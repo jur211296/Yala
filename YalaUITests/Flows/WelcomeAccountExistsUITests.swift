@@ -8,8 +8,9 @@
 //  qué contesta `GET /account/exists`. El seam `-uitest-fake-account-exists <new|complete|groupsOnly|offline>` finge el
 //  inicio de sesión (sin SIWA, sin token, sin red) y la respuesta; qué pantalla sale lo decide la tabla de siempre.
 //
-//  Ruta: Hero → «Ya tengo una cuenta» → Apple → consentimiento → «Aceptar». Desde la bienvenida 2.3 (Y23-01) el primer
-//  nivel es la vitrina y «¡Hola de nuevo!» se alcanza por la puerta de Grupos → «¿Ya tienes una cuenta? Entra aquí».
+//  Ruta: vitrina → puerta de Grupos → «¿Ya tienes una cuenta? Entra aquí» → «¡Hola de nuevo!» → Apple. Desde el E13 del
+//  recorrido del 13-nov, Apple va por el acceso único: firma sola (fingida) y el consentimiento va dentro de la hoja que
+//  sigue, no en una hoja aparte antes.
 //
 
 import XCTest
@@ -32,7 +33,7 @@ final class WelcomeAccountExistsUITests: XCTestCase {
         return app
     }
 
-    /// Hasta el «Aceptar» del consentimiento, que es lo que arranca el inicio de sesión.
+    /// Hasta tocar Apple, que arranca el inicio de sesión (el acceso único firma sin un toque más).
     private func signInFromExistingAccount(_ app: XCUIApplication) {
         app.openWelcomeGroupsPaths()
         let signIn = app.buttons["welcome_groups_sign_in"]
@@ -41,28 +42,28 @@ final class WelcomeAccountExistsUITests: XCTestCase {
         let appleCard = app.buttons["welcome_existing_cloud"]
         XCTAssertTrue(appleCard.waitForExistence(timeout: 10), "No apareció la card de Apple.")
         appleCard.tap()
-        let accept = app.buttons["storage_consent_accept"]
-        XCTAssertTrue(accept.waitForExistence(timeout: 10), "No se abrió el consentimiento.")
-        accept.tap()
     }
 
-    /// Cuenta inexistente, con la puerta del alta abierta: «No encontramos una cuenta» con su botón al alta.
+    /// Cuenta inexistente, con la puerta del alta abierta: «Vamos a crear tu cuenta», con el consentimiento dentro y su
+    /// botón al alta (lo mismo que la vitrina desde el E13 del 13-nov; antes, «No encontramos una cuenta»).
     func test_existingAccount_noAccount_offersTheSignUp() {
         let app = launch("new", attest: true)
         signInFromExistingAccount(app)
-        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_not_found"].waitForExistence(timeout: 20),
-                      "No salió «No encontramos una cuenta».")
-        XCTAssertTrue(app.buttons["welcome_cloud_not_found_cta"].exists, "Falta el botón que lleva al alta.")
-        XCTAssertFalse(app.buttons["welcome_cloud_not_found_back"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_create_account"].waitForExistence(timeout: 20),
+                      "No salió «Vamos a crear tu cuenta».")
+        XCTAssertTrue(app.buttons["welcome_cloud_create_account_cta"].exists, "Falta el botón que crea la cuenta.")
+        XCTAssertFalse(app.buttons["storage_consent_accept"].exists, "Salió la hoja aparte del consentimiento.")
     }
 
-    /// Control de la condición: la misma respuesta sin App Attest no ofrece el alta, ofrece «Volver».
+    /// Control de la condición: la misma respuesta sin App Attest no ofrece el alta: «No encontramos una cuenta» con
+    /// «Volver» (`UnifiedAccessLogic.phaseWithoutAccount`).
     func test_existingAccount_noAccount_withoutAppAttest_offersOnlyBack() {
         let app = launch("new")
         signInFromExistingAccount(app)
         XCTAssertTrue(app.buttons["welcome_cloud_not_found_back"].waitForExistence(timeout: 20),
                       "Sin App Attest, «No encontramos una cuenta» tenía que ofrecer «Volver».")
         XCTAssertFalse(app.buttons["welcome_cloud_not_found_cta"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_cloud_create_account"].exists)
     }
 
     /// Cuenta solo de grupos: no se adopta. Ni la barra de «Conectando con tu cuenta…» ni «No encontramos».

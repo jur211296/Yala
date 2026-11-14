@@ -141,6 +141,35 @@ nonisolated enum WelcomeAccountChoiceLogic {
         return ExistingAccountOrder(options: reordered, usedOnThisDevice: used)
     }
 
+    /// **«¡Hola de nuevo!» desde la puerta de Grupos** (recorrido de la bienvenida del 13-nov, E13; Jürgen: «Grupos no
+    /// tiene iCloud»). Quien llega por «¿Ya tienes una cuenta? Entra aquí» busca su cuenta de Yala, que es donde viven los
+    /// grupos: «Restaurar desde iCloud» no le lleva a ningún grupo, así que no se ofrece. Y tampoco la nota «La que
+    /// usaste en este dispositivo»: el faro que la pone dice con qué método se creó la cuenta PERSONAL de este Apple ID, no
+    /// con cuál entró este teléfono la última vez (con la última en Google, la nota salía bajo Apple). Sin entradas a una
+    /// cuenta visibles (el interruptor remoto apagado, o un XCUITest sin el opt-in) se queda lo que había: una puerta sin
+    /// ninguna opción no lleva a ninguna parte.
+    ///
+    /// Fuera de la puerta de Grupos, el orden del faro de siempre (`orderExistingOptions`).
+    static func existingChooserOrder(
+        _ options: [ExistingOption],
+        fromGroupsDoor: Bool,
+        beaconLinked: Bool,
+        beaconProvider: String?
+    ) -> ExistingAccountOrder {
+        guard fromGroupsDoor else {
+            return orderExistingOptions(options, beaconLinked: beaconLinked, beaconProvider: beaconProvider)
+        }
+        return ExistingAccountOrder(options: existingOptions(options, fromGroupsDoor: true), usedOnThisDevice: nil)
+    }
+
+    /// Las opciones de «¡Hola de nuevo!» según la puerta desde la que se llega (ver `existingChooserOrder`). La usa
+    /// también el bypass, para que el sub-chooser se salte con el mismo criterio con el que se pinta.
+    static func existingOptions(_ options: [ExistingOption], fromGroupsDoor: Bool) -> [ExistingOption] {
+        guard fromGroupsDoor else { return options }
+        let accounts = options.filter { $0 != .restoreICloud }
+        return accounts.isEmpty ? options : accounts
+    }
+
     /// Bypass del sub-chooser: con una sola opción visible se navega directo a ella.
     static func bypass<Option>(_ options: [Option]) -> Option? {
         options.count == 1 ? options.first : nil
@@ -472,10 +501,12 @@ enum WelcomeNewBranchRouter {
     /// pantallas tienen que leer la misma señal, o una encaminaría a Google y la otra marcaría Apple.
     static func existingOrder(
         beacon: CloudBeacon,
-        options: [WelcomeAccountChoiceLogic.ExistingOption]
+        options: [WelcomeAccountChoiceLogic.ExistingOption],
+        fromGroupsDoor: Bool = false
     ) -> WelcomeAccountChoiceLogic.ExistingAccountOrder {
-        WelcomeAccountChoiceLogic.orderExistingOptions(
+        WelcomeAccountChoiceLogic.existingChooserOrder(
             options,
+            fromGroupsDoor: fromGroupsDoor,
             beaconLinked: beacon.isCloudAccountLinked,
             beaconProvider: beacon.linkedProvider)
     }

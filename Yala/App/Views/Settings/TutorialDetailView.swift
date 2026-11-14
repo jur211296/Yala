@@ -88,19 +88,17 @@ struct TutorialDetailView: View {
 
     // MARK: - Progress Indicator
 
+    /// Un punto por PASO, los mismos que dice la lista («4 pasos»). E14 del recorrido del 13-nov: la Bandeja decía «4
+    /// pasos» y enseñaba 6 puntos, porque la portada y el final también llevaban el suyo. En la portada todos vacíos; en
+    /// el final, todos llenos.
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<totalPages, id: \.self) { page in
-                let isCurrent = page == currentPage
-                let isPast = page < currentPage
-                let isEdge = page == 0 || page == totalPages - 1
+            ForEach(0..<TutorialProgressDots.count(steps: steps.count), id: \.self) { dot in
+                let state = TutorialProgressDots.state(dot: dot, page: currentPage, steps: steps.count)
 
                 Capsule()
-                    .fill(isPast || isCurrent ? theme.accent : theme.secondaryText.opacity(0.2))
-                    .frame(
-                        width: isCurrent ? 24 : (isEdge ? 6 : 8),
-                        height: isEdge ? 6 : 8
-                    )
+                    .fill(state == .upcoming ? theme.secondaryText.opacity(0.2) : theme.accent)
+                    .frame(width: state == .current ? 24 : 8, height: 8)
                     .dsAnimation(.spring(response: 0.3), value: currentPage, reduceMotion: reduceMotion)
             }
         }
@@ -406,5 +404,21 @@ final class LoopingPlayerUIView: UIView {
 
     deinit {
         cleanUp()
+    }
+}
+
+/// Los puntos de progreso de un tutorial de la biblioteca: uno por paso, sin la portada ni el final (E14, 13-nov).
+nonisolated enum TutorialProgressDots {
+    enum State: Equatable { case done, current, upcoming }
+
+    /// Tantos puntos como pasos: lo que dice la fila de la lista.
+    static func count(steps: Int) -> Int { steps }
+
+    /// La página 0 es la portada, de la 1 a la N los pasos y la N + 1 el final.
+    static func state(dot: Int, page: Int, steps: Int) -> State {
+        let stepPage = dot + 1
+        if page > stepPage { return .done }
+        if page == stepPage { return .current }
+        return .upcoming
     }
 }
