@@ -173,7 +173,14 @@ struct CashFlowDetailLineRow: View {
         if lineResult.isIncome {
             return isOver ? L10n.UXL18.receivedExtra : L10n.UXL18.toReceive
         }
-        return isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel
+        return Self.expenseLabel(isOver: isOver, monthIsPast: month.isPast)
+    }
+
+    /// Un gasto por debajo de lo planeado en un mes que ya cerró dice «Te sobró», no «Te quedan»: ese dinero ya no se
+    /// puede gastar en ese mes. Mismo criterio que el período cerrado de Presupuestos (`BudgetRemainingLogic`).
+    static func expenseLabel(isOver: Bool, monthIsPast: Bool) -> String {
+        if isOver { return L10n.UXL9.overLabel }
+        return monthIsPast ? L10n.UXL9.leftoverLabel : L10n.UXL9.remainingLabel
     }
 
     // MARK: - Category Icon

@@ -49,32 +49,48 @@ enum RecordsListSearchReveal {
 struct RecordsListSearchSlot: View {
     @Environment(\.offersRecordsListSearch) private var offersSearch
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Bindable var viewModel: RecordsViewModel
-    var onQueryChange: () -> Void
 
+    /// Sin campo, el hueco NO pinta nada (ni un contenedor vacío): un `VStack` vacío sigue siendo un hijo de la pila de
+    /// `RecordsTabView`, que le suma su espaciado, y dejaba ~12 pt de aire de más bajo los chips (card 4wqy, 14-nov).
+    /// La animación y la escucha del texto viven en `recordsListSearchContainer`, sobre la pila que siempre existe.
     var body: some View {
-        // Contenedor común del campo y de lo que baja por él: entra fundiéndose y la lista se aparta (implícita: dentro
-        // de una pestaña un `withAnimation` no anima, `swiftui-ds.md`).
-        VStack(spacing: DS.Spacing.none) {
-            if offersSearch, RecordsListSearchReveal.isShown(
-                revealed: viewModel.isListSearchRevealed,
-                hasText: !viewModel.listSearchText.isEmpty,
-                voiceOver: voiceOver
-            ) {
-                RecordsListSearchField(
-                    text: $viewModel.listSearchText,
-                    onClear: {
-                        viewModel.listSearchText = ""
-                        viewModel.isListSearchRevealed = false
-                    }
-                )
-                .transition(.opacity)
-            }
+        if offersSearch, RecordsListSearchReveal.isShown(
+            revealed: viewModel.isListSearchRevealed,
+            hasText: !viewModel.listSearchText.isEmpty,
+            voiceOver: voiceOver
+        ) {
+            RecordsListSearchField(
+                text: $viewModel.listSearchText,
+                onClear: {
+                    viewModel.listSearchText = ""
+                    viewModel.isListSearchRevealed = false
+                }
+            )
+            .transition(.opacity)
         }
-        .dsAnimation(DS.Animation.appear, value: viewModel.isListSearchRevealed, reduceMotion: reduceMotion)
-        .onChange(of: viewModel.listSearchText) { _, _ in onQueryChange() }
+    }
+}
+
+extension View {
+    /// En la pila que contiene `RecordsListSearchSlot`: el campo entra fundiéndose y lo de debajo se aparta con la misma
+    /// curva (implícita: dentro de una pestaña un `withAnimation` no anima, `swiftui-ds.md`), y cada cambio del texto
+    /// vuelve a filtrar. Va aquí y no en el hueco porque el hueco, sin campo, no existe.
+    func recordsListSearchContainer(_ viewModel: RecordsViewModel, onQueryChange: @escaping () -> Void) -> some View {
+        modifier(RecordsListSearchContainerModifier(viewModel: viewModel, onQueryChange: onQueryChange))
+    }
+}
+
+private struct RecordsListSearchContainerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let viewModel: RecordsViewModel
+    let onQueryChange: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .dsAnimation(DS.Animation.appear, value: viewModel.isListSearchRevealed, reduceMotion: reduceMotion)
+            .onChange(of: viewModel.listSearchText) { _, _ in onQueryChange() }
     }
 }
 
