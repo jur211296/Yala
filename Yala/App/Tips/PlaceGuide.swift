@@ -187,7 +187,12 @@ final class PlaceGuideCenter {
     /// pasa al 7, como en el prototipo (Y23-14).
     @ObservationIgnored private var onSkip: (() -> Void)?
 
-    init() {}
+    /// Donde vive la marca de la tarjeta del Panel (`ContextualGuideBanner.panel()`). Inyectable para los tests.
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     var stage: PlaceGuideStage? {
         guard let guide else { return nil }
@@ -206,6 +211,10 @@ final class PlaceGuideCenter {
     @discardableResult
     func start(_ guide: PlaceGuide, onFinish: (() -> Void)?, onSkip: (() -> Void)?) -> Bool {
         guard self.guide == nil else { return false }
+        // E14 del recorrido del 13-nov: al omitir el paso 2, la guía de la Bandeja salía con la tarjeta «Este es tu
+        // resumen» del Panel a la vista, y había dos guías con su «Entendido» a la vez. La de foco es la de Primeros pasos
+        // y la tarjeta del Panel ya dijo lo suyo (cómo apuntar un gasto): se retira para siempre, como con su X.
+        PlaceGuideLogic.retirePanelBeginnerGuide(in: defaults)
         self.guide = guide
         stageIndex = 0
         self.onFinish = onFinish
@@ -272,6 +281,14 @@ enum PlaceGuideLogic {
         case advance
         case close
         case stay
+    }
+
+    /// La clave de `ContextualGuideBanner.panel()` (`guide.<id>.dismissed`) y de `PanelView.panelGuideDismissed`.
+    static let panelBeginnerGuideKey = "guide.panel.dismissed"
+
+    /// Retira la tarjeta «Este es tu resumen» del Panel, como su X.
+    static func retirePanelBeginnerGuide(in defaults: UserDefaults) {
+        defaults.set(true, forKey: panelBeginnerGuideKey)
     }
 
     static func stage(of guide: PlaceGuide, at index: Int) -> PlaceGuideStage? {

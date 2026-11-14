@@ -4023,8 +4023,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "A transferir os teus dados…";
-"welcome.cloud.cancelAdoptBody" = "Este dispositivo não alterou nada do que tens na tua conta Yala. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta com «Já tenho conta».";
-"welcome.cloud.cancelAdoptEffectBody" = "O que tens neste dispositivo continua aqui, como até agora. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta com «Já tenho conta».";
+"welcome.cloud.cancelAdoptBody" = "Este dispositivo não alterou nada do que tens na tua conta Yala. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta a partir do início.";
+"welcome.cloud.cancelAdoptEffectBody" = "O que tens neste dispositivo continua aqui, como até agora. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta a partir do início.";
+"welcome.cloud.cancelling" = "A cancelar…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Os Grupos precisam do iCloud";
@@ -4248,7 +4249,7 @@
 "settings.deleteAccountViewGroups" = "Ver os meus grupos";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "A tua cópia antiga do iCloud (de antes da tua conta Yala) não é alterada: se voltares a abrir o Yala, vais vê-la como uma reinstalação.";
+"settings.deleteAccountFrozenICloudNote" = "Se usavas o Yala com o teu iCloud antes de criar a tua conta, essa cópia continua no teu iCloud: eliminar a tua conta Yala não a apaga.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "Em grupos antigos (iCloud), o teu nome pode continuar visível para os membros desses grupos.";
@@ -7933,7 +7934,6 @@
 "account.saveErrorPartial" = "Não foi possível guardar tudo. Parte das alterações pode já estar visível; verifique a conta e guarde novamente.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "A partir de um recibo";
 "receiptSplit.entry.hint" = "Lê um recibo por fotografia ou voz e divide-o por linha";
 "receiptSplit.title" = "A partir de um recibo";
 "receiptSplit.photo.title" = "Fotografia do recibo";
@@ -7979,6 +7979,15 @@
 "receiptSplit.failure.read.message" = "Algo deu errado. Tente de novo em instantes.";
 "receiptSplit.failure.noLines.title" = "Não encontrei linhas com valor";
 "receiptSplit.failure.noLines.message" = "Experimente uma fotografia mais perto do recibo e com boa luz, ou dite-o.";
+"receiptSplit.failure.dailyLimitFree.title" = "Já dividiste os recibos de hoje";
+"receiptSplit.failure.dailyLimitFree.message" = "Amanhã podes dividir mais recibos grátis. Com o Yala Pro tens muitos mais por dia.";
+"receiptSplit.failure.dailyLimit.title" = "Chegaste ao limite de recibos de hoje";
+"receiptSplit.failure.dailyLimit.message" = "Amanhã podes continuar a dividir recibos.";
+"receiptSplit.text.hint" = "Escreve a despesa e a IA divide-a";
+"receiptSplit.text.title" = "Escreve a despesa";
+"receiptSplit.text.placeholder" = "pizza 40 Ana e eu, bitoque 35 Beto, bebidas 18 todos";
+"receiptSplit.text.footer" = "Cada item com o valor e quem o consumiu. O que não tiver nome é dividido por todos.";
+"receiptSplit.failure.noLines.textMessage" = "Escreve cada item com o valor, por exemplo «pizza 40».";
 "receiptSplit.failure.noConnection.message" = "Ligue-se à internet para ler o recibo.";
 "receiptSplit.failure.mic.message" = "Dê permissão nas Definições para ditar o recibo.";
 
@@ -8314,7 +8323,6 @@
 "bienvenida23.groups.accountOnlyBody" = "Entro em Grupos e preparo depois";
 "bienvenida23.access.createTitle" = "Vamos criar a tua conta";
 "bienvenida23.access.createBody" = "Esse e-mail ainda não tem uma conta da Yala.";
-"bienvenida23.access.otherProviderNote" = "Criaste a tua conta com %1$@? Entra com %1$@: com %2$@ seria uma conta nova.";
 "bienvenida23.access.useAnotherAccount" = "Usar outra conta";
 "bienvenida23.access.existsTitle" = "Já tens uma conta";
 "bienvenida23.access.existsBody" = "Esse e-mail já tem uma conta da Yala. Carregamos os teus dados e entramos?";
@@ -8786,6 +8794,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Agora deves %1$@ a %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "Agora %1$@ deve-te %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "Agora %1$@ deve %2$@ a %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Há um pagamento de %@ por confirmar";
+"groups.saldar23.pendingOnDebt.many" = "Há pagamentos de %@ por confirmar";
+"groups.saldar23.confirmOver.title" = "Confirmar este pagamento?";
+"groups.saldar23.confirmOver.settled" = "%1$@ já não te devia nada: outro pagamento saldou esta dívida. Se confirmares estes %2$@, fica pago a mais. Se for o mesmo pagamento registado duas vezes, retira-o.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ só tinha %2$@ por te pagar. Se confirmares estes %3$@, fica pago a mais.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirmar na mesma";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "O Yala juntou as dívidas para haver menos pagamentos.";
@@ -8797,3 +8811,59 @@
 "panel.lote23chico.budgetsOnPanel" = "Orçamentos no Painel";
 "panel.lote23chico.budgetsOnPanelHint" = "Escolhe quais aparecem no cartão de Orçamentos.";
 "usageMode.lote23chico.fullExpensesOnly" = "Yala completo · apenas despesas";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "A terminar sessão…";
+"uxcs.signOutProgress.removingData" = "A remover os teus dados deste dispositivo…";
+"uxcs.signOutProgress.deletingAccount" = "A eliminar a tua conta…";
+"uxcs.signOutProgress.keepOpen" = "Mantém o Yala aberto até terminar.";
+"uxcs.signOutProgress.accountDeletedTitle" = "A tua conta foi eliminada";
+"uxcs.signOutProgress.accountDeletedBody" = "Eliminámos a tua conta Yala com todos os dados, incluindo os deste dispositivo. Se estavas em grupos, aí o teu nome agora é «Utilizador eliminado».";
+"uxcs.signOutProgress.continue" = "Continuar";
+"uxcs.relaunch.accountDeleted" = "Conta eliminada";
+"uxcs.relaunch.afterSignOutICloud" = "Os teus dados estavam ligados ao teu iCloud, e o Yala só larga essa ligação ao fechar por completo. Ao abri-lo outra vez, termina de remover os teus dados deste dispositivo.";
+"bienvenida23.access.sameEmailNote" = "Com o mesmo email, a Apple e a Google abrem a mesma conta Yala. Se criaste a tua com outro email, entra com esse.";
+"bienvenida23.access.consentAccessDetail" = "Não há palavra-passe da Yala nem recuperação por email: se perderes esse acesso, exporta os teus dados antes (Definições → Exportar registos).";
+"bienvenida23.access.createdTitle" = "Criámos a tua conta";
+"bienvenida23.access.createdBody" = "Agora, três perguntas rápidas para deixar o Yala à tua medida.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Navegadores ligados";
+"connectedBrowsers.rowSubtitle" = "As sessões do Yala web abertas com a tua conta";
+"connectedBrowsers.intro" = "Vê aqui onde o Yala web está aberto com a tua conta. Se não reconheceres uma, termina-a.";
+"connectedBrowsers.empty" = "Não há nenhuma sessão do Yala web aberta com a tua conta.";
+"connectedBrowsers.close" = "Terminar";
+"connectedBrowsers.closeAll" = "Terminar todas as sessões web";
+"connectedBrowsers.closeAllConfirmTitle" = "Terminar todas as sessões web?";
+"connectedBrowsers.closeAllConfirmBody" = "Esses separadores ficam vazios em menos de um minuto. Os teus dados não mudam.";
+"connectedBrowsers.closeAllConfirm" = "Terminar todas";
+"connectedBrowsers.footer" = "Ao terminares uma, esse separador fica vazio em menos de um minuto.";
+"connectedBrowsers.loadFailed" = "Não foi possível carregar a lista. Verifica a tua ligação e tenta de novo.";
+"connectedBrowsers.closeFailed" = "Não foi possível terminar. Verifica a tua ligação e tenta de novo.";
+"connectedBrowsers.unknownBrowser" = "Navegador";
+"connectedBrowsers.sharedComputer" = "computador partilhado";
+"connectedBrowsers.justNow" = "agora";
+"connectedBrowsers.browserOn" = "%1$@ no %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Associar um navegador";
+"connectedBrowsers.link.rowFooter" = "Abre o teu Yala num computador sem escrever palavra-passe: lê o código que o Yala web mostra.";
+"connectedBrowsers.link.title" = "Associar um navegador";
+"connectedBrowsers.link.intro" = "No computador, abre o Yala web e escolhe “Entrar com o teu iPhone”. Aponta a câmara para o código.";
+"connectedBrowsers.link.scanner" = "Câmara para ler o código";
+"connectedBrowsers.link.typeHeader" = "Ou escreve o código";
+"connectedBrowsers.link.continue" = "Continuar";
+"connectedBrowsers.link.confirmHeader" = "Abrir o Yala neste navegador?";
+"connectedBrowsers.link.whereCity" = "Pedido a partir de %1$@ · código %2$@";
+"connectedBrowsers.link.whereNoCity" = "Código %@";
+"connectedBrowsers.link.warning" = "Só confirmes se vires este código no teu próprio ecrã. Ninguém do Yala to vai pedir.";
+"connectedBrowsers.link.confirm" = "Confirmar com Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirma que queres abrir o teu Yala nesse navegador.";
+"connectedBrowsers.link.doneTitle" = "Navegador associado";
+"connectedBrowsers.link.doneBody" = "%@ já mostra o teu Yala, só de leitura. Podes terminar a sessão aqui quando quiseres.";
+"connectedBrowsers.link.doneButton" = "OK";
+"connectedBrowsers.link.problem.invalidCode" = "Esse código não é do Yala web. Verifica se tem 8 caracteres.";
+"connectedBrowsers.link.problem.expired" = "O código expirou ou já foi usado. Pede outro no Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "A tua conta não usa a nuvem do Yala. Ativa-a em Armazenamento para usar o Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "A tua sessão da nuvem expirou. Volta a entrar em A tua conta Yala.";
+"connectedBrowsers.link.problem.network" = "Não foi possível ligar ao Yala web. Tenta novamente.";

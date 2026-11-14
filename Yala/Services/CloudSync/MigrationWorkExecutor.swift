@@ -53,6 +53,10 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// Caso propio por lo mismo que `adoptLocalFailure`: esperar no arregla un corpus ajeno, así que cuenta para el techo
     /// CORTO. La espera legítima —el marcador que aún se importa— la para antes la quiescencia, que es `adoptRetry`.
     case adoptLineageUnproven
+    /// La persona confirmó «Cancelar la activación» y el efecto del adopt llegó a uno de sus puntos seguros (card l4m0 del
+    /// barrido del 14-nov). Hasta entonces el «sí» solo se miraba ANTES de cada intento, y el intento en vuelo que salía
+    /// bien adoptaba igual. El runner lo recoge en `observeAdoptEffectFailure`, que mira el «sí» antes que nada.
+    case adoptCancelRequested
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -908,6 +912,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// su primer push—, así que el import no cabe en medio.
     /// La cifra de la subida (`MigrationSnapshotUploader.progress`).
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { uploader.progress }
+
+    /// En qué paso REAL va el efecto del adopt y cuántas filas de la cuenta lleva leídas (card jxbp). Solo informa: lo
+    /// lee la barra de «Conectando con tu cuenta» a través del runner y del controller. Cada pasada lo repone desde el
+    /// primer paso; la pantalla no retrocede (`AdoptEffectProgress.displayed`).
+    private(set) var adoptEffectProgress: AdoptEffectProgress?
+
+    /// ¿Hay un «Cancelar la activación» apuntado? Lo instala el runner (`installAdoptCancelProbe`), dueño del «sí». Lo mira
+    /// el efecto del adopt en sus puntos seguros (`runAdoptFlow`, card l4m0).
+    private var adoptCancelProbe: @MainActor () -> Bool = { false }
+
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool) {
+        adoptCancelProbe = probe
+    }
+
+    /// Un punto seguro del efecto del adopt: con el «sí» apuntado, el intento sale aquí en vez de seguir hasta adoptar.
+    private func stopIfAdoptCancelRequested(at point: String) throws {
+        guard adoptCancelProbe() else { return }
+        CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "cancel requested at \(point)")
+        throw MigrationExecutorError.adoptCancelRequested
+    }
 
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         do {
@@ -2164,10 +2188,21 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         if let waiting = await awaitICloudCorpusIfNotLocal(localInventory) { return waiting }
         // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
-        guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        // Card jxbp: cuántas filas tiene la cuenta, para que la barra avance con la lectura. Solo informa: la comprobación
+        // de que la lectura salió entera sigue siendo el Merkle de DESPUÉS, y sin respuesta aquí la lectura va sin cifra.
+        var expectedRows: Int?
+        if case .snapshot(let merkle) = await merkleClient.fetchMerkle() {
+            expectedRows = AdoptEffectProgress.expectedRows(merkleCounts: merkle.entities.values.map(\.count))
+        }
+        adoptEffectProgress = AdoptEffectProgress(stage: .readingAccount, rowsRead: 0, rowsExpected: expectedRows)
+        guard let enumeration = await enumerateBackendSyncIDs(onPage: { [weak self] rows in
+            self?.adoptEffectProgress?.rowsRead += rows
+        }) else { return .transient }
+        adoptEffectProgress?.stage = .verifyingAccount
         // Verificación POSITIVA de completitud contra los counts del Merkle (SERIO 1 — ver doc del método).
         // El merkle se consulta DESPUÉS de la enumeración: sesgo a abortar, jamás a proceder.
         guard await verifyEnumerationComplete(enumeration) else { return .transient }
+        adoptEffectProgress?.stage = .matchingDevice
         let backendSyncIDs = enumeration.known
 
         // Las identidades que el espejo cambió desde una pasada ANTERIOR de este adopt, que sembró el registro fila →
@@ -2293,6 +2328,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
         // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
         // casados, para que el espejo lo exporte detrás de ellos.
+        adoptEffectProgress?.stage = .uploading
         let outcome = await uploadAdoptOrphans(plan, identityAssigned: identityAssigned)
         if case .completed = outcome { relayAdoptMarkerIfCovered(enumeration: enumeration) }
         return outcome
@@ -2399,6 +2435,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// pendiente y el próximo `resume()` lo reintenta (tras su propia espera de quiescencia). Idempotente:
     /// una 2ª pasada re-diffea (lo aplicado sale del diff) y re-persiste (LWW/no-op).
     func runAdoptFlow() async throws {
+        adoptEffectProgress = AdoptEffectProgress(stage: .checkingDevice)
+        // Al acabar la pasada, bien o mal, el progreso deja de valer: el intento siguiente no puede leer el de éste
+        // (review adversarial).
+        defer { adoptEffectProgress = nil }
         // 1) Quiescencia del import (el adopt persiste `.cloud` sobre un store en importación — DEBE
         //    asentarse antes). El runner ya gatea sus entradas por quiescencia; esta es la red específica
         //    del contrato por si el drive alcanzó el efecto lejos de la entrada.
@@ -2406,6 +2446,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "import not quiescent")
             throw MigrationExecutorError.adoptRetry(reason: "quiescence")
         }
+
+        // 1-ter) Card l4m0: un «Cancelar la activación» confirmado mientras esperaba se honra aquí, antes de enumerar nada.
+        try stopIfAdoptCancelRequested(at: "beforeReconcile")
 
         // 1-bis) Un reintento que solo espera a que el marcador relevado de una pasada anterior llegue a iCloud no repite el
         //    reconcile (ni su enumeración del backend): sale aquí mientras dure la espera (`relayMarkerAwaitingExport`).
@@ -2435,6 +2478,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             break
         }
 
+        // 2-ter) Card l4m0: el «sí» que llegó durante el reconcile se honra aquí, antes de armar el modo nube (paso 5), que es
+        //    lo que ya no se deshace. Entre este punto y el paso 5 no hay ningún `await`.
+        try stopIfAdoptCancelRequested(at: "afterReconcile")
+
         // 2-bis) El marcador que este adopt acaba de relevar tiene que llegar a iCloud ANTES de armar el apagado del espejo
         //    (paso 5), como el del líder en su paso 4 (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
         //    `adoptRetry`: el runner lo trata como la red —pausa el techo corto— y el reintento espera en el 1-bis.
@@ -2442,6 +2489,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             throw MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")
         }
 
+        adoptEffectProgress?.stage = .finishing
         // 3) Fast-forward del History baseline: sin él el primer drain del runtime post-relaunch re-emitiría
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
@@ -3372,7 +3420,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
     /// `sweepZombies`). `nil` = red (transient). El loop copia el shape de `sweepZombies`: cursor, high-water,
     /// break si página vacía o sin progreso.
-    private func enumerateBackendSyncIDs() async -> BackendEnumeration? {
+    private func enumerateBackendSyncIDs(onPage: ((Int) -> Void)? = nil) async -> BackendEnumeration? {
         var known: Set<UUID> = []
         var liveByTable: [String: Set<UUID>] = [:]
         var liveKeys: [UUID: String] = [:]
@@ -3384,6 +3432,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         while true {
             switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
             case let .page(page):
+                // Las vivas: el total con el que se compara (Merkle) cuenta solo filas vivas.
+                onPage?(page.deltas.lazy.filter { $0.op != .tombstone }.count)
                 for delta in page.deltas {
                     known.insert(delta.syncID)
                     do {

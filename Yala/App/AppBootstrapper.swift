@@ -271,6 +271,21 @@ final class AppBootstrapper {
             }
         }
 
+        // 2d. El papel de las subcategorías de transferencia y de ajuste (ticket
+        //     `transfer-and-adjustment-subcategories-need-a-stable-role`). En CADA arranque —lo que llega sin papel
+        //     puede llegar por iCloud o por el canal del Modo Nube en cualquier momento— y tras la quiescencia: escribe
+        //     `Subcategory` del store personal. Mientras no corre, `Subcategory.systemRole` deduce el mismo papel.
+        //     `!uiTestActive` como sus vecinos: los seeds de UI se leen con esa deducción.
+        if !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.subcategorySystemRoles", "import not quiescent")
+                    return
+                }
+                SubcategorySystemRoleBackfill.run(context: context)
+            }
+        }
+
         // 3. Load subscription status
         await loadSubscriptionStatus()
 
@@ -466,7 +481,7 @@ final class AppBootstrapper {
                 cloudSyncFanOutObserver = NotificationCenter.default.addObserver(
                     forName: .cloudSyncAppliedRemoteChanges, object: nil, queue: .main
                 ) { _ in
-                    Task { @MainActor in SessionState.shared.markRemoteChangePending() }
+                    Task { @MainActor in RemoteChangesFanOut.receive(isApplicationActive: UIApplication.shared.applicationState == .active) }
                 }
             }
             Task { await CloudSyncRuntime.startShared(context: context) }
@@ -1849,6 +1864,10 @@ final class AppBootstrapper {
         // No se pierde nada: `iCloudMismatchAlreadyDetected` sigue en `false`, así que el foreground
         // siguiente lo vuelve a ofrecer si el veredicto de identidad fue que no había cambio.
         guard !appleIDChangeOffered, !appleIDChangeCheckInFlight else { return }
+        // Card gd78: con una entrada a una cuenta a medias el montaje neutro es a propósito (`WelcomeAdoptInFlight`), y
+        // «reinicia para sincronizar con iCloud» volvería a montar neutro: un aviso que no se puede cumplir. Sin marcar el
+        // «ya detectado»: cuando el traspaso aterrice o se deshaga, el primer plano siguiente vuelve a mirar.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
 
         // R1 (relanzamiento cero): la decisión vive en `SwiftDataConfiguration.shouldOfferICloudRestart`
         // (pura, testeable) e incluye el término R9. Sus dos primeros inputs son testigos de lo que ESTE
@@ -2556,8 +2575,10 @@ final class AppBootstrapper {
         }
         // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
+        // Lo apuntado en Yala web llega por la misma cola: antes, se pregunta a la web si hay sesiones abiertas (lote 1).
         Task { @MainActor in
-            if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
+            let webConnected = await ConnectedBrowsersPresence.refreshIfDue(client: ConnectedBrowsersClient())
+            if await BankEmailDraftService.syncIfNeeded(context: context, webConnected: webConnected) > 0 {
                 sessionState.incrementDataVersion()
             }
         }
@@ -3406,6 +3427,10 @@ final class AppBootstrapper {
             !UserDefaults.standard.bool(forKey: ChatUnsignedExpenseRepairService.repairSweepKey)
         else { return }
 
+        // La ventana cierra AHORA, antes de la espera: lo que la persona registre mientras tanto ya
+        // lo escribió un build que firma y no debe voltearse.
+        ChatUnsignedExpenseRepairService.armWindowCloseIfNeeded()
+
         // Gate de quiescencia: el barrido escribe `TransactionItem` (store personal) y hace `save()`;
         // durante el import del restore eso dispara el `_assertionFailure` interno de SwiftData. Si el
         // import no asienta, NO se marca el flag → reintenta en el próximo arranque.
@@ -3642,6 +3667,10 @@ final class AppBootstrapper {
         // Hasta el 2026-09-12, el CAJÓN de la sesión: las notificaciones se siembran en el store de quien
         // está dentro. Con un solo dominio, ese store es `.standard`.
         guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
+        // Card gd78 (medido en el iPhone 14 el 13-nov): con una entrada a una cuenta a medias el onboarding consta hecho
+        // (`onAdoptStarted` lo marca antes de conducir), y sembrar aquí dejaba 7 avisos locales sin linaje: el traspaso
+        // retomado se paraba en «no demuestra que los datos sean de la cuenta». Los avisos de la cuenta bajan con ella.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 

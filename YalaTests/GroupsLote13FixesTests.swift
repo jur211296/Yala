@@ -150,7 +150,9 @@ struct GroupsLote13FixesTests {
 
     // MARK: - B7 · «Cancelar» visible en los diálogos de borrar
 
-    /// Con `role: .cancel` el diálogo (sale como popover en iOS 26) no pinta la salida: medido en el lote 13.
+    /// Con `role: .cancel` el diálogo (sale como popover en iOS 26) no pinta la salida: medido en el lote 13. Vale para los
+    /// `confirmationDialog`; una `.alert` de tres botones sí lleva `.cancel`, o el sistema añade otro «Cancelar» y salen dos
+    /// (medido el 2026-11-13 en el aviso de «Sí, lo recibí» de Saldos).
     @Test(arguments: [
         "Yala/App/Views/Groups/GroupExpenseFormView.swift",
         "Yala/App/Views/Groups/GroupRecordsView.swift",
@@ -160,7 +162,12 @@ struct GroupsLote13FixesTests {
     func deleteDialogs_showAPlainCancel(path: String) throws {
         let source = try Self.source(path)
         #expect(source.contains("Button(L10n.Common.cancel) {"), "\(path) sin «Cancelar» visible")
-        #expect(!source.contains("Button(L10n.Common.cancel, role: .cancel)"))
+        let dialogs = source.components(separatedBy: ".confirmationDialog(").dropFirst()
+            .map { $0.components(separatedBy: "} message: {").first ?? $0 }
+        #expect(!dialogs.isEmpty, "\(path) sin diálogo de borrar")
+        for dialog in dialogs {
+            #expect(!dialog.contains("Button(L10n.Common.cancel, role: .cancel)"), "\(path): diálogo con «Cancelar» oculto")
+        }
     }
 
     // MARK: - B6 / B9 · Textos que decían algo falso o en inglés

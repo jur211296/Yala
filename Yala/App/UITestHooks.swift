@@ -1326,6 +1326,13 @@ final class UITestHooks {
     /// llega de otro dispositivo.
     nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
 
+    /// `-uitest-seed-pending-settlement-already-settled`: con `-uitest-seed-pending-settlement`, Ana ya saldó en soles con
+    /// otro pago, confirmado. Su pago de S/ 50 por confirmar ya no cabe en la deuda: «Sí, lo recibí» avisa antes de
+    /// confirmarlo (Grupos 2.3, pago por confirmar, opción B).
+    nonisolated static var seedPendingSettlementAlreadySettled: Bool {
+        hasArg("-uitest-seed-pending-settlement-already-settled")
+    }
+
     /// `-uitest-seed-group-sale`: con el perfil `grupos`, un grupo más, «Ventas con Ana», con una venta tuya a Ana de S/ 50
     /// ya puenteada (por cobrar) y el pago de Ana de S/ 50 por confirmar, que la cobra entera (Grupos B · card 10).
     nonisolated static var seedGroupSale: Bool { hasArg("-uitest-seed-group-sale") }

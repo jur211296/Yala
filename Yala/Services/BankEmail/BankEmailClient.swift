@@ -66,11 +66,18 @@ struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     let date: String?
     let bank: String?
     let accountLast4: String?
+    /// Yala web (lote 1): `"web"` en lo apuntado desde el navegador, que entra por esta misma cola (`WebDraftLogic`).
+    /// Con la cuenta y la subcategoría elegidas, por su id de la nube (`shortcutID`). El correo no los manda.
+    var source: String? = nil
+    var accountRef: String? = nil
+    var subcategoryRef: String? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, amount, currency, merchant, date, bank
+        case id, kind, amount, currency, merchant, date, bank, source
         case receivedAtMs = "received_at_ms"
         case accountLast4 = "account_last4"
+        case accountRef = "account_ref"
+        case subcategoryRef = "subcategory_ref"
     }
 }
 

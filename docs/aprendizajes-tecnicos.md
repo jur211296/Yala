@@ -721,3 +721,35 @@ empezar. **No fue la causa** del bloqueo de 15 minutos al entrar en una cuenta c
 reprodujo igual, porque las filas las creaba el puente de Grupos en el mismo intento. Lo que sí hace es convertir una
 prueba de «teléfono nuevo» en una de «teléfono con datos de antes» sin avisar, y entonces un bloqueo de linaje puede ser
 legítimo. Sin medir si una persona real que desinstala y reinstala de la App Store conserva el App Group igual.
+
+### Web: una cookie `__Host-` con `Path` distinto de `/` se descarta, y `no-referrer` manda `Origin: null` en los formularios (2026-11-13)
+
+Dos trampas del navegador que las pruebas con un navegador falso no ven, cazadas por la revisión de seguridad del lote 0
+de Yala web (`webapp/`) antes de que nadie entrara:
+
+- **`__Host-` exige `Path=/`, `Secure` y ningún `Domain`.** Con `Path=/auth`, Chrome, Firefox y Safari la tiran en
+  silencio: el `Set-Cookie` sale bien en la respuesta y la cookie no vuelve nunca. El login social volvía siempre a
+  «caducada», fallando cerrado y sin ningún error.
+- **`Referrer-Policy: no-referrer` cambia el `Origin` de los POST de formulario a `null`** (estándar Fetch, «append a
+  request Origin header»). Un control «`Origin` tiene que ser el mío» rechaza entonces los formularios PROPIOS. Para no
+  filtrar la URL a otros sitios sin romper eso, `same-origin`.
+
+Lo que cuesta poco y lo evita: el navegador falso de las pruebas aplica las reglas de `__Host-` (`webapp/test/fakes.ts`),
+y una prueba fija el `Referrer-Policy` con el porqué al lado. Y un clic real en el navegador antes de dar por bueno un
+flujo de entrada: las pruebas ponían `Origin` a mano.
+
+### Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierres va en un Durable Object (2026-11-14)
+
+La primera versión de la lista de sesiones de Yala web guardaba una clave del KV por sesión y la leía con `list({prefix})`.
+Las 64 pruebas unitarias pasaban (el KV de las pruebas es un `Map`) y el e2e contra staging cayó: con dos sesiones recién
+abiertas, la lista salía **vacía** y «Cerrar todas» desde el iPhone cerraba **cero**. El `list` del KV es de consistencia
+eventual (hasta un minuto) incluso en el mismo punto de presencia donde se escribió.
+
+Para algo que solo se enseña, un minuto de retraso es aceptable; para algo que decide qué se cierra, no: la sesión que
+alguien acaba de abrir en un equipo ajeno es justo la que quiere cerrar. Se pasó a un Durable Object por cuenta
+(`webapp/src/worker/sessionIndex.ts`, SQLite), que es uno solo en el mundo y lee lo que se escribió. El mismo riesgo
+tiene borrar una sesión del KV: otra ubicación puede seguir sirviendo la copia vieja hasta un minuto. Por eso «cerrar»
+cierra también la sesión de Supabase, y cada petición de datos comprueba antes `GET /auth/v1/user`, que sí es inmediato
+(lo fija `webapp/test/lote1.test.ts`, «aunque el KV aún devuelva la sesión cerrada»).
+
+Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.

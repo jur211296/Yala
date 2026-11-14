@@ -109,6 +109,12 @@ su permiso.
 - **Un fallo del proveedor (5xx, 429, 408, red) devuelve el uso** (`refundQuota`). Un 4xx del proveedor sí gasta.
 - **Agotado: 403 `yala_trial_exhausted`**, que la app enseña como «Ya usaste tus notas/fotos de prueba» con «Ver Yala Pro»
   (`ProxyErrorMapper.isTrialExhausted`). El copy no lleva la cifra a propósito: si el cupo cambia, no caduca.
+- **Repartir un recibo en Grupos NO vive de este cupo (Jürgen, 2026-11-14: «Grupos es el gancho»).** Cubo propio
+  `receipt`, DIARIO en los dos planes: Free 5 recibos al día, Pro 50, foto o voz con un solo contador. Las tres tareas
+  (`receipt.photo`, `receipt.voice` y `receipt.transcribe`, que transcribe la nota del recibo para no abrir una nota de
+  voz de personal) cuentan ahí; agotado es 429 `yala_quota_daily`, y la app ofrece Pro solo a Free. Sin candado en la
+  app. Una IA nueva dentro de Grupos parte de esta regla, no de «Pro como personal». Lo fija
+  `gateway/test/ai.receipt-split.test.ts`.
 - **Staging corre `observe` y no bloquea**: el 403 solo se ve en producción. Se verifica con un token de 15 min para un
   dispositivo ficticio y `gateway/scripts/verify-ai.ts --trial`, a ritmo de persona (la ráfaga free es 5/min).
 - **La prueba de cortesía de Yala IA de Primeros pasos (Y23-09, 2026-11-12) vive de este cupo, no del chat.** El plan

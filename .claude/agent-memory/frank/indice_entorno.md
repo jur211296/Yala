@@ -31,3 +31,6 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [reference-ui-onboarding-login](reference_ui_onboarding_login.md) — Referencia de UI que Jürgen señaló el 2026-09-15 para el onboarding de Yala — pantalla de entrada con Google, correo y «…
 - [El centinela no vigila un `timeout`](feedback_el_centinela_no_vigila_un_timeout.md) — pgrep casa con el envoltorio y sale 2; lanza sin `timeout` y pasa `$!`.
 - [Device MCP Free: un espejo](reference_device_mcp_free_un_espejo.md) — otro dispositivo espejado ⇒ simulador con axe + simctl.
+- [Campo de CloudKit en Development: lo añade Dan](feedback_campo_cloudkit_development_lo_anade_dan.md) — sin token de cktool; pedir al bot Frank → Dan; `preguntar-bot --help` envía.
+- [Secretos de staging en la Mini](reference_secretos_de_staging_en_la_mini.md) — desde la Max: SQL, deploy y e2e por ssh mini, sin copiar secretos.
+- [Playwright en la Mini](reference_playwright_en_la_mini.md) — capturas de staging con A/B: la descarga de Chromium se atasca; copiar el de la Max (1243 + playwright 1.63.0).

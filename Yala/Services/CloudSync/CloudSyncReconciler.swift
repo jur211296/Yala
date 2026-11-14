@@ -294,7 +294,7 @@ enum CloudSyncReconciler {
         return merged
     }
 
-    /// Subcategorías `balanceAdjustment` duplicadas cross-idioma (matching `Subcategory.balanceAdjustmentNames`).
+    /// Subcategorías `balanceAdjustment` duplicadas cross-idioma (por `Subcategory.systemRole`).
     /// v1: UN grupo lógico por store (no hay dimensión currency; es 1 lógica por usuario). Ganador
     /// `(name, shortcutID)` asc; re-apunta TXs/favorites/scheduled/drafts/merchant/cashFlowLines + M2M/CSV
     /// `Budget.subcategories`; borra perdedoras. NO mergea categorías padre (R5: cada idioma sembró la suya;
@@ -302,24 +302,20 @@ enum CloudSyncReconciler {
     private static func mergeBalanceAdjustmentSubcategories(context: ModelContext) -> Int {
         let candidates: [Subcategory]
         do {
-            // Scope a sistema/sembradas (evita adoptar una homónima PERSONAL); balanceAdjustment se siembra
-            // con `isDefaultSeed = true` (seed Y `ensureBalanceAdjustmentSubcategoryExists` — ninguno pone
-            // `isSystem=true`, así que exigir `isSystem` mataría la política). INVARIANTE del que depende el
-            // scope: el path de creación de UI (`SubcategoryDetailView`) pasa `isDefaultSeed: false` explícito
-            // → las subcats tecleadas por el usuario quedan FUERA aunque el nombre coincida. Vector residual
-            // aceptado: un auto-create futuro con el default (`isDefaultSeed: true`) cuyo nombre caiga en el
-            // set multi-idioma entraría al merge — el modelo no registra procedencia (MAPA invariante 11), no
-            // hay señal más fuerte. El nombre multi-idioma se filtra en Swift (`#Predicate` no maneja
-            // `Set.contains`).
-            candidates = try context.fetch(FetchDescriptor<Subcategory>(
-                predicate: #Predicate { $0.isSystem || $0.isDefaultSeed }))
+            // Todas, y el papel decide (abajo): una homónima PERSONAL no tiene papel y queda fuera aunque el nombre
+            // coincida. Hasta el 2026-11-13 el scope era `isSystem || isDefaultSeed` más el nombre multi-idioma; con
+            // el papel sobra, y además dejaría fuera la de ajustes que creó el importador antes del papel
+            // (`isDefaultSeed == false`) y que el relleno marcó por guardar ajustes.
+            candidates = try context.fetch(FetchDescriptor<Subcategory>())
         } catch {
             #if DEBUG
             print("CloudSyncReconciler.balanceAdjustment fetch falló: \(error)")
             #endif
             return 0
         }
-        let balanceAdj = candidates.filter { Subcategory.balanceAdjustmentNames.contains($0.name) }
+        // Por papel, no por nombre (2026-11-13). `systemRole` deduce el de una sembrada de antes que el relleno aún no
+        // escribió, así que en el Modo Nube —cuyo canal no lleva el campo— cada teléfono ve el mismo grupo.
+        let balanceAdj = candidates.filter { $0.systemRole == .balanceAdjustment }
         guard balanceAdj.count > 1 else { return 0 }
 
         let plans = SystemEntityMergePolicy.plan(

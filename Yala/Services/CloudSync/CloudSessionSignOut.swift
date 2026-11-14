@@ -97,6 +97,16 @@ final class CloudSessionSignOut {
     }
     private(set) var iCloudExportWait: ICloudExportWait?
 
+    /// Card p9q0 (13-nov-2026) · **`true` mientras el cambio de almacén en caliente está en vuelo.** El cierre pone la fase en
+    /// `.awaitingRelaunch` ANTES de intentarlo (es la red: si no sale, el arranque lo consuma), así que la fase sola no
+    /// distingue «hay que reabrir» de «todavía no se sabe». La pantalla de progreso del cierre se queda mientras esto sea
+    /// `true` y se retira cuando el cambio termina: con `.idle` aterriza en el Welcome; si la fase sigue en
+    /// `.awaitingRelaunch`, deja ver la pantalla de reabrir. Lo encienden los cuatro cierres justo antes de pedir el cambio,
+    /// sin suspensión de por medio (la misma vuelta del main actor que la fase), y lo apaga su `defer` al salir del método,
+    /// en la misma vuelta que la vuelta a `.idle`: el cambio es lo último de los cuatro métodos. Un cierre nuevo que cambie
+    /// el almacén en caliente lo enciende igual (`SignOutSwapInFlightWiringTests`).
+    private(set) var inPlaceSwapInFlight = false
+
     /// Card ypit · a dónde vuelve el Welcome cuando el borrado de este cierre queda ARMADO. Lo pasa la puerta de Grupos
     /// del Welcome (`WelcomeGroupsGateView.Purpose.destinationAfterNeutralReturn`) y se escribe pegado al arm
     /// (`persistDestinationOnArm`), antes del cambio en caliente.
@@ -1582,6 +1592,8 @@ final class CloudSessionSignOut {
         // espejo y se quedan con el relanzamiento (`mountAdmitsSwap` las saltaría igual: el `guard` lo dice aquí). Mismo
         // orden y misma red: el borrado ya está armado, y si el cambio no puede, el arranque siguiente hace lo de siempre.
         guard kind == .groupsOnly else { return }
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
             phase = .idle
         }
@@ -1854,6 +1866,8 @@ final class CloudSessionSignOut {
         // Welcome — la persona siguiente entra sin haber cerrado la app ni una vez. La fase se devuelve a
         // `.idle` SOLO en ese caso: mientras el cierre siga dependiendo de un relanzamiento, la fase es lo
         // que sostiene el cover y el exit-on-background.
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
             phase = .idle
         }
@@ -2578,6 +2592,8 @@ final class CloudSessionSignOut {
         // Card ypit · «Borrar mi cuenta» en la nube y en solo-grupos sin sesión privada cierra sin reabrir: el mismo cambio
         // en caliente y en el mismo sitio que el cierre de sesión en la nube (R4, arriba), y con la misma red. Los dos
         // montan sin espejo; si el proceso montó con él (`mountAdmitsSwap`), se salta y queda el relanzamiento de siempre.
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
         phase = .idle
         return true
@@ -2635,6 +2651,8 @@ final class CloudSessionSignOut {
         // El Welcome ya retiró la sesión (`CloudSessionRetirement.retireForHandover`), pero ese retiro es un `Task`: se repite
         // aquí, y si sobrevive queda armada para el arranque, como en el cierre tras borrar la cuenta.
         Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "welcome-fresh-start-cloud")
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
         phase = .idle
         return true

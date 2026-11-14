@@ -929,6 +929,11 @@ struct PanelView: View {
                 .refreshable {
                     await refreshData()
                 }
+                // Card 3f57: «Tu saldo se mueve solo» señala la píldora de la tendencia; si queda bajo la barra de
+                // pestañas, el Panel sube hasta ella, como con el tour Pro.
+                .onChange(of: showTodayFXCoachMark) { _, showing in
+                    if showing { scrollToTodayFXHint(scrollProxy) }
+                }
                 .onAppear {
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
 
@@ -990,6 +995,12 @@ struct PanelView: View {
         // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
         withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
             proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
+        }
+    }
+
+    private func scrollToTodayFXHint(_ proxy: ScrollViewProxy) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
+            proxy.scrollTo(ProTourSteps.todayFXAnchor, anchor: .center)
         }
     }
 

@@ -5,10 +5,10 @@
 
 ## Subíndices — ábrelos cuando el tema toque
 - [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 78 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
-- [Simulador y capturas](indice_simulador_y_capturas.md) — 85 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
+- [Simulador y capturas](indice_simulador_y_capturas.md) — 86 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
 - [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
 - [Estado del trabajo](indice_estado_del_trabajo.md) — 93 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
-- [Entorno y herramientas](indice_entorno.md) — 20 entradas: máquina, hooks, accesos, disco.
+- [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
 - [Verificación Gmail: video v3 enviado](project_verificacion_gmail_video_v2.md) — 12-nov aprobado y enviado a Google; no se vuelve a pedir; receta de toma.
@@ -44,6 +44,7 @@
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
 - [Elige la propuesta completa aunque apriete](feedback_elige_la_propuesta_completa_aunque_aprieta.md) — por producto y, en finanzas, por la regla del dominio.
 - [Gasto a la medida del tráfico](feedback_gasto_a_la_medida_del_trafico.md) — plan mínimo que funcione; estima el gasto y avisa antes.
+- [Grupos es el gancho](project_grupos_es_el_gancho_ia_gratis.md) — IA en Grupos gratis con cupo diario (5 Free, 50 Pro), nunca tras Pro.
 - [Verificar prod del gateway: token acuñado](feedback_verificar_prod_del_gateway_con_token_acunado.md) — staging con Yala Dev de Jürgen; prod con token 15 min, preguntando.
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
@@ -87,7 +88,10 @@
 - [Propuestas: artifact visual, no Markdown](feedback_propuestas_como_artifact_visual.md) — tarjetas, antes/después y selector sí/no/después en la db.
 - [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
 - [Si no avanza, cierra y prioriza el bug](feedback_si_no_avanza_cierra_y_prioriza_el_bug.md) — prueba parada por un bug grave ajeno: PR abierto, device-QA y card primero.
+- [El iPhone 14 lo ve también la otra máquina](feedback_el_iphone_14_lo_ve_tambien_la_otra_maquina.md) — la sesión de la Mini lo conduce por red; mira su transcript antes de probar.
+- [Recorrido con artifact y veredicto](feedback_recorrido_con_artifact_y_veredicto.md) — tira de capturas por escenario + sí/no y nota en la db; publicar tras cada escenario.
 - [QA en vivo: mira y sigue](feedback_qa_en_vivo_con_jurgen_mira_y_sigue.md) — si él prueba, sin popups ni toques; lo que destapa va a su card.
+- [Sin teléfono: guion para otra sesión](feedback_sin_telefono_guion_para_otra_sesion.md) — no se espera el iPhone; pasos y resultado esperado en el cierre y la card.
 ## Cómo mido y cómo entrego
 - [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
 - [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.

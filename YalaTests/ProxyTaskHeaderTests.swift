@@ -111,7 +111,7 @@ struct ProxyTaskHeaderTests {
             #expect(line.contains("category: \"\(task.category.rawValue)\""), "\(task.rawValue): el cubo de la app no es el del gateway")
             #expect(!line.contains("deducedOnly"), "\(task.rawValue) solo la deduce el gateway: con cabecera se ignoraría")
         }
-        #expect(ProxyTask.allCases.count == 15)
+        #expect(ProxyTask.allCases.count == 16)
     }
 
     @Test("cada tarea sale por el SDK con su X-Yala-Task, su cubo y el token")
@@ -369,7 +369,9 @@ struct ProxyTaskHeaderTests {
             ("Yala/Services/ChatAssistantService.swift", "func processQuestion(", ".chatAnswer"),
             ("Yala/App/Services/SuggestionsRewriterService.swift", "func process(", ".chatRewrite"),
             ("Yala/Services/TranscriptionParserService.swift", "func parseMultiple(", ".textParse"),
-            ("Yala/Services/VoiceTranscriptionService.swift", "func transcribe(", ".voiceTranscribe"),
+            // La transcripción recibe la tarea: `.voiceTranscribe` por defecto, `.receiptTranscribe` desde el recibo de un
+            // grupo (las dos líneas de abajo del bucle lo fijan).
+            ("Yala/Services/VoiceTranscriptionService.swift", "func transcribe(", "task"),
             ("Yala/Services/InsightsLLMService.swift", "func generateInsights(", ".insightsCards"),
             ("Yala/Services/InsightsLLMService.swift", "func generateCashFlowInsight(", ".insightsCashflow"),
             ("Yala/Services/InsightsLLMService.swift", "func generateDeviationInsight(", ".insightsDeviation"),
@@ -387,6 +389,10 @@ struct ProxyTaskHeaderTests {
             let body = next.map { rest[..<$0.lowerBound] } ?? rest
             #expect(body.contains("ProxyClientFactory.makeOpenAI(task: \(item.task))"), "\(item.function) en \(item.file) no pide \(item.task)")
         }
+        let voice = try String(contentsOf: repoURL("Yala/Services/VoiceTranscriptionService.swift"), encoding: .utf8)
+        #expect(voice.contains("task: ProxyTask = .voiceTranscribe"), "la transcripción de personal dejó de ser voice.transcribe por defecto")
+        let receiptSheet = try String(contentsOf: repoURL("Yala/App/Views/Groups/GroupReceiptSplitView.swift"), encoding: .utf8)
+        #expect(receiptSheet.contains("task: .receiptTranscribe"), "la nota del recibo gastaría la prueba de voz de personal")
         let roots = ["Yala", "YalaShare", "YalaWidgets"]
         var offenders: [String] = []
         let fm = FileManager.default

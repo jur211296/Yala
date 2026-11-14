@@ -67,6 +67,13 @@ paths:
   cambie lo que pinta el Panel sin GUARDAR y sin avisar no se ve al volver** (antes sí): guarda, o avisa. Y lo que
   el cálculo lea fuera del almacén (una preferencia, el reloj) necesita su observador o entrar en la firma.
   La espera de 150 ms del Panel es ahora FIJA desde la primera petición: lo que llega dentro se suma, no la reinicia.
+  **La recarga lee los movimientos por tramos y cede el hilo entre uno y otro (2026-11-13, YALA-IOS-K)**: leídos de una
+  vez, con un historial grande la app dejaba de responder más de 2 s (`PanelViewModel.fetchTransactionsInSlices`, tramos
+  de 1.500 por clave fecha + instante de creación, con `<=` en el borde y descarte por identidad). Durante la lectura
+  `recalculateTask` sigue puesto: un recálculo se suma al de esa vuelta y una recarga abre la siguiente
+  (`finishRecalculation`). **Tras cada `await` de la recarga, una tarea cancelada no toca `recalculateTask`** (quien la
+  canceló ya lo soltó) y un almacén soltado corta. Una lectura nueva de tabla entera en `loadData` pasa por tramos o se mide.
+  Pin: `YalaTests/SentryHangs2026Nov/PanelSlicedLoadTests`.
 
 - **Entrar en Estadísticas no calcula en el `onAppear`, y solo calcula si cambió su firma (2026-11-11, G1 de la
   decisión 28).** Medido en el iPhone 14 con diez años (Release optimizado): el `onAppear` bloqueaba 7,5 s y el cambio
@@ -80,6 +87,13 @@ paths:
   haya abierto (cambiar el período en el Panel), y sin `hasEnteredOnce` cargaban y calculaban los diez años en segundo
   plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
   `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
+
+- **Lo que baja la nube con la app delante recarga en el acto (2026-11-13, card c8i9).** El aviso del motor
+  (`.cloudSyncAppliedRemoteChanges`) pasa por `RemoteChangesFanOut`: con la app activa sube `dataVersion`; sin ella,
+  queda pendiente para volver a primer plano. Antes solo marcaba pendiente, y tras «¡Tu cuenta está lista!» el Panel y
+  Registros se quedaban vacíos con los datos ya en el teléfono. Y el Panel que carga VACÍO con el motor sin su primer
+  tirón enseña su esqueleto hasta que el tirón termina (`PanelAccountDataWait`, techo 60 s), no S/ 0. El aviso de
+  CloudKit (`NSPersistentStoreRemoteChange`) sigue solo marcando pendiente. Pin: `PanelWaitsForAccountDataTests`.
 
 - **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
   no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
@@ -430,11 +444,18 @@ paths:
   no pintan fondo de presentación** (regla «Ninguna hoja con fondo gris», en «Backgrounds de vista»), y presentan en los
   tres niveles igual que Fecha. Lo fijan los cuatro casos `test_draftDetails_*` de `ChatMessagingLayoutUITests`.
 
-- **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
+- **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md. **En una `List` (`YalaSettingsList`), no**: su `onTapGesture` se come los toques de las filas y los botones dejan de responder (medido el 2026-11-14 en «Vincular un navegador»: «Continuar» y «Confirmar» muertos; ya lo decía `GroupSettingsView`). Ahí, `.scrollDismissesKeyboard(.interactively)` y el Intro del campo.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
 
 - **Presentaciones (sheet/fullScreenCover) — 4 reglas del bug "toolbar muerta" (TestFlight 2.0.5):** (1) NUNCA un binding de presentación con setter no-op (`set: { _ in }`) ni sin `onDismiss:` de respaldo — si UIKit tumba la cadena presentada (p.ej. dismiss del sheet debajo de un cover), el estado queda pegado → cover fantasma irrecuperable; el reset del flag JAMÁS puede depender solo de un `Task { sleep; ... }` interno de la vista presentada. (2) **`opacity(0)` NO desactiva hit-testing**: un backdrop full-screen invisible con `.onTapGesture` se traga todos los taps de la app — siempre `allowsHitTesting(isVisible)`. (3) Toda presentación nueva que cuelgue del anchor de ContentView DEBE entrar a `ShellReadinessState`/`blocker()` (matriz de readiness), y los sheets de MainTabView/PanelShell están gateados por `RouterConsumerGateLogic` (peek-first: un intent que presenta se RETIENE en cola mientras un nodo superior tape — nunca se consume tapado). Corolario one-shots: flags tipo `markXShown` se queman en el `onAppear` del sheet real, nunca en el drain ni en el productor. **Corolario del MOMENTO (2026-07-28): «anchor libre» no basta — un cover montado mientras `AppBootstrapper.bootstrap` sigue corriendo se queda PEGADO** (el usuario lo descarta, UIKit no completa el desmontaje y la app ignora todos los taps; medido en iOS 27.0: ~1 de cada 3 arranques, 10 taps perdidos en ~40 s). Lo cubre el blocker `bootstrapPending` (`SessionState.isBootstrapSettled`, liberado por un `defer` de `bootstrap()`), hermano de `splash` y NO redundante con él: el splash se va por su propio reloj y no espera al bootstrap. **Gatear la MATRIZ, nunca un intent suelto**: retener la cola entera preserva el orden por prioridad (aviso de bandeja → paywall); adelantar uno solo invierte la pareja y monta el segundo encima del primero. Y al abrir un gate que estaba reteniendo, un solo drain por tick — `markReady` bumpea revision y el `.onChange(revision)` ya drena; un drain explícito además presentaría dos covers a la vez. (4) **NUNCA dos anchors presentando ante el mismo observable** (bug device sign-out 2026-07-14): UIKit no presenta dos veces y la reconciliación puede tumbar AMBAS cadenas dejando los flags en `true` sin que NINGÚN `onDismiss` corra (jamás se presentaron) → red muerta e irrecuperable; "SwiftUI materializa la presentación pendiente al despejarse el anchor" es FALSO. Un solo DUEÑO de la presentación (los demás anchors ceden — p.ej. cierran su sheet) + verificación de presentación EFECTIVA: solo el `onAppear` del contenido real prueba que UIKit presentó — si no llegó, re-intentar con toggle false→true tras un runloop turn (molde `SignOutRelaunchNetModifier` + `RelaunchNetLogic`); para blockers de la matriz, la CONDICIÓN VIVA del dominio es el input, el `@State` del cover es solo la red visual.
+
+- **El `onDismiss` de un cover lee los `@Binding` que tenía AL PRESENTARSE (medido el 2026-11-14 en el iPhone 14, card
+  c8i9).** El respaldo de `WelcomeFlowModifier.welcomeCoverDidDismiss` miraba `hasCompletedOnboarding` (un `@Binding` a un
+  `@AppStorage`) y la traza dio `false` con `true` en disco: `onAdoptStarted` lo marca con el cover abierto, y en la primera
+  entrada tras instalar «Empezar» volvía a la bienvenida. El cierre de `onFinishedToApp`, un instante antes, leía `true`.
+  ⇒ **lo que un `onDismiss` decide con un valor que puede cambiar con la presentación abierta lo lee vivo** (de disco, o de
+  un closure que lea la fuente), no del binding. Pin: `EmpezarEntersTheAppTests`.
 
 - **Un flag de presentación que además es BLOCKER de la matriz de readiness convierte «la presentación no montó» en un brick de toda la sesión (2026-09-10).** Los dos hechos son buenos por separado —un aviso destructivo tiene que bloquear al router, y el router tiene que retenerse— pero juntos crean un modo de fallo nuevo: si UIKit descarta esa presentación (el caso clásico: **dos `.alert` encadenados desde el mismo anchor**, donde el segundo se enciende mientras el primero se desmonta), el flag se queda en `true`, `blocker()` lo devuelve para siempre, y **el router no vuelve a drenar nada** — ni avisos de bandeja, ni paywall, ni invitaciones de grupo. Sin `onDismiss` no hay rescate, y `.alert` no tiene `onDismiss`. Solo se sale matando la app. ⇒ **una cadena de dos gestos (confirmar → «¿seguro?») no se hace con dos presentaciones del mismo anchor**: o dos CONTENEDORES distintos con el `onDismiss` del primero encadenando al segundo (molde de `UserDataResetView`: sheet → alert), o —mejor— **una sola presentación con FASES dentro**, que es lo que hacen `WelcomePrivateICloudGateView` y `LateICloudMirrorNoticeView`. Las fases dan además sitio para el progreso y el error, que un alert no tiene: sin ellas, entre «sí, borra» y el final pasaban decenas de segundos con la app mostrando nada, y si fallaba, tampoco.
 

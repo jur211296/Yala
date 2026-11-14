@@ -6529,6 +6529,7 @@ enum L10n {
             /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
             static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
             static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
+            static var cancelling: String { ls("welcome.cloud.cancelling", comment: "Bajo la barra tras «Sí, cancelar»") }
         }
 
         enum Restore {

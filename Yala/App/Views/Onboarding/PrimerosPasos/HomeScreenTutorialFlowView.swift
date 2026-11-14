@@ -86,6 +86,7 @@ struct HomeScreenTutorialFlowView: View {
             eyebrow: T.eyebrow,
             count: methods.count,
             part: $progress.part,
+            partDuration: TutorialStoryLogic.slowPartDuration,
             onBack: goBackFromIntro,
             content: { index in HomeScreenIntroPart(method: methods[index]) },
             footer: {

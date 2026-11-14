@@ -47,7 +47,8 @@ final class GruposAjustesLote23ChicoUITests: XCTestCase {
         app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups", cloudSession: true, groupsConsent: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        let newGroup = app.buttons["groups_action_new_group"]
+        // Desde el 2026-11-14 «Nuevo grupo» va en la barra (con grupos) y en la fila solo sin grupos: vale cualquiera.
+        let newGroup = app.buttons.matching(NSPredicate(format: "identifier IN %@", ["groups_toolbar_new_group", "groups_action_new_group"])).firstMatch
         XCTAssertTrue(newGroup.waitForExistence(timeout: 15), "No apareció «Nuevo grupo».")
         newGroup.tap()
         let more = app.buttons["group_form_more_options"]

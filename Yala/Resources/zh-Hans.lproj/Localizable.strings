@@ -4788,8 +4788,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "正在下载你的数据…";
-"welcome.cloud.cancelAdoptBody" = "此设备没有更改你的 Yala 账户中的任何内容。你将回到起始页面。你可以随时通过「我已经有账户了」重新登录你的账户。";
-"welcome.cloud.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。你将回到起始页面。你可以随时通过「我已经有账户了」重新登录你的账户。";
+"welcome.cloud.cancelAdoptBody" = "此设备没有更改你的 Yala 账户中的任何内容。你将回到起始页面。你可以随时从起始页面重新登录你的账户。";
+"welcome.cloud.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。你将回到起始页面。你可以随时从起始页面重新登录你的账户。";
+"welcome.cloud.cancelling" = "正在取消…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "群组需要 iCloud";
@@ -5013,7 +5014,7 @@
 "settings.deleteAccountViewGroups" = "查看我的群组";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "你以前的 iCloud 数据（使用你的 Yala 账户之前的）不受影响：如果你重新打开 Yala，看到的就像重新安装了一样。";
+"settings.deleteAccountFrozenICloudNote" = "如果你在创建账户之前用 iCloud 使用过 Yala，那份数据仍在你的 iCloud 中：删除 Yala 账户不会抹掉它。";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "在旧群组（iCloud）中，你的名字可能仍然对其他成员可见。";
@@ -8696,7 +8697,6 @@
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "从小票";
 "receiptSplit.entry.hint" = "用照片或语音读取小票，按项目分摊";
 "receiptSplit.title" = "从小票";
 "receiptSplit.photo.title" = "小票照片";
@@ -8742,6 +8742,15 @@
 "receiptSplit.failure.read.message" = "出了点问题，请稍后再试。";
 "receiptSplit.failure.noLines.title" = "未找到带金额的项目";
 "receiptSplit.failure.noLines.message" = "请在光线充足处靠近拍摄小票，或用语音口述。";
+"receiptSplit.failure.dailyLimitFree.title" = "今天的收据已经分完了";
+"receiptSplit.failure.dailyLimitFree.message" = "明天可以继续免费分收据。使用 Yala Pro，每天可以分更多。";
+"receiptSplit.failure.dailyLimit.title" = "已达到今天的收据上限";
+"receiptSplit.failure.dailyLimit.message" = "明天可以继续分收据。";
+"receiptSplit.text.hint" = "写下支出，AI 帮你分";
+"receiptSplit.text.title" = "写下支出";
+"receiptSplit.text.placeholder" = "披萨 40 安娜和我，牛排 35 小贝，饮料 18 大家";
+"receiptSplit.text.footer" = "每一项写上金额和谁吃的。没写名字的由大家平分。";
+"receiptSplit.failure.noLines.textMessage" = "每一项写上金额，例如“披萨 40”。";
 "receiptSplit.failure.noConnection.message" = "请连接互联网以读取小票。";
 "receiptSplit.failure.mic.message" = "请在“设置”中允许访问，以便口述小票。";
 
@@ -9077,7 +9086,6 @@
 "bienvenida23.groups.accountOnlyBody" = "先进入群组，稍后再设置";
 "bienvenida23.access.createTitle" = "来创建你的账户";
 "bienvenida23.access.createBody" = "这个邮箱还没有 Yala 账户。";
-"bienvenida23.access.otherProviderNote" = "你是用 %1$@ 创建的账户吗？请通过 %1$@ 继续：用 %2$@ 会是一个新账户。";
 "bienvenida23.access.useAnotherAccount" = "使用其他账户";
 "bienvenida23.access.existsTitle" = "你已经有账户了";
 "bienvenida23.access.existsBody" = "这个邮箱已有 Yala 账户。要载入你的数据并进入吗？";
@@ -9549,6 +9557,12 @@
 "groups.saldar23.notice.nowYouOwe" = "你现在欠 %2$@ %1$@。";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ 现在欠你 %2$@。";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ 现在欠 %3$@ %2$@。";
+"groups.saldar23.pendingOnDebt.one" = "有一笔 %@ 的付款待确认";
+"groups.saldar23.pendingOnDebt.many" = "有多笔付款共 %@ 待确认";
+"groups.saldar23.confirmOver.title" = "确认这笔付款？";
+"groups.saldar23.confirmOver.settled" = "%1$@ 已经不欠你了：另一笔付款已结清这笔欠款。确认这 %2$@ 会多付。如果是同一笔付款记了两次，请删除它。";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ 只剩 %2$@ 要付给你。确认这 %3$@ 会多付。";
+"groups.saldar23.confirmOver.confirmAnyway" = "仍然确认";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala 合并了欠款，让付款次数更少。";
@@ -9560,3 +9574,59 @@
 "panel.lote23chico.budgetsOnPanel" = "面板上的预算";
 "panel.lote23chico.budgetsOnPanelHint" = "选择在预算卡片上显示哪些。";
 "usageMode.lote23chico.fullExpensesOnly" = "完整 Yala · 仅支出";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "正在退出登录…";
+"uxcs.signOutProgress.removingData" = "正在从此设备移除你的数据…";
+"uxcs.signOutProgress.deletingAccount" = "正在删除你的账户…";
+"uxcs.signOutProgress.keepOpen" = "请保持 Yala 打开，直到完成。";
+"uxcs.signOutProgress.accountDeletedTitle" = "你的账户已删除";
+"uxcs.signOutProgress.accountDeletedBody" = "我们已删除你的 Yala 账户及其所有数据，包括此设备上的数据。如果你在群组中，你在那里的名字现在是“已删除的用户”。";
+"uxcs.signOutProgress.continue" = "继续";
+"uxcs.relaunch.accountDeleted" = "账户已删除";
+"uxcs.relaunch.afterSignOutICloud" = "你的数据曾连接到你的 iCloud，Yala 只有在完全关闭时才能断开这个连接。再次打开后，它会完成从此设备移除你的数据。";
+"bienvenida23.access.sameEmailNote" = "使用同一邮箱时，Apple 和 Google 打开的是同一个 Yala 账户。如果你是用另一个邮箱创建的，请用那个邮箱登录。";
+"bienvenida23.access.consentAccessDetail" = "没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出记录）。";
+"bienvenida23.access.createdTitle" = "你的账户已创建";
+"bienvenida23.access.createdBody" = "接下来，回答三个简单问题，让 Yala 更适合你。";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "已连接的浏览器";
+"connectedBrowsers.rowSubtitle" = "用你的账户打开的 Yala web 会话";
+"connectedBrowsers.intro" = "这里显示 Yala web 在哪里用你的账户打开。如果有不认识的，就退出它。";
+"connectedBrowsers.empty" = "你的账户没有打开任何 Yala web 会话。";
+"connectedBrowsers.close" = "退出";
+"connectedBrowsers.closeAll" = "退出所有网页会话";
+"connectedBrowsers.closeAllConfirmTitle" = "退出所有网页会话？";
+"connectedBrowsers.closeAllConfirmBody" = "这些标签页会在一分钟内清空。你的数据不会改变。";
+"connectedBrowsers.closeAllConfirm" = "全部退出";
+"connectedBrowsers.footer" = "退出一个后，那个标签页会在一分钟内清空。";
+"connectedBrowsers.loadFailed" = "无法加载列表。请检查网络连接后重试。";
+"connectedBrowsers.closeFailed" = "无法退出。请检查网络连接后重试。";
+"connectedBrowsers.unknownBrowser" = "浏览器";
+"connectedBrowsers.sharedComputer" = "共用电脑";
+"connectedBrowsers.justNow" = "刚刚";
+"connectedBrowsers.browserOn" = "%2$@ 上的 %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "关联浏览器";
+"connectedBrowsers.link.rowFooter" = "无需输入密码即可在电脑上打开 Yala：扫描 Yala web 显示的二维码。";
+"connectedBrowsers.link.title" = "关联浏览器";
+"connectedBrowsers.link.intro" = "在电脑上打开 Yala web，选择“用 iPhone 登录”。将相机对准二维码。";
+"connectedBrowsers.link.scanner" = "用于读取二维码的相机";
+"connectedBrowsers.link.typeHeader" = "或输入代码";
+"connectedBrowsers.link.continue" = "继续";
+"connectedBrowsers.link.confirmHeader" = "在此浏览器中打开 Yala？";
+"connectedBrowsers.link.whereCity" = "来自 %1$@ 的请求 · 代码 %2$@";
+"connectedBrowsers.link.whereNoCity" = "代码 %@";
+"connectedBrowsers.link.warning" = "仅当你在自己的屏幕上看到此代码时才确认。Yala 的任何人都不会向你索要。";
+"connectedBrowsers.link.confirm" = "用面容 ID 确认";
+"connectedBrowsers.link.faceIDReason" = "确认要在该浏览器中打开你的 Yala。";
+"connectedBrowsers.link.doneTitle" = "已关联浏览器";
+"connectedBrowsers.link.doneBody" = "%@ 现在显示你的 Yala（只读）。你可以随时在这里退出。";
+"connectedBrowsers.link.doneButton" = "完成";
+"connectedBrowsers.link.problem.invalidCode" = "这不是 Yala web 的代码。请确认它有 8 个字符。";
+"connectedBrowsers.link.problem.expired" = "代码已过期或已被使用。请在 Yala web 上获取新的代码。";
+"connectedBrowsers.link.problem.noCloud" = "你的账户未使用 Yala 云。请在“存储”中开启后再使用 Yala web。";
+"connectedBrowsers.link.problem.sessionExpired" = "你的云端会话已过期。请在“你的 Yala 账户”中重新登录。";
+"connectedBrowsers.link.problem.network" = "无法连接 Yala web。请重试。";

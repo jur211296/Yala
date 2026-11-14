@@ -3,17 +3,24 @@
 //  Yala
 //
 //  «Ver los 7 pasos» del mazo (Y23-05): la lista de Primeros pasos con los hechos marcados y el actual resaltado, y
-//  «Seguir donde iba» para volver. Media altura, con el cristal del sistema y `.subtle` al estirarla (regla «Ninguna
-//  hoja con fondo gris»).
+//  «Seguir donde iba» para volver. Con el cristal del sistema a media altura y `.subtle` grande (regla «Ninguna hoja con
+//  fondo gris»).
+//
+//  **Decisión de Jürgen (13-nov, E14 del recorrido):** la hoja abre GRANDE, con los siete a la vista en un iPhone 14 (a
+//  media altura se veían seis y «Seguir donde iba» tapaba la descripción del sexto), y cualquier paso que no esté hecho
+//  se abre tocándolo, aunque no sea el siguiente.
 //
 
 import SwiftUI
 
 struct SetupStepsListSheet: View {
     let manager: SetupChecklistManager
+    /// Un paso tocado en la lista. Quien presenta la hoja lo abre al terminar de cerrarla (`onDismiss`): pedirlo con la
+    /// hoja aún arriba sería presentar sobre una presentación.
+    var onOpenStep: (SetupStepID) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedDetent: PresentationDetent = .medium
+    @State private var selectedDetent: PresentationDetent = SetupStepsListLogic.initialDetent
     /// En ventana ancha la hoja sale grande aunque la selección siga en `.medium` (`yalaSheetDetents`).
     @Environment(\.usesLargeSheets) private var usesLargeSheets
 
@@ -45,7 +52,7 @@ struct SetupStepsListSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                        SetupStepRow(step: step, position: index + 1, isCurrent: step.id == current)
+                        row(step, position: index + 1, isCurrent: step.id == current)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -70,6 +77,41 @@ struct SetupStepsListSheet: View {
         .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
         .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
     }
+
+    /// Un paso que se puede abrir es un botón con su chevron; uno hecho queda como texto, marcado.
+    @ViewBuilder
+    private func row(_ step: SetupStep, position: Int, isCurrent: Bool) -> some View {
+        if SetupStepsListLogic.opens(step) {
+            Button {
+                DS.Haptic.selection()
+                onOpenStep(step.id)
+                dismiss()
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    SetupStepRow(step: step, position: position, isCurrent: isCurrent)
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("setup_steps_row_\(String(describing: step.id))")
+        } else {
+            SetupStepRow(step: step, position: position, isCurrent: isCurrent)
+                .accessibilityIdentifier("setup_steps_row_\(String(describing: step.id))")
+        }
+    }
+}
+
+/// Las reglas de «Ver los 7 pasos» (decisión de Jürgen del 13-nov), sin efectos.
+enum SetupStepsListLogic {
+    /// La hoja abre grande: a media altura, en un iPhone 14, el séptimo quedaba fuera.
+    static let initialDetent: PresentationDetent = .large
+
+    /// Se abre cualquier paso que no esté hecho, también uno omitido o uno que no es el siguiente.
+    static func opens(_ step: SetupStep) -> Bool { !step.isCompleted }
 }
 
 /// La llegada con «Solo gastos» (Y23-05): la única acción es «Anotar el primer gasto», y debajo a qué cuenta van, que

@@ -22,54 +22,44 @@ final class WelcomeChooserUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleOpensTheConsent() throws {
+    /// **E13 del recorrido del 13-nov** · «¡Hola de nuevo!» desde la puerta de Grupos: Apple y Google, sin «Restaurar desde
+    /// iCloud» (y por tanto sin la ayuda de «¿No te acuerdas?», que solo sale con los dos caminos). Y Google va por el
+    /// acceso único: firma y enseña el consentimiento DENTRO de «Vamos a crear tu cuenta», sin la hoja aparte de «tres
+    /// cosas que conviene saber» antes de elegir la cuenta. `-uitest-fake-account-exists new` finge la firma y la
+    /// respuesta (sin red); la pantalla que sale la decide la tabla de siempre.
+    func testExistingChooser_fromTheGroupsDoor_offersTheAccounts_andGoogleGoesThroughTheUnifiedAccess() throws {
         let app = XCUIApplication()
         // Sin skipOnboarding (el flow Welcome ES el sujeto) y sin seed (no hace falta data).
         app.launchForUITest(
             reset: true,
             skipOnboarding: false,
             seed: nil,
-            extraArguments: ["-uitest-cloud-chooser"]
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser", "-uitest-fake-account-exists", "new"]
         )
         // NOTA: `uitest_ready` vive en el root de ContentView, que queda CUBIERTO por el
         // fullScreenCover del Welcome → no usar waitForUITestReady aquí (patrón
         // OnboardingFlowUITests); se espera el Hero directamente con timeout generoso.
 
-        // «¡Hola de nuevo!» (con el opt-in hay >1 opción, no hay bypass). Desde la bienvenida 2.3 se llega por la puerta de
-        // Grupos → «¿Ya tienes una cuenta? Entra aquí».
         openExistingChooser(app)
 
-        // 2º nivel: las TRES cards por identifier.
-        let restoreCard = app.buttons["welcome_existing_restore"]
-        XCTAssertTrue(restoreCard.waitForExistence(timeout: 10), "No apareció la card de restaurar iCloud.")
-        XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
         let googleCard = app.buttons["welcome_existing_google"]
-        XCTAssertTrue(googleCard.exists, "No apareció la card de Google.")
-        // UX 2.2 · L6-1: con los dos caminos a la vista, la ayuda de «¿No te acuerdas?» está.
-        XCTAssertTrue(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
-                      "No apareció la ayuda para quien no recuerda dónde guardó sus datos.")
+        XCTAssertTrue(googleCard.waitForExistence(timeout: 10), "No apareció la card de Google.")
+        XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
+                       "La ayuda de «¿No te acuerdas?» habla de iCloud: desde Grupos no tiene sentido.")
 
-        // UX 2.2 · L6-3: la card Google abre DIRECTAMENTE el consentimiento (sin la pantalla intermedia que repetía
-        // el botón). Nada se firma: el test no acepta.
         googleCard.tap()
-        let consentAccept = app.buttons["storage_consent_accept"]
-        XCTAssertTrue(consentAccept.waitForExistence(timeout: 10),
-                      "La card de Google no abrió el consentimiento de la nube.")
-        // Lo que importa es que el consentimiento es lo que está DELANTE, sin un toque más. La pantalla de la entrada
-        // sigue montada debajo de la hoja (es la salida si se cancela Apple/Google), y con una hoja presentada la vista
-        // de fondo sigue entera en el árbol: un `exists` sobre su botón no dice nada (`.claude/rules/testing.md`).
-        XCTAssertTrue(consentAccept.isHittable, "El consentimiento no quedó delante: hay otra pantalla que tocar antes.")
-
-        // Paso 6 · CONTROL del test del faro de abajo: «Crear otra cuenta» es SOLO de la entrada a la que
-        // encamina el faro. Quien entra por «Ya tengo cuenta» dijo que tenía una; si no la tiene, «No
-        // encontramos una cuenta» ya le ofrece crearla.
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_create_account"].waitForExistence(timeout: 20),
+                      "Google no llevó a «Vamos a crear tu cuenta» por el acceso único.")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_create_consent"].exists,
+                      "El consentimiento no va dentro de «Vamos a crear tu cuenta».")
+        XCTAssertFalse(app.buttons["storage_consent_accept"].exists,
+                       "Salió la hoja aparte de «tres cosas que conviene saber».")
+        // Paso 6 · «Crear otra cuenta» es SOLO de la entrada a la que encamina el faro.
         XCTAssertFalse(app.buttons["welcome_cloud_create_another"].exists,
                        "«Crear otra cuenta» apareció en la re-entrada normal: se coló fuera del faro.")
-
-        // L6-3 + L6-11: cancelar el consentimiento vuelve a «¡Hola de nuevo!», de donde se salió, y no al chooser.
-        app.buttons["storage_consent_cancel"].tap()
-        XCTAssertTrue(app.buttons["welcome_existing_restore"].waitForExistence(timeout: 10),
-                      "Cancelar el consentimiento no volvió a «¡Hola de nuevo!».")
     }
 
     /// A4 + A5 de D-A7: el 2º nivel de "Soy nuevo" y el destino REAL de su card de nube. Mismo
@@ -628,9 +618,9 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_existing_cloud"].waitForExistence(timeout: 10),
                       "No apareció el botón de Apple de la tarjeta.")
         XCTAssertTrue(app.buttons["welcome_existing_google"].exists, "No apareció el botón de Google.")
-        XCTAssertTrue(app.buttons["welcome_existing_restore"].exists, "No apareció Restaurar desde iCloud.")
-        // vb1f · CONTROL del test del faro de abajo: sin faro, ninguna entrada lleva «La que usaste en este iPhone» y
-        // Apple sigue primero. La presencia de los tres botones de arriba es la que discrimina esta ausencia.
+        // E13 (13-nov): desde la puerta de Grupos no se ofrece iCloud («Grupos no tiene iCloud»).
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
+        // Sin faro, ninguna entrada lleva «La que usaste en este iPhone» y Apple sigue primero.
         XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_used_on_this_device"].exists,
                        "La nota del método usado salió sin faro.")
         XCTAssertLessThan(app.buttons["welcome_existing_cloud"].frame.minY,
@@ -654,11 +644,12 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_new_private"].exists, "Falta la opción privada en «Es mi primera vez».")
     }
 
-    /// **vb1f (opción A)** · con el faro diciendo que la cuenta de este Apple ID se creó con Google, «¡Hola de nuevo!»
-    /// pone Google por delante de Apple y le cuelga «La que usaste en este iPhone»; Apple sigue ahí. El faro se finge
-    /// con `-uitest-fake-beacon`, que no persiste nada; el orden lo decide la lógica real. Su control —sin faro, sin
-    /// nota y Apple primero— va en `testExistingChooser_footerQuestion_opensTheFirstTimeBranch`.
-    func testExistingChooser_googleBeacon_putsGoogleFirst_withTheUsedHereNote() throws {
+    /// **E13 del recorrido del 13-nov** · desde la puerta de Grupos, «¡Hola de nuevo!» no lleva la nota del faro aunque
+    /// el faro diga Google: el faro habla de la cuenta PERSONAL de este Apple ID, no de con qué entró este teléfono la
+    /// última vez (con la última en Google, la nota salía bajo Apple). Antes (vb1f) Google subía primero con «La que usaste
+    /// en este iPhone». El faro se finge con `-uitest-fake-beacon`, que no persiste nada; la lógica es la real
+    /// (`WelcomeAccountChoiceLogic.existingChooserOrder`, fijada también en `GroupsDoorExistingChooserTests`).
+    func testExistingChooser_fromTheGroupsDoor_ignoresTheBeacon() throws {
         let app = XCUIApplication()
         app.launchForUITest(
             reset: true,
@@ -673,12 +664,10 @@ final class WelcomeChooserUITests: XCTestCase {
         let apple = app.buttons["welcome_existing_cloud"]
         XCTAssertTrue(google.waitForExistence(timeout: 10), "No apareció el botón de Google.")
         XCTAssertTrue(apple.exists, "Apple tiene que seguir disponible.")
-        XCTAssertLessThan(google.frame.minY, apple.frame.minY, "Con el faro de Google, Google va primero.")
-
-        let note = app.descendants(matching: .any)["welcome_existing_used_on_this_device"]
-        XCTAssertTrue(note.exists, "Falta «La que usaste en este dispositivo».")
-        XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
-        XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
+        XCTAssertLessThan(apple.frame.minY, google.frame.minY, "Desde Grupos el faro no reordena: Apple y luego Google.")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_used_on_this_device"].exists,
+                       "Desde Grupos salió la nota del faro.")
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
     }
 }
 

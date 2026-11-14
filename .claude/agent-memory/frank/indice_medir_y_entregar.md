@@ -91,3 +91,8 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Lote que depende de otro en cola](feedback_lote_que_depende_de_otro_en_cola.md) — apilar sobre su rama; `reset --keep origin/2.3` cuando entre.
 - [Leer telemetría de staging](reference_leer_telemetria_de_staging.md) — Yala Dev sin -uitest + AE SQL con el token de wrangler (renueva el del panel); alta 2.3 con Device MCP fill.
 - [zsh no parte los filtros de -only-testing](feedback_zsh_no_parte_los_filtros_de_only_testing.md) — `$F` con varias suites corre 0 casos y sale verde: `${=F}`.
+- [Un atasco se diagnostica y se cardea en el acto](feedback_un_atasco_se_diagnostica_y_se_cardea_en_el_acto.md) — telemetría por instalación + journal; very-high «CRÍTICO» lista.
+- [pgrep -f casa con prompts de otras sesiones](feedback_pgrep_f_casa_con_los_prompts_de_otras_sesiones.md) — usa `pgrep -x xcodebuild`.
+- [Breadcrumbs de Sentry fechan el pull](reference_sentry_breadcrumbs_fechan_el_pull.md) — GET /sync/pull cada 3-4 s = páginas en el hilo principal; mismo app_start_time = misma apertura.
+- [La nota de la card manda sobre su «hecha cuando»](feedback_la_nota_de_la_card_manda_sobre_su_hecha_cuando.md) — el «hecha cuando» es de Tim y anterior; si chocan, la nota de Jürgen.
+- [iPhone ocupado: avanza y prueba después](feedback_iphone_ocupado_avanza_y_prueba_despues.md) — código y sim mientras; nada completo sin probarlo en el iPhone.
