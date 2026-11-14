@@ -237,6 +237,12 @@ struct WelcomeCloudSignInView: View {
                 // `sessionOpenedHere` se queda en `false` (review adversarial): no consta quién abrió la sesión que quedó —la
                 // de la puerta de Grupos no es de esta entrada— y una salida del traspaso no debe cerrar una que no abrió.
                 phase = .adopting(fraction: 0)
+                // Card 0f7h: la persona ya dijo «Sí, cancelar» antes de cerrar Yala. Se termina de cancelar, no se retoma.
+                if WelcomeAdoptInFlight.isCancelRequested() {
+                    cancelRequested = true
+                    launchFlow { await cancelAdopt() }
+                    return
+                }
                 launchFlow { await retryAdoptResume() }
                 return
             }
@@ -310,14 +316,13 @@ struct WelcomeCloudSignInView: View {
             // Sin un adopt que proteger, el candado de Grupos de esta entrada sobra (`AccountEntryGroupsHold`).
             AccountEntryGroupsHold.releaseIfNoAdoptPending()
         }
-        // El diálogo de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
+        // El aviso de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
         // pasada en la que la fase deja de ofrecerlo, y un `.onChange` colgado de él no llegaba a correr (lo cazó la
-        // review). Aquí sí baja el diálogo si la máquina deja de ofrecer la salida con él abierto.
-        .confirmationDialog(L10n.Storage.Confirm.cancelMigrationTitle,
-                            isPresented: $confirmCancelAdopt, titleVisibility: .visible) {
-            Button(L10n.Storage.Confirm.cancelMigrationConfirm) {
-                cancelRequested = true
-                launchFlow { await cancelAdopt() }
+        // review). Aquí sí baja el aviso si la máquina deja de ofrecer la salida con él abierto. Es un `.alert` y no un
+        // `confirmationDialog` (card l4m0): el diálogo salía sin la salida de «no cancelar» (regla de `swiftui-ds.md`).
+        .alert(L10n.Storage.Confirm.cancelMigrationTitle, isPresented: $confirmCancelAdopt) {
+            Button(L10n.Storage.Confirm.cancelMigrationConfirm, role: .destructive) {
+                confirmAdoptCancel()
             }
             Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
         } message: {
@@ -1044,6 +1049,14 @@ struct WelcomeCloudSignInView: View {
             if offersAdoptCancel, let controller = CloudMigrationController.shared {
                 cancelAdoptButton(controller)
             }
+            // Card l4m0: entre «Sí, cancelar» y volver al inicio el traspaso termina su paso en curso. Sin esto la barra
+            // se quedaba sin botón ni texto, y parecía que la cancelación no había hecho nada.
+            if cancelRequested {
+                Text(L10n.Welcome.Cloud.cancelling)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .accessibilityIdentifier("welcome_cloud_adopt_cancelling")
+            }
         }
         .accessibilityIdentifier("welcome_cloud_adopting")
         .task {
@@ -1080,6 +1093,14 @@ struct WelcomeCloudSignInView: View {
         MigrationImportWaitLogic.cancelEnabled(
             isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
             cancelling: controller.isCancellingMigration, adoptEffectPending: controller.isAdoptEffectPending)
+    }
+
+    /// «Sí, cancelar». El «sí» se apunta también en disco (card 0f7h): si Yala se cierra antes de que aterrice, el arranque
+    /// siguiente lo honra en vez de retomar el traspaso.
+    private func confirmAdoptCancel() {
+        cancelRequested = true
+        WelcomeAdoptInFlight.markCancelRequested()
+        launchFlow { await cancelAdopt() }
     }
 
     /// Cancela y vuelve a mirar. **El poll se para ANTES** (`launchFlow` cancela el task viejo) y vuelve DESPUÉS: quien
@@ -1841,6 +1862,7 @@ struct WelcomeCloudSignInView: View {
                 autoResumeState = WelcomeAdoptAutoResume.State()
                 lastObservedPhase = nil
                 cancelRequested = false
+                WelcomeAdoptInFlight.clearCancelRequest()
                 await driveWhilePolling {
                     await CloudMigrationController.shared?.startAdoptWithExistingSession(
                         sessionOpenedByThisAttempt: sessionOpenedHere)

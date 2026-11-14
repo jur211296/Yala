@@ -3678,8 +3678,12 @@ private struct WelcomeFlowModifier: ViewModifier {
         // `!showWelcomeFlow` es el término del bloque [I], hermano del `!showOnboarding` de
         // arriba: desde el cover único `onEnterGroupsOnly` ya no lo cierra (vuelve al Welcome en el step de Grupos
         // fundiendo), pero el término sigue siendo el que impide pisar un Welcome ya pedido con `.chooser`.
-        if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding
-            && !showWelcomeFlow {
+        // Card c8i9: el onboarding se lee de disco. El `@Binding` de este `onDismiss` es el de cuando se presentó el cover, y
+        // `onAdoptStarted` lo marca con el cover abierto (ver `WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn`).
+        let onboardingCompletedNow = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        if WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn(
+            onboardingCompletedNow: onboardingCompletedNow, inviteOnboardingShown: showGroupInviteOnboarding,
+            onboardingShown: showOnboarding, welcomeFlowShown: showWelcomeFlow) {
             welcomeFlowInitialStep = .chooser
             showWelcomeFlow = true
         }
@@ -4027,6 +4031,11 @@ private struct WelcomeFlowModifier: ViewModifier {
                                             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed())
                 // Card x5tm: quien entró por «Entra aquí» de Grupos aterriza en Grupos, no en el Panel.
                 if WelcomeGroupsDoorLanding.consume() { navigation.selectMainTab(.groups) }
+                // Card c8i9 (barrido del 14-nov): las páginas montadas bajo la bienvenida calcularon ANTES de entrar en la
+                // cuenta, en iCloud y vacías, y cerrar el cover no las vuelve a cargar. Sin esto el Panel se quedaba en S/ 0 y
+                // «Crea tu primera cuenta» hasta que llegaba el primer tirón; con esto recalcula ya en la nube y, si la cuenta
+                // aún no bajó, enseña su esqueleto (`PanelAccountDataWait`).
+                SessionState.shared.incrementDataVersion()
                 showWelcomeCloudSignIn = false
             },
             onBornCloudCompleted: {

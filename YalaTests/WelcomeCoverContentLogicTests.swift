@@ -178,7 +178,8 @@ struct WelcomeCoverContentLogicTests {
         #expect(reset == "adoptStartsAtConsent = false cloudSignInFromExistingChooser = false")
         let dismiss = Self.flat(try Self.body(of: "private func welcomeCoverDidDismiss() {", in: modifier))
         #expect(dismiss.hasPrefix("guard WelcomeCoverContentLogic.runsCloudSignInDismissFallback(last: lastWelcomeCoverContent) else { return } resetCloudSignInEntry()"))
-        #expect(dismiss.hasSuffix("if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding && !showWelcomeFlow { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
+        // Barrido del 14-nov (c8i9): el onboarding se lee de disco, no del `@Binding` que el `onDismiss` se quedó.
+        #expect(dismiss.hasSuffix("let onboardingCompletedNow = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) if WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn( onboardingCompletedNow: onboardingCompletedNow, inviteOnboardingShown: showGroupInviteOnboarding, onboardingShown: showOnboarding, welcomeFlowShown: showWelcomeFlow) { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
     }
 
     @Test("si UIKit cierra el cover, se apaga el flag de lo que enseñaba, no los dos")

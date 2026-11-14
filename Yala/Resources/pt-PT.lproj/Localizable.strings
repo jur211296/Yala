@@ -4023,8 +4023,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "A transferir os teus dados…";
-"welcome.cloud.cancelAdoptBody" = "Este dispositivo não alterou nada do que tens na tua conta Yala. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta com «Já tenho conta».";
-"welcome.cloud.cancelAdoptEffectBody" = "O que tens neste dispositivo continua aqui, como até agora. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta com «Já tenho conta».";
+"welcome.cloud.cancelAdoptBody" = "Este dispositivo não alterou nada do que tens na tua conta Yala. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta a partir do início.";
+"welcome.cloud.cancelAdoptEffectBody" = "O que tens neste dispositivo continua aqui, como até agora. Vais voltar ao início. Quando quiseres, podes entrar de novo na tua conta a partir do início.";
+"welcome.cloud.cancelling" = "A cancelar…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Os Grupos precisam do iCloud";
