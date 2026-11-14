@@ -3,14 +3,23 @@
  *
  *   GET  /api/config            clave pública de Turnstile y entorno (sin sesión)
  *   GET  /api/me                con sesión: el nombre de la cuenta. Sin ella, 401
+ *   GET  /api/panel             saldos, entradas y salidas del mes y últimos registros (núcleo compartido)
+ *   GET  /api/registros         movimientos de 50 en 50, con filtros (`buscar_movimientos`)
+ *   GET  /api/categorias        categorías y subcategorías, para filtrar y para apuntar
+ *   GET  /api/bandeja           lo pendiente en la Bandeja del iPhone y lo enviado que aún no recogió
+ *   POST /api/borradores        apuntar un gasto: a la cola común de borradores (decisión D9)
+ *   GET  /api/sesiones          las sesiones web de la cuenta
+ *   POST /api/sesiones/cerrar   cierra otra sesión web de la cuenta ({id}); `cerrar-otras` cierra todas menos esta
+ *   GET  /api/dispositivo/sesiones          el iPhone («Navegadores conectados»), con el token de su sesión
+ *   POST /api/dispositivo/sesiones/cerrar   ídem, una ({id}) o `cerrar-todas`
  *   POST /auth/start            verifica Turnstile y manda al login de Apple o Google (vía Supabase)
  *   GET  /auth/callback         vuelta del login: entra (o explica por qué no) y deja la cookie
  *   POST /auth/password         SOLO staging: lo mismo con contraseña, para las pruebas de punta a punta
  *   POST /auth/logout           cierra la sesión web y la de Supabase que llevaba dentro
  *   lo demás                    la página (Vite), con las mismas cabeceras de seguridad
  *
- * Los POST exigen `Origin` = este origen (además de la cookie `SameSite=Lax`): un formulario de otro sitio no puede
- * hacer entrar ni salir a nadie.
+ * Los POST con cookie exigen `Origin` = este origen (además de la cookie `SameSite=Lax`): un formulario de otro sitio no
+ * puede hacer entrar, salir ni apuntar a nadie. Las rutas `/api/dispositivo/*` no leen la cookie: solo el Bearer.
  */
 import { loginReturnUrl, isStaging, publicOrigin, type Env } from "./env";
 import { configProblems } from "./config";
@@ -19,6 +28,7 @@ import { withHeaders } from "./headers";
 import { allow, clientIp } from "./ratelimit";
 import { cloudKind } from "./cloud";
 import {
+  closeWebSession,
   currentUser,
   grantReadOnly,
   logout,
@@ -30,6 +40,11 @@ import {
 } from "./supabase";
 import { verifyTurnstile } from "./turnstile";
 import { makeReaderVerifier, type ReaderVerifier } from "./verify";
+import { bearer, makeAppVerifier, type AppVerifier } from "./device";
+import { approximateCity, describeBrowser } from "./ua";
+import { InvalidInputError, bandeja, categorias, panel, registros, toolContext } from "./data";
+import { insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
+import { isPid, sessionIndex, toPublic, type SessionEntry } from "./sessions";
 import {
   LOGIN_COOKIE,
   LOGIN_TTL_SECONDS,
@@ -37,6 +52,8 @@ import {
   clearSessionCookie,
   createSession,
   deleteSession,
+  deleteSessionByKey,
+  kvKey,
   loadSession,
   loginCookie,
   randomToken,
@@ -54,12 +71,15 @@ export interface AppDeps {
   /** El `fetch` de salida SIN envolver: la app lo pasa siempre por la lista cerrada. */
   fetcher?: Fetcher;
   verify?: ReaderVerifier;
+  /** Verifica el token de la app (iPhone) en `/api/dispositivo/*`. */
+  appVerify?: AppVerifier;
   nowSec?: () => number;
 }
 
 /** Margen con el que se refresca el acceso antes de que caduque. */
 const REFRESH_MARGIN_SECONDS = 60;
 const MAX_FORM_BYTES = 8 * 1024;
+const MAX_JSON_BYTES = 4 * 1024;
 
 export type Aviso = "sin-nube" | "solo-grupos" | "error" | "cancelado" | "caducada" | "verificacion" | "salida" | "limite";
 
@@ -100,6 +120,19 @@ async function readForm(request: Request): Promise<FormData | null> {
   }
 }
 
+/** Un cuerpo JSON pequeño. `null` si no es JSON, no dice su tamaño o pasa de `MAX_JSON_BYTES`. */
+async function readJson(request: Request): Promise<unknown | null> {
+  const raw = request.headers.get("Content-Length");
+  const len = raw === null ? NaN : Number(raw);
+  if (!Number.isFinite(len) || len > MAX_JSON_BYTES) return null;
+  if (!(request.headers.get("Content-Type") ?? "").startsWith("application/json")) return null;
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
 export function createApp(deps: AppDeps = {}) {
   const nowSec = deps.nowSec ?? (() => Math.floor(Date.now() / 1000));
 
@@ -113,13 +146,15 @@ export function createApp(deps: AppDeps = {}) {
       }
       const fetcher = guardEgress(env, deps.fetcher ?? defaultFetch);
       const verify = deps.verify ?? makeReaderVerifier(env);
-      const ctx = { env, fetcher, verify, now: nowSec() };
+      const appVerify = deps.appVerify ?? makeAppVerifier(env);
+      const ctx = { env, fetcher, verify, appVerify, now: nowSec() };
       let res: Response;
       try {
         res = await route(request, url, ctx);
       } catch (err) {
         console.error(JSON.stringify({ evento: "web_error", ruta: url.pathname, error: err instanceof Error ? err.name : "desconocido" }));
-        res = url.pathname.startsWith("/api/") ? json({ error: "no_disponible" }, 503) : aviso("error");
+        if (err instanceof InvalidInputError && url.pathname.startsWith("/api/")) res = json({ error: "entrada" }, 400);
+        else res = url.pathname.startsWith("/api/") ? json({ error: "no_disponible" }, 503) : aviso("error");
       }
       return withHeaders(env, url.pathname, res);
     },
@@ -130,6 +165,7 @@ interface Ctx {
   env: Env;
   fetcher: Fetcher;
   verify: ReaderVerifier;
+  appVerify: AppVerifier;
   now: number;
 }
 
@@ -138,10 +174,24 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
   const path = url.pathname;
   const method = request.method.toUpperCase();
 
+  if (path.startsWith("/api/dispositivo/")) return deviceRoute(request, path, method, ctx);
+
   if (path.startsWith("/api/")) {
-    if (method !== "GET") return json({ error: "metodo" }, 405);
-    if (path === "/api/config") return json({ turnstileSiteKey: env.TURNSTILE_SITE_KEY, entorno: env.ENVIRONMENT });
-    if (path === "/api/me") return me(request, ctx);
+    if (method === "GET") {
+      if (path === "/api/config") return json({ turnstileSiteKey: env.TURNSTILE_SITE_KEY, entorno: env.ENVIRONMENT });
+      if (path === "/api/me") return withLive(request, ctx, async (live) => json({ nombre: live.account.nombre, correo: live.account.correo, equipoCompartido: live.session.shared }));
+      if (path === "/api/panel") return withLive(request, ctx, async (live) => json(await panel(readCtx(ctx, live))));
+      if (path === "/api/registros") return withLive(request, ctx, async (live) => json(await registros(readCtx(ctx, live), url.searchParams)));
+      if (path === "/api/categorias") return withLive(request, ctx, async (live) => json(await categorias(readCtx(ctx, live))));
+      if (path === "/api/bandeja") return withLive(request, ctx, (live) => inbox(ctx, live));
+      if (path === "/api/sesiones") return withLive(request, ctx, async (live) => json({ sesiones: await liveEntries(ctx, live.session.sub, live.session.pid) }));
+      return json({ error: "no_existe" }, 404);
+    }
+    if (method !== "POST") return json({ error: "metodo" }, 405);
+    if (!sameOrigin(request, env)) return json({ error: "origen" }, 403);
+    if (path === "/api/borradores") return withLive(request, ctx, (live) => newDraft(request, ctx, live));
+    if (path === "/api/sesiones/cerrar") return withLive(request, ctx, (live) => closeOne(request, ctx, live.session.sub, live.session.access, live.session.pid));
+    if (path === "/api/sesiones/cerrar-otras") return withLive(request, ctx, (live) => closeAll(ctx, live.session.sub, live.session.access, live.session.pid));
     return json({ error: "no_existe" }, 404);
   }
 
@@ -232,12 +282,19 @@ async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, sh
       return aviso("error", cookies);
     }
     let token: string;
+    const pid = randomToken(9);
     try {
       token = await createSession(
         env.WEB_KV,
         { sub: check.claims.sub, sid: check.claims.sessionId, access: grant.tokens.access, accessExp: check.claims.exp, refresh: grant.tokens.refresh },
         shared,
         now,
+        pid,
+      );
+      const browser = describeBrowser(request.headers.get("User-Agent"));
+      await sessionIndex(env, check.claims.sub).put(
+        { pid, k: await kvKey(token), sid: check.claims.sessionId, creada: now, uso: now, compartido: shared, ...browser, ciudad: approximateCity(request) },
+        now + remainingSeconds({ createdAt: now, lastSeen: now, shared }, now),
       );
     } catch (err) {
       // Sin dónde guardarla, la sesión de lectura no la usaría nadie: se cierra en vez de dejarla viva.
@@ -285,17 +342,42 @@ function unauthorized(hadCookie: boolean): Response {
   return json({ error: "sin_sesion" }, 401, hadCookie ? { "Set-Cookie": clearSessionCookie() } : {});
 }
 
-async function me(request: Request, ctx: Ctx): Promise<Response> {
+interface Live {
+  token: string;
+  session: Session;
+  account: { nombre: string; correo: string | null };
+}
+
+/** Borra una sesión que ya no sirve: la del KV y su entrada en la lista. */
+async function dropSession(ctx: Ctx, token: string, session: Session): Promise<void> {
+  await deleteSession(ctx.env.WEB_KV, token);
+  if (session.pid) await sessionIndex(ctx.env, session.sub).remove(session.pid);
+}
+
+/**
+ * La sesión de esta cookie, VIVA: refrescada si toca y comprobada contra Supabase (`GET /user`) en cada petición. Esa
+ * comprobación es lo que hace que una sesión cerrada desde el iPhone deje de leer al momento: PostgREST no mira si la
+ * sesión de Supabase sigue abierta, `GET /user` sí. Si sigue viva, corre `handler` y renueva la cookie al salir.
+ */
+async function withLive(request: Request, ctx: Ctx, handler: (live: Live) => Promise<Response>): Promise<Response> {
   const { env, fetcher, now } = ctx;
   const token = readCookie(request, SESSION_COOKIE);
   const session = await loadSession(env.WEB_KV, token, now);
   if (!token || !session) return unauthorized(!!token);
   if (!(await allow(env, "RL_API", session.sid))) return json({ error: "limite" }, 429, { "Retry-After": "60" });
+  // La lista de sesiones manda. Una sesión que no está en ella (cerrada desde el iPhone u otra pestaña, aunque el KV aún
+  // sirva una copia vieja en otro punto de presencia; o del lote 0, sin id) no lee, y se borra.
+  if (!session.pid || !(await sessionIndex(env, session.sub).has(session.pid, now))) {
+    log("web_sesion_retirada", { motivo: session.pid ? "fuera_de_la_lista" : "sin_id" });
+    await logout(env, fetcher, session.access);
+    await deleteSession(env.WEB_KV, token);
+    return unauthorized(true);
+  }
 
   let fresh = await ensureFresh(ctx, session);
   if (!fresh.ok) {
     if (!fresh.gone) return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
-    await deleteSession(env.WEB_KV, token);
+    await dropSession(ctx, token, session);
     return unauthorized(true);
   }
   let changed = fresh.changed;
@@ -305,7 +387,7 @@ async function me(request: Request, ctx: Ctx): Promise<Response> {
     fresh = await ensureFresh(ctx, session, true);
     if (!fresh.ok) {
       if (!fresh.gone) return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
-      await deleteSession(env.WEB_KV, token);
+      await dropSession(ctx, token, session);
       return unauthorized(true);
     }
     changed = true;
@@ -315,14 +397,102 @@ async function me(request: Request, ctx: Ctx): Promise<Response> {
   if (user.status === "unknown" || user.status === "stale") return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
   if (user.status !== "alive") {
     log("web_sesion_retirada", { motivo: `user_${user.status}` });
-    await deleteSession(env.WEB_KV, token);
+    await dropSession(ctx, token, session);
     return unauthorized(true);
   }
 
+  const res = await handler({ token, session, account: user.account });
   const wrote = await saveSession(env.WEB_KV, token, session, now, changed);
-  const headers: Record<string, string> = {};
-  if (wrote && !session.shared) headers["Set-Cookie"] = sessionCookie(token, false, remainingSeconds(session, now));
-  return json({ nombre: user.account.nombre, correo: user.account.correo, equipoCompartido: session.shared }, 200, headers);
+  if (wrote && session.pid) await touchEntry(ctx, session).catch(() => undefined);
+  if (wrote && !session.shared) res.headers.append("Set-Cookie", sessionCookie(token, false, remainingSeconds(session, now)));
+  return res;
+}
+
+/** Mueve «último uso» (y el `session_id`, si un refresh lo cambió) en la entrada de la lista. */
+async function touchEntry(ctx: Ctx, session: Session): Promise<void> {
+  if (!session.pid) return;
+  await sessionIndex(ctx.env, session.sub).touch(session.pid, ctx.now, session.sid, ctx.now + remainingSeconds(session, ctx.now));
+}
+
+function readCtx(ctx: Ctx, live: Live) {
+  return toolContext(ctx.env, ctx.fetcher, live.session.access, new Date(ctx.now * 1000));
+}
+
+// ─── Bandeja y apuntar ─────────────────────────────────────────────────────────────────────────────────────────
+
+async function inbox(ctx: Ctx, live: Live): Promise<Response> {
+  const [pendientes, enviados] = await Promise.all([bandeja(readCtx(ctx, live)), queuedWebDrafts(ctx.env, live.session.sub, ctx.now * 1000)]);
+  return json({ pendientes, enviados });
+}
+
+async function newDraft(request: Request, ctx: Ctx, live: Live): Promise<Response> {
+  const body = await readJson(request);
+  if (body === null) return json({ error: "entrada" }, 400);
+  const nowMs = ctx.now * 1000;
+  const parsed = parseWebDraft(body, nowMs);
+  if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+  const day = new Date(nowMs).toISOString().slice(0, 10);
+  if (!(await sessionIndex(ctx.env, live.session.sub).takeDraftSlot(day, WEB_DRAFTS_PER_DAY))) {
+    log("web_borrador_tope");
+    return json({ error: "tope_diario", tope: WEB_DRAFTS_PER_DAY }, 429);
+  }
+  const id = await insertWebDraft(ctx.env, live.session.sub, parsed.value, nowMs);
+  log("web_borrador");
+  return json({ id }, 201);
+}
+
+// ─── Sesiones ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Las sesiones vivas de la cuenta (las caducadas las retira el propio índice al leer). */
+async function liveEntries(ctx: Ctx, sub: string, currentPid: string | null) {
+  return (await sessionIndex(ctx.env, sub).list(ctx.now)).map((e) => toPublic(e, currentPid));
+}
+
+/** Cierra una sesión de la lista: su sesión de Supabase (con el token de quien cierra), la del KV y la entrada. */
+async function closeEntry(ctx: Ctx, sub: string, callerToken: string, e: SessionEntry): Promise<boolean> {
+  const supabase = await closeWebSession(ctx.env, ctx.fetcher, callerToken, e.sid);
+  await deleteSessionByKey(ctx.env.WEB_KV, e.k);
+  await sessionIndex(ctx.env, sub).remove(e.pid);
+  return supabase;
+}
+
+async function closeOne(request: Request, ctx: Ctx, sub: string, callerToken: string, currentPid: string | null): Promise<Response> {
+  const body = (await readJson(request)) as { id?: unknown } | null;
+  const id = body?.id;
+  if (!isPid(id)) return json({ error: "entrada" }, 400);
+  // Esta misma sesión se cierra con «Salir», que además borra la cookie.
+  if (id === currentPid) return json({ error: "es_esta" }, 409);
+  const e = (await sessionIndex(ctx.env, sub).list(ctx.now)).find((x) => x.pid === id);
+  if (!e) return json({ cerradas: 0 });
+  const supabase = await closeEntry(ctx, sub, callerToken, e);
+  log("web_sesion_cerrada", { desde: currentPid ? "web" : "iphone", supabase_cerrada: supabase });
+  return json({ cerradas: 1 });
+}
+
+async function closeAll(ctx: Ctx, sub: string, callerToken: string, currentPid: string | null): Promise<Response> {
+  const entries = (await sessionIndex(ctx.env, sub).list(ctx.now)).filter((e) => e.pid !== currentPid);
+  let supabase = 0;
+  for (const e of entries) if (await closeEntry(ctx, sub, callerToken, e)) supabase++;
+  log("web_sesiones_cerradas", { desde: currentPid ? "web" : "iphone", n: entries.length, supabase_cerradas: supabase });
+  return json({ cerradas: entries.length });
+}
+
+// ─── El iPhone («Navegadores conectados») ──────────────────────────────────────────────────────────────────────
+
+async function deviceRoute(request: Request, path: string, method: string, ctx: Ctx): Promise<Response> {
+  const raw = bearer(request);
+  if (!raw) return json({ error: "sin_sesion" }, 401);
+  const check = await ctx.appVerify(raw);
+  if (!check.ok) return check.reason === "unavailable" ? json({ error: "no_disponible" }, 503, { "Retry-After": "30" }) : json({ error: "sin_sesion" }, 401);
+  if (!(await allow(ctx.env, "RL_API", `app:${check.sub}`))) return json({ error: "limite" }, 429, { "Retry-After": "60" });
+  // La firma sola no basta: un token de una sesión de la app ya cerrada vale hasta su `exp`. `GET /user` sí lo sabe.
+  const alive = await currentUser(ctx.env, ctx.fetcher, raw);
+  if (alive.status === "unknown") return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
+  if (alive.status !== "alive") return json({ error: "sin_sesion" }, 401);
+  if (path === "/api/dispositivo/sesiones" && method === "GET") return json({ sesiones: await liveEntries(ctx, check.sub, null) });
+  if (path === "/api/dispositivo/sesiones/cerrar" && method === "POST") return closeOne(request, ctx, check.sub, raw, null);
+  if (path === "/api/dispositivo/sesiones/cerrar-todas" && method === "POST") return closeAll(ctx, check.sub, raw, null);
+  return json({ error: "no_existe" }, 404);
 }
 
 /**
@@ -338,6 +508,7 @@ async function closeSession(ctx: Ctx, token: string | null): Promise<boolean> {
     const fresh = await ensureFresh(ctx, session).catch(() => ({ ok: false as const, gone: false }));
     await logout(env, fetcher, session.access);
     closed = fresh.ok;
+    if (session.pid) await sessionIndex(env, session.sub).remove(session.pid);
   }
   await deleteSession(env.WEB_KV, token);
   return closed;

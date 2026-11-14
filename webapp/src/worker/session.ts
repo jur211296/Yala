@@ -35,6 +35,8 @@ interface StoredSession {
   createdAt: number;
   lastSeen: number;
   shared: boolean;
+  /** Id público de la sesión en la lista de sesiones (`sessions.ts`). Las del lote 0 no lo tienen. */
+  pid?: string;
   iv: string;
   ct: string;
 }
@@ -43,6 +45,7 @@ export interface Session extends SessionSecrets {
   createdAt: number;
   lastSeen: number;
   shared: boolean;
+  pid: string | null;
 }
 
 // ─── bytes ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -76,7 +79,8 @@ export async function s256(verifier: string): Promise<string> {
   return b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
 }
 
-async function kvKey(token: string): Promise<string> {
+/** La clave del KV de una sesión: el SHA-256 de su cookie. El índice de sesiones la guarda para poder cerrarla a distancia. */
+export async function kvKey(token: string): Promise<string> {
   return `s:${await sha256Hex(token)}`;
 }
 
@@ -134,10 +138,10 @@ async function write(kv: KVNamespace, token: string, meta: Omit<StoredSession, "
   await kv.put(key, JSON.stringify(stored), { expirationTtl: ttl });
 }
 
-/** Crea una sesión y devuelve el valor de la cookie. */
-export async function createSession(kv: KVNamespace, secrets: SessionSecrets, shared: boolean, nowSec: number): Promise<string> {
+/** Crea una sesión y devuelve el valor de la cookie. `pid`: su id en la lista de sesiones. */
+export async function createSession(kv: KVNamespace, secrets: SessionSecrets, shared: boolean, nowSec: number, pid?: string): Promise<string> {
   const token = randomToken();
-  await write(kv, token, { createdAt: nowSec, lastSeen: nowSec, shared }, secrets, nowSec);
+  await write(kv, token, { createdAt: nowSec, lastSeen: nowSec, shared, ...(pid ? { pid } : {}) }, secrets, nowSec);
   return token;
 }
 
@@ -171,7 +175,7 @@ export async function loadSession(kv: KVNamespace, token: string | null, nowSec:
     await kv.delete(key);
     return null;
   }
-  return { ...secrets, createdAt: stored.createdAt, lastSeen: stored.lastSeen, shared: stored.shared };
+  return { ...secrets, createdAt: stored.createdAt, lastSeen: stored.lastSeen, shared: stored.shared, pid: typeof stored.pid === "string" ? stored.pid : null };
 }
 
 /**
@@ -180,9 +184,9 @@ export async function loadSession(kv: KVNamespace, token: string | null, nowSec:
  */
 export async function saveSession(kv: KVNamespace, token: string, session: Session, nowSec: number, tokensChanged: boolean): Promise<boolean> {
   if (!tokensChanged && nowSec - session.lastSeen < TOUCH_EVERY_SECONDS) return false;
-  const { createdAt, shared, sub, sid, access, accessExp, refresh } = session;
+  const { createdAt, shared, pid, sub, sid, access, accessExp, refresh } = session;
   try {
-    await write(kv, token, { createdAt, lastSeen: nowSec, shared }, { sub, sid, access, accessExp, refresh }, nowSec);
+    await write(kv, token, { createdAt, lastSeen: nowSec, shared, ...(pid ? { pid } : {}) }, { sub, sid, access, accessExp, refresh }, nowSec);
   } catch (err) {
     // Con tokens rotados no guardar es perder la sesión: que se note. Solo mover «último uso» (p. ej. dos pestañas en
     // el mismo segundo, el KV admite una escritura por segundo por clave) puede fallar sin consecuencias.
@@ -197,6 +201,15 @@ export async function deleteSession(kv: KVNamespace, token: string): Promise<voi
   if (!TOKEN_RE.test(token)) return;
   await kv.delete(await kvKey(token));
 }
+
+const SESSION_KEY_RE = /^s:[0-9a-f]{64}$/;
+
+/** Borra una sesión sin su cookie, por su clave del KV: lo que hace «Cerrar» desde otro aparato. */
+export async function deleteSessionByKey(kv: KVNamespace, key: string): Promise<void> {
+  if (!SESSION_KEY_RE.test(key)) return;
+  await kv.delete(key);
+}
+
 
 // ─── login a medias ────────────────────────────────────────────────────────────────────────────────────────────
 

@@ -34,8 +34,26 @@ run_worker_first = true
 binding = "WEB_KV"
 id = "aaee191d09924a7bbbdaa912cd1bcf05"
 
+# La cola COMÚN de borradores (decisión D9): el D1 del gateway de staging. La web solo inserta filas `source: "web"` en
+# `mail_drafts` y cuenta las suyas (src/worker/drafts.ts); el iPhone las recoge por `GET /mail/drafts` del gateway.
+[[d1_databases]]
+binding = "DRAFTS_DB"
+database_name = "yala-gateway-staging"
+database_id = "6f76834b-62b4-4ec4-bb4f-db974b60f2ee"
+
+# La lista de sesiones web de cada cuenta (lo que enseña «Navegadores conectados»): un objeto por cuenta, con SQLite.
+# No va en el KV: su `list` es eventual y una sesión recién abierta tardaba hasta un minuto en verse (src/worker/sessions.ts).
+[[durable_objects.bindings]]
+name = "SESSION_INDEX"
+class_name = "SessionIndex"
+
+[[migrations]]
+tag = "v1-sesiones"
+new_sqlite_classes = ["SessionIndex"]
+
 [vars]
 ENVIRONMENT = "staging"
+DEFAULT_TIMEZONE = "America/Lima"
 PUBLIC_URL = "https://yala-web-staging.misty-surf-6866.workers.dev"
 SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"

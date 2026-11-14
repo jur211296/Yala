@@ -9574,3 +9574,21 @@
 "bienvenida23.access.consentAccessDetail" = "There's no Yala password or email recovery: if you lose that login, export your data first (Settings → Export records).";
 "bienvenida23.access.createdTitle" = "Your account is created";
 "bienvenida23.access.createdBody" = "Now, three quick questions to make Yala yours.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Connected browsers";
+"connectedBrowsers.rowSubtitle" = "Yala web sessions open with your account";
+"connectedBrowsers.intro" = "See where Yala web is open with your account. If you don't recognize one, sign it out.";
+"connectedBrowsers.empty" = "No Yala web sessions are open with your account.";
+"connectedBrowsers.close" = "Sign out";
+"connectedBrowsers.closeAll" = "Sign out of all web sessions";
+"connectedBrowsers.closeAllConfirmTitle" = "Sign out of all web sessions?";
+"connectedBrowsers.closeAllConfirmBody" = "Those tabs empty in under a minute. Your data doesn't change.";
+"connectedBrowsers.closeAllConfirm" = "Sign out all";
+"connectedBrowsers.footer" = "When you sign one out, that tab empties in under a minute.";
+"connectedBrowsers.loadFailed" = "Couldn't load the list. Check your connection and try again.";
+"connectedBrowsers.closeFailed" = "Couldn't sign it out. Check your connection and try again.";
+"connectedBrowsers.unknownBrowser" = "Browser";
+"connectedBrowsers.sharedComputer" = "shared computer";
+"connectedBrowsers.justNow" = "now";
+"connectedBrowsers.browserOn" = "%1$@ on %2$@";

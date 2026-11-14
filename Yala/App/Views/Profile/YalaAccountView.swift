@@ -74,6 +74,7 @@ struct YalaAccountView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
                 header
                 dataLocationSection
+                connectedBrowsersSection
                 exitsSection
             }
             .padding(.vertical, DS.Spacing.xxl)
@@ -203,6 +204,26 @@ struct YalaAccountView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Spacing.lg)
             .solidCard(radius: DS.Radius.xl)
+        }
+    }
+
+    /// Yala web, lote 1: «Navegadores conectados», para ver y cerrar las sesiones web. Solo con los datos en la cuenta de
+    /// Yala y solo donde hay web (Yala Dev, contra staging: `ConnectedBrowsersConfig`).
+    @ViewBuilder
+    private var connectedBrowsersSection: some View {
+        if ConnectedBrowsersConfig.isAvailable && model.dataLocation == .cloud {
+            NavigationLink {
+                ConnectedBrowsersView()
+            } label: {
+                exitRowContent(
+                    icon: "macbook.and.iphone",
+                    title: ConnectedBrowsersText.title,
+                    subtitle: ConnectedBrowsersText.rowSubtitle,
+                    destructive: false)
+            }
+            .buttonStyle(.plain)
+            .solidCard(radius: DS.Radius.xl)
+            .accessibilityIdentifier("yala_account_connected_browsers")
         }
     }
 

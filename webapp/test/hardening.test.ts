@@ -177,8 +177,10 @@ describe("cabeceras de seguridad en todo, página incluida", () => {
     expect((await w.browser.request("/auth/logout", { form: {}, headers: { Origin: "null" } })).status).toBe(403);
   });
 
-  it("la API solo atiende GET", async () => {
+  it("la API solo atiende GET y POST, y un POST sin el Origin de la web se rechaza", async () => {
     const w = await world();
-    expect((await w.call(new Request(`${BASE}/api/me`, { method: "POST" }))).status).toBe(405);
+    expect((await w.call(new Request(`${BASE}/api/me`, { method: "PUT" }))).status).toBe(405);
+    expect((await w.call(new Request(`${BASE}/api/borradores`, { method: "POST" }))).status).toBe(403);
+    expect((await w.call(new Request(`${BASE}/api/borradores`, { method: "POST", headers: { Origin: "https://otro.test" } }))).status).toBe(403);
   });
 });

@@ -9568,3 +9568,21 @@
 "bienvenida23.access.consentAccessDetail" = "Es gibt kein Yala-Passwort und keine Wiederherstellung per E-Mail: Wenn du diesen Zugang verlierst, exportiere vorher deine Daten (Einstellungen → Einträge exportieren).";
 "bienvenida23.access.createdTitle" = "Dein Konto ist erstellt";
 "bienvenida23.access.createdBody" = "Jetzt noch drei kurze Fragen, damit Yala zu dir passt.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Verbundene Browser";
+"connectedBrowsers.rowSubtitle" = "Mit deinem Konto geöffnete Yala-web-Sitzungen";
+"connectedBrowsers.intro" = "Hier siehst du, wo Yala web mit deinem Konto geöffnet ist. Wenn du eine nicht erkennst, melde sie ab.";
+"connectedBrowsers.empty" = "Mit deinem Konto ist keine Yala-web-Sitzung geöffnet.";
+"connectedBrowsers.close" = "Abmelden";
+"connectedBrowsers.closeAll" = "Alle Web-Sitzungen abmelden";
+"connectedBrowsers.closeAllConfirmTitle" = "Alle Web-Sitzungen abmelden?";
+"connectedBrowsers.closeAllConfirmBody" = "Diese Tabs leeren sich in weniger als einer Minute. Deine Daten ändern sich nicht.";
+"connectedBrowsers.closeAllConfirm" = "Alle abmelden";
+"connectedBrowsers.footer" = "Wenn du eine abmeldest, leert sich dieser Tab in weniger als einer Minute.";
+"connectedBrowsers.loadFailed" = "Die Liste konnte nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.";
+"connectedBrowsers.closeFailed" = "Abmelden fehlgeschlagen. Prüfe deine Verbindung und versuch es noch einmal.";
+"connectedBrowsers.unknownBrowser" = "Browser";
+"connectedBrowsers.sharedComputer" = "gemeinsam genutzter Computer";
+"connectedBrowsers.justNow" = "gerade eben";
+"connectedBrowsers.browserOn" = "%1$@ auf %2$@";

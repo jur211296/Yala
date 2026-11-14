@@ -2575,8 +2575,10 @@ final class AppBootstrapper {
         }
         // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
+        // Lo apuntado en Yala web llega por la misma cola: antes, se pregunta a la web si hay sesiones abiertas (lote 1).
         Task { @MainActor in
-            if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
+            let webConnected = await ConnectedBrowsersPresence.refreshIfDue(client: ConnectedBrowsersClient())
+            if await BankEmailDraftService.syncIfNeeded(context: context, webConnected: webConnected) > 0 {
                 sessionState.incrementDataVersion()
             }
         }

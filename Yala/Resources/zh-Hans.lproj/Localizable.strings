@@ -9580,3 +9580,21 @@
 "bienvenida23.access.consentAccessDetail" = "没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出记录）。";
 "bienvenida23.access.createdTitle" = "你的账户已创建";
 "bienvenida23.access.createdBody" = "接下来，回答三个简单问题，让 Yala 更适合你。";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "已连接的浏览器";
+"connectedBrowsers.rowSubtitle" = "用你的账户打开的 Yala web 会话";
+"connectedBrowsers.intro" = "这里显示 Yala web 在哪里用你的账户打开。如果有不认识的，就退出它。";
+"connectedBrowsers.empty" = "你的账户没有打开任何 Yala web 会话。";
+"connectedBrowsers.close" = "退出";
+"connectedBrowsers.closeAll" = "退出所有网页会话";
+"connectedBrowsers.closeAllConfirmTitle" = "退出所有网页会话？";
+"connectedBrowsers.closeAllConfirmBody" = "这些标签页会在一分钟内清空。你的数据不会改变。";
+"connectedBrowsers.closeAllConfirm" = "全部退出";
+"connectedBrowsers.footer" = "退出一个后，那个标签页会在一分钟内清空。";
+"connectedBrowsers.loadFailed" = "无法加载列表。请检查网络连接后重试。";
+"connectedBrowsers.closeFailed" = "无法退出。请检查网络连接后重试。";
+"connectedBrowsers.unknownBrowser" = "浏览器";
+"connectedBrowsers.sharedComputer" = "共用电脑";
+"connectedBrowsers.justNow" = "刚刚";
+"connectedBrowsers.browserOn" = "%2$@ 上的 %1$@";

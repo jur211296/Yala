@@ -24,6 +24,15 @@ export interface Env {
   WEB_KV: KVNamespace;
   /** La página (Vite) que sirve el Worker. */
   ASSETS: Fetcher;
+  /**
+   * La cola de borradores COMÚN (decisión D9): el D1 del gateway del mismo entorno, tabla `mail_drafts`. La web solo
+   * inserta filas suyas (`source: "web"`) y cuenta las de hoy; el iPhone las recoge por `GET /mail/drafts` del gateway.
+   */
+  DRAFTS_DB: D1Database;
+  /** La lista de sesiones web de cada cuenta: un Durable Object por cuenta (`sessionIndex.ts`). */
+  SESSION_INDEX: DurableObjectNamespace;
+  /** IANA. La zona con la que se decide qué día es hoy si la app nunca subió la suya (como el conector). */
+  DEFAULT_TIMEZONE: string;
   /** Límite por IP en `/auth/*` (lo abre el navegador). Opcional en los tests; en producción, obligatorio. */
   RL_AUTH?: RateLimiter;
   /** Límite por sesión en `/api/*`. */

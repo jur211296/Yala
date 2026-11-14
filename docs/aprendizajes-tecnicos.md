@@ -737,3 +737,19 @@ de Yala web (`webapp/`) antes de que nadie entrara:
 Lo que cuesta poco y lo evita: el navegador falso de las pruebas aplica las reglas de `__Host-` (`webapp/test/fakes.ts`),
 y una prueba fija el `Referrer-Policy` con el porqué al lado. Y un clic real en el navegador antes de dar por bueno un
 flujo de entrada: las pruebas ponían `Origin` a mano.
+
+### Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierres va en un Durable Object (2026-11-14)
+
+La primera versión de la lista de sesiones de Yala web guardaba una clave del KV por sesión y la leía con `list({prefix})`.
+Las 64 pruebas unitarias pasaban (el KV de las pruebas es un `Map`) y el e2e contra staging cayó: con dos sesiones recién
+abiertas, la lista salía **vacía** y «Cerrar todas» desde el iPhone cerraba **cero**. El `list` del KV es de consistencia
+eventual (hasta un minuto) incluso en el mismo punto de presencia donde se escribió.
+
+Para algo que solo se enseña, un minuto de retraso es aceptable; para algo que decide qué se cierra, no: la sesión que
+alguien acaba de abrir en un equipo ajeno es justo la que quiere cerrar. Se pasó a un Durable Object por cuenta
+(`webapp/src/worker/sessionIndex.ts`, SQLite), que es uno solo en el mundo y lee lo que se escribió. El mismo riesgo
+tiene borrar una sesión del KV: otra ubicación puede seguir sirviendo la copia vieja hasta un minuto. Por eso «cerrar»
+cierra también la sesión de Supabase, y cada petición de datos comprueba antes `GET /auth/v1/user`, que sí es inmediato
+(lo fija `webapp/test/lote1.test.ts`, «aunque el KV aún devuelva la sesión cerrada»).
+
+Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.

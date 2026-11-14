@@ -7,7 +7,8 @@
  * permite lo mínimo que usa.
  *
  * Lo permitido, y para qué:
- * - PostgREST: solo `GET` a una tabla (hoy, `profiles`, para saber si la cuenta usa la nube).
+ * - PostgREST: `GET` a una tabla (`profiles` para saber si la cuenta usa la nube; con el token de solo lectura, lo que
+ *   leen el Panel, Registros y la Bandeja) y `POST` a UNA función, `yala_web_close_session` (cerrar una sesión web).
  * - Auth con la sesión NORMAL del login social, que se cierra en la misma petición: canjear el código del login
  *   (`grant_type=pkce`), contraseña (SOLO staging), leer y aprobar la autorización que la propia web pidió, y salir.
  * - Auth como cliente OAuth de la web: pedir la autorización (solo con su `client_id`), canjear el código y refrescar.
@@ -60,6 +61,8 @@ const none = (q: URLSearchParams) => [...q.keys()].length === 0;
 
 export const SUPABASE_RULES: readonly Rule[] = [
   { method: "GET", path: /^\/rest\/v1\/[a-z_]+$/, query: () => true },
+  // Cerrar a distancia una sesión web (lote 1). Sin parámetros: el id va en el cuerpo y la función filtra por cuenta.
+  { method: "POST", path: /^\/rest\/v1\/rpc\/yala_web_close_session$/, query: none },
   { method: "POST", path: /^\/auth\/v1\/token$/, query: (q) => exactly(q, "grant_type", "pkce") },
   { method: "POST", path: /^\/auth\/v1\/token$/, query: (q) => exactly(q, "grant_type", "password"), stagingOnly: true },
   { method: "GET", path: /^\/auth\/v1\/oauth\/authorize$/, query: (q, env) => isOwnAuthorize(env, q) },
