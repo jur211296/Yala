@@ -9605,3 +9605,26 @@
 "connectedBrowsers.sharedComputer" = "computer condiviso";
 "connectedBrowsers.justNow" = "adesso";
 "connectedBrowsers.browserOn" = "%1$@ su %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Collega un browser";
+"connectedBrowsers.link.rowFooter" = "Apri il tuo Yala su un computer senza digitare una password: scansiona il codice che mostra Yala web.";
+"connectedBrowsers.link.title" = "Collega un browser";
+"connectedBrowsers.link.intro" = "Sul computer, apri Yala web e scegli «Accedi con il tuo iPhone». Inquadra il codice con la fotocamera.";
+"connectedBrowsers.link.scanner" = "Fotocamera per leggere il codice";
+"connectedBrowsers.link.typeHeader" = "Oppure digita il codice";
+"connectedBrowsers.link.continue" = "Continua";
+"connectedBrowsers.link.confirmHeader" = "Aprire Yala in questo browser?";
+"connectedBrowsers.link.whereCity" = "Richiesto da %1$@ · codice %2$@";
+"connectedBrowsers.link.whereNoCity" = "Codice %@";
+"connectedBrowsers.link.warning" = "Conferma solo se vedi questo codice sul tuo schermo. Nessuno di Yala te lo chiederà mai.";
+"connectedBrowsers.link.confirm" = "Conferma con Face ID";
+"connectedBrowsers.link.faceIDReason" = "Conferma che vuoi aprire il tuo Yala in quel browser.";
+"connectedBrowsers.link.doneTitle" = "Browser collegato";
+"connectedBrowsers.link.doneBody" = "%@ ora mostra il tuo Yala, in sola lettura. Puoi disconnetterlo da qui quando vuoi.";
+"connectedBrowsers.link.doneButton" = "Fine";
+"connectedBrowsers.link.problem.invalidCode" = "Questo non è un codice di Yala web. Controlla che abbia 8 caratteri.";
+"connectedBrowsers.link.problem.expired" = "Il codice è scaduto o è già stato usato. Chiedine un altro su Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Il tuo account non usa il cloud di Yala. Attivalo in Archiviazione per usare Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "La tua sessione cloud è scaduta. Accedi di nuovo in Il tuo account Yala.";
+"connectedBrowsers.link.problem.network" = "Impossibile connettersi a Yala web. Riprova.";

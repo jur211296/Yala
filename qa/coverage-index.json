@@ -4109,11 +4109,13 @@
         "Yala/Services/ConnectedBrowsers/**",
         "webapp/src/worker/sessions.ts",
         "webapp/src/worker/sessionIndex.ts",
-        "webapp/src/worker/device.ts"
+        "webapp/src/worker/device.ts",
+        "webapp/src/worker/pairing.ts",
+        "webapp/src/worker/qrPairing.ts"
       ],
       "scenarioIDs": [],
       "classification": "agentic",
-      "coverage": "unit:YalaTests/ConnectedBrowsers (cliente, presencia, textos, borrador web) + webapp:test/lote1.test.ts + webapp e2e staging (test/e2e/lote1.e2e.test.ts) | 2026-11-14 (Yala web, lote 1, decisión D5): Ajustes › Tu cuenta de Yala › «Navegadores conectados» lista las sesiones de Yala web (navegador, sistema, ciudad aproximada, último uso, equipo compartido) y las cierra de una en una o todas, con confirmación. Recorrido visual en el simulador con `-uitest-connected-browsers-demo` (web de mentira, solo DEBUG). Pendiente: device-qa en el iPhone 14 con una sesión real (guion en tickets/*/yala-web-lote-1-beta.md).",
+      "coverage": "unit:YalaTests/ConnectedBrowsers/LinkBrowserModelTests + webapp:test/lote2.test.ts | 2026-11-14 (Yala web, lote 2): «Vincular un navegador» en «Navegadores conectados»: lee el QR de la web (VisionKit) o su código escrito, enseña navegador y ciudad, pide Face ID (o el código del iPhone; NSFaceIDUsageDescription solo en Debug-Dev y Release-Dev) y aprueba; la web entra con su sesión de solo lectura. Unit: lectura del código (dirección o a mano), sin Face ID no hay POST, cada respuesta con su texto. Webapp: el flujo entero y sus defensas (otro navegador con el mismo código no entra, otra cuenta no aprueba, Turnstile, caducidad y renovación, token de la app). Recorrido visual con -uitest-connected-browsers-demo (código ZZZZ-ZZZZ = caducado). Pendiente: device-qa en el iPhone 14 con la cámara y Face ID reales. | unit:YalaTests/ConnectedBrowsers (cliente, presencia, textos, borrador web) + webapp:test/lote1.test.ts + webapp e2e staging (test/e2e/lote1.e2e.test.ts) | 2026-11-14 (Yala web, lote 1, decisión D5): Ajustes › Tu cuenta de Yala › «Navegadores conectados» lista las sesiones de Yala web (navegador, sistema, ciudad aproximada, último uso, equipo compartido) y las cierra de una en una o todas, con confirmación. Recorrido visual en el simulador con `-uitest-connected-browsers-demo` (web de mentira, solo DEBUG). Pendiente: device-qa en el iPhone 14 con una sesión real (guion en tickets/*/yala-web-lote-1-beta.md).",
       "owner": "frank",
       "lastVerified": "2026-11-14"
     },

@@ -9607,3 +9607,26 @@
 "connectedBrowsers.sharedComputer" = "gedeelde computer";
 "connectedBrowsers.justNow" = "zojuist";
 "connectedBrowsers.browserOn" = "%1$@ op %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Browser koppelen";
+"connectedBrowsers.link.rowFooter" = "Open je Yala op een computer zonder wachtwoord te typen: scan de code die Yala web toont.";
+"connectedBrowsers.link.title" = "Browser koppelen";
+"connectedBrowsers.link.intro" = "Open op de computer Yala web en kies ‘Inloggen met je iPhone’. Richt de camera op de code.";
+"connectedBrowsers.link.scanner" = "Camera om de code te lezen";
+"connectedBrowsers.link.typeHeader" = "Of typ de code";
+"connectedBrowsers.link.continue" = "Ga door";
+"connectedBrowsers.link.confirmHeader" = "Yala openen in deze browser?";
+"connectedBrowsers.link.whereCity" = "Aangevraagd vanuit %1$@ · code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Bevestig alleen als je deze code op je eigen scherm ziet. Niemand van Yala zal je erom vragen.";
+"connectedBrowsers.link.confirm" = "Bevestig met Face ID";
+"connectedBrowsers.link.faceIDReason" = "Bevestig dat je je Yala in die browser wilt openen.";
+"connectedBrowsers.link.doneTitle" = "Browser gekoppeld";
+"connectedBrowsers.link.doneBody" = "%@ toont nu je Yala, alleen-lezen. Je kunt hem hier altijd afmelden.";
+"connectedBrowsers.link.doneButton" = "Klaar";
+"connectedBrowsers.link.problem.invalidCode" = "Dat is geen code van Yala web. Controleer of hij 8 tekens heeft.";
+"connectedBrowsers.link.problem.expired" = "De code is verlopen of al gebruikt. Vraag een nieuwe aan op Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Je account gebruikt de Yala-cloud niet. Zet die aan bij Opslag om Yala web te gebruiken.";
+"connectedBrowsers.link.problem.sessionExpired" = "Je cloudsessie is verlopen. Log opnieuw in bij Je Yala-account.";
+"connectedBrowsers.link.problem.network" = "Kan geen verbinding maken met Yala web. Probeer het opnieuw.";

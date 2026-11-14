@@ -444,7 +444,7 @@ paths:
   no pintan fondo de presentación** (regla «Ninguna hoja con fondo gris», en «Backgrounds de vista»), y presentan en los
   tres niveles igual que Fecha. Lo fijan los cuatro casos `test_draftDetails_*` de `ChatMessagingLayoutUITests`.
 
-- **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
+- **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md. **En una `List` (`YalaSettingsList`), no**: su `onTapGesture` se come los toques de las filas y los botones dejan de responder (medido el 2026-11-14 en «Vincular un navegador»: «Continuar» y «Confirmar» muertos; ya lo decía `GroupSettingsView`). Ahí, `.scrollDismissesKeyboard(.interactively)` y el Intro del campo.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
 

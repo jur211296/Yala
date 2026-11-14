@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { lang, texts } from "./i18n";
 import { Shell } from "./app/Shell";
+import { QrLogin } from "./QrLogin";
 
 interface Me {
   nombre: string;
@@ -65,6 +66,24 @@ export function App() {
   }, []);
 
   if (state.kind === "dentro" && !aviso) return <Shell me={state.me} />;
+  // Quien escanea el QR con la cámara del iPhone (y no desde Yala) llega aquí: se le explica dónde leerlo.
+  if (window.location.pathname.startsWith("/v/")) {
+    return (
+      <main className="shell">
+        <div className="card">
+          <div className="brand" aria-hidden="true">
+            <i />
+            Yala
+          </div>
+          <h1>{t.qr.titulo}</h1>
+          <p className="muted">{t.qr.pasos}</p>
+          <a className="btn" href="/">
+            {t.qr.volver}
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="shell">
@@ -109,7 +128,15 @@ function SinNube({ titulo, cuerpo, como }: { titulo: string; cuerpo: string; com
 }
 
 function Login({ siteKey }: { siteKey: string }) {
+  const [round, setRound] = useState(0);
+  const [qr, setQr] = useState<{ token: string; compartido: boolean } | null>(null);
+  if (qr) return <QrLogin turnstile={qr.token} compartido={qr.compartido} onBack={() => (setQr(null), setRound((r) => r + 1))} />;
+  return <SsoLogin key={round} siteKey={siteKey} onQr={(token, compartido) => setQr({ token, compartido })} />;
+}
+
+function SsoLogin({ siteKey, onQr }: { siteKey: string; onQr: (token: string, compartido: boolean) => void }) {
   const widget = useRef<HTMLDivElement>(null);
+  const shared = useRef<HTMLInputElement>(null);
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -149,10 +176,16 @@ function Login({ siteKey }: { siteKey: string }) {
       <button className="btn" type="submit" name="provider" value="google" disabled={!token}>
         {t.google}
       </button>
+      <p className="or" aria-hidden="true">
+        {t.qr.otraForma}
+      </p>
+      <button className="btn" type="button" disabled={!token} onClick={() => token && onQr(token, shared.current?.checked === true)}>
+        {t.qr.entrarConIphone}
+      </button>
       <div ref={widget} className="turnstile" />
       {!token ? <p className="fade">{t.esperandoVerificacion}</p> : null}
       <label className="check">
-        <input type="checkbox" name="compartido" value="1" />
+        <input ref={shared} type="checkbox" name="compartido" value="1" />
         {t.compartido}
       </label>
       <p className="fade">

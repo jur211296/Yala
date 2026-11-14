@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "O Yala usa as tuas fotos para extrair detalhes de gastos de capturas e comprovativos. As imagens seleccionadas são enviadas para um serviço de IA.";
 "NSPhotoLibraryAddUsageDescription" = "O Yala guarda nas tuas fotos os resumos de grupo que escolheres guardar. Nada é guardado sem que o peças.";
 "NSCameraUsageDescription" = "O Yala usa a câmara para fotografar os teus recibos e criar despesas. A fotografia é enviada a um serviço de IA para ser lida.";
+"NSFaceIDUsageDescription" = "O Yala usa o Face ID para confirmar que és tu antes de abrir a tua conta num navegador.";

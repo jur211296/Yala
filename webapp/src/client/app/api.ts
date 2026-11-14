@@ -130,3 +130,74 @@ export interface Sesion {
   equipoCompartido: boolean;
   esta: boolean;
 }
+
+// ─── Lote 2: Estadísticas y Pagos planificados ─────────────────────────────────────────────────────────────────
+
+export type PeriodoEst = "mes_actual" | "mes_pasado" | "anio_actual";
+
+export interface Trozo {
+  id: string | null;
+  categoria: string | null;
+  importe: number;
+  porcentaje: number;
+  movimientos: number;
+}
+
+export interface Estadisticas {
+  periodo: PeriodoEst;
+  resumen: {
+    divisa: string;
+    periodo: { desde: string; hasta: string };
+    ingresos: number;
+    gastos: number;
+    neto: number;
+    movimientos: number;
+    variacion: { ingresos: number | null; gastos: number | null; neto: number | null; gasto_medio_diario: number | null };
+    gasto_medio_diario: number;
+    dias: number;
+    top_categorias: Trozo[];
+    gasto_mas_alto: { importe: number; nota: string | null; categoria: string | null; dia: string } | null;
+    aproximado: { ingresos: boolean; gastos: boolean; neto: boolean };
+    sin_categoria: number;
+  };
+  distribucion: { divisa: string; total: number; categorias: Trozo[] };
+  tendencias: { mes: string; desde: string; hasta: string; ingresos: number; gastos: number; neto: number }[];
+  incompleto: boolean;
+}
+
+export interface Cobro {
+  id: string;
+  nombre: string;
+  dia: string;
+  en_dias: number;
+  importe: number;
+  divisa: string;
+  importe_en_divisa_preferida: number | null;
+  movimiento: "gasto" | "ingreso";
+  tipo: "suscripcion" | "recurrente" | "unico";
+  frecuencia: string;
+  cada: number;
+  categoria: string | null;
+}
+
+export interface Suscripcion {
+  id: string;
+  nombre: string;
+  importe: number;
+  divisa: string;
+  frecuencia: string;
+  cada: number;
+  proximo_cobro: string | null;
+  equivalente_mensual_en_divisa_preferida: number | null;
+  categoria: string | null;
+}
+
+export interface Pagos {
+  divisa: string;
+  proximos: Cobro[];
+  total_gastos: number;
+  suscripciones: Suscripcion[];
+  suscripciones_mensual: number;
+  aproximado: boolean;
+  incompleto: boolean;
+}

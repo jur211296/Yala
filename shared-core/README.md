@@ -19,4 +19,8 @@ ANTES del movimiento; el test exige lo mismo byte a byte. La paridad con la app 
 `mcp/test/golden.test.ts`. Cada cálculo nuevo se escribe dos veces —Swift y aquí— y se prueba contra los casos que
 exportan los tests de Swift (decisión R1 de `docs/web-app/index.html`).
 
+**Lo que solo usa Yala web** (lote 2) vive en `webCore.ts` y no entra en `TOOL_CORES`: el conector no lo ofrece y su
+contrato byte a byte no cambia. Estadísticas (`logic/stats.ts`) y el calendario de pagos (`logic/schedule.ts`) se
+prueban contra la app en el bloque `estadisticas`/`pagos` del mismo golden.
+
 No tiene `package.json` ni suite propia: sus pruebas corren en el job `mcp` del CI.

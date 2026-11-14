@@ -1349,5 +1349,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-web-embeddable-in-claude-with-mcp-apps | backlog | tickets/backlog/yala-web-embeddable-in-claude-with-mcp-apps.md |
 | yala-web-lote-0-cimientos | done | tickets/done/yala-web-lote-0-cimientos.md |
 | yala-web-lote-1-beta | done | tickets/done/yala-web-lote-1-beta.md |
+| yala-web-lote-2 | done | tickets/done/yala-web-lote-2.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | done | tickets/done/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

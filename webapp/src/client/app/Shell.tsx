@@ -1,5 +1,6 @@
 /**
- * La app con sesión (lote 1): Panel, Bandeja, Registros y Configurar, con «Apuntar» y el ojo que oculta los montos.
+ * La app con sesión (lotes 1 y 2): Panel, Bandeja, Registros, Pagos planificados, Estadísticas y Configurar, con
+ * «Apuntar» y el ojo que oculta los montos.
  * Escritorio: barra lateral. Móvil: barra de pestañas con «+» en medio y «Más». Las secciones de los lotes siguientes
  * salen en la barra como «Pronto», sin abrir nada.
  *
@@ -15,6 +16,8 @@ import { Registros } from "./Registros";
 import { Bandeja } from "./Bandeja";
 import { Configurar } from "./Configurar";
 import { Apuntar } from "./Apuntar";
+import { Estadisticas } from "./Estadisticas";
+import { Pagos } from "./Pagos";
 
 const t = texts();
 
@@ -24,8 +27,8 @@ export interface Me {
   equipoCompartido: boolean;
 }
 
-type Sec = "panel" | "bandeja" | "registros" | "configurar" | "mas";
-const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "configurar", "mas"];
+type Sec = "panel" | "bandeja" | "registros" | "pagos" | "estadisticas" | "configurar" | "mas";
+const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "pagos", "estadisticas", "configurar", "mas"];
 const HIDE_KEY = "yala-web-ocultar";
 
 function secFromPath(): Sec {
@@ -52,8 +55,6 @@ export function writeHidePref(v: boolean): void {
 
 const SOON: { key: keyof typeof t.app; icon: ReactNode; group?: boolean }[] = [
   { key: "presupuestos", icon: Icons.presupuestos },
-  { key: "pagos", icon: Icons.pagos },
-  { key: "estadisticas", icon: Icons.estadisticas },
   { key: "grupos", icon: Icons.grupos },
   { key: "ia", icon: Icons.ia },
 ];
@@ -155,6 +156,8 @@ export function Shell({ me }: { me: Me }) {
           {navButton("panel", Icons.panel)}
           {navButton("bandeja", Icons.bandeja)}
           {navButton("registros", Icons.registros)}
+          {navButton("pagos", Icons.pagos)}
+          {navButton("estadisticas", Icons.estadisticas)}
           {SOON.map(soonItem)}
           {navButton("configurar", Icons.configurar)}
         </nav>
@@ -183,9 +186,13 @@ export function Shell({ me }: { me: Me }) {
           {sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
           {sec === "registros" ? <Registros cuentas={panel?.cuentas.cuentas ?? []} /> : null}
           {sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} /> : null}
+          {sec === "pagos" ? <Pagos /> : null}
+          {sec === "estadisticas" ? <Estadisticas /> : null}
           {sec === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
           {sec === "mas" ? (
             <div className="cd" style={{ padding: "6px 10px" }}>
+              {navButton("pagos", Icons.pagos)}
+              {navButton("estadisticas", Icons.estadisticas)}
               {navButton("configurar", Icons.configurar)}
               {SOON.map(soonItem)}
             </div>
@@ -208,7 +215,7 @@ export function Shell({ me }: { me: Me }) {
           {t.app.bandeja}
           {badge}
         </button>
-        <button type="button" className="mt" aria-current={sec === "mas" || sec === "configurar" ? "page" : undefined} onClick={() => go("mas")}>
+        <button type="button" className="mt" aria-current={sec === "mas" || sec === "configurar" || sec === "pagos" || sec === "estadisticas" ? "page" : undefined} onClick={() => go("mas")}>
           {Icons.mas}
           {t.app.mas}
         </button>

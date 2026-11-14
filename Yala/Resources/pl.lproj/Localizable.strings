@@ -9607,3 +9607,26 @@
 "connectedBrowsers.sharedComputer" = "komputer współdzielony";
 "connectedBrowsers.justNow" = "teraz";
 "connectedBrowsers.browserOn" = "%1$@ na %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Połącz przeglądarkę";
+"connectedBrowsers.link.rowFooter" = "Otwórz Yala na komputerze bez wpisywania hasła: zeskanuj kod, który pokazuje Yala web.";
+"connectedBrowsers.link.title" = "Połącz przeglądarkę";
+"connectedBrowsers.link.intro" = "Na komputerze otwórz Yala web i wybierz „Zaloguj się iPhone’em”. Skieruj aparat na kod.";
+"connectedBrowsers.link.scanner" = "Aparat do odczytu kodu";
+"connectedBrowsers.link.typeHeader" = "Albo wpisz kod";
+"connectedBrowsers.link.continue" = "Dalej";
+"connectedBrowsers.link.confirmHeader" = "Otworzyć Yala w tej przeglądarce?";
+"connectedBrowsers.link.whereCity" = "Prośba z: %1$@ · kod %2$@";
+"connectedBrowsers.link.whereNoCity" = "Kod %@";
+"connectedBrowsers.link.warning" = "Potwierdź tylko wtedy, gdy widzisz ten kod na własnym ekranie. Nikt z Yala nigdy cię o niego nie poprosi.";
+"connectedBrowsers.link.confirm" = "Potwierdź Face ID";
+"connectedBrowsers.link.faceIDReason" = "Potwierdź, że chcesz otworzyć Yala w tej przeglądarce.";
+"connectedBrowsers.link.doneTitle" = "Przeglądarka połączona";
+"connectedBrowsers.link.doneBody" = "%@ pokazuje teraz twoje Yala, tylko do odczytu. W każdej chwili możesz ją stąd wylogować.";
+"connectedBrowsers.link.doneButton" = "Gotowe";
+"connectedBrowsers.link.problem.invalidCode" = "To nie jest kod Yala web. Sprawdź, czy ma 8 znaków.";
+"connectedBrowsers.link.problem.expired" = "Kod wygasł lub został już użyty. Wyświetl nowy w Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Twoje konto nie korzysta z chmury Yala. Włącz ją w Pamięci, aby używać Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "Twoja sesja w chmurze wygasła. Zaloguj się ponownie w Twoim koncie Yala.";
+"connectedBrowsers.link.problem.network" = "Nie udało się połączyć z Yala web. Spróbuj ponownie.";

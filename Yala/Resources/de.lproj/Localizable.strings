@@ -9595,3 +9595,26 @@
 "connectedBrowsers.sharedComputer" = "gemeinsam genutzter Computer";
 "connectedBrowsers.justNow" = "gerade eben";
 "connectedBrowsers.browserOn" = "%1$@ auf %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Browser verknüpfen";
+"connectedBrowsers.link.rowFooter" = "Öffne dein Yala auf einem Computer, ohne ein Passwort einzugeben: Scanne den Code, den Yala web anzeigt.";
+"connectedBrowsers.link.title" = "Browser verknüpfen";
+"connectedBrowsers.link.intro" = "Öffne auf dem Computer Yala web und wähle „Mit deinem iPhone anmelden“. Richte die Kamera auf den Code.";
+"connectedBrowsers.link.scanner" = "Kamera zum Lesen des Codes";
+"connectedBrowsers.link.typeHeader" = "Oder gib den Code ein";
+"connectedBrowsers.link.continue" = "Weiter";
+"connectedBrowsers.link.confirmHeader" = "Yala in diesem Browser öffnen?";
+"connectedBrowsers.link.whereCity" = "Angefragt aus %1$@ · Code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Bestätige nur, wenn du diesen Code auf deinem eigenen Bildschirm siehst. Niemand von Yala wird dich danach fragen.";
+"connectedBrowsers.link.confirm" = "Mit Face ID bestätigen";
+"connectedBrowsers.link.faceIDReason" = "Bestätige, dass du dein Yala in diesem Browser öffnen möchtest.";
+"connectedBrowsers.link.doneTitle" = "Browser verknüpft";
+"connectedBrowsers.link.doneBody" = "%@ zeigt jetzt dein Yala, nur zum Ansehen. Du kannst ihn hier jederzeit abmelden.";
+"connectedBrowsers.link.doneButton" = "Fertig";
+"connectedBrowsers.link.problem.invalidCode" = "Das ist kein Code von Yala web. Prüfe, ob er 8 Zeichen hat.";
+"connectedBrowsers.link.problem.expired" = "Der Code ist abgelaufen oder wurde schon verwendet. Hol dir in Yala web einen neuen.";
+"connectedBrowsers.link.problem.noCloud" = "Dein Konto nutzt die Yala-Cloud nicht. Aktiviere sie unter Speicher, um Yala web zu nutzen.";
+"connectedBrowsers.link.problem.sessionExpired" = "Deine Cloud-Sitzung ist abgelaufen. Melde dich unter Dein Yala-Konto erneut an.";
+"connectedBrowsers.link.problem.network" = "Keine Verbindung zu Yala web. Versuche es noch einmal.";

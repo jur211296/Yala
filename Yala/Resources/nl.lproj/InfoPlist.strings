@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala gebruikt je foto's om uitgavendetails te extraheren uit screenshots en bonnetjes. Geselecteerde afbeeldingen worden naar een AI-dienst gestuurd.";
 "NSPhotoLibraryAddUsageDescription" = "Yala bewaart de groepsoverzichten die je wilt opslaan in je fotobibliotheek. Er wordt niets opgeslagen zonder dat je erom vraagt.";
 "NSCameraUsageDescription" = "Yala gebruikt de camera om je bonnen te fotograferen en uitgaven aan te maken. De foto wordt naar een AI-dienst gestuurd om te lezen.";
+"NSFaceIDUsageDescription" = "Yala gebruikt Face ID om te bevestigen dat jij het bent voordat je account in een browser wordt geopend.";

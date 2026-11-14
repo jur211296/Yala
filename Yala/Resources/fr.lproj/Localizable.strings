@@ -9596,3 +9596,26 @@
 "connectedBrowsers.sharedComputer" = "ordinateur partagé";
 "connectedBrowsers.justNow" = "à l'instant";
 "connectedBrowsers.browserOn" = "%1$@ sur %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Associer un navigateur";
+"connectedBrowsers.link.rowFooter" = "Ouvrez votre Yala sur un ordinateur sans saisir de mot de passe : scannez le code affiché par Yala web.";
+"connectedBrowsers.link.title" = "Associer un navigateur";
+"connectedBrowsers.link.intro" = "Sur l’ordinateur, ouvrez Yala web et choisissez « Se connecter avec votre iPhone ». Pointez l’appareil photo vers le code.";
+"connectedBrowsers.link.scanner" = "Appareil photo pour lire le code";
+"connectedBrowsers.link.typeHeader" = "Ou saisissez le code";
+"connectedBrowsers.link.continue" = "Continuer";
+"connectedBrowsers.link.confirmHeader" = "Ouvrir Yala dans ce navigateur ?";
+"connectedBrowsers.link.whereCity" = "Demandé depuis %1$@ · code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Ne confirmez que si vous voyez ce code sur votre propre écran. Personne chez Yala ne vous le demandera.";
+"connectedBrowsers.link.confirm" = "Confirmer avec Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirmez que vous voulez ouvrir votre Yala dans ce navigateur.";
+"connectedBrowsers.link.doneTitle" = "Navigateur associé";
+"connectedBrowsers.link.doneBody" = "%@ affiche maintenant votre Yala, en lecture seule. Vous pouvez le déconnecter d’ici à tout moment.";
+"connectedBrowsers.link.doneButton" = "OK";
+"connectedBrowsers.link.problem.invalidCode" = "Ce code n’est pas un code Yala web. Vérifiez qu’il a 8 caractères.";
+"connectedBrowsers.link.problem.expired" = "Le code a expiré ou a déjà été utilisé. Demandez-en un autre sur Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Votre compte n’utilise pas le cloud Yala. Activez-le dans Stockage pour utiliser Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "Votre session cloud a expiré. Reconnectez-vous dans Votre compte Yala.";
+"connectedBrowsers.link.problem.network" = "Impossible de joindre Yala web. Réessayez.";

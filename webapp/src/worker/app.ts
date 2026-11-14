@@ -7,6 +7,8 @@
  *   GET  /api/registros         movimientos de 50 en 50, con filtros (`buscar_movimientos`)
  *   GET  /api/categorias        categorías y subcategorías, para filtrar y para apuntar
  *   GET  /api/bandeja           lo pendiente en la Bandeja del iPhone y lo enviado que aún no recogió
+ *   GET  /api/estadisticas      Resumen, Distribución y Tendencias de un período (`?periodo=`, lote 2)
+ *   GET  /api/pagos             próximos cobros de 30 días y suscripciones (lote 2)
  *   POST /api/borradores        apuntar un gasto: a la cola común de borradores (decisión D9)
  *   GET  /api/sesiones          las sesiones web de la cuenta
  *   POST /api/sesiones/cerrar   cierra otra sesión web de la cuenta ({id}); `cerrar-otras` cierra todas menos esta
@@ -16,6 +18,11 @@
  *   GET  /auth/callback         vuelta del login: entra (o explica por qué no) y deja la cookie
  *   POST /auth/password         SOLO staging: lo mismo con contraseña, para las pruebas de punta a punta
  *   POST /auth/logout           cierra la sesión web y la de Supabase que llevaba dentro
+ *   POST /auth/qr/start         entrar con el iPhone: verifica Turnstile y da un código QR ligado a este navegador
+ *   POST /auth/qr/renovar       el código siguiente (cada 60 s, hasta 10 min) sin volver a Turnstile
+ *   POST /auth/qr/estado        ¿lo aprobó el iPhone? Aprobado: abre la sesión web y deja la cookie
+ *   GET  /api/dispositivo/vincular?codigo=   el iPhone lee un código: qué navegador y desde dónde
+ *   POST /api/dispositivo/vincular           el iPhone lo aprueba, tras Face ID ({codigo})
  *   lo demás                    la página (Vite), con las mismas cabeceras de seguridad
  *
  * Los POST con cookie exigen `Origin` = este origen (además de la cookie `SameSite=Lax`): un formulario de otro sitio no
@@ -28,8 +35,10 @@ import { withHeaders } from "./headers";
 import { allow, clientIp } from "./ratelimit";
 import { cloudKind } from "./cloud";
 import {
+  authorizeReadOnly,
   closeWebSession,
   currentUser,
+  exchangeReadOnly,
   grantReadOnly,
   logout,
   passwordLogin,
@@ -42,7 +51,21 @@ import { verifyTurnstile } from "./turnstile";
 import { makeReaderVerifier, type ReaderVerifier } from "./verify";
 import { bearer, makeAppVerifier, type AppVerifier } from "./device";
 import { approximateCity, describeBrowser } from "./ua";
-import { InvalidInputError, bandeja, categorias, panel, registros, toolContext } from "./data";
+import {
+  QR_CHAIN_SECONDS,
+  QR_CODE_TTL_SECONDS,
+  QR_COOKIE,
+  browserHash,
+  displayCode,
+  newPairingCode,
+  normalizeCode,
+  pairing,
+  qrChallenge,
+  qrCookie,
+  qrVerifier,
+  type PairingRecord,
+} from "./pairing";
+import { InvalidInputError, bandeja, categorias, estadisticas, pagos, panel, registros, toolContext } from "./data";
 import { insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
 import { isPid, sessionIndex, toPublic, type SessionEntry } from "./sessions";
 import {
@@ -184,6 +207,8 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
       if (path === "/api/registros") return withLive(request, ctx, async (live) => json(await registros(readCtx(ctx, live), url.searchParams)));
       if (path === "/api/categorias") return withLive(request, ctx, async (live) => json(await categorias(readCtx(ctx, live))));
       if (path === "/api/bandeja") return withLive(request, ctx, (live) => inbox(ctx, live));
+      if (path === "/api/estadisticas") return withLive(request, ctx, async (live) => json(await estadisticas(readCtx(ctx, live), url.searchParams)));
+      if (path === "/api/pagos") return withLive(request, ctx, async (live) => json(await pagos(readCtx(ctx, live))));
       if (path === "/api/sesiones") return withLive(request, ctx, async (live) => json({ sesiones: await liveEntries(ctx, live.session.sub, live.session.pid) }));
       return json({ error: "no_existe" }, 404);
     }
@@ -192,6 +217,17 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
     if (path === "/api/borradores") return withLive(request, ctx, (live) => newDraft(request, ctx, live));
     if (path === "/api/sesiones/cerrar") return withLive(request, ctx, (live) => closeOne(request, ctx, live.session.sub, live.session.access, live.session.pid));
     if (path === "/api/sesiones/cerrar-otras") return withLive(request, ctx, (live) => closeAll(ctx, live.session.sub, live.session.access, live.session.pid));
+    return json({ error: "no_existe" }, 404);
+  }
+
+  if (path.startsWith("/auth/qr/")) {
+    if (method !== "POST") return json({ error: "metodo" }, 405);
+    if (!sameOrigin(request, env)) return json({ error: "origen" }, 403);
+    const bucket = path === "/auth/qr/start" ? "RL_AUTH" : "RL_QR";
+    if (!(await allow(env, bucket, clientIp(request)))) return json({ error: "limite" }, 429, { "Retry-After": "60" });
+    if (path === "/auth/qr/start") return qrStart(request, ctx);
+    if (path === "/auth/qr/renovar") return qrRenew(request, ctx);
+    if (path === "/auth/qr/estado") return qrStatus(request, ctx);
     return json({ error: "no_existe" }, 404);
   }
 
@@ -261,7 +297,7 @@ async function passwordEntry(request: Request, ctx: Ctx): Promise<Response> {
  * pase, la normal no sale de esta función abierta.
  */
 async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, shared: boolean, cookies: string[] = []): Promise<Response> {
-  const { env, fetcher, verify, now } = ctx;
+  const { env, fetcher } = ctx;
   try {
     const kind = await cloudKind(env, fetcher, normal.access);
     if (kind !== "complete") {
@@ -274,41 +310,59 @@ async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, sh
       log("web_permiso_fallido", { paso: grant.step, estado: grant.status ?? null });
       return aviso("error", cookies);
     }
-    const check = await verify(grant.tokens.access, normal.userId);
-    if (!check.ok) {
-      // No es de solo lectura, o no es de la web, o no es de este usuario: no se guarda. Se cierra para no dejarla viva.
-      await logout(env, fetcher, grant.tokens.access);
-      log("web_permiso_rechazado", { motivo: check.reason });
-      return aviso("error", cookies);
-    }
-    let token: string;
-    const pid = randomToken(9);
-    try {
-      token = await createSession(
-        env.WEB_KV,
-        { sub: check.claims.sub, sid: check.claims.sessionId, access: grant.tokens.access, accessExp: check.claims.exp, refresh: grant.tokens.refresh },
-        shared,
-        now,
-        pid,
-      );
-      const browser = describeBrowser(request.headers.get("User-Agent"));
-      await sessionIndex(env, check.claims.sub).put(
-        { pid, k: await kvKey(token), sid: check.claims.sessionId, creada: now, uso: now, compartido: shared, ...browser, ciudad: approximateCity(request) },
-        now + remainingSeconds({ createdAt: now, lastSeen: now, shared }, now),
-      );
-    } catch (err) {
-      // Sin dónde guardarla, la sesión de lectura no la usaría nadie: se cierra en vez de dejarla viva.
-      await logout(env, fetcher, grant.tokens.access);
-      throw err;
-    }
-    // Si el navegador ya traía una sesión (volvió a entrar sin salir), la anterior se cierra: una cookie vieja no debe
-    // seguir valiendo 30 días.
-    await closeSession(ctx, readCookie(request, SESSION_COOKIE));
+    const opened = await openReaderSession(ctx, request, grant.tokens, normal.userId, shared);
+    if (!opened) return aviso("error", cookies);
     log("web_entrada", { compartido: shared });
-    return goTo("/", [...cookies, sessionCookie(token, shared, remainingSeconds({ createdAt: now, lastSeen: now, shared }, now))]);
+    return goTo("/", [...cookies, opened.cookie]);
   } finally {
     await logout(env, fetcher, normal.access);
   }
+}
+
+/**
+ * Con los tokens de solo lectura recién canjeados: los comprueba (rol de la web, de este usuario), abre la sesión web,
+ * la apunta en la lista de sesiones y cierra la que el navegador ya trajera. `null` si los tokens no valen (y entonces
+ * se cierran). La comparten entrar con Apple o Google y el QR.
+ */
+async function openReaderSession(
+  ctx: Ctx,
+  request: Request,
+  tokens: { access: string; refresh: string },
+  expectedSub: string,
+  shared: boolean,
+): Promise<{ cookie: string } | null> {
+  const { env, fetcher, verify, now } = ctx;
+  const check = await verify(tokens.access, expectedSub);
+  if (!check.ok) {
+    // No es de solo lectura, o no es de la web, o no es de este usuario: no se guarda. Se cierra para no dejarla viva.
+    await logout(env, fetcher, tokens.access);
+    log("web_permiso_rechazado", { motivo: check.reason });
+    return null;
+  }
+  let token: string;
+  const pid = randomToken(9);
+  try {
+    token = await createSession(
+      env.WEB_KV,
+      { sub: check.claims.sub, sid: check.claims.sessionId, access: tokens.access, accessExp: check.claims.exp, refresh: tokens.refresh },
+      shared,
+      now,
+      pid,
+    );
+    const browser = describeBrowser(request.headers.get("User-Agent"));
+    await sessionIndex(env, check.claims.sub).put(
+      { pid, k: await kvKey(token), sid: check.claims.sessionId, creada: now, uso: now, compartido: shared, ...browser, ciudad: approximateCity(request) },
+      now + remainingSeconds({ createdAt: now, lastSeen: now, shared }, now),
+    );
+  } catch (err) {
+    // Sin dónde guardarla, la sesión de lectura no la usaría nadie: se cierra en vez de dejarla viva.
+    await logout(env, fetcher, tokens.access);
+    throw err;
+  }
+  // Si el navegador ya traía una sesión (volvió a entrar sin salir), la anterior se cierra: una cookie vieja no debe
+  // seguir valiendo 30 días.
+  await closeSession(ctx, readCookie(request, SESSION_COOKIE));
+  return { cookie: sessionCookie(token, shared, remainingSeconds({ createdAt: now, lastSeen: now, shared }, now)) };
 }
 
 // ─── Con sesión ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -489,6 +543,8 @@ async function deviceRoute(request: Request, path: string, method: string, ctx: 
   const alive = await currentUser(ctx.env, ctx.fetcher, raw);
   if (alive.status === "unknown") return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
   if (alive.status !== "alive") return json({ error: "sin_sesion" }, 401);
+  if (path === "/api/dispositivo/vincular" && method === "GET") return qrPeek(request, ctx, check.sub);
+  if (path === "/api/dispositivo/vincular" && method === "POST") return qrApprove(request, ctx, check.sub, raw);
   if (path === "/api/dispositivo/sesiones" && method === "GET") return json({ sesiones: await liveEntries(ctx, check.sub, null) });
   if (path === "/api/dispositivo/sesiones/cerrar" && method === "POST") return closeOne(request, ctx, check.sub, raw, null);
   if (path === "/api/dispositivo/sesiones/cerrar-todas" && method === "POST") return closeAll(ctx, check.sub, raw, null);
@@ -518,4 +574,114 @@ async function signOut(request: Request, ctx: Ctx): Promise<Response> {
   const token = readCookie(request, SESSION_COOKIE);
   if (token) log("web_salida", { supabase_cerrada: await closeSession(ctx, token) });
   return aviso("salida", [clearSessionCookie()]);
+}
+
+// ─── Entrar con el iPhone (QR, lote 2) ─────────────────────────────────────────────────────────────────────────
+
+/** Crea el objeto de un código nuevo. Reintenta si el código ya existía (40 bits: prácticamente nunca). */
+async function newCode(ctx: Ctx, base: Omit<PairingRecord, "creada" | "expira">): Promise<string> {
+  for (let i = 0; i < 3; i++) {
+    const code = newPairingCode();
+    const created = await pairing(ctx.env, code).create({ ...base, creada: ctx.now, expira: ctx.now + QR_CODE_TTL_SECONDS });
+    if (created) return code;
+  }
+  throw new Error("qr: sin código libre");
+}
+
+function codeResponse(env: Env, code: string, now: number, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return { codigo: displayCode(code), url: `${publicOrigin(env)}/v/${code}`, expira: now + QR_CODE_TTL_SECONDS, ...extra };
+}
+
+async function qrStart(request: Request, ctx: Ctx): Promise<Response> {
+  const { env, fetcher, now } = ctx;
+  const body = (await readJson(request)) as { turnstile?: unknown; compartido?: unknown } | null;
+  const token = typeof body?.turnstile === "string" ? body.turnstile : null;
+  if (!(await verifyTurnstile(env, fetcher, token, request.headers.get("CF-Connecting-IP")))) {
+    log("web_qr_turnstile_rechazado");
+    return json({ error: "verificacion" }, 403);
+  }
+  const secret = randomToken();
+  const browser = describeBrowser(request.headers.get("User-Agent"));
+  const code = await newCode(ctx, {
+    bh: await browserHash(secret),
+    challenge: await qrChallenge(secret),
+    inicio: now,
+    compartido: body?.compartido === true,
+    ...browser,
+    ciudad: approximateCity(request),
+  });
+  log("web_qr_codigo");
+  return json(codeResponse(env, code, now), 200, { "Set-Cookie": qrCookie(secret, QR_CHAIN_SECONDS + 180) });
+}
+
+async function qrRenew(request: Request, ctx: Ctx): Promise<Response> {
+  const { env, now } = ctx;
+  const secret = readCookie(request, QR_COOKIE);
+  const body = (await readJson(request)) as { codigo?: unknown } | null;
+  const old = normalizeCode(body?.codigo);
+  if (!secret || !old) return json({ error: "caducado" }, 410);
+  const bh = await browserHash(secret);
+  const prev = await pairing(env, old).retire(bh, now);
+  // Leído por el iPhone, aprobado, de otro navegador o pasados 10 minutos: no se renueva.
+  if (!prev || now - prev.inicio > QR_CHAIN_SECONDS) return json({ error: "caducado" }, 410);
+  const code = await newCode(ctx, { bh, challenge: await qrChallenge(secret), ...prev });
+  return json(codeResponse(env, code, now));
+}
+
+async function qrStatus(request: Request, ctx: Ctx): Promise<Response> {
+  const { env, fetcher, now } = ctx;
+  const secret = readCookie(request, QR_COOKIE);
+  const body = (await readJson(request)) as { codigo?: unknown } | null;
+  const code = normalizeCode(body?.codigo);
+  if (!secret || !code) return json({ estado: "caducado" });
+  const st = await pairing(env, code).status(await browserHash(secret), now);
+  if (st.estado !== "aprobado") return json(st.estado === "caducado" ? { estado: "caducado" } : { estado: st.estado, expira: st.expira });
+
+  // Aprobado: el código de autorización solo se canjea con el `verifier` que sale de ESTA cookie.
+  const clearQr = qrCookie("", 0);
+  const grant = await exchangeReadOnly(env, fetcher, st.auth, await qrVerifier(secret));
+  if (!grant.ok) {
+    log("web_qr_canje_fallido", { estado: grant.status ?? null });
+    return json({ estado: "error" }, 200, { "Set-Cookie": clearQr });
+  }
+  const opened = await openReaderSession(ctx, request, grant.tokens, st.sub, st.compartido);
+  if (!opened) return json({ estado: "error" }, 200, { "Set-Cookie": clearQr });
+  log("web_entrada", { compartido: st.compartido, via: "qr" });
+  const headers = new Headers();
+  headers.append("Set-Cookie", clearQr);
+  headers.append("Set-Cookie", opened.cookie);
+  return json({ estado: "dentro" }, 200, headers);
+}
+
+/** El iPhone lee un código: queda suyo y recibe qué navegador lo pidió y desde dónde. */
+async function qrPeek(request: Request, ctx: Ctx, sub: string): Promise<Response> {
+  const code = normalizeCode(new URL(request.url).searchParams.get("codigo"));
+  if (!code) return json({ error: "codigo" }, 400);
+  const claimed = await pairing(ctx.env, code).claim(sub, ctx.now);
+  if (!claimed) return json({ error: "caducado" }, 404);
+  return json({ codigo: displayCode(code), ...claimed.info });
+}
+
+/**
+ * El iPhone aprueba, tras Face ID. Con SU sesión (que no se guarda): comprueba que la cuenta usa la nube, pide el
+ * permiso de solo lectura de la web con el `challenge` del código y deja en el objeto solo el código de autorización.
+ */
+async function qrApprove(request: Request, ctx: Ctx, sub: string, appToken: string): Promise<Response> {
+  const { env, fetcher, now } = ctx;
+  const body = (await readJson(request)) as { codigo?: unknown } | null;
+  const code = normalizeCode(body?.codigo);
+  if (!code) return json({ error: "codigo" }, 400);
+  const obj = pairing(env, code);
+  const claimed = await obj.claim(sub, now);
+  if (!claimed) return json({ error: "caducado" }, 404);
+  const kind = await cloudKind(env, fetcher, appToken);
+  if (kind !== "complete") return json({ error: kind === "groups_only" ? "solo_grupos" : "sin_nube" }, 409);
+  const auth = await authorizeReadOnly(env, fetcher, { access: appToken, userId: sub }, { challenge: claimed.challenge, state: randomToken(16) });
+  if (!auth.ok) {
+    log("web_qr_permiso_fallido", { paso: auth.step, estado: auth.status ?? null });
+    return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
+  }
+  if (!(await obj.approve(sub, auth.code, now))) return json({ error: "caducado" }, 404);
+  log("web_qr_aprobado");
+  return json({ ok: true, navegador: claimed.info.navegador, sistema: claimed.info.sistema });
 }
