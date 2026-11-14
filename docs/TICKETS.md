@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1304)
+## Index (1306)
 
 | id | status | path |
 |---|---|---|
@@ -164,6 +164,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bank-email-measure-a-week-of-real-peruvian-alerts | backlog | tickets/backlog/bank-email-measure-a-week-of-real-peruvian-alerts.md |
 | bank-email-read-reconcile-with-the-ai-cost-control | done | tickets/done/bank-email-read-reconcile-with-the-ai-cost-control.md |
 | barrido-bugs-lote-a | done | tickets/done/barrido-bugs-lote-a.md |
+| barrido-bugs-lote-b | done | tickets/done/barrido-bugs-lote-b.md |
 | barrido-ios27-animaciones-y-vistas-mal-optimizadas | done | tickets/done/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | done | tickets/done/blocked-copy-mapping-lives-in-three-views-untestable.md |
@@ -654,6 +655,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-restore-preview-counts-categories-twice | qa | tickets/qa/icloud-restore-preview-counts-categories-twice.md |
+| icloud-return-stuck-and-empty-icloud | done | tickets/done/icloud-return-stuck-and-empty-icloud.md |
 | icloud-screen-says-not-active-with-drive-off | done | tickets/done/icloud-screen-says-not-active-with-drive-off.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
