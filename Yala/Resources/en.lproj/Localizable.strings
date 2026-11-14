@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "%@ days left";
 "budgets.period.past" = "Closed";
 "budgets.amount.of" = "of %@";
-"budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
+"budgets.exceeded.overByAdjust %@" = "You went over by %@. Adjust the limit?";
+"budgets.exceeded.adjustLimit" = "Adjust limit";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Budget name";

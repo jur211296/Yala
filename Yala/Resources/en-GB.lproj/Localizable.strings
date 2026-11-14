@@ -844,7 +844,8 @@
 "budgets.editor.start.date" = "Start Date";
 "budgets.empty.message" = "Create budgets to better control your spending.";
 "budgets.empty.title" = "You don't have any budgets yet";
-"budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
+"budgets.exceeded.overByAdjust %@" = "You went over by %@. Adjust the limit?";
+"budgets.exceeded.adjustLimit" = "Adjust limit";
 "budgets.favorites.previewTitle" = "This is how it will look on the Panel";
 "budgets.includeSharedExpenses" = "Count my share of group expenses";
 "budgets.includeSharedExpensesHint" = "When off, only your personal expenses count.";

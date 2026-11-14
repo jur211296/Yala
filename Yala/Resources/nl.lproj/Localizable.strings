@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "%@ dagen over";
 "budgets.period.past" = "Afgesloten";
 "budgets.amount.of" = "van %@";
-"budgets.exceeded.encouragement" = "Je bent over budget gegaan — volgende periode wordt beter!";
+"budgets.exceeded.overByAdjust %@" = "%@ over je budget. Limiet aanpassen?";
+"budgets.exceeded.adjustLimit" = "Limiet aanpassen";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Naam van budget";

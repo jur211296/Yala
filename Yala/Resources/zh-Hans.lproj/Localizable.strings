@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "剩余 %@ 天";
 "budgets.period.past" = "已结束";
 "budgets.amount.of" = "/ %@";
-"budgets.exceeded.encouragement" = "你超出了预算 — 下一个周期会更好!";
+"budgets.exceeded.overByAdjust %@" = "超出了 %@。要调整限额吗？";
+"budgets.exceeded.adjustLimit" = "调整限额";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "预算名称";

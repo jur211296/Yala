@@ -925,7 +925,8 @@
 "budgets.editor.period.type" = "Período";
 "budgets.editor.start.date" = "Fecha inicial";
 "budgets.empty.message" = "Crea presupuestos para controlar mejor tus gastos.";
-"budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
+"budgets.exceeded.overByAdjust %@" = "Te pasaste por %@. ¿Ajustamos el límite?";
+"budgets.exceeded.adjustLimit" = "Ajustar límite";
 "budgets.favorites.previewEmpty" = "Seleccioná favoritos para ver la vista previa";
 "budgets.favorites.previewTitle" = "Así se verá en el Panel";
 "budgets.includeSharedExpenses" = "Contar mi parte de los gastos de grupo";

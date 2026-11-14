@@ -766,7 +766,8 @@
 "budgets.editor.start.date" = "Data inicial";
 "budgets.empty.message" = "Cria orçamentos para controlares melhor as tuas despesas.";
 "budgets.empty.title" = "Sem orçamentos";
-"budgets.exceeded.encouragement" = "Passaste do orçamento — o próximo período será melhor!";
+"budgets.exceeded.overByAdjust %@" = "Passaste %@ do limite. Ajustamos o limite?";
+"budgets.exceeded.adjustLimit" = "Ajustar limite";
 "budgets.favorites.previewEmpty" = "Seleciona favoritos para ver a pré-visualização";
 "budgets.favorites.previewTitle" = "Assim vai aparecer no Painel";
 "budgets.includeSharedExpenses" = "Contar a minha parte dos gastos do grupo";
