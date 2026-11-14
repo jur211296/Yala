@@ -71,7 +71,16 @@ enum WelcomeConversationLogic {
             .first
             .map(String.init)
         guard let first, !first.isEmpty, !first.contains("@") else { return nil }
-        return first
+        return naturalCase(first)
+    }
+
+    /// Card luc1 (13-nov-2026): Apple entrega el nombre tal como está en el Apple ID, y «¿Te llamo JURGEN?» se lee a gritos.
+    /// Un nombre todo en mayúsculas o todo en minúsculas sale con mayúscula inicial; uno con mayúsculas propias («McKenzie»,
+    /// «DeAndre») se respeta tal cual.
+    static func naturalCase(_ name: String) -> String {
+        guard name.contains(where: \.isLetter) else { return name }
+        guard name == name.uppercased() || name == name.lowercased() else { return name }
+        return name.lowercased().capitalized
     }
 
     /// El nombre que se propone. El que trae Google o Apple, por su primer nombre; el que ya tenía la persona en su

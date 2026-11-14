@@ -167,7 +167,8 @@ struct Bienvenida23UnifiedAccessTests {
             "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"), encoding: .utf8)
         // Los tres puntos del consentimiento de siempre, con sus textos, y la aceptación que lo deja pendiente.
         for detail in ["L10n.Storage.Consent.pointServers", "L10n.Storage.Consent.pointPhotos",
-                       "L10n.Storage.Consent.pointAccess", "L10n.Storage.Consent.privacyLink"] {
+                       // El punto de acceso sin «Sin depender de iCloud»: el Welcome no nombra iCloud (card luc1, 13-nov).
+                       "L10n.UnifiedAccess.consentAccessDetail", "L10n.Storage.Consent.privacyLink"] {
             #expect(view.contains(detail), "«Vamos a crear tu cuenta» perdió \(detail)")
         }
         #expect(view.contains("acceptConsentInThisSheet()\n                        switchToSignUp(with: signUpProvider)"))

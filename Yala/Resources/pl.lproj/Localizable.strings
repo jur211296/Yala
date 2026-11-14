@@ -5013,7 +5013,7 @@
 "settings.deleteAccountViewGroups" = "Zobacz moje grupy";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Twoja stara kopia iCloud (sprzed konta Yala) pozostaje nietknięta: jeśli ponownie otworzysz Yala, zobaczysz ją jak przy ponownej instalacji.";
+"settings.deleteAccountFrozenICloudNote" = "Jeśli używałeś Yala z iCloud przed utworzeniem konta, ta kopia zostaje w Twoim iCloud: usunięcie konta Yala jej nie kasuje.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "W starych grupach (iCloud) Twoje imię może nadal być widoczne dla ich członków.";
@@ -9077,7 +9077,6 @@
 "bienvenida23.groups.accountOnlyBody" = "Wejdę do Grup i przygotuję to później";
 "bienvenida23.access.createTitle" = "Utwórzmy twoje konto";
 "bienvenida23.access.createBody" = "Ten e-mail nie ma jeszcze konta Yala.";
-"bienvenida23.access.otherProviderNote" = "Konto zostało utworzone przez %1$@? Kontynuuj z %1$@: z %2$@ byłoby to nowe konto.";
 "bienvenida23.access.useAnotherAccount" = "Użyj innego konta";
 "bienvenida23.access.existsTitle" = "Masz już konto";
 "bienvenida23.access.existsBody" = "Ten e-mail ma już konto Yala. Wczytać dane i wejść?";
@@ -9566,3 +9565,18 @@
 "panel.lote23chico.budgetsOnPanel" = "Budżety w Panelu";
 "panel.lote23chico.budgetsOnPanelHint" = "Wybierz, które pojawią się na karcie Budżety.";
 "usageMode.lote23chico.fullExpensesOnly" = "Pełna Yala · tylko wydatki";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "Wylogowywanie…";
+"uxcs.signOutProgress.removingData" = "Usuwanie Twoich danych z tego urządzenia…";
+"uxcs.signOutProgress.deletingAccount" = "Usuwanie Twojego konta…";
+"uxcs.signOutProgress.keepOpen" = "Nie zamykaj Yala, dopóki się nie skończy.";
+"uxcs.signOutProgress.accountDeletedTitle" = "Twoje konto zostało usunięte";
+"uxcs.signOutProgress.accountDeletedBody" = "Usunęliśmy Twoje konto Yala ze wszystkimi danymi, także tymi z tego urządzenia. Jeśli byłeś w grupach, Twoje imię jest tam teraz „Usunięty użytkownik”.";
+"uxcs.signOutProgress.continue" = "Dalej";
+"uxcs.relaunch.accountDeleted" = "Konto usunięte";
+"uxcs.relaunch.afterSignOutICloud" = "Twoje dane były połączone z Twoim iCloud, a Yala może zwolnić to połączenie dopiero po całkowitym zamknięciu. Gdy otworzysz ją ponownie, dokończy usuwanie danych z tego urządzenia.";
+"bienvenida23.access.sameEmailNote" = "Przy tym samym adresie e-mail Apple i Google otwierają to samo konto Yala. Jeśli Twoje powstało z innym adresem, zaloguj się nim.";
+"bienvenida23.access.consentAccessDetail" = "Nie ma hasła Yala ani odzyskiwania przez e-mail: jeśli utracisz ten dostęp, najpierw wyeksportuj dane (Ustawienia → Eksportuj wpisy).";
+"bienvenida23.access.createdTitle" = "Twoje konto jest utworzone";
+"bienvenida23.access.createdBody" = "Teraz trzy szybkie pytania, by dopasować Yala do Ciebie.";

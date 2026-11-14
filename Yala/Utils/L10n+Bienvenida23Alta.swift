@@ -150,10 +150,14 @@ extension L10n {
     enum UnifiedAccess {
         static var createTitle: String { b23("bienvenida23.access.createTitle") }
         static var createBody: String { b23("bienvenida23.access.createBody") }
-        /// «¿Creaste tu cuenta con Apple? Entra con Apple: con Google sería una cuenta nueva.»
-        static func otherProviderNote(_ other: String, _ current: String) -> String {
-            String(format: b23("bienvenida23.access.otherProviderNote"), other, current)
-        }
+        /// Con el mismo correo, Apple y Google abren la misma cuenta (GoTrue enlaza las identidades por correo verificado,
+        /// decisión de Jürgen del 13-nov); con otro correo, otra cuenta.
+        static var sameEmailNote: String { b23("bienvenida23.access.sameEmailNote") }
+        /// El punto de acceso del consentimiento sin nombrar iCloud: en el alta del Welcome no se menciona (13-nov).
+        static var consentAccessDetail: String { b23("bienvenida23.access.consentAccessDetail") }
+        /// La cuenta nueva acaba de crearse y aún faltan las tres preguntas: no es «¡Tu cuenta está lista!».
+        static var createdTitle: String { b23("bienvenida23.access.createdTitle") }
+        static var createdBody: String { b23("bienvenida23.access.createdBody") }
         static var useAnotherAccount: String { b23("bienvenida23.access.useAnotherAccount") }
         static var existsTitle: String { b23("bienvenida23.access.existsTitle") }
         static var existsBody: String { b23("bienvenida23.access.existsBody") }

@@ -5013,7 +5013,7 @@
 "settings.deleteAccountViewGroups" = "グループを表示";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（Yala アカウントを使う前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
+"settings.deleteAccountFrozenICloudNote" = "アカウント作成前にiCloudでYalaを使っていた場合、そのデータはiCloudに残ります。Yalaアカウントを削除しても消えません。";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";
@@ -9077,7 +9077,6 @@
 "bienvenida23.groups.accountOnlyBody" = "グループは後で準備します";
 "bienvenida23.access.createTitle" = "アカウントを作成しましょう";
 "bienvenida23.access.createBody" = "このメールアドレスにはまだYalaアカウントがありません。";
-"bienvenida23.access.otherProviderNote" = "%1$@でアカウントを作成しましたか？ %1$@で続けてください。%2$@では別のアカウントになります。";
 "bienvenida23.access.useAnotherAccount" = "別のアカウントを使う";
 "bienvenida23.access.existsTitle" = "アカウントがあります";
 "bienvenida23.access.existsBody" = "このメールアドレスにはYalaアカウントがあります。データを読み込んで入りますか？";
@@ -9566,3 +9565,18 @@
 "panel.lote23chico.budgetsOnPanel" = "パネルに表示する予算";
 "panel.lote23chico.budgetsOnPanelHint" = "予算カードに表示するものを選びます。";
 "usageMode.lote23chico.fullExpensesOnly" = "Yalaの全機能・支出のみ";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "サインアウトしています…";
+"uxcs.signOutProgress.removingData" = "このデバイスからデータを削除しています…";
+"uxcs.signOutProgress.deletingAccount" = "アカウントを削除しています…";
+"uxcs.signOutProgress.keepOpen" = "完了するまでYalaを開いたままにしてください。";
+"uxcs.signOutProgress.accountDeletedTitle" = "アカウントを削除しました";
+"uxcs.signOutProgress.accountDeletedBody" = "Yalaアカウントとそのすべてのデータを、このデバイス上のものも含めて削除しました。グループに参加していた場合、そこでのあなたの名前は「削除されたユーザー」になりました。";
+"uxcs.signOutProgress.continue" = "続ける";
+"uxcs.relaunch.accountDeleted" = "アカウントを削除しました";
+"uxcs.relaunch.afterSignOutICloud" = "データはあなたのiCloudにつながっていたため、Yalaを完全に閉じないとその接続を外せません。もう一度開くと、このデバイスからのデータ削除が完了します。";
+"bienvenida23.access.sameEmailNote" = "同じメールアドレスなら、AppleでもGoogleでも同じYalaアカウントが開きます。別のメールアドレスで作成した場合は、そのアドレスでサインインしてください。";
+"bienvenida23.access.consentAccessDetail" = "Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → 記録をエクスポート）。";
+"bienvenida23.access.createdTitle" = "アカウントを作成しました";
+"bienvenida23.access.createdBody" = "次に、Yalaをあなた向けに整えるための簡単な質問を3つします。";
