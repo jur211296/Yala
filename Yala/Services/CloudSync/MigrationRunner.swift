@@ -848,6 +848,9 @@ protocol MigrationWorkExecuting: AnyObject {
     /// paso 5 y el borrado del pendiente— no puede salir a `failedRollback`, que dejaría `.cloud` persistido en un terminal
     /// de fallo. Default `false` en la extension de abajo.
     func hasPersistedCloudMode() -> Bool
+    /// Le da al ejecutor la pregunta «¿hay un «Cancelar la activación» apuntado?» para los puntos seguros del efecto del
+    /// adopt (card l4m0 del barrido del 14-nov). La instala el runner al crearse. Default no-op en la extension de abajo.
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool)
     /// `has_personal_writes` del último `performClaim` que contestó `created` (g16_03, ticket
     /// `migration-takeover-uploads-without-a-lineage-check`): la cuenta ya recibió datos personales. `nil` = no lo dijo (un
     /// servidor sin g16_03, u otro desenlace). Lo lee `handle` al ENTRAR en `assigningIdentity`, para journalearlo en el
@@ -974,6 +977,9 @@ extension MigrationWorkExecuting {
 
     /// Default: el modo sigue en iCloud, que es lo que un fake que no lo guiona describe.
     func hasPersistedCloudMode() -> Bool { false }
+
+    /// Default: un fake sin efecto del adopt no tiene puntos seguros que mirar.
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool) {}
 }
 
 // MARK: - Runner
@@ -1129,6 +1135,8 @@ final class MigrationRunner {
         self.markerExportInPassWaitSeconds = max(0, markerExportInPassWaitSeconds)
         self.onQuiescenceTimeout = onQuiescenceTimeout
         self.onQuiescenceWaited = onQuiescenceWaited
+        // Card l4m0: el efecto del adopt mira el «sí» en sus puntos seguros, no solo antes de cada intento.
+        executor.installAdoptCancelProbe { [weak self] in self?.migrationCancelRequested == true }
     }
 
     /// Termina una espera a iCloud que sí esperó (no el atajo de iCloud ya quieto): segundos y si se asentó. Producción emite
@@ -1622,8 +1630,8 @@ final class MigrationRunner {
             }
             // Un «Cancelar» apuntado con el efecto del adopt pendiente se honra ANTES de intentarlo otra vez (hallazgo de la
             // review de `adopt-effect-retries-forever-with-no-ceiling`): mirándolo solo al fallar, un intento que saliera
-            // bien adoptaba a quien acababa de confirmar que cancelaba. Un intento que ya está dentro del efecto no se para:
-            // eso lo recoge el `catch` de abajo si falla.
+            // bien adoptaba a quien acababa de confirmar que cancelaba. Un intento que ya está dentro del efecto se para en sus
+            // puntos seguros (`MigrationExecutorError.adoptCancelRequested`, card l4m0) y lo recoge el `catch` de abajo.
             if effect == .adoptBackendAccount, migrationCancelRequested, try await journalMigrationCancel() { return }
             do {
                 try await executor.execute(effect)

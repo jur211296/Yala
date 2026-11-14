@@ -132,11 +132,12 @@ struct WelcomeAdoptExitTests {
 
     /// **Los dos cuerpos de la bienvenida, en los 16 idiomas.** Al confirmar, la pantalla vuelve al selector: no pueden
     /// llevar la frase de Almacenamiento («puedes volver a activar la nube… desde aquí»). Conservan su primera frase, que
-    /// es la que dice qué pasó con los datos, y nombran el botón por el que se vuelve a entrar con el texto EXACTO que
-    /// tiene en el selector de ese idioma: si alguien lo renombra, esto cae. Y heredan las prohibiciones de los suyos: el
+    /// es la que dice qué pasó con los datos. **Ya no nombran «Ya tengo una cuenta»** (card l4m0, barrido del 14-nov): la
+    /// bienvenida 2.3 no tiene ese botón, y el aviso mandaba a buscar algo que no existe; dicen «desde el inicio». Y
+    /// heredan las prohibiciones de los suyos: el
     /// del efecto no afirma que la nube no cambió, y ninguno promete «tus datos siguen en este dispositivo». Se lee del
     /// fichero de cada locale, porque la corrida solo ve uno.
-    @Test func welcomeBodies_inEveryLocale_dropTheFromHereSentence_andNameTheChooserButton() throws {
+    @Test func welcomeBodies_inEveryLocale_dropTheFromHereSentence_andDoNotNameTheOldButton() throws {
         let pairs = [("welcome.cloud.cancelAdoptBody", "storage.confirm.cancelAdoptBody"),
                      ("welcome.cloud.cancelAdoptEffectBody", "storage.confirm.cancelAdoptEffectBody")]
         let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
@@ -163,7 +164,7 @@ struct WelcomeAdoptExitTests {
                 #expect(value.hasPrefix(first), "\(locale) · \(key) no empieza por «\(first)»")
                 #expect(!value.contains(fromHere), "\(locale) · \(key) repite «\(fromHere)»")
                 #expect(value != storage, "\(locale) · \(key)")
-                #expect(value.contains(button), "\(locale) · \(key) no nombra «\(button)»")
+                #expect(!value.contains(button), "\(locale) · \(key) nombra «\(button)», que la bienvenida ya no tiene")
                 #expect(!value.contains(localData), "\(locale) · \(key) repite «\(localData)»")
             }
             let effect = try #require(table["welcome.cloud.cancelAdoptEffectBody"], "\(locale)")
@@ -339,13 +340,24 @@ struct WelcomeAdoptExitTests {
             """))
         // El diálogo cuelga del `body`, que no sale del árbol: su `.onChange` corre de verdad.
         let src = try Self.flat(Self.source(Self.view))
-        for needle in ["isPresented: $confirmCancelAdopt, titleVisibility: .visible) {",
-                       "Button(L10n.Storage.Confirm.cancelMigrationConfirm) { cancelRequested = true launchFlow { await cancelAdopt() } }",
+        // Card l4m0: es un `.alert`, que pinta siempre las dos salidas (el `confirmationDialog` salía sin «no cancelar»).
+        for needle in [".alert(L10n.Storage.Confirm.cancelMigrationTitle, isPresented: $confirmCancelAdopt) {",
+                       "Button(L10n.Storage.Confirm.cancelMigrationConfirm, role: .destructive) { confirmAdoptCancel() }",
                        "Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}",
                        "isAdoptClaim: controller.isAdoptClaim, isAdoptEffectPending: controller.isAdoptEffectPending, surface: .welcome))",
                        ".onChange(of: offersAdoptCancel) { _, offers in if !offers { confirmCancelAdopt = false } }"] {
             #expect(src.contains(needle), "\(needle)")
         }
+        #expect(!src.contains(".confirmationDialog(L10n.Storage.Confirm.cancelMigrationTitle"))
+        // Card 0f7h: el «sí» se apunta también en disco, antes de lanzar la cancelación.
+        let confirm = try Self.flat(Self.body(of: "private func confirmAdoptCancel()"))
+        #expect(confirm == Self.flat("""
+            {
+                cancelRequested = true
+                WelcomeAdoptInFlight.markCancelRequested()
+                launchFlow { await cancelAdopt() }
+            }
+            """))
     }
 
     /// El poll mira la cancelación pedida ANTES del mapeo, en cada vuelta; «Retomar» no re-reclama con ella pedida; y el
@@ -368,7 +380,8 @@ struct WelcomeAdoptExitTests {
         let src = try Self.flat(Self.source(Self.view))
         #expect(src.contains(
             // Card jxbp: dentro de `driveWhilePolling`, que conduce y refresca a la vez.
-            "lastObservedPhase = nil cancelRequested = false await driveWhilePolling { await CloudMigrationController.shared?.startAdoptWithExistingSession( sessionOpenedByThisAttempt: sessionOpenedHere) }"))
+            // Card 0f7h: el adopt nuevo olvida también el «sí» apuntado en disco del anterior.
+            "lastObservedPhase = nil cancelRequested = false WelcomeAdoptInFlight.clearCancelRequest() await driveWhilePolling { await CloudMigrationController.shared?.startAdoptWithExistingSession( sessionOpenedByThisAttempt: sessionOpenedHere) }"))
     }
 
     /// El cuerpo ENTERO: una sentencia antepuesta (un `onBack()` antes de cancelar, un `return`) pasaría un `contains`.

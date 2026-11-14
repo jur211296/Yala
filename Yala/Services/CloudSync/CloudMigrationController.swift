@@ -1832,10 +1832,15 @@ final class CloudMigrationController {
         // Antes de retomar nada: recoge la salida de un adopt que un kill dejó con la sesión abierta, y en el arranque va por
         // delante del registrador de Grupos, que primero pregunta a la red (`AppBootstrapper`).
         await closeSessionOfExitedAdopt()
+        // Card 0f7h: un «Sí, cancelar» de la bienvenida que un cierre de Yala dejó sin aterrizar se honra en esta pasada, antes
+        // de que el traspaso vuelva a intentarlo. Solo cuando hay algo que retomar: sin pasada que lo consuma, el «sí» se
+        // quedaba en el runner y cancelaba el siguiente intento de la persona (lo cazó la review adversarial).
         switch MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPending) {
         case .resume:
+            if WelcomeAdoptInFlight.isCancelRequested() { runner.requestMigrationCancel() }
             await resume(clearingError: clearingError)
         case .pollLeader:
+            if WelcomeAdoptInFlight.isCancelRequested() { runner.requestMigrationCancel() }
             await pollLeader(clearingError: clearingError)
         case .none:
             refresh()

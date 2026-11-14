@@ -64,4 +64,17 @@ enum WelcomeCoverContentLogic {
     static func runsCloudSignInDismissFallback(last: Content) -> Bool {
         last == .cloudSignIn
     }
+
+    /// ¿Vuelve el respaldo al elector? Solo sin el onboarding completo y sin ninguna otra pantalla ya pedida.
+    ///
+    /// **Card c8i9 (barrido del iPhone 14, 14-nov, medido con trazas):** el onboarding completo se lee VIVO, de disco
+    /// (`onboardingCompletedNow`), no del `@Binding` del modificador. El `onDismiss` del cover se quedó con la copia de
+    /// cuando se presentó, y en la primera entrada tras instalar `onAdoptStarted` lo marca CON el cover abierto: la traza
+    /// dio `onb=false` en el respaldo con `true` en disco, y «Empezar» devolvía a la bienvenida en vez de entrar en la
+    /// app. Al reabrir no pasaba porque el valor ya era `true` al presentar el cover.
+    static func reopensChooserAfterCloudSignIn(
+        onboardingCompletedNow: Bool, inviteOnboardingShown: Bool, onboardingShown: Bool, welcomeFlowShown: Bool
+    ) -> Bool {
+        !onboardingCompletedNow && !inviteOnboardingShown && !onboardingShown && !welcomeFlowShown
+    }
 }

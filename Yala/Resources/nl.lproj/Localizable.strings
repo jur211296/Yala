@@ -4788,8 +4788,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Je gegevens worden gedownload…";
-"welcome.cloud.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in je Yala-account hebt. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
-"welcome.cloud.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
+"welcome.cloud.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in je Yala-account hebt. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account vanaf het begin.";
+"welcome.cloud.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account vanaf het begin.";
+"welcome.cloud.cancelling" = "Annuleren…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Groepen heeft iCloud nodig";

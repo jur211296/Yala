@@ -53,6 +53,10 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// Caso propio por lo mismo que `adoptLocalFailure`: esperar no arregla un corpus ajeno, así que cuenta para el techo
     /// CORTO. La espera legítima —el marcador que aún se importa— la para antes la quiescencia, que es `adoptRetry`.
     case adoptLineageUnproven
+    /// La persona confirmó «Cancelar la activación» y el efecto del adopt llegó a uno de sus puntos seguros (card l4m0 del
+    /// barrido del 14-nov). Hasta entonces el «sí» solo se miraba ANTES de cada intento, y el intento en vuelo que salía
+    /// bien adoptaba igual. El runner lo recoge en `observeAdoptEffectFailure`, que mira el «sí» antes que nada.
+    case adoptCancelRequested
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -913,6 +917,21 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// lee la barra de «Conectando con tu cuenta» a través del runner y del controller. Cada pasada lo repone desde el
     /// primer paso; la pantalla no retrocede (`AdoptEffectProgress.displayed`).
     private(set) var adoptEffectProgress: AdoptEffectProgress?
+
+    /// ¿Hay un «Cancelar la activación» apuntado? Lo instala el runner (`installAdoptCancelProbe`), dueño del «sí». Lo mira
+    /// el efecto del adopt en sus puntos seguros (`runAdoptFlow`, card l4m0).
+    private var adoptCancelProbe: @MainActor () -> Bool = { false }
+
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool) {
+        adoptCancelProbe = probe
+    }
+
+    /// Un punto seguro del efecto del adopt: con el «sí» apuntado, el intento sale aquí en vez de seguir hasta adoptar.
+    private func stopIfAdoptCancelRequested(at point: String) throws {
+        guard adoptCancelProbe() else { return }
+        CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "cancel requested at \(point)")
+        throw MigrationExecutorError.adoptCancelRequested
+    }
 
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         do {
@@ -2428,6 +2447,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             throw MigrationExecutorError.adoptRetry(reason: "quiescence")
         }
 
+        // 1-ter) Card l4m0: un «Cancelar la activación» confirmado mientras esperaba se honra aquí, antes de enumerar nada.
+        try stopIfAdoptCancelRequested(at: "beforeReconcile")
+
         // 1-bis) Un reintento que solo espera a que el marcador relevado de una pasada anterior llegue a iCloud no repite el
         //    reconcile (ni su enumeración del backend): sale aquí mientras dure la espera (`relayMarkerAwaitingExport`).
         if relayMarkerAwaitingExport() {
@@ -2455,6 +2477,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         case .completed, .abortedEmptyBackend:
             break
         }
+
+        // 2-ter) Card l4m0: el «sí» que llegó durante el reconcile se honra aquí, antes de armar el modo nube (paso 5), que es
+        //    lo que ya no se deshace. Entre este punto y el paso 5 no hay ningún `await`.
+        try stopIfAdoptCancelRequested(at: "afterReconcile")
 
         // 2-bis) El marcador que este adopt acaba de relevar tiene que llegar a iCloud ANTES de armar el apagado del espejo
         //    (paso 5), como el del líder en su paso 4 (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).

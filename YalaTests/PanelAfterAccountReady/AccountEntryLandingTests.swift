@@ -81,8 +81,9 @@ struct AccountEntryLandingTests {
     @Test("«Empezar» consume la puerta de Grupos y elige su pestaña; «Entra aquí» la apunta y la vitrina la retira")
     func groupsDoor_wiring() throws {
         let content = try Self.code("Yala/App/ContentView.swift")
+        // Barrido del 14-nov (c8i9): entre elegir Grupos y cerrar el cover, «Empezar» sube `dataVersion`.
         #expect(content.contains("if WelcomeGroupsDoorLanding.consume() { navigation.selectMainTab(.groups) } "
-                                 + "showWelcomeCloudSignIn = false"))
+                                 + "SessionState.shared.incrementDataVersion() showWelcomeCloudSignIn = false"))
         let flow = try Self.code("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
         #expect(flow.contains("onSignIn: { WelcomeGroupsDoorLanding.arm() handleExistingBranch() }"))
         #expect(flow.contains("from door: WelcomeShowcaseLogic.Door) { WelcomeGroupsDoorLanding.disarm() switch (access, door)"))

@@ -32,10 +32,11 @@ nonisolated enum WelcomeAdoptInFlight {
     static let neutralMountArmedKey = "welcome.adoptInFlight.neutralMountArmed"
     static let freshInstallOwnsNeutralMountKey = "welcome.adoptInFlight.freshInstallOwnsNeutralMount"
     static let providerKey = "welcome.adoptInFlight.provider"
+    static let cancelRequestedKey = "welcome.adoptInFlight.cancelRequested"
 
     /// Todas las keys de la marca, para el borrado.
     static let allKeys = [key, hadCompletedOnboardingKey, hadPrivateSessionKey, neutralMountArmedKey,
-                          freshInstallOwnsNeutralMountKey, providerKey]
+                          freshInstallOwnsNeutralMountKey, providerKey, cancelRequestedKey]
 
     /// La arma `onAdoptStarted` con la foto de ANTES del primer intento. Un «Reintentar» que vuelve a pasar por ahí no la
     /// pisa: la foto buena es la primera.
@@ -70,6 +71,24 @@ nonisolated enum WelcomeAdoptInFlight {
             hasPrivateSession: defaults.bool(forKey: hadPrivateSessionKey),
             neutralMountArmed: defaults.bool(forKey: neutralMountArmedKey),
             freshInstallOwnsNeutralMount: defaults.bool(forKey: freshInstallOwnsNeutralMountKey))
+    }
+
+    /// **Card 0f7h · el «Sí, cancelar» sobrevive a cerrar Yala.** El «sí» del runner vive en memoria, y cerrar Yala entre
+    /// la confirmación y el aterrizaje lo perdía: el arranque retomaba el traspaso y terminaba en «¡Tu cuenta está lista!».
+    /// Se apunta aquí junto a la marca (sin marca no hay entrada que cancelar), lo honra el arranque
+    /// (`CloudMigrationController.resumeIfNeeded`) y la pantalla que retoma, y se va con la marca o al empezar otro adopt.
+    static func markCancelRequested(_ defaults: UserDefaults = .standard) {
+        guard isArmed(defaults) else { return }
+        defaults.set(true, forKey: cancelRequestedKey)
+    }
+
+    static func isCancelRequested(_ defaults: UserDefaults = .standard) -> Bool {
+        isArmed(defaults) && defaults.bool(forKey: cancelRequestedKey)
+    }
+
+    /// Un adopt nuevo (otro «Cargar mis datos y entrar», «Reintentar») no hereda el «sí» del anterior.
+    static func clearCancelRequest(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: cancelRequestedKey)
     }
 
     /// Con qué se firmó la entrada, para retomarla. `nil` si no se sabe: la pantalla retoma igual, con el de la sesión.
