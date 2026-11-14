@@ -69,7 +69,7 @@ import {
   qrVerifier,
   type PairingRecord,
 } from "./pairing";
-import { InvalidInputError, bandeja, categorias, estadisticas, pagos, panel, registros, toolContext } from "./data";
+import { InvalidInputError, bandeja, categorias, estadisticas, pagos, panel, presupuestos, registros, toolContext } from "./data";
 import { discardWebDraft, editWebDraft, insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
 import { converterFor, groupDetail, groupsList, GroupsUnavailableError } from "./groups";
 import { parseExpense, parseSettlement, writeErrorResponse, type WebInviteResult, type WebWriteResult } from "./groupsWrite";
@@ -220,6 +220,7 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
       if (path === "/api/bandeja") return withFull(request, ctx, (live) => inbox(ctx, live));
       if (path === "/api/estadisticas") return withFull(request, ctx, async (live) => json(await estadisticas(readCtx(ctx, live), url.searchParams)));
       if (path === "/api/pagos") return withFull(request, ctx, async (live) => json(await pagos(readCtx(ctx, live))));
+      if (path === "/api/presupuestos") return withFull(request, ctx, async (live) => json(await presupuestos(readCtx(ctx, live))));
       if (path === "/api/grupos") return withLive(request, ctx, (live) => listGroups(ctx, live));
       if (path === "/api/grupos/detalle") return withLive(request, ctx, (live) => oneGroup(ctx, live, url.searchParams.get("id")));
       if (path === "/api/sesiones") return withLive(request, ctx, async (live) => json({ sesiones: await liveEntries(ctx, live.session.sub, live.session.pid) }));

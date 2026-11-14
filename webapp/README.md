@@ -11,8 +11,10 @@ Bandeja del iPhone; Configurar (cuenta, sesiones web, ocultar montos, idioma, sa
 
 **Lote 2 (2.3, solo staging):** Estadísticas (Resumen, Distribución y Tendencias) y Pagos planificados (próximos cobros
 y suscripciones), en lectura y con las cifras del iPhone; y entrar con el iPhone por código QR, con «Vincular un
-navegador» en «Navegadores conectados» (Yala Dev). Del lote 2 del plan quedan para después Presupuestos, Grupos en
-lectura, ⌘K, CSV y los 16 idiomas.
+navegador» en «Navegadores conectados» (Yala Dev).
+
+**Lote 2b (2.3, solo staging):** lo que faltaba del lote 2 del plan: Presupuestos en lectura, buscar en todo (⌘K),
+exportar Registros a CSV, la marca «Pagado» en los próximos cobros y los 16 idiomas de la app.
 
 Staging: <https://yala-web-staging.misty-surf-6866.workers.dev>
 
@@ -82,6 +84,29 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
   sesión; el Worker pide el permiso de solo lectura de siempre y guarda solo el código de autorización, que sin la cookie
   de ese navegador (PKCE) no sirve. Un Durable Object por código (`QrPairing`), que una alarma vacía al caducar. Límite
   propio para las preguntas del navegador (`RL_QR`).
+
+## Lote 2b: Presupuestos, ⌘K, CSV, «Pagado» y 16 idiomas
+
+- **Presupuestos** (`/api/presupuestos`): `estado_presupuestos` del núcleo tal cual, activos e inactivos (paridad con la
+  pantalla del iPhone en `mcp/test/golden.test.ts`). La página los pinta en los tres bloques del iPhone: Excedidos,
+  Activos e Inactivos.
+- **«Pagado» en los próximos cobros** (`/api/pagos`, `src/worker/paid.ts`): la regla de la lista de Pagos del iPhone
+  (`ScheduledPaymentsViewModel.calculatePaymentData` + `ScheduledPaymentPaidStatusHelper`): N movimientos enlazados al
+  pago en un mes pagan las N primeras fechas no saltadas de ese mes. Cada cobro trae `pagado`, «Por pagar»
+  (`total_gastos`) deja fuera lo pagado y `pagados` los cuenta. Diferencia aceptada: un borrador aprobado cuyo
+  movimiento se borró sigue contando en el iPhone y en la web no (el rol de la web no lee
+  `inbox_drafts.source_scheduled_payment_ref`).
+- **Buscar en todo** (`src/client/app/Busqueda.tsx`): ⌘K / Ctrl+K o la lupa de la barra. Secciones, cuentas, categorías
+  y presupuestos se filtran en la página; las notas de los registros, con `/api/registros?texto=`. Sin ruta nueva.
+- **Exportar a CSV** (`src/client/app/csv.ts`): «Exportar CSV» en Registros baja lo que se ve, de 200 en 200
+  (`/api/registros?limite=200`; cualquier otro `limite` se queda en 50), con tope de 5.000. El archivo es el del iPhone
+  (`TransactionsExportService.makeCSVData`): cabeceras fijas en inglés, coma, BOM, fechas `AAAA-MM-DD`, punto decimal,
+  etiquetas con «;». Se arma en el navegador.
+- **Idiomas** (`src/client/i18n.ts` + `src/client/i18n/<código>.ts`): los 16 de la app. El español es el contrato
+  (`Texts`); es-AR, es-ES y en-GB son parches sobre su base; es-419 = es y pt = pt-BR, como en la app. `main.tsx` carga
+  el idioma antes de importar la página, así que el navegador solo baja el suyo. `test/idiomas.test.ts` repasa los 16:
+  todas las claves, nada sin traducir y ninguno de los nombres de sitio que retiró la decisión 51 de 2.3 (las listas de
+  `YalaTests/DosNombresDeSitioTests.swift`).
 
 ## Lote 3: Grupos
 

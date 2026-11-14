@@ -134,3 +134,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de diseñar un arreglo con
 - [Arreglar una frase: mira el rótulo de encima](feedback_arreglar_una_frase_mira_el_rotulo_de_encima.md) — Saldos: neto cero dejaba «Estás a mano» sobre «Tú pagas a Ana».
 - [Botones de la bienvenida: cristal y centrados](feedback_welcome_botones_cristal_y_centrados.md) — blancos «gritan»; «misma alineación» = mismo patrón centrado, no la misma x.
 - [Mira los PR abiertos antes de arreglar UI](feedback_mira_los_pr_abiertos_antes_de_arreglar_ui.md) — «ya en done» del barrido era un PR sin mergear; su diseño manda.
+- [Test de traducción: solo frases](feedback_test_de_traduccion_solo_frases.md) — palabras sueltas iguales al español empujaron a sinónimos peores.
