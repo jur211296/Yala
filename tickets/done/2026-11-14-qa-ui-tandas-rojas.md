@@ -30,8 +30,10 @@ Los rojos que pasan al reintento (ver «Fuera») no ponen la tanda en rojo: `xco
 | 9 | `IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView` | **Choque de diseño.** Los chips rápidos de Registros (decisión 15) dejan la primera fila 96 pt bajo la barra en el 17 Pro girado. | Fallo conocido en la última aserción + tarjeta con la pregunta para Jürgen. |
 
 Los fallos conocidos van con `XCTExpectFailure` acotado (bloque o `issueMatcher`), nunca el caso entero: cualquier
-otro fallo del mismo caso sigue en rojo. El de la tanda 6 es estricto (al arreglarse, el caso se pone en rojo y
-avisa); los otros tres no, porque esos casos corren también en el iPad o en el Pro Max, donde pueden no fallar.
+otro fallo del mismo caso sigue en rojo. Los cuatro son no estrictos: el de la tanda 6 sale
+3 de cada 4 corridas en local (intermitente), y los otros corren también en el iPad o en el Pro Max, donde pueden no
+fallar. La sesión «Bugs de interfaz 2.3, lote 1» arregla las tarjetas gphj y 4wqy en su propio PR y quita esas
+expectativas allí.
 
 ## Tarjetas creadas
 
