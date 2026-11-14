@@ -12,7 +12,7 @@ import type { Env } from "../src/env";
 const SUB = "11111111-2222-3333-4444-555555555555";
 
 function jwt(role: string): string {
-  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${b64({ alg: "ES256" })}.${b64({ sub: SUB, role })}.firma`;
 }
 const WEB = jwt("yala_mcp_reader");
