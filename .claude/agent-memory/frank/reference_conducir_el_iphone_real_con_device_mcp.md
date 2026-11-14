@@ -41,3 +41,13 @@ Medido el 2026-11-14 (barrido de la parte 2, iPhone 14, iOS 27.2.1):
 - **Widget en dos toques:** pulsación larga sobre el icono de Yala Dev → la fila de tamaños de arriba lo convierte en
   widget sin pasar por la galería (que enseña apps personales). Para deshacerlo, pulsación larga → el tamaño icono.
 - `press_button home` puede dejarte en otra página de inicio con apps personales: no la captures; desliza a la de Yala.
+
+Medido el 2026-11-14 (barrido, parte 3):
+
+- **`devicectl … process launch --console` dentro de `timeout N` MATA la app al vencer** (signal 15): para capturar
+  la consola de un arranque y seguir mirando, deja el plazo largo o reabre la app después; si no, la «pantalla de
+  inicio» que ves es tu propio corte, no un cierre de Yala.
+- **`scroll_to` de Device MCP se cuelga >120 s** en pantallas largas de Yala (Más, Panel) y el batch pasa a segundo
+  plano: usa `scroll` con `distance` y una captura.
+- **Para volver a la app tras «Inicio», toca su icono**, no `launch_app`: con la app suspendida `launch_app` la
+  relanzó y perdió la pantalla (y el filtro) que estabas probando.
