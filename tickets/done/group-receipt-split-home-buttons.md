@@ -1,10 +1,10 @@
 ---
 id: group-receipt-split-home-buttons
-status: backlog
+status: done
 area: groups
 priority: medium
 created: 2026-11-13
-updated: 2026-11-13
+updated: 2026-11-14
 source: card tablero-grupos-repartir-un-recibo-con-ia-foto-o-fu74 · pedido de Jürgen del 13-nov
 ---
 
