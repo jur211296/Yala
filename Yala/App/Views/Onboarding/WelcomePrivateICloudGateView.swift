@@ -571,6 +571,9 @@ struct WelcomePrivateICloudGateView: View {
 
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Welcome.PrivateICloud.restoreAction) {
+                    // La elección queda hecha: tras reabrir, «¡Qué bien volver a verte!» no la vuelve a pedir
+                    // (`RestoreBringChoiceStore`).
+                    RestoreBringChoiceStore.recordChosenAtGate()
                     onRestore()
                 }
                 .accessibilityIdentifier("welcome_private_icloud_restore")
