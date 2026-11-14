@@ -56,6 +56,10 @@ struct DestructiveScopeSheet: View {
         let cancelLabel: String
         /// Se invoca ANTES del `dismiss()` de la hoja — el callsite fija su `pending` aquí.
         let onConfirm: () -> Void
+        /// La nota de conservación solo es verdad con Pro («Tu suscripción Pro no cambia», de Vaciar datos): se lee VIVO
+        /// al pintar (`FeatureGateService`, del main actor), no al armar la configuración, que también se arma en tests
+        /// fuera del main actor. Sin Pro, la nota no sale (Jürgen, E02 del recorrido del 13-nov).
+        var conservationNoteNeedsPro = false
 
         struct Row {
             let icon: String
@@ -123,7 +127,8 @@ struct DestructiveScopeSheet: View {
                         }
                     }
 
-                    if let note = config.conservationNote {
+                    if let note = config.conservationNote,
+                       !config.conservationNoteNeedsPro || FeatureGateService.shared.isProUser {
                         Text(note)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -299,7 +304,8 @@ extension DestructiveScopeSheet.Config {
             confirmIdentifier: Self.confirmIdentifier(for: operation),
             scenarioIdentifier: Self.scenarioIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,
-            onConfirm: onConfirm)
+            onConfirm: onConfirm,
+            conservationNoteNeedsPro: operation == .wipeDataFull)
     }
 
     /// Preserva `delete_account_view_groups` (asertado por `DeleteAccountDialogUITests`) en eliminar-cuenta;

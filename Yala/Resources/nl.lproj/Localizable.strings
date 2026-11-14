@@ -5013,7 +5013,7 @@
 "settings.deleteAccountViewGroups" = "Mijn groepen bekijken";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Je oude iCloud-kopie (van vóór je Yala-account) blijft onaangeroerd: als je Yala opnieuw opent, zie je die als een nieuwe installatie.";
+"settings.deleteAccountFrozenICloudNote" = "Gebruikte je Yala met je iCloud voordat je je account maakte, dan blijft die kopie in je iCloud: je Yala-account verwijderen wist die niet.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "In oude groepen (iCloud) kan je naam zichtbaar blijven voor hun leden.";
@@ -9077,7 +9077,6 @@
 "bienvenida23.groups.accountOnlyBody" = "Ik ga naar Groepen en stel het later in";
 "bienvenida23.access.createTitle" = "Laten we je account maken";
 "bienvenida23.access.createBody" = "Dit e-mailadres heeft nog geen Yala-account.";
-"bienvenida23.access.otherProviderNote" = "Heb je je account met %1$@ gemaakt? Ga verder met %1$@: met %2$@ zou het een nieuw account zijn.";
 "bienvenida23.access.useAnotherAccount" = "Ander account gebruiken";
 "bienvenida23.access.existsTitle" = "Je hebt al een account";
 "bienvenida23.access.existsBody" = "Dit e-mailadres heeft al een Yala-account. Zullen we je gegevens laden en naar binnen gaan?";
@@ -9566,3 +9565,18 @@
 "panel.lote23chico.budgetsOnPanel" = "Budgetten in het Panel";
 "panel.lote23chico.budgetsOnPanelHint" = "Kies welke op de Budgetten-kaart staan.";
 "usageMode.lote23chico.fullExpensesOnly" = "Volledige Yala · alleen uitgaven";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "Afmelden…";
+"uxcs.signOutProgress.removingData" = "Je gegevens worden van dit apparaat verwijderd…";
+"uxcs.signOutProgress.deletingAccount" = "Je account wordt verwijderd…";
+"uxcs.signOutProgress.keepOpen" = "Houd Yala open tot het klaar is.";
+"uxcs.signOutProgress.accountDeletedTitle" = "Je account is verwijderd";
+"uxcs.signOutProgress.accountDeletedBody" = "We hebben je Yala-account met al zijn gegevens verwijderd, ook die op dit apparaat. Zat je in groepen, dan heet je daar nu “Verwijderde gebruiker”.";
+"uxcs.signOutProgress.continue" = "Doorgaan";
+"uxcs.relaunch.accountDeleted" = "Account verwijderd";
+"uxcs.relaunch.afterSignOutICloud" = "Je gegevens waren gekoppeld aan je iCloud, en Yala kan die koppeling pas loslaten als het helemaal sluit. Als je het weer opent, verwijdert Yala je gegevens verder van dit apparaat.";
+"bienvenida23.access.sameEmailNote" = "Met hetzelfde e-mailadres openen Apple en Google hetzelfde Yala-account. Heb je het jouwe met een ander e-mailadres gemaakt, log dan daarmee in.";
+"bienvenida23.access.consentAccessDetail" = "Er is geen Yala-wachtwoord en geen herstel via e-mail: verlies je die toegang, exporteer dan eerst je gegevens (Instellingen → Boekingen exporteren).";
+"bienvenida23.access.createdTitle" = "Je account is aangemaakt";
+"bienvenida23.access.createdBody" = "Nu nog drie korte vragen om Yala op jou af te stemmen.";

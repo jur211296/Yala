@@ -1136,8 +1136,10 @@ struct WelcomeCloudSignInView: View {
     /// espera: por eso lleva CTA y no un texto pasivo. El copy no promete sincronización todavía —el motor
     /// acaba de arrancar— sino que la cuenta está lista, que es lo único medido en este instante.
     private var bornCloudReadyContent: some View {
-        readyContent(id: "welcome_born_cloud_ready", title: L10n.Welcome.BornCloud.readyTitle,
-                     action: onBornCloudCompleted)
+        // La cuenta acaba de crearse y aún faltan las tres preguntas: «Creamos tu cuenta» y lo que sigue, no «¡Tu cuenta
+        // está lista!» (Jürgen, 13-nov).
+        readyContent(id: "welcome_born_cloud_ready", title: L10n.UnifiedAccess.createdTitle,
+                     body: L10n.UnifiedAccess.createdBody, action: onBornCloudCompleted)
     }
 
     /// R3 · la RE-ENTRADA terminó y no hay nada que reabrir. **Misma pantalla que el alta y a propósito**
@@ -1172,7 +1174,8 @@ struct WelcomeCloudSignInView: View {
     /// porque el defecto que se comprueba ahí es precisamente cuál de las dos salidas se tomó.
     ///
     /// El título lo pasa quien llama: el alta que entró en una cuenta ya creada no puede decir «¡Tu cuenta está lista!».
-    private func readyContent(id: String, title: String, action: @escaping () -> Void) -> some View {
+    private func readyContent(id: String, title: String, body bodyText: String = L10n.Welcome.BornCloud.readyBody,
+                              action: @escaping () -> Void) -> some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 44))
@@ -1182,7 +1185,7 @@ struct WelcomeCloudSignInView: View {
                 .font(DS.Typography.title2)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text(L10n.Welcome.BornCloud.readyBody)
+            Text(bodyText)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -1328,6 +1331,15 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
+    /// El correo de la etiqueta. **El de la sesión primero**: Apple solo entrega el correo en la primera autorización, así
+    /// que el capturado falta en cada entrada posterior y la etiqueta decía «Apple» donde con Google sale el correo (E10 del
+    /// recorrido del 13-nov). La sesión lo trae siempre, como en «Tu cuenta de Yala». Solo para pintar: nada decide con él.
+    static func verifiedAccessEmail() -> String? {
+        let fromSession = CloudAuthService.shared.sessionEmail?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let fromSession, !fromSession.isEmpty { return fromSession }
+        return CloudAuthService.shared.capturedEmail()
+    }
+
     /// La etiqueta del acceso verificado: el correo si el proveedor lo dio, y si no, el proveedor.
     private var verifiedAccessTag: some View {
         HStack(spacing: DS.Spacing.xs) {
@@ -1346,9 +1358,10 @@ struct WelcomeCloudSignInView: View {
 
     /// **«Vamos a crear tu cuenta»** (SPEC Y23-02): el consentimiento de la nube va EN esta hoja —los tres puntos de
     /// `CloudConsentView`, su pie y la política—, y «Crear mi cuenta» es la aceptación explícita: se registra igual que
-    /// la del consentimiento de siempre (pendiente hasta que el claim confirme la cuenta nueva). Antes del botón, el aviso
-    /// de que con el otro proveedor sería otra cuenta, con su salida («Entrar con …»): es lo más que permite el servidor
-    /// de hoy (decisión A de Jürgen, 12-nov).
+    /// la del consentimiento de siempre (pendiente hasta que el claim confirme la cuenta nueva). Antes del botón, la nota de
+    /// que con el mismo correo Apple y Google abren la misma cuenta, y con otro correo otra, con su salida («Entrar con …»).
+    /// Es lo que hace el servidor (GoTrue enlaza las identidades por correo verificado, medido el 16-jul y en E10 del
+    /// 13-nov) y lo que decidió Jürgen el 13-nov: hasta ese día la nota decía «con Apple sería una cuenta nueva».
     private var createAccountContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             verifiedAccessTag
@@ -1356,8 +1369,7 @@ struct WelcomeCloudSignInView: View {
                 .accessibilityIdentifier("welcome_cloud_create_account")
             consentCard(id: "welcome_cloud_create_consent")
 
-            Text(L10n.UnifiedAccess.otherProviderNote(otherProvider == .apple ? "Apple" : "Google",
-                                                      provider == .apple ? "Apple" : "Google"))
+            Text(L10n.UnifiedAccess.sameEmailNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.white.opacity(0.75))
                 .multilineTextAlignment(.center)
@@ -1415,10 +1427,6 @@ struct WelcomeCloudSignInView: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            Text(L10n.Storage.Consent.footer)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.white.opacity(0.65))
-                .fixedSize(horizontal: false, vertical: true)
             Button {
                 openURL(AppConstants.privacyURL)
             } label: {
@@ -1521,8 +1529,11 @@ struct WelcomeCloudSignInView: View {
                          detail: L10n.Storage.Consent.pointServers),
             ConsentPoint(icon: "photo.on.rectangle", title: L10n.UXLote6.consentPhotosTitle,
                          detail: L10n.Storage.Consent.pointPhotos),
+            // En el alta y la entrada del Welcome no se nombra iCloud (Jürgen, 13-nov): el punto de siempre sin «Sin
+            // depender de iCloud», y sin el pie de «Puedes volver a tu iCloud». No cambia el contrato (`CloudConsentText`):
+            // ni qué sale, ni quién lo lee, ni dónde se guarda.
             ConsentPoint(icon: "key.fill", title: L10n.UXLote6.consentAccessTitle,
-                         detail: L10n.Storage.Consent.pointAccess),
+                         detail: L10n.UnifiedAccess.consentAccessDetail),
         ]
     }
 
@@ -1697,7 +1708,7 @@ struct WelcomeCloudSignInView: View {
             // vb1f: las dos salidas de aquí llevan al alta con el método que se acaba de usar (`switchToSignUp`). La
             // credencial de Google se recoge ANTES de soltar la sesión —`signOut()` la olvida— para que el alta no
             // vuelva a pedirla. La SESIÓN no viaja, solo la credencial: lo que sigue de abajo no cambia.
-            verifiedEmail = CloudAuthService.shared.capturedEmail()
+            verifiedEmail = Self.verifiedAccessEmail()
             let nextPhase: CloudWelcomeSignInPhase
             switch verdict {
             case .mismatch(let exits): nextPhase = .providerMismatch(exits)
@@ -1778,7 +1789,7 @@ struct WelcomeCloudSignInView: View {
             // (`confirmLoadAndEnter`) con la sesión viva y la respuesta del servidor fresca.
             if UnifiedAccessLogic.asksBeforeLoading(isUnifiedAccess: isUnifiedAccess, loadConfirmed: loadConfirmed,
                                                     origin: origin) {
-                verifiedEmail = CloudAuthService.shared.capturedEmail()
+                verifiedEmail = Self.verifiedAccessEmail()
                 phase = .confirmLoad
                 return
             }

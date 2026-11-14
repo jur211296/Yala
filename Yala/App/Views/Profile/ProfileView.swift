@@ -1323,6 +1323,9 @@ struct ProfileView: View {
         // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
         // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
         .modifier(ClosesForShellIntegrityNotice(navigation: navigation) { dismiss() })
+        // Card p9q0 (13-nov-2026) · cerrar sesión, quitar los datos y eliminar la cuenta tienen su propia pantalla mientras
+        // trabajan, por encima de Ajustes y de sus hojas: ya no se queda la fila girando con la lista navegable.
+        .presentsSignOutProgress(removesDeviceData: exitInProgressRemovesDeviceData ?? signOutRowRemovesDeviceData)
         // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
         // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
         // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
