@@ -4,7 +4,7 @@ status: qa
 priority: low
 area: "registro, ui"
 created: 2026-11-05
-updated: 2026-11-07
+updated: 2026-11-14
 source: "mitad de producto de record-selectors-uitest-taps-the-tags-chip-off-screen (lote T8)"
 ---
 
@@ -40,6 +40,18 @@ lote 2.3).
 
 **Hallazgo de test:** `TransactionFormDecided02BUITests.test_tagsChip_isVisibleWithoutScrolling` pasa en el SE con el
 chip tapado: comprueba que el marco cabe en la ventana, y `isHittable` también da `true`. No mira lo que tiene encima.
+
+## Medido el 2026-11-14 (versión 2.3 de hoy, iPhone SE 3.ª gen. en simulador, iOS 27.2, seed `minimal`, modo oscuro)
+
+El caso es más estrecho que el 7-nov:
+
+- **Categoría de nombre corto** («Restaurantes»): cuenta y categoría caben en una fila y «Etiquetas» (y=543–577) se ve
+  **entera** sobre «Guardar» (y=593). Al completar el formulario desaparece la línea «Para guardar, falta…» y deja sitio.
+- **Categoría de nombre largo** («Mantenimiento y reparaciones»): los chips pasan a tres filas y «Etiquetas» (y=575)
+  asoma **a medias** por debajo de la barra de «Guardar». Deslizando un poco queda entera.
+
+Capturas y maquetas de las opciones en `docs/qa/barrido-iphone-2026-11-14/decisiones/capturas/`. La decisión se pidió en
+el artifact de decisiones del barrido (`docs/qa/barrido-iphone-2026-11-14/decisiones/`); Frank recomienda **A**.
 
 ## Decisión de producto pendiente (no se implementa en este lote)
 
