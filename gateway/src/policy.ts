@@ -1,7 +1,7 @@
 import type { Tier } from "./attest/session";
 
 /** Categorías de uso (cada endpoint de IA mapea a una). `sync` = tráfico de Modo Nube. */
-export type Category = "chat" | "vision" | "voice" | "insights" | "suggestions" | "rates" | "sync";
+export type Category = "chat" | "vision" | "voice" | "insights" | "suggestions" | "receipt" | "rates" | "sync";
 
 /**
  * Límites de un (tier × categoría). Exactamente uno de `daily` o `trial`:
@@ -24,6 +24,9 @@ export interface Limits {
  *   chat/insights/suggestions → Pro requerido. Tasas: abiertas a cualquier device atestado.
  * - Una nota de voz cuenta UNA vez en `voice` aunque haga dos llamadas (transcribir + leer): ver `notePairing` en
  *   `ai/tasks.ts` y el crédito de `rate_limiter.ts`.
+ * - `receipt` (repartir un recibo en un grupo, 2.3): cupo DIARIO propio para los dos planes, aparte de las fotos y notas
+ *   de personal. Decisión de Jürgen del 2026-11-14: Grupos es el gancho, así que todo Free tiene 5 recibos al día (foto
+ *   o voz, un contador), use o no personal; Pro, 50. Ninguno gasta la prueba de «Configura tu Yala».
  */
 const TABLE: Record<Tier, Partial<Record<Category, Limits>>> = {
   pro: {
@@ -32,12 +35,14 @@ const TABLE: Record<Tier, Partial<Record<Category, Limits>>> = {
     voice: { daily: 100, burstPerMin: 20 },
     insights: { daily: 60, burstPerMin: 15 },
     suggestions: { daily: 300, burstPerMin: 30 },
+    receipt: { daily: 50, burstPerMin: 15 },
     rates: { daily: 2000, burstPerMin: 60 },
     sync: { daily: 20000, burstPerMin: 240 },
   },
   free: {
     vision: { trial: 5, burstPerMin: 5 },
     voice: { trial: 5, burstPerMin: 5 },
+    receipt: { daily: 5, burstPerMin: 5 },
     rates: { daily: 2000, burstPerMin: 60 },
     // Modo Nube es GRATIS (decisión 4, §j.1) → sync abierto a cualquier device atestado, incl. free.
     // Generoso: un catch-up masivo tras offline drena por lotes; el burst acota el flood.
