@@ -1,10 +1,10 @@
 ---
 id: chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install
-status: backlog
+status: done
 priority: low
 area: "data, import, chat"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-11-13
 source: hallazgo de camino del lote 12.6 (card d4od, ticket csv-import-leaves-no-origin-mark-and-reuses-opposite-categories)
 ---
 
@@ -43,3 +43,15 @@ El ticket del importador pedía una marca de origen en cada fila. Se descartó a
 
 Un registro creado en esta instalación (también un CSV de una fila con un reembolso) no lo voltea el barrido, y un
 corpus viejo que llega por restore sigue reparándose. Con test de las dos cosas.
+
+## Resolución (2026-11-13)
+
+Primera salida: la ventana cierra en el **primer arranque de esta instalación con un build que firma**
+(`ChatUnsignedExpenseRepairService.armWindowCloseIfNeeded`, clave `chatUnsignedExpenseRepairSweep.windowClose.v1`). Lo
+fija `AppBootstrapper` antes de esperar al store, y el barrido usa `min(ahora, cierre)`. Lo creado aquí después —también
+un CSV de una fila con un reembolso— queda fuera; un corpus que llega por restore conserva su `createdAt` viejo y se
+sigue reparando. Tests: `YalaTests/SubcategoryStableRole/ChatSignSweepNewInstallTests` (los dos casos, los dos juntos,
+el cierre que no se mueve y el orden del cableado en el arranque).
+
+Residual aceptado: quien instaló 2.2, registró algo sin relanzar nunca con el store vacío y actualiza a 2.3 sigue
+expuesto, porque 2.2 no apuntaba el cierre.

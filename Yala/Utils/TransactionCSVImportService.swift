@@ -675,20 +675,34 @@ enum TransactionCSVImportService {
         guard !trimmedSubcategory.isEmpty else { throw ImportError.emptySubcategory(row: rowNumber) }
         let category: Category
         let subcategory: Subcategory
-        switch try CategoryImportHelper.resolveForImport(
-            categoryName: trimmedCategory,
-            subcategoryName: trimmedSubcategory,
-            isIncome: reading.value >= 0,
-            allowCreating: allowCreatingNewCategories,
-            in: context
-        ) {
-        case .resolved(let resolvedCategory, let resolvedSubcategory):
-            category = resolvedCategory
-            subcategory = resolvedSubcategory
-        case .unknownCategory:
-            throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
-        case .unknownSubcategory:
-            throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+        if let role = systemRole(forImportedSubcategoryName: trimmedSubcategory) {
+            // Una transferencia o un ajuste va a la subcategoría de sistema con ese PAPEL, no a una con ese nombre:
+            // si no, en un teléfono sin la sembrada el import creaba una del usuario y sus filas dejaban de ser
+            // transferencias en cuanto la subcategoría perdía el nombre como señal (2026-11-13).
+            guard let systemSubcategory = try systemSubcategory(
+                for: role, categoryName: trimmedCategory, isIncome: reading.value >= 0, in: context),
+                  let systemCategory = systemSubcategory.category
+            else {
+                throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+            }
+            category = systemCategory
+            subcategory = systemSubcategory
+        } else {
+            switch try CategoryImportHelper.resolveForImport(
+                categoryName: trimmedCategory,
+                subcategoryName: trimmedSubcategory,
+                isIncome: reading.value >= 0,
+                allowCreating: allowCreatingNewCategories,
+                in: context
+            ) {
+            case .resolved(let resolvedCategory, let resolvedSubcategory):
+                category = resolvedCategory
+                subcategory = resolvedSubcategory
+            case .unknownCategory:
+                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+            case .unknownSubcategory:
+                throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+            }
         }
         // Lo resuelto también: una entidad de sistema del puente con un nombre que la lista no conoce.
         if category.isSystem || subcategory.isSystem {
@@ -1163,15 +1177,54 @@ extension TransactionCSVImportService {
     /// El ÚNICO sitio donde el import decide si una fila es ajuste de saldo, transferencia o un
     /// movimiento normal (`nil`). Lo llaman las cuatro rutas (CSV y Excel, una cuenta y varias divisas).
     ///
-    /// El ajuste se reconoce con los nombres de TODOS los idiomas (`balanceAdjustmentNames`), no con el
-    /// texto del idioma actual: «Ajustes de saldo» sembrado en español e importado con el teléfono en
-    /// inglés sigue siendo ajuste. Cualquier otra subcategoría de sistema es transferencia, como antes.
+    /// Decide el PAPEL de la subcategoría (`Subcategory.systemRole`), no su nombre: una subcategoría del usuario que se
+    /// llame como la de transferencias es un movimiento normal (decisión de Jürgen, 2026-11-13).
     static func systemAdjustmentType(for subcategory: Subcategory) -> String? {
-        guard subcategory.isAnySystem else { return nil }
-        if Subcategory.balanceAdjustmentNames.contains(subcategory.name) {
-            return InitialBalanceService.typeAdjustment
+        switch subcategory.systemRole {
+        case .balanceAdjustment: return InitialBalanceService.typeAdjustment
+        case .transfer: return TransactionItem.adjustmentTypeTransfer
+        case nil: return nil
         }
-        return TransactionItem.adjustmentTypeTransfer
+    }
+
+    /// El papel que trae una fila del archivo por el texto de su subcategoría, o `nil` para un movimiento normal.
+    ///
+    /// Un archivo solo trae texto, así que aquí el nombre es la única señal: los de ajuste y transferencia de TODOS los
+    /// idiomas (`balanceAdjustmentNames`, `transferNames`) y los de la subcategoría de transferencia que siembra Yala
+    /// (`seededTransferNames`), que desde el 2026-11-13 es de sistema en todos los idiomas. «Ajustes de saldo»
+    /// sembrado en español e importado con el teléfono en inglés sigue siendo ajuste.
+    static func systemRole(forImportedSubcategoryName name: String) -> SubcategorySystemRole? {
+        if Subcategory.balanceAdjustmentNames.contains(name) { return .balanceAdjustment }
+        if Subcategory.transferNames.contains(name) || Subcategory.seededTransferNames.contains(name) { return .transfer }
+        return nil
+    }
+
+    /// La subcategoría de sistema donde va una fila con papel.
+    ///
+    /// Primero una con ese papel en la categoría que nombra el archivo: la de la naturaleza del signo y, si no la hay,
+    /// la que tenga (un reembolso o una transferencia se quedan en la categoría que ya tiene su subcategoría, lote 12.6,
+    /// y no se crea una categoría nueva para la pata de entrada). Si el archivo nombra una categoría sin ninguna, la de
+    /// las transferencias según el signo o la de ajustes, que se crean si no existen, con el interruptor de categorías
+    /// como esté: son de Yala, no del usuario, y el formulario de Nuevo registro también las crea.
+    @MainActor
+    static func systemSubcategory(
+        for role: SubcategorySystemRole, categoryName: String, isIncome: Bool, in context: ModelContext
+    ) throws -> Subcategory? {
+        let named = try context.fetch(FetchDescriptor<Subcategory>())
+            .filter { $0.systemRole == role && $0.category?.name == categoryName }
+        let sameNature = named.filter { $0.category?.isIncome == isIncome }
+        let currentName = role == .transfer ? L10n.Transfer.categoryName : L10n.Subcategory.balanceAdjustment
+        if let match = TransferCategoryResolver.preferred(sameNature.isEmpty ? named : sameNature, currentName: currentName) {
+            return match
+        }
+        switch role {
+        case .transfer:
+            return isIncome
+                ? try TransferCategoryResolver.inflow(context: context)
+                : try TransferCategoryResolver.outflow(context: context)
+        case .balanceAdjustment:
+            return InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: context)
+        }
     }
 
     /// Importa y guarda en `context`; si la importación o el guardado fallan, deshace lo insertado

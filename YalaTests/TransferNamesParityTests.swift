@@ -2,8 +2,8 @@
 //  TransferNamesParityTests.swift
 //  YalaTests
 //
-//  H2 de la auditoría del import 2.2 (card ynsq): el import marca una fila como transferencia si su
-//  subcategoría es de sistema, y eso lo decide su NOMBRE contra `Subcategory.transferNames`. Faltaban los
+//  H2 de la auditoría del import 2.2 (card ynsq): el import marca una fila como transferencia por el texto de su
+//  subcategoría (`Subcategory.transferNames`) y, desde el 2026-11-13, por el PAPEL de la subcategoría a la que va. Faltaban los
 //  nombres de ja, nl, pl, zh-Hans y pt, así que en esos idiomas una transferencia importada contaba como
 //  gasto e ingreso. Y el ajuste se reconocía con el texto del idioma ACTUAL: «Ajustes de saldo» importado
 //  con el teléfono en inglés salía como transferencia.
@@ -49,23 +49,24 @@ struct TransferNamesParityTests {
         }
     }
 
-    /// Decisión de Jürgen (2026-10-29): las subcategorías sembradas solo son de sistema donde su texto
-    /// coincide con el de las transferencias de Yala. En en, de, nl, ja y zh siguen siendo normales.
-    @Test("Las subcategorías sembradas de transferencia no entran con su propio nombre")
-    func seededTransferNames_areSystemOnlyWhereTheyMatchTheAppsTransferName() throws {
-        let appNames = try Self.localizedTransferNames()
-        var stayNormal: Set<String> = []
+    /// Decisión de Jürgen (2026-11-13, reemplaza la del 29-oct): la subcategoría de transferencia que Yala siembra es
+    /// de sistema en TODOS los idiomas. Sus nombres de los `.lproj` son exactamente `seededTransferNames`, y una
+    /// sembrada con cualquiera de ellos tiene papel de transferencia.
+    @Test("Los nombres sembrados de transferencia de cada .lproj son de sistema")
+    func seededTransferNames_areSystemInEveryLanguage() throws {
+        var seeded: Set<String> = []
         for (locale, table) in try Self.tables() {
             for key in ["subcategory.accountTransfer", "subcategory.accountTransferOther"] {
                 let name = try #require(table[key], "\(locale): falta \(key)")
+                seeded.insert(name)
                 #expect(
-                    Subcategory.transferNames.contains(name) == appNames.contains(name),
+                    Subcategory.inferredSystemRole(name: name, isDefaultSeed: true) == .transfer,
                     "\(locale): «\(name)» (\(key))")
-                if !appNames.contains(name) { stayNormal.insert(name) }
             }
         }
-        // Control: el caso existe (si un día coincidieran todos, este test no probaría nada).
-        #expect(stayNormal.isSuperset(of: ["Account transfer", "Kontoüberweisung", "口座振替"]))
+        #expect(seeded == Subcategory.seededTransferNames)
+        // Control: los que antes eran normales siguen en la lista (si coincidieran todos, el caso no existiría).
+        #expect(seeded.subtracting(Subcategory.transferNames).isSuperset(of: ["Account transfer", "Kontoüberweisung", "口座振替"]))
     }
 
     @Test("Ninguna lista pisa a la otra")
@@ -88,27 +89,40 @@ struct TransferNamesParityTests {
         }
     }
 
-    @Test("Una transferencia en cualquier idioma es transferencia; la sembrada sigue siendo normal")
+    @Test("Una transferencia en cualquier idioma es transferencia, también la sembrada; la del usuario no")
     func transfer_isRecognizedInEveryLanguage() throws {
         let category = Category(name: "Otros", colorHex: "#64748B", isIncome: false)
-        for name in try Self.localizedTransferNames() {
+        for name in try Self.localizedTransferNames().union(Subcategory.seededTransferNames) {
             let sub = Subcategory(name: name, category: category)
             #expect(
                 TransactionCSVImportService.systemAdjustmentType(for: sub) == TransactionItem.adjustmentTypeTransfer,
                 "«\(name)»")
-        }
-        for name in ["Account transfer", "Kontoüberweisung", "口座振替", "账户转账", "Rekeningoverdracht"] {
-            #expect(TransactionCSVImportService.systemAdjustmentType(for: Subcategory(name: name, category: category)) == nil)
+            // Creada a mano con el mismo nombre: normal.
+            let own = Subcategory(name: name, isDefaultSeed: false, category: category)
+            #expect(TransactionCSVImportService.systemAdjustmentType(for: own) == nil, "«\(name)» del usuario")
         }
     }
 
-    @Test("Una subcategoría normal no es de sistema; una con isSystem sigue siendo transferencia")
-    func normalSubcategory_isNotSystem_andFlaggedOneStaysTransfer() {
+    /// Desde el 2026-11-13 decide el papel. Una del puente de Grupos (`isSystem`) no tiene papel, y el import la rechaza
+    /// antes de llegar aquí (`ImportError.groupRow`).
+    @Test("Una subcategoría normal no es de sistema; una del puente no tiene papel")
+    func normalSubcategory_isNotSystem_andBridgeOneHasNoRole() {
         let category = Category(name: "Alimentación", colorHex: "#22C55E", isIncome: false)
         #expect(TransactionCSVImportService.systemAdjustmentType(for: Subcategory(name: "Delivery", category: category)) == nil)
         let flagged = Subcategory(name: "Gasto compartido", category: category)
         flagged.isSystem = true
-        #expect(TransactionCSVImportService.systemAdjustmentType(for: flagged) == TransactionItem.adjustmentTypeTransfer)
+        #expect(TransactionCSVImportService.systemAdjustmentType(for: flagged) == nil)
+    }
+
+    @Test("El texto de una fila importada da su papel en cualquier idioma")
+    func importedRowText_givesItsRole() throws {
+        for name in Subcategory.balanceAdjustmentNames {
+            #expect(TransactionCSVImportService.systemRole(forImportedSubcategoryName: name) == .balanceAdjustment)
+        }
+        for name in try Self.localizedTransferNames().union(Subcategory.seededTransferNames) {
+            #expect(TransactionCSVImportService.systemRole(forImportedSubcategoryName: name) == .transfer, "«\(name)»")
+        }
+        #expect(TransactionCSVImportService.systemRole(forImportedSubcategoryName: "Delivery") == nil)
     }
 
     // MARK: - Cableado

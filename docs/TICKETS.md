@@ -228,7 +228,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
-| chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install | backlog | tickets/backlog/chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install.md |
+| chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install | done | tickets/done/chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install.md |
 | chat-suggestions-context-counts-the-whole-group-expense | done | tickets/done/chat-suggestions-context-counts-the-whole-group-expense.md |
 | chat-suggestions-reject-the-users-own-recurring-payments | backlog | tickets/backlog/chat-suggestions-reject-the-users-own-recurring-payments.md |
 | chat-suggestions-show-merchants-in-capitals | done | tickets/done/chat-suggestions-show-merchants-in-capitals.md |
@@ -1215,7 +1215,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | done | tickets/done/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
-| transfer-and-adjustment-subcategories-need-a-stable-role | backlog | tickets/backlog/transfer-and-adjustment-subcategories-need-a-stable-role.md |
+| transfer-and-adjustment-subcategories-need-a-stable-role | done | tickets/done/transfer-and-adjustment-subcategories-need-a-stable-role.md |
 | transfer-subcategory-is-looked-up-in-the-current-language | qa | tickets/qa/transfer-subcategory-is-looked-up-in-the-current-language.md |
 | transfer-subcategory-unrecognized-in-five-languages | done | tickets/done/transfer-subcategory-unrecognized-in-five-languages.md |
 | translation-review-with-sonnet-before-each-release | done | tickets/done/translation-review-with-sonnet-before-each-release.md |

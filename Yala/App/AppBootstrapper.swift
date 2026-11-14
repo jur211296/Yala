@@ -271,6 +271,21 @@ final class AppBootstrapper {
             }
         }
 
+        // 2d. El papel de las subcategorías de transferencia y de ajuste (ticket
+        //     `transfer-and-adjustment-subcategories-need-a-stable-role`). En CADA arranque —lo que llega sin papel
+        //     puede llegar por iCloud o por el canal del Modo Nube en cualquier momento— y tras la quiescencia: escribe
+        //     `Subcategory` del store personal. Mientras no corre, `Subcategory.systemRole` deduce el mismo papel.
+        //     `!uiTestActive` como sus vecinos: los seeds de UI se leen con esa deducción.
+        if !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.subcategorySystemRoles", "import not quiescent")
+                    return
+                }
+                SubcategorySystemRoleBackfill.run(context: context)
+            }
+        }
+
         // 3. Load subscription status
         await loadSubscriptionStatus()
 
@@ -3409,6 +3424,10 @@ final class AppBootstrapper {
         guard
             !UserDefaults.standard.bool(forKey: ChatUnsignedExpenseRepairService.repairSweepKey)
         else { return }
+
+        // La ventana cierra AHORA, antes de la espera: lo que la persona registre mientras tanto ya
+        // lo escribió un build que firma y no debe voltearse.
+        ChatUnsignedExpenseRepairService.armWindowCloseIfNeeded()
 
         // Gate de quiescencia: el barrido escribe `TransactionItem` (store personal) y hace `save()`;
         // durante el import del restore eso dispara el `_assertionFailure` interno de SwiftData. Si el
