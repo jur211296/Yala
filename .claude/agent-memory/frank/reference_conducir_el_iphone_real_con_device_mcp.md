@@ -30,3 +30,14 @@ Medido el 2026-11-09 (Device MCP con tools en sesión, versión gratis):
   de Pro. La galería de widgets y Atajos enseñan contactos y apps personales: no las captures.
 - **StoreKit en Yala Dev instalada así**: «No pudimos cargar los precios». Lo de compras va con TestFlight
   ([[qa-en-yala-dev-antes-que-prod]]).
+
+Medido el 2026-11-14 (barrido de la parte 2, iPhone 14, iOS 27.2.1):
+
+- **Los seams `-uitest-*` van en el iPhone real** con `launch_app` + `arguments` (p. ej. `-uitest -uitest-reset
+  -uitest-pro -uitest-voice-result two`): sirve para lo que el teléfono no reproduce sin voz ni red. `-uitest-reset`
+  borra la sesión; el siguiente arranque normal pide «reabre Yala» para soltar el iCloud, y luego la bienvenida.
+- **Con una animación viva (la onda de la hoja de voz) el árbol de accesibilidad se queda congelado** en la pantalla
+  anterior: `list_elements` devuelve otra vista. Para una etiqueta de VoiceOver, verifica en textos y tests.
+- **Widget en dos toques:** pulsación larga sobre el icono de Yala Dev → la fila de tamaños de arriba lo convierte en
+  widget sin pasar por la galería (que enseña apps personales). Para deshacerlo, pulsación larga → el tamaño icono.
+- `press_button home` puede dejarte en otra página de inicio con apps personales: no la captures; desliza a la de Yala.
