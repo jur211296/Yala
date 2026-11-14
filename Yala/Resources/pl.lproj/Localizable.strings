@@ -8696,7 +8696,6 @@
 "account.saveErrorPartial" = "Nie udało się zapisać wszystkiego. Część zmian może być już widoczna; sprawdź konto i zapisz ponownie.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Z paragonu";
 "receiptSplit.entry.hint" = "Odczytuje paragon ze zdjęcia lub głosu i dzieli go na pozycje";
 "receiptSplit.title" = "Z paragonu";
 "receiptSplit.photo.title" = "Zdjęcie paragonu";
@@ -8742,6 +8741,15 @@
 "receiptSplit.failure.read.message" = "Coś poszło nie tak. Spróbuj ponownie za chwilę.";
 "receiptSplit.failure.noLines.title" = "Nie znaleziono pozycji z kwotą";
 "receiptSplit.failure.noLines.message" = "Zrób zdjęcie bliżej paragonu przy dobrym świetle albo go podyktuj.";
+"receiptSplit.failure.dailyLimitFree.title" = "Dzisiejsze paragony już podzielone";
+"receiptSplit.failure.dailyLimitFree.message" = "Jutro znów podzielisz paragony za darmo. Z Yala Pro masz ich dużo więcej każdego dnia.";
+"receiptSplit.failure.dailyLimit.title" = "Osiągnięto dzisiejszy limit paragonów";
+"receiptSplit.failure.dailyLimit.message" = "Jutro możesz dalej dzielić paragony.";
+"receiptSplit.text.hint" = "Wpisz wydatek, a AI go podzieli";
+"receiptSplit.text.title" = "Wpisz wydatek";
+"receiptSplit.text.placeholder" = "pizza 40 Ana i ja, stek 35 Ben, napoje 18 wszyscy";
+"receiptSplit.text.footer" = "Każda pozycja z kwotą i tym, kto ją zamówił. To, co nie ma imienia, dzieli się na wszystkich.";
+"receiptSplit.failure.noLines.textMessage" = "Wpisz każdą pozycję z kwotą, na przykład „pizza 40”.";
 "receiptSplit.failure.noConnection.message" = "Połącz się z internetem, aby odczytać paragon.";
 "receiptSplit.failure.mic.message" = "Zezwól na dostęp w Ustawieniach, aby podyktować paragon.";
 

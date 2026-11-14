@@ -7944,7 +7944,6 @@
 "account.saveErrorPartial" = "No se pudo guardar del todo. Puede que parte de los cambios ya se vea; revisa la cuenta y vuelve a guardar.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Desde un recibo";
 "receiptSplit.entry.hint" = "Lee un recibo con foto o voz y lo reparte por líneas";
 "receiptSplit.title" = "Desde un recibo";
 "receiptSplit.photo.title" = "Foto del recibo";
@@ -7990,6 +7989,15 @@
 "receiptSplit.failure.read.message" = "Algo salió mal. Inténtalo de nuevo en un momento.";
 "receiptSplit.failure.noLines.title" = "No encontré líneas con importe";
 "receiptSplit.failure.noLines.message" = "Prueba con una foto más cerca del recibo y con buena luz, o díctalo.";
+"receiptSplit.failure.dailyLimitFree.title" = "Ya has repartido tus recibos de hoy";
+"receiptSplit.failure.dailyLimitFree.message" = "Mañana puedes repartir más recibos gratis. Con Yala Pro tienes muchos más cada día.";
+"receiptSplit.failure.dailyLimit.title" = "Has llegado al límite de recibos de hoy";
+"receiptSplit.failure.dailyLimit.message" = "Mañana puedes seguir repartiendo recibos.";
+"receiptSplit.text.hint" = "Escribe el gasto y la IA lo reparte";
+"receiptSplit.text.title" = "Escribe el gasto";
+"receiptSplit.text.placeholder" = "pizza 40 Ana y yo, tortilla 35 Beto, sangría 18 entre todos";
+"receiptSplit.text.footer" = "Cada cosa con su importe y quién la ha consumido. Lo que no tenga nombre se reparte entre todos.";
+"receiptSplit.failure.noLines.textMessage" = "Escribe cada cosa con su importe, por ejemplo «pizza 40».";
 "receiptSplit.failure.noConnection.message" = "Conéctate a internet para leer el recibo.";
 "receiptSplit.failure.mic.message" = "Dale permiso en Ajustes para dictar el recibo.";
 

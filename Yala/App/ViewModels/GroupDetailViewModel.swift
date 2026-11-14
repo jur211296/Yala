@@ -718,6 +718,8 @@ enum GroupSheet: Identifiable {
     case settings
     case members
     case addExpense
+    /// Nuevo gasto relleno con el reparto de un recibo (Voz o Foto bajo el saldo, 2026-11-14).
+    case addExpenseFromReceipt(GroupExpensePrefillTemplate)
     case expenseDetail(SplitExpense)
     case editExpense(SplitExpense)
     case openingBalanceDetail(SplitExpense)
@@ -740,6 +742,7 @@ enum GroupSheet: Identifiable {
         case .settings: ID(kind: "settings")
         case .members: ID(kind: "members")
         case .addExpense: ID(kind: "addExpense")
+        case .addExpenseFromReceipt: ID(kind: "addExpenseFromReceipt")
         case .expenseDetail(let e): ID(kind: "expenseDetail", expense: e.persistentModelID)
         case .editExpense(let e): ID(kind: "editExpense", expense: e.persistentModelID)
         case .openingBalanceDetail(let e): ID(kind: "openingBalanceDetail", expense: e.persistentModelID)

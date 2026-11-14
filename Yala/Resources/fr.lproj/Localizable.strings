@@ -8685,7 +8685,6 @@
 "account.saveErrorPartial" = "Tout n'a pas pu être enregistré. Une partie des modifications est peut-être déjà visible ; vérifie le compte et enregistre à nouveau.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Depuis un reçu";
 "receiptSplit.entry.hint" = "Lit un reçu en photo ou à la voix et le partage ligne par ligne";
 "receiptSplit.title" = "Depuis un reçu";
 "receiptSplit.photo.title" = "Photo du reçu";
@@ -8731,6 +8730,15 @@
 "receiptSplit.failure.read.message" = "Un problème est survenu. Réessaie dans un instant.";
 "receiptSplit.failure.noLines.title" = "Aucune ligne avec un montant";
 "receiptSplit.failure.noLines.message" = "Essaie une photo plus proche du reçu, bien éclairée, ou dicte-le.";
+"receiptSplit.failure.dailyLimitFree.title" = "Tu as partagé tes tickets du jour";
+"receiptSplit.failure.dailyLimitFree.message" = "Demain, tu pourras partager d'autres tickets gratuitement. Avec Yala Pro, tu en as beaucoup plus chaque jour.";
+"receiptSplit.failure.dailyLimit.title" = "Tu as atteint la limite de tickets du jour";
+"receiptSplit.failure.dailyLimit.message" = "Tu pourras continuer à partager des tickets demain.";
+"receiptSplit.text.hint" = "Écris la dépense et l'IA la partage";
+"receiptSplit.text.title" = "Écris la dépense";
+"receiptSplit.text.placeholder" = "pizza 40 Ana et moi, steak 35 Ben, boissons 18 tout le monde";
+"receiptSplit.text.footer" = "Chaque article avec son montant et qui l'a pris. Ce qui n'a pas de nom est partagé entre tous.";
+"receiptSplit.failure.noLines.textMessage" = "Écris chaque article avec son montant, par exemple « pizza 40 ».";
 "receiptSplit.failure.noConnection.message" = "Connecte-toi à Internet pour lire le reçu.";
 "receiptSplit.failure.mic.message" = "Autorise l’accès dans Réglages pour dicter le reçu.";
 

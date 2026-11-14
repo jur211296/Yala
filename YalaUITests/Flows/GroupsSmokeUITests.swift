@@ -92,7 +92,8 @@ final class GroupsSmokeUITests: XCTestCase {
         let app = launchOnGroupsWithSession()
 
         // Desde la card kzhe «Nuevo grupo» está arriba, bajo el resumen; el flotante solo sale al bajar.
-        let newGroup = app.buttons["groups_action_new_group"]
+        // Desde el 2026-11-14 «Nuevo grupo» va en la barra (con grupos) y en la fila solo sin grupos: vale cualquiera.
+        let newGroup = app.buttons.matching(NSPredicate(format: "identifier IN %@", ["groups_toolbar_new_group", "groups_action_new_group"])).firstMatch
         XCTAssertTrue(newGroup.waitForExistence(timeout: 10), "No apareció «Nuevo grupo» arriba en Grupos.")
         newGroup.tap()
 
@@ -119,7 +120,8 @@ final class GroupsSmokeUITests: XCTestCase {
         let app = launchOnGroupsWithSession()
 
         // Desde la card kzhe «Nuevo grupo» está arriba, bajo el resumen; el flotante solo sale al bajar.
-        let newGroup = app.buttons["groups_action_new_group"]
+        // Desde el 2026-11-14 «Nuevo grupo» va en la barra (con grupos) y en la fila solo sin grupos: vale cualquiera.
+        let newGroup = app.buttons.matching(NSPredicate(format: "identifier IN %@", ["groups_toolbar_new_group", "groups_action_new_group"])).firstMatch
         XCTAssertTrue(newGroup.waitForExistence(timeout: 10), "No apareció «Nuevo grupo» arriba en Grupos.")
         newGroup.tap()
 
