@@ -219,15 +219,6 @@ final class FormClarity23UITests: XCTestCase {
 
     func test_v3_largeText_manualEntryIsReachable() {
         let app = launch(largeText: true, fakePrices: true)
-        // FALLO CONOCIDO (14-nov-2026): con AX5 el Panel es más ancho que la pantalla y el «+» flotante queda fuera
-        // (x = 405 en una ventana de 402): no se puede tocar. Tarjeta `tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj`.
-        // Solo se espera el fallo de tocar el «+»; lo demás sigue en rojo. No estricto (depende del ancho del aparato); al
-        // arreglarlo, quitar esto.
-        let knownOffscreenFAB = XCTExpectedFailure.Options()
-        knownOffscreenFAB.isStrict = false
-        knownOffscreenFAB.issueMatcher = { $0.compactDescription.contains("fab_new_transaction") }
-        XCTExpectFailure("«+» fuera de la pantalla con AX5: tarjeta tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj",
-                         options: knownOffscreenFAB)
         openVoiceGate(app, fromFAB: true)
         let manual = app.buttons["upgrade_prompt_manual_entry"]
         var swipes = 0

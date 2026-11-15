@@ -1,17 +1,17 @@
 ---
 name: fallos-conocidos-ui-2-3
-description: Cuatro XCUITest de 2.3 llevan XCTExpectFailure con tarjeta (14-nov-2026); al arreglar el fallo o decidir, hay que quitarlos
+description: IPhoneLandscapeUITests lleva un XCTExpectFailure no estricto por la tarjeta c94z (14-nov-2026); al decidir Jürgen, quitarlo
 metadata:
   type: project
 ---
 
-Desde el 14-nov-2026 cuatro XCUITest llevan `XCTExpectFailure` acotado, cada uno con el id de su tarjeta en el texto:
-Panel más ancho que la pantalla con AX5 (`…-gphj`, dos tests), hueco de más bajo los chips en Estadísticas › Registros
-(`…-4wqy`, estricto) y chips rápidos de Registros en horizontal (`…-c94z`, espera decisión de Jürgen: A ocultar, B dejar,
-C compactar).
+Desde el 14-nov-2026 `IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView` lleva un
+`XCTExpectFailure` no estricto en su última aserción, con el id de la tarjeta `…-c94z` (chips rápidos de Registros en
+horizontal; espera decisión de Jürgen: A ocultar, B dejar, C compactar). Los de gphj y 4wqy se retiraron el 15-nov:
+su arreglo aterrizó antes que el PR de las tandas rojas.
 
-**Why:** el encargo de las tandas rojas prohibía tocar `Yala/`; los fallos son reales y se dejaron visibles sin tener la
+**Why:** el encargo de las tandas rojas prohibía tocar `Yala/`; el choque es real y se dejó visible sin tener la
 nocturna en rojo cada día.
 
-**How to apply:** quien arregle una de esas tres cosas busca `XCTExpectFailure` con el id de la tarjeta y lo quita en el
-mismo PR. Los no estrictos no avisan solos al arreglarse. `grep -rn "XCTExpectFailure" YalaUITests` los lista.
+**How to apply:** quien aplique la decisión de c94z quita ese bloque o reescribe el caso en el mismo PR. Al ser no
+estricto no avisa solo. `grep -rn "XCTExpectFailure" YalaUITests` lo lista.

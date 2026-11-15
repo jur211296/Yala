@@ -43,17 +43,6 @@ final class PanelQuickActionsLargeTextUITests: XCTestCase {
         let row = app.descendants(matching: .any)["panel_quick_actions"].firstMatch
         XCTAssertTrue(row.exists, "No aparece la fila de acciones (panel_quick_actions).")
         let bounds = row.frame.intersection(app.windows.firstMatch.frame)
-        // FALLO CONOCIDO (14-nov-2026): con AX5 el carrusel de cuentas mide 560-656 pt y ensancha el Panel entero más allá
-        // de la pantalla, así que «Nuevo registro» empieza fuera de su fila. Tarjeta
-        // `tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj`. Solo se espera ESE fallo (el marco de una acción); otro
-        // cualquiera sigue en rojo. No estricto: el caso también corre en el iPad (media columna), donde puede no fallar.
-        // Al arreglarlo, quitar esto.
-        let knownWidePanel = XCTExpectedFailure.Options()
-        knownWidePanel.isStrict = false
-        knownWidePanel.issueMatcher = { $0.compactDescription.contains("fuera de su fila")
-            || $0.compactDescription.contains("se sale de su fila") }
-        XCTExpectFailure("Panel más ancho que la pantalla con AX5: tarjeta tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj",
-                         options: knownWidePanel)
         for id in actionIDs {
             let action = app.buttons[id].firstMatch
             XCTAssertTrue(action.exists, "Con AX5 falta la acción \(id) en el Panel.")

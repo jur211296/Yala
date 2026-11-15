@@ -101,16 +101,7 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
 
         openChip(app, "detail_chip_registros")
         assertPanelHero(app, in: "Registros")
-        // FALLO CONOCIDO (14-nov-2026): en Registros el hueco vacío de «Buscar en Registros» (decisión 14 de 2.3) suma el
-        // espaciado de la pila y deja 43 pt. Medido: sin ese hueco, 30 y verde. Tarjeta
-        // `tablero-2-3-hueco-de-mas-bajo-los-chips-en-estad-4wqy`. No estricto: el arreglo va en otro PR («Bugs de interfaz
-        // 2.3, lote 1») que puede aterrizar antes o después que este, y ese PR quita este bloque.
-        let knownGap = XCTExpectedFailure.Options()
-        knownGap.isStrict = false
-        XCTExpectFailure("Hueco de más bajo los chips en Registros: tarjeta tablero-2-3-hueco-de-mas-bajo-los-chips-en-estad-4wqy",
-                         options: knownGap) {
-            assertHeroHugsChips(app, chip: "detail_chip_registros", in: "Registros")
-        }
+        assertHeroHugsChips(app, chip: "detail_chip_registros", in: "Registros")
     }
 
     /// «Ver más en Tendencias» abre Estadísticas directamente en Tendencias, sin pasar por Resumen. El hero de
