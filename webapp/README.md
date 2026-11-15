@@ -160,6 +160,11 @@ un permiso propio de la web, por el gateway, solo en staging hasta una revisión
   pago (confirmado si lo apunta quien paga o quien recibe; si no, pendiente, como `SettlementSaldar23Logic`) y crear un
   enlace con el formato de la app (7 días, 20 usos). Valida miembros activos, divisas que el grupo ya usa, céntimos y
   fechas. Los demás miembros reciben el aviso push de siempre.
+- **Quién es quién (15-nov, barrido final de 2.3):** en gastos, cuotas y pagos la app no escribe la `member_key` del
+  miembro sino el id local de su iPhone (SHA-256 de `SplitMemberBackend:<grupo>:<clave>`, o `SplitMember:` para claves de
+  la era iCloud, en mayúsculas). La web traduce al leer y escribe esa forma (`shared-core/src/logic/groupMemberRef.ts`),
+  y la base solo acepta esa (`web_member_ref` en `web3_02`). Con la clave cruda salían «Todo saldado» con deudas,
+  miembros «Sin nombre» y, en la app, «? pagó». Paridad con la app: `memberRefs` de `mcp/test/golden/groups-parity.json`.
 - **Límite por cuenta:** cubo `webw:<sub>` (300 al día, 20 por minuto), que se aplica también en `observe`.
 - **Reintentos:** el id lo pone el formulario al abrirse. Un fallo no deja nada escrito (transacción); un reenvío de lo
   que ya entró devuelve `ya_estaba` sin tocar nada.

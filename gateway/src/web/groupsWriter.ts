@@ -16,6 +16,11 @@
  * llave de Grupos solo cifra aquí. Las reglas son las de la app: el reparto igual de `GroupSplitCalculator` y quién
  * confirma un pago de `SettlementSaldar23Logic`. Los demás miembros reciben el aviso push de siempre.
  *
+ * Quién es quién: la web habla con `member_key` (lo que enseña el detalle), pero las filas se escriben con el id con el
+ * que la app nombra a cada miembro (`appMemberRef`, `shared-core/src/logic/groupMemberRef.ts`). Con la clave cruda, el
+ * iPhone pintaba «? pagó» y el grupo ganaba dos personas fantasma (barrido final de 2.3, 15-nov). La base solo acepta
+ * esa forma (`web_group_active_member`, web3_02).
+ *
  * Reintentos: los ids los manda la web (uno por formulario abierto). Cada operación es una transacción en la base: un fallo
  * no deja nada escrito, y un reenvío de lo que ya entró devuelve `already` sin tocar nada.
  */
@@ -32,6 +37,7 @@ import type { SyncDeltaResult } from "../sync/types";
 import { nestFieldsByUnit, validateUpsertShape } from "../groups/manifest";
 import { readGroupsForWeb, type Row, type WebGroupRows } from "./groupsReader";
 import { equalSplit } from "../../../shared-core/src/logic/groupSplit";
+import { appMemberRef } from "../../../shared-core/src/logic/groupMemberRef";
 
 export const WEB_WRITER_ROLE = "yala_web";
 export const WEB_WRITE_BUCKET = (sub: string) => `webw:${sub}`;
@@ -267,21 +273,22 @@ export async function addWebExpense(env: Env, token: string, input: WebExpenseIn
   if (g.expenses.some((e) => str(e.sync_id) === id)) return { ok: true, status: "already" };
 
   const hlc = webHlc(nowMs, randomNode());
+  const ref = (key: string) => appMemberRef(g.group_id, key);
   const expense = delta("split_expenses", g.group_id, id, {
     amount: input.amount,
     currency_code: currency,
     expense_description: description,
     date,
     created_at: new Date(nowMs).toISOString(),
-    paid_by_member_key: str(input.paidBy),
+    paid_by_member_key: await ref(str(input.paidBy)),
     split_type: "equal",
     is_settled: false,
     is_opening_balance: false,
-    last_edited_by_member_key: str(ctx.me.member_key),
+    last_edited_by_member_key: await ref(str(ctx.me.member_key)),
   }, hlc);
   const shares: GroupSyncDelta[] = [];
   for (const p of parts) {
-    shares.push(delta("split_shares", g.group_id, await shareId(id, p.member), { expense_id: id, member_key: p.member, amount: p.amount, is_paid: false }, hlc));
+    shares.push(delta("split_shares", g.group_id, await shareId(id, p.member), { expense_id: id, member_key: await ref(p.member), amount: p.amount, is_paid: false }, hlc));
   }
   const e = shaped(expense);
   const ss = shares.map(shaped);
@@ -330,14 +337,15 @@ export async function addWebSettlement(env: Env, token: string, input: WebSettle
   const confirmed = recorder === from || recorder === to;
 
   const hlc = webHlc(nowMs, randomNode());
+  const ref = (key: string) => appMemberRef(g.group_id, key);
   const fields: Record<string, unknown> = {
-    from_member_key: from,
-    to_member_key: to,
+    from_member_key: await ref(from),
+    to_member_key: await ref(to),
     amount: input.amount,
     currency_code: currency,
     date,
     is_confirmed: confirmed,
-    recorded_by_member_key: recorder,
+    recorded_by_member_key: await ref(recorder),
   };
   if (note) fields.note = note;
   const d = delta("split_settlements", g.group_id, id, fields, hlc);

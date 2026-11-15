@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { BASE, world, type Browser, type World } from "./fakes";
 import type { GroupsReaderBinding, WebGroupRows, WebGroupsResult } from "../src/worker/groups";
+import { appMemberRef } from "../../shared-core/src/logic/groupMemberRef";
 
 function viaje(): WebGroupRows {
   return {
@@ -146,6 +147,51 @@ describe("lote 3: Grupos en lectura", () => {
     gw.result = { ok: true, groups: [viaje()], truncated: true };
     const d = (await (await w.browser.request("/api/grupos/detalle?id=g-viaje")).json()) as { incompleto: boolean };
     expect(d.incompleto).toBe(true);
+  });
+
+  it("las filas que escribe la app nombran a cada miembro con su id del iPhone: la web las reconoce (barrido 2.3)", async () => {
+    // El caso del barrido final de 2.3: un grupo de dos creado en la app, con una deuda de 60. Antes la lista decía
+    // «Todo saldado» y los dos miembros salían «Sin nombre».
+    const { w, gw } = await setup();
+    const gid = "SplitGroup-EF6EB72F-0000-4000-8000-000000000001";
+    const ana = "3e9bda1c-0000-4000-8000-00000000000a";
+    const beto = "7fa23530-0000-4000-8000-00000000000b";
+    const rAna = await appMemberRef(gid, ana);
+    const rBeto = await appMemberRef(gid, beto);
+    const app: WebGroupRows = {
+      group_id: gid,
+      me: ana,
+      group: { group_id: gid, name: "Depa", currency_code: "PEN", simplify_debts: true, show_debts_in_single_currency: false, is_archived: false },
+      members: [
+        { member_key: ana, display_name: "Ana", role: "admin", status: "active" },
+        { member_key: beto, display_name: "Beto", role: "member", status: "active" },
+      ],
+      expenses: [{ sync_id: "e1", amount: "120.0000", currency_code: "PEN", paid_by_member_key: rAna, last_edited_by_member_key: rAna, is_settled: false, expense_description: "Luz", date: "2026-11-10T12:00:00Z" }],
+      shares: [
+        { expense_id: "e1", member_key: rAna, amount: "60.0000" },
+        { expense_id: "e1", member_key: rBeto, amount: "60.0000" },
+      ],
+      settlements: [],
+    };
+    gw.result = { ok: true, groups: [app], truncated: false };
+    const list = (await (await w.browser.request("/api/grupos")).json()) as {
+      resumen: { teDeben: unknown[] };
+      grupos: { banda: { estado: string }; miembros: number; personas: { nombre: string; sentido: string; importe: number }[] }[];
+    };
+    expect(list.resumen.teDeben).toEqual([{ divisa: "PEN", importe: 60 }]);
+    expect(list.grupos[0]!.banda.estado).toBe("theyOweMe");
+    expect(list.grupos[0]!.miembros).toBe(2);
+    expect(list.grupos[0]!.personas).toEqual([{ nombre: "Beto", sentido: "teDebe", importe: 60, divisa: "PEN" }]);
+
+    const d = (await (await w.browser.request(`/api/grupos/detalle?id=${gid}`)).json()) as {
+      deudas: { de: string; a: string; deClave: string; aClave: string }[];
+      saldos: { nombre: string }[];
+      gastos: { pagadoPor: string; pagasteTu: boolean; tuParte: number | null }[];
+    };
+    // Las claves que la página manda de vuelta al escribir son las `member_key`, no los ids del iPhone.
+    expect(d.deudas).toEqual([expect.objectContaining({ de: "Beto", a: "Ana", deClave: beto, aClave: ana })]);
+    expect(d.saldos.map((s) => s.nombre).sort()).toEqual(["Ana", "Beto"]);
+    expect(d.gastos).toEqual([expect.objectContaining({ pagadoPor: "Ana", pagasteTu: true, tuParte: 60 })]);
   });
 
   it("sin sesión, 401", async () => {
