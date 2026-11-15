@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Purga de las superficies de ENTRADA que viven en el App Group: las colas cross-launch que la
-//  app materializa como `InboxDraft` al abrir (Apple Pay, Siri, imágenes compartidas) y el
+//  app materializa como `InboxDraft` al abrir (Apple Pay, Siri, avisos del banco, imágenes compartidas) y el
 //  snapshot de contexto que lee el intent de Siri.
 //
 //  Existe porque el App Group es COMPARTIDO entre cuentas y sobrevive al borrado de los stores.
@@ -59,6 +59,7 @@ enum AppGroupInboundPurge {
     static func purgeInboundSurfaces() {
         ApplePayPendingStore.remove(keys: ApplePayPendingStore.peekAll().map(\.key))
         SiriPendingStore.remove(keys: SiriPendingStore.peekAll().map(\.key))
+        BankNoticePendingStore.remove(keys: BankNoticePendingStore.peekAll().map(\.key))
         let widgetDefaults = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
         ScheduledPaymentWidgetPaidStore.remove(
             keys: ScheduledPaymentWidgetPaidStore.peekAll(defaults: widgetDefaults).map(\.key), defaults: widgetDefaults)

@@ -19,7 +19,9 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   sí. Pero en el iPad ese toque físico sobre una tarjeta con menú contextual (cuenta, grupo) se lee como pulsación
   larga y abre el menú: ahí, `--tap-style simulator`. Y un `TextField` solo tomó el foco con `axe touch --down`,
   0,25 s, `--up` (con `tap`, lo tecleado se perdía en silencio). Un toque en los ~3 s tras `uitest_ready` también se
-  perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app.
+  perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app. **Los botones de cristal de la barra de
+  Registros (iOS 27.2, 2026-11-11) no respondieron a `axe tap` ni por id ni por punto; `axe touch --down --up --delay
+  0.15` sí**, y lo mismo las filas y los botones de una alerta: para capturas del «antes», empieza por `touch`.
 - **Escribir:** `axe type` no escribe tildes ni «ñ» («No keycode found for character: 'é'»): escribe sin ellas.
 - **Ver:** `simctl io <U> screenshot` + `sips -Z 700` a JPEG; las coordenadas de la imagen × (402/ancho) dan puntos.
 - **El importe del formulario de gasto de grupo no se deja escribir a mano (medido el 2026-10-21, iOS 27.0):** tras
@@ -29,6 +31,10 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   capturas salen del propio test (`TEST_RUNNER_<VAR>` + `app.screenshot().pngRepresentation.write`), que además queda
   como red. Y erase antes de volver a XCUITest (regla del teclado físico de `testing.md`).
 - Las marcas de selección de Fotos se pintan con retraso: el contador «Mostrar selección (N)» es la verdad, no la captura.
+- (2026-11-12) En Registros, «Más filtros», los chips de moneda y el segmentado del monto ignoran `axe tap` (por id y por
+  punto) y responden a `axe touch -x X -y Y --down --up --delay 0.1`. Dentro de la hoja de Filtros, un `axe swipe` hacia
+  ARRIBA desplaza sin cerrarla. Llegar al año pasado en «Todo el tiempo» a golpe de swipe se pasa de largo: para eso,
+  XCUITest con el separador de mes.
 
 **How to apply:** en cualquier `/qa` o `/barrido-qa` largo. Para un toque suelto con elementRef, el MCP sigue valiendo.
 Relacionado: [[capturar-el-menu-de-compartir]], [[el-tap-de-xcodebuildmcp-se-pierde-en-pantallas-vivas]].

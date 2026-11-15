@@ -166,7 +166,9 @@ enum ReceiptDropHandler {
             }
             return .readable(file: data, isPDF: true)
         }
-        guard let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.9) else {
+        // Reducida al leerla (`PhotoIntake`): a tamaño completo, cada foto de 48 MP soltada pasaba por ~190 MB.
+        guard let jpeg = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge())?
+            .jpegData(compressionQuality: 0.9) else {
             #if DEBUG
             print("ReceiptDropHandler: Error: lo soltado no es una imagen legible")
             #endif

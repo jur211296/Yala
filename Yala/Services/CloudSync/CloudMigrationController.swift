@@ -82,7 +82,8 @@ nonisolated enum CloudMigrationUIStateDeriver {
         phase: MigrationPhase,
         mirrorOffArmed: Bool,
         mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
-        adoptEffectJournaled: Bool = false
+        adoptEffectJournaled: Bool = false,
+        adoptProgress: AdoptEffectProgress? = nil
     ) -> CloudMigrationUIState {
         let mirrorStillAttached = mountedDecision.attachesCloudKitMirror
         // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso montó CON mirror (sigue
@@ -122,14 +123,15 @@ nonisolated enum CloudMigrationUIStateDeriver {
             // pendiente, el adopt que se reintenta → progreso con la fase journaleada (la tarjeta no la nombra). Si no, idle.
             if storageMode == .cloud { return .cloudActive }
             if AdoptEffectScope.isPending(phase, adoptEffectJournaled: adoptEffectJournaled, persistedCloudMode: false) {
-                return .migrating(MigrationUIStep(fraction: adoptEffectFraction, phase: phase))
+                return .migrating(MigrationUIStep(fraction: adoptProgress?.fraction ?? adoptEffectFraction, phase: phase))
             }
             return .idle
         }
     }
 
-    /// Dónde va la barra mientras el efecto del adopt se reintenta: después del claim (22 %) y antes del relanzamiento.
-    static let adoptEffectFraction = 0.6
+    /// Dónde va la barra mientras el efecto del adopt se reintenta y todavía no hay paso medido: justo después del claim
+    /// (22 %). Hasta la card jxbp era un 60 % fijo para todo el efecto; ahora cada paso real lo mueve (`AdoptEffectProgress`).
+    static let adoptEffectFraction = AdoptEffectProgress.startFraction
 
     /// La misma derivación con la LECTURA del journal. Un journal ilegible es `.journalUnreadable`, salvo el relanzamiento
     /// de IDA (regla 1 de arriba), que no mira la fase: el mirror-off armado con el espejo aún montado pide relanzar sea
@@ -140,12 +142,14 @@ nonisolated enum CloudMigrationUIStateDeriver {
         read: JournaledPhaseRead,
         mirrorOffArmed: Bool,
         mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
-        adoptEffectJournaled: Bool = false
+        adoptEffectJournaled: Bool = false,
+        adoptProgress: AdoptEffectProgress? = nil
     ) -> CloudMigrationUIState {
         switch read {
         case .phase(let phase):
             return derive(storageMode: storageMode, phase: phase, mirrorOffArmed: mirrorOffArmed,
-                          mountedDecision: mountedDecision, adoptEffectJournaled: adoptEffectJournaled)
+                          mountedDecision: mountedDecision, adoptEffectJournaled: adoptEffectJournaled,
+                          adoptProgress: adoptProgress)
         case .unreadable:
             if needsForwardRelaunch(mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision) {
                 return .needsRelaunch(.toCloud)
@@ -507,8 +511,20 @@ final class CloudMigrationController {
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (`MigrationRunner.snapshotUploadProgress`).
     private(set) var uploadProgress: CloudProgressStepsLogic.UploadProgress?
 
+    /// Un «Cancelar y seguir en tu cuenta de Yala» está en camino: el botón se apaga solo entonces.
+    private(set) var isCancellingReverse = false
+
+    /// Cuántos cambios pendientes lleva confirmados «Traer tus datos de tu cuenta de Yala» de la vuelta, de cuántos había
+    /// (`MigrationRunner.reverseDrainProgress`; card `volver-a-tu-icloud-se-queda-en-traer-tus`). Solo informa.
+    private(set) var reverseDrainProgress: CloudProgressStepsLogic.UploadProgress?
+
     /// La entrada del runner en curso espera a que iCloud termine de importar (`MigrationRunner.isAwaitingImportQuiescence`).
     private(set) var runnerAwaitingImport = false
+
+    /// El motor ya bajó la cuenta una vez en este proceso (`SyncQuiescenceCoordinator.hasCompletedFirstPull`). Copiado aquí
+    /// para que Almacenamiento repinte cuando cambia (card rfzc): la tarjeta decía «Todo sincronizado» con el Panel aún
+    /// vacío y la cuenta sin bajar.
+    private(set) var engineFirstPullCompleted = true
 
     /// «Volver a iCloud» se confirmó y el journal todavía no lo recoge: la entrada del runner espera a iCloud antes de su
     /// primer guardado. Hasta este ticket la pantalla seguía en «nube activa» con el botón apagado y nada más (card 27z3).
@@ -532,7 +548,8 @@ final class CloudMigrationController {
     var reverseProgressSteps: [CloudProgressStepsLogic.Step] {
         CloudProgressStepsLogic.reverseSteps(
             phase: journaledPhase, waitingForICloud: isWaitingForICloudImport, wipingDeleted: priorICloudWipeDeleted,
-            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending)
+            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending,
+            bring: journaledPhase == .reverseDrainAll ? reverseDrainProgress : nil)
     }
 
     /// ¿La pantalla enseña ya los pasos de la vuelta aunque el journal siga en «nube activa»? Mientras se borra lo de antes
@@ -1674,6 +1691,7 @@ final class CloudMigrationController {
         // persona que firma para CONTINUAR se encontraba la vuelta abandonada en silencio, sin nota (`cancelled` no
         // la deja a propósito).
         cancelReverseRequested = false
+        _runner?.withdrawReverseCancel()
         releasedForResume = true
         isWorking = false
         await resume()
@@ -1745,12 +1763,19 @@ final class CloudMigrationController {
     /// nada. Espera a que suelte y cancela después. Si mientras tanto la vuelta ya avanzó —drenó, o saltó su
     /// techo—, el runner no hace nada: no hay de dónde salir.
     func cancelReverse() async {
+        // El botón se apaga SOLO mientras este «sí» está en camino (card `volver-a-tu-icloud-se-queda-en-traer-tus`): hasta el
+        // 13-nov colgaba de `isWorking`, que sigue en `true` todo el drenaje, y «Cancelar» quedaba apagado mientras esperaba.
+        isCancellingReverse = true
+        defer { isCancellingReverse = false }
         // El «sí» se apunta ANTES del spin, no después. Un re-kick de 30 s en vuelo puede cruzar las cuatro fases
         // previas al montaje en una sola pasada —cada una es una llamada de red, no una espera—, y con el flag
         // puesto después, el `resume()` que viniera detrás no lo veía: el gesto se perdía en silencio tras haber
         // prometido lo contrario. Lo que queda fuera de alcance es el pase que YA cruzó hasta el montaje: ahí la
         // salida previa no existe y el toque es no-op, con su ticket.
         cancelReverseRequested = true
+        // Y en el runner: el drenaje de «Traer tus datos» lo mira antes de cada tanda y corta, así que el «sí» no espera a
+        // que suba el outbox entero (card `volver-a-tu-icloud-se-queda-en-traer-tus`).
+        _runner?.requestReverseCancel()
         while isWorking {
             do {
                 try await Task.sleep(for: .milliseconds(200))
@@ -1823,10 +1848,15 @@ final class CloudMigrationController {
         // Antes de retomar nada: recoge la salida de un adopt que un kill dejó con la sesión abierta, y en el arranque va por
         // delante del registrador de Grupos, que primero pregunta a la red (`AppBootstrapper`).
         await closeSessionOfExitedAdopt()
+        // Card 0f7h: un «Sí, cancelar» de la bienvenida que un cierre de Yala dejó sin aterrizar se honra en esta pasada, antes
+        // de que el traspaso vuelva a intentarlo. Solo cuando hay algo que retomar: sin pasada que lo consuma, el «sí» se
+        // quedaba en el runner y cancelaba el siguiente intento de la persona (lo cazó la review adversarial).
         switch MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPending) {
         case .resume:
+            if WelcomeAdoptInFlight.isCancelRequested() { runner.requestMigrationCancel() }
             await resume(clearingError: clearingError)
         case .pollLeader:
+            if WelcomeAdoptInFlight.isCancelRequested() { runner.requestMigrationCancel() }
             await pollLeader(clearingError: clearingError)
         case .none:
             refresh()
@@ -2002,7 +2032,9 @@ final class CloudMigrationController {
             mirrorOffArmed: mirrorOffArmed,
             mountedDecision: mountedDecision,
             // La última lectura buena: con el journal ilegible la fase no se usa (`.journalUnreadable`).
-            adoptEffectJournaled: adoptEffectJournaled)
+            adoptEffectJournaled: adoptEffectJournaled,
+            // Card jxbp: el paso real del efecto, del runner vivo (`_runner`: no se construye aquí).
+            adoptProgress: _runner?.adoptEffectProgress)
 
         // `_runner` y NO `runner`: la property lazy CONSTRUIRÍA el runner y su executor (red, sesión,
         // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
@@ -2012,7 +2044,9 @@ final class CloudMigrationController {
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
         uploadProgress = _runner?.snapshotUploadProgress
+        reverseDrainProgress = _runner?.reverseDrainProgress
         runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false
+        engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull
         #if DEBUG
         if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }
         #endif

@@ -100,14 +100,19 @@ enum XLSXReader {
 
             let dateColumn = header.indexByField[.date]
             let amountColumn = header.indexByField[.amount]
+            let timeColumn = header.indexByField[.time]
+            let rateColumn = header.indexByField[.exchangeRate]
             var rawRows: [RawImportRow] = []
             rawRows.reserveCapacity(rows.count)
             for row in rows where row.reference > headerRow.reference {
-                let cells = cellValues(of: row, sharedStrings: sharedStrings, dateColumn: dateColumn)
+                let cells = cellValues(
+                    of: row, sharedStrings: sharedStrings, dateColumn: dateColumn, timeColumn: timeColumn)
                 guard cells.contains(where: { !$0.text.isEmpty }) else { continue }
                 let amountIsNumber = amountColumn.map { $0 < cells.count && cells[$0].isNumber } ?? false
+                let rateIsNumber = rateColumn.map { $0 < cells.count && cells[$0].isNumber } ?? false
                 rawRows.append(header.row(
-                    number: Int(row.reference), cells: cells.map(\.text), amountIsNumber: amountIsNumber))
+                    number: Int(row.reference), cells: cells.map(\.text), amountIsNumber: amountIsNumber,
+                    exchangeRateIsNumber: rateIsNumber))
             }
             if chosen == nil {
                 chosen = ImportFileReader.table(rows: rawRows, header: header)
@@ -178,7 +183,7 @@ enum XLSXReader {
     /// Las celdas de una fila por su columna (A=0, B=1…), con su texto y si eran un número.
     /// En la columna de la fecha, un número de serie de Excel se convierte a fecha ISO.
     private static func cellValues(
-        of row: Row, sharedStrings: SharedStrings?, dateColumn: Int?
+        of row: Row, sharedStrings: SharedStrings?, dateColumn: Int?, timeColumn: Int? = nil
     ) -> [(text: String, isNumber: Bool)] {
         var values: [(text: String, isNumber: Bool)] = []
         for cell in row.cells {
@@ -192,11 +197,24 @@ enum XLSXReader {
             if columnIndex == dateColumn, isNumber, let serialDate = Double(value), serialDate > 1000 && serialDate < 100000 {
                 value = excelSerialDateToISO(serialDate)
             }
+            // Una hora es una fracción de día («0» es medianoche, «0.5» mediodía): a «HH:mm:ss» (H18).
+            if columnIndex == timeColumn, isNumber, let serial = Double(value), let time = excelTimeText(serial) {
+                value = time
+            }
 
             while values.count <= columnIndex { values.append((text: "", isNumber: false)) }
             values[columnIndex] = (text: value, isNumber: isNumber)
         }
         return values
+    }
+
+    /// La hora de un número de Excel: la parte decimal es la fracción del día (una fecha con hora trae también los días
+    /// delante, y se quedan fuera). `nil` si no es un número de Excel válido.
+    static func excelTimeText(_ serial: Double) -> String? {
+        guard serial.isFinite, serial >= 0 else { return nil }
+        var seconds = Int(((serial - serial.rounded(.down)) * 86_400).rounded())
+        if seconds == 86_400 { seconds = 0 }
+        return String(format: "%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
     }
 
     /// Convierte un número serial de Excel a fecha ISO (yyyy-MM-dd).
@@ -231,7 +249,13 @@ enum XLSXReader {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.string(from: resultDate)
+        let day = formatter.string(from: resultDate)
+
+        // Una fecha con hora guarda la hora como fracción del día: se escribe detrás para que el import la conserve
+        // (H18). Sin fracción, solo la fecha, como siempre.
+        let seconds = Int(((correctedSerial - correctedSerial.rounded(.down)) * 86_400).rounded())
+        guard seconds > 0, seconds < 86_400 else { return day }
+        return day + String(format: " %02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
     }
 
     /// Convierte referencia de columna (A, B, ..., Z, AA, AB, ...) a índice numérico.

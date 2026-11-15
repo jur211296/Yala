@@ -346,7 +346,8 @@ struct SiriNaturalEntryIntent: AppIntent {
         let snippet = TransactionSnippetView(
             amount: snippetAmount,
             currencyCode: firstParsed?.currencyHint ?? cachedContext?.defaultCurrency ?? "USD",
-            accountName: "—",
+            // La cuenta la elige la app al revisar el borrador: aquí no se sabe y la fila no se pinta (decisión 76).
+            accountName: nil,
             subcategoryName: firstParsed?.subcategoryHint ?? firstNote,
             subcategoryIcon: "text.bubble",
             date: firstParsed?.date ?? Date.now,

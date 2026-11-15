@@ -622,7 +622,9 @@ struct MigrationJournalUnreadableWiringTests {
             "read: read.phaseRead,",
             "mirrorOffArmed: mirrorOffArmed,",
             "mountedDecision: mountedDecision,",
-            "adoptEffectJournaled: adoptEffectJournaled)",
+            "adoptEffectJournaled: adoptEffectJournaled,",
+            // Card jxbp: el paso real del efecto del adopt, del runner vivo.
+            "adoptProgress: _runner?.adoptEffectProgress)",
             "claimBlocker = _runner?.lastClaimBlocker",
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
@@ -630,7 +632,11 @@ struct MigrationJournalUnreadableWiringTests {
             // Los pasos con su cifra (ticket `cloud-progress-shows-real-steps-and-counts`): lo que el runner publica, el seam
             // de XCUITest y la primera muestra de la vuelta.
             "uploadProgress = _runner?.snapshotUploadProgress",
+            // Card `volver-a-tu-icloud-se-queda-en-traer-tus` (13-nov): la cifra de «Traer tus datos» de la vuelta.
+            "reverseDrainProgress = _runner?.reverseDrainProgress",
             "runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false",
+            // Card rfzc: el primer pull del motor, para que Almacenamiento no diga «Todo sincronizado» antes de tiempo.
+            "engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull",
             "#if DEBUG",
             "if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }",
             "#endif",
@@ -809,7 +815,11 @@ struct MigrationJournalUnreadableWiringTests {
             let reads = Self.occurrences(of: "currentJournalRead", in: code)
             if reads > 0, url.lastPathComponent != "MigrationPhaseStore.swift" { journalReadUses[url.lastPathComponent] = reads }
         }
-        #expect(journalReadUses == ["MigrationRestReading.swift": 1])
+        // `AccountEntryGroupsHold.swift` entra el 2026-11-13 (ticket `adopt-lineage-block-shows-connecting-for-fifteen-minutes`):
+        // el candado de Grupos de una entrada del Welcome pregunta si hay una migración en vuelo y si el journal se deja leer.
+        // Ilegible NO alarga el candado (decide su plazo de 1 h): concederlo sería dejar a la persona sin Grupos para siempre,
+        // y lo que protege —que el puente no escriba antes del adopt— ya lo cubre ese plazo. Sin journal conectado frena.
+        #expect(journalReadUses == ["MigrationRestReading.swift": 1, "AccountEntryGroupsHold.swift": 2])
         #expect(phaseDecideUses == ["BGTaskMigrationGate.swift": 1, "CloudSyncDebugView.swift": 1])
     }
 
@@ -884,7 +894,10 @@ struct MigrationJournalUnreadableWiringTests {
             "continue",
             "}",
         ])
-        #expect(poll[start + 14] == "phase = next")
+        // Card jxbp: después del caso ilegible, los fallos del intento de antes con el drive en vuelo se ignoran, y la barra
+        // no retrocede; `phase = next` sigue siendo la asignación de todo lo demás.
+        #expect(poll[start + 14] == "if controller.isWorking, CloudWelcomeSignInFlow.isFailureTerminal(next) {")
+        #expect(poll.contains("phase = next"))
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: view))
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
     }

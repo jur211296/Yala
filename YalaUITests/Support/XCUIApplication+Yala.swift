@@ -71,6 +71,7 @@ extension XCUIApplication {
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
         pendingICloudWipe: Bool = false,
+        pendingICloudWipeHalfway: Bool = false,
         // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
@@ -307,6 +308,7 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if pendingICloudWipeHalfway { args.append("-uitest-pending-icloud-wipe-halfway") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
         if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
         if syncNeedsSignIn { args.append("-uitest-sync-needs-sign-in") }
@@ -740,8 +742,8 @@ extension XCUIApplication {
     }
 
     /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo
-    /// registro» (su línea de lo que falta y el botón). `nil` si nada lo pisa. Con el teclado puesto, «Guardar» va dentro
-    /// del scroll por debajo de los chips y no lo pisa, así que no cuenta.
+    /// registro» (sin teclado, su línea de lo que falta y el botón; con teclado, la barra de encima del teclado, con
+    /// «Guardar» en la misma fila que sus pastillas). `nil` si nada lo pisa.
     private func selectorChipCoverTop(over chip: XCUIElement) -> CGFloat? {
         let chipFrame = chip.frame
         let covers = [

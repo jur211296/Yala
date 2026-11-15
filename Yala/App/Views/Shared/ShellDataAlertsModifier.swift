@@ -322,7 +322,16 @@ struct ShellDataAlertsModifier: ViewModifier {
             // persona en un onboarding «de cero» sobre sus datos intactos, sin decir
             // una palabra.
             showWelcomeFlow = false
-            showOnboarding = true
+            // **Con el teléfono todavía en la nube, no se abre el onboarding: se deja recién instalado** (ticket
+            // `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A). Misma regla que
+            // `ContentView.returnCloudPhoneToFreshInstallIfNeeded`.
+            // Armado síncrono antes de soltar el toque; con el coordinador ocupado, el onboarding de siempre.
+            if AdoptOverCloudGuardLogic.freshStartReturnsToFreshInstall(persistedMode: StorageModePersistence.read()),
+               CloudSessionSignOut.shared.armReturnToFreshInstallAfterWelcomeFreshStart() {
+                Task { await CloudSessionSignOut.shared.finishReturnToFreshInstallAfterWelcomeFreshStart() }
+            } else {
+                showOnboarding = true
+            }
         } catch is DataWipeService.GroupsDomainWipeError {
             // El cinturón saltó ANTES del primer borrado: no se tocó nada. Lo que hay que decir es «faltan cambios de
             // grupos», no «no pudimos borrar tus datos», y el sitio donde decirlo es la puerta, que puede subirlos.

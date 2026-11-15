@@ -6,6 +6,9 @@
 //  «Tus finanzas» —la sugerencia de Siri, Primeros pasos, la guía «Este es tu resumen», la oferta— y las cuentas
 //  quedaban a dos pantallas. Ahora se ve el más importante y un «1 de N» lleva a los demás; ninguno se pierde.
 //
+//  Primeros pasos tampoco está en la cola desde la bienvenida 2.3 (Y23-05): es la acción principal del Panel (el mazo),
+//  no un aviso, y va debajo de las acciones.
+//
 //  Fuera de la cola, a propósito, los dos que dicen que algo NO funciona: el de la nube que no sincroniza y el de
 //  movimientos sin cuenta. Esos no compiten con una novedad.
 //
@@ -18,8 +21,6 @@ enum PanelNotice: String, CaseIterable, Equatable {
     case cloudAdoptOffer
     /// «Este es tu resumen»: la guía de la primera visita. Primero porque explica la pantalla que se está viendo.
     case panelGuide
-    /// Primeros pasos.
-    case setupChecklist
     /// Hay una versión nueva en la App Store.
     case updateAvailable
     /// Días de prueba de Yala Pro, u oferta periódica sin Pro.
@@ -36,7 +37,6 @@ enum PanelNoticeQueueLogic {
     struct Flags: Equatable {
         var cloudAdoptOffer = false
         var panelGuide = false
-        var setupChecklist = false
         var updateAvailable = false
         var proOffer = false
         var nudge = false
@@ -49,7 +49,6 @@ enum PanelNoticeQueueLogic {
             switch notice {
             case .cloudAdoptOffer: return flags.cloudAdoptOffer
             case .panelGuide: return flags.panelGuide
-            case .setupChecklist: return flags.setupChecklist
             case .updateAvailable: return flags.updateAvailable
             case .proOffer: return flags.proOffer
             case .nudge: return flags.nudge

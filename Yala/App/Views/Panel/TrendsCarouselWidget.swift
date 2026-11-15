@@ -288,6 +288,17 @@ struct TrendsCarouselWidget: View {
                         startEndVariation(variation)
                     }
                 }
+                // Texto al máximo (card gphj, 14-nov): «14 nov 2024 S/ 12,406.00» solo ya no cabía en una línea, y como
+                // `ViewThatFits` se queda con la última forma aunque no quepa, sus piezas de ancho fijo ensanchaban el
+                // Panel entero por los dos lados. Cada fecha y cada monto en su línea: la más ancha es un monto solo.
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    startEndSide(date: startDate, value: summary.startValue, stacked: true)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        startEndArrow
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate, stacked: true)
+                    }
+                    startEndVariation(variation)
+                }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(startEndAccessibilityLabel(summary, startDate: startDate, endDate: endDate, variation: variation))
@@ -295,8 +306,12 @@ struct TrendsCarouselWidget: View {
         }
     }
 
-    private func startEndSide(date: String, value: Double, isEstimate: Bool = false) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+    /// `stacked`: la fecha encima del monto, para cuando los dos no caben en una línea (texto al máximo).
+    private func startEndSide(date: String, value: Double, isEstimate: Bool = false, stacked: Bool = false) -> some View {
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.none))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs))
+        return layout {
             Text(date)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.thSecondaryText)

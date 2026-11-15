@@ -1,0 +1,66 @@
+PanelPreferencesMigration: remote panel prefs detected → skip seeding (existing user)
+TabBarDefaultsMigration: freshInstall
+iCloudSync: startObserving() registered — listening for NSPersistentCloudKitContainer events
+CashFlowWipeService: Wiped 0 plans, 0 lines, 0 overrides
+PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=true, shouldProcess=false, shouldMark=true)
+LanguageManager: Migrated legacy override 'nil' from standard → App Group
+[AppBootstrapper] Cleaned up orphaned biometric keychain items
+ContentView readiness blocked by: splash
+AppBootstrapper: iCloud mismatch — container was local, iCloud now available
+AppBootstrapper: Checking for pending Control Center action in App Group: group.com.jurgenschmidt.yala.dev
+AppBootstrapper: No pending Control Center action found
+UserSegmentService: segment=dormant (tx=0, avgDays=0.0, advanced=false) (pre-import)
+MetricsService: [canary] attestKeyDiscardedAfterAssertFailure detail=com.apple.devicecheck.error#2 value=1.0
+ContentView readiness blocked by: bootstrapPending
+ContentView readiness blocked by: bootstrapPending
+ExchangeRateAPI Response: {"success":true,"terms":"https:\/\/currencylayer.com\/terms","privacy":"https:\/\/currencylayer.com\/privacy","timestamp":1794627551,"source":"USD","quotes":{"USDPEN":3.403039,"USDMXN":18.536504,"USDCOP":3319.97,"USDBRL":5.666304,"USDARS":1546.131265,"USDCLP":995.220396,"USDUYU":40.541335,"USDBOB":11.678099,"USDPYG":6207.891986,"USDCRC":448.217041,"USDGTQ":7.646644,"USDHNL":26.950388,"USDNIO":36.803722,"USDPAB":1.000231,"USDDOP":60.703884,"USDEUR":0.90715,"USDGBP":0.75683,"USDCHF":0.838719,"USDSEK":10.075038,"USDNOK":9.57248,"USDDKK":6.782304,"USDPLN":3.996535,"USDCZK":22.139304,"USDHUF":331.003504,"USDRON":4.851904,"USDRUB":82.829047,"USDUAH":45.477786,"USDTRY":50.342104,"USDJPY":159.72504,"USDCNY":6.67175,"USDKRW":1336.565039,"USDINR":94.25795,"USDIDR":18235.4,"USDPHP":63.960375,"USDTHB":33.875038,"USDMYR":4.086104,"USDSGD":1.287204,"USDHKD":7.84565,"USDTWD":32.891404,"USDVND":25725.5,"USDAUD":1.476887,"USDNZD":1.809628,"USDAED":3.673042,"USDSAR":3.77446,"USDILS":3.216704,"USDQAR":3.64425,"USDKWD":0.31147,"USDZAR":16.976255,"USDEGP":53.502064,"USDNGN":1343.570377,"USDKES":130.050385,"USDMAD":9.961704,"USDCAD":1.42715}}
+StoreKitManager: Loading products for IDs: ["com.yala.pro.yearly", "com.yala.pro.monthly"]
+StoreKitManager: Loaded 0 products
+NotificationService: Cancelled 0 dynamic notification schedules
+BackgroundTaskManager: Registered background tasks (including backup)
+BackgroundTaskManager: Scheduled main report task for ~14/11/26, 6:00 a. m.
+BackgroundTaskManager: Scheduled backup report task for ~14/11/26, 7:00 a. m.
+BackgroundTaskManager: Scheduled widget refresh for ~4 hours
+UserSegmentService: segment=dormant (tx=0, avgDays=0.0, advanced=false) (pre-import)
+AppBootstrapper: Checking for pending Control Center action in App Group: group.com.jurgenschmidt.yala.dev
+AppBootstrapper: No pending Control Center action found
+ContentView readiness blocked by: welcomeFlow
+ContentView readiness blocked by: welcomeFlow
+AppBootstrapper: Remote CloudKit change — leading edge
+ContentView: Bootstrap wait done — products=0, initialized=true
+TransactionUpdateService: store sin transacciones; el barrido se reintenta en el próximo arranque
+AppBootstrapper: Remote CloudKit change — trailing edge
+AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors deferred — CloudKit import didn't settle within timeout
+ContentView readiness blocked by: welcomeCloudSignIn
+ContentView readiness blocked by: welcomeCloudSignIn
+AppBootstrapper: Checking for pending Control Center action in App Group: group.com.jurgenschmidt.yala.dev
+AppBootstrapper: No pending Control Center action found
+UserSegmentService: segment=dormant (tx=0, avgDays=0.0, advanced=false) (pre-import)
+[LiveBalance] migration: 100%
+[LiveBalance] migration completed successfully
+AppBootstrapper: repairStaleLineNames renamed 0 line(s)
+ChatUnsignedExpenseRepairService: store sin transacciones; se reintenta en el próximo arranque
+MetricsService: [canary] cloudConsentAccepted detail=adopt value=1.0
+ContentView readiness blocked by: welcomeCloudSignIn
+PanelViewModel: volver al Panel → recarga
+ContentView readiness blocked by: welcomeCloudSignIn
+MetricsService: [canary] cloudMigrationStep detail=notStarted>consent value=-1.0
+MetricsService: [canary] cloudMigrationStep detail=consent>auth value=0.0
+MetricsService: [canary] cloudMigrationStep detail=auth>claim value=0.0
+[TransferMigration] Starting migration of positive transfers...
+[TransferMigration] Could not find or create income transfer subcategory
+AppBootstrapper: Remote CloudKit change — leading edge
+PanelViewModel: performCalculation #1
+MetricsService: [canary] cloudMigrationStep detail=claim>notStarted value=0.0
+AppBootstrapper: Remote CloudKit change — trailing edge
+AppBootstrapper: Remote CloudKit change — leading edge
+RecalculationDebouncer[GroupsViewModel]: un recálculo para 1 peticiones (reload: true)
+ContentView readiness blocked by: welcomeFlow
+GroupNotif[#16-debug]: typeRaw=groups itemFound=false isActive=false changes={newExp=1 modExp=0 newSet=0 newMem=0 newPend=0}
+GroupBridgeSystemEntities: creada cuenta sistema 'Grupos PEN' (PEN)
+CategorySeed: Semilla system groups creada correctamente.
+RecalculationDebouncer[GroupsViewModel]: un recálculo para 1 peticiones (reload: true)
+PanelViewModel: performCalculation #2
+Launched application with com.jurgenschmidt.yala.dev bundle identifier.
+Waiting for the application to terminate...
+App terminated due to signal 9.

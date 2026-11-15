@@ -583,8 +583,8 @@ struct PrivateSessionMarkWiringTests {
             apareció un segundo escritor directo de la marca. Si es un alta o una baja nueva, va por
             `SessionState.hasPrivateSession` — si no, persiste el eje sin refrescar la shell.
             """)
-        #expect(Self.countInProduction(".hasPrivateSession = ") == 9, """
-            el eje se enciende o se apaga en NUEVE sitios. Un décimo gesto es un alta o una baja nueva:
+        #expect(Self.countInProduction(".hasPrivateSession = ") == 10, """
+            el eje se enciende o se apaga en DIEZ sitios (el décimo, card gd78: deshacer una entrada a medias tras un cierre). Un décimo gesto es un alta o una baja nueva:
             decide de qué lado va y corrige el conteo de la cabecera de `PrivateSessionMark`.
 
             El punto del literal NO es cosmético: sin él, `let hasPrivateSession = …` de un lector local

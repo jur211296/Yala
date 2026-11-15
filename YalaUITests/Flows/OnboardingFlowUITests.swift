@@ -3,12 +3,10 @@
 //  YalaUITests
 //
 //  Cobertura XCUITest del área `onboarding-flow` (1.x): el OnboardingView (8 steps)
-//  monta y avanza entre steps. Usa el hook `-uitest-onboarding`
-//  (`launchForUITest(onboarding:)`) que presenta el OnboardingView directo,
-//  saltando el Welcome Hero/Chooser (animaciones + alert de detección iCloud no
-//  deterministas) SIN marcar el onboarding completado. Sin seed (el onboarding
-//  parte de cero). La lógica de prefill/skip de steps ya tiene cobertura pure-logic
-//  (OnboardingPrefillResolver, FullModeActivationLogic).
+//  monta y avanza entre steps. **Desde la bienvenida 2.3 (Y23-04)** el alta es la conversación de tres
+//  preguntas y el hook `-uitest-onboarding` la monta a ella; el OnboardingView vive en «Activar Yala
+//  completo», y por ahí entra este fichero (`launchIntoFullActivationOnboarding`). La lógica de
+//  prefill/skip de steps ya tiene cobertura pure-logic (OnboardingPrefillResolver, FullModeActivationLogic).
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -22,15 +20,11 @@ final class OnboardingFlowUITests: XCTestCase {
 
     private func launchOnboarding() -> XCUIApplication {
         let app = XCUIApplication()
-        // skipOnboarding=false (no marcar completo) + onboarding=true (hook directo) + sin seed.
-        app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true)
-        // NOTA: `uitest_ready` vive en el root de ContentView, que queda CUBIERTO por el
-        // fullScreenCover del OnboardingView → no usar waitForUITestReady aquí; los tests
-        // esperan el OnboardingView directamente (onboarding_name_field) con timeout generoso.
+        app.launchIntoFullActivationOnboarding()
         return app
     }
 
-    /// El OnboardingView monta directo en el step 1 (nombre).
+    /// El OnboardingView de la activación monta en el step 1 (nombre).
     func test_onboardingMountsAtNameStep() {
         let app = launchOnboarding()
 

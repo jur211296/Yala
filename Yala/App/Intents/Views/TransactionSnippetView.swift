@@ -15,7 +15,8 @@ import SwiftUI
 struct TransactionSnippetView: View {
     let amount: Double
     let currencyCode: String
-    let accountName: String
+    /// `nil` (o vacía) cuando aún no se sabe: la fila no se pinta (decisión 76 de 2.3; antes decía «Cuenta: —»).
+    let accountName: String?
     let subcategoryName: String
     let subcategoryIcon: String
     let date: Date
@@ -28,23 +29,29 @@ struct TransactionSnippetView: View {
         return YalaFormatterStatic.currency(value: signed, currencyCode: currencyCode, forceFullPrecision: true)
     }
 
+    /// Con el mes en letras (decisión 76 de 2.3): «12/11/2026» se lee al revés según el país.
     private var dateFormatted: String {
-        date.formatted(date: .numeric, time: .omitted)
+        TransactionSnippetLogic.dateText(date)
     }
 
     var body: some View {
         VStack(spacing: 16) {
-            // Monto grande centrado
+            // Monto grande centrado. Escala con el tamaño del texto (decisión 76 de 2.3; iba a 38 pt fijos) y encoge
+            // antes que partirse si no cabe.
             Text(formattedAmount)
-                .font(.system(size: 38, weight: .bold))
+                .font(.largeTitle.bold())
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .padding(.top, 8)
 
             Divider()
 
             // Filas de detalle
             VStack(spacing: 14) {
-                row(icon: "creditcard", label: String(localized: "shortcut.snippet.account"), value: accountName)
+                if let account = TransactionSnippetLogic.visibleAccountName(accountName) {
+                    row(icon: "creditcard", label: String(localized: "shortcut.snippet.account"), value: account)
+                }
                 row(icon: subcategoryIcon, label: String(localized: "shortcut.snippet.category"), value: subcategoryName)
                 row(icon: "calendar", label: String(localized: "shortcut.snippet.date"), value: dateFormatted)
             }

@@ -18,7 +18,6 @@ enum ProFeature: String, CaseIterable {
     case premiumIcons
     case proThemes
     case smartInsightsAI
-    case cashFlowAdvanced    // Base feature is Free; advanced methods/horizon/charts are Pro
     case chatAssistant       // Ask Yala: AI chat assistant (Pro only)
 
     /// Free tier limit for countable features (nil = no limit in free tier)
@@ -48,7 +47,6 @@ enum ProFeature: String, CaseIterable {
         case .premiumIcons: return L10n.FeatureGate.premiumIcons
         case .proThemes: return L10n.FeatureGate.proThemes
         case .smartInsightsAI: return L10n.FeatureGate.smartInsightsAI
-        case .cashFlowAdvanced: return L10n.FeatureGate.cashFlowAdvanced
         case .chatAssistant: return L10n.FeatureGate.chatAssistant
         }
     }
@@ -63,7 +61,6 @@ enum ProFeature: String, CaseIterable {
         case .premiumIcons: return "app.fill"
         case .proThemes: return "paintpalette.fill"
         case .smartInsightsAI: return "sparkles"
-        case .cashFlowAdvanced: return "arrow.left.arrow.right"
         case .chatAssistant: return "bubble.left.and.text.bubble.right"
         }
     }
@@ -184,9 +181,6 @@ extension L10n {
         }
         static var smartInsightsAI: String {
             NSLocalizedString("featureGate.smartInsightsAI", comment: "Smart Insights AI feature name")
-        }
-        static var cashFlowAdvanced: String {
-            NSLocalizedString("featureGate.cashFlowAdvanced", comment: "Cash flow advanced feature name")
         }
         static var chatAssistant: String {
             NSLocalizedString("featureGate.chatAssistant", comment: "Chat assistant feature name")

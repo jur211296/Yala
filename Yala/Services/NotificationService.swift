@@ -173,6 +173,58 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// Y23-18: el aviso antes del primer cobro de la prueba de Pro, tras confirmarla en la hoja de pago. Sin pedir permiso
+    /// (Y23-17; ni diálogo ni provisional): solo se agenda si ya lo hay, y quien llama solo promete el aviso si quedó
+    /// agendado. Uno solo: una prueba nueva lo sustituye; si ya está pendiente con la misma fecha, no se toca. Devuelve si
+    /// queda agendado.
+    @discardableResult
+    func scheduleProTrialChargeReminder(chargeDate: Date, now: Date = .now, calendar: Calendar = .current) async -> Bool {
+        let fireDate = SetupCompleteTrialOfferLogic.reminderDate(chargeDate: chargeDate, calendar: calendar)
+        guard SetupCompleteTrialOfferLogic.schedulesReminder(at: fireDate, now: now), let fireDate,
+              SetupCompleteTrialOfferLogic.canScheduleReminder(await checkPermissionStatus()) else { return false }
+        let identifier = SetupCompleteTrialOfferLogic.reminderIdentifier
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        let pending = await notificationCenter.pendingNotificationRequests().first { $0.identifier == identifier }
+        if let trigger = pending?.trigger as? UNCalendarNotificationTrigger, trigger.dateComponents == components {
+            return true
+        }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
+        let content = UNMutableNotificationContent()
+        content.title = L10n.PrimerosPasos23.Final.reminderTitle
+        content.body = L10n.PrimerosPasos23.Final.reminderMessage(ProPresentation.longDate(chargeDate))
+        content.sound = .default
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        do {
+            try await notificationCenter.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+        } catch {
+            #if DEBUG
+            print("NotifService: Error agendando el aviso de la prueba de Pro: \(error)")
+            #endif
+            return false
+        }
+        // Un `add` aceptado no garantiza que iOS lo retenga (límite de 64): se comprueba.
+        return await notificationCenter.pendingNotificationRequests().contains { $0.identifier == identifier }
+    }
+
+    /// Y23-18: con el aviso prometido en la oferta del final, cada vez que cambia la suscripción: si la prueba sigue y
+    /// renueva, se repone (un borrado de datos o un cierre de sesión lo quitan con todos los avisos); si se canceló o
+    /// terminó, se retira y se olvida. Sin promesa no hace nada.
+    func reconcileProTrialChargeReminder(isTrial: Bool, willAutoRenew: Bool?, chargeDate: Date?,
+                                         defaults: UserDefaults = .standard) async {
+        let owed = defaults.bool(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
+        switch SetupCompleteTrialOfferLogic.reconcile(
+            owed: owed, isTrial: isTrial, willAutoRenew: willAutoRenew, chargeDate: chargeDate) {
+        case .nothing:
+            break
+        case .ensure(let chargeDate):
+            await scheduleProTrialChargeReminder(chargeDate: chargeDate)
+        case .removeAndForget:
+            notificationCenter.removePendingNotificationRequests(
+                withIdentifiers: [SetupCompleteTrialOfferLogic.reminderIdentifier])
+            defaults.removeObject(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
+        }
+    }
+
     /// Check current permission status
     func checkPermissionStatus() async -> UNAuthorizationStatus {
         let settings = await notificationCenter.notificationSettings()
@@ -614,6 +666,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             // Los resúmenes y el aviso de la tarjeta los retira su replan con la pausa puesta (`UsageModeService`): así
             // sus marcas del tracker quedan al día.
             .filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix) }
+            // El aviso antes del cobro de la prueba de Pro (Y23-18) es de la suscripción de Apple, no de los datos: se queda.
+            .filter { $0 != SetupCompleteTrialOfferLogic.reminderIdentifier }
         guard !personal.isEmpty else { return }
         notificationCenter.removePendingNotificationRequests(withIdentifiers: personal)
     }
@@ -661,8 +715,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         let pending = await notificationCenter.pendingNotificationRequests()
         // Tampoco el aviso de la tarjeta (`creditCardReminder_*`, card nmtk): este método no lo vuelve a programar, y
         // su marca de dedup se puso al programarlo, así que borrarlo aquí perdía el aviso del día.
+        // Ni el aviso antes del cobro de la prueba de Pro (Y23-18): se agenda una vez, al confirmar la prueba.
         let nonSummaryIDs = pending.map(\.identifier).filter {
             !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix)
+                && $0 != SetupCompleteTrialOfferLogic.reminderIdentifier
         }
         if !nonSummaryIDs.isEmpty {
             notificationCenter.removePendingNotificationRequests(withIdentifiers: nonSummaryIDs)

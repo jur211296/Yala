@@ -336,7 +336,9 @@ struct LateICloudWipeLeftHalfwayWiringTests {
         let confirm = try Self.slice(from: "case .confirmingFinish:\n", to: "case .groupsPending(let block) where", in: late)
         #expect(confirm.contains("L10n.Welcome.PrivateICloud.leftHalfwayConfirmBody"))
         #expect(confirm.contains("primaryAction: { phase = .leftHalfway }"))
-        #expect(confirm.contains("destructiveAction: { phase = .wiping })"), "terminar vuelve a correr el borrado entero")
+        #expect(confirm.contains("phase = .wiping"), "terminar vuelve a correr el borrado entero")
+        // Desde Ajustes (revisión 2.3, decisión 57) el aviso pudo esperar en la cola: sin borrado pendiente no se arma otro.
+        #expect(confirm.contains("if notice.finishesFromSettings && !StorageModePersistence.hasPendingICloudCorpusWipe() {"))
     }
 
     @Test("quedarse tras el borrado a medias retira la marca y el testigo, y no borra nada")
@@ -352,8 +354,9 @@ struct LateICloudWipeLeftHalfwayWiringTests {
         let late = try Self.code(Self.late)
         let failed = try Self.slice(from: "case .failed:\n", to: "case .leftHalfway:\n", in: late)
         #expect(failed.contains("destructiveAction: { dismiss() })"))
-        let bar = try Self.slice(from: "} else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish {",
+        let bar = try Self.slice(from: "} else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish\n",
                                  to: "} else {", in: late)
+        #expect(bar.contains("|| phase == .confirmingArmedFinish {"), "el «¿seguro?» de Ajustes también sale como «luego»")
         #expect(bar.contains("dismiss()"))
         #expect(!bar.contains("onKeep"), "`onKeep` retira el testigo y el aviso ya no volvería a preguntar")
     }
