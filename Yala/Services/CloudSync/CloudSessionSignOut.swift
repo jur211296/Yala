@@ -2636,6 +2636,10 @@ final class CloudSessionSignOut {
         destinationOnArm = nil
         WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
+        // Barrido del 14-nov (card p9q0): el cambio en caliente llega tras unas esperas en `finishReturn…`, y sin el testigo
+        // puesto ya aquí la pantalla de reabrir se armaba en el árbol que el cambio desmonta (cover huérfano). Lo apaga el
+        // `defer` de arriba de `finishReturnToFreshInstallAfterWelcomeFreshStart`, salga por donde salga.
+        inPlaceSwapInFlight = true
         phase = .awaitingRelaunch
         return true
     }
@@ -2644,6 +2648,7 @@ final class CloudSessionSignOut {
     /// Devuelve `true` si cerró sin reabrir; con `false` la fase sigue en `.awaitingRelaunch` y el cover pide reabrir.
     @discardableResult
     func finishReturnToFreshInstallAfterWelcomeFreshStart() async -> Bool {
+        defer { inPlaceSwapInFlight = false }
         guard phase == .awaitingRelaunch, StorageModePersistence.isSignOutWipeArmed() else { return false }
         CloudSyncRuntime.shared?.teardownGuestSession()
         GroupsSyncClient.shared.teardownForSignOut()

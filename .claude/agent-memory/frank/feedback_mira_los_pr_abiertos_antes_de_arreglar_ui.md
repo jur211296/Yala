@@ -1,6 +1,6 @@
 ---
 name: mira-los-pr-abiertos-antes-de-arreglar-ui
-description: Antes de arreglar un bug de UI del barrido, busca un PR abierto que ya rediseñe esa pantalla; «ya en done» en un barrido puede ser un PR que nunca mergeó
+description: Antes de arreglar un bug del barrido, busca el PR abierto que ya lo arregla; «ya en done» o «en cola de auto-merge» puede ser un PR que nunca mergeó
 metadata:
   type: feedback
 ---
@@ -16,3 +16,9 @@ arreglo mío que «cabe».
 **How to apply:** al empezar un lote de UI, `gh pr list --state open` sobre los ficheros que vas a tocar
 (`gh pr view <n> --json files`) y lee `docs/DECISIONS.md` de los últimos días. Si un PR abierto ya cubre la card, la card
 espera a ese PR y se dice en el cierre. Ver [[alcance-minimo-salvo-incoherencia]].
+
+**Segunda vez, 14-nov (lote B):** dos de las cinco cards (iCloud vaciado y «Volver a tu iCloud» colgado) las arreglaba un
+PR del 13-nov **en cola de auto-merge con todo en verde** que llevaba un día `DIRTY`: chocaba solo en `DECISIONS.md` y
+`TICKETS.md`, y la cola no avanza con conflicto. El barrido probó una build sin él y las dio por falladas. Lo mergeé en la
+rama del lote (conflictos con la versión de 2.3) y su PR se marca mergeado al aterrizar el mío. ⇒ `gh pr view <n> --json
+mergeable,mergeStateStatus` de los PR enlazados en cada card: `CONFLICTING` con auto-merge puesto es un PR muerto.

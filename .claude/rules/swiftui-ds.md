@@ -305,6 +305,15 @@ paths:
   ese almacén) mira `isDetachedFromMountedStore` antes. Hoy, `PanelViewModel` y `DetailContainerViewModel`. Un
   ViewModel nuevo que recargue desde el `onDismiss` de una hoja que pueda cerrar sesión hace lo mismo.
   Pin: `SwappedStoreContentTests`, `BoundStoreContextWiringTests`, `BackgroundTaskRegistrationOnceTests`.
+  (4) **Un `fullScreenCover` presentado desde el árbol viejo se queda HUÉRFANO encima del árbol nuevo** (medido en el
+  iPhone 14 el 2026-11-14, card p9q0): «Ya casi está · Vuelve a abrir Yala» se armaba al pasar el cierre a
+  `.awaitingRelaunch`, justo antes del cambio; la consola decía `CloudSignOut swap COMPLETED` y la pantalla seguía puesta
+  sobre el Welcome nuevo, sin nadie que la retirara (el `standDown` del árbol nuevo baja SU binding, no el del viejo).
+  ⇒ **nada del árbol viejo se presenta con el cambio en vuelo** (`CloudSessionSignOut.inPlaceSwapInFlight`); lo que haga
+  falta si el cambio no se consuma se arma al apagarse el testigo, en el árbol que quedó. Y **un servicio que guarda el
+  contexto lo suelta en `releaseModelContextsForSwap`**, o el almacén no muere y el cambio aborta: los avisos de Grupos lo
+  recibían solo con las notificaciones permitidas, así que el cierre funcionaba en un teléfono y no en otro. Pin:
+  `SignOutRelaunchCoverWaitsForSwapTests`, `SwapReleasesEveryServiceContextTests` (paridad sobre todo `Yala/`).
 
 - **Un destino del Welcome sobrevive al borrado del cierre de sesión, a propósito, así que cada cierre decide el suyo
   (card 7e60, medido el 2026-11-05).** Un «Restaurar desde iCloud» de antes del cierre que nadie consumió dejaba a la

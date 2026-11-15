@@ -4346,6 +4346,12 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
                 // bloquearía la matriz y la app entera (lo cazó la review: este modificador solo sabía armarse).
                 if newPhase == .idle { standDown() }
             }
+            // Barrido del 14-nov (card p9q0): mientras el cambio en caliente está en vuelo no se arma (ver `arm()`). Si termina
+            // sin consumarse —el montaje lleva espejo o el almacén no se soltó—, la fase sigue en `.awaitingRelaunch` y la
+            // pantalla de reabrir se arma aquí, en el árbol que quedó.
+            .onChange(of: CloudSessionSignOut.shared.inPlaceSwapInFlight) { _, inFlight in
+                if !inFlight && phase == .awaitingRelaunch { arm() }
+            }
             // Ciclo FRESCO al volver a foreground con la condición armada y sin cover
             // (el cap de intentos es por-ciclo, no de por vida).
             .onChange(of: scenePhase) { _, newScene in
@@ -4374,6 +4380,12 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
         // Con el remonte en caliente en curso, la fase sigue en `.awaitingRelaunch` unos segundos (el re-bootstrap) y el
         // `ContentView` nuevo la ve al aparecer: no se arma, porque al terminar el cierre vuelve a `.idle` sin reabrir.
         guard !PersonalContainerSwap.inPlaceRemountInFlight else { return }
+        // Barrido del 14-nov (card p9q0), medido en el iPhone 14: el cierre pone la fase en `.awaitingRelaunch` y ENSEGUIDA
+        // intenta el cambio en caliente. Armado aquí, el cover se presentaba desde el árbol viejo, el cambio desmontaba ese
+        // árbol y UIKit dejaba el cover huérfano encima del Welcome nuevo: «Ya casi está · Vuelve a abrir Yala» con la
+        // sesión ya cerrada en caliente («CloudSignOut swap COMPLETED» en la consola). Mientras el cambio está en vuelo lo
+        // tapa la pantalla de progreso del cierre; si no se consuma, lo arma el `onChange` del testigo.
+        guard !CloudSessionSignOut.shared.inPlaceSwapInFlight else { return }
         showRelaunchCover = true
         // Cancel-before-start: un solo verify loop vivo — dos loops togglando el mismo
         // binding reproducirían la carrera que este fix mata.
