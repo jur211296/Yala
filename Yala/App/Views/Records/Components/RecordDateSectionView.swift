@@ -34,6 +34,15 @@ struct RecordDateSectionView: View {
     var spentText: String? = nil
     /// Registros (decisión 17, T1): «vie 17 oct», con el día de la semana. Buscar y Grupos siguen con «17 de octubre».
     var showsWeekday: Bool = false
+    /// Modo selección de Registros (decisión 18 de 2.3, E2): «Seleccionar día» a la derecha de la fecha, o
+    /// «Deseleccionar día» si ya están todos. Ocupa el sitio de `spentText` mientras se elige (Jürgen, 2026-11-12): la
+    /// barra de selección ya dice cuánto suma lo elegido. `nil` fuera del modo selección y en Buscar y Grupos.
+    var dayAction: DayAction? = nil
+
+    struct DayAction {
+        let isDaySelected: Bool
+        let toggle: () -> Void
+    }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -43,7 +52,23 @@ struct RecordDateSectionView: View {
 
             Spacer()
 
-            if let spentText {
+            if let dayAction {
+                // Sin háptico propio: ya vibra la marca de cada fila (`sensoryFeedback` de `RecordRowView`).
+                Button {
+                    dayAction.toggle()
+                } label: {
+                    Text(dayAction.isDaySelected ? L10n.RecordsBulkUndo.deselectDay : L10n.RecordsBulkUndo.selectDay)
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.thAccentText)
+                        // El área de toque crece hasta un dedo sin mover la cabecera (review del lote: el texto solo
+                        // medía ~18 pt de alto).
+                        .contentShape(Rectangle().inset(by: -DS.Spacing.md))
+                }
+                .buttonStyle(.plain)
+                // VoiceOver dice qué día: con varias cabeceras, «Seleccionar día» a secas no se distingue.
+                .accessibilityLabel(Text(verbatim: "\(dayAction.isDaySelected ? L10n.RecordsBulkUndo.deselectDay : L10n.RecordsBulkUndo.selectDay), \(formattedDate)"))
+                .accessibilityIdentifier("records_select_day_button")
+            } else if let spentText {
                 Text(spentText)
                     .font(DS.Typography.labelSmall.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -53,7 +78,8 @@ struct RecordDateSectionView: View {
         // Más aire arriba que abajo: la fecha encabeza su día y no flota a medio camino de la tarjeta de arriba.
         .padding(.top, DS.Spacing.md)
         .padding(.bottom, DS.Spacing.xxs)
-        .accessibilityElement(children: .combine)
+        // Con «Seleccionar día» la cabecera no se funde en un elemento: el botón tiene que poder tocarse por sí solo.
+        .accessibilityElement(children: dayAction == nil ? .combine : .contain)
         .accessibilityIdentifier(showsWeekday ? "records_day_header" : "")
     }
 

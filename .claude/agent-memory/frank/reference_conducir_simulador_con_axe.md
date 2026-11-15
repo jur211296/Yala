@@ -19,7 +19,9 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   sí. Pero en el iPad ese toque físico sobre una tarjeta con menú contextual (cuenta, grupo) se lee como pulsación
   larga y abre el menú: ahí, `--tap-style simulator`. Y un `TextField` solo tomó el foco con `axe touch --down`,
   0,25 s, `--up` (con `tap`, lo tecleado se perdía en silencio). Un toque en los ~3 s tras `uitest_ready` también se
-  perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app.
+  perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app. **Los botones de cristal de la barra de
+  Registros (iOS 27.2, 2026-11-11) no respondieron a `axe tap` ni por id ni por punto; `axe touch --down --up --delay
+  0.15` sí**, y lo mismo las filas y los botones de una alerta: para capturas del «antes», empieza por `touch`.
 - **Escribir:** `axe type` no escribe tildes ni «ñ» («No keycode found for character: 'é'»): escribe sin ellas.
 - **Ver:** `simctl io <U> screenshot` + `sips -Z 700` a JPEG; las coordenadas de la imagen × (402/ancho) dan puntos.
 - **El importe del formulario de gasto de grupo no se deja escribir a mano (medido el 2026-10-21, iOS 27.0):** tras

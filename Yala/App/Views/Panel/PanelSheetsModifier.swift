@@ -44,6 +44,12 @@ struct PanelSheetsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Primeros pasos 2.3: el paso 1, el tutorial del paso 2 y su cierre (Y23-07 a Y23-10).
+            .modifier(PrimerosPasosPanelPresentations(sheets: $sheets, viewModel: viewModel))
+            // Primeros pasos 2.3: los pasos 3, 4 y 5 (Y23-11 a Y23-13).
+            .modifier(PrimerosPasosPlanningPresentations(sheets: $sheets, viewModel: viewModel))
+            // Primeros pasos 2.3: el paso 7 (Y23-16).
+            .modifier(PrimerosPasosHomeScreenPresentation(sheets: $sheets))
             .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {
@@ -265,6 +271,7 @@ struct PanelSheetsModifier: ViewModifier {
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: true)
                     sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
@@ -272,6 +279,7 @@ struct PanelSheetsModifier: ViewModifier {
                         viewModel.deletePracticeItem(item)
                     }
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: false)
                     sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }

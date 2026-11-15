@@ -21,6 +21,8 @@ struct ChatDraftDetailSheet: View {
     var onSave: () -> Void
     var onDiscard: () -> Void
     var onOpenFullForm: () -> Void
+    /// La prueba de Yala IA de Primeros pasos no ofrece el formulario completo (`chatDraftFullFormHidden`).
+    @Environment(\.chatDraftFullFormHidden) private var fullFormHidden
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
@@ -46,14 +48,16 @@ struct ChatDraftDetailSheet: View {
                         dismiss()
                     }
                     .accessibilityIdentifier("chat_draft_detail_save")
-                    Button(L10n.Chat.Draft.openFullForm) {
-                        focusedField = nil
-                        onOpenFullForm()
+                    if !fullFormHidden {
+                        Button(L10n.Chat.Draft.openFullForm) {
+                            focusedField = nil
+                            onOpenFullForm()
+                        }
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(theme.accentText)
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("chat_draft_open_full_form")
                     }
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(theme.accentText)
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("chat_draft_open_full_form")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)

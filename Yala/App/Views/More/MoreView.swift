@@ -51,6 +51,8 @@ struct MoreView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
+    /// La página que se ve: abrir Más apaga su punto de «algo nuevo» (Y23-10). Las páginas se montan al arrancar.
+    @Environment(\.isRootPageShown) private var isRootPageShown
     @State private var showProfile = false
     @State private var showEditor = false
 
@@ -121,6 +123,11 @@ struct MoreView: View {
         // parpadeo al abrir Ajustes desde la vista Más de entonces, y su propio mensaje dice que no lo arregló; ese mismo
         // día el apagado de `ContentView` sobre la `TabView` cubrió el parpadeo. Lo único que hacía era apagar las
         // animaciones de Ajustes solo cuando se abría desde aquí. Desde el Panel y Grupos nunca lo llevó.
+        // La parte de las guías «dónde vive cada cosa» que vive aquí (Y23-15): foco en las tarjetas y «Entendido».
+        .placeGuideMoreHost()
+        .onChange(of: isRootPageShown, initial: true) { _, shown in
+            if shown { MoreTabNews.shared.clear() }
+        }
         .sheet(isPresented: $showProfile) {
             ProfileView()
         }
@@ -236,6 +243,8 @@ struct MoreView: View {
                         iconColor: item.iconColor,
                         action: item.action
                     )
+                    // Destino de las guías «dónde vive cada cosa» (Y23-15).
+                    .placeGuideAnchor(item.id)
                 }
             }
         }

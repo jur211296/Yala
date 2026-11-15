@@ -18,12 +18,13 @@ struct GroupsContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
     /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta). Decide si el grupo
     /// abierto va en la columna de detalle o empujado.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La pestaña está a la vista (`MainTabView`): la intro que espera al primer tirón no sale con otra pestaña delante.
+    @Environment(\.isRootPageShown) private var isRootPageShown
 
     // MARK: - State
 
@@ -39,6 +40,9 @@ struct GroupsContainerView: View {
     /// Sube al cerrar la tarjeta de avisos: el contenedor la anima a ella y a lo que sube detrás (card C2).
     @State private var notificationsCardDismissals = 0
     @State private var showGroupsOnboarding = false
+    /// Card zkyg: la intro se aplazó al primer tirón de Grupos de esta entrada. Solo entonces se vuelve a decidir tras
+    /// el tirón: sin esta marca, una intro aplazada con la X volvía a salir en cuanto el tirón terminaba.
+    @State private var groupsOnboardingAwaitsPull = false
     // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
     // `GroupsSignOutBannerMarker` (in-session, sobrevive el relaunch), se lee en la primera aparición del
     // tab (el `onAppear` no re-lee si ya está visible) y se quema en el `onAppear` del banner real.
@@ -60,6 +64,8 @@ struct GroupsContainerView: View {
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
     @State private var expenseComposerPayload: ExpenseComposerPayload?
+    /// Voz y Foto de arriba: repartir un recibo con IA (2026-11-14).
+    @State private var receiptRequest: GroupReceiptRequest?
     /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
     /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
     /// del RELOJ: una racha de ayer se vuelve terminal sin que nadie escriba nada. Se recalcula en los CINCO
@@ -286,6 +292,17 @@ struct GroupsContainerView: View {
             .navigationBarTitleDisplayMode(.large)
             .prefersToolbarItemsInVerticalBar()
             .toolbar {
+                // «Nuevo grupo» sale de la fila de arriba a la barra (Jürgen, 2026-11-14): la fila queda como la de
+                // personal. El + flotante lo sigue ofreciendo.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await requestCreateGroup() }
+                    } label: {
+                        Label(L10n.Groups.newGroup, systemImage: "person.2.badge.plus")
+                    }
+                    .accessibilityIdentifier("groups_toolbar_new_group")
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isPresentingGroupsSettings = true
@@ -326,10 +343,19 @@ struct GroupsContainerView: View {
                     memberNameLookup: { viewModel.memberNameLookup(for: $0) },
                     memberCount: { viewModel.memberCount(for: $0) },
                     notice: payload.notice,
+                    receiptSplit: payload.receiptSplit,
                     onSave: { viewModel.loadData() }
                 )
                 .yalaSheetDetents([.large])
             }
+            .groupReceiptSplitFlow(
+                request: $receiptRequest,
+                activeMembers: { viewModel.activeMembers(for: $0) },
+                memberCount: { viewModel.memberCount(for: $0) },
+                onReady: { group, template in
+                    expenseComposerPayload = ExpenseComposerPayload(groups: [group], initialGroup: group, receiptSplit: template)
+                }
+            )
             .navigationDestination(item: $viewModel.selectedGroup) { group in
                 // En ventana ancha el grupo va en la columna de detalle, junto a la lista y sin tapar la barra de
                 // navigación; en compacta, empujado como siempre.
@@ -398,10 +424,12 @@ struct GroupsContainerView: View {
                     GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "groups-tab")
                 }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
-                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
+                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga. Card zkyg: después, la intro
+                // que esperaba a los grupos de la cuenta se decide, con la pestaña a la vista.
                 Task {
                     await viewModel.refreshFromCloud(force: false)
                     refreshAttestTerminalNotice()
+                    if groupsOnboardingAwaitsPull, isRootPageShown { evaluateGroupsOnboarding(afterFirstPull: true) }
                 }
                 refreshAttestTerminalNotice()
             }
@@ -705,7 +733,7 @@ struct GroupsContainerView: View {
         }
     }
 
-    private func evaluateGroupsOnboarding() {
+    private func evaluateGroupsOnboarding(afterFirstPull: Bool = false) {
         #if DEBUG
         // F1c: en uitest no montar el onboarding informativo del tab (interceptaría taps).
         //
@@ -717,12 +745,19 @@ struct GroupsContainerView: View {
         // que ningún test existente cambia de comportamiento.
         if UITestHooks.isActive && !UITestHooks.groupsEducativo { return }
         #endif
+        // Card zkyg: quien ya tiene grupos no ve la intro; si aún pueden estar bajando, se decide tras el primer tirón.
+        let hasGroups = !viewModel.activeGroups.isEmpty || !viewModel.archivedGroups.isEmpty
+        groupsOnboardingAwaitsPull = !afterFirstPull && GroupsOnboardingLogic.decidesAfterFirstPull(
+            hasGroups: hasGroups,
+            channelCanBringGroups: CloudSyncFlags.groupsBackendEnabled && CloudAuthService.shared.hasSession)
+        if groupsOnboardingAwaitsPull { return }
         let shouldShow = GroupsOnboardingLogic.shouldShow(
             hasSeenEducational: hasSeenGroupsEducational,
             // Un formulario pedido (la rama de la bienvenida, L13-8 «Crear grupo», L12-11) cuenta como un destino
             // pendiente igual que un deeplink: el educativo es una hoja del mismo anchor y se lo comería.
             hasPendingGroupDeeplink: navigation.pendingGroupID != nil || navigation.pendingNewGroupForm
-                || navigation.pendingExpenseAfterNewGroup
+                || navigation.pendingExpenseAfterNewGroup,
+            hasGroups: hasGroups
         )
         if shouldShow {
             showGroupsOnboarding = true
@@ -1210,31 +1245,21 @@ struct GroupsContainerView: View {
 
     // MARK: - Acciones de arriba (card kzhe)
 
-    /// Bajo el resumen. Con algún grupo donde apuntar, «Nuevo gasto» es la principal —es lo que más se hace aquí— y
-    /// «Nuevo grupo» va al lado en tarjeta; sin ninguno, solo «Nuevo grupo». Las mismas dos acciones que el flotante.
+    /// Bajo el resumen, la fila de personal (Jürgen, 2026-11-14): «Nuevo gasto», Voz, Foto y Yala IA. «Nuevo grupo» vive
+    /// en la barra de arriba; sin grupo donde apuntar, la fila es solo «Nuevo grupo», como antes.
+    @ViewBuilder
     private var topActions: some View {
-        let canAddExpense = !viewModel.eligibleGroupsForExpense().isEmpty
-        // A tamaños de accesibilidad las dos no caben a lo ancho y salían «Nu…» y «N…» (pase de estrés 2.2, card ysol):
-        // una debajo de otra. `AnyLayout` para que cambiar el tamaño de texto no cambie su identidad.
-        let layout = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.sm))
-            : AnyLayout(HStackLayout(spacing: DS.Spacing.sm))
-        return layout {
-            if canAddExpense {
+        Group {
+            if viewModel.eligibleGroupsForExpense().isEmpty {
                 TopPrimaryActionPill(
-                    title: L10n.Groups.Expense.newExpense,
-                    systemImage: "square.and.pencil",
-                    accessibilityIdentifier: "groups_action_new_expense",
-                    action: startNewExpense
-                )
-            }
-            TopPrimaryActionPill(
-                title: L10n.Groups.newGroup,
-                systemImage: "person.2.fill",
-                isPrimary: !canAddExpense,
-                accessibilityIdentifier: "groups_action_new_group"
-            ) {
-                Task { await requestCreateGroup() }
+                    title: L10n.Groups.newGroup,
+                    systemImage: "person.2.fill",
+                    accessibilityIdentifier: "groups_action_new_group"
+                ) {
+                    Task { await requestCreateGroup() }
+                }
+            } else {
+                GroupQuickActionsRow(identifierPrefix: "groups", onNewExpense: startNewExpense, onReceipt: startReceiptSplit)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1249,6 +1274,13 @@ struct GroupsContainerView: View {
         if let initial = lastUsedOrFirst(of: eligibles) {
             expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: initial)
         }
+    }
+
+    /// Voz o Foto de arriba: con un solo grupo elegible, directo a él; con varios, «¿En qué grupo?» con el último marcado.
+    private func startReceiptSplit(_ source: GroupReceiptEntryKind) {
+        let eligibles = viewModel.eligibleGroupsForExpense()
+        guard let initial = lastUsedOrFirst(of: eligibles) else { return }
+        receiptRequest = GroupReceiptRequest(groups: eligibles, preselected: initial, source: source)
     }
 
     /// «Nuevo gasto» abre en el último grupo donde se apuntó un gasto; si ya no admite gastos, en el primero
@@ -1326,6 +1358,8 @@ private struct ExpenseComposerPayload: Identifiable {
     let initialGroup: SplitGroup
     /// L13-8 · aviso arriba del gasto («Ahora apunta el gasto») cuando se abre justo después de crear el grupo.
     var notice: String? = nil
+    /// El reparto que trae Voz o Foto: Nuevo gasto abre relleno.
+    var receiptSplit: GroupExpensePrefillTemplate? = nil
 }
 
 /// Card nve0 · los dos avisos que re-deciden el estado vacío: el consentimiento que cambia en disco y la sesión que entra o

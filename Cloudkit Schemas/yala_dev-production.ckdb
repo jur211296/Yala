@@ -450,6 +450,7 @@ DEFINE SCHEMA
         CD_natureRawValue STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_shortcutID     STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_sortOrder      INT64 QUERYABLE SORTABLE,
+        CD_systemRoleRaw  STRING QUERYABLE SEARCHABLE SORTABLE,
         "___createTime"   TIMESTAMP,
         "___createdBy"    REFERENCE,
         "___etag"         STRING,

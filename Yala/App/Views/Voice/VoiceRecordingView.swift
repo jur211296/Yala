@@ -77,6 +77,13 @@ struct VoiceRecordingView: View {
     /// Práctica guiada: «Ahora no».
     var onSetupTrialSkipped: (() -> Void)?
 
+    /// La prueba de cortesía de «Aprender a registrar» (Y23-09): con texto, arriba va la franja «Prueba de cortesía: la
+    /// voz, una vez gratis» con «Omitir» en vez de «Ahora no». Su «Omitir» es `onSetupTrialSkipped`.
+    var courtesyTrialText: String?
+    /// La prueba de cortesía: los borradores de más que dejó una frase con varios gastos (se revisa el primero; los
+    /// demás quedan en la Bandeja). Van a «¿Borramos los de prueba?» con los demás.
+    var onCourtesyExtraDrafts: (([PersistentIdentifier]) -> Void)?
+
     private enum Phase: Equatable {
         /// Pidiendo el micro: se ve como escuchando, con Listo apagado.
         case starting
@@ -145,9 +152,19 @@ struct VoiceRecordingView: View {
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    @ViewBuilder
     private var header: some View {
+        if let courtesyTrialText, let skip = onSetupTrialSkipped {
+            CourtesyTrialStrip(text: courtesyTrialText) {
+                stopLivePreview()
+                recorder.cancelRecording()
+                skip()
+                dismiss()
+            }
+            .padding(.top, DS.Spacing.md)
+        }
         HStack {
-            if let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
+            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
                 Button(L10n.SetupChecklist.skipStep) {
                     stopLivePreview()
                     recorder.cancelRecording()
@@ -806,6 +823,7 @@ struct VoiceRecordingView: View {
             pendingAudioData = nil
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja, como antes.
             drafts = isSetupTrial ? Array(created.prefix(1)) : created
+            if isSetupTrial, created.count > 1 { onCourtesyExtraDrafts?(created.dropFirst().map(\.persistentModelID)) }
             transcription = text
             phase = .review
             DS.Haptic.success()

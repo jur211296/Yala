@@ -88,6 +88,7 @@ struct PracticeCleanupPrompt: ViewModifier {
             PracticeCleanupDeleter.delete(item, in: modelContext)
         }
         TrialOfferMoments.notePracticeAnswered(item)
+        NewUserMetrics.practiceAnswered(step: item?.stepID, kept: !delete)
         item = nil
         onAnswered()
     }

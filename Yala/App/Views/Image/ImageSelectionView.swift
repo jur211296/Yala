@@ -96,6 +96,13 @@ struct ImageSelectionView: View {
     /// Práctica guiada: «Ahora no».
     var onSetupTrialSkipped: (() -> Void)?
 
+    /// La prueba de cortesía de «Aprender a registrar» (Y23-09): con texto, arriba va la franja «Prueba de cortesía: la
+    /// foto, una vez gratis» con «Omitir», y de los ejemplos solo el recibo: «Usar el recibo de ejemplo».
+    var courtesyTrialText: String?
+    /// La prueba de cortesía: los borradores de más de una foto con varias líneas (se revisa el primero; los demás
+    /// quedan en la Bandeja). Van a «¿Borramos los de prueba?» con los demás.
+    var onCourtesyExtraDrafts: (([PersistentIdentifier]) -> Void)?
+
     private enum Phase: Equatable {
         case choose
         /// Un PDF con contraseña espera a que se escriba. `wrongPassword` si la anterior no lo abrió.
@@ -233,9 +240,17 @@ struct ImageSelectionView: View {
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    @ViewBuilder
     private var header: some View {
+        if let courtesyTrialText, let skip = onSetupTrialSkipped {
+            CourtesyTrialStrip(text: courtesyTrialText) {
+                skip()
+                dismiss()
+            }
+            .padding(.top, DS.Spacing.md)
+        }
         HStack {
-            if let skip = onSetupTrialSkipped, phase != .review, phase != .reading {
+            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .reading {
                 Button(L10n.SetupChecklist.skipStep) {
                     skip()
                     dismiss()
@@ -288,11 +303,15 @@ struct ImageSelectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let examples = exampleImages, !examples.isEmpty {
+            if courtesyTrialText == nil, let examples = exampleImages, !examples.isEmpty {
                 exampleRow(examples)
             }
 
             sourceTiles
+
+            if courtesyTrialText != nil, let receipt = exampleImages?.first {
+                exampleReceiptButton(receipt)
+            }
 
             if !isSetupTrial {
                 Text(L10n.Image.Entry.multipleHint)
@@ -394,6 +413,37 @@ struct ImageSelectionView: View {
                 }
             }
         }
+    }
+
+    /// «Usar el recibo de ejemplo» (Y23-09): la imagen de ejemplo de la app, para probar sin buscar una foto.
+    private func exampleReceiptButton(_ receipt: UIImage) -> some View {
+        Button {
+            startReading([receipt])
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(uiImage: receipt)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 60) // A11Y-DT: miniatura del recibo de ejemplo
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.PrimerosPasos23.Record.useExampleReceipt)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(L10n.PrimerosPasos23.Record.useExampleReceiptHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "chevron.right").font(DS.Typography.caption).foregroundStyle(.tertiary)
+            }
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(.thCard))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("image_example_receipt")
     }
 
     private func exampleLabel(_ index: Int) -> String {
@@ -971,16 +1021,18 @@ struct ImageSelectionView: View {
     private func cameraFinished(_ image: UIImage?) {
         showCamera = false
         guard let image else { return }
-        startReading([image])
+        startReading([PhotoIntake.image(reducing: image, maxEdge: PhotoIntake.currentIntakeMaxEdge())])
     }
 
     private func loadPickedPhotos(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         Task {
             var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
             for item in items {
                 do {
-                    if let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                    if let data = try await item.loadTransferable(type: Data.self),
+                       let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
                         loaded.append(image)
                     }
                 } catch {
@@ -1111,25 +1163,29 @@ struct ImageSelectionView: View {
             readSharedFiles(batch)
             return
         }
-        var loaded: [UIImage] = []
-        for member in batch {
-            do {
-                let data = try Data(contentsOf: member)
-                if let image = UIImage(data: data) {
-                    loaded.append(image)
+        // Las fotos se reducen fuera del hilo principal: una tanda de diez grandes congelaba la pantalla (YALA-IOS-B).
+        Task {
+            var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
+            for member in batch {
+                do {
+                    let data = try Data(contentsOf: member)
+                    if let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
+                        loaded.append(image)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
+                    #endif
                 }
-            } catch {
-                #if DEBUG
-                print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
-                #endif
+                SharedContainerService.removePendingImage(at: member)
             }
-            SharedContainerService.removePendingImage(at: member)
+            guard !loaded.isEmpty else {
+                phase = .failure(.unreadable)
+                return
+            }
+            startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
         }
-        guard !loaded.isEmpty else {
-            phase = .failure(.unreadable)
-            return
-        }
-        startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
     }
 
     /// Una tanda soltada con algún PDF: fotos y PDF juntos, por el mismo camino que varios archivos elegidos en Archivo.
@@ -1160,7 +1216,7 @@ struct ImageSelectionView: View {
                 openFiles([.pdf(data)])
                 return
             }
-            guard let image = UIImage(data: data) else {
+            guard let image = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge()) else {
                 phase = .failure(.unreadable)
                 return
             }
@@ -1314,6 +1370,7 @@ struct ImageSelectionView: View {
             let combined = appending ? drafts + shown : shown
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja.
             drafts = isSetupTrial ? Array(combined.prefix(1)) : combined
+            if isSetupTrial, combined.count > 1 { onCourtesyExtraDrafts?(combined.dropFirst().map(\.persistentModelID)) }
             failedImages = failed
             failedReasons = reasons
             phase = .review

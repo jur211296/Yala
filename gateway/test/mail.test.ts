@@ -91,16 +91,16 @@ describe("la dirección", () => {
   });
 
   it("lee el código del destinatario del sobre, con mayúsculas y <>", () => {
-    expect(codeFromRecipient("auto+abcdefghjk@yala-app.pe", CFG)).toBe("abcdefghjk");
-    expect(codeFromRecipient("<AUTO+ABCDEFGHJK@Yala-App.pe>", CFG)).toBe("abcdefghjk");
+    expect(codeFromRecipient("auto+abcdefghjk@yalainbox.com", CFG)).toBe("abcdefghjk");
+    expect(codeFromRecipient("<AUTO+ABCDEFGHJK@YalaInbox.com>", CFG)).toBe("abcdefghjk");
   });
 
   it("rechaza lo que no es nuestro", () => {
-    expect(codeFromRecipient("auto@yala-app.pe", CFG)).toBeNull();
+    expect(codeFromRecipient("auto@yalainbox.com", CFG)).toBeNull();
     expect(codeFromRecipient("auto+abcdefghjk@otro.pe", CFG)).toBeNull();
-    expect(codeFromRecipient("otro+abcdefghjk@yala-app.pe", CFG)).toBeNull();
-    expect(codeFromRecipient("auto+abc@yala-app.pe", CFG)).toBeNull();
-    expect(codeFromRecipient("auto+abcdefghj0@yala-app.pe", CFG)).toBeNull(); // 0 no está en el alfabeto
+    expect(codeFromRecipient("otro+abcdefghjk@yalainbox.com", CFG)).toBeNull();
+    expect(codeFromRecipient("auto+abc@yalainbox.com", CFG)).toBeNull();
+    expect(codeFromRecipient("auto+abcdefghj0@yalainbox.com", CFG)).toBeNull(); // 0 no está en el alfabeto
   });
 });
 
@@ -172,13 +172,13 @@ describe("la entrada de Email Routing", () => {
     if (pro) {
       sqlite.prepare("INSERT INTO account_entitlements VALUES (?, 'pro', ?, 'txn', 'jwt', 0, 0)").run(SUB, Date.now() + 86_400_000);
     }
-    return { env, sqlite, to: `auto+${row.code}@yala-app.pe` };
+    return { env, sqlite, to: `auto+${row.code}@yalainbox.com` };
   }
 
   it("rechaza una dirección que no existe sin leer nada", async () => {
     const { env } = await setup();
     const read = vi.fn();
-    const msg = incoming("auto+zzzzzzzzzz@yala-app.pe", BCP_PURCHASE);
+    const msg = incoming("auto+zzzzzzzzzz@yalainbox.com", BCP_PURCHASE);
     expect(await processIncomingMail(msg, env, { read })).toBe("rejected_unknown");
     expect(msg.rejected).not.toBeNull();
     expect(read).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe("las rutas de la app", () => {
     const { call } = await appWith();
     const a = (await (await call("POST", "/mail/address", "jwt-a")).json()) as Record<string, unknown>;
     const b = (await (await call("POST", "/mail/address", "jwt-a")).json()) as Record<string, unknown>;
-    expect(a.address).toMatch(/^auto\+[a-z2-9]{10}@yala-app\.pe$/);
+    expect(a.address).toMatch(/^auto\+[a-z2-9]{10}@yalainbox\.com$/);
     expect(b.address).toBe(a.address);
     expect(a).toMatchObject({ pro: false, trial_limit: 5, trial_used: 0, gmail_confirmation: null });
   });

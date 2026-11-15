@@ -21,6 +21,7 @@
 
 import CloudKit
 import Foundation
+import OSLog
 import SwiftData
 #if canImport(UIKit)
 import UIKit
@@ -53,6 +54,10 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     /// Caso propio por lo mismo que `adoptLocalFailure`: esperar no arregla un corpus ajeno, así que cuenta para el techo
     /// CORTO. La espera legítima —el marcador que aún se importa— la para antes la quiescencia, que es `adoptRetry`.
     case adoptLineageUnproven
+    /// La persona confirmó «Cancelar la activación» y el efecto del adopt llegó a uno de sus puntos seguros (card l4m0 del
+    /// barrido del 14-nov). Hasta entonces el «sí» solo se miraba ANTES de cada intento, y el intento en vuelo que salía
+    /// bien adoptaba igual. El runner lo recoge en `observeAdoptEffectFailure`, que mira el «sí» antes que nada.
+    case adoptCancelRequested
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -909,6 +914,26 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// La cifra de la subida (`MigrationSnapshotUploader.progress`).
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { uploader.progress }
 
+    /// En qué paso REAL va el efecto del adopt y cuántas filas de la cuenta lleva leídas (card jxbp). Solo informa: lo
+    /// lee la barra de «Conectando con tu cuenta» a través del runner y del controller. Cada pasada lo repone desde el
+    /// primer paso; la pantalla no retrocede (`AdoptEffectProgress.displayed`).
+    private(set) var adoptEffectProgress: AdoptEffectProgress?
+
+    /// ¿Hay un «Cancelar la activación» apuntado? Lo instala el runner (`installAdoptCancelProbe`), dueño del «sí». Lo mira
+    /// el efecto del adopt en sus puntos seguros (`runAdoptFlow`, card l4m0).
+    private var adoptCancelProbe: @MainActor () -> Bool = { false }
+
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool) {
+        adoptCancelProbe = probe
+    }
+
+    /// Un punto seguro del efecto del adopt: con el «sí» apuntado, el intento sale aquí en vez de seguir hasta adoptar.
+    private func stopIfAdoptCancelRequested(at point: String) throws {
+        guard adoptCancelProbe() else { return }
+        CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "cancel requested at \(point)")
+        throw MigrationExecutorError.adoptCancelRequested
+    }
+
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         do {
             try restoreRelayIdentities()
@@ -1601,6 +1626,28 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// que renovar— pero ya no se confunde con la red, porque es lo que elige el techo CORTO de esta etapa. Hasta ese
     /// día se quedaba en `.transient` y la vuelta se paraba aquí sin salida.
     func reverseDrainOnce() async -> ReverseStepOutcome {
+        await reverseDrainOnce(continueWhile: { true }, onProgress: { _ in })
+    }
+
+    /// Cuántos cambios sube cada tanda del drenaje de la vuelta. Lo mismo que un trozo de `SyncPushClient` (50 ≈ 15 s de
+    /// Worker, que aplica cada delta en serie): así cada petición confirma y purga lo suyo antes de la siguiente.
+    static let reverseDrainBatchSize = 50
+
+    /// **Por tandas desde el 13-nov** (card `volver-a-tu-icloud-se-queda-en-traer-tus`, E07 del recorrido). Hasta ese día
+    /// subía el outbox ENTERO en una sola llamada a `push` y purgaba al final: con 3090 cambios recién creados por «Cargar
+    /// datos de prueba» eran ~15 minutos sin una cifra, «Cancelar» esperaba apagado a que terminara y, al cerrar Yala, nada
+    /// quedaba purgado y la pasada siguiente volvía a empezar desde el primero. Ahora:
+    ///  - **el orden es el mismo**: se ordena el outbox entero por HLC (`HLC.uploadOrder`) ANTES de partirlo, así que la
+    ///    subida llega al servidor en el orden de siempre (regla «Todo HLC guardado queda acotado»);
+    ///  - **cada tanda confirmada se purga en el acto** (`applyResults`), así que lo subido sobrevive a cerrar Yala y a cancelar;
+    ///  - **`continueWhile` se pregunta antes de cada tanda**: con `false` corta con `.transient` y lo confirmado queda
+    ///    guardado. Es el «sí» de «Cancelar y seguir en tu cuenta de Yala»;
+    ///  - **`onProgress` dice cuántos lleva de cuántos había**: la cifra de «Traer tus datos de tu cuenta de Yala».
+    /// Lo que se escriba DURANTE la pasada lo recoge la siguiente (la verificación lo exige igual que antes).
+    func reverseDrainOnce(
+        continueWhile: @escaping @MainActor () -> Bool,
+        onProgress: @escaping @MainActor (CloudProgressStepsLogic.UploadProgress) -> Void
+    ) async -> ReverseStepOutcome {
         // Sin drain completo no se da por drenado: lo siguiente es CONGELAR el backend (mismo porqué que el outbox
         // ilegible de abajo; ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
         guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
@@ -1618,15 +1665,36 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let (live, poison) = pushClient.partitionBuildable(allLive)
         engine.deadLetterPoison(poison, context: context, now: now())
         if !live.isEmpty {
-            switch await pushClient.push(live) {
-            case .completed(let results):
-                await pushClient.applyResults(results, rows: live, engine: engine, context: context)
-            case .sessionExpired:
-                return .sessionExpired
-            case .accountUnavailable:
-                return .blocked(.accountUnavailable)
-            case .transient:
-                return .transient
+            let ordered = HLC.uploadOrder(live, hlc: \.hlc, createdAt: \.createdAt)
+            let total = ordered.count
+            var confirmed = 0
+            onProgress(CloudProgressStepsLogic.UploadProgress(done: 0, total: total))
+            var start = 0
+            while start < total {
+                guard continueWhile() else {
+                    migrationRunnerLogger.notice("reverseDrain stopped before batch sent=\(confirmed, privacy: .public) total=\(total, privacy: .public)")
+                    return .transient
+                }
+                let end = min(start + Self.reverseDrainBatchSize, total)
+                let batch = Array(ordered[start..<end])
+                let batchStartedAt = Date()
+                switch await pushClient.push(batch) {
+                case .completed(let results):
+                    await pushClient.applyResults(results, rows: batch, engine: engine, context: context)
+                    confirmed += results.count
+                    onProgress(CloudProgressStepsLogic.UploadProgress(done: confirmed, total: total))
+                    migrationRunnerLogger.notice("reverseDrain batch confirmed=\(confirmed, privacy: .public) total=\(total, privacy: .public) ms=\(Int(Date().timeIntervalSince(batchStartedAt) * 1000), privacy: .public)")
+                    // Un trozo que confirma menos de lo que mandó cortó a medias dentro de `push`: lo confirmado ya se
+                    // purgó y el resto vuelve en la pasada siguiente.
+                    if results.count < batch.count { return .transient }
+                case .sessionExpired:
+                    return .sessionExpired
+                case .accountUnavailable:
+                    return .blocked(.accountUnavailable)
+                case .transient:
+                    return .transient
+                }
+                start = end
             }
         }
         switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
@@ -2164,10 +2232,29 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         if let waiting = await awaitICloudCorpusIfNotLocal(localInventory) { return waiting }
         // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
-        guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        // Card jxbp: cuántas filas tiene la cuenta, para que la barra avance con la lectura. Solo informa: la comprobación
+        // de que la lectura salió entera sigue siendo el Merkle de DESPUÉS, y sin respuesta aquí la lectura va sin cifra.
+        //
+        // **Esa cifra se pide EN PARALELO con la lectura, no antes** (card «Conectar con la cuenta tarda 22–50 s», 2026-11-14):
+        // medido en el iPhone 14, el Merkle tardaba ~6 s y la lectura no empezaba hasta que contestaba. Mientras no llega, la
+        // barra se queda al principio del tramo de lectura; cuando llega, avanza con lo que ya se leyó. Al terminar la lectura
+        // se cancela: una cifra que llegue tarde ya no pinta nada.
+        adoptEffectProgress = AdoptEffectProgress(stage: .readingAccount, rowsRead: 0, rowsExpected: nil)
+        let expectedRowsTask = Task { @MainActor [weak self] in
+            guard let self, case .snapshot(let merkle) = await self.merkleClient.fetchMerkle(), !Task.isCancelled else { return }
+            self.adoptEffectProgress?.rowsExpected =
+                AdoptEffectProgress.expectedRows(merkleCounts: merkle.entities.values.map(\.count))
+        }
+        let readEnumeration = await enumerateBackendSyncIDs(onPage: { [weak self] rows in
+            self?.adoptEffectProgress?.rowsRead += rows
+        })
+        expectedRowsTask.cancel()
+        guard let enumeration = readEnumeration else { return .transient }
+        adoptEffectProgress?.stage = .verifyingAccount
         // Verificación POSITIVA de completitud contra los counts del Merkle (SERIO 1 — ver doc del método).
         // El merkle se consulta DESPUÉS de la enumeración: sesgo a abortar, jamás a proceder.
         guard await verifyEnumerationComplete(enumeration) else { return .transient }
+        adoptEffectProgress?.stage = .matchingDevice
         let backendSyncIDs = enumeration.known
 
         // Las identidades que el espejo cambió desde una pasada ANTERIOR de este adopt, que sembró el registro fila →
@@ -2293,6 +2380,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
         // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
         // casados, para que el espejo lo exporte detrás de ellos.
+        adoptEffectProgress?.stage = .uploading
         let outcome = await uploadAdoptOrphans(plan, identityAssigned: identityAssigned)
         if case .completed = outcome { relayAdoptMarkerIfCovered(enumeration: enumeration) }
         return outcome
@@ -2399,6 +2487,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// pendiente y el próximo `resume()` lo reintenta (tras su propia espera de quiescencia). Idempotente:
     /// una 2ª pasada re-diffea (lo aplicado sale del diff) y re-persiste (LWW/no-op).
     func runAdoptFlow() async throws {
+        adoptEffectProgress = AdoptEffectProgress(stage: .checkingDevice)
+        // Al acabar la pasada, bien o mal, el progreso deja de valer: el intento siguiente no puede leer el de éste
+        // (review adversarial).
+        defer { adoptEffectProgress = nil }
         // 1) Quiescencia del import (el adopt persiste `.cloud` sobre un store en importación — DEBE
         //    asentarse antes). El runner ya gatea sus entradas por quiescencia; esta es la red específica
         //    del contrato por si el drive alcanzó el efecto lejos de la entrada.
@@ -2406,6 +2498,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "import not quiescent")
             throw MigrationExecutorError.adoptRetry(reason: "quiescence")
         }
+
+        // 1-ter) Card l4m0: un «Cancelar la activación» confirmado mientras esperaba se honra aquí, antes de enumerar nada.
+        try stopIfAdoptCancelRequested(at: "beforeReconcile")
 
         // 1-bis) Un reintento que solo espera a que el marcador relevado de una pasada anterior llegue a iCloud no repite el
         //    reconcile (ni su enumeración del backend): sale aquí mientras dure la espera (`relayMarkerAwaitingExport`).
@@ -2435,6 +2530,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             break
         }
 
+        // 2-ter) Card l4m0: el «sí» que llegó durante el reconcile se honra aquí, antes de armar el modo nube (paso 5), que es
+        //    lo que ya no se deshace. Entre este punto y el paso 5 no hay ningún `await`.
+        try stopIfAdoptCancelRequested(at: "afterReconcile")
+
         // 2-bis) El marcador que este adopt acaba de relevar tiene que llegar a iCloud ANTES de armar el apagado del espejo
         //    (paso 5), como el del líder en su paso 4 (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`).
         //    `adoptRetry`: el runner lo trata como la red —pausa el techo corto— y el reintento espera en el 1-bis.
@@ -2442,6 +2541,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             throw MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")
         }
 
+        adoptEffectProgress?.stage = .finishing
         // 3) Fast-forward del History baseline: sin él el primer drain del runtime post-relaunch re-emitiría
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
@@ -3369,10 +3469,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var liveExchangeRateAnchors: [UUID: String] = [:]
     }
 
+    /// Filas por página al leer la cuenta en el adopt: el máximo que sirve `/sync/pull` (`clamp(limit, 1, 1000)` en
+    /// `gateway/src/sync/routes.ts`). Era 500, y cada página cuesta un viaje con coste fijo: medido en el iPhone 14 el
+    /// 2026-11-14, 15 páginas de ~2,5 s para 7.221 filas (card «Conectar con la cuenta tarda 22–50 s»). Pedir más de 1000
+    /// no rompe nada (el servidor recorta) pero tampoco ahorra.
+    static let adoptEnumerationPageSize = 1000
+
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
     /// `sweepZombies`). `nil` = red (transient). El loop copia el shape de `sweepZombies`: cursor, high-water,
     /// break si página vacía o sin progreso.
-    private func enumerateBackendSyncIDs() async -> BackendEnumeration? {
+    private func enumerateBackendSyncIDs(onPage: ((Int) -> Void)? = nil) async -> BackendEnumeration? {
         var known: Set<UUID> = []
         var liveByTable: [String: Set<UUID>] = [:]
         var liveKeys: [UUID: String] = [:]
@@ -3382,8 +3488,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var liveExchangeRateAnchors: [UUID: String] = [:]
         var cursor: Int64 = 0
         while true {
-            switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
+            switch await tombstoneSource.pullPage(since: cursor, limit: Self.adoptEnumerationPageSize) {
             case let .page(page):
+                // Las vivas: el total con el que se compara (Merkle) cuenta solo filas vivas.
+                onPage?(page.deltas.lazy.filter { $0.op != .tombstone }.count)
                 for delta in page.deltas {
                     known.insert(delta.syncID)
                     do {

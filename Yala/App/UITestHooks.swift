@@ -112,6 +112,29 @@ final class UITestHooks {
     /// limpia.
     nonisolated static var showsProTourPanel: Bool { hasArg("-uitest-pro-tour-panel") }
 
+    /// `-uitest-show-setup-deck`: el mazo de Primeros pasos (Y23-05) se pinta también bajo `-uitest`, donde por defecto
+    /// se calla para no tapar lo que cada test busca. Solo para los tests del propio mazo.
+    nonisolated static var showsSetupDeck: Bool { hasArg("-uitest-show-setup-deck") }
+
+    /// `-uitest-setup-deck-at <n>`: con `-uitest-show-setup-deck`, el mazo arranca en el paso `n` (1…7, y 8 = completo):
+    /// los anteriores quedan omitidos. Para probar los pasos 6 y 7 y el final (Y23-14, Y23-16, Y23-18) sin recorrer
+    /// los cinco primeros.
+    nonisolated static var setupDeckPosition: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-setup-deck-at", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-later-charts-guide`: la guía de «días después» (Y23-15) puede salir bajo `-uitest`. Solo su XCUITest.
+    nonisolated static var showsLaterChartsGuide: Bool { hasArg("-uitest-later-charts-guide") }
+
+    /// `-uitest-fresh-install`: con `-uitest-reset`, la instalación arranca como una nueva de 2.3 (pestañas Panel ·
+    /// Grupos · Registros, llegada tranquila). Sin él, el reset deja la barra de antes (`TabBarDefaultsMigration`).
+    nonisolated static var freshInstall: Bool { hasArg("-uitest-fresh-install") }
+
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
@@ -399,6 +422,31 @@ final class UITestHooks {
         return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-probe-stalled")
         #else
         return false
+        #endif
+    }
+
+    /// `-uitest-private-gate-icloud-has-data`: la revisión de iCloud de la puerta privada contesta que hay datos (214
+    /// registros, 3 cuentas, 2 presupuestos) sin tocar CloudKit. Bienvenida 2.3 (Y23-03): con la vitrina, «Traer mis datos»
+    /// solo se alcanza por «Entrar con mi iCloud» con datos, y sin esto no hay XCUITest de ese camino. **Finge la entrada,
+    /// no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. Solo DEBUG.
+    nonisolated static var privateGateICloudHasData: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-icloud-has-data")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-unified-access-phase <create|confirm>`: el acceso único de la vitrina (bienvenida 2.3, Y23-02) aterriza en
+    /// «Vamos a crear tu cuenta» o en «¿Cargamos tus datos y entramos?» sin firmar ni preguntar al servidor, que el
+    /// simulador no puede. **Solo pinta la pantalla**: sus botones no tienen sesión detrás (el XCUITest prueba el
+    /// contenido; el recorrido con sesión es QA de iPhone). Solo DEBUG.
+    nonisolated static var unifiedAccessPhase: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-unified-access-phase", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
         #endif
     }
 
@@ -1278,6 +1326,13 @@ final class UITestHooks {
     /// llega de otro dispositivo.
     nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
 
+    /// `-uitest-seed-pending-settlement-already-settled`: con `-uitest-seed-pending-settlement`, Ana ya saldó en soles con
+    /// otro pago, confirmado. Su pago de S/ 50 por confirmar ya no cabe en la deuda: «Sí, lo recibí» avisa antes de
+    /// confirmarlo (Grupos 2.3, pago por confirmar, opción B).
+    nonisolated static var seedPendingSettlementAlreadySettled: Bool {
+        hasArg("-uitest-seed-pending-settlement-already-settled")
+    }
+
     /// `-uitest-seed-group-sale`: con el perfil `grupos`, un grupo más, «Ventas con Ana», con una venta tuya a Ana de S/ 50
     /// ya puenteada (por cobrar) y el pago de Ana de S/ 50 por confirmar, que la cobra entera (Grupos B · card 10).
     nonisolated static var seedGroupSale: Bool { hasArg("-uitest-seed-group-sale") }
@@ -1290,6 +1345,10 @@ final class UITestHooks {
     /// es «Lucía», no «Tú», para ver dónde la app lo cambia. Y «Grupo sin gastos», recién creado y sin nada apuntado.
     nonisolated static var seedGroupCrossDebts: Bool { hasArg("-uitest-seed-group-cross-debts") }
     nonisolated static let seededCrossDebtsGroupName = "Piso compartido"
+    /// `-uitest-seed-group-cross-debts-simplified`: con la semilla de arriba, «Piso compartido» con «Menos pagos»
+    /// ENCENDIDO (lote chico de 2.3, decisión 36): juntadas quedan Beto → Ana S/ 70 y tú → Ana S/ 10, distintas de las de
+    /// cada par (tú → Ana 40, Beto → Ana 40, Beto → tú 30), así que Saldos enseña la línea al pie.
+    nonisolated static var seedGroupCrossDebtsSimplified: Bool { hasArg("-uitest-seed-group-cross-debts-simplified") }
     nonisolated static let seededEmptyGroupName = "Grupo sin gastos"
 
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence

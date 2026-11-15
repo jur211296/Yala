@@ -170,26 +170,15 @@ import SwiftData
 
     // MARK: - Helper
 
-    /// Finds the balance adjustment subcategory from the seed data (localized)
+    /// La subcategoría de ajustes de saldo, por su PAPEL (`systemRole == .balanceAdjustment`), nunca por el nombre: vale
+    /// la sembrada en cualquier idioma (la app cambió de idioma, o llegó de otro aparato) y una del usuario con el mismo
+    /// nombre no recibe ajustes. Con varias, la del idioma actual y luego la de nombre e identidad menores, como el
+    /// fusionador de duplicados (`CloudSyncReconciler.mergeBalanceAdjustmentSubcategories`).
     static func findBalanceAdjustmentSubcategory(context: ModelContext) -> Subcategory? {
-        let localizedName = L10n.Subcategory.balanceAdjustment
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate<Subcategory> { subcategory in
-                subcategory.name == localizedName
-            }
-        )
-
         do {
-            if let found = try context.fetch(descriptor).first { return found }
-            // Sembrada en otro idioma (la app cambió de idioma, o llegó de otro aparato): el nombre localizado de hoy
-            // no la encuentra. Se busca por los nombres de todos los idiomas, como el fusionador de duplicados.
-            let names = Array(Subcategory.balanceAdjustmentNames)
-            let anyLanguage = FetchDescriptor<Subcategory>(
-                predicate: #Predicate<Subcategory> { subcategory in
-                    names.contains(subcategory.name)
-                }
-            )
-            return try context.fetch(anyLanguage).first
+            let candidates = try context.fetch(FetchDescriptor<Subcategory>())
+                .filter { $0.systemRole == .balanceAdjustment }
+            return TransferCategoryResolver.preferred(candidates, currentName: L10n.Subcategory.balanceAdjustment)
         } catch {
             #if DEBUG
             print("Error fetching balance adjustment subcategory: \(error)")
@@ -234,6 +223,7 @@ import SwiftData
                 colorHex: "#64748B",
                 natureRawValue: "sin_clasificacion",
                 iconName: "plusminus",
+                systemRole: .balanceAdjustment,
                 category: category
             )
             context.insert(subcategory)

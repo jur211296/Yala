@@ -212,6 +212,12 @@ struct PanelSheetStateActivePresentationTests {
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showAIConsentAlert = true
         #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.showFirstAccountFlow = true
+        #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.showRecordTutorial = true
+        #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.showPracticeRecordsCleanup = true
+        #expect(s.hasActivePresentation)
     }
 
     // Flags de COORDINACIÓN post-dismiss / setup trial ⇒ false (no presentan).

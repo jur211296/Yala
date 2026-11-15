@@ -307,6 +307,7 @@ struct CashFlowMonthDetailView: View {
                 uncategorizedRow(
                     result: month.otherIncome,
                     label: L10n.CashFlowPlan.otherIncomeLabel,
+                    identifier: "cashflow_others_income_row",
                     action: { viewModel.showOthersIncomeBreakdown = true }
                 )
                 addLineButton(isIncome: true)
@@ -328,6 +329,7 @@ struct CashFlowMonthDetailView: View {
                 uncategorizedRow(
                     result: month.otherExpenses,
                     label: L10n.CashFlowPlan.otherExpensesLabel,
+                    identifier: "cashflow_others_expense_row",
                     action: { viewModel.showOthersBreakdown = true }
                 )
                 addLineButton(isIncome: false)
@@ -379,7 +381,9 @@ struct CashFlowMonthDetailView: View {
     // MARK: - Uncategorized Row
 
     @ViewBuilder
-    private func uncategorizedRow(result: CashFlowOtherResult?, label: String, action: @escaping () -> Void) -> some View {
+    private func uncategorizedRow(
+        result: CashFlowOtherResult?, label: String, identifier: String, action: @escaping () -> Void
+    ) -> some View {
         if let result, result.plannedAmount > 0 {
             Button(action: action) {
                 HStack(spacing: DS.Spacing.md) {
@@ -408,6 +412,7 @@ struct CashFlowMonthDetailView: View {
                 .solidCard(radius: DS.Radius.md)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
         }
     }
 

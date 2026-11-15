@@ -2,39 +2,64 @@
 //  SetupStep.swift
 //  Yala
 //
-//  Defines the 8 setup checklist steps for new users.
+//  Defines the setup checklist («Primeros pasos») steps for new users.
 //
 
 import Foundation
 import SwiftData
 
 /// Identifies each step in the setup checklist.
-/// Declaration order determines CaseIterable iteration (UI order), NOT rawValue: the rawValue is the
-/// UserDefaults key (`setup.step.N.completed`) and must never change.
+/// The rawValue is the UserDefaults key (`setup.step.N.completed`) and must never change.
 ///
-/// UX 2.2 · L5-1 (decisión de Jürgen, opción A): lo primero es apuntar un gasto, después la voz y la foto,
-/// y Ajustes y Yala Pro al final. Antes Ajustes iba primero y abría una guía de nueve pasos antes de apuntar nada.
+/// Y23-05 (bienvenida 2.3, docs/onboarding-2-3/SPEC.md): «Primeros pasos» es un MAZO de siete pasos, en este orden:
+/// cuenta, registrar, presupuesto, pagos fijos, grupo, a dónde va el dinero y la pantalla de inicio (`deck`). Los tres
+/// que ya existían conservan su clave (2, 3 y 4), así que lo avanzado antes cuenta. «Conoce todo lo que puedes
+/// personalizar» (1) y «Conoce Yala Pro» (5) salieron del mazo; sus claves quedan sin leer.
+///
+/// Voz y foto (6 y 7) ya no son pasos: son prácticas DENTRO de «Aprender a registrar» (Y23-09 las rehace) y siguen aquí
+/// porque su «¿era de prueba?» (`PracticeCleanupItem`) y su «Ahora no» se apuntan con estos ids. No cuentan para el mazo.
 enum SetupStepID: Int, CaseIterable, Identifiable {
+    /// 1 · Crea tu primera cuenta.
+    case firstAccount = 8
+    /// 2 · Aprender a registrar. Se llama así por la clave de 2.2 («Registra tu primer gasto»), que se conserva.
     case firstExpense = 2
-    case tryVoiceInput = 6
-    case tryImageInput = 7
+    /// 3 · Crea tu primer presupuesto.
     case firstBudget = 3
+    /// 4 · Anota tus pagos fijos.
     case scheduledPayment = 4
-    case exploreSettings = 1
-    case discoverFeatures = 5
+    /// 5 · Divide gastos con tu grupo.
+    case groups = 9
+    /// 6 · Mira a dónde va tu dinero.
+    case whereMoneyGoes = 10
+    /// 7 · Yala en tu pantalla de inicio.
+    case homeScreen = 11
+    /// Práctica de voz dentro del paso 2 (no es un paso del mazo).
+    case tryVoiceInput = 6
+    /// Práctica de foto dentro del paso 2 (no es un paso del mazo).
+    case tryImageInput = 7
 
     var id: Int { rawValue }
+
+    /// Los siete pasos del mazo, en el orden de la ficha.
+    static let deck: [SetupStepID] = [
+        .firstAccount, .firstExpense, .firstBudget, .scheduledPayment, .groups, .whereMoneyGoes, .homeScreen,
+    ]
+
+    /// Si es un paso del mazo (y no una práctica de dentro de un paso).
+    var isDeckStep: Bool { Self.deck.contains(self) }
 
     /// SF Symbol icon for each step.
     var icon: String {
         switch self {
-        case .exploreSettings: "gearshape.fill"
+        case .firstAccount: "creditcard.fill"
         case .firstExpense: "plus.circle.fill"
         case .firstBudget: "chart.pie.fill"
         case .scheduledPayment: "calendar.badge.clock"
+        case .groups: "person.2.fill"
+        case .whereMoneyGoes: "chart.bar.fill"
+        case .homeScreen: "apps.iphone"
         case .tryVoiceInput: "waveform"
         case .tryImageInput: "camera.fill"
-        case .discoverFeatures: "sparkles"
         }
     }
 
@@ -52,7 +77,7 @@ enum SetupStepID: Int, CaseIterable, Identifiable {
         "setup.step.\(rawValue).completed"
     }
 
-    /// UserDefaults key for «Ahora no» (UX 2.2 · L5-2): the step was skipped, not done.
+    /// UserDefaults key for «Ahora no» / «Omitir» (UX 2.2 · L5-2): the step was skipped, not done.
     var skippedStorageKey: String {
         "setup.step.\(rawValue).skipped"
     }

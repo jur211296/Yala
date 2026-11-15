@@ -798,9 +798,10 @@ struct FullModeActivationWiringTests {
         }
         #expect(scanned >= 500, "el escáner solo leyó \(scanned) ficheros — no mide el árbol real")
         #expect(activationSheets == ["ContentView.swift"])
-        #expect(onboardings == ["ContentView.swift": 1, "FullModeActivationView.swift": 2], """
-            `OnboardingView` se monta en el Welcome (ContentView) y en la activación (su onboarding y el \
-            recorrido de antes). Encontrado: \(onboardings)
+        // Bienvenida 2.3 (Y23-04): el alta del Welcome es la conversación de tres preguntas; el onboarding de ocho pasos
+        // queda solo en la activación (su onboarding y el recorrido de antes).
+        #expect(onboardings == ["FullModeActivationView.swift": 2], """
+            `OnboardingView` se monta solo en la activación. Encontrado: \(onboardings)
             """)
     }
 }

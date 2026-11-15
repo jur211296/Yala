@@ -356,7 +356,6 @@ struct UpgradePromptSheet: View {
             case .imageInput: return L10n.UXPro.gateTitlePhoto
             case .smartInsightsAI: return L10n.UXPro.gateTitleInsights
             case .chatAssistant: return L10n.UXPro.gateTitleChat
-            case .cashFlowAdvanced: return L10n.UXPro.gateTitleCashFlow
             case .proThemes:
                 if case .theme(let appTheme, _) = preview { return L10n.UXPro.gateTitleTheme(appTheme.label) }
                 return L10n.UXPro.gateTitleThemeGeneric
@@ -381,7 +380,6 @@ struct UpgradePromptSheet: View {
             case .smartInsightsAI, .chatAssistant: return L10n.UXPro.gateBodyDataStaysFree
             case .proThemes: return L10n.UXPro.gateBodyThemeStays
             case .premiumIcons: return L10n.UXPro.gateBodyIconStays
-            case .cashFlowAdvanced: return L10n.UXPro.gateBodyCashFlowStays
             }
         }
     }

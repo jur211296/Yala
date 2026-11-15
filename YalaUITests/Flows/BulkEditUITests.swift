@@ -178,7 +178,7 @@ final class BulkEditUITests: XCTestCase {
 
     /// Auditoría UX 2.2 · L8-13: elegir primero y aplicar después. Elegir una cuenta NO la aplica: queda en el resumen
     /// («Cuenta → …») con «Aplicar» encendido; al aplicar, los dos registros pasan a esa cuenta, y al volver a abrir
-    /// «Editar varios» con los mismos elegidos la fila dice «Hoy: <esa cuenta>».
+    /// «Editar varios» con los mismos elegidos la fila dice «Ahora: <esa cuenta>» (decisión 75 de 2.3; antes «Hoy:»).
     func test_bulkEditAccount_isPendingUntilApply_andThenTheRecordsChange() {
         let app = XCUIApplication()
         app.launchForUITest()
@@ -207,6 +207,12 @@ final class BulkEditUITests: XCTestCase {
             app.recordsOverflowMenu.waitForExistence(timeout: 5),
             "Tras aplicar no se volvió a la lista en modo normal."
         )
+        // Desde la decisión 18 de 2.3 aplicar deja un aviso con «Deshacer» abajo, encima de la barra de selección: se
+        // espera a que se retire antes de volver a tocar esa franja.
+        XCTAssertTrue(
+            app.descendants(matching: .any)["records_bulk_edit_notice"].waitForNonExistence(timeout: 15),
+            "El aviso del lote no se retiró."
+        )
 
         // Los mismos dos registros ya tienen esa cuenta.
         enterSelectMode(app)
@@ -216,7 +222,7 @@ final class BulkEditUITests: XCTestCase {
         XCTAssertTrue(accountOption.waitForExistence(timeout: 5), "No se volvió a montar BulkEditSheet.")
         XCTAssertTrue(
             accountOption.label.contains(accountName),
-            "Tras aplicar, los registros no dicen «Hoy: \(accountName)»: «\(accountOption.label)»."
+            "Tras aplicar, los registros no dicen «Ahora: \(accountName)»: «\(accountOption.label)»."
         )
     }
 }

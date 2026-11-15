@@ -1,0 +1,170 @@
+{
+ "raw": "raw.mp4",
+ "items": [
+  {
+   "type": "card",
+   "secs": 10,
+   "step": "OAUTH VERIFICATION DEMO · PROJECT yala-502622",
+   "title": "Yala — personal finance app for iPhone",
+   "body": [
+    "This video shows every use of the Gmail scope https://www.googleapis.com/auth/gmail.readonly in Yala, end to end, and why a narrower scope is not enough.",
+    "• Scopes requested by the app (same as configured in Google Cloud Console): openid, userinfo.email, userinfo.profile, gmail.readonly.",
+    "• Recorded with the development build \"Yala Dev\" on the iOS Simulator. The OAuth app's publishing status remains \"In production\".",
+    "(The app UI is shown in English; the Gmail connection sheet is in Spanish and is translated on screen.)"
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 8.9,
+   "end": 17.0,
+   "step": "STEP 1 · ENTRY POINT",
+   "title": "Home > Inbox",
+   "body": [
+    "• The Inbox holds draft expenses that the user reviews before saving.",
+    "• The envelope button at the top right is \"Connect Gmail\"."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 17.0,
+   "end": 26.6,
+   "hold": 3,
+   "step": "STEP 2 · IN-APP DISCLOSURE",
+   "title": "\"Bank email\" sheet, before any Google screen",
+   "body": [
+    "Translation of the sheet:",
+    "• \"Connect your Gmail and your bank's alerts arrive in the Inbox on their own.\"",
+    "• Yala only searches your bank's alert emails (for now, BCP).",
+    "• Each alert becomes a draft: you review it and save it.",
+    "• The email is read on this iPhone. It is not sent to any server or to any AI.",
+    "• Yala does not read the rest of your email, does not write or delete anything, and does not sell or share your data.",
+    "• You can remove the permission at any time, here or in your Google Account."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 26.6,
+   "end": 40.5,
+   "step": "STEP 3 · OAUTH FLOW STARTS",
+   "title": "\"Continue with Google\"",
+   "body": [
+    "• iOS asks to use accounts.google.com to sign in > Continue.",
+    "• Google's sign-in page opens in English.",
+    "(The account email, password and 2-step verification are cut from the video for privacy.)"
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 346.0,
+   "end": 367.0,
+   "step": "STEP 4 · UNVERIFIED APP SCREEN",
+   "title": "Expected while verification is pending",
+   "body": [
+    "• \"Google hasn't verified this app\" > Advanced > Go to Yala (unsafe)."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 367.0,
+   "end": 388.7,
+   "step": "STEP 5 · CONSENT SCREEN",
+   "title": "Yala requests Gmail access",
+   "body": [
+    "• App name: Yala.",
+    "• New access requested: \"View your email messages and settings\" — this is https://www.googleapis.com/auth/gmail.readonly.",
+    "• \"Yala already has some access\": the sign-in scopes granted earlier."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 388.7,
+   "end": 411.5,
+   "step": "STEP 5 · ALL SCOPES EXPANDED",
+   "title": "Every requested scope, expanded",
+   "body": [
+    "gmail.readonly > View your email messages · Search your email messages · View your settings.",
+    "\"3 services\" Yala already has:",
+    "• See your personal info… > userinfo.profile",
+    "• See your primary Google Account email address > userinfo.email",
+    "• Associate you with your personal info on Google > openid",
+    "No other scope is requested. The user taps Continue."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 437.5,
+   "end": 452.0,
+   "hold": 2,
+   "step": "STEP 6 · HOW THE SCOPE IS USED (1/2)",
+   "title": "Search: only the bank's alert emails",
+   "body": [
+    "• Gmail API users.messages.list with q = \"(from:<bank alert sender> …) newer_than:180d\", maxResults = 5.",
+    "• The query only matches known bank alert senders (e.g. notificaciones@notificacionesbcp.com.pe). No other email is listed or opened.",
+    "• Result: \"5 new drafts in the Inbox\", for the connected account."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 452.0,
+   "end": 475.0,
+   "step": "STEP 6 · HOW THE SCOPE IS USED (2/2)",
+   "title": "Read the body and create a draft",
+   "body": [
+    "• For each match, users.messages.get (format=full).",
+    "• The MESSAGE BODY is parsed on the device: amount, currency, merchant and date. These fields only exist in the body of the bank alert.",
+    "• Each alert becomes a draft marked \"Email\" in the Inbox."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 475.0,
+   "end": 509.0,
+   "speed": 1.5,
+   "step": "STEP 7 · THE USER REVIEWS AND SAVES",
+   "title": "Draft > expense",
+   "body": [
+    "• The user opens the draft (Disney Plus, $20.78, yesterday), picks a category and saves it.",
+    "• Nothing is saved without the user's review."
+   ]
+  },
+  {
+   "type": "card",
+   "secs": 20,
+   "step": "WHY A NARROWER SCOPE IS NOT ENOUGH",
+   "title": "gmail.readonly is the narrowest scope that can read the alert's body",
+   "body": [
+    "• gmail.metadata — headers and labels only. The amount, merchant and date are in the body, so the feature cannot work.",
+    "• gmail.labels, gmail.send, gmail.compose, gmail.insert — cannot read messages.",
+    "• gmail.addons.current.message.readonly — only inside a Gmail add-on, for the message the user has open in Gmail. Yala is a native iOS app that imports alerts without the user opening each email.",
+    "• Gmail has no scope limited to one sender. Yala limits itself: the search query only matches bank alert senders, at most 5 recent messages, read-only.",
+    "• Yala never sends, modifies or deletes email."
+   ]
+  },
+  {
+   "type": "clip",
+   "start": 509.0,
+   "end": 532.5,
+   "hold": 2,
+   "step": "STEP 8 · REVOKE",
+   "title": "The user can remove access from the app",
+   "body": [
+    "• The sheet shows \"Connected as …\" and \"Remove Gmail permission\".",
+    "• Tapping it revokes the token with Google (GIDSignIn.disconnect). \"Connected as …\" disappears."
+   ]
+  },
+  {
+   "type": "card",
+   "secs": 18,
+   "step": "DATA HANDLING",
+   "title": "Limited use of Gmail data",
+   "body": [
+    "• Gmail data is read and processed on the user's device only. It is not sent to Yala's servers or to any AI service.",
+    "• Not sold, not shared, not used for advertising, not used to train AI models. Privacy policy: https://yala-app.pe/privacy",
+    "OAuth clients in project yala-502622:",
+    "• \"Yala iOS (dev)\" and \"Yala iOS (prod)\": the same iOS app (development and App Store builds). Both show this same consent screen and flow; this recording uses the dev client.",
+    "• \"Yala Web (MCP)\": web sign-in for Yala's AI-assistant connector. It requests only \"email profile\" and never requests any Gmail scope.",
+    "Thank you for reviewing."
+   ]
+  }
+ ]
+}
