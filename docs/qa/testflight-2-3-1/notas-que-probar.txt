@@ -1,0 +1,11 @@
+Novedades de Yala 2.3:
+• Bienvenida nueva: entra con Google o Apple y Yala te dice si ya tienes cuenta.
+• Cuentas en varias monedas.
+• Logos de tus suscripciones en los pagos planificados.
+• Gastos hormiga: cuánto suman al mes.
+• Flujo proyectado en Tendencias y en el Panel.
+• El ojo del Panel oculta tus montos.
+• Al registrar, Yala sugiere descripciones de gastos anteriores.
+• Grupos: reparte un recibo con IA, con foto o voz.
+
+Qué probar: registrar un gasto, la nube y Grupos. Si algo falla, envía una captura desde TestFlight.
