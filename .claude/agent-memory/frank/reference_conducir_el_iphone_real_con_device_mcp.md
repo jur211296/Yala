@@ -63,3 +63,12 @@ Medido el 2026-11-14 (prueba B0 del atajo del banco):
   recibe una automatización, añade «Copiar en el portapapeles» y lee con `get_clipboard` (sobrevive al bloqueo).
 - **Una acción de Atajos solo DEBUG en Yala Dev** que programa una notificación local con retardo sirve para simular
   avisos de otras apps («Al recibir una notificación de Yala Dev»): el molde es `BankNoticeTestEmitIntent`.
+
+Medido el 2026-11-14 (pagos recurrentes S1):
+
+- **Un toque justo después de abrir una hoja se pierde**: el interruptor de la hoja de ajustes no cambió y parecía un
+  bug de la app. Con la hoja ya quieta (una captura antes), el mismo toque funcionó. Tras abrir una hoja, captura o
+  `wait_for` antes de tocar dentro, y comprueba el estado después.
+- **Para un «antes» y «después» con los mismos datos**: instala la build de la base (git archive), siembra con
+  `-uitest -uitest-reset -uitest-skip-onboarding -uitest-seed realista`, prepara el estado, captura, e instala encima la
+  build nueva con `devicectl device install app` (conserva los datos) y lanza sin `-uitest-reset`.
