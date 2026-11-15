@@ -54,7 +54,7 @@ enum SmartAxisHelper {
 
         // For month/week grouping: use actual data dates (not linear interpolation)
         // This prevents duplicate labels like "ene", "ene", "feb", "mar"
-        if grouping == .month || grouping == .weekOfYear {
+        if grouping == .month || grouping == .weekOfYear || grouping == .year {
             let dataCount = actualDataDates.count
 
             if dataCount <= maxLabels {
@@ -148,10 +148,15 @@ enum SmartAxisHelper {
 
         let dateFormat: String
 
-        if let grouping = forceGrouping {
+        if forceGrouping == .year || days > yearsOnlyAxisMinDays {
+            // Barras por año, o más de tres años en el eje: solo el año («2016 · 2021 · 2026»). Con mes y año,
+            // «nov 2016 · nov 2021» repetía el mes en cada marca sin decir nada (G2 de la decisión 28).
+            dateFormat = "yyyy"
+        } else if let grouping = forceGrouping {
             switch grouping {
             case .month:
-                dateFormat = multipleYears ? "MMMyy" : "MMM"
+                // El año con cuatro cifras: «nov 24» se leía como el día 24 (decisión 11 de la revisión 2.3).
+                dateFormat = multipleYears ? "MMMyyyy" : "MMM"
             case .weekOfYear:
                 dateFormat = "dMMM"
             default:
@@ -167,11 +172,14 @@ enum SmartAxisHelper {
             .replacing(".", with: "")
     }
 
+    /// A partir de cuántos días de eje las marcas dicen solo el año: tres años (G2 de la decisión 28).
+    nonisolated static let yearsOnlyAxisMinDays: Double = 3 * 365
+
     private static func spanBasedFormat(days: Double, multipleYears: Bool, isSinglePoint: Bool) -> String {
         if isSinglePoint || days == 0 {
-            return multipleYears ? "dMMMyy" : "dMMM"
+            return multipleYears ? "dMMMyyyy" : "dMMM"
         } else if days > 60 {
-            return multipleYears ? "MMMyy" : "MMM"
+            return multipleYears ? "MMMyyyy" : "MMM"
         } else if days > 14 {
             return "dMMM"
         } else {
@@ -262,6 +270,7 @@ enum SmartAxisHelper {
         // Determine unit duration based on grouping
         let unitDays: Int = {
             switch grouping {
+            case .year: return 365
             case .month: return 30
             case .weekOfYear: return 7
             default: return 1  // day

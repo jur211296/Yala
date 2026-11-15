@@ -371,6 +371,8 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
     case day = "Día"
     case week = "Semana"
     case month = "Mes"
+    /// Una barra o un punto por año: Estadísticas con datos de más de tres años (G2 de la decisión 28).
+    case year = "Año"
 
     var id: String { rawValue }
 
@@ -380,6 +382,7 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
         case .day: return .day
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
 
@@ -389,8 +392,21 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
         case .day: return nil
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
+
+    /// El año de un punto agrupado por año, para el eje y el globo: «2024». Cuatro cifras, como pide la decisión 11.
+    static func yearLabel(for date: Date) -> String {
+        yearFormatter.string(from: date)
+    }
+
+    private static let yearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("yyyy")
+        return formatter
+    }()
 
     /// Returns the start date of the bucket containing the given date
     func dateKey(for date: Date, calendar: Calendar = .current) -> Date {
@@ -402,6 +418,9 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
                 ?? calendar.startOfDay(for: date)
         case .month:
             return calendar.dateInterval(of: .month, for: date)?.start
+                ?? calendar.startOfDay(for: date)
+        case .year:
+            return calendar.dateInterval(of: .year, for: date)?.start
                 ?? calendar.startOfDay(for: date)
         }
     }

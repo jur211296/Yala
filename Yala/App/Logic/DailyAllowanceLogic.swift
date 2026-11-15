@@ -2,7 +2,8 @@
 //  DailyAllowanceLogic.swift
 //  Yala
 //
-//  «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto, que baja con cada gasto de hoy.
+//  «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto, que baja con cada gasto de hoy. Desde la decisión
+//  23 de la revisión 2.3 se enseña como guía neutra (`guide`): pasarse un día es válido, y no se avisa en rosa.
 //
 //  La cuenta: lo que quedaba del presupuesto al EMPEZAR el día se reparte entre los días que faltan (hoy incluido), y a
 //  esa parte se le resta lo gastado hoy. Así el cupo de hoy no se mueve por lo que gastes hoy —solo baja lo que te
@@ -24,10 +25,25 @@ enum DailyAllowanceLogic {
         case overToday(Double)
     }
 
+    /// Las cifras de la línea neutra del detalle (decisión 23 de 2.3): «Quedan 5 días y S/ 400: unos S/ 80 al día. Hoy
+    /// llevas S/ 120, S/ 40 más que eso». Es la misma cuenta que `state`, contada para leerla como guía y no como aviso.
+    struct Guide: Equatable {
+        /// Días que faltan, hoy incluido.
+        let daysRemaining: Int
+        /// Lo que quedaba del presupuesto al empezar el día.
+        let leftAtStartOfDay: Double
+        /// El cupo del día: `leftAtStartOfDay / daysRemaining`.
+        let perDay: Double
+        /// Lo gastado hoy; 0 si no hay nada (o menos de medio céntimo).
+        let spentToday: Double
+        /// Lo de hoy por encima del cupo; 0 si no lo supera.
+        let overPerDay: Double
+    }
+
     /// `nil` cuando no hay cupo que enseñar: período cerrado o que no empieza (`daysRemaining <= 0`), presupuesto sin
     /// límite, o el presupuesto ya agotado —antes de hoy o con lo de hoy—. Agotado, la fila ya lo dice con «Te pasaste
-    /// por» / «Te quedan S/ 0.00», y un segundo «te pasaste» con otra cifra en la misma tarjeta la contradiría.
-    static func state(limit: Double, spent: Double, spentToday: Double, daysRemaining: Int) -> State? {
+    /// por» / «Te quedan S/ 0.00», y la línea no sale.
+    static func guide(limit: Double, spent: Double, spentToday: Double, daysRemaining: Int) -> Guide? {
         guard daysRemaining > 0, limit > 0 else { return nil }
         guard BudgetRemainingLogic.remaining(limit: limit, spent: spent) > 0 else { return nil }
         let today = max(0, spentToday)
@@ -36,8 +52,23 @@ enum DailyAllowanceLogic {
         let allowance = leftAtStartOfDay / Double(daysRemaining)
         let left = allowance - today
         // Medio céntimo de holgura, como `BudgetRemainingLogic.remaining`: una conversión deja «0.004».
-        if abs(left) < halfCent { return .available(0) }
-        return left > 0 ? .available(left) : .overToday(-left)
+        return Guide(
+            daysRemaining: daysRemaining,
+            leftAtStartOfDay: leftAtStartOfDay,
+            perDay: allowance,
+            spentToday: today < halfCent ? 0 : today,
+            overPerDay: left <= -halfCent ? -left : 0
+        )
+    }
+
+    /// Lo que queda del cupo de hoy, o lo que hoy lo supera. Misma condición de `nil` que `guide`.
+    static func state(limit: Double, spent: Double, spentToday: Double, daysRemaining: Int) -> State? {
+        guard let guide = guide(limit: limit, spent: spent, spentToday: spentToday, daysRemaining: daysRemaining) else {
+            return nil
+        }
+        if guide.overPerDay > 0 { return .overToday(guide.overPerDay) }
+        let left = guide.perDay - max(0, spentToday)
+        return .available(abs(left) < halfCent ? 0 : left)
     }
 
     /// El intervalo de HOY dentro del período del presupuesto: `[inicio de hoy, último segundo de hoy]` recortado al

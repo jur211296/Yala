@@ -83,29 +83,23 @@ struct BudgetRowView: View {
                 }
 
                 // Progress bar
+                // Barra y palabra del mismo estado (decisión 23 de 2.3): rosa y «Te pasaste» solo por encima del límite.
                 BudgetProgressBar(
                     percentage: summary.percentage,
                     color: summary.color,
-                    isExceeded: summary.status == .exceeded,
+                    isExceeded: budgetStatus == .overLimit,
                     height: DS.Sizing.budgetRowProgressBarHeight
                 )
 
-                // «En el límite» junto al naranja (Jürgen, 2026-11-05): el color avisa y la palabra lo nombra.
-                if isAtLimit {
-                    BudgetAtLimitLabel()
-                }
+                BudgetStatusLabel(status: budgetStatus)
 
                 // Sin filtros cuenta TODO lo gastado (UX 2.2 · L9-2): «Viajes» salió al 1522% sin que nada lo dijera.
                 if summary.budget.countsAllExpenses {
                     BudgetCountsAllExpensesNote()
                 }
 
-                // Exceeded encouragement (brand voice: constructive, never scolding)
-                if summary.status == .exceeded {
-                    Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
+                // Presupuesto pasado: el monto ya sale arriba («Te pasaste por …»); la acción «Ajustar límite» vive en el
+                // detalle, porque la fila entera es un botón (Jürgen, 14-nov).
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
@@ -143,17 +137,17 @@ struct BudgetRowView: View {
         )
     }
 
-    private var isAtLimit: Bool {
-        BudgetAtLimitLabel.isShown(spent: summary.spent, limit: summary.budget.limitAmount)
+    private var budgetStatus: BudgetCounterStatus {
+        BudgetStatusCounter.classify(spent: summary.spent, limit: summary.budget.limitAmount)
     }
 
-    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría «En el límite». Lleva lo
+    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría la palabra del estado. Lleva lo
     /// que la fila enseña en grande —«Te quedan S/ 392.00»— y los días, también cuando la fila no los pinta porque van
     /// en el título de la sección (lote 04 de mejoras necesarias 2.3: VoiceOver no decía ni lo uno ni lo otro).
     private var accessibilityLabelText: String {
         let base = L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit)
         var parts = [base, remainingSpoken, L10n.UXL9.shortDays(summary.daysRemaining)]
-        if isAtLimit { parts.append(L10n.UXL9.atLimit) }
+        if let word = BudgetStatusLabel.word(for: budgetStatus) { parts.append(word) }
         return parts.joined(separator: ", ")
     }
 

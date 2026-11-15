@@ -13,40 +13,40 @@ import SwiftData
 
 enum TransferCategoryResolver {
 
-    /// Los nombres de la subcategoría de transferencia en los 16 idiomas (`Subcategory.transferNames`). Antes se
-    /// buscaba solo el del idioma ACTUAL, y al cambiar de idioma cada transferencia nueva creaba otra subcategoría.
-    private static let knownNames: [String] = Array(Subcategory.transferNames)
-
-    /// Entre las que existen, la del idioma actual si la hay; si no, la de nombre más estable (orden alfabético),
-    /// para que dos llamadas seguidas devuelvan la misma.
+    /// Entre las que existen, la del idioma actual si la hay; si no, la de nombre más estable (orden alfabético, y el
+    /// `shortcutID` para desempatar), para que dos llamadas seguidas devuelvan la misma.
     static func preferred(_ candidates: [Subcategory], currentName: String) -> Subcategory? {
-        if let current = candidates.first(where: { $0.name == currentName }) {
+        if let current = candidates.filter({ $0.name == currentName })
+            .min(by: { $0.shortcutID.uuidString < $1.shortcutID.uuidString }) {
             return current
         }
-        return candidates.min { $0.name < $1.name }
+        return candidates.min { lhs, rhs in
+            lhs.name != rhs.name ? lhs.name < rhs.name : lhs.shortcutID.uuidString < rhs.shortcutID.uuidString
+        }
+    }
+
+    /// Las subcategorías de transferencia de una naturaleza, por su PAPEL (`systemRole == .transfer`), nunca por el
+    /// nombre: así sirve la de cualquier idioma (si el usuario cambió de idioma se reutiliza la que ya tiene) y una
+    /// subcategoría del usuario con el mismo nombre no recibe transferencias. El papel es calculado, así que se filtra
+    /// en memoria; son pocas filas.
+    static func transferSubcategories(isIncome: Bool, context: ModelContext) -> [Subcategory] {
+        let descriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.category?.isIncome == isIncome }
+        )
+        do {
+            return try context.fetch(descriptor).filter { $0.systemRole == .transfer }
+        } catch {
+            #if DEBUG
+            print("[TransferCategoryResolver] Error fetching transfer subcategory: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// La subcategoría de la pata de SALIDA (categoría de gasto).
     static func outflow(context: ModelContext) throws -> Subcategory {
         let subcategoryName = L10n.Transfer.categoryName
-        let knownNames = Self.knownNames
-
-        // La de transferencia puede existir con el nombre de CUALQUIER idioma: si el usuario cambió de idioma, se
-        // reutiliza la que ya tiene en vez de crear otra con el nombre nuevo.
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { knownNames.contains($0.name) && $0.category?.isIncome == false }
-        )
-
-        let fetchedSubcategories: [Subcategory]
-        do {
-            fetchedSubcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("[TransferCategoryResolver] Error fetching transfer subcategory: \(error)")
-            #endif
-            fetchedSubcategories = []
-        }
-        if let existing = preferred(fetchedSubcategories, currentName: subcategoryName) {
+        if let existing = preferred(transferSubcategories(isIncome: false, context: context), currentName: subcategoryName) {
             return existing
         }
 
@@ -85,6 +85,7 @@ enum TransferCategoryResolver {
             colorHex: nil,
             natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
+            systemRole: .transfer,
             category: category
         )
         context.insert(subcategory)
@@ -95,23 +96,7 @@ enum TransferCategoryResolver {
     /// Ensures the income transfer subcategory exists for incoming transfers
     static func inflow(context: ModelContext) throws -> Subcategory {
         let subcategoryName = L10n.Transfer.categoryName
-        let knownNames = Self.knownNames
-
-        // Igual que en la de salida: cualquier idioma vale.
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { knownNames.contains($0.name) && $0.category?.isIncome == true }
-        )
-
-        let fetchedIncomeSubcategories: [Subcategory]
-        do {
-            fetchedIncomeSubcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("[TransferCategoryResolver] Error fetching income transfer subcategory: \(error)")
-            #endif
-            fetchedIncomeSubcategories = []
-        }
-        if let existing = preferred(fetchedIncomeSubcategories, currentName: subcategoryName) {
+        if let existing = preferred(transferSubcategories(isIncome: true, context: context), currentName: subcategoryName) {
             return existing
         }
 
@@ -150,6 +135,7 @@ enum TransferCategoryResolver {
             colorHex: nil,
             natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
+            systemRole: .transfer,
             category: category
         )
         context.insert(subcategory)

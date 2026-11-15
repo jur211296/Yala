@@ -303,6 +303,15 @@ final class GroupStatsViewModel {
             .reduce(0) { $0 + $1.amount }
     }
 
+    /// «Tú» para ti, como el resto de Grupos (decía tu nombre, «Lucía»); el nombre del miembro para los demás. Lote 06
+    /// de mejoras 2.3.
+    static func memberDisplayName(
+        memberID: String, currentUserMemberID: String?, names: [String: String]
+    ) -> String {
+        if let me = currentUserMemberID, memberID == me { return L10n.UXL13.you }
+        return names[memberID] ?? memberID
+    }
+
     /// Gasto total pagado por cada miembro, descendente.
     private func computeMemberSpending(from expenses: [SplitExpense]) -> [MemberSpending] {
         let memberNameLookup = Dictionary(
@@ -313,7 +322,8 @@ final class GroupStatsViewModel {
         return grouped.map { memberID, expenses in
             MemberSpending(
                 id: memberID,
-                displayName: memberNameLookup[memberID] ?? memberID,
+                displayName: Self.memberDisplayName(
+                    memberID: memberID, currentUserMemberID: currentUserMemberID, names: memberNameLookup),
                 totalPaid: expenses.reduce(0) { $0 + $1.amount }
             )
         }

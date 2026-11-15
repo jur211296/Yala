@@ -49,5 +49,19 @@ extension L10n {
 
         static var migratedRejoinSentence: String { l04("uxcs.migrated.rejoinSentence") }
 
+        // MARK: - Cierre de sesión con pantalla propia (card p9q0, 13-nov-2026)
+
+        static var progressSigningOut: String { l04("uxcs.signOutProgress.signingOut") }
+        static var progressRemovingData: String { l04("uxcs.signOutProgress.removingData") }
+        static var progressDeletingAccount: String { l04("uxcs.signOutProgress.deletingAccount") }
+        static var progressKeepOpen: String { l04("uxcs.signOutProgress.keepOpen") }
+        static var progressAccountDeletedTitle: String { l04("uxcs.signOutProgress.accountDeletedTitle") }
+        static var progressAccountDeletedBody: String { l04("uxcs.signOutProgress.accountDeletedBody") }
+        static var progressContinue: String { l04("uxcs.signOutProgress.continue") }
+        /// El check de la pantalla de reabrir cuando lo que terminó fue el borrado de la cuenta.
+        static var relaunchAccountDeleted: String { l04("uxcs.relaunch.accountDeleted") }
+        /// Por qué hay que reabrir cuando el almacén tenía iCloud montado.
+        static var relaunchAfterSignOutICloud: String { l04("uxcs.relaunch.afterSignOutICloud") }
+
     }
 }

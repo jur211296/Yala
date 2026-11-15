@@ -315,6 +315,36 @@ struct WidgetFreshnessNote: View {
     }
 }
 
+// MARK: - Cifra corta del tramo estimado
+
+/// «● Estimado S/ 7,473 al 30 nov» (decisión 34 de 2.3): lo que vale el tramo punteado al final del período. El punto
+/// va en el color de lo estimado y hace de leyenda de ese tramo; la palabra es «Estimado», no «≈», que en Yala solo
+/// quiere decir «convertido». Solo en el tamaño mediano, donde cabe.
+struct WidgetProjectedEndLine: View {
+    let end: WidgetInsightsLogic.ProjectedEnd
+    let amountText: String
+
+    var body: some View {
+        HStack(spacing: WidgetDS.Spacing.xs) {
+            Circle()
+                .fill(WidgetColors.estimate)
+                .frame(width: WidgetDS.Spacing.sm, height: WidgetDS.Spacing.sm)
+                .accessibilityHidden(true)
+            Text(Self.text(amount: amountText, date: end.date))
+                .font(WidgetDS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    static func text(amount: String, date: Date) -> String {
+        String(format: String(localized: "widget.projected.endCaption", bundle: .main),
+               amount, date.formatted(.dateTime.day().month(.abbreviated)))
+    }
+}
+
 // MARK: - Fechas en texto
 
 enum WidgetDateText {

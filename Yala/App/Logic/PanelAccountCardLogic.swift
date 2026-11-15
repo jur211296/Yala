@@ -99,6 +99,31 @@ nonisolated enum PanelAccountCardLogic {
     static let maxCardWidth: CGFloat = 320
     static let visibleFraction: CGFloat = 0.8
 
+    // MARK: - Cuadrícula en ventana ancha (decisión 12 de la revisión 2.3, opción D)
+
+    /// En ventana ancha (iPad), «Tus finanzas» va junto a la cifra grande y las cuentas pasan del carrusel a una
+    /// cuadrícula de dos columnas, para verlas de un vistazo. Solo si caben dos tarjetas de este ancho: en una columna
+    /// estrecha (iPad mini en vertical) o con texto de accesibilidad, el carrusel de siempre. Nunca tres columnas.
+    static let minGridCardWidth: CGFloat = 220
+
+    static func usesGrid(
+        isWideScreen: Bool,
+        isAccessibilityText: Bool,
+        containerWidth: CGFloat,
+        spacing: CGFloat
+    ) -> Bool {
+        guard isWideScreen, !isAccessibilityText else { return false }
+        return containerWidth >= minGridCardWidth * 2 + spacing
+    }
+
+    /// Las filas de la cuadrícula: índices de dos en dos; con un número impar, la última fila lleva una sola tarjeta,
+    /// en la columna izquierda.
+    static func gridRows(cardCount: Int) -> [[Int]] {
+        stride(from: 0, to: cardCount, by: 2).map { start in
+            Array(start..<min(start + 2, cardCount))
+        }
+    }
+
     static func cardWidth(containerWidth: CGFloat) -> CGFloat {
         guard containerWidth > 0 else { return maxCardWidth }
         return min(containerWidth * visibleFraction, maxCardWidth)

@@ -45,6 +45,11 @@ enum WidgetColors {
     /// Warning state (amber)
     static let warning = Color(hex: "F59E0B")
 
+    /// Lo estimado (decisión 34 de 2.3): el tramo punteado de «Mostrar proyectado» y el punto de su cifra corta, en Gasto
+    /// y en Saldo. Propio, para no confundirse con el rosa de lo gastado, el índigo del saldo ni el gris del período
+    /// anterior. Solo relleno y trazo: el texto de la cifra va en `.secondary`.
+    static let estimate = warning
+
     /// Success state (green)
     static let success = Color(hex: "22C55E")
 

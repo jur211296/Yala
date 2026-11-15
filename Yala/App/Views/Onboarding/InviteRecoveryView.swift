@@ -92,23 +92,33 @@ struct InviteRecoveryView: View {
                                 .labelStyle(.titleAndIcon)
                                 .tint(theme.accent)
                                 .accessibilityIdentifier("invite_recovery_paste")
-                                .id(Self.pasteAnchor)
 
                                 if let error = validationError {
                                     Text(error)
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(DS.Semantic.errorForeground)
+                                        .fixedSize(horizontal: false, vertical: true)
                                         .transition(.opacity)
+                                        .accessibilityIdentifier("invite_recovery_invalid_link")
                                 }
+
+                                // Lo último del bloque, DESPUÉS del aviso: el scroll se lleva hasta aquí. Anclado en «Pegar», el
+                                // aviso de enlace no válido quedaba debajo de «Unirme al grupo» con el teclado abierto (barrido
+                                // del iPhone 14, 14-nov).
+                                Color.clear
+                                    .frame(height: 1)
+                                    .accessibilityHidden(true)
+                                    .id(Self.inputBottomAnchor)
                             }
                             .padding(.horizontal, DS.Spacing.lg)
 
                             Spacer(minLength: DS.Spacing.lg)
                         }
                     }
-                    // Con el teclado, el sistema sube el scroll hasta el CAMPO, y «Pegar» va debajo: se lleva también a la
-                    // vista al escribir y al enfocar (card zdio).
-                    .onChange(of: linkText) { _, _ in scroll.scrollTo(Self.pasteAnchor, anchor: .bottom) }
+                    // Con el teclado, el sistema sube el scroll hasta el CAMPO, y «Pegar» y el aviso van debajo: se llevan
+                    // también a la vista al escribir, al enfocar (card zdio) y cuando aparece el aviso.
+                    .onChange(of: linkText) { _, _ in scroll.scrollTo(Self.inputBottomAnchor, anchor: .bottom) }
+                    .onChange(of: validationError) { _, _ in revealInputBottom(scroll: scroll) }
                     .onChange(of: inputFocused) { _, focused in revealPaste(focused: focused, scroll: scroll) }
                     // «Unirme al grupo» va en el borde del scroll, no encima: con un enlace largo y el teclado abierto, el
                     // botón fijo tapaba media «Pegar» (QA del 2026-11-05, iPhone 14). Así el contenido acaba por encima del
@@ -147,9 +157,9 @@ struct InviteRecoveryView: View {
         }
     }
 
-    private static let pasteAnchor = "invite_recovery_paste_anchor"
+    private static let inputBottomAnchor = "invite_recovery_input_bottom_anchor"
 
-    /// Al enfocar, espera a que el teclado termine de subir (su animación dura ~0,3 s) y lleva «Pegar» a la vista.
+    /// Al enfocar, espera a que el teclado termine de subir (su animación dura ~0,3 s) y lleva «Pegar» y el aviso a la vista.
     private func revealPaste(focused: Bool, scroll: ScrollViewProxy) {
         guard focused else { return }
         Task { @MainActor in
@@ -158,7 +168,14 @@ struct InviteRecoveryView: View {
             } catch {
                 return
             }
-            scroll.scrollTo(Self.pasteAnchor, anchor: .bottom)
+            scroll.scrollTo(Self.inputBottomAnchor, anchor: .bottom)
+        }
+    }
+
+    /// El aviso entra en la pasada siguiente al cambio de texto: se espera a que esté medido para llevarlo a la vista.
+    private func revealInputBottom(scroll: ScrollViewProxy) {
+        Task { @MainActor in
+            scroll.scrollTo(Self.inputBottomAnchor, anchor: .bottom)
         }
     }
 

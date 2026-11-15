@@ -101,7 +101,8 @@ enum ReverseICloudPriorDataLogic {
         }
     }
 
-    /// Las cifras del aviso, en el orden en que se leen. Vacío si ninguna casilla tiene nada que decir: el texto cae
+    /// Las cifras de lo que hay en tu iCloud, en el orden en que se leen (las usa la hoja de volver,
+    /// `ReturnToICloudSheetLogic`). Vacío si ninguna casilla tiene nada que decir: el texto cae
     /// entonces a la versión sin cifras, que no promete números que no tiene.
     static func summaryParts(_ corpus: ICloudForeignCorpus) -> [String] {
         var parts: [String] = []
@@ -123,18 +124,5 @@ enum ReverseICloudPriorDataLogic {
             parts.append(L10n.Welcome.PrivateICloud.foundUnknownAmount)
         }
         return parts
-    }
-
-    /// El cuerpo del aviso. **Los registros de grupos se nombran aparte**: llegan sin su grupo si esta cuenta no está en
-    /// él, y en la Bandeja no se pueden descartar (ticket `prior-icloud-group-records-summed-without-their-group`).
-    static func message(_ corpus: ICloudForeignCorpus) -> String {
-        let parts = summaryParts(corpus)
-        var message = parts.isEmpty
-            ? L10n.Storage.Revert.Prior.bodyNoCount
-            : L10n.Storage.Revert.Prior.body(parts.joined(separator: ", "))
-        if corpus.groupTransactions > 0 {
-            message += " " + L10n.Storage.Revert.Prior.groupsNote
-        }
-        return message
     }
 }

@@ -75,6 +75,9 @@ final class CategoriesSettingsListViewModel {
         self.modelContext = context
         self.deletionService = deletionService
         deletionService.setContext(context)
+        // Con la lista a la vista no hay ninguna categoría nueva a medias: si la marca sigue puesta, la de la vez anterior
+        // quedó abandonada (lote 09 de mejoras 2.3, `NewCategoryDraftMark`).
+        NewCategoryDraftMark.sweepIfArmed(in: context)
         loadCategories()
     }
 
@@ -97,6 +100,8 @@ final class CategoriesSettingsListViewModel {
 
     func createAndOpenNewCategory() {
         guard let context = modelContext else { return }
+        // Un borrador anterior que nadie recogió se va antes de armar la marca para este.
+        NewCategoryDraftMark.sweepIfArmed(in: context)
 
         let nextSortOrder = (categories.map { $0.sortOrder }.max() ?? 0) + 1
 
@@ -112,6 +117,8 @@ final class CategoriesSettingsListViewModel {
         // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
         SyncIdentityService.captureIfEnabled(category)
         context.insert(category)
+        // Insertada sin nombre: si la app se cierra antes de guardarla o descartarla, la marca dice que se recoja.
+        NewCategoryDraftMark.arm()
 
         newCategory = category
         isNavigatingToNewCategory = true

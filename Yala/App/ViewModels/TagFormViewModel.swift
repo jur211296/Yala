@@ -34,25 +34,50 @@ final class TagFormViewModel {
     let tagToEdit: Tag?
     var isEditing: Bool { tagToEdit != nil }
 
+    /// Cómo estaba el formulario al abrirse: la X pregunta antes de tirar lo que cambió (lote 09 de mejoras 2.3).
+    private let initialName: String
+    private let initialColorHex: String
+    private let initialIconName: String
+    private let initialIsActive: Bool
+
+    /// Si hay algo que perder al cerrar. Un nombre de solo espacios no cuenta: no se guardaría.
+    var hasUnsavedChanges: Bool {
+        trimmedName != initialName.trimmingCharacters(in: .whitespacesAndNewlines)
+            || selectedColorHex.uppercased() != initialColorHex.uppercased()
+            || selectedIconName != initialIconName
+            || isActive != initialIsActive
+    }
+
     // MARK: - Init
 
     init(tagToEdit: Tag? = nil, initialExistingTags: [Tag] = []) {
         self.tagToEdit = tagToEdit
 
+        let name: String
+        let colorHex: String
+        let iconName: String
+        let isActive: Bool
         if let tag = tagToEdit {
-            self.name = tag.name
-            self.selectedColorHex = tag.colorHex
-            self.selectedIconName = tag.iconName
-            self.isActive = tag.isActive
+            name = tag.name
+            colorHex = tag.colorHex
+            iconName = tag.iconName
+            isActive = tag.isActive
         } else {
             // Calculate unique color based on existing tags
             let usedColors = initialExistingTags.map { $0.colorHex }
-            let defaultColor = Tag.nextAvailableColor(excluding: usedColors)
-            self.name = ""
-            self.selectedColorHex = defaultColor
-            self.selectedIconName = "tag.fill"
-            self.isActive = true
+            name = ""
+            colorHex = Tag.nextAvailableColor(excluding: usedColors)
+            iconName = "tag.fill"
+            isActive = true
         }
+        self.name = name
+        self.selectedColorHex = colorHex
+        self.selectedIconName = iconName
+        self.isActive = isActive
+        self.initialName = name
+        self.initialColorHex = colorHex
+        self.initialIconName = iconName
+        self.initialIsActive = isActive
 
         self.existingTags = initialExistingTags
     }
@@ -93,7 +118,7 @@ final class TagFormViewModel {
     }
 
     var isNameValid: Bool {
-        !trimmedName.isEmpty && trimmedName.count <= 20
+        !trimmedName.isEmpty && trimmedName.count <= TagNameLimit.maxLength
     }
 
     var isNameUnique: Bool {

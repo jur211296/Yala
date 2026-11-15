@@ -27,9 +27,27 @@ struct BudgetStatusCounterTests {
         #expect(BudgetStatusCounter.classify(spent: 99, limit: 100) == .atLimit)
     }
 
-    @Test func classify_atOrAboveLimit_returnsOverLimit() {
-        #expect(BudgetStatusCounter.classify(spent: 100, limit: 100) == .overLimit)
+    /// Decisión 23 de 2.3: justo el límite es «Llegaste al límite», no «Te pasaste». Con la regla de antes (`>=`) el
+    /// primer caso salía `.overLimit` y la fila se iba a «Excedidos» diciendo «Te quedan S/ 0.00».
+    @Test func classify_exactlyAtLimit_returnsReachedLimit() {
+        #expect(BudgetStatusCounter.classify(spent: 100, limit: 100) == .reachedLimit)
+        #expect(BudgetStatusCounter.classify(spent: 1_000, limit: 1_000) == .reachedLimit)
+        // Medio céntimo de holgura, como «Te quedan»: una conversión que deja 1000.004 no es pasarse.
+        #expect(BudgetStatusCounter.classify(spent: 1_000.004, limit: 1_000) == .reachedLimit)
+    }
+
+    @Test func classify_aboveLimit_returnsOverLimit() {
+        #expect(BudgetStatusCounter.classify(spent: 100.01, limit: 100) == .overLimit)
         #expect(BudgetStatusCounter.classify(spent: 150, limit: 100) == .overLimit)
+    }
+
+    /// El estado y la cifra de «Te quedan / Te pasaste por» no se contradicen en ningún punto.
+    @MainActor @Test func classify_overLimit_matchesTheFigureRule() {
+        for cents in stride(from: 0, through: 15_000, by: 1) {
+            let spent = Double(cents) / 100
+            let over = BudgetStatusCounter.classify(spent: spent, limit: 100) == .overLimit
+            #expect(over == BudgetRemainingLogic.isOver(limit: 100, spent: spent), "spent \(spent)")
+        }
     }
 
     @Test func classify_zeroLimit_returnsOnTrackDefensive() {
@@ -53,12 +71,12 @@ struct BudgetStatusCounterTests {
             (50,  100),    // onTrack
             (80,  100),    // atLimit
             (90,  100),    // atLimit
-            (100, 100),    // overLimit
+            (100, 100),    // reachedLimit: cuenta con «en el límite», no con los superados
             (200, 100),    // overLimit
             (0,   100),    // onTrack
         ]
         let result = BudgetStatusCounter.counters(for: items)
-        #expect(result == BudgetCounters(onTrack: 2, atLimit: 2, overLimit: 2))
+        #expect(result == BudgetCounters(onTrack: 2, atLimit: 3, overLimit: 1))
     }
 
     // MARK: - Umbral único de la barra (card bj9n, 2026-11-04)

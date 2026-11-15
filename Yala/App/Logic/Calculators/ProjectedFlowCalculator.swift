@@ -45,6 +45,10 @@ enum ProjectedFlowCalculator {
         let closingValue: Double
         let isApproximate: Bool
         let source: Source
+        /// Lo que se acumula (saldo, ingresos o gastos) y el último día proyectado: el rótulo de la cifra dice de qué es
+        /// y hasta cuándo («Al 30 de noviembre tendrías», decisión 30 de 2.3).
+        var metric: TrendType = .balance
+        var endDate: Date = .distantPast
     }
 
     // MARK: - Días

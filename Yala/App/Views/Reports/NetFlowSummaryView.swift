@@ -20,13 +20,22 @@ struct NetFlowSummaryView: View {
     var showsComparison: Bool = true
     /// El período anterior dentro de una frase («setiembre», «el 1–21 de septiembre» no: aquí va sin artículo).
     var previousPeriodName: String = ""
+    /// El período anterior es un tramo de días («1–7 de octubre»): «En 1–7 de octubre te quedaron…» no se lee bien y la
+    /// frase pasa a «El 1–7 de octubre te quedaron…» (decisión 32 de 2.3).
+    var previousIsDayRange: Bool = false
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private var showVariations: Bool { appPreferences.showVariations }
 
     private var caption: String {
         guard showsComparison, let previousAmount, !previousPeriodName.isEmpty else { return L10n.UXL18.netCaption }
         let amount = appPreferences.currency(abs(previousAmount), currencyCode: currencyCode)
+        if previousIsDayRange {
+            return previousAmount >= 0
+                ? L10n.UXL18.netCaptionGainBeforeRange(previousPeriodName, amount)
+                : L10n.UXL18.netCaptionLossBeforeRange(previousPeriodName, amount)
+        }
         return previousAmount >= 0
             ? L10n.UXL18.netCaptionGainBefore(previousPeriodName, amount)
             : L10n.UXL18.netCaptionLossBefore(previousPeriodName, amount)
@@ -34,30 +43,24 @@ struct NetFlowSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.sm) {
-                Text(currentAmount >= 0 ? L10n.UXL18.netGain : L10n.UXL18.netLoss)
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+            // Con texto de accesibilidad «Te quedó» va solo en su línea y la cifra con el cambio debajo: en una fila el
+            // título se partía por sílabas («Te que-dó») y la cifra se cortaba (lote 05 de 2.3, zona 36 P5).
+            if dynamicTypeSize.isAccessibilitySize {
+                title
+                HStack(spacing: DS.Spacing.sm) {
+                    amount
+                    Spacer(minLength: DS.Spacing.sm)
+                    chip
+                }
+            } else {
+                HStack(spacing: DS.Spacing.sm) {
+                    title
 
-                Spacer(minLength: DS.Spacing.sm)
+                    Spacer(minLength: DS.Spacing.sm)
 
-                AmountText(
-                    value: abs(currentAmount),
-                    currencyCode: currencyCode,
-                    font: DS.Typography.label.weight(.semibold),
-                    tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                    amount
 
-                if showVariations && showsComparison {
-                    VariationChip(
-                        variation: variation,
-                        size: .small,
-                        showNAWhenNil: previousAmount == nil,
-                        isExpenseContext: false
-                    )
+                    chip
                 }
             }
 
@@ -70,5 +73,38 @@ struct NetFlowSummaryView: View {
         .solidCard()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("report_net_summary")
+    }
+
+    private var title: some View {
+        Text(currentAmount >= 0 ? L10n.UXL18.netGain : L10n.UXL18.netLoss)
+            .font(DS.Typography.label)
+            .fontWeight(.semibold)
+            .foregroundStyle(.primary)
+    }
+
+    private var amount: some View {
+        AmountText(
+            value: abs(currentAmount),
+            currencyCode: currencyCode,
+            font: DS.Typography.label.weight(.semibold),
+            // Tokens de TEXTO que pasan AA en claro y oscuro; índigo y rosa de la paleta no llegan como texto sobre la
+            // tarjeta (lote 08 de 2.3, regla de color en `swiftui-ds.md`).
+            tint: .color(currentAmount >= 0 ? Color.incomeAmount : Color.groupOweAmount)
+        )
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+
+    @ViewBuilder
+    private var chip: some View {
+        if showVariations && showsComparison {
+            VariationChip(
+                variation: variation,
+                size: .small,
+                showNAWhenNil: previousAmount == nil,
+                isExpenseContext: false,
+                usesAccessibleTextTone: true
+            )
+        }
     }
 }

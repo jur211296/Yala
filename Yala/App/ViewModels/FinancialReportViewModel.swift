@@ -264,7 +264,8 @@ final class FinancialReportViewModel: Filterable {
             adjustment: adjustment,
             converter: converter,
             accountGrouping: accountCardGrouping,
-            cards: cards
+            cards: cards,
+            sortsByChange: supportsComparison
         )
 
         // Flatten for rendering

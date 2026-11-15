@@ -438,6 +438,7 @@ struct NeedTrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -478,6 +479,7 @@ struct NeedTrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -773,6 +775,7 @@ struct NeedTrendChartView: View {
         switch grouping {
         case .day, .week: formatter = Self.fullDayFormatter
         case .month: formatter = Self.fullMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
@@ -805,6 +808,7 @@ struct NeedTrendChartView: View {
         case .day: return .day
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
 

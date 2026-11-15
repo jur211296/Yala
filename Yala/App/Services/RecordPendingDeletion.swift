@@ -26,6 +26,10 @@ final class RecordPendingDeletion {
     private(set) var pendingTransferPairIDs: Set<String> = []
     private var transferPairByID: [PersistentIdentifier: String] = [:]
     private var commits: [PersistentIdentifier: @MainActor () -> Void] = [:]
+    /// Los borrados en lote del modo selección (decisión 18 de 2.3, E1): un cierre por lote que recibe los ids que siguen
+    /// esperando y los borra con un solo guardado. Con «Seleccionar los 2.334», un cierre por registro serían 2.334
+    /// guardados al vencer el aviso.
+    private var batchCommits: [(ids: Set<PersistentIdentifier>, commit: @MainActor (Set<PersistentIdentifier>) -> Void)] = []
     /// Un solo plazo para todo lo que espera. Dos borrados seguidos comparten aviso («Eliminaste 2 registros ·
     /// Deshacer») y plazo: el segundo alarga el del primero en vez de quitarle su «Deshacer» (ticket
     /// `record-pending-deletion-still-counts-outside-records`). Hasta el 2026-10-25 el aviso del segundo retiraba el del
@@ -38,6 +42,9 @@ final class RecordPendingDeletion {
     /// Lo que rehace la foto de los widgets al deshacer. La foto pudo escribirse mientras el registro esperaba (sin él), y
     /// «Deshacer» solo sube `dataVersion`, que la foto no escucha.
     private var refreshAfterUndo: (@MainActor () -> Void)?
+    /// Cómo se llama cada registro que espera: el aviso lo nombra si es el único (review del lote: con un nombre único
+    /// guardado aparte, un lote de una transferencia nombraba al último borrado suelto o salía «Eliminaste «»»).
+    private var names: [PersistentIdentifier: String] = [:]
 
     /// Lo que dura el aviso con «Deshacer».
     static let undoWindow: Duration = DraftDiscardUndoNotice.visibleDuration
@@ -86,11 +93,58 @@ final class RecordPendingDeletion {
         if pendingIDs.isEmpty { batchStartedAt = ContinuousClock.now }
         if let refreshAfterUndo { self.refreshAfterUndo = refreshAfterUndo }
         pendingIDs.insert(id)
+        names[id] = name
         commits[id] = commit
         if let transferPairID {
             pendingTransferPairIDs.insert(transferPairID)
             transferPairByID[id] = transferPairID
         }
+        armBatchAndNotice()
+    }
+
+    /// El borrado en lote del modo selección: esconde todos los elegidos a la vez, con UN aviso «Eliminaste 2.334
+    /// registros · Deshacer», y al vencer los borra con `commit`, que recibe los que siguen esperando (un «Deshacer» de
+    /// uno solo, `undo(_:)`, lo saca). `entries` lleva cada registro con la pareja de su transferencia, si lo es.
+    /// Devuelve cuántos quedaron esperando.
+    @discardableResult
+    func requestBatch(
+        _ entries: [(id: PersistentIdentifier, transferPairID: String?, name: String)],
+        refreshAfterUndo: (@MainActor () -> Void)? = nil,
+        commit: @escaping @MainActor (Set<PersistentIdentifier>) -> Void
+    ) -> Int {
+        var accepted: Set<PersistentIdentifier> = []
+        var acceptedPairs: [PersistentIdentifier: String] = [:]
+        var pairsInBatch: Set<String> = []
+        for entry in entries where !pendingIDs.contains(entry.id) {
+            if let pair = entry.transferPairID {
+                // Las dos patas elegidas: espera una y la otra se borra y vuelve con ella (como en `request`).
+                if pendingTransferPairIDs.contains(pair) || pairsInBatch.contains(pair) { continue }
+                pairsInBatch.insert(pair)
+                acceptedPairs[entry.id] = pair
+            }
+            accepted.insert(entry.id)
+            names[entry.id] = entry.name
+        }
+        guard !accepted.isEmpty else { return 0 }
+        if let started = batchStartedAt, ContinuousClock.now - started >= Self.maxBatchSpan {
+            batchTask?.cancel()
+            finishAll()
+        }
+        if pendingIDs.isEmpty { batchStartedAt = ContinuousClock.now }
+        if let refreshAfterUndo { self.refreshAfterUndo = refreshAfterUndo }
+        pendingIDs.formUnion(accepted)
+        for (id, pair) in acceptedPairs {
+            pendingTransferPairIDs.insert(pair)
+            transferPairByID[id] = pair
+        }
+        batchCommits.append((ids: accepted, commit: commit))
+        armBatchAndNotice()
+        return accepted.count
+    }
+
+    /// Avisa a las pantallas, (re)arma el plazo y enseña el aviso con lo que espera: el nombre si espera uno solo; si no,
+    /// cuántos registros desaparecen, contando la otra pata de cada transferencia (se borra con ella).
+    private func armBatchAndNotice() {
         SessionState.shared.incrementDataVersion()
         batchTask?.cancel()
         let delay = commitDelayForBatch
@@ -103,9 +157,10 @@ final class RecordPendingDeletion {
             }
             self?.finishAll()
         }
-        let count = pendingIDs.count
+        let single = pendingIDs.count == 1 ? pendingIDs.first.flatMap { names[$0] } : nil
+        let count = pendingIDs.count + pendingTransferPairIDs.count
         DraftDiscardUndoNotice.show(
-            message: count == 1 ? L10n.UXL10.deleted(name) : L10n.UXL10.deletedRecords(count),
+            message: single.map { L10n.UXL10.deleted($0) } ?? L10n.UXL10.deletedRecords(count),
             systemImage: "trash",
             undoTitle: L10n.Inbox.undoDiscard,
             noticeIdentifier: "record_deleted_notice",
@@ -123,6 +178,9 @@ final class RecordPendingDeletion {
         batchTask?.cancel()
         batchTask = nil
         batchStartedAt = nil
+        // El lote se vacía antes: `release` lo recorre por cada id, y con «Seleccionar los 2.334» eso eran millones de
+        // operaciones en el hilo principal (review del lote).
+        batchCommits = []
         for id in pendingIDs { release(id) }
         SessionState.shared.incrementDataVersion()
         let refresh = refreshAfterUndo
@@ -147,7 +205,15 @@ final class RecordPendingDeletion {
         batchStartedAt = nil
         refreshAfterUndo = nil
         let due = commits
-        guard !due.isEmpty else { return }
+        let dueBatches = batchCommits
+        batchCommits = []
+        guard !due.isEmpty || !dueBatches.isEmpty else { return }
+        for batch in dueBatches {
+            let stillPending = batch.ids.intersection(pendingIDs)
+            guard !stillPending.isEmpty else { continue }
+            batch.commit(stillPending)
+            for id in stillPending { release(id) }
+        }
         for (id, commit) in due where pendingIDs.contains(id) {
             commit()
             release(id)
@@ -160,6 +226,14 @@ final class RecordPendingDeletion {
     private func release(_ id: PersistentIdentifier) {
         pendingIDs.remove(id)
         commits[id] = nil
+        names[id] = nil
+        if !batchCommits.isEmpty {
+            batchCommits = batchCommits.compactMap { batch in
+                guard batch.ids.contains(id) else { return batch }
+                let rest = batch.ids.subtracting([id])
+                return rest.isEmpty ? nil : (ids: rest, commit: batch.commit)
+            }
+        }
         if let pair = transferPairByID.removeValue(forKey: id) {
             pendingTransferPairIDs.remove(pair)
         }

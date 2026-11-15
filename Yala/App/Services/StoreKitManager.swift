@@ -469,6 +469,9 @@ final class StoreKitManager {
             subscriptionExpirationDate = nil
             activePlan = nil
         }
+        // Y23-18: el aviso antes del cobro prometido en la oferta del final se repone o se retira con la suscripción.
+        await NotificationService.shared.reconcileProTrialChargeReminder(
+            isTrial: isInTrial, willAutoRenew: activePlan?.willAutoRenew, chargeDate: trialEndDate)
 
         // Force chat FAB visible when transitioning to Pro
         let wasAlreadyPro = isProUser

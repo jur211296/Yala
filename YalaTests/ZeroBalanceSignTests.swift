@@ -76,7 +76,7 @@ struct ZeroBalanceSignTests {
 
         let vm = AccountsSettingsListViewModel()
         vm.setContext(context)
-        return vm.formattedBalance(for: account)
+        return vm.formattedBalance(for: account, displayFormat: .code)
     }
 
     @Test func accountsList_balanceThatSumsToZero_hasNoSign() throws {

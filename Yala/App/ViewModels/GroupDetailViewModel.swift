@@ -32,6 +32,12 @@ final class GroupDetailViewModel {
     private(set) var settlements: [SplitSettlement] = []
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
+    /// Decisión 36 de 2.3 (A1): las deudas de cada par, SIN juntar, para «Ver las deudas de cada par» de Saldos. Solo se
+    /// calculan con «Menos pagos» encendido (sin él, `debts` ya son las de cada par); misma «una sola moneda» que `debts`.
+    private(set) var pairDebts: [Debt] = []
+    /// Las de cada par llevan «≈» por su cuenta: juntar puede anular la deuda en otra divisa (un ciclo en USD) y dejar
+    /// `debtsWereConverted` en `false` mientras las de cada par sí se convirtieron.
+    private(set) var pairDebtsWereConverted = false
 
     /// Progreso del presupuesto del grupo (G14), o `nil` si el grupo no tiene uno. Se recalcula en
     /// `recalculate()` como todo lo derivado, y no en la vista: `GroupBudgetLogic` deduplica y convierte
@@ -396,6 +402,18 @@ final class GroupDetailViewModel {
         if newBalances != balances { balances = newBalances }
         if newDebts != debts { debts = newDebts }
 
+        let rawPairDebts = group.simplifyDebts
+            ? GroupBalanceService.calculateDebts(
+                expenses: expenses, shares: shares, settlements: settlements, simplifyDebts: false)
+            : []
+        let newPairsConverted = group.showDebtsInSingleCurrency
+            && rawPairDebts.contains { $0.currencyCode != group.currencyCode }
+        let newPairDebts = newPairsConverted
+            ? GroupBalanceService.consolidatedDebts(from: rawPairDebts, targetCurrency: group.currencyCode)
+            : rawPairDebts
+        if newPairDebts != pairDebts { pairDebts = newPairDebts }
+        if newPairsConverted != pairDebtsWereConverted { pairDebtsWereConverted = newPairsConverted }
+
         // Presupuesto del grupo (G14). Va aquí y no en la vista porque `progress` deduplica y convierte
         // divisas; recalcularlo en cada `body` lo repetiría en cada scroll. Guard de igualdad como el
         // resto: sin él, un recálculo que no cambia nada seguiría invalidando la vista.
@@ -585,6 +603,24 @@ final class GroupDetailViewModel {
         }
     }
 
+    /// «Deshacer» del aviso que sale al saldar (decisión 37 de 2.3, C3). Borra el pago por el camino de siempre, que
+    /// limpia lo que el puente apuntó en tus cuentas y propaga el borrado a los demás. Si ya no existe (otro teléfono lo
+    /// quitó mientras duraba el aviso), no hay nada que deshacer.
+    func undoSettlement(_ settlement: SplitSettlement) {
+        guard !settlement.isDeleted, settlement.modelContext != nil,
+              !group.isDeleted, group.modelContext != nil else { return }
+        do {
+            try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            DS.Haptic.success()
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error undoing settlement: \(error)")
+            #endif
+            surfaceActionError(L10n.Groups.Settlement.deleteFailed)
+        }
+    }
+
     func sharesForExpense(_ expense: SplitExpense) -> [SplitShare] {
         shares.filter { $0.expenseID == expense.id }
     }
@@ -695,6 +731,8 @@ enum GroupSheet: Identifiable {
     case settings
     case members
     case addExpense
+    /// Nuevo gasto relleno con el reparto de un recibo (Voz o Foto bajo el saldo, 2026-11-14).
+    case addExpenseFromReceipt(GroupExpensePrefillTemplate)
     case expenseDetail(SplitExpense)
     case editExpense(SplitExpense)
     case openingBalanceDetail(SplitExpense)
@@ -717,6 +755,7 @@ enum GroupSheet: Identifiable {
         case .settings: ID(kind: "settings")
         case .members: ID(kind: "members")
         case .addExpense: ID(kind: "addExpense")
+        case .addExpenseFromReceipt: ID(kind: "addExpenseFromReceipt")
         case .expenseDetail(let e): ID(kind: "expenseDetail", expense: e.persistentModelID)
         case .editExpense(let e): ID(kind: "editExpense", expense: e.persistentModelID)
         case .openingBalanceDetail(let e): ID(kind: "openingBalanceDetail", expense: e.persistentModelID)

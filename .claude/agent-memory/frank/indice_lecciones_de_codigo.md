@@ -131,3 +131,8 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de diseñar un arreglo con
 - [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
 - [El mecanismo nuevo quita la tolerancia del viejo](feedback_el_modificador_nuevo_quita_la_tolerancia.md) — `.hidden` en TabView abortó donde quitar la pestaña se toleraba.
 - [El fallo que se traga es gemelo del que aborta](feedback_el_fallo_que_se_traga_es_gemelo_del_que_aborta.md) — `_ = deleteFiles` dejaba el mismo bucle.
+- [Arreglar una frase: mira el rótulo de encima](feedback_arreglar_una_frase_mira_el_rotulo_de_encima.md) — Saldos: neto cero dejaba «Estás a mano» sobre «Tú pagas a Ana».
+- [Botones de la bienvenida: cristal y centrados](feedback_welcome_botones_cristal_y_centrados.md) — blancos «gritan»; «misma alineación» = mismo patrón centrado, no la misma x.
+- [Mira los PR abiertos antes de arreglar UI](feedback_mira_los_pr_abiertos_antes_de_arreglar_ui.md) — «ya en done» del barrido era un PR sin mergear; su diseño manda.
+- [Test de traducción: solo frases](feedback_test_de_traduccion_solo_frases.md) — palabras sueltas iguales al español empujaron a sinónimos peores.
+- [El golden a mano hereda tu modelo del dato](feedback_el_golden_a_mano_hereda_tu_modelo_del_dato.md) — paridad web↔app verde con claves crudas; la app escribe otra forma: mide filas reales en staging.

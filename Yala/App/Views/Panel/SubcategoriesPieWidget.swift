@@ -573,8 +573,10 @@ struct SubcategoriesPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.subcategoryPieChart)
+            // El recuento es el de la cabecera de Distribución (`DistributionCountLogic`), no los trozos: «Sin
+            // categoría» y «Otros» no son categorías (lote 07 de mejoras necesarias 2.3).
             .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
-                L10n.Accessibility.subcategoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
+                L10n.Accessibility.subcategoriesCount(DistributionCountLogic.subcategoryCount(subcategories), formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 

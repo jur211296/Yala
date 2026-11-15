@@ -18,63 +18,99 @@ struct FavoriteRowView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: DS.Spacing.md) {
-                // Icon with category color
-                favoriteIcon
-
-                // Text content
-                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
-                    // Line 1: Favorite name
-                    Text(favorite.name)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    // Line 2: Subcategory • Account (or placeholders)
-                    secondaryLine
-
-                    // Line 3: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
-                    let resolvedTags = TagDisplayResolver.tags(for: favorite, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
-                    if !resolvedTags.isEmpty {
-                        tagsRow(resolvedTags)
-                    }
-                }
-
-                Spacer()
-
-                // Right column: Amount + Nature (if set)
-                VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                    if let amount = favorite.amount, amount > 0 {
-                        Text(formattedAmount)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(amountColor)
-                    }
-
-                    if let need = favorite.effectiveNeed {
-                        needIndicator(for: need)
-                    }
-                }
-            }
-            .padding(.vertical, DS.Spacing.md)
-            .padding(.horizontal, DS.FormRow.paddingV)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            rowContent
+                .padding(.vertical, DS.Spacing.md)
+                .padding(.horizontal, DS.FormRow.paddingV)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .background(cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .shadow(
+                    color: Color.black.opacity(theme.shadowOpacity),
+                    radius: 6,
+                    x: 0,
+                    y: 3
+                )
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - Components
+
+    /// Con texto de accesibilidad el importe (y su necesidad) baja a su propia línea, entero: al lado del nombre se partía
+    /// en «S/ / 3,000. / 00» (decisión 63 de la revisión 2.3, el molde de «Esto entendí» en 2.2). A tamaño normal, la
+    /// fila de siempre, con los mismos hijos en el mismo `HStack`.
+    @ViewBuilder
+    private var rowContent: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.md) {
+                    favoriteIcon
+                    rowTexts
+                }
+                if hasAmountColumn {
+                    amountColumn(alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: DS.Spacing.md) {
+                // Icon with category color
+                favoriteIcon
+
+                // Text content
+                rowTexts
+
+                Spacer()
+
+                // Right column: Amount + Nature (if set)
+                amountColumn(alignment: .trailing)
+            }
+        }
+    }
+
+    private var rowTexts: some View {
+        VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
+            // Line 1: Favorite name
+            Text(favorite.name)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .accessibilityIdentifier("favorite_row_name_\(favorite.name)")
+
+            // Line 2: Subcategory • Account (or placeholders)
+            secondaryLine
+
+            // Line 3: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
+            let resolvedTags = TagDisplayResolver.tags(for: favorite, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
+            if !resolvedTags.isEmpty {
+                tagsRow(resolvedTags)
+            }
+        }
+    }
+
+    private var hasAmountColumn: Bool {
+        (favorite.amount ?? 0) > 0 || favorite.effectiveNeed != nil
+    }
+
+    private func amountColumn(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: DS.Spacing.xs) {
+            if let amount = favorite.amount, amount > 0 {
+                Text(formattedAmount)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(amountColor)
+                    .accessibilityIdentifier("favorite_row_amount_\(favorite.name)")
+            }
+
+            if let need = favorite.effectiveNeed {
+                needIndicator(for: need)
+            }
+        }
+    }
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
@@ -99,8 +135,7 @@ struct FavoriteRowView: View {
     private var secondaryLine: some View {
         let text: String
         if favorite.type == .transfer {
-            // «Cuenta Principal → Ahorros». Un favorito de antes de 2.2 no tiene destino: «Cuenta Principal → …».
-            text = "\(favorite.account?.name ?? "…") → \(favorite.destinationAccount?.name ?? "…")"
+            text = FavoriteRowLine.transfer(origin: favorite.account?.name, destination: favorite.destinationAccount?.name)
         } else {
             let parts: [String] = [
                 favorite.subcategory?.name,
@@ -165,5 +200,19 @@ struct FavoriteRowView: View {
 
     private var amountColor: Color {
         Color.amountTint(isIncome: favorite.type == .income)
+    }
+}
+
+/// La segunda línea de un favorito de transferencia (decisión 72 de la revisión 2.3). «Cuenta Principal → Ahorros» con
+/// las dos cuentas; con una sola (un favorito de antes de 2.2 no tiene destino), su nombre, sin «→ …»; sin ninguna,
+/// «Transferencia».
+enum FavoriteRowLine {
+    static func transfer(origin: String?, destination: String?) -> String {
+        switch (origin, destination) {
+        case let (origin?, destination?): return "\(origin) → \(destination)"
+        case let (origin?, nil): return origin
+        case let (nil, destination?): return destination
+        case (nil, nil): return TransactionType.transfer.displayName
+        }
     }
 }

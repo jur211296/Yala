@@ -44,8 +44,8 @@ struct ApproximateMarkWiringTests {
             El hero en modo Solo Gastos pinta `periodSummary.expense`: su marca tiene que ser la del
             gasto, no la del período entero.
             """)
-        // Desde el lote 3 de la auditoría UX 2.2 (L3-1/L3-3) la cifra del hero normal es el balance, o el lado que
-        // filtra la píldora puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
+        // Desde la decisión 8 de 2.3 la línea del mes (bajo «Tienes hoy») es el neto, o el lado que filtra la píldora
+        // puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
         // casos intercambiados, un `contains` suelto seguiría verde.
         #expect(src.contains("case .balance: return periodSummary.amountsAreApproximate"), """
             El balance agrega los dos lados: su marca es la del período entero.
@@ -56,7 +56,7 @@ struct ApproximateMarkWiringTests {
         #expect(src.contains("case .income: return periodSummary.incomeApproximate"), """
             Con «solo ingresos» la cifra es el ingreso: su marca es la del ingreso.
             """)
-        #expect(src.contains("isEstimate: figureIsApproximate"), "La cifra grande no lee la marca de su caso.")
+        #expect(src.contains("isEstimate: figureIsApproximate"), "La línea del mes no lee la marca de su caso.")
     }
 
     /// VoiceOver tiene que oír lo mismo que se ve. La marca es información, y dejarla solo en el
@@ -82,9 +82,14 @@ struct ApproximateMarkWiringTests {
         let section = try Self.source("Yala/App/Views/Panel/Sections/PanelHeroSection.swift")
         #expect(section.contains("totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate"),
                 "El hero no recibe la marca del saldo total.")
+        // Desde la decisión 8 de 2.3 el saldo total es la cifra grande del hero («Tienes hoy»): la marca va en la cifra
+        // y en lo que oye VoiceOver.
         let hero = try Self.source("Yala/App/Views/Panel/HeroMonthView.swift")
-        #expect(hero.contains("appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)"),
-                "«Tienes X en tus cuentas» pinta el saldo total sin su marca.")
+        let bigFigure = try #require(hero.range(of: "value: PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),"))
+        #expect(String(hero[bigFigure.upperBound...].prefix(300)).contains("isEstimate: totalBalanceIsApproximate"),
+                "«Tienes hoy» pinta el saldo total sin su marca.")
+        let spoken = try #require(hero.range(of: "PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),\n            currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate"))
+        #expect(!spoken.isEmpty, "VoiceOver lee «Tienes hoy» sin su marca.")
         let help = try Self.source("Yala/App/Views/Panel/InfoSheets/WidgetInfoSheet.swift")
         #expect(help.contains("money(viewModel.panelTotalBalance, isEstimate: viewModel.panelTotalBalanceIsApproximate)"),
                 "La ayuda de la gráfica de saldo pinta el saldo total sin su marca.")

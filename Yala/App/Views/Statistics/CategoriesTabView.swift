@@ -64,10 +64,17 @@ struct CategoriesTabView: View {
     @Bindable var viewModel: StatisticsViewModel
     @Bindable var insightsViewModel: InsightsViewModel
     let defaultCurrencyCode: String
+    /// Tocar un registro del detalle de una categoría: abre su hoja, la misma del chip Registros (lo monta el contenedor).
+    var onOpenRecord: ((TransactionItem) -> Void)? = nil
+    /// «Ver en Registros» del detalle de una categoría: el contenedor pasa al chip Registros.
+    var onShowRecordsTab: (() -> Void)? = nil
 
     // MARK: - State
 
     @State private var categorySpending: [CategorySpendingSummary] = []
+    /// La página ya tiene su primer cálculo; hasta entonces, esqueleto (G1 de la decisión 28).
+    @State private var pageCalculated = false
+    @State private var firstCalculationTask: Task<Void, Never>?
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
     @State private var needTrendPoints: [NeedTrendPoint] = []
@@ -86,6 +93,12 @@ struct CategoriesTabView: View {
     /// El último día con movimientos del período: lo usa la frase de comparación (UX 2.2 · L11-4).
     @State private var comparisonDataEnd: Date?
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
+
+    /// La categoría abierta en su detalle (decisión 25 de la revisión 2.3, B1). Tocar una categoría ya no filtra.
+    @State private var openCategoryDetail: CategoryDetailRoute?
+    /// Lo que el detalle necesita del último cálculo. Una clase sin observar: escribirla no repinta; el detalle se
+    /// repinta con `categorySpending`, que cambia en la misma pasada.
+    @State private var detailSource = CategoryDetailSource()
 
     /// Local pool-node selection for Sankey filtering. Single-select (tap toggles).
     /// Not persisted in SessionState — lives only within the tab's render lifecycle.
@@ -203,6 +216,7 @@ struct CategoriesTabView: View {
 
     var body: some View {
         scrollBody
+            .navigationDestination(item: $openCategoryDetail) { route in categoryDetailDestination(route) }
             .sheet(isPresented: $showUpgradeSheet) {
                 UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
             }
@@ -237,10 +251,11 @@ struct CategoriesTabView: View {
     /// resuelva cada tramo por separado (mismo molde que `ContentView.body`).
     private func scrollLifecycle(_ content: some View) -> some View {
         content
-            .onAppear {
-                calculateData()
-                recomputeSankey()
-            }
+            // G1 de la decisión 28: el primer cálculo ya no va en el `onAppear`. Montándose debajo (`StagedTabPages`), el
+            // chip no cambiaba hasta terminarlo; ahora la página se enseña en el acto con el esqueleto y las cifras
+            // llegan una vuelta después.
+            .onAppear { scheduleFirstCalculation() }
+            .onDisappear { firstCalculationTask?.cancel() }
             .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
             // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
             // contenedor, detrás de su debounce, y esa recarga avanza `dataGeneration`. Antes se miraba
@@ -294,19 +309,24 @@ struct CategoriesTabView: View {
     private var scrollContent: some View {
         VStack(spacing: DS.Spacing.md) {
             StatsGuideSlot()
-            heroSummary
-            // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
-            StatsQuickActionsSlot()
-            filterBarPanel
+            if pageCalculated {
+                heroSummary
+                // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
+                StatsQuickActionsSlot()
+                filterBarPanel
 
-            if hasNoData {
-                YalaEmptyState(
-                    icon: "chart.pie",
-                    title: L10n.Empty.noData
-                )
-                .padding(.top, DS.Spacing.xxxxl)
+                if hasNoData {
+                    YalaEmptyState(
+                        icon: "chart.pie",
+                        title: L10n.Empty.noData
+                    )
+                    .padding(.top, DS.Spacing.xxxxl)
+                } else {
+                    populatedScrollContent
+                }
             } else {
-                populatedScrollContent
+                // El saldo de la cabecera también sale de este cálculo: hasta tenerlo, esqueleto en su sitio.
+                StatisticsCardsSkeleton()
             }
         }
         .padding(.top, DS.Spacing.sm)
@@ -375,7 +395,7 @@ struct CategoriesTabView: View {
                 HeroHeaderLabel(text: StatsHeroCaptionLogic.distribution(
                     isBalanceMode: isBalanceMode,
                     natures: viewModel.selectedTransactionNatures
-                ).text)
+                ).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {
@@ -418,9 +438,10 @@ struct CategoriesTabView: View {
 
     /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
     private func heroDimensionalSubtitle() -> String? {
-        // Cuenta categorías y subcategorías REALES: el trozo «Sin categoría» suma en la tarta pero no es una de ellas.
-        let catCount = categorySpending.filter { !$0.isUncategorized }.count
-        let subCount = subcategorySpending.filter { !$0.isUncategorized }.count
+        // El mismo recuento que la tarta le da a VoiceOver (`DistributionCountLogic`): categorías y subcategorías
+        // REALES con importe en el período. Ni «Sin categoría» ni «Sin subcategoría» ni las de importe cero.
+        let catCount = DistributionCountLogic.categoryCount(categorySpending)
+        let subCount = DistributionCountLogic.subcategoryCount(subcategorySpending)
         let tagCount = tagSpending.count
         let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
         switch activeDims {
@@ -608,7 +629,7 @@ struct CategoriesTabView: View {
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryIDs: effectiveCategoryIDsForDim,
                     onSelectCategory: { categoryID in
-                        askAboutCategory(categoryID)
+                        openCategory(categoryID)
                     },
                     size: .large,
                     headerInfoButton: AnyView(WidgetInfoButton(kind: .categoriesPie)),
@@ -661,8 +682,9 @@ struct CategoriesTabView: View {
             if tagSpending.isEmpty {
                 emptyState(
                     icon: "tag",
-                    title: L10n.Empty.noTags,
-                    subtitle: L10n.Statistics.noExpensesInPeriod
+                    // Lo que falta es movimiento etiquetado en el período, no etiquetas (lote 07 de 2.3).
+                    title: L10n.Stats.Distribution.emptyNoTagMovementsTitle,
+                    subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(height: 320)
             } else {
@@ -698,7 +720,7 @@ struct CategoriesTabView: View {
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     Spacer()
-                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode)
+                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode, currencyCode: defaultCurrencyCode)
                 }
                 sankeyCardBody.panelCard()
             }
@@ -732,7 +754,7 @@ struct CategoriesTabView: View {
                 selectedSubcategoryIDs: viewModel.selectedSubcategories,
                 selectedPoolNodeIDs: selectedSankeyPoolNodeIDs,
                 onTapCategory: { catID in
-                    askAboutCategory(catID)
+                    openCategory(catID)
                 },
                 onTapSubcategory: { subID in
                     askAboutSubcategory(subID)
@@ -751,6 +773,18 @@ struct CategoriesTabView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+    }
+
+    /// El primer cálculo de la página, una vuelta después de aparecer (G1 de la decisión 28).
+    private func scheduleFirstCalculation() {
+        firstCalculationTask?.cancel()
+        firstCalculationTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(30)) } catch { return }
+            guard !Task.isCancelled else { return }
+            calculateData()
+            recomputeSankey()
+            if !pageCalculated { pageCalculated = true }
         }
     }
 
@@ -793,24 +827,63 @@ struct CategoriesTabView: View {
         }
     }
 
-    private func askAboutCategory(_ categoryID: PersistentIdentifier) {
-        let summary = categorySpending.first { $0.id == categoryID }
-        let name = summary?.name ?? categories.first { $0.persistentModelID == categoryID }?.name ?? ""
-        askAboutSegment(
-            .category(categoryID), name: name, amount: summary?.amount,
-            hide: {
-                // Ocultar la categoría de una subcategoría vista sola dejaba «Solo Restaurantes» + «Sin Comida»: todo
-                // a 0. Esas subcategorías se van con ella.
-                let inside = Set(allSubcategories.filter { $0.category?.persistentModelID == categoryID }
-                    .map(\.persistentModelID))
-                viewModel.selectedSubcategories.subtract(inside)
-                sessionState.hide(.category(categoryID))
-            }
-        ) {
-            viewModel.selectedCategories = [categoryID]
-            // Ver solo una categoría deja de lado las subcategorías que se veían solas; las ocultas siguen ocultas.
-            viewModel.selectedSubcategories.removeAll()
+    // MARK: - Tocar una categoría: abre su detalle (decisión 25 de la revisión 2.3, B1)
+
+    /// Abre el detalle de la categoría. No escribe ningún filtro: «atrás» deja Distribución como estaba. «Sin
+    /// categoría» no llega aquí (no tiene id).
+    private func openCategory(_ categoryID: PersistentIdentifier) {
+        guard categorySpending.contains(where: { $0.id == categoryID }) else { return }
+        openCategoryDetail = CategoryDetailRoute(categoryID: categoryID)
+    }
+
+    @ViewBuilder
+    private func categoryDetailDestination(_ route: CategoryDetailRoute) -> some View {
+        if let summary = categorySpending.first(where: { $0.id == route.categoryID }),
+           let detail = StatisticsCategoryDetailLogic.build(
+               summary: summary,
+               current: detailSource.current,
+               previous: detailSource.previous,
+               interval: detailSource.interval ?? viewModel.panelDateInterval,
+               previousInterval: detailSource.previousInterval,
+               currencyCode: defaultCurrencyCode,
+               natures: detailSource.natures,
+               adjustment: detailSource.adjustment
+           ) {
+            StatisticsCategoryDetailView(
+                detail: detail,
+                currencyCode: defaultCurrencyCode,
+                amountTitle: categoryDetailAmountTitle,
+                period: viewModel.detailPeriod,
+                customRange: sessionState.customDateRange,
+                comparisonMode: sessionState.comparisonMode,
+                showsVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                onSeeInRecords: { seeCategoryInRecords(route.categoryID) },
+                onOpenRecord: { record in onOpenRecord?(record) }
+            )
+        } else {
+            // La categoría ya no tiene movimientos con lo que se ve (un borrado, otro período): nada que enseñar.
+            YalaEmptyState(icon: "chart.pie", title: L10n.Statistics.noDataToShow)
+                .yalaScreenBackground()
         }
+    }
+
+    /// Qué es la cifra del detalle, según la naturaleza elegida en Distribución.
+    private var categoryDetailAmountTitle: String {
+        switch viewModel.selectedTransactionNatures {
+        case [.income]: return L10n.TrendType.income
+        case [], [.expense]: return L10n.Panel.spent
+        default: return L10n.Widget.total
+        }
+    }
+
+    /// «Ver en Registros»: el único gesto del detalle que filtra, y lo dice. Ve solo esa categoría y pasa al chip
+    /// Registros, con el mismo período.
+    private func seeCategoryInRecords(_ categoryID: PersistentIdentifier) {
+        viewModel.selectedCategories = [categoryID]
+        // Ver solo una categoría deja de lado las subcategorías que se veían solas; las ocultas siguen ocultas.
+        viewModel.selectedSubcategories.removeAll()
+        openCategoryDetail = nil
+        onShowRecordsTab?()
     }
 
     private func askAboutSubcategory(_ subcategoryID: PersistentIdentifier) {
@@ -975,7 +1048,8 @@ struct CategoriesTabView: View {
             if categorySpending.isEmpty {
                 emptyState(
                     icon: "chart.bar.xaxis",
-                    title: L10n.Empty.noCategories,
+                    // Las categorías existen: lo que falta son movimientos del período (lote 07 de 2.3).
+                    title: L10n.Stats.Distribution.emptyNoMovementsTitle,
                     subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -988,7 +1062,7 @@ struct CategoriesTabView: View {
                     showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                     onToggleExpanded: { isListExpanded.toggle() },
                     onSelectCategory: { categoryID in
-                        askAboutCategory(categoryID)
+                        openCategory(categoryID)
                     }
                 )
             }
@@ -996,7 +1070,7 @@ struct CategoriesTabView: View {
             if subcategorySpending.isEmpty {
                 emptyState(
                     icon: "list.bullet.indent",
-                    title: L10n.Empty.noSubcategories,
+                    title: L10n.Stats.Distribution.emptyNoSubcategoryMovementsTitle,
                     subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -1333,9 +1407,10 @@ struct CategoriesTabView: View {
     private func findingText(_ finding: DistributionInsightFinding) -> String {
         switch finding {
         case .onset:
-            return L10n.Stats.Distribution.Insight.onset(periodDisplayName)
-        case .newCategory(let name, let period):
-            return L10n.Stats.Distribution.Insight.newCategory(name, period)
+            return L10n.Stats.Distribution.Insight.onsetNoMovements
+        case .newCategory(let name, _):
+            // El nombre del período no entra en la frase: «este Este mes» (lote 07 de mejoras necesarias 2.3).
+            return L10n.Stats.Distribution.Insight.newCategoryInPeriod(name)
         case .concentrated(let percent, let topCat):
             return L10n.Stats.Distribution.Insight.concentrated(percent, topCat)
         case .balanced(let maxPercent):
@@ -1438,6 +1513,10 @@ struct CategoriesTabView: View {
             adjustment: adjustment
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
+        detailSource.current = pieFiltered
+        detailSource.interval = interval
+        detailSource.natures = naturesFilter
+        detailSource.adjustment = adjustment
         let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
         if newTotal != totalAmount { totalAmount = newTotal }
 
@@ -1559,6 +1638,8 @@ struct CategoriesTabView: View {
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard viewModel.detailPeriod != .allTime else {
+            detailSource.previous = []
+            detailSource.previousInterval = nil
             previousCategoryTotal = nil
             previousSubcategoryTotal = nil
             previousTagTotal = nil
@@ -1629,6 +1710,9 @@ struct CategoriesTabView: View {
             currentSource: currentCategorySource,
             natures: naturesFilter
         )
+
+        detailSource.previous = previousFiltered
+        detailSource.previousInterval = previousInterval
 
         // Calculate previous period category spending
         // Use same need filter as current period for consistent comparison
@@ -1851,7 +1935,9 @@ private struct AllCategoriesListContent: View {
                             summary: summary,
                             maxAmount: maxAmount,
                             currencyCode: currencyCode,
-                            showVariation: showVariation
+                            showVariation: showVariation,
+                            // Abre su detalle: la fila lo dice con «›». «Sin categoría» no abre nada.
+                            showsChevron: summary.id != nil
                         )
                         .opacity(shouldDim ? 0.3 : 1.0)
                         .contentShape(Rectangle())
@@ -1944,6 +2030,7 @@ private struct AllSubcategoriesListContent: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("distribution_subcategory_row")
                 }
 
                 if showExpandButton {
@@ -1989,6 +2076,7 @@ private struct CategoryRowView: View {
     let maxAmount: Double
     let currencyCode: String
     var showVariation: Bool = true
+    var showsChevron: Bool = false
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -2005,14 +2093,13 @@ private struct CategoryRowView: View {
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and Amount
-                HStack {
+                // Nombre e importe. Con texto de accesibilidad el importe baja a su línea: en la misma fila se cortaba
+                // («S/2,3….00») y el nombre se partía por sílabas (lote 05 de 2.3, zona 35 P3).
+                AdaptiveRowStack {
                     Text(summary.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-
-                    Spacer()
-
+                } trailing: {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,
@@ -2054,6 +2141,13 @@ private struct CategoryRowView: View {
                     .frame(height: 6)
                 }
             }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -2064,7 +2158,8 @@ private struct CategoryRowView: View {
 
 // MARK: - Subcategory Row Component
 
-private struct SubcategoryRowView: View {
+/// También la usa el detalle de una categoría (`StatisticsCategoryDetailView`).
+struct SubcategoryRowView: View {
     private static let percentFormatter: NumberFormatter = {
         let f = NumberFormatter()
         f.numberStyle = .percent
@@ -2101,14 +2196,13 @@ private struct SubcategoryRowView: View {
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and Amount
-                HStack {
+                // Nombre e importe. Con texto de accesibilidad el importe baja a su línea: en la misma fila se cortaba
+                // («S/2,3….00») y el nombre se partía por sílabas (lote 05 de 2.3, zona 35 P3).
+                AdaptiveRowStack {
                     Text(summary.subcategoryName)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-
-                    Spacer()
-
+                } trailing: {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,
@@ -2180,4 +2274,23 @@ private struct CategoriesFilterRecalcObservers: ViewModifier {
             // lista y el carrusel antes de recalcular. Observarla dos veces corría `calculateData()` dos veces por toque
             // (ticket `distribucion-recalcula-dos-veces-por-toque-y-sin-debounce`).
     }
+}
+
+// MARK: - Detalle de una categoría
+
+/// La categoría abierta en su detalle desde Distribución.
+struct CategoryDetailRoute: Hashable, Identifiable {
+    let categoryID: PersistentIdentifier
+    var id: PersistentIdentifier { categoryID }
+}
+
+/// Lo que el último cálculo de Distribución deja para el detalle: los movimientos de la tarta (con los filtros de la
+/// pantalla) del período y del anterior. Clase y sin observar a propósito: guardarlos no repinta la pestaña.
+final class CategoryDetailSource {
+    var current: [TransactionItem] = []
+    var previous: [TransactionItem] = []
+    var interval: DateInterval?
+    var previousInterval: DateInterval?
+    var natures: Set<TransactionNature>?
+    var adjustment: GroupBridgeStatsAdjustment = .none
 }

@@ -251,6 +251,29 @@ enum DateAlignmentHelper {
         ).last?.value
     }
 
+    /// El punto del período anterior contra el que compara `alignedPreviousTotal`, con su fecha REAL (no la alineada):
+    /// el chip de la gráfica de saldo del Panel la dice («vs 20 oct», decisión 11 de la revisión 2.3). Sale del mismo
+    /// recorte que el total, así que su valor es siempre `alignedPreviousTotal`.
+    static func alignedPreviousReference(
+        previousPoints: [BarPoint],
+        currentPoints: [BarPoint],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        calendar: Calendar = .current
+    ) -> BarPoint? {
+        clippedPreviousPairs(
+            previousPoints: previousPoints,
+            currentPoints: currentPoints,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: period,
+            comparisonMode: comparisonMode,
+            calendar: calendar
+        ).last?.original
+    }
+
     /// Dominio X de la comparación: rango de datos del período ACTUAL (puntos
     /// con `value != 0`) con padding de ±1 día; fallback al intervalo si no hay
     /// datos. **SSOT** del dominio — la curva (`chartXScale` + clipping) y el
@@ -285,6 +308,27 @@ enum DateAlignmentHelper {
         comparisonMode: ComparisonMode,
         calendar: Calendar = .current
     ) -> [BarPoint] {
+        clippedPreviousPairs(
+            previousPoints: previousPoints,
+            currentPoints: currentPoints,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: period,
+            comparisonMode: comparisonMode,
+            calendar: calendar
+        ).map(\.aligned)
+    }
+
+    /// El recorte de `clippedPreviousPoints`, con cada punto alineado junto al original del que sale.
+    private static func clippedPreviousPairs(
+        previousPoints: [BarPoint],
+        currentPoints: [BarPoint],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        calendar: Calendar
+    ) -> [(aligned: BarPoint, original: BarPoint)] {
         let domain = currentDataDomain(
             currentPoints: currentPoints,
             currentInterval: currentInterval,
@@ -292,7 +336,7 @@ enum DateAlignmentHelper {
         )
         return previousPoints
             .filter { $0.value != 0 }
-            .compactMap { point -> BarPoint? in
+            .compactMap { point -> (aligned: BarPoint, original: BarPoint)? in
                 let adjustedDate = adjustDateToCurrent(
                     point.date,
                     currentInterval: currentInterval,
@@ -304,9 +348,9 @@ enum DateAlignmentHelper {
                 guard adjustedDate >= domain.lowerBound && adjustedDate <= domain.upperBound else {
                     return nil
                 }
-                return BarPoint(date: adjustedDate, value: point.value)
+                return (BarPoint(date: adjustedDate, value: point.value), point)
             }
-            .sorted { $0.date < $1.date }
+            .sorted { $0.aligned.date < $1.aligned.date }
     }
 
     // MARK: - Sumas agregadas (VariationChips del Panel, p20-15 fase 2)

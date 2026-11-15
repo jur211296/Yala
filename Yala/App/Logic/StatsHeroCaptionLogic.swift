@@ -34,9 +34,9 @@ import Foundation
 
 /// Qué magnitud está enseñando el hero. El texto se resuelve en la vista.
 enum StatsHeroCaption: String, Equatable, CaseIterable {
-    /// Stock: saldo de las cuentas, misma semántica que el KPI del Panel.
+    /// Stock: saldo de las cuentas, misma semántica que la cifra grande del Panel («Tienes hoy»).
     case accountsBalance
-    /// Flujo: ingresos − gastos del período.
+    /// Flujo: ingresos − gastos del período («Te queda» / «Te quedó», la línea del mes del Panel).
     case netPeriod
     /// Flujo: solo el lado de ingresos.
     case incomePeriod
@@ -109,11 +109,18 @@ enum StatsHeroCaptionLogic {
 /// mismos cinco casos: repetir el `switch` cuatro veces es justo como divergen.
 /// La lógica de arriba sigue siendo pura — los tests comparan casos del enum, no
 /// strings, así que no necesitan Bundle.
+///
+/// Desde la decisión 8 de la revisión 2.3 (9-nov-2026) las palabras son las del Panel: el saldo es lo que «tienes» y el
+/// neto es lo que «te queda». Las dos van en pasado con un período cerrado (`PeriodTenseLogic`): el saldo de un mes
+/// cerrado es el de su cierre («Tenías al cierre») y su neto ya no «queda», «quedó». Por eso el texto pide el tiempo y
+/// no hay un `text` a secas: un llamador nuevo no puede olvidarse de él.
 extension StatsHeroCaption {
-    var text: String {
+    func text(isClosed: Bool) -> String {
         switch self {
-        case .accountsBalance: return L10n.Stats.Hero.captionAccountsBalance
-        case .netPeriod:       return L10n.Stats.Hero.captionNetPeriod
+        case .accountsBalance:
+            return isClosed ? L10n.Stats.Hero.captionAccountsBalanceClosed : L10n.Panel.Hero.haveToday
+        case .netPeriod:
+            return isClosed ? L10n.Panel.Hero.leftPast : L10n.Panel.Hero.leftNow
         case .incomePeriod:    return L10n.Stats.Hero.captionIncomePeriod
         case .expensePeriod:   return L10n.Stats.Hero.captionExpensePeriod
         case .totalPeriod:     return L10n.Stats.Hero.captionTotalPeriod

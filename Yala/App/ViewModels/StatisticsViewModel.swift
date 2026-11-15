@@ -209,7 +209,7 @@ final class StatisticsViewModel: Filterable {
     var trendLiveAnchorIsApproximate: Bool = false
 
     /// Trend grouping based on period
-    var trendGrouping: TrendGrouping = .month
+    var trendGrouping: TrendGrouping = .day
 
     /// Date interval for the current period
     var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
@@ -419,12 +419,24 @@ final class StatisticsViewModel: Filterable {
         // Enforce metric lock based on filters
         enforceMetricLock()
 
-        // Always use day grouping so chart data reaches today
-        trendGrouping = .day
-
         // Get interval
         let interval = panelDateInterval
         currentInterval = interval
+
+        // Por día hasta unos tres meses de datos y por mes a partir de ahí (G2 de la decisión 28): con diez años, la
+        // curva pintaba ~3.650 puntos y el eje no se leía. El último punto sigue valiendo lo de hoy: el saldo de un mes
+        // se valora a su cierre o a hoy (`BalanceValuation.closingInstant`), y el saldo vivo va aparte (`liveAnchor`).
+        let newGrouping = StatisticsChartGranularityLogic.curveGrouping(
+            dataSpanDays: StatisticsChartGranularityLogic.dataSpanDays(
+                earliestDate: StatisticsChartGranularityLogic.earliestDate(
+                    of: transactions.lazy.map(\.date), in: interval),
+                interval: interval,
+                now: now
+            ),
+            intervalEndsAfterToday: interval.end > LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: Calendar.current)
+                .startOfTomorrow
+        )
+        if newGrouping != trendGrouping { trendGrouping = newGrouping }
 
         // Build filter criteria and apply
         let criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)
@@ -548,9 +560,13 @@ final class StatisticsViewModel: Filterable {
         guard !days.isEmpty else { return nil }
         var undated = criteria
         undated.dateInterval = nil
-        let counted = criteria.dateInterval == nil
+        let historyCounted = criteria.dateInterval == nil
             ? filtered
             : FilterService.filterForTrends(transactions: transactions, accounts: accounts, criteria: undated)
+        // La proyección del saldo sigue a las cuentas que suman, como la del Panel (`balanceTransactions`): una cuenta
+        // archivada no va a moverse y no entra en ese ritmo (decisión 6 de 2.3). La de ingresos o gastos, con todo.
+        let counted = metric == .balance
+            ? historyCounted.filter { $0.account?.isArchivedByThePerson != true } : historyCounted
         let inputs = ProjectedFlowBuilder.Inputs(
             today: now,
             calendar: calendar,
@@ -560,7 +576,7 @@ final class StatisticsViewModel: Filterable {
             countedTransactions: counted,
             hasSessionFilters: ProjectedFlowBuilder.filtersNarrowData(criteria),
             scheduledPayments: scheduledPayments,
-            paymentFilter: ProjectedFlowBuilder.paymentFilter(from: criteria),
+            paymentFilter: projectionPaymentFilter(metric: metric, criteria: criteria, accounts: accounts),
             currencyCode: defaultCurrencyCode,
             adjustment: adjustment,
             converter: CurrencyConverter.shared
@@ -576,6 +592,21 @@ final class StatisticsViewModel: Filterable {
             today: now,
             calendar: calendar
         )
+    }
+
+    /// Los pagos planificados de la proyección. En la de Saldo, sin los de una cuenta archivada por la persona, como la
+    /// del Panel (que los acota a `balanceAccounts`): esa cuenta ya no suma y su línea no debe bajar por ella.
+    private func projectionPaymentFilter(
+        metric: TrendType, criteria: FilterCriteria, accounts: [Account]
+    ) -> ProjectedFlowBuilder.PaymentFilter {
+        var filter = ProjectedFlowBuilder.paymentFilter(from: criteria)
+        guard metric == .balance else { return filter }
+        let archived = Set(accounts.filter(\.isArchivedByThePerson).map(\.persistentModelID))
+        filter.accounts = EntityFilter(
+            included: criteria.selectedAccounts.subtracting(archived),
+            excluded: criteria.excludedAccounts.union(archived)
+        )
+        return filter
     }
 
     // MARK: - Historical Totals (Trend Insight Card V2)
@@ -722,7 +753,8 @@ final class StatisticsViewModel: Filterable {
             plannedPending: plannedPending,
             plannedSplit: .byKind,
             propagatePlannedToCategories: true,
-            adjustment: adjustment
+            adjustment: adjustment,
+            periodIsClosed: PeriodTenseLogic.isClosed(period: detailPeriod, customRange: customDateRange)
         )
         if newData != sankeyData { sankeyData = newData }
     }
@@ -783,11 +815,12 @@ final class StatisticsViewModel: Filterable {
         return criteria
     }
 
-    /// Compute eligible accounts for trend calculations (archived accounts still count)
+    /// Las cuentas cuyos movimientos cuentan en Estadísticas: las archivadas también (`Account.keepsHistory`). Un saldo
+    /// deja fuera las archivadas en sus piezas base (`LiveBalanceCalculator`, `TrendDataProcessor.fillBalanceBuckets`).
     private func computeEligibleAccounts(from accounts: [Account]) -> [Account] {
         let accountFilter = EntityFilter(included: selectedAccounts, excluded: excludedAccounts)
         return accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
+            guard account.keepsHistory else { return false }
             return accountFilter.matches(account.persistentModelID)
         }
     }
@@ -960,7 +993,10 @@ final class StatisticsViewModel: Filterable {
             .electricIndigo, .hotPink, .brandPrimary, .teal, .orange, .purple, .green,
         ]
 
-        for (index, account) in accounts.enumerated() {
+        // Con la métrica de saldo, una cuenta archivada no tiene línea: no suma en ningún saldo (decisión 6 de 2.3). Con
+        // ingresos o gastos, sí, porque su historial se ve. El color sigue a la posición en `accounts`, así que no cambia
+        // al pasar de una métrica a otra.
+        for (index, account) in accounts.enumerated() where selectedMetric != .balance || account.sumsInBalance {
             let accountTransactions = transactions.filter {
                 $0.account?.persistentModelID == account.persistentModelID
             }

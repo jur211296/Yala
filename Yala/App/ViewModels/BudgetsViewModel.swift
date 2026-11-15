@@ -865,8 +865,9 @@ final class BudgetsViewModel {
             return .inactive
         }
 
-        // For active budgets, determine status based on spending
-        let isExceeded = spending >= limit
+        // «Excedidos» solo si te pasaste: gastar justo el límite es «Llegaste al límite» y se queda en Activos
+        // (decisión 23 de 2.3). La misma regla que «Te pasaste por» (`BudgetRemainingLogic.isOver`).
+        let isExceeded = BudgetRemainingLogic.isOver(limit: limit, spent: spending)
 
         if isExceeded {
             return .exceeded

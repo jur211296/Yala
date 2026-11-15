@@ -234,26 +234,76 @@ enum GroupBalanceService {
 
     // MARK: - Global Summary
 
-    /// Global summary across all groups for the current user.
-    /// - Parameter currentUserMemberIDs: Set of member IDs that represent the current user across groups.
-    static func globalSummary(
-        allExpenses: [SplitExpense],
-        allShares: [SplitShare],
-        allSettlements: [SplitSettlement],
-        currentUserMemberIDs: Set<String>
-    ) -> GroupGlobalSummary {
-        let debts = rawDebts(expenses: allExpenses, shares: allShares, settlements: allSettlements)
-        let simplified = DebtSimplificationService.simplify(debts: debts)
+    /// Lo que un grupo aporta al resumen global: sus fuentes y sus dos opciones de cómo enseñar las deudas.
+    struct GroupSummarySource {
+        let expenses: [SplitExpense]
+        let shares: [SplitShare]
+        let settlements: [SplitSettlement]
+        /// «Menos pagos entre ustedes» del grupo (`SplitGroup.simplifyDebts`).
+        let simplifyDebts: Bool
+        /// La divisa del grupo si tiene «una sola moneda» (`showDebtsInSingleCurrency`); `nil` si no.
+        let singleCurrency: String?
 
+        init(expenses: [SplitExpense], shares: [SplitShare], settlements: [SplitSettlement],
+             simplifyDebts: Bool, singleCurrency: String?) {
+            self.expenses = expenses
+            self.shares = shares
+            self.settlements = settlements
+            self.simplifyDebts = simplifyDebts
+            self.singleCurrency = singleCurrency
+        }
+
+        init(group: SplitGroup, expenses: [SplitExpense], shares: [SplitShare], settlements: [SplitSettlement]) {
+            self.init(expenses: expenses, shares: shares, settlements: settlements,
+                      simplifyDebts: group.simplifyDebts,
+                      singleCurrency: group.showDebtsInSingleCurrency ? group.currencyCode : nil)
+        }
+    }
+
+    /// Las deudas de UN grupo tal como las enseña: con su «Menos pagos» y, con «una sola moneda», consolidadas en la
+    /// divisa del grupo si alguna está en otra. Es la cuenta de la tarjeta de la lista
+    /// (`GroupsViewModel.computeCurrentUserDebts`) y la de Saldos (`GroupDetailViewModel.recalculate`).
+    static func shownDebts(
+        _ source: GroupSummarySource,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [Debt] {
+        let debts = calculateDebts(
+            expenses: source.expenses,
+            shares: source.shares,
+            settlements: source.settlements,
+            simplifyDebts: source.simplifyDebts
+        )
+        guard let target = source.singleCurrency, debts.contains(where: { $0.currencyCode != target }) else {
+            return debts
+        }
+        return consolidatedDebts(from: debts, targetCurrency: target, converter: converter)
+    }
+
+    /// Lo que debes y lo que te deben en todos los grupos, por divisa: la suma de lo que dice la tarjeta de cada grupo.
+    ///
+    /// Cada grupo se cuenta APARTE y con sus opciones (lote chico de 2.3, card de «Debes S/ 0.00» junto a «Le debes a
+    /// Ana»). Antes se juntaban las deudas de todos los grupos y se simplificaban siempre: con «Menos pagos» apagado la
+    /// cabecera neteaba lo que la tarjeta enseña por persona («Debes S/ 10» frente a «Le debes a Ana S/ 40 · Beto te debe
+    /// S/ 30»), y la simplificación podía emparejar a un deudor de un grupo con un acreedor de otro.
+    /// - Parameter currentUserMemberIDs: los ids de «yo» de cada grupo (en una zona migrada, dos filas del mismo humano).
+    ///   La tarjeta resuelve UNO por grupo; con dos filas mías la cabecera puede sumar algo que la tarjeta no enseña. Eso
+    ///   ya pasaba antes y es a propósito (`GroupsViewModel.recalculate`: quedarse con la canónica borraría la otra).
+    static func globalSummary(
+        groups: [GroupSummarySource],
+        currentUserMemberIDs: Set<String>,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> GroupGlobalSummary {
         var owedToMe: [String: Double] = [:]
         var iOwe: [String: Double] = [:]
 
-        for debt in simplified {
-            if currentUserMemberIDs.contains(debt.toMemberID) {
-                owedToMe[debt.currencyCode, default: 0] += debt.amount
-            }
-            if currentUserMemberIDs.contains(debt.fromMemberID) {
-                iOwe[debt.currencyCode, default: 0] += debt.amount
+        for group in groups {
+            for debt in shownDebts(group, converter: converter) {
+                if currentUserMemberIDs.contains(debt.toMemberID) {
+                    owedToMe[debt.currencyCode, default: 0] += debt.amount
+                }
+                if currentUserMemberIDs.contains(debt.fromMemberID) {
+                    iOwe[debt.currencyCode, default: 0] += debt.amount
+                }
             }
         }
 
@@ -261,7 +311,7 @@ enum GroupBalanceService {
         owedToMe = owedToMe.mapValues { roundToTwoDecimals($0) }
         iOwe = iOwe.mapValues { roundToTwoDecimals($0) }
 
-        let pendingCount = allSettlements.filter { !$0.isConfirmed }.count
+        let pendingCount = groups.reduce(0) { $0 + $1.settlements.filter { !$0.isConfirmed }.count }
 
         return GroupGlobalSummary(
             totalOwedToMe: owedToMe,

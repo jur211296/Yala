@@ -24,6 +24,7 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
 
@@ -528,7 +529,7 @@ struct ProfileView: View {
         isGroupsOnlyShell ? viewModel.hasExportableGroups : viewModel.hasTransactions
     }
 
-    /// Hint de accesibilidad cuando "Exportar datos" está deshabilitada (D6).
+    /// Por qué "Exportar datos" está deshabilitada (D6): va en el subtítulo de la fila, a la vista (D4 de la zona 40).
     private var exportDisabledHint: String {
         isGroupsOnlyShell
             ? L10n.Accessibility.noGroupsToExport
@@ -1322,6 +1323,9 @@ struct ProfileView: View {
         // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
         // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
         .modifier(ClosesForShellIntegrityNotice(navigation: navigation) { dismiss() })
+        // Card p9q0 (13-nov-2026) · cerrar sesión, quitar los datos y eliminar la cuenta tienen su propia pantalla mientras
+        // trabajan, por encima de Ajustes y de sus hojas: ya no se queda la fila girando con la lista navegable.
+        .presentsSignOutProgress(removesDeviceData: exitInProgressRemovesDeviceData ?? signOutRowRemovesDeviceData)
         // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
         // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
         // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
@@ -1396,6 +1400,12 @@ struct ProfileView: View {
                     // muerto el resto de la sesión, sin `onDismiss` que rescate porque nunca se
                     // presentó. Es el modo de fallo de la regla (4) de Presentaciones.
                     RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+                }, onFinishPendingICloudWipe: { notice in
+                    // Revisión 2.3, decisión 57: terminar el borrado pendiente es la hoja que ya lo hace en el arranque,
+                    // anclada en `ContentView`. Mismo molde que arriba: este sheet se cierra y el router retiene el aviso
+                    // hasta que el anchor quede libre.
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(notice))
                 })
             case .yalaAccount:
                 // §3.3.5: mapa/explainer del enlace privado ↔ nube. Los desenlaces disparan el @State
@@ -1610,6 +1620,10 @@ struct ProfileView: View {
     }
 
     private var organizacionSection: some View {
+        // Decisión 47 de la revisión 2.3 (B1): cada fila abre lo que dice. «Presupuestos» (que abría las estrellas del
+        // Panel) pasa a Configurar Panel como «Presupuestos en el Panel», «Pagos planificados» (que cerraba Ajustes y te
+        // dejaba en otra pestaña) sale, y «Favoritos» pasa a «Registros favoritos». El pie dice dónde quedó cada cosa.
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
                 // «Yala Pro» con el estado del plan, arriba de la primera sección (UX 2.2 · L17-1). Antes era
@@ -1641,28 +1655,17 @@ struct ProfileView: View {
                     .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
-                    icon: "chart.pie.fill", title: L10n.Settings.budgets,
-                    iconColor: .mint,
-                    destination: .budgets)
-                    .coachMarkAnchor("settingsBudgets")
-                SubsectionDivider()
-                // Una sola lista de pagos planificados (UX 2.2 · L10-15): la fila cierra Ajustes y abre Planificación ›
-                // Pagos planificados. Antes abría otra lista de lo mismo, con otro formato y borrado sin confirmar.
-                Button {
-                    dismiss()
-                    RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
-                } label: {
-                    settingsRowContent(icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments, iconColor: .cyan)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("profile_planned")
-                .coachMarkAnchor("settingsPlanned")
-                SubsectionDivider()
-                profileRow(
-                    icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
+                    icon: "star.fill", title: L10n.Lote23Chico.favoriteRecords, iconColor: .yellow,
                     destination: .favorites)
                     .accessibilityIdentifier("profile_favorites")
             }
+        }
+            Text(L10n.Lote23Chico.organizationFooter)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.sm)
+                .accessibilityIdentifier("profile_organization_footer")
         }
         .padding(.horizontal, DS.Spacing.lg)
     }
@@ -1675,7 +1678,11 @@ struct ProfileView: View {
                 settingsLink(ProfileDestination.usageMode) {
                     settingsRowContent(
                         icon: "square.grid.2x2.fill", title: L10n.UsageMode.rowTitle,
-                        subtitle: isGroupsFocusedShell ? L10n.UsageMode.groupsOnlyTitle : L10n.UsageMode.fullTitle,
+                        // Decisión 48 (F1): con «Solo gastos» encendido la fila dice el modo entero.
+                        subtitle: isGroupsFocusedShell
+                            ? L10n.UsageMode.groupsOnlyTitle
+                            : (sessionState.isExpensesOnlyMode
+                                ? L10n.Lote23Chico.fullExpensesOnly : L10n.UsageMode.fullTitle),
                         iconColor: theme.accent)
                 }
                 .buttonStyle(.plain)
@@ -1755,15 +1762,17 @@ struct ProfileView: View {
                 } label: {
                     // L20-4: «Exportar registros · Para Excel o Google Sheets». En solo grupos exporta los grupos, no
                     // registros: conserva «Exportar datos» con el mismo subtítulo (el archivo también se abre ahí).
+                    // Lote 10 de las mejoras necesarias 2.3 (D4 de la zona 40): apagada, la fila dice por qué en su
+                    // subtítulo, a la vista. Antes salía gris con «Para Excel o Google Sheets» y el motivo solo lo
+                    // oía VoiceOver, en la pista; con el motivo en la etiqueta, la pista ya no se repite.
                     settingsRowContent(
                         icon: "square.and.arrow.up.fill",
                         title: isGroupsOnlyShell ? L10n.Settings.exportData : L10n.UXL20D.exportRecordsRow,
-                        subtitle: L10n.Settings.exportDataSubtitle,
+                        subtitle: isExportEnabled ? L10n.Settings.exportDataSubtitle : exportDisabledHint,
                         iconColor: .mint
                     )
                     .opacity(isExportEnabled ? 1.0 : 0.5)
                 }
-                .accessibilityHint(isExportEnabled ? "" : exportDisabledHint)
                 .disabled(!isExportEnabled)
                 .buttonStyle(.plain)
                 .coachMarkAnchor("proExportExtended")
@@ -2166,29 +2175,9 @@ struct ProfileView: View {
     ) -> AnyView {
         // `AnyView` por la misma razón que `settingsLink`: cada fila nombraba este tipo y la primera apertura de Ajustes
         // lo descifraba una vez por fila (card YALA-IOS-G).
-        AnyView(HStack(spacing: DS.Spacing.md) {
-            // Conditionally show colored or plain icons based on setting
-            if effectiveColorfulIcons {
-                // iOS-style colored icon with rounded square background
-                Image(systemName: icon)
-                    .font(DS.Typography.subheadline).fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(iconColor)
-                    )
-                    .accessibilityHidden(true)
-            } else {
-                // Plain icon without background
-                Image(systemName: icon)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-            }
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+        AnyView(settingsRowLayout(
+            icon: settingsRowIcon(icon: icon, iconColor: iconColor),
+            labels: VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
                     .font(DS.Typography.body)
                     .foregroundStyle(textColor)
@@ -2199,25 +2188,78 @@ struct ProfileView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-            }
-
-            Spacer()
-
-            // H-2026-07-18-6: spinner inline en la fila mientras el cierre de sesión trabaja
-            // (reemplaza el chevron — el resto de filas conservan el chevron por default false).
-            if showSpinner {
-                ProgressView()
-                    .controlSize(.small)
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelSmall.weight(.medium))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-        }
+            },
+            accessory: settingsRowAccessory(showSpinner: showSpinner)
+        )
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle()))
+    }
+
+    /// Con texto de accesibilidad el icono va encima del título, que se queda con el ancho de la fila: a su lado los
+    /// títulos de una palabra se partían por sílabas («Personaliza-ción», «Notificacio-nes»; lote 05 de 2.3, zona 40
+    /// P7). El icono se queda: si sobra con esos tamaños es otra decisión (G1 de la revisión). A tamaño normal, la fila
+    /// de siempre.
+    @ViewBuilder
+    private func settingsRowLayout<Icon: View, Labels: View, Accessory: View>(
+        icon: Icon, labels: Labels, accessory: Accessory
+    ) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                icon
+                HStack(spacing: DS.Spacing.md) {
+                    labels
+                    Spacer()
+                    accessory
+                }
+            }
+        } else {
+            HStack(spacing: DS.Spacing.md) {
+                icon
+                labels
+                Spacer()
+                accessory
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func settingsRowIcon(icon: String, iconColor: Color) -> some View {
+        // Conditionally show colored or plain icons based on setting
+        if effectiveColorfulIcons {
+            // iOS-style colored icon with rounded square background
+            Image(systemName: icon)
+                .font(DS.Typography.subheadline).fontWeight(.medium)
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(iconColor)
+                )
+                .accessibilityHidden(true)
+        } else {
+            // Plain icon without background
+            Image(systemName: icon)
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    private func settingsRowAccessory(showSpinner: Bool) -> some View {
+        // H-2026-07-18-6: spinner inline en la fila mientras el cierre de sesión trabaja
+        // (reemplaza el chevron — el resto de filas conservan el chevron por default false).
+        if showSpinner {
+            ProgressView()
+                .controlSize(.small)
+        } else {
+            Image(systemName: "chevron.right")
+                .font(DS.Typography.labelSmall.weight(.medium))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
     }
 
 }

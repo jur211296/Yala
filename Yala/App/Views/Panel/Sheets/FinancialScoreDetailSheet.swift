@@ -209,6 +209,22 @@ struct FinancialScoreDetailSheet: View {
             .padding(DS.Spacing.md)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
 
+            // Revisión 2.3, decisión 9 (PN-2): lo mismo que dice la tarjeta.
+            if let missing = FinancialScoreCopy.missingLine(for: breakdown) {
+                Text(missing)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("health_sheet_missing_parts")
+            }
+            if let unseen = FinancialScoreCopy.unseenLine(for: breakdown, isExpensesOnlyMode: sessionState.isExpensesOnlyMode) {
+                Text(unseen)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("health_sheet_unseen")
+            }
+
             if let improvement = improvementLine(breakdown) {
                 Text(improvement)
                     .font(DS.Typography.subheadlineEmphasized)
@@ -254,7 +270,12 @@ struct FinancialScoreDetailSheet: View {
         case .budget: return L10n.Panel.Health.improveBudget
         case .activity: return L10n.Panel.Health.improveActivity
         case .bills: return L10n.Panel.Health.improveBills
-        case .total, nil: return L10n.Panel.Health.improveNothing
+        case .total, nil:
+            // Revisión 2.3, decisión 9 (PN-2): «Sigue así» debajo de una alerta es la misma contradicción que
+            // «¡Vas increíble!»; con alertas, la línea de lo que la nota no ve ya dice qué mirar.
+            return breakdown.alerts.hasAlerts(isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
+                ? nil
+                : L10n.Panel.Health.improveNothing
         }
     }
 
@@ -286,6 +307,10 @@ struct FinancialScoreDetailSheet: View {
     private var headline: String {
         switch kind {
         case .total:
+            // Revisión 2.3, decisión 9 (PN-2): con alertas no felicita, y con datos pero sin nota no pide el primer registro.
+            if let breakdown {
+                return FinancialScoreCopy.totalHeadline(for: breakdown, isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
+            }
             guard let score else { return L10n.Panel.Health.totalHeadlineEmpty }
             if score >= 90 { return L10n.Panel.Health.totalHeadlineHigh }
             if score >= 70 { return L10n.Panel.Health.totalHeadlineMid }

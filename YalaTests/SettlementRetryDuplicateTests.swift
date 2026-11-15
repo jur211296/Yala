@@ -161,8 +161,67 @@ struct SettlementRetryDuplicateTests {
             .filter { !$0.hasPrefix("//") }
             .joined(separator: " ")
         #expect(code.contains("createSettlement("))
-        #expect(code.contains("confirmed: true"))
+        // Desde el merge con 2.3 (decisión 37, C1): nace confirmado salvo que lo apunte alguien que no paga ni recibe.
+        // Sigue siendo UN guardado: la decisión viaja en `confirmed:`, no en un `confirmSettlement` aparte.
+        #expect(code.contains(
+            "confirmed: SettlementSaldar23Logic.confirmsOnRecord( recorderMemberID: currentUserMemberID, fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID)"
+        ))
+        #expect(!code.contains("confirmed: true"))
         #expect(!code.contains("confirmSettlement("))
+    }
+
+    // MARK: - Pago apuntado por un tercero (desbloqueo del PR, 15-nov)
+
+    private func bridgedRows(_ context: ModelContext, settlementID: String) throws -> (txs: Int, drafts: Int) {
+        let txs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID }
+        )).count
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID }
+        )).count
+        return (txs, drafts)
+    }
+
+    @Test("Un pago entre otros que apunto yo nace pendiente y no toca mis cuentas; el mío sí pasa por el puente")
+    func thirdPartyPayment_isStoredPending_andNotBridged() throws {
+        let dir = freshDir()
+        defer { discardTestStoreDirectory(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        let beto = SplitMember(groupZoneID: f.group.cloudKitZoneID, displayName: "Beto")
+        context.insert(beto)
+        try context.save()
+
+        try withServices(context) {
+            let me = f.me.id.uuidString, ana = f.ana.id.uuidString, betoID = beto.id.uuidString
+            // Lo que decide la hoja: apunto «Beto → Ana» sin ser ninguno de los dos.
+            let thirdParty = SettlementSaldar23Logic.confirmsOnRecord(
+                recorderMemberID: me, fromMemberID: betoID, toMemberID: ana)
+            #expect(thirdParty == false)
+            let pending = try GroupExpenseService.shared.createSettlement(
+                in: f.group, fromMemberID: betoID, toMemberID: ana, amount: 25, currencyCode: "PEN",
+                note: nil, date: Date(timeIntervalSince1970: 1_793_000_000), confirmed: thirdParty)
+
+            // Control: mi propio pago a Ana sí nace confirmado y el puente lo recoge (sin cuenta, como borrador). Sin
+            // esto, «cero filas» del pendiente saldría igual con el puente apagado en el arnés.
+            let mine = SettlementSaldar23Logic.confirmsOnRecord(recorderMemberID: me, fromMemberID: me, toMemberID: ana)
+            #expect(mine)
+            let own = try GroupExpenseService.shared.createSettlement(
+                in: f.group, fromMemberID: me, toMemberID: ana, amount: 40, currencyCode: "PEN",
+                note: nil, date: Date(timeIntervalSince1970: 1_793_000_000), confirmed: mine)
+
+            let ownRows = try bridgedRows(context, settlementID: own.id.uuidString)
+            #expect(ownRows.txs + ownRows.drafts > 0)
+            let pendingRows = try bridgedRows(context, settlementID: pending.id.uuidString)
+            #expect(pendingRows.txs == 0)
+            #expect(pendingRows.drafts == 0)
+        }
+
+        let stored = try storedSettlements(context, in: f.group)
+        #expect(stored.count == 2)
+        #expect(stored.first { $0.amount == 25 }?.isConfirmed == false)
+        #expect(stored.first { $0.amount == 25 }?.recordedByMemberID == f.me.id.uuidString)
+        #expect(stored.first { $0.amount == 40 }?.isConfirmed == true)
     }
 
     private static func sourceURL(_ relative: String) -> URL {

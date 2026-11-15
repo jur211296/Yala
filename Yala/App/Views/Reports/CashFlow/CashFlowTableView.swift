@@ -172,7 +172,9 @@ struct CashFlowTableView: View {
             allIncomeCategories: incomeCategories,
             scheduledPayments: scheduledPayments,
             currencyCode: currencyCode,
-            converter: CurrencyConverter.shared
+            converter: CurrencyConverter.shared,
+            accounts: accounts,
+            includeGroups: appPreferences.includeGroupsInPanelTotal
         )
     }
 }

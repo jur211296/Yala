@@ -124,7 +124,7 @@ struct TagsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.orderedActiveTags.count) * DS.FormRow.minHeight)
+            .contentSizedListHeight(estimated: CGFloat(viewModel.orderedActiveTags.count) * DS.FormRow.minHeight)
             .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
@@ -157,7 +157,7 @@ struct TagsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.inactiveTags.count) * DS.FormRow.minHeight)
+            .contentSizedListHeight(estimated: CGFloat(viewModel.inactiveTags.count) * DS.FormRow.minHeight)
             .solidCard()
         }
     }

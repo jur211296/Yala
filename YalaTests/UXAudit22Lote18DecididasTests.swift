@@ -90,7 +90,7 @@ struct UXAudit22Lote18DecididasTests {
     // MARK: - L18-4 · desglose
 
     @Test func grouping_optionalDimensions_hideTheMandatoryOne_andReorderKeepsItFirst() {
-        var state = ReportGroupingState()
+        var state = ReportGroupingState(activeDimensions: [.tipo])
         state.toggle(.categoria)
         state.toggle(.subcategoria)
         #expect(state.optionalDimensions == [.categoria, .subcategoria])
@@ -101,7 +101,7 @@ struct UXAudit22Lote18DecididasTests {
     }
 
     @Test func grouping_example_followsTheChosenOrder() {
-        var state = ReportGroupingState()
+        var state = ReportGroupingState(activeDimensions: [.tipo])
         state.toggle(.categoria)
         state.toggle(.subcategoria)
         let example = state.activeDimensions.map(\.exampleValue).joined(separator: " › ")

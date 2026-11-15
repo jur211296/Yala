@@ -110,7 +110,7 @@ struct AccessoryBalanceWidgetView: View {
             value: formatCompact(entry.amount),
             label: entry.isExpensesOnly
                 ? String(localized: "widget.ui.expenses", bundle: .main)
-                : String(localized: "widget.ui.available", bundle: .main)
+                : String(localized: "widget.ui.balance", bundle: .main)
         )
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }

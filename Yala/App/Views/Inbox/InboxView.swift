@@ -36,10 +36,10 @@ struct InboxView: View {
     @State private var selectedDraftIDs: Set<PersistentIdentifier> = []
     @State private var showBulkActions = false
 
-    // Success view state (for swipe approve)
-    @State private var showSwipeSuccessView = false
-    @State private var swipeSuccessData: InboxApproveSuccessData?
-    @State private var swipeApprovedTransaction: TransactionItem?
+    // La pantalla de éxito de guardar deslizando. Un solo valor con los datos y el registro: con un flag
+    // `isPresented:` y los datos en otro `@State`, la hoja salía vacía a ratos (ticket
+    // `inbox-swipe-save-success-sheet-shows-blank`, regla de `swiftui-ds.md`).
+    @State private var swipeSuccess: InboxSwipeSuccess?
 
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
@@ -477,34 +477,30 @@ struct InboxView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showSwipeSuccessView) {
-                if let data = swipeSuccessData {
-                    InboxApproveSuccessView(
-                        data: data,
-                        hasNextDraft: viewModel.hasPendingDrafts,
-                        onEdit: {
-                            showSwipeSuccessView = false
-                            if let transaction = swipeApprovedTransaction {
-                                Task {
-                                    do {
-                                        try await Task.sleep(for: .milliseconds(300))
-                                    } catch { return }
-                                    selectedTransaction = transaction
-                                }
-                            }
-                        },
-                        onAccept: {
-                            showSwipeSuccessView = false
-                            dismissIfNoPendingDrafts()
-                        },
-                        onApproveNext: {
-                            showSwipeSuccessView = false
-                            if let next = viewModel.firstPendingDraft() {
-                                openDraftAfterDelay(next)
-                            }
+            .sheet(item: $swipeSuccess) { success in
+                InboxApproveSuccessView(
+                    data: success.data,
+                    hasNextDraft: viewModel.hasPendingDrafts,
+                    onEdit: {
+                        swipeSuccess = nil
+                        Task {
+                            do {
+                                try await Task.sleep(for: .milliseconds(300))
+                            } catch { return }
+                            selectedTransaction = success.transaction
                         }
-                    )
-                }
+                    },
+                    onAccept: {
+                        swipeSuccess = nil
+                        dismissIfNoPendingDrafts()
+                    },
+                    onApproveNext: {
+                        swipeSuccess = nil
+                        if let next = viewModel.firstPendingDraft() {
+                            openDraftAfterDelay(next)
+                        }
+                    }
+                )
             }
             .alert(L10n.Inbox.cannotApprove, isPresented: $showArchivedAccountAlert) {
                 Button(L10n.Common.ok, role: .cancel) {}
@@ -554,49 +550,29 @@ struct InboxView: View {
 
     // MARK: - Selection Bar
 
+    /// Con texto de accesibilidad «Editar» baja a su propia línea, a todo lo ancho: junto al contador se partía por
+    /// sílabas («Edi-tar», «seleccio-nados»; lote 05 de 2.3, zona 38 P7). A tamaño normal, la barra de siempre.
     private var selectionBar: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            // Select all / Deselect all
-            Button {
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    if selectedDraftIDs.count == filteredDrafts.count {
-                        selectedDraftIDs.removeAll()
-                    } else {
-                        selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    HStack(spacing: DS.Spacing.lg) {
+                        selectAllButton
+                        selectedCountText
                     }
+                    bulkEditButton(fillsWidth: true)
                 }
-            } label: {
-                Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(theme.accentText)
-                    .frame(minWidth: 44, minHeight: 44)
+            } else {
+                HStack(spacing: DS.Spacing.lg) {
+                    selectAllButton
+
+                    selectedCountText
+
+                    Spacer()
+
+                    bulkEditButton(fillsWidth: false)
+                }
             }
-            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
-
-            // Count
-            Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
-                .font(DS.Typography.label)
-
-            Spacer()
-
-            // Actions button
-            Button {
-                showBulkActions = true
-            } label: {
-                Text(L10n.Action.edit)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thOnAccent)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .frame(minHeight: 44)
-                    .background(
-                        Capsule()
-                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
-                    )
-            }
-            .disabled(selectedDraftIDs.isEmpty)
-            .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -605,6 +581,53 @@ struct InboxView: View {
                 .fill(.ultraThinMaterial)
                 .ignoresSafeArea()
         )
+    }
+
+    /// Select all / Deselect all
+    private var selectAllButton: some View {
+        Button {
+            DS.Haptic.selection()
+            dsWithAnimation(reduceMotion) {
+                if selectedDraftIDs.count == filteredDrafts.count {
+                    selectedDraftIDs.removeAll()
+                } else {
+                    selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                }
+            }
+        } label: {
+            Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
+                .font(DS.Typography.title)
+                .foregroundStyle(theme.accentText)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
+    }
+
+    private var selectedCountText: some View {
+        Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
+            .font(DS.Typography.label)
+            .accessibilityIdentifier("inbox_selected_count")
+    }
+
+    /// Actions button. `fillsWidth`: apilado, a todo lo ancho de la barra.
+    private func bulkEditButton(fillsWidth: Bool) -> some View {
+        Button {
+            showBulkActions = true
+        } label: {
+            Text(L10n.Action.edit)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thOnAccent)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: 44)
+                .background(
+                    Capsule()
+                        .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
+                )
+        }
+        .disabled(selectedDraftIDs.isEmpty)
+        .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
+        .accessibilityIdentifier("inbox_bulk_edit")
     }
 
     private var selectedDrafts: [InboxDraft] {
@@ -636,6 +659,13 @@ struct InboxView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.md)
+
+            // Gastos de grupo a los que les sobra un borrador o un préstamo (bug del 2026-11-09): se quitan aquí, viendo qué.
+            if !isSelectionMode && selectedFilter == .pending {
+                GroupBridgeLeftoversNotice(count: viewModel.groupLeftoverCount) { viewModel.loadData() }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, viewModel.groupLeftoverCount > 0 ? DS.Spacing.sm : DS.Spacing.none)
+            }
 
             // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
             // Seleccionar todo, Editar y Aprobar.
@@ -811,7 +841,7 @@ struct InboxView: View {
     private func draftRow(for draft: InboxDraft) -> some View {
         InboxDraftRowView(
             draft: draft,
-            currencyCode: draft.displayCurrencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
+            currencyCode: viewModel.displayCurrencyCode(for: draft, fallback: appPreferences.defaultCurrencyCode.rawValue),
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
             onTap: {
@@ -1142,20 +1172,21 @@ struct InboxView: View {
 
             // Animate only the UI transition
             dsWithAnimation(reduceMotion) {
-                swipeApprovedTransaction = transaction
-                swipeSuccessData = InboxApproveSuccessData(
-                    date: draft.effectiveDate,
-                    accountName: account.name,
-                    accountColorHex: account.colorHex,
-                    note: draft.note,
-                    amount: amount,
-                    currencyCode: account.currencyCode,
-                    subcategoryName: subcategory.name,
-                    categoryName: subcategory.safeCategory.name,
-                    categoryColorHex: subcategory.safeCategory.colorHex,
-                    isExpense: amount < 0
+                swipeSuccess = InboxSwipeSuccess(
+                    data: InboxApproveSuccessData(
+                        date: draft.effectiveDate,
+                        accountName: account.name,
+                        accountColorHex: account.colorHex,
+                        note: draft.note,
+                        amount: amount,
+                        currencyCode: account.currencyCode,
+                        subcategoryName: subcategory.name,
+                        categoryName: subcategory.safeCategory.name,
+                        categoryColorHex: subcategory.safeCategory.colorHex,
+                        isExpense: amount < 0
+                    ),
+                    transaction: transaction
                 )
-                showSwipeSuccessView = true
             }
         } catch {
             #if DEBUG
@@ -1175,7 +1206,7 @@ struct InboxView: View {
             do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
             // Si en ese rato se abrió otra hoja, no se guarda: la pantalla de éxito no podría salir y el borrador sigue
             // en la Bandeja para volver a intentarlo.
-            guard selectedDraft == nil, !showSwipeSuccessView,
+            guard selectedDraft == nil, swipeSuccess == nil,
                   draft.isReadableInInbox, draft.status == .pending else { return }
             approveDraft(draft, skipDuplicateCheck: true)
         }
@@ -1279,6 +1310,14 @@ private struct InboxSwipeDuplicatePresentation: ViewModifier {
                 Text(L10n.Inbox.duplicateWarningMessage)
             }
     }
+}
+
+/// Lo que presenta la pantalla de éxito tras guardar deslizando: el resumen y el registro guardado (lo abre «Editar»).
+/// Cada guardado es un valor nuevo, así que `.sheet(item:)` lo presenta con SUS datos.
+private struct InboxSwipeSuccess: Identifiable {
+    let id = UUID()
+    let data: InboxApproveSuccessData
+    let transaction: TransactionItem
 }
 
 /// Qué dice el lote de lo que dejó por posible duplicado. Pura: la fija `InboxDuplicateCheckTests`.

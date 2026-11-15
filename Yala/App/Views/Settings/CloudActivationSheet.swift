@@ -8,9 +8,12 @@
 //  de entrar al pie. Tocar uno es aceptar lo que dice la hoja, confirmar y elegir el método, y por eso aquí se
 //  REGISTRA el consentimiento (la misma escritura y la misma métrica que `CloudConsentView`).
 //
-//  Lo que la hoja no esconde: «Ver los detalles» despliega el texto legal entero —incluidas las fotos de los
-//  recibos, que no viajan—, y «Exportar una copia antes» exporta todos los registros sin asistente (el molde de
-//  L20-8) en vez de escribir la ruta de Ajustes. El contrato no cambió: `CloudConsentText.version` no sube.
+//  Lo que no se deshace solo, a la vista (revisión 2.3, zona 41, decisión 52, opción H1, 2026-11-09): que Yala puede
+//  ver los datos y no hay cifrado de extremo a extremo, que las fotos de los recibos no viajan, y «Exportar una copia
+//  antes», que exporta todos los registros sin asistente (el molde de L20-8). Una línea cada uno; «Ver los detalles»,
+//  que los plegaba, se fue. La fila de fotos no lleva cifra: Yala no guarda fotos de recibos (las lee para crear el
+//  registro y las suelta), así que no hay nada que contar (Jürgen, 2026-11-12). El contrato no cambió:
+//  `CloudConsentText.version` no sube.
 //
 //  Pura respecto a la migración: no la arranca. `onContinue` comunica la elección y el caller (`StorageSettingsView`)
 //  baja la hoja y arranca desde su `onDismiss` (regla 4 de presentaciones; Google resuelve su presenter con el
@@ -39,20 +42,28 @@ struct CloudActivationSheet: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    @State private var showsDetails = false
     @State private var isExporting = false
     @State private var exportedFile: ExportedFile?
     @State private var exportErrorMessage = ""
     @State private var showExportError = false
     /// Alto natural de lo de arriba y del pie, medidos: la hoja mide lo que su contenido (la variante elegida es una hoja
-    /// a media pantalla, no una pantalla completa con un hueco). Crece si se abren los detalles; si no cabe, se desplaza.
+    /// a media pantalla, no una pantalla completa con un hueco). Si no cabe, se desplaza.
     @State private var contentHeight: CGFloat = 0
     @State private var footerHeight: CGFloat = 0
 
+    /// Con texto de accesibilidad los botones de entrar van al final de lo que se desplaza, no fijos al pie: fijos
+    /// ocupaban cerca del 40 % de la pantalla y lo que hay que leer antes de aceptar pasaba por una rendija (revisión 2.3,
+    /// zona 41, problema 8; el molde de Nuevo registro). A tamaño normal, el pie fijo de siempre.
+    private var footerScrollsWithContent: Bool { dynamicTypeSize.isAccessibilitySize }
+
     /// `.large` hasta que se mide; después, el alto del contenido (y `.large` para quien la estire).
     private var detents: Set<PresentationDetent> {
+        if footerScrollsWithContent {
+            guard contentHeight > 0 else { return [.large] }
+            return [.height(contentHeight + DS.Spacing.lg), .large]
+        }
         guard contentHeight > 0, footerHeight > 0 else { return [.large] }
         return [.height(contentHeight + footerHeight + DS.Spacing.lg), .large]
     }
@@ -71,6 +82,10 @@ struct CloudActivationSheet: View {
                     title: L10n.UXL20N.anyPhoneTitle, detail: L10n.UXL20N.anyPhoneDetail)
                 row(icon: "eye", tint: DS.Semantic.warningForeground,
                     title: L10n.UXL20N.seesTitle, detail: L10n.UXL20N.seesDetail)
+                    .accessibilityIdentifier("storage_activation_row_sees")
+                row(icon: "photo", tint: .hotPink,
+                    title: L10n.UXL20N.photosTitle, detail: L10n.UXL20N.photosDetail)
+                    .accessibilityIdentifier("storage_activation_row_photos")
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     row(icon: "key", tint: .secondary,
                         title: L10n.UXL20N.accessTitle, detail: L10n.UXL20N.accessDetail)
@@ -78,14 +93,17 @@ struct CloudActivationSheet: View {
                         .padding(.leading, Self.iconSize + DS.Spacing.md)
                 }
 
-                detailsDisclosure
-
                 if let previewLine {
                     Text(previewLine)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("storage_activation_preview")
+                }
+
+                if footerScrollsWithContent {
+                    footerButtons
+                        .padding(.top, DS.Spacing.md)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,12 +113,12 @@ struct CloudActivationSheet: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
-        // Los botones de entrar, siempre a la vista: con «Ver los detalles» abierto o el texto grande, lo de arriba se
-        // desplaza y esto no se va de la pantalla.
-        .safeAreaInset(edge: .bottom) {
+        // Los botones de entrar, siempre a la vista: si lo de arriba no cabe, se desplaza y esto no se va de la pantalla.
+        // Con texto de accesibilidad van dentro del desplazamiento (`footerScrollsWithContent`).
+        .modifier(PinnedFooter(isPinned: !footerScrollsWithContent) {
             footer
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { footerHeight = $0 }
-        }
+        })
         .yalaScreenBackground(.partialSheet)
         .yalaSheetDetents(detents)
         .presentationDragIndicator(.visible)
@@ -167,64 +185,6 @@ struct CloudActivationSheet: View {
         .accessibilityIdentifier("storage_activation_export")
     }
 
-    // MARK: - Ver los detalles
-
-    /// El texto legal entero, a un toque (L20-12). Es el contrato de siempre (`storage.consent.*`), con lo que la hoja
-    /// resume: quién lee los datos, las fotos que no viajan, cómo se entra y que se puede volver.
-    private var detailsDisclosure: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Button {
-                // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
-                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) { showsDetails.toggle() }
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(showsDetails ? L10n.UXL20N.hideDetails : L10n.UXL20N.details)
-                    Image(systemName: showsDetails ? "chevron.up" : "chevron.down")
-                        .font(DS.Typography.caption.weight(.semibold))
-                        .accessibilityHidden(true)
-                }
-                .font(DS.Typography.subheadline.weight(.medium))
-                .foregroundStyle(DS.Semantic.infoForeground)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("storage_activation_details")
-
-            if showsDetails {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    detail(L10n.UXLote6.consentServersTitle, L10n.Storage.Consent.pointServers)
-                    detail(L10n.UXLote6.consentPhotosTitle, L10n.Storage.Consent.pointPhotos)
-                    detail(L10n.UXLote6.consentAccessTitle, L10n.UXL20N.detailsAccess)
-                    Text(L10n.Storage.Consent.footer)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(DS.Spacing.md)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                        .fill(Color(uiColor: .secondarySystemBackground))
-                )
-                .transition(.opacity)
-                .accessibilityIdentifier("storage_activation_details_text")
-            }
-        }
-    }
-
-    private func detail(_ title: String, _ text: String) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            Text(title)
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(.primary)
-            Text(text)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
-    }
-
     /// «Pasarán 32 registros, 2 cuentas y 6 presupuestos.» — en letra normal, no en gris monoespaciado (L20-11). Sin
     /// cifras si no se dejaron contar: un cero sería inventado.
     private var previewLine: String? {
@@ -241,6 +201,16 @@ struct CloudActivationSheet: View {
     // MARK: - El pie: entrar
 
     private var footer: some View {
+        footerButtons
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.sm)
+            .background(.bar)
+    }
+
+    /// Los botones de entrar con la política y «Cancelar». Fijos al pie (`footer`) o, con texto de accesibilidad, al
+    /// final del contenido.
+    private var footerButtons: some View {
         VStack(spacing: DS.Spacing.md) {
             switch decision {
             case .askProvider:
@@ -274,10 +244,6 @@ struct CloudActivationSheet: View {
             .font(DS.Typography.caption)
             .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.top, DS.Spacing.md)
-        .padding(.bottom, DS.Spacing.sm)
-        .background(.bar)
     }
 
     /// Un botón de entrar con su marca, «Continuar con…» (verbo neutro: desde aquí se crea una cuenta al migrar o se
@@ -337,6 +303,21 @@ struct CloudActivationSheet: View {
                 exportErrorMessage = SignOutBlockedCopy.personalExportFailureMessage(for: error)
                 showExportError = true
             }
+        }
+    }
+}
+
+/// El pie fijo de la hoja de activar, solo cuando toca: con texto de accesibilidad el pie va dentro del desplazamiento y
+/// aquí no se reserva nada. A tamaño normal es el `.safeAreaInset(edge: .bottom)` de siempre, sin cambios.
+private struct PinnedFooter<Footer: View>: ViewModifier {
+    let isPinned: Bool
+    @ViewBuilder let footer: () -> Footer
+
+    func body(content: Content) -> some View {
+        if isPinned {
+            content.safeAreaInset(edge: .bottom) { footer() }
+        } else {
+            content
         }
     }
 }

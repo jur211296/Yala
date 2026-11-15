@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Auditoría UX 2.2 · L18-11 (opción C, variante 2): el resumen del mes en frases en vez de «Disponible» y «Acumulado»
-//  con «?»: «Este mes te sobran S/ 3,283», «Si sigue así, a fin de diciembre tendrías S/ 12,028», «Empezaste con S/ 0 ·
+//  con «?»: «Este mes te sobran S/ 3,283» (desde la decisión 8 de 2.3, «te quedaría»), «Si sigue así, a fin de diciembre tendrías S/ 12,028», «Empezaste con S/ 0 ·
 //  Cambiar» y «Llevas el 68 % de lo que planeaste gastar». Las frases cambian con el mes elegido: lo que ya pasó se dice
 //  en pasado y lo que viene en condicional, y «te faltan» cuando sale más de lo que entra.
 //
@@ -14,8 +14,19 @@ import Foundation
 
 enum CashFlowMonthSummaryLogic {
 
-    /// El rótulo de la cifra grande del mes (sin el monto): «Este mes te sobran», «En noviembre te sobrarían»…
-    static func heroLabel(for month: CashFlowMonth) -> String {
+    /// El rótulo de la cifra grande del mes (sin el monto). En el mes en curso, con la fecha de fin de mes de «Al 30
+    /// tendrías» (decisión 30 de 2.3), «Al 30 de noviembre tendrías»: la misma cifra que el Panel. Sin ella (otro mes, o
+    /// sin cuentas que sumen), lo que entra menos lo que sale: «En diciembre te quedaría», «En octubre te quedó»…
+    static func heroLabel(for month: CashFlowMonth, monthEndDate: Date? = nil) -> String {
+        if month.isCurrent, let monthEndDate {
+            return L10n.ProjectedFlow.closingBalance(MonthEndBalanceLogic.dayAndMonth(monthEndDate))
+        }
+        return netLabel(for: month)
+    }
+
+    /// Lo que entra menos lo que sale del mes, con el vocabulario de la decisión 8 («te queda», nunca «te sobra»): en
+    /// presente o condicional si el mes no ha cerrado, en pasado si sí, y «te falta…» cuando sale más de lo que entra.
+    static func netLabel(for month: CashFlowMonth) -> String {
         let surplus = !isShortfall(month.netFlow)
         let name = monthInSentence(month.date)
         if month.isCurrent {
