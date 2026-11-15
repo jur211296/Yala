@@ -9734,3 +9734,20 @@
 "pagosRecurrentes.settings.done" = "Fine";
 "pagosRecurrentes.footer.link" = "Pagamenti che si ripetono";
 "pagosRecurrentes.footer.off" = "Disattivato";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Rendi ricorrente";
+"rfr.inbox.approveAndMakeRecurring" = "Salva e rendi ricorrente";
+"rfr.planning.fromRecord" = "Da un movimento";
+"rfr.picker.title" = "Scegli un movimento";
+"rfr.picker.searchPrompt" = "Cerca per descrizione o categoria";
+"rfr.picker.empty" = "Non ci sono movimenti che possano diventare ricorrenti.";
+"rfr.picker.noResults" = "Nessun movimento corrisponde a «%@»";
+"rfr.picker.footer" = "Movimenti degli ultimi 6 mesi. Non compaiono quelli di un gruppo, i trasferimenti e quelli già legati a un ricorrente.";
+"rfr.choice.headline" = "Hai già un ricorrente simile";
+"rfr.choice.body" = "Se questo movimento è un pagamento di quel ricorrente, collegalo: conta come pagato e non se ne crea un altro.";
+"rfr.choice.link" = "Collega a «%@»";
+"rfr.choice.createNew" = "Crea un altro ricorrente";
+"rfr.choice.nextDue" = "Prossimo addebito: %@";
+"rfr.notice.linked" = "Collegato a «%@»";
+"rfr.notice.created" = "Ricorrente creato · questo movimento è il primo pagamento";

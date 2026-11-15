@@ -9724,3 +9724,20 @@
 "pagosRecurrentes.settings.done" = "OK";
 "pagosRecurrentes.footer.link" = "Pagamentos que se repetem";
 "pagosRecurrentes.footer.off" = "Desativado";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Tornar recorrente";
+"rfr.inbox.approveAndMakeRecurring" = "Salvar e tornar recorrente";
+"rfr.planning.fromRecord" = "A partir de um registro";
+"rfr.picker.title" = "Escolha um registro";
+"rfr.picker.searchPrompt" = "Buscar por descrição ou categoria";
+"rfr.picker.empty" = "Não há registros que possam virar recorrentes.";
+"rfr.picker.noResults" = "Nenhum registro corresponde a “%@”";
+"rfr.picker.footer" = "Registros dos últimos 6 meses. Não aparecem os de um grupo, as transferências nem os que já pertencem a um recorrente.";
+"rfr.choice.headline" = "Você já tem um recorrente parecido";
+"rfr.choice.body" = "Se este registro é um pagamento desse recorrente, vincule-o: ele conta como pago e nenhum outro é criado.";
+"rfr.choice.link" = "Vincular a “%@”";
+"rfr.choice.createNew" = "Criar outro recorrente";
+"rfr.choice.nextDue" = "Próxima cobrança: %@";
+"rfr.notice.linked" = "Vinculado a “%@”";
+"rfr.notice.created" = "Recorrente criado · este registro é o primeiro pagamento";

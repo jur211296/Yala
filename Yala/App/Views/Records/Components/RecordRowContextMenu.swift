@@ -170,6 +170,12 @@ struct RecordRowContextMenu: ViewModifier {
                 viewModel.duplicateRecord(record)
             }
         }
+        // «Hacer recurrente» (encargo del 15-nov): el editor de recurrentes prellenado, con este registro como primer pago.
+        if RecurringFromRecordService.offersMakeRecurring(record) {
+            Button(L10n.RecurringFromRecord.makeRecurring, systemImage: "repeat") {
+                viewModel.recurringFromRecord = record
+            }
+        }
         if actions.canChangeCategory {
             Button(L10n.Keyboard.changeCategory, systemImage: "folder") {
                 viewModel.categoryChangeRecord = record
@@ -193,7 +199,7 @@ struct RecordRowContextMenu: ViewModifier {
     }
 }
 
-/// Lo que el menú (y ⌫) presenta: la confirmación de borrado y el selector de categoría. Vive en la lista
+/// Lo que el menú (y ⌫) presenta: la confirmación de borrado, el selector de categoría y «Hacer recurrente». Vive en la lista
 /// (`RecordsTabView`), que comparten Registros y Estadísticas › Registros; el editor lo presenta cada host con su hoja
 /// de siempre (`showEditTransaction`).
 struct RecordRowActionsPresenter: ViewModifier {
@@ -222,6 +228,9 @@ struct RecordRowActionsPresenter: ViewModifier {
             .sheet(item: $viewModel.categoryChangeRecord) { record in
                 // «Cambiar subcategoría» (L8-9): aplica al elegir y avisa con Deshacer.
                 RecordSubcategoryChangeSheet(record: record, viewModel: viewModel)
+            }
+            .sheet(item: $viewModel.recurringFromRecord) { record in
+                RecurringFromRecordSheet(record: record)
             }
     }
 

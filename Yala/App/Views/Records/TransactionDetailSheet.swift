@@ -72,6 +72,8 @@ struct TransactionDetailSheet: View {
 
     @State private var transferPartnerAccount: Account?
     @State private var isConfirmingDelete = false
+    /// «Recurrente» del pie (encargo del 15-nov): el editor de recurrentes prellenado con este registro.
+    @State private var showsRecurringFlow = false
     /// Gasto de grupo (L8-5): su nombre y de dónde sale cada número. Se leen una vez al abrir.
     @State private var groupName: String?
     @State private var groupBreakdown: GroupExpenseBreakdownLogic.Breakdown?
@@ -131,6 +133,9 @@ struct TransactionDetailSheet: View {
             Text(deleteMessage)
         }
         .task(id: transaction.persistentModelID) { resolveGroup() }
+        .sheet(isPresented: $showsRecurringFlow) {
+            RecurringFromRecordSheet(record: transaction)
+        }
         .sheet(isPresented: $showsSplitLines) {
             if let expenseID = transaction.splitExpenseID {
                 GroupSplitLinesSheet(splitExpenseID: expenseID) { resolveGroup() }
@@ -149,41 +154,34 @@ struct TransactionDetailSheet: View {
         RecordContextActionLogic.Shape(record: transaction).isGroupRecord
     }
 
+    /// «Hacer recurrente» sale donde sale Duplicar (lo ofrece el mismo host) y solo en lo que se puede hacer recurrente:
+    /// ni de grupo, ni transferencias o ajustes, ni lo que ya es de un recurrente (`RecurringFromRecordLogic`).
+    private var offersRecurring: Bool {
+        onDuplicate != nil && RecurringFromRecordService.offersMakeRecurring(transaction)
+    }
+
     @ViewBuilder
     private var footerActions: some View {
         let offersDuplicate = onDuplicate != nil && rowActions.canDuplicate
         let offersDelete = onDelete != nil && rowActions.canDelete
-        if offersDuplicate || offersDelete {
-            HStack(spacing: DS.Spacing.md) {
-                if offersDuplicate {
-                    Button {
-                        onDuplicate?()
-                    } label: {
-                        Label(L10n.Action.duplicate, systemImage: "doc.on.doc")
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DS.Spacing.md)
-                            .background(Color.secondary.opacity(0.18), in: Capsule())
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("transaction_detail_duplicate")
+        let offersRecurring = offersRecurring
+        if offersDuplicate || offersDelete || offersRecurring {
+            // Los tres en una fila si caben; si no (un iPhone pequeño, texto grande), «Recurrente» arriba a todo lo ancho
+            // y Duplicar y Eliminar debajo, como estaban.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.md) {
+                    if offersDuplicate { duplicateButton }
+                    if offersRecurring { recurringButton }
+                    if offersDelete { deleteButton }
                 }
-                if offersDelete {
-                    Button {
-                        isConfirmingDelete = true
-                    } label: {
-                        Label(L10n.Action.delete, systemImage: "trash")
-                            .font(DS.Typography.label)
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DS.Spacing.md)
-                            .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
-                            .contentShape(Capsule())
+                VStack(spacing: DS.Spacing.sm) {
+                    if offersRecurring { recurringButton }
+                    if offersDuplicate || offersDelete {
+                        HStack(spacing: DS.Spacing.md) {
+                            if offersDuplicate { duplicateButton }
+                            if offersDelete { deleteButton }
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("transaction_detail_delete")
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -193,6 +191,56 @@ struct TransactionDetailSheet: View {
             // Fijo al pie y con su cristal: sin él, las filas que suben por detrás se leían entre los dos botones.
             .background(.ultraThinMaterial)
         }
+    }
+
+    private var duplicateButton: some View {
+        Button {
+            onDuplicate?()
+        } label: {
+            Label(L10n.Action.duplicate, systemImage: "doc.on.doc")
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Color.secondary.opacity(0.18), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("transaction_detail_duplicate")
+    }
+
+    private var recurringButton: some View {
+        Button {
+            showsRecurringFlow = true
+        } label: {
+            Label(L10n.Action.recurring, systemImage: "repeat")
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Color.secondary.opacity(0.18), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        // VoiceOver dice qué hace, no solo «Recurrente».
+        .accessibilityLabel(L10n.RecurringFromRecord.makeRecurring)
+        .accessibilityIdentifier("transaction_detail_make_recurring")
+    }
+
+    private var deleteButton: some View {
+        Button {
+            isConfirmingDelete = true
+        } label: {
+            Label(L10n.Action.delete, systemImage: "trash")
+                .font(DS.Typography.label)
+                .foregroundStyle(DS.Semantic.errorForeground)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("transaction_detail_delete")
     }
 
     /// Lo que viene de un grupo se borra desde el grupo: se dice dónde en vez de no ofrecer nada (L8-6). Va en el

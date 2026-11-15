@@ -82,6 +82,10 @@ struct InboxDraftEditSheet: View {
     @State private var showSuccessView = false
     @State private var approvedTransaction: TransactionItem?
     @State private var successData: InboxApproveSuccessData?
+    /// «Aprobar y hacer recurrente» (encargo del 15-nov): el aprobado sigue en el editor de recurrentes prellenado, en
+    /// esta misma hoja, con el registro como primer pago.
+    @State private var approvesIntoRecurring = false
+    @State private var recurringRecord: TransactionItem?
 
     // Group conversion: grupos elegibles resueltos en .task (solo para gastos puntuales pendientes).
     // Vacío = no ofrecer la acción "Convertir a gasto compartido".
@@ -154,7 +158,9 @@ struct InboxDraftEditSheet: View {
 
     var body: some View {
         Group {
-            if showSuccessView, let data = successData {
+            if let recurringRecord {
+                RecurringFromRecordSheet(record: recurringRecord)
+            } else if showSuccessView, let data = successData {
                 InboxApproveSuccessView(
                     data: data,
                     hasNextDraft: nextPendingDraft != nil,
@@ -725,10 +731,35 @@ struct InboxDraftEditSheet: View {
                     L10n.Inbox.approve,
                     isDisabled: !isReadyToApprove
                 ) {
+                    approvesIntoRecurring = false
                     approveDraft()
                 }
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
                 .accessibilityIdentifier("inbox_approve_button")
+            }
+
+            // «Aprobar y hacer recurrente» (encargo del 15-nov): aprueba como siempre y sigue en el editor de recurrentes
+            // con el registro como primer pago. No en lo que ya viene de un recurrente ni desde «Pagar ahora».
+            if payNowTitle == nil, RecurringFromRecordLogic.offersApproveAndMakeRecurring(
+                sourceType: draft.sourceType,
+                sourceScheduledPaymentID: draft.sourceScheduledPaymentID,
+                isPending: initialStatus == .pending
+            ) {
+                Button {
+                    approvesIntoRecurring = true
+                    approveDraft()
+                } label: {
+                    Label(L10n.RecurringFromRecord.approveAndMakeRecurring, systemImage: "repeat")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(isReadyToApprove ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.tertiary))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isReadyToApprove)
+                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                .accessibilityIdentifier("inbox_approve_and_make_recurring_button")
             }
 
             // Acción terciaria: redirigir el gasto a un grupo (crea un SplitExpense en vez de una
@@ -1024,6 +1055,15 @@ struct InboxDraftEditSheet: View {
                 isExpense: isExpense
             )
             DS.Haptic.success()
+
+            // «Aprobar y hacer recurrente»: sin pantalla de éxito; la hoja pasa al editor de recurrentes. La Bandeja
+            // ya sabe que se aprobó (al cerrarse, se cierra si no quedan pendientes, como tras «Listo»).
+            if approvesIntoRecurring {
+                approvesIntoRecurring = false
+                onApproved?()
+                recurringRecord = transaction
+                return
+            }
 
             // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
             if payNowTitle != nil {

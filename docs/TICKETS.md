@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1320)
+## Index (1321)
 
 | id | status | path |
 |---|---|---|
@@ -1011,6 +1011,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | records-summary-approximate-mark-fails-only-alongside-group-suites | done | tickets/done/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |
 | records-summary-mixes-preferred-currencies | done | tickets/done/records-summary-mixes-preferred-currencies.md |
+| recurrente-desde-registro | done | tickets/done/recurrente-desde-registro.md |
 | reentry-counts-as-fresh-install | done | tickets/done/reentry-counts-as-fresh-install.md |
 | reentry-killswitch-closes-both-doors | done | tickets/done/reentry-killswitch-closes-both-doors.md |
 | regional-variants-show-the-plural-form-for-one | done | tickets/done/regional-variants-show-the-plural-form-for-one.md |

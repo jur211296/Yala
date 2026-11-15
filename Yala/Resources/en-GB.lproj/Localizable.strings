@@ -8968,3 +8968,20 @@
 "pagosRecurrentes.settings.done" = "Done";
 "pagosRecurrentes.footer.link" = "Payments that repeat";
 "pagosRecurrentes.footer.off" = "Off";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Make recurring";
+"rfr.inbox.approveAndMakeRecurring" = "Save and make recurring";
+"rfr.planning.fromRecord" = "From a record";
+"rfr.picker.title" = "Choose a record";
+"rfr.picker.searchPrompt" = "Search by description or category";
+"rfr.picker.empty" = "There are no records that can be made recurring.";
+"rfr.picker.noResults" = "No records match ‘%@’";
+"rfr.picker.footer" = "Records from the last 6 months. Group records, transfers and records that already belong to a recurring payment aren’t shown.";
+"rfr.choice.headline" = "You already have a similar recurring payment";
+"rfr.choice.body" = "If this record is a payment of that recurring payment, link it: it counts as paid and no new one is created.";
+"rfr.choice.link" = "Link to ‘%@’";
+"rfr.choice.createNew" = "Create another recurring payment";
+"rfr.choice.nextDue" = "Next charge: %@";
+"rfr.notice.linked" = "Linked to ‘%@’";
+"rfr.notice.created" = "Recurring payment created · this record is its first payment";
