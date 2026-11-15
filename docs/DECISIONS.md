@@ -2,12 +2,14 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (104 entradas)
+## Índice (106 entradas)
 
-> **No hace falta leer este fichero entero** — son 290 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 293 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-14` [Atajo del banco y pagos recurrentes: las recomendadas, y Grupos web escribe en producción](#2026-11-14-atajo-del-banco-y-pagos-recurrentes-las-recomendadas-y-grupos-web-escribe-en-produccin)
 - `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
+- `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
 - `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
@@ -130,6 +132,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-14] Atajo del banco y pagos recurrentes: las recomendadas, y Grupos web escribe en producción
+**Contexto:** Dos decisiones de Jürgen del 14-nov (16:56 y 17:50, Lima), capturadas en el chat por el bot dueño (ADR-082 de casa). Las incorpora la sesión «Atajo del banco: prueba B0 y lectura del aviso».
+**Decisión:** (1) **Atajo del banco y suscripciones detectadas: todas las recomendadas** de la propuesta visual (`docs/ux/atajo-banco-y-suscripciones/`): A1 notificación primero y correo de Mail solo si la prueba lo permite; A2 = I2, atajo listo por enlace + guía corta; A3 = L2, reglas primero y el modelo del iPhone de respaldo; A4 BCP, Interbank, BBVA, Scotiabank y Yape con reglas; A5 Yala no avisa cuando apunta; A6 se activa en «Lo que Yala apunta solo»; S1 = P1, tarjeta en Planificación; S2 tres cobros mensuales o cuatro semanales; S3 lo descartado se recuerda en cada iPhone; S4 los cobros pasados no se tocan; S5 cambios de precio y bajas en un lote aparte (S2). La prueba B0 la corre una sesión en el iPhone 14 con un aviso simulado, no Jürgen en su iPhone. (2) **La escritura en Grupos de Yala web** (permiso de escritura dedicado por el gateway, opción A) **pasa de staging a producción ya** (17:50).
+**Razones:** Son decisiones de producto que Jürgen tomó sobre la propuesta y en el chat. Escritas aquí, la sesión que implemente cada lote no vuelve a preguntarlas.
+**Consecuencias:** (1) B0 corrió el 14-nov en el iPhone 14 (iOS 27.2.1): la notificación entrega «título␤cuerpo» con el importe y corre con el iPhone bloqueado sin pedir nada; el atajo compartido por iCloud lleva su disparador pero llega apagado (la guía de I2 son dos toques: añadir y encender «Automatización»); el disparador Correo entrega el cuerpo, así que B3 queda permitido. Con eso se fija A1 y se construye B1 (PR de esta sesión; ticket `tickets/done/2026-11-14-atajo-banco-b0-b1.md`). El encargo pidió reglas también para Plin: B1 cubre la unión (seis bancos más genéricas). (2) **sustituye la consecuencia de la entrada «Yala web: Grupos se escribe desde la web con permiso propio»** que pedía revisión de Jürgen antes de producción: esa revisión ya está dada. La ejecuta la sesión de Yala web que tenga el lote; esta no despliega nada.
+**Estado:** Activa
 
 ### [2026-11-14] Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3
 **Contexto:** El PR de ajustes visuales de la bienvenida (13-nov) llamó al tercer acceso «Entrar con iCloud privado». La decisión 51 de 2.3 retiró «iCloud privado» como nombre de sitio («En tu iCloud» / «En tu cuenta de Yala»), y `DosNombresDeSitioTests` lo puso en rojo en 12 idiomas, lo que paraba el merge.
