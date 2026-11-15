@@ -84,6 +84,8 @@ enum FirstAccountCreator {
 
         WidgetDataCache.updateCache(context: context)
         SessionState.shared.incrementDataVersion()
+        // Telemetría del usuario nuevo (card 4b7h): si ya tenía otra, es la segunda cuenta propia.
+        NewUserMetrics.accountCreated(in: context)
         SetupChecklistManager.shared.markCompleted(.firstAccount)
         return account
     }

@@ -9,6 +9,7 @@
 //  modificador para no alargar la cadena de `PanelSheetsModifier`.
 //
 
+import SwiftData
 import SwiftUI
 
 struct PrimerosPasosPanelPresentations: ViewModifier {
@@ -16,6 +17,7 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
     let viewModel: PanelViewModel
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.modelContext) private var modelContext
 
     /// El tutorial terminó (no solo se cerró): al cerrarse su pantalla toca la hoja del final.
     @State private var recordTutorialFinished = false
@@ -58,6 +60,9 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
     /// Cierra el paso 2: el aviso de lo borrado y, con el Panel ya lleno, la guía de la Bandeja.
     private func finishRecordTutorial(deleted: Int) {
         let keptAny = RecordTutorialSession.shared.records.count > deleted
+        // Telemetría del usuario nuevo (card 4b7h): si tras la hoja no queda ningún registro propio, el primero no ha
+        // pasado todavía. Va antes de `finish()`, que cierra el paso y emitiría lo que esperaba.
+        NewUserMetrics.recordTutorialFinished(keptARecord: hasAnyUserRecord())
         RecordTutorialSession.shared.finish()
         cleanupRecords = []
         // Debajo de la cuenta, solo «Últimos registros» (Y23-10): las gráficas se suman después desde «Configurar
@@ -76,6 +81,21 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
             // Que la hoja termine de cerrarse y el Panel se asiente antes de oscurecerlo.
             do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
             if !PlaceGuideCenter.shared.start(.inbox, onFinish: notice) { notice() }
+        }
+    }
+
+    /// Queda algún gasto o ingreso que apuntó la persona: sin el saldo inicial ni los ajustes (`countsAsUserRecord`), sin
+    /// transferencias y sin lo que escribe el puente de Grupos. Sin poder contarlo se da por bueno: borrar solo pasa por la hoja, y lo que no se pudo
+    /// leer no se borró.
+    private func hasAnyUserRecord() -> Bool {
+        do {
+            return try modelContext.fetch(SetupChecklistManager.userRecordsDescriptor())
+                .contains { $0.splitExpenseID == nil && $0.splitSettlementID == nil && $0.transferPairID == nil }
+        } catch {
+            #if DEBUG
+            print("PrimerosPasosPanelPresentations: Error: counting user records: \(error)")
+            #endif
+            return true
         }
     }
 

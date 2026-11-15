@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 import SwiftData
 
 @MainActor
@@ -166,7 +167,19 @@ final class SetupChecklistManager {
     /// Lo que pasa al completar «Primeros pasos»: la oferta de prueba (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
     /// Inyectable porque el de producción escribe en `SessionState` y pide al router, y un test que complete la
     /// lista no debe dejar una oferta armada al resto de la suite.
-    var onAllStepsCompleted: () -> Void = { TrialOfferMoments.note(.setupChecklistCompleted) }
+    ///
+    /// Y23-18: con el mazo, la oferta sube un momento después de la tarjeta «¡Primeros pasos completos!» (1,6 s; 0,2 s
+    /// con Reducir movimiento), como en el prototipo.
+    var onAllStepsCompleted: () -> Void = {
+        guard SetupChecklistManager.shared.showsDeck else {
+            TrialOfferMoments.note(.setupChecklistCompleted)
+            return
+        }
+        UserDefaults.standard.set(true, forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
+        TrialOfferMoments.note(
+            .setupChecklistCompleted,
+            submitDelay: SetupCompleteTrialOfferLogic.offerDelay(reduceMotion: UIAccessibility.isReduceMotionEnabled))
+    }
 
     // MARK: - Init
 
@@ -219,6 +232,9 @@ final class SetupChecklistManager {
         stepSkipped[step] = false
         UserDefaults.standard.set(true, forKey: step.storageKey)
         UserDefaults.standard.removeObject(forKey: step.skippedStorageKey)
+        // Telemetría del usuario nuevo (card 4b7h): el paso hecho y, si no viene «¿Era de prueba?», el primer registro,
+        // presupuesto o pago que esperaba a saber si se quedaba.
+        NewUserMetrics.stepCompleted(step, practicePending: practiceItem != nil)
 
         #if DEBUG
         print("SetupChecklist: Step \(step.rawValue) completed (\(completedCount)/\(totalCount))")
@@ -427,6 +443,7 @@ final class SetupChecklistManager {
             print("SetupChecklist: All steps completed! 🎉")
             #endif
 
+            MetricsService.used(.primerosPasosCompleta)
             onAllStepsCompleted()
         }
     }

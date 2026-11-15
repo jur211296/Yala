@@ -194,6 +194,9 @@ final class AppBootstrapper {
         //      Bajo `-uitest` start() es no-op (guard interno) — cero red en XCUITests.
         MetricsService.start()
         MetricsService.dailyActivePingIfNeeded()
+        // Lo que esperaba un «¿Era de prueba?» que no llegó a contestarse (iOS cerró Yala): se quedó (card 4b7h).
+        NewUserMetrics.releaseWaitingAtLaunch(
+            recordTutorialRunning: SetupChecklistManager.shared.isRecordTutorialRunning)
 
         // 0.55. Track session for upsell frequency capping
         ProUpsellService.shared.incrementSessionCount()
@@ -265,6 +268,21 @@ final class AppBootstrapper {
         if !uiTestActive {
             Task { @MainActor in
                 await repairUnsignedChatExpensesIfNeeded(context: context)
+            }
+        }
+
+        // 2d. El papel de las subcategorías de transferencia y de ajuste (ticket
+        //     `transfer-and-adjustment-subcategories-need-a-stable-role`). En CADA arranque —lo que llega sin papel
+        //     puede llegar por iCloud o por el canal del Modo Nube en cualquier momento— y tras la quiescencia: escribe
+        //     `Subcategory` del store personal. Mientras no corre, `Subcategory.systemRole` deduce el mismo papel.
+        //     `!uiTestActive` como sus vecinos: los seeds de UI se leen con esa deducción.
+        if !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.subcategorySystemRoles", "import not quiescent")
+                    return
+                }
+                SubcategorySystemRoleBackfill.run(context: context)
             }
         }
 
@@ -463,7 +481,7 @@ final class AppBootstrapper {
                 cloudSyncFanOutObserver = NotificationCenter.default.addObserver(
                     forName: .cloudSyncAppliedRemoteChanges, object: nil, queue: .main
                 ) { _ in
-                    Task { @MainActor in SessionState.shared.markRemoteChangePending() }
+                    Task { @MainActor in RemoteChangesFanOut.receive(isApplicationActive: UIApplication.shared.applicationState == .active) }
                 }
             }
             Task { await CloudSyncRuntime.startShared(context: context) }
@@ -894,7 +912,13 @@ final class AppBootstrapper {
             // La guía de «días después» sale una vez: su marca no viaja de una corrida a otra. Y el mazo de Primeros
             // pasos solo se ve en una instalación marcada como nueva: su test la marca (Y23-05, Y23-15).
             UserDefaults.standard.removeObject(forKey: LaterChartsGuideLogic.shownKey)
+            // Y23-18: qué oferta se pidió y el aviso prometido tampoco viajan de una corrida a otra.
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
             if UITestHooks.showsSetupDeck { SetupChecklistManager.shared.markAsNewInstall() }
+            if UITestHooks.showsSetupDeck, let position = UITestHooks.setupDeckPosition {
+                for step in SetupStepID.deck.prefix(max(0, position - 1)) { SetupChecklistManager.shared.markSkipped(step) }
+            }
             // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
             // el siguiente.
             StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }
@@ -1580,6 +1604,11 @@ final class AppBootstrapper {
         GroupNotificationService.shared.setContext(nil)
         // Una foto de widgets pedida y aún sin hacer leería el contexto que se suelta (`WidgetDataCache.updateCache`).
         WidgetDataCache.cancelPendingUpdate()
+        // Barrido del 14-nov (card p9q0): los dos avisos de Grupos reciben el contexto en el chequeo de avisos del arranque,
+        // que solo corre con las notificaciones permitidas. Sin soltarlos, el almacén seguía vivo, el cambio en caliente
+        // abortaba y cerrar sesión en la nube pedía «Vuelve a abrir Yala».
+        GroupSettlementReminderService.shared.setContext(nil)
+        GroupBudgetAlertService.shared.setContext(nil)
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
         raceCleanerModelContext = nil
@@ -1840,6 +1869,10 @@ final class AppBootstrapper {
         // No se pierde nada: `iCloudMismatchAlreadyDetected` sigue en `false`, así que el foreground
         // siguiente lo vuelve a ofrecer si el veredicto de identidad fue que no había cambio.
         guard !appleIDChangeOffered, !appleIDChangeCheckInFlight else { return }
+        // Card gd78: con una entrada a una cuenta a medias el montaje neutro es a propósito (`WelcomeAdoptInFlight`), y
+        // «reinicia para sincronizar con iCloud» volvería a montar neutro: un aviso que no se puede cumplir. Sin marcar el
+        // «ya detectado»: cuando el traspaso aterrice o se deshaga, el primer plano siguiente vuelve a mirar.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
 
         // R1 (relanzamiento cero): la decisión vive en `SwiftDataConfiguration.shouldOfferICloudRestart`
         // (pura, testeable) e incluye el término R9. Sus dos primeros inputs son testigos de lo que ESTE
@@ -2547,8 +2580,10 @@ final class AppBootstrapper {
         }
         // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
+        // Lo apuntado en Yala web llega por la misma cola: antes, se pregunta a la web si hay sesiones abiertas (lote 1).
         Task { @MainActor in
-            if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
+            let webConnected = await ConnectedBrowsersPresence.refreshIfDue(client: ConnectedBrowsersClient())
+            if await BankEmailDraftService.syncIfNeeded(context: context, webConnected: webConnected) > 0 {
                 sessionState.incrementDataVersion()
             }
         }
@@ -3397,6 +3432,10 @@ final class AppBootstrapper {
             !UserDefaults.standard.bool(forKey: ChatUnsignedExpenseRepairService.repairSweepKey)
         else { return }
 
+        // La ventana cierra AHORA, antes de la espera: lo que la persona registre mientras tanto ya
+        // lo escribió un build que firma y no debe voltearse.
+        ChatUnsignedExpenseRepairService.armWindowCloseIfNeeded()
+
         // Gate de quiescencia: el barrido escribe `TransactionItem` (store personal) y hace `save()`;
         // durante el import del restore eso dispara el `_assertionFailure` interno de SwiftData. Si el
         // import no asienta, NO se marca el flag → reintenta en el próximo arranque.
@@ -3633,6 +3672,10 @@ final class AppBootstrapper {
         // Hasta el 2026-09-12, el CAJÓN de la sesión: las notificaciones se siembran en el store de quien
         // está dentro. Con un solo dominio, ese store es `.standard`.
         guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
+        // Card gd78 (medido en el iPhone 14 el 13-nov): con una entrada a una cuenta a medias el onboarding consta hecho
+        // (`onAdoptStarted` lo marca antes de conducir), y sembrar aquí dejaba 7 avisos locales sin linaje: el traspaso
+        // retomado se paraba en «no demuestra que los datos sean de la cuenta». Los avisos de la cuenta bajan con ella.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 

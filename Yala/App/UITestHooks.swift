@@ -116,6 +116,18 @@ final class UITestHooks {
     /// se calla para no tapar lo que cada test busca. Solo para los tests del propio mazo.
     nonisolated static var showsSetupDeck: Bool { hasArg("-uitest-show-setup-deck") }
 
+    /// `-uitest-setup-deck-at <n>`: con `-uitest-show-setup-deck`, el mazo arranca en el paso `n` (1…7, y 8 = completo):
+    /// los anteriores quedan omitidos. Para probar los pasos 6 y 7 y el final (Y23-14, Y23-16, Y23-18) sin recorrer
+    /// los cinco primeros.
+    nonisolated static var setupDeckPosition: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-setup-deck-at", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-later-charts-guide`: la guía de «días después» (Y23-15) puede salir bajo `-uitest`. Solo su XCUITest.
     nonisolated static var showsLaterChartsGuide: Bool { hasArg("-uitest-later-charts-guide") }
 
@@ -216,6 +228,9 @@ final class UITestHooks {
     /// diálogo y lo que hace cada botón son los de producción. No escribe el arm de verdad porque el arranque del XCUITest
     /// lo reanudaría (`ContentView.runLateICloudMirrorCheck`) y borraría la semilla. Solo DEBUG.
     nonisolated static var fakePendingICloudWipe: Bool { hasArg("-uitest-pending-icloud-wipe") }
+    /// El mismo borrado pendiente, pero A MEDIAS (la zona de iCloud ya se borró): la hoja de «Dónde viven tus datos» dice
+    /// la verdad de ese estado (revisión 2.3, decisión 57). Finge solo la ENTRADA, como el de arriba.
+    nonisolated static var fakePendingICloudWipeHalfway: Bool { hasArg("-uitest-pending-icloud-wipe-halfway") }
 
     /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
     /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de
@@ -1314,6 +1329,13 @@ final class UITestHooks {
     /// llega de otro dispositivo.
     nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
 
+    /// `-uitest-seed-pending-settlement-already-settled`: con `-uitest-seed-pending-settlement`, Ana ya saldó en soles con
+    /// otro pago, confirmado. Su pago de S/ 50 por confirmar ya no cabe en la deuda: «Sí, lo recibí» avisa antes de
+    /// confirmarlo (Grupos 2.3, pago por confirmar, opción B).
+    nonisolated static var seedPendingSettlementAlreadySettled: Bool {
+        hasArg("-uitest-seed-pending-settlement-already-settled")
+    }
+
     /// `-uitest-seed-group-sale`: con el perfil `grupos`, un grupo más, «Ventas con Ana», con una venta tuya a Ana de S/ 50
     /// ya puenteada (por cobrar) y el pago de Ana de S/ 50 por confirmar, que la cobra entera (Grupos B · card 10).
     nonisolated static var seedGroupSale: Bool { hasArg("-uitest-seed-group-sale") }
@@ -1326,6 +1348,10 @@ final class UITestHooks {
     /// es «Lucía», no «Tú», para ver dónde la app lo cambia. Y «Grupo sin gastos», recién creado y sin nada apuntado.
     nonisolated static var seedGroupCrossDebts: Bool { hasArg("-uitest-seed-group-cross-debts") }
     nonisolated static let seededCrossDebtsGroupName = "Piso compartido"
+    /// `-uitest-seed-group-cross-debts-simplified`: con la semilla de arriba, «Piso compartido» con «Menos pagos»
+    /// ENCENDIDO (lote chico de 2.3, decisión 36): juntadas quedan Beto → Ana S/ 70 y tú → Ana S/ 10, distintas de las de
+    /// cada par (tú → Ana 40, Beto → Ana 40, Beto → tú 30), así que Saldos enseña la línea al pie.
+    nonisolated static var seedGroupCrossDebtsSimplified: Bool { hasArg("-uitest-seed-group-cross-debts-simplified") }
     nonisolated static let seededEmptyGroupName = "Grupo sin gastos"
 
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence

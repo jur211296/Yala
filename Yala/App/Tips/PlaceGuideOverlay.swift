@@ -171,7 +171,7 @@ private struct PanelPlaceGuideLayer: View {
     var body: some View {
         if let stage = center.stage, stage.target.tab == .panel {
             ZStack {
-                PlaceGuideScrim(cutout: nil) { center.skip() }
+                PlaceGuideScrim(cutout: nil) { center.dismiss() }
                     .ignoresSafeArea()
                 GeometryReader { proxy in
                     card(stage, proxy: proxy)
@@ -253,8 +253,8 @@ private struct MorePlaceGuideLayer: View {
                 let highlight = rects.dropFirst().reduce(rects.first) { $0?.union($1) }
                     .map { $0.insetBy(dx: -DS.Spacing.sm, dy: -DS.Spacing.sm) }
                     .flatMap { visible.contains($0) ? $0 : nil }
-                // Tocar lo resaltado la cumple, como «Entendido»; tocar fuera, la omite.
-                PlaceGuideScrim(cutout: highlight, onCutoutTap: { center.advance() }) { center.skip() }
+                // Tocar lo resaltado la cumple, como «Entendido»; tocar fuera, la cierra sin omitirla.
+                PlaceGuideScrim(cutout: highlight, onCutoutTap: { center.advance() }) { center.dismiss() }
                 if let highlight {
                     let below = highlight.midY < proxy.size.height * 0.5
                     VStack(spacing: 0) {

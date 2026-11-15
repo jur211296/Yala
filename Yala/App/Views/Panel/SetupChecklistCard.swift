@@ -28,6 +28,8 @@ struct SetupChecklistCard: View {
 
     @State private var showCelebration = false
     @State private var showsAllSteps = false
+    /// El paso tocado en «Ver los 7 pasos», que se abre cuando la hoja termina de cerrarse.
+    @State private var stepOpenedFromList: SetupStepID?
     @Environment(\.self) private var environment
 
     /// Si el texto sobre el acento es claro (blanco en los temas índigo) u oscuro (negro en Teal, Rosa y Minimalista).
@@ -66,10 +68,17 @@ struct SetupChecklistCard: View {
                     DS.Haptic.success()
                 }
             }
-            .sheet(isPresented: $showsAllSteps) {
-                SetupStepsListSheet(manager: manager)
+            .sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList) {
+                SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 })
             }
         }
+    }
+
+    /// Abre el paso tocado en la lista, ya con la hoja cerrada (el paso puede presentar su propia pantalla).
+    private func openStepTappedInList() {
+        guard let step = stepOpenedFromList else { return }
+        stepOpenedFromList = nil
+        onStepTapped(step)
     }
 
     // MARK: - Deck
@@ -162,7 +171,50 @@ struct SetupChecklistCard: View {
 
     // MARK: - Completed View
 
+    /// Y23-18: en una instalación con el mazo, «¡Primeros pasos completos!» con chispas y «Cerrar» (prototipo v35). La
+    /// lista de 2.2 conserva su final de siempre.
+    @ViewBuilder
     private var completedView: some View {
+        if manager.showsDeck {
+            deckCompletedView
+        } else {
+            legacyCompletedView
+        }
+    }
+
+    private var deckCompletedView: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark")
+                .font(DS.Typography.headline.weight(.bold))
+                .foregroundStyle(theme.onAccent)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(theme.accent))
+                .accessibilityHidden(true)
+            Text(L10n.PrimerosPasos23.Final.doneTitle)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("setup_deck_done_title")
+            Text(L10n.PrimerosPasos23.Final.doneMessage)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thSecondaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(L10n.Action.close) { manager.dismissCompleted() }
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.thAccentText)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityIdentifier("setup_deck_done_close")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(DS.Spacing.lg)
+        .background(DS.Semantic.infoBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .accessibilityElement(children: .contain)
+    }
+
+    private var legacyCompletedView: some View {
         HStack {
             VStack(spacing: DS.Spacing.sm) {
                 // Con algún paso saltado no dice «¡Ya eres experto!» (UX 2.2 · L5-2).

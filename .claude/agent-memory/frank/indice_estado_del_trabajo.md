@@ -103,4 +103,6 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [wiped-no-llega-con-la-ventana-abierta](project_wiped_no_llega_con_la_ventana_abierta.md) — PR #207 (2026-09-22) — el séptimo camino a «Empezar desde cero» ya apaga la ventana de sesión; ticket en qa con guion de…
 - [QA guiado 2.1 sigue abierto](project_qa_guiado_2_1_espera_tf19.md) — tras el TF19 espera t2q8, 840m, blqa, z81w y un TF20; tanda en Yala Dev.
 - [Prueba de cortesía de IA espera iPhone](project_prueba_cortesia_ia_espera_iphone.md) — 12-nov: Y23-09 en qa; vaciar Yala Dev chocaba con el encargo.
-- [Yala web espera decisiones](project_yala_web_espera_decisiones.md) — 12-nov: maqueta y 6 lotes en el artifact; leer su db antes del lote 0.
+- [Yala web: lotes 0-3 en staging](project_yala_web_espera_decisiones.md) — 14-nov: lote 3 = Grupos en lectura y escritura (opción A), solo staging; producción tras revisión de Jürgen; device-QA pendiente.
+- [Doce PR de 2.3 en desbloqueo](project_doce_prs_de_2_3_en_desbloqueo.md) — 14-nov: colgados por conflicto en cola de auto-merge; dos cadenas `desbloquear-pr-*`, cards en blocked.
+- [Fallo conocido de UI en 2.3](project_fallos_conocidos_ui_2_3.md) — IPhoneLandscape con XCTExpectFailure por c94z; quitarlo al decidir Jürgen.

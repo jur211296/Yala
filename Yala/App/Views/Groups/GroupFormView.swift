@@ -46,7 +46,10 @@ struct GroupFormView: View {
     @State private var name: String = ""
     @State private var iconName: String = "person.2.fill"
     @State private var colorHex: String = "#8B5CF6"
-    @State private var simplifyDebts: Bool = false
+    /// Decisión 36 de la revisión 2.3 (A1): «Menos pagos entre ustedes» nace ENCENDIDO en un grupo nuevo. Pedía «de 3 o
+    /// más», pero al crear aún no hay nadie más; con dos personas juntar las deudas da lo mismo que no juntarlas, así que
+    /// solo se nota en los de 3 o más. Al editar, `populateFromGroup` pone la del grupo: los existentes no cambian.
+    @State private var simplifyDebts: Bool = GroupFormDefaults.simplifyDebtsForNewGroup
     @State private var showDebtsInSingleCurrency: Bool = false
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var defaultSplitType: SplitType = .equal
@@ -290,6 +293,7 @@ struct GroupFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Toggle(L10n.GroupsCreate.simplify, isOn: $simplifyDebts)
                         .font(DS.Typography.body)
+                        .accessibilityIdentifier("group_form_simplify_toggle")
 
                     Text(L10n.GroupsCreate.simplifyHint)
                         .font(DS.Typography.captionSmall)
@@ -395,7 +399,11 @@ struct GroupFormView: View {
         let preferredCurrency = isFirstGroupSetup
             ? CurrencyDefaults.detectCurrencyFromRegion()
             : appPreferences.defaultCurrencyCode
-        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : preferredCurrency.rawValue
+        // Decisión 3 de la revisión 2.3 (opción A): al editar un grupo con «una sola moneda» apagado, el grupo conserva
+        // la suya; la divisa preferida solo vale para uno nuevo.
+        let currencyCode = showDebtsInSingleCurrency
+            ? selectedCurrency.rawValue
+            : (group?.currencyCode ?? preferredCurrency.rawValue)
 
         do {
             if let group {

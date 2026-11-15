@@ -99,7 +99,12 @@ struct DosNombresDeSitioTests {
     ]
 
     /// Fuera a propósito: otra fila (decisión 54 la funde) y el nombre de un avatar.
-    private static let outOfScope: Set<String> = ["icloud.title", "profile.icon.cloud"]
+    /// `bienvenida23.access.iCloud` («Entrar con iCloud privado») es la ÚNICA excepción a la
+    /// decisión 51: Jürgen (2026-11-14) la quiere en el botón de la bienvenida para dejar claro
+    /// que es la vía privada. No abre la puerta a ningún otro texto.
+    private static let outOfScope: Set<String> = [
+        "icloud.title", "profile.icon.cloud", "bienvenida23.access.iCloud",
+    ]
 
     private static let icloudTitleKeys = [
         "storage.status.icloudTitle", "welcome.new.privateTitle", "settings.dataLocationSubtitleICloud",

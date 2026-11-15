@@ -47,6 +47,37 @@ final class InviteRecoveryPasteVisibleUITests: XCTestCase {
                                  "«Unirme al grupo» tapa «Pegar»: \(paste.frame) bajo \(join.frame).")
     }
 
+    /// Card «el aviso de enlace no válido queda debajo de "Unirme al grupo"» (barrido del iPhone 14, 14-nov): con el teclado
+    /// abierto y un texto largo que no es de Yala, el aviso rojo tiene que leerse entero por encima del botón.
+    func test_longInvalidLinkWithKeyboard_invalidLinkNoticeIsAboveJoin() {
+        let text = "https://example.com/esto-no-es-una-invitacion-de-yala-sino-un-enlace-cualquiera-bastante-largo-"
+            + "que-ocupa-varias-lineas-del-campo-de-texto-como-el-del-barrido-del-catorce-de-noviembre-con-mas-texto"
+        let app = XCUIApplication()
+        app.launchForUITest(skipOnboarding: false, seed: nil, extraArguments: [XCUIApplication.welcomeProvidersArgument])
+        app.openWelcomeGroupsPaths()
+        let joinCard = app.buttons["welcome_groups_join"]
+        XCTAssertTrue(joinCard.waitForExistence(timeout: 10))
+        joinCard.tap()
+
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText(text)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "El teclado no está abierto.")
+        let notice = app.staticTexts["invite_recovery_invalid_link"]
+        XCTAssertTrue(notice.waitForExistence(timeout: 10), "No salió el aviso de enlace no válido.")
+        let join = app.buttons["primary_button"]
+        XCTAssertTrue(join.exists)
+        // Que el teclado y el desplazamiento se asienten antes de medir.
+        let settled = expectation(description: "asentado")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { settled.fulfill() }
+        wait(for: [settled], timeout: 3)
+
+        capture(app, "aviso-enlace-no-valido-con-teclado")
+        XCTAssertLessThanOrEqual(notice.frame.maxY, join.frame.minY,
+                                 "«Unirme al grupo» tapa el aviso: \(notice.frame) bajo \(join.frame).")
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name

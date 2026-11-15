@@ -45,7 +45,7 @@
 "settings.tabBarConfig" = "Bottom tabs";
 "common.color" = "Colour";
 "budgets.widget.noFavorites.title" = "No favourite budgets";
-"budgets.widget.noFavorites.message" = "Mark budgets as favourites in Settings > Budgets to see them here.";
+"budgets.widget.noFavorites.message" = "Mark budgets as favourites in Configure Panel > Budgets on the Panel to see them here.";
 "budgets.widget.selectFavorites" = "Select favourites";
 "cashFlowPlan.description" = "We analysed your last 6 months to build your plan. Review and adjust as needed.";
 "cashFlowPlan.lineNameHint" = "You can customise it";
@@ -844,7 +844,8 @@
 "budgets.editor.start.date" = "Start Date";
 "budgets.empty.message" = "Create budgets to better control your spending.";
 "budgets.empty.title" = "You don't have any budgets yet";
-"budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
+"budgets.exceeded.overByAdjust %@" = "You went over by %@. Adjust the limit?";
+"budgets.exceeded.adjustLimit" = "Adjust limit";
 "budgets.favorites.previewTitle" = "This is how it will look on the Panel";
 "budgets.includeSharedExpenses" = "Count my share of group expenses";
 "budgets.includeSharedExpensesHint" = "When off, only your personal expenses count.";
@@ -3750,6 +3751,10 @@
 "groups.openingBalance.approvalPromptSkip" = "No, start at zero";
 "groups.openingBalance.errorNotAdmin" = "Only a group admin can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
+"groups.openingBalance.replaceTitle" = "There's already an opening balance between %1$@ and %2$@";
+"groups.openingBalance.replaceMessage" = "Right now it says: %@. If you continue, it's replaced by the one you just entered.";
+"groups.openingBalance.replaceConfirm" = "Replace";
+"groups.openingBalance.errorLockedBySettlements" = "The people in this opening balance already have confirmed payments, so it can't be changed or removed any more.";
 "groups.openingBalance.serverRejected.title" = "Your change didn't reach the group";
 "groups.openingBalance.serverRejected.notAdmin" = "Only the group's owner or an admin can change opening balances, and you aren't one right now. The balance goes back to how it is in the group.";
 "groups.openingBalance.serverRejected.locked" = "The people in that opening balance already have confirmed payments, so it can't be changed any more. The balance goes back to how it is in the group.";
@@ -3860,7 +3865,7 @@
 "storage.adopt.body" = "Your data is already in your Yala account. Let’s use it on this device.";
 "storage.adopt.button" = "Use on this device";
 "storage.revert.title" = "Go back to your iCloud";
-"storage.revert.body" = "Your data will live on your device and in your iCloud, without losing anything.";
+"storage.revert.body" = "Your data comes back to this device and to your iCloud. Before you start, here’s what happens to each thing.";
 "storage.revert.button" = "Go back to your iCloud";
 "storage.revert.ineligible" = "You can’t go back to your iCloud from this device right now.";
 "storage.sync.title" = "Sync";
@@ -3880,12 +3885,9 @@
 "storage.confirm.migrate2Title" = "Are you sure?";
 "storage.confirm.migrate2Body" = "On this device, your data will move to your Yala account.";
 "storage.confirm.migrate2Confirm" = "Yes, move to my Yala account";
-"storage.confirm.revertTitle" = "Go back to your iCloud?";
-"storage.confirm.revertBody" = "Your data goes back to living on this device and in your iCloud. You don't lose anything.";
 "storage.confirm.revertContinue" = "Continue";
 "storage.confirm.revert2Title" = "Are you sure?";
 "storage.confirm.revert2Body" = "On this device, your data will go back to your iCloud.";
-"storage.confirm.revert2Confirm" = "Yes, go back to my iCloud";
 "storage.errors.title" = "Something went wrong";
 "storage.errors.generic" = "Something didn’t work. Please try again.";
 "storage.errors.adoptOtherAccount" = "That isn’t the account you were turning on for this device. Try again with the same account.";
@@ -4018,8 +4020,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Downloading your data…";
-"welcome.cloud.cancelAdoptBody" = "This device didn’t change anything you have in your Yala account. You’ll go back to the start. Whenever you like, you can sign in to your account again with “I already have an account”.";
-"welcome.cloud.cancelAdoptEffectBody" = "What you have on this device is still here, as before. You’ll go back to the start. Whenever you like, you can sign in to your account again with “I already have an account”.";
+"welcome.cloud.cancelAdoptBody" = "This device didn’t change anything you have in your Yala account. You’ll go back to the start. Whenever you like, you can sign in to your account again from the start.";
+"welcome.cloud.cancelAdoptEffectBody" = "What you have on this device is still here, as before. You’ll go back to the start. Whenever you like, you can sign in to your account again from the start.";
+"welcome.cloud.cancelling" = "Cancelling…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Groups needs iCloud";
@@ -4243,7 +4246,7 @@
 "settings.deleteAccountViewGroups" = "View my groups";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Your old iCloud copy (from before your Yala account) is left untouched: if you open Yala again, you'll see it as a fresh reinstall.";
+"settings.deleteAccountFrozenICloudNote" = "If you used Yala with your iCloud before creating your account, that copy stays in your iCloud: deleting your Yala account doesn’t erase it.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "In older (iCloud) groups, your name may still be visible to their members.";
@@ -4442,8 +4445,6 @@
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Everything is deleted, for good.";
 
-/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "This is how you stop using your Yala account on this device: it’s paused in case you come back.";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "Your account";
@@ -4490,16 +4491,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "You'll keep using your current Yala account, so your data and your groups live in the same account.";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "Your current Yala account already has personal finances, so it can’t take this device’s. To move your data to another account, first unlink this one in “Groups”.";
+"storage.migrate.refusedPersonalData" = "Your current Yala account already has personal finances, so it can’t take this device’s. To move your data to another account, first tap “Change account”.";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Your groups use another account, and this device can only have one Yala account. To move your data to your Yala account, sign in with your groups account or unlink it first in “Groups”.";
+"storage.migrate.refusedOtherGroups" = "Your groups use another account, and this device can only have one Yala account. To move your data to your Yala account, sign in with your groups account or tap “Change account” first.";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "With your current Yala account you went back to your iCloud, and moving to it again isn’t available yet.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Your current Yala account may belong to someone else: it was already signed in when this device started fresh. To choose yours, unlink it in “Groups” and tap “Move to your Yala account” again.";
+"storage.migrate.refusedFreshStart" = "Your current Yala account may belong to someone else: it was already signed in when this device started fresh. To choose yours, tap “Change account”, then tap “Move to your Yala account” again.";
 "storage.migrate.refusedOtherDevice" = "There’s an unfinished cloud activation for this account. If you started it here, try again in an hour; if it was on another of your devices, finish it there.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -5255,16 +5256,16 @@
 "storage.errors.identityCheck" = "We couldn’t verify your account. Try again in a moment. Nothing has changed.";
 "storage.migrateBlock.personalDataTitle" = "This account already has its own data";
 "storage.migrateBlock.personalDataBody" = "Nothing has changed. To move your data to a Yala account, use another account. To use that account’s data here, sign out and sign in with it.";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "Nothing has changed. To use that account’s data here, sign out and sign in with it. To move your data to another account, first unlink this one in “Groups”.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Nothing has changed. To use that account’s data here, sign out and sign in with it. To move your data to another account, first tap “Change account”.";
 "storage.migrateBlock.otherGroupsTitle" = "You already use another account for your groups";
-"storage.migrateBlock.otherGroupsBody" = "Nothing has changed. This device can only have one Yala account, and your groups already use another one. To move your data to your Yala account, sign in with your groups account or, if you’d rather use another one, unlink it first in “Groups”.";
-"storage.migrateBlock.otherGroupsBodyEmail" = "Nothing has changed. This device can only have one Yala account, and your groups already use %@. To move your data to your Yala account, sign in with that account or, if you’d rather use another one, unlink it first in “Groups”.";
+"storage.migrateBlock.otherGroupsBody" = "Nothing has changed. This device can only have one Yala account, and your groups already use another one. To move your data to your Yala account, sign in with your groups account or, if you’d rather use another one, tap “Change account” first.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Nothing has changed. This device can only have one Yala account, and your groups already use %@. To move your data to your Yala account, sign in with that account or, if you’d rather use another one, tap “Change account” first.";
 "storage.migrateBlock.returnedTitle" = "With this account you went back to your iCloud";
 "storage.migrateBlock.returnedBody" = "Moving to it again isn’t available yet. Nothing has changed.";
 "storage.migrateBlock.useAnotherAccount" = "Use another account";
 "storage.migrateBlock.appleSameAccountNote" = "With Apple, Yala always uses this device’s account. To use another one, choose Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "This account may belong to someone else";
-"storage.migrateBlock.freshStartSessionBody" = "Nothing has changed. Your groups use an account that was already signed in on this device, and since this device started fresh, it may belong to someone else. To move your data to your Yala account, unlink it in “Groups” and tap “Move to your Yala account” again: you’ll be able to choose your account.";
+"storage.migrateBlock.freshStartSessionBody" = "Nothing has changed. Your groups use an account that was already signed in on this device, and since this device started fresh, it may belong to someone else. To move your data to your Yala account, tap “Change account”, then tap “Move to your Yala account” again: you’ll be able to choose your account.";
 "storage.migrateBlock.otherDeviceTitle" = "There’s an unfinished cloud activation for this account";
 "storage.migrateBlock.otherDeviceBody" = "Nothing has changed. If you started it on this device, try again in an hour. If it was on another of your devices, finish it there.";
 
@@ -5551,7 +5552,7 @@
 "accountDetail.empty" = "No activity in this period";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Once archived, this account stops counting towards your totals and statistics, and its records are hidden in Records. To keep it counting, turn off \"Exclude from statistics\".";
+"account.archiveKeepsHistoryNotice" = "An archived account doesn't count towards your balance and doesn't show up among your Panel accounts or when you add a record. Its expenses and income still count in the Panel, Records and Statistics.";
 
 
 /* Chat draft card (Yala IA) — redesign A */
@@ -5703,13 +5704,24 @@
 "storage.pendingICloudWipe.title" = "You have a deletion that didn't finish";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "You asked to delete your iCloud data earlier and it didn't finish. If you move to your Yala account, that deletion is cancelled.";
+"storage.pendingICloudWipe.body" = "You asked to delete your data and start over, and it didn’t finish. If you move to your Yala account, that deletion won’t happen and your iCloud data stays.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Turn on without deleting";
+"storage.pendingICloudWipe.proceed" = "Move to my Yala account and keep my iCloud data";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Not now";
+"storage.pendingICloudWipe.bodyHalfway" = "What was in your iCloud is already deleted. If you move to your Yala account, what’s left on this device comes with you.";
+"storage.pendingICloudWipe.proceedHalfway" = "Move to my Yala account with what’s left here";
+"storage.pendingICloudWipe.proceedDetail" = "The deletion won’t happen: you move to your Yala account and your iCloud data stays there.";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "The deletion won’t finish: you move to your Yala account with what’s left on this device.";
+"storage.pendingICloudWipe.finish" = "Finish deleting and start over";
+"storage.pendingICloudWipe.finishDetail" = "Your data is deleted from this device and from your iCloud. No copy is kept.";
+"storage.pendingICloudWipe.finishDetailHalfway" = "What’s left on this device is deleted. No copy is kept.";
+"storage.pendingICloudWipe.finishConfirmBody" = "Your data is deleted from this device and from your iCloud, including anything you created since you asked, and you start over. No copy is kept.";
+"storage.pendingICloudWipe.finishDetailWithGroups" = "Your data is deleted from this device and from your iCloud. No copy is kept. Your groups and your Yala account are also removed from this device.";
+"storage.pendingICloudWipe.finishDetailHalfwayWithGroups" = "What’s left on this device is deleted. No copy is kept. Your groups and your Yala account are also removed from this device.";
+"storage.pendingICloudWipe.finishConfirmBodyWithGroups" = "Your data is deleted from this device and from your iCloud, including anything you created since you asked, and you start over. No copy is kept. Your groups and your Yala account are also removed from this device.";
 
 /* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
 "welcome.privateICloud.cancelledInCloudTitle" = "A deletion didn't finish";
@@ -5969,15 +5981,10 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Checking your iCloud…";
 "storage.revert.prior.title" = "Your iCloud already has Yala data";
-"storage.revert.prior.body" = "This device’s iCloud has Yala data that isn’t in your account: %@. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
-"storage.revert.prior.bodyNoCount" = "This device’s iCloud has Yala data that isn’t in your account. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
 "storage.revert.prior.groupRecords" = "%d group records";
 "storage.revert.prior.groupsNote" = "Group records may arrive without their group.";
 "storage.revert.prior.merge" = "Add it to my data";
 "storage.revert.prior.discard" = "Start without it";
-"storage.revert.prior.discardConfirmTitle" = "Delete it from your iCloud?";
-"storage.revert.prior.discardConfirmBody" = "It’s deleted from your iCloud and from the devices that use it with this Apple ID. No copy is kept and we can’t recover it. Then going back to your iCloud starts.";
-"storage.revert.prior.discardConfirm" = "Delete and go back to your iCloud";
 "storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
 "storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
 "storage.revert.prior.stalledTitle" = "iCloud took too long to respond";
@@ -5987,6 +5994,26 @@
 "storage.revert.prior.wiping" = "Deleting the earlier data… %d so far";
 "storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this device";
 "storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this device isn’t signed in to iCloud. Sign in from Settings and try again.";
+"storage.revert.sheet.title" = "Go back to your iCloud";
+"storage.revert.sheet.dataTitle" = "Your data";
+"storage.revert.sheet.dataDetail" = "Comes down to this device and goes up to your iCloud.";
+"storage.revert.sheet.accountTitle" = "Your Yala account";
+"storage.revert.sheet.accountDetail" = "Stays signed in for your groups.";
+"storage.revert.sheet.storedTitle" = "What’s in it";
+"storage.revert.sheet.storedDetail" = "Your finances stay saved, unused.";
+"storage.revert.sheet.cloudAgainTitle" = "Moving your data back to it";
+"storage.revert.sheet.cloudAgainDetail" = "Not possible today.";
+"storage.revert.sheet.continue" = "Continue";
+"storage.revert.sheet.priorBody" = "This device’s iCloud has Yala data that isn’t in your account: %@.";
+"storage.revert.sheet.priorBodyNoCount" = "This device’s iCloud has Yala data that isn’t in your account.";
+"storage.revert.sheet.mergeDetail" = "It shows up alongside yours.";
+"storage.revert.sheet.discardDetail" = "Deletes it from your iCloud and from the devices that use it with this Apple ID. No copy is kept.";
+"storage.revert.sheet.confirmTitle" = "Go back to your iCloud?";
+"storage.revert.sheet.confirmMerge" = "Added to your data: %@.";
+"storage.revert.sheet.confirmMergeNoCount" = "The Yala data that was in your iCloud is added to yours.";
+"storage.revert.sheet.confirmDiscard" = "Deleted from your iCloud: %@. No copy is kept and we can’t recover it.";
+"storage.revert.sheet.confirmDiscardNoCount" = "The Yala data that was in your iCloud is deleted. No copy is kept and we can’t recover it.";
+"storage.revert.sheet.confirmDiscardButton" = "Delete and go back to your iCloud";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Remove here";
@@ -6904,15 +6931,14 @@
 "l20n.sheet.anyPhoneTitle" = "Sign in from any device";
 "l20n.sheet.anyPhoneDetail" = "Without relying on iCloud.";
 "l20n.sheet.seesTitle" = "Yala can see your data";
-"l20n.sheet.seesDetail" = "To give you support and smart features.";
+"l20n.sheet.seesDetail" = "To give you support and smart features. There's no end-to-end encryption.";
 "l20n.sheet.accessTitle" = "You sign in with Apple or Google";
 "l20n.sheet.accessDetail" = "If you lose that access, there's no Yala password: export a copy first.";
 "l20n.sheet.exportCopy" = "Export a copy first";
-"l20n.sheet.details" = "See the details";
-"l20n.sheet.hideDetails" = "Hide the details";
-"l20n.sheet.detailsAccess" = "There's no Yala password and no email recovery: if you lose access to your Apple or Google account, you lose access to your data. That's why it's worth exporting a copy first.";
 "l20n.sheet.willMove" = "%1$@, %2$@ and %3$@ will move.";
 "l20n.sheet.continueCurrent" = "Continue with your current account";
+"l20n.sheet.photosTitle" = "Your receipt photos don't come along";
+"l20n.sheet.photosDetail" = "Yala doesn't keep them or upload them to your account.";
 "l20n.relaunch.almostTitle" = "Almost done";
 "l20n.relaunch.doneSignedOut" = "Signed out";
 "l20n.relaunch.afterSignOut" = "When you open it again, Yala finishes removing your data from this device.";
@@ -7928,7 +7954,6 @@
 "account.saveErrorPartial" = "Not everything could be saved. Some of the changes may already show; check the account and save again.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "From a receipt";
 "receiptSplit.entry.hint" = "Reads a receipt from a photo or your voice and splits it by line";
 "receiptSplit.title" = "From a receipt";
 "receiptSplit.photo.title" = "Receipt photo";
@@ -7974,6 +7999,15 @@
 "receiptSplit.failure.read.message" = "Something went wrong. Try again in a moment.";
 "receiptSplit.failure.noLines.title" = "I couldn’t find lines with amounts";
 "receiptSplit.failure.noLines.message" = "Try a closer photo of the receipt in good light, or dictate it.";
+"receiptSplit.failure.dailyLimitFree.title" = "You've split today's receipts";
+"receiptSplit.failure.dailyLimitFree.message" = "Tomorrow you can split more receipts for free. With Yala Pro you get many more each day.";
+"receiptSplit.failure.dailyLimit.title" = "You've reached today's receipt limit";
+"receiptSplit.failure.dailyLimit.message" = "You can keep splitting receipts tomorrow.";
+"receiptSplit.text.hint" = "Type the expense and the AI splits it";
+"receiptSplit.text.title" = "Type the expense";
+"receiptSplit.text.placeholder" = "pizza 40 Ana and me, steak 35 Ben, drinks 18 everyone";
+"receiptSplit.text.footer" = "Each item with its amount and who had it. Anything without a name is split among everyone.";
+"receiptSplit.failure.noLines.textMessage" = "Type each item with its amount, for example “pizza 40”.";
 "receiptSplit.failure.noConnection.message" = "Connect to the internet to read the receipt.";
 "receiptSplit.failure.mic.message" = "Allow access in Settings to dictate the receipt.";
 
@@ -8150,6 +8184,29 @@
 "groups.discard.paymentTitle" = "Discard this payment?";
 "groups.discard.openingBalanceTitle" = "Discard this opening balance?";
 "groups.expense.groupChangedNotice" = "You changed groups: what you typed stays; who paid and the split start over.";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "Used by your groups";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "Change account";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "Unlink your groups account?";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "Either way, your groups leave this device and stay in your account: they come back if you connect it again. The records of what you’re owed or what you owe disappear from your accounts.";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "The expenses you paid stay in your accounts as regular records.";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "The expenses you paid stay in your accounts as regular records: %1$d (%2$@).";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "The expenses you paid also leave your accounts.";
 "statistics.categoryDetail.seeInRecords" = "View in Records";
 
 /* Buscar en Registros (decisión 14 de 2.3) */
@@ -8234,19 +8291,19 @@
 "bienvenida23.showcase.groupsTitle" = "Clear accounts";
 "bienvenida23.showcase.groupsTitleAccent" = "with your friends.";
 "bienvenida23.showcase.receipt.name" = "Reads your receipts";
-"bienvenida23.showcase.receipt.caption" = "Point the camera at the receipt. Yala reads it and records it.";
+"bienvenida23.showcase.receipt.caption" = "Yala reads your receipt and logs it.";
 "bienvenida23.showcase.voice.name" = "Log it with your voice";
-"bienvenida23.showcase.voice.caption" = "Tell Yala what you spent, the way you'd tell a friend.";
+"bienvenida23.showcase.voice.caption" = "Tell Yala what you spent.";
 "bienvenida23.showcase.organize.name" = "Sorts your spending";
-"bienvenida23.showcase.organize.caption" = "Yala groups your spending by category, so you see where your money goes.";
+"bienvenida23.showcase.organize.caption" = "See where your money goes.";
 "bienvenida23.showcase.split.name" = "Split any expense";
-"bienvenida23.showcase.split.caption" = "A dinner, the rent or a trip: Yala splits it and keeps track.";
+"bienvenida23.showcase.split.caption" = "Yala splits it and keeps track.";
 "bienvenida23.showcase.budget.name" = "Stick to a budget";
-"bienvenida23.showcase.budget.caption" = "Set a limit and see how much you have left.";
+"bienvenida23.showcase.budget.caption" = "Set a limit and see what's left.";
 "bienvenida23.showcase.whoOwes.name" = "Who owes whom";
-"bienvenida23.showcase.whoOwes.caption" = "No spreadsheets: everyone sees their part.";
+"bienvenida23.showcase.whoOwes.caption" = "Everyone sees their share.";
 "bienvenida23.showcase.settle.name" = "Settle up in one tap";
-"bienvenida23.showcase.settle.caption" = "Record the payment and everything goes back to zero.";
+"bienvenida23.showcase.settle.caption" = "Log the payment and you're even.";
 "bienvenida23.showcase.example" = "Example";
 "bienvenida23.showcase.groupsDoorLink" = "Split expenses with friends";
 "bienvenida23.showcase.pause" = "Pause the showcase";
@@ -8254,7 +8311,7 @@
 "bienvenida23.showcase.position" = "%1$@, %2$d of %3$d";
 "bienvenida23.access.google" = "Continue with Google";
 "bienvenida23.access.apple" = "Continue with Apple";
-"bienvenida23.access.iCloud" = "Continue with my iCloud";
+"bienvenida23.access.iCloud" = "Continue with private iCloud";
 "bienvenida23.access.iCloudLine" = "Your data only on your Apple devices.";
 "bienvenida23.access.groupsNeedAccount" = "To share expenses with other people you need a Yala account.";
 "bienvenida23.demo.lunch" = "Lunch";
@@ -8309,7 +8366,6 @@
 "bienvenida23.groups.accountOnlyBody" = "I'll go to Groups and set it up later";
 "bienvenida23.access.createTitle" = "Let's create your account";
 "bienvenida23.access.createBody" = "That email doesn't have a Yala account yet.";
-"bienvenida23.access.otherProviderNote" = "Did you create your account with %1$@? Continue with %1$@: with %2$@ it would be a new account.";
 "bienvenida23.access.useAnotherAccount" = "Use another account";
 "bienvenida23.access.existsTitle" = "You already have an account";
 "bienvenida23.access.existsBody" = "That email already has a Yala account. Shall we load your data and go in?";
@@ -8660,3 +8716,255 @@
 
 /* VoiceOver: name of the custom color picker in the icon/color sheet */
 "a11y.selectores.customColor" = "Custom colour";
+
+/* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
+"pasos23.home.eyebrow" = "Log without opening Yala";
+"pasos23.home.start" = "Start";
+"pasos23.home.methodEyebrow" = "%1$d of %2$d · %3$@";
+"pasos23.home.progress" = "%1$d of %2$d done!";
+"pasos23.home.keepGoing" = "Keep going";
+"pasos23.home.now" = "Now: %@";
+"pasos23.home.finish" = "Finish";
+"pasos23.home.widget.name" = "Widget";
+"pasos23.home.applePay.name" = "Apple Pay";
+"pasos23.home.share.name" = "Share";
+"pasos23.home.siri.name" = "Siri";
+"pasos23.home.widget.part.title" = "A widget on your Home Screen";
+"pasos23.home.widget.part.message" = "One tap and you're in New record.";
+"pasos23.home.applePay.part.title" = "Every Apple Pay payment";
+"pasos23.home.applePay.part.message" = "You pay with your iPhone and it lands in the Inbox for you to approve.";
+"pasos23.home.applePay.part.paid" = "You paid %@ at the supermarket";
+"pasos23.home.applePay.part.push" = "%@ payment to review. Tap to approve it.";
+"pasos23.home.share.part.title" = "Share a photo with Yala";
+"pasos23.home.share.part.message" = "From Photos, WhatsApp or your bank: share the receipt and Yala reads it.";
+"pasos23.home.siri.part.title" = "Tell Siri";
+"pasos23.home.siri.part.message" = "Hands-free, while you pay.";
+"pasos23.home.siri.part.ask" = "“Hey Siri, note an expense in Yala”";
+"pasos23.home.siri.part.answer" = "What do you want to log?";
+"pasos23.home.widget.title" = "Add the widget";
+"pasos23.home.widget.subtitle" = "You add it yourself from your Home Screen. It takes half a minute.";
+"pasos23.home.widget.step1" = "Touch and hold an empty spot on your Home Screen.";
+"pasos23.home.widget.step2" = "Tap “Edit”, then “Add Widget”.";
+"pasos23.home.widget.step3" = "Search for “Yala” and choose “New record”.";
+"pasos23.home.widget.step4" = "Tap “Add Widget” and place it wherever you like.";
+"pasos23.home.widget.done" = "Done, I've got it";
+"pasos23.home.applePay.done" = "I've set it up";
+"pasos23.home.share.title" = "Share a photo with Yala";
+"pasos23.home.share.subtitle" = "A receipt, a bank screenshot or a PDF, from any app.";
+"pasos23.home.share.step1" = "In Photos (or the app where it is), tap Share.";
+"pasos23.home.share.step2" = "Choose Yala. If it doesn't show up, swipe and tap “More”.";
+"pasos23.home.share.step3" = "Yala picks up the amount, the merchant and the date: you review it and save it.";
+"pasos23.home.siri.title" = "What do I say to Siri?";
+"pasos23.home.siri.subtitle" = "Start with “Hey Siri” and say any of these. They work without any setup.";
+"pasos23.home.siri.newRecordPhrase" = "New record in Yala";
+"pasos23.home.applePay.next" = "Every Apple Pay payment lands in your Inbox.";
+"pasos23.home.share.next" = "Share a receipt from any app.";
+"pasos23.home.siri.next" = "Everything you can ask Siri.";
+"pasos23.home.applePay.nextAction" = "Set up Apple Pay";
+"pasos23.home.share.nextAction" = "See how to share";
+"pasos23.home.siri.nextAction" = "See what to tell Siri";
+"pasos23.home.mail.name" = "Email";
+"pasos23.home.mail.part.title" = "Your email, on autopilot";
+"pasos23.home.mail.part.message" = "Forward your bank's alerts to your Yala address and each transaction lands in your Inbox on its own.";
+"pasos23.home.mail.part.mail" = "%@ card purchase";
+"pasos23.home.mail.part.from" = "Alert from your bank";
+"pasos23.home.mail.part.push" = "In your Inbox: %@, ready to approve.";
+"pasos23.home.mail.title" = "Your Yala address";
+"pasos23.home.mail.subtitle" = "Set up a filter in your email and your bank's alerts reach your Inbox as drafts: nothing is recorded until you approve it.";
+"pasos23.home.mail.addressCaption" = "Forward your alerts to";
+"pasos23.home.mail.copy" = "Copy";
+"pasos23.home.mail.step1" = "Copy your Yala address.";
+"pasos23.home.mail.step2" = "Open your email on the web (Gmail, Outlook or iCloud Mail) and create a filter with your bank's email as the sender.";
+"pasos23.home.mail.step3" = "Choose to forward to your Yala address and save the filter.";
+"pasos23.home.mail.step3.detail" = "In Gmail, add it under Forwarding first: the code to confirm it shows up in Settings › Bank emails.";
+"pasos23.home.mail.soon" = "Coming soon: connect Gmail and Outlook directly, no filters.";
+"pasos23.home.mail.next" = "Your bank's alerts, straight to your Inbox.";
+"pasos23.home.mail.nextAction" = "See my address";
+"pasos23.final.done.title" = "First steps complete!";
+"pasos23.final.done.message" = "You know the essentials of Yala. You'll discover the rest at your own pace.";
+"pasos23.final.offer.titleOneMonth" = "Try Yala Pro free for 1 month";
+"pasos23.final.offer.titleDays" = "Try Yala Pro free for %d days";
+"pasos23.final.offer.subtitle" = "You've seen what it does. With Pro you log by speaking or with a photo, and ask Yala AI how you're doing.";
+"pasos23.final.offer.mostChosen" = "Most popular";
+"pasos23.final.offer.cheaperPerMonth" = "Cheaper per month";
+"pasos23.final.offer.timeline.reminder" = "We'll let you know before you're charged.";
+"pasos23.final.offer.timeline.charge" = "Your plan starts. Cancel in Settings before then and you pay nothing.";
+"pasos23.final.offer.ctaOneMonth" = "Start my free month";
+"pasos23.final.offer.ctaDays" = "Start my %d free days";
+"pasos23.final.offer.keepFree" = "Continue with the free version";
+"pasos23.final.feature.voice" = "Dictate the expense and Yala logs it.";
+"pasos23.final.feature.photo" = "A receipt, a screenshot or a PDF.";
+"pasos23.final.feature.ai" = "How you're doing, what you spend on, what's coming.";
+"pasos23.final.feature.accounts" = "All your cards and banks.";
+"pasos23.final.feature.budgets" = "A limit for each thing.";
+"pasos23.final.feature.looks" = "Yala your way.";
+"pasos23.final.success.title" = "All set! You have Pro";
+"pasos23.final.success.oneMonth" = "Your free month runs until %1$@. On %2$@ we'll let you know, before any charge.";
+"pasos23.final.success.days" = "Your %1$d free days run until %2$@. On %3$@ we'll let you know, before any charge.";
+"pasos23.final.success.oneMonthUntil" = "Your free month runs until %@.";
+"pasos23.final.success.daysUntil" = "Your %1$d free days run until %2$@.";
+"pasos23.final.success.startUsing" = "Start using it";
+"pasos23.final.reminder.title" = "Your Yala Pro trial ends soon";
+"pasos23.final.reminder.body" = "Your plan starts on %@. If you don't want to continue, cancel in Settings first.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Time";
+"export.column.time.description" = "The time of the record.";
+"export.column.exchangeRate" = "Exchange rate";
+"export.column.exchangeRate.description" = "In another currency, the rate it was converted at and to which currency.";
+"export.column.need" = "Need";
+"export.column.need.description" = "Only if you changed it on that record.";
+"import.error.unreadableRow" = "Row %1$d: we couldn't read it because it has no columns.";
+"import.error.time" = "Row %1$d: we can't read the time “%2$@”. Write it like 14:30.";
+"import.error.exchangeRate" = "Row %1$d: we can't read the exchange rate “%2$@”. Write it with a decimal point and no thousands separator, like 3.75.";
+"import.error.need" = "Row %1$d: we can't read the need “%2$@”. Use essential, priority, optional or unclassified.";
+/* Grupos 2.3 · saldar como en Splitwise (decisión 37, C1 + C2 + C3) */
+"groups.saldar23.thirdPartyHint" = "You're recording it: %@ will see it and confirm it arrived.";
+"groups.saldar23.recordedBy" = "Recorded by %@";
+"groups.saldar23.recordedByYou" = "Recorded by you";
+"groups.saldar23.pendingTitleOther" = "%1$@ recorded that %2$@ paid you %3$@";
+"groups.saldar23.scopeA11y" = "How much is paid";
+"groups.saldar23.scopeAll" = "All · %@";
+"groups.saldar23.scopePart" = "Part";
+"groups.saldar23.settlesWith" = "This settles you up with %@.";
+"groups.saldar23.settlesOthers" = "This settles up %1$@ and %2$@.";
+"groups.saldar23.leaves.youPay" = "You'll still owe %2$@ %1$@.";
+"groups.saldar23.leaves.paysYou" = "%1$@ will still owe you %2$@.";
+"groups.saldar23.leaves.others" = "%1$@ will still owe %3$@ %2$@.";
+"groups.saldar23.overpays.youPay" = "That's more than you owe (%1$@). %2$@ would owe you %3$@.";
+"groups.saldar23.overpays.paysYou" = "That's more than they owe you (%1$@). You'd owe %3$@ %2$@.";
+"groups.saldar23.overpays.others" = "That's more than %1$@ owes %2$@ (%3$@). %2$@ would owe %1$@ %4$@.";
+"groups.saldar23.saveAnyway" = "Settle anyway";
+"groups.saldar23.notice.youPaid" = "You paid %2$@ %1$@.";
+"groups.saldar23.notice.paidYou" = "%1$@ paid you %2$@.";
+"groups.saldar23.notice.othersPaid" = "You recorded that %1$@ paid %3$@ %2$@.";
+"groups.saldar23.notice.waitingFor" = "Waiting for %@ to confirm.";
+"groups.saldar23.notice.settled" = "You're all settled up.";
+"groups.saldar23.notice.nowYouOwe" = "You now owe %2$@ %1$@.";
+"groups.saldar23.notice.nowOwesYou" = "%1$@ now owes you %2$@.";
+"groups.saldar23.notice.nowOthersOwe" = "%1$@ now owes %3$@ %2$@.";
+"groups.saldar23.pendingOnDebt.one" = "There's a %@ payment waiting to be confirmed";
+"groups.saldar23.pendingOnDebt.many" = "Payments of %@ are waiting to be confirmed";
+"groups.saldar23.confirmOver.title" = "Confirm this payment?";
+"groups.saldar23.confirmOver.settled" = "%1$@ didn't owe you anything anymore: another payment settled this debt. If you confirm this %2$@, it'll be overpaid. If it's the same payment recorded twice, remove it.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ only had %2$@ left to pay you. If you confirm this %3$@, it'll be overpaid.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirm anyway";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala combined the debts so there are fewer payments.";
+"groups.lote23chico.showPairs" = "See each pair's debts";
+"groups.lote23chico.pairsNote" = "These are the debts between each pair, not combined. To settle up, go back to fewer payments.";
+"groups.lote23chico.showSimplified" = "See with fewer payments";
+"settings.lote23chico.favoriteRecords" = "Favourite records";
+"settings.lote23chico.organizationFooter" = "Budgets and Scheduled Payments are in Planning. The budgets you see on the Panel are chosen in Configure Panel.";
+"panel.lote23chico.budgetsOnPanel" = "Budgets on the Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Choose which ones appear on the Budgets card.";
+"usageMode.lote23chico.fullExpensesOnly" = "Full Yala · expenses only";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "Signing out…";
+"uxcs.signOutProgress.removingData" = "Removing your data from this device…";
+"uxcs.signOutProgress.deletingAccount" = "Deleting your account…";
+"uxcs.signOutProgress.keepOpen" = "Keep Yala open until it finishes.";
+"uxcs.signOutProgress.accountDeletedTitle" = "Your account has been deleted";
+"uxcs.signOutProgress.accountDeletedBody" = "We've deleted your Yala account and all its data, including what was on this device. If you were in groups, your name there is now “Deleted user”.";
+"uxcs.signOutProgress.continue" = "Continue";
+"uxcs.relaunch.accountDeleted" = "Account deleted";
+"uxcs.relaunch.afterSignOutICloud" = "Your data was connected to your iCloud, and Yala can only let go of that connection when it fully closes. When you open it again, it finishes removing your data from this device.";
+"bienvenida23.access.sameEmailNote" = "With the same email, Apple and Google open the same Yala account. If you created yours with another email, sign in with that one.";
+"bienvenida23.access.consentAccessDetail" = "There's no Yala password or email recovery: if you lose that login, export your data first (Settings → Export records).";
+"bienvenida23.access.createdTitle" = "Your account has been created";
+"bienvenida23.access.createdBody" = "Now, three quick questions to make Yala yours.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Connected browsers";
+"connectedBrowsers.rowSubtitle" = "Yala web sessions open with your account";
+"connectedBrowsers.intro" = "See where Yala web is open with your account. If you don't recognise one, sign it out.";
+"connectedBrowsers.empty" = "No Yala web sessions are open with your account.";
+"connectedBrowsers.close" = "Sign out";
+"connectedBrowsers.closeAll" = "Sign out of all web sessions";
+"connectedBrowsers.closeAllConfirmTitle" = "Sign out of all web sessions?";
+"connectedBrowsers.closeAllConfirmBody" = "Those tabs empty in under a minute. Your data doesn't change.";
+"connectedBrowsers.closeAllConfirm" = "Sign out all";
+"connectedBrowsers.footer" = "When you sign one out, that tab empties in under a minute.";
+"connectedBrowsers.loadFailed" = "Couldn't load the list. Check your connection and try again.";
+"connectedBrowsers.closeFailed" = "Couldn't sign it out. Check your connection and try again.";
+"connectedBrowsers.unknownBrowser" = "Browser";
+"connectedBrowsers.sharedComputer" = "shared computer";
+"connectedBrowsers.justNow" = "now";
+"connectedBrowsers.browserOn" = "%1$@ on %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Link a browser";
+"connectedBrowsers.link.rowFooter" = "Open your Yala on a computer without typing a password: scan the code Yala web shows.";
+"connectedBrowsers.link.title" = "Link a browser";
+"connectedBrowsers.link.intro" = "On the computer, open Yala web and choose “Sign in with your iPhone”. Point the camera at the code.";
+"connectedBrowsers.link.scanner" = "Camera to read the code";
+"connectedBrowsers.link.typeHeader" = "Or type the code";
+"connectedBrowsers.link.continue" = "Continue";
+"connectedBrowsers.link.confirmHeader" = "Open Yala in this browser?";
+"connectedBrowsers.link.whereCity" = "Requested from %1$@ · code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Only confirm if you see this code on your own screen. No one from Yala will ever ask you for it.";
+"connectedBrowsers.link.confirm" = "Confirm with Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirm you want to open your Yala in that browser.";
+"connectedBrowsers.link.doneTitle" = "Browser linked";
+"connectedBrowsers.link.doneBody" = "%@ now shows your Yala, read-only. You can sign it out from here any time.";
+"connectedBrowsers.link.doneButton" = "Done";
+"connectedBrowsers.link.problem.invalidCode" = "That isn't a Yala web code. Check it has 8 characters.";
+"connectedBrowsers.link.problem.expired" = "The code expired or was already used. Get a new one on Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Your account doesn't use the Yala cloud. Turn it on in Storage to use Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "Your cloud session expired. Sign in again in Your Yala account.";
+"connectedBrowsers.link.problem.network" = "Couldn't reach Yala web. Please try again.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Record transaction from text";
+"shortcut.bankNotice.description" = "Reads your bank’s notification and leaves the transaction in your Inbox to confirm. Use it in your bank app’s “When I get a notification” automation, with the Notification variable.";
+"shortcut.bankNotice.param.text" = "Text";
+"shortcut.bankNotice.param.text.description" = "The notification text (the Notification variable)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Other bank";
+"Record a movement from the text ${text}" = "Record a movement from the text ${text}";
+"inbox.sourceBankNotice" = "%@ notification";
+"inbox.sourceBankNoticeOther" = "Bank notification";
+"inbox.sourceBankNoticeNotUnderstood" = "We couldn’t read this notification";
+/* Pagos que se repiten: propuestas de pagos planificados desde el historial (lote S1, 2026-11-14) */
+"pagosRecurrentes.card.title" = "Payments that repeat";
+"pagosRecurrentes.card.subtitle" = "We found them in your records. Shall we plan them?";
+"pagosRecurrentes.card.manage" = "Suggestion settings";
+"pagosRecurrentes.card.manageA11y" = "Repeating payments options";
+"pagosRecurrentes.cadence.monthly" = "Every month, on the %@";
+"pagosRecurrentes.cadence.monthlyApprox" = "Every month, around the %@";
+"pagosRecurrentes.cadence.weekly" = "Every week, on %@";
+"pagosRecurrentes.sheet.chargesFound" = "Charges found: %@";
+"pagosRecurrentes.sheet.lastCharge" = "Last charge: %@";
+"pagosRecurrentes.sheet.amount" = "Amount";
+"pagosRecurrentes.sheet.frequency" = "Frequency";
+"pagosRecurrentes.sheet.frequencyMonthly" = "Every month";
+"pagosRecurrentes.sheet.frequencyWeekly" = "Every week";
+"pagosRecurrentes.sheet.nextCharge" = "Next charge";
+"pagosRecurrentes.sheet.account" = "Account";
+"pagosRecurrentes.sheet.chooseAccount" = "Choose an account";
+"pagosRecurrentes.sheet.category" = "Category";
+"pagosRecurrentes.sheet.notify" = "Remind me";
+"pagosRecurrentes.sheet.variable" = "The amount changes from one charge to the next: we use the latest.";
+"pagosRecurrentes.sheet.create" = "Create planned payment";
+"pagosRecurrentes.sheet.notFixed" = "Not fixed";
+"pagosRecurrentes.sheet.notNow" = "Not now";
+"pagosRecurrentes.notify.none" = "Don't remind me";
+"pagosRecurrentes.notify.sameDay" = "On the day";
+"pagosRecurrentes.notify.oneDay" = "1 day before";
+"pagosRecurrentes.notify.threeDays" = "3 days before";
+"pagosRecurrentes.notify.oneWeek" = "1 week before";
+"pagosRecurrentes.created.notice" = "%1$@ is now a planned payment. We'll remind you on %2$@.";
+"pagosRecurrentes.created.noticeNoReminder" = "%@ is now a planned payment.";
+"pagosRecurrentes.created.view" = "View";
+"pagosRecurrentes.settings.title" = "Payments that repeat";
+"pagosRecurrentes.settings.toggle" = "Suggest payments that repeat";
+"pagosRecurrentes.settings.footer" = "Yala checks your records on this device. Nothing leaves it.";
+"pagosRecurrentes.settings.dismissed" = "Dismissed";
+"pagosRecurrentes.settings.dismissedOn" = "Marked as ‘Not fixed’ on %@";
+"pagosRecurrentes.settings.restore" = "Suggest again";
+"pagosRecurrentes.settings.done" = "Done";
+"pagosRecurrentes.footer.link" = "Payments that repeat";
+"pagosRecurrentes.footer.off" = "Off";

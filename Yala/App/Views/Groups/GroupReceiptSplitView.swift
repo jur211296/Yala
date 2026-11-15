@@ -2,7 +2,13 @@
 //  GroupReceiptSplitView.swift
 //  Yala
 //
-//  «Desde un recibo», dentro de Nuevo gasto de un grupo (card «Grupos: repartir un recibo con IA», 2.3).
+//  Repartir un recibo con IA en un grupo (card «Grupos: repartir un recibo con IA», 2.3). Desde el 2026-11-14 se abre
+//  con los botones Voz y Foto del inicio de Grupos y del detalle de un grupo (Jürgen: como en personal, no dentro de
+//  Nuevo gasto); Voz abre la hoja escuchando.
+//
+//  Cupo (Jürgen, 2026-11-14): Grupos es el gancho. Sin candado: todo Free reparte 5 recibos al día y Pro 50, con un
+//  contador propio (`receipt` en el gateway) que no gasta las fotos y notas de personal. Agotado, el gateway da 429
+//  `yala_quota_daily`; a Free se le ofrece Yala Pro.
 //
 //  Foto del recibo (con una frase opcional de quién comió qué) o una nota de voz con las dos cosas. La IA lee las
 //  líneas; la revisión deja cambiar quién paga cada una, incluir propina, servicio o impuestos con un atajo y quitar
@@ -23,6 +29,9 @@ struct GroupReceiptSplitView: View {
     let currentMemberID: String?
     let currencyCode: String
     let onUse: (GroupExpensePrefillTemplate) -> Void
+    /// Con `.voice`, la hoja empieza a escuchar al abrirse (el botón Voz). Con `.text` (el botón Yala IA) abre para
+    /// escribir el gasto. Con `.photo` o `nil`, lista para la foto.
+    var startsWith: GroupReceiptEntryKind? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
@@ -38,6 +47,8 @@ struct GroupReceiptSplitView: View {
 
     enum Failure: Equatable {
         case read, noLines, noConnection, trialPhotos, trialVoice, busy, dailyLimit, camera, microphone, noVoice
+        /// Los recibos del día de Free, gastados: mañana vuelven y Yala Pro da más.
+        case dailyLimitFree
     }
 
     @State private var phase: Phase = .capture
@@ -58,6 +69,11 @@ struct GroupReceiptSplitView: View {
     @State private var showUpgrade = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .image
+    @State private var didStart = false
+    /// Lo escrito con Yala IA («pizza 40 Ana y yo, lomo 35 Beto»): va como una nota dictada, sin audio.
+    @State private var typedNote = ""
+    @State private var pendingTextRead = false
+    @FocusState private var typedFocused: Bool
 
     @FocusState private var phraseFocused: Bool
 
@@ -68,7 +84,7 @@ struct GroupReceiptSplitView: View {
         NavigationStack {
             content
                 .yalaScreenBackground(.subtle)
-                .navigationTitle(phase == .review ? L10n.ReceiptSplit.reviewTitle : L10n.ReceiptSplit.title)
+                .navigationTitle(navigationTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -97,9 +113,27 @@ struct GroupReceiptSplitView: View {
             phase = .capture
         }
         .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
-            start(input)
+            if pendingTextRead {
+                pendingTextRead = false
+                readText()
+            } else {
+                start(input)
+            }
+        }
+        .onAppear {
+            // Una sola vez: volver de la hoja de Pro o del permiso no vuelve a abrir el micrófono.
+            guard !didStart else { return }
+            didStart = true
+            if startsWith == .voice { requestRead(.voice) }
+            if startsWith == .text { typedFocused = true }
         }
         .onDisappear { cancelAll() }
+    }
+
+    /// Con Yala IA no hay recibo: la hoja se llama como el botón que la abrió.
+    private var navigationTitle: String {
+        if phase == .review { return L10n.ReceiptSplit.reviewTitle }
+        return startsWith == .text ? L10n.Chat.assistantName : L10n.ReceiptSplit.title
     }
 
     @ViewBuilder
@@ -115,7 +149,44 @@ struct GroupReceiptSplitView: View {
 
     // MARK: - Captura
 
+    @ViewBuilder
     private var captureView: some View {
+        if startsWith == .text {
+            textCaptureView
+        } else {
+            mediaCaptureView
+        }
+    }
+
+    /// Yala IA: el gasto escrito, con quién comió qué. Lo lee la misma IA que la nota de voz.
+    private var textCaptureView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                Label(L10n.ReceiptSplit.textTitle, systemImage: "sparkles")
+                    .font(DS.Typography.headline)
+                TextField(L10n.ReceiptSplit.textPlaceholder, text: $typedNote, axis: .vertical)
+                    .lineLimit(3...8)
+                    .focused($typedFocused)
+                    .padding(DS.Spacing.md)
+                    .background(theme.card, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .accessibilityIdentifier("receipt_split_text")
+                Text(L10n.ReceiptSplit.textFooter)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                YalaPrimaryButton(L10n.ReceiptSplit.splitButton, icon: "sparkles") {
+                    typedFocused = false
+                    requestText()
+                }
+                .disabled(typedNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("receipt_split_split")
+            }
+            .padding(DS.Spacing.lg)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .dismissKeyboardOnTap()
+    }
+
+    private var mediaCaptureView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -487,7 +558,7 @@ struct GroupReceiptSplitView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Spacer()
-            if failure == .trialPhotos || failure == .trialVoice {
+            if failure == .trialPhotos || failure == .trialVoice || failure == .dailyLimitFree {
                 YalaPrimaryButton(L10n.Voice.trialSeePro) { showUpgrade = true }
                     .accessibilityIdentifier("receipt_split_see_pro")
             } else {
@@ -501,7 +572,7 @@ struct GroupReceiptSplitView: View {
 
     private func failureIcon(_ failure: Failure) -> String {
         switch failure {
-        case .trialPhotos, .trialVoice: "sparkles"
+        case .trialPhotos, .trialVoice, .dailyLimitFree: "sparkles"
         case .noConnection: "wifi.slash"
         case .camera: "camera"
         case .microphone, .noVoice: "mic.slash"
@@ -517,7 +588,8 @@ struct GroupReceiptSplitView: View {
         case .trialPhotos: L10n.Image.Entry.failureTrialUsedUpTitle
         case .trialVoice: L10n.Voice.failureTrialUsedUpTitle
         case .busy: L10n.Image.Entry.failureBusyTitle
-        case .dailyLimit: lastSource == .voice ? L10n.Voice.failureDailyLimitTitle : L10n.Image.Entry.failureDailyLimitTitle
+        case .dailyLimit: L10n.ReceiptSplit.failureDailyLimitTitle
+        case .dailyLimitFree: L10n.ReceiptSplit.failureDailyLimitFreeTitle
         case .camera: L10n.Image.Entry.failureCameraTitle
         case .microphone: L10n.Voice.failureMicTitle
         case .noVoice: L10n.Voice.failureNoVoiceTitle
@@ -527,12 +599,13 @@ struct GroupReceiptSplitView: View {
     private func failureMessage(_ failure: Failure) -> String {
         switch failure {
         case .read: L10n.ReceiptSplit.failureReadMessage
-        case .noLines: L10n.ReceiptSplit.failureNoLinesMessage
+        case .noLines: startsWith == .text ? L10n.ReceiptSplit.failureNoLinesTextMessage : L10n.ReceiptSplit.failureNoLinesMessage
         case .noConnection: L10n.ReceiptSplit.failureNoConnectionMessage
         case .trialPhotos: L10n.Image.Entry.failureTrialUsedUpMessage
         case .trialVoice: L10n.Voice.failureTrialUsedUpMessage
         case .busy: L10n.Image.Entry.failureBusyMessage
-        case .dailyLimit: lastSource == .voice ? L10n.Voice.failureDailyLimitMessage : L10n.Image.Entry.failureDailyLimitMessage
+        case .dailyLimit: L10n.ReceiptSplit.failureDailyLimitMessage
+        case .dailyLimitFree: L10n.ReceiptSplit.failureDailyLimitFreeMessage
         case .camera: L10n.Image.Entry.failureCameraMessage
         case .microphone: L10n.ReceiptSplit.failureMicMessage
         case .noVoice: L10n.Voice.failureNoVoiceMessage
@@ -601,6 +674,38 @@ struct GroupReceiptSplitView: View {
         }
     }
 
+    /// Lo escrito pasa por el mismo consentimiento que voz y foto.
+    private func requestText() {
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingTextRead = true
+            pendingAIInput = .voice
+            showAIConsentAlert = true
+            return
+        }
+        readText()
+    }
+
+    /// Lo escrito va como una nota ya transcrita (`receipt.voice`): gasta un recibo del día, como la foto o la voz.
+    private func readText() {
+        lastSource = .voice
+        phase = .reading
+        let note = typedNote
+        readTask = Task {
+            #if DEBUG
+            if let profile = UITestHooks.receiptSplitProfile {
+                await applyUITestReply(profile, source: .voice)
+                return
+            }
+            #endif
+            do {
+                let response = try await ReceiptSplitService.shared.readNote(text: note, currency: currencyContext)
+                apply(response)
+            } catch {
+                handle(error, source: .voice)
+            }
+        }
+    }
+
     private func startRecording() async {
         #if DEBUG
         if UITestHooks.receiptSplitProfile != nil {
@@ -641,7 +746,8 @@ struct GroupReceiptSplitView: View {
                 let audio = try await AudioRecorderService.shared.stopRecording()
                 let transcription = try await VoiceTranscriptionService.shared.transcribe(
                     audioData: audio,
-                    language: appPreferences.voiceLanguage
+                    language: appPreferences.voiceLanguage,
+                    task: .receiptTranscribe
                 )
                 let text = transcription.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 // Un audio vacío que el modelo «transcribe» con relleno no trae importes: lo para `noLines` del servicio.
@@ -702,12 +808,19 @@ struct GroupReceiptSplitView: View {
         #if DEBUG
         print("GroupReceiptSplitView: Error: \(error)")
         #endif
-        phase = .failure(Self.failure(for: error, source: source, isConnected: NetworkMonitor.shared.isConnected))
+        phase = .failure(Self.failure(
+            for: error,
+            source: source,
+            isConnected: NetworkMonitor.shared.isConnected,
+            isPro: FeatureGateService.shared.isProUser
+        ))
         DS.Haptic.error()
     }
 
     /// Qué fallo enseñar: lo que el gateway contestó con nombre propio va con su texto (el de foto o el de voz).
-    static func failure(for error: Error, source: PendingAIInput, isConnected: Bool) -> Failure {
+    /// El cupo diario de recibos es de los dos planes: a Free se le ofrece Pro, a Pro solo se le dice que vuelva mañana.
+    /// La prueba agotada (`trial*`) solo la contesta un gateway anterior al cubo `receipt`.
+    static func failure(for error: Error, source: PendingAIInput, isConnected: Bool, isPro: Bool) -> Failure {
         let inner: Error
         switch error {
         case ReceiptSplitError.noLines: return .noLines
@@ -718,7 +831,7 @@ struct GroupReceiptSplitView: View {
         default: return isConnected ? .read : .noConnection
         }
         if ProxyErrorMapper.isTrialExhausted(inner) { return source == .voice ? .trialVoice : .trialPhotos }
-        if ProxyErrorMapper.isDailyLimitReached(inner) { return .dailyLimit }
+        if ProxyErrorMapper.isDailyLimitReached(inner) { return isPro ? .dailyLimit : .dailyLimitFree }
         if ProxyErrorMapper.isBurstLimited(inner) { return .busy }
         return isConnected ? .read : .noConnection
     }
@@ -819,6 +932,10 @@ struct GroupReceiptSplitView: View {
         }
         if profile == "trial" {
             handle(ReceiptSplitError.network(ProxyErrorMapper.trialExhaustedResponse()), source: source)
+            return
+        }
+        if profile == "daily" {
+            handle(ReceiptSplitError.network(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily")), source: source)
             return
         }
         apply(Self.uiTestCuscoResponse)

@@ -18,18 +18,15 @@ import SwiftData
 enum PanelTotalAccountsLogic {
     /// Las cuentas que el conteo «en N cuentas» del panorama puede contar: las que suman.
     ///
-    /// Lo decide «Excluir de las estadísticas», el mismo filtro que aplica
-    /// `LiveBalanceCalculator` al saldo, y no estar archivada (decisión de Jürgen, 2026-10-03:
-    /// archivar solo enciende ese toggle). Antes contaba las no archivadas, así que una cuenta
-    /// archivada seguía en el saldo sin estar en el conteo, y una excluida en el conteo sin estar
-    /// en el saldo.
+    /// Lo decide `Account.sumsInBalance`, el mismo filtro que aplica `LiveBalanceCalculator` al
+    /// saldo: ni excluida de las estadísticas ni archivada (decisión 6 de 2.3, que sustituye a la
+    /// del 2026-10-03 en la que archivar solo encendía «Excluir»).
     ///
-    /// Excepción: las cuentas sistema de Grupos que la propia app archiva
-    /// (`GroupBridgeSystemEntities`, al quedarse sin movimientos o por duplicadas) no cuentan.
-    /// Esas no las archiva el usuario, no se auto-excluyen y no se ven en ningún sitio; su saldo
-    /// es 0, así que dejarlas fuera no separa el conteo del saldo.
+    /// Excepción, la de siempre: las cuentas sistema de Grupos que la propia app archiva
+    /// (`GroupBridgeSystemEntities`, al quedarse sin movimientos o por duplicadas) no cuentan aunque
+    /// su saldo siga sumando. No son una cuenta para la persona ni se ven en ningún sitio.
     static func countableAccounts(_ accounts: [Account]) -> [Account] {
-        accounts.filter { !$0.excludeFromStatistics && !($0.isSystemAccount && $0.isArchived) }
+        accounts.filter { $0.sumsInBalance && !($0.isSystemAccount && $0.isArchived) }
     }
 
     /// Cuántas cuentas suma el saldo del panorama: las contables que el cálculo del saldo eligió

@@ -151,6 +151,7 @@ final class ScheduledPaymentEditorViewModel {
             : paymentDate
 
         let paymentID: UUID
+        var createdNew = false
 
         if let existingPayment = existing {
             // Update existing
@@ -227,6 +228,7 @@ final class ScheduledPaymentEditorViewModel {
             newPayment.setSplitConfig(participantIDs: splitParticipantIDs, values: splitValues)
 
             paymentID = newPayment.id
+            createdNew = true
         }
 
         do {
@@ -234,6 +236,8 @@ final class ScheduledPaymentEditorViewModel {
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+            // Telemetría del usuario nuevo (card 4b7h): el primer pago planificado, si se queda.
+            if createdNew { NewUserMetrics.created(.scheduledPayment) }
 
             return paymentID
         } catch {

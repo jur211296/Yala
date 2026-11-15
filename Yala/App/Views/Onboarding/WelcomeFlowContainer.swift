@@ -318,8 +318,11 @@ struct WelcomeFlowContainer: View {
                     },
                     onBack: { goTo(groupsChooserOrigin) },
                     // Card 2osn: «¿Ya tienes una cuenta? Entra aquí» va por la MISMA puerta que «Ya tengo una cuenta» del
-                    // elector (bypass incluido), y su «Volver» devuelve aquí.
-                    onSignIn: { handleExistingBranch() }
+                    // elector (bypass incluido), y su «Volver» devuelve aquí. Card x5tm: «Empezar» aterriza en Grupos.
+                    onSignIn: {
+                        WelcomeGroupsDoorLanding.arm()
+                        handleExistingBranch()
+                    }
                 )
                 .transition(.opacity)
             case .groupsGate(let purpose):
@@ -360,7 +363,12 @@ struct WelcomeFlowContainer: View {
             case .existingChooser:
                 // vb1f (opción A): el faro ordena las entradas y marca la del método con que se creó la cuenta. Se lee
                 // al pintar, con el mismo adaptador que encamina «Soy nuevo».
-                let order = WelcomeNewBranchRouter.existingOrder(beacon: CloudBeacon(), options: visibleExistingOptions)
+                // Desde la puerta de Grupos, sin iCloud ni la nota del faro (E13 del recorrido del 13-nov). La marca de la
+                // puerta y no solo el origen: al volver de la entrada a la cuenta el contenedor se monta de nuevo y el
+                // origen guardado aquí se pierde; la marca sigue puesta hasta que se elige otra entrada.
+                let order = WelcomeNewBranchRouter.existingOrder(
+                    beacon: CloudBeacon(), options: visibleExistingOptions,
+                    fromGroupsDoor: WelcomeGroupsDoorLanding.isArmed || existingChooserOrigin == .groupsChooser)
                 WelcomeExistingChooserView(
                     options: order.options,
                     usedOnThisDevice: order.usedOnThisDevice,
@@ -458,6 +466,14 @@ struct WelcomeFlowContainer: View {
             case .mirrorRelaunch:
                 WelcomeMirrorRelaunchView()
                     .transition(.opacity)
+                    // Telemetría (card 4b7h): se le pidió reabrir en pleno alta. El destino ya está guardado: quien lleva a
+                    // este paso lo escribe antes.
+                    .onAppear {
+                        if let asked = MetricsUseFeature.relaunchAsked(
+                            destination: WelcomePendingDestinationStore.peek()) {
+                            MetricsService.used(asked)
+                        }
+                    }
             }
             }
         }
@@ -545,7 +561,10 @@ struct WelcomeFlowContainer: View {
     /// bypass directo — comportamiento idéntico al flujo restore de hoy; con ambas,
     /// muestra el 2º nivel.
     private func handleExistingBranch() {
-        if let single = WelcomeAccountChoiceLogic.bypass(visibleExistingOptions) {
+        // El bypass mira las mismas opciones que se pintarían: desde la puerta de Grupos, sin «Restaurar desde iCloud».
+        let options = WelcomeAccountChoiceLogic.existingOptions(
+            visibleExistingOptions, fromGroupsDoor: step == .groupsChooser)
+        if let single = WelcomeAccountChoiceLogic.bypass(options) {
             handleExistingOption(single)
         } else {
             existingChooserOrigin = WelcomeBackStepLogic.existingChooserOrigin(openedFrom: step)
@@ -567,8 +586,13 @@ struct WelcomeFlowContainer: View {
         let destination: WelcomeMirrorRelaunchLogic.Destination
         switch option {
         case .restoreICloud:
+            // Restaurar no termina en «Empezar»: la puerta de Grupos no tiene dónde aterrizar (card x5tm).
+            WelcomeGroupsDoorLanding.disarm()
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
+            // Desde «¡Hola de nuevo!» o la puerta de Grupos la persona aún no eligió traer nada: Restaurar le pregunta. Desde
+            // la puerta de iCloud privado la marca ya la encendió su «Traer mis datos» (`RestoreBringChoiceStore`).
+            if step != .privateICloudGate { RestoreBringChoiceStore.clear() }
             destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }
@@ -698,6 +722,8 @@ struct WelcomeFlowContainer: View {
     ///   cuenta» con el consentimiento de la nube en la misma hoja.
     /// · Google o Apple desde Grupos → los caminos de Grupos.
     private func handleShowcaseAccess(_ access: WelcomeShowcaseLogic.Access, from door: WelcomeShowcaseLogic.Door) {
+        // Una entrada nueva desde la vitrina deja de ser la de «Entra aquí» de Grupos (card x5tm).
+        WelcomeGroupsDoorLanding.disarm()
         switch (access, door) {
         case (.iCloud, _):
             handleNewOption(.privateAccount)

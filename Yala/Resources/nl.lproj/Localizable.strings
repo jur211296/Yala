@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "Mijn deel van groepsuitgaven meetellen";
 "budgets.includeSharedExpensesHint" = "Als dit uit staat, tellen alleen je persoonlijke uitgaven mee.";
 "budgets.widget.noFavorites.title" = "Geen favoriete budgetten";
-"budgets.widget.noFavorites.message" = "Markeer budgetten als favoriet via Instellingen > Budgetten om ze hier te zien.";
+"budgets.widget.noFavorites.message" = "Markeer budgetten als favoriet via Panel instellen > Budgetten in het Panel om ze hier te zien.";
 "budgets.widget.selectFavorites" = "Selecteer favorieten";
 "budgets.alerts.title" = "Meldingen";
 "budgets.alerts.enable" = "Waarschuwen bij bereiken van limiet";
@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "%@ dagen over";
 "budgets.period.past" = "Afgesloten";
 "budgets.amount.of" = "van %@";
-"budgets.exceeded.encouragement" = "Je bent over budget gegaan — volgende periode wordt beter!";
+"budgets.exceeded.overByAdjust %@" = "%@ over je budget. Limiet aanpassen?";
+"budgets.exceeded.adjustLimit" = "Limiet aanpassen";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Naam van budget";
@@ -4519,6 +4520,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
 "groups.openingBalance.errorNotAdmin" = "Alleen een beheerder van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
+"groups.openingBalance.replaceTitle" = "Er is al een beginsaldo tussen %1$@ en %2$@";
+"groups.openingBalance.replaceMessage" = "Nu staat er: %@. Als je doorgaat, wordt het vervangen door het saldo dat je net hebt ingevoerd.";
+"groups.openingBalance.replaceConfirm" = "Vervangen";
+"groups.openingBalance.errorLockedBySettlements" = "De personen in dit beginsaldo hebben al bevestigde betalingen, dus het kan niet meer worden gewijzigd of verwijderd.";
 "groups.openingBalance.serverRejected.title" = "Je wijziging is niet bij de groep aangekomen";
 "groups.openingBalance.serverRejected.notAdmin" = "Alleen de eigenaar of een beheerder van de groep kan beginsaldi wijzigen, en dat ben je nu niet. Het saldo staat weer zoals in de groep.";
 "groups.openingBalance.serverRejected.locked" = "De personen in dit beginsaldo hebben al bevestigde betalingen, dus het kan niet meer worden gewijzigd. Het saldo staat weer zoals in de groep.";
@@ -4630,7 +4635,7 @@
 "storage.adopt.body" = "Je gegevens staan al in je Yala-account. Laten we het op dit apparaat gebruiken.";
 "storage.adopt.button" = "Gebruiken op dit apparaat";
 "storage.revert.title" = "Terug naar je iCloud";
-"storage.revert.body" = "Je gegevens staan dan op je apparaat en in je iCloud, zonder iets te verliezen.";
+"storage.revert.body" = "Je gegevens komen terug op dit apparaat en in je iCloud. Voordat je begint, vertellen we wat er met alles gebeurt.";
 "storage.revert.button" = "Terug naar je iCloud";
 "storage.revert.ineligible" = "Je kunt nu niet terug naar je iCloud vanaf dit apparaat.";
 "storage.sync.title" = "Synchronisatie";
@@ -4650,12 +4655,9 @@
 "storage.confirm.migrate2Title" = "Weet je het zeker?";
 "storage.confirm.migrate2Body" = "Op dit apparaat gaan je gegevens over naar je Yala-account.";
 "storage.confirm.migrate2Confirm" = "Ja, overstappen naar mijn Yala-account";
-"storage.confirm.revertTitle" = "Terug naar je iCloud?";
-"storage.confirm.revertBody" = "Je gegevens staan weer op dit apparaat en in je iCloud. Je verliest niets.";
 "storage.confirm.revertContinue" = "Doorgaan";
 "storage.confirm.revert2Title" = "Weet je het zeker?";
 "storage.confirm.revert2Body" = "Op dit apparaat gaan je gegevens terug naar je iCloud.";
-"storage.confirm.revert2Confirm" = "Ja, terug naar mijn iCloud";
 "storage.errors.title" = "Er ging iets mis";
 "storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
 "storage.errors.adoptOtherAccount" = "Dit is niet het account dat je op dit apparaat aan het inschakelen was. Probeer het opnieuw met hetzelfde account.";
@@ -4788,8 +4790,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Je gegevens worden gedownload…";
-"welcome.cloud.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in je Yala-account hebt. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
-"welcome.cloud.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
+"welcome.cloud.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in je Yala-account hebt. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account vanaf het begin.";
+"welcome.cloud.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account vanaf het begin.";
+"welcome.cloud.cancelling" = "Annuleren…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Groepen heeft iCloud nodig";
@@ -5013,7 +5016,7 @@
 "settings.deleteAccountViewGroups" = "Mijn groepen bekijken";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Je oude iCloud-kopie (van vóór je Yala-account) blijft onaangeroerd: als je Yala opnieuw opent, zie je die als een nieuwe installatie.";
+"settings.deleteAccountFrozenICloudNote" = "Gebruikte je Yala met je iCloud voordat je je account maakte, dan blijft die kopie in je iCloud: je Yala-account verwijderen wist die niet.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "In oude groepen (iCloud) kan je naam zichtbaar blijven voor hun leden.";
@@ -5212,8 +5215,6 @@
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Alles wordt verwijderd, voorgoed.";
 
-/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "Zo stop je met het gebruik van je Yala-account op dit apparaat: het wordt gepauzeerd voor als je terugkomt.";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "Je account";
@@ -5260,16 +5261,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "Je gebruikt je huidige Yala-account — zo staan je gegevens en je groepen in hetzelfde account.";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "Je huidige Yala-account heeft al persoonlijke financiën en kan die van dit apparaat niet ontvangen. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrate.refusedPersonalData" = "Je huidige Yala-account heeft al persoonlijke financiën en kan die van dit apparaat niet ontvangen. Wil je je gegevens naar een ander account brengen, tik dan eerst op ‘Account wijzigen’.";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Je groepen gebruiken een ander account, en op dit apparaat kan maar één Yala-account staan. Log in met het account van je groepen om je gegevens naar je Yala-account over te zetten, of ontkoppel het eerst in ‘Groepen’.";
+"storage.migrate.refusedOtherGroups" = "Je groepen gebruiken een ander account, en op dit apparaat kan maar één Yala-account staan. Log in met het account van je groepen om je gegevens naar je Yala-account over te zetten, of tik eerst op ‘Account wijzigen’.";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "Met je huidige Yala-account ben je teruggegaan naar je iCloud, en opnieuw daarnaar overstappen kan nog niet.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Je huidige Yala-account is misschien van iemand anders: het was al ingelogd toen hier opnieuw werd begonnen. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Overstappen naar je Yala-account’ om je eigen account te kiezen.";
+"storage.migrate.refusedFreshStart" = "Je huidige Yala-account is misschien van iemand anders: het was al ingelogd toen hier opnieuw werd begonnen. Tik op ‘Account wijzigen’ en daarna opnieuw op ‘Overstappen naar je Yala-account’ om je eigen account te kiezen.";
 "storage.migrate.refusedOtherDevice" = "Er staat een onafgemaakte activering voor dit account. Ben je die hier begonnen, probeer het dan over een uur opnieuw; was het op een ander apparaat van je, rond het daar af.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6023,16 +6024,16 @@
 "storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
 "storage.migrateBlock.personalDataTitle" = "Dit account heeft al eigen gegevens";
 "storage.migrateBlock.personalDataBody" = "Er is niets veranderd. Gebruik een ander account om je gegevens naar een Yala-account over te zetten. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account.";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, tik dan eerst op ‘Account wijzigen’.";
 "storage.migrateBlock.otherGroupsTitle" = "Je gebruikt al een ander account voor je groepen";
-"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één Yala-account staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar je Yala-account over te zetten, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
-"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één Yala-account staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar je Yala-account over te zetten, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één Yala-account staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar je Yala-account over te zetten, of tik eerst op ‘Account wijzigen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één Yala-account staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar je Yala-account over te zetten, of tik eerst op ‘Account wijzigen’ als je liever een ander gebruikt.";
 "storage.migrateBlock.returnedTitle" = "Met dit account ben je teruggegaan naar je iCloud";
 "storage.migrateBlock.returnedBody" = "Opnieuw daarnaar overstappen kan nog niet. Er is niets veranderd.";
 "storage.migrateBlock.useAnotherAccount" = "Ander account gebruiken";
 "storage.migrateBlock.appleSameAccountNote" = "Met Apple gebruikt Yala altijd het account van dit apparaat. Kies Google om een ander account te gebruiken.";
 "storage.migrateBlock.freshStartSessionTitle" = "Dit account is misschien van iemand anders";
-"storage.migrateBlock.freshStartSessionBody" = "Er is niets veranderd. Je groepen gebruiken een account dat al op dit apparaat was ingelogd, en omdat hier opnieuw is begonnen, is het misschien van iemand anders. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Overstappen naar je Yala-account’ om je gegevens naar je Yala-account over te zetten: dan kun je je eigen account kiezen.";
+"storage.migrateBlock.freshStartSessionBody" = "Er is niets veranderd. Je groepen gebruiken een account dat al op dit apparaat was ingelogd, en omdat hier opnieuw is begonnen, is het misschien van iemand anders. Tik op ‘Account wijzigen’ en daarna opnieuw op ‘Overstappen naar je Yala-account’ om je gegevens naar je Yala-account over te zetten: dan kun je je eigen account kiezen.";
 "storage.migrateBlock.otherDeviceTitle" = "Er staat een onafgemaakte activering voor dit account";
 "storage.migrateBlock.otherDeviceBody" = "Er is niets veranderd. Ben je die op dit apparaat begonnen, probeer het dan over een uur opnieuw. Was het op een ander apparaat van je, rond het daar af.";
 
@@ -6319,7 +6320,7 @@
 "accountDetail.empty" = "Geen boekingen in deze periode";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Na archiveren telt deze rekening niet meer mee in je totalen en statistieken, en worden haar boekingen verborgen in Boekingen. Wil je dat ze blijft meetellen, zet dan „Uitsluiten van statistieken” uit.";
+"account.archiveKeepsHistoryNotice" = "Een gearchiveerde rekening telt niet mee in je saldo en verschijnt niet bij de rekeningen in het Panel of bij het invoeren. Haar uitgaven en inkomsten tellen nog mee in het Panel, Boekingen en Statistieken.";
 
 
 /* Chat draft card (Yala IA) — redesign A */
@@ -6471,13 +6472,24 @@
 "storage.pendingICloudWipe.title" = "Een verwijdering is niet klaar";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Je vroeg eerder om je iCloud-gegevens te wissen en dat is niet afgerond. Als je overstapt naar je Yala-account, wordt dat wissen geannuleerd.";
+"storage.pendingICloudWipe.body" = "Je vroeg om je gegevens te verwijderen en opnieuw te beginnen, en dat is niet afgerond. Als je overstapt naar je Yala-account, gebeurt die verwijdering niet en blijven je iCloud-gegevens staan.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Aanzetten zonder wissen";
+"storage.pendingICloudWipe.proceed" = "Overstappen naar mijn Yala-account en mijn iCloud-gegevens houden";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Niet nu";
+"storage.pendingICloudWipe.bodyHalfway" = "Wat in je iCloud stond, is al verwijderd. Als je overstapt naar je Yala-account, gaat wat er op dit apparaat over is mee.";
+"storage.pendingICloudWipe.proceedHalfway" = "Overstappen naar mijn Yala-account met wat hier over is";
+"storage.pendingICloudWipe.proceedDetail" = "De verwijdering gebeurt niet: je stapt over naar je Yala-account en je iCloud-gegevens blijven daar staan.";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "De verwijdering wordt niet afgerond: je stapt over naar je Yala-account met wat er op dit apparaat over is.";
+"storage.pendingICloudWipe.finish" = "Verwijderen afronden en opnieuw beginnen";
+"storage.pendingICloudWipe.finishDetail" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishDetailHalfway" = "Wat er op dit apparaat over is, wordt verwijderd. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishConfirmBody" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishDetailWithGroups" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
+"storage.pendingICloudWipe.finishDetailHalfwayWithGroups" = "Wat er op dit apparaat over is, wordt verwijderd. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
+"storage.pendingICloudWipe.finishConfirmBodyWithGroups" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
 
 /* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
 "welcome.privateICloud.cancelledInCloudTitle" = "Een verwijdering is niet afgerond";
@@ -6737,15 +6749,10 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
 "storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
-"storage.revert.prior.body" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
-"storage.revert.prior.bodyNoCount" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
 "storage.revert.prior.groupRecords" = "%d groepsrecords";
 "storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
 "storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
 "storage.revert.prior.discard" = "Zonder beginnen";
-"storage.revert.prior.discardConfirmTitle" = "Uit je iCloud verwijderen?";
-"storage.revert.prior.discardConfirmBody" = "Ze worden verwijderd uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie en we kunnen ze niet terughalen. Daarna begint de terugkeer naar je iCloud.";
-"storage.revert.prior.discardConfirm" = "Verwijderen en terug naar je iCloud";
 "storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
 "storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
 "storage.revert.prior.stalledTitle" = "iCloud deed er te lang over om te reageren";
@@ -6755,6 +6762,26 @@
 "storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";
 "storage.revert.prior.noAccountTitle" = "Log in bij iCloud op dit apparaat";
 "storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en dit apparaat is niet ingelogd bij iCloud. Log in via Instellingen en probeer het opnieuw.";
+"storage.revert.sheet.title" = "Terug naar je iCloud";
+"storage.revert.sheet.dataTitle" = "Je gegevens";
+"storage.revert.sheet.dataDetail" = "Komen naar dit apparaat en gaan naar je iCloud.";
+"storage.revert.sheet.accountTitle" = "Je Yala-account";
+"storage.revert.sheet.accountDetail" = "Blijft ingelogd voor je groepen.";
+"storage.revert.sheet.storedTitle" = "Wat erin staat";
+"storage.revert.sheet.storedDetail" = "Je financiën blijven bewaard, ongebruikt.";
+"storage.revert.sheet.cloudAgainTitle" = "Er opnieuw naar overstappen";
+"storage.revert.sheet.cloudAgainDetail" = "Kan vandaag niet.";
+"storage.revert.sheet.continue" = "Doorgaan";
+"storage.revert.sheet.priorBody" = "In de iCloud van dit apparaat staan Yala-gegevens die niet in je account staan: %@.";
+"storage.revert.sheet.priorBodyNoCount" = "In de iCloud van dit apparaat staan Yala-gegevens die niet in je account staan.";
+"storage.revert.sheet.mergeDetail" = "Ze verschijnen naast die van jou.";
+"storage.revert.sheet.discardDetail" = "Verwijdert ze uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie.";
+"storage.revert.sheet.confirmTitle" = "Terug naar je iCloud?";
+"storage.revert.sheet.confirmMerge" = "Toegevoegd aan je gegevens: %@.";
+"storage.revert.sheet.confirmMergeNoCount" = "De Yala-gegevens uit je iCloud worden aan die van jou toegevoegd.";
+"storage.revert.sheet.confirmDiscard" = "Verwijderd uit je iCloud: %@. Er blijft geen kopie en we kunnen ze niet terughalen.";
+"storage.revert.sheet.confirmDiscardNoCount" = "De Yala-gegevens uit je iCloud worden verwijderd. Er blijft geen kopie en we kunnen ze niet terughalen.";
+"storage.revert.sheet.confirmDiscardButton" = "Verwijderen en terug naar je iCloud";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Hier verwijderen";
@@ -7672,15 +7699,14 @@
 "l20n.sheet.anyPhoneTitle" = "Je logt in vanaf elk apparaat";
 "l20n.sheet.anyPhoneDetail" = "Zonder afhankelijk te zijn van iCloud.";
 "l20n.sheet.seesTitle" = "Yala kan je gegevens zien";
-"l20n.sheet.seesDetail" = "Om je te helpen en voor slimme functies.";
+"l20n.sheet.seesDetail" = "Om je te helpen en voor slimme functies. Er is geen eind-tot-eindversleuteling.";
 "l20n.sheet.accessTitle" = "Je logt in met Apple of Google";
 "l20n.sheet.accessDetail" = "Raak je die toegang kwijt, dan is er geen Yala-wachtwoord: exporteer eerst een kopie.";
 "l20n.sheet.exportCopy" = "Eerst een kopie exporteren";
-"l20n.sheet.details" = "Bekijk de details";
-"l20n.sheet.hideDetails" = "Verberg de details";
-"l20n.sheet.detailsAccess" = "Er is geen Yala-wachtwoord en geen herstel via e-mail: raak je de toegang tot je Apple- of Google-account kwijt, dan raak je de toegang tot je gegevens kwijt. Daarom loont het om eerst een kopie te exporteren.";
 "l20n.sheet.willMove" = "%1$@, %2$@ en %3$@ gaan mee.";
 "l20n.sheet.continueCurrent" = "Doorgaan met je huidige account";
+"l20n.sheet.photosTitle" = "De foto's van je bonnetjes gaan niet mee";
+"l20n.sheet.photosDetail" = "Yala bewaart ze niet en uploadt ze niet naar je account.";
 "l20n.relaunch.almostTitle" = "Bijna klaar";
 "l20n.relaunch.doneSignedOut" = "Afgemeld";
 "l20n.relaunch.afterSignOut" = "Als je de app opnieuw opent, haalt Yala je gegevens helemaal van dit apparaat.";
@@ -8696,7 +8722,6 @@
 "account.saveErrorPartial" = "Niet alles kon worden opgeslagen. Een deel van de wijzigingen is misschien al zichtbaar; controleer de rekening en sla opnieuw op.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Van een bon";
 "receiptSplit.entry.hint" = "Leest een bon via foto of stem en verdeelt hem per regel";
 "receiptSplit.title" = "Van een bon";
 "receiptSplit.photo.title" = "Foto van de bon";
@@ -8742,6 +8767,15 @@
 "receiptSplit.failure.read.message" = "Er ging iets mis. Probeer het zo opnieuw.";
 "receiptSplit.failure.noLines.title" = "Geen regels met een bedrag gevonden";
 "receiptSplit.failure.noLines.message" = "Probeer een foto dichter bij de bon en met goed licht, of spreek hem in.";
+"receiptSplit.failure.dailyLimitFree.title" = "Je hebt de bonnetjes van vandaag verdeeld";
+"receiptSplit.failure.dailyLimitFree.message" = "Morgen kun je weer gratis bonnetjes verdelen. Met Yala Pro heb je er elke dag veel meer.";
+"receiptSplit.failure.dailyLimit.title" = "Je hebt de bonnetjeslimiet van vandaag bereikt";
+"receiptSplit.failure.dailyLimit.message" = "Morgen kun je verder met bonnetjes verdelen.";
+"receiptSplit.text.hint" = "Typ de uitgave en de AI verdeelt hem";
+"receiptSplit.text.title" = "Typ de uitgave";
+"receiptSplit.text.placeholder" = "pizza 40 Ana en ik, biefstuk 35 Ben, drankjes 18 iedereen";
+"receiptSplit.text.footer" = "Elk item met het bedrag en wie het had. Wat geen naam heeft, wordt over iedereen verdeeld.";
+"receiptSplit.failure.noLines.textMessage" = "Typ elk item met het bedrag, bijvoorbeeld ‘pizza 40’.";
 "receiptSplit.failure.noConnection.message" = "Maak verbinding met internet om de bon te lezen.";
 "receiptSplit.failure.mic.message" = "Geef toegang in Instellingen om de bon in te spreken.";
 
@@ -8918,6 +8952,29 @@
 "groups.discard.paymentTitle" = "Deze betaling weggooien?";
 "groups.discard.openingBalanceTitle" = "Dit beginsaldo weggooien?";
 "groups.expense.groupChangedNotice" = "Je hebt van groep gewisseld: wat je hebt ingevuld blijft staan; wie betaalde en de verdeling beginnen opnieuw.";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "Gebruikt door je groepen";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "Account wijzigen";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "Account van je groepen ontkoppelen?";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "In beide gevallen verdwijnen je groepen van dit apparaat en blijven ze in je account: ze komen terug als je het opnieuw koppelt. De boekingen van wat je tegoed hebt of verschuldigd bent, verdwijnen uit je rekeningen.";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "De uitgaven die jij betaalde, blijven als gewone boekingen in je rekeningen.";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "De uitgaven die jij betaalde, blijven als gewone boekingen in je rekeningen: %1$d (%2$@).";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "De uitgaven die jij betaalde, verdwijnen ook uit je rekeningen.";
 "statistics.categoryDetail.seeInRecords" = "Bekijken in Boekingen";
 
 /* Buscar en Registros (decisión 14 de 2.3) */
@@ -9002,19 +9059,19 @@
 "bienvenida23.showcase.groupsTitle" = "Heldere rekeningen";
 "bienvenida23.showcase.groupsTitleAccent" = "met je vrienden.";
 "bienvenida23.showcase.receipt.name" = "Leest je bonnetjes";
-"bienvenida23.showcase.receipt.caption" = "Richt de camera op het bonnetje. Yala leest het en zet het erin.";
+"bienvenida23.showcase.receipt.caption" = "Yala leest je bon en noteert hem.";
 "bienvenida23.showcase.voice.name" = "Noteer met je stem";
-"bienvenida23.showcase.voice.caption" = "Vertel Yala wat je hebt uitgegeven, zoals je het iemand zou vertellen.";
+"bienvenida23.showcase.voice.caption" = "Vertel Yala wat je uitgaf.";
 "bienvenida23.showcase.organize.name" = "Ordent je uitgaven";
-"bienvenida23.showcase.organize.caption" = "Yala zet je uitgaven per categorie bij elkaar. Zo zie je waar je geld naartoe gaat.";
+"bienvenida23.showcase.organize.caption" = "Zie waar je geld naartoe gaat.";
 "bienvenida23.showcase.split.name" = "Verdeel elke uitgave";
-"bienvenida23.showcase.split.caption" = "Een etentje, de huur of een reis: Yala verdeelt en houdt het bij.";
+"bienvenida23.showcase.split.caption" = "Yala verdeelt en houdt het bij.";
 "bienvenida23.showcase.budget.name" = "Bewaak een budget";
-"bienvenida23.showcase.budget.caption" = "Stel een limiet in en zie hoeveel je nog over hebt.";
+"bienvenida23.showcase.budget.caption" = "Stel een limiet en zie wat er over is.";
 "bienvenida23.showcase.whoOwes.name" = "Wie wie wat schuldig is";
-"bienvenida23.showcase.whoOwes.caption" = "Geen spreadsheets: iedereen ziet zijn deel.";
+"bienvenida23.showcase.whoOwes.caption" = "Iedereen ziet zijn deel.";
 "bienvenida23.showcase.settle.name" = "Verreken met één tik";
-"bienvenida23.showcase.settle.caption" = "Noteer de betaling en alles staat weer op nul.";
+"bienvenida23.showcase.settle.caption" = "Noteer de betaling: alles op nul.";
 "bienvenida23.showcase.example" = "Voorbeeld";
 "bienvenida23.showcase.groupsDoorLink" = "Uitgaven delen met vrienden";
 "bienvenida23.showcase.pause" = "Etalage pauzeren";
@@ -9022,7 +9079,7 @@
 "bienvenida23.showcase.position" = "%1$@, %2$d van %3$d";
 "bienvenida23.access.google" = "Doorgaan met Google";
 "bienvenida23.access.apple" = "Doorgaan met Apple";
-"bienvenida23.access.iCloud" = "Doorgaan met mijn iCloud";
+"bienvenida23.access.iCloud" = "Doorgaan met privé-iCloud";
 "bienvenida23.access.iCloudLine" = "Je gegevens alleen op je Apple-apparaten.";
 "bienvenida23.access.groupsNeedAccount" = "Om uitgaven met anderen te delen, heb je een Yala-account nodig.";
 "bienvenida23.demo.lunch" = "Lunch";
@@ -9077,7 +9134,6 @@
 "bienvenida23.groups.accountOnlyBody" = "Ik ga naar Groepen en stel het later in";
 "bienvenida23.access.createTitle" = "Laten we je account maken";
 "bienvenida23.access.createBody" = "Dit e-mailadres heeft nog geen Yala-account.";
-"bienvenida23.access.otherProviderNote" = "Heb je je account met %1$@ gemaakt? Ga verder met %1$@: met %2$@ zou het een nieuw account zijn.";
 "bienvenida23.access.useAnotherAccount" = "Ander account gebruiken";
 "bienvenida23.access.existsTitle" = "Je hebt al een account";
 "bienvenida23.access.existsBody" = "Dit e-mailadres heeft al een Yala-account. Zullen we je gegevens laden en naar binnen gaan?";
@@ -9428,3 +9484,255 @@
 
 /* VoiceOver: name of the custom color picker in the icon/color sheet */
 "a11y.selectores.customColor" = "Eigen kleur";
+
+/* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
+"pasos23.home.eyebrow" = "Boek zonder Yala te openen";
+"pasos23.home.start" = "Beginnen";
+"pasos23.home.methodEyebrow" = "%1$d van %2$d · %3$@";
+"pasos23.home.progress" = "Al %1$d van %2$d!";
+"pasos23.home.keepGoing" = "Ga door";
+"pasos23.home.now" = "Nu: %@";
+"pasos23.home.finish" = "Klaar";
+"pasos23.home.widget.name" = "Widget";
+"pasos23.home.applePay.name" = "Apple Pay";
+"pasos23.home.share.name" = "Delen";
+"pasos23.home.siri.name" = "Siri";
+"pasos23.home.widget.part.title" = "Een widget op je beginscherm";
+"pasos23.home.widget.part.message" = "Eén tik en je zit in Nieuwe boeking.";
+"pasos23.home.applePay.part.title" = "Elke betaling met Apple Pay";
+"pasos23.home.applePay.part.message" = "Je betaalt met je iPhone en hij komt in de Inbox te staan, zodat je hem kunt goedkeuren.";
+"pasos23.home.applePay.part.paid" = "Je hebt %@ betaald in de supermarkt";
+"pasos23.home.applePay.part.push" = "Betaling van %@ om te controleren. Tik erop om hem goed te keuren.";
+"pasos23.home.share.part.title" = "Deel een foto met Yala";
+"pasos23.home.share.part.message" = "Vanuit Foto’s, WhatsApp of je bank: je deelt het bonnetje en Yala leest het.";
+"pasos23.home.siri.part.title" = "Zeg het tegen Siri";
+"pasos23.home.siri.part.message" = "Handsfree, terwijl je betaalt.";
+"pasos23.home.siri.part.ask" = "“Hé Siri, maak een boeking in Yala”";
+"pasos23.home.siri.part.answer" = "Wat wil je boeken?";
+"pasos23.home.widget.title" = "Voeg de widget toe";
+"pasos23.home.widget.subtitle" = "Je zet hem zelf op je beginscherm. Het kost een halve minuut.";
+"pasos23.home.widget.step1" = "Houd een lege plek op je beginscherm ingedrukt.";
+"pasos23.home.widget.step2" = "Tik op “Wijzig” en dan op “Voeg widget toe”.";
+"pasos23.home.widget.step3" = "Zoek naar “Yala” en kies “Nieuwe boeking”.";
+"pasos23.home.widget.step4" = "Tik op “Voeg widget toe” en zet hem waar je wilt.";
+"pasos23.home.widget.done" = "Klaar, ik heb hem";
+"pasos23.home.applePay.done" = "Ik heb het ingesteld";
+"pasos23.home.share.title" = "Deel een foto met Yala";
+"pasos23.home.share.subtitle" = "Een bonnetje, een screenshot van je bank of een PDF, vanuit elke app.";
+"pasos23.home.share.step1" = "Tik in Foto’s (of in de app waar het staat) op Deel.";
+"pasos23.home.share.step2" = "Kies Yala. Als het er niet staat, veeg dan en tik op “Meer”.";
+"pasos23.home.share.step3" = "Yala haalt het bedrag, de winkel en de datum eruit: jij controleert en bewaart.";
+"pasos23.home.siri.title" = "Wat zeg ik tegen Siri?";
+"pasos23.home.siri.subtitle" = "Begin met “Hé Siri” en zeg een van deze zinnen. Ze werken zonder iets in te stellen.";
+"pasos23.home.siri.newRecordPhrase" = "Nieuwe boeking in Yala";
+"pasos23.home.applePay.next" = "Elke betaling met Apple Pay komt in je Inbox.";
+"pasos23.home.share.next" = "Deel een bonnetje vanuit elke app.";
+"pasos23.home.siri.next" = "Alles wat je aan Siri kunt vragen.";
+"pasos23.home.applePay.nextAction" = "Apple Pay instellen";
+"pasos23.home.share.nextAction" = "Bekijk hoe je deelt";
+"pasos23.home.siri.nextAction" = "Bekijk wat je tegen Siri kunt zeggen";
+"pasos23.home.mail.name" = "E-mail";
+"pasos23.home.mail.part.title" = "Je e-mail, automatisch";
+"pasos23.home.mail.part.message" = "Stuur de meldingen van je bank door naar je Yala-adres en elke transactie komt vanzelf in je Inbox.";
+"pasos23.home.mail.part.mail" = "Kaartbetaling van %@";
+"pasos23.home.mail.part.from" = "Melding van je bank";
+"pasos23.home.mail.part.push" = "In je Inbox: %@, klaar om goed te keuren.";
+"pasos23.home.mail.title" = "Je Yala-adres";
+"pasos23.home.mail.subtitle" = "Maak een filter in je e-mail en de meldingen van je bank komen als concept in je Inbox: er wordt niets vastgelegd zonder jouw goedkeuring.";
+"pasos23.home.mail.addressCaption" = "Stuur je meldingen door naar";
+"pasos23.home.mail.copy" = "Kopiëren";
+"pasos23.home.mail.step1" = "Kopieer je Yala-adres.";
+"pasos23.home.mail.step2" = "Open je e-mail op het web (Gmail, Outlook of iCloud Mail) en maak een filter met het adres van je bank als afzender.";
+"pasos23.home.mail.step3" = "Kies doorsturen naar je Yala-adres en bewaar het filter.";
+"pasos23.home.mail.step3.detail" = "Voeg het in Gmail eerst toe bij Doorsturen: de code om het te bevestigen staat in Instellingen › E-mails van de bank.";
+"pasos23.home.mail.soon" = "Binnenkort: Gmail en Outlook direct koppelen, zonder filters.";
+"pasos23.home.mail.next" = "De meldingen van je bank, rechtstreeks in je Inbox.";
+"pasos23.home.mail.nextAction" = "Mijn adres bekijken";
+"pasos23.final.done.title" = "Eerste stappen voltooid!";
+"pasos23.final.done.message" = "Je kent de basis van Yala. De rest ontdek je in je eigen tempo.";
+"pasos23.final.offer.titleOneMonth" = "Probeer Yala Pro 1 maand gratis";
+"pasos23.final.offer.titleDays" = "Probeer Yala Pro %d dagen gratis";
+"pasos23.final.offer.subtitle" = "Je hebt gezien wat het doet. Met Pro boek je met je stem of een foto en vraag je Yala AI hoe je ervoor staat.";
+"pasos23.final.offer.mostChosen" = "Meest gekozen";
+"pasos23.final.offer.cheaperPerMonth" = "Goedkoper per maand";
+"pasos23.final.offer.timeline.reminder" = "We waarschuwen je voordat er wordt afgeschreven.";
+"pasos23.final.offer.timeline.charge" = "Je abonnement begint. Zeg eerder op in Instellingen en je betaalt niets.";
+"pasos23.final.offer.ctaOneMonth" = "Mijn gratis maand starten";
+"pasos23.final.offer.ctaDays" = "Mijn %d gratis dagen starten";
+"pasos23.final.offer.keepFree" = "Doorgaan met de gratis versie";
+"pasos23.final.feature.voice" = "Dicteer de uitgave en Yala boekt ze.";
+"pasos23.final.feature.photo" = "Een bonnetje, een screenshot of een PDF.";
+"pasos23.final.feature.ai" = "Hoe je ervoor staat, waar je aan uitgeeft, wat eraan komt.";
+"pasos23.final.feature.accounts" = "Al je kaarten en banken.";
+"pasos23.final.feature.budgets" = "Een limiet voor elk ding.";
+"pasos23.final.feature.looks" = "Yala zoals jij het wilt.";
+"pasos23.final.success.title" = "Klaar! Je hebt Pro";
+"pasos23.final.success.oneMonth" = "Je gratis maand loopt tot %1$@. Op %2$@ waarschuwen we je, vóór er iets wordt afgeschreven.";
+"pasos23.final.success.days" = "Je %1$d gratis dagen lopen tot %2$@. Op %3$@ waarschuwen we je, vóór er iets wordt afgeschreven.";
+"pasos23.final.success.oneMonthUntil" = "Je gratis maand loopt tot %@.";
+"pasos23.final.success.daysUntil" = "Je %1$d gratis dagen lopen tot %2$@.";
+"pasos23.final.success.startUsing" = "Aan de slag";
+"pasos23.final.reminder.title" = "Je proefperiode van Yala Pro eindigt binnenkort";
+"pasos23.final.reminder.body" = "Op %@ begint je abonnement. Wil je niet doorgaan, zeg dan eerder op in Instellingen.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Tijd";
+"export.column.time.description" = "Het tijdstip van de boeking.";
+"export.column.exchangeRate" = "Wisselkoers";
+"export.column.exchangeRate.description" = "Bij een andere valuta de koers van de omrekening en naar welke valuta.";
+"export.column.need" = "Noodzaak";
+"export.column.need.description" = "Alleen als je die bij deze boeking hebt gewijzigd.";
+"import.error.unreadableRow" = "Rij %1$d: we konden hem niet lezen omdat hij geen kolommen heeft.";
+"import.error.time" = "Rij %1$d: we begrijpen de tijd ‘%2$@’ niet. Schrijf hem zo: 14:30.";
+"import.error.exchangeRate" = "Rij %1$d: we begrijpen de wisselkoers ‘%2$@’ niet. Schrijf hem met een decimale punt en zonder duizendtalscheiding, zo: 3.75.";
+"import.error.need" = "Rij %1$d: we begrijpen de noodzaak ‘%2$@’ niet. Gebruik essential, priority, optional of unclassified.";
+/* Grupos 2.3 · saldar como en Splitwise (decisión 37, C1 + C2 + C3) */
+"groups.saldar23.thirdPartyHint" = "Jij zet het erin: %@ ziet het en bevestigt dat het binnen is.";
+"groups.saldar23.recordedBy" = "Ingevoerd door %@";
+"groups.saldar23.recordedByYou" = "Ingevoerd door jou";
+"groups.saldar23.pendingTitleOther" = "%1$@ heeft ingevoerd dat %2$@ je %3$@ heeft betaald";
+"groups.saldar23.scopeA11y" = "Hoeveel er wordt betaald";
+"groups.saldar23.scopeAll" = "Alles · %@";
+"groups.saldar23.scopePart" = "Een deel";
+"groups.saldar23.settlesWith" = "Hiermee staan jij en %@ quitte.";
+"groups.saldar23.settlesOthers" = "Hiermee staan %1$@ en %2$@ quitte.";
+"groups.saldar23.leaves.youPay" = "Je blijft %2$@ nog %1$@ schuldig.";
+"groups.saldar23.leaves.paysYou" = "%1$@ blijft je nog %2$@ schuldig.";
+"groups.saldar23.leaves.others" = "%1$@ blijft %3$@ nog %2$@ schuldig.";
+"groups.saldar23.overpays.youPay" = "Dat is meer dan je schuldig bent (%1$@). %2$@ zou jou dan %3$@ schuldig zijn.";
+"groups.saldar23.overpays.paysYou" = "Dat is meer dan je tegoed hebt (%1$@). Jij zou %3$@ dan %2$@ schuldig zijn.";
+"groups.saldar23.overpays.others" = "Dat is meer dan %1$@ %2$@ schuldig is (%3$@). %2$@ zou %1$@ dan %4$@ schuldig zijn.";
+"groups.saldar23.saveAnyway" = "Toch verrekenen";
+"groups.saldar23.notice.youPaid" = "Je hebt %2$@ %1$@ betaald.";
+"groups.saldar23.notice.paidYou" = "%1$@ heeft je %2$@ betaald.";
+"groups.saldar23.notice.othersPaid" = "Je hebt ingevoerd dat %1$@ %3$@ %2$@ heeft betaald.";
+"groups.saldar23.notice.waitingFor" = "Wacht op bevestiging van %@.";
+"groups.saldar23.notice.settled" = "Jullie staan quitte.";
+"groups.saldar23.notice.nowYouOwe" = "Je bent %2$@ nu %1$@ schuldig.";
+"groups.saldar23.notice.nowOwesYou" = "%1$@ is je nu %2$@ schuldig.";
+"groups.saldar23.notice.nowOthersOwe" = "%1$@ is %3$@ nu %2$@ schuldig.";
+"groups.saldar23.pendingOnDebt.one" = "Er wacht een betaling van %@ op bevestiging";
+"groups.saldar23.pendingOnDebt.many" = "Er wachten betalingen van %@ op bevestiging";
+"groups.saldar23.confirmOver.title" = "Deze betaling bevestigen?";
+"groups.saldar23.confirmOver.settled" = "%1$@ was je niets meer schuldig: een andere betaling heeft deze schuld voldaan. Als je deze %2$@ bevestigt, is er te veel betaald. Is het dezelfde betaling die twee keer is ingevoerd, haal hem dan weg.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ hoefde je nog maar %2$@ te betalen. Als je deze %3$@ bevestigt, is er te veel betaald.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Toch bevestigen";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala heeft de schulden samengevoegd zodat er minder betalingen zijn.";
+"groups.lote23chico.showPairs" = "Schulden per paar bekijken";
+"groups.lote23chico.pairsNote" = "Dit zijn de schulden per paar, niet samengevoegd. Om te verrekenen ga je terug naar minder betalingen.";
+"groups.lote23chico.showSimplified" = "Bekijken met minder betalingen";
+"settings.lote23chico.favoriteRecords" = "Favoriete boekingen";
+"settings.lote23chico.organizationFooter" = "Budgetten en Geplande betalingen staan in Planning. Welke budgetten in het Panel staan, kies je in Panel instellen.";
+"panel.lote23chico.budgetsOnPanel" = "Budgetten in het Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Kies welke op de Budgetten-kaart staan.";
+"usageMode.lote23chico.fullExpensesOnly" = "Volledige Yala · alleen uitgaven";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "Afmelden…";
+"uxcs.signOutProgress.removingData" = "Je gegevens worden van dit apparaat verwijderd…";
+"uxcs.signOutProgress.deletingAccount" = "Je account wordt verwijderd…";
+"uxcs.signOutProgress.keepOpen" = "Houd Yala open tot het klaar is.";
+"uxcs.signOutProgress.accountDeletedTitle" = "Je account is verwijderd";
+"uxcs.signOutProgress.accountDeletedBody" = "We hebben je Yala-account met al zijn gegevens verwijderd, ook die op dit apparaat. Zat je in groepen, dan heet je daar nu “Verwijderde gebruiker”.";
+"uxcs.signOutProgress.continue" = "Doorgaan";
+"uxcs.relaunch.accountDeleted" = "Account verwijderd";
+"uxcs.relaunch.afterSignOutICloud" = "Je gegevens waren gekoppeld aan je iCloud, en Yala kan die koppeling pas loslaten als het helemaal sluit. Als je het weer opent, verwijdert Yala je gegevens verder van dit apparaat.";
+"bienvenida23.access.sameEmailNote" = "Met hetzelfde e-mailadres openen Apple en Google hetzelfde Yala-account. Heb je het jouwe met een ander e-mailadres gemaakt, log dan daarmee in.";
+"bienvenida23.access.consentAccessDetail" = "Er is geen Yala-wachtwoord en geen herstel via e-mail: verlies je die toegang, exporteer dan eerst je gegevens (Instellingen → Boekingen exporteren).";
+"bienvenida23.access.createdTitle" = "Je account is aangemaakt";
+"bienvenida23.access.createdBody" = "Nu nog drie korte vragen om Yala op jou af te stemmen.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Verbonden browsers";
+"connectedBrowsers.rowSubtitle" = "Yala web-sessies die met je account open zijn";
+"connectedBrowsers.intro" = "Hier zie je waar Yala web met je account open is. Herken je er een niet, meld die dan af.";
+"connectedBrowsers.empty" = "Er is geen Yala web-sessie open met je account.";
+"connectedBrowsers.close" = "Afmelden";
+"connectedBrowsers.closeAll" = "Alle websessies afmelden";
+"connectedBrowsers.closeAllConfirmTitle" = "Alle websessies afmelden?";
+"connectedBrowsers.closeAllConfirmBody" = "Die tabbladen worden binnen een minuut leeg. Je gegevens veranderen niet.";
+"connectedBrowsers.closeAllConfirm" = "Alles afmelden";
+"connectedBrowsers.footer" = "Als je er een afmeldt, wordt dat tabblad binnen een minuut leeg.";
+"connectedBrowsers.loadFailed" = "De lijst kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.";
+"connectedBrowsers.closeFailed" = "Afmelden is niet gelukt. Controleer je verbinding en probeer het opnieuw.";
+"connectedBrowsers.unknownBrowser" = "Browser";
+"connectedBrowsers.sharedComputer" = "gedeelde computer";
+"connectedBrowsers.justNow" = "zojuist";
+"connectedBrowsers.browserOn" = "%1$@ op %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Browser koppelen";
+"connectedBrowsers.link.rowFooter" = "Open je Yala op een computer zonder wachtwoord te typen: scan de code die Yala web toont.";
+"connectedBrowsers.link.title" = "Browser koppelen";
+"connectedBrowsers.link.intro" = "Open op de computer Yala web en kies ‘Inloggen met je iPhone’. Richt de camera op de code.";
+"connectedBrowsers.link.scanner" = "Camera om de code te lezen";
+"connectedBrowsers.link.typeHeader" = "Of typ de code";
+"connectedBrowsers.link.continue" = "Ga door";
+"connectedBrowsers.link.confirmHeader" = "Yala openen in deze browser?";
+"connectedBrowsers.link.whereCity" = "Aangevraagd vanuit %1$@ · code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Bevestig alleen als je deze code op je eigen scherm ziet. Niemand van Yala zal je erom vragen.";
+"connectedBrowsers.link.confirm" = "Bevestig met Face ID";
+"connectedBrowsers.link.faceIDReason" = "Bevestig dat je je Yala in die browser wilt openen.";
+"connectedBrowsers.link.doneTitle" = "Browser gekoppeld";
+"connectedBrowsers.link.doneBody" = "%@ toont nu je Yala, alleen-lezen. Je kunt hem hier altijd afmelden.";
+"connectedBrowsers.link.doneButton" = "Klaar";
+"connectedBrowsers.link.problem.invalidCode" = "Dat is geen code van Yala web. Controleer of hij 8 tekens heeft.";
+"connectedBrowsers.link.problem.expired" = "De code is verlopen of al gebruikt. Vraag een nieuwe aan op Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Je account gebruikt de Yala-cloud niet. Zet die aan bij Opslag om Yala web te gebruiken.";
+"connectedBrowsers.link.problem.sessionExpired" = "Je cloudsessie is verlopen. Log opnieuw in bij Je Yala-account.";
+"connectedBrowsers.link.problem.network" = "Kan geen verbinding maken met Yala web. Probeer het opnieuw.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Transactie vastleggen uit tekst";
+"shortcut.bankNotice.description" = "Leest de melding van je bank en zet de transactie in je Inbox om te bevestigen. Gebruik het in de automatisering ‘Als ik een melding krijg’ van je bank-app, met de variabele Melding.";
+"shortcut.bankNotice.param.text" = "Tekst";
+"shortcut.bankNotice.param.text.description" = "De tekst van de melding (de variabele Melding)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Andere bank";
+"Record a movement from the text ${text}" = "Transactie vastleggen uit de tekst ${text}";
+"inbox.sourceBankNotice" = "Melding van %@";
+"inbox.sourceBankNoticeOther" = "Bankmelding";
+"inbox.sourceBankNoticeNotUnderstood" = "We begrepen deze melding niet";
+/* Pagos que se repiten: propuestas de pagos planificados desde el historial (lote S1, 2026-11-14) */
+"pagosRecurrentes.card.title" = "Terugkerende betalingen";
+"pagosRecurrentes.card.subtitle" = "We vonden ze in je boekingen. Zullen we ze plannen?";
+"pagosRecurrentes.card.manage" = "Instellingen voor voorstellen";
+"pagosRecurrentes.card.manageA11y" = "Opties voor terugkerende betalingen";
+"pagosRecurrentes.cadence.monthly" = "Elke maand, op de %@e";
+"pagosRecurrentes.cadence.monthlyApprox" = "Elke maand, rond de %@e";
+"pagosRecurrentes.cadence.weekly" = "Elke week, op %@";
+"pagosRecurrentes.sheet.chargesFound" = "Gevonden afschrijvingen: %@";
+"pagosRecurrentes.sheet.lastCharge" = "Laatste afschrijving: %@";
+"pagosRecurrentes.sheet.amount" = "Bedrag";
+"pagosRecurrentes.sheet.frequency" = "Frequentie";
+"pagosRecurrentes.sheet.frequencyMonthly" = "Elke maand";
+"pagosRecurrentes.sheet.frequencyWeekly" = "Elke week";
+"pagosRecurrentes.sheet.nextCharge" = "Volgende afschrijving";
+"pagosRecurrentes.sheet.account" = "Rekening";
+"pagosRecurrentes.sheet.chooseAccount" = "Kies een rekening";
+"pagosRecurrentes.sheet.category" = "Categorie";
+"pagosRecurrentes.sheet.notify" = "Herinner me";
+"pagosRecurrentes.sheet.variable" = "Het bedrag verschilt per afschrijving: we nemen het laatste.";
+"pagosRecurrentes.sheet.create" = "Geplande betaling maken";
+"pagosRecurrentes.sheet.notFixed" = "Niet vast";
+"pagosRecurrentes.sheet.notNow" = "Niet nu";
+"pagosRecurrentes.notify.none" = "Niet herinneren";
+"pagosRecurrentes.notify.sameDay" = "Op de dag zelf";
+"pagosRecurrentes.notify.oneDay" = "1 dag ervoor";
+"pagosRecurrentes.notify.threeDays" = "3 dagen ervoor";
+"pagosRecurrentes.notify.oneWeek" = "1 week ervoor";
+"pagosRecurrentes.created.notice" = "%1$@ is nu een geplande betaling. We herinneren je op %2$@.";
+"pagosRecurrentes.created.noticeNoReminder" = "%@ is nu een geplande betaling.";
+"pagosRecurrentes.created.view" = "Bekijk";
+"pagosRecurrentes.settings.title" = "Terugkerende betalingen";
+"pagosRecurrentes.settings.toggle" = "Terugkerende betalingen voorstellen";
+"pagosRecurrentes.settings.footer" = "Yala bekijkt je boekingen op dit apparaat. Er verlaat niets het apparaat.";
+"pagosRecurrentes.settings.dismissed" = "Afgewezen";
+"pagosRecurrentes.settings.dismissedOn" = "Op %@ gemarkeerd als ‘Niet vast’";
+"pagosRecurrentes.settings.restore" = "Opnieuw voorstellen";
+"pagosRecurrentes.settings.done" = "Gereed";
+"pagosRecurrentes.footer.link" = "Terugkerende betalingen";
+"pagosRecurrentes.footer.off" = "Uit";

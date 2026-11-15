@@ -29,6 +29,8 @@ struct ContentView: View {
     /// elige dentro). Cada productor lo setea EXPLÍCITO antes de presentar — jamás se hereda el del
     /// intento anterior.
     @State private var welcomeCloudEntry: WelcomeCloudSignInView.Entry = .reentry(.apple)
+    /// Card gd78: el cover de la entrada se abre para RETOMAR un traspaso que un cierre dejó a medias, no para firmar.
+    @State private var welcomeCloudResumesAdopt = false
     /// UX 2.2 · L6-3: la entrada a la nube la abrió «¡Hola de nuevo!» (y no la puerta de Grupos ni el faro). Decide dos
     /// cosas de esa entrada: cancelar su consentimiento —que es su primera pantalla— vuelve a «¡Hola de nuevo!», y
     /// «atrás» también. Cada productor del cover la escribe EXPLÍCITA, como `welcomeCloudEntry`.
@@ -122,6 +124,8 @@ struct ContentView: View {
     @State private var lateICloudNotice: LateICloudNotice?
     @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
+    /// Y23-18: la oferta presentada es la del final de Primeros pasos (la apunta quien la pidió, no el estado del mazo).
+    @State private var trialOfferIsSetupCompletion = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
@@ -638,7 +642,7 @@ struct ContentView: View {
                 },
                 // El alcance no lo decide esta vista: el aviso EMPIEZA un borrado, el borrado a medias TERMINA el que
                 // se armó (`performLateICloudWipe`).
-                performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) },
+                performWipe: { await performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe) },
                 onWiped: { settleAfterLateICloudWipe() }
             )
         }
@@ -658,6 +662,7 @@ struct ContentView: View {
             showInviteRecovery: $showInviteRecovery,
             showWelcomeCloudSignIn: $showWelcomeCloudSignIn,
             welcomeCloudEntry: $welcomeCloudEntry,
+            welcomeCloudResumesAdopt: $welcomeCloudResumesAdopt,
             adoptStartsAtConsent: $adoptStartsAtConsent,
             cloudSignInFromExistingChooser: $cloudSignInFromExistingChooser,
             prefilledOnboardingData: $prefilledOnboardingData,
@@ -796,8 +801,13 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
         }) {
-            ProTrialOfferSheet {
-                showProTrialOffer = false
+            // Y23-18: la oferta que pidió el final de Primeros pasos, la suya; la de tras guardar un registro, la de siempre.
+            if trialOfferIsSetupCompletion {
+                SetupCompleteTrialOfferSheet { showProTrialOffer = false }
+            } else {
+                ProTrialOfferSheet {
+                    showProTrialOffer = false
+                }
             }
         }
         .sheet(isPresented: $showWhatsNew, onDismiss: {
@@ -1161,7 +1171,6 @@ struct ContentView: View {
         WelcomeConversationView(
             providerName: CloudAuthService.shared.hasSession ? CloudAuthService.shared.capturedFullName() : nil,
             livesInYalaAccount: CloudAuthService.shared.hasSession,
-            prefilledData: prefilledOnboardingData,
             onCancel: {
                 // Resetea `hasShownWelcomeChooser` para que la bienvenida se vuelva
                 // a presentar (no salta al Chooser automáticamente).
@@ -1545,6 +1554,8 @@ struct ContentView: View {
             // en los productores — permite re-emitir tras un drop transient.
             SessionState.shared.needsPostOnboardingTrial = false
             SessionState.shared.trialOfferMomentReached = false
+            // Y23-18: qué oferta se pidió se consume aquí, con la presentación o con la que ya no saldrá.
+            trialOfferIsSetupCompletion = SetupCompleteTrialOfferLogic.takePendingOffer()
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
@@ -2574,6 +2585,50 @@ struct ContentView: View {
     /// A4 v3.1: NO hace autopromote por data en iCloud. NO espera 8s con spinner.
     /// El fetch de iCloud lo hace `WelcomeHeroView` invisible mientras el user lee
     /// las cards animadas. Decisión consciente del user — no se carga data sin tap explícito.
+    /// **Card gd78 · el arranque que encuentra una entrada a medias.** Lee el journal con la misma lectura que la salida
+    /// hacia atrás (`WelcomeAdoptInFlight.relaunchRoute`):
+    ///  - si algo del traspaso sigue en vuelo, vuelve a «Conectando con tu cuenta» con la entrada de antes, que retoma el
+    ///    traspaso y ofrece «Cancelar la activación»;
+    ///  - si consta que salió sin dejar nada, deshace lo que marcó `onAdoptStarted` y vuelve a la bienvenida.
+    /// `false` = no hay controller (backend sin configurar): el arranque sigue como siempre.
+    private func resumeWelcomeAdoptAfterRelaunch() -> Bool {
+        guard let controller = CloudMigrationController.shared else { return false }
+        controller.refresh()
+        let route = WelcomeAdoptInFlight.relaunchRoute(
+            journaledPhase: controller.journaledPhase,
+            adoptEffectJournaled: controller.adoptEffectJournaled,
+            journalUnreadable: controller.isJournalUnreadable,
+            adoptClaimExit: controller.adoptClaimExit,
+            hasLocalData: checkHasExistingData())
+        CloudSyncBreadcrumb.welcomeAdoptRelaunchRoute(route: "\(route)",
+                                                      phase: "\(controller.journaledPhase)")
+        switch route {
+        case .release:
+            // Salió sin poder deshacerse, o el journal no se deja leer: la app, como antes del arreglo (review adversarial:
+            // retomar aquí volvía a reclamar una cuenta que la persona dejó, o se quedaba en «Conectando» sin salida).
+            WelcomeAdoptInFlight.clear()
+            return false
+        case .resume:
+            welcomeCloudEntry = .reentry(WelcomeAdoptInFlight.provider()
+                ?? CloudSignInProvider(rawValue: CloudAuthService.shared.storedProvider() ?? "") ?? .google)
+            welcomeCloudResumesAdopt = true
+            adoptStartsAtConsent = false
+            cloudSignInFromExistingChooser = false
+            showWelcomeCloudSignIn = true
+        case .backOut:
+            if let snapshot = WelcomeAdoptInFlight.snapshot() {
+                snapshot.restoreNeutralMount()
+                if !snapshot.hasCompletedOnboarding { hasCompletedOnboarding = false }
+                if !snapshot.hasPrivateSession { SessionState.shared.hasPrivateSession = false }
+            }
+            WelcomeAdoptInFlight.clear()
+            hasShownWelcomeChooser = false
+            welcomeFlowInitialStep = .chooser
+            showWelcomeFlow = true
+        }
+        return true
+    }
+
     private func checkInitialSyncState() async {
         // **El término del corpus de la puerta del invitado, cableado desde aquí.** Contar filas pide un
         // `ModelContext` y `GroupBackendInviteEntryHandler` no tiene ninguno, así que se le instala el
@@ -2622,6 +2677,16 @@ struct ContentView: View {
         hasExistingData = checkHasExistingData()
         hasPersonalData = checkHasPersonalData()
         IntentSignalBreadcrumb.initialSyncChecked(hasExistingData: hasExistingData)
+
+        // Card gd78: una entrada a una cuenta que se cerró a mitad, con el par sin escribir, no aterriza en la app: vuelve a
+        // «Conectando con tu cuenta», que la retoma, o a la bienvenida si consta que no dejó nada.
+        if hasCompletedOnboarding, WelcomeAdoptInFlight.holdsNeutralMount() {
+            await waitForBootstrap()
+            if resumeWelcomeAdoptAfterRelaunch() {
+                isInitialCheckDone = true
+                return
+            }
+        }
 
         if hasCompletedOnboarding {
             // Returning user este device — ya completó onboarding antes.
@@ -3325,6 +3390,11 @@ struct ContentView: View {
         // (onboarding). Se CONSUME al leerlo — un destino que no se retira secuestra la pantalla inicial de
         // todos los arranques siguientes.
         if let pending = WelcomePendingDestinationStore.consume() {
+            // Telemetría (card 4b7h): volvió a abrir Yala tras «Reabre Yala» en pleno alta y el alta sigue. Va en las ramas
+            // que siguen, no aquí: con el montaje sin espejo se vuelve a pedir reabrir, y eso no es haber vuelto.
+            let noteReturned = {
+                if let returned = MetricsUseFeature.relaunchReturned(destination: pending) { MetricsService.used(returned) }
+            }
             switch pending {
             case .privateOnboarding:
                 // **Con el montaje sin espejo, el onboarding privado no corre: se pide reabrir** (ticket
@@ -3338,9 +3408,11 @@ struct ContentView: View {
                     welcomeFlowInitialStep = .mirrorRelaunch
                     showWelcomeFlow = true
                 } else {
+                    noteReturned()
                     showOnboarding = true
                 }
             case .restoreICloud:
+                noteReturned()
                 showWelcomeRestore = true
             case .inviteRecovery:
                 showInviteRecovery = true
@@ -3442,6 +3514,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Lo que `onAdoptStarted` cambió, para deshacerlo si el adopt sale hacia atrás sin dejar nada (card 0f7h).
     @State private var adoptStartSnapshot: WelcomeAdoptBackOut.Snapshot?
     @Environment(\.modelContext) private var modelContext
+    /// Card x5tm: «Empezar» de quien entró por la puerta de Grupos elige la pestaña de Grupos de esta ventana.
+    @Environment(SceneNavigation.self) private var navigation
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var welcomeRestoreOrigin: WelcomeFlowStep?
@@ -3455,6 +3529,9 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Qué hace el cover de nube: re-entrada (con su provider) o alta born-cloud (A5). Cada
     /// productor lo setea EXPLÍCITO antes de presentar — jamás se hereda el del intento anterior.
     @Binding var welcomeCloudEntry: WelcomeCloudSignInView.Entry
+    /// Card gd78: el cover se abrió para retomar un traspaso que un cierre dejó a medias. Lo enciende el arranque y se
+    /// apaga en cuanto el cover deja de enseñar la entrada.
+    @Binding var welcomeCloudResumesAdopt: Bool
     /// **Bloque [I]** · el cover del adopt se abrió con la sesión ya firmada en la puerta de Grupos, así
     /// que arranca en el consentimiento y no en el intro. Lo repone este modifier al cerrarse el cover.
     @Binding var adoptStartsAtConsent: Bool
@@ -3579,6 +3656,7 @@ private struct WelcomeFlowModifier: ViewModifier {
             resetCloudSignInEntry()
         }
         if let now { lastWelcomeCoverContent = now }
+        if now != .cloudSignIn { welcomeCloudResumesAdopt = false }
     }
 
     /// El arranque-en-consent es de UNA entrada: la siguiente por el chooser es un recorrido normal y debe ver su intro.
@@ -3600,8 +3678,12 @@ private struct WelcomeFlowModifier: ViewModifier {
         // `!showWelcomeFlow` es el término del bloque [I], hermano del `!showOnboarding` de
         // arriba: desde el cover único `onEnterGroupsOnly` ya no lo cierra (vuelve al Welcome en el step de Grupos
         // fundiendo), pero el término sigue siendo el que impide pisar un Welcome ya pedido con `.chooser`.
-        if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding
-            && !showWelcomeFlow {
+        // Card c8i9: el onboarding se lee de disco. El `@Binding` de este `onDismiss` es el de cuando se presentó el cover, y
+        // `onAdoptStarted` lo marca con el cover abierto (ver `WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn`).
+        let onboardingCompletedNow = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        if WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn(
+            onboardingCompletedNow: onboardingCompletedNow, inviteOnboardingShown: showGroupInviteOnboarding,
+            onboardingShown: showOnboarding, welcomeFlowShown: showWelcomeFlow) {
             welcomeFlowInitialStep = .chooser
             showWelcomeFlow = true
         }
@@ -3644,18 +3726,15 @@ private struct WelcomeFlowModifier: ViewModifier {
                 case .restoreICloud:
                     showWelcomeFlow = false
                     showWelcomeRestore = true
-                case .cloudSignIn:
-                    welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
+                case .cloudSignIn, .googleSignIn:
+                    // E13 del recorrido del 13-nov: el acceso único de la vitrina (Y23-02), no el consentimiento en una
+                    // hoja aparte ANTES de elegir la cuenta. Firma, verifica y enseña el consentimiento dentro de «¿Cargamos
+                    // tus datos y entramos?» o «Vamos a crear tu cuenta»: un solo diseño y un solo momento para el aviso.
+                    // El proveedor va EXPLÍCITO (jamás heredar el previo), y el origen se marca para que «Volver» regrese
+                    // a «¡Hola de nuevo!».
+                    welcomeCloudEntry = .unified(option == .googleSignIn ? .google : .apple)
                     cloudSignInFromExistingChooser = true
-                    // UX 2.2 · L6-3: «Entrar con Apple» abre directamente el consentimiento, y de ahí Apple.
-                    // La pantalla intermedia repetía el mismo botón («Iniciar sesión con Apple»).
-                    adoptStartsAtConsent = true
-                    showWelcomeFlow = false
-                    showWelcomeCloudSignIn = true
-                case .googleSignIn:
-                    welcomeCloudEntry = .reentry(.google)
-                    cloudSignInFromExistingChooser = true
-                    adoptStartsAtConsent = true
+                    adoptStartsAtConsent = false
                     showWelcomeFlow = false
                     showWelcomeCloudSignIn = true
                 }
@@ -3750,6 +3829,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // mismo cover y puede pedir confirmación sin desmontar nada. Para cuando este
                 // callback corre, la pregunta ya se hizo.
                 hasShownWelcomeChooser = true
+                // Card gd78: un destino que pide el espejo no puede quedar detrás del neutro de una entrada a medias, o el
+                // relanzamiento giraría igual que con el neutro solo-grupos de abajo.
+                WelcomeAdoptInFlight.clear()
                 // **El anti-bucle del neutro solo-grupos** (paso 5 del rediseño), y va JUNTO a la
                 // línea de arriba porque hace exactamente su mismo trabajo sobre el otro
                 // predicado de mount. Este callback es el punto ÚNICO donde se decide que un
@@ -3783,6 +3865,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                     // declaran lo mismo.
                     CloudSessionRetirement.arm(defaults: .standard)
                 }
+                // **Con el teléfono todavía en la nube, el onboarding privado no se encola: se deja recién instalado**
+                // (opción A). Tras el relanzamiento montaría el store de la nube y correría encima, sin sesión.
+                if destination == .privateOnboarding, returnCloudPhoneToFreshInstallIfNeeded() { return }
                 WelcomePendingDestinationStore.set(destination)
             },
             onGroupsGateNeutralReturnArmed: { purpose in
@@ -3830,11 +3915,12 @@ private struct WelcomeFlowModifier: ViewModifier {
             },
             onGroupsGateCloudAccountProceed: { provider, fromExistingChooser in
                 // La puerta de la entrada con otra cuenta abrió: el teléfono ya no tiene datos que dejar aparte. Se vuelve a
-                // la entrada a la cuenta como desde «¡Hola de nuevo!» —en el consentimiento, y de ahí al método—, porque la
-                // sesión no sobrevivió al borrado y la persona tiene que volver a firmar.
-                welcomeCloudEntry = .reentry(provider)  // EXPLÍCITO (jamás heredar el previo)
+                // la entrada a la cuenta como desde «¡Hola de nuevo!», porque la sesión no sobrevivió al borrado y la
+                // persona tiene que volver a firmar. Desde el E13 del recorrido del 13-nov, por el acceso único: firma y
+                // el consentimiento va dentro de la hoja que sigue, no en una hoja aparte antes.
+                welcomeCloudEntry = .unified(provider)  // EXPLÍCITO (jamás heredar el previo)
                 cloudSignInFromExistingChooser = fromExistingChooser
-                adoptStartsAtConsent = true
+                adoptStartsAtConsent = false
                 showWelcomeFlow = false
                 showWelcomeCloudSignIn = true
             },
@@ -3887,6 +3973,7 @@ private struct WelcomeFlowModifier: ViewModifier {
     private var welcomeCloudSignIn: some View {
         WelcomeCloudSignInView(
             entry: welcomeCloudEntry,
+            resumesAdopt: welcomeCloudResumesAdopt,
             startsAtConsent: adoptStartsAtConsent,
             cancelConsentGoesBack: cloudSignInFromExistingChooser,
             deviceStateNow: {
@@ -3903,10 +3990,20 @@ private struct WelcomeFlowModifier: ViewModifier {
             hasLocalDataNow: { hasLocalDataNow() },
             onAdoptStarted: {
                 // La foto es la de ANTES del primer intento: un «Reintentar» vuelve a pasar por aquí con todo ya marcado.
+                // Tras un cierre, la foto buena es la que guardó la marca: recapturarla ahora tomaría lo que `onAdoptStarted` ya
+                // marcó (review adversarial).
+                if adoptStartSnapshot == nil, let durable = WelcomeAdoptInFlight.snapshot() {
+                    adoptStartSnapshot = durable
+                }
                 if adoptStartSnapshot == nil {
                     adoptStartSnapshot = WelcomeAdoptBackOut.Snapshot.capture(
                         hasCompletedOnboarding: hasCompletedOnboarding,
                         hasPrivateSession: SessionState.shared.hasPrivateSession)
+                }
+                // Card gd78: la entrada queda apuntada en disco, con la misma foto, ANTES de marcar nada. Si Yala se cierra
+                // antes de escribir el par, el arranque sigue sin espejo y vuelve a esta pantalla (`WelcomeAdoptInFlight`).
+                if let snapshot = adoptStartSnapshot {
+                    WelcomeAdoptInFlight.arm(snapshot: snapshot, provider: welcomeCloudEntry.signInProvider)
                 }
                 // TEMPRANO (antes de conducir la máquina): cierra el hazard
                 // kill-mid-adopt → el seed del onboarding jamás corre sobre una
@@ -3928,6 +4025,17 @@ private struct WelcomeFlowModifier: ViewModifier {
             },
             onFinishedToApp: {
                 adoptStartSnapshot = nil
+                // Solo con el par escrito: «Continuar a la app» desde la espera del líder sale sin él, y la marca tiene que
+                // seguir sosteniendo el neutro hasta que el traspaso aterrice (review adversarial).
+                WelcomeAdoptInFlight.settle(persistedMode: StorageModePersistence.read(),
+                                            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed())
+                // Card x5tm: quien entró por «Entra aquí» de Grupos aterriza en Grupos, no en el Panel.
+                if WelcomeGroupsDoorLanding.consume() { navigation.selectMainTab(.groups) }
+                // Card c8i9 (barrido del 14-nov): las páginas montadas bajo la bienvenida calcularon ANTES de entrar en la
+                // cuenta, en iCloud y vacías, y cerrar el cover no las vuelve a cargar. Sin esto el Panel se quedaba en S/ 0 y
+                // «Crea tu primera cuenta» hasta que llegaba el primer tirón; con esto recalcula ya en la nube y, si la cuenta
+                // aún no bajó, enseña su esqueleto (`PanelAccountDataWait`).
+                SessionState.shared.incrementDataVersion()
                 showWelcomeCloudSignIn = false
             },
             onBornCloudCompleted: {
@@ -3947,6 +4055,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // Por eso `showOnboarding` se enciende EXPLÍCITAMENTE en vez de dejar que el
                 // `onDismiss` decida — su rama de respaldo devuelve al chooser.
                 adoptStartSnapshot = nil
+                WelcomeAdoptInFlight.clear()
                 showWelcomeCloudSignIn = false
                 showOnboarding = true
             },
@@ -3992,6 +4101,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                     LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
                 }
                 adoptStartSnapshot = nil
+                WelcomeAdoptInFlight.clear()
                 welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
                 showWelcomeFlow = true
                 showWelcomeCloudSignIn = false
@@ -4057,16 +4167,26 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Con el journal sin probar que no quedó nada, no se toca: `onAdoptStarted` existe para que un kill a mitad del
     /// adopt aterrice en la app (`WelcomeAdoptBackOut.leftNoTrace`).
     private func restoreStateIfAdoptLeftNoTrace() {
-        guard let snapshot = adoptStartSnapshot else { return }
+        // Card gd78: tras un cierre a mitad la foto del `@State` ya no existe; la guardó `WelcomeAdoptInFlight`.
+        guard let snapshot = adoptStartSnapshot ?? WelcomeAdoptInFlight.snapshot() else { return }
         adoptStartSnapshot = nil
         guard let controller = CloudMigrationController.shared else { return }
         controller.refresh()
+        // Card gd78 (review adversarial): si el traspaso ya SALIÓ, la marca se retira aunque no conste que no dejó nada. Si
+        // se quedara, el teléfono montaría neutro para siempre y cada arranque volvería a reclamar la cuenta que la persona
+        // dejó. Lo que no se puede deshacer se queda como antes del arreglo: la app, con su tarjeta de Almacenamiento.
+        if WelcomeStaleMigrationCancel.landed(journaledPhase: controller.journaledPhase,
+                                              adoptEffectJournaled: controller.adoptEffectJournaled,
+                                              journalUnreadable: controller.isJournalUnreadable) {
+            WelcomeAdoptInFlight.clear()
+        }
         guard WelcomeAdoptBackOut.leftNoTrace(
             journaledPhase: controller.journaledPhase,
             adoptEffectJournaled: controller.adoptEffectJournaled,
             journalUnreadable: controller.isJournalUnreadable,
             adoptClaimExit: controller.adoptClaimExit,
             hasLocalData: hasLocalDataNow()) else { return }
+        WelcomeAdoptInFlight.clear()
         snapshot.restoreNeutralMount()
         if !snapshot.hasCompletedOnboarding {
             hasCompletedOnboarding = false
@@ -4161,9 +4281,32 @@ private struct WelcomeFlowModifier: ViewModifier {
             // `.proceed` llega aquí sin retirarla; sin esta línea, tras el onboarding nuevo el arranque ofrecería
             // «Terminar de borrar» sobre el corpus recién creado.
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            // **Con el teléfono todavía en la nube, no se abre el onboarding: se deja recién instalado** (opción A).
+            guard !returnCloudPhoneToFreshInstallIfNeeded() else { return }
             showWelcomeFlow = false
             showOnboarding = true
         }
+    }
+
+    /// **«Empezar de cero» en un teléfono que sigue en modo nube lo deja como recién instalado** (ticket
+    /// `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen del 13-nov). Lo llaman las salidas del
+    /// Welcome que, tras el borrado de «Empezar de cero», iban a abrir el onboarding privado: este cuerpo, el destino
+    /// `.privateOnboarding` del relanzamiento del espejo y el alert de datos existentes (`ShellDataAlertsModifier`, con la
+    /// misma regla). Con el modo en `.cloud`, ese onboarding corría sobre el store de la nube sin sesión y dejaba armado el
+    /// adopt sin salida (`AdoptOverCloudGuardLogic`).
+    ///
+    /// Cierra el cover del Welcome para que se presente el del cierre si hace falta reabrir: los dos cuelgan del mismo body
+    /// y UIKit presenta uno solo. Con el cambio en caliente, la jerarquía se remonta y aterriza en el Welcome.
+    ///
+    /// - Returns: `true` si tomó el relevo; el llamador no abre nada más.
+    private func returnCloudPhoneToFreshInstallIfNeeded() -> Bool {
+        guard AdoptOverCloudGuardLogic.freshStartReturnsToFreshInstall(
+            persistedMode: StorageModePersistence.read()) else { return false }
+        // Armado AQUÍ, síncrono, antes de cerrar nada: con el coordinador ocupado no se toca el Welcome.
+        guard CloudSessionSignOut.shared.armReturnToFreshInstallAfterWelcomeFreshStart() else { return false }
+        showWelcomeFlow = false
+        Task { await CloudSessionSignOut.shared.finishReturnToFreshInstallAfterWelcomeFreshStart() }
+        return true
     }
 }
 
@@ -4203,6 +4346,12 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
                 // bloquearía la matriz y la app entera (lo cazó la review: este modificador solo sabía armarse).
                 if newPhase == .idle { standDown() }
             }
+            // Barrido del 14-nov (card p9q0): mientras el cambio en caliente está en vuelo no se arma (ver `arm()`). Si termina
+            // sin consumarse —el montaje lleva espejo o el almacén no se soltó—, la fase sigue en `.awaitingRelaunch` y la
+            // pantalla de reabrir se arma aquí, en el árbol que quedó.
+            .onChange(of: CloudSessionSignOut.shared.inPlaceSwapInFlight) { _, inFlight in
+                if !inFlight && phase == .awaitingRelaunch { arm() }
+            }
             // Ciclo FRESCO al volver a foreground con la condición armada y sin cover
             // (el cap de intentos es por-ciclo, no de por vida).
             .onChange(of: scenePhase) { _, newScene in
@@ -4231,6 +4380,12 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
         // Con el remonte en caliente en curso, la fase sigue en `.awaitingRelaunch` unos segundos (el re-bootstrap) y el
         // `ContentView` nuevo la ve al aparecer: no se arma, porque al terminar el cierre vuelve a `.idle` sin reabrir.
         guard !PersonalContainerSwap.inPlaceRemountInFlight else { return }
+        // Barrido del 14-nov (card p9q0), medido en el iPhone 14: el cierre pone la fase en `.awaitingRelaunch` y ENSEGUIDA
+        // intenta el cambio en caliente. Armado aquí, el cover se presentaba desde el árbol viejo, el cambio desmontaba ese
+        // árbol y UIKit dejaba el cover huérfano encima del Welcome nuevo: «Ya casi está · Vuelve a abrir Yala» con la
+        // sesión ya cerrada en caliente («CloudSignOut swap COMPLETED» en la consola). Mientras el cambio está en vuelo lo
+        // tapa la pantalla de progreso del cierre; si no se consuma, lo arma el `onChange` del testigo.
+        guard !CloudSessionSignOut.shared.inPlaceSwapInFlight else { return }
         showRelaunchCover = true
         // Cancel-before-start: un solo verify loop vivo — dos loops togglando el mismo
         // binding reproducirían la carrera que este fix mata.
@@ -4370,6 +4525,8 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
     if EntryOnboardingEffects.marksNewInstall(kind) {
         SetupChecklistManager.shared.markAsNewInstall()
     }
+    // Telemetría del usuario nuevo (card 4b7h): quien vuelve con sus datos no manda «primeros».
+    if kind == .reentry { NewUserMetrics.reentered() }
 }
 
 /// Side-effect de `WelcomeRestoreView.onCompleteSkipAll` (rama fullyPrefilled) y del arranque del

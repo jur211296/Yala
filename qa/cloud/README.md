@@ -1633,6 +1633,9 @@ exige que cada nombre salga aquí:
 | `pushTokenRegisterFailed` | `POST /push/register` falló contra PostgREST | estado HTTP |
 | `groupSyncCoherenceGroupPartial` | delta de Grupos con una unidad de coherencia a medias | entidad |
 | `cloudSyncCoherenceGroupPartial` | delta personal con una unidad de coherencia a medias | entidad |
+| `webGroupsWriteLimited` | Yala web (staging): una escritura en Grupos topó con el límite por cuenta | — |
+| `webGroupsWriteRejected` | Yala web (staging): PostgREST rechazó una escritura en Grupos | `entidad/status` o `invite/status` |
+| `webGroupsWritten` | Yala web (staging): salió una escritura en Grupos | `expense`, `settlement:confirmed`, `settlement:pending`, `invite` |
 
 ```sql
 -- ¿Están llegando los avisos de Grupos? Entregados frente a fallos, por día.
@@ -1655,6 +1658,10 @@ Decisiones de Jürgen del 6-nov (propuesta en `docs/telemetria/propuesta-2026-11
 
 - **`use`** (de la app): «usó esta función», `n` = slug de la función, **como mucho uno al día por función** (guard
   del cliente, día UTC, como el del ping). El gateway exige `n`. `blob4` = versión, `blob5` = install, como el resto.
+  **Excepción, desde el 2026-11-13 (card del usuario nuevo después del alta):** los `alta.reabrir.*` y `primeros.*`
+  salen **una vez por instalación**, y los `primeros.*` solo de instalaciones que cerraron el alta con la versión que
+  los manda. Lista, cuándo sale cada uno y cómo se cruzan: `docs/telemetria/eventos-usuario-nuevo.md`. El gateway no
+  cambia: son `use` con otro `n`.
 - **`e = "server"`** (del gateway, `gateway/src/serverEvent.ts`): hechos normales que solo ve el servidor, con
   `blob4 = blob5 = 'gateway'`. No son canarios (`e = 'canary'`): no se miran «en cero». Lista cerrada
   (`SERVER_EVENTS`); `gateway/test/serverEvent.unit.test.ts` exige que cada nombre salga aquí:

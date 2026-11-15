@@ -22,8 +22,10 @@ struct WelcomeConversationView: View {
     let providerName: String?
     /// Dónde vivirán los datos: el pie de la tarjeta («En tu iCloud» / «En tu cuenta de Yala»).
     let livesInYalaAccount: Bool
-    /// Lo que trajo un resumen de iCloud, si lo hay: nombre y moneda propuestos.
-    var prefilledData: ICloudAccountSummary? = nil
+    // **Lo que trajo un resumen de iCloud no se propone** (recorrido de la bienvenida del 13-nov, E01 y E03). Quien
+    // recupera sus datos sin el resumen completo pasa por aquí, y con el nombre recordado y la moneda preguntada la
+    // conversación iba «a medias». Jürgen: «está bien que vuelva a preguntar, pero entonces que pregunte todo». Así que
+    // pregunta las tres como a cualquiera: el nombre que trae Google o Apple, si lo hay, y la moneda de la región.
     /// «Atrás» en la primera pregunta: vuelve a la bienvenida sin guardar nada.
     var onCancel: (() -> Void)? = nil
     var onComplete: () -> Void
@@ -53,14 +55,12 @@ struct WelcomeConversationView: View {
     private let regionCurrency = CurrencyDefaults.detectCurrencyFromRegion()
 
     private var proposedName: String? {
-        WelcomeConversationLogic.proposedName(providerName: providerName, restoredName: prefilledData?.userName)
+        WelcomeConversationLogic.proposedName(fromProviderName: providerName)
     }
 
-    /// La moneda propuesta (review adversarial): la del iCloud restaurado si la trae, o la de la región. Antes solo se
-    /// ofrecía la región y quien restauraba en euros tenía que buscar la suya, y el selector no contaba volver a tocar
-    /// la marcada.
+    /// La moneda propuesta: la de la región, como a cualquiera que entra (ver arriba: nada a medias).
     private var proposedCurrency: (currency: CurrencyCode, fromRegion: Bool) {
-        WelcomeConversationLogic.proposedCurrency(restoredCode: prefilledData?.primaryCurrencyCode, region: regionCurrency)
+        WelcomeConversationLogic.proposedCurrency(restoredCode: nil, region: regionCurrency)
     }
 
     var body: some View {
@@ -473,9 +473,6 @@ struct WelcomeConversationView: View {
 
     private func prefill() {
         recordStepReached(.name)
-        if let raw = prefilledData?.primaryCurrencyCode, let code = CurrencyCode(rawValue: raw) {
-            pickedCurrency = code
-        }
     }
 
     // MARK: - Etiquetas

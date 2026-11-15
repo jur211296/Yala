@@ -1,0 +1,84 @@
+[
+ {
+  "titulo": "Entrar con Apple, en la app y en la web",
+  "minutos": 4,
+  "porque": "Apple pide tu Face ID y, para la segunda parte, otro Apple ID con su contraseña.",
+  "cards": [
+   "188b",
+   "pboq",
+   "4yc7",
+   "ljz7"
+  ],
+  "pasos": [
+   "Yala Dev en el iPhone 14 › Ajustes › Cerrar sesión. En la bienvenida, «Entrar con Apple» (Face ID).",
+   "Debe decir «Ya tienes una cuenta» si tu Apple ID usa el correo de una cuenta con Yala. Si una pantalla dice que es la misma cuenta y otra que sería nueva, haz captura de las dos.",
+   "En esa hoja, abajo, «Otra cuenta de Apple»: entra con otro Apple ID. Debe abrir esa cuenta y seguir dentro al cerrar y abrir Yala.",
+   "Safari › yala-web-staging.misty-surf-6866.workers.dev › «Continuar con Apple»: el saldo total debe ser el del Panel de Yala Dev."
+  ]
+ },
+ {
+  "titulo": "Pro con la compra de Sandbox",
+  "minutos": 8,
+  "porque": "La hoja de pago real solo sale en TestFlight y la confirma tu tester de Sandbox. Va con el primer TestFlight de 2.3.",
+  "cards": [
+   "l1c5",
+   "4afh"
+  ],
+  "pasos": [
+   "Con el TestFlight de 2.3 en el iPhone 14, entra con una cuenta Free y termina los 7 Primeros pasos.",
+   "En el final, toca la prueba de Pro y confírmala con el tester de Sandbox. Ajustes › Yala Pro debe decir Pro.",
+   "Ajustes › Cerrar sesión y vuelve a entrar con la misma cuenta: Yala Pro debe seguir en Pro sin cerrar la app."
+  ]
+ },
+ {
+  "titulo": "Voz y foto de verdad",
+  "minutos": 3,
+  "porque": "Desde la Mac no se puede hablar al iPhone ni apuntar la cámara a un recibo. La parte escrita ya pasó.",
+  "cards": [
+   "d1ab",
+   "fu74"
+  ],
+  "pasos": [
+   "Con una instalación nueva y cuenta Free: Panel › Primeros pasos › «Aprender a registrar». Toca Voz y di «almuerzo dieciocho soles»; luego Foto de un recibo. Los dos dejan un borrador correcto.",
+   "Grupos › Depa Barranco › Voz: «pizza cuarenta entre todos, cerveza doce Jurgen». Luego Foto de un recibo de restaurante.",
+   "El reparto debe salir bien a la primera o con un ajuste, y guardarse como gasto del grupo."
+  ]
+ },
+ {
+  "titulo": "Un aviso real de tu banco",
+  "minutos": 3,
+  "porque": "El iPhone 14 no tiene la app del banco; la lectura del aviso ya se probó con uno simulado.",
+  "cards": [
+   "phhl"
+  ],
+  "pasos": [
+   "En tu iPhone: Atajos › + › Automatización › Notificación › App: la de tu banco.",
+   "Añade «Registrar movimiento desde texto» de Yala › Texto › Notificación.",
+   "Haz un pago pequeño: debe aparecer en la Bandeja de Yala con su monto y comercio."
+  ]
+ },
+ {
+  "titulo": "El conector de Yala en tu Claude",
+  "minutos": 3,
+  "porque": "Es tu cuenta de Claude, y entrar pide tu Apple o tu Google.",
+  "cards": [
+   "r8hi"
+  ],
+  "pasos": [
+   "En Claude › Conectores, añade el conector de Yala de staging y entra con Google; repite con Apple.",
+   "Pregunta «¿cuánto gasté este mes?»: debe responder con tus datos de staging."
+  ]
+ },
+ {
+  "titulo": "Entrar a la web con el QR del iPhone",
+  "minutos": 1,
+  "porque": "La cámara del iPhone tiene que apuntar a la pantalla de otro aparato.",
+  "cards": [
+   "7yhc"
+  ],
+  "pasos": [
+   "En el Mac abre yala-web-staging.misty-surf-6866.workers.dev y toca «Entrar con tu iPhone».",
+   "Escanea el QR con la cámara del iPhone 14 (Yala Dev con sesión en la nube) y confirma: la web debe entrar con tu cuenta."
+  ]
+ }
+]

@@ -2375,6 +2375,20 @@ enum L10n {
             // Errores
             static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+            /// Editar o quitar un saldo inicial con pagos confirmados de quienes están en él (lote 2.3 de Grupos). Antes
+            /// salía el aviso de BORRAR un gasto (`groups.bridge.deleteExpenseBlocked`).
+            static var errorLockedBySettlements: String {
+                ls("groups.openingBalance.errorLockedBySettlements", comment: "")
+            }
+            /// Añadir uno entre dos personas que ya tienen otro editable en esa moneda: se pregunta antes de reemplazarlo.
+            static func replaceTitle(_ first: String, _ second: String) -> String {
+                String(format: ls("groups.openingBalance.replaceTitle", comment: ""), first, second)
+            }
+            /// «Ahora dice: Beto le debe a Ana · S/ 50.00. Si sigues, …».
+            static func replaceMessage(_ current: String) -> String {
+                String(format: ls("groups.openingBalance.replaceMessage", comment: ""), current)
+            }
+            static var replaceConfirm: String { ls("groups.openingBalance.replaceConfirm", comment: "") }
             // El servidor rechazó la subida (card 6n1o, g27_01): aviso en el detalle del grupo.
             static var serverRejectedTitle: String { ls("groups.openingBalance.serverRejected.title", comment: "") }
             static var serverRejectedNotAdmin: String { ls("groups.openingBalance.serverRejected.notAdmin", comment: "") }
@@ -3863,7 +3877,7 @@ enum L10n {
             ls("account.excludeFromStats", comment: "")
         }
         /// Aviso bajo «Archivar cuenta» cuando archivar encendió «Excluir de las estadísticas».
-        static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
+        static var archiveKeepsHistoryNotice: String { ls("account.archiveKeepsHistoryNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
         /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).
@@ -4647,6 +4661,10 @@ enum L10n {
         static var columnNote: String { ls("export.column.note", comment: "") }
         static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
         static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
+        /// Las columnas de la ida y vuelta exacta (H18 de la auditoría del import).
+        static var columnTime: String { ls("export.column.time", comment: "Export column with the time of the record") }
+        static var columnExchangeRate: String { ls("export.column.exchangeRate", comment: "Export column with the exchange rate") }
+        static var columnNeed: String { ls("export.column.need", comment: "Export column with the nature changed by hand") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -4662,6 +4680,9 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+        static var columnTimeDesc: String { ls("export.column.time.description", comment: "") }
+        static var columnExchangeRateDesc: String { ls("export.column.exchangeRate.description", comment: "") }
+        static var columnNeedDesc: String { ls("export.column.need.description", comment: "") }
 
         // G5-D2: export ampliado con grupos (archivo CSV aparte)
         static var includeGroups: String { ls("export.includeGroups", comment: "") }
@@ -6522,6 +6543,7 @@ enum L10n {
             /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
             static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
             static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
+            static var cancelling: String { ls("welcome.cloud.cancelling", comment: "Bajo la barra tras «Sí, cancelar»") }
         }
 
         enum Restore {
@@ -8476,6 +8498,16 @@ enum L10n {
             static var detachFinishButton: String { ls("storage.groups.detachFinishButton", comment: "") }
             static var detachPendingBody: String { ls("storage.groups.detachPendingBody", comment: "") }
             static var detachBusy: String { ls("storage.groups.detachBusy", comment: "") }
+            /// G1 de la revisión 2.3 (decisión 55): la fila de la cuenta y su enlace; y la hoja de soltar (decisión 59).
+            static var usedByGroups: String { ls("storage.groups.usedByGroups", comment: "") }
+            static var changeAccount: String { ls("storage.groups.changeAccount", comment: "") }
+            static var changeAccountTitle: String { ls("storage.groups.changeAccountTitle", comment: "") }
+            static var changeAccountCommon: String { ls("storage.groups.changeAccountCommon", comment: "") }
+            static var changeAccountKeepEffect: String { ls("storage.groups.changeAccountKeepEffect", comment: "") }
+            static func changeAccountKeepEffectCount(_ count: Int, _ amounts: String) -> String {
+                String(format: ls("storage.groups.changeAccountKeepEffectCount", comment: ""), count, amounts)
+            }
+            static var changeAccountRemoveEffect: String { ls("storage.groups.changeAccountRemoveEffect", comment: "") }
         }
 
         enum Status {
@@ -8537,8 +8569,6 @@ enum L10n {
         enum Revert {
             static var title: String { ls("storage.revert.title", comment: "") }
             static var body: String { ls("storage.revert.body", comment: "") }
-            /// §3.3.5: frase de que la Reversa ES el desenlace funcional del enlace privado ↔ nube.
-            static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
             /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
@@ -8549,19 +8579,12 @@ enum L10n {
             enum Prior {
                 static var checking: String { ls("storage.revert.prior.checking", comment: "") }
                 static var title: String { ls("storage.revert.prior.title", comment: "") }
-                static func body(_ summary: String) -> String {
-                    String(format: ls("storage.revert.prior.body", comment: ""), summary)
-                }
-                static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
                 static func groupRecords(_ count: Int) -> String {
                     L10n.formatWithAppLocale(ls("storage.revert.prior.groupRecords", comment: ""), count)
                 }
                 static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
                 static var merge: String { ls("storage.revert.prior.merge", comment: "") }
                 static var discard: String { ls("storage.revert.prior.discard", comment: "") }
-                static var discardConfirmTitle: String { ls("storage.revert.prior.discardConfirmTitle", comment: "") }
-                static var discardConfirmBody: String { ls("storage.revert.prior.discardConfirmBody", comment: "") }
-                static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
                 static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
                 static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
                 static var stalledTitle: String { ls("storage.revert.prior.stalledTitle", comment: "") }
@@ -8573,6 +8596,37 @@ enum L10n {
                 }
                 static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
                 static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
+            }
+
+            /// La hoja con fases de «Volver a tu iCloud» (revisión 2.3, decisión 53, V2): qué pasa, qué hacer con lo que
+            /// ya hay en tu iCloud y confirmar. Sustituye a los tres globos de antes.
+            enum Sheet {
+                static var title: String { ls("storage.revert.sheet.title", comment: "") }
+                static var dataTitle: String { ls("storage.revert.sheet.dataTitle", comment: "") }
+                static var dataDetail: String { ls("storage.revert.sheet.dataDetail", comment: "") }
+                static var accountTitle: String { ls("storage.revert.sheet.accountTitle", comment: "") }
+                static var accountDetail: String { ls("storage.revert.sheet.accountDetail", comment: "") }
+                static var storedTitle: String { ls("storage.revert.sheet.storedTitle", comment: "") }
+                static var storedDetail: String { ls("storage.revert.sheet.storedDetail", comment: "") }
+                static var cloudAgainTitle: String { ls("storage.revert.sheet.cloudAgainTitle", comment: "") }
+                static var cloudAgainDetail: String { ls("storage.revert.sheet.cloudAgainDetail", comment: "") }
+                static var continueButton: String { ls("storage.revert.sheet.continue", comment: "") }
+                static func priorBody(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.priorBody", comment: ""), summary)
+                }
+                static var priorBodyNoCount: String { ls("storage.revert.sheet.priorBodyNoCount", comment: "") }
+                static var mergeDetail: String { ls("storage.revert.sheet.mergeDetail", comment: "") }
+                static var discardDetail: String { ls("storage.revert.sheet.discardDetail", comment: "") }
+                static var confirmTitle: String { ls("storage.revert.sheet.confirmTitle", comment: "") }
+                static func confirmMerge(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.confirmMerge", comment: ""), summary)
+                }
+                static var confirmMergeNoCount: String { ls("storage.revert.sheet.confirmMergeNoCount", comment: "") }
+                static func confirmDiscard(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.confirmDiscard", comment: ""), summary)
+                }
+                static var confirmDiscardNoCount: String { ls("storage.revert.sheet.confirmDiscardNoCount", comment: "") }
+                static var confirmDiscardButton: String { ls("storage.revert.sheet.confirmDiscardButton", comment: "") }
             }
         }
 
@@ -8882,6 +8936,24 @@ enum L10n {
             static var body: String { ls("storage.pendingICloudWipe.body", comment: "") }
             static var proceed: String { ls("storage.pendingICloudWipe.proceed", comment: "") }
             static var wait: String { ls("storage.pendingICloudWipe.wait", comment: "") }
+            /// La hoja del borrado pendiente (revisión 2.3, decisión 57, opción 1 de Jürgen): cada estado dice su verdad.
+            static var bodyHalfway: String { ls("storage.pendingICloudWipe.bodyHalfway", comment: "") }
+            static var proceedHalfway: String { ls("storage.pendingICloudWipe.proceedHalfway", comment: "") }
+            static var proceedDetail: String { ls("storage.pendingICloudWipe.proceedDetail", comment: "") }
+            static var proceedDetailHalfway: String { ls("storage.pendingICloudWipe.proceedDetailHalfway", comment: "") }
+            static var finish: String { ls("storage.pendingICloudWipe.finish", comment: "") }
+            static var finishDetail: String { ls("storage.pendingICloudWipe.finishDetail", comment: "") }
+            static var finishDetailHalfway: String { ls("storage.pendingICloudWipe.finishDetailHalfway", comment: "") }
+            /// El «¿seguro?» de terminar desde Ajustes un borrado armado que no empezó (`LateICloudNotice.finishArmedWipe`).
+            static var finishConfirmBody: String { ls("storage.pendingICloudWipe.finishConfirmBody", comment: "") }
+            /// Las variantes con el alcance que purga los grupos de este dispositivo (`.handover`).
+            static var finishDetailWithGroups: String { ls("storage.pendingICloudWipe.finishDetailWithGroups", comment: "") }
+            static var finishDetailHalfwayWithGroups: String {
+                ls("storage.pendingICloudWipe.finishDetailHalfwayWithGroups", comment: "")
+            }
+            static var finishConfirmBodyWithGroups: String {
+                ls("storage.pendingICloudWipe.finishConfirmBodyWithGroups", comment: "")
+            }
         }
 
         enum Confirm {
@@ -8891,12 +8963,9 @@ enum L10n {
             static var migrate2Title: String { ls("storage.confirm.migrate2Title", comment: "") }
             static var migrate2Body: String { ls("storage.confirm.migrate2Body", comment: "") }
             static var migrate2Confirm: String { ls("storage.confirm.migrate2Confirm", comment: "") }
-            static var revertTitle: String { ls("storage.confirm.revertTitle", comment: "") }
-            static var revertBody: String { ls("storage.confirm.revertBody", comment: "") }
             static var revertContinue: String { ls("storage.confirm.revertContinue", comment: "") }
             static var revert2Title: String { ls("storage.confirm.revert2Title", comment: "") }
             static var revert2Body: String { ls("storage.confirm.revert2Body", comment: "") }
-            static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
             static var cancelReverseTitle: String { ls("storage.confirm.cancelReverseTitle", comment: "") }
             static var cancelReverseBody: String { ls("storage.confirm.cancelReverseBody", comment: "") }
             /// El cuerpo del mismo diálogo ANTES del montaje del espejo: ahí no hay espejo que apagar, así que no se

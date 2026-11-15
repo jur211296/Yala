@@ -708,3 +708,63 @@ puente con `shouldSave: false` para guardar todo junto siembra antes de escribir
 resto de llamadores sigue expuesto: ticket `group-system-category-seed-saves-the-context-mid-bridge`. Y el `rollback()` de
 ese camino (registro editado, gasto, repartos y préstamo insertados, «Grupos» desarchivada) NO aborta: medido en las dos
 formas, a diferencia del de la sección anterior.
+
+### Desinstalar Yala Dev no vacía su App Group: un «teléfono nuevo» de QA hay que vaciarlo a mano (2026-11-13)
+
+Medido en el iPhone 14 durante la sesión del minitutorial del correo: tras `devicectl device uninstall` de Yala Dev, el
+store de `group.com.jurgenschmidt.yala.dev` volvió intacto al reinstalar. Lo que vive en el App Group (el store personal,
+`UserDefaults` compartidos, el espejo del outbox) sobrevive, así que **una reinstalación no es un teléfono nuevo**: un QA
+que necesite «entrar desde un teléfono nuevo» tiene que vaciar los stores a mano (receta: `devicectl` sobre el App Group,
+`reference_contar_el_store_del_iphone_con_devicectl` en la memoria de Frank) y comprobar que quedaron vacíos antes de
+empezar. **No fue la causa** del bloqueo de 15 minutos al entrar en una cuenta con grupos (ticket
+`adopt-lineage-block-shows-connecting-for-fifteen-minutes`): la segunda y la tercera prueba vaciaron los stores y se
+reprodujo igual, porque las filas las creaba el puente de Grupos en el mismo intento. Lo que sí hace es convertir una
+prueba de «teléfono nuevo» en una de «teléfono con datos de antes» sin avisar, y entonces un bloqueo de linaje puede ser
+legítimo. Sin medir si una persona real que desinstala y reinstala de la App Store conserva el App Group igual.
+
+### Web: una cookie `__Host-` con `Path` distinto de `/` se descarta, y `no-referrer` manda `Origin: null` en los formularios (2026-11-13)
+
+Dos trampas del navegador que las pruebas con un navegador falso no ven, cazadas por la revisión de seguridad del lote 0
+de Yala web (`webapp/`) antes de que nadie entrara:
+
+- **`__Host-` exige `Path=/`, `Secure` y ningún `Domain`.** Con `Path=/auth`, Chrome, Firefox y Safari la tiran en
+  silencio: el `Set-Cookie` sale bien en la respuesta y la cookie no vuelve nunca. El login social volvía siempre a
+  «caducada», fallando cerrado y sin ningún error.
+- **`Referrer-Policy: no-referrer` cambia el `Origin` de los POST de formulario a `null`** (estándar Fetch, «append a
+  request Origin header»). Un control «`Origin` tiene que ser el mío» rechaza entonces los formularios PROPIOS. Para no
+  filtrar la URL a otros sitios sin romper eso, `same-origin`.
+
+Lo que cuesta poco y lo evita: el navegador falso de las pruebas aplica las reglas de `__Host-` (`webapp/test/fakes.ts`),
+y una prueba fija el `Referrer-Policy` con el porqué al lado. Y un clic real en el navegador antes de dar por bueno un
+flujo de entrada: las pruebas ponían `Origin` a mano.
+
+### Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierres va en un Durable Object (2026-11-14)
+
+La primera versión de la lista de sesiones de Yala web guardaba una clave del KV por sesión y la leía con `list({prefix})`.
+Las 64 pruebas unitarias pasaban (el KV de las pruebas es un `Map`) y el e2e contra staging cayó: con dos sesiones recién
+abiertas, la lista salía **vacía** y «Cerrar todas» desde el iPhone cerraba **cero**. El `list` del KV es de consistencia
+eventual (hasta un minuto) incluso en el mismo punto de presencia donde se escribió.
+
+Para algo que solo se enseña, un minuto de retraso es aceptable; para algo que decide qué se cierra, no: la sesión que
+alguien acaba de abrir en un equipo ajeno es justo la que quiere cerrar. Se pasó a un Durable Object por cuenta
+(`webapp/src/worker/sessionIndex.ts`, SQLite), que es uno solo en el mundo y lee lo que se escribió. El mismo riesgo
+tiene borrar una sesión del KV: otra ubicación puede seguir sirviendo la copia vieja hasta un minuto. Por eso «cerrar»
+cierra también la sesión de Supabase, y cada petición de datos comprueba antes `GET /auth/v1/user`, que sí es inmediato
+(lo fija `webapp/test/lote1.test.ts`, «aunque el KV aún devuelva la sesión cerrada»).
+
+Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.
+
+### Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)
+
+**Qué pasó.** Para que Yala web escribiera en Grupos (lote 3, opción A) se creó el rol `yala_web` con INSERT y RLS en las
+tablas de Grupos y EXECUTE de `apply_group_delta`. Cada escritura daba 503: `apply_group_delta` es SECURITY INVOKER y su
+primera línea lee `auth.uid()`, y el rol no tenía USAGE en el esquema `auth` («permission denied for schema auth»).
+
+**Por qué no se arregla con un GRANT.** El esquema `auth` es de `supabase_admin`, y `postgres` (el usuario de la Management
+API) solo tiene USAGE, sin opción de concederlo: `grant usage on schema auth to yala_web` no da error, da un aviso y no hace
+nada (`has_schema_privilege` sigue en `false`). `authenticated` lo tiene porque lo concedió `supabase_admin`.
+
+**Qué hacer.** Para un rol propio, las escrituras van por una función SECURITY DEFINER del dueño, que sí lee `auth.uid()`.
+Dentro la RLS no actúa, así que la función comprueba antes todo lo que la RLS decidía (miembro, grupo vivo, solo filas
+nuevas, id nuevo en todos los grupos): `webapp/supabase/web3_02_grupos_escritura.sql`, `web_add_group_expense`. Se verifica con `set local role <rol>` y
+`set_config('request.jwt.claims', …)` dentro de un bloque `do` que acaba en `raise exception` (no deja nada escrito).

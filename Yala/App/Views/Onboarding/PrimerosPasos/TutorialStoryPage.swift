@@ -15,6 +15,11 @@ nonisolated enum TutorialStoryLogic {
     /// Lo que dura cada parte (ficha: 3,4 s).
     static let partDuration: Duration = .milliseconds(3400)
 
+    /// Lo que dura cada parte de «Anota sin abrir Yala» (paso 7). Jürgen, 13-nov (E14): «deberían ir más lento»; con
+    /// 3,4 s la del correo se iba antes de poder leerla. Sus partes llevan más texto que las de las cuentas o las de
+    /// anotar.
+    static let slowPartDuration: Duration = .milliseconds(6000)
+
     /// Si la página avanza sola: nunca con Reducir movimiento ni con VoiceOver, y nunca desde la última parte.
     static func advancesAutomatically(part: Int, count: Int, reduceMotion: Bool, voiceOver: Bool) -> Bool {
         !reduceMotion && !voiceOver && part < count - 1
@@ -31,6 +36,7 @@ struct TutorialStorySegments: View {
     let count: Int
     @Binding var part: Int
     let isRunning: Bool
+    var partDuration: Duration = TutorialStoryLogic.partDuration
 
     @Environment(\.yalaTheme) private var theme
 
@@ -46,7 +52,7 @@ struct TutorialStorySegments: View {
                         .overlay(alignment: .leading) {
                             if index == part && isRunning {
                                 // El de ahora se llena mientras dura la parte.
-                                SegmentRunningFill(color: theme.accent).id(part)
+                                SegmentRunningFill(color: theme.accent, duration: partDuration).id(part)
                             } else if index <= part {
                                 Capsule().fill(theme.accent)
                             }
@@ -67,6 +73,7 @@ struct TutorialStorySegments: View {
 /// (sin Reducir movimiento ni VoiceOver).
 private struct SegmentRunningFill: View {
     let color: Color
+    let duration: Duration
     @State private var filled = false
 
     var body: some View {
@@ -74,7 +81,8 @@ private struct SegmentRunningFill: View {
             Capsule()
                 .fill(color)
                 .frame(width: filled ? proxy.size.width : 0)
-                .animation(.linear(duration: 3.4), value: filled)
+                .animation(.linear(duration: Double(duration.components.seconds)
+                                   + Double(duration.components.attoseconds) / 1e18), value: filled)
         }
         .onAppear { filled = true }
     }
@@ -85,6 +93,8 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
     let eyebrow: String
     let count: Int
     @Binding var part: Int
+    /// Lo que dura cada parte antes de pasar sola a la siguiente.
+    var partDuration: Duration = TutorialStoryLogic.partDuration
     let onBack: () -> Void
     @ViewBuilder let content: (Int) -> Part
     @ViewBuilder let footer: () -> Footer
@@ -108,7 +118,7 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                 Spacer()
                 Color.clear.frame(width: 44, height: 44)
             }
-            TutorialStorySegments(count: count, part: $part, isRunning: runs)
+            TutorialStorySegments(count: count, part: $part, isRunning: runs, partDuration: partDuration)
             ScrollView {
                 content(part)
                     .id(part)
@@ -132,7 +142,7 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
         // Una parte nueva rearma el reloj; con VoiceOver o Reducir movimiento no corre.
         .task(id: TimerKey(part: part, runs: runs)) {
             guard runs else { return }
-            do { try await Task.sleep(for: TutorialStoryLogic.partDuration) } catch { return }
+            do { try await Task.sleep(for: partDuration) } catch { return }
             part = TutorialStoryLogic.tapped(part: part, count: count)
         }
     }

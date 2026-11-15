@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "统计我在群组支出中的份额";
 "budgets.includeSharedExpensesHint" = "关闭后,只统计你的个人支出。";
 "budgets.widget.noFavorites.title" = "没有收藏的预算";
-"budgets.widget.noFavorites.message" = "在「设置 > 预算」中将预算标记为收藏即可在此查看。";
+"budgets.widget.noFavorites.message" = "在「配置面板 > 面板上的预算」中将预算标记为收藏即可在此查看。";
 "budgets.widget.selectFavorites" = "选择收藏";
 "budgets.alerts.title" = "提醒";
 "budgets.alerts.enable" = "达到额度时通知";
@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "剩余 %@ 天";
 "budgets.period.past" = "已结束";
 "budgets.amount.of" = "/ %@";
-"budgets.exceeded.encouragement" = "你超出了预算 — 下一个周期会更好!";
+"budgets.exceeded.overByAdjust %@" = "超出了 %@。要调整限额吗？";
+"budgets.exceeded.adjustLimit" = "调整限额";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "预算名称";
@@ -4519,6 +4520,10 @@
 "groups.openingBalance.approvalPromptSkip" = "否，从零开始";
 "groups.openingBalance.errorNotAdmin" = "只有群组管理员可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
+"groups.openingBalance.replaceTitle" = "%1$@ 和 %2$@ 之间已有一笔初始余额";
+"groups.openingBalance.replaceMessage" = "目前为：%@。如果继续，将替换为你刚刚输入的内容。";
+"groups.openingBalance.replaceConfirm" = "替换";
+"groups.openingBalance.errorLockedBySettlements" = "这笔初始余额涉及的人已经有确认的付款，因此无法再更改或删除。";
 "groups.openingBalance.serverRejected.title" = "你的更改没有同步到群组";
 "groups.openingBalance.serverRejected.notAdmin" = "只有群组的所有者或管理员才能更改初始余额，而你现在不是。余额会恢复为群组中的内容。";
 "groups.openingBalance.serverRejected.locked" = "这笔初始余额涉及的人已经有确认的付款，因此无法再更改。余额会恢复为群组中的内容。";
@@ -4630,7 +4635,7 @@
 "storage.adopt.body" = "你的数据已在你的 Yala 账户中。我们将在此设备上使用它。";
 "storage.adopt.button" = "在此设备上使用";
 "storage.revert.title" = "返回你的 iCloud";
-"storage.revert.body" = "你的数据将保存在设备和你的 iCloud 中，不会丢失任何内容。";
+"storage.revert.body" = "你的数据会回到这台设备和你的 iCloud。开始前，我们先告诉你每样东西会怎样。";
 "storage.revert.button" = "返回你的 iCloud";
 "storage.revert.ineligible" = "目前无法从此设备返回你的 iCloud。";
 "storage.sync.title" = "同步";
@@ -4650,12 +4655,9 @@
 "storage.confirm.migrate2Title" = "确定吗？";
 "storage.confirm.migrate2Body" = "在此设备上，你的数据将转到你的 Yala 账户。";
 "storage.confirm.migrate2Confirm" = "是，转到我的 Yala 账户";
-"storage.confirm.revertTitle" = "返回你的 iCloud？";
-"storage.confirm.revertBody" = "你的数据会回到这台设备和你的 iCloud 中。你不会丢失任何东西。";
 "storage.confirm.revertContinue" = "继续";
 "storage.confirm.revert2Title" = "确定吗？";
 "storage.confirm.revert2Body" = "在此设备上，你的数据将返回你的 iCloud。";
-"storage.confirm.revert2Confirm" = "是，返回我的 iCloud";
 "storage.errors.title" = "出了点问题";
 "storage.errors.generic" = "操作未成功。请重试。";
 "storage.errors.adoptOtherAccount" = "这不是你在此设备上正在启用的账户。请用同一个账户重试。";
@@ -4788,8 +4790,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "正在下载你的数据…";
-"welcome.cloud.cancelAdoptBody" = "此设备没有更改你的 Yala 账户中的任何内容。你将回到起始页面。你可以随时通过「我已经有账户了」重新登录你的账户。";
-"welcome.cloud.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。你将回到起始页面。你可以随时通过「我已经有账户了」重新登录你的账户。";
+"welcome.cloud.cancelAdoptBody" = "此设备没有更改你的 Yala 账户中的任何内容。你将回到起始页面。你可以随时从起始页面重新登录你的账户。";
+"welcome.cloud.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。你将回到起始页面。你可以随时从起始页面重新登录你的账户。";
+"welcome.cloud.cancelling" = "正在取消…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "群组需要 iCloud";
@@ -5013,7 +5016,7 @@
 "settings.deleteAccountViewGroups" = "查看我的群组";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "你以前的 iCloud 数据（使用你的 Yala 账户之前的）不受影响：如果你重新打开 Yala，看到的就像重新安装了一样。";
+"settings.deleteAccountFrozenICloudNote" = "如果你在创建账户之前用 iCloud 使用过 Yala，那份数据仍在你的 iCloud 中：删除 Yala 账户不会抹掉它。";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "在旧群组（iCloud）中，你的名字可能仍然对其他成员可见。";
@@ -5212,8 +5215,6 @@
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "全部内容将被永久删除。";
 
-/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "这样你就不再在此设备上使用你的 Yala 账户：账户会暂停，留待你回来。";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "你的账户";
@@ -5260,16 +5261,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "将继续使用你当前的 Yala 账户，这样你的数据和群组都在同一个账户里。";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先点“更换账户”。";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个 Yala 账户。要把你的数据转到你的 Yala 账户，请用群组的账户登录，或先在“群组”中取消关联。";
+"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个 Yala 账户。要把你的数据转到你的 Yala 账户，请用群组的账户登录，或先点“更换账户”。";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "你已用当前的 Yala 账户返回你的 iCloud，目前还无法再次转到这个账户。";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先在“群组”中取消关联，再点一次“转到你的 Yala 账户”。";
+"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先点“更换账户”，再点一次“转到你的 Yala 账户”。";
 "storage.migrate.refusedOtherDevice" = "此账户有一次未完成的启用。如果是在这里开始的，请一小时后重试；如果是在你的另一台设备上，请在那台设备上完成。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6023,16 +6024,16 @@
 "storage.errors.identityCheck" = "无法验证你的账户。请稍后重试。未做任何更改。";
 "storage.migrateBlock.personalDataTitle" = "此账户已有自己的数据";
 "storage.migrateBlock.personalDataBody" = "未做任何更改。要把你的数据转到一个 Yala 账户，请使用其他账户。要在这里使用此账户的数据，请退出登录后用此账户登录。";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先点“更换账户”。";
 "storage.migrateBlock.otherGroupsTitle" = "你的群组已在使用另一个账户";
-"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个 Yala 账户，而你的群组已在使用另一个账户。要把你的数据转到你的 Yala 账户，请用群组的账户登录；如果想用其他账户，请先在“群组”中取消关联。";
-"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个 Yala 账户，而你的群组已在使用 %@。要把你的数据转到你的 Yala 账户，请用该账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个 Yala 账户，而你的群组已在使用另一个账户。要把你的数据转到你的 Yala 账户，请用群组的账户登录；如果想用其他账户，请先点“更换账户”。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个 Yala 账户，而你的群组已在使用 %@。要把你的数据转到你的 Yala 账户，请用该账户登录；如果想用其他账户，请先点“更换账户”。";
 "storage.migrateBlock.returnedTitle" = "你已用此账户返回你的 iCloud";
 "storage.migrateBlock.returnedBody" = "目前还无法再次转到这个账户。未做任何更改。";
 "storage.migrateBlock.useAnotherAccount" = "使用其他账户";
 "storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
 "storage.migrateBlock.freshStartSessionTitle" = "此账户可能属于其他人";
-"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据转到你的 Yala 账户，请先在“群组”中取消关联，再点一次“转到你的 Yala 账户”，即可选择你自己的账户。";
+"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据转到你的 Yala 账户，请先点“更换账户”，再点一次“转到你的 Yala 账户”，即可选择你自己的账户。";
 "storage.migrateBlock.otherDeviceTitle" = "此账户有一次未完成的启用";
 "storage.migrateBlock.otherDeviceBody" = "未做任何更改。如果是在这台设备上开始的，请一小时后重试。如果是在你的另一台设备上，请在那台设备上完成。";
 
@@ -6319,7 +6320,7 @@
 "accountDetail.empty" = "此期间没有记录";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其记录也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
+"account.archiveKeepsHistoryNotice" = "归档的账户不计入你的余额，也不会出现在面板的账户中或记账时。它的支出和收入仍会计入面板、“记录”和“统计”。";
 
 
 /* Chat draft card (Yala IA) — redesign A */
@@ -6471,13 +6472,24 @@
 "storage.pendingICloudWipe.title" = "有一项删除尚未完成";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "你之前要求删除 iCloud 中的数据，但尚未完成。如果转到你的 Yala 账户，该删除将被取消。";
+"storage.pendingICloudWipe.body" = "你之前要求删除数据并从头开始，但没有完成。如果转到你的 Yala 账户，这次删除不会进行，你 iCloud 中的数据会保留。";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "开启但不删除";
+"storage.pendingICloudWipe.proceed" = "转到我的 Yala 账户并保留我的 iCloud 数据";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "暂不";
+"storage.pendingICloudWipe.bodyHalfway" = "你 iCloud 中原有的数据已经删除。如果转到你的 Yala 账户，这台设备上剩下的数据会一起转过去。";
+"storage.pendingICloudWipe.proceedHalfway" = "用这里剩下的数据转到我的 Yala 账户";
+"storage.pendingICloudWipe.proceedDetail" = "不会删除：你转到 Yala 账户，你 iCloud 中的数据会保留在那里。";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "删除不会完成：你用这台设备上剩下的数据转到 Yala 账户。";
+"storage.pendingICloudWipe.finish" = "完成删除并从头开始";
+"storage.pendingICloudWipe.finishDetail" = "你的数据会从这台设备和你的 iCloud 中删除。不会保留副本。";
+"storage.pendingICloudWipe.finishDetailHalfway" = "这台设备上剩下的数据会被删除。不会保留副本。";
+"storage.pendingICloudWipe.finishConfirmBody" = "你的数据会从这台设备和你的 iCloud 中删除，包括你提出要求后创建的内容，然后从头开始。不会保留副本。";
+"storage.pendingICloudWipe.finishDetailWithGroups" = "你的数据会从这台设备和你的 iCloud 中删除。不会保留副本。你的群组和 Yala 账户也会从这台设备上移除。";
+"storage.pendingICloudWipe.finishDetailHalfwayWithGroups" = "这台设备上剩下的数据会被删除。不会保留副本。你的群组和 Yala 账户也会从这台设备上移除。";
+"storage.pendingICloudWipe.finishConfirmBodyWithGroups" = "你的数据会从这台设备和你的 iCloud 中删除，包括你提出要求后创建的内容，然后从头开始。不会保留副本。你的群组和 Yala 账户也会从这台设备上移除。";
 
 /* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
 "welcome.privateICloud.cancelledInCloudTitle" = "一项删除未完成";
@@ -6737,15 +6749,10 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "正在检查你的 iCloud…";
 "storage.revert.prior.title" = "你的 iCloud 里已经有 Yala 数据";
-"storage.revert.prior.body" = "这台设备的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
-"storage.revert.prior.bodyNoCount" = "这台设备的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
 "storage.revert.prior.groupRecords" = "%d 条群组记录";
 "storage.revert.prior.groupsNote" = "群组记录可能会在没有所属群组的情况下出现。";
 "storage.revert.prior.merge" = "合并到我的数据";
 "storage.revert.prior.discard" = "不带它们开始";
-"storage.revert.prior.discardConfirmTitle" = "要从你的 iCloud 中删除吗？";
-"storage.revert.prior.discardConfirmBody" = "它们会从你的 iCloud 以及使用此 Apple ID 的设备上删除。不会保留副本，我们也无法恢复。之后会开始返回你的 iCloud。";
-"storage.revert.prior.discardConfirm" = "删除并返回你的 iCloud";
 "storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
 "storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
 "storage.revert.prior.stalledTitle" = "iCloud 响应时间太长";
@@ -6755,6 +6762,26 @@
 "storage.revert.prior.wiping" = "正在删除以前的数据…已删除 %d 条";
 "storage.revert.prior.noAccountTitle" = "请在这台设备上登录 iCloud";
 "storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这台设备没有登录 iCloud。请在“设置”中登录后再试一次。";
+"storage.revert.sheet.title" = "回到你的 iCloud";
+"storage.revert.sheet.dataTitle" = "你的数据";
+"storage.revert.sheet.dataDetail" = "下载到这台设备，并上传到你的 iCloud。";
+"storage.revert.sheet.accountTitle" = "你的 Yala 账户";
+"storage.revert.sheet.accountDetail" = "为你的群组保持登录。";
+"storage.revert.sheet.storedTitle" = "账户里的内容";
+"storage.revert.sheet.storedDetail" = "你的财务数据保留下来，不再使用。";
+"storage.revert.sheet.cloudAgainTitle" = "再次转到此账户";
+"storage.revert.sheet.cloudAgainDetail" = "目前无法做到。";
+"storage.revert.sheet.continue" = "继续";
+"storage.revert.sheet.priorBody" = "这台设备的 iCloud 中有不在你账户里的 Yala 数据：%@。";
+"storage.revert.sheet.priorBodyNoCount" = "这台设备的 iCloud 中有不在你账户里的 Yala 数据。";
+"storage.revert.sheet.mergeDetail" = "它们会和你的数据一起显示。";
+"storage.revert.sheet.discardDetail" = "将它们从你的 iCloud 以及使用此 Apple ID 的设备上删除。不会保留副本。";
+"storage.revert.sheet.confirmTitle" = "回到你的 iCloud？";
+"storage.revert.sheet.confirmMerge" = "加入你的数据：%@。";
+"storage.revert.sheet.confirmMergeNoCount" = "你 iCloud 中原有的 Yala 数据会加入你的数据。";
+"storage.revert.sheet.confirmDiscard" = "从你的 iCloud 删除：%@。不会保留副本，我们也无法恢复。";
+"storage.revert.sheet.confirmDiscardNoCount" = "你 iCloud 中原有的 Yala 数据会被删除。不会保留副本，我们也无法恢复。";
+"storage.revert.sheet.confirmDiscardButton" = "删除并回到你的 iCloud";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "在此移除";
@@ -7672,15 +7699,14 @@
 "l20n.sheet.anyPhoneTitle" = "可在任何设备上登录";
 "l20n.sheet.anyPhoneDetail" = "无需依赖 iCloud。";
 "l20n.sheet.seesTitle" = "Yala 可以查看你的数据";
-"l20n.sheet.seesDetail" = "用于为你提供支持和智能功能。";
+"l20n.sheet.seesDetail" = "用于为你提供支持和智能功能。没有端到端加密。";
 "l20n.sheet.accessTitle" = "你使用 Apple 或 Google 登录";
 "l20n.sheet.accessDetail" = "如果失去该访问权限，Yala 没有密码可用：请先导出一份副本。";
 "l20n.sheet.exportCopy" = "先导出一份副本";
-"l20n.sheet.details" = "查看详情";
-"l20n.sheet.hideDetails" = "隐藏详情";
-"l20n.sheet.detailsAccess" = "Yala 没有密码，也不能通过邮件恢复：如果你无法访问自己的 Apple 或 Google 账户，也就无法访问你的数据。因此建议先导出一份副本。";
 "l20n.sheet.willMove" = "将转移 %1$@、%2$@ 和 %3$@。";
 "l20n.sheet.continueCurrent" = "使用当前账户继续";
+"l20n.sheet.photosTitle" = "收据照片不会随之迁移";
+"l20n.sheet.photosDetail" = "Yala 不会保存这些照片，也不会上传到你的账户。";
 "l20n.relaunch.almostTitle" = "快完成了";
 "l20n.relaunch.doneSignedOut" = "已退出登录";
 "l20n.relaunch.afterSignOut" = "再次打开后，Yala 会完成从这台设备上移除你的数据。";
@@ -8696,7 +8722,6 @@
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "从小票";
 "receiptSplit.entry.hint" = "用照片或语音读取小票，按项目分摊";
 "receiptSplit.title" = "从小票";
 "receiptSplit.photo.title" = "小票照片";
@@ -8742,6 +8767,15 @@
 "receiptSplit.failure.read.message" = "出了点问题，请稍后再试。";
 "receiptSplit.failure.noLines.title" = "未找到带金额的项目";
 "receiptSplit.failure.noLines.message" = "请在光线充足处靠近拍摄小票，或用语音口述。";
+"receiptSplit.failure.dailyLimitFree.title" = "今天的收据已经分完了";
+"receiptSplit.failure.dailyLimitFree.message" = "明天可以继续免费分收据。使用 Yala Pro，每天可以分更多。";
+"receiptSplit.failure.dailyLimit.title" = "已达到今天的收据上限";
+"receiptSplit.failure.dailyLimit.message" = "明天可以继续分收据。";
+"receiptSplit.text.hint" = "写下支出，AI 帮你分";
+"receiptSplit.text.title" = "写下支出";
+"receiptSplit.text.placeholder" = "披萨 40 安娜和我，牛排 35 小贝，饮料 18 大家";
+"receiptSplit.text.footer" = "每一项写上金额和谁吃的。没写名字的由大家平分。";
+"receiptSplit.failure.noLines.textMessage" = "每一项写上金额，例如“披萨 40”。";
 "receiptSplit.failure.noConnection.message" = "请连接互联网以读取小票。";
 "receiptSplit.failure.mic.message" = "请在“设置”中允许访问，以便口述小票。";
 
@@ -8918,6 +8952,29 @@
 "groups.discard.paymentTitle" = "要丢弃这笔付款吗？";
 "groups.discard.openingBalanceTitle" = "要丢弃这个初始余额吗？";
 "groups.expense.groupChangedNotice" = "你换了群组：已填写的内容保留；谁付的款和分摊方式重新开始。";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "你的群组在使用";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "更换账户";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "要取消关联群组的账户吗？";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "无论选哪种，你的群组都会从此设备移除，但仍保留在你的账户中：重新连接后就会回来。别人欠你和你欠别人的记录会从你的账户中消失。";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "你付过的支出会作为普通记录留在你的账户中。";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "你付过的支出会作为普通记录留在你的账户中：%1$d 笔（%2$@）。";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "你付过的支出也会从你的账户中移除。";
 "statistics.categoryDetail.seeInRecords" = "在记录中查看";
 
 /* Buscar en Registros (decisión 14 de 2.3) */
@@ -9002,19 +9059,19 @@
 "bienvenida23.showcase.groupsTitle" = "账目清清楚楚";
 "bienvenida23.showcase.groupsTitleAccent" = "和朋友一起。";
 "bienvenida23.showcase.receipt.name" = "识别你的小票";
-"bienvenida23.showcase.receipt.caption" = "把相机对准小票，Yala 会识别并记下来。";
+"bienvenida23.showcase.receipt.caption" = "Yala 读取小票并记账。";
 "bienvenida23.showcase.voice.name" = "用声音记账";
-"bienvenida23.showcase.voice.caption" = "像跟别人聊天一样，告诉 Yala 你花了多少。";
+"bienvenida23.showcase.voice.caption" = "说出花了多少就行。";
 "bienvenida23.showcase.organize.name" = "整理你的支出";
-"bienvenida23.showcase.organize.caption" = "Yala 按分类汇总支出，让你看清钱花到哪里。";
+"bienvenida23.showcase.organize.caption" = "看清钱花在哪里。";
 "bienvenida23.showcase.split.name" = "分摊任何支出";
-"bienvenida23.showcase.split.caption" = "聚餐、房租或旅行：Yala 帮你分摊并记账。";
+"bienvenida23.showcase.split.caption" = "Yala 帮你分摊记账。";
 "bienvenida23.showcase.budget.name" = "守住预算";
-"bienvenida23.showcase.budget.caption" = "设定上限，随时看还剩多少。";
+"bienvenida23.showcase.budget.caption" = "设个上限，看看还剩多少。";
 "bienvenida23.showcase.whoOwes.name" = "谁欠谁多少";
-"bienvenida23.showcase.whoOwes.caption" = "不用电子表格：每人都能看到自己那份。";
+"bienvenida23.showcase.whoOwes.caption" = "每人都能看到自己的份额。";
 "bienvenida23.showcase.settle.name" = "一键结清";
-"bienvenida23.showcase.settle.caption" = "记下付款，一切归零。";
+"bienvenida23.showcase.settle.caption" = "记下付款，账目清零。";
 "bienvenida23.showcase.example" = "示例";
 "bienvenida23.showcase.groupsDoorLink" = "和朋友分摊费用";
 "bienvenida23.showcase.pause" = "暂停展示";
@@ -9022,7 +9079,7 @@
 "bienvenida23.showcase.position" = "%1$@，第 %2$d 个，共 %3$d 个";
 "bienvenida23.access.google" = "通过 Google 继续";
 "bienvenida23.access.apple" = "通过 Apple 继续";
-"bienvenida23.access.iCloud" = "使用我的 iCloud 继续";
+"bienvenida23.access.iCloud" = "使用私人 iCloud 继续";
 "bienvenida23.access.iCloudLine" = "你的数据只保存在你的 Apple 设备上。";
 "bienvenida23.access.groupsNeedAccount" = "要和其他人分摊费用，你需要一个 Yala 账户。";
 "bienvenida23.demo.lunch" = "午餐";
@@ -9077,7 +9134,6 @@
 "bienvenida23.groups.accountOnlyBody" = "先进入群组，稍后再设置";
 "bienvenida23.access.createTitle" = "来创建你的账户";
 "bienvenida23.access.createBody" = "这个邮箱还没有 Yala 账户。";
-"bienvenida23.access.otherProviderNote" = "你是用 %1$@ 创建的账户吗？请通过 %1$@ 继续：用 %2$@ 会是一个新账户。";
 "bienvenida23.access.useAnotherAccount" = "使用其他账户";
 "bienvenida23.access.existsTitle" = "你已经有账户了";
 "bienvenida23.access.existsBody" = "这个邮箱已有 Yala 账户。要载入你的数据并进入吗？";
@@ -9428,3 +9484,255 @@
 
 /* VoiceOver: name of the custom color picker in the icon/color sheet */
 "a11y.selectores.customColor" = "自定义颜色";
+
+/* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
+"pasos23.home.eyebrow" = "不打开 Yala 也能记账";
+"pasos23.home.start" = "开始";
+"pasos23.home.methodEyebrow" = "第 %1$d 项，共 %2$d 项 · %3$@";
+"pasos23.home.progress" = "已完成 %1$d/%2$d！";
+"pasos23.home.keepGoing" = "继续";
+"pasos23.home.now" = "现在：%@";
+"pasos23.home.finish" = "完成";
+"pasos23.home.widget.name" = "小组件";
+"pasos23.home.applePay.name" = "Apple Pay";
+"pasos23.home.share.name" = "分享";
+"pasos23.home.siri.name" = "Siri";
+"pasos23.home.widget.part.title" = "主屏幕上的小组件";
+"pasos23.home.widget.part.message" = "轻点一下，就进入“新记录”。";
+"pasos23.home.applePay.part.title" = "每一笔 Apple Pay 支付";
+"pasos23.home.applePay.part.message" = "用 iPhone 付款，记录会进入收件箱，等你确认。";
+"pasos23.home.applePay.part.paid" = "你在超市付了 %@";
+"pasos23.home.applePay.part.push" = "有一笔 %@ 的付款待查看。轻点即可确认。";
+"pasos23.home.share.part.title" = "把照片分享给 Yala";
+"pasos23.home.share.part.message" = "从“照片”、WhatsApp 或银行 App：分享收据，Yala 来识别。";
+"pasos23.home.siri.part.title" = "告诉 Siri";
+"pasos23.home.siri.part.message" = "不用动手，付款的同时就能记。";
+"pasos23.home.siri.part.ask" = "“嘿 Siri，在 Yala 中创建一条记录”";
+"pasos23.home.siri.part.answer" = "你想记录什么？";
+"pasos23.home.widget.title" = "添加小组件";
+"pasos23.home.widget.subtitle" = "你自己在主屏幕上添加即可，大约半分钟。";
+"pasos23.home.widget.step1" = "长按主屏幕上的空白处。";
+"pasos23.home.widget.step2" = "轻点“编辑”，然后轻点“添加小组件”。";
+"pasos23.home.widget.step3" = "搜索“Yala”，选择“新记录”。";
+"pasos23.home.widget.step4" = "轻点“添加小组件”，放在你喜欢的位置。";
+"pasos23.home.widget.done" = "好了，我加好了";
+"pasos23.home.applePay.done" = "我已设置好";
+"pasos23.home.share.title" = "把照片分享给 Yala";
+"pasos23.home.share.subtitle" = "一张收据、一张银行截图或一个 PDF，任何 App 都行。";
+"pasos23.home.share.step1" = "在“照片”（或图片所在的 App）中，轻点“分享”。";
+"pasos23.home.share.step2" = "选择 Yala。如果没有出现，向左滑动并轻点“更多”。";
+"pasos23.home.share.step3" = "Yala 会识别金额、商家和日期：你检查后保存即可。";
+"pasos23.home.siri.title" = "该对 Siri 说什么？";
+"pasos23.home.siri.subtitle" = "以“嘿 Siri”开头，再说下面任意一句。无需任何设置。";
+"pasos23.home.siri.newRecordPhrase" = "在 Yala 中新建记录";
+"pasos23.home.applePay.next" = "每一笔 Apple Pay 支付都会进入你的收件箱。";
+"pasos23.home.share.next" = "从任何 App 分享一张收据。";
+"pasos23.home.siri.next" = "你可以让 Siri 做的所有事。";
+"pasos23.home.applePay.nextAction" = "设置 Apple Pay";
+"pasos23.home.share.nextAction" = "查看分享方法";
+"pasos23.home.siri.nextAction" = "查看该对 Siri 说什么";
+"pasos23.home.mail.name" = "邮件";
+"pasos23.home.mail.part.title" = "邮件自动记账";
+"pasos23.home.mail.part.message" = "把银行的通知转发到你的 Yala 地址，每笔交易都会自动进入收件箱。";
+"pasos23.home.mail.part.mail" = "刷卡消费 %@";
+"pasos23.home.mail.part.from" = "来自银行的通知";
+"pasos23.home.mail.part.push" = "已进入收件箱：%@，等待确认。";
+"pasos23.home.mail.title" = "你的 Yala 地址";
+"pasos23.home.mail.subtitle" = "在邮箱中创建过滤规则，银行通知会以草稿形式进入收件箱：未经你确认，不会记录任何内容。";
+"pasos23.home.mail.addressCaption" = "将通知转发到";
+"pasos23.home.mail.copy" = "复制";
+"pasos23.home.mail.step1" = "复制你的 Yala 地址。";
+"pasos23.home.mail.step2" = "在网页版邮箱（Gmail、Outlook 或 iCloud 邮件）中，创建以银行邮箱为发件人的过滤规则。";
+"pasos23.home.mail.step3" = "选择转发到你的 Yala 地址，并保存规则。";
+"pasos23.home.mail.step3.detail" = "在 Gmail 中，请先在“转发”里添加该地址：确认码会显示在“设置 › 银行邮件”中。";
+"pasos23.home.mail.soon" = "即将推出：无需过滤规则，直接连接 Gmail 和 Outlook。";
+"pasos23.home.mail.next" = "银行通知，直达收件箱。";
+"pasos23.home.mail.nextAction" = "查看我的地址";
+"pasos23.final.done.title" = "新手入门完成！";
+"pasos23.final.done.message" = "Yala 的基础你已经掌握。其余的，按自己的节奏慢慢发现吧。";
+"pasos23.final.offer.titleOneMonth" = "免费试用 Yala Pro 1 个月";
+"pasos23.final.offer.titleDays" = "免费试用 Yala Pro %d 天";
+"pasos23.final.offer.subtitle" = "你已经看到它能做什么。有了 Pro，你可以用语音或照片记账，还能问 Yala AI 你的财务状况。";
+"pasos23.final.offer.mostChosen" = "最多人选择";
+"pasos23.final.offer.cheaperPerMonth" = "按月算更划算";
+"pasos23.final.offer.timeline.reminder" = "扣费前我们会提醒你。";
+"pasos23.final.offer.timeline.charge" = "你的套餐开始计费。在此之前到“设置”中取消，就不会收费。";
+"pasos23.final.offer.ctaOneMonth" = "开始我的免费 1 个月";
+"pasos23.final.offer.ctaDays" = "开始我的 %d 天免费试用";
+"pasos23.final.offer.keepFree" = "继续使用免费版";
+"pasos23.final.feature.voice" = "说出这笔支出，Yala 帮你记下。";
+"pasos23.final.feature.photo" = "一张收据、一张截图或一个 PDF。";
+"pasos23.final.feature.ai" = "你的财务状况、花在哪里、接下来有什么。";
+"pasos23.final.feature.accounts" = "你所有的银行卡和银行。";
+"pasos23.final.feature.budgets" = "每个类别都设一个上限。";
+"pasos23.final.feature.looks" = "按你的喜好定制 Yala。";
+"pasos23.final.success.title" = "成功！你已拥有 Pro";
+"pasos23.final.success.oneMonth" = "你的免费 1 个月到 %1$@ 为止。%2$@ 我们会提醒你，任何扣费之前都会先通知。";
+"pasos23.final.success.days" = "你的 %1$d 天免费试用到 %2$@ 为止。%3$@ 我们会提醒你，任何扣费之前都会先通知。";
+"pasos23.final.success.oneMonthUntil" = "你的免费 1 个月到 %@ 为止。";
+"pasos23.final.success.daysUntil" = "你的 %1$d 天免费期到 %2$@ 为止。";
+"pasos23.final.success.startUsing" = "开始使用";
+"pasos23.final.reminder.title" = "你的 Yala Pro 试用即将结束";
+"pasos23.final.reminder.body" = "%@ 你的套餐开始计费。如果不想继续，请先到“设置”中取消。";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "时间";
+"export.column.time.description" = "记录的时间。";
+"export.column.exchangeRate" = "汇率";
+"export.column.exchangeRate.description" = "其他货币时，换算所用的汇率及换算成的货币。";
+"export.column.need" = "需求";
+"export.column.need.description" = "仅在你修改过该记录时填写。";
+"import.error.unreadableRow" = "第 %1$d 行：没有列，无法读取。";
+"import.error.time" = "第 %1$d 行：无法识别时间“%2$@”。请写成 14:30。";
+"import.error.exchangeRate" = "第 %1$d 行：无法识别汇率“%2$@”。请使用小数点、不加千位分隔符，写成 3.75。";
+"import.error.need" = "第 %1$d 行：无法识别需求“%2$@”。请使用 essential、priority、optional 或 unclassified。";
+/* Grupos 2.3 · saldar como en Splitwise (decisión 37, C1 + C2 + C3) */
+"groups.saldar23.thirdPartyHint" = "由你记录：%@ 会看到并确认已收到。";
+"groups.saldar23.recordedBy" = "由 %@ 记录";
+"groups.saldar23.recordedByYou" = "由你记录";
+"groups.saldar23.pendingTitleOther" = "%1$@ 记录了 %2$@ 付给你 %3$@";
+"groups.saldar23.scopeA11y" = "支付金额";
+"groups.saldar23.scopeAll" = "全部 · %@";
+"groups.saldar23.scopePart" = "部分";
+"groups.saldar23.settlesWith" = "这样你和 %@ 就两清了。";
+"groups.saldar23.settlesOthers" = "这样 %1$@ 和 %2$@ 就两清了。";
+"groups.saldar23.leaves.youPay" = "你还欠 %2$@ %1$@。";
+"groups.saldar23.leaves.paysYou" = "%1$@ 还欠你 %2$@。";
+"groups.saldar23.leaves.others" = "%1$@ 还欠 %3$@ %2$@。";
+"groups.saldar23.overpays.youPay" = "比你欠的多（%1$@）。%2$@ 会反过来欠你 %3$@。";
+"groups.saldar23.overpays.paysYou" = "比欠你的多（%1$@）。你会反过来欠 %3$@ %2$@。";
+"groups.saldar23.overpays.others" = "比 %1$@ 欠 %2$@ 的多（%3$@）。%2$@ 会反过来欠 %1$@ %4$@。";
+"groups.saldar23.saveAnyway" = "仍然结清";
+"groups.saldar23.notice.youPaid" = "你付给了 %2$@ %1$@。";
+"groups.saldar23.notice.paidYou" = "%1$@ 付给你 %2$@。";
+"groups.saldar23.notice.othersPaid" = "你记录了 %1$@ 付给 %3$@ %2$@。";
+"groups.saldar23.notice.waitingFor" = "等待 %@ 确认。";
+"groups.saldar23.notice.settled" = "你们已两清。";
+"groups.saldar23.notice.nowYouOwe" = "你现在欠 %2$@ %1$@。";
+"groups.saldar23.notice.nowOwesYou" = "%1$@ 现在欠你 %2$@。";
+"groups.saldar23.notice.nowOthersOwe" = "%1$@ 现在欠 %3$@ %2$@。";
+"groups.saldar23.pendingOnDebt.one" = "有一笔 %@ 的付款待确认";
+"groups.saldar23.pendingOnDebt.many" = "有多笔付款共 %@ 待确认";
+"groups.saldar23.confirmOver.title" = "确认这笔付款？";
+"groups.saldar23.confirmOver.settled" = "%1$@ 已经不欠你了：另一笔付款已结清这笔欠款。确认这 %2$@ 会多付。如果是同一笔付款记了两次，请删除它。";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ 只剩 %2$@ 要付给你。确认这 %3$@ 会多付。";
+"groups.saldar23.confirmOver.confirmAnyway" = "仍然确认";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala 合并了欠款，让付款次数更少。";
+"groups.lote23chico.showPairs" = "查看每两人之间的欠款";
+"groups.lote23chico.pairsNote" = "这是每两人之间未合并的欠款。要结清，请回到「减少付款」视图。";
+"groups.lote23chico.showSimplified" = "按减少付款查看";
+"settings.lote23chico.favoriteRecords" = "收藏的记录";
+"settings.lote23chico.organizationFooter" = "预算和计划付款在「计划」中。面板上显示哪些预算，在「配置面板」中选择。";
+"panel.lote23chico.budgetsOnPanel" = "面板上的预算";
+"panel.lote23chico.budgetsOnPanelHint" = "选择在预算卡片上显示哪些。";
+"usageMode.lote23chico.fullExpensesOnly" = "完整 Yala · 仅支出";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "正在退出登录…";
+"uxcs.signOutProgress.removingData" = "正在从此设备移除你的数据…";
+"uxcs.signOutProgress.deletingAccount" = "正在删除你的账户…";
+"uxcs.signOutProgress.keepOpen" = "请保持 Yala 打开，直到完成。";
+"uxcs.signOutProgress.accountDeletedTitle" = "你的账户已删除";
+"uxcs.signOutProgress.accountDeletedBody" = "我们已删除你的 Yala 账户及其所有数据，包括此设备上的数据。如果你在群组中，你在那里的名字现在是“已删除的用户”。";
+"uxcs.signOutProgress.continue" = "继续";
+"uxcs.relaunch.accountDeleted" = "账户已删除";
+"uxcs.relaunch.afterSignOutICloud" = "你的数据曾连接到你的 iCloud，Yala 只有在完全关闭时才能断开这个连接。再次打开后，它会完成从此设备移除你的数据。";
+"bienvenida23.access.sameEmailNote" = "使用同一邮箱时，Apple 和 Google 打开的是同一个 Yala 账户。如果你是用另一个邮箱创建的，请用那个邮箱登录。";
+"bienvenida23.access.consentAccessDetail" = "没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出记录）。";
+"bienvenida23.access.createdTitle" = "你的账户已创建";
+"bienvenida23.access.createdBody" = "接下来，回答三个简单问题，让 Yala 更适合你。";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "已连接的浏览器";
+"connectedBrowsers.rowSubtitle" = "用你的账户打开的 Yala web 会话";
+"connectedBrowsers.intro" = "这里显示 Yala web 在哪里用你的账户打开。如果有不认识的，就退出它。";
+"connectedBrowsers.empty" = "你的账户没有打开任何 Yala web 会话。";
+"connectedBrowsers.close" = "退出";
+"connectedBrowsers.closeAll" = "退出所有网页会话";
+"connectedBrowsers.closeAllConfirmTitle" = "退出所有网页会话？";
+"connectedBrowsers.closeAllConfirmBody" = "这些标签页会在一分钟内清空。你的数据不会改变。";
+"connectedBrowsers.closeAllConfirm" = "全部退出";
+"connectedBrowsers.footer" = "退出一个后，那个标签页会在一分钟内清空。";
+"connectedBrowsers.loadFailed" = "无法加载列表。请检查网络连接后重试。";
+"connectedBrowsers.closeFailed" = "无法退出。请检查网络连接后重试。";
+"connectedBrowsers.unknownBrowser" = "浏览器";
+"connectedBrowsers.sharedComputer" = "共用电脑";
+"connectedBrowsers.justNow" = "刚刚";
+"connectedBrowsers.browserOn" = "%2$@ 上的 %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "关联浏览器";
+"connectedBrowsers.link.rowFooter" = "无需输入密码即可在电脑上打开 Yala：扫描 Yala web 显示的二维码。";
+"connectedBrowsers.link.title" = "关联浏览器";
+"connectedBrowsers.link.intro" = "在电脑上打开 Yala web，选择“用 iPhone 登录”。将相机对准二维码。";
+"connectedBrowsers.link.scanner" = "用于读取二维码的相机";
+"connectedBrowsers.link.typeHeader" = "或输入代码";
+"connectedBrowsers.link.continue" = "继续";
+"connectedBrowsers.link.confirmHeader" = "在此浏览器中打开 Yala？";
+"connectedBrowsers.link.whereCity" = "来自 %1$@ 的请求 · 代码 %2$@";
+"connectedBrowsers.link.whereNoCity" = "代码 %@";
+"connectedBrowsers.link.warning" = "仅当你在自己的屏幕上看到此代码时才确认。Yala 的任何人都不会向你索要。";
+"connectedBrowsers.link.confirm" = "用面容 ID 确认";
+"connectedBrowsers.link.faceIDReason" = "确认要在该浏览器中打开你的 Yala。";
+"connectedBrowsers.link.doneTitle" = "已关联浏览器";
+"connectedBrowsers.link.doneBody" = "%@ 现在显示你的 Yala（只读）。你可以随时在这里退出。";
+"connectedBrowsers.link.doneButton" = "完成";
+"connectedBrowsers.link.problem.invalidCode" = "这不是 Yala web 的代码。请确认它有 8 个字符。";
+"connectedBrowsers.link.problem.expired" = "代码已过期或已被使用。请在 Yala web 上获取新的代码。";
+"connectedBrowsers.link.problem.noCloud" = "你的账户未使用 Yala 云。请在“存储”中开启后再使用 Yala web。";
+"connectedBrowsers.link.problem.sessionExpired" = "你的云端会话已过期。请在“你的 Yala 账户”中重新登录。";
+"connectedBrowsers.link.problem.network" = "无法连接 Yala web。请重试。";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "从文本记录交易";
+"shortcut.bankNotice.description" = "读取银行通知，并把交易放进收件箱等你确认。在银行 App 的“收到通知时”自动化中配合“通知”变量使用。";
+"shortcut.bankNotice.param.text" = "文本";
+"shortcut.bankNotice.param.text.description" = "通知的文本（“通知”变量）";
+"shortcut.bankNotice.param.bank" = "银行";
+"shortcut.bankNotice.bank.other" = "其他银行";
+"Record a movement from the text ${text}" = "从文本 ${text} 记录交易";
+"inbox.sourceBankNotice" = "%@ 通知";
+"inbox.sourceBankNoticeOther" = "银行通知";
+"inbox.sourceBankNoticeNotUnderstood" = "我们没能读懂这条通知";
+/* Pagos que se repiten: propuestas de pagos planificados desde el historial (lote S1, 2026-11-14) */
+"pagosRecurrentes.card.title" = "重复的付款";
+"pagosRecurrentes.card.subtitle" = "我们在你的记录中找到了它们。要把它们加入计划吗？";
+"pagosRecurrentes.card.manage" = "建议设置";
+"pagosRecurrentes.card.manageA11y" = "重复付款的选项";
+"pagosRecurrentes.cadence.monthly" = "每月%@日";
+"pagosRecurrentes.cadence.monthlyApprox" = "每月%@日左右";
+"pagosRecurrentes.cadence.weekly" = "每周%@";
+"pagosRecurrentes.sheet.chargesFound" = "找到的扣款：%@";
+"pagosRecurrentes.sheet.lastCharge" = "最近一次扣款：%@";
+"pagosRecurrentes.sheet.amount" = "金额";
+"pagosRecurrentes.sheet.frequency" = "频率";
+"pagosRecurrentes.sheet.frequencyMonthly" = "每月";
+"pagosRecurrentes.sheet.frequencyWeekly" = "每周";
+"pagosRecurrentes.sheet.nextCharge" = "下次扣款";
+"pagosRecurrentes.sheet.account" = "账户";
+"pagosRecurrentes.sheet.chooseAccount" = "选择账户";
+"pagosRecurrentes.sheet.category" = "类别";
+"pagosRecurrentes.sheet.notify" = "提醒我";
+"pagosRecurrentes.sheet.variable" = "每次扣款金额不同：我们使用最近一次的金额。";
+"pagosRecurrentes.sheet.create" = "创建计划付款";
+"pagosRecurrentes.sheet.notFixed" = "不是固定的";
+"pagosRecurrentes.sheet.notNow" = "以后再说";
+"pagosRecurrentes.notify.none" = "不提醒";
+"pagosRecurrentes.notify.sameDay" = "当天";
+"pagosRecurrentes.notify.oneDay" = "提前1天";
+"pagosRecurrentes.notify.threeDays" = "提前3天";
+"pagosRecurrentes.notify.oneWeek" = "提前1周";
+"pagosRecurrentes.created.notice" = "%1$@ 已成为计划付款。我们会在%2$@提醒你。";
+"pagosRecurrentes.created.noticeNoReminder" = "%@ 已成为计划付款。";
+"pagosRecurrentes.created.view" = "查看";
+"pagosRecurrentes.settings.title" = "重复的付款";
+"pagosRecurrentes.settings.toggle" = "建议重复的付款";
+"pagosRecurrentes.settings.footer" = "Yala 在这台设备上查看你的记录。任何内容都不会离开这台设备。";
+"pagosRecurrentes.settings.dismissed" = "已忽略";
+"pagosRecurrentes.settings.dismissedOn" = "于%@标记为“不是固定的”";
+"pagosRecurrentes.settings.restore" = "重新建议";
+"pagosRecurrentes.settings.done" = "完成";
+"pagosRecurrentes.footer.link" = "重复的付款";
+"pagosRecurrentes.footer.off" = "关闭";

@@ -100,7 +100,7 @@ enum ChatTopicAreasLogic {
             ))
             let adjustment = GroupBridgeStatsAdjustment.build(from: monthTxs, context: context)
             let txs = monthTxs.filter {
-                $0.balanceAdjustmentType == nil && $0.account?.excludeFromStatistics != true
+                $0.balanceAdjustmentType == nil && $0.account?.keepsHistory != false
             }
             let sums = ChatSuggestionsLLMService.monthSums(
                 txs,

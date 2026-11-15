@@ -92,6 +92,9 @@ struct PanelSheetState {
     var showGroupsTutorial = false
     /// Paso 5: se fue a crear un grupo o a unirse a uno; al volver al Panel sale la guía «Tus grupos, a un toque».
     var pendingGroupsPlaceGuide = false
+    // Primeros pasos 2.3 (Y23-16)
+    /// Paso 7: «Anota sin abrir Yala» (`HomeScreenTutorialFlowView`).
+    var showHomeScreenTutorial = false
 
     // AI consent
     var showAIConsentAlert = false
@@ -167,6 +170,7 @@ struct PanelSheetState {
             || showFirstBudgetFlow
             || showFirstScheduledPaymentFlow
             || showGroupsTutorial
+            || showHomeScreenTutorial
     }
 
     /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa
