@@ -8978,3 +8978,20 @@
 "pagosRecurrentes.settings.done" = "Listo";
 "pagosRecurrentes.footer.link" = "Pagos que se repiten";
 "pagosRecurrentes.footer.off" = "Apagado";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Hacer recurrente";
+"rfr.inbox.approveAndMakeRecurring" = "Guardar y hacer recurrente";
+"rfr.planning.fromRecord" = "Desde un registro";
+"rfr.picker.title" = "Elige un registro";
+"rfr.picker.searchPrompt" = "Buscar por descripción o categoría";
+"rfr.picker.empty" = "No hay registros que se puedan hacer recurrentes.";
+"rfr.picker.noResults" = "Ningún registro coincide con «%@»";
+"rfr.picker.footer" = "Registros de los últimos 6 meses. No salen los de un grupo, las transferencias ni los que ya son de un recurrente.";
+"rfr.choice.headline" = "Ya tienes un recurrente parecido";
+"rfr.choice.body" = "Si este registro es un pago de ese recurrente, vincúlalo: cuenta como pagado y no se crea otro.";
+"rfr.choice.link" = "Vincular a «%@»";
+"rfr.choice.createNew" = "Crear otro recurrente";
+"rfr.choice.nextDue" = "Próximo cobro: %@";
+"rfr.notice.linked" = "Vinculado a «%@»";
+"rfr.notice.created" = "Recurrente creado · este registro es su primer pago";

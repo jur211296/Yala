@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 161,
-      "deterministic": 66,
+      "total": 162,
+      "deterministic": 67,
       "agentic": 35,
       "manual": 59,
       "deterministicSinXCUITest": 0
@@ -4161,6 +4161,19 @@
       "classification": "manual",
       "coverage": "unit:YalaTests/AdoptCancelInFlightRunnerTests | unit:YalaTests/WelcomeAdoptCancelRequestTests | unit:YalaTests/AdoptCancelWiringTests | unit:YalaTests/WelcomeAdoptExitTests | 2026-11-14 (ticket barrido-bugs-lote-a, cards c8i9, x5tm, l4m0 y 0f7h del barrido del iPhone 14): «Sí, cancelar» para el traspaso en vuelo en sus puntos seguros y sobrevive a cerrar Yala; el aviso tiene las dos salidas; «Empezar» entra en la app porque el respaldo del cover lee el onboarding de disco. Pin del respaldo: unit:YalaTests/EmpezarEntersTheAppTests. Manual porque pide entrar con una cuenta real de la nube (App Attest): device-QA en el iPhone 14 en el ticket.",
       "lastVerified": "2026-11-14"
+    },
+    {
+      "area": "recurring-from-record",
+      "codeGlobs": [
+        "Yala/App/Logic/RecurringFromRecord/**",
+        "Yala/App/Views/Planning/PagosRecurrentes/RecurringFromRecordSheet.swift",
+        "Yala/Utils/L10n+RecurrenteDesdeRegistro.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecurrenteDesdeRegistroUITests + unit:YalaTests/RecurrenteDesdeRegistro/RecurrenteDesdeRegistroTests | 2026-11-15 (encargo «crear un recurrente a partir de un registro»): «Hacer recurrente» en el menú y el detalle del registro, «Aprobar y hacer recurrente» en la Bandeja y «Desde un registro» en Planificación › Pagos llegan al mismo editor prellenado; el registro queda como primer pago (scheduledPaymentID + lastPaidDate, la próxima fecha avanza sin dejar vencidos atrás) y no se crea otro gasto. Con un recurrente parecido (misma moneda y tipo, monto ±15 %, mismo comercio o, sin nombre, misma subcategoría) se ofrece «Vincular a …», que archiva el borrador pendiente del vencimiento cubierto. No se ofrece en registros de grupo, transferencias, ajustes ni ya vinculados.",
+      "owner": "",
+      "lastVerified": "2026-11-15"
     }
   ]
 }

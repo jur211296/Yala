@@ -9719,3 +9719,20 @@
 "pagosRecurrentes.settings.done" = "OK";
 "pagosRecurrentes.footer.link" = "Paiements qui se répètent";
 "pagosRecurrentes.footer.off" = "Désactivé";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Rendre récurrent";
+"rfr.inbox.approveAndMakeRecurring" = "Enregistrer et rendre récurrent";
+"rfr.planning.fromRecord" = "À partir d’une opération";
+"rfr.picker.title" = "Choisis une opération";
+"rfr.picker.searchPrompt" = "Rechercher par description ou catégorie";
+"rfr.picker.empty" = "Aucune opération ne peut devenir récurrente.";
+"rfr.picker.noResults" = "Aucune opération ne correspond à « %@ »";
+"rfr.picker.footer" = "Opérations des 6 derniers mois. Les opérations de groupe, les virements et celles déjà liées à un paiement récurrent n’apparaissent pas.";
+"rfr.choice.headline" = "Tu as déjà un paiement récurrent similaire";
+"rfr.choice.body" = "Si cette opération est un paiement de ce récurrent, associe-la : elle compte comme payée et aucun autre n’est créé.";
+"rfr.choice.link" = "Associer à « %@ »";
+"rfr.choice.createNew" = "Créer un autre récurrent";
+"rfr.choice.nextDue" = "Prochain prélèvement : %@";
+"rfr.notice.linked" = "Associé à « %@ »";
+"rfr.notice.created" = "Récurrent créé · cette opération est son premier paiement";

@@ -214,6 +214,9 @@ final class RecordsViewModel: Filterable {
     /// Menú contextual: el registro al que se le elige otra categoría.
     var categoryChangeRecord: TransactionItem?
 
+    /// Menú contextual «Hacer recurrente» (encargo del 15-nov): el registro con el que se abre el editor de recurrentes.
+    var recurringFromRecord: TransactionItem?
+
     /// ↑↓: el día que enseña la vista calendario, si hay uno elegido. Lo escribe `RecordsTabView`, que es quien filtra
     /// la lista por él (`displayedGroups`); sin él, las flechas abrirían registros que no se ven.
     var keyboardDayFilter: Date?

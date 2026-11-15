@@ -9730,3 +9730,20 @@
 "pagosRecurrentes.settings.done" = "完了";
 "pagosRecurrentes.footer.link" = "繰り返しの支払い";
 "pagosRecurrentes.footer.off" = "オフ";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "定期支払いにする";
+"rfr.inbox.approveAndMakeRecurring" = "保存して定期支払いにする";
+"rfr.planning.fromRecord" = "記録から作成";
+"rfr.picker.title" = "記録を選択";
+"rfr.picker.searchPrompt" = "説明やカテゴリで検索";
+"rfr.picker.empty" = "定期支払いにできる記録はありません。";
+"rfr.picker.noResults" = "「%@」に一致する記録はありません";
+"rfr.picker.footer" = "過去6か月の記録です。グループの記録、振替、すでに定期支払いに紐づいた記録は表示されません。";
+"rfr.choice.headline" = "似た定期支払いがすでにあります";
+"rfr.choice.body" = "この記録がその定期支払いの1回分なら紐づけてください。支払い済みとして扱われ、新しく作成されません。";
+"rfr.choice.link" = "「%@」に紐づける";
+"rfr.choice.createNew" = "別の定期支払いを作成";
+"rfr.choice.nextDue" = "次回の請求: %@";
+"rfr.notice.linked" = "「%@」に紐づけました";
+"rfr.notice.created" = "定期支払いを作成しました · この記録が最初の支払いです";

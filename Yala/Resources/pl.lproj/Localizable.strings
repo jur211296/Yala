@@ -9730,3 +9730,20 @@
 "pagosRecurrentes.settings.done" = "Gotowe";
 "pagosRecurrentes.footer.link" = "Powtarzające się płatności";
 "pagosRecurrentes.footer.off" = "Wyłączone";
+
+/* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
+"rfr.action.makeRecurring" = "Ustaw jako cykliczną";
+"rfr.inbox.approveAndMakeRecurring" = "Zapisz i ustaw jako cykliczną";
+"rfr.planning.fromRecord" = "Z transakcji";
+"rfr.picker.title" = "Wybierz transakcję";
+"rfr.picker.searchPrompt" = "Szukaj po opisie lub kategorii";
+"rfr.picker.empty" = "Nie ma transakcji, które można ustawić jako cykliczne.";
+"rfr.picker.noResults" = "Żadna transakcja nie pasuje do „%@”";
+"rfr.picker.footer" = "Transakcje z ostatnich 6 miesięcy. Nie ma tu transakcji grupowych, przelewów ani tych, które już należą do płatności cyklicznej.";
+"rfr.choice.headline" = "Masz już podobną płatność cykliczną";
+"rfr.choice.body" = "Jeśli ta transakcja to płatność tej cyklicznej, połącz ją: liczy się jako opłacona i nie powstaje nowa.";
+"rfr.choice.link" = "Połącz z „%@”";
+"rfr.choice.createNew" = "Utwórz inną płatność cykliczną";
+"rfr.choice.nextDue" = "Następne obciążenie: %@";
+"rfr.notice.linked" = "Połączono z „%@”";
+"rfr.notice.created" = "Utworzono płatność cykliczną · ta transakcja to jej pierwsza płatność";

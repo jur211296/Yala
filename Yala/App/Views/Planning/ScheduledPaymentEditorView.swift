@@ -18,6 +18,9 @@ struct ScheduledPaymentPrefill {
     let needOverride: SubcategoryNeed?
     let currencyCode: String
     let transactionDate: Date
+    /// El nombre del pago. `nil`: la descripción del registro, como desde «Hacer recurrente › Más opciones…». Desde un
+    /// registro ya guardado sin nota, su subcategoría (`RecurringFromRecordLogic.paymentName`).
+    var name: String? = nil
 }
 
 struct ScheduledPaymentEditorView: View {
@@ -1657,7 +1660,7 @@ struct ScheduledPaymentEditorView: View {
         if payment == nil, let prefill = prefill {
             let calendar = Calendar.current
             // Desde «Hacer recurrente › Más opciones…» el nombre es la descripción del registro (UX 2.2 · L2-15).
-            name = prefill.note.trimmingCharacters(in: .whitespacesAndNewlines)
+            name = prefill.name ?? prefill.note.trimmingCharacters(in: .whitespacesAndNewlines)
             amount = prefill.amount
             note = prefill.note
             transactionType = prefill.transactionType
