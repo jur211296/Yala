@@ -19,6 +19,7 @@ import {
   type GroupSource,
 } from "../../shared-core/src/logic/groupBalances";
 import { equalSplit } from "../../shared-core/src/logic/groupSplit";
+import { appMemberRef, isLegacyMemberKey, memberRefResolver } from "../../shared-core/src/logic/groupMemberRef";
 
 interface GoldenGroup {
   id: string;
@@ -40,6 +41,7 @@ interface GoldenScenario {
 const golden = goldenJson as unknown as {
   scenarios: GoldenScenario[];
   equalSplits: { total: number; participants: string[]; expected: { member: string; amount: number }[] | null }[];
+  memberRefs: { groupId: string; memberKey: string; expected: string }[];
 };
 const TOL = 1e-6;
 
@@ -126,6 +128,26 @@ describe("Grupos · el reparto igual de la web es el de la app (golden)", () => 
       expect(c.expected, `equalSplits[${i}] sin expected: genera el golden desde la app`).toBeTruthy();
       compare(equalSplit(c.total, c.participants), c.expected, `equalSplits[${i}]`);
     });
+  });
+});
+
+describe("Grupos · la web nombra a los miembros como la app (golden)", () => {
+  it("hay casos de las dos ramas", () => {
+    expect(golden.memberRefs.some((c) => isLegacyMemberKey(c.memberKey))).toBe(true);
+    expect(golden.memberRefs.some((c) => !isLegacyMemberKey(c.memberKey))).toBe(true);
+  });
+  golden.memberRefs.forEach((c, i) => {
+    it(`memberRefs[${i}] ${c.memberKey}`, async () => {
+      expect(await appMemberRef(c.groupId, c.memberKey)).toBe(c.expected);
+    });
+  });
+  it("lee las dos formas y deja tal cual lo que no es de nadie", async () => {
+    const c = golden.memberRefs[0]!;
+    const resolve = await memberRefResolver(c.groupId, [c.memberKey]);
+    expect(resolve(c.expected)).toBe(c.memberKey);
+    expect(resolve(c.expected.toLowerCase())).toBe(c.memberKey);
+    expect(resolve(c.memberKey.toUpperCase())).toBe(c.memberKey);
+    expect(resolve("otra-cosa")).toBe("otra-cosa");
   });
 });
 

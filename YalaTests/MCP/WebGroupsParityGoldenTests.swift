@@ -179,6 +179,34 @@ struct WebGroupsParityGoldenTests {
         }
     }
 
+    /// En gastos, cuotas y pagos la app NO escribe la `member_key` del servidor: escribe el id local del `SplitMember`
+    /// (`uuidString`), que `GroupsSyncClient.applyMember` deriva de la clave al bajarla. Yala web lo calcula igual
+    /// (`shared-core/src/logic/groupMemberRef.ts`, y `web_member_ref` en la base) para leer lo que escribe la app y que la
+    /// app reconozca lo que escribe la web (barrido final de 2.3: «? pagó», «Sin nombre», «Todo saldado» con deuda).
+    /// La rama legacy/backend es la de `applyMember`, con sus mismas dos funciones.
+    @Test func theWebMemberRefGoldenMatchesTheApp() throws {
+        let data = try Data(contentsOf: Self.goldenURL)
+        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let cases = root["memberRefs"] as? [[String: Any]]
+        else { throw GoldenError.bad("groups-parity.json sin memberRefs") }
+        #expect(cases.count >= 3)
+        var sawLegacy = false
+        var sawBackend = false
+        for (i, c) in cases.enumerated() {
+            guard let groupID = c["groupId"] as? String, let key = c["memberKey"] as? String,
+                  let expected = c["expected"] as? String
+            else { throw GoldenError.bad("memberRefs[\(i)]: caso incompleto") }
+            let legacy = GroupBackendIdentityLogic.isLegacyMemberKey(key)
+            if legacy { sawLegacy = true } else { sawBackend = true }
+            let id = legacy
+                ? GroupUserIdentityService.deterministicUUID(namespace: "SplitMember", name: "\(groupID):\(key)")
+                : GroupBackendIdentityLogic.deterministicMemberID(groupID: groupID, memberKey: key)
+            #expect(id.uuidString == expected, "memberRefs[\(i)] \(key)")
+        }
+        // Sin un caso de cada rama, un golden que solo cubra una pasaría con la otra rota.
+        #expect(sawLegacy && sawBackend)
+    }
+
     // MARK: - Cálculo con el código de la app
 
     private func compute(_ scenario: Scenario) -> [String: Any] {

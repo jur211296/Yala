@@ -6,10 +6,12 @@
  * - A añade un gasto de 10,01 entre los dos desde la web; repetir el envío no lo duplica; A y B lo ven con su parte.
  * - B salda 5,01 desde la web: nace confirmado porque lo apunta quien paga.
  * - A crea un enlace de invitación con el formato de la app.
- * - Lo escrito baja por `/groups/pull` (el canal del iPhone) con la forma de un gasto del iPhone.
+ * - Lo escrito baja por `/groups/pull` (el canal del iPhone) con la forma de un gasto del iPhone: los miembros, con el id
+ *   con que los nombra la app (`appMemberRef`), no con su `member_key` (barrido final de 2.3).
  * Al terminar, lo borra con el token de la APP de A por `/groups/push` (la web no borra) y revoca la invitación.
  */
 import { afterAll, describe, expect, it } from "vitest";
+import { appMemberRef } from "../../../shared-core/src/logic/groupMemberRef";
 
 const BASE = "https://yala-web-staging.misty-surf-6866.workers.dev";
 const GATEWAY = "https://yala-gateway-staging.misty-surf-6866.workers.dev";
@@ -180,7 +182,10 @@ describe.skipIf(!haveUsers)("lote 3 · escribir en Grupos contra staging", () =>
       expect(inviteToken).toMatch(/^[0-9a-f]{32}$/);
     }
 
-    // 4 · Por el canal del iPhone: el gasto y sus cuotas, con la forma que el iPhone sabe leer.
+    // 4 · Por el canal del iPhone: el gasto y sus cuotas, con la forma que el iPhone sabe leer. Hasta el 15-nov este paso
+    // exigía la `member_key` cruda, que es justo lo que el iPhone no reconoce («? pagó»).
+    const anaRef = await appMemberRef(groupId, ana.clave);
+    const betoRef = await appMemberRef(groupId, beto.clave);
     const token = await appToken(A);
     // Con la cabecera de capacidades de la app 2.3 (`v3`): sin ella el pull poda el autor del gasto, que llegó en la v3.
     const pull = await fetch(`${GATEWAY}/groups/pull?cursors=${encodeURIComponent("{}")}&limit=1000`, {
@@ -190,14 +195,14 @@ describe.skipIf(!haveUsers)("lote 3 · escribir en Grupos contra staging", () =>
     const body = (await pull.json()) as { deltas: { entity_type: string; sync_id: string; group_id: string; fields: Record<string, unknown>; field_hlcs: Record<string, string> }[] };
     const exp = body.deltas.find((x) => x.entity_type === "split_expenses" && x.sync_id === gastoId);
     expect(exp?.fields).toEqual(
-      expect.objectContaining({ expense_description: "e2e web lote 3", currency_code: gasto.divisa, paid_by_member_key: ana.clave, split_type: "equal", last_edited_by_member_key: ana.clave }),
+      expect.objectContaining({ expense_description: "e2e web lote 3", currency_code: gasto.divisa, paid_by_member_key: anaRef, split_type: "equal", last_edited_by_member_key: anaRef }),
     );
     expect(Number(exp?.fields.amount)).toBe(10.01);
     expect(Object.keys(exp?.field_hlcs ?? {})).toEqual(expect.arrayContaining(["gmoney", "expense_description", "date", "paid_by_member_key", "split_type"]));
     const shares = body.deltas.filter((x) => x.entity_type === "split_shares" && x.fields.expense_id === gastoId);
     expect(shares.map((s) => [s.fields.member_key, Number(s.fields.amount)]).sort()).toEqual([
-      [ana.clave, 5.01],
-      [beto.clave, 5],
+      [anaRef, 5.01],
+      [betoRef, 5],
     ].sort());
   }, 120_000);
 });

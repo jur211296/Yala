@@ -137,7 +137,30 @@ end;
 $$;
 revoke execute on function public.web_group_write_guard(text) from public, anon, authenticated, yala_mcp_reader, yala_web;
 
--- ¿Es miembro activo del grupo esa clave?
+-- El id con el que la APP nombra a un miembro en gastos, cuotas y pagos (2026-11-15, barrido final de 2.3). No es la
+-- `member_key`: es el id local del `SplitMember` del iPhone, SHA-256 de '<namespace>:<group_id>:<member_key>' truncado a
+-- 16 bytes y en mayúsculas, con namespace 'SplitMemberBackend' si la clave es un UUID y 'SplitMember' si no (clave de la
+-- era iCloud). Espejo de `shared-core/src/logic/groupMemberRef.ts` y de `GroupsSyncClient.applyMember`. Con la clave
+-- cruda, la app pintaba «? pagó» y el grupo ganaba personas fantasma.
+create or replace function public.web_member_ref(p_group_id text, p_member_key text)
+returns text
+language sql
+immutable
+set search_path = public, pg_catalog
+as $$
+  select upper(regexp_replace(
+           encode(substr(sha256(convert_to(
+             case when p_member_key ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                    or p_member_key = '' or p_member_key = '__deleted_user__'
+                  then 'SplitMemberBackend' else 'SplitMember' end
+             || ':' || p_group_id || ':' || p_member_key, 'UTF8')), 1, 16), 'hex'),
+           '^(.{8})(.{4})(.{4})(.{4})(.{12})$', '\1-\2-\3-\4-\5'))
+$$;
+revoke execute on function public.web_member_ref(text, text) from public, anon, authenticated, yala_mcp_reader, yala_web;
+
+-- ¿Nombra esa referencia a un miembro activo del grupo? Solo la forma de la app (`web_member_ref`): aceptar también la
+-- clave cruda dejaría a la web volver a escribir filas que el iPhone no reconoce.
+-- (El parámetro conserva su nombre, `p_member_key`, porque Postgres no deja renombrarlo con `create or replace`.)
 create or replace function public.web_group_active_member(p_group_id text, p_member_key text)
 returns boolean
 language sql
@@ -146,7 +169,8 @@ security definer
 set search_path = public
 as $$
   select exists (select 1 from public.group_members m
-                 where m.group_id = p_group_id and m.member_key = p_member_key and m.deleted = false and m.status = 'active')
+                 where m.group_id = p_group_id and m.deleted = false and m.status = 'active'
+                   and public.web_member_ref(m.group_id, m.member_key) = p_member_key)
 $$;
 revoke execute on function public.web_group_active_member(text, text) from public, anon, authenticated, yala_mcp_reader, yala_web;
 

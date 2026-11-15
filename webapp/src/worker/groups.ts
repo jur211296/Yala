@@ -30,6 +30,7 @@ import {
   type LatestConverter,
 } from "../../../shared-core/src/logic/groupBalances";
 import { convertOn, type RateBook } from "../../../shared-core/src/logic/fx";
+import { memberRefResolver } from "../../../shared-core/src/logic/groupMemberRef";
 
 type Row = Record<string, unknown>;
 
@@ -124,11 +125,32 @@ function band(h: HeaderBalance) {
   return { estado: h.state, teDeben: moneyList(h.owedToMe), debes: moneyList(h.iOwe) };
 }
 
+/**
+ * Las filas que escribe la app nombran a cada miembro con el id local de su iPhone, no con su `member_key`
+ * (`shared-core/src/logic/groupMemberRef.ts`). Aquí todo pasa a `member_key`, que es lo que usan `me`, los nombres y lo
+ * que la página manda de vuelta al escribir. Sin esto, la lista decía «Todo saldado» con deudas y los miembros salían
+ * «Sin nombre» (barrido final de 2.3).
+ */
+export async function withMemberKeys(g: WebGroupRows): Promise<WebGroupRows> {
+  const resolve = await memberRefResolver(g.group_id, g.members.map((m) => str(m.member_key)));
+  const fix = (row: Row, cols: readonly string[]): Row => {
+    const out: Row = { ...row };
+    for (const c of cols) if (typeof row[c] === "string") out[c] = resolve(row[c] as string);
+    return out;
+  };
+  return {
+    ...g,
+    expenses: g.expenses.map((e) => fix(e, ["paid_by_member_key", "last_edited_by_member_key"])),
+    shares: g.shares.map((s) => fix(s, ["member_key"])),
+    settlements: g.settlements.map((s) => fix(s, ["from_member_key", "to_member_key", "recorded_by_member_key"])),
+  };
+}
+
 async function snapshot(binding: GroupsReaderBinding | undefined, token: string, only?: string): Promise<{ groups: WebGroupRows[]; truncated: boolean }> {
   if (!binding) throw new GroupsUnavailableError("sin_binding");
   const r = only ? await binding.snapshot(token, only) : await binding.snapshot(token);
   if (!r.ok) throw new GroupsUnavailableError(r.error);
-  return { groups: r.groups.filter(visible), truncated: r.truncated };
+  return { groups: await Promise.all(r.groups.filter(visible).map(withMemberKeys)), truncated: r.truncated };
 }
 
 /** La lista: el resumen de arriba (lo que te deben y lo que debes, por divisa) y una tarjeta por grupo. */

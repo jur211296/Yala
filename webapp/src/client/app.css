@@ -380,8 +380,11 @@
   color: var(--ink);
   border-radius: 99px;
   padding: 6px 12px;
-  font: 600 13px inherit;
+  /* No `font: 600 13px inherit`: `inherit` no vale dentro del atajo, el navegador tiraba la línea entera y los campos
+     se quedaban en la letra por defecto (13,3 px). */
   font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
 }
 .chips input[type="search"] {
   flex: 1;
@@ -1294,8 +1297,9 @@
   border: 0;
   background: transparent;
   color: var(--ink);
-  font: 500 16px inherit;
   font-family: inherit;
+  font-weight: 500;
+  font-size: 16px;
   outline: none;
 }
 .kin kbd {
@@ -1400,4 +1404,18 @@
 .hideamt .bud-amt,
 .hideamt .amt-s {
   filter: blur(7px);
+}
+
+/* Safari del iPhone amplía la página al tocar un campo con letra de menos de 16 px y la deja ampliada al salir: toda la
+   web quedaba corrida a la derecha y cortaba importes en Más, Pagos, Estadísticas y Grupos (barrido final de 2.3). En
+   pantallas táctiles ningún campo baja de 16 px; los que ya pasan de ahí (importe, divisa, buscador) no cambian. */
+@media (hover: none) and (pointer: coarse) {
+  .chips select,
+  .chips input[type="search"],
+  .fld input,
+  .fld select,
+  .kv select,
+  .link-in {
+    font-size: 16px;
+  }
 }

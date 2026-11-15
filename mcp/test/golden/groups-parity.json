@@ -1,5 +1,5 @@
 {
-  "about" : "Yala web, lote 3: saldos y deudas de Grupos. Entradas escritas a mano; los expected los escribe YalaTests/MCP/WebGroupsParityGoldenTests.swift con GroupBalanceService. mcp/test/groups-parity.test.ts exige lo mismo a shared-core/src/logic/groupBalances.ts. Ningún escenario lleva medio céntimo: la app suma los gastos en el orden de un diccionario (cambia entre ejecuciones) y en un medio céntimo el redondeo cambiaría de una corrida a otra.",
+  "about" : "Yala web, lote 3: saldos y deudas de Grupos. Entradas escritas a mano; los expected los escribe YalaTests/MCP/WebGroupsParityGoldenTests.swift con GroupBalanceService. mcp/test/groups-parity.test.ts exige lo mismo a shared-core/src/logic/groupBalances.ts. Ningún escenario lleva medio céntimo: la app suma los gastos en el orden de un diccionario (cambia entre ejecuciones) y en un medio céntimo el redondeo cambiaría de una corrida a otra. memberRefs: el id con que la app nombra a cada miembro en gastos, cuotas y pagos (GroupsSyncClient.applyMember); la web lo calcula con shared-core/src/logic/groupMemberRef.ts y la base con web_member_ref.",
   "equalSplits" : [
     {
       "expected" : [
@@ -307,6 +307,28 @@
         "b"
       ],
       "total" : 33.329999999999998
+    }
+  ],
+  "memberRefs" : [
+    {
+      "expected" : "C7D29600-3BB0-0523-71E1-449AB61518E2",
+      "groupId" : "SplitGroup-0B8E1C52-7A3D-4F19-9C2E-5D6A7B8C9D0E",
+      "memberKey" : "5f0c2a9e-1b3d-4e6f-8a7b-9c0d1e2f3a4b"
+    },
+    {
+      "expected" : "3BBF3E08-6826-D87B-8FD4-B9DD64921ACE",
+      "groupId" : "SplitGroup-0B8E1C52-7A3D-4F19-9C2E-5D6A7B8C9D0E",
+      "memberKey" : "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f"
+    },
+    {
+      "expected" : "4E1E7C50-32CB-1894-7BEF-1BC5551C9B49",
+      "groupId" : "SplitGroup-0B8E1C52-7A3D-4F19-9C2E-5D6A7B8C9D0E",
+      "memberKey" : "_4b1f6d2a8c9e0f3a5b7c9d1e2f4a6b8c"
+    },
+    {
+      "expected" : "10A9FCD0-F208-9B1C-DCD1-733D0263F236",
+      "groupId" : "web3-demo-1794670652091-nsd9di",
+      "memberKey" : "5F0C2A9E-1B3D-4E6F-8A7B-9C0D1E2F3A4B"
     }
   ],
   "scenarios" : [

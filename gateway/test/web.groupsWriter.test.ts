@@ -9,6 +9,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../src/env";
+import { appMemberRef } from "../../shared-core/src/logic/groupMemberRef";
+
+/** Lo que escribe la web en las filas: el id con que la app nombra al miembro, no su `member_key` (barrido 2.3). */
+const ref = (key: string) => appMemberRef(GID, key);
 
 const SUB = "11111111-2222-3333-4444-555555555555";
 const OTHER = "99999999-2222-3333-4444-555555555555";
@@ -198,11 +202,11 @@ describe("WebGroupsWriter · añadir un gasto", () => {
       expense_description: { expense_description: "Cena" },
       date: { date: "2026-11-14T15:30:00.000Z" },
       created_at: { created_at: new Date(NOW).toISOString() },
-      paid_by_member_key: { paid_by_member_key: "m-ana" },
+      paid_by_member_key: { paid_by_member_key: await ref("m-ana") },
       split_type: { split_type: "equal" },
       is_settled: { is_settled: false },
       is_opening_balance: { is_opening_balance: false },
-      last_edited_by_member_key: { last_edited_by_member_key: "m-ana" },
+      last_edited_by_member_key: { last_edited_by_member_key: await ref("m-ana") },
     });
     // Un reloj por delta, con el formato de la app (46 caracteres), en todas sus unidades.
     const hlc = e.p_row_hlc as string;
@@ -213,9 +217,9 @@ describe("WebGroupsWriter · añadir un gasto", () => {
     // 100 / 3: el céntimo que sobra va al primero, como `GroupSplitCalculator.equalSplit`.
     const shares = e.p_shares as { sync_id: string; fields: Record<string, Record<string, unknown>>; field_hlcs: Record<string, string> }[];
     expect(shares.map((s) => s.fields.gshare)).toEqual([
-      { expense_id: EXP, member_key: "m-ana", amount: 33.34 },
-      { expense_id: EXP, member_key: "m-beto", amount: 33.33 },
-      { expense_id: EXP, member_key: "m-caro", amount: 33.33 },
+      { expense_id: EXP, member_key: await ref("m-ana"), amount: 33.34 },
+      { expense_id: EXP, member_key: await ref("m-beto"), amount: 33.33 },
+      { expense_id: EXP, member_key: await ref("m-caro"), amount: 33.33 },
     ]);
     for (const s of shares) {
       expect(s.fields.is_paid).toEqual({ is_paid: false });
@@ -303,12 +307,12 @@ describe("WebGroupsWriter · apuntar un pago", () => {
       expect(a?.url.endsWith("/rpc/web_add_group_settlement")).toBe(true);
       expect(a?.body?.p_sync_id).toBe(PAY);
       expect(a?.body?.p_fields).toEqual({
-        from_member_key: { from_member_key: over.from },
-        to_member_key: { to_member_key: over.to },
+        from_member_key: { from_member_key: await ref(over.from as string) },
+        to_member_key: { to_member_key: await ref(over.to as string) },
         smoney: { amount: 25.5, currency_code: "PEN" },
         date: { date: "2026-11-14T15:00:00.000Z" },
         is_confirmed: { is_confirmed: confirmed },
-        recorded_by_member_key: { recorded_by_member_key: "m-ana" },
+        recorded_by_member_key: { recorded_by_member_key: await ref("m-ana") },
       });
       const alerts = (fanOut.mock.calls.at(-1) as unknown as unknown[])[6] as Record<string, { locKey: string }>;
       expect(alerts[GID]?.locKey).toBe("notifications.groups.push.settlementAdded");
