@@ -49,6 +49,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 |---|---|---|
 | 2026-11-14-atajo-banco-b0-b1 | done | tickets/done/2026-11-14-atajo-banco-b0-b1.md |
 | 2026-11-14-pagos-recurrentes-s1 | done | tickets/done/2026-11-14-pagos-recurrentes-s1.md |
+| 2026-11-14-qa-ui-tandas-rojas | done | tickets/done/2026-11-14-qa-ui-tandas-rojas.md |
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
