@@ -16,3 +16,9 @@ accesibilidad colgada.
 
 **How to apply:** si un XCUITest sale con esa línea y cero `Test Case`, no lo cuentes como rojo ni lo repitas tal cual:
 reinicia el simulador una vez y vuelve a lanzar con `test-without-building`. Relacionado: [[el-carril-espera-a-cola-a]].
+
+**Otra cara, 2026-11-15 (Max, barrido final 2.3):** con el simulador heredado de otra sesión ya arrancado, la primera
+corrida de XCUITest cayó caso por caso con `Failed to get matching snapshots: Error getting main window
+kAXErrorAPIDisabled` y `uitest_ready ausente — bootstrap no completó` (timeouts de 125 s). Costó 12 de los 30 min de
+presupuesto. Tras `shutdown` + `boot` + `bootstatus -b`, 43/43 verdes con `test-without-building`. **Reinicia el simulador
+ANTES de la primera corrida de XCUITest de una sesión**, no después del primer rojo.
