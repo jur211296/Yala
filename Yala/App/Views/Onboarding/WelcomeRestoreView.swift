@@ -62,6 +62,9 @@ struct WelcomeRestoreView: View {
     /// anterior (la del migrado se queda congelada al migrar) y «Encontramos tus datos» lo avisa con una nota (card lokl,
     /// ticket `restore-beacon-outlives-account-deletion` §3, decisión A de Jürgen del 2026-11-05: nota, mismos botones).
     @State private var foundCopyPredatesCloud = false
+    /// La persona ya eligió «Traer mis datos» en la puerta de iCloud privado antes de reabrir Yala: «¡Qué bien volver a
+    /// verte!» no vuelve a preguntar (`RestoreFoundActionsLogic`). Se lee una vez al montar; la marca la apagan las salidas.
+    @State private var bringChosenAtGate = RestoreBringChoiceStore.wasChosenAtGate()
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
     var onStartFresh: () -> Void
@@ -93,6 +96,18 @@ struct WelcomeRestoreView: View {
             return true
         default: return false
         }
+    }
+
+    /// Lo que ofrece «¡Qué bien volver a verte!» según si la elección ya se hizo en la puerta.
+    private var foundActions: RestoreFoundActionsLogic.Actions {
+        RestoreFoundActionsLogic.actions(bringChosenAtGate: bringChosenAtGate)
+    }
+
+    /// La flecha atrás desaparece solo en «¡Qué bien volver a verte!» con la elección ya hecha: durante la búsqueda y en
+    /// los demás desenlaces sigue siendo la salida.
+    private var showsBackButton: Bool {
+        guard case .found = state else { return true }
+        return foundActions.offersBack
     }
 
     var body: some View {
@@ -156,9 +171,12 @@ struct WelcomeRestoreView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                        onBack()
+                if showsBackButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                            RestoreBringChoiceStore.clear()
+                            onBack()
+                        }
                     }
                 }
                 if showRefreshToolbar {
@@ -512,21 +530,25 @@ struct WelcomeRestoreView: View {
             Spacer()
 
             VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(L10n.UXLote6.restoreBringBack) {
+                YalaPrimaryButton(foundActions.primaryIsContinue ? L10n.Action.continueAction : L10n.UXLote6.restoreBringBack) {
                     DS.Haptic.success()
+                    RestoreBringChoiceStore.clear()
                     // El destino (directo / onboarding) lo decide el caller con
                     // RestoreRouter, según lo que traiga el resumen restaurado.
                     onContinueWithSummary(summary)
                 }
                 .accessibilityIdentifier("welcome_restore_continue")
 
-                Button {
-                    showStartFreshConfirm = true
-                } label: {
-                    Text(L10n.Welcome.Restore.startFresh)
-                        .font(DS.Typography.label)
-                        // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
-                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                if foundActions.offersStartFresh {
+                    Button {
+                        showStartFreshConfirm = true
+                    } label: {
+                        Text(L10n.Welcome.Restore.startFresh)
+                            .font(DS.Typography.label)
+                            // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    }
+                    .accessibilityIdentifier("welcome_restore_found_start_fresh")
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

@@ -590,6 +590,9 @@ struct WelcomeFlowContainer: View {
             WelcomeGroupsDoorLanding.disarm()
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
+            // Desde «¡Hola de nuevo!» o la puerta de Grupos la persona aún no eligió traer nada: Restaurar le pregunta. Desde
+            // la puerta de iCloud privado la marca ya la encendió su «Traer mis datos» (`RestoreBringChoiceStore`).
+            if step != .privateICloudGate { RestoreBringChoiceStore.clear() }
             destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }
