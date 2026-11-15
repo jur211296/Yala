@@ -1955,7 +1955,7 @@ struct ProfileView: View {
 
             Spacer()
 
-            Toggle("", isOn: Binding(
+            Toggle("Simular Pro", isOn: Binding(
                 get: { StoreKitManager.shared.devForceProTier },
                 set: { _ in StoreKitManager.shared.toggleDevProTier() }
             ))

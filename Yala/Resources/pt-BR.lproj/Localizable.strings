@@ -9467,6 +9467,12 @@
 "pasos23.groups.what.linkHint" = "Alguém já criou o grupo";
 "pasos23.groups.alreadySeen" = "Você já conhece Grupos: viu ao entrar. Seguimos com o passo 6.";
 
+/* VoiceOver: name of the Show only / Hide segmented control in Records filters */
+"a11y.selectores.filterMode" = "Modo do filtro";
+
+/* VoiceOver: name of the custom color picker in the icon/color sheet */
+"a11y.selectores.customColor" = "Cor personalizada";
+
 /* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
 "pasos23.home.eyebrow" = "Registre sem abrir o Yala";
 "pasos23.home.start" = "Começar";

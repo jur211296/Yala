@@ -109,11 +109,14 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         // segmentos van cortos para que quepan en un iPhone pequeño y en alemán; la frase de debajo
                         // dice qué hace el que está puesto.
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Picker("", selection: $isEditingHidden) {
+                            Picker(L10n.VoiceOverSelectores.filterMode, selection: $isEditingHidden) {
                                 Text(L10n.Filters.includeMode).tag(false)
                                 Text(L10n.Filters.excludeMode).tag(true)
                             }
+                            .labelsHidden()
                             .pickerStyle(.segmented)
+                            // Un segmentado no pasa su título a VoiceOver (regla de `swiftui-ds.md`).
+                            .accessibilityLabel(L10n.VoiceOverSelectores.filterMode)
                             .accessibilityIdentifier("filters_include_exclude_picker")
 
                             Text(isEditingHidden ? L10n.Filters.excludeModeExplanation : L10n.Filters.includeModeExplanation)
