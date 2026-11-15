@@ -132,7 +132,7 @@
           "to" : "EUR"
         }
       ],
-      "description" : "Septiembre en PEN con movimientos en USD, EUR y GBP, un gasto de grupo pagado por mí, un préstamo suelto, un «me deben» de saldo inicial, un grupo con una cuenta que no resuelve, cuentas excluida y archivada, futuros, transferencias y sin categoría. Y dos gastos de grupo con una pata que no se puede creer: una sin convertir (importe guardado 0) y otra guardada con otra divisa principal. Y dos movimientos sueltos en USD con el importe convertido sin escribir (0), uno sin categoría: se reconvierten con la tasa de su día.",
+      "description" : "Septiembre en PEN con movimientos en USD, EUR y GBP, un gasto de grupo pagado por mí, un préstamo suelto, un «me deben» de saldo inicial, un grupo con una cuenta que no resuelve, cuentas excluida y archivada, futuros, transferencias y sin categoría. Y dos gastos de grupo con una pata que no se puede creer: una sin convertir (importe guardado 0) y otra guardada con otra divisa principal. Y dos movimientos sueltos en USD con el importe convertido sin escribir (0), uno sin categoría: se reconvierten con la tasa de su día. Y una cuenta sistema de Grupos archivada por la app (duplicada) con saldo inicial: sigue sumando en el saldo, como en el Panel (decisión 6 de 2.3).",
       "expected" : {
         "balances" : {
           "accounts" : {
@@ -141,10 +141,11 @@
             "00000000-0000-4000-8000-000000001003" : 360,
             "00000000-0000-4000-8000-000000001004" : -999,
             "00000000-0000-4000-8000-000000001005" : -888,
-            "00000000-0000-4000-8000-000000001006" : 100
+            "00000000-0000-4000-8000-000000001006" : 100,
+            "00000000-0000-4000-8000-000000001007" : 300
           },
           "aproximado" : true,
-          "total" : 13000.70616
+          "total" : 14188.70616
         },
         "budgets" : {
           "00000000-0000-4000-8000-000000006001" : 4118.8054679999996,
@@ -437,7 +438,8 @@
           "00000000-0000-4000-8000-000000007020" : "gasto",
           "00000000-0000-4000-8000-000000007021" : "ingreso",
           "00000000-0000-4000-8000-000000007022" : "gasto",
-          "00000000-0000-4000-8000-000000007023" : "gasto"
+          "00000000-0000-4000-8000-000000007023" : "gasto",
+          "00000000-0000-4000-8000-000000007090" : "ajuste_de_saldo"
         },
         "pagos" : {
           "fechas" : {
@@ -680,6 +682,15 @@
             "is_system_account" : true,
             "name" : "Grupos USD",
             "sync_id" : "00000000-0000-4000-8000-000000001006",
+            "type" : "checking"
+          },
+          {
+            "currency_code" : "PEN",
+            "exclude_from_statistics" : false,
+            "is_archived" : true,
+            "is_system_account" : true,
+            "name" : "Grupos (duplicada)",
+            "sync_id" : "00000000-0000-4000-8000-000000001007",
             "type" : "checking"
           }
         ],
@@ -1855,6 +1866,28 @@
             "sync_id" : "00000000-0000-4000-8000-000000007023",
             "tag_refs" : [
               "00000000-0000-4000-8000-000000004001"
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001007",
+            "amount" : 300,
+            "amount_in_preferred_currency" : 300,
+            "balance_adjustment_type" : "initial_balance",
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-03T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007090",
+            "tag_refs" : [
+
             ],
             "transfer_pair_id" : null
           }

@@ -11,7 +11,7 @@
 //  - saldo por cuenta: `AccountBalanceCalculator.currentBalance` (con el corte de hoy en `now`, y lo que está en otra
 //    divisa convertido a la de la cuenta con la tasa de su fecha);
 //  - saldo total y su «≈»: `LiveBalanceCalculator.liveBalanceBreakdown` (con el corte de hoy en `now`) sobre las cuentas
-//    que cuentan (como el Panel; el chat recorta a 13 meses al leer, y el conector no);
+//    que suman (`Account.sumsInBalance`, como el Panel; el chat recorta a 13 meses al leer, y el conector no);
 //  - periodos y totales de recurrentes: `FullFinancialContextBuilder.buildFromArrays` (el contexto del chat, que es
 //    lo que el conector porta), con `GroupBridgeStatsAdjustment.build(from:context:)`;
 //  - gasto de presupuesto: `BudgetsViewModel.calculateSpending` (la pantalla de Presupuestos);
@@ -194,9 +194,10 @@ struct MCPAppParityGoldenTests {
         // El saldo de HOY corta en el `now` del escenario (`LiveBalanceCalculator.TodayCutoff`): lo fechado después no
         // cuenta, como en el Panel y en la lista de cuentas.
         let live = LiveBalanceCalculator.liveBalanceBreakdown(
-            // Las cuentas que suma el Panel (archivar no decide la suma, 2026-10-03), que es también lo que el
-            // chat lista en `balances` y lo que porta `computeBalances` del conector.
-            accounts: PanelTotalAccountsLogic.countableAccounts(accounts.map(\.model)),
+            // Las cuentas que suma el saldo del Panel sin filtro de cuentas: `liveBalanceBreakdown` se queda con las que
+            // cumplen `Account.sumsInBalance` (ni excluidas ni archivadas por la persona; la cuenta sistema de Grupos que
+            // archivó la app sigue sumando, decisión 6 de 2.3). Es lo que porta `computeBalances` del conector.
+            accounts: accounts.map(\.model),
             transactions: allTx,
             preferredCurrencyCode: scenario.preferredCurrency,
             asOf: now,

@@ -9,9 +9,9 @@
  *   o sin fecha, se suma tal cual, como la app.
  * - Total: port de `LiveBalanceCalculator.liveBalanceBreakdown`
  *   (Yala/App/Logic/Calculators/LiveBalanceCalculator.swift:111) con el filtro de cuentas del chat
- *   (`FullFinancialContextBuilder.buildBalances` = `PanelTotalAccountsLogic.countableAccounts`: fuera las excluidas de
- *   estadísticas y las cuentas sistema de Grupos que archiva la app; una archivada a mano suma si no está excluida,
- *   porque archivar no decide la suma desde el 2026-10-03). Agrupa por
+ *   (`Account.sumsInBalance`, el filtro del saldo del Panel): fuera las excluidas de estadísticas y las archivadas por la
+ *   persona, que salen del saldo y conservan su historial (decisión 6 de 2.3). Las cuentas sistema de Grupos que archiva
+ *   la propia app (duplicadas tras una carrera entre dispositivos) siguen sumando, como en la app. Agrupa por
  *   la divisa DEL MOVIMIENTO y convierte cada bolsa con la tasa de HOY (`convertCheckedWithLatestRate`: la fila del
  *   día UTC de hoy, y si le falta la divisa, las anteriores o la tabla estática). Es «lo que tienes hoy», no la suma
  *   de conversiones históricas. Los gastos de grupo NO se ajustan: el saldo es el dinero que de verdad se movió.
@@ -35,6 +35,15 @@ function dayOf(date: string, tz: string): Day | null {
   }
 }
 import { num, round2, type AccountRow, type TxRow } from "./types";
+
+/**
+ * `true` si la cuenta entra en un saldo: ni excluida de las estadísticas ni archivada por la persona. Port de
+ * `AccountScopeLogic.sumsInBalance` (decisión 6 de 2.3): una cuenta sistema de Grupos archivada la archivó la app
+ * (`GroupBridgeSystemEntities`, al fundir duplicadas) y sigue sumando.
+ */
+export function sumsInBalance(a: Pick<AccountRow, "exclude_from_statistics" | "is_archived" | "is_system_account">): boolean {
+  return a.exclude_from_statistics !== true && (a.is_archived !== true || a.is_system_account === true);
+}
 
 export interface AccountBalance {
   id: string;
@@ -102,7 +111,9 @@ export function computeBalances(
 
   const countable = new Map<string, AccountRow>();
   for (const a of accounts) {
-    if (a.exclude_from_statistics !== true && !(a.is_system_account === true && a.is_archived === true)) countable.set(a.sync_id, a);
+    // Suma en el saldo: port de `AccountScopeLogic.sumsInBalance` (decisión 6 de 2.3). Ni excluida ni archivada por la
+    // persona; una cuenta sistema de Grupos archivada la archivó la app y sigue sumando.
+    if (sumsInBalance(a)) countable.set(a.sync_id, a);
   }
 
   const native = new Map<string, number>();

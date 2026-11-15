@@ -7,8 +7,8 @@
    "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
-   "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=35",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
+   "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=36",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4"
   ],
   "resultado": {
@@ -66,7 +66,7 @@
    ],
    "total": {
     "divisa": "PEN",
-    "importe": 13095.97,
+    "importe": 14283.97,
     "aproximado": true,
     "sin_convertir": []
    },
@@ -86,8 +86,8 @@
    "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
-   "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=35",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
+   "tx_items?select=account_ref%2Camount%2Ccurrency_code%2Cdate%2Clocal_day&deleted=is.false&account_ref=not.is.null&order=sync_id.asc&limit=1000&offset=36",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4"
   ],
   "resultado": {
@@ -121,6 +121,16 @@
      "archivada": false,
      "excluida_de_estadisticas": false,
      "movimientos": 4
+    },
+    {
+     "id": "00000000-0000-4000-8000-000000001007",
+     "nombre": "Grupos (duplicada)",
+     "tipo": "checking",
+     "divisa": "PEN",
+     "saldo": 300,
+     "archivada": true,
+     "excluida_de_estadisticas": false,
+     "movimientos": 1
     },
     {
      "id": "00000000-0000-4000-8000-000000001006",
@@ -155,7 +165,7 @@
    ],
    "total": {
     "divisa": "PEN",
-    "importe": 13095.97,
+    "importe": 14283.97,
     "aproximado": true,
     "sin_convertir": []
    },
@@ -173,7 +183,7 @@
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1"
@@ -243,7 +253,7 @@
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1"
@@ -315,7 +325,7 @@
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
@@ -818,6 +828,20 @@
       "viaje"
      ],
      "gasto_de_grupo": false
+    },
+    {
+     "id": "00000000-0000-4000-8000-000000007090",
+     "fecha": "2026-09-03",
+     "importe": 300,
+     "divisa": "PEN",
+     "importe_en_divisa_preferida": 300,
+     "nota": null,
+     "tipo": "ajuste_de_saldo",
+     "categoria": null,
+     "subcategoria": null,
+     "cuenta": "Grupos (duplicada)",
+     "etiquetas": [],
+     "gasto_de_grupo": false
     }
    ],
    "divisa_preferida": "PEN",
@@ -836,7 +860,7 @@
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
@@ -903,7 +927,7 @@
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
@@ -1406,6 +1430,20 @@
       "viaje"
      ],
      "gasto_de_grupo": false
+    },
+    {
+     "id": "00000000-0000-4000-8000-000000007090",
+     "fecha": "2026-09-03",
+     "importe": 300,
+     "divisa": "PEN",
+     "importe_en_divisa_preferida": 300,
+     "nota": null,
+     "tipo": "ajuste_de_saldo",
+     "categoria": null,
+     "subcategoria": null,
+     "cuenta": "Grupos (duplicada)",
+     "etiquetas": [],
+     "gasto_de_grupo": false
     }
    ],
    "divisa_preferida": "PEN",
@@ -1427,14 +1465,14 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-08-30&date_key=lte.2026-09-17&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-08-30&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-08-30&date_key=lte.2026-09-17&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "periodo": {
@@ -1512,14 +1550,14 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-07-30&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-07-30&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-07-31T05%3A00%3A00.000Z&date=lt.2026-09-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-07-30&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-07-31T05%3A00%3A00.000Z&date=lt.2026-09-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-07-31T05%3A00%3A00.000Z&date=lt.2026-09-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "periodo": {
@@ -1570,14 +1608,14 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2025-12-30&date_key=lte.2026-09-17&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2025-12-30&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2025-12-30&date_key=lte.2026-09-17&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2026-09-17T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "periodo": {
@@ -1645,14 +1683,14 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2025-12-30&date_key=lte.2027-01-02&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2025-12-30&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2027-01-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2025-12-30&date_key=lte.2027-01-02&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2027-01-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2025-12-31T05%3A00%3A00.000Z&date=lt.2027-01-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "periodo": {
@@ -1731,15 +1769,15 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "budgets?select=sync_id%2Cname%2Ccurrency_code%2Climit_amount%2Cperiod_type%2Cstart_date%2Cend_date%2Cnatures%2Csubcategory_ids%2Caccount_ids%2Ctag_refs%2Cis_active%2Cinclude_shared_expenses&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "presupuestos": [
@@ -1946,15 +1984,15 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=0",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "budgets?select=sync_id%2Cname%2Ccurrency_code%2Climit_amount%2Cperiod_type%2Cstart_date%2Cend_date%2Cnatures%2Csubcategory_ids%2Caccount_ids%2Ctag_refs%2Cis_active%2Cinclude_shared_expenses&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=35",
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&date=gte.2026-08-31T05%3A00%3A00.000Z&date=lt.2026-10-02T05%3A00%3A00.000Z&order=date.desc%2Csync_id.desc&limit=1000&offset=36",
    "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=0",
-   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=sync_id%2Cdate%2Clocal_day%2Camount%2Ccurrency_code%2Cnote%2Ccategory_ref%2Csubcategory_ref%2Caccount_ref%2Ctag_refs%2Camount_in_preferred_currency%2Cpreferred_currency_code%2Cis_exchange_rate_provisional%2Cneed_override%2Cscheduled_payment_ref%2Cbalance_adjustment_type%2Ctransfer_pair_id%2Csplit_expense_id%2Csplit_lines_raw&deleted=is.false&split_expense_id=in.%28%22G1%22%2C%22G2%22%2C%22G3%22%2C%22G4%22%2C%22G5%22%2C%22G6%22%2C%22G7%22%2C%22G8%22%29&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "presupuestos": [
@@ -2162,12 +2200,12 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=0",
    "scheduled_payments?select=sync_id%2Cname%2Camount%2Ccurrency_code%2Ctransaction_type%2Cis_recurring%2Crecurrence_type%2Crecurrence_interval%2Cnext_due_date%2Cend_date%2Cpayment_category%2Cis_active%2Clast_paid_date%2Csubcategory_ref%2Caccount_ref&deleted=is.false&order=sync_id.asc&limit=1000&offset=9",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "divisa_preferida": "PEN",
@@ -2373,12 +2411,12 @@
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=lt.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=90&offset=0",
    "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=0",
    "scheduled_payments?select=sync_id%2Cname%2Camount%2Ccurrency_code%2Ctransaction_type%2Cis_recurring%2Crecurrence_type%2Crecurrence_interval%2Cnext_due_date%2Cend_date%2Cpayment_category%2Cis_active%2Clast_paid_date%2Csubcategory_ref%2Caccount_ref&deleted=is.false&order=sync_id.asc&limit=1000&offset=9",
-   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=6",
+   "accounts?select=sync_id%2Cname%2Ccurrency_code%2Ctype%2Cis_archived%2Cexclude_from_statistics%2Cis_system_account%2Cparent_account_id&deleted=is.false&order=sync_id.asc&limit=1000&offset=7",
    "categories?select=sync_id%2Cname%2Cis_income%2Cis_visible%2Csort_order&deleted=is.false&order=sync_id.asc&limit=1000&offset=3",
    "subcategories?select=sync_id%2Cname%2Ccategory_ref%2Cnature_raw_value%2Cis_visible%2Csort_order%2Cis_system%2Cis_default_seed&deleted=is.false&order=sync_id.asc&limit=1000&offset=5",
    "tags?select=sync_id%2Cname&deleted=is.false&order=sync_id.asc&limit=1000&offset=1",
    "exchange_rates?select=sync_id%2Cdate_key%2Cbase%2Crates%2Ctimestamp&deleted=is.false&date_key=gte.2026-09-15&date_key=lte.2026-09-15&order=date_key.desc%2Csync_id.asc&limit=1000&offset=4",
-   "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=35"
+   "tx_items?select=scheduled_payment_ref%2Cdate%2Clocal_day&deleted=is.false&scheduled_payment_ref=not.is.null&order=sync_id.asc&limit=1000&offset=36"
   ],
   "resultado": {
    "divisa_preferida": "PEN",
