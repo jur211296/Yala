@@ -100,3 +100,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Simulador iPhone 14 para medir tamaño](reference_simulador_iphone_14_para_medir_tamano.md) — 390×844 + axe/simctl io cuando el teléfono lo tiene otra sesión.
 - [Simulador con axe si Device MCP espeja el iPhone](reference_simulador_con_axe_si_device_mcp_espeja_el_iphone.md) — simctl io + axe tap por coordenadas; hojas invisibles al árbol.
 - [Cuenta nueva y web en el iPhone 14](reference_cuenta_nueva_y_web_en_el_iphone_14.md) — eliminar test@ libera «Vamos a crear tu cuenta»; web staging en Safari por devicectl.
+- [Safari del iPhone 14 sin open_url](reference_safari_del_iphone_14_sin_open_url.md) — open_url pide aprobación; teclado español rompe URLs; recargar y pellizcar.
