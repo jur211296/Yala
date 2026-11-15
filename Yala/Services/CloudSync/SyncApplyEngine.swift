@@ -327,6 +327,12 @@ extension CloudSyncEngine {
             var nonFiniteQuarantined: [(entity: String, serverSeq: Int64, columns: [String])] = []
             var superseded: [String: Int] = [:]
 
+            // YALA-IOS-J: lo que el bucle va a buscar fila a fila se lee ANTES por lote (un `IN` por tabla); sin esto
+            // cada delta recorría tablas enteras y una página tardaba segundos en el hilo principal. Solo dentro de esta
+            // página: fuera de ella las búsquedas van al `fetch` de siempre.
+            EntityApplyMap.pageLookups = EntityApplyMap.prepareLookups(for: page, context: context)
+            defer { EntityApplyMap.pageLookups = nil }
+
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for delta in page.deltas {
                     // D-3: integra el HLC de FILA de CADA delta (aplicado o cuarentenado) en el reloj.
@@ -456,12 +462,16 @@ extension CloudSyncEngine {
             // no-op avanzaría el cursor con el borrado sin hacer.
             guard let model = try entry.fetchBySyncID(delta.syncID, context) else { return }
             context.delete(model)
+            let lookups = EntityApplyMap.pageLookups(for: context)
+            lookups?.noteDeleted(model, key: delta.syncID)
             if let identity = try EntityApplyMap.findSyncIdentity(bySyncID: delta.syncID, context: context) {
                 context.delete(identity)
+                lookups?.noteDeleted(identity, key: delta.syncID)
             }
             // I8f-2 (D-A): higiene del clock por-unidad en el MISMO save de página (si el modelo
             // resucita por un upsert posterior, drain/apply lo re-pueblan).
             try SyncUnitClockStore.deleteChecked(syncID: delta.syncID, context: context)
+            lookups?.forget(SyncUnitClock.self, key: delta.syncID)
 
         case .upsert:
             // D-8: sin fila local → born-remote (crear + fijar syncID para que el sweep del drain no
@@ -475,6 +485,7 @@ extension CloudSyncEngine {
             } else {
                 model = entry.make(context)
                 entry.setSyncID(model, delta.syncID)
+                EntityApplyMap.pageLookups(for: context)?.noteInserted(model, key: delta.syncID)
                 isNew = true
             }
             // Full-row (D-0): iterar SOLO las columnas presentes en `fields` (key ausente = no tocar).
@@ -502,6 +513,7 @@ extension CloudSyncEngine {
             if !appliedUnits.isEmpty {
                 try SyncUnitClockStore.upsertChecked(syncID: delta.syncID, entityTable: delta.entityType,
                                           unitHlcs: appliedUnits, context: context)
+                EntityApplyMap.pageLookups(for: context)?.forget(SyncUnitClock.self, key: delta.syncID)
             }
             if isNew {
                 try ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)
@@ -533,6 +545,7 @@ extension CloudSyncEngine {
             localAnchor: entry.anchor(model)
         )
         context.insert(row)
+        EntityApplyMap.pageLookups(for: context)?.noteInserted(row, key: syncID)
     }
 
     // MARK: - Re-resolución de refs colgadas (F-2)

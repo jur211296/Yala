@@ -114,8 +114,9 @@ final class SettingsLote15UITests: XCTestCase {
     func test_expensesOnly_asksWithActivateAndVisibleCancel() {
         let app = launch()
         app.openProfile()
-        app.openSettingsSection("profile_personalization")
-        let toggle = app.switches["personalization_row_expenses_only"]
+        // Desde la decisión 48 de 2.3 (F1), «Solo gastos» vive en «Cómo usas Yala».
+        app.openSettingsSection("profile_usage_mode")
+        let toggle = app.switches["usage_mode_expenses_only"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 10), "No apareció «Solo gastos».")
         toggle.switches.firstMatch.tap()
 
@@ -134,7 +135,7 @@ final class SettingsLote15UITests: XCTestCase {
         let app = launch()
         app.openProfile()
         app.openSettingsSection("profile_personalization")
-        XCTAssertTrue(app.switches["personalization_row_expenses_only"].waitForExistence(timeout: 10),
+        XCTAssertTrue(app.buttons["personalization_row_app_language"].waitForExistence(timeout: 10),
                       "No se abrió Personalización.")
         capture(app, "L16-7-personalizacion-1")
         // La lista monta solo las celdas visibles: se baja hasta la fila.

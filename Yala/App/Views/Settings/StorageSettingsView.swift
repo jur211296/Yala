@@ -795,6 +795,18 @@ struct StorageSettingsView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier(pending == nil
                                          ? "storage_sync_waiting_uncounted" : "storage_sync_waiting_count")
+            case .upToDate where CloudSyncFlags.storageMode == .cloud && !controller.engineFirstPullCompleted:
+                // Card rfzc: con el motor sano y nada por subir, pero la cuenta todavía bajando por primera vez, «Todo
+                // sincronizado» mentía: el Panel seguía vacío. Dice lo mismo que el aviso del Panel.
+                Label {
+                    Text(L10n.Welcome.Cloud.hydrationBanner)
+                } icon: {
+                    Image(systemName: "icloud.and.arrow.down")
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storage_sync_first_download")
             case .upToDate:
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "checkmark.circle.fill")
@@ -962,8 +974,10 @@ struct StorageSettingsView: View {
     /// y volver a abrirla, porque ahí el espejo ESTÁ montado y hay que re-armar su apagado. Antes del montaje no hay
     /// espejo que apagar, así que esa frase sería falsa: no hay relanzamiento que pedir.
     private func cancelReverseButton(_ controller: CloudMigrationController) -> some View {
+        // Apagado solo con un «sí» ya en camino, nunca por el trabajo en vuelo: el drenaje de la vuelta lo mira entre tandas
+        // y `cancelReverse()` espera a que la pasada suelte (card `volver-a-tu-icloud-se-queda-en-traer-tus`).
         YalaSecondaryButton(L10n.Storage.Progress.cancelReverse, icon: "arrow.uturn.backward",
-                            isDisabled: controller.isWorking) {
+                            isDisabled: controller.isCancellingReverse) {
             confirmCancelReverse = true
         }
         .accessibilityIdentifier("storage_cancel_reverse_button")
@@ -992,7 +1006,8 @@ struct StorageSettingsView: View {
         YalaSecondaryButton(L10n.Storage.Progress.cancelMigration, icon: "xmark.circle",
                             isDisabled: !MigrationImportWaitLogic.cancelEnabled(
                                 isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
-                                cancelling: controller.isCancellingMigration)) {
+                                cancelling: controller.isCancellingMigration,
+                                adoptEffectPending: controller.isAdoptEffectPending)) {
             confirmCancelMigration = true
         }
         .accessibilityIdentifier("storage_cancel_migration_button")

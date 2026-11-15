@@ -113,7 +113,7 @@ struct BankEmailGatesTests {
 struct BankEmailCopyTests {
     private func info(pro: Bool, used: Int, skipped: Int = 0) throws -> BankEmailAddressInfo {
         let json = """
-        {"address":"auto+abcdefghjk@yala-app.pe","pro":\(pro),"trial_limit":5,"trial_used":\(used),
+        {"address":"auto+abcdefghjk@yalainbox.com","pro":\(pro),"trial_limit":5,"trial_used":\(used),
          "skipped_quota":\(skipped),"last_received_at_ms":null,"gmail_confirmation":null}
         """
         return try JSONDecoder().decode(BankEmailAddressInfo.self, from: Data(json.utf8))
@@ -182,12 +182,12 @@ struct BankEmailClientTests {
     @Test func leeLaDireccion_yElCodigoDeGmail() async throws {
         let session = MailStubSession()
         session.body = Data("""
-        {"address":"auto+abcdefghjk@yala-app.pe","pro":false,"trial_limit":5,"trial_used":1,"skipped_quota":0,
+        {"address":"auto+abcdefghjk@yalainbox.com","pro":false,"trial_limit":5,"trial_used":1,"skipped_quota":0,
          "last_received_at_ms":1793800000000,"gmail_confirmation":{"code":"123456789","received_at_ms":1793800000000}}
         """.utf8)
         let client = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, urlSession: session)
         let info = try await client.address()
-        #expect(info.address == "auto+abcdefghjk@yala-app.pe")
+        #expect(info.address == "auto+abcdefghjk@yalainbox.com")
         #expect(info.gmailConfirmation?.code == "123456789")
         #expect(session.requests.last?.httpMethod == "POST")
         #expect(session.requests.last?.url?.path.hasSuffix("mail/address") == true)

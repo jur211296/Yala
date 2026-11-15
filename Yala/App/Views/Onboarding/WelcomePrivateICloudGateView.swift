@@ -571,6 +571,9 @@ struct WelcomePrivateICloudGateView: View {
 
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Welcome.PrivateICloud.restoreAction) {
+                    // La elección queda hecha: tras reabrir, «¡Qué bien volver a verte!» no la vuelve a pedir
+                    // (`RestoreBringChoiceStore`).
+                    RestoreBringChoiceStore.recordChosenAtGate()
                     onRestore()
                 }
                 .accessibilityIdentifier("welcome_private_icloud_restore")
@@ -891,7 +894,9 @@ struct WelcomePrivateICloudGateView: View {
         // él, las pantallas del corpus del teléfono no tienen XCUITest. Tampoco toca la red: iCloud cuenta «sin cuenta».
         let forcedDeviceReading = UITestHooks.privateGateDeviceReading
         let forcedProbeStalled = UITestHooks.privateGateProbeStalled
-        guard !SwiftDataConfiguration.isUITesting || forcedDeviceReading != nil || forcedProbeStalled else {
+        let forcedICloudHasData = UITestHooks.privateGateICloudHasData
+        guard !SwiftDataConfiguration.isUITesting || forcedDeviceReading != nil || forcedProbeStalled
+                || forcedICloudHasData else {
             onProceed()
             return
         }
@@ -915,6 +920,9 @@ struct WelcomePrivateICloudGateView: View {
         let outcome: ICloudProbeOutcome
         if forcedProbeStalled {
             outcome = .failed(ICloudZoneScanEnd.stalledReason)
+        } else if forcedICloudHasData {
+            outcome = .measured(ICloudPersonalCorpus(transactions: 214, accounts: 3, categories: 0, budgets: 2,
+                                                     oldestTransactionDate: nil, truncated: false))
         } else if forcedDeviceReading != nil {
             outcome = .noAccount
         } else {

@@ -22,7 +22,7 @@ import SwiftUI
 
 /// Qué eligió la persona en la hoja del borrado pendiente. Lo consume el `onDismiss` de quien la presenta.
 enum PendingICloudWipeChoice: Equatable {
-    /// «Activar y conservar…»: la renuncia de este intento y la cadena de activar de siempre.
+    /// «Pasar a mi cuenta de Yala y conservar…»: la renuncia de este intento y la cadena de activar de siempre.
     case activateKeeping
     /// «Terminar de borrar y empezar de cero»: cierra Ajustes y abre la hoja que termina el borrado.
     case finishWipe

@@ -88,3 +88,16 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Resolver conflictos no se encadena](feedback_resolver_conflictos_no_se_encadena.md) — `;` tras el resolvedor cerró un rebase con marcas; los .strings llevan «=======».
 - [Un `return` suelto no es mutante](feedback_un_return_suelto_no_es_mutante.md) — delante de un switch, Swift lo ejecuta; muta con `if … { return }`.
 - [Plantar estado del host de unit tests](reference_plantar_estado_del_host_de_unit_tests.md) — plist con el sim apagado; Swift Testing no baraja el orden.
+- [Lote que depende de otro en cola](feedback_lote_que_depende_de_otro_en_cola.md) — apilar sobre su rama; `reset --keep origin/2.3` cuando entre.
+- [Leer telemetría de staging](reference_leer_telemetria_de_staging.md) — Yala Dev sin -uitest + AE SQL con el token de wrangler (renueva el del panel); alta 2.3 con Device MCP fill.
+- [zsh no parte los filtros de -only-testing](feedback_zsh_no_parte_los_filtros_de_only_testing.md) — `$F` con varias suites corre 0 casos y sale verde: `${=F}`.
+- [Un atasco se diagnostica y se cardea en el acto](feedback_un_atasco_se_diagnostica_y_se_cardea_en_el_acto.md) — telemetría por instalación + journal; very-high «CRÍTICO» lista.
+- [pgrep -f casa con prompts de otras sesiones](feedback_pgrep_f_casa_con_los_prompts_de_otras_sesiones.md) — usa `pgrep -x xcodebuild`.
+- [Breadcrumbs de Sentry fechan el pull](reference_sentry_breadcrumbs_fechan_el_pull.md) — GET /sync/pull cada 3-4 s = páginas en el hilo principal; mismo app_start_time = misma apertura.
+- [La nota de la card manda sobre su «hecha cuando»](feedback_la_nota_de_la_card_manda_sobre_su_hecha_cuando.md) — el «hecha cuando» es de Tim y anterior; si chocan, la nota de Jürgen.
+- [iPhone ocupado: avanza y prueba después](feedback_iphone_ocupado_avanza_y_prueba_despues.md) — código y sim mientras; nada completo sin probarlo en el iPhone.
+- [Una cifra igual a la semilla no prueba nada](feedback_una_cifra_igual_a_la_semilla_no_prueba_nada.md) — seed 42: 2351 en todos los modos; mide N antes y después.
+- [El toca se amplía con la causa medida](feedback_toca_se_amplia_con_la_causa_medida.md) — si la causa medida cae fuera del toca, se pregunta A ampliar ESE archivo / B card; Jürgen eligió A (14-nov).
+- [Medir la entrada a la cuenta en el iPhone](reference_medir_la_entrada_a_la_cuenta_en_el_iphone.md) — prints DEBUG + devicectl --console; reinstalar entre corridas.
+- [Gateway medido va a producción](feedback_gateway_medido_va_a_produccion.md) — 14-nov: eligió staging y producción por la sesión; pregunta igual.
+- [Revisión independiente antes del gate](feedback_revision_independiente_antes_del_gate.md) — lote de fechas/dinero: revisor con el código, no con mi veredicto; 9 fallos reales en S1.

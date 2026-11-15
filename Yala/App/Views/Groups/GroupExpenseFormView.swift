@@ -14,11 +14,12 @@ import SwiftData
 /// Cómo se muestra el chip de contexto de grupo (debajo del segmented control).
 /// `.hidden` (default) preserva el form original; `.readOnly` muestra el grupo sin
 /// permitir cambiarlo (dentro del detalle de un grupo); `.editable` permite tocarlo
-/// para cambiar de grupo (al crear un gasto desde el FAB del tab Grupos).
+/// para cambiar de grupo (al crear un gasto desde el FAB del tab Grupos). Al tocarlo entrega lo escrito, que viaja al
+/// grupo que se elija (decisión 39 de 2.3, F3).
 enum GroupContextChipMode {
     case hidden
     case readOnly
-    case editable(() -> Void)
+    case editable((GroupExpenseCarryOver) -> Void)
 }
 
 /// Plantilla de prellenado para crear un gasto de grupo "como favorito" — p.ej. al aprobar
@@ -90,6 +91,11 @@ struct GroupExpenseFormView: View {
     /// importe, moneda, fecha, cuenta y pagador quedan fijos (son los del registro) y no hay «¿Lo registramos?»: el
     /// registro ya existe. Requiere `initialTemplate`.
     let conversionSource: TransactionItem?
+    /// Lo que se escribió en otro grupo antes de cambiar a este (decisión 39 de 2.3, F3). Solo lo pasa «Nuevo gasto».
+    let carriedOver: GroupExpenseCarryOver?
+    /// El reparto de un recibo leído con Voz o Foto de Grupos (2026-11-14): se aplica al abrir, como lo escrito, y la
+    /// persona sigue aquí (quién pagó, cuenta) y guarda como siempre.
+    let receiptSplit: GroupExpensePrefillTemplate?
 
     // MARK: - State
 
@@ -149,8 +155,9 @@ struct GroupExpenseFormView: View {
     /// Parte abierta bajo la frase «Pagado por · dividido»; `nil` = las dos plegadas.
     @State private var expandedSection: ExpandedSection?
 
-    /// «Desde un recibo» (card «Grupos: repartir un recibo con IA», 2.3): la hoja que lee el recibo y devuelve el reparto.
-    @State private var showReceiptSplit = false
+    /// Decisión 39 de 2.3 (F1): lo que había al abrir, precargado incluido. La X y el gesto de bajar comparan con esto.
+    @State private var formBaseline: GroupExpenseViewModel.FormSnapshot?
+    @State private var showDiscardAlert = false
 
     // MARK: - Init
 
@@ -167,6 +174,8 @@ struct GroupExpenseFormView: View {
         onExpenseCreated: ((String) -> Void)? = nil,
         presentsSuccessScreen: Bool = true,
         conversionSource: TransactionItem? = nil,
+        carriedOver: GroupExpenseCarryOver? = nil,
+        receiptSplit: GroupExpensePrefillTemplate? = nil,
         onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
@@ -181,6 +190,8 @@ struct GroupExpenseFormView: View {
         self.onExpenseCreated = onExpenseCreated
         self.presentsSuccessScreen = presentsSuccessScreen
         self.conversionSource = conversionSource
+        self.carriedOver = carriedOver
+        self.receiptSplit = receiptSplit
         self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
@@ -273,6 +284,12 @@ struct GroupExpenseFormView: View {
                         groupContextChip
                             .padding(.top, DS.Spacing.sm)
 
+                        if carriedOver?.hasContent == true {
+                            groupChangedNotice
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.top, DS.Spacing.lg)
+                        }
+
                         if viewModel.isConversion {
                             conversionNotice
                                 .padding(.horizontal, DS.Spacing.lg)
@@ -327,7 +344,7 @@ struct GroupExpenseFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        closeOrAskToDiscard()
                     }
                     .accessibilityIdentifier("group_expense_close")
                 }
@@ -405,6 +422,15 @@ struct GroupExpenseFormView: View {
                     } else if let template = initialTemplate {
                         viewModel.applyTemplate(template)
                     }
+                    // La foto de partida es lo precargado; lo que viene de otro grupo cuenta como escrito.
+                    formBaseline = viewModel.formSnapshot
+                    if let carriedOver, carriedOver.hasContent {
+                        viewModel.applyCarryOver(carriedOver)
+                    }
+                    // Después de la foto de partida: el reparto cuenta como escrito y la X pregunta antes de perderlo.
+                    if let receiptSplit {
+                        applyReceiptSplit(receiptSplit)
+                    }
                 }
                 // Nunca autoenfocamos el monto: el form abre sin teclado (decisión de UX).
                 // M6: defensa profundidad — si VM no resolvió current user (members no cargados),
@@ -417,15 +443,6 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
-            }
-            .sheet(isPresented: $showReceiptSplit) {
-                GroupReceiptSplitView(
-                    members: viewModel.activeSheetMembers,
-                    currentMemberID: viewModel.currentUserMemberID,
-                    currencyCode: viewModel.currencyCode,
-                    onUse: applyReceiptSplit
-                )
-                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
@@ -468,7 +485,49 @@ struct GroupExpenseFormView: View {
             .onChange(of: viewModel.currencyCode) { _, _ in
                 viewModel.resetAccountIfIncompatible()
             }
+            .asksBeforeDiscardingGroupForm(
+                hasUnsavedInput: hasUnsavedInput,
+                title: L10n.GroupsDiscard.expenseTitle,
+                isPresented: $showDiscardAlert,
+                onDiscard: { dismiss() }
+            )
         }
+    }
+
+    // MARK: - No tirar lo escrito (decisión 39 de 2.3)
+
+    /// Algo distinto de lo que había al abrir. Con la pantalla de éxito delante ya está guardado.
+    private var hasUnsavedInput: Bool {
+        guard !showSuccessScreen else { return false }
+        return GroupFormDiscardLogic.asksBeforeDiscarding(current: viewModel.formSnapshot, baseline: formBaseline)
+    }
+
+    private func closeOrAskToDiscard() {
+        if hasUnsavedInput {
+            dismissKeyboard()
+            showDiscardAlert = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// Tras cambiar de grupo con algo escrito (F3): lo escrito se quedó; quién pagó y el reparto, no.
+    private var groupChangedNotice: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.thAccentText)
+                .accessibilityHidden(true)
+            Text(L10n.GroupsDiscard.groupChangedNotice)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(padding: 0, radius: DS.Radius.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_group_changed_notice")
     }
 
     // MARK: - Central Content
@@ -476,10 +535,7 @@ struct GroupExpenseFormView: View {
     /// Fecha, descripción y monto en el orden, el tamaño y el aire de Nuevo registro; debajo, quién paga y cómo se reparte.
     private var centralContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            HStack(spacing: DS.Spacing.sm) {
-                dateChip
-                if offersReceiptSplit { receiptSplitChip }
-            }
+            dateChip
             descriptionField
             amountDisplay
             whoPaysCard
@@ -503,21 +559,7 @@ struct GroupExpenseFormView: View {
         .accessibilityLabel(dateChipText)
     }
 
-    /// «Desde un recibo» solo en un gasto NUEVO y vacío de plantilla: editar o convertir un borrador ya traen su reparto.
-    private var offersReceiptSplit: Bool {
-        !viewModel.isEditMode && initialTemplate == nil
-    }
-
-    private var receiptSplitChip: some View {
-        RecordPillButton(icon: "doc.text.viewfinder", text: L10n.ReceiptSplit.entryButton) {
-            dismissKeyboard()
-            showReceiptSplit = true
-        }
-        .accessibilityIdentifier("group_expense_from_receipt")
-        .accessibilityHint(L10n.ReceiptSplit.entryHint)
-    }
-
-    /// Lo que devuelve «Desde un recibo»: el formulario se rellena con el total, la descripción y el reparto exacto, y
+    /// Lo que devuelve la hoja del recibo (Voz o Foto de Grupos): el formulario se rellena con el total, la descripción y el reparto exacto, y
     /// la persona sigue aquí (cuenta, categoría, quién pagó) y guarda como siempre.
     ///
     /// La fecha y una descripción ya escritas se quedan: el recibo no trae fecha, y sin nombre de local no borra la que
@@ -669,7 +711,7 @@ struct GroupExpenseFormView: View {
         case .editable(let onTap):
             Button {
                 dismissKeyboard()
-                onTap()
+                onTap(viewModel.carryOver)
             } label: {
                 groupChipLabel(showsChevron: true)
             }
@@ -1119,6 +1161,12 @@ struct GroupExpenseFormView: View {
             return
         }
         DS.Haptic.success()
+        // Ya está guardado: cerrar desde aquí (o al volver con «Editar») no pierde nada.
+        formBaseline = viewModel.formSnapshot
+        // «Nuevo gasto» abrirá en este grupo la próxima vez (decisión 39 de 2.3, F3).
+        if viewModel.lastCreatedExpenseID != nil {
+            LastExpenseGroupMark.record(group.id)
+        }
 
         // F4: pago planificado de grupo — cierra el ciclo (marca pagado, avanza fecha, vincula
         // scheduledPaymentID en la TX real, borra el draft) en cuanto el SplitExpense existe,
@@ -1280,6 +1328,7 @@ struct GroupExpenseFormView: View {
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
         vm.setContext(modelContext)
         viewModel = vm
+        formBaseline = vm.formSnapshot
         // El formulario nuevo no arrastra la marca de «qué falta» del anterior.
         showsMissingField = false
         dsWithAnimation(reduceMotion) {

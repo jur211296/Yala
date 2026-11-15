@@ -79,6 +79,12 @@ las dos listas, ya disjuntas).
   2026-10-26). Sin nada oculto el toque no pregunta: ve solo lo tocado, o quita el filtro si ya se veía solo
   (`SegmentFilterChoiceLogic.directAction`). Un gesto nuevo que escriba el filtro pasa por ese host, no por un toggle
   propio: así hereda las dos ramas.
+- **En Distribución, tocar una CATEGORÍA no filtra: abre su detalle** (decisión 25 de la revisión 2.3, B1, 9-nov;
+  reabre a propósito lo del 25-26 oct). Fila, tarta y Sankey empujan `StatisticsCategoryDetailView`, que lee los
+  movimientos del último cálculo de la pestaña (`CategoryDetailSource`) y no escribe nada: «atrás» deja la sesión como
+  estaba. Su único gesto que filtra es «Ver en Registros» («Solo <categoría>» + chip Registros). Subcategorías,
+  etiquetas y necesidades siguen preguntando; en el Panel la tarta de categorías también. Un toque nuevo de categoría
+  en Estadísticas abre el detalle, no el host. Pin: `StatisticsCategoryDetailUITests`.
 - **Los filtros de sesión no se guardan en disco** (medido el 2026-10-25): no hay migración de estado. El asistente de
   Exportar conserva su propio «Mostrar solo / Ocultar» local, a propósito.
 - **Borrar un valor lo quita del filtro** (2026-10-28): categorías, subcategorías y etiquetas pasan por
@@ -173,3 +179,12 @@ aplica `BridgedTransactionFilter` una vez, a todo lo que suma movimientos menos 
 Si el saldo suma N cuentas, el carrusel marca esas N y el chip dice cuántas son. Un carrusel que
 marca una tarjeta sobre un saldo que suma dos es el mismo bug, en la capa de al lado: para el
 usuario, la pantalla se contradice.
+
+**Dónde se ven los filtros (revisión 2.3, decisiones 15 y 16, 9-nov).** Las barras de Panel, Estadísticas, Registros e
+Informes pintan sus cápsulas en `FilterBand`, que las parte en líneas (ninguna queda fuera de pantalla) y trae «Quitar
+todo» desde el primer filtro; la ✕ de cada cápsula tiene 44 pt de toque. En Registros, los chips rápidos
+(`RecordsQuickFilterBar`: Cuenta · Categoría · Fecha · Más filtros) dicen lo INCLUIDO de cuenta y categoría, y la banda
+no lo repite (`hidesQuickFilterDimensions`, `FilterBandLogic.bandFilterCount`); lo oculto de esas dimensiones sí va en la
+banda. Un chip rápido escribe la sesión como la hoja y REEMPLAZA su dimensión (un toque, un valor); lo múltiple sigue en
+«Más filtros». Una cápsula nueva va dentro de la banda, no en otro carrusel horizontal. Pin: `RecordsQuickFilters23Tests`,
+`RecordsQuickFilters23UITests`.

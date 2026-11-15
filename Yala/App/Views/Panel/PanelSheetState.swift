@@ -76,6 +76,26 @@ struct PanelSheetState {
     /// Patrón canónico iOS 26 — reemplaza el frágil `Task.sleep(350ms)`.
     var pendingOpenChatAfterOnboarding = false
 
+    // Primeros pasos 2.3 (Y23-07 a Y23-10)
+    /// Paso 1: crear la primera cuenta preguntando (`FirstAccountFlowView`).
+    var showFirstAccountFlow = false
+    /// Paso 2: aprender a registrar (`RecordTutorialView`).
+    var showRecordTutorial = false
+    /// Paso 2, al terminar: «¿Borramos los de prueba?» (`PracticeRecordsCleanupSheet`).
+    var showPracticeRecordsCleanup = false
+    // Primeros pasos 2.3 (Y23-11 a Y23-13)
+    /// Paso 3: el primer presupuesto preguntando (`FirstBudgetFlowView`).
+    var showFirstBudgetFlow = false
+    /// Paso 4: el primer pago planificado preguntando (`FirstScheduledPaymentFlowView`).
+    var showFirstScheduledPaymentFlow = false
+    /// Paso 5: el onboarding de Grupos como página del tutorial (`GroupsTutorialFlowView`).
+    var showGroupsTutorial = false
+    /// Paso 5: se fue a crear un grupo o a unirse a uno; al volver al Panel sale la guía «Tus grupos, a un toque».
+    var pendingGroupsPlaceGuide = false
+    // Primeros pasos 2.3 (Y23-16)
+    /// Paso 7: «Anota sin abrir Yala» (`HomeScreenTutorialFlowView`).
+    var showHomeScreenTutorial = false
+
     // AI consent
     var showAIConsentAlert = false
     var pendingAIInput: PendingAIInput = .voice
@@ -144,6 +164,13 @@ struct PanelSheetState {
             || showChatConsentAlert
             || showYalaAIOnboarding
             || showAIConsentAlert
+            || showFirstAccountFlow
+            || showRecordTutorial
+            || showPracticeRecordsCleanup
+            || showFirstBudgetFlow
+            || showFirstScheduledPaymentFlow
+            || showGroupsTutorial
+            || showHomeScreenTutorial
     }
 
     /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa

@@ -6,7 +6,7 @@
 //  Sustituye a los tres globos de antes («Tu iCloud ya tiene datos de Yala», «¿Borrarlos de tu iCloud?» y «¿Volver a
 //  iCloud?»), que se decidían con letra de 9-10 pt anclados al botón.
 //
-//  1. **Qué pasa** con cada cosa, incluido «Volver a la nube con ella · Hoy no se puede»: la tarjeta prometía «queda en
+//  1. **Qué pasa** con cada cosa, incluido «Volver a pasar tus datos a ella · Hoy no se puede»: la tarjeta prometía «queda en
 //     pausa por si vuelves», y esa cuenta hoy no puede volver a la nube.
 //  2. **Qué hacer con lo que ya hay** en tu iCloud, solo si la pregunta previa encontró algo: dos tarjetas con su
 //     consecuencia y «Ahora no» aparte. La que borra se lee distinta.

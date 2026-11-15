@@ -11,6 +11,8 @@ import SwiftUI
 
 struct TransferAmountInputView: View {
     @Bindable var viewModel: NewTransactionViewModel
+    /// Tras tocar un favorito, el importe de origen queda seleccionado con el teclado abierto (F1, 2.3).
+    @Binding var favoriteAmountSelectionRequest: Bool
     @Environment(AppPreferences.self) private var appPreferences
 
     // Local state for destination amount text. Vacío = el «0.00» gris de ejemplo (UX 2.2 · L2-16).
@@ -22,6 +24,7 @@ struct TransferAmountInputView: View {
     // Focus states
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isDestFieldFocused: Bool
+    @State private var amountSelection: TextSelection?
 
     /// Símbolo o código según la preferencia de formato de moneda (UX 2.2 · L2-18): antes, siempre el código.
     private func currencyLabel(_ account: Account?) -> String {
@@ -99,20 +102,27 @@ struct TransferAmountInputView: View {
                 .foregroundStyle(Color.hotPink.opacity(0.7))
                 .accessibilityHidden(true)
 
-            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
+            TextField(
+                "", text: $viewModel.amountString, selection: $amountSelection,
+                prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary)
+            )
                 .accessibilityLabel(amountAccessibilityLabel(.source))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
+                .amountKeyboard()
                 .focused($isAmountFieldFocused)
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)
+                .selectsAmountOnRequest(
+                    $favoriteAmountSelectionRequest, isActive: viewModel.needsExchangeRate,
+                    select: focusAndSelectAmount)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     if isFocused && Self.isEmptyAmount(viewModel.amountString) {
                         viewModel.amountString = ""
                     }
                     if !isFocused {
+                        amountSelection = nil
                         if Self.isEmptyAmount(viewModel.amountString) {
                             // Vacío se queda vacío: el «0.00» gris es de ejemplo, no un monto escrito (L2-16).
                             viewModel.amountString = ""
@@ -131,6 +141,20 @@ struct TransferAmountInputView: View {
         }
     }
 
+    /// Foco en el importe de origen y todo su texto seleccionado: escribir lo sustituye.
+    private func focusAndSelectAmount() {
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: FavoriteAmountSelection.focusDelay)
+            } catch {
+                return
+            }
+            isAmountFieldFocused = true
+            await Task.yield()
+            amountSelection = FavoriteAmountSelection.all(of: viewModel.amountString)
+        }
+    }
+
     // MARK: - Destination Amount Field
 
     private var destinationAmountField: some View {
@@ -145,7 +169,7 @@ struct TransferAmountInputView: View {
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
+                .amountKeyboard()
                 .focused($isDestFieldFocused)
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)

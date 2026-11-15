@@ -31,6 +31,13 @@ struct ScheduledPaymentsView: View {
         ZStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
+                    // Pagos que se repiten (lote S1, opción P1): lo que Yala encontró en el historial, arriba de la lista
+                    // mientras haya algo por responder.
+                    RecurringProposalsCard { month in
+                        viewModel.selectedMonth = month
+                        viewModel.recalculateData()
+                    }
+
                     // Tab segmented control
                     tabSelector
                         .padding(.horizontal, DS.Spacing.lg)
@@ -46,6 +53,9 @@ struct ScheduledPaymentsView: View {
                         onRefresh: { refreshData() },
                         showsFloatingNew: $showFloatingNew
                     )
+
+                    // Volver a encender las propuestas o recuperar lo descartado sin tarjeta a la vista (lote S1).
+                    RecurringProposalsFooterLink()
                 }
             }
 

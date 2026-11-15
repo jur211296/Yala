@@ -1416,6 +1416,13 @@ enum L10n {
         static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
         static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
         static var cellDetailEarned: String { ls("cashFlowPlan.cellDetailEarned", comment: "") }
+        /// «Gastaste S/ 120; el estimado era S/ 100.» Una frase entera: pegar «vs» a mano salía «vs» en los 16 idiomas.
+        static func cellDetailSpentVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailSpentVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount spent, %2$@ = amount estimated in the plan"), real, planned)
+        }
+        static func cellDetailEarnedVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailEarnedVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount received, %2$@ = amount estimated in the plan"), real, planned)
+        }
         static var cellDetailMore: String { ls("cashFlowPlan.cellDetailMore", comment: "") }
         static var cellDetailLess: String { ls("cashFlowPlan.cellDetailLess", comment: "") }
         static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
@@ -1476,11 +1483,19 @@ enum L10n {
             String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
         }
         static var chartAllWithinPlan: String { ls("cashFlowPlan.chartAllWithinPlan", comment: "") }
-        static func deviationCommentSingle(_ name: String, _ amount: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentSingle", comment: ""), name, amount)
+        // La frase de «Gastos por revisar» dice que la cifra es un promedio y de cuántos meses (decisión 35 de la
+        // revisión 2.3): «En Bares gastaste S/ 47 más» no casaba con los S/ 17.75 del mes.
+        static func deviationAverageSingle(_ months: Int, _ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageSingle", comment: "Cash flow charts: %1$d = months averaged, %2$@ = plan line, %3$@ = average monthly excess"), months, name, amount)
         }
-        static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        static func deviationAverageMultiple(_ months: Int, _ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageMultiple", comment: "Cash flow charts: %1$d = months averaged, %2$@ = line with the largest excess, %3$@ = its average monthly excess, %4$@ = average monthly excess of all lines"), months, name, amount, total)
+        }
+        static func deviationThisMonthSingle(_ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthSingle", comment: "Cash flow charts, only the current month: %1$@ = plan line, %2$@ = excess"), name, amount)
+        }
+        static func deviationThisMonthMultiple(_ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthMultiple", comment: "Cash flow charts, only the current month: %1$@ = line with the largest excess, %2$@ = its excess, %3$@ = excess of all lines"), name, amount, total)
         }
         static var chartSavingsSubtitle: String { ls("cashFlowPlan.chartSavingsSubtitle", comment: "") }
         static var chartPlanned: String { ls("cashFlowPlan.chartPlanned", comment: "") }
@@ -1767,6 +1782,10 @@ enum L10n {
         static var ofExpense: String {
             ls("statistics.ofExpense", comment: "")
         }
+        /// Detalle de una categoría en Distribución (decisión 25 de la revisión 2.3): lleva a sus registros.
+        static var categoryDetailSeeInRecords: String {
+            ls("statistics.categoryDetail.seeInRecords", comment: "Category detail in Statistics: link that opens Records showing only this category")
+        }
         static var spendingAnalysis: String {
             ls("statistics.spendingAnalysis", comment: "")
         }
@@ -1803,6 +1822,8 @@ enum L10n {
         static var netFlow: String { ls("report.netFlow", comment: "") }
         static var noData: String { ls("report.noData", comment: "") }
         static var noDataDescription: String { ls("report.noDataDescription", comment: "") }
+        /// El vacío de Flujo de caja: el flujo de caja no tiene período, así que no dice «en este período».
+        static var cashFlowNoDataDescription: String { ls("report.cashFlowNoDataDescription", comment: "Cash flow empty state: no records yet") }
         static var uncategorized: String { ls("report.uncategorized", comment: "") }
         static var noSubcategory: String { ls("report.noSubcategory", comment: "") }
         static var noTag: String { ls("report.noTag", comment: "") }
@@ -1872,15 +1893,15 @@ enum L10n {
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
-            String(format: ls("records.deleteConfirmTitle", comment: ""), count)
+            String(format: ls("records.deleteConfirmTitle", comment: ""), locale: AppLocale.current, count)
         }
         /// Barra del modo selección: «1 seleccionado», «3 seleccionados». Plural en el `.stringsdict`.
         static func selectedCount(_ count: Int) -> String {
-            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), count)
+            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), locale: AppLocale.current, count)
         }
         /// Borrado en lote: los elegidos que vienen de un grupo se quedan. Plural en el `.stringsdict`.
         static func groupRecordsKept(_ count: Int) -> String {
-            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), count)
+            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), locale: AppLocale.current, count)
         }
         static var groupRecordsOnlyTitle: String { ls("records.groupRecordsOnlyTitle", comment: "Borrado en lote: todo lo elegido viene de un grupo") }
         static var groupRecordsDeleteFromGroup: String { ls("records.groupRecordsDeleteFromGroup", comment: "Borrado en lote: por qué lo de un grupo se borra desde el grupo") }
@@ -3275,6 +3296,8 @@ enum L10n {
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
         static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
         static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        /// Sin conexión, debajo de `errorOffline` al abrir el chat (decisión 42 de 2.3).
+        static var offlineBody: String { ls("chat.offline.body", comment: "Yala IA sin conexión: vuelve con internet; mientras, apuntar a mano") }
         static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
         static var errorNoData: String { ls("chat.errorNoData", comment: "") }
         static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
@@ -4624,6 +4647,10 @@ enum L10n {
         static var columnNote: String { ls("export.column.note", comment: "") }
         static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
         static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
+        /// Las columnas de la ida y vuelta exacta (H18 de la auditoría del import).
+        static var columnTime: String { ls("export.column.time", comment: "Export column with the time of the record") }
+        static var columnExchangeRate: String { ls("export.column.exchangeRate", comment: "Export column with the exchange rate") }
+        static var columnNeed: String { ls("export.column.need", comment: "Export column with the nature changed by hand") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -4639,6 +4666,9 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+        static var columnTimeDesc: String { ls("export.column.time.description", comment: "") }
+        static var columnExchangeRateDesc: String { ls("export.column.exchangeRate.description", comment: "") }
+        static var columnNeedDesc: String { ls("export.column.need.description", comment: "") }
 
         // G5-D2: export ampliado con grupos (archivo CSV aparte)
         static var includeGroups: String { ls("export.includeGroups", comment: "") }
@@ -6499,6 +6529,7 @@ enum L10n {
             /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
             static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
             static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
+            static var cancelling: String { ls("welcome.cloud.cancelling", comment: "Bajo la barra tras «Sí, cancelar»") }
         }
 
         enum Restore {
@@ -6951,6 +6982,27 @@ enum L10n {
         }
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
+
+        /// Aviso y hoja de los gastos de grupo repetidos (bug del 2026-11-09): borrador «Elige cuenta» o «Préstamo a
+        /// grupos» de más en un gasto que ya está en tus registros. Las cifras van fuera de la frase («Borradores de más:
+        /// 1»), para no depender de plurales en los 16 idiomas.
+        enum GroupLeftovers {
+            static var bannerTitle: String { ls("inbox.groupLeftovers.bannerTitle", comment: "") }
+            static var bannerMessage: String { ls("inbox.groupLeftovers.bannerMessage", comment: "") }
+            static var bannerAction: String { ls("inbox.groupLeftovers.bannerAction", comment: "") }
+            static var intro: String { ls("inbox.groupLeftovers.intro", comment: "") }
+            static func extraDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraDrafts", comment: ""), count)
+            }
+            static func extraLoans(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraLoans", comment: ""), count)
+            }
+            static var remove: String { ls("inbox.groupLeftovers.remove", comment: "") }
+            static var confirmTitle: String { ls("inbox.groupLeftovers.confirmTitle", comment: "") }
+            static var confirmMessage: String { ls("inbox.groupLeftovers.confirmMessage", comment: "") }
+            static var confirmAction: String { ls("inbox.groupLeftovers.confirmAction", comment: "") }
+            static var failed: String { ls("inbox.groupLeftovers.failed", comment: "") }
+        }
 
         // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
         enum GroupExpenseDraft {

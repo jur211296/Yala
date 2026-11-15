@@ -204,7 +204,7 @@
 "filters.noneSelected" = "未選択";
 "filters.allSubcategories" = "すべてのサブカテゴリー";
 "filters.filterOptions" = "フィルターオプション";
-"filters.noteContains" = "メモに含む...";
+"filters.noteContains" = "メモに含む…";
 "filters.selectAccounts" = "口座を選択";
 "filters.selectTags" = "タグを選択";
 "filters.selectCurrencies" = "通貨を選択";
@@ -403,13 +403,13 @@
 "favorites.new" = "新規お気に入り";
 "favorites.edit" = "お気に入りを編集";
 "favorites.noFavorites" = "お気に入りはまだありません";
-"favorites.createTemplate" = "繰り返す支出（コーヒーやタクシーなど）を保存して、ワンタップで記録できます。";
+"favorites.createTemplate" = "繰り返す支出（コーヒーやタクシーなど）を保存すると、2タップで記録できます。選んで、保存するだけ。";
 "favorites.newTitle" = "新規お気に入り";
 "favorites.editTitle" = "お気に入りを編集";
 "favorites.namePlaceholder" = "お気に入りの名前";
 "favorites.notConfigured" = "未設定";
 "favorites.descriptionPlaceholder" = "説明(任意)";
-"favorites.saveDescription" = "いつもの支出をワンタップで。";
+"favorites.saveDescription" = "いつもの支出を、入力済みの状態で。";
 
 // MARK: - Scheduled
 
@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "グループ支出の自分の分を含める";
 "budgets.includeSharedExpensesHint" = "オフにすると、個人の支出のみが対象になります。";
 "budgets.widget.noFavorites.title" = "お気に入り予算がありません";
-"budgets.widget.noFavorites.message" = "ここに表示するには、設定 > 予算でお気に入りに登録してください。";
+"budgets.widget.noFavorites.message" = "ここに表示するには、パネル設定 > パネルに表示する予算でお気に入りに登録してください。";
 "budgets.widget.selectFavorites" = "お気に入りを選択";
 "budgets.alerts.title" = "通知";
 "budgets.alerts.enable" = "上限に達したら通知";
@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "残り%@日";
 "budgets.period.past" = "終了";
 "budgets.amount.of" = "/ %@";
-"budgets.exceeded.encouragement" = "予算を超えました — 次回はうまくいきますよ！";
+"budgets.exceeded.overByAdjust %@" = "%@ 超過しました。上限を調整しますか？";
+"budgets.exceeded.adjustLimit" = "上限を調整";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "予算名";
@@ -672,6 +673,7 @@
 "report.netFlow" = "純フロー";
 "report.noData" = "データなし";
 "report.noDataDescription" = "この期間に記録はありません";
+"report.cashFlowNoDataDescription" = "最初の記録を追加すると、ここにキャッシュフローが表示されます。";
 "report.uncategorized" = "未分類";
 "report.noSubcategory" = "サブカテゴリーなし";
 "report.noTag" = "タグなし";
@@ -916,6 +918,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "最近の記録";
 "cashFlowPlan.cellDetailSpent" = "支出額";
 "cashFlowPlan.cellDetailEarned" = "受取額";
+"cashFlowPlan.cellDetailSpentVsPlan" = "%1$@ を使いました。予定は %2$@ でした。";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "%1$@ を受け取りました。予定は %2$@ でした。";
 "cashFlowPlan.cellDetailMore" = "多い";
 "cashFlowPlan.cellDetailLess" = "少ない";
 "cashFlowPlan.cellDetailOverrideActive" = "金額を手動で調整しました";
@@ -966,8 +970,10 @@
 "cashFlowPlan.commentHealthy" = "計画は順調 — 期間終了時に累積%@になります";
 "cashFlowPlan.commentDefault" = "予測は%dヶ月先までカバーします";
 "cashFlowPlan.chartAllWithinPlan" = "支出項目はすべて計画内に収まっています";
-"cashFlowPlan.deviationCommentSingle" = "%@で計画より%@多く使いました";
-"cashFlowPlan.deviationCommentMultiple" = "%@が一番超過しており、追加で%@、合計%@の超過です";
+"cashFlowPlan.deviationAverageSingle" = "直近%1$dか月の平均：%2$@は月に%3$@予定をオーバーしています。";
+"cashFlowPlan.deviationAverageMultiple" = "直近%1$dか月の平均：一番オーバーしているのは%2$@で月に%3$@、全体では月に%4$@です。";
+"cashFlowPlan.deviationThisMonthSingle" = "今月：%1$@は%2$@予定をオーバーしています。";
+"cashFlowPlan.deviationThisMonthMultiple" = "今月：一番オーバーしているのは%1$@で%2$@、全体では%3$@です。";
 "cashFlowPlan.chartSavingsSubtitle" = "計画に対する月々の貯蓄額";
 "cashFlowPlan.chartPlanned" = "計画";
 "cashFlowPlan.commentSavingsBelow" = "計画より月々%@少なく貯めています — どこか支出を減らせますか？";
@@ -1124,7 +1130,7 @@
 "profile.aliasAvailable" = "このエイリアスは利用可能です";
 "profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
 "profile.privacyTitle" = "データの保存先";
-"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してAIサービスに届き、そこで処理されます。どのサービスかはプライバシーポリシーに記載しています。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。";
+"profile.privacyDesc" = "あなたの iCloud では、データはこの端末とあなたの iCloud に保存されます。あなたの Yala アカウントでは、Yala のサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してAIサービスに届き、そこで処理されます。どのサービスかはプライバシーポリシーに記載しています。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。";
 "profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
 "profile.proMember" = "PROメンバー";
 "profile.choosePhoto" = "写真を選ぶ";
@@ -2115,7 +2121,7 @@
 "tips.camera.title" = "レシートやスクリーンショットを読み取り";
 "tips.camera.detail" = "レシートや銀行のスクリーンショットを撮影。Yalaが金額を抽出し、自動でドラフトを作成します。";
 "tips.favorites.title" = "よく使う支払いを保存";
-"tips.favorites.detail" = "同じ支払いが多いですか？支出をお気に入りに保存すると、次回は+メニューから1タップで記録できます。";
+"tips.favorites.detail" = "同じ支払いが多いですか？支出をお気に入りに保存すると、次回は記録するときに選んで保存するだけです。";
 "tips.budgets.title" = "予算を作成";
 "tips.budgets.detail" = "カテゴリーごとに月の予算を設定。上限に近づいたらYalaがお知らせするので、超過を防げます。";
 "tips.tags.title" = "特別な支出にタグ";
@@ -2447,7 +2453,6 @@
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
 "featureGate.smartInsightsAI" = "AIサマリー";
-"featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
 
 // Titles
 "featureGate.limitReachedTitle" = "上限に達しました";
@@ -2678,11 +2683,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "お気に入り";
 "tutorials.createFavorites.intro.title" = "お気に入りとは？";
-"tutorials.createFavorites.intro.desc" = "頻繁な支出をショートカットとして保存し、1タップで記録できます。";
+"tutorials.createFavorites.intro.desc" = "頻繁な支出をショートカットとして保存。選ぶだけでフォームに自動入力されます。";
 "tutorials.createFavorites.step0.title" = "お気に入りを作成";
 "tutorials.createFavorites.step1.title" = "すばやく使う";
 "tutorials.createFavorites.completion.title" = "お気に入りの使い方がわかりました";
-"tutorials.createFavorites.completion.desc" = "お気に入りを使えば、繰り返す支出をワンタップで記録できます。いくつでも作れます。";
+"tutorials.createFavorites.completion.desc" = "お気に入りなら、繰り返す支出がすぐ準備できます。選んで、必要なら金額を変えて、保存するだけ。いくつでも作れます。";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "パネルをカスタマイズ";
@@ -2833,17 +2838,17 @@
 "aiPrivacy.processingRow" = "音声や写真で記録";
 "aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AIサマリー";
-"aiPrivacy.cloudExploreRow" = "クラウドのアカウントを参照";
+"aiPrivacy.cloudExploreRow" = "あなたの Yala アカウントを参照";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データが送信されるのは、これらの機能を使うときだけで、当社のサーバーを経由してAIサービスに届きます。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。データの販売や広告への利用は行いません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、これらの機能を使うときだけで、当社のサーバーを経由してAIサービスに届きます。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。データの販売や広告への利用は行いません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yalaが代わりに記録します";
-"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
+"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
 "aiConsent.insightsTitle" = "AIサマリー";
-"aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い、くり返している小さな買い物の名前と回数・合計）をAIサービスに送ります。記録の履歴全体は送りません。クラウドのアカウントでは、正確に読み取るために必要なもの（買い物ごとの日付や金額など）も読み取れます。AIの学習には使われません。";
+"aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い、くり返している小さな買い物の名前と回数・合計）をAIサービスに送ります。記録の履歴全体は送りません。データがあなたの Yala アカウントにある場合は、正確に読み取るために必要なもの（買い物ごとの日付や金額など）も読み取れます。AIの学習には使われません。";
 "aiConsent.accept" = "同意して有効化";
 "aiConsent.privacyPolicy" = "プライバシーポリシー";
 "aiConsent.inlineHintProcessing" = "音声と画像のデータはAIサービスで処理されます。永続的に保存されることはありません。";
@@ -3052,7 +3057,7 @@
 
 // Bridge personal integration (per-group override)
 "groups.settings.personalIntegrationSectionTitle" = "あなたの口座に反映";
-"groups.settings.personalIntegrationToggleLabel" = "このグループの支出を個人の口座に記録する";
+"groups.settings.personalIntegrationToggleLabel" = "あなたの口座に反映";
 "groups.settings.personalIntegrationHintInheritOn" = "全体設定を継承しています（オン）。";
 "groups.settings.personalIntegrationHintLocalOff" = "このグループのみ：オフ。";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "ここでこのオプションを有効にするには、先にグループ設定で有効にしてください。";
@@ -3330,6 +3335,7 @@
 "chat.emptySubtitle" = "質問で資産状況を探検";
 "chat.errorTimeout" = "応答に時間がかかりすぎました。もう一度お試しください。";
 "chat.errorOffline" = "Yala AIを使うにはインターネット接続が必要です。";
+"chat.offline.body" = "インターネットにつながるとYala AIが戻ります。それまでは手入力できます。";
 "chat.errorGeneric" = "問題が発生しました。もう一度お試しください。";
 "chat.errorNoData" = "その質問に該当するデータが見つかりませんでした。もう少し具体的にお願いします。";
 "chat.dailyLimitReached" = "今日の質問回数を使い切りました。明日また来てください！";
@@ -3389,9 +3395,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala AI";
-"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。回答のためだけに使われ、AIの学習には使われません。";
-"aiConsent.cloudExploreTitle" = "Yala AIとクラウドのアカウント";
-"aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なクラウドアカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.cloudExploreTitle" = "Yala AIとあなたの Yala アカウント";
+"aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なあなたの Yala アカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
 "aiConsent.inlineHintChat" = "あなたの財務概要は回答のためAIサービスで処理されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintMultiple" = "複数の機能がAIサービスでデータを処理します。永続的に保存されることはありません。";
 
@@ -3420,13 +3426,13 @@
 "groups.expense.eachPays" = "1人あたり";
 
 // GC-05: Settlements
-"groups.settlement.title" = "支払いを記録";
+"groups.settlement.title" = "精算";
 "groups.settlement.payTo" = "支払先";
-"groups.settlement.registerPayment" = "支払いを記録";
+"groups.settlement.registerPayment" = "精算";
 "groups.settlement.confirm" = "確認";
 "groups.settlement.reject" = "却下";
 "groups.settlement.settle" = "精算";
-"groups.settlement.settleHint" = "この支払いを記録するフォームを開きます";
+"groups.settlement.settleHint" = "この借りを精算するフォームを開きます";
 "groups.settlement.confirmQuestion" = "この支払いを確認済みにしますか？";
 "groups.settlement.rejectQuestion" = "この支払いを却下しますか？";
 
@@ -3992,9 +3998,9 @@
 "groups.bridge.upsellGroupInviteSettlement" = "Yalaを完全にアクティベートして、この支払いを実際の口座と照合しましょう。";
 
 // Bridge opt-out — alert post-save (F2c)
-"groups.bridge.optoutAlertTitle" = "個人のYalaにも記録しますか?";
+"groups.bridge.optoutAlertTitle" = "あなたの口座に反映しますか？";
 "groups.bridge.optoutAlertBody" = "この支出を反映する個人の記録を口座に作成することも、グループ内だけにとどめておくこともできます。";
-"groups.bridge.optoutAlertYes" = "はい、記録する";
+"groups.bridge.optoutAlertYes" = "はい、反映する";
 "groups.bridge.optoutAlertNo" = "グループのみ";
 
 // Bridge deactivation sheet (F5)
@@ -4006,7 +4012,7 @@
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "グループ設定";
 "groups.globalSettings.bridgeSectionTitle" = "あなたの口座に反映";
-"groups.globalSettings.bridgeToggleLabel" = "グループの支出を個人の口座に記録する";
+"groups.globalSettings.bridgeToggleLabel" = "あなたの口座に反映";
 "groups.globalSettings.bridgeCaption" = "オンにすると、あなたが支払うまたは精算する各支出が、選んだ個人の口座にも記録されます。残高が実態を反映します。";
 "groups.globalSettings.visibilitySectionTitle" = "表示";
 "groups.globalSettings.visibilityCaption" = "グループの記録をパネル、統計、記録一覧に表示するかどうかを管理します。";
@@ -4072,7 +4078,7 @@
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
 "welcome.restore.foundBody" = "この端末に戻るデータ：";
-"welcome.restore.foundPreCloudNote" = "このiCloudのコピーはYalaのクラウドを使う前のものです。最近の変更が含まれていない可能性があります。";
+"welcome.restore.foundPreCloudNote" = "このiCloudのコピーは、データをあなたの Yala アカウントに移す前のものです。最近の変更が含まれていない可能性があります。";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -4119,7 +4125,7 @@
 "welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
-"welcome.hero.cards.icloud.title" = "プライベートiCloud";
+"welcome.hero.cards.icloud.title" = "あなたの iCloud";
 "welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。";
 "welcome.hero.cards.more.title" = "さらに多くの機能";
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
@@ -4382,7 +4388,7 @@
 "whatsNew.v21.logging.title" = "記録がこんなに簡単に";
 "whatsNew.v21.logging.description" = "話しかけても、写真を撮っても、友だちにメッセージするように書いても大丈夫。Yala が使った内容を理解して記録するので、家計の管理はほんの数秒です。";
 "whatsNew.v21.data.title" = "あなたのデータは、あなたのルールで";
-"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったパネルと、iPad での Yala のフルスクリーン表示も。";
+"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。あなたの iCloud か、あなたの Yala アカウントか。すべてのデバイスで使えます。さらに、新しくなったパネルと、iPad での Yala のフルスクリーン表示も。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4505,7 +4511,7 @@
 "groups.openingBalance.sectionTitle" = "開始残高";
 "groups.openingBalance.addButton" = "開始残高を追加";
 "groups.openingBalance.emptyState" = "まだ開始残高はありません。";
-"groups.openingBalance.frozenNote" = "このグループはYalaのクラウドに移動しました。開始残高は見られますが、ここでは変更できません。";
+"groups.openingBalance.frozenNote" = "このグループはあなたの Yala アカウントに移りました。開始残高は見られますが、ここでは変更できません。";
 "groups.openingBalance.rollupOwes" = "借りています";
 "groups.openingBalance.rollupOwed" = "受け取ります";
 "groups.openingBalance.approvalPromptTitle" = "%@さんには、グループとの未精算の貸し借りがありましたか？";
@@ -4611,53 +4617,53 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "データの保存先";
-"storage.waitingForLeader" = "別のデバイスがこのアカウントのクラウドを有効化しています。完了までお待ちください。";
-"storage.status.icloudTitle" = "プライベート iCloud";
-"storage.status.icloudBody" = "データはデバイスに保存され、プライベートな iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
-"storage.status.cloudTitle" = "クラウドアカウント";
+"storage.waitingForLeader" = "別のデバイスがデータをあなたの Yala アカウントに移しています。完了までお待ちください。";
+"storage.status.icloudTitle" = "あなたの iCloud";
+"storage.status.icloudBody" = "データはデバイスに保存され、あなたの iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
+"storage.status.cloudTitle" = "あなたの Yala アカウント";
 "storage.status.cloudBody" = "データは Yala アカウントに保存され、すべてのデバイスで同期されます。";
-"storage.migrate.title" = "クラウドへ移行";
+"storage.migrate.title" = "Yala アカウントに移す";
 "storage.migrate.body" = "Apple または Google でアカウントを作成すれば、iCloud がなくてもどのデバイスからでもデータにアクセスできます。";
-"storage.migrate.button" = "クラウドを有効化";
-"storage.migrate.previewButton" = "移行される内容を見る";
+"storage.migrate.button" = "Yala アカウントに移す";
+"storage.migrate.previewButton" = "移される内容を見る";
 "storage.migrate.previewResult" = "記録 %1$d件 · カテゴリ %2$d件 · 口座 %3$d件 · 予算 %4$d件";
-"storage.adopt.title" = "この端末でクラウドを有効化";
-"storage.adopt.body" = "このアカウントのデータはすでにクラウドにあります。この端末で有効化しましょう。";
-"storage.adopt.button" = "この端末で有効化";
+"storage.adopt.title" = "この端末であなたの Yala アカウントを使う";
+"storage.adopt.body" = "データはすでにあなたの Yala アカウントにあります。この端末で使いましょう。";
+"storage.adopt.button" = "この端末で使う";
 "storage.revert.title" = "iCloud に戻す";
 "storage.revert.body" = "データはこのデバイスと iCloud に戻ります。始める前に、それぞれがどうなるかを説明します。";
 "storage.revert.button" = "iCloud に戻す";
-"storage.revert.ineligible" = "現在、この端末から iCloud に戻すことはできません。";
+"storage.revert.ineligible" = "現在、この端末からあなたの iCloud に戻すことはできません。";
 "storage.sync.title" = "同期";
 "storage.sync.upToDate" = "すべて同期済み";
 "storage.sync.signInButton" = "サインイン";
-"storage.progress.migrating" = "クラウドを有効化しています…";
+"storage.progress.migrating" = "Yala アカウントに移しています…";
 "storage.progress.reverting" = "iCloud に戻しています…";
 "storage.progress.resume" = "再開";
 "storage.progress.retry" = "再試行";
 "storage.relaunch.title" = "あと少し — Yala を再起動してください";
 "storage.relaunch.body" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いて完了してください。";
-"storage.failed.migration" = "クラウドを有効化できませんでした。データはデバイスに安全に残っています。もう一度お試しください。";
-"storage.failed.reverse" = "iCloud への復帰を完了できませんでした。データは安全です。もう一度お試しください。";
-"storage.confirm.migrateTitle" = "クラウドを有効化しますか？";
+"storage.failed.migration" = "データをあなたの Yala アカウントに移せませんでした。データはデバイスに安全に残っています。もう一度お試しください。";
+"storage.failed.reverse" = "あなたの iCloud への復帰を完了できませんでした。データは安全です。もう一度お試しください。";
+"storage.confirm.migrateTitle" = "Yala アカウントに移しますか？";
 "storage.confirm.migrateBody" = "データが Yala アカウントに移動します。元に戻せますが、大きな変更です。";
 "storage.confirm.migrateContinue" = "続ける";
 "storage.confirm.migrate2Title" = "よろしいですか？";
-"storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
-"storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
+"storage.confirm.migrate2Body" = "この端末で、データがあなたの Yala アカウントに移ります。";
+"storage.confirm.migrate2Confirm" = "はい、Yala アカウントに移す";
 "storage.confirm.revertContinue" = "続ける";
 "storage.confirm.revert2Title" = "よろしいですか？";
-"storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
+"storage.confirm.revert2Body" = "この端末で、データがあなたの iCloud に戻ります。";
 "storage.errors.title" = "問題が発生しました";
 "storage.errors.generic" = "うまくいきませんでした。もう一度お試しください。";
 "storage.errors.adoptOtherAccount" = "この端末で有効化しようとしていたアカウントではありません。同じアカウントでもう一度お試しください。";
-"storage.errors.adoptICloudNotSettled" = "クラウドの有効化を開始できませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
+"storage.errors.adoptICloudNotSettled" = "データをあなたの Yala アカウントに移し始められませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
 "storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
-"storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
+"storage.consent.title" = "あなたの Yala アカウントにあるデータ";
 "storage.consent.pointServers" = "サポートやスマート機能を提供するため、私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
-"storage.consent.pointPhotos" = "クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
+"storage.consent.pointPhotos" = "あなたの Yala アカウントには保存されず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
 "storage.consent.pointAccess" = "iCloudは不要です。Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → 記録をエクスポート）。";
-"storage.consent.footer" = "いつでもプライベートモードに戻せます。何も失われません。";
+"storage.consent.footer" = "いつでもあなたの iCloud に戻せます。何も失われません。";
 "storage.consent.privacyLink" = "プライバシーポリシーを見る";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4707,7 +4713,7 @@
 "settings.signOutBlockedTitle" = "サインアウトできませんでした";
 
 /* Alert message when pending uploads block sign out */
-"settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
+"settings.signOutBlockedMessage" = "まだあなたの Yala アカウントに届いていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
 "welcome.existing.title" = "おかえりなさい！";
@@ -4726,13 +4732,13 @@
 "welcome.existing.cloudTitle" = "Appleでサインイン";
 
 /* Card body: sign in to cloud account */
-"welcome.existing.cloudBody" = "クラウド上のYalaアカウントに、どのデバイスからでも。";
+"welcome.existing.cloudBody" = "あなたの Yala アカウントに、どのデバイスからでも。";
 
 /* Cloud sign-in screen title */
 "welcome.cloud.title" = "アカウントにサインイン";
 
 /* Cloud sign-in screen subtitle */
-"welcome.cloud.subtitle" = "クラウドアカウントを作成したときと同じApple IDを使ってください。";
+"welcome.cloud.subtitle" = "Yala アカウントを作成したときと同じApple IDを使ってください。";
 
 /* Progress label while checking account exists */
 "welcome.cloud.checking" = "アカウントを確認しています…";
@@ -4747,7 +4753,7 @@
 "welcome.cloud.notFoundTitle" = "アカウントが見つかりませんでした";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだYalaのクラウドアカウントがありません。";
+"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだ Yala アカウントがありません。";
 "welcome.cloud.notFoundCta" = "アカウントを作る";
 
 /* Title when foreign local data blocks sign-in */
@@ -4780,8 +4786,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "データをダウンロード中…";
-"welcome.cloud.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
-"welcome.cloud.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
+"welcome.cloud.cancelAdoptBody" = "この端末はあなたの Yala アカウントのデータを何も変更していません。最初の画面に戻ります。いつでも最初の画面からアカウントに再度ログインできます。";
+"welcome.cloud.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。最初の画面に戻ります。いつでも最初の画面からアカウントに再度ログインできます。";
+"welcome.cloud.cancelling" = "キャンセルしています…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "グループには iCloud が必要です";
@@ -4796,10 +4803,10 @@
 "storage.relaunch.bodyAutoExit" = "ホーム画面に戻り、もう一度 Yala を開いてください。これで完了です。";
 
 /* G4 groups consent screen title */
-"groups.consent.title" = "クラウドのグループ";
+"groups.consent.title" = "あなたの Yala アカウントのグループ";
 
 /* G4 consent point 1 */
-"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
+"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、クラウド上のあなたの Yala アカウントに保存されます。";
 
 /* G4 consent point 2 */
 "groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたの名前とグループの支出。ほかのメンバーにメールアドレスは表示されません。";
@@ -4821,7 +4828,7 @@
 "groups.signin.bodyNoInvite" = "グループはYalaアカウントに保存され、全員が同じ支出を最新の状態で見られます。AppleまたはGoogleでサインインして続けましょう。";
 
 /* G4 sign-in R9 account note */
-"groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";
+"groups.signin.accountNote" = "これがあなたの Yala アカウントになります。いつか個人データをあなたの Yala アカウントに移すときも、この同じアカウントを使います。";
 
 /* G4 sign-in error */
 "groups.signin.error" = "アカウントを連携できませんでした。もう一度お試しください。";
@@ -4871,13 +4878,13 @@
 "export.groupsExportFailedNote" = "個人ファイルは正常に書き出されましたが、今回はグループを含められませんでした。後でもう一度お試しください。";
 
 /* G6-3: freeze error surfaced when writing to a migrated group */
-"groups.errors.movedToBackend" = "このグループはYalaのクラウドに移動しました。引き続き使うには、もう一度サインインしてください。";
+"groups.errors.movedToBackend" = "このグループはあなたの Yala アカウントに移りました。引き続き使うには、もう一度サインインしてください。";
 
 /* G6-3: card chip for a migrated frozen group */
 "groups.card.movedChip" = "移動済み";
 
 /* G6-3: detail banner title for a migrated group */
-"groups.migrated.bannerTitle" = "このグループはYalaのクラウドに移動しました";
+"groups.migrated.bannerTitle" = "このグループはあなたの Yala アカウントに移りました";
 
 /* G6-3: detail banner body for a migrated group */
 "groups.migrated.bannerBody" = "支出の表示と編集を続けるには、もう一度サインインしてください。";
@@ -4893,7 +4900,7 @@
 
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
-"groups.migrated.migratingBanner" = "グループをYalaのクラウドに移動しています…";
+"groups.migrated.migratingBanner" = "グループをあなたの Yala アカウントに移しています…";
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Googleで続ける";
@@ -4904,11 +4911,11 @@
 "welcome.existing.googleTitle" = "Googleでサインイン";
 
 /* Existing-account chooser: Google sign-in card body */
-"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、あなたの Yala アカウントです。";
 "welcome.existing.usedOnThisDeviceNote" = "この端末で使った方法";
 
 /* Cloud sign-in intro subtitle when provider is Google */
-"welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
+"welcome.cloud.subtitleGoogle" = "Yala アカウントを作成したときと同じGoogleアカウントを使ってください。";
 
 
 
@@ -4930,7 +4937,7 @@
 "storage.signin.title" = "サインイン方法を選択";
 
 /* Body of the provider chooser in the cloud migration entry */
-"storage.signin.body" = "データをクラウドに保存するにはYalaアカウントが必要です。AppleまたはGoogleでサインインしてください。";
+"storage.signin.body" = "データをあなたの Yala アカウントに保存するには、AppleまたはGoogleでサインインしてください。";
 
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
@@ -5005,7 +5012,7 @@
 "settings.deleteAccountViewGroups" = "グループを表示";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（クラウド以前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
+"settings.deleteAccountFrozenICloudNote" = "アカウント作成前にiCloudでYalaを使っていた場合、そのデータはiCloudに残ります。Yalaアカウントを削除しても消えません。";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";
@@ -5014,10 +5021,10 @@
 "settings.scopeDeviceLabel" = "このデバイス";
 
 /* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
-"settings.scopeICloudLabel" = "iCloud";
+"settings.scopeICloudLabel" = "あなたの iCloud";
 
 /* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
-"settings.scopeCloudAccountLabel" = "Yalaアカウント";
+"settings.scopeCloudAccountLabel" = "あなたの Yala アカウント";
 
 /* D4 hoja de alcance: etiqueta fila grupos */
 "settings.scopeGroupsLabel" = "あなたのグループ";
@@ -5111,7 +5118,7 @@
 "settings.wipeExportBeforeButton" = "先にエクスポート";
 
 /* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
-"settings.wipeExportBeforeCloudCaption" = "クラウドモードでは、これが唯一のコピーになることがあります";
+"settings.wipeExportBeforeCloudCaption" = "データがあなたの Yala アカウントにある場合、これが唯一のコピーになることがあります";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
@@ -5186,10 +5193,10 @@
 "settings.yalaAccountDataLocationTitle" = "データの保存先";
 
 /* Datos en modo nube */
-"settings.yalaAccountDataLocationCloud" = "クラウド上の Yala アカウントに保存されています。";
+"settings.yalaAccountDataLocationCloud" = "あなたの Yala アカウントに保存されています。";
 
 /* Datos en solo-grupos (5b) */
-"settings.yalaAccountDataLocationGroupsOnly" = "この端末とプライベート iCloud に保存されています。アカウントはグループでのみ使用します。";
+"settings.yalaAccountDataLocationGroupsOnly" = "あなたの iCloud とこの端末に保存されています。アカウントはグループでのみ使用します。";
 "settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "アカウントに保存されるのはグループだけです。このデバイスに個人データはありません。";
 
 /* Alcance del desenlace Cerrar sesión */
@@ -5199,7 +5206,7 @@
 "settings.yalaAccountReturnICloud" = "iCloud に戻す";
 
 /* Alcance del desenlace Volver a iCloud */
-"settings.yalaAccountReturnICloudScope" = "データはプライベート iCloud に戻り、アカウントは一時停止になります。";
+"settings.yalaAccountReturnICloudScope" = "データはあなたの iCloud に戻り、アカウントは一時停止になります。";
 
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "すべてが永久に削除されます。";
@@ -5209,10 +5216,10 @@
 "settings.accountSubsectionTitle" = "アカウント";
 
 /* Subtitulo de Donde viven tus datos, modo iCloud */
-"settings.dataLocationSubtitleICloud" = "プライベート iCloud";
+"settings.dataLocationSubtitleICloud" = "あなたの iCloud";
 
 /* Subtitulo de Donde viven tus datos, modo nube */
-"settings.dataLocationSubtitleCloud" = "クラウドアカウント";
+"settings.dataLocationSubtitleCloud" = "あなたの Yala アカウント";
 
 /* D10 batch: stop button (D3) */
 "settings.batchLeaveStop" = "中止";
@@ -5253,29 +5260,29 @@
 "storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
+"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使える Yala アカウントは1つだけです。データをあなたの Yala アカウントに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
-"storage.migrate.refusedReturned" = "現在の Yala アカウントはiCloudに戻っていて、このアカウントでクラウドに戻すことはまだできません。";
+"storage.migrate.refusedReturned" = "現在の Yala アカウントからあなたの iCloud に戻したため、このアカウントにもう一度移すことはまだできません。";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。";
+"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「Yala アカウントに移す」をタップしてください。";
 "storage.migrate.refusedOtherDevice" = "このアカウントで有効化が途中のままです。このデバイスで始めた場合は1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
-"storage.adopt.otherAccountNote" = "このクラウドのコピーは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
+"storage.adopt.otherAccountNote" = "このデータは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
-"storage.adopt.otherAccountNoteGeneric" = "このクラウドのコピーは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
+"storage.adopt.otherAccountNoteGeneric" = "このデータは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
 
 /* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
-"storage.failed.migrationICloudFull" = "クラウドの有効化を完了できませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
+"storage.failed.migrationICloudFull" = "データをあなたの Yala アカウントに移し終えられませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
 
 /* Cloud cutover failed because iCloud is not enabled on this device */
-"storage.failed.migrationICloudOff" = "クラウドの有効化を完了できませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
+"storage.failed.migrationICloudOff" = "データをあなたの Yala アカウントに移し終えられませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
 
 /* Cloud cutover failed because iCloud never confirmed the last export step */
-"storage.failed.migrationICloudStalled" = "クラウドの有効化を完了できませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
+"storage.failed.migrationICloudStalled" = "データをあなたの Yala アカウントに移し終えられませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "iCloudの確認を待っています…";
@@ -5289,7 +5296,7 @@
 "groups.migrated.updateBody" = "もう一度参加するには、Yalaをアップデートしてください。それまでは支出を見ることはできますが、編集はできません。";
 
 /* C-10: detail banner body when the channel is paused */
-"groups.migrated.pausedBody" = "このグループをYalaのクラウドに移動しているところです。少し時間をおいて、もう一度お試しください。何も失われないので安心してください。";
+"groups.migrated.pausedBody" = "このグループをあなたの Yala アカウントに移しているところです。少し時間をおいて、もう一度お試しください。何も失われないので安心してください。";
 
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "表示しているのはグループが移動した時点のコピーなので、最新ではない場合があります。";
@@ -5315,9 +5322,9 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "データの保存場所を選んでください。";
-"welcome.new.privateTitle" = "プライベートなiCloudのアカウント";
-"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
-"welcome.new.cloudTitle" = "クラウドのアカウント";
+"welcome.new.privateTitle" = "あなたの iCloud";
+"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなたの iCloud で同期します。ほかの誰も読めません。私たちも読めません。";
+"welcome.new.cloudTitle" = "あなたの Yala アカウント";
 "welcome.new.cloudBody" = "データはほかの多くのアプリと同じように、私たちのサーバーに保存されます。サポートや新しい機能のために、私たちのチームが見ることがあります。";
 "welcome.new.groupsQuestion" = "割り勘だけしたいですか？";
 "welcome.new.groupsAction" = "こちらから始める";
@@ -5396,7 +5403,7 @@
 
 /* C2 · empty state con sesión viva y sin consent */
 "groups.empty.needsConsent.title" = "グループの保存方法に同意する";
-"groups.empty.needsConsent.message" = "Yalaのクラウドに何が保存されるかをお伝えします。決めるのはあなたです。";
+"groups.empty.needsConsent.message" = "あなたの Yala アカウントに何が保存されるかをお伝えします。決めるのはあなたです。";
 "groups.empty.needsConsent.action" = "確認して同意";
 
 
@@ -5498,7 +5505,7 @@
 "welcome.restore.cloudPausedTitle" = "データはiCloudにはありません";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "このApple IDはYalaのクラウドアカウントで使われていました。そこに保存したデータはiCloudにはありません。クラウドへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
+"welcome.restore.cloudPausedBody" = "このApple IDは Yala アカウントで使われていました。そこに保存したデータはあなたの iCloud にはありません。あなたの Yala アカウントへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 お知らせです。%2$@さんに%1$@の精算が残っています。都合のよいときにどうぞ。";
@@ -5534,7 +5541,7 @@
 "groups.shareableSummary.owedLabel" = "負担分";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "精算する";
+"groups.shareableSummary.settleUp" = "精算するには";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "すべて精算済みです！";
@@ -5642,7 +5649,7 @@
 "groups.accountIsComplete.title" = "そのアカウントはすでにYala全体を使っています";
 
 /* Bloque [I]: por qué se bloquea */
-"groups.accountIsComplete.body" = "そのアカウントには、すでに誰かの家計データがクラウドに入っています。グループだけに使うと2つのアカウントが1つに混ざってしまうので、ここではできません。";
+"groups.accountIsComplete.body" = "その Yala アカウントには、すでに誰かの家計データが入っています。グループだけに使うと2つのアカウントが1つに混ざってしまうので、ここではできません。";
 
 /* Bloque [I]: CTA para firmar con otra cuenta */
 "groups.accountIsComplete.useAnotherAccount" = "別のアカウントを使う";
@@ -5789,7 +5796,7 @@
 "welcome.groups.neutralUnavailableBody" = "この端末には開いたままのセッションがあります。ここでグループを始める前に、設定から閉じてください。戻ってください。何も変更していません。";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "iCloud とクラウドの間のデータ移行が完了したことをまだ確認できません。今この端末を準備すると、まだアップロードされていないデータが削除されるおそれがあります。戻ってください。何も変更していません。";
+"welcome.groups.neutralMigrationBody" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行が完了したことをまだ確認できません。今この端末を準備すると、まだアップロードされていないデータが削除されるおそれがあります。戻ってください。何も変更していません。";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "グループ";
@@ -5971,11 +5978,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "この端末ではデータを同期できません";
-"settings.signOutAttestMessage" = "この端末は1日前からクラウドのアカウントに変更を送信できません。届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
-"settings.signOutAttestMessageUnknown" = "この端末は1日前からクラウドのアカウントに変更を送信できず、届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessage" = "この端末は1日前からあなたの Yala アカウントに変更を送信できません。届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessageUnknown" = "この端末は1日前からあなたの Yala アカウントに変更を送信できず、届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 "settings.signOutAttestExportButton" = "記録をエクスポート";
 "settings.signOutAttestLossButton" = "変更が失われてもサインアウト";
-"settings.signOutAttestBlocked" = "この端末は1日前からクラウドのアカウントに変更を送信できないため、変更をアップロードできません。";
+"settings.signOutAttestBlocked" = "この端末は1日前からあなたの Yala アカウントに変更を送信できないため、変更をアップロードできません。";
 "settings.signOutAttestExportEmpty" = "エクスポートできる記録がありません。";
 "settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
 
@@ -5983,46 +5990,46 @@
 "groups.attestTerminalBanner" = "この端末は1日前からグループに変更を送信できません。ここで記録した内容はグループの誰にも表示されないため、別の端末をお使いください。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "この端末は1日前からクラウドのアカウントに変更を送信できません。ここで記録した内容は端末内には残りますが、アカウントには届きません。当面は別の端末をお使いください。";
+"settings.attestTerminalBanner" = "この端末は1日前からあなたの Yala アカウントに変更を送信できません。ここで記録した内容は端末内には残りますが、アカウントには届きません。当面は別の端末をお使いください。";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "データを iCloud にアップロードしています。Yala はそのままお使いいただけます。";
 "storage.progress.reversePending" = "アップロード待ち：%d";
-"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、クラウドのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
-"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
-"storage.progress.cancelReverse" = "キャンセルしてクラウドのまま使う";
-"storage.confirm.cancelReverseTitle" = "iCloud に戻す処理をキャンセルしますか？";
-"storage.confirm.cancelReverseBody" = "データは Yala のクラウドとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
-"storage.confirm.cancelReverseConfirm" = "はい、クラウドのまま使う";
+"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、あなたの Yala アカウントのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
+"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、あなたの Yala アカウントのままになり、あとでもう一度お試しいただけます。";
+"storage.progress.cancelReverse" = "キャンセルして Yala アカウントのまま使う";
+"storage.confirm.cancelReverseTitle" = "あなたの iCloud に戻す処理をキャンセルしますか？";
+"storage.confirm.cancelReverseBody" = "データはあなたの Yala アカウントとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
+"storage.confirm.cancelReverseConfirm" = "はい、Yala アカウントのまま使う";
 "storage.confirm.cancelReverseKeep" = "このまま待つ";
-"storage.reverseAbort.relaunchTitle" = "データはクラウドに残っています";
-"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてクラウドを使い続けてください。";
-"storage.reverseAbort.icloudFull" = "iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
-"storage.reverseAbort.icloudUnavailable" = "iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
-"storage.reverseAbort.stalled" = "iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
-"storage.reverseAbort.claimRetryLater" = "iCloud に戻す処理を開始できませんでした。データのクラウドへの移行がまだ完了していませんでした。しばらくしてからもう一度お試しください。";
-"storage.reverseAbort.claimRefused" = "iCloud に戻す処理を開始できませんでした。このアカウントでは実行できませんでした。この操作では何も変更されていません。%@ までご連絡ください。一緒に確認します。";
-"storage.reverseAbort.otherDeviceReverting" = "iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
-"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データは iCloud に届きません。設定でオンにするか、キャンセルしてクラウドのまま使い続けてください。";
+"storage.reverseAbort.relaunchTitle" = "データはあなたの Yala アカウントに残っています";
+"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてあなたの Yala アカウントを使い続けてください。";
+"storage.reverseAbort.icloudFull" = "あなたの iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
+"storage.reverseAbort.icloudUnavailable" = "あなたの iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
+"storage.reverseAbort.stalled" = "あなたの iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
+"storage.reverseAbort.claimRetryLater" = "あなたの iCloud に戻す処理を開始できませんでした。データがまだあなたの Yala アカウントに移りきっていませんでした。しばらくしてからもう一度お試しください。";
+"storage.reverseAbort.claimRefused" = "あなたの iCloud に戻す処理を開始できませんでした。このアカウントでは実行できませんでした。この操作では何も変更されていません。%@ までご連絡ください。一緒に確認します。";
+"storage.reverseAbort.otherDeviceReverting" = "あなたの iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
+"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データはあなたの iCloud に届きません。設定でオンにするか、キャンセルしてあなたの Yala アカウントのまま使い続けてください。";
 /* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
-"storage.progress.reverseLocalFailure" = "このデバイスで iCloud へのアップロード用のデータを準備できませんでした。数分たっても解決しない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
-"storage.reverseAbort.localFailure" = "iCloud への切り替えを完了できませんでした。このデバイスでアップロード用のデータを準備できませんでした。クラウドのままです。しばらくしてから、もう一度お試しください。";
-"storage.errors.reversePendingExit" = "まだ iCloud に戻せません。先にクラウドの再有効化を完了する必要があります。少し待ってからもう一度お試しください。";
+"storage.progress.reverseLocalFailure" = "このデバイスで iCloud へのアップロード用のデータを準備できませんでした。数分たっても解決しない場合は、あなたの Yala アカウントのままになり、あとでもう一度お試しいただけます。";
+"storage.reverseAbort.localFailure" = "あなたの iCloud に戻す処理を完了できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データはあなたの Yala アカウントのままです。しばらくしてから、もう一度お試しください。";
+"storage.errors.reversePendingExit" = "まだあなたの iCloud に戻せません。先に、この端末であなたの Yala アカウントを再び使えるようにする処理を完了する必要があります。少し待ってからもう一度お試しください。";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
 "storage.migrateBlock.personalDataTitle" = "このアカウントにはすでに独自のデータがあります";
-"storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
+"storage.migrateBlock.personalDataBody" = "何も変更していません。データを Yala アカウントに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
 "storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
-"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
-"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
-"storage.migrateBlock.returnedTitle" = "このアカウントはiCloudに戻っています";
-"storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
+"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使える Yala アカウントは1つだけで、グループはすでに別のアカウントを使っています。データをあなたの Yala アカウントに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使える Yala アカウントは1つだけで、グループはすでに%@を使っています。データをあなたの Yala アカウントに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.returnedTitle" = "このアカウントからあなたの iCloud に戻しました";
+"storage.migrateBlock.returnedBody" = "このアカウントにもう一度移すことはまだできません。何も変更していません。";
 "storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
 "storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
 "storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
-"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
+"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをあなたの Yala アカウントに移すには、「グループ」でリンクを解除してから、もう一度「Yala アカウントに移す」をタップしてください。ご自身のアカウントを選べます。";
 "storage.migrateBlock.otherDeviceTitle" = "このアカウントで有効化が途中のままです";
 "storage.migrateBlock.otherDeviceBody" = "何も変更していません。このデバイスで始めた場合は、1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
@@ -6033,12 +6040,12 @@
 "welcome.restore.cloudUnverifiedBody" = "保存されたデータがあるかを確認するために接続できませんでした。少し経ってから、もう一度お試しください。";
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
-"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。iCloud に戻す作業を続けるには、もう一度サインインしてください。";
-"storage.progress.adoptSessionExpired" = "クラウドのセッションが無効になりました。有効化をキャンセルして、アカウントで再度サインインしてください。";
+"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。あなたの iCloud に戻す作業を続けるには、もう一度サインインしてください。";
+"storage.progress.adoptSessionExpired" = "あなたの Yala アカウントのセッションが無効になりました。キャンセルして、アカウントで再度サインインしてください。";
 "storage.progress.adoptAccountUnavailable" = "今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
-"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";
+"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。あなたの iCloud に戻す操作を始めたアカウントでサインインしてください。";
 "storage.errors.syncSignInOtherAccount" = "別のアカウントでサインインしたため、サインインしたままにしませんでした。この端末で Yala に使っているアカウントでサインインしてください。";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
@@ -6048,64 +6055,64 @@
 "welcome.restore.importIncompleteBody" = "iCloud がまだ履歴を送信しています。記録が多い場合や通信が遅い場合は数分かかることがあります。少し待ってからもう一度検索してください。";
 
 /* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
-"storage.reverseAbort.preMountRefused" = "iCloud への切り替えを完了できませんでした。クラウドのアカウントが許可しませんでした。データは Yala のクラウドにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
+"storage.reverseAbort.preMountRefused" = "あなたの iCloud に戻す処理を完了できませんでした。あなたの Yala アカウントが許可しませんでした。データはあなたの Yala アカウントにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
 
 /* Salida de la vuelta antes de montar el espejo: venció el techo largo */
-"storage.reverseAbort.preMountStalled" = "iCloud への切り替えを完了できませんでした。処理が進まなくなりました。データは Yala のクラウドにそのまま残っています。いつでもやり直せます。";
+"storage.reverseAbort.preMountStalled" = "あなたの iCloud に戻す処理を完了できませんでした。処理が進まなくなりました。データはあなたの Yala アカウントにそのまま残っています。いつでもやり直せます。";
 
 /* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
-"storage.confirm.cancelReverseBeforeMountBody" = "データは Yala のクラウドとこの端末にそのまま残ります。いつでもやり直せます。";
+"storage.confirm.cancelReverseBeforeMountBody" = "データはあなたの Yala アカウントとこの端末にそのまま残ります。いつでもやり直せます。";
 
 /* Diálogo de cancelar: seguir, antes de montar el espejo */
-"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud への切り替えを続ける";
+"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud に戻す処理を続ける";
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
-"storage.reverseAbort.preMountOtherDevice" = "iCloud への切り替えを完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
+"storage.reverseAbort.preMountOtherDevice" = "あなたの iCloud に戻す処理を完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
 
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.snapshotStalled" = "クラウドを有効化できませんでした。データのアップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+"storage.failed.snapshotStalled" = "データをあなたの Yala アカウントに移せませんでした。アップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
 /* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
-"storage.failed.snapshotMixedCauses" = "クラウドを有効化できませんでした。待っても解決しない問題で、データのアップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
+"storage.failed.snapshotMixedCauses" = "データをあなたの Yala アカウントに移せませんでした。待っても解決しない問題で、アップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
 /* Fallo de la activación: la sesión caducó durante la subida */
-"storage.failed.snapshotSessionExpired" = "クラウドを有効化できませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+"storage.failed.snapshotSessionExpired" = "データをあなたの Yala アカウントに移せませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
-"storage.failed.snapshotAccountUnavailable" = "クラウドを有効化できませんでした。クラウドのアカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.snapshotAccountUnavailable" = "データをあなたの Yala アカウントに移せませんでした。アカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
-"storage.failed.snapshotLocalFailure" = "クラウドを有効化できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.snapshotLocalFailure" = "データをあなたの Yala アカウントに移せませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
 /* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.stepStalled" = "クラウドを有効化できませんでした。有効化の処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+"storage.failed.stepStalled" = "データをあなたの Yala アカウントに移せませんでした。移す処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
 /* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
-"storage.failed.stepSessionExpired" = "クラウドを有効化できませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+"storage.failed.stepSessionExpired" = "データをあなたの Yala アカウントに移せませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
-"storage.failed.stepOtherDevice" = "このデバイスではクラウドを有効化できませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
-"storage.failed.adoptStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間進んでいません。この端末はクラウドのデータを何も変更していません。後でもう一度お試しください。";
-"storage.failed.adoptSessionExpired" = "クラウドのアカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はクラウドのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
-"storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
-"storage.failed.adoptEffectLocalFailure" = "クラウドのアカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
-"storage.failed.adoptEffectStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
-"storage.failed.adoptEffectLineageUnproven" = "クラウドのアカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをクラウドに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepOtherDevice" = "このデバイスからデータをあなたの Yala アカウントに移せませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
+"storage.failed.adoptStalled" = "あなたの Yala アカウントにサインインできませんでした。処理が数日間進んでいません。この端末はあなたの Yala アカウントのデータを何も変更していません。後でもう一度お試しください。";
+"storage.failed.adoptSessionExpired" = "あなたの Yala アカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はあなたの Yala アカウントのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
+"storage.failed.adoptAccountUnavailable" = "あなたの Yala アカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.adoptEffectLocalFailure" = "あなたの Yala アカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.adoptEffectStalled" = "あなたの Yala アカウントにサインインできませんでした。処理が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
+"storage.failed.adoptEffectLineageUnproven" = "あなたの Yala アカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをあなたの Yala アカウントに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationTitle" = "クラウドの有効化をキャンセルしますか？";
+"storage.confirm.cancelMigrationTitle" = "Yala アカウントに移す処理をキャンセルしますか？";
 /* Cuerpo de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
-"storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
-"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、あなたの Yala アカウントに残ります。いつでもやり直せます。";
+"storage.confirm.cancelAdoptBody" = "この端末はあなたの Yala アカウントのデータを何も変更していません。いつでもここから、この端末であなたの Yala アカウントを再び使えます。";
+"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末であなたの Yala アカウントを再び使えます。";
 "storage.waiting.stopWaiting" = "待つのをやめる";
 "storage.confirm.stopWaitingTitle" = "待つのをやめますか？";
-"storage.confirm.stopWaitingBody" = "もう一方のデバイスはクラウドの有効化を続けます。この端末は待つのをやめ、クラウドのデータは何も変更しません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.stopWaitingBody" = "もう一方のデバイスは、データをあなたの Yala アカウントに移し続けます。この端末は待つのをやめ、あなたの Yala アカウントのデータは何も変更しません。いつでもここから、この端末であなたの Yala アカウントを使えます。";
 "storage.confirm.stopWaitingConfirm" = "やめる";
 "storage.confirm.stopWaitingKeep" = "このまま待つ";
-"storage.progress.followerSessionExpired" = "クラウドのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
+"storage.progress.followerSessionExpired" = "あなたの Yala アカウントのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */
-"storage.confirm.cancelMigrationKeep" = "有効化を続ける";
+"storage.confirm.cancelMigrationKeep" = "Yala アカウントに移す処理を続ける";
 
 /* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
-"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はクラウドへの移行も iCloud への切り戻しもできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
+"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はデータをあなたの Yala アカウントに移すことも、あなたの iCloud に戻すこともできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "サインインして変更をアップロード";
@@ -6119,25 +6126,25 @@
 "storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
-"storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
-"storage.failed.stepLeaderRowsNotArrived" = "クラウドを有効にできませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLineageUnproven" = "データをあなたの Yala アカウントに移せませんでした。そのアカウントにはすでにデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLeaderRowsNotArrived" = "データをあなたの Yala アカウントに移せませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
-"settings.signOutSyncStoppedNeedsUpdate" = "まだクラウドにアップロードされていない変更があります。データのクラウドへの移行状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
-"settings.signOutCaptureUnfinished" = "最近の変更の一部を、クラウドへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutSyncStoppedNeedsUpdate" = "まだあなたの Yala アカウントに届いていない変更があります。データをあなたの Yala アカウントに移す処理の状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutCaptureUnfinished" = "最近の変更の一部を、あなたの Yala アカウントへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。この設定画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutSyncStoppedMidMigration" = "まだあなたの Yala アカウントに届いていない変更があります。あなたの Yala アカウントとあなたの iCloud の間のデータ移行が完了していないため、同期は一時停止しています。この設定画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
-"settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
+"settings.signOutSyncStoppedNeedsRelaunch" = "まだあなたの Yala アカウントに届いていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
-"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
+"settings.signOutUploadRetryLater" = "最新の変更があなたの Yala アカウントに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだあなたの Yala アカウントに届いていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
 "settings.signOutSessionSurvived" = "この端末ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
-"settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
-"settings.signOutMigrationUnreadable" = "iCloud とクラウドの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutMigrationInFlight" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutMigrationUnreadable" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "削除が途中で止まりました";
@@ -6193,10 +6200,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。あなたの Yala アカウントに届かなかった変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、クラウドのアカウントに届かなかった変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、あなたの Yala アカウントに届かなかった変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "記録を選ぶとここに表示されます";
@@ -6215,13 +6222,13 @@
 "welcome.groups.inviteRelaunchTitle" = "参加するには Yala をもう一度開いてください";
 
 /* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
-"welcome.groups.inviteRelaunchBody" = "クラウドのアカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
+"welcome.groups.inviteRelaunchBody" = "あなたの Yala アカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
 "welcome.groups.inviteCloudSignInTitle" = "まず、この端末のアカウントでサインインしてください";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていないクラウドアカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
+"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていない Yala アカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
 "welcome.groups.wipeFailedTitle" = "この端末を準備できませんでした";
@@ -6461,17 +6468,17 @@
 "storage.pendingICloudWipe.title" = "削除が完了していません";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "以前、データを削除して最初からやり直すよう依頼しましたが、終わっていません。クラウドをオンにすると、その削除は行われず、iCloud のデータは残ります。";
+"storage.pendingICloudWipe.body" = "以前、データを削除して最初からやり直すよう依頼しましたが、終わっていません。Yala アカウントに移すと、その削除は行われず、iCloud のデータは残ります。";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "オンにして iCloud のデータを残す";
+"storage.pendingICloudWipe.proceed" = "Yala アカウントに移して iCloud のデータを残す";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "今はしない";
-"storage.pendingICloudWipe.bodyHalfway" = "iCloud にあったデータはすでに削除されています。クラウドをオンにすると、このデバイスに残っているデータが Yala アカウントに移ります。";
-"storage.pendingICloudWipe.proceedHalfway" = "ここに残っているデータでオンにする";
-"storage.pendingICloudWipe.proceedDetail" = "削除は行われません。クラウドをオンにし、iCloud のデータはそのまま残ります。";
-"storage.pendingICloudWipe.proceedDetailHalfway" = "削除は完了しません。このデバイスに残っているデータでクラウドをオンにします。";
+"storage.pendingICloudWipe.bodyHalfway" = "iCloud にあったデータはすでに削除されています。Yala アカウントに移すと、このデバイスに残っているデータも一緒に移ります。";
+"storage.pendingICloudWipe.proceedHalfway" = "ここに残っているデータで Yala アカウントに移す";
+"storage.pendingICloudWipe.proceedDetail" = "削除は行われません。Yala アカウントに移し、iCloud のデータはそのまま残ります。";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "削除は完了しません。このデバイスに残っているデータで Yala アカウントに移します。";
 "storage.pendingICloudWipe.finish" = "削除を完了して最初からやり直す";
 "storage.pendingICloudWipe.finishDetail" = "このデバイスと iCloud からデータが削除されます。コピーは残りません。";
 "storage.pendingICloudWipe.finishDetailHalfway" = "このデバイスに残っているデータが削除されます。コピーは残りません。";
@@ -6484,7 +6491,7 @@
 "welcome.privateICloud.cancelledInCloudTitle" = "削除が完了しませんでした";
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
-"welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがクラウドに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、iCloudに残っているか、Yalaアカウントに移っている可能性があります。";
+"welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがあなたの Yala アカウントに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、あなたの iCloud に残っているか、あなたの Yala アカウントに移っている可能性があります。";
 
 /* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
 "inbox.groupSettlementAmountChange.title" = "金額が変更されました";
@@ -6601,7 +6608,7 @@
 "welcome.privateICloud.noAccountProceedTitle" = "この端末は iCloud がオフです";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
-"welcome.mirrorRelaunch.privacyNote" = "これで Yala があなただけの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
+"welcome.mirrorRelaunch.privacyNote" = "これで Yala があなたの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
 "onboarding.purpose.changeLaterHint" = "あとから「設定 > パーソナライズ」でいつでも変更できます。";
@@ -6746,8 +6753,8 @@
 "storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
 "storage.revert.prior.stalledTitle" = "iCloudの応答に時間がかかりすぎました";
 "storage.revert.prior.stalledBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。確認が進まなくなりました。もう一度お試しください。";
-"storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
-"storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
+"storage.revert.prior.wipeFailed" = "あなたの iCloud から以前のデータを削除しきれなかったため、iCloud に戻す処理を開始していません。あなたの Yala アカウントのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.wipeStopped" = "あなたの iCloud から以前のデータを削除しきれなかったため、iCloud に戻す処理を開始していません。あなたの Yala アカウントのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
 "storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";
 "storage.revert.prior.noAccountTitle" = "この端末で iCloud にサインインしてください";
 "storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この端末は iCloud にサインインしていません。設定からサインインして、もう一度お試しください。";
@@ -6758,7 +6765,7 @@
 "storage.revert.sheet.accountDetail" = "グループのためにサインインしたままです。";
 "storage.revert.sheet.storedTitle" = "アカウント内のデータ";
 "storage.revert.sheet.storedDetail" = "家計のデータは使われずに保存されたままです。";
-"storage.revert.sheet.cloudAgainTitle" = "このアカウントでクラウドに戻すこと";
+"storage.revert.sheet.cloudAgainTitle" = "このアカウントにもう一度移すこと";
 "storage.revert.sheet.cloudAgainDetail" = "現在はできません。";
 "storage.revert.sheet.continue" = "続ける";
 "storage.revert.sheet.priorBody" = "このデバイスの iCloud に、アカウントにない Yala のデータがあります：%@。";
@@ -7025,7 +7032,7 @@
 "storage.consent.accessTitle" = "AppleまたはGoogleで、どの端末からでもサインイン";
 "storage.consent.acceptEnter" = "了解して、アカウントにサインイン";
 "storage.consent.acceptCreate" = "了解して、アカウントを作成";
-"storage.consent.acceptMove" = "了解して、データをクラウドに移す";
+"storage.consent.acceptMove" = "了解して、データを Yala アカウントに移す";
 "welcome.privateICloud.lateLead" = "以前、同じApple IDであなたのiCloudに保存したデータです：";
 "welcome.privateICloud.lateMerge" = "今のデータとまとめる";
 "welcome.privateICloud.lateWipe" = "iCloudから削除して最初から始める";
@@ -7143,7 +7150,7 @@
 "records.l8.changedTo" = "%@ に変更しました";
 "records.l8.changedToWithNeed" = "%1$@（%2$@・%3$@）に変更しました";
 "records.l8.undo" = "取り消す";
-"records.l8.selectHint" = "選ぶ記録をタップしてください";
+"records.l8.selectHint" = "記録をタップするか「この日を選択」";
 "search.l8.recent" = "最近";
 "filters.l8.discardTitle" = "フィルターを破棄しますか？";
 "filters.l8.discardMessage" = "選んだ内容は適用されません。";
@@ -7684,27 +7691,26 @@
 "uxcs.migrated.rejoinSentence" = "このグループは移動しました。最新の状態を見るには、もう一度サインインしてください。";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
-"l20n.sheet.title" = "クラウドをオンにする前に";
+"l20n.sheet.title" = "Yala アカウントに移す前に";
 "l20n.sheet.anyPhoneTitle" = "どの端末からでもログインできます";
 "l20n.sheet.anyPhoneDetail" = "iCloud に頼らずに使えます。";
 "l20n.sheet.seesTitle" = "Yala はあなたのデータを見ることができます";
-"l20n.sheet.seesDetail" = "サポートやスマート機能を提供するためです。";
+"l20n.sheet.seesDetail" = "サポートやスマート機能を提供するためです。エンドツーエンドの暗号化はありません。";
 "l20n.sheet.accessTitle" = "Apple または Google でログインします";
 "l20n.sheet.accessDetail" = "そのアクセスを失うと、Yala のパスワードでは復旧できません。先にコピーをエクスポートしてください。";
 "l20n.sheet.exportCopy" = "先にコピーをエクスポート";
-"l20n.sheet.details" = "詳細を見る";
-"l20n.sheet.hideDetails" = "詳細を隠す";
-"l20n.sheet.detailsAccess" = "Yala のパスワードやメールでの復旧はありません。Apple または Google のアカウントにアクセスできなくなると、データにもアクセスできなくなります。だからこそ、先にコピーをエクスポートしておくのがおすすめです。";
 "l20n.sheet.willMove" = "%1$@、%2$@、%3$@ が移ります。";
 "l20n.sheet.continueCurrent" = "今のアカウントで続ける";
+"l20n.sheet.photosTitle" = "レシートの写真は引き継がれません";
+"l20n.sheet.photosDetail" = "Yalaは写真を保存せず、アカウントにもアップロードしません。";
 "l20n.relaunch.almostTitle" = "あと少しです";
 "l20n.relaunch.doneSignedOut" = "サインアウトしました";
 "l20n.relaunch.afterSignOut" = "もう一度開くと、Yala がこの端末からデータを取り除き終えます。";
 "l20n.relaunch.afterGroupsOnly" = "個人のデータはこの端末に残ります。";
-"l20n.relaunch.doneInCloud" = "データはすでにクラウドのアカウントにあります";
+"l20n.relaunch.doneInCloud" = "データはすでにあなたの Yala アカウントにあります";
 "l20n.relaunch.doneOnPhone" = "データはすでにこの端末にあります";
 "l20n.relaunch.afterToICloud" = "もう一度開くと、iCloud へのアップロードが始まります。";
-"l20n.relaunch.doneReverseStopped" = "iCloud への切り替えは止まりました";
+"l20n.relaunch.doneReverseStopped" = "あなたの iCloud に戻す処理は止まりました";
 "l20n.relaunch.pending" = "Yala をもう一度開く";
 "l20n.relaunch.toFinish" = "仕上げに";
 "l20n.relaunch.step1" = "画面の下端から上にスワイプして止めます";
@@ -7751,16 +7757,16 @@
 "uxpro.gate.title.photo" = "写真で記録はYala Proの機能です";
 "uxpro.gate.title.insights" = "AIのまとめはYala Proの機能です";
 "uxpro.gate.title.chat" = "Yala AIへの質問はYala Proの機能です";
-"uxpro.gate.title.cashFlow" = "高度なキャッシュフローはYala Proの機能です";
 "uxpro.gate.title.theme" = "テーマ「%@」はYala Proの機能です";
 "uxpro.gate.title.themeGeneric" = "このテーマはYala Proの機能です";
 "uxpro.gate.title.icon" = "アイコン「%@」はYala Proの機能です";
 "uxpro.gate.title.iconGeneric" = "このアイコンはYala Proの機能です";
 "uxpro.gate.body.manualStaysFree" = "手入力での記録はこれまでどおり無料です。";
 "uxpro.gate.body.dataStaysFree" = "記録と統計はこれまでどおり無料です。";
+"uxpro.gate.offlinePrices" = "オフライン：接続すると価格が表示されます。";
+"uxpro.gate.offlineMeanwhile" = "それまでは無料で";
 "uxpro.gate.body.themeStays" = "今のテーマはそのままです。";
 "uxpro.gate.body.iconStays" = "今のアイコンはそのままです。";
-"uxpro.gate.body.cashFlowStays" = "いつものキャッシュフローは引き続き無料です。";
 "uxpro.gate.preview" = "Yalaはこう見えます";
 "uxpro.gate.trialBody" = "これまでの記録はそのまま残っています。無料プランでは口座%1$lld件、予算%2$lld件まで使えます。";
 "uxpro.gate.ctaTrialDays" = "Proを%lld日間無料で試す";
@@ -7808,7 +7814,6 @@
 "uxpro.welcome.budgets" = "予算を無制限に作れるようになりました。";
 "uxpro.welcome.theme" = "このテーマが使えるようになりました。";
 "uxpro.welcome.icon" = "このアイコンが使えるようになりました。";
-"uxpro.welcome.cashFlow" = "高度なキャッシュフローが使えるようになりました。";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "もう一方のウインドウでサインアウトしています…";
@@ -7840,7 +7845,7 @@
 "aiPrivacy.l14d.processingLine" = "話した内容や撮った写真を記録にします。";
 "aiPrivacy.l14d.chatLine" = "お金についての質問に答え、チャットから支出を記録します。";
 "aiPrivacy.l14d.insightsLine" = "統計で、あなたの数字についての気づきを書きます。";
-"aiPrivacy.l14d.cloudExploreLine" = "質問に必要なときは、Yala AIがクラウドのアカウントも確認します。";
+"aiPrivacy.l14d.cloudExploreLine" = "質問に必要なときは、Yala AIがあなたの Yala アカウントも確認します。";
 "aiPrivacy.l14d.revokeTitle" = "%@をオフにしますか？";
 "settings.l14d.summaryWhere" = "%@で表示されます。";
 "siriShortcuts.siri.alsoSay" = "ほかに：%1$@・%2$@";
@@ -8218,7 +8223,7 @@
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@さんをグループに承認しますか？";
 /* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
-"storage.revert.ineligibleOtherDevice" = "あなたのアカウントは別の端末からクラウドに移行したため、iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではクラウドをそのまま使えます。";
+"storage.revert.ineligibleOtherDevice" = "データは別の端末からあなたの Yala アカウントに移ったため、あなたの iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではあなたの Yala アカウントをそのまま使えます。";
 
 /* card vv0k */
 "image.entry.failure.busy.title" = "少々お待ちください";
@@ -8251,7 +8256,7 @@
 "image.entry.dailyLimitLeftOutMany" = "本日の上限に達しました。%d枚を読み取れませんでした。";
 
 /* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
-"l15.personal.dataNote" = "選んだ方法に応じて、iCloudまたはクラウドのアカウントに保存されます。グループで記録した内容はグループのメンバーに表示されます。";
+"l15.personal.dataNote" = "選んだ方法に応じて、あなたの iCloud またはあなたの Yala アカウントに保存されます。グループで記録した内容はグループのメンバーに表示されます。";
 "l15.personal.moreAboutData" = "データについて詳しく";
 "l15.rates.search" = "通貨を検索";
 "l15.personalization.voiceLanguageFooter" = "音声で記録するときに、Yalaに話しかける言語です。";
@@ -8291,7 +8296,7 @@
 "l15.faq.yalaAI.q" = "Yala AIとは？";
 "l15.faq.yalaAI.a" = "Yala Proのアシスタントです。お金のことを質問したり（「今月コーヒーにいくら使った？」）、支出を伝えて記録してもらったりできます。回答のために必要な情報をAIサービスに送信します。これは「設定 > AIプライバシーとデータ」で決められます。";
 "l15.faq.whereData.q" = "データはどこに保存される？";
-"l15.faq.whereData.a" = "プライベートなiCloudを選んだ場合は、端末とiCloudに保存され、Yalaからは見えません。クラウドのアカウントを使う場合はYalaのサーバーに保存され、別の端末からもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
+"l15.faq.whereData.a" = "あなたの iCloud を選んだ場合は、端末とあなたの iCloud に保存され、Yalaからは見えません。あなたの Yala アカウントを選んだ場合はYalaのサーバーに保存され、別の端末からもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
 "l15.faq.faceID.q" = "Face IDでYalaを保護できる？";
 "l15.faq.faceID.a" = "はい、iOSのロック機能を使います。ホーム画面でYalaのアイコンを長押しし、「Face IDを要求」をタップします。Yalaがあなたの顔を見ることはなく、確認はiOSが行います。手順は「設定 > Face IDで保護」にあります。";
 "l15.faq.widgets.q" = "Yalaのウィジェットを追加するには？";
@@ -8411,7 +8416,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "あなたの口座";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "ここで払った分を自分の口座に記録";
+"groups.l19.options.personalToggle" = "あなたの口座に反映";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "グループ設定と同じです。";
 /* Miembros: rótulo sobre la cifra */
@@ -8464,7 +8469,7 @@
 "l2d.date.futureDaysNote" = "今後の日付はグレーで表示されます。まだ発生していない支払いには[予定の支払い](yala-form://scheduled)を使ってください。";
 "l2d.favorites.seeAll" = "すべて表示";
 "l2d.favorites.use" = "お気に入り「%@」を使う";
-"l2d.favorites.transferHelp" = "いつもの振替をワンタップで。";
+"l2d.favorites.transferHelp" = "いつもの振替を、入力済みの状態で。";
 "l2d.recurring.title" = "くり返しにする";
 "l2d.recurring.header" = "今日の分を保存します。次回からは該当日に受信トレイに届くので、確認してください。予定の支払いで確認できます。";
 "l2d.recurring.weekly" = "毎週%@";
@@ -8501,7 +8506,7 @@
 "l2d.split.bar.others" = "ほかの人 %@";
 
 /* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
-"storage.steps.forwardTitle" = "クラウドを有効化しています";
+"storage.steps.forwardTitle" = "Yala アカウントに移しています";
 "storage.steps.reverseTitle" = "iCloud に戻しています";
 "storage.steps.connect" = "アカウントに接続";
 "storage.steps.prepare" = "データを準備";
@@ -8512,7 +8517,7 @@
 "storage.steps.keepOpen" = "完了するまで Yala を開いたままにしてください。";
 "storage.steps.wipePrior" = "以前のデータを削除";
 "storage.steps.wipedCount" = "%@ 件削除済み";
-"storage.steps.bring" = "クラウドからデータを取得";
+"storage.steps.bring" = "あなたの Yala アカウントからデータを取得";
 "storage.steps.review" = "iCloud が保存済みの内容を確認";
 "storage.steps.reviewDetail" = "アップロードの前に、iCloud がこのデバイスの保存内容を確認します。数分かかることがあります。";
 "storage.steps.uploadToICloud" = "iCloud にアップロード";
@@ -8530,7 +8535,7 @@
 "storage.migrateBlock.detachAndContinue" = "リンクを解除して続ける";
 
 /* Aviso del Panel en un segundo dispositivo: otro dispositivo del mismo iCloud activó la nube */
-"panel.cloudAdoptOffer.title" = "データはすでにクラウドのアカウントにあります";
+"panel.cloudAdoptOffer.title" = "データはすでにあなたの Yala アカウントにあります";
 
 /* Cuerpo del aviso: activar la cuenta en la nube aquí también */
 "panel.cloudAdoptOffer.body" = "このデバイスでも有効にしますか？";
@@ -8713,7 +8718,6 @@
 "account.saveErrorPartial" = "すべてを保存できませんでした。一部の変更はすでに反映されている可能性があります。口座を確認して、もう一度保存してください。";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "レシートから";
 "receiptSplit.entry.hint" = "写真か音声でレシートを読み取り、品目ごとに割り勘します";
 "receiptSplit.title" = "レシートから";
 "receiptSplit.photo.title" = "レシートの写真";
@@ -8759,6 +8763,15 @@
 "receiptSplit.failure.read.message" = "問題が発生しました。少ししてからもう一度お試しください。";
 "receiptSplit.failure.noLines.title" = "金額のある品目が見つかりません";
 "receiptSplit.failure.noLines.message" = "明るい場所でレシートに近づいて撮るか、音声で入力してください。";
+"receiptSplit.failure.dailyLimitFree.title" = "今日のレシートは分け終わりました";
+"receiptSplit.failure.dailyLimitFree.message" = "明日また無料でレシートを分けられます。Yala Proなら毎日もっとたくさん使えます。";
+"receiptSplit.failure.dailyLimit.title" = "今日のレシートの上限に達しました";
+"receiptSplit.failure.dailyLimit.message" = "明日またレシートを分けられます。";
+"receiptSplit.text.hint" = "支出を書くとAIが分けます";
+"receiptSplit.text.title" = "支出を書く";
+"receiptSplit.text.placeholder" = "ピザ 40 アナと私、ステーキ 35 ベン、飲み物 18 全員";
+"receiptSplit.text.footer" = "品目ごとに金額と誰が食べたかを書いてください。名前のないものは全員で分けます。";
+"receiptSplit.failure.noLines.textMessage" = "品目ごとに金額を書いてください。例：「ピザ 40」。";
 "receiptSplit.failure.noConnection.message" = "レシートを読み取るにはインターネットに接続してください。";
 "receiptSplit.failure.mic.message" = "レシートを音声で入力するには「設定」でアクセスを許可してください。";
 
@@ -8841,6 +8854,19 @@
 "groups.convert.personalSplitHint" = "共有の支出にするには「自分の分」を外してください。この記録にはあなたの分だけが保存されています。";
 "groups.convert.saveFirstHint" = "共有の支出にするには、先に変更を保存してください。";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "重複したグループの支出";
+"inbox.groupLeftovers.bannerMessage" = "口座付きですでに記録に入っていますが、下書きか「グループへの貸付」が余分に残っています。";
+"inbox.groupLeftovers.bannerAction" = "確認して重複を削除";
+"inbox.groupLeftovers.intro" = "これらのグループの支出は口座付きですでに記録に入っています。リストにあるのは余分なものです。口座付きの記録とグループの支出は変わりません。";
+"inbox.groupLeftovers.extraDrafts" = "余分な下書き：%d";
+"inbox.groupLeftovers.extraLoans" = "重複した「グループへの貸付」：%d";
+"inbox.groupLeftovers.remove" = "重複を削除";
+"inbox.groupLeftovers.confirmTitle" = "重複を削除しますか？";
+"inbox.groupLeftovers.confirmMessage" = "リストの下書きと貸付を削除します。口座付きの記録とグループの支出はそのままです。";
+"inbox.groupLeftovers.confirmAction" = "削除";
+"inbox.groupLeftovers.failed" = "削除できませんでした。もう一度お試しください。";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "この端末の iCloud データは iCloud にそのまま残ります。最新の変更のアップロードを終えて、アカウントにサインインできるよう端末を準備しています…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
@@ -8910,3 +8936,770 @@
 "cashflow.monthEnd.leftIn" = "これからの入金";
 "cashflow.monthEnd.leftOut" = "これからの出金";
 "cashFlowPlan.estimateLeft" = "残り（予定）";
+
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "%1$@〜%2$@";
+"records.bulk23.deleteOnDay" = "%@";
+"records.bulk23.deleteTotal" = "合計 %@";
+"records.bulk23.selectDay" = "この日を選択";
+"records.bulk23.deselectDay" = "この日を解除";
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "この支出を破棄しますか？";
+"groups.discard.paymentTitle" = "この支払いを破棄しますか？";
+"groups.discard.openingBalanceTitle" = "この開始残高を破棄しますか？";
+"groups.expense.groupChangedNotice" = "グループを変更しました。入力した内容はそのままです。支払った人と分け方は最初からになります。";
+"statistics.categoryDetail.seeInRecords" = "記録で見る";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "記録を検索";
+"records.listSearch.clear" = "検索をクリア";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "口座";
+"records23.quick.category" = "カテゴリ";
+"records23.quick.date" = "日付";
+"records23.quick.more" = "その他のフィルタ";
+"records23.quick.accountsCount" = "%d件の口座";
+"records23.category.searchPrompt" = "カテゴリを検索";
+"records23.category.noResults" = "「%@」に一致するカテゴリはありません";
+"records23.category.wholeCategory" = "カテゴリ全体";
+"records23.category.expand" = "%@のサブカテゴリを表示";
+"records23.category.collapse" = "%@のサブカテゴリを隠す";
+"records23.band.removeAll" = "すべて解除";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "別の月へ移動";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "タグ";
+"records.list.loading" = "記録を読み込み中…";
+"records.list.loadErrorTitle" = "記録を読み込めませんでした";
+"records.list.loadErrorMessage" = "読み込み中に問題が発生しました。少し待ってからもう一度お試しください。";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "聞き取った内容を破棄しますか？";
+"entryDiscard.voice.message" = "もう一度録音すると、保存していないものは削除され、受信箱にも残りません。";
+"entryDiscard.photo.title" = "読み取った内容を破棄しますか？";
+"entryDiscard.photo.message" = "別の写真を選ぶと、保存していないものは削除され、受信箱にも残りません。";
+"entryDiscard.keepReviewing" = "確認を続ける";
+
+/* Bienvenida 2.3 · Y23-05 (mazo de Primeros pasos) y Y23-15 (guías «dónde vive cada cosa») */
+"setup.deck.counter" = "はじめに · %2$d中%1$d";
+"setup.deck.after" = "次:%@";
+"setup.deck.then" = "その次:%@";
+"setup.deck.resume" = "さっきの続きへ";
+"setup.deck.firstExpense" = "最初の支出を記録";
+"setup.deck.firstExpense.note" = "支出は「%@」に入ります。Yalaが自動で作成します。";
+"setup.deck.currentValue" = "現在のステップ";
+"setup.deck.skippedValue" = "スキップ済み";
+"setup.deck.step.account" = "最初の口座を作成";
+"setup.deck.step.account.detail" = "お金がどこにあって、いくらあるか。";
+"setup.deck.step.record" = "記録のしかたを学ぶ";
+"setup.deck.step.record.detail" = "手入力、音声、写真、Yala AIで。";
+"setup.deck.step.budget" = "最初の予算を作成";
+"setup.deck.step.budget.detail" = "いちばん使っているものに上限を。";
+"setup.deck.step.payments" = "固定費を登録";
+"setup.deck.step.payments.detail" = "家賃、公共料金、サブスク:Yalaがお知らせします。";
+"setup.deck.step.groups" = "グループで費用を割り勘";
+"setup.deck.step.groups.detail" = "友だちやパートナーと、リンクひとつで。";
+"setup.deck.step.money" = "お金の行き先を見る";
+"setup.deck.step.money.detail" = "統計:カテゴリー、トレンド、キャッシュフロー、先月との比較。";
+"setup.deck.step.home" = "ホーム画面にYalaを";
+"setup.deck.step.home.detail" = "ワンタップで記録できるウィジェットと「Hey Siri」。";
+"placeGuide.progress" = "%2$d中%1$d";
+"placeGuide.stepOf" = "ステップ %1$d/%2$d";
+"placeGuide.skip" = "スキップ";
+"placeGuide.configure.title" = "パネルを組み立てる";
+"placeGuide.configure.message" = "ここから「カテゴリー別の内訳」や「入金と出金」などのグラフをパネルに追加できます。";
+"placeGuide.charts.tab.title" = "グラフは「もっと見る」にあります";
+"placeGuide.charts.tab.later" = "いつでも「もっと見る」をタップして確認できます。";
+"placeGuide.charts.tab.step" = "「もっと見る」をタップすると場所をお見せします。";
+"placeGuide.charts.more.title" = "すべてのグラフ";
+"placeGuide.charts.more.message" = "「統計」では今月のいちばん大事なこと、お金の増減、使い道がわかります。その下の「レポート」では、キャッシュフローと先月との比較が見られます。";
+"placeGuide.budgets.tab.title" = "予算は「もっと見る」にあります";
+"placeGuide.budgets.tab.message" = "いつでも「もっと見る」をタップして見つけられます。";
+"placeGuide.budgets.more.title" = "予算はこちら";
+"placeGuide.budgets.more.message" = "いつでも確認、調整、追加ができます。";
+"placeGuide.payments.tab.title" = "予定支払いは「もっと見る」にあります";
+"placeGuide.payments.tab.message" = "いつでも「もっと見る」をタップして確認できます。";
+"placeGuide.payments.more.title" = "予定支払いはこちら";
+"placeGuide.payments.more.message" = "毎月これから払うものと、支払い済みのもの。ここから追加もできます。";
+"placeGuide.groups.title" = "グループにワンタップで";
+"placeGuide.groups.message" = "グループ、誰が誰にいくら借りているか、ほかのメンバーが追加した支出が見られます。";
+/* Bienvenida 2.3 · lote 02: vitrina, accesos, puerta de Grupos y conversación de tres preguntas (SPEC Y23-01, 03, 04, 06) */
+"bienvenida23.showcase.financesTitle" = "あなたの家計を、";
+"bienvenida23.showcase.financesTitleAccent" = "かんたんに。";
+"bienvenida23.showcase.groupsTitle" = "割り勘をすっきり";
+"bienvenida23.showcase.groupsTitleAccent" = "友だちと。";
+"bienvenida23.showcase.receipt.name" = "レシートを読み取る";
+"bienvenida23.showcase.receipt.caption" = "Yalaがレシートを読んで記録。";
+"bienvenida23.showcase.voice.name" = "声で記録";
+"bienvenida23.showcase.voice.caption" = "使ったお金を話すだけ。";
+"bienvenida23.showcase.organize.name" = "支出を整理";
+"bienvenida23.showcase.organize.caption" = "お金の行き先がひと目で。";
+"bienvenida23.showcase.split.name" = "どんな支出も割り勘";
+"bienvenida23.showcase.split.caption" = "Yalaが分けて記録します。";
+"bienvenida23.showcase.budget.name" = "予算を守る";
+"bienvenida23.showcase.budget.caption" = "上限を決めて残りを確認。";
+"bienvenida23.showcase.whoOwes.name" = "誰が誰にいくら";
+"bienvenida23.showcase.whoOwes.caption" = "それぞれ自分の分がわかる。";
+"bienvenida23.showcase.settle.name" = "ワンタップで精算";
+"bienvenida23.showcase.settle.caption" = "支払いを記録すればゼロに。";
+"bienvenida23.showcase.example" = "例";
+"bienvenida23.showcase.groupsDoorLink" = "友だちと割り勘する";
+"bienvenida23.showcase.pause" = "ショーケースを一時停止";
+"bienvenida23.showcase.resume" = "ショーケースを再開";
+"bienvenida23.showcase.position" = "%1$@、%2$d / %3$d";
+"bienvenida23.access.google" = "Googleで続ける";
+"bienvenida23.access.apple" = "Appleで続ける";
+"bienvenida23.access.iCloud" = "自分だけのiCloudで続ける";
+"bienvenida23.access.iCloudLine" = "データはあなたのAppleデバイスだけに。";
+"bienvenida23.access.groupsNeedAccount" = "ほかの人と支出を共有するには、Yalaアカウントが必要です。";
+"bienvenida23.demo.lunch" = "ランチ";
+"bienvenida23.demo.taxi" = "タクシー";
+"bienvenida23.demo.market" = "スーパー";
+"bienvenida23.demo.power" = "電気代";
+"bienvenida23.demo.dinner" = "ディナー";
+"bienvenida23.demo.food" = "食費";
+"bienvenida23.demo.transport" = "交通費";
+"bienvenida23.demo.home" = "住まい";
+"bienvenida23.demo.you" = "あなた";
+"bienvenida23.demo.paidSplit" = "あなたが支払い・3人で割り勘";
+"bienvenida23.demo.voiceSaid" = "「タクシーで%@使った」";
+"bienvenida23.demo.voiceDone" = "記録しました。";
+"bienvenida23.demo.perMonth" = "月%@";
+"bienvenida23.demo.spentSoFar" = "使用済み %@";
+"bienvenida23.demo.left" = "残り";
+"bienvenida23.demo.owesYou" = "%@があなたに支払う予定";
+"bienvenida23.demo.youOwe" = "%@に支払う予定";
+"bienvenida23.demo.paidYou" = "%@が支払いました";
+"bienvenida23.demo.allSettled" = "精算完了";
+"bienvenida23.chat.subtitle" = "はじめるお手伝い";
+"bienvenida23.chat.cardTitle" = "あなたのYala";
+"bienvenida23.chat.rowName" = "名前";
+"bienvenida23.chat.rowCurrency" = "通貨";
+"bienvenida23.chat.rowTracking" = "記録する内容";
+"bienvenida23.chat.pending" = "未入力";
+"bienvenida23.chat.typing" = "Yalaが入力中";
+"bienvenida23.chat.hello" = "こんにちは！Yalaです。";
+"bienvenida23.chat.askName" = "何とお呼びすればいいですか？";
+"bienvenida23.chat.askProposedName" = "%@さんとお呼びしてもいいですか？";
+"bienvenida23.chat.yesCallMe" = "はい、%@で";
+"bienvenida23.chat.otherName" = "別の名前にする";
+"bienvenida23.chat.namePlaceholder" = "名前を入力";
+"bienvenida23.chat.send" = "送信";
+"bienvenida23.chat.niceToMeet" = "よろしくお願いします、%@さん！";
+"bienvenida23.chat.askCurrency" = "どの通貨で支払いますか？";
+"bienvenida23.chat.byRegion" = "お住まいの地域から";
+"bienvenida23.chat.dollars" = "米ドル";
+"bienvenida23.chat.otherCurrency" = "ほかの通貨";
+"bienvenida23.chat.askTracking" = "Yalaで何を記録しますか？";
+"bienvenida23.chat.incomeAndExpenses" = "支出と収入";
+"bienvenida23.chat.expensesOnly" = "支出のみ";
+"bienvenida23.chat.whatsTheDifference" = "違いは？";
+"bienvenida23.chat.incomeAndExpensesExplained" = "入ってくるお金と出ていくお金を記録して、残りを確認できます。";
+"bienvenida23.chat.expensesOnlyExplained" = "使ったお金だけを記録して、お金の行き先がわかります。";
+"bienvenida23.chat.readyNamed" = "準備完了、%@さん！";
+"bienvenida23.chat.ready" = "準備完了！";
+"bienvenida23.chat.yourYalaIsReady" = "あなたのYalaの準備ができました。";
+"bienvenida23.chat.enterYala" = "Yalaをはじめる";
+"bienvenida23.groups.accountOnlyTitle" = "アカウントだけ作成";
+"bienvenida23.groups.accountOnlyBody" = "グループは後で準備します";
+"bienvenida23.access.createTitle" = "アカウントを作成しましょう";
+"bienvenida23.access.createBody" = "このメールアドレスにはまだYalaアカウントがありません。";
+"bienvenida23.access.useAnotherAccount" = "別のアカウントを使う";
+"bienvenida23.access.existsTitle" = "アカウントがあります";
+"bienvenida23.access.existsBody" = "このメールアドレスにはYalaアカウントがあります。データを読み込んで入りますか？";
+"bienvenida23.access.loadAndEnter" = "データを読み込んで入る";
+"bienvenida23.groups.subtitleThree" = "どれを選んでも行き先は同じです。";
+
+/* Primeros pasos 2.3 · pasos 1 y 2 (Y23-07 a Y23-10) */
+"pasos23.partOf" = "パート %1$d / %2$d";
+"pasos23.account.intro.eyebrow" = "はじめる前に";
+"pasos23.account.intro.createFirst" = "最初の口座を作る";
+"pasos23.account.intro.part1.title" = "口座とは？";
+"pasos23.account.intro.part1.message" = "お金を持っていたり使ったりしている場所のことです。";
+"pasos23.account.intro.part2.title" = "口座はこんなふうに表示されます";
+"pasos23.account.intro.part2.message" = "それぞれに名前と残高があります。1つの口座で%1$@と%2$@を同時に持つこともできます。";
+"pasos23.account.intro.part3.title" = "なぜ最新に保つの？";
+"pasos23.account.intro.part3.message" = "Yalaの表示が銀行の表示と同じなら、あといくら使えるか、当てずっぽうにならずにわかります。";
+"pasos23.account.place.wallet" = "お財布";
+"pasos23.account.place.paid" = "給料の入る場所";
+"pasos23.account.place.saved" = "貯めているお金";
+"pasos23.account.place.owe" = "借りているお金";
+"pasos23.account.place.bank" = "銀行口座";
+"pasos23.account.place.card" = "カード";
+"pasos23.account.row.cash" = "お財布の中のお札";
+"pasos23.account.row.savings" = "2つの通貨での貯蓄";
+"pasos23.account.row.card" = "カード：支払う分";
+"pasos23.account.match.yala" = "Yalaの表示";
+"pasos23.account.match.bank" = "銀行の表示";
+"pasos23.account.benefit.spend" = "本当に使える金額がわかる";
+"pasos23.account.benefit.reports" = "レポートと予算が正しくなる";
+"pasos23.account.benefit.adjust" = "ずれたら残高を調整するだけ";
+"pasos23.account.chat.subtitle" = "最初の口座";
+"pasos23.account.kind.question" = "最初にどれを作りますか？";
+"pasos23.account.kind.subtitle" = "いちばんよく使うものから始めましょう。";
+"pasos23.account.kind.savings" = "貯蓄";
+"pasos23.account.kind.allTogether" = "まとめて";
+"pasos23.account.kind.allTogetherHint" = "すべてのお金を分けずにまとめて";
+"pasos23.account.currency.question" = "このお金の通貨は何ですか？";
+"pasos23.account.currency.questionCard" = "このカードはどの通貨で使っていますか？";
+"pasos23.account.currency.subtitle" = "ドルなど、ほかの通貨でも持っていますか？追加できます。";
+"pasos23.account.currency.subtitleCard" = "ドルなど、ほかの通貨でも支払っていますか？追加できます。";
+"pasos23.account.currency.add" = "＋ 通貨を追加";
+"pasos23.account.continue" = "続ける";
+"pasos23.account.currency.slot" = "通貨%1$d：%2$@。タップして変更";
+"pasos23.account.currency.remove" = "%@を削除";
+"pasos23.account.name.myMoney" = "マイマネー";
+"pasos23.account.name.question" = "この口座の名前は？";
+"pasos23.account.name.subtitleOwn" = "自分でわかる名前を付けましょう。";
+"pasos23.account.name.suggest" = "「%@」にしますか？";
+"pasos23.account.name.subtitle" = "口座の一覧ではこの名前で表示されます。";
+"pasos23.account.name.editQuestion" = "名前はどうしますか？";
+"pasos23.account.name.placeholder" = "口座名";
+"pasos23.account.name.example" = "例：%@";
+"pasos23.account.name.keep" = "はい、これでいいです";
+"pasos23.account.name.change" = "別の名前にする";
+"pasos23.account.example.checking" = "給与口座";
+"pasos23.account.example.savings" = "旅行の貯金";
+"pasos23.account.example.card" = "仕事用のVisa";
+"pasos23.account.balance.single" = "今、この口座にいくらありますか？";
+"pasos23.account.balance.cardSingle" = "今、このカードでいくら支払う分がありますか？";
+"pasos23.account.balance.in" = "今、%@でいくらありますか？";
+"pasos23.account.balance.cardIn" = "今、%@でいくら支払う分がありますか？";
+"pasos23.account.balance.and" = "%@は？";
+"pasos23.account.balance.subtitle" = "おおよその数字で大丈夫です。";
+"pasos23.account.balance.subtitleCard" = "買ったけれどまだ払っていない分です。おおよそで大丈夫です。";
+"pasos23.account.balance.field" = "残高";
+"pasos23.account.balance.helpMe" = "わからない、計算を手伝って";
+"pasos23.account.balance.startAtZero" = "0から始める";
+"pasos23.account.balance.oweNothing" = "借りはありません";
+"pasos23.account.balance.noneIn" = "今は%@を持っていません";
+"pasos23.account.balance.oweNothingIn" = "%@の支払いはありません";
+"pasos23.account.balance.signPositive" = "プラスの残高。タップでマイナスにします";
+"pasos23.account.balance.signNegative" = "マイナスの残高。タップでプラスにします";
+"pasos23.account.send" = "送信";
+"pasos23.account.helper.card.title" = "銀行のアプリで確認しましょう";
+"pasos23.account.helper.card.intro" = "銀行のアプリでカードを開き、次の2つの数字を探してください。";
+"pasos23.account.helper.limit" = "利用限度額";
+"pasos23.account.helper.limitHint" = "このカードで使える上限";
+"pasos23.account.helper.remaining" = "残りの枠";
+"pasos23.account.helper.remainingHint" = "今日あといくら使えるか";
+"pasos23.account.helper.used" = "利用済み";
+"pasos23.account.helper.left" = "残り";
+"pasos23.account.helper.general.title" = "お金のある場所を足してみましょう";
+"pasos23.account.helper.general.intro" = "持っているものだけ入力してください。おおよそで大丈夫です。";
+"pasos23.account.helper.inBank" = "銀行";
+"pasos23.account.helper.saved" = "貯金";
+"pasos23.account.helper.inCash" = "現金";
+"pasos23.account.helper.cash.title" = "現金を数える";
+"pasos23.account.helper.cash.intro" = "お財布の中と、家に置いてある分を見てみましょう。";
+"pasos23.account.helper.cash.row" = "手元の現金";
+"pasos23.account.helper.checking.title" = "銀行のアプリで確認";
+"pasos23.account.helper.checking.intro" = "口座を開いたときに大きく表示される数字です。";
+"pasos23.account.helper.checking.row" = "口座に表示されている金額";
+"pasos23.account.helper.savings.title" = "いくら貯まっていますか？";
+"pasos23.account.helper.savings.intro" = "貯蓄用の口座が複数ある場合は、合計するか、1つずつ口座を作りましょう。";
+"pasos23.account.helper.savings.row" = "貯めている金額";
+"pasos23.account.helper.resultOwe" = "支払う分";
+"pasos23.account.helper.resultHave" = "持っている分";
+"pasos23.account.helper.use" = "%@を使う";
+"pasos23.account.helper.useThis" = "この残高を使う";
+"pasos23.account.helper.footnote" = "あとからいつでも調整できます。";
+"pasos23.account.statement.question" = "カードの締め日はいつですか？";
+"pasos23.account.statement.subtitle" = "銀行がその月の買い物を合計する日です。この日をもとに、支払う金額と、各買い物が何月分になるかをお知らせします。";
+"pasos23.account.payment.question" = "いつまでに支払えますか？";
+"pasos23.account.payment.subtitle" = "支払期限日です。利息がかからないよう、期限までに支払うようお知らせするために使います。";
+"pasos23.account.day.prefix" = "毎月";
+"pasos23.account.day.placeholder" = "1〜31";
+"pasos23.account.day.field" = "月の日付";
+"pasos23.account.day.dontKnow" = "わからない";
+"pasos23.account.day.preferNot" = "答えたくない";
+"pasos23.account.reminder.question" = "支払いはいつお知らせしますか？";
+"pasos23.account.reminder.subtitle" = "支払う金額と一緒にお知らせします。";
+"pasos23.account.reminder.subtitleEach" = "通貨ごとに支払う金額と一緒にお知らせします。";
+"pasos23.account.reminder.subtitleNoStatement" = "締め日がわからないので、支払日当日に金額なしでお知らせします。";
+"pasos23.account.reminder.none" = "お知らせしない";
+"pasos23.account.done.title" = "できました！";
+"pasos23.account.done.subtitle" = "「%@」をYalaに追加しました。";
+"pasos23.account.done.subtitleWith" = "「%1$@」を%2$@でYalaに追加しました。";
+"pasos23.account.done.seeMyYala" = "Yalaを見る";
+"pasos23.account.done.another" = "別の口座を作る";
+"pasos23.account.card.placeholderName" = "あなたの口座";
+"pasos23.account.card.placeholderType" = "種類";
+"pasos23.account.card.balance" = "残高";
+"pasos23.account.card.owe" = "支払う分";
+"pasos23.account.card.balanceIn" = "%@の残高";
+"pasos23.account.card.oweIn" = "%@の支払う分";
+"pasos23.account.card.line" = "%@";
+"pasos23.account.card.closesOn" = "%d日締め";
+"pasos23.account.card.payBy" = "支払期限は%d日";
+"pasos23.account.card.reminds" = "%@にお知らせします";
+"pasos23.record.intro.eyebrow" = "記録する4つの方法";
+"pasos23.record.manual.title" = "手入力";
+"pasos23.record.manual.message" = "金額、使い道、口座を入力します。ほかは任意です。";
+"pasos23.record.voice.title" = "音声で";
+"pasos23.record.voice.message" = "誰かに話すように言うだけで、Yalaが記録します。";
+"pasos23.record.photo.title" = "写真で";
+"pasos23.record.photo.message" = "レシート、銀行のスクリーンショット、PDFから、Yalaが金額、お店、日付を読み取ります。";
+"pasos23.record.ai.title" = "Yala AIで";
+"pasos23.record.ai.message" = "チャットに書くだけで、保存するだけの状態の記録ができます。";
+"pasos23.record.tryFreeOnce" = "ここで1回だけ無料でお試しいただけます。";
+"pasos23.record.startManual" = "手入力で始める";
+"pasos23.record.skipStep" = "このステップをスキップ";
+"pasos23.record.manual.short" = "手入力";
+"pasos23.record.voice.short" = "音声";
+"pasos23.record.photo.short" = "写真";
+"pasos23.record.between.first" = "最初の記録です！";
+"pasos23.record.between.keepGoing" = "続けましょう";
+"pasos23.record.now.voice" = "次は音声で";
+"pasos23.record.now.photo" = "次は写真で";
+"pasos23.record.now.ai" = "次はYala AIで";
+"pasos23.record.next.voice" = "マイクをタップして、誰かに話すように言ってください。";
+"pasos23.record.next.photo" = "サンプルのレシートか自分の写真を使いましょう。Yalaが金額、お店、日付を読み取ります。";
+"pasos23.record.next.ai" = "支払った内容をYalaに書くと、記録が整います。";
+"pasos23.record.courtesyOnce" = "お試し：1回だけ無料です。";
+"pasos23.record.try.voice" = "音声で試す";
+"pasos23.record.try.photo" = "写真で試す";
+"pasos23.record.try.ai" = "Yala AIで試す";
+"pasos23.record.skip" = "スキップ";
+"pasos23.record.goToPanel" = "パネルへ";
+"pasos23.record.state.done" = "完了";
+"pasos23.record.state.skipped" = "スキップ済み";
+"pasos23.record.state.next" = "次";
+"pasos23.record.state.pending" = "未完了";
+"pasos23.record.inInbox" = "受信箱に";
+"pasos23.record.trial.voice" = "お試し：音声は1回だけ無料";
+"pasos23.record.trial.photo" = "お試し：写真は1回だけ無料";
+"pasos23.record.trial.ai" = "お試し：Yala AIは1回だけ無料";
+"pasos23.record.exampleReceipt" = "サンプルのレシートを使う";
+"pasos23.record.exampleReceiptHint" = "写真を探さずに試せます";
+"pasos23.record.aiGuide.title" = "ひと言で頼む";
+"pasos23.record.aiGuide.message" = "「支出を記録する」をタップして、何を支払ったか伝えてください。";
+"pasos23.record.guide.amount.title" = "まず金額から";
+"pasos23.record.guide.amount.message" = "ここをタップして、使った金額を入力してください。";
+"pasos23.record.guide.category.title" = "何に使いましたか？";
+"pasos23.record.guide.category.message" = "「カテゴリー」をタップして選んでください。よく使うものが先頭に表示されます。";
+"pasos23.record.guide.account.title" = "口座はもう選ばれています";
+"pasos23.record.guide.account.message" = "口座が1つだけなので、Yalaが選びます。追加したらここで変更できます。";
+"pasos23.record.guide.name.title" = "名前は、お好みで";
+"pasos23.record.guide.name.message" = "あとで見つけやすくなります。スキップしてもかまいません。";
+"pasos23.record.guide.name.write" = "入力";
+"pasos23.record.guide.name.skip" = "スキップ";
+"pasos23.record.guide.save.title" = "保存する";
+"pasos23.record.guide.save.message" = "金額、カテゴリー、口座があれば保存できます。";
+"pasos23.record.cleanup.title" = "練習の記録を削除しますか？";
+"pasos23.record.cleanup.markSome" = "削除したいものを選んでください";
+"pasos23.record.cleanup.keepAll" = "すべて残す";
+"pasos23.record.inboxGuide.title" = "Yalaが自動で記録するもの";
+"pasos23.record.inboxGuide.message" = "あなたの操作なしで用意される記録がここに届きます。予定している支払い、Apple Pay、音声や写真で保存しなかったものなどです。確認して承認してください。";
+
+/* Bienvenida 2.3 · Primeros pasos, pasos 3, 4 y 5 (presupuesto, pagos planificados y grupos) */
+"pasos23.plan.seePanel" = "パネルを見る";
+"pasos23.plan.done" = "完了！";
+"pasos23.plan.panel.question" = "パネルに表示しますか？";
+"pasos23.plan.panel.yes" = "はい、パネルに表示";
+"pasos23.plan.panel.no" = "いいえ、計画だけに";
+"pasos23.plan.noThanks" = "いいえ、結構です";
+"pasos23.plan.youHaveLeft" = "残り";
+"pasos23.plan.youWentOver" = "超過額";
+"pasos23.plan.spentOfLimit" = "%2$@ 中 %1$@";
+"pasos23.budget.chatSubtitle" = "はじめての予算";
+"pasos23.budget.intro.cta" = "予算を作る";
+"pasos23.budget.intro.part1.title" = "使うお金に上限を";
+"pasos23.budget.intro.part1.message" = "期間内に使う上限を決めます。たとえば食費に月 %@ まで。";
+"pasos23.budget.intro.part1.card" = "今月の上限";
+"pasos23.budget.intro.part2.title" = "何を数えるかはあなた次第";
+"pasos23.budget.intro.part2.message" = "すべての支出、または一部のカテゴリだけ：食費、交通、外出…";
+"pasos23.budget.intro.part3.title" = "Yalaが早めにお知らせ";
+"pasos23.budget.intro.part3.message" = "上限に近づくとお知らせが届き、超えると赤で表示されます。";
+"pasos23.budget.intro.part3.push" = "%1$@ の75%%を使いました。残り9日で %2$@ です。";
+"pasos23.budget.intro.part3.card" = "超えると赤で表示";
+"pasos23.budget.scope.question" = "どの支出を数えますか？";
+"pasos23.budget.scope.subtitle" = "全部に上限をつけるか、気になるものだけにできます。";
+"pasos23.budget.scope.all" = "すべての支出";
+"pasos23.budget.scope.allHint" = "全部にひとつの上限";
+"pasos23.budget.scope.categories" = "一部のカテゴリだけ";
+"pasos23.budget.scope.categoriesHint" = "たとえば食費や外出";
+"pasos23.budget.categories.question" = "どれですか？";
+"pasos23.budget.categories.subtitle" = "好きなものをタップ。あとで調整します。";
+"pasos23.budget.categories.spent" = "これまで %@";
+"pasos23.budget.subcategories.question" = "数えたくないものはありますか？";
+"pasos23.budget.subcategories.subtitle" = "すべて選択済みです。この予算に入れないものを外してください。";
+"pasos23.budget.period.question" = "どのくらいの頻度でリセットしますか？";
+"pasos23.budget.period.subtitle" = "いちばん多いのは毎月です。";
+"pasos23.budget.period.once" = "1回だけ";
+"pasos23.budget.period.monthlyHint" = "毎月リセット";
+"pasos23.budget.period.weeklyHint" = "毎週リセット";
+"pasos23.budget.period.yearlyHint" = "毎年リセット";
+"pasos23.budget.period.onceHint" = "2つの日付の間。繰り返しません";
+"pasos23.budget.dates.question" = "いつからいつまで？";
+"pasos23.budget.dates.subtitle" = "旅行や特別な月のために。";
+"pasos23.budget.dates.from" = "開始日";
+"pasos23.budget.dates.to" = "終了日";
+"pasos23.budget.limit.question.monthly" = "月にいくらまで使いますか？";
+"pasos23.budget.limit.question.weekly" = "週にいくらまで使いますか？";
+"pasos23.budget.limit.question.yearly" = "年にいくらまで使いますか？";
+"pasos23.budget.limit.question.once" = "その期間にいくらまで使いますか？";
+"pasos23.budget.limit.spentSoFar" = "選んだ分で今月すでに %@ 使っています。";
+"pasos23.budget.limit.roundNumber" = "きりのいい数字でOK。いつでも変えられます。";
+"pasos23.budget.name.question" = "「%@」という名前にしますか？";
+"pasos23.budget.name.subtitle" = "パネルではこの名前で表示されます。";
+"pasos23.budget.name.yes" = "はい、それでOK";
+"pasos23.budget.name.other" = "別の名前にする";
+"pasos23.budget.name.editQuestion" = "名前は何にしますか？";
+"pasos23.budget.name.placeholder" = "予算の名前";
+"pasos23.budget.name.allExpenses" = "今月の支出";
+"pasos23.budget.name.joined" = "%1$@と%2$@";
+"pasos23.budget.name.fallback" = "私の予算";
+"pasos23.budget.card.placeholder" = "あなたの予算";
+"pasos23.budget.card.countsAll" = "すべての支出を数えます";
+"pasos23.budget.card.pickCategories" = "カテゴリを選んでください";
+"pasos23.budget.card.alert75" = "75%と100%でお知らせ";
+"pasos23.budget.card.alert100" = "100%でお知らせ";
+"pasos23.budget.alert.question" = "上限に近づいたらお知らせしますか？";
+"pasos23.budget.alert.subtitle" = "早めのお知らせで、超える前に調整できます。";
+"pasos23.budget.alert.at75" = "はい、75%と100%で";
+"pasos23.budget.alert.at75Hint" = "ブレーキをかける余裕ができます";
+"pasos23.budget.alert.at100" = "はい、上限に達したときだけ";
+"pasos23.budget.panel.subtitle" = "Yalaを開くたびに見られます。";
+"pasos23.budget.panel.yesHint" = "予算ウィジェットに";
+"pasos23.budget.done.message" = "「%@」を計画に追加しました。";
+"pasos23.budget.done.messagePanel" = "「%@」を計画とパネルに追加しました。";
+"pasos23.payment.chatSubtitle" = "はじめての予定支払い";
+"pasos23.payment.intro.cta" = "最初の支払いを登録";
+"pasos23.payment.intro.part1.title" = "毎月支払うもの";
+"pasos23.payment.intro.part1.message" = "家賃、光熱費、サブスク：一度登録すればYalaが管理します。";
+"pasos23.payment.intro.part1.caption" = "今月";
+"pasos23.payment.intro.part2.title" = "受信トレイに届きます";
+"pasos23.payment.intro.part2.message" = "支払日になると、Yalaが受信トレイに用意します。確認してワンタップで承認。";
+"pasos23.payment.intro.part3.title" = "前もってお知らせ";
+"pasos23.payment.intro.part3.message" = "払い忘れや払いすぎを防ぎます。";
+"pasos23.payment.example.music" = "音楽";
+"pasos23.payment.example.light" = "電気";
+"pasos23.payment.example.rent" = "家賃";
+"pasos23.payment.inbox.later" = "あとで";
+"pasos23.payment.kind.question" = "定期的に払うものは？";
+"pasos23.payment.kind.subtitle" = "種類を選んでください。名前はあとで。";
+"pasos23.payment.kind.rent" = "家賃";
+"pasos23.payment.kind.utilities" = "光熱費";
+"pasos23.payment.kind.phone" = "通信";
+"pasos23.payment.kind.utilitySubscription" = "実用系サブスク";
+"pasos23.payment.kind.leisureSubscription" = "エンタメ系サブスク";
+"pasos23.payment.kind.fitness" = "フィットネス";
+"pasos23.payment.name.rent" = "家賃";
+"pasos23.payment.name.utilities" = "光熱費";
+"pasos23.payment.name.phone" = "通信費";
+"pasos23.payment.name.subscription" = "サブスク";
+"pasos23.payment.name.fitness" = "フィットネス";
+"pasos23.payment.example.rent.1" = "家賃";
+"pasos23.payment.example.rent.2" = "住宅ローン";
+"pasos23.payment.example.rent.3" = "駐車場";
+"pasos23.payment.example.utilities.1" = "電気";
+"pasos23.payment.example.utilities.2" = "水道";
+"pasos23.payment.example.utilities.3" = "ガス";
+"pasos23.payment.example.phone.1" = "携帯";
+"pasos23.payment.example.phone.2" = "インターネット";
+"pasos23.payment.example.phone.3" = "ケーブルTV";
+"pasos23.payment.example.utilitySubscription.1" = "クラウド";
+"pasos23.payment.example.utilitySubscription.2" = "ウイルス対策";
+"pasos23.payment.example.utilitySubscription.3" = "メール";
+"pasos23.payment.example.leisureSubscription.1" = "音楽";
+"pasos23.payment.example.leisureSubscription.2" = "映画・ドラマ";
+"pasos23.payment.example.leisureSubscription.3" = "ゲーム";
+"pasos23.payment.example.fitness.1" = "ジム";
+"pasos23.payment.example.fitness.2" = "ヨガ";
+"pasos23.payment.example.fitness.3" = "レッスン";
+"pasos23.payment.otherSubcategory" = "ほかのサブカテゴリ";
+"pasos23.payment.change" = "変更";
+"pasos23.payment.isSubscription" = "サブスクです";
+"pasos23.payment.isSubscriptionHint" = "サブスクのタブに表示";
+"pasos23.payment.details.question" = "名前と金額は？";
+"pasos23.payment.details.subtitle" = "%1$@ · %2$@ から支払い";
+"pasos23.payment.details.name" = "名前";
+"pasos23.payment.details.namePlaceholder" = "支払いの名前";
+"pasos23.payment.details.clearName" = "名前を消す";
+"pasos23.payment.details.amount" = "支払額";
+"pasos23.payment.details.variable" = "毎回変わる";
+"pasos23.payment.details.variableHint" = "見込み額：承認時に調整します";
+"pasos23.payment.when.question" = "支払日はいつ？";
+"pasos23.payment.when.monthly" = "毎月";
+"pasos23.payment.when.weekly" = "毎週";
+"pasos23.payment.when.yearly" = "毎年";
+"pasos23.payment.when.once" = "1回";
+"pasos23.payment.when.dayOfMonth" = "毎月何日";
+"pasos23.payment.when.otherDay" = "その他";
+"pasos23.payment.when.weekday" = "何曜日";
+"pasos23.payment.when.date" = "日付";
+"pasos23.payment.reminder.question" = "支払日の前にお知らせしますか？";
+"pasos23.payment.reminder.subtitle" = "お知らせには名前と金額が入ります。";
+"pasos23.payment.reminder.threeDays" = "はい、3日前";
+"pasos23.payment.reminder.oneDay" = "はい、1日前";
+"pasos23.payment.reminder.sameDay" = "はい、当日";
+"pasos23.payment.panel.subtitle" = "Yalaを開くたびに予定が見られます。";
+"pasos23.payment.panel.yesHint" = "予定支払いウィジェットに";
+"pasos23.payment.done.message" = "%@ に受信トレイに届くので、承認してください。";
+"pasos23.payment.done.another" = "ほかの支払いを登録";
+"pasos23.payment.card.placeholder" = "あなたの支払い";
+"pasos23.groups.eyebrow" = "グループ・ステップ %1$d/%2$d";
+"pasos23.groups.chatSubtitle" = "はじめてのグループ";
+"pasos23.groups.what.question" = "どうしますか？";
+"pasos23.groups.what.subtitle" = "どちらもいつでもできます。";
+"pasos23.groups.what.create" = "最初のグループを作る";
+"pasos23.groups.what.createHint" = "旅行、家、友だち…";
+"pasos23.groups.what.link" = "招待リンクがある";
+"pasos23.groups.what.linkHint" = "誰かがもうグループを作っています";
+"pasos23.groups.alreadySeen" = "グループはもう見ましたね。ステップ6に進みます。";
+
+/* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
+"pasos23.home.eyebrow" = "Yalaを開かずに記録";
+"pasos23.home.start" = "はじめる";
+"pasos23.home.methodEyebrow" = "%1$d / %2$d · %3$@";
+"pasos23.home.progress" = "%1$d / %2$dまで進みました！";
+"pasos23.home.keepGoing" = "続けましょう";
+"pasos23.home.now" = "今：%@";
+"pasos23.home.finish" = "完了";
+"pasos23.home.widget.name" = "ウィジェット";
+"pasos23.home.applePay.name" = "Apple Pay";
+"pasos23.home.share.name" = "共有";
+"pasos23.home.siri.name" = "Siri";
+"pasos23.home.widget.part.title" = "ホーム画面のウィジェット";
+"pasos23.home.widget.part.message" = "ワンタップで「新規記録」へ。";
+"pasos23.home.applePay.part.title" = "Apple Payでの支払いをすべて";
+"pasos23.home.applePay.part.message" = "iPhoneで支払うと受信箱に届くので、承認するだけです。";
+"pasos23.home.applePay.part.paid" = "スーパーで%@を支払いました";
+"pasos23.home.applePay.part.push" = "%@の支払いを確認待ちです。タップして承認しましょう。";
+"pasos23.home.share.part.title" = "写真をYalaに共有";
+"pasos23.home.share.part.message" = "写真アプリ、WhatsApp、銀行アプリから：レシートを共有すれば、Yalaが読み取ります。";
+"pasos23.home.siri.part.title" = "Siriに話しかける";
+"pasos23.home.siri.part.message" = "手を使わずに、支払いながら。";
+"pasos23.home.siri.part.ask" = "「Hey Siri、Yalaに記録を作成」";
+"pasos23.home.siri.part.answer" = "何を記録しますか？";
+"pasos23.home.widget.title" = "ウィジェットを追加";
+"pasos23.home.widget.subtitle" = "ホーム画面からご自身で追加します。30秒ほどで終わります。";
+"pasos23.home.widget.step1" = "ホーム画面の何もない場所を長押しします。";
+"pasos23.home.widget.step2" = "「編集」をタップして、「ウィジェットを追加」をタップします。";
+"pasos23.home.widget.step3" = "「Yala」を検索して、「新規記録」を選びます。";
+"pasos23.home.widget.step4" = "「ウィジェットを追加」をタップして、好きな場所に置きます。";
+"pasos23.home.widget.done" = "できました";
+"pasos23.home.applePay.done" = "設定しました";
+"pasos23.home.share.title" = "写真をYalaに共有";
+"pasos23.home.share.subtitle" = "レシート、銀行のスクリーンショット、PDFを、どのアプリからでも。";
+"pasos23.home.share.step1" = "写真アプリ（または画像があるアプリ）で、共有をタップします。";
+"pasos23.home.share.step2" = "Yalaを選びます。見当たらない場合は、スワイプして「その他」をタップします。";
+"pasos23.home.share.step3" = "Yalaが金額・店舗・日付を読み取ります。確認して保存しましょう。";
+"pasos23.home.siri.title" = "Siriになんて言う？";
+"pasos23.home.siri.subtitle" = "「Hey Siri」に続けて、次のどれかを言ってください。設定は不要です。";
+"pasos23.home.siri.newRecordPhrase" = "Yalaで新しい記録";
+"pasos23.home.applePay.next" = "Apple Payでの支払いはすべて受信箱に届きます。";
+"pasos23.home.share.next" = "どのアプリからでもレシートを共有できます。";
+"pasos23.home.siri.next" = "Siriにお願いできることすべて。";
+"pasos23.home.applePay.nextAction" = "Apple Payを設定";
+"pasos23.home.share.nextAction" = "共有のしかたを見る";
+"pasos23.home.siri.nextAction" = "Siriへの話しかけ方を見る";
+"pasos23.home.mail.name" = "メール";
+"pasos23.home.mail.part.title" = "メールで自動記録";
+"pasos23.home.mail.part.message" = "銀行からの通知をYalaのアドレスに転送すると、取引が自動で受信箱に届きます。";
+"pasos23.home.mail.part.mail" = "カード利用 %@";
+"pasos23.home.mail.part.from" = "銀行からの通知";
+"pasos23.home.mail.part.push" = "受信箱に届きました：%@、承認待ち。";
+"pasos23.home.mail.title" = "あなたのYalaアドレス";
+"pasos23.home.mail.subtitle" = "メールでフィルタを作成すると、銀行の通知が下書きとして受信箱に届きます。承認するまで何も記録されません。";
+"pasos23.home.mail.addressCaption" = "通知の転送先";
+"pasos23.home.mail.copy" = "コピー";
+"pasos23.home.mail.step1" = "Yalaのアドレスをコピーします。";
+"pasos23.home.mail.step2" = "ウェブ版のメール（Gmail、Outlook、iCloudメール）を開き、銀行のアドレスを差出人にしたフィルタを作成します。";
+"pasos23.home.mail.step3" = "Yalaのアドレスへの転送を選び、フィルタを保存します。";
+"pasos23.home.mail.step3.detail" = "Gmailでは先に「転送」に追加してください。確認コードは「設定 › 銀行のメール」に表示されます。";
+"pasos23.home.mail.soon" = "近日公開：フィルタなしでGmailとOutlookに直接接続。";
+"pasos23.home.mail.next" = "銀行の通知を受信箱へ直接。";
+"pasos23.home.mail.nextAction" = "アドレスを見る";
+"pasos23.final.done.title" = "はじめの一歩、完了です！";
+"pasos23.final.done.message" = "Yalaの基本はこれでばっちり。あとは自分のペースで見つけていきましょう。";
+"pasos23.final.offer.titleOneMonth" = "Yala Proを1か月間無料で試す";
+"pasos23.final.offer.titleDays" = "Yala Proを%d日間無料で試す";
+"pasos23.final.offer.subtitle" = "ここまでで使い方はおわかりのはず。Proなら、話したり写真を撮ったりして記録でき、Yala AIに状況を聞けます。";
+"pasos23.final.offer.mostChosen" = "一番人気";
+"pasos23.final.offer.cheaperPerMonth" = "月あたりでお得";
+"pasos23.final.offer.timeline.reminder" = "課金の前にお知らせします。";
+"pasos23.final.offer.timeline.charge" = "ここからプランが始まります。その前に設定でキャンセルすれば、料金はかかりません。";
+"pasos23.final.offer.ctaOneMonth" = "無料の1か月を始める";
+"pasos23.final.offer.ctaDays" = "無料の%d日間を始める";
+"pasos23.final.offer.keepFree" = "無料版を使い続ける";
+"pasos23.final.feature.voice" = "支出を話せば、Yalaが記録します。";
+"pasos23.final.feature.photo" = "レシート、スクリーンショット、PDF。";
+"pasos23.final.feature.ai" = "今の状況、使い道、これからの予定。";
+"pasos23.final.feature.accounts" = "すべてのカードと銀行。";
+"pasos23.final.feature.budgets" = "項目ごとに上限を設定。";
+"pasos23.final.feature.looks" = "Yalaを好みの見た目に。";
+"pasos23.final.success.title" = "完了！Proが使えます";
+"pasos23.final.success.oneMonth" = "無料の1か月は%1$@までです。%2$@にお知らせします。課金の前にご連絡します。";
+"pasos23.final.success.days" = "無料の%1$d日間は%2$@までです。%3$@にお知らせします。課金の前にご連絡します。";
+"pasos23.final.success.oneMonthUntil" = "無料の1か月は%@までです。";
+"pasos23.final.success.daysUntil" = "%1$d日間の無料期間は%2$@までです。";
+"pasos23.final.success.startUsing" = "使いはじめる";
+"pasos23.final.reminder.title" = "Yala Proのトライアルがまもなく終了します";
+"pasos23.final.reminder.body" = "%@からプランが始まります。続けない場合は、その前に設定でキャンセルしてください。";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "時刻";
+"export.column.time.description" = "記録の時刻。";
+"export.column.exchangeRate" = "為替レート";
+"export.column.exchangeRate.description" = "別の通貨の場合、換算に使ったレートと換算先の通貨。";
+"export.column.need" = "性質";
+"export.column.need.description" = "その記録で変更した場合のみ。";
+"import.error.unreadableRow" = "%1$d行目：列がないため読み取れませんでした。";
+"import.error.time" = "%1$d行目：時刻「%2$@」を読み取れません。14:30 のように書いてください。";
+"import.error.exchangeRate" = "%1$d行目：為替レート「%2$@」を読み取れません。桁区切りを付けず、小数点で 3.75 のように書いてください。";
+"import.error.need" = "%1$d行目：性質「%2$@」を読み取れません。essential、priority、optional、unclassified のいずれかを使ってください。";
+/* Grupos 2.3 · saldar como en Splitwise (decisión 37, C1 + C2 + C3) */
+"groups.saldar23.thirdPartyHint" = "あなたが記録します。%@さんが確認すると反映されます。";
+"groups.saldar23.recordedBy" = "%@さんが記録";
+"groups.saldar23.recordedByYou" = "あなたが記録";
+"groups.saldar23.pendingTitleOther" = "%1$@さんが、%2$@さんからあなたへの%3$@の支払いを記録しました";
+"groups.saldar23.scopeA11y" = "支払う金額";
+"groups.saldar23.scopeAll" = "全額 · %@";
+"groups.saldar23.scopePart" = "一部";
+"groups.saldar23.settlesWith" = "これで%@さんとの精算が完了します。";
+"groups.saldar23.settlesOthers" = "これで%1$@さんと%2$@さんの精算が完了します。";
+"groups.saldar23.leaves.youPay" = "%2$@さんへの残りは%1$@です。";
+"groups.saldar23.leaves.paysYou" = "%1$@さんからの残りは%2$@です。";
+"groups.saldar23.leaves.others" = "%1$@さんから%3$@さんへの残りは%2$@です。";
+"groups.saldar23.overpays.youPay" = "借りている額（%1$@）より多いです。%2$@さんがあなたに%3$@借りることになります。";
+"groups.saldar23.overpays.paysYou" = "借りられている額（%1$@）より多いです。あなたが%3$@さんに%2$@借りることになります。";
+"groups.saldar23.overpays.others" = "%1$@さんが%2$@さんに借りている額（%3$@）より多いです。%2$@さんが%1$@さんに%4$@借りることになります。";
+"groups.saldar23.saveAnyway" = "このまま精算";
+"groups.saldar23.notice.youPaid" = "%2$@さんに%1$@支払いました。";
+"groups.saldar23.notice.paidYou" = "%1$@さんから%2$@受け取りました。";
+"groups.saldar23.notice.othersPaid" = "%1$@さんから%3$@さんへの%2$@の支払いを記録しました。";
+"groups.saldar23.notice.waitingFor" = "%@さんの確認待ちです。";
+"groups.saldar23.notice.settled" = "精算が完了しました。";
+"groups.saldar23.notice.nowYouOwe" = "%2$@さんへの残りは%1$@です。";
+"groups.saldar23.notice.nowOwesYou" = "%1$@さんからの残りは%2$@です。";
+"groups.saldar23.notice.nowOthersOwe" = "%1$@さんから%3$@さんへの残りは%2$@です。";
+"groups.saldar23.pendingOnDebt.one" = "確認待ちの支払いが%@あります";
+"groups.saldar23.pendingOnDebt.many" = "確認待ちの支払いが合計%@あります";
+"groups.saldar23.confirmOver.title" = "この支払いを確認しますか？";
+"groups.saldar23.confirmOver.settled" = "%1$@さんはもう何も借りていません。別の支払いでこの借りは清算済みです。この%2$@を確認すると払いすぎになります。同じ支払いが二重に記録されているなら、削除してください。";
+"groups.saldar23.confirmOver.exceeds" = "%1$@さんの残りは%2$@だけでした。この%3$@を確認すると払いすぎになります。";
+"groups.saldar23.confirmOver.confirmAnyway" = "それでも確認";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "支払いの回数が減るように、Yalaが借りをまとめました。";
+"groups.lote23chico.showPairs" = "ペアごとの借りを見る";
+"groups.lote23chico.pairsNote" = "まとめる前の、ペアごとの借りです。精算するときは「支払いを減らす」表示に戻ってください。";
+"groups.lote23chico.showSimplified" = "支払いを減らして見る";
+"settings.lote23chico.favoriteRecords" = "お気に入りの記録";
+"settings.lote23chico.organizationFooter" = "予算と予定支払いは「計画」にあります。パネルに表示する予算は「パネル設定」で選びます。";
+"panel.lote23chico.budgetsOnPanel" = "パネルに表示する予算";
+"panel.lote23chico.budgetsOnPanelHint" = "予算カードに表示するものを選びます。";
+"usageMode.lote23chico.fullExpensesOnly" = "Yalaの全機能・支出のみ";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "サインアウトしています…";
+"uxcs.signOutProgress.removingData" = "このデバイスからデータを削除しています…";
+"uxcs.signOutProgress.deletingAccount" = "アカウントを削除しています…";
+"uxcs.signOutProgress.keepOpen" = "完了するまでYalaを開いたままにしてください。";
+"uxcs.signOutProgress.accountDeletedTitle" = "アカウントを削除しました";
+"uxcs.signOutProgress.accountDeletedBody" = "Yalaアカウントとそのすべてのデータを、このデバイス上のものも含めて削除しました。グループに参加していた場合、そこでのあなたの名前は「削除されたユーザー」になりました。";
+"uxcs.signOutProgress.continue" = "続ける";
+"uxcs.relaunch.accountDeleted" = "アカウントを削除しました";
+"uxcs.relaunch.afterSignOutICloud" = "データはあなたのiCloudにつながっていたため、Yalaを完全に閉じないとその接続を外せません。もう一度開くと、このデバイスからのデータ削除が完了します。";
+"bienvenida23.access.sameEmailNote" = "同じメールアドレスなら、AppleでもGoogleでも同じYalaアカウントが開きます。別のメールアドレスで作成した場合は、そのアドレスでサインインしてください。";
+"bienvenida23.access.consentAccessDetail" = "Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → 記録をエクスポート）。";
+"bienvenida23.access.createdTitle" = "アカウントを作成しました";
+"bienvenida23.access.createdBody" = "次に、Yalaをあなた向けに整えるための簡単な質問を3つします。";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "接続中のブラウザ";
+"connectedBrowsers.rowSubtitle" = "あなたのアカウントで開いている Yala web のセッション";
+"connectedBrowsers.intro" = "あなたのアカウントで Yala web が開かれている場所です。心当たりがないものはログアウトしてください。";
+"connectedBrowsers.empty" = "あなたのアカウントで開いている Yala web のセッションはありません。";
+"connectedBrowsers.close" = "ログアウト";
+"connectedBrowsers.closeAll" = "すべてのウェブセッションからログアウト";
+"connectedBrowsers.closeAllConfirmTitle" = "すべてのウェブセッションからログアウトしますか？";
+"connectedBrowsers.closeAllConfirmBody" = "それらのタブは1分以内に空になります。データは変わりません。";
+"connectedBrowsers.closeAllConfirm" = "すべてログアウト";
+"connectedBrowsers.footer" = "ログアウトすると、そのタブは1分以内に空になります。";
+"connectedBrowsers.loadFailed" = "リストを読み込めませんでした。接続を確認して、もう一度お試しください。";
+"connectedBrowsers.closeFailed" = "ログアウトできませんでした。接続を確認して、もう一度お試しください。";
+"connectedBrowsers.unknownBrowser" = "ブラウザ";
+"connectedBrowsers.sharedComputer" = "共用のコンピュータ";
+"connectedBrowsers.justNow" = "たった今";
+"connectedBrowsers.browserOn" = "%2$@ の %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "ブラウザを連携";
+"connectedBrowsers.link.rowFooter" = "パスワードを入力せずにパソコンで Yala を開けます。Yala web に表示されたコードを読み取ってください。";
+"connectedBrowsers.link.title" = "ブラウザを連携";
+"connectedBrowsers.link.intro" = "パソコンで Yala web を開き、「iPhone でログイン」を選んでください。カメラをコードに向けます。";
+"connectedBrowsers.link.scanner" = "コードを読み取るカメラ";
+"connectedBrowsers.link.typeHeader" = "またはコードを入力";
+"connectedBrowsers.link.continue" = "続ける";
+"connectedBrowsers.link.confirmHeader" = "このブラウザで Yala を開きますか？";
+"connectedBrowsers.link.whereCity" = "%1$@ からのリクエスト · コード %2$@";
+"connectedBrowsers.link.whereNoCity" = "コード %@";
+"connectedBrowsers.link.warning" = "このコードが自分の画面に表示されている場合だけ確認してください。Yala がこのコードを尋ねることはありません。";
+"connectedBrowsers.link.confirm" = "Face ID で確認";
+"connectedBrowsers.link.faceIDReason" = "そのブラウザで Yala を開くことを確認してください。";
+"connectedBrowsers.link.doneTitle" = "ブラウザを連携しました";
+"connectedBrowsers.link.doneBody" = "%@ にあなたの Yala が表示されています（閲覧のみ）。ここからいつでもログアウトできます。";
+"connectedBrowsers.link.doneButton" = "完了";
+"connectedBrowsers.link.problem.invalidCode" = "Yala web のコードではありません。8 文字か確認してください。";
+"connectedBrowsers.link.problem.expired" = "コードの有効期限が切れたか、すでに使われています。Yala web で新しいコードを表示してください。";
+"connectedBrowsers.link.problem.noCloud" = "このアカウントは Yala クラウドを使っていません。Yala web を使うには「ストレージ」でオンにしてください。";
+"connectedBrowsers.link.problem.sessionExpired" = "クラウドのセッションが切れました。「Yala アカウント」で再度ログインしてください。";
+"connectedBrowsers.link.problem.network" = "Yala web に接続できませんでした。もう一度お試しください。";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "テキストから取引を記録";
+"shortcut.bankNotice.description" = "銀行の通知を読み取り、確認用の取引を受信箱に追加します。銀行アプリの「通知を受け取ったとき」オートメーションで「通知」変数と一緒に使ってください。";
+"shortcut.bankNotice.param.text" = "テキスト";
+"shortcut.bankNotice.param.text.description" = "通知のテキスト（「通知」変数）";
+"shortcut.bankNotice.param.bank" = "銀行";
+"shortcut.bankNotice.bank.other" = "その他の銀行";
+"Record a movement from the text ${text}" = "テキスト ${text} から取引を記録";
+"inbox.sourceBankNotice" = "%@ の通知";
+"inbox.sourceBankNoticeOther" = "銀行の通知";
+"inbox.sourceBankNoticeNotUnderstood" = "この通知を読み取れませんでした";
+/* Pagos que se repiten: propuestas de pagos planificados desde el historial (lote S1, 2026-11-14) */
+"pagosRecurrentes.card.title" = "繰り返しの支払い";
+"pagosRecurrentes.card.subtitle" = "記録の中から見つけました。予定に追加しますか？";
+"pagosRecurrentes.card.manage" = "提案の設定";
+"pagosRecurrentes.card.manageA11y" = "繰り返しの支払いのオプション";
+"pagosRecurrentes.cadence.monthly" = "毎月%@日";
+"pagosRecurrentes.cadence.monthlyApprox" = "毎月%@日ごろ";
+"pagosRecurrentes.cadence.weekly" = "毎週%@";
+"pagosRecurrentes.sheet.chargesFound" = "見つかった引き落とし：%@";
+"pagosRecurrentes.sheet.lastCharge" = "最後の引き落とし：%@";
+"pagosRecurrentes.sheet.amount" = "金額";
+"pagosRecurrentes.sheet.frequency" = "頻度";
+"pagosRecurrentes.sheet.frequencyMonthly" = "毎月";
+"pagosRecurrentes.sheet.frequencyWeekly" = "毎週";
+"pagosRecurrentes.sheet.nextCharge" = "次回の引き落とし";
+"pagosRecurrentes.sheet.account" = "口座";
+"pagosRecurrentes.sheet.chooseAccount" = "口座を選択";
+"pagosRecurrentes.sheet.category" = "カテゴリ";
+"pagosRecurrentes.sheet.notify" = "通知";
+"pagosRecurrentes.sheet.variable" = "金額は引き落としごとに変わります。最新の金額を使います。";
+"pagosRecurrentes.sheet.create" = "予定の支払いを作成";
+"pagosRecurrentes.sheet.notFixed" = "固定ではない";
+"pagosRecurrentes.sheet.notNow" = "今はしない";
+"pagosRecurrentes.notify.none" = "通知しない";
+"pagosRecurrentes.notify.sameDay" = "当日";
+"pagosRecurrentes.notify.oneDay" = "1日前";
+"pagosRecurrentes.notify.threeDays" = "3日前";
+"pagosRecurrentes.notify.oneWeek" = "1週間前";
+"pagosRecurrentes.created.notice" = "%1$@を予定の支払いにしました。%2$@にお知らせします。";
+"pagosRecurrentes.created.noticeNoReminder" = "%@を予定の支払いにしました。";
+"pagosRecurrentes.created.view" = "表示";
+"pagosRecurrentes.settings.title" = "繰り返しの支払い";
+"pagosRecurrentes.settings.toggle" = "繰り返しの支払いを提案";
+"pagosRecurrentes.settings.footer" = "Yalaはこのデバイス上で記録を確認します。外部には何も送られません。";
+"pagosRecurrentes.settings.dismissed" = "却下したもの";
+"pagosRecurrentes.settings.dismissedOn" = "%@に「固定ではない」にしました";
+"pagosRecurrentes.settings.restore" = "もう一度提案";
+"pagosRecurrentes.settings.done" = "完了";
+"pagosRecurrentes.footer.link" = "繰り返しの支払い";
+"pagosRecurrentes.footer.off" = "オフ";

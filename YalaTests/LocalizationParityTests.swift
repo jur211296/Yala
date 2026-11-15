@@ -273,6 +273,11 @@ struct LocalizationParityTests {
         "devseed.notePhonePlan",
         "devseed.budgetMobility",
         "cashFlowPlan.chartRollingAvg",
+        // Paso 4 de la bienvenida 2.3 (Y23-12): el tipo de pago «Comunicación» (la subcategoría «Telefonía y
+        // comunicaciones») y su ejemplo «Celular» nombran el servicio que se paga, no el aparato.
+        "pasos23.payment.kind.phone",
+        "pasos23.payment.name.phone",
+        "pasos23.payment.example.phone.1",
     ]
 
     /// La palabra «teléfono» de cada idioma. El aparato se nombra «dispositivo»

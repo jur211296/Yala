@@ -33,6 +33,10 @@ struct GroupRecordsView: View {
     var onEditExpense: ((SplitExpense) -> Void)?
     var onDeleteExpense: ((SplitExpense) -> Void)?
     var onInvite: (() -> Void)?
+    /// La fila de personal bajo el saldo (Jürgen, 2026-11-14): «Nuevo gasto», Voz, Foto y Yala IA. nil → no sale (quien
+    /// no puede apuntar gastos aquí, o un grupo congelado).
+    var onNewExpense: (() -> Void)?
+    var onReceipt: ((GroupReceiptEntryKind) -> Void)?
     /// Banda de balance del header (scrollea junto a los registros). nil → no se muestra.
     var headerBalance: GroupHeaderBalance?
     var debtsWereConverted: Bool = false
@@ -60,12 +64,18 @@ struct GroupRecordsView: View {
         // y el scroll entra y sale en el acto, porque lleva el título grande del grupo y fundido se fundiría con él.
         ZStack {
             if items.isEmpty {
-                YalaEmptyState(
-                    icon: "receipt",
-                    title: L10n.Groups.Expense.noExpenses,
-                    actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
-                    action: onInvite
-                )
+                // Un grupo recién creado es justo donde se apunta el primero: la fila también aquí.
+                VStack(spacing: DS.Spacing.none) {
+                    quickActions
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                    YalaEmptyState(
+                        icon: "receipt",
+                        title: L10n.Groups.Expense.noExpenses,
+                        actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
+                        action: onInvite
+                    )
+                }
                 .transition(.stateSwap)
             } else {
                 recordsScroll
@@ -73,6 +83,14 @@ struct GroupRecordsView: View {
             }
         }
         .animatesEmptyStateSwap(ids: items.prefix(4).map(\.id))
+    }
+
+    @ViewBuilder
+    private var quickActions: some View {
+        if let onNewExpense, let onReceipt {
+            GroupQuickActionsRow(identifierPrefix: "group_detail", onNewExpense: onNewExpense, onReceipt: onReceipt)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     @ViewBuilder
@@ -97,6 +115,9 @@ struct GroupRecordsView: View {
                     // anterior (dos cifras una encima de otra; regla de `swiftui-ds.md`).
                     .transaction { $0.animation = nil }
                 }
+                quickActions
+                    .padding(.bottom, DS.Spacing.sm)
+                    .transaction { $0.animation = nil }
                 // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
                 // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
                 if let budgetProgress {

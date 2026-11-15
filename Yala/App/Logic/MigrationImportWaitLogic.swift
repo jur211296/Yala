@@ -21,9 +21,15 @@ nonisolated enum MigrationImportWaitLogic {
     ///
     /// Con una cancelación ya en marcha, no: su propia espera es una pre-espera más, y un segundo toque la cortaba y la dejaba
     /// sin cancelar (review adversarial). El «sí» ya está apuntado en el runner.
-    static func cancelEnabled(isWorking: Bool, waitingForImport: Bool, cancelling: Bool) -> Bool {
+    ///
+    /// **Y con el EFECTO del adopt en vuelo, también** (card gd78, medido en el iPhone 14 el 13-nov). Cada reintento del
+    /// efecto vuelve a leer la cuenta entera (~40 s con 5.900 filas) y el auto-resume encadena reintentos: el botón pasaba
+    /// casi todo el tiempo apagado y la persona no tenía salida. El «sí» se apunta en el runner (`requestMigrationCancel`) y
+    /// el efecto lo honra en su siguiente reintento (`drive()`), así que tocarlo con trabajo en vuelo no deja nada a medias.
+    static func cancelEnabled(isWorking: Bool, waitingForImport: Bool, cancelling: Bool,
+                              adoptEffectPending: Bool = false) -> Bool {
         guard !cancelling else { return false }
-        return !isWorking || waitingForImport
+        return !isWorking || waitingForImport || adoptEffectPending
     }
 
     /// Qué tenía a iCloud sin asentarse cuando venció el tope, para el canario `cloudMigrationImportNotSettled`. La causa

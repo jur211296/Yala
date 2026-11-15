@@ -1323,6 +1323,9 @@ struct ProfileView: View {
         // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
         // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
         .modifier(ClosesForShellIntegrityNotice(navigation: navigation) { dismiss() })
+        // Card p9q0 (13-nov-2026) · cerrar sesión, quitar los datos y eliminar la cuenta tienen su propia pantalla mientras
+        // trabajan, por encima de Ajustes y de sus hojas: ya no se queda la fila girando con la lista navegable.
+        .presentsSignOutProgress(removesDeviceData: exitInProgressRemovesDeviceData ?? signOutRowRemovesDeviceData)
         // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
         // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
         // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
@@ -1617,6 +1620,10 @@ struct ProfileView: View {
     }
 
     private var organizacionSection: some View {
+        // Decisión 47 de la revisión 2.3 (B1): cada fila abre lo que dice. «Presupuestos» (que abría las estrellas del
+        // Panel) pasa a Configurar Panel como «Presupuestos en el Panel», «Pagos planificados» (que cerraba Ajustes y te
+        // dejaba en otra pestaña) sale, y «Favoritos» pasa a «Registros favoritos». El pie dice dónde quedó cada cosa.
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
                 // «Yala Pro» con el estado del plan, arriba de la primera sección (UX 2.2 · L17-1). Antes era
@@ -1648,28 +1655,17 @@ struct ProfileView: View {
                     .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
-                    icon: "chart.pie.fill", title: L10n.Settings.budgets,
-                    iconColor: .mint,
-                    destination: .budgets)
-                    .coachMarkAnchor("settingsBudgets")
-                SubsectionDivider()
-                // Una sola lista de pagos planificados (UX 2.2 · L10-15): la fila cierra Ajustes y abre Planificación ›
-                // Pagos planificados. Antes abría otra lista de lo mismo, con otro formato y borrado sin confirmar.
-                Button {
-                    dismiss()
-                    RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
-                } label: {
-                    settingsRowContent(icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments, iconColor: .cyan)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("profile_planned")
-                .coachMarkAnchor("settingsPlanned")
-                SubsectionDivider()
-                profileRow(
-                    icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
+                    icon: "star.fill", title: L10n.Lote23Chico.favoriteRecords, iconColor: .yellow,
                     destination: .favorites)
                     .accessibilityIdentifier("profile_favorites")
             }
+        }
+            Text(L10n.Lote23Chico.organizationFooter)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.sm)
+                .accessibilityIdentifier("profile_organization_footer")
         }
         .padding(.horizontal, DS.Spacing.lg)
     }
@@ -1682,7 +1678,11 @@ struct ProfileView: View {
                 settingsLink(ProfileDestination.usageMode) {
                     settingsRowContent(
                         icon: "square.grid.2x2.fill", title: L10n.UsageMode.rowTitle,
-                        subtitle: isGroupsFocusedShell ? L10n.UsageMode.groupsOnlyTitle : L10n.UsageMode.fullTitle,
+                        // Decisión 48 (F1): con «Solo gastos» encendido la fila dice el modo entero.
+                        subtitle: isGroupsFocusedShell
+                            ? L10n.UsageMode.groupsOnlyTitle
+                            : (sessionState.isExpensesOnlyMode
+                                ? L10n.Lote23Chico.fullExpensesOnly : L10n.UsageMode.fullTitle),
                         iconColor: theme.accent)
                 }
                 .buttonStyle(.plain)

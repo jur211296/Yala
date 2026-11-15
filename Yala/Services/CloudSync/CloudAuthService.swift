@@ -474,8 +474,13 @@ final class CloudAuthService: NSObject {
     ///
     /// `reusingGoogleCredential` (vb1f): con Google, se intenta primero esa credencial sin abrir la hoja; si no entra,
     /// la hoja de siempre. Con Apple se ignora.
+    ///
+    /// `appleOnTheWeb`: con Apple, firma por la web con otro Apple ID (`signInWithAppleOnTheWeb`) en vez del Apple ID del
+    /// teléfono. Lo pide «Otra cuenta de Apple» de la bienvenida (ticket `other-account-sign-in-bounces-to-welcome`). Con
+    /// Google se ignora. Pasa por aquí y no directo para conservar el seam de XCUITest y el derecho Pro de la cuenta.
     func signIn(with provider: CloudSignInProvider,
-                reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {
+                reusingGoogleCredential reusable: GoogleSignInCredential? = nil,
+                appleOnTheWeb: Bool = false) async throws {
         #if DEBUG
         // Seam de XCUITest (card er5c): sin hoja de Apple ni de Google. Sin token: nada sale a la red.
         if UITestHooks.fakeAccountExists != nil {
@@ -485,7 +490,8 @@ final class CloudAuthService: NSObject {
         }
         #endif
         switch provider {
-        case .apple: try await signInWithApple()
+        case .apple:
+            if appleOnTheWeb { try await signInWithAppleOnTheWeb() } else { try await signInWithApple() }
         case .google:
             if let reusable, await signInWithReusedGoogleCredential(reusable) { break }
             try await signInWithGoogle()

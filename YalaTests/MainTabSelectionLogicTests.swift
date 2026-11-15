@@ -93,12 +93,12 @@ struct MainTabSelectionLogicTests {
     // MARK: - Config malformada (fromJSON inválido cae a default)
 
     @Test func decide_emptyConfig_fallsBackToDefault() {
-        // fromJSON con string vacío retorna .default = [.panel, .statistics, .planning]
+        // fromJSON con string vacío retorna .default = [.panel, .groups, .records] (Y23-15, bienvenida 2.3)
         let config = TabBarConfiguration.fromJSON("")
-        let statisticsDecision = MainTabSelectionLogic.decide(requested: .statistics, config: config)
-        #expect(statisticsDecision.requiresDelay == false)
         let recordsDecision = MainTabSelectionLogic.decide(requested: .records, config: config)
-        #expect(recordsDecision.requiresDelay == true)
-        #expect(recordsDecision.temporaryTab == .records)
+        #expect(recordsDecision.requiresDelay == false)
+        let statisticsDecision = MainTabSelectionLogic.decide(requested: .statistics, config: config)
+        #expect(statisticsDecision.requiresDelay == true)
+        #expect(statisticsDecision.temporaryTab == .statistics)
     }
 }

@@ -5,12 +5,16 @@
 
 ## Subíndices — ábrelos cuando el tema toque
 - [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 78 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
-- [Simulador y capturas](indice_simulador_y_capturas.md) — 85 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
+- [Simulador y capturas](indice_simulador_y_capturas.md) — 86 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
 - [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
 - [Estado del trabajo](indice_estado_del_trabajo.md) — 93 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
-- [Entorno y herramientas](indice_entorno.md) — 20 entradas: máquina, hooks, accesos, disco.
+- [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
+- [Verificación Gmail: video v3 enviado](project_verificacion_gmail_video_v2.md) — 12-nov aprobado y enviado a Google; no se vuelve a pedir; receta de toma.
+- [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe hace pulsación larga en la web; Device MCP con `device=` sí toca.
+- [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.
+- [Google Sign-In sigue el idioma del sistema](reference_idioma_de_google_en_el_simulador.md) — -AppleLanguages no basta: defaults -g + reboot.
 - [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
@@ -33,16 +37,18 @@
 - [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el suyo personal; elige por modelo, no por el primer UDID.
 - [QA físico: datos dev, no preguntes](feedback_qa_fisico_datos_dev_no_preguntes.md) — borrar/vaciar en el iPhone 14 lo decides tú; contáctale solo urgente o su mano.
 - [Tester de Sandbox del iPhone 14](reference_tester_sandbox_iphone_14.md) — ya existe en ASC; no crear otro; contraseña en 1Password o la pone Jürgen.
-- [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — stdio, teclado inglés, open_url con aprobación, devicectl --payload-url.
+- [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — sin Pro: xcodebuild+devicectl; screenshot sin overwrite; Siri por Atajos; teclado inglés.
 - [Maquetas con piezas reales de la app](feedback_maquetas_con_piezas_reales_de_la_app.md) — recibos «feos»; varias funciones; alta tipo chat.
 - [Probar un artifact en el iPhone 14](reference_probar_un_artifact_en_el_iphone_14.md) — Safari con sesión; captura a 390 o fallan los toques; el móvil simulado atrapa el scroll.
 - [Sin firma de IA en commits](feedback_sin_firma_de_ia_en_commits.md) — el hook rechaza Co-Authored-By de Claude; manda la casa sobre el entorno.
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
 - [Elige la propuesta completa aunque apriete](feedback_elige_la_propuesta_completa_aunque_aprieta.md) — por producto y, en finanzas, por la regla del dominio.
 - [Gasto a la medida del tráfico](feedback_gasto_a_la_medida_del_trafico.md) — plan mínimo que funcione; estima el gasto y avisa antes.
+- [Grupos es el gancho](project_grupos_es_el_gancho_ia_gratis.md) — IA en Grupos gratis con cupo diario (5 Free, 50 Pro), nunca tras Pro.
 - [Verificar prod del gateway: token acuñado](feedback_verificar_prod_del_gateway_con_token_acunado.md) — staging con Yala Dev de Jürgen; prod con token 15 min, preguntando.
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
+- [Merge corto que falta: lo hace la sesión](feedback_merge_corto_que_falta_lo_hace_la_sesion.md) — BLOQUEANTE y ofrecerlo; el lote sobre la rama del merge, sin rebase.
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
@@ -76,9 +82,19 @@
 - [Discusión de decisiones con Jürgen](feedback_discusion_de_decisiones_con_jurgen.md) — claridad antes que lo decidido; delega a la recomendación; accesibilidad sin preguntar.
 - [Regresión: medir contra lo publicado](feedback_regresion_se_mide_contra_lo_publicado.md) — Panel iPad: B→A al saber que la 2.1 no lo tenía.
 - [«Igual a tamaño normal» es al píxel](feedback_igual_a_tamano_normal_es_literal.md) — también el botón desactivado; lo que el sistema cambie se fuerza al aspecto de antes.
+- [Reparar sus datos: lo nuevo solo, lo suyo con botón](feedback_reparacion_de_datos_se_ensena_y_se_ubica.md) — enseña y confirma; él elige dónde va el botón (Bandeja).
 - [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
+- [Propuestas: artifact visual, no Markdown](feedback_propuestas_como_artifact_visual.md) — tarjetas, antes/después y selector sí/no/después en la db.
+- [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
+- [Si no avanza, cierra y prioriza el bug](feedback_si_no_avanza_cierra_y_prioriza_el_bug.md) — prueba parada por un bug grave ajeno: PR abierto, device-QA y card primero.
+- [El iPhone 14 lo ve también la otra máquina](feedback_el_iphone_14_lo_ve_tambien_la_otra_maquina.md) — la sesión de la Mini lo conduce por red; mira su transcript antes de probar.
+- [Recorrido con artifact y veredicto](feedback_recorrido_con_artifact_y_veredicto.md) — tira de capturas por escenario + sí/no y nota en la db; publicar tras cada escenario.
+- [QA en vivo: mira y sigue](feedback_qa_en_vivo_con_jurgen_mira_y_sigue.md) — si él prueba, sin popups ni toques; lo que destapa va a su card.
+- [Sin teléfono: guion para otra sesión](feedback_sin_telefono_guion_para_otra_sesion.md) — no se espera el iPhone; pasos y resultado esperado en el cierre y la card.
 ## Cómo mido y cómo entrego
+- [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
+- [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.
 - [decisiones.py no está en la Max](reference_decisiones_py_no_esta_en_la_max.md) — incorporar-lote no corre ahí: decisión al repo y avisar.
 - [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
@@ -86,6 +102,7 @@
 - [Un crash arreglado destapa el de detrás](feedback_un_crash_arreglado_destapa_el_de_detras.md) — repite el gesto en el iPhone; el cierre en la nube tenía dos en fila.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
+- [El centinela canta por otro proyecto](feedback_centinela_canta_por_otro_proyecto.md) — en la Max, centro de mando dispara el 1; mira los PID antes de repetir.
 - [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.
 - [El paso 5 no va en paralelo con el 3](feedback_el_paso_5_no_va_en_paralelo_con_el_3.md) — sim-lock-test cayó 4/37 junto a un runner muerto; solo, 37/37.
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
@@ -152,6 +169,7 @@
 - [Sustituir un latido cambia qué significa el lease](feedback_sustituir_un_latido_cambia_que_significa_el_lease.md) — «misma cadencia…
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reint…
 - [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el…
+- [El mutante en el aparato de la captura](feedback_el_mutante_en_el_aparato_de_la_captura.md) — verde en el Pro 13 sin discriminar; el flotante era del Air 11; exige teclado visible.
 - [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo…
 - [La prueba que sustituyo implicaba más](feedback_la_prueba_que_sustituyo_implicaba_mas.md) — el marcador implicaba «llegaro…
 - [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabrica…
@@ -180,11 +198,12 @@
 - [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
 - [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
 - [En cola no es «entrará»](feedback_auto_merge_en_2_2_no_espera_al_ci.md) — 2.2 exige tests, coverage-index y gateway; #634 se atascó un día.
+- [En cola puede estar en conflicto](feedback_en_cola_puede_estar_en_conflicto.md) — mira mergeStateStatus: el lote de deshacer estaba DIRTY con el CI ya arreglado.
 - [Tests del conector mcp/ en local](reference_mcp_tests_en_local.md) — un calculador compartido rompe el golden; npm ci --prefer-offline + regenerar.
 - [Sentry por API: tokens y dónde](reference_sentry_tokens_y_api.md) — Chrome sin sesión; lectura en ~/Secrets, completo en el Llavero `sentry-yala`.
 - [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.
 - [Botón de widget y App Group en el simulador](reference_widget_intent_y_app_group_en_simulador.md) — el ✓ no responde a toques sintéticos; la cola, por plistlib.
-- [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — sin servidor: args -uitest-chat-* y -chatQuestionsToday N; privacy grant mata la app.
+- [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — -uitest-chat-*, -uitest-network-offline; el modelo de Apple sale listo: fíngelo ausente.
 - [Precios en el simulador: SKTestSession](reference_precios_en_el_simulador_con_sktestsession.md) — conductor XCUITest; la config se queda: erase antes del gate.
 - [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
 - [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.
@@ -197,6 +216,8 @@
 - [AX timeout tras una tanda con axe](feedback_xcuitest_ax_timeout_tras_una_tanda_con_axe.md) — el runner no arranca; reinicia el simulador antes del gate.
 - [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
+- [Prototipo bienvenida 2.3: fuente en la Max](reference_prototipo_bienvenida_2_3_en_la_max.md) — el artifact v35 no se lee desde la Mini; scp de fuente-actual/.
+- [axe no toca la bienvenida](feedback_axe_no_toca_la_bienvenida.md) — iOS 27.2: XcodeBuildMCP sí; para el «antes», plist y sin -uitest.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Reportes a AX3, por la pestaña](reference_reportes_a_ax3_por_la_pestana.md) — la tarjeta de «Más» no se alcanza; `-tabBarConfiguration` con reports.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.

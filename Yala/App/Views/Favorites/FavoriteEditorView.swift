@@ -65,7 +65,7 @@ struct FavoriteEditorView: View {
 
     init(favorite: FavoritePayment? = nil) {
         self.favorite = favorite
-        _isTransfer = State(initialValue: Self.isTransferFavorite(favorite))
+        _opensAsTransfer = State(initialValue: Self.isTransferFavorite(favorite))
     }
 
     var body: some View {
@@ -75,7 +75,7 @@ struct FavoriteEditorView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(spacing: DS.Spacing.none) {
-                        // Transaction type selector (without transfer)
+                        // Gasto, Ingreso o Transferencia, como el formulario (decisión 70 de 2.3)
                         transactionTypeSelector
                             .padding(.top, DS.Spacing.sm)
 
@@ -238,16 +238,23 @@ struct FavoriteEditorView: View {
         }
     }
 
-    // MARK: - Transaction Type Selector (No Transfer)
+    // MARK: - Transaction Type Selector
 
+    /// Los tres tipos del formulario (decisión 70 de la revisión 2.3): antes, «Gastos · Ingresos» y una transferencia
+    /// solo se creaba desde el formulario.
     private var availableTransactionTypes: [TransactionType] {
-        sessionState.isExpensesOnlyMode ? [.expense] : [.expense, .income]
+        FavoriteEditorTypeLogic.availableTypes(isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
     }
 
     /// El favorito que se edita es una transferencia (card 93ta). Se lee del FAVORITO y no del estado: un favorito de
     /// transferencia no se convierte en gasto o ingreso desde aquí. Copiado al crear la vista: «Eliminar» borra el
     /// favorito y el editor sigue presentado mientras se cierra, y en iOS 27.x leer un modelo borrado aborta (card 1w89).
-    @State private var isTransfer: Bool
+    @State private var opensAsTransfer: Bool
+
+    /// Origen y destino en vez de cuenta, categoría y etiquetas: un favorito de transferencia, o «Transferencia» elegida.
+    private var isTransfer: Bool {
+        opensAsTransfer || transactionType == .transfer
+    }
 
     /// Mira antes de leer: si quien presenta el editor lo vuelve a crear con el favorito ya borrado, el valor se ignora
     /// (manda el `@State` de la primera vez), pero la lectura correría igual.
@@ -260,10 +267,10 @@ struct FavoriteEditorView: View {
     private var transactionTypeSelector: some View {
         // Una transferencia no se cambia de tipo: sin selector, como el formulario cuando solo cabe un tipo
         // (`TransactionTypeSelectorView` también se esconde con uno).
-        if !isTransfer { expenseIncomeSelector }
+        if !opensAsTransfer { typeSelector }
     }
 
-    private var expenseIncomeSelector: some View {
+    private var typeSelector: some View {
         HStack(spacing: DS.Spacing.none) {
             ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
@@ -272,19 +279,24 @@ struct FavoriteEditorView: View {
                         selectedSubcategory = nil
                     }
                 } label: {
-                    Text(type == .expense ? L10n.Transaction.expense : L10n.Transaction.income)
-                        .font(DS.Typography.headline)
+                    // Con tres tipos, la letra y el margen del selector del formulario: «Transferencia» no cabía.
+                    Text(FavoriteEditorTypeLogic.title(for: type))
+                        .font(DS.Typography.subheadline)
+                        .fontWeight(transactionType == type ? .semibold : .regular)
                         .foregroundStyle(transactionType == type ? .white : .secondary)
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Chip.paddingH)
                         .background {
                             if transactionType == type {
                                 Capsule()
-                                    .fill(type == .expense ? Color.hotPink : Color.electricIndigo)
+                                    .fill(type.color)
                             }
                         }
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(transactionType == type ? .isSelected : [])
+                .accessibilityIdentifier("favorite_editor_type_\(type.rawValue)")
             }
         }
         .padding(DS.Spacing.xs)
@@ -292,7 +304,7 @@ struct FavoriteEditorView: View {
             Capsule()
                 .fill(Color.primary.opacity(0.08))
         )
-        .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Central Content
@@ -553,6 +565,19 @@ struct FavoriteEditorView: View {
 
     private func filterAmountInput(_ input: String) -> String {
         AmountInputHelper.filterAmountInput(input)
+    }
+}
+
+/// Qué tipos ofrece el editor de favoritos y con qué nombre (decisión 70 de la revisión 2.3).
+enum FavoriteEditorTypeLogic {
+    /// Los tres del formulario; con «Solo gastos», solo Gasto, como hasta ahora.
+    static func availableTypes(isExpensesOnlyMode: Bool) -> [TransactionType] {
+        isExpensesOnlyMode ? [.expense] : [.expense, .income, .transfer]
+    }
+
+    /// El nombre del formulario, en singular («Gasto», no «Gastos»).
+    static func title(for type: TransactionType) -> String {
+        type.displayName
     }
 }
 

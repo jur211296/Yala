@@ -121,7 +121,7 @@
 "welcome.restore.foundTitle" = "¡Hola %@! Qué bien volver a verte.";
 "welcome.restore.foundTitleAnonymous" = "¡Qué bien volver a verte!";
 "welcome.restore.foundBody" = "Esto vuelve a este dispositivo:";
-"welcome.restore.foundPreCloudNote" = "Esta copia de iCloud es de antes de que usaras la nube de Yala, así que puede no tener tus últimos cambios.";
+"welcome.restore.foundPreCloudNote" = "Esta copia de iCloud es de antes de que pasaras tus datos a tu cuenta de Yala, así que puede no tener tus últimos cambios.";
 "welcome.restore.continue" = "Continuar";
 "welcome.restore.notFoundTitle" = "No encontramos tus datos";
 "welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar desde cero?";
@@ -168,7 +168,7 @@
 "welcome.hero.cards.multiAndCurrencies.body" = "Tarjetas, efectivo, 50+ monedas.";
 "welcome.hero.cards.import.title" = "Importa tu historial";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Listo.";
-"welcome.hero.cards.icloud.title" = "iCloud privado";
+"welcome.hero.cards.icloud.title" = "En tu iCloud";
 "welcome.hero.cards.icloud.body" = "Tus datos, en tu iCloud.";
 "welcome.hero.cards.more.title" = "Y mucho más";
 "welcome.hero.cards.more.body" = "Vamos a descubrirlo juntos.";
@@ -269,7 +269,7 @@
 "groups.activate.skipNotifications" = "Ahora no";
 "groups.activate.subtitle" = "Registra gastos, presupuestos y más";
 "groups.activate.title" = "Activar Yala completo";
-"groups.balance.confirmed" = "Confirmada";
+"groups.balance.confirmed" = "Confirmado";
 "groups.balance.noDebts" = "¡Están al día!";
 "groups.balance.pending" = "Pendiente";
 "groups.balance.pendingDebts" = "Deudas pendientes";
@@ -289,8 +289,8 @@
 "groups.bridge.errorTransactionUpdate" = "No pudimos actualizar este gasto en tus cuentas. Lo intentamos otra vez solos; no tienes que hacer nada.";
 "groups.bridge.optoutAlertBody" = "Puedes crear un registro personal en tu cuenta para reflejar este gasto, o dejarlo solo dentro del grupo.";
 "groups.bridge.optoutAlertNo" = "Solo en el grupo";
-"groups.bridge.optoutAlertTitle" = "¿Registrar también en tu Yala personal?";
-"groups.bridge.optoutAlertYes" = "Sí, registrar";
+"groups.bridge.optoutAlertTitle" = "¿Reflejar en tus cuentas?";
+"groups.bridge.optoutAlertYes" = "Sí, reflejar";
 "groups.card.leaveGroupAlertBody" = "Tu solicitud fue rechazada. Si sales del grupo, se eliminará de tu lista. Tus registros personales se mantienen.";
 "groups.card.leaveGroupAlertTitle" = "¿Salir del grupo?";
 "groups.card.moreDebts" = "+%d más";
@@ -342,7 +342,7 @@
 "groups.form.simplifyDebtsHint" = "Reduce el número de pagos necesarios entre miembros";
 "groups.globalSettings.bridgeCaption" = "Cuando está activo, cada gasto que pagas o saldas se registra también en la cuenta personal que elijas. Tu saldo refleja la realidad.";
 "groups.globalSettings.bridgeSectionTitle" = "Reflejar en tus cuentas";
-"groups.globalSettings.bridgeToggleLabel" = "Registrar gastos de grupos en mis cuentas personales";
+"groups.globalSettings.bridgeToggleLabel" = "Reflejar en tus cuentas";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir registros de grupos en Registros";
 "groups.globalSettings.title" = "Ajustes de Grupos";
 "groups.globalSettings.visibilityCaption" = "Elige si los registros de grupos aparecen en tu Panel, Estadísticas y Registros.";
@@ -447,7 +447,7 @@
 "groups.settings.personalIntegrationHintInheritOn" = "Heredas tu ajuste general (Activado).";
 "groups.settings.personalIntegrationHintLocalOff" = "Solo en este grupo: desactivado.";
 "groups.settings.personalIntegrationSectionTitle" = "Reflejar en tus cuentas";
-"groups.settings.personalIntegrationToggleLabel" = "Registrar gastos de este grupo en mis cuentas personales";
+"groups.settings.personalIntegrationToggleLabel" = "Reflejar en tus cuentas";
 "groups.settings.showArchived" = "Ver archivados";
 "groups.settings.showArchivedCount" = "Ver archivados (%d)";
 "groups.settings.title" = "Ajustes del grupo";
@@ -455,12 +455,12 @@
 "groups.settlement.confirm" = "Confirmar";
 "groups.settlement.confirmQuestion" = "¿Marcar este pago como confirmado?";
 "groups.settlement.payTo" = "paga a";
-"groups.settlement.registerPayment" = "Apuntar pago";
+"groups.settlement.registerPayment" = "Saldar";
 "groups.settlement.reject" = "Rechazar";
 "groups.settlement.rejectQuestion" = "¿Rechazar este pago?";
 "groups.settlement.settle" = "Liquidar";
-"groups.settlement.settleHint" = "Abre el formulario para apuntar este pago";
-"groups.settlement.title" = "Apuntar pago";
+"groups.settlement.settleHint" = "Abre el formulario para saldar esta deuda";
+"groups.settlement.title" = "Saldar";
 "groups.stats.allTime" = "Todo";
 "groups.stats.assignCategoriesHint" = "Asigna categorías a tus gastos para ver el desglose por tipo.";
 "groups.stats.categories" = "Categorías";
@@ -495,7 +495,7 @@
 
 /* MARK: More keys explicit for variant locales (iOS no hace fallback es-419->es) */
 "more.subtitle.panel" = "Tu resumen del día a día";
-"more.subtitle.insights" = "Lo más importante de tu periodo";
+"more.subtitle.insights" = "Lo más importante de tu período";
 "more.subtitle.trends" = "Mira cómo evoluciona tu dinero";
 "more.subtitle.distribution" = "Descubre en qué se va tu dinero";
 "more.subtitle.budgets" = "Pon límites y mira cómo vas";
@@ -579,9 +579,9 @@
 "accessibility.noTransactions" = "No hay registros";
 "accessibility.noTransactionsToExport" = "No hay registros para exportar";
 "accessibility.pageIndicator %d %d" = "Página %1$d de %2$d";
-"accessibility.periodComparison" = "Gráfica de comparación entre periodos";
-"accessibility.periodComparisonValue %d" = "Periodo actual vs anterior, %d puntos";
-"accessibility.periodsCount %d" = "%d periodos";
+"accessibility.periodComparison" = "Gráfica de comparación entre períodos";
+"accessibility.periodComparisonValue %d" = "Período actual vs anterior, %d puntos";
+"accessibility.periodsCount %d" = "%d períodos";
 "accessibility.previousPeriod" = "Período anterior";
 "accessibility.proFeature" = "Requiere suscripción Pro";
 "accessibility.processAudio" = "Procesar audio";
@@ -697,24 +697,24 @@
 "action.viewAll" = "Ver todos";
 "action.viewLess" = "Ver menos";
 "aiConsent.accept" = "Aceptar y activar";
-"aiConsent.chatMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses: saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este mes. Con tu cuenta en la nube, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. Se usa solo para responderte y no para entrenar a la IA.";
-"aiConsent.cloudExploreTitle" = "Yala IA con tu cuenta en la nube";
-"aiConsent.cloudExploreMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses y, cuando la pregunta lo necesita, los datos de tu cuenta en la nube que hacen falta para responderla: movimientos de cualquier fecha con su nota, cuentas, presupuestos y pagos recurrentes. Se usa solo para responderte y no para entrenar a la IA.";
+"aiConsent.chatMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses: saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este mes. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. Se usa solo para responderte y no para entrenar a la IA.";
+"aiConsent.cloudExploreTitle" = "Yala IA con tu cuenta de Yala";
+"aiConsent.cloudExploreMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses y, cuando la pregunta lo necesita, los datos de tu cuenta de Yala que hacen falta para responderla: movimientos de cualquier fecha con su nota, cuentas, presupuestos y pagos recurrentes. Se usa solo para responderte y no para entrenar a la IA.";
 "aiConsent.chatTitle" = "Yala IA";
 "aiConsent.inlineHintBoth" = "Tus datos de voz, imágenes y resumen se procesan con un servicio de IA. No se almacenan permanentemente.";
 "aiConsent.inlineHintChat" = "Tu resumen financiero se procesa con un servicio de IA para responder. No se almacena permanentemente.";
 "aiConsent.inlineHintInsights" = "Tu resumen financiero se envía a un servicio de IA para el análisis. No se almacena permanentemente.";
 "aiConsent.inlineHintMultiple" = "Varias funciones usan un servicio de IA para procesar tus datos. No se almacenan permanentemente.";
 "aiConsent.inlineHintProcessing" = "Tus datos de voz e imágenes se procesan con un servicio de IA. No se almacenan permanentemente.";
-"aiConsent.insightsMessage" = "Yala analiza tus finanzas y te explica cómo vas. Para eso envía a un servicio de IA un resumen —totales y tendencias por categoría, presupuestos, pagos recurrentes y los nombres de tus compras pequeñas que se repiten, con cuántas veces y cuánto suman—, no tu historial completo de registros. Con tu cuenta en la nube, puede leer además todo lo que haga falta para precisar, como cada compra con su fecha e importe. No se usa para entrenar a la IA.";
+"aiConsent.insightsMessage" = "Yala analiza tus finanzas y te explica cómo vas. Para eso envía a un servicio de IA un resumen —totales y tendencias por categoría, presupuestos, pagos recurrentes y los nombres de tus compras pequeñas que se repiten, con cuántas veces y cuánto suman—, no tu historial completo de registros. Con tus datos en tu cuenta de Yala, puede leer además todo lo que haga falta para precisar, como cada compra con su fecha e importe. No se usa para entrenar a la IA.";
 "aiConsent.insightsTitle" = "Resumen con IA";
 "aiConsent.privacyPolicy" = "Política de privacidad";
-"aiConsent.processingMessage" = "Dictas o eliges una foto del recibo y Yala apunta el gasto. Para eso envía el audio o la foto a un servicio de IA, solo en ese momento. Con tu cuenta en la nube, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No se usan para entrenar a la IA.";
+"aiConsent.processingMessage" = "Dictas o eliges una foto del recibo y Yala apunta el gasto. Para eso envía el audio o la foto a un servicio de IA, solo en ese momento. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No se usan para entrenar a la IA.";
 "aiConsent.processingTitle" = "Yala lo apunta por ti";
 "aiPrivacy.chatRow" = "Yala IA";
-"aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas una de estas funciones, y llegan a un servicio de IA a través de nuestro servidor. Con tu cuenta en la nube, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No los vendemos ni los usamos para publicidad.";
+"aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas una de estas funciones, y llegan a un servicio de IA a través de nuestro servidor. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No los vendemos ni los usamos para publicidad.";
 "aiPrivacy.insightsRow" = "Resumen con IA";
-"aiPrivacy.cloudExploreRow" = "Consultar tu cuenta en la nube";
+"aiPrivacy.cloudExploreRow" = "Consultar tu cuenta de Yala";
 "aiPrivacy.policyLink" = "Política de Privacidad";
 "aiPrivacy.processingRow" = "Apuntar con voz o foto";
 "aiPrivacy.revokeConfirmAction" = "Desactivar";
@@ -777,11 +777,12 @@
 "budgets.editor.end.date" = "Fecha final";
 "budgets.editor.filters" = "Filtros";
 "budgets.editor.name.placeholder" = "Nombre del presupuesto";
-"budgets.editor.period.type" = "Periodo";
+"budgets.editor.period.type" = "Período";
 "budgets.editor.start.date" = "Fecha inicial";
 "budgets.empty.message" = "Crea presupuestos para controlar mejor tus gastos.";
 "budgets.empty.title" = "Aún no tienes presupuestos";
-"budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
+"budgets.exceeded.overByAdjust %@" = "Te pasaste por %@. ¿Ajustamos el límite?";
+"budgets.exceeded.adjustLimit" = "Ajustar límite";
 "budgets.favorites.previewEmpty" = "Selecciona favoritos para ver la vista previa";
 "budgets.favorites.previewTitle" = "Así se verá en el Panel";
 "budgets.includeSharedExpenses" = "Contar mi parte de los gastos de grupo";
@@ -807,7 +808,7 @@
 "budgets.status.exceeded" = "Excedidos";
 "budgets.status.inactive" = "Inactivos";
 "budgets.title" = "Presupuestos";
-"budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Ajustes > Presupuestos para verlos aquí.";
+"budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Configurar Panel > Presupuestos en el Panel para verlos aquí.";
 "budgets.widget.noFavorites.title" = "Sin presupuestos favoritos";
 "budgets.widget.selectFavorites" = "Seleccionar favoritos";
 "bulkEdit.availableTags" = "Disponibles para añadir";
@@ -851,6 +852,8 @@
 "cashFlowPlan.calculationMethodTitle" = "Cálculo del monto";
 "cashFlowPlan.cellDetailDailyProgress" = "Avance diario";
 "cashFlowPlan.cellDetailEarned" = "Recibiste";
+"cashFlowPlan.cellDetailSpentVsPlan" = "Gastaste %1$@; el estimado era %2$@.";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "Recibiste %1$@; el estimado era %2$@.";
 "cashFlowPlan.cellDetailLess" = "menos";
 "cashFlowPlan.cellDetailMore" = "más";
 "cashFlowPlan.cellDetailNote" = "Nota (opcional)";
@@ -877,7 +880,7 @@
 "cashFlowPlan.chartsSectionTitle" = "Tu flujo de caja";
 "cashFlowPlan.chartsTitle" = "Gráficas";
 "cashFlowPlan.commentDefault" = "Tu proyección cubre %d meses hacia adelante";
-"cashFlowPlan.commentHealthy" = "Tu plan se ve saludable — al final del periodo tendrías %@ acumulado";
+"cashFlowPlan.commentHealthy" = "Tu plan se ve saludable — al final del período tendrías %@ acumulado";
 "cashFlowPlan.commentHealthyWithSavings" = "Tu plan se ve bien — ahorras unos %@/mes y terminarías con %@";
 "cashFlowPlan.commentNegative" = "A partir de %@ tu acumulado entra en negativo — revisa si puedes ajustar algo";
 "cashFlowPlan.commentSavingsAbove" = "Vas %@ por encima de tu plan de ahorro — tu saldo llegaría a %@";
@@ -896,8 +899,10 @@
 "cashFlowPlan.densityFull" = "Completo";
 "cashFlowPlan.densityIcons" = "Íconos";
 "cashFlowPlan.description" = "Analizamos tus últimos 6 meses para armar tu plan. Revisa y ajusta lo que necesites.";
-"cashFlowPlan.deviationCommentMultiple" = "%@ es donde más te pasaste del plan, con %@ extra — en total gastaste %@ de más entre todas";
-"cashFlowPlan.deviationCommentSingle" = "En %@ gastaste %@ más de lo planeado";
+"cashFlowPlan.deviationAverageSingle" = "En promedio, últimos %1$d meses: en %2$@ te pasaste por %3$@ al mes.";
+"cashFlowPlan.deviationAverageMultiple" = "En promedio, últimos %1$d meses: donde más te pasaste es %2$@, por %3$@ al mes; entre todas, %4$@ al mes.";
+"cashFlowPlan.deviationThisMonthSingle" = "Este mes: en %1$@ te pasaste por %2$@.";
+"cashFlowPlan.deviationThisMonthMultiple" = "Este mes: donde más te pasaste es %1$@, por %2$@; entre todas, %3$@.";
 "cashFlowPlan.difference" = "Diferencia";
 "cashFlowPlan.editStartingBalance" = "Editar saldo inicial";
 "cashFlowPlan.editStartingBalanceSave" = "Guardar";
@@ -1050,6 +1055,7 @@
 "chat.errorMicPermission" = "Necesito permiso para usar el micrófono.";
 "chat.errorNoData" = "No encontré datos para esa consulta. ¿Puedes ser más específico?";
 "chat.errorOffline" = "Necesitas conexión para usar Yala IA.";
+"chat.offline.body" = "Yala IA vuelve cuando tengas internet. Mientras, puedes apuntar a mano.";
 "chat.errorTimeout" = "La respuesta tardó demasiado. Intenta de nuevo.";
 "chat.errorTranscription" = "No pude transcribir el audio. Inténtalo de nuevo.";
 "chat.greeting" = "Hola, soy Yala IA. Cuéntame, ¿qué quieres saber de tus finanzas?";
@@ -1459,7 +1465,7 @@
 "faq.whatIsPro.q" = "¿Qué incluye Yala Pro?";
 "faq.whatIsYala.a" = "Yala es tu app de finanzas personales. Te ayuda a registrar gastos e ingresos, organizar tu dinero por categorías y etiquetas, crear presupuestos y ver reportes claros de cómo va tu economía.";
 "faq.whatIsYala.q" = "¿Qué es Yala?";
-"favorites.createTemplate" = "Guarda un gasto que repites (tu café, el taxi) y regístralo con un toque.";
+"favorites.createTemplate" = "Guarda un gasto que repites (tu café, el taxi) y apúntalo en dos toques: elígelo y guarda.";
 "favorites.descriptionPlaceholder" = "Descripción (opcional)";
 "favorites.edit" = "Editar favorito";
 "favorites.editTitle" = "Editar favorito";
@@ -1468,11 +1474,10 @@
 "favorites.newTitle" = "Nuevo favorito";
 "favorites.noFavorites" = "Aún no tienes favoritos";
 "favorites.notConfigured" = "Sin configurar";
-"favorites.saveDescription" = "Tus gastos de siempre, a un toque.";
+"favorites.saveDescription" = "Tus gastos de siempre, ya rellenos.";
 "favorites.title" = "Favoritos";
 "featureGate.accounts" = "Cuentas";
 "featureGate.budgets" = "Presupuestos";
-"featureGate.cashFlowAdvanced" = "Flujo de caja avanzado";
 "featureGate.chatAssistant" = "Yala IA";
 "featureGate.imageInput" = "Registro con foto o archivo";
 "featureGate.limitInfo" = "%d de %d";
@@ -1483,7 +1488,7 @@
 "featureGate.proFeatureTitle" = "Función Pro";
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Resumen con IA";
-"featureGate.trialExpiredMessage" = "Tu periodo de prueba ha terminado. Suscríbete para seguir disfrutando de todas las funciones.";
+"featureGate.trialExpiredMessage" = "Tu período de prueba ha terminado. Suscríbete para seguir disfrutando de todas las funciones.";
 "featureGate.trialExpiredTitle" = "Prueba terminada";
 "featureGate.upgrade" = "Actualizar";
 "featureGate.upgradeForMore" = "Actualiza a Pro para crear más";
@@ -1510,7 +1515,7 @@
 "filters.noTags" = "Sin etiquetas";
 "filters.none" = "Ninguno";
 "filters.noneSelected" = "Ninguna seleccionada";
-"filters.noteContains" = "Nota contiene...";
+"filters.noteContains" = "Nota contiene…";
 "filters.nothingExcluded" = "Nada";
 "filters.selectAccounts" = "Seleccionar cuentas";
 "filters.selectAll" = "Seleccionar todo";
@@ -1560,7 +1565,7 @@
 "guide.insights.title" = "Yala analiza por ti";
 "guide.panel.message" = "Aquí ves de un vistazo cuánto has gastado y cuánto te queda. Toca Nuevo registro para apuntar un gasto.";
 "guide.panel.title" = "Este es tu resumen";
-"guide.records.message" = "Aquí están tus ingresos y gastos del periodo, ordenados por fecha. Toca uno para ver los detalles.";
+"guide.records.message" = "Aquí están tus ingresos y gastos del período, ordenados por fecha. Toca uno para ver los detalles.";
 "guide.records.title" = "Todos tus registros";
 "guide.scheduled.message" = "¿Pagas Netflix todos los meses? ¿El alquiler? Agrégalos aquí y Yala te avisa antes de que se venzan.";
 "guide.scheduled.title" = "Gastos que se repiten";
@@ -1769,7 +1774,7 @@
 "insights.budgetsAtRisk" = "Presupuestos en riesgo";
 "insights.chartsSection" = "Gráficos";
 "insights.commitments" = "Compromisos";
-"insights.commitmentsNote" = "Periodo actual de cada presupuesto";
+"insights.commitmentsNote" = "Período actual de cada presupuesto";
 "insights.comparison" = "Comparativa";
 "insights.dailyAverage" = "Promedio diario";
 "insights.emptyBody" = "Registra gastos para ver tus observaciones";
@@ -1788,7 +1793,7 @@
 "insights.goToSettings" = "Ir a ajustes";
 "insights.highestAvgWeekday" = "Día de más gasto";
 "insights.highestExpense" = "Mayor gasto";
-"insights.inThisPeriod" = "en este periodo";
+"insights.inThisPeriod" = "en este período";
 "insights.intelligentInsights" = "Observaciones";
 "insights.metricsSection" = "Métricas";
 "insights.monthly" = "mensual";
@@ -1810,11 +1815,11 @@
 "insights.ruleDominantSharedCategory.normal" = "%@ domina tus gastos compartidos (%d%%)";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ es el %d%% de tu gasto compartido. ¿Solo comen juntos?";
 "insights.ruleExpenseDown.considerate" = "Los datos muestran una reducción de %@ en gastos — un resultado positivo.";
-"insights.ruleExpenseDown.normal" = "Buen ritmo: tus gastos bajaron %@ respecto al periodo anterior.";
+"insights.ruleExpenseDown.normal" = "Buen ritmo: tus gastos bajaron %@ respecto al período anterior.";
 "insights.ruleExpenseDown.sarcastic" = "Bien ahí, gastos abajo %@. Nada mal.";
-"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — vale considerar si hubo algún gasto atípico este periodo.";
-"insights.ruleExpenseUp.normal" = "Tus gastos subieron %@ respecto al periodo anterior.";
-"insights.ruleExpenseUp.sarcastic" = "Gastos arriba %@ vs el periodo pasado. Vale la pena revisar qué cambió.";
+"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — vale considerar si hubo algún gasto atípico este período.";
+"insights.ruleExpenseUp.normal" = "Tus gastos subieron %@ respecto al período anterior.";
+"insights.ruleExpenseUp.sarcastic" = "Gastos arriba %@ vs el período pasado. Vale la pena revisar qué cambió.";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ lleva el %d%% del gasto compartido — es tu grupo principal";
 "insights.ruleMostExpensiveGroup.normal" = "%@ es tu grupo más costoso con el %d%% del gasto compartido";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ se lleva el %d%% de tu gasto compartido. Dominante.";
@@ -1824,13 +1829,13 @@
 "insights.ruleSavingsNegative" = "Tus gastos superan tus ingresos en el período.";
 "insights.ruleSavingsPositive %d" = "Ahorras un %d%% de tus ingresos.";
 "insights.ruleSharedMoM.considerate" = "El gasto compartido subió %@ — revisa si hubo gastos extra";
-"insights.ruleSharedMoM.normal" = "Tu gasto compartido subió %@ vs el periodo anterior";
+"insights.ruleSharedMoM.normal" = "Tu gasto compartido subió %@ vs el período anterior";
 "insights.ruleSharedMoM.sarcastic" = "Gasto compartido +%@. ¿Qué celebraron?";
 "insights.ruleSharedRatio.considerate" = "El %d%% de tu gasto fue compartido — está bien repartir";
-"insights.ruleSharedRatio.normal" = "El %d%% de tus gastos este periodo son compartidos";
+"insights.ruleSharedRatio.normal" = "El %d%% de tus gastos este período son compartidos";
 "insights.ruleSharedRatio.sarcastic" = "El %d%% de tu gasto es compartido. ¿Quién paga la próxima?";
 "insights.ruleTopCategory.considerate" = "%@ representa el %d%% de tus gastos, aunque técnicamente podría ser esperable según tus prioridades.";
-"insights.ruleTopCategory.normal" = "%@ representa el %d%% de tus gastos este periodo.";
+"insights.ruleTopCategory.normal" = "%@ representa el %d%% de tus gastos este período.";
 "insights.ruleTopCategory.sarcastic" = "%@ se lleva el %d%% de tus gastos. Ojo con eso.";
 "insights.subscriptions" = "Suscripciones";
 "insights.tipBudgetRisk" = "Aún quedan días — intenta frenar gastos en %@ lo que resta";
@@ -2212,7 +2217,7 @@
 "panel.panorama.expand" = "Expandir tus finanzas";
 "panel.panorama.expandedValue" = "Expandido";
 "panel.panorama.title" = "Tus finanzas";
-"panel.periodComparison.requiresPeriod" = "Elige un mes o periodo para comparar";
+"panel.periodComparison.requiresPeriod" = "Elige un mes o período para comparar";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.preparingInsight" = "Preparando observación...";
@@ -2263,11 +2268,11 @@
 "panel.widgetInfo.cashFlow.chip4" = "Puedes tocarla";
 "panel.widgetInfo.cashFlow.largeHowA" = "Mantén el dedo sobre las barras para ver el detalle exacto de un punto concreto.";
 "panel.widgetInfo.cashFlow.largeHowQ" = "¿Cómo interactúo con la gráfica?";
-"panel.widgetInfo.cashFlow.largeWhatA" = "La evolución de tus ingresos y gastos a lo largo del periodo, agrupados por día, semana o mes según el intervalo seleccionado.";
+"panel.widgetInfo.cashFlow.largeWhatA" = "La evolución de tus ingresos y gastos a lo largo del período, agrupados por día, semana o mes según el intervalo seleccionado.";
 "panel.widgetInfo.cashFlow.largeWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y lo que te queda), con más espacio para ver los importes a detalle.";
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
+"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el período: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
 "panel.widgetInfo.cashFlow.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.title" = "Entradas y salidas";
 "panel.widgetInfo.categoriesPie.chip1" = "Categorías";
@@ -2382,9 +2387,9 @@
 "panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con mi saldo total?";
 "panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre saldo, ingresos y gastos con los botones de arriba.";
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
-"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del periodo.";
+"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del período.";
 "panel.widgetInfo.trend.largeWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
+"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del período según el filtro activo, con una mini-gráfica de evolución.";
 "panel.widgetInfo.trend.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.trend.title" = "Tendencia de saldo";
 "panel.widgetInfo.weekdayBar.chip1" = "Días de la semana";
@@ -2447,14 +2452,14 @@
 "profile.maxChars" = "Máximo 20 caracteres";
 "profile.minChars" = "Mínimo 3 caracteres";
 "profile.personalDetails" = "Detalles personales";
-"profile.privacyDesc" = "Con tu cuenta en tu iCloud privado, tus datos se guardan en tu dispositivo y en tu iCloud. Con tu cuenta en la nube, se guardan en los servidores de Yala. Lo que apuntas en un grupo, con tu alias, se guarda en los servidores de Yala para que el grupo lo vea. Las funciones de IA (voz, imagen e insights) son opcionales: lo que les envías pasa por nuestro servidor hasta un servicio de IA, que lo procesa. La Política de Privacidad dice cuál es. Con tu cuenta en la nube, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada.";
+"profile.privacyDesc" = "En tu iCloud, tus datos se guardan en tu dispositivo y en tu iCloud. En tu cuenta de Yala, se guardan en los servidores de Yala. Lo que apuntas en un grupo, con tu alias, se guarda en los servidores de Yala para que el grupo lo vea. Las funciones de IA (voz, imagen e insights) son opcionales: lo que les envías pasa por nuestro servidor hasta un servicio de IA, que lo procesa. La Política de Privacidad dice cuál es. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada.";
 "profile.privacyTitle" = "Dónde viven tus datos";
 "profile.proMember" = "Miembro PRO";
 "profile.removeAvatar" = "Quitar";
 "profile.title" = "Ajustes";
 "profile.yourName" = "Tu nombre";
 "records.latest" = "Últimos registros";
-"records.noRecords" = "Sin registros en este periodo";
+"records.noRecords" = "Sin registros en este período";
 "records.noRecordsThisDay" = "Sin registros este día";
 "records.title" = "Registros";
 "records.viewModeCalendarA11y" = "Vista de calendario";
@@ -2475,7 +2480,8 @@
 "report.netFlow" = "Flujo neto";
 "report.noAccount" = "Sin cuenta";
 "report.noData" = "Sin datos";
-"report.noDataDescription" = "No hay registros en este periodo";
+"report.noDataDescription" = "No hay registros en este período";
+"report.cashFlowNoDataDescription" = "Aquí verás tu flujo de caja cuando tengas tus primeros registros.";
 "report.noSubcategory" = "Sin subcategoría";
 "report.noTag" = "Sin etiqueta";
 "report.tab.cashFlow" = "Flujo de caja";
@@ -2922,11 +2928,11 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d categorías · %d subcategorías · %d etiquetas";
 "stats.distribution.insight.balanced %d" = "Tu gasto se reparte: ninguna categoría supera el %d%%. Distribución equilibrada.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% de tu gasto se concentra en %@. ¿Te alinea con tus prioridades?";
-"stats.distribution.empty.noTagMovementsTitle" = "Sin movimientos con etiqueta en este periodo";
-"stats.distribution.empty.noSubcategoryMovementsTitle" = "Sin movimientos con subcategoría en este periodo";
-"stats.distribution.empty.noMovementsTitle" = "Sin movimientos en este periodo";
-"stats.distribution.insight.newCategoryInPeriod %@" = "Probaste %@ en este periodo.";
-"stats.distribution.insight.onsetNoMovements" = "Aún no hay movimientos en este periodo. Cuando los registres, verás aquí cómo se reparten.";
+"stats.distribution.empty.noTagMovementsTitle" = "Sin movimientos con etiqueta en este período";
+"stats.distribution.empty.noSubcategoryMovementsTitle" = "Sin movimientos con subcategoría en este período";
+"stats.distribution.empty.noMovementsTitle" = "Sin movimientos en este período";
+"stats.distribution.insight.newCategoryInPeriod %@" = "Probaste %@ en este período.";
+"stats.distribution.insight.onsetNoMovements" = "Aún no hay movimientos en este período. Cuando los registres, verás aquí cómo se reparten.";
 "stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ bajó %1$d%% vs %3$@. Buen ajuste.";
 "stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ subió %1$d%% vs %3$@. Veamos qué cambió este período.";
 "stats.distribution.insight.topSub %d %@ %@" = "%2$@ representa el %1$d%% dentro de %3$@. Tu mayor partida específica.";
@@ -2950,7 +2956,7 @@
 "stats.trends.heroStable" = "Lo que te queda se mantiene estable";
 "stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
-"stats.trends.insight.onsetNoPrevious" = "Aún no hay un periodo anterior con el que comparar.";
+"stats.trends.insight.onsetNoPrevious" = "Aún no hay un período anterior con el que comparar.";
 "stats.trends.insight.stableBalance" = "Tu saldo se mantiene estable.";
 "stats.trends.insight.sustainedUpExpense %@" = "Tu gasto lleva subiendo desde hace %@.";
 "stats.trends.insight.sustainedDownExpense %@" = "Tu gasto lleva bajando desde hace %@.";
@@ -2963,7 +2969,7 @@
 "stats.trends.insight.durationYears %d" = "%d años";
 "stats.trends.insight.cashFlowSurplus %d" = "Tus ingresos han cubierto el %d%% de tus gastos: has cerrado en positivo.";
 "stats.trends.insight.cashFlowDeficit %d" = "Tus ingresos han cubierto el %d%% de tus gastos: has gastado más de lo que ha entrado.";
-"stats.trends.insight.cashFlowNoIncome" = "En este periodo has registrado gastos, pero ningún ingreso.";
+"stats.trends.insight.cashFlowNoIncome" = "En este período has registrado gastos, pero ningún ingreso.";
 "stats.trends.insight.weekdayPeak %@ %@" = "El %@ es tu día más caro: gastas %@ de media.";
 "stats.trends.insight.stableExpense" = "Tu gasto se mantiene estable.";
 "stats.trends.insight.stableIncome" = "Tus ingresos se mantienen estables.";
@@ -3080,7 +3086,7 @@
 "subscription.feature.unlimitedAccounts" = "Cuentas ilimitadas";
 "subscription.feature.unlimitedBudgets" = "Presupuestos ilimitados";
 "subscription.feature.voice" = "Registro por voz ilimitado";
-"subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del periodo actual.";
+"subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del período actual.";
 "subscription.manageInAppStore" = "Administrar en App Store";
 "subscription.paywallSubtitle" = "Lleva tus finanzas al siguiente nivel con herramientas avanzadas";
 "subscription.paywallTitle" = "Desbloquea todo el potencial de Yala";
@@ -3162,7 +3168,7 @@
 "tipkit.cfTable.available.title" = "Lo que te queda";
 "tipkit.cfTable.cell.message" = "Toca cualquier monto para ver de dónde viene y cómo se calculó.";
 "tipkit.cfTable.cell.title" = "Toca para ver más";
-"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el periodo anterior o con el mismo periodo del año pasado.";
+"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el período anterior o con el mismo período del año pasado.";
 "tipkit.comparison.title" = "Compara y aprende";
 "tipkit.done" = "Listo";
 "tipkit.next" = "Siguiente";
@@ -3191,10 +3197,10 @@
 "tips.camera.title" = "Escanea recibos y capturas";
 "tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hojas de cálculo o para tus archivos.";
 "tips.export.title" = "Exporta tus datos";
-"tips.favorites.detail" = "¿Pagas lo mismo seguido? Guarda un gasto como favorito y la próxima vez regístralo con un solo toque desde el menú +.";
+"tips.favorites.detail" = "¿Pagas lo mismo a menudo? Guarda un gasto como favorito: la próxima vez, elígelo al registrar y guarda.";
 "tips.favorites.title" = "Guarda pagos frecuentes";
-"tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o periodo. Compara mes a mes para detectar cambios.";
-"tips.filters.title" = "Filtra y compara periodos";
+"tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o período. Compara mes a mes para detectar cambios.";
+"tips.filters.title" = "Filtra y compara períodos";
 "tips.section.advanced" = "Trucos avanzados";
 "tips.section.organize" = "Organiza tu dinero";
 "tips.section.quickEntry" = "Registro rápido";
@@ -3287,7 +3293,7 @@
 "tutorials.createBudgets.intro.title" = "¿Qué es un presupuesto?";
 "tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
 "tutorials.createBudgets.step0.title" = "Abre Planificación";
-"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el período: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
 "tutorials.createBudgets.step1.title" = "Configura tu presupuesto";
 "tutorials.createBudgets.step2.desc" = "Activa «Mostrar en el widget» para verlo en el widget de Presupuestos del Panel.";
 "tutorials.createBudgets.step2.title" = "Muéstralo en el Panel";
@@ -3307,9 +3313,9 @@
 "tutorials.createCategories.step3.desc" = "Personaliza a tu gusto el icono y color de tu categoría cuando quieras.";
 "tutorials.createCategories.step3.title" = "Personaliza tu categoría";
 "tutorials.createCategories.title" = "Crear categorías";
-"tutorials.createFavorites.completion.desc" = "Un favorito apunta en un toque los gastos que repites. Puedes tener los que quieras.";
+"tutorials.createFavorites.completion.desc" = "Un favorito te deja listo el gasto que repites: lo eliges, cambias el monto si hace falta y guardas. Puedes tener los que quieras.";
 "tutorials.createFavorites.completion.title" = "Ya sabes cómo usar favoritos";
-"tutorials.createFavorites.intro.desc" = "Guarda gastos frecuentes como atajos y regístralos con un toque.";
+"tutorials.createFavorites.intro.desc" = "Guarda gastos frecuentes como atajos: al elegirlos, el formulario se rellena solo.";
 "tutorials.createFavorites.intro.title" = "¿Qué son los favoritos?";
 "tutorials.createFavorites.step0.desc" = "En Nuevo registro, toca «Favorito», debajo del monto, para guardar como favorito lo que llevas escrito.";
 "tutorials.createFavorites.step0.title" = "Crea un favorito";
@@ -3390,7 +3396,7 @@
 "tutorials.nextTutorial" = "Siguiente tutorial";
 "tutorials.panelFiltering.completion.desc" = "Combina filtros para ver justo lo que buscas. Se aplican en todas las pantallas a la vez.";
 "tutorials.panelFiltering.completion.title" = "Ya sabes cómo filtrar";
-"tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o periodo para análisis detallado.";
+"tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o período para análisis detallado.";
 "tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
 "tutorials.panelFiltering.step0.desc" = "Saca el máximo provecho a los gráficos interactivos de Yala. Casi todos los paneles son filtrables por categoría, necesidad, entre otros. Juega con ellos y encuentra lo que más te sirva.";
 "tutorials.panelFiltering.step0.title" = "Toca los gráficos para filtrar";
@@ -3512,13 +3518,13 @@
 "widget.hint.trend" = "Muestra la evolución de tu saldo, ingresos o gastos en el período seleccionado.";
 "widget.list" = "Lista";
 "widget.main" = "Principal";
-"widget.noDataForPeriod" = "Aún no hay datos para este periodo";
+"widget.noDataForPeriod" = "Aún no hay datos para este período";
 "widget.noExpensesDescriptionCategories" = "Cuando tengas registros, verás aquí tus categorías principales.";
 "widget.noExpensesDescriptionSubcategories" = "Cuando tengas registros, verás aquí tus subcategorías principales.";
-"widget.noExpensesNeedPeriod" = "No hay gastos registrados por necesidad para este periodo.";
-"widget.noExpensesPeriod" = "Aún no tienes gastos en este periodo.";
-"widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este periodo.";
-"widget.noRecordsForFilters" = "No hay registros para este periodo y filtros";
+"widget.noExpensesNeedPeriod" = "No hay gastos registrados por necesidad para este período.";
+"widget.noExpensesPeriod" = "Aún no tienes gastos en este período.";
+"widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este período.";
+"widget.noRecordsForFilters" = "No hay registros para este período y filtros";
 "widget.of" = "de %@";
 "widget.ofExpense" = "del gasto";
 "widget.ofTotal" = "del total";
@@ -3617,7 +3623,7 @@
 "whatsNew.v21.logging.title" = "Apuntar nunca fue tan fácil";
 "whatsNew.v21.logging.description" = "Háblale, hazle una foto o escríbele como a un amigo. Yala entiende lo que has gastado y lo registra por ti, para que llevar tus cuentas sea cuestión de segundos.";
 "whatsNew.v21.data.title" = "Tus datos, tus reglas";
-"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud privado o en la nube de Yala, para tenerla en todos tus dispositivos. Además, un Panel renovado y Yala a pantalla completa en tu iPad.";
+"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud o en tu cuenta de Yala, para tenerla en todos tus dispositivos. Además, un Panel renovado y Yala a pantalla completa en tu iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -3743,7 +3749,7 @@
 "groups.openingBalance.sectionTitle" = "Saldos iniciales";
 "groups.openingBalance.addButton" = "Añadir saldo inicial";
 "groups.openingBalance.emptyState" = "Aún no hay saldos iniciales.";
-"groups.openingBalance.frozenNote" = "Este grupo se movió a la nube de Yala. Los saldos iniciales se pueden ver, pero no cambiar aquí.";
+"groups.openingBalance.frozenNote" = "Este grupo pasó a tu cuenta de Yala. Los saldos iniciales se pueden ver, pero no cambiar aquí.";
 "groups.openingBalance.rollupOwes" = "debe";
 "groups.openingBalance.rollupOwed" = "le deben";
 "groups.openingBalance.approvalPromptTitle" = "¿%@ ya tenía cuentas pendientes con el grupo?";
@@ -3848,53 +3854,53 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "Dónde viven tus datos";
-"storage.waitingForLeader" = "Otro de tus dispositivos está activando la nube para esta cuenta. Espera a que termine.";
-"storage.status.icloudTitle" = "iCloud privado";
-"storage.status.icloudBody" = "Tus datos viven en tu dispositivo y se sincronizan por tu iCloud privado. Nadie más puede leerlos, ni siquiera nosotros.";
-"storage.status.cloudTitle" = "Tu cuenta en la nube";
+"storage.waitingForLeader" = "Otro de tus dispositivos está pasando tus datos a tu cuenta de Yala. Espera a que termine.";
+"storage.status.icloudTitle" = "En tu iCloud";
+"storage.status.icloudBody" = "Tus datos viven en tu dispositivo y se sincronizan por tu iCloud. Nadie más puede leerlos, ni siquiera nosotros.";
+"storage.status.cloudTitle" = "En tu cuenta de Yala";
 "storage.status.cloudBody" = "Tus datos se guardan en tu cuenta de Yala y se sincronizan en todos tus dispositivos.";
-"storage.migrate.title" = "Migrar a la nube";
+"storage.migrate.title" = "Pasar a tu cuenta de Yala";
 "storage.migrate.body" = "Crea una cuenta con Apple o Google y accede a tus datos desde cualquier dispositivo, incluso sin iCloud.";
-"storage.migrate.button" = "Activar la nube";
-"storage.migrate.previewButton" = "Ver qué migraría";
+"storage.migrate.button" = "Pasar a tu cuenta de Yala";
+"storage.migrate.previewButton" = "Ver qué pasaría";
 "storage.migrate.previewResult" = "%1$d registros · %2$d categorías · %3$d cuentas · %4$d presupuestos";
-"storage.adopt.title" = "Activar la nube en este dispositivo";
-"storage.adopt.body" = "Esta cuenta ya tiene tus datos en la nube. Vamos a activarla en este dispositivo.";
-"storage.adopt.button" = "Activar en este dispositivo";
+"storage.adopt.title" = "Usar tu cuenta de Yala en este dispositivo";
+"storage.adopt.body" = "Tus datos ya están en tu cuenta de Yala. Vamos a usarla en este dispositivo.";
+"storage.adopt.button" = "Usar en este dispositivo";
 "storage.revert.title" = "Volver a tu iCloud";
 "storage.revert.body" = "Tus datos vuelven a este dispositivo y a tu iCloud. Antes de empezar, te contamos qué pasa con cada cosa.";
 "storage.revert.button" = "Volver a tu iCloud";
-"storage.revert.ineligible" = "Ahora mismo no puedes volver a iCloud desde este dispositivo.";
+"storage.revert.ineligible" = "Ahora mismo no puedes volver a tu iCloud desde este dispositivo.";
 "storage.sync.title" = "Sincronización";
 "storage.sync.upToDate" = "Todo sincronizado";
 "storage.sync.signInButton" = "Iniciar sesión";
-"storage.progress.migrating" = "Activando la nube…";
-"storage.progress.reverting" = "Volviendo a iCloud…";
+"storage.progress.migrating" = "Pasando a tu cuenta de Yala…";
+"storage.progress.reverting" = "Volviendo a tu iCloud…";
 "storage.progress.resume" = "Retomar";
 "storage.progress.retry" = "Reintentar";
 "storage.relaunch.title" = "Ya casi está — reinicia Yala";
 "storage.relaunch.body" = "Cierra Yala del todo (deslízala fuera del selector de apps) y vuelve a abrirla para terminar.";
-"storage.failed.migration" = "No pudimos activar la nube. Tus datos están a salvo en tu dispositivo; puedes reintentar.";
-"storage.failed.reverse" = "No pudimos completar la vuelta a iCloud. Tus datos están a salvo; puedes reintentar.";
-"storage.confirm.migrateTitle" = "¿Activar la nube?";
+"storage.failed.migration" = "No pudimos pasar tus datos a tu cuenta de Yala. Tus datos están a salvo en tu dispositivo; puedes reintentar.";
+"storage.failed.reverse" = "No pudimos completar la vuelta a tu iCloud. Tus datos están a salvo; puedes reintentar.";
+"storage.confirm.migrateTitle" = "¿Pasar a tu cuenta de Yala?";
 "storage.confirm.migrateBody" = "Tus datos se moverán a tu cuenta de Yala. Es reversible, pero es un cambio importante.";
 "storage.confirm.migrateContinue" = "Continuar";
 "storage.confirm.migrate2Title" = "¿Seguro?";
-"storage.confirm.migrate2Body" = "Se activará la nube en este dispositivo.";
-"storage.confirm.migrate2Confirm" = "Sí, activar la nube";
+"storage.confirm.migrate2Body" = "Tus datos pasarán a tu cuenta de Yala en este dispositivo.";
+"storage.confirm.migrate2Confirm" = "Sí, pasar a mi cuenta de Yala";
 "storage.confirm.revertContinue" = "Continuar";
 "storage.confirm.revert2Title" = "¿Seguro?";
-"storage.confirm.revert2Body" = "Se desactivará la nube en este dispositivo.";
+"storage.confirm.revert2Body" = "Tus datos volverán a tu iCloud en este dispositivo.";
 "storage.errors.title" = "Algo salió mal";
 "storage.errors.generic" = "Algo no salió bien. Inténtalo de nuevo.";
 "storage.errors.adoptOtherAccount" = "Esa no es la cuenta que estabas activando en este dispositivo. Inténtalo de nuevo con la misma cuenta.";
-"storage.errors.adoptICloudNotSettled" = "No pudimos empezar a activar la nube: iCloud sigue trayendo datos a este dispositivo. Inténtalo de nuevo en unos minutos.";
+"storage.errors.adoptICloudNotSettled" = "No pudimos empezar a pasar tus datos a tu cuenta de Yala: iCloud sigue trayendo datos a este dispositivo. Inténtalo de nuevo en unos minutos.";
 "storage.errors.signIn" = "No pudimos iniciar sesión. Inténtalo de nuevo.";
-"storage.consent.title" = "Tus datos en la nube de Yala";
+"storage.consent.title" = "Tus datos en tu cuenta de Yala";
 "storage.consent.pointServers" = "Nuestro equipo puede verlos para darte soporte y funciones inteligentes. No usamos cifrado de extremo a extremo.";
-"storage.consent.pointPhotos" = "No se respaldan en la nube ni se ven en otros dispositivos. Si quieres conservarlas, guárdalas antes de cambiar de dispositivo.";
+"storage.consent.pointPhotos" = "No se guardan en tu cuenta de Yala ni se ven en otros dispositivos. Si quieres conservarlas, guárdalas antes de cambiar de dispositivo.";
 "storage.consent.pointAccess" = "Sin depender de iCloud. No hay contraseña de Yala ni recuperación por correo: si pierdes ese acceso, exporta antes tus datos (Ajustes → Exportar registros).";
-"storage.consent.footer" = "Puedes volver al modo privado cuando quieras, sin perder nada.";
+"storage.consent.footer" = "Puedes volver a tu iCloud cuando quieras, sin perder nada.";
 "storage.consent.privacyLink" = "Ver la política de privacidad";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -3944,7 +3950,7 @@
 "settings.signOutBlockedTitle" = "No pudimos cerrar tu sesión";
 
 /* Alert message when pending uploads block sign out */
-"settings.signOutBlockedMessage" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. Revisa tu conexión e inténtalo de nuevo.";
+"settings.signOutBlockedMessage" = "Hay cambios que aún no llegan a tu cuenta de Yala y no queremos que pierdas nada. Revisa tu conexión e inténtalo de nuevo.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
 "welcome.existing.title" = "¡Hola de nuevo!";
@@ -3963,13 +3969,13 @@
 "welcome.existing.cloudTitle" = "Entrar con Apple";
 
 /* Card body: sign in to cloud account */
-"welcome.existing.cloudBody" = "Tu cuenta Yala en la nube, desde cualquier dispositivo.";
+"welcome.existing.cloudBody" = "Tu cuenta de Yala, desde cualquier dispositivo.";
 
 /* Cloud sign-in screen title */
 "welcome.cloud.title" = "Entra a tu cuenta";
 
 /* Cloud sign-in screen subtitle */
-"welcome.cloud.subtitle" = "Usa el mismo Apple ID con el que creaste tu cuenta de la nube.";
+"welcome.cloud.subtitle" = "Usa el mismo Apple ID con el que creaste tu cuenta de Yala.";
 
 /* Progress label while checking account exists */
 "welcome.cloud.checking" = "Verificando tu cuenta…";
@@ -3984,7 +3990,7 @@
 "welcome.cloud.notFoundTitle" = "No encontramos una cuenta";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "Aún no hay una cuenta de Yala en la nube para el acceso que usaste.";
+"welcome.cloud.notFoundBody" = "Aún no hay una cuenta de Yala para el acceso que usaste.";
 "welcome.cloud.notFoundCta" = "Crear mi cuenta";
 
 /* Title when foreign local data blocks sign-in */
@@ -4017,8 +4023,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Descargando tus datos…";
-"welcome.cloud.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en la nube. Volverás al inicio. Cuando quieras, puedes entrar otra vez en tu cuenta con «Ya tengo cuenta».";
-"welcome.cloud.cancelAdoptEffectBody" = "Lo que tienes en este dispositivo sigue aquí, como hasta ahora. Volverás al inicio. Cuando quieras, puedes entrar otra vez en tu cuenta con «Ya tengo cuenta».";
+"welcome.cloud.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en tu cuenta de Yala. Volverás al inicio. Cuando quieras, puedes entrar otra vez en tu cuenta desde el inicio.";
+"welcome.cloud.cancelAdoptEffectBody" = "Lo que tienes en este dispositivo sigue aquí, como hasta ahora. Volverás al inicio. Cuando quieras, puedes entrar otra vez en tu cuenta desde el inicio.";
+"welcome.cloud.cancelling" = "Cancelando…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Grupos necesita iCloud";
@@ -4033,10 +4040,10 @@
 "storage.relaunch.bodyAutoExit" = "Ve a la pantalla de inicio y vuelve a abrir Yala — todo quedará listo.";
 
 /* G4 groups consent screen title */
-"groups.consent.title" = "Grupos en la nube";
+"groups.consent.title" = "Grupos en tu cuenta de Yala";
 
 /* G4 consent point 1 */
-"groups.consent.point1" = "Los grupos son compartidos por naturaleza: viven en la nube de Yala para que todos vean los mismos gastos, al día.";
+"groups.consent.point1" = "Los grupos son compartidos por naturaleza: viven en tu cuenta de Yala, en la nube, para que todos vean los mismos gastos, al día.";
 
 /* G4 consent point 2 */
 "groups.consent.point2" = "Con el grupo solo se comparte lo mínimo: tu nombre y los gastos del grupo. Los demás miembros no ven tu correo.";
@@ -4058,7 +4065,7 @@
 "groups.signin.bodyNoInvite" = "Tus grupos se guardan en tu cuenta de Yala, para que todos vean los mismos gastos al día. Entra con Apple o Google para seguir.";
 
 /* G4 sign-in R9 account note */
-"groups.signin.accountNote" = "Esta será tu cuenta de Yala: si algún día llevas tus datos personales a la nube, usarás esta misma.";
+"groups.signin.accountNote" = "Esta será tu cuenta de Yala: si algún día pasas tus datos personales a tu cuenta de Yala, usarás esta misma.";
 
 /* G4 sign-in error */
 "groups.signin.error" = "Hmm, no pudimos conectar tu cuenta. Inténtalo de nuevo.";
@@ -4108,13 +4115,13 @@
 "export.groupsExportFailedNote" = "Tu archivo personal se exportó bien, pero no pudimos incluir tus grupos esta vez. Inténtalo de nuevo más tarde.";
 
 /* G6-3: freeze error surfaced when writing to a migrated group */
-"groups.errors.movedToBackend" = "Este grupo se movió a la nube de Yala. Vuelve a entrar para seguir usándolo.";
+"groups.errors.movedToBackend" = "Este grupo pasó a tu cuenta de Yala. Vuelve a entrar para seguir usándolo.";
 
 /* G6-3: card chip for a migrated frozen group */
 "groups.card.movedChip" = "Se movió";
 
 /* G6-3: detail banner title for a migrated group */
-"groups.migrated.bannerTitle" = "Este grupo se movió a la nube de Yala";
+"groups.migrated.bannerTitle" = "Este grupo pasó a tu cuenta de Yala";
 
 /* G6-3: detail banner body for a migrated group */
 "groups.migrated.bannerBody" = "Vuelve a entrar para seguir viendo y editando los gastos.";
@@ -4130,7 +4137,7 @@
 
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
-"groups.migrated.migratingBanner" = "Moviendo tus grupos a la nube de Yala…";
+"groups.migrated.migratingBanner" = "Pasando tus grupos a tu cuenta de Yala…";
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Continuar con Google";
@@ -4141,11 +4148,11 @@
 "welcome.existing.googleTitle" = "Entrar con Google";
 
 /* Existing-account chooser: Google sign-in card body */
-"welcome.existing.googleBody" = "Tu cuenta Yala en la nube, si la creaste con tu cuenta de Google.";
+"welcome.existing.googleBody" = "Tu cuenta de Yala, si la creaste con tu cuenta de Google.";
 "welcome.existing.usedOnThisDeviceNote" = "La que usaste en este dispositivo";
 
 /* Cloud sign-in intro subtitle when provider is Google */
-"welcome.cloud.subtitleGoogle" = "Usa la misma cuenta de Google con la que creaste tu cuenta de la nube.";
+"welcome.cloud.subtitleGoogle" = "Usa la misma cuenta de Google con la que creaste tu cuenta de Yala.";
 
 
 
@@ -4167,7 +4174,7 @@
 "storage.signin.title" = "Elige cómo iniciar sesión";
 
 /* Body of the provider chooser in the cloud migration entry */
-"storage.signin.body" = "Para guardar tus datos en la nube necesitas una cuenta de Yala. Entra con Apple o Google.";
+"storage.signin.body" = "Para guardar tus datos en tu cuenta de Yala, entra con Apple o Google.";
 
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
@@ -4242,7 +4249,7 @@
 "settings.deleteAccountViewGroups" = "Ver mis grupos";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Tu copia antigua de iCloud (de antes de la nube) no se toca: si vuelves a abrir Yala, la verás como una reinstalación.";
+"settings.deleteAccountFrozenICloudNote" = "Si usabas Yala con tu iCloud antes de crear tu cuenta, esa copia sigue en tu iCloud: eliminar tu cuenta de Yala no la borra.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "En grupos antiguos (iCloud) tu nombre puede seguir visible para sus miembros.";
@@ -4251,7 +4258,7 @@
 "settings.scopeDeviceLabel" = "En este dispositivo";
 
 /* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
-"settings.scopeICloudLabel" = "En iCloud";
+"settings.scopeICloudLabel" = "En tu iCloud";
 
 /* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
 "settings.scopeCloudAccountLabel" = "En tu cuenta de Yala";
@@ -4348,7 +4355,7 @@
 "settings.wipeExportBeforeButton" = "Exportar antes";
 
 /* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
-"settings.wipeExportBeforeCloudCaption" = "En modo nube esta puede ser tu única copia";
+"settings.wipeExportBeforeCloudCaption" = "Con tus datos en tu cuenta de Yala, esta puede ser tu única copia";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "Tus grupos se conservan, pero tienes saldos pendientes. Puedes saldarlos desde la pestaña Grupos.";
@@ -4423,20 +4430,20 @@
 "settings.yalaAccountDataLocationTitle" = "Dónde viven tus datos";
 
 /* Datos en modo nube */
-"settings.yalaAccountDataLocationCloud" = "En tu cuenta de Yala, en la nube.";
+"settings.yalaAccountDataLocationCloud" = "En tu cuenta de Yala.";
 
 /* Datos en solo-grupos (5b) */
-"settings.yalaAccountDataLocationGroupsOnly" = "En este dispositivo y en tu iCloud privado. Tu cuenta solo la usas para Grupos.";
+"settings.yalaAccountDataLocationGroupsOnly" = "En tu iCloud y en este dispositivo. Tu cuenta solo la usas para Grupos.";
 "settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "Tu cuenta solo guarda tus grupos; en este dispositivo no hay datos personales.";
 
 /* Alcance del desenlace Cerrar sesión */
 "settings.yalaAccountSignOutScope" = "Tu cuenta sigue; vuelves cuando quieras.";
 
 /* Desenlace Volver a iCloud (la Reversa) */
-"settings.yalaAccountReturnICloud" = "Volver a iCloud";
+"settings.yalaAccountReturnICloud" = "Volver a tu iCloud";
 
 /* Alcance del desenlace Volver a iCloud */
-"settings.yalaAccountReturnICloudScope" = "Tus datos vuelven a tu iCloud privado; tu cuenta queda en pausa.";
+"settings.yalaAccountReturnICloudScope" = "Tus datos vuelven a tu iCloud; tu cuenta queda en pausa.";
 
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Se borra todo, para siempre.";
@@ -4446,10 +4453,10 @@
 "settings.accountSubsectionTitle" = "Tu cuenta";
 
 /* Subtitulo de Donde viven tus datos, modo iCloud */
-"settings.dataLocationSubtitleICloud" = "iCloud privado";
+"settings.dataLocationSubtitleICloud" = "En tu iCloud";
 
 /* Subtitulo de Donde viven tus datos, modo nube */
-"settings.dataLocationSubtitleCloud" = "Tu cuenta en la nube";
+"settings.dataLocationSubtitleCloud" = "En tu cuenta de Yala";
 
 /* D10 batch: stop button (D3) */
 "settings.batchLeaveStop" = "Detener";
@@ -4490,29 +4497,29 @@
 "storage.migrate.refusedPersonalData" = "Tu cuenta de Yala actual ya tiene finanzas personales, así que no puede recibir las de este dispositivo. Para llevar tus datos a otra cuenta, primero desasocia esta en «Grupos».";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Tus grupos usan otra cuenta, y en este dispositivo solo puede haber una en la nube. Para llevar tus datos a la nube, entra con la cuenta de tus grupos o desasóciala antes en «Grupos».";
+"storage.migrate.refusedOtherGroups" = "Tus grupos usan otra cuenta, y en este dispositivo solo puede haber una cuenta de Yala. Para pasar tus datos a tu cuenta de Yala, entra con la cuenta de tus grupos o desasóciala antes en «Grupos».";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
-"storage.migrate.refusedReturned" = "Tu cuenta de Yala actual ha vuelto a iCloud, y volver a la nube con ella todavía no está disponible.";
+"storage.migrate.refusedReturned" = "Con tu cuenta de Yala actual has vuelto a tu iCloud, y pasar otra vez a ella todavía no está disponible.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Tu cuenta de Yala actual puede ser de otra persona: ya estaba abierta y aquí se ha empezado desde cero. Para elegir la tuya, desasóciala en «Grupos» y vuelve a tocar «Activar la nube».";
+"storage.migrate.refusedFreshStart" = "Tu cuenta de Yala actual puede ser de otra persona: ya estaba abierta y aquí se ha empezado desde cero. Para elegir la tuya, desasóciala en «Grupos» y vuelve a tocar «Pasar a tu cuenta de Yala».";
 "storage.migrate.refusedOtherDevice" = "Hay una activación a medias con esta cuenta. Si la empezaste aquí, vuelve a intentarlo dentro de una hora; si fue en otro de tus dispositivos, termínala allí.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
-"storage.adopt.otherAccountNote" = "Esta copia de la nube pertenece a otra cuenta de Yala, la de %@. Cierra sesión y entra con esa cuenta para continuar.";
+"storage.adopt.otherAccountNote" = "Estos datos son de otra cuenta de Yala, la de %@. Cierra sesión y entra con esa cuenta para continuar.";
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
-"storage.adopt.otherAccountNoteGeneric" = "Esta copia de la nube pertenece a otra cuenta de Yala. Cierra sesión y entra con esa cuenta para continuar.";
+"storage.adopt.otherAccountNoteGeneric" = "Estos datos son de otra cuenta de Yala. Cierra sesión y entra con esa cuenta para continuar.";
 
 /* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
-"storage.failed.migrationICloudFull" = "No pudimos terminar de activar la nube: iCloud se quedó sin espacio. Tus datos están enteros en este dispositivo. Libera espacio en iCloud e inténtalo de nuevo.";
+"storage.failed.migrationICloudFull" = "No pudimos terminar de pasar tus datos a tu cuenta de Yala: iCloud se quedó sin espacio. Tus datos están enteros en este dispositivo. Libera espacio en iCloud e inténtalo de nuevo.";
 
 /* Cloud cutover failed because iCloud is not enabled on this device */
-"storage.failed.migrationICloudOff" = "No pudimos terminar de activar la nube: este dispositivo no tiene iCloud activo. Tus datos están enteros aquí. Activa iCloud en Ajustes e inténtalo de nuevo.";
+"storage.failed.migrationICloudOff" = "No pudimos terminar de pasar tus datos a tu cuenta de Yala: este dispositivo no tiene iCloud activo. Tus datos están enteros aquí. Activa iCloud en Ajustes e inténtalo de nuevo.";
 
 /* Cloud cutover failed because iCloud never confirmed the last export step */
-"storage.failed.migrationICloudStalled" = "No pudimos terminar de activar la nube: iCloud no confirmó el último paso. Tus datos están enteros en este dispositivo; inténtalo de nuevo cuando tengas buena conexión.";
+"storage.failed.migrationICloudStalled" = "No pudimos terminar de pasar tus datos a tu cuenta de Yala: iCloud no confirmó el último paso. Tus datos están enteros en este dispositivo; inténtalo de nuevo cuando tengas buena conexión.";
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "Esperando la confirmación de iCloud…";
@@ -4526,7 +4533,7 @@
 "groups.migrated.updateBody" = "Actualiza Yala para volver a entrar. Mientras tanto puedes ver los gastos, pero no editarlos.";
 
 /* C-10: detail banner body when the channel is paused */
-"groups.migrated.pausedBody" = "Estamos terminando de mover este grupo a la nube de Yala. Vuelve a intentarlo en un rato; no pierdes nada.";
+"groups.migrated.pausedBody" = "Estamos terminando de pasar este grupo a tu cuenta de Yala. Vuelve a intentarlo en un rato; no pierdes nada.";
 
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "Lo que ves es la copia de cuando el grupo se movió, así que puede que no esté al día.";
@@ -4552,9 +4559,9 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "Elige dónde quieres guardar tus datos.";
-"welcome.new.privateTitle" = "Tu cuenta en tu iCloud privado";
-"welcome.new.privateBody" = "Tus datos viven en los dispositivos Apple de tu Apple ID y se sincronizan por tu iCloud privado. Nadie más puede leerlos, ni siquiera nosotros.";
-"welcome.new.cloudTitle" = "Tu cuenta en la nube";
+"welcome.new.privateTitle" = "En tu iCloud";
+"welcome.new.privateBody" = "Tus datos viven en los dispositivos Apple de tu Apple ID y se sincronizan por tu iCloud. Nadie más puede leerlos, ni siquiera nosotros.";
+"welcome.new.cloudTitle" = "En tu cuenta de Yala";
 "welcome.new.cloudBody" = "Tus datos viven en nuestros servidores, como en la mayoría de tus aplicaciones. Nuestro equipo puede verlos para darte soporte y funciones nuevas.";
 "welcome.new.groupsQuestion" = "¿Solo vienes a dividir gastos?";
 "welcome.new.groupsAction" = "Empieza por aquí";
@@ -4633,7 +4640,7 @@
 
 /* C2 · empty state con sesión viva y sin consent */
 "groups.empty.needsConsent.title" = "Acepta cómo se guardan tus grupos";
-"groups.empty.needsConsent.message" = "Te contamos qué se guarda en la nube de Yala y tú decides.";
+"groups.empty.needsConsent.message" = "Te contamos qué se guarda en tu cuenta de Yala y tú decides.";
 "groups.empty.needsConsent.action" = "Ver y aceptar";
 
 
@@ -4744,7 +4751,7 @@
 "welcome.restore.cloudPausedTitle" = "Tus datos no están en iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Este Apple ID se usó con una cuenta de Yala en la nube, y lo que guardaste ahí no está en tu iCloud. La entrada a la nube está en pausa por ahora; vuelve a intentarlo más tarde.";
+"welcome.restore.cloudPausedBody" = "Este Apple ID se usó con una cuenta de Yala, y lo que guardaste ahí no está en tu iCloud. La entrada a tu cuenta de Yala está en pausa por ahora; vuelve a intentarlo más tarde.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Te recordamos que le debes %1$@ a %2$@. Cuando puedas, ponte al día.";
@@ -4780,7 +4787,7 @@
 "groups.shareableSummary.owedLabel" = "Le tocaba";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Para saldar";
+"groups.shareableSummary.settleUp" = "Para quedar a mano";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "¡Todo saldado!";
@@ -4890,7 +4897,7 @@
 "groups.accountIsComplete.title" = "Esa cuenta ya tiene Yala completo";
 
 /* Bloque [I]: por qué se bloquea */
-"groups.accountIsComplete.body" = "Esa cuenta ya guarda las finanzas de alguien en la nube. Usarla solo para tus grupos mezclaría dos cuentas en una, así que aquí no podemos.";
+"groups.accountIsComplete.body" = "Esa cuenta de Yala ya guarda las finanzas de alguien. Usarla solo para tus grupos mezclaría dos cuentas en una, así que aquí no podemos.";
 
 /* Bloque [I]: CTA para firmar con otra cuenta */
 "groups.accountIsComplete.useAnotherAccount" = "Usar otra cuenta";
@@ -5037,7 +5044,7 @@
 "welcome.groups.neutralUnavailableBody" = "Este dispositivo tiene una sesión abierta que hay que cerrar desde Ajustes antes de empezar un grupo aquí. Vuelve atrás: no se ha tocado nada.";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "Todavía no podemos confirmar que el paso de tus datos entre iCloud y la nube haya terminado, y preparar este dispositivo ahora podría borrar lo que falta por subir. Vuelve atrás: no se ha tocado nada.";
+"welcome.groups.neutralMigrationBody" = "Todavía no podemos confirmar que el paso de tus datos entre tu iCloud y tu cuenta de Yala haya terminado, y preparar este dispositivo ahora podría borrar lo que falta por subir. Vuelve atrás: no se ha tocado nada.";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Grupos";
@@ -5219,11 +5226,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "Este dispositivo no puede sincronizar tus datos";
-"settings.signOutAttestMessage" = "Este dispositivo no puede enviar cambios a tu cuenta en la nube desde hace un día. Cambios que no han llegado: %d. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
-"settings.signOutAttestMessageUnknown" = "Este dispositivo no puede enviar cambios a tu cuenta en la nube desde hace un día, y hay cambios que no han llegado. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestMessage" = "Este dispositivo no puede enviar cambios a tu cuenta de Yala desde hace un día. Cambios que no han llegado: %d. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestMessageUnknown" = "Este dispositivo no puede enviar cambios a tu cuenta de Yala desde hace un día, y hay cambios que no han llegado. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 "settings.signOutAttestExportButton" = "Exportar mis registros";
 "settings.signOutAttestLossButton" = "Cerrar sesión y perderlos";
-"settings.signOutAttestBlocked" = "Este dispositivo no puede enviar cambios a tu cuenta en la nube desde hace un día, así que tus cambios no pueden subir.";
+"settings.signOutAttestBlocked" = "Este dispositivo no puede enviar cambios a tu cuenta de Yala desde hace un día, así que tus cambios no pueden subir.";
 "settings.signOutAttestExportEmpty" = "No tienes registros que exportar.";
 "settings.signOutAttestExportFailed" = "No hemos podido generar el archivo. Inténtalo de nuevo.";
 
@@ -5231,46 +5238,46 @@
 "groups.attestTerminalBanner" = "Este dispositivo no puede enviar cambios a tus grupos desde hace un día. Lo que apuntes aquí no lo verá nadie del grupo: usa otro dispositivo.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Este dispositivo no puede enviar cambios a tu cuenta en la nube desde hace un día. Lo que apuntes aquí se guarda en el dispositivo, pero no llega a tu cuenta: usa otro dispositivo mientras tanto.";
+"settings.attestTerminalBanner" = "Este dispositivo no puede enviar cambios a tu cuenta de Yala desde hace un día. Lo que apuntes aquí se guarda en el dispositivo, pero no llega a tu cuenta: usa otro dispositivo mientras tanto.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Subiendo tus datos a iCloud. Puedes seguir usando Yala.";
 "storage.progress.reversePending" = "Pendientes de subir: %d";
-"storage.progress.reverseICloudFull" = "iCloud no tiene espacio para tus datos. Si la subida no avanza en unos minutos, seguirás en la nube y podrás volver a intentarlo cuando liberes espacio.";
-"storage.progress.reverseICloudUnavailable" = "iCloud no está disponible en este dispositivo. Si la subida no avanza en unos minutos, seguirás en la nube y podrás volver a intentarlo.";
-"storage.progress.cancelReverse" = "Cancelar y seguir en la nube";
-"storage.confirm.cancelReverseTitle" = "¿Cancelar la vuelta a iCloud?";
-"storage.confirm.cancelReverseBody" = "Tus datos siguen en la nube de Yala y en este dispositivo. Yala te pedirá cerrarla y volver a abrirla.";
-"storage.confirm.cancelReverseConfirm" = "Sí, seguir en la nube";
+"storage.progress.reverseICloudFull" = "iCloud no tiene espacio para tus datos. Si la subida no avanza en unos minutos, seguirás en tu cuenta de Yala y podrás volver a intentarlo cuando liberes espacio.";
+"storage.progress.reverseICloudUnavailable" = "iCloud no está disponible en este dispositivo. Si la subida no avanza en unos minutos, seguirás en tu cuenta de Yala y podrás volver a intentarlo.";
+"storage.progress.cancelReverse" = "Cancelar y seguir en tu cuenta de Yala";
+"storage.confirm.cancelReverseTitle" = "¿Cancelar la vuelta a tu iCloud?";
+"storage.confirm.cancelReverseBody" = "Tus datos siguen en tu cuenta de Yala y en este dispositivo. Yala te pedirá cerrarla y volver a abrirla.";
+"storage.confirm.cancelReverseConfirm" = "Sí, seguir en mi cuenta de Yala";
 "storage.confirm.cancelReverseKeep" = "Seguir esperando";
-"storage.reverseAbort.relaunchTitle" = "Tus datos siguen en la nube";
-"storage.reverseAbort.relaunchBody" = "Cierra Yala del todo (deslízala fuera del selector de apps) y vuelve a abrirla para seguir usando la nube.";
-"storage.reverseAbort.icloudFull" = "No pudimos terminar de volver a iCloud: iCloud se quedó sin espacio. Libera espacio e inténtalo de nuevo.";
-"storage.reverseAbort.icloudUnavailable" = "No pudimos terminar de volver a iCloud: iCloud no estaba disponible en este dispositivo. Revisa tu cuenta de iCloud en Ajustes e inténtalo de nuevo.";
-"storage.reverseAbort.stalled" = "No pudimos terminar de volver a iCloud: iCloud no recibió todos tus datos. Comprueba que iCloud esté activo en este dispositivo e inténtalo de nuevo con buena conexión y con Yala abierta mientras sube.";
-"storage.reverseAbort.claimRetryLater" = "No pudimos empezar a volver a iCloud: tus datos todavía estaban terminando de pasar a la nube. Inténtalo de nuevo en un rato.";
-"storage.reverseAbort.claimRefused" = "No pudimos empezar a volver a iCloud: tu cuenta no lo permitía. Ese intento no cambió nada. Escríbenos a %@ y lo revisamos contigo.";
-"storage.reverseAbort.otherDeviceReverting" = "No pudimos empezar a volver a iCloud: otro de tus dispositivos ya estaba volviendo. Cuando termine, podrás hacerlo en este.";
-"storage.progress.reverseICloudMaybeOff" = "Si iCloud no está activo en este dispositivo, tus datos no pueden llegar a iCloud. Actívalo en Ajustes o cancela para seguir en la nube.";
+"storage.reverseAbort.relaunchTitle" = "Tus datos siguen en tu cuenta de Yala";
+"storage.reverseAbort.relaunchBody" = "Cierra Yala del todo (deslízala fuera del selector de apps) y vuelve a abrirla para seguir usando tu cuenta de Yala.";
+"storage.reverseAbort.icloudFull" = "No pudimos terminar de volver a tu iCloud: iCloud se quedó sin espacio. Libera espacio e inténtalo de nuevo.";
+"storage.reverseAbort.icloudUnavailable" = "No pudimos terminar de volver a tu iCloud: iCloud no estaba disponible en este dispositivo. Revisa tu cuenta de iCloud en Ajustes e inténtalo de nuevo.";
+"storage.reverseAbort.stalled" = "No pudimos terminar de volver a tu iCloud: iCloud no recibió todos tus datos. Comprueba que iCloud esté activo en este dispositivo e inténtalo de nuevo con buena conexión y con Yala abierta mientras sube.";
+"storage.reverseAbort.claimRetryLater" = "No pudimos empezar a volver a tu iCloud: tus datos todavía estaban terminando de pasar a tu cuenta de Yala. Inténtalo de nuevo en un rato.";
+"storage.reverseAbort.claimRefused" = "No pudimos empezar a volver a tu iCloud: tu cuenta no lo permitía. Ese intento no cambió nada. Escríbenos a %@ y lo revisamos contigo.";
+"storage.reverseAbort.otherDeviceReverting" = "No pudimos empezar a volver a tu iCloud: otro de tus dispositivos ya estaba volviendo. Cuando termine, podrás hacerlo en este.";
+"storage.progress.reverseICloudMaybeOff" = "Si iCloud no está activo en este dispositivo, tus datos no pueden llegar a tu iCloud. Actívalo en Ajustes o cancela para seguir en tu cuenta de Yala.";
 /* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
-"storage.progress.reverseLocalFailure" = "Este dispositivo no pudo preparar tus datos para subirlos a iCloud. Si no se resuelve en unos minutos, seguirás en la nube y podrás volver a intentarlo.";
-"storage.reverseAbort.localFailure" = "No pudimos terminar de volver a iCloud: este dispositivo no pudo preparar tus datos para subirlos. Sigues en la nube; inténtalo de nuevo dentro de un rato.";
-"storage.errors.reversePendingExit" = "Aún no podemos volver a iCloud: falta terminar de reactivar tu nube. Inténtalo de nuevo en un momento.";
+"storage.progress.reverseLocalFailure" = "Este dispositivo no pudo preparar tus datos para subirlos a iCloud. Si no se resuelve en unos minutos, seguirás en tu cuenta de Yala y podrás volver a intentarlo.";
+"storage.reverseAbort.localFailure" = "No pudimos terminar de volver a tu iCloud: este dispositivo no pudo preparar tus datos para subirlos. Sigues en tu cuenta de Yala; inténtalo de nuevo dentro de un rato.";
+"storage.errors.reversePendingExit" = "Aún no podemos volver a tu iCloud: falta terminar de reactivar tu cuenta de Yala en este dispositivo. Inténtalo de nuevo en un momento.";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "No hemos podido comprobar tu cuenta. Inténtalo de nuevo en un momento. No hemos cambiado nada.";
 "storage.migrateBlock.personalDataTitle" = "Esta cuenta ya tiene sus propios datos";
-"storage.migrateBlock.personalDataBody" = "No hemos cambiado nada. Para llevar tus datos a la nube, usa otra cuenta. Para usar los de esa cuenta aquí, cierra sesión y entra con ella.";
+"storage.migrateBlock.personalDataBody" = "No hemos cambiado nada. Para pasar tus datos a una cuenta de Yala, usa otra cuenta. Para usar los de esa cuenta aquí, cierra sesión y entra con ella.";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "No hemos cambiado nada. Para usar los datos de esa cuenta aquí, cierra sesión y entra con ella. Para llevar tus datos a otra cuenta, primero desasocia esta en «Grupos».";
 "storage.migrateBlock.otherGroupsTitle" = "Ya usas otra cuenta para tus grupos";
-"storage.migrateBlock.otherGroupsBody" = "No hemos cambiado nada. En este dispositivo solo puede haber una cuenta en la nube, y tus grupos ya usan otra. Para llevar tus datos a la nube, entra con la cuenta de tus grupos o, si prefieres otra, desasóciala antes en «Grupos».";
-"storage.migrateBlock.otherGroupsBodyEmail" = "No hemos cambiado nada. En este dispositivo solo puede haber una cuenta en la nube, y tus grupos ya usan %@. Para llevar tus datos a la nube, entra con esa cuenta o, si prefieres otra, desasóciala antes en «Grupos».";
-"storage.migrateBlock.returnedTitle" = "Esta cuenta ha vuelto a iCloud";
-"storage.migrateBlock.returnedBody" = "Volver a la nube con ella todavía no está disponible. No hemos cambiado nada.";
+"storage.migrateBlock.otherGroupsBody" = "No hemos cambiado nada. En este dispositivo solo puede haber una cuenta de Yala, y tus grupos ya usan otra. Para pasar tus datos a tu cuenta de Yala, entra con la cuenta de tus grupos o, si prefieres otra, desasóciala antes en «Grupos».";
+"storage.migrateBlock.otherGroupsBodyEmail" = "No hemos cambiado nada. En este dispositivo solo puede haber una cuenta de Yala, y tus grupos ya usan %@. Para pasar tus datos a tu cuenta de Yala, entra con esa cuenta o, si prefieres otra, desasóciala antes en «Grupos».";
+"storage.migrateBlock.returnedTitle" = "Con esta cuenta has vuelto a tu iCloud";
+"storage.migrateBlock.returnedBody" = "Pasar otra vez a ella todavía no está disponible. No hemos cambiado nada.";
 "storage.migrateBlock.useAnotherAccount" = "Usar otra cuenta";
 "storage.migrateBlock.appleSameAccountNote" = "Con Apple, Yala usa siempre la cuenta de este dispositivo. Para usar otra, elige Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Esta cuenta puede ser de otra persona";
-"storage.migrateBlock.freshStartSessionBody" = "No hemos cambiado nada. Tus grupos usan una cuenta que ya estaba abierta en este dispositivo y, como aquí se empezó desde cero, puede ser de otra persona. Para llevar tus datos a la nube, desasóciala en «Grupos» y vuelve a tocar «Activar la nube»: podrás elegir tu cuenta.";
+"storage.migrateBlock.freshStartSessionBody" = "No hemos cambiado nada. Tus grupos usan una cuenta que ya estaba abierta en este dispositivo y, como aquí se empezó desde cero, puede ser de otra persona. Para pasar tus datos a tu cuenta de Yala, desasóciala en «Grupos» y vuelve a tocar «Pasar a tu cuenta de Yala»: podrás elegir tu cuenta.";
 "storage.migrateBlock.otherDeviceTitle" = "Hay una activación a medias con esta cuenta";
 "storage.migrateBlock.otherDeviceBody" = "No hemos cambiado nada. Si la empezaste en este dispositivo, vuelve a intentarlo dentro de una hora. Si fue en otro de tus dispositivos, termínala allí.";
 
@@ -5281,12 +5288,12 @@
 "welcome.restore.cloudUnverifiedBody" = "No pudimos conectarnos para revisar si tienes datos guardados. Inténtalo de nuevo en un momento.";
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
-"storage.progress.reverseNeedsSignIn" = "Tu sesión caducó. Vuelve a entrar para terminar de volver a iCloud.";
-"storage.progress.adoptSessionExpired" = "Tu sesión en la nube ya no es válida. Cancela la activación y vuelve a entrar con tu cuenta.";
+"storage.progress.reverseNeedsSignIn" = "Tu sesión caducó. Vuelve a entrar para terminar de volver a tu iCloud.";
+"storage.progress.adoptSessionExpired" = "Tu sesión en tu cuenta de Yala ya no es válida. Cancela y vuelve a entrar con tu cuenta.";
 "storage.progress.adoptAccountUnavailable" = "Ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
-"storage.errors.reverseSignInOtherAccount" = "Entraste con otra cuenta. Vuelve a entrar con la cuenta desde la que empezaste a volver a iCloud.";
+"storage.errors.reverseSignInOtherAccount" = "Entraste con otra cuenta. Vuelve a entrar con la cuenta desde la que empezaste a volver a tu iCloud.";
 "storage.errors.syncSignInOtherAccount" = "Entraste con otra cuenta, así que no la dejamos abierta. Vuelve a entrar con la cuenta con la que usas Yala en este dispositivo.";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
@@ -5296,64 +5303,64 @@
 "welcome.restore.importIncompleteBody" = "iCloud todavía está enviando tu historial. Con muchos registros o una conexión lenta puede tardar unos minutos. Vuelve a buscar en un momento.";
 
 /* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
-"storage.reverseAbort.preMountRefused" = "No pudimos terminar de volver a iCloud: tu cuenta en la nube no lo permitió. Tus datos siguen en la nube de Yala. Escríbenos a %@ y lo revisamos contigo.";
+"storage.reverseAbort.preMountRefused" = "No pudimos terminar de volver a tu iCloud: tu cuenta de Yala no lo permitió. Tus datos siguen en tu cuenta de Yala. Escríbenos a %@ y lo revisamos contigo.";
 
 /* Salida de la vuelta antes de montar el espejo: venció el techo largo */
-"storage.reverseAbort.preMountStalled" = "No pudimos terminar de volver a iCloud: la vuelta no avanzó. Tus datos siguen en la nube de Yala y puedes volver a intentarlo cuando quieras.";
+"storage.reverseAbort.preMountStalled" = "No pudimos terminar de volver a tu iCloud: la vuelta no avanzó. Tus datos siguen en tu cuenta de Yala y puedes volver a intentarlo cuando quieras.";
 
 /* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
-"storage.confirm.cancelReverseBeforeMountBody" = "Tus datos siguen en la nube de Yala y en este dispositivo. Puedes volver a intentarlo cuando quieras.";
+"storage.confirm.cancelReverseBeforeMountBody" = "Tus datos siguen en tu cuenta de Yala y en este dispositivo. Puedes volver a intentarlo cuando quieras.";
 
 /* Diálogo de cancelar: seguir, antes de montar el espejo */
-"storage.confirm.cancelReverseKeepBeforeMount" = "Seguir volviendo a iCloud";
+"storage.confirm.cancelReverseKeepBeforeMount" = "Seguir volviendo a tu iCloud";
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
-"storage.reverseAbort.preMountOtherDevice" = "No pudimos terminar de volver a iCloud: otro de tus dispositivos tomó el relevo. Cuando termine, podrás hacerlo en este.";
+"storage.reverseAbort.preMountOtherDevice" = "No pudimos terminar de volver a tu iCloud: otro de tus dispositivos tomó el relevo. Cuando termine, podrás hacerlo en este.";
 
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.snapshotStalled" = "No pudimos activar la nube: la subida de tus datos lleva días sin avanzar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo más tarde.";
+"storage.failed.snapshotStalled" = "No pudimos pasar tus datos a tu cuenta de Yala: la subida lleva días sin avanzar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo más tarde.";
 /* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
-"storage.failed.snapshotMixedCauses" = "No pudimos activar la nube: la subida de tus datos se atascó por algo que esperar no iba a arreglar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo.";
+"storage.failed.snapshotMixedCauses" = "No pudimos pasar tus datos a tu cuenta de Yala: la subida se atascó por algo que esperar no iba a arreglar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo.";
 /* Fallo de la activación: la sesión caducó durante la subida */
-"storage.failed.snapshotSessionExpired" = "No pudimos activar la nube: tu sesión caducó mientras subíamos tus datos. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
+"storage.failed.snapshotSessionExpired" = "No pudimos pasar tus datos a tu cuenta de Yala: tu sesión caducó mientras subíamos tus datos. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
-"storage.failed.snapshotAccountUnavailable" = "No pudimos activar la nube: tu cuenta en la nube no lo permitió. Tus datos están a salvo en tu dispositivo. Escríbenos a %@ y lo revisamos contigo.";
+"storage.failed.snapshotAccountUnavailable" = "No pudimos pasar tus datos a tu cuenta de Yala: tu cuenta no lo permitió. Tus datos están a salvo en tu dispositivo. Escríbenos a %@ y lo revisamos contigo.";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
-"storage.failed.snapshotLocalFailure" = "No pudimos activar la nube: este dispositivo no pudo preparar tus datos para subirlos. Tus datos siguen aquí, sin cambios; inténtalo de nuevo dentro de un rato.";
+"storage.failed.snapshotLocalFailure" = "No pudimos pasar tus datos a tu cuenta de Yala: este dispositivo no pudo preparar tus datos para subirlos. Tus datos siguen aquí, sin cambios; inténtalo de nuevo dentro de un rato.";
 /* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.stepStalled" = "No pudimos activar la nube: la activación lleva días sin avanzar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo más tarde.";
+"storage.failed.stepStalled" = "No pudimos pasar tus datos a tu cuenta de Yala: el paso lleva días sin avanzar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo más tarde.";
 /* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
-"storage.failed.stepSessionExpired" = "No pudimos activar la nube: tu sesión caducó antes de terminar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
+"storage.failed.stepSessionExpired" = "No pudimos pasar tus datos a tu cuenta de Yala: tu sesión caducó antes de terminar. Tus datos están a salvo en tu dispositivo; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
-"storage.failed.stepOtherDevice" = "No pudimos activar la nube desde este dispositivo: otro dispositivo con tu cuenta tomó el relevo. Tus datos siguen aquí, sin cambios.";
-"storage.failed.adoptStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin avanzar. Este dispositivo no cambió nada de lo que tienes en la nube; inténtalo de nuevo más tarde.";
-"storage.failed.adoptSessionExpired" = "No pudimos entrar en tu cuenta de la nube: tu sesión caducó. Este dispositivo no cambió nada de lo que tienes en la nube; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
-"storage.failed.adoptAccountUnavailable" = "No pudimos entrar en tu cuenta de la nube: ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
-"storage.failed.adoptEffectLocalFailure" = "No pudimos entrar en tu cuenta de la nube: este dispositivo no pudo leer tus datos para juntarlos con los de tu cuenta. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo dentro de un rato.";
-"storage.failed.adoptEffectStalled" = "No pudimos entrar en tu cuenta de la nube: la activación lleva días sin poder terminar. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo más tarde.";
-"storage.failed.adoptEffectLineageUnproven" = "No pudimos entrar en tu cuenta de la nube: este dispositivo tiene datos que esa cuenta no tiene y no pudimos comprobar que vengan de ella, así que no los juntamos. Lo que tienes en este dispositivo sigue aquí. Si llevaste a la nube los datos de este iCloud desde otro dispositivo, comprueba que entras con esa misma cuenta y espera a que iCloud termine de traerlos antes de intentarlo de nuevo.";
+"storage.failed.stepOtherDevice" = "No pudimos pasar tus datos a tu cuenta de Yala desde este dispositivo: otro dispositivo con tu cuenta tomó el relevo. Tus datos siguen aquí, sin cambios.";
+"storage.failed.adoptStalled" = "No pudimos entrar en tu cuenta de Yala: el paso lleva días sin avanzar. Este dispositivo no cambió nada de lo que tienes en tu cuenta de Yala; inténtalo de nuevo más tarde.";
+"storage.failed.adoptSessionExpired" = "No pudimos entrar en tu cuenta de Yala: tu sesión caducó. Este dispositivo no cambió nada de lo que tienes en tu cuenta de Yala; inténtalo de nuevo y vuelve a entrar con tu cuenta.";
+"storage.failed.adoptAccountUnavailable" = "No pudimos entrar en tu cuenta de Yala: ahora mismo no podemos darte acceso a esta cuenta. Escríbenos a %@ y lo revisamos contigo.";
+"storage.failed.adoptEffectLocalFailure" = "No pudimos entrar en tu cuenta de Yala: este dispositivo no pudo leer tus datos para juntarlos con los de tu cuenta. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo dentro de un rato.";
+"storage.failed.adoptEffectStalled" = "No pudimos entrar en tu cuenta de Yala: el paso lleva días sin poder terminar. Lo que tienes en este dispositivo sigue aquí; inténtalo de nuevo más tarde.";
+"storage.failed.adoptEffectLineageUnproven" = "No pudimos entrar en tu cuenta de Yala: este dispositivo tiene datos que esa cuenta no tiene y no pudimos comprobar que vengan de ella, así que no los juntamos. Lo que tienes en este dispositivo sigue aquí. Si pasaste a tu cuenta de Yala los datos de este iCloud desde otro dispositivo, comprueba que entras con esa misma cuenta y espera a que iCloud termine de traerlos antes de intentarlo de nuevo.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Cancelar la activación";
 /* Título de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationTitle" = "¿Cancelar la activación de la nube?";
+"storage.confirm.cancelMigrationTitle" = "¿Cancelar el paso a tu cuenta de Yala?";
 /* Cuerpo de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationBody" = "Tus datos siguen en este dispositivo, como hasta ahora. Lo que ya se subió se queda en tu cuenta de la nube. Puedes volver a intentarlo cuando quieras.";
-"storage.confirm.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en la nube. Puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
-"storage.confirm.cancelAdoptEffectBody" = "Lo que tienes en este dispositivo sigue aquí, como hasta ahora. Puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
+"storage.confirm.cancelMigrationBody" = "Tus datos siguen en este dispositivo, como hasta ahora. Lo que ya se subió se queda en tu cuenta de Yala. Puedes volver a intentarlo cuando quieras.";
+"storage.confirm.cancelAdoptBody" = "Este dispositivo no cambió nada de lo que tienes en tu cuenta de Yala. Puedes volver a usarla en este dispositivo desde aquí cuando quieras.";
+"storage.confirm.cancelAdoptEffectBody" = "Lo que tienes en este dispositivo sigue aquí, como hasta ahora. Puedes volver a usar tu cuenta de Yala en este dispositivo desde aquí cuando quieras.";
 "storage.waiting.stopWaiting" = "Dejar de esperar";
 "storage.confirm.stopWaitingTitle" = "¿Dejar de esperar?";
-"storage.confirm.stopWaitingBody" = "El otro dispositivo sigue activando la nube. Este deja de esperar sin cambiar nada de lo que tienes en la nube, y puedes volver a activar la nube en este dispositivo desde aquí cuando quieras.";
+"storage.confirm.stopWaitingBody" = "El otro dispositivo sigue pasando tus datos a tu cuenta de Yala. Este deja de esperar sin cambiar nada de lo que tienes en tu cuenta de Yala, y puedes volver a usarla en este dispositivo desde aquí cuando quieras.";
 "storage.confirm.stopWaitingConfirm" = "Sí, dejar de esperar";
 "storage.confirm.stopWaitingKeep" = "Seguir esperando";
-"storage.progress.followerSessionExpired" = "Tu sesión en la nube ya no es válida. Deja de esperar y vuelve a entrar con tu cuenta.";
+"storage.progress.followerSessionExpired" = "Tu sesión en tu cuenta de Yala ya no es válida. Deja de esperar y vuelve a entrar con tu cuenta.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Sí, cancelar";
 /* Botón que sigue con la activación */
-"storage.confirm.cancelMigrationKeep" = "Seguir activando la nube";
+"storage.confirm.cancelMigrationKeep" = "Seguir pasando a mi cuenta de Yala";
 
 /* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
-"storage.journalUnreadable.message" = "No hemos podido comprobar en qué punto están tus datos. Por ahora no puedes pasarlos a la nube ni devolverlos a iCloud. Lo seguimos intentando; si no se arregla, cierra Yala y vuelve a abrirla.";
+"storage.journalUnreadable.message" = "No hemos podido comprobar en qué punto están tus datos. Por ahora no puedes pasarlos a tu cuenta de Yala ni volver con ellos a tu iCloud. Lo seguimos intentando; si no se arregla, cierra Yala y vuelve a abrirla.";
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Inicia sesión para subir tus cambios";
@@ -5367,25 +5374,25 @@
 "storage.migrate.previewUnreadable" = "No hemos podido contar tus datos. Inténtalo de nuevo en un momento.";
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
-"storage.failed.stepLineageUnproven" = "No pudimos activar la nube: esa cuenta ya tiene datos en la nube y los de este dispositivo no coinciden con ellos, así que no los juntamos. Lo que tienes en este dispositivo sigue aquí. Comprueba que entras con la cuenta correcta. Si es la tuya y este dispositivo usa el mismo iCloud, espera a que iCloud termine de traer tus datos y vuelve a intentarlo.";
-"storage.failed.stepLeaderRowsNotArrived" = "No pudimos activar la nube: otro de tus dispositivos ya subió parte de tus datos y a este todavía no le han llegado todos por iCloud, así que no subimos nada para no duplicarlos. Lo que tienes en este dispositivo sigue aquí. Abre Yala con conexión en ese otro dispositivo, espera a que iCloud termine de traer tus datos a este y vuelve a intentarlo.";
+"storage.failed.stepLineageUnproven" = "No pudimos pasar tus datos a tu cuenta de Yala: esa cuenta ya tiene datos y los de este dispositivo no coinciden con ellos, así que no los juntamos. Lo que tienes en este dispositivo sigue aquí. Comprueba que entras con la cuenta correcta. Si es la tuya y este dispositivo usa el mismo iCloud, espera a que iCloud termine de traer tus datos y vuelve a intentarlo.";
+"storage.failed.stepLeaderRowsNotArrived" = "No pudimos pasar tus datos a tu cuenta de Yala: otro de tus dispositivos ya subió parte de tus datos y a este todavía no le han llegado todos por iCloud, así que no subimos nada para no duplicarlos. Lo que tienes en este dispositivo sigue aquí. Abre Yala con conexión en ese otro dispositivo, espera a que iCloud termine de traer tus datos a este y vuelve a intentarlo.";
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
-"settings.signOutSyncStoppedNeedsUpdate" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. No hemos podido comprobar en qué punto va el paso de tus datos a la nube, así que por ahora no podemos subirlos. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
-"settings.signOutCaptureUnfinished" = "Algunos de tus últimos cambios no se han podido preparar para subir a la nube. Siguen guardados en este dispositivo y no se pierden. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
+"settings.signOutSyncStoppedNeedsUpdate" = "Hay cambios que aún no llegan a tu cuenta de Yala y no queremos que pierdas nada. No hemos podido comprobar en qué punto va el paso de tus datos a tu cuenta de Yala, así que por ahora no podemos subirlos. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
+"settings.signOutCaptureUnfinished" = "Algunos de tus últimos cambios no se han podido preparar para subir a tu cuenta de Yala. Siguen guardados en este dispositivo y no se pierden. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre la nube e iCloud no ha terminado. Abre «Dónde viven tus datos», aquí en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
+"settings.signOutSyncStoppedMidMigration" = "Hay cambios que aún no llegan a tu cuenta de Yala y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre tu cuenta de Yala y tu iCloud no ha terminado. Abre «Dónde viven tus datos», aquí en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
-"settings.signOutSyncStoppedNeedsRelaunch" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa hasta que vuelvas a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps), vuelve a abrirla e inténtalo de nuevo.";
+"settings.signOutSyncStoppedNeedsRelaunch" = "Hay cambios que aún no llegan a tu cuenta de Yala y no queremos que pierdas nada. La sincronización está en pausa hasta que vuelvas a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps), vuelve a abrirla e inténtalo de nuevo.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a la nube. Siguen guardados en este dispositivo y no se pierden; inténtalo de nuevo en un rato.";
-"settings.signOutCloudSessionExpired" = "Tu sesión ha caducado y hay cambios sin subir a la nube. No se pierden: abre «Dónde viven tus datos», aquí en Ajustes, toca «Iniciar sesión» y después vuelve a intentarlo.";
+"settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a tu cuenta de Yala. Siguen guardados en este dispositivo y no se pierden; inténtalo de nuevo en un rato.";
+"settings.signOutCloudSessionExpired" = "Tu sesión ha caducado y hay cambios que aún no llegan a tu cuenta de Yala. No se pierden: abre «Dónde viven tus datos», aquí en Ajustes, toca «Iniciar sesión» y después vuelve a intentarlo.";
 "settings.signOutSessionSurvived" = "Tu sesión sigue abierta en este dispositivo, así que no se ha borrado nada. Vuelve a intentarlo.";
-"settings.signOutMigrationInFlight" = "El paso de tus datos entre iCloud y la nube todavía no ha terminado, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Abre «Dónde viven tus datos», en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
-"settings.signOutMigrationUnreadable" = "No hemos podido comprobar en qué punto va el paso de tus datos entre iCloud y la nube, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
+"settings.signOutMigrationInFlight" = "El paso de tus datos entre tu iCloud y tu cuenta de Yala todavía no ha terminado, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Abre «Dónde viven tus datos», en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
+"settings.signOutMigrationUnreadable" = "No hemos podido comprobar en qué punto va el paso de tus datos entre tu iCloud y tu cuenta de Yala, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "El borrado quedó a medias";
@@ -5441,10 +5448,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Los cambios de grupos que no han llegado al servidor se borran de este dispositivo. Nadie del grupo los verá y no se pueden recuperar.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta en la nube: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta de Yala: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Tu sesión ha caducado y hay cambios que no han llegado a tu cuenta en la nube. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Tu sesión ha caducado y hay cambios que no han llegado a tu cuenta de Yala. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Elige un registro para verlo aquí";
@@ -5463,13 +5470,13 @@
 "welcome.groups.inviteRelaunchTitle" = "Abre Yala otra vez para unirte";
 
 /* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
-"welcome.groups.inviteRelaunchBody" = "Tu cuenta en la nube termina de prepararse cuando vuelves a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps) y ábrela otra vez: tu invitación sigue guardada y seguirás desde ahí.";
+"welcome.groups.inviteRelaunchBody" = "Tu cuenta de Yala termina de prepararse cuando vuelves a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps) y ábrela otra vez: tu invitación sigue guardada y seguirás desde ahí.";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
 "welcome.groups.inviteCloudSignInTitle" = "Primero, entra con la cuenta de este dispositivo";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "En este dispositivo están los datos de una cuenta en la nube que no tiene la sesión abierta, y tus gastos del grupo acabarían en ella. Si es tuya, entra con ella desde «Ya tengo cuenta» y seguirás con tu invitación. Si no lo es, únete desde tu propio dispositivo.";
+"welcome.groups.inviteCloudSignInBody" = "En este dispositivo están los datos de una cuenta de Yala que no tiene la sesión abierta, y tus gastos del grupo acabarían en ella. Si es tuya, entra con ella desde «Ya tengo cuenta» y seguirás con tu invitación. Si no lo es, únete desde tu propio dispositivo.";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
 "welcome.groups.wipeFailedTitle" = "No pudimos preparar este dispositivo";
@@ -5709,17 +5716,17 @@
 "storage.pendingICloudWipe.title" = "Tienes un borrado sin terminar";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Antes pediste borrar tus datos para empezar de cero, y no terminó. Si activas la nube, ese borrado no se hace y tus datos de iCloud se quedan.";
+"storage.pendingICloudWipe.body" = "Antes pediste borrar tus datos para empezar de cero, y no terminó. Si pasas a tu cuenta de Yala, ese borrado no se hace y tus datos de iCloud se quedan.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Activar y conservar mis datos de iCloud";
+"storage.pendingICloudWipe.proceed" = "Pasar a mi cuenta de Yala y conservar mis datos de iCloud";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Ahora no";
-"storage.pendingICloudWipe.bodyHalfway" = "Lo que había en tu iCloud ya se borró. Si activas la nube, lo que quedó en este dispositivo pasa a tu cuenta de Yala.";
-"storage.pendingICloudWipe.proceedHalfway" = "Activar con lo que quedó aquí";
-"storage.pendingICloudWipe.proceedDetail" = "El borrado no se hace: activas la nube y tus datos de iCloud se quedan ahí.";
-"storage.pendingICloudWipe.proceedDetailHalfway" = "El borrado no se termina: activas la nube con lo que quedó en este dispositivo.";
+"storage.pendingICloudWipe.bodyHalfway" = "Lo que había en tu iCloud ya se borró. Si pasas a tu cuenta de Yala, te llevas lo que quedó en este dispositivo.";
+"storage.pendingICloudWipe.proceedHalfway" = "Pasar a mi cuenta de Yala con lo que quedó aquí";
+"storage.pendingICloudWipe.proceedDetail" = "El borrado no se hace: pasas a tu cuenta de Yala y tus datos de iCloud se quedan ahí.";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "El borrado no se termina: pasas a tu cuenta de Yala con lo que quedó en este dispositivo.";
 "storage.pendingICloudWipe.finish" = "Terminar de borrar y empezar de cero";
 "storage.pendingICloudWipe.finishDetail" = "Se borran tus datos de este dispositivo y de tu iCloud. No queda copia.";
 "storage.pendingICloudWipe.finishDetailHalfway" = "Se borra lo que quedó en este dispositivo. No queda copia.";
@@ -5732,7 +5739,7 @@
 "welcome.privateICloud.cancelledInCloudTitle" = "Un borrado no llegó a terminar";
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
-"welcome.privateICloud.cancelledInCloudBody" = "Pediste empezar de cero y borrar tus datos de iCloud, pero el borrado no terminó antes de que tus datos pasaran a la nube, y ya no se hará. Puede que algo de lo que ibas a borrar siga en iCloud o haya pasado a tu cuenta de Yala.";
+"welcome.privateICloud.cancelledInCloudBody" = "Pediste empezar de cero y borrar tus datos de iCloud, pero el borrado no terminó antes de que tus datos pasaran a tu cuenta de Yala, y ya no se hará. Puede que algo de lo que ibas a borrar siga en tu iCloud o haya pasado a tu cuenta de Yala.";
 
 /* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
 "inbox.groupSettlementAmountChange.title" = "Ha cambiado el importe";
@@ -5849,7 +5856,7 @@
 "welcome.privateICloud.noAccountProceedTitle" = "Este dispositivo no tiene iCloud activo";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
-"welcome.mirrorRelaunch.privacyNote" = "Así Yala se conecta a tu iCloud privado y tus datos quedan siempre privados: nadie más puede leerlos, ni siquiera nosotros.";
+"welcome.mirrorRelaunch.privacyNote" = "Así Yala se conecta a tu iCloud y tus datos quedan siempre privados: nadie más puede leerlos, ni siquiera nosotros.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
 "onboarding.purpose.changeLaterHint" = "Puedes cambiarlo cuando quieras en Ajustes > Personalización.";
@@ -5994,8 +6001,8 @@
 "storage.revert.prior.checkFailedBody" = "Antes de volver miramos si tu iCloud ya tiene datos de Yala, para no mezclarlos sin avisarte. Puede ser la conexión: inténtalo otra vez.";
 "storage.revert.prior.stalledTitle" = "iCloud tardó demasiado en responder";
 "storage.revert.prior.stalledBody" = "Antes de volver miramos si tu iCloud ya tiene datos de Yala, para no mezclarlos sin avisarte. La revisión no avanzó: inténtalo otra vez.";
-"storage.revert.prior.wipeFailed" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Revisa tu conexión y vuelve a intentarlo.";
-"storage.revert.prior.wipeStopped" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Lo que ya se borró queda borrado: vuelve a intentarlo y seguiremos con lo que falta.";
+"storage.revert.prior.wipeFailed" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en tu cuenta de Yala. Revisa tu conexión y vuelve a intentarlo.";
+"storage.revert.prior.wipeStopped" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en tu cuenta de Yala. Lo que ya se borró queda borrado: vuelve a intentarlo y seguiremos con lo que falta.";
 "storage.revert.prior.wiping" = "Borrando los datos de antes… %d hasta ahora";
 "storage.revert.prior.noAccountTitle" = "Abre iCloud en este dispositivo";
 "storage.revert.prior.noAccountBody" = "Antes de volver miramos qué hay en tu iCloud, y este dispositivo no tiene iCloud abierto. Ábrelo en Ajustes y vuelve a intentarlo.";
@@ -6006,7 +6013,7 @@
 "storage.revert.sheet.accountDetail" = "Sigue abierta para tus grupos.";
 "storage.revert.sheet.storedTitle" = "Lo que hay en ella";
 "storage.revert.sheet.storedDetail" = "Tus finanzas se quedan guardadas, sin usarse.";
-"storage.revert.sheet.cloudAgainTitle" = "Volver a la nube con ella";
+"storage.revert.sheet.cloudAgainTitle" = "Volver a pasar tus datos a ella";
 "storage.revert.sheet.cloudAgainDetail" = "Hoy no se puede.";
 "storage.revert.sheet.continue" = "Seguir";
 "storage.revert.sheet.priorBody" = "En el iCloud de este dispositivo hay datos de Yala que no están en tu cuenta: %@.";
@@ -6273,7 +6280,7 @@
 "storage.consent.accessTitle" = "Entras con Apple o Google, desde cualquier dispositivo";
 "storage.consent.acceptEnter" = "Entendido, entrar a mi cuenta";
 "storage.consent.acceptCreate" = "Entendido, crear mi cuenta";
-"storage.consent.acceptMove" = "Entendido, llevar mis datos a la nube";
+"storage.consent.acceptMove" = "Entendido, pasar mis datos a mi cuenta de Yala";
 "welcome.privateICloud.lateLead" = "Los guardaste antes en tu iCloud, con esta misma cuenta de Apple:";
 "welcome.privateICloud.lateMerge" = "Juntarlos con lo de ahora";
 "welcome.privateICloud.lateWipe" = "Borrarlos de iCloud y empezar de cero";
@@ -6391,7 +6398,7 @@
 "records.l8.changedTo" = "Ahora es %@";
 "records.l8.changedToWithNeed" = "Ahora es %1$@ (%2$@ · %3$@)";
 "records.l8.undo" = "Deshacer";
-"records.l8.selectHint" = "Toca los registros que quieras";
+"records.l8.selectHint" = "Toca los registros o «Seleccionar día»";
 "search.l8.recent" = "Recientes";
 "filters.l8.discardTitle" = "¿Descartar los filtros?";
 "filters.l8.discardMessage" = "Lo que has elegido no se aplicará.";
@@ -6430,7 +6437,7 @@
 "records.l8b.duplicates.field.note" = "nota";
 "records.l8b.duplicates.field.subcategory" = "categoría";
 "records.l8b.duplicates.field.date" = "fecha";
-"records.l8b.bulk.today" = "Hoy: %@";
+"records.l8b.bulk.today" = "Ahora: %@";
 "records.l8b.bulk.distinctNotes" = "Notas distintas";
 "records.l8b.bulk.distinctAmounts" = "Montos distintos";
 "records.l8b.bulk.noNote" = "Sin nota";
@@ -6932,27 +6939,26 @@
 "uxcs.migrated.rejoinSentence" = "Este grupo se ha mudado. Vuelve a entrar para verlo al día.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
-"l20n.sheet.title" = "Antes de activar la nube";
+"l20n.sheet.title" = "Antes de pasar a tu cuenta de Yala";
 "l20n.sheet.anyPhoneTitle" = "Entras desde cualquier dispositivo";
 "l20n.sheet.anyPhoneDetail" = "Sin depender de iCloud.";
 "l20n.sheet.seesTitle" = "Yala puede ver tus datos";
-"l20n.sheet.seesDetail" = "Para darte soporte y funciones inteligentes.";
+"l20n.sheet.seesDetail" = "Para darte soporte y funciones inteligentes. No hay cifrado de extremo a extremo.";
 "l20n.sheet.accessTitle" = "Tu entrada es tu Apple o tu Google";
 "l20n.sheet.accessDetail" = "Si la pierdes, no hay contraseña de Yala: exporta una copia antes.";
 "l20n.sheet.exportCopy" = "Exportar una copia antes";
-"l20n.sheet.details" = "Ver los detalles";
-"l20n.sheet.hideDetails" = "Ocultar los detalles";
-"l20n.sheet.detailsAccess" = "No hay contraseña de Yala ni recuperación por correo: si pierdes el acceso a tu Apple o tu Google, pierdes el acceso a tus datos. Por eso conviene exportar una copia antes.";
 "l20n.sheet.willMove" = "Pasarán %1$@, %2$@ y %3$@.";
 "l20n.sheet.continueCurrent" = "Continuar con tu cuenta actual";
+"l20n.sheet.photosTitle" = "Las fotos de tus recibos no viajan";
+"l20n.sheet.photosDetail" = "Yala no las guarda ni las sube a tu cuenta.";
 "l20n.relaunch.almostTitle" = "Ya casi está";
 "l20n.relaunch.doneSignedOut" = "Sesión cerrada";
 "l20n.relaunch.afterSignOut" = "Al abrirla otra vez, Yala termina de quitar tus datos de este dispositivo.";
 "l20n.relaunch.afterGroupsOnly" = "Tus datos personales siguen en este dispositivo.";
-"l20n.relaunch.doneInCloud" = "Tus datos ya están en tu cuenta de la nube";
+"l20n.relaunch.doneInCloud" = "Tus datos ya están en tu cuenta de Yala";
 "l20n.relaunch.doneOnPhone" = "Tus datos ya están en este dispositivo";
 "l20n.relaunch.afterToICloud" = "Al abrirla otra vez, empiezan a subir a tu iCloud.";
-"l20n.relaunch.doneReverseStopped" = "La vuelta a iCloud se detuvo";
+"l20n.relaunch.doneReverseStopped" = "La vuelta a tu iCloud se detuvo";
 "l20n.relaunch.pending" = "Vuelve a abrir Yala";
 "l20n.relaunch.toFinish" = "Para terminar";
 "l20n.relaunch.step1" = "Desliza hacia arriba desde el borde de abajo y detente";
@@ -6999,16 +7005,16 @@
 "uxpro.gate.title.photo" = "Apuntar con una foto es de Yala Pro";
 "uxpro.gate.title.insights" = "El resumen con IA es de Yala Pro";
 "uxpro.gate.title.chat" = "Preguntarle a Yala IA es de Yala Pro";
-"uxpro.gate.title.cashFlow" = "El flujo de caja avanzado es de Yala Pro";
 "uxpro.gate.title.theme" = "El tema %@ es de Yala Pro";
 "uxpro.gate.title.themeGeneric" = "Este tema es de Yala Pro";
 "uxpro.gate.title.icon" = "El icono %@ es de Yala Pro";
 "uxpro.gate.title.iconGeneric" = "Este icono es de Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Apuntar a mano sigue gratis, como siempre.";
 "uxpro.gate.body.dataStaysFree" = "Tus registros y tus estadísticas siguen gratis, como siempre.";
+"uxpro.gate.offlinePrices" = "Sin conexión: verás el precio cuando te conectes.";
+"uxpro.gate.offlineMeanwhile" = "Mientras tanto, gratis";
 "uxpro.gate.body.themeStays" = "Tu tema de ahora se queda como está.";
 "uxpro.gate.body.iconStays" = "Tu icono de ahora se queda como está.";
-"uxpro.gate.body.cashFlowStays" = "El flujo de caja de siempre sigue gratis.";
 "uxpro.gate.preview" = "Así se vería Yala";
 "uxpro.gate.trialBody" = "Lo que apuntaste sigue aquí. Con el plan gratis tienes %1$lld cuentas y %2$lld presupuestos activos.";
 "uxpro.gate.ctaTrialDays" = "Probar Pro gratis %lld días";
@@ -7056,7 +7062,6 @@
 "uxpro.welcome.budgets" = "Ya puedes crear presupuestos sin límite.";
 "uxpro.welcome.theme" = "Ya puedes usar este tema.";
 "uxpro.welcome.icon" = "Ya puedes usar este icono.";
-"uxpro.welcome.cashFlow" = "Ya puedes usar el flujo de caja avanzado.";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "Cerrando tu sesión en la otra ventana…";
@@ -7088,7 +7093,7 @@
 "aiPrivacy.l14d.processingLine" = "Convierte lo que dices o fotografías en un registro.";
 "aiPrivacy.l14d.chatLine" = "Responde tus preguntas sobre tu dinero y apunta gastos desde el chat.";
 "aiPrivacy.l14d.insightsLine" = "Escribe observaciones sobre tus cifras en Estadísticas.";
-"aiPrivacy.l14d.cloudExploreLine" = "Yala IA consulta también tu cuenta en la nube cuando la pregunta lo necesita.";
+"aiPrivacy.l14d.cloudExploreLine" = "Yala IA consulta también tu cuenta de Yala cuando la pregunta lo necesita.";
 "aiPrivacy.l14d.revokeTitle" = "¿Desactivar %@?";
 "settings.l14d.summaryWhere" = "Lo ves en %@.";
 "siriShortcuts.siri.alsoSay" = "También: %1$@ · %2$@";
@@ -7466,7 +7471,7 @@
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "¿Aceptar a %@ en el grupo?";
 /* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
-"storage.revert.ineligibleOtherDevice" = "Tu cuenta llegó a la nube desde otro dispositivo, así que la vuelta a iCloud se hace desde ese, si aún tiene Yala. Aquí puedes seguir usando la nube.";
+"storage.revert.ineligibleOtherDevice" = "Tus datos pasaron a tu cuenta de Yala desde otro dispositivo, así que la vuelta a tu iCloud se hace desde ese, si aún tiene Yala. Aquí puedes seguir usando tu cuenta de Yala.";
 
 /* card vv0k */
 "image.entry.failure.busy.title" = "Un momento";
@@ -7499,7 +7504,7 @@
 "image.entry.dailyLimitLeftOutMany" = "Has llegado al límite de hoy: han quedado %d sin leer.";
 
 /* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
-"l15.personal.dataNote" = "Se guardan en tu iCloud o en tu cuenta en la nube, según lo que hayas elegido. Lo que apuntas en un grupo lo ve el grupo.";
+"l15.personal.dataNote" = "Se guardan en tu iCloud o en tu cuenta de Yala, según lo que hayas elegido. Lo que apuntas en un grupo lo ve el grupo.";
 "l15.personal.moreAboutData" = "Más sobre tus datos";
 "l15.rates.search" = "Buscar moneda";
 "l15.personalization.voiceLanguageFooter" = "El idioma en que le hablas a Yala cuando apuntas con la voz.";
@@ -7539,7 +7544,7 @@
 "l15.faq.yalaAI.q" = "¿Qué es Yala IA?";
 "l15.faq.yalaAI.a" = "Es el asistente de Yala Pro. Le preguntas por tus finanzas («¿cuánto he gastado en café este mes?») o le cuentas un gasto y lo apunta por ti. Para responder, envía lo necesario a un servicio de IA; lo decides en Ajustes > Privacidad y datos IA.";
 "l15.faq.whereData.q" = "¿Dónde se guardan mis datos?";
-"l15.faq.whereData.a" = "Si has elegido tu iCloud privado, en tu dispositivo y en tu iCloud: Yala no los ve. Si tienes una cuenta en la nube, en los servidores de Yala, y entras desde otro dispositivo con Apple o Google. Lo que apuntas en un grupo se guarda en la nube para que el grupo lo vea.";
+"l15.faq.whereData.a" = "Si has elegido tu iCloud, en tu dispositivo y en tu iCloud: Yala no los ve. Si has elegido tu cuenta de Yala, en los servidores de Yala, y entras desde otro dispositivo con Apple o Google. Lo que apuntas en un grupo se guarda en la nube para que el grupo lo vea.";
 "l15.faq.faceID.q" = "¿Puedo proteger Yala con Face ID?";
 "l15.faq.faceID.a" = "Sí, con el bloqueo de iOS: mantén pulsado el icono de Yala en tu pantalla de inicio y toca «Requerir Face ID». Yala nunca ve tu cara: lo comprueba iOS. Tienes la guía en Ajustes > Proteger con Face ID.";
 "l15.faq.widgets.q" = "¿Cómo añado un widget de Yala?";
@@ -7659,7 +7664,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "En tus cuentas";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Apuntar en mis cuentas lo que pago aquí";
+"groups.l19.options.personalToggle" = "Reflejar en tus cuentas";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Igual que en Ajustes de Grupos.";
 /* Miembros: rótulo sobre la cifra */
@@ -7712,7 +7717,7 @@
 "l2d.date.futureDaysNote" = "Los días que vienen salen en gris. Para un pago que aún no ha llegado, usa [Pagos planificados](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Ver todos";
 "l2d.favorites.use" = "Usar el favorito %@";
-"l2d.favorites.transferHelp" = "Tus transferencias de siempre, a un toque.";
+"l2d.favorites.transferHelp" = "Tus transferencias de siempre, ya rellenas.";
 "l2d.recurring.title" = "Hacer recurrente";
 "l2d.recurring.header" = "Guardamos el de hoy. Los siguientes llegarán a tu Bandeja el día que toque, para que los confirmes. Los ves en Pagos planificados.";
 "l2d.recurring.weekly" = "Cada semana, el %@";
@@ -7749,8 +7754,8 @@
 "l2d.split.bar.others" = "Los demás %@";
 
 /* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
-"storage.steps.forwardTitle" = "Activando la nube";
-"storage.steps.reverseTitle" = "Volviendo a iCloud";
+"storage.steps.forwardTitle" = "Pasando a tu cuenta de Yala";
+"storage.steps.reverseTitle" = "Volviendo a tu iCloud";
 "storage.steps.connect" = "Conectar con tu cuenta";
 "storage.steps.prepare" = "Preparar tus datos";
 "storage.steps.upload" = "Subir tus datos";
@@ -7760,7 +7765,7 @@
 "storage.steps.keepOpen" = "Mantén Yala abierta hasta que termine.";
 "storage.steps.wipePrior" = "Borrar los datos de antes";
 "storage.steps.wipedCount" = "%@ borrados hasta ahora";
-"storage.steps.bring" = "Traer tus datos de la nube";
+"storage.steps.bring" = "Traer tus datos de tu cuenta de Yala";
 "storage.steps.review" = "iCloud revisa lo que ya tiene";
 "storage.steps.reviewDetail" = "Antes de subir, iCloud mira lo que guarda de este dispositivo. Puede tardar unos minutos.";
 "storage.steps.uploadToICloud" = "Subir a iCloud";
@@ -7778,7 +7783,7 @@
 "storage.migrateBlock.detachAndContinue" = "Desasociarla y seguir";
 
 /* Aviso del Panel en un segundo dispositivo: otro dispositivo del mismo iCloud activó la nube */
-"panel.cloudAdoptOffer.title" = "Tus datos ya están en tu cuenta en la nube";
+"panel.cloudAdoptOffer.title" = "Tus datos ya están en tu cuenta de Yala";
 
 /* Cuerpo del aviso: activar la cuenta en la nube aquí también */
 "panel.cloudAdoptOffer.body" = "¿Activarla también en este dispositivo?";
@@ -7961,7 +7966,6 @@
 "account.saveErrorPartial" = "No se pudo guardar del todo. Puede que parte de los cambios ya se vea; revisa la cuenta y vuelve a guardar.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Desde un recibo";
 "receiptSplit.entry.hint" = "Lee un recibo con foto o voz y lo reparte por líneas";
 "receiptSplit.title" = "Desde un recibo";
 "receiptSplit.photo.title" = "Foto del recibo";
@@ -8007,6 +8011,15 @@
 "receiptSplit.failure.read.message" = "Algo salió mal. Inténtalo de nuevo en un momento.";
 "receiptSplit.failure.noLines.title" = "No encontré líneas con importe";
 "receiptSplit.failure.noLines.message" = "Prueba con una foto más cerca del recibo y con buena luz, o díctalo.";
+"receiptSplit.failure.dailyLimitFree.title" = "Ya has repartido tus recibos de hoy";
+"receiptSplit.failure.dailyLimitFree.message" = "Mañana puedes repartir más recibos gratis. Con Yala Pro tienes muchos más cada día.";
+"receiptSplit.failure.dailyLimit.title" = "Has llegado al límite de recibos de hoy";
+"receiptSplit.failure.dailyLimit.message" = "Mañana puedes seguir repartiendo recibos.";
+"receiptSplit.text.hint" = "Escribe el gasto y la IA lo reparte";
+"receiptSplit.text.title" = "Escribe el gasto";
+"receiptSplit.text.placeholder" = "pizza 40 Ana y yo, tortilla 35 Beto, sangría 18 entre todos";
+"receiptSplit.text.footer" = "Cada cosa con su importe y quién la ha consumido. Lo que no tenga nombre se reparte entre todos.";
+"receiptSplit.failure.noLines.textMessage" = "Escribe cada cosa con su importe, por ejemplo «pizza 40».";
 "receiptSplit.failure.noConnection.message" = "Conéctate a internet para leer el recibo.";
 "receiptSplit.failure.mic.message" = "Dale permiso en Ajustes para dictar el recibo.";
 
@@ -8089,6 +8102,19 @@
 "groups.convert.personalSplitHint" = "Para convertirlo en gasto compartido, quita «Mi parte»: este registro guarda solo tu parte.";
 "groups.convert.saveFirstHint" = "Guarda los cambios para convertirlo en gasto compartido.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Gastos de grupo repetidos";
+"inbox.groupLeftovers.bannerMessage" = "Ya están en tus registros con su cuenta, pero quedó un borrador o un «Préstamo a grupos» de más.";
+"inbox.groupLeftovers.bannerAction" = "Revisar y quitar lo repetido";
+"inbox.groupLeftovers.intro" = "Estos gastos de grupo ya están en tus registros con su cuenta. En la lista está lo que sobra. Tus registros con cuenta y los gastos del grupo no cambian.";
+"inbox.groupLeftovers.extraDrafts" = "Borradores de más: %d";
+"inbox.groupLeftovers.extraLoans" = "«Préstamo a grupos» repetidos: %d";
+"inbox.groupLeftovers.remove" = "Quitar lo repetido";
+"inbox.groupLeftovers.confirmTitle" = "¿Quitar lo repetido?";
+"inbox.groupLeftovers.confirmMessage" = "Se quitan los borradores y los préstamos de la lista. Tus registros con cuenta y los gastos del grupo se quedan como están.";
+"inbox.groupLeftovers.confirmAction" = "Quitar";
+"inbox.groupLeftovers.failed" = "No se pudo quitar. Inténtalo de nuevo.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Los datos de iCloud de este dispositivo se quedan en iCloud, sin tocar. Estamos terminando de subir los últimos cambios y dejando el dispositivo listo para entrar a tu cuenta…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
@@ -8158,3 +8184,770 @@
 "cashflow.monthEnd.leftIn" = "Falta entrar";
 "cashflow.monthEnd.leftOut" = "Falta salir";
 "cashFlowPlan.estimateLeft" = "Estimado que falta";
+
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "Del %1$@ al %2$@";
+"records.bulk23.deleteOnDay" = "El %@";
+"records.bulk23.deleteTotal" = "%@ en total";
+"records.bulk23.selectDay" = "Seleccionar día";
+"records.bulk23.deselectDay" = "Deseleccionar día";
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "¿Descartar este gasto?";
+"groups.discard.paymentTitle" = "¿Descartar este pago?";
+"groups.discard.openingBalanceTitle" = "¿Descartar este saldo inicial?";
+"groups.expense.groupChangedNotice" = "Has cambiado de grupo: lo que escribiste se queda; quién pagó y el reparto vuelven a empezar.";
+"statistics.categoryDetail.seeInRecords" = "Ver en Registros";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "Buscar en Registros";
+"records.listSearch.clear" = "Borrar búsqueda";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "Cuenta";
+"records23.quick.category" = "Categoría";
+"records23.quick.date" = "Fecha";
+"records23.quick.more" = "Más filtros";
+"records23.quick.accountsCount" = "%d cuentas";
+"records23.category.searchPrompt" = "Busca una categoría";
+"records23.category.noResults" = "Ninguna categoría con «%@»";
+"records23.category.wholeCategory" = "Toda la categoría";
+"records23.category.expand" = "Ver subcategorías de %@";
+"records23.category.collapse" = "Ocultar subcategorías de %@";
+"records23.band.removeAll" = "Quitar todo";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "Ir a otro mes";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Etiqueta";
+"records.list.loading" = "Cargando tus registros…";
+"records.list.loadErrorTitle" = "No hemos podido cargar tus registros";
+"records.list.loadErrorMessage" = "Algo ha salido mal al leerlos. Inténtalo de nuevo en un momento.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "¿Descartar lo que entendí?";
+"entryDiscard.voice.message" = "Para grabar otra vez, lo que no guardaste se borra y no queda en tu Bandeja.";
+"entryDiscard.photo.title" = "¿Descartar lo que leí?";
+"entryDiscard.photo.message" = "Para elegir otra foto, lo que no guardaste se borra y no queda en tu Bandeja.";
+"entryDiscard.keepReviewing" = "Seguir revisando";
+
+/* Bienvenida 2.3 · Y23-05 (mazo de Primeros pasos) y Y23-15 (guías «dónde vive cada cosa») */
+"setup.deck.counter" = "Primeros pasos · %1$d de %2$d";
+"setup.deck.after" = "Después: %@";
+"setup.deck.then" = "Luego: %@";
+"setup.deck.resume" = "Seguir donde iba";
+"setup.deck.firstExpense" = "Anotar el primer gasto";
+"setup.deck.firstExpense.note" = "Tus gastos van a «%@», que Yala crea sola.";
+"setup.deck.currentValue" = "Paso actual";
+"setup.deck.skippedValue" = "Omitido";
+"setup.deck.step.account" = "Crea tu primera cuenta";
+"setup.deck.step.account.detail" = "Dónde está tu dinero y cuánto tienes.";
+"setup.deck.step.record" = "Aprender a registrar";
+"setup.deck.step.record.detail" = "A mano, con la voz, con una foto y con Yala IA.";
+"setup.deck.step.budget" = "Crea tu primer presupuesto";
+"setup.deck.step.budget.detail" = "Ponle un tope a lo que más gastas.";
+"setup.deck.step.payments" = "Anota tus pagos fijos";
+"setup.deck.step.payments.detail" = "Alquiler, servicios, suscripciones: Yala te los recuerda.";
+"setup.deck.step.groups" = "Divide gastos con tu grupo";
+"setup.deck.step.groups.detail" = "Con amigos o en pareja, con un enlace.";
+"setup.deck.step.money" = "Mira a dónde va tu dinero";
+"setup.deck.step.money.detail" = "Estadísticas: categorías, tendencias, flujo de caja y cómo vas contra el mes pasado.";
+"setup.deck.step.home" = "Yala en tu pantalla de inicio";
+"setup.deck.step.home.detail" = "El widget para anotar en un toque y «Oye Siri».";
+"placeGuide.progress" = "%1$d de %2$d";
+"placeGuide.stepOf" = "Paso %1$d de %2$d";
+"placeGuide.skip" = "Omitir";
+"placeGuide.configure.title" = "Arma tu Panel";
+"placeGuide.configure.message" = "Desde aquí sumas gráficas a tu Panel, como «Distribución por categoría» o «Entradas y salidas».";
+"placeGuide.charts.tab.title" = "Tus gráficas viven en Más";
+"placeGuide.charts.tab.later" = "Toca Más para verlas cuando quieras.";
+"placeGuide.charts.tab.step" = "Toca Más y te mostramos dónde están.";
+"placeGuide.charts.more.title" = "Todas tus gráficas";
+"placeGuide.charts.more.message" = "En Estadísticas ves lo más importante del mes, cómo cambia tu dinero y en qué se va. Más abajo, en Reportes, el flujo de caja y cómo vas contra el mes pasado.";
+"placeGuide.budgets.tab.title" = "Tus presupuestos viven en Más";
+"placeGuide.budgets.tab.message" = "Toca Más para encontrarlos cuando quieras.";
+"placeGuide.budgets.more.title" = "Aquí están tus presupuestos";
+"placeGuide.budgets.more.message" = "Míralos, ajústalos o crea otro cuando quieras.";
+"placeGuide.payments.tab.title" = "Tus pagos planificados viven en Más";
+"placeGuide.payments.tab.message" = "Toca Más para verlos cuando quieras.";
+"placeGuide.payments.more.title" = "Aquí están tus pagos planificados";
+"placeGuide.payments.more.message" = "Lo que se viene mes a mes y lo que ya pagaste. Desde aquí también sumas otro.";
+"placeGuide.groups.title" = "Tus grupos, a un toque";
+"placeGuide.groups.message" = "Aquí ves tus grupos, quién le debe a quién y los gastos que suman los demás.";
+/* Bienvenida 2.3 · lote 02: vitrina, accesos, puerta de Grupos y conversación de tres preguntas (SPEC Y23-01, 03, 04, 06) */
+"bienvenida23.showcase.financesTitle" = "Tus finanzas personales,";
+"bienvenida23.showcase.financesTitleAccent" = "sin esfuerzo.";
+"bienvenida23.showcase.groupsTitle" = "Cuentas claras";
+"bienvenida23.showcase.groupsTitleAccent" = "con tus amigos.";
+"bienvenida23.showcase.receipt.name" = "Lee tus tickets";
+"bienvenida23.showcase.receipt.caption" = "Yala lee tu ticket y lo anota.";
+"bienvenida23.showcase.voice.name" = "Anota con tu voz";
+"bienvenida23.showcase.voice.caption" = "Dile a Yala lo que gastaste.";
+"bienvenida23.showcase.organize.name" = "Ordena tus gastos";
+"bienvenida23.showcase.organize.caption" = "Mira a dónde se va tu dinero.";
+"bienvenida23.showcase.split.name" = "Divide cualquier gasto";
+"bienvenida23.showcase.split.caption" = "Yala reparte y lleva la cuenta.";
+"bienvenida23.showcase.budget.name" = "Cuida un presupuesto";
+"bienvenida23.showcase.budget.caption" = "Ponte un límite y mira cuánto queda.";
+"bienvenida23.showcase.whoOwes.name" = "Quién le debe a quién";
+"bienvenida23.showcase.whoOwes.caption" = "Cada uno ve lo que le toca.";
+"bienvenida23.showcase.settle.name" = "Salda con un toque";
+"bienvenida23.showcase.settle.caption" = "Anota el pago y todo queda en cero.";
+"bienvenida23.showcase.example" = "Ejemplo";
+"bienvenida23.showcase.groupsDoorLink" = "Dividir gastos con amigos";
+"bienvenida23.showcase.pause" = "Pausar la vitrina";
+"bienvenida23.showcase.resume" = "Reanudar la vitrina";
+"bienvenida23.showcase.position" = "%1$@, %2$d de %3$d";
+"bienvenida23.access.google" = "Entrar con Google";
+"bienvenida23.access.apple" = "Entrar con Apple";
+"bienvenida23.access.iCloud" = "Entrar con iCloud privado";
+"bienvenida23.access.iCloudLine" = "Tus datos solo en tus dispositivos Apple.";
+"bienvenida23.access.groupsNeedAccount" = "Para compartir gastos con otras personas necesitas una cuenta de Yala.";
+"bienvenida23.demo.lunch" = "Almuerzo";
+"bienvenida23.demo.taxi" = "Taxi";
+"bienvenida23.demo.market" = "Mercado";
+"bienvenida23.demo.power" = "Luz";
+"bienvenida23.demo.dinner" = "Cena";
+"bienvenida23.demo.food" = "Comida";
+"bienvenida23.demo.transport" = "Transporte";
+"bienvenida23.demo.home" = "Casa";
+"bienvenida23.demo.you" = "Tú";
+"bienvenida23.demo.paidSplit" = "Pagaste tú · entre 3";
+"bienvenida23.demo.voiceSaid" = "«Gasté %@ en taxi»";
+"bienvenida23.demo.voiceDone" = "Listo, lo anoté.";
+"bienvenida23.demo.perMonth" = "%@ al mes";
+"bienvenida23.demo.spentSoFar" = "Llevas %@";
+"bienvenida23.demo.left" = "Te quedan";
+"bienvenida23.demo.owesYou" = "%@ te debe";
+"bienvenida23.demo.youOwe" = "Le debes a %@";
+"bienvenida23.demo.paidYou" = "%@ te pagó";
+"bienvenida23.demo.allSettled" = "Todo en cero entre vosotros";
+"bienvenida23.chat.subtitle" = "Te ayuda a empezar";
+"bienvenida23.chat.cardTitle" = "Tu Yala";
+"bienvenida23.chat.rowName" = "Nombre";
+"bienvenida23.chat.rowCurrency" = "Moneda";
+"bienvenida23.chat.rowTracking" = "Llevas";
+"bienvenida23.chat.pending" = "pendiente";
+"bienvenida23.chat.typing" = "Yala está escribiendo";
+"bienvenida23.chat.hello" = "¡Hola! Soy Yala.";
+"bienvenida23.chat.askName" = "¿Cómo te llamo?";
+"bienvenida23.chat.askProposedName" = "¿Te llamo %@?";
+"bienvenida23.chat.yesCallMe" = "Sí, llámame %@";
+"bienvenida23.chat.otherName" = "Prefiero otro nombre";
+"bienvenida23.chat.namePlaceholder" = "Escribe tu nombre";
+"bienvenida23.chat.send" = "Enviar";
+"bienvenida23.chat.niceToMeet" = "¡Mucho gusto, %@!";
+"bienvenida23.chat.askCurrency" = "¿En qué moneda gastas?";
+"bienvenida23.chat.byRegion" = "Por tu región";
+"bienvenida23.chat.dollars" = "Dólares";
+"bienvenida23.chat.otherCurrency" = "Otra moneda";
+"bienvenida23.chat.askTracking" = "¿Qué quieres llevar en Yala?";
+"bienvenida23.chat.incomeAndExpenses" = "Gastos e ingresos";
+"bienvenida23.chat.expensesOnly" = "Solo gastos";
+"bienvenida23.chat.whatsTheDifference" = "¿Cuál es la diferencia?";
+"bienvenida23.chat.incomeAndExpensesExplained" = "Lo que entra y lo que sale, para ver cuánto te queda.";
+"bienvenida23.chat.expensesOnlyExplained" = "Solo lo que gastas, para saber en qué se te va el dinero.";
+"bienvenida23.chat.readyNamed" = "¡Listo, %@!";
+"bienvenida23.chat.ready" = "¡Listo!";
+"bienvenida23.chat.yourYalaIsReady" = "Tu Yala está lista.";
+"bienvenida23.chat.enterYala" = "Entrar a Yala";
+"bienvenida23.groups.accountOnlyTitle" = "Solo crear mi cuenta";
+"bienvenida23.groups.accountOnlyBody" = "Entro a Grupos y lo monto después";
+"bienvenida23.access.createTitle" = "Vamos a crear tu cuenta";
+"bienvenida23.access.createBody" = "Ese correo todavía no tiene una cuenta de Yala.";
+"bienvenida23.access.useAnotherAccount" = "Usar otra cuenta";
+"bienvenida23.access.existsTitle" = "Ya tienes una cuenta";
+"bienvenida23.access.existsBody" = "Ese correo ya tiene una cuenta de Yala. ¿Cargamos tus datos y entramos?";
+"bienvenida23.access.loadAndEnter" = "Cargar mis datos y entrar";
+"bienvenida23.groups.subtitleThree" = "Los tres caminos te dejan en el mismo sitio.";
+
+/* Primeros pasos 2.3 · pasos 1 y 2 (Y23-07 a Y23-10) */
+"pasos23.partOf" = "Parte %1$d de %2$d";
+"pasos23.account.intro.eyebrow" = "Antes de empezar";
+"pasos23.account.intro.createFirst" = "Crear mi primera cuenta";
+"pasos23.account.intro.part1.title" = "¿Qué es una cuenta?";
+"pasos23.account.intro.part1.message" = "Es cada lugar donde tienes o usas tu dinero.";
+"pasos23.account.intro.part2.title" = "Así se ven tus cuentas";
+"pasos23.account.intro.part2.message" = "Cada una con su nombre y su saldo. Una puede tener %1$@ y %2$@ a la vez.";
+"pasos23.account.intro.part3.title" = "¿Por qué tenerlas al día?";
+"pasos23.account.intro.part3.message" = "Si lo que dice Yala es lo mismo que dice tu banco, sabes cuánto puedes gastar sin adivinar.";
+"pasos23.account.place.wallet" = "Tu cartera";
+"pasos23.account.place.paid" = "Donde te pagan";
+"pasos23.account.place.saved" = "Lo que ahorras";
+"pasos23.account.place.owe" = "Lo que debes";
+"pasos23.account.place.bank" = "Cuenta bancaria";
+"pasos23.account.place.card" = "Tarjeta";
+"pasos23.account.row.cash" = "Billetes en tu cartera";
+"pasos23.account.row.savings" = "Ahorros en dos monedas";
+"pasos23.account.row.card" = "Tarjeta: lo que debes";
+"pasos23.account.match.yala" = "Yala dice";
+"pasos23.account.match.bank" = "Tu banco dice";
+"pasos23.account.benefit.spend" = "Sabes cuánto puedes gastar de verdad";
+"pasos23.account.benefit.reports" = "Tus informes y presupuestos cuentan bien";
+"pasos23.account.benefit.adjust" = "Si algo no cuadra, ajustas el saldo y listo";
+"pasos23.account.chat.subtitle" = "Tu primera cuenta";
+"pasos23.account.kind.question" = "¿Cuál creamos primero?";
+"pasos23.account.kind.subtitle" = "Empieza por la que más usas.";
+"pasos23.account.kind.savings" = "Ahorros";
+"pasos23.account.kind.allTogether" = "Todo junto";
+"pasos23.account.kind.allTogetherHint" = "Todo tu dinero junto, sin separarlo";
+"pasos23.account.currency.question" = "¿En qué moneda está este dinero?";
+"pasos23.account.currency.questionCard" = "¿En qué moneda usas esta tarjeta?";
+"pasos23.account.currency.subtitle" = "¿Tienes también dólares u otra moneda? Añádela.";
+"pasos23.account.currency.subtitleCard" = "¿También pagas en dólares u otra moneda? Añádela.";
+"pasos23.account.currency.add" = "+ Añadir moneda";
+"pasos23.account.continue" = "Continuar";
+"pasos23.account.currency.slot" = "Moneda %1$d: %2$@. Toca para cambiarla";
+"pasos23.account.currency.remove" = "Quitar %@";
+"pasos23.account.name.myMoney" = "Mi dinero";
+"pasos23.account.name.question" = "¿Cómo se llama esta cuenta?";
+"pasos23.account.name.subtitleOwn" = "Ponle el nombre con el que la reconoces.";
+"pasos23.account.name.suggest" = "¿La llamamos «%@»?";
+"pasos23.account.name.subtitle" = "Así la verás en tus cuentas.";
+"pasos23.account.name.editQuestion" = "¿Cómo la llamamos?";
+"pasos23.account.name.placeholder" = "Nombre de la cuenta";
+"pasos23.account.name.example" = "Ej. %@";
+"pasos23.account.name.keep" = "Sí, así está bien";
+"pasos23.account.name.change" = "Ponerle otro nombre";
+"pasos23.account.example.checking" = "Cuenta nómina";
+"pasos23.account.example.savings" = "Ahorro viaje";
+"pasos23.account.example.card" = "Visa del trabajo";
+"pasos23.account.balance.single" = "¿Cuánto tienes hoy en esta cuenta?";
+"pasos23.account.balance.cardSingle" = "¿Cuánto debes hoy en esta tarjeta?";
+"pasos23.account.balance.in" = "¿Cuánto tienes hoy en %@?";
+"pasos23.account.balance.cardIn" = "¿Cuánto debes hoy en %@?";
+"pasos23.account.balance.and" = "¿Y en %@?";
+"pasos23.account.balance.subtitle" = "Con un número aproximado basta.";
+"pasos23.account.balance.subtitleCard" = "Lo que has comprado y aún no has pagado. Un aproximado basta.";
+"pasos23.account.balance.field" = "Saldo";
+"pasos23.account.balance.helpMe" = "No lo sé, ayúdame a calcularlo";
+"pasos23.account.balance.startAtZero" = "Empiezo en 0";
+"pasos23.account.balance.oweNothing" = "No debo nada";
+"pasos23.account.balance.noneIn" = "Ahora no tengo %@";
+"pasos23.account.balance.oweNothingIn" = "No debo nada en %@";
+"pasos23.account.balance.signPositive" = "Saldo positivo. Toca para que sea negativo";
+"pasos23.account.balance.signNegative" = "Saldo negativo. Toca para que sea positivo";
+"pasos23.account.send" = "Enviar";
+"pasos23.account.helper.card.title" = "Lo sacamos con la app de tu banco";
+"pasos23.account.helper.card.intro" = "Abre tu tarjeta en la app del banco y busca estos dos números.";
+"pasos23.account.helper.limit" = "Tu límite";
+"pasos23.account.helper.limitHint" = "Lo máximo que puedes gastar con ella";
+"pasos23.account.helper.remaining" = "Lo que te queda";
+"pasos23.account.helper.remainingHint" = "Lo que aún puedes gastar hoy";
+"pasos23.account.helper.used" = "Ya has usado";
+"pasos23.account.helper.left" = "Te queda";
+"pasos23.account.helper.general.title" = "Sumemos dónde tienes dinero";
+"pasos23.account.helper.general.intro" = "Rellena solo lo que tengas. Un aproximado está bien.";
+"pasos23.account.helper.inBank" = "En el banco";
+"pasos23.account.helper.saved" = "Ahorrado";
+"pasos23.account.helper.inCash" = "En efectivo";
+"pasos23.account.helper.cash.title" = "Cuenta tu efectivo";
+"pasos23.account.helper.cash.intro" = "Mira tu cartera y lo que guardas en casa.";
+"pasos23.account.helper.cash.row" = "Efectivo que tienes";
+"pasos23.account.helper.checking.title" = "Míralo en la app de tu banco";
+"pasos23.account.helper.checking.intro" = "Es el número grande que ves al abrir tu cuenta.";
+"pasos23.account.helper.checking.row" = "Lo que ves en tu cuenta";
+"pasos23.account.helper.savings.title" = "¿Cuánto tienes ahorrado?";
+"pasos23.account.helper.savings.intro" = "Si tienes varias cuentas de ahorro, súmalas o crea una por cada una.";
+"pasos23.account.helper.savings.row" = "Lo que tienes ahorrado";
+"pasos23.account.helper.resultOwe" = "Debes";
+"pasos23.account.helper.resultHave" = "Tienes";
+"pasos23.account.helper.use" = "Usar %@";
+"pasos23.account.helper.useThis" = "Usar este saldo";
+"pasos23.account.helper.footnote" = "Siempre puedes ajustarlo después.";
+"pasos23.account.statement.question" = "¿Qué día cierra tu tarjeta?";
+"pasos23.account.statement.subtitle" = "Es el día en que el banco suma tus compras del mes. Con él te decimos cuánto vas a pagar y en qué mes cae cada compra.";
+"pasos23.account.payment.question" = "¿Hasta qué día puedes pagarla?";
+"pasos23.account.payment.subtitle" = "Es tu fecha límite de pago. La usamos para recordarte que pagues a tiempo y que no te cobren intereses.";
+"pasos23.account.day.prefix" = "Día";
+"pasos23.account.day.placeholder" = "del 1 al 31";
+"pasos23.account.day.field" = "Día del mes";
+"pasos23.account.day.dontKnow" = "No lo sé";
+"pasos23.account.day.preferNot" = "Prefiero no decirlo";
+"pasos23.account.reminder.question" = "¿Cuándo te recordamos pagarla?";
+"pasos23.account.reminder.subtitle" = "Te avisamos con el importe que te toca pagar.";
+"pasos23.account.reminder.subtitleEach" = "Te avisamos con el importe que te toca pagar en cada moneda.";
+"pasos23.account.reminder.subtitleNoStatement" = "Como no sabemos el día de cierre, te avisamos el mismo día del pago y sin el importe.";
+"pasos23.account.reminder.none" = "No me lo recuerdes";
+"pasos23.account.done.title" = "¡Lista!";
+"pasos23.account.done.subtitle" = "«%@» ya está en Yala.";
+"pasos23.account.done.subtitleWith" = "«%1$@» ya está en Yala, con %2$@.";
+"pasos23.account.done.seeMyYala" = "Ver mi Yala";
+"pasos23.account.done.another" = "Crear otra cuenta";
+"pasos23.account.card.placeholderName" = "Tu cuenta";
+"pasos23.account.card.placeholderType" = "Tipo";
+"pasos23.account.card.balance" = "Saldo";
+"pasos23.account.card.owe" = "Debes";
+"pasos23.account.card.balanceIn" = "Saldo en %@";
+"pasos23.account.card.oweIn" = "Debes en %@";
+"pasos23.account.card.line" = "En %@";
+"pasos23.account.card.closesOn" = "Cierra el %d";
+"pasos23.account.card.payBy" = "Pagas hasta el %d";
+"pasos23.account.card.reminds" = "Te recordamos %@";
+"pasos23.record.intro.eyebrow" = "Cuatro maneras de apuntar";
+"pasos23.record.manual.title" = "A mano";
+"pasos23.record.manual.message" = "Pones cuánto, en qué ha sido y con qué cuenta. Lo demás es opcional.";
+"pasos23.record.voice.title" = "Con la voz";
+"pasos23.record.voice.message" = "Lo dices como se lo contarías a alguien y Yala lo apunta.";
+"pasos23.record.photo.title" = "Con una foto";
+"pasos23.record.photo.message" = "Un recibo, una captura del banco o un PDF. Yala saca el importe, el comercio y la fecha.";
+"pasos23.record.ai.title" = "Con Yala IA";
+"pasos23.record.ai.message" = "Se lo escribes en el chat y te deja el registro listo para guardar.";
+"pasos23.record.tryFreeOnce" = "Aquí la pruebas gratis una vez.";
+"pasos23.record.startManual" = "Empezar a mano";
+"pasos23.record.skipStep" = "Omitir este paso";
+"pasos23.record.manual.short" = "A mano";
+"pasos23.record.voice.short" = "Voz";
+"pasos23.record.photo.short" = "Foto";
+"pasos23.record.between.first" = "¡Tu primer registro!";
+"pasos23.record.between.keepGoing" = "Sigamos";
+"pasos23.record.now.voice" = "Ahora, con la voz";
+"pasos23.record.now.photo" = "Ahora, con una foto";
+"pasos23.record.now.ai" = "Ahora, con Yala IA";
+"pasos23.record.next.voice" = "Toca el micrófono y dilo como se lo contarías a alguien.";
+"pasos23.record.next.photo" = "Usa el recibo de ejemplo o una foto tuya: Yala saca el importe, el comercio y la fecha.";
+"pasos23.record.next.ai" = "Escríbele a Yala lo que has pagado y te deja el registro listo.";
+"pasos23.record.courtesyOnce" = "Prueba de cortesía: una vez, gratis.";
+"pasos23.record.try.voice" = "Probar con la voz";
+"pasos23.record.try.photo" = "Probar con una foto";
+"pasos23.record.try.ai" = "Probar con Yala IA";
+"pasos23.record.skip" = "Omitir";
+"pasos23.record.goToPanel" = "Ir a mi Panel";
+"pasos23.record.state.done" = "hecho";
+"pasos23.record.state.skipped" = "omitido";
+"pasos23.record.state.next" = "la siguiente";
+"pasos23.record.state.pending" = "pendiente";
+"pasos23.record.inInbox" = "en tu Bandeja de entrada";
+"pasos23.record.trial.voice" = "Prueba de cortesía: la voz, una vez gratis";
+"pasos23.record.trial.photo" = "Prueba de cortesía: la foto, una vez gratis";
+"pasos23.record.trial.ai" = "Prueba de cortesía: Yala IA, una vez gratis";
+"pasos23.record.exampleReceipt" = "Usar el recibo de ejemplo";
+"pasos23.record.exampleReceiptHint" = "Para probar sin buscar una foto";
+"pasos23.record.aiGuide.title" = "Pídeselo en una frase";
+"pasos23.record.aiGuide.message" = "Toca «Apunta un gasto» y cuéntale qué has pagado.";
+"pasos23.record.guide.amount.title" = "Empieza por el importe";
+"pasos23.record.guide.amount.message" = "Toca aquí y escribe cuánto has gastado.";
+"pasos23.record.guide.category.title" = "¿En qué ha sido?";
+"pasos23.record.guide.category.message" = "Toca «Categoría» y elige una. Las que más uses aparecerán primero.";
+"pasos23.record.guide.account.title" = "Tu cuenta ya está puesta";
+"pasos23.record.guide.account.message" = "Como solo tienes una, Yala la elige. Si añades más, aquí la cambias.";
+"pasos23.record.guide.name.title" = "Un nombre, si quieres";
+"pasos23.record.guide.name.message" = "Te ayuda a encontrarlo después. Puedes saltarlo.";
+"pasos23.record.guide.name.write" = "Escribir";
+"pasos23.record.guide.name.skip" = "Saltar";
+"pasos23.record.guide.save.title" = "Guárdalo";
+"pasos23.record.guide.save.message" = "Con importe, categoría y cuenta ya se puede guardar.";
+"pasos23.record.cleanup.title" = "¿Borramos los de prueba?";
+"pasos23.record.cleanup.markSome" = "Marca los que quieras borrar";
+"pasos23.record.cleanup.keepAll" = "Conservarlos todos";
+"pasos23.record.inboxGuide.title" = "Lo que Yala apunta solo";
+"pasos23.record.inboxGuide.message" = "Aquí llegan los registros que se preparan sin ti —tus pagos planificados, Apple Pay o lo que dejes sin guardar de voz o foto— para que los revises y los apruebes.";
+
+/* Bienvenida 2.3 · Primeros pasos, pasos 3, 4 y 5 (presupuesto, pagos planificados y grupos) */
+"pasos23.plan.seePanel" = "Ver mi Panel";
+"pasos23.plan.done" = "¡Listo!";
+"pasos23.plan.panel.question" = "¿Lo ponemos en tu Panel?";
+"pasos23.plan.panel.yes" = "Sí, mostrarlo en el Panel";
+"pasos23.plan.panel.no" = "No, solo en Planificación";
+"pasos23.plan.noThanks" = "No, gracias";
+"pasos23.plan.youHaveLeft" = "Te quedan";
+"pasos23.plan.youWentOver" = "Te pasaste por";
+"pasos23.plan.spentOfLimit" = "%1$@ de %2$@";
+"pasos23.budget.chatSubtitle" = "Tu primer presupuesto";
+"pasos23.budget.intro.cta" = "Crear mi presupuesto";
+"pasos23.budget.intro.part1.title" = "Un tope para lo que gastas";
+"pasos23.budget.intro.part1.message" = "Eliges cuánto quieres gastar como máximo en un tiempo, por ejemplo %@ al mes en comida.";
+"pasos23.budget.intro.part1.card" = "Tu tope de este mes";
+"pasos23.budget.intro.part2.title" = "Tú eliges qué cuenta";
+"pasos23.budget.intro.part2.message" = "Todos tus gastos, o solo algunas categorías: comida, transporte, salidas…";
+"pasos23.budget.intro.part3.title" = "Yala te avisa a tiempo";
+"pasos23.budget.intro.part3.message" = "Antes de llegar al tope te llega un aviso, y si te pasas lo ves en rojo.";
+"pasos23.budget.intro.part3.push" = "Ya usaste el 75 %% de %1$@. Te quedan %2$@ para 9 días.";
+"pasos23.budget.intro.part3.card" = "Si te pasas, lo ves en rojo";
+"pasos23.budget.scope.question" = "¿Qué gastos cuenta?";
+"pasos23.budget.scope.subtitle" = "Puedes poner un tope a todo o solo a lo que más te preocupa.";
+"pasos23.budget.scope.all" = "Todos mis gastos";
+"pasos23.budget.scope.allHint" = "Un solo tope para todo";
+"pasos23.budget.scope.categories" = "Solo algunas categorías";
+"pasos23.budget.scope.categoriesHint" = "Por ejemplo, comida o salidas";
+"pasos23.budget.categories.question" = "¿Cuáles?";
+"pasos23.budget.categories.subtitle" = "Toca las que quieras. Después afinamos.";
+"pasos23.budget.categories.spent" = "Llevas %@";
+"pasos23.budget.subcategories.question" = "¿Algo que no quieras contar?";
+"pasos23.budget.subcategories.subtitle" = "Van todas marcadas. Quita las que no entran en este presupuesto.";
+"pasos23.budget.period.question" = "¿Cada cuánto se renueva?";
+"pasos23.budget.period.subtitle" = "Lo más común es cada mes.";
+"pasos23.budget.period.once" = "Una sola vez";
+"pasos23.budget.period.monthlyHint" = "Se renueva cada mes";
+"pasos23.budget.period.weeklyHint" = "Se renueva cada semana";
+"pasos23.budget.period.yearlyHint" = "Se renueva cada año";
+"pasos23.budget.period.onceHint" = "Entre dos fechas; no se repite";
+"pasos23.budget.dates.question" = "¿Entre qué fechas?";
+"pasos23.budget.dates.subtitle" = "Para un viaje o un mes especial.";
+"pasos23.budget.dates.from" = "Desde";
+"pasos23.budget.dates.to" = "Hasta";
+"pasos23.budget.limit.question.monthly" = "¿Cuánto quieres gastar como máximo al mes?";
+"pasos23.budget.limit.question.weekly" = "¿Cuánto quieres gastar como máximo a la semana?";
+"pasos23.budget.limit.question.yearly" = "¿Cuánto quieres gastar como máximo al año?";
+"pasos23.budget.limit.question.once" = "¿Cuánto quieres gastar como máximo en esas fechas?";
+"pasos23.budget.limit.spentSoFar" = "En lo que elegiste ya llevas %@ este mes.";
+"pasos23.budget.limit.roundNumber" = "Un número redondo está bien; lo puedes cambiar cuando quieras.";
+"pasos23.budget.name.question" = "¿Lo llamamos «%@»?";
+"pasos23.budget.name.subtitle" = "Es como lo verás en tu Panel.";
+"pasos23.budget.name.yes" = "Sí, así está bien";
+"pasos23.budget.name.other" = "Ponerle otro nombre";
+"pasos23.budget.name.editQuestion" = "¿Cómo lo llamamos?";
+"pasos23.budget.name.placeholder" = "Nombre del presupuesto";
+"pasos23.budget.name.allExpenses" = "Mis gastos del mes";
+"pasos23.budget.name.joined" = "%1$@ y %2$@";
+"pasos23.budget.name.fallback" = "Mi presupuesto";
+"pasos23.budget.card.placeholder" = "Tu presupuesto";
+"pasos23.budget.card.countsAll" = "Cuenta todos tus gastos";
+"pasos23.budget.card.pickCategories" = "Elige categorías";
+"pasos23.budget.card.alert75" = "Te avisamos al 75 % y al 100 %";
+"pasos23.budget.card.alert100" = "Te avisamos al 100 %";
+"pasos23.budget.alert.question" = "¿Te avisamos cuando vayas llegando al tope?";
+"pasos23.budget.alert.subtitle" = "Un aviso a tiempo te deja corregir antes de pasarte.";
+"pasos23.budget.alert.at75" = "Sí, al 75 % y al 100 %";
+"pasos23.budget.alert.at75Hint" = "Te da margen para frenar";
+"pasos23.budget.alert.at100" = "Sí, solo al llegar al tope";
+"pasos23.budget.panel.subtitle" = "Así lo ves cada vez que abres Yala.";
+"pasos23.budget.panel.yesHint" = "En el widget de Presupuestos";
+"pasos23.budget.done.message" = "«%@» ya está en Planificación.";
+"pasos23.budget.done.messagePanel" = "«%@» ya está en Planificación y en tu Panel.";
+"pasos23.payment.chatSubtitle" = "Tu primer pago planificado";
+"pasos23.payment.intro.cta" = "Anotar mi primer pago";
+"pasos23.payment.intro.part1.title" = "Lo que pagas cada mes";
+"pasos23.payment.intro.part1.message" = "Alquiler, servicios, suscripciones: anótalos una vez y Yala lleva la cuenta.";
+"pasos23.payment.intro.part1.caption" = "Este mes";
+"pasos23.payment.intro.part2.title" = "Llega a tu Bandeja";
+"pasos23.payment.intro.part2.message" = "El día del pago, Yala lo deja listo en tu Bandeja. Lo revisas y lo apruebas con un toque.";
+"pasos23.payment.intro.part3.title" = "Te avisamos antes";
+"pasos23.payment.intro.part3.message" = "Para que no se te pase ni te cobren de más.";
+"pasos23.payment.example.music" = "Música";
+"pasos23.payment.example.light" = "Luz";
+"pasos23.payment.example.rent" = "Alquiler";
+"pasos23.payment.inbox.later" = "Dejar para después";
+"pasos23.payment.kind.question" = "¿Qué pagas cada cierto tiempo?";
+"pasos23.payment.kind.subtitle" = "Elige el tipo; el nombre lo pones tú después.";
+"pasos23.payment.kind.rent" = "Renta";
+"pasos23.payment.kind.utilities" = "Servicios";
+"pasos23.payment.kind.phone" = "Comunicación";
+"pasos23.payment.kind.utilitySubscription" = "Suscripción de utilidad";
+"pasos23.payment.kind.leisureSubscription" = "Suscripción de ocio";
+"pasos23.payment.kind.fitness" = "Fitness";
+"pasos23.payment.name.rent" = "Renta";
+"pasos23.payment.name.utilities" = "Servicio";
+"pasos23.payment.name.phone" = "Comunicación";
+"pasos23.payment.name.subscription" = "Suscripción";
+"pasos23.payment.name.fitness" = "Fitness";
+"pasos23.payment.example.rent.1" = "Alquiler";
+"pasos23.payment.example.rent.2" = "Hipoteca";
+"pasos23.payment.example.rent.3" = "Cochera";
+"pasos23.payment.example.utilities.1" = "Luz";
+"pasos23.payment.example.utilities.2" = "Agua";
+"pasos23.payment.example.utilities.3" = "Gas";
+"pasos23.payment.example.phone.1" = "Celular";
+"pasos23.payment.example.phone.2" = "Internet";
+"pasos23.payment.example.phone.3" = "Cable";
+"pasos23.payment.example.utilitySubscription.1" = "Nube";
+"pasos23.payment.example.utilitySubscription.2" = "Antivirus";
+"pasos23.payment.example.utilitySubscription.3" = "Correo";
+"pasos23.payment.example.leisureSubscription.1" = "Música";
+"pasos23.payment.example.leisureSubscription.2" = "Películas y series";
+"pasos23.payment.example.leisureSubscription.3" = "Videojuegos";
+"pasos23.payment.example.fitness.1" = "Gimnasio";
+"pasos23.payment.example.fitness.2" = "Yoga";
+"pasos23.payment.example.fitness.3" = "Clases";
+"pasos23.payment.otherSubcategory" = "Otra subcategoría";
+"pasos23.payment.change" = "Cambiar";
+"pasos23.payment.isSubscription" = "Es una suscripción";
+"pasos23.payment.isSubscriptionHint" = "Aparece en la pestaña Suscripciones";
+"pasos23.payment.details.question" = "¿Cómo se llama y cuánto pagas?";
+"pasos23.payment.details.subtitle" = "%1$@ · se paga con %2$@";
+"pasos23.payment.details.name" = "Nombre";
+"pasos23.payment.details.namePlaceholder" = "Nombre del pago";
+"pasos23.payment.details.clearName" = "Borrar el nombre";
+"pasos23.payment.details.amount" = "Cuánto pagas";
+"pasos23.payment.details.variable" = "Cambia cada vez";
+"pasos23.payment.details.variableHint" = "Monto estimado: lo ajustas al aprobarlo";
+"pasos23.payment.when.question" = "¿Cuándo toca pagar?";
+"pasos23.payment.when.monthly" = "Cada mes";
+"pasos23.payment.when.weekly" = "Cada semana";
+"pasos23.payment.when.yearly" = "Cada año";
+"pasos23.payment.when.once" = "Una vez";
+"pasos23.payment.when.dayOfMonth" = "Qué día del mes";
+"pasos23.payment.when.otherDay" = "Otro";
+"pasos23.payment.when.weekday" = "Qué día";
+"pasos23.payment.when.date" = "Fecha";
+"pasos23.payment.reminder.question" = "¿Te avisamos antes de que toque pagar?";
+"pasos23.payment.reminder.subtitle" = "El aviso llega con el nombre y el monto.";
+"pasos23.payment.reminder.threeDays" = "Sí, 3 días antes";
+"pasos23.payment.reminder.oneDay" = "Sí, 1 día antes";
+"pasos23.payment.reminder.sameDay" = "Sí, el mismo día";
+"pasos23.payment.panel.subtitle" = "Así ves lo que viene cada vez que abres Yala.";
+"pasos23.payment.panel.yesHint" = "En el widget de Pagos planificados";
+"pasos23.payment.done.message" = "El %@ llegará a tu Bandeja para que lo apruebes.";
+"pasos23.payment.done.another" = "Anotar otro pago";
+"pasos23.payment.card.placeholder" = "Tu pago";
+"pasos23.groups.eyebrow" = "Grupos · paso %1$d de %2$d";
+"pasos23.groups.chatSubtitle" = "Tu primer grupo";
+"pasos23.groups.what.question" = "¿Qué quieres hacer?";
+"pasos23.groups.what.subtitle" = "Puedes hacer las dos cosas cuando quieras.";
+"pasos23.groups.what.create" = "Crear mi primer grupo";
+"pasos23.groups.what.createHint" = "Un viaje, la casa, los amigos…";
+"pasos23.groups.what.link" = "Tengo un enlace de invitación";
+"pasos23.groups.what.linkHint" = "Alguien ya creó el grupo";
+"pasos23.groups.alreadySeen" = "Grupos ya lo conoces: lo viste al entrar. Seguimos con el paso 6.";
+
+/* Primeros pasos 2.3 · paso 7 y final (Y23-16, Y23-18) */
+"pasos23.home.eyebrow" = "Anota sin abrir Yala";
+"pasos23.home.start" = "Empezar";
+"pasos23.home.methodEyebrow" = "%1$d de %2$d · %3$@";
+"pasos23.home.progress" = "¡Llevas %1$d de %2$d!";
+"pasos23.home.keepGoing" = "Sigamos";
+"pasos23.home.now" = "Ahora: %@";
+"pasos23.home.finish" = "Terminar";
+"pasos23.home.widget.name" = "Widget";
+"pasos23.home.applePay.name" = "Apple Pay";
+"pasos23.home.share.name" = "Compartir";
+"pasos23.home.siri.name" = "Siri";
+"pasos23.home.widget.part.title" = "Un widget en tu pantalla de inicio";
+"pasos23.home.widget.part.message" = "Un toque y estás en Nuevo registro.";
+"pasos23.home.applePay.part.title" = "Cada pago con Apple Pay";
+"pasos23.home.applePay.part.message" = "Pagas con el iPhone y te llega a la Bandeja para aprobarlo.";
+"pasos23.home.applePay.part.paid" = "Has pagado %@ en el supermercado";
+"pasos23.home.applePay.part.push" = "Pago de %@ pendiente de revisar. Tócalo para aprobarlo.";
+"pasos23.home.share.part.title" = "Compártele una foto";
+"pasos23.home.share.part.message" = "Desde Fotos, WhatsApp o tu banco: compartes el recibo y Yala lo lee.";
+"pasos23.home.siri.part.title" = "Díselo a Siri";
+"pasos23.home.siri.part.message" = "Sin usar las manos, mientras pagas.";
+"pasos23.home.siri.part.ask" = "«Oye Siri, anota un gasto en Yala»";
+"pasos23.home.siri.part.answer" = "¿Qué quieres registrar?";
+"pasos23.home.widget.title" = "Añade el widget";
+"pasos23.home.widget.subtitle" = "Lo pones tú desde tu pantalla de inicio. Te llevará medio minuto.";
+"pasos23.home.widget.step1" = "Mantén pulsado un espacio vacío de tu pantalla de inicio.";
+"pasos23.home.widget.step2" = "Toca «Editar» y luego «Añadir widget».";
+"pasos23.home.widget.step3" = "Busca «Yala» y elige «Nuevo registro».";
+"pasos23.home.widget.step4" = "Toca «Añadir widget» y colócalo donde quieras.";
+"pasos23.home.widget.done" = "Listo, ya lo tengo";
+"pasos23.home.applePay.done" = "Ya lo he configurado";
+"pasos23.home.share.title" = "Compártele una foto a Yala";
+"pasos23.home.share.subtitle" = "Un recibo, una captura del banco o un PDF, desde cualquier app.";
+"pasos23.home.share.step1" = "En Fotos (o en la app donde esté), toca Compartir.";
+"pasos23.home.share.step2" = "Elige Yala. Si no aparece, desliza y toca «Más».";
+"pasos23.home.share.step3" = "Yala saca el importe, el comercio y la fecha: lo revisas y lo guardas.";
+"pasos23.home.siri.title" = "¿Qué le digo a Siri?";
+"pasos23.home.siri.subtitle" = "Empieza con «Oye Siri» y di cualquiera de estas. Funcionan sin configurar nada.";
+"pasos23.home.siri.newRecordPhrase" = "Nuevo registro en Yala";
+"pasos23.home.applePay.next" = "Cada pago con Apple Pay llega a tu Bandeja.";
+"pasos23.home.share.next" = "Compártele un recibo desde cualquier app.";
+"pasos23.home.siri.next" = "Todo lo que le puedes pedir a Siri.";
+"pasos23.home.applePay.nextAction" = "Configurar Apple Pay";
+"pasos23.home.share.nextAction" = "Ver cómo compartir";
+"pasos23.home.siri.nextAction" = "Ver qué decirle a Siri";
+"pasos23.home.mail.name" = "Correo";
+"pasos23.home.mail.part.title" = "Tu correo, en automático";
+"pasos23.home.mail.part.message" = "Reenvía los avisos de tu banco a tu dirección de Yala y cada movimiento llega solo a la Bandeja.";
+"pasos23.home.mail.part.mail" = "Consumo de %@ con tu tarjeta";
+"pasos23.home.mail.part.from" = "Aviso de tu banco";
+"pasos23.home.mail.part.push" = "En tu Bandeja: %@, listo para aprobar.";
+"pasos23.home.mail.title" = "Tu dirección de Yala";
+"pasos23.home.mail.subtitle" = "Crea un filtro en tu correo y los avisos de tu banco llegan a tu Bandeja como borrador: nada se registra sin que lo apruebes.";
+"pasos23.home.mail.addressCaption" = "Reenvía tus avisos a";
+"pasos23.home.mail.copy" = "Copiar";
+"pasos23.home.mail.step1" = "Copia tu dirección de Yala.";
+"pasos23.home.mail.step2" = "Abre tu correo en la web (Gmail, Outlook o iCloud Mail) y crea un filtro con el correo de tu banco como remitente.";
+"pasos23.home.mail.step3" = "Elige reenviar a tu dirección de Yala y guarda el filtro.";
+"pasos23.home.mail.step3.detail" = "En Gmail, primero agrégala en Reenvío: el código para confirmarla aparece en Ajustes › Correo del banco.";
+"pasos23.home.mail.soon" = "Pronto: conectar Gmail y Outlook directamente, sin filtros.";
+"pasos23.home.mail.next" = "Los avisos de tu banco, directo a tu Bandeja.";
+"pasos23.home.mail.nextAction" = "Ver mi dirección";
+"pasos23.final.done.title" = "¡Primeros pasos completos!";
+"pasos23.final.done.message" = "Ya sabes lo esencial de Yala. Lo demás lo irás descubriendo a tu ritmo.";
+"pasos23.final.offer.titleOneMonth" = "Prueba Yala Pro 1 mes gratis";
+"pasos23.final.offer.titleDays" = "Prueba Yala Pro %d días gratis";
+"pasos23.final.offer.subtitle" = "Ya has visto lo que hace. Con Pro anotas hablando, con una foto y le preguntas a Yala IA cómo vas.";
+"pasos23.final.offer.mostChosen" = "El más elegido";
+"pasos23.final.offer.cheaperPerMonth" = "Sale más barato al mes";
+"pasos23.final.offer.timeline.reminder" = "Te avisamos antes de cobrar.";
+"pasos23.final.offer.timeline.charge" = "Empieza tu plan. Cancela antes en Ajustes y no pagas nada.";
+"pasos23.final.offer.ctaOneMonth" = "Empezar mi mes gratis";
+"pasos23.final.offer.ctaDays" = "Empezar mis %d días gratis";
+"pasos23.final.offer.keepFree" = "Seguir con la versión gratis";
+"pasos23.final.feature.voice" = "Dicta el gasto y Yala lo anota.";
+"pasos23.final.feature.photo" = "Un recibo, una captura o un PDF.";
+"pasos23.final.feature.ai" = "Cómo vas, en qué gastas, qué viene.";
+"pasos23.final.feature.accounts" = "Todas tus tarjetas y bancos.";
+"pasos23.final.feature.budgets" = "Un tope para cada cosa.";
+"pasos23.final.feature.looks" = "Yala a tu gusto.";
+"pasos23.final.success.title" = "¡Listo! Tienes Pro";
+"pasos23.final.success.oneMonth" = "Tu mes gratis dura hasta el %1$@. El %2$@ te avisamos, antes de cualquier cobro.";
+"pasos23.final.success.days" = "Tus %1$d días gratis duran hasta el %2$@. El %3$@ te avisamos, antes de cualquier cobro.";
+"pasos23.final.success.oneMonthUntil" = "Tu mes gratis va hasta el %@.";
+"pasos23.final.success.daysUntil" = "Tus %1$d días gratis van hasta el %2$@.";
+"pasos23.final.success.startUsing" = "Empezar a usarlo";
+"pasos23.final.reminder.title" = "Tu prueba de Yala Pro termina pronto";
+"pasos23.final.reminder.body" = "El %@ empieza tu plan. Si no quieres seguir, cancela antes en Ajustes.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Hora";
+"export.column.time.description" = "La hora del registro.";
+"export.column.exchangeRate" = "Tipo de cambio";
+"export.column.exchangeRate.description" = "En otra moneda, el tipo con el que se convirtió y a qué moneda.";
+"export.column.need" = "Necesidad";
+"export.column.need.description" = "Solo si la has cambiado en ese registro.";
+"import.error.unreadableRow" = "Fila %1$d: no la hemos podido leer porque no tiene columnas.";
+"import.error.time" = "Fila %1$d: no entendemos la hora «%2$@». Escríbela así: 14:30.";
+"import.error.exchangeRate" = "Fila %1$d: no entendemos el tipo de cambio «%2$@». Escríbelo con punto decimal y sin separador de miles, así: 3.75.";
+"import.error.need" = "Fila %1$d: no entendemos la necesidad «%2$@». Usa essential, priority, optional o unclassified.";
+/* Grupos 2.3 · saldar como en Splitwise (decisión 37, C1 + C2 + C3) */
+"groups.saldar23.thirdPartyHint" = "Lo apuntas tú: %@ lo verá y confirmará que le llegó.";
+"groups.saldar23.recordedBy" = "Lo apuntó %@";
+"groups.saldar23.recordedByYou" = "Lo apuntaste tú";
+"groups.saldar23.pendingTitleOther" = "%1$@ apuntó que %2$@ te pagó %3$@";
+"groups.saldar23.scopeA11y" = "Cuánto se paga";
+"groups.saldar23.scopeAll" = "Todo · %@";
+"groups.saldar23.scopePart" = "Una parte";
+"groups.saldar23.settlesWith" = "Con esto quedas a mano con %@.";
+"groups.saldar23.settlesOthers" = "Con esto %1$@ y %2$@ quedan a mano.";
+"groups.saldar23.leaves.youPay" = "Te quedará por pagar %1$@ a %2$@.";
+"groups.saldar23.leaves.paysYou" = "%1$@ te quedará debiendo %2$@.";
+"groups.saldar23.leaves.others" = "%1$@ le quedará debiendo %2$@ a %3$@.";
+"groups.saldar23.overpays.youPay" = "Es más de lo que le debes (%1$@). %2$@ quedaría debiéndote %3$@.";
+"groups.saldar23.overpays.paysYou" = "Es más de lo que te debe (%1$@). Quedarías debiéndole %2$@ a %3$@.";
+"groups.saldar23.overpays.others" = "Es más de lo que %1$@ le debe a %2$@ (%3$@). %2$@ quedaría debiéndole %4$@ a %1$@.";
+"groups.saldar23.saveAnyway" = "Saldar igual";
+"groups.saldar23.notice.youPaid" = "Pagaste %1$@ a %2$@.";
+"groups.saldar23.notice.paidYou" = "%1$@ te pagó %2$@.";
+"groups.saldar23.notice.othersPaid" = "Apuntaste que %1$@ le pagó %2$@ a %3$@.";
+"groups.saldar23.notice.waitingFor" = "Falta que %@ lo confirme.";
+"groups.saldar23.notice.settled" = "Ya estáis a mano.";
+"groups.saldar23.notice.nowYouOwe" = "Ahora le debes %1$@ a %2$@.";
+"groups.saldar23.notice.nowOwesYou" = "Ahora %1$@ te debe %2$@.";
+"groups.saldar23.notice.nowOthersOwe" = "Ahora %1$@ le debe %2$@ a %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Hay un pago de %@ por confirmar";
+"groups.saldar23.pendingOnDebt.many" = "Hay pagos por confirmar por %@";
+"groups.saldar23.confirmOver.title" = "¿Confirmar este pago?";
+"groups.saldar23.confirmOver.settled" = "%1$@ ya no te debía nada: otro pago saldó esta deuda. Si confirmas estos %2$@, quedará pagado de más. Si es el mismo pago apuntado dos veces, quítalo.";
+"groups.saldar23.confirmOver.exceeds" = "A %1$@ solo le quedaban %2$@ por pagarte. Si confirmas estos %3$@, quedará pagado de más.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirmar igual";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala ha juntado las deudas para que haya menos pagos.";
+"groups.lote23chico.showPairs" = "Ver las deudas de cada par";
+"groups.lote23chico.pairsNote" = "Así quedan las deudas de cada par, sin juntar. Para saldar, vuelve a menos pagos.";
+"groups.lote23chico.showSimplified" = "Ver con menos pagos";
+"settings.lote23chico.favoriteRecords" = "Registros favoritos";
+"settings.lote23chico.organizationFooter" = "Presupuestos y Pagos planificados están en Planificación. Los presupuestos que ves en el Panel se eligen en Configurar Panel.";
+"panel.lote23chico.budgetsOnPanel" = "Presupuestos en el Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Elige cuáles salen en la tarjeta de Presupuestos.";
+"usageMode.lote23chico.fullExpensesOnly" = "Yala completo · solo gastos";
+
+/* Cierre de sesión con pantalla propia y textos de entrada y salida (13-nov-2026) */
+"uxcs.signOutProgress.signingOut" = "Cerrando sesión…";
+"uxcs.signOutProgress.removingData" = "Quitando tus datos de este dispositivo…";
+"uxcs.signOutProgress.deletingAccount" = "Eliminando tu cuenta…";
+"uxcs.signOutProgress.keepOpen" = "Mantén Yala abierta hasta que termine.";
+"uxcs.signOutProgress.accountDeletedTitle" = "Tu cuenta se ha eliminado";
+"uxcs.signOutProgress.accountDeletedBody" = "Hemos borrado tu cuenta de Yala con todos sus datos, también los de este dispositivo. Si estabas en grupos, ahí tu nombre ahora es «Usuario eliminado».";
+"uxcs.signOutProgress.continue" = "Continuar";
+"uxcs.relaunch.accountDeleted" = "Cuenta eliminada";
+"uxcs.relaunch.afterSignOutICloud" = "Tus datos estaban conectados a tu iCloud, y Yala solo suelta esa conexión al cerrarse del todo. Al abrirla otra vez, termina de quitarlos de este dispositivo.";
+"bienvenida23.access.sameEmailNote" = "Con el mismo correo, Apple y Google abren la misma cuenta de Yala. Si creaste la tuya con otro correo, entra con ese.";
+"bienvenida23.access.consentAccessDetail" = "No hay contraseña de Yala ni recuperación por correo: si pierdes ese acceso, exporta antes tus datos (Ajustes → Exportar registros).";
+"bienvenida23.access.createdTitle" = "Hemos creado tu cuenta";
+"bienvenida23.access.createdBody" = "Ahora, tres preguntas rápidas para dejar Yala a tu medida.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Navegadores conectados";
+"connectedBrowsers.rowSubtitle" = "Las sesiones de Yala web abiertas con tu cuenta";
+"connectedBrowsers.intro" = "Aquí ves dónde está abierta Yala web con tu cuenta. Si no reconoces una, ciérrala.";
+"connectedBrowsers.empty" = "No hay ninguna sesión de Yala web abierta con tu cuenta.";
+"connectedBrowsers.close" = "Cerrar";
+"connectedBrowsers.closeAll" = "Cerrar todas las sesiones web";
+"connectedBrowsers.closeAllConfirmTitle" = "¿Cerrar todas las sesiones web?";
+"connectedBrowsers.closeAllConfirmBody" = "Esas pestañas se vacían en menos de un minuto. Tus datos no cambian.";
+"connectedBrowsers.closeAllConfirm" = "Cerrar todas";
+"connectedBrowsers.footer" = "Al cerrar una, esa pestaña se vacía en menos de un minuto.";
+"connectedBrowsers.loadFailed" = "No se ha podido cargar la lista. Revisa tu conexión y vuelve a intentarlo.";
+"connectedBrowsers.closeFailed" = "No se ha podido cerrar. Revisa tu conexión y vuelve a intentarlo.";
+"connectedBrowsers.unknownBrowser" = "Navegador";
+"connectedBrowsers.sharedComputer" = "ordenador compartido";
+"connectedBrowsers.justNow" = "ahora";
+"connectedBrowsers.browserOn" = "%1$@ en %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Vincular un navegador";
+"connectedBrowsers.link.rowFooter" = "Abre tu Yala en un ordenador sin escribir tu contraseña: escanea el código que muestra Yala web.";
+"connectedBrowsers.link.title" = "Vincular un navegador";
+"connectedBrowsers.link.intro" = "En el ordenador, abre Yala web y elige «Entrar con tu iPhone». Apunta la cámara al código.";
+"connectedBrowsers.link.scanner" = "Cámara para leer el código";
+"connectedBrowsers.link.typeHeader" = "O escribe el código";
+"connectedBrowsers.link.continue" = "Continuar";
+"connectedBrowsers.link.confirmHeader" = "¿Abrir Yala en este navegador?";
+"connectedBrowsers.link.whereCity" = "Lo pidió desde %1$@ · código %2$@";
+"connectedBrowsers.link.whereNoCity" = "Código %@";
+"connectedBrowsers.link.warning" = "Confirma solo si ves este código en tu propia pantalla. Nadie de Yala te lo va a pedir.";
+"connectedBrowsers.link.confirm" = "Confirmar con Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirma que quieres abrir tu Yala en ese navegador.";
+"connectedBrowsers.link.doneTitle" = "Navegador vinculado";
+"connectedBrowsers.link.doneBody" = "%@ ya muestra tu Yala, en lectura. Puedes cerrarlo desde aquí cuando quieras.";
+"connectedBrowsers.link.doneButton" = "Listo";
+"connectedBrowsers.link.problem.invalidCode" = "Ese código no es de Yala web. Comprueba que tenga 8 caracteres.";
+"connectedBrowsers.link.problem.expired" = "El código ha caducado o ya se ha usado. Pide otro en Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Tus datos están en tu iCloud. Para usar Yala web, llévalos a tu cuenta de Yala en Almacenamiento.";
+"connectedBrowsers.link.problem.sessionExpired" = "Tu sesión de la nube ha caducado. Vuelve a entrar en Tu cuenta de Yala.";
+"connectedBrowsers.link.problem.network" = "No se ha podido conectar con Yala web. Vuelve a intentarlo.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Registrar movimiento desde texto";
+"shortcut.bankNotice.description" = "Lee el aviso de tu banco y deja el movimiento en tu Bandeja por confirmar. Úsalo en la automatización «Al recibir una notificación» de la app de tu banco, con la variable Notificación.";
+"shortcut.bankNotice.param.text" = "Texto";
+"shortcut.bankNotice.param.text.description" = "El texto del aviso (la variable Notificación)";
+"shortcut.bankNotice.param.bank" = "Banco";
+"shortcut.bankNotice.bank.other" = "Otro banco";
+"Record a movement from the text ${text}" = "Registrar movimiento desde el texto ${text}";
+"inbox.sourceBankNotice" = "Aviso de %@";
+"inbox.sourceBankNoticeOther" = "Aviso del banco";
+"inbox.sourceBankNoticeNotUnderstood" = "No hemos entendido este aviso";
+/* Pagos que se repiten: propuestas de pagos planificados desde el historial (lote S1, 2026-11-14) */
+"pagosRecurrentes.card.title" = "Pagos que se repiten";
+"pagosRecurrentes.card.subtitle" = "Los hemos encontrado en tus registros. ¿Los planificamos?";
+"pagosRecurrentes.card.manage" = "Ajustes de las propuestas";
+"pagosRecurrentes.card.manageA11y" = "Opciones de pagos que se repiten";
+"pagosRecurrentes.cadence.monthly" = "Cada mes, el %@";
+"pagosRecurrentes.cadence.monthlyApprox" = "Cada mes, hacia el %@";
+"pagosRecurrentes.cadence.weekly" = "Cada semana, el %@";
+"pagosRecurrentes.sheet.chargesFound" = "Cobros encontrados: %@";
+"pagosRecurrentes.sheet.lastCharge" = "Último cobro: %@";
+"pagosRecurrentes.sheet.amount" = "Importe";
+"pagosRecurrentes.sheet.frequency" = "Frecuencia";
+"pagosRecurrentes.sheet.frequencyMonthly" = "Cada mes";
+"pagosRecurrentes.sheet.frequencyWeekly" = "Cada semana";
+"pagosRecurrentes.sheet.nextCharge" = "Próximo cobro";
+"pagosRecurrentes.sheet.account" = "Cuenta";
+"pagosRecurrentes.sheet.chooseAccount" = "Elige una cuenta";
+"pagosRecurrentes.sheet.category" = "Categoría";
+"pagosRecurrentes.sheet.notify" = "Avisarme";
+"pagosRecurrentes.sheet.variable" = "El monto cambia de un cobro a otro: usamos el último.";
+"pagosRecurrentes.sheet.create" = "Crear pago planificado";
+"pagosRecurrentes.sheet.notFixed" = "No es fijo";
+"pagosRecurrentes.sheet.notNow" = "Ahora no";
+"pagosRecurrentes.notify.none" = "No avisarme";
+"pagosRecurrentes.notify.sameDay" = "El mismo día";
+"pagosRecurrentes.notify.oneDay" = "1 día antes";
+"pagosRecurrentes.notify.threeDays" = "3 días antes";
+"pagosRecurrentes.notify.oneWeek" = "1 semana antes";
+"pagosRecurrentes.created.notice" = "%1$@ ya es un pago planificado. Te avisamos el %2$@.";
+"pagosRecurrentes.created.noticeNoReminder" = "%@ ya es un pago planificado.";
+"pagosRecurrentes.created.view" = "Ver";
+"pagosRecurrentes.settings.title" = "Pagos que se repiten";
+"pagosRecurrentes.settings.toggle" = "Proponer pagos que se repiten";
+"pagosRecurrentes.settings.footer" = "Yala revisa tus registros en este dispositivo. Nada sale de él.";
+"pagosRecurrentes.settings.dismissed" = "Descartados";
+"pagosRecurrentes.settings.dismissedOn" = "Marcado como «No es fijo» el %@";
+"pagosRecurrentes.settings.restore" = "Volver a proponer";
+"pagosRecurrentes.settings.done" = "Listo";
+"pagosRecurrentes.footer.link" = "Pagos que se repiten";
+"pagosRecurrentes.footer.off" = "Apagado";

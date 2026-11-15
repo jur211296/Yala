@@ -493,7 +493,8 @@ struct PrivateSignOutMigrationWiringTests {
         let rama = try #require(welcome.range(of: "case .blocked(_, .migrationInFlight), .blocked(_, .migrationUnreadable):"))
         let catchAll = try #require(welcome.range(of: "        case .blocked(let pending, let reason):\n"))
         #expect(rama.upperBound <= catchAll.lowerBound)
-        let cuerpo = String(welcome[rama.upperBound...].prefix(900))
+        // 2600: desde la card 285z la rama ofrece además cancelar el paso a medias, con su porqué, antes de su «Volver».
+        let cuerpo = String(welcome[rama.upperBound...].prefix(2600))
         #expect(cuerpo.contains("title: L10n.Welcome.Groups.neutralUnavailableTitle,"))
         #expect(cuerpo.contains("body: L10n.Welcome.Groups.neutralMigrationBody,"))
         #expect(cuerpo.contains("YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }"))

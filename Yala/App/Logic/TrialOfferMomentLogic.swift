@@ -91,7 +91,9 @@ enum TrialOfferMoments {
         note(.firstRecordPracticeAnswered)
     }
 
-    static func note(_ moment: TrialOfferMoment) {
+    /// - Parameter submitDelay: las marcas se escriben en el acto (la red del arranque las necesita si la app muere) y
+    ///   solo el envío al router espera (Y23-18: la oferta del final sube tras la tarjeta «¡Primeros pasos completos!»).
+    static func note(_ moment: TrialOfferMoment, submitDelay: Duration? = nil) {
         let session = SessionState.shared
         let isPro = FeatureGateService.shared.isProUser
         if TrialOfferMomentLogic.arms(moment, isProUser: isPro) {
@@ -104,7 +106,14 @@ enum TrialOfferMoments {
         }
         if TrialOfferMomentLogic.shouldSubmit(
             moment, armed: session.needsPostOnboardingTrial, momentReached: wasReached, isProUser: isPro) {
-            RouterEntryGate.shared.submit(.presentTrialOffer)
+            guard let submitDelay else {
+                RouterEntryGate.shared.submit(.presentTrialOffer)
+                return
+            }
+            Task { @MainActor in
+                do { try await Task.sleep(for: submitDelay) } catch { return }
+                RouterEntryGate.shared.submit(.presentTrialOffer)
+            }
         }
     }
 }

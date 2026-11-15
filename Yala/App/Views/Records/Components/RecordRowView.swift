@@ -145,8 +145,9 @@ struct RecordRowView: View {
         }
         .buttonStyle(.plain)
         .pointerHighlight(cornerRadius: DS.Radius.card)
-        // La fecha del modo duplicados también se lee: la etiqueta de la fila sustituye a la de sus textos.
-        .accessibilityLabel(dateCaption.map { "\(accessibilityDescription), \($0)" } ?? accessibilityDescription)
+        // La etiqueta lleva siempre la fecha (decisión 60 de 2.3), también en el modo duplicados: ahí ya no se le suma
+        // `dateCaption`, que diría la misma fecha dos veces.
+        .accessibilityLabel(accessibilityDescription)
         .accessibilityIdentifier("record_row")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -161,8 +162,10 @@ struct RecordRowView: View {
     /// preferida, un gasto de 9.064.482 ₫ se leía «S/ 9.064.482,03» (card cvlu). Estática para fijarla con un registro de
     /// verdad en `RecordRowAccessibilityCurrencyTests`.
     /// `groupName`: la cápsula del grupo que la fila pinta junto al importe (pata de tu cuenta, entrada de una recarga).
+    /// `locale`: el de la fecha que cierra la etiqueta (decisión 60 de 2.3); inyectable para fijarlo en los tests.
     static func accessibilityDescription(
-        for record: TransactionItem, appPreferences: AppPreferences, groupName: String? = nil
+        for record: TransactionItem, appPreferences: AppPreferences, groupName: String? = nil,
+        locale: Locale = AppLocale.current
     ) -> String {
         let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
         // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
@@ -187,7 +190,8 @@ struct RecordRowView: View {
                     $0, adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
             },
             // La cápsula del grupo en la pata de tu cuenta (y en la entrada de una recarga, card oibr) también se lee.
-            account: [record.account?.name, groupName].compactMap { $0 }.joined(separator: " · ")
+            account: [record.account?.name, groupName].compactMap { $0 }.joined(separator: " · "),
+            date: RecordRowAccessibilityDate.text(record.date, locale: locale)
         )
     }
 
@@ -276,7 +280,8 @@ struct RecordRowView: View {
                         .fill(Color(hex: tag.colorHex).opacity(0.15))
                 )
                 .accessibilityElement(children: .combine)
-                .accessibilityHint(String(localized: "Tag"))
+                // Traducida (decisión 61 de 2.3): decía «Tag» en inglés en los 16 idiomas.
+                .accessibilityHint(L10n.RecordsVoiceOver23.tagHint)
             }
 
             if tags.count > 3 {
