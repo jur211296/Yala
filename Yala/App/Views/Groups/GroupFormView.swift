@@ -36,13 +36,20 @@ struct GroupFormView: View {
     /// L12-12 · el alta quedó escrita (aunque crear el grupo falle después): quien presentó el formulario ya no puede
     /// devolver a la persona al Welcome.
     var onSetupCompleted: (() -> Void)? = nil
+    /// Bienvenida 2.3 (Y23-06) · «Solo crear mi cuenta»: el primer grupo abre directamente en la pregunta del nombre de
+    /// la persona (la misma de cerrar sin crear), que termina en Grupos vacío. Cancelarla deja el formulario, por si
+    /// quiere crear el grupo después de todo.
+    var opensAtNamePrompt: Bool = false
 
     // MARK: - Form State
 
     @State private var name: String = ""
     @State private var iconName: String = "person.2.fill"
     @State private var colorHex: String = "#8B5CF6"
-    @State private var simplifyDebts: Bool = false
+    /// Decisión 36 de la revisión 2.3 (A1): «Menos pagos entre ustedes» nace ENCENDIDO en un grupo nuevo. Pedía «de 3 o
+    /// más», pero al crear aún no hay nadie más; con dos personas juntar las deudas da lo mismo que no juntarlas, así que
+    /// solo se nota en los de 3 o más. Al editar, `populateFromGroup` pone la del grupo: los existentes no cambian.
+    @State private var simplifyDebts: Bool = GroupFormDefaults.simplifyDebtsForNewGroup
     @State private var showDebtsInSingleCurrency: Bool = false
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var defaultSplitType: SplitType = .equal
@@ -58,6 +65,8 @@ struct GroupFormView: View {
     /// Card ycke (C2) · la pregunta del nombre al cerrar el primer grupo sin haberlo escrito.
     @State private var showCloseNamePrompt = false
     @State private var closeNameDraft = ""
+    /// Y23-06 · la pregunta del nombre de «Solo crear mi cuenta» se abre una sola vez por presentación.
+    @State private var didOpenNamePrompt = false
 
     // MARK: - Sheet State
 
@@ -128,6 +137,22 @@ struct GroupFormView: View {
             }
             .onAppear {
                 populateFromGroup()
+                if opensAtNamePrompt, isFirstGroupSetup, !setupWritten, !didOpenNamePrompt {
+                    didOpenNamePrompt = true
+                    closeNameDraft = ""
+                    // Tras la presentación del formulario (review adversarial): pedida en el mismo `onAppear`, UIKit
+                    // podía descartar el aviso mientras la pantalla aún se presentaba.
+                    Task { @MainActor in
+                        do {
+                            try await Task.sleep(for: .milliseconds(450))
+                        } catch {
+                            #if DEBUG
+                            print("GroupFormView: Error: \(error)")
+                            #endif
+                        }
+                        showCloseNamePrompt = true
+                    }
+                }
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
                 Button(L10n.Common.ok) {}
@@ -268,6 +293,7 @@ struct GroupFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Toggle(L10n.GroupsCreate.simplify, isOn: $simplifyDebts)
                         .font(DS.Typography.body)
+                        .accessibilityIdentifier("group_form_simplify_toggle")
 
                     Text(L10n.GroupsCreate.simplifyHint)
                         .font(DS.Typography.captionSmall)
@@ -370,7 +396,11 @@ struct GroupFormView: View {
         let preferredCurrency = isFirstGroupSetup
             ? CurrencyDefaults.detectCurrencyFromRegion()
             : appPreferences.defaultCurrencyCode
-        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : preferredCurrency.rawValue
+        // Decisión 3 de la revisión 2.3 (opción A): al editar un grupo con «una sola moneda» apagado, el grupo conserva
+        // la suya; la divisa preferida solo vale para uno nuevo.
+        let currencyCode = showDebtsInSingleCurrency
+            ? selectedCurrency.rawValue
+            : (group?.currencyCode ?? preferredCurrency.rawValue)
 
         do {
             if let group {

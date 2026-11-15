@@ -3,7 +3,7 @@
 //  Yala
 //
 //  El ÚNICO sitio que convierte las capturas que esperan en el App Group —gastos de Apple Pay, dictados de
-//  Siri y los «Ya lo pagué» del widget de Pagos planificados— en borradores o registros del store personal. Lo llaman el arranque, la vuelta a primer plano, el final de una
+//  Siri, avisos del banco del atajo y los «Ya lo pagué» del widget de Pagos planificados— en borradores o registros del store personal. Lo llaman el arranque, la vuelta a primer plano, el final de una
 //  ráfaga de cambios remotos y el cierre de una sesión privada.
 //
 //  ## Por qué un solo sitio
@@ -25,7 +25,7 @@ import SwiftData
 @MainActor
 enum InboundCaptureDrain {
 
-    /// Materializa las colas de Apple Pay y Siri. Devuelve cuántos borradores creó.
+    /// Materializa las colas de Apple Pay, Siri y avisos del banco. Devuelve cuántos borradores creó.
     ///
     /// **Con el borrado de cierre armado no toca nada**: las colas se quedan para la purga del arranque, que
     /// es la frontera de privacidad entre cuentas.
@@ -46,24 +46,29 @@ enum InboundCaptureDrain {
         hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession(),
         applePay: @MainActor (ModelContext) -> Int = { ApplePayDraftService.processPending(context: $0) },
         siri: @MainActor (ModelContext) -> Int = { SiriDraftService.processPending(context: $0) },
+        bankNotice: @MainActor (ModelContext) -> Int = { BankNoticeDraftService.processPending(context: $0) },
         widgetPaid: @MainActor (ModelContext) -> Int = { ScheduledPaymentPayNow.processWidgetPaidRequests(context: $0) }
     ) -> Int {
         guard !wipeArmed else { return 0 }
         let applePayCreated = hasPrivateSession ? applePay(context) : 0
         let siriCreated = hasPrivateSession ? siri(context) : 0
+        // Avisos del banco (atajo del banco, 2.3): mismo gate de datos que Apple Pay y Siri.
+        let bankNoticeCreated = hasPrivateSession ? bankNotice(context) : 0
         // «Ya lo pagué» del widget de Pagos planificados: el registro con la lógica de «Apuntarlo ahora».
         let widgetPaidCreated = widgetPaid(context)
-        return applePayCreated + siriCreated + widgetPaidCreated
+        return applePayCreated + siriCreated + bankNoticeCreated + widgetPaidCreated
     }
 
-    /// Cuántas capturas de Apple Pay y Siri esperan todavía en el App Group. Las colas son inyectables para
+    /// Cuántas capturas de Apple Pay, Siri y avisos del banco esperan todavía en el App Group. Las colas son inyectables para
     /// los tests; en producción, las del App Group.
     static func queuedCount(
         applePayDefaults: UserDefaults? = ApplePayPendingStore.appGroupDefaults,
-        siriDefaults: UserDefaults? = SiriPendingStore.appGroupDefaults
+        siriDefaults: UserDefaults? = SiriPendingStore.appGroupDefaults,
+        bankNoticeDefaults: UserDefaults? = BankNoticePendingStore.appGroupDefaults
     ) -> Int {
         ApplePayPendingStore.peekAll(defaults: applePayDefaults).count
             + SiriPendingStore.peekAll(defaults: siriDefaults).count
+            + BankNoticePendingStore.peekAll(defaults: bankNoticeDefaults).count
     }
 
     /// La pasada del cierre privado: materializa y dice qué quedó en cola, para que el recuento lo vea

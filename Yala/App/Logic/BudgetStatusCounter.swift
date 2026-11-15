@@ -6,13 +6,15 @@
 //  superado) y agregar contadores. Sin SwiftData ni UI — el callsite construye los
 //  inputs `[Double]` desde `[BudgetSummary]`.
 //
-//  Thresholds:
-//    - spentPercent  < 80%   → .onTrack
-//    - spentPercent  80-99%  → .atLimit
-//    - spentPercent >= 100%  → .overLimit
+//  Un estado, una palabra, un color (decisión 23 de la revisión 2.3, Jürgen 2026-11-09). Umbrales:
+//    - gastado  < 80 %        → .onTrack       (sin palabra, color del presupuesto)
+//    - gastado  80 – 99 %     → .atLimit       («En el límite», naranja)
+//    - gastado  100 % justo   → .reachedLimit  («Llegaste al límite», naranja)
+//    - gastado  > 100 %       → .overLimit     («Te pasaste», rosa; sección «Excedidos»)
 //
-//  Es la fuente única del umbral «en el límite» (card bj9n, 2026-11-04): la barra de un presupuesto se pone naranja
-//  con `isAtOrPastLimit(percent:)`. Antes la barra lo hacía al 75 % y el estado empezaba al 80 %.
+//  «Justo» y «pasado» los decide `BudgetRemainingLogic.remaining` (medio céntimo de holgura): la misma regla de «Te
+//  quedan / Te pasaste por». Barra, palabra, sección e historial leen de aquí; antes la sección y la barra rosa
+//  empezaban en el 100 % justo y la cifra por encima, y al 100 % la fila decía «Te quedan S/ 0.00» en «Excedidos».
 //
 
 import Foundation
@@ -20,6 +22,8 @@ import Foundation
 enum BudgetCounterStatus: Equatable {
     case onTrack
     case atLimit
+    /// Gastado justo el límite: no se pasó.
+    case reachedLimit
     case overLimit
 }
 
@@ -34,26 +38,25 @@ struct BudgetCounters: Equatable {
 enum BudgetStatusCounter {
     /// Desde qué porcentaje gastado un presupuesto está «en el límite». Decidido el 2026-11-04: 80 %.
     static let atLimitPercent: Double = 80
-    /// Desde qué porcentaje está superado.
-    static let overLimitPercent: Double = 100
-
-    /// Clasifica un presupuesto individual por `spent / limitAmount`.
+    /// Clasifica un presupuesto por lo gastado contra su límite.
     /// `limit <= 0` defensive → `.onTrack` (no rompe en datos inválidos).
     static func classify(spent: Double, limit: Double) -> BudgetCounterStatus {
         guard limit > 0 else { return .onTrack }
-        return classify(percent: spent / limit * 100)
+        let remaining = BudgetRemainingLogic.remaining(limit: limit, spent: spent)
+        if remaining < 0 { return .overLimit }
+        if remaining == 0 { return .reachedLimit }
+        return spent / limit * 100 >= atLimitPercent ? .atLimit : .onTrack
     }
 
-    /// Clasifica por el porcentaje gastado (0-100+), el que reciben las barras.
-    static func classify(percent: Double) -> BudgetCounterStatus {
-        if percent >= overLimitPercent { return .overLimit }
-        if percent >= atLimitPercent { return .atLimit }
-        return .onTrack
+    /// La barra se pinta de aviso (naranja) en «en el límite» y «llegaste al límite»; el rosa es de «te pasaste».
+    static func isWarning(_ status: BudgetCounterStatus) -> Bool {
+        status == .atLimit || status == .reachedLimit
     }
 
-    /// La barra se pinta de aviso desde aquí: «en el límite» o más.
+    /// Para la barra, que recibe el porcentaje y aparte si se pasó: desde el 80 % es aviso. El rosa lo decide quien
+    /// sabe si se pasó (`isExceeded`, `classify == .overLimit`), así que al 100 % justo la barra queda naranja.
     static func isAtOrPastLimit(percent: Double) -> Bool {
-        classify(percent: percent) != .onTrack
+        percent >= atLimitPercent
     }
 
     /// Agrega contadores a partir de pares `(spent, limit)` ya filtrados por
@@ -63,7 +66,8 @@ enum BudgetStatusCounter {
         for item in items {
             switch classify(spent: item.spent, limit: item.limit) {
             case .onTrack:   ot += 1
-            case .atLimit:   al += 1
+            // Llegar justo al límite no es pasarse: cuenta con «en el límite».
+            case .atLimit, .reachedLimit: al += 1
             case .overLimit: ol += 1
             }
         }

@@ -18,6 +18,8 @@ struct PieChartVariationHeader: View {
     @Environment(AppPreferences.self) private var appPreferences
     /// «Ocultar montos» del Panel (`AmountPrivacy`).
     @Environment(\.amountsHidden) private var amountsHidden
+    /// Días 1 y 2 de «Este mes»: sin «vs» ni chip, solo el monto (decisión 10 de 2.3).
+    @Environment(\.hidesPeriodVariations) private var hidesPeriodVariations
 
     // MARK: - Properties
 
@@ -81,6 +83,7 @@ struct PieChartVariationHeader: View {
                     // Show previous period value for comparison (only when showVariations is ON)
                     if variationDisplay.showsPreviousAmountLabel,
                        appPreferences.showVariations,
+                       !hidesPeriodVariations,
                        let prevAmount = previousAmount {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
                             Text(L10n.Common.vs)
@@ -100,7 +103,7 @@ struct PieChartVariationHeader: View {
             Spacer()
 
             // Right: Variation chip and comparison text (show when previousAmount exists and showVariations is ON)
-            if appPreferences.showVariations && previousAmount != nil {
+            if appPreferences.showVariations && !hidesPeriodVariations && previousAmount != nil {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     // Variation chip
                     VariationChip(

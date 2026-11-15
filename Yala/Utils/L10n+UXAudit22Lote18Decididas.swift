@@ -61,6 +61,17 @@ extension L10n {
         static func netCaptionLossBefore(_ period: String, _ amount: String) -> String {
             String(format: l18("report.l18.net.captionLossBefore"), period, amount)
         }
+        /// Decisión 32 de 2.3: «El 1–7 de octubre te quedaron S/ 4,910.» (con un tramo de días, «En 1–7…» no se lee bien).
+        static func netCaptionGainBeforeRange(_ range: String, _ amount: String) -> String {
+            String(format: l18("report.l18.net.captionGainBeforeRange"), range, amount)
+        }
+        static func netCaptionLossBeforeRange(_ range: String, _ amount: String) -> String {
+            String(format: l18("report.l18.net.captionLossBeforeRange"), range, amount)
+        }
+        /// El chip de cambio de la Comparativa en palabras (decisión 32 de 2.3): «igual» en vez de «= +0 %» y «nuevo» en
+        /// vez de «N/A».
+        static var changeSame: String { l18("report.l18.change.same") }
+        static var changeNew: String { l18("report.l18.change.new") }
         /// Lo que VoiceOver lee por fila: «S/ 12,666 en octubre, S/ 9,976 en setiembre».
         static func rowAmountsA11y(_ current: String, _ currentPeriod: String, _ previous: String, _ previousPeriod: String) -> String {
             String(format: l18("report.l18.row.amountsA11y"), current, currentPeriod, previous, previousPeriod)
@@ -105,6 +116,14 @@ extension L10n {
         static var summaryExpense: String { l18("cashflow.l18.summary.expense") }
         static var summarySurplus: String { l18("cashflow.l18.summary.surplus") }
         static var summaryShortfall: String { l18("cashflow.l18.summary.shortfall") }
+        /// Decisión 33 de 2.3: sin ingresos a la vista, el armado los pregunta.
+        static var incomeQuestionTitle: String { l18("cashflow.l18.income.title") }
+        static var incomeQuestionBody: String { l18("cashflow.l18.income.body") }
+        static var incomeQuestionUnknown: String { l18("cashflow.l18.income.unknown") }
+        /// En vez de «Te faltan al mes» cuando la persona aún no sabe su ingreso.
+        static var summaryIncomeMissing: String { l18("cashflow.l18.summary.incomeMissing") }
+        /// La línea del ingreso escrito, si no hay ninguna categoría de ingreso a la que atarla.
+        static var typedIncomeLineName: String { l18("cashflow.l18.income.lineName") }
         /// «Hoy tienes S/ 83,666 en tus cuentas».
         static func todayBalance(_ amount: String) -> String {
             String(format: l18("cashflow.l18.sheet.todayBalance"), amount)

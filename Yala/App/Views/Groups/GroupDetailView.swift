@@ -75,6 +75,7 @@ struct GroupDetailView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -97,6 +98,8 @@ struct GroupDetailView: View {
     private var selectedTab: GroupDetailTab { pages.shown }
     @State private var showNudgeBanner = false
     @State private var showShareSheet = false
+    /// Voz y Foto bajo el saldo (2026-11-14).
+    @State private var receiptRequest: GroupReceiptRequest?
     @State private var wasArchivedOnAppear = false
 
     // MARK: - Init
@@ -181,6 +184,13 @@ struct GroupDetailView: View {
         }) { sheet in
             presentedSheet(for: sheet)
         }
+        // Voz y Foto bajo el saldo: la hoja del recibo y, con «Usar este reparto», Nuevo gasto relleno (2026-11-14).
+        .groupReceiptSplitFlow(
+            request: $receiptRequest,
+            activeMembers: { _ in viewModel.activeMembers },
+            memberCount: { _ in viewModel.activeMembers.count },
+            onReady: { _, template in viewModel.activeSheet = .addExpenseFromReceipt(template) }
+        )
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
                 // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
@@ -433,6 +443,18 @@ struct GroupDetailView: View {
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
+        case .addExpenseFromReceipt(let template):
+            GroupExpenseFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
+                groupChip: .readOnly,
+                onSave: {},
+                receiptSplit: template
+            )
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
+
         case .expenseDetail(let expense):
             // Fase 1: detalle read-only. El botón Editar sube el editor
             // (vía pendingEdit consumido en el onDismiss del sheet).
@@ -499,11 +521,56 @@ struct GroupDetailView: View {
                 debt: debt,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentUserMemberID: viewModel.currentMemberID,
-                onSave: {}
+                onSave: { announceSavedSettlement($0, undoable: $1) }
             )
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
         }
+    }
+
+    // MARK: - Decisión 37 de 2.3 · C3: el aviso al saldar
+
+    /// Al guardar un pago: qué pasó y cómo queda la pareja, con «Deshacer» mientras dura el aviso. El aviso vive en su
+    /// propia ventana (`DraftDiscardUndoNotice`): la hoja de «Saldar» se está cerrando cuando llega.
+    /// `undoable == false` tras «Sí, registrar» en tus cuentas: lo que aprobaste en esa hoja ya es un movimiento de tu
+    /// cuenta sin enlace al pago, y «Deshacer» solo borraría el pago (review adversarial del 2026-11-12).
+    private func announceSavedSettlement(_ settlement: SplitSettlement, undoable: Bool) {
+        viewModel.loadData()
+        let me = viewModel.currentMemberID
+        let converted = viewModel.debtsWereConverted
+        // Espacio duro dentro de cada importe: el aviso es estrecho y partía «S/» de «30.00» en dos líneas.
+        let keepTogether = { (text: String) in text.replacingOccurrences(of: " ", with: "\u{00A0}") }
+        let message = SettlementSaldar23Logic.savedNotice(
+            fromMemberID: settlement.fromMemberID,
+            toMemberID: settlement.toMemberID,
+            currentUserMemberID: me,
+            isConfirmed: settlement.isConfirmed,
+            amount: keepTogether(appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)),
+            remainder: SettlementSaldar23Logic.pairRemainder(
+                debts: viewModel.debts, fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID),
+            name: { id in id == me ? L10n.UXL13.you : viewModel.memberName(for: id) },
+            format: { debts in
+                debts.map {
+                    keepTogether(appPreferences.currency($0.amount, currencyCode: $0.currencyCode, isEstimate: converted))
+                }
+                .joined(separator: " + ")
+            }
+        )
+        let model = viewModel
+        let undo: (@MainActor () -> Void)?
+        if undoable {
+            undo = { model.undoSettlement(settlement) }
+        } else {
+            undo = nil
+        }
+        DraftDiscardUndoNotice.show(
+            message: message,
+            systemImage: "checkmark.circle",
+            undoTitle: L10n.UXL19.undo,
+            noticeIdentifier: "settlement_saved_notice",
+            undoIdentifier: "settlement_saved_undo",
+            onUndo: undo
+        )
     }
 
     // MARK: - Members Button
@@ -643,8 +710,13 @@ struct GroupDetailView: View {
                         }
                     }
                 } : nil,
+                onNewExpense: canAddHere ? { viewModel.activeSheet = .addExpense } : nil,
+                onReceipt: canAddHere ? { source in
+                    receiptRequest = GroupReceiptRequest(groups: [group], preselected: group, source: source)
+                } : nil,
                 headerBalance: viewModel.headerBalance,
                 debtsWereConverted: viewModel.debtsWereConverted,
+                headerDebts: viewModel.debts,
                 onTapBalance: { selectPage(.balances) },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) },
                 budgetProgress: viewModel.budgetProgress,
@@ -655,9 +727,13 @@ struct GroupDetailView: View {
             GroupBalancesView(
                 balances: viewModel.balances,
                 debts: viewModel.debts,
+                pairDebts: viewModel.pairDebts,
+                pairDebtsWereConverted: viewModel.pairDebtsWereConverted,
+                simplifyDebts: group.simplifyDebts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
+                activeMemberIDs: Set(viewModel.activeMembers.map { $0.id.uuidString }),
                 groupColorHex: group.colorHex,
                 balancesWereConverted: viewModel.balancesWereConverted,
                 debtsWereConverted: viewModel.debtsWereConverted,
@@ -667,7 +743,9 @@ struct GroupDetailView: View {
                 onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
                 // El dueño o un admin gestiona los saldos iniciales (card yd2w; el servicio decide igual).
                 onAddOpeningBalance: viewModel.canManageOpeningBalances
-                    ? { viewModel.activeSheet = .newOpeningBalance } : nil
+                    ? { viewModel.activeSheet = .newOpeningBalance } : nil,
+                hasExpenses: !viewModel.expenses.isEmpty,
+                hasSettlements: !viewModel.settlements.isEmpty
             )
 
         case .stats:
@@ -730,6 +808,11 @@ struct GroupDetailView: View {
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.handle(groupID: groupID, token: token, source: .userAction)
         }
+    }
+
+    /// Quien puede apuntar gastos aquí y el grupo no está congelado: la misma condición que el + flotante.
+    private var canAddHere: Bool {
+        viewModel.canCurrentUserParticipate && !group.isMigratedFrozen
     }
 
     // MARK: - FAB

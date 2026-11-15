@@ -97,6 +97,14 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
   Un porcentaje que se REABRE (edición, plantilla, pago planificado) pasa por `GroupExpenseViewModel.loadPercentages`,
   que lo deja sumando 100: a un decimal, un gasto pequeño se reabría con 100,1 y no dejaba guardar.
 
+## «Al 30 tendrías»: una cifra, la del Panel (decisión 30 de 2.3, 2026-11-11)
+
+La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)
+dan la misma cifra porque salen de la misma cuenta: saldo vivo de las cuentas del Panel + `ProjectedFlowBuilder` hasta
+fin de mes sin filtros de sesión (`MonthEndBalanceLogic`). Si cambias cómo proyecta el Panel con Saldo, cambia esa pieza
+también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan). El horizonte del plan («a fin de mayo de 2027
+tendrías») NO sale de ahí: parte del saldo inicial del plan.
+
 ## Los tests que lo fijan
 
 `IncomeExpenseScreenParityTests` (seis superficies × tres períodos, Informe por dimensión, filtros y neto),

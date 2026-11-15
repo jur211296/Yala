@@ -1,0 +1,1012 @@
+{
+ "build": "Yala Dev con 2.3 más los arreglos de «Usar otra cuenta» y de «Empezar lleva al Panel», instalada desde cero en el iPhone 14",
+ "escenarios": [
+  {
+   "id": "e01",
+   "titulo": "iCloud con datos · Entrar con mi iCloud",
+   "partida": "Teléfono recién instalado. El iCloud del teléfono ya tiene datos de Yala Dev (6 registros, 5 cuentas).",
+   "salida": "Quitar mis datos de este dispositivo",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. Toco «Entrar con mi iCloud».",
+     ""
+    ],
+    [
+     "02-tras-tocar-icloud.png",
+     "«Revisando qué hay en tu iCloud…» (unos 5 s).",
+     ""
+    ],
+    [
+     "03-resultado-revision.png",
+     "«Ya tienes datos en tu iCloud»: 6 registros · 5 cuentas · 63 categorías. Toco «Traer mis datos».",
+     "Aquí dice 63 categorías; dos pantallas después dice 65."
+    ],
+    [
+     "04-tras-traer.png",
+     "«Un último paso: reabre Yala». Voy a la pantalla de inicio y vuelvo a tocar Yala, sin cerrarla.",
+     "Bastó con salir y volver a entrar; no hizo falta cerrar Yala."
+    ],
+    [
+     "05-tras-reabrir-desde-inicio.png",
+     "«Conectando con iCloud…» con 5 cuentas, 65 categorías y 6 registros.",
+     ""
+    ],
+    [
+     "06-tras-conectar.png",
+     "«Trayendo tus datos…».",
+     ""
+    ],
+    [
+     "07-tras-traer-datos.png",
+     "«¡Qué bien volver a verte!» con el resumen y otra vez «Traer mis datos». Lo toco.",
+     "Pide «Traer mis datos» por segunda vez: ya lo había elegido. Además, aquí el texto es «Empezar desde cero» y antes era «Empezar de cero»."
+    ],
+    [
+     "08-tras-segundo-traer.png",
+     "«¡Hola! Soy Yala. ¿Cómo te llamo?». Escribo «Jurgen».",
+     "Alguien que recupera sus datos responde las tres preguntas como un usuario nuevo."
+    ],
+    [
+     "09-pregunta-2.png",
+     "«¿En qué moneda gastas?». Elijo Soles.",
+     ""
+    ],
+    [
+     "10-pregunta-3.png",
+     "«¿Qué quieres llevar en Yala?». Elijo «Gastos e ingresos».",
+     ""
+    ],
+    [
+     "11-tras-preguntas.png",
+     "«Tu Yala está lista». Toco «Entrar a Yala».",
+     ""
+    ],
+    [
+     "12-tras-entrar.png",
+     "Panel con sus datos y la guía «Arma tu Panel» (1 de 2). Primeros pasos va en 3 de 7. Debajo: «Tus datos ya están en tu cuenta de Yala. ¿Activarla también en este dispositivo?».",
+     "Ese aviso sale porque la sesión de la Mini pasó estos datos a la cuenta de Google hoy. Tiene sentido, pero aparece apenas se entra."
+    ],
+    [
+     "13-tutorial-2.png",
+     "Guía 2 de 2: «Tus gráficas viven en Más».",
+     "El globo solo tiene «Omitir»; para seguir hay que adivinar que se toca Más."
+    ],
+    [
+     "14-tras-tocar-mas.png",
+     "Al tocar Más: «Todas tus gráficas». Toco «Entendido».",
+     ""
+    ],
+    [
+     "15-panel.png",
+     "De vuelta al Panel.",
+     ""
+    ],
+    [
+     "16-ajustes-guia-1.png",
+     "Al abrir Ajustes, otra guía: «Tus cuentas» (1 de 3).",
+     ""
+    ],
+    [
+     "17-ajustes-guia-2.png",
+     "«Personalización» (2 de 3).",
+     ""
+    ],
+    [
+     "18-ajustes-guia-3.png",
+     "«Tutoriales» (3 de 3). Toco «Listo».",
+     ""
+    ],
+    [
+     "19-ajustes-datos.png",
+     "Ajustes › Datos: «Dónde viven tus datos — En tu iCloud».",
+     ""
+    ],
+    [
+     "20-ajustes-salida-icloud.png",
+     "En modo iCloud no hay «Cerrar sesión»: abajo del todo está «Quitar mis datos de este dispositivo — Siguen en tu iCloud».",
+     ""
+    ],
+    [
+     "21-hoja-quitar.png",
+     "Hoja «¿Quitar tus datos de este dispositivo?» con lo que pasa en el teléfono, en iCloud y en los grupos. Toco «Quitar mis datos».",
+     "Dice «elige Restaurar desde iCloud», pero en la bienvenida ese botón se llama «Entrar con mi iCloud»."
+    ],
+    [
+     "22-tras-quitar.png",
+     "«Ya casi está»: ✓ Sesión cerrada · Vuelve a abrir Yala.",
+     "Dice «Sesión cerrada», pero en modo iCloud no había sesión: el gesto fue quitar los datos."
+    ],
+    [
+     "23-tras-reabrir.png",
+     "Cierro y abro Yala: vuelve la bienvenida.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e02",
+   "titulo": "iCloud con datos · Empezar de cero · Vaciar datos",
+   "partida": "Bienvenida; el iCloud del teléfono tiene los datos de E01.",
+   "salida": "Vaciar datos (modo iCloud)",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. Toco «Entrar con mi iCloud».",
+     ""
+    ],
+    [
+     "02-ya-tienes-datos.png",
+     "«Ya tienes datos en tu iCloud». Esta vez toco «Empezar de cero».",
+     ""
+    ],
+    [
+     "03-confirmar-1.png",
+     "«¿Seguro? Esto es definitivo.» con «Mejor no» y «Vaciar definitivamente». Toco vaciar.",
+     ""
+    ],
+    [
+     "04-tras-vaciar.png",
+     "«Un último paso: reabre Yala». Salgo a inicio y vuelvo.",
+     ""
+    ],
+    [
+     "05-tras-reabrir.png",
+     "Las tres preguntas desde «¿Cómo te llamo?».",
+     ""
+    ],
+    [
+     "06-tu-yala-lista.png",
+     "«Tu Yala está lista». «Entrar a Yala».",
+     ""
+    ],
+    [
+     "07-tras-entrar.png",
+     "Panel vacío, Primeros pasos 1 de 7, guía «Este es tu resumen».",
+     "Aquí no salió la guía «Arma tu Panel» que sí salió en E01."
+    ],
+    [
+     "08-ajustes-datos.png",
+     "Ajustes › Datos. Toco «Vaciar datos».",
+     ""
+    ],
+    [
+     "09-vaciar-datos.png",
+     "Pantalla «Vaciar datos»: «Exportar una copia antes» y «Vaciar mis datos».",
+     ""
+    ],
+    [
+     "10-confirmar-vaciar.png",
+     "Al tocar «Vaciar mis datos» la primera vez se abrió «Exportar».",
+     "No lo pude repetir: a la segunda abrió la hoja correcta. Lo dejo anotado por si te pasa."
+    ],
+    [
+     "11-hoja-vaciar.png",
+     "Hoja «¿Vaciar tus datos?» con lo que se borra en el teléfono, en iCloud y en los grupos.",
+     "Dice «Tu suscripción Pro no cambia» a alguien sin Pro."
+    ],
+    [
+     "12-tras-vaciar.png",
+     "Tercera confirmación: alerta «¿Seguro? Esto es definitivo.».",
+     "Son tres pasos para confirmar: pantalla, hoja y alerta."
+    ],
+    [
+     "13-tras-confirmar-vaciar.png",
+     "Panel vacío con «Listo, has empezado de cero. Crea tu primera cuenta para registrar.».",
+     ""
+    ],
+    [
+     "14-quitar-del-telefono.png",
+     "«Quitar mis datos de este dispositivo» para salir. «Ya casi está».",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e03",
+   "titulo": "iCloud sin datos · Entrar con mi iCloud",
+   "partida": "iCloud recién vaciado en E02; teléfono en la bienvenida.",
+   "salida": "Quitar mis datos de este dispositivo",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con mi iCloud».",
+     ""
+    ],
+    [
+     "02-revisando.png",
+     "«Revisando qué hay en tu iCloud…».",
+     "Tardó 34 s."
+    ],
+    [
+     "03-resultado.png",
+     "«Ya tienes datos en tu iCloud — 62 categorías».",
+     "El iCloud estaba recién vaciado: solo quedan las categorías de serie, y aun así lo trata como «con datos». Card creada."
+    ],
+    [
+     "04-reabre.png",
+     "«Traer mis datos» → «Un último paso: reabre Yala».",
+     ""
+    ],
+    [
+     "05-conectando.png",
+     "«Conectando con iCloud…».",
+     "Tardó 54 s en terminar."
+    ],
+    [
+     "06-volver-a-verte.png",
+     "«¡Hola Jurgen! Qué bien volver a verte.» — Categorías 62.",
+     "Avisa que la copia es de antes de pasar los datos a la cuenta de Yala; ya no es cierto. Y otra vez pide «Traer mis datos»."
+    ],
+    [
+     "07-tras-traer.png",
+     "«¿Te llamo Jurgen?» con «Sí, llámame Jurgen».",
+     "Recuerda el nombre…"
+    ],
+    [
+     "08-pregunta-2.png",
+     "«¿En qué moneda gastas?».",
+     "…pero vuelve a pedir la moneda."
+    ],
+    [
+     "09-pregunta-3.png",
+     "«¿Qué quieres llevar en Yala?».",
+     ""
+    ],
+    [
+     "10-panel.png",
+     "Panel vacío, Primeros pasos 1 de 7.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e04",
+   "titulo": "iCloud sin datos · Entrar con Google (cuenta con datos)",
+   "partida": "iCloud sin datos; cuenta de Google jur211296 con 5 registros y dos grupos.",
+   "salida": "Cerrar sesión (modo cuenta de Yala)",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Google».",
+     ""
+    ],
+    [
+     "02-tras-tocar-google.png",
+     "Aviso de iOS «Yala quiere usar accounts.google.com». Continuar y elijo la cuenta (selector omitido: muestra tus correos).",
+     ""
+    ],
+    [
+     "03-tras-google.png",
+     "«Verificando tu cuenta…».",
+     ""
+    ],
+    [
+     "04-tras-verificar.png",
+     "«Ya tienes una cuenta» con las tres cosas que conviene saber. «Cargar mis datos y entrar».",
+     ""
+    ],
+    [
+     "05-cargando.png",
+     "«Conectando con tu cuenta… 0 %» con «Cancelar la activación».",
+     "Tardó unos 50 s."
+    ],
+    [
+     "06-tras-conectar.png",
+     "«¡Tu cuenta está lista!». «Empezar».",
+     ""
+    ],
+    [
+     "07-tras-empezar.png",
+     "Va directo al Panel, sin volver a la bienvenida.",
+     "El arreglo de «Empezar» funciona. Pero el Panel sale vacío: S/ 0 y «Crea tu primera cuenta»."
+    ],
+    [
+     "08-panel-15s.png",
+     "15 s después sigue vacío.",
+     "Card creada (prioridad alta)."
+    ],
+    [
+     "09-grupos.png",
+     "Pestaña Grupos: intro «Comparte gastos sin perderles el rastro».",
+     "Intro de usuario nuevo a quien ya tiene grupos. Card creada."
+    ],
+    [
+     "10-grupos-lista.png",
+     "Al cerrarla: Depa Barranco y Depa Miraflores, te deben S/ 60.",
+     ""
+    ],
+    [
+     "11-registros.png",
+     "Registros: 5 registros, S/ -125. Los datos sí llegaron.",
+     ""
+    ],
+    [
+     "12-panel-de-nuevo.png",
+     "Al volver al Panel ya aparece todo: S/ 1353.",
+     ""
+    ],
+    [
+     "13-ajustes.png",
+     "Ajustes: el perfil ya dice «Jur».",
+     ""
+    ],
+    [
+     "14-ajustes-datos.png",
+     "Datos: «Dónde viven tus datos — En tu cuenta de Yala».",
+     ""
+    ],
+    [
+     "15-hoja-cerrar-sesion.png",
+     "«Cerrar sesión» → hoja: vuelves a la pantalla de inicio como recién instalado, tus datos quedan seguros, los grupos no se tocan.",
+     ""
+    ],
+    [
+     "16-tras-cerrar-sesion.png",
+     "Tras confirmar, la fila «Cerrar sesión» gira unos segundos.",
+     ""
+    ],
+    [
+     "17-tras-cerrar-8s.png",
+     "«Ya casi está: Sesión cerrada · Vuelve a abrir Yala».",
+     "También pide cerrar y reabrir Yala a mano."
+    ],
+    [
+     "18-tras-reabrir.png",
+     "Al reabrir: bienvenida.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e05",
+   "titulo": "iCloud sin datos · Google con cuenta existente (test) · Eliminar mi cuenta",
+   "partida": "iCloud sin datos; test@yala-app.pe ya tenía cuenta en staging con muchos datos.",
+   "salida": "Eliminar mi cuenta",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Google» y elijo test@yala-app.pe.",
+     ""
+    ],
+    [
+     "02-tras-verificar.png",
+     "«Ya tienes una cuenta».",
+     "Así supe que test ya tenía cuenta en staging."
+    ],
+    [
+     "03-tras-atras.png",
+     "Pruebo la flecha atrás antes de cargar: vuelve a la bienvenida sin dejar nada a medias.",
+     ""
+    ],
+    [
+     "04-cargando.png",
+     "Vuelvo a entrar y toco «Cargar mis datos y entrar»: «Conectando con tu cuenta…».",
+     "Unos 30 s."
+    ],
+    [
+     "05-tras-cargar.png",
+     "«¡Tu cuenta está lista!». «Empezar».",
+     ""
+    ],
+    [
+     "06-panel.png",
+     "Panel vacío otra vez: S/ 0 y «Crea tu primera cuenta».",
+     "Mismo fallo que en E04: con otra cuenta también pasa."
+    ],
+    [
+     "07-registros.png",
+     "Paso por Registros…",
+     ""
+    ],
+    [
+     "08-panel-de-nuevo.png",
+     "…y al volver el Panel muestra todo (S/ 854, Ahorros USD, Cuenta Principal).",
+     ""
+    ],
+    [
+     "09-tu-cuenta.png",
+     "«Dónde viven tus datos» en modo cuenta: En tu cuenta de Yala, Grupos, Todo sincronizado, «Volver a tu iCloud».",
+     ""
+    ],
+    [
+     "10-tu-cuenta-de-yala.png",
+     "«Tu cuenta de Yala»: Cerrar sesión, Volver a tu iCloud, Eliminar mi cuenta.",
+     ""
+    ],
+    [
+     "11-eliminar-1.png",
+     "«¿Eliminar tu cuenta de Yala?» con lo que pasa en el teléfono, en la cuenta y en los grupos. «Continuar».",
+     "Habla de «tu copia antigua de iCloud» aunque esta cuenta nunca tuvo una en este teléfono."
+    ],
+    [
+     "12-eliminar-2.png",
+     "Alerta «Esto es definitivo». «Eliminar mi cuenta».",
+     ""
+    ],
+    [
+     "13-tras-eliminar.png",
+     "Pantalla de carga de Yala unos segundos.",
+     ""
+    ],
+    [
+     "14-tras-eliminar-4s.png",
+     "«Ya casi está: Sesión cerrada · Vuelve a abrir Yala».",
+     "No dice que la cuenta se eliminó: solo «Sesión cerrada»."
+    ]
+   ]
+  },
+  {
+   "id": "e06",
+   "titulo": "iCloud sin datos · Google con cuenta nueva (test tras eliminarla)",
+   "partida": "test@yala-app.pe recién eliminada en E05; iCloud sin datos.",
+   "salida": "(siguió con Volver a tu iCloud, E07)",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Google», test@yala-app.pe. Google vuelve a pedir permiso (al eliminar se revocó).",
+     ""
+    ],
+    [
+     "02-tras-verificar.png",
+     "«Vamos a crear tu cuenta. Ese correo todavía no tiene una cuenta de Yala.»",
+     ""
+    ],
+    [
+     "03-crear-boton.png",
+     "Abajo: «Crear mi cuenta», «Entrar con Apple», «Usar otra cuenta».",
+     "Le dice «Puedes volver a tu iCloud cuando quieras» a alguien que nunca usó iCloud."
+    ],
+    [
+     "04-tras-crear.png",
+     "«¡Tu cuenta está lista!». «Empezar».",
+     ""
+    ],
+    [
+     "05-tras-empezar.png",
+     "Después de decir «lista», empiezan las tres preguntas: «¿Te llamo Test?».",
+     "El orden extraña: primero «tu cuenta está lista» y luego las preguntas."
+    ],
+    [
+     "06-lista.png",
+     "«Tu Yala está lista». «Entrar a Yala».",
+     ""
+    ],
+    [
+     "07-panel.png",
+     "Panel vacío (correcto: cuenta nueva) con un aviso «Descargando tus datos…» arriba.",
+     "«Descargando tus datos» en una cuenta recién creada, que no tiene nada que descargar."
+    ]
+   ]
+  },
+  {
+   "id": "e07",
+   "titulo": "Volver a tu iCloud (cuenta test con datos de prueba)",
+   "partida": "Cuenta test@yala-app.pe con «Cargar datos de prueba» recién hecho (unos 2300 registros); iCloud con las categorías de serie.",
+   "salida": "Se queda atascado; hubo que reinstalar",
+   "pasos": [
+    [
+     "01-tu-cuenta.png",
+     "Ajustes › Tu cuenta de Yala. Toco «Volver a tu iCloud».",
+     ""
+    ],
+    [
+     "02-volver-icloud.png",
+     "«Dónde viven tus datos» con la tarjeta «Volver a tu iCloud». Toco el botón.",
+     ""
+    ],
+    [
+     "03-hoja-volver.png",
+     "«Revisando tu iCloud…».",
+     ""
+    ],
+    [
+     "04-tras-revisar.png",
+     "«Tu iCloud ya tiene datos de Yala»: Sumarlos / Empezar sin ellos / Ahora no. Elijo «Empezar sin ellos».",
+     ""
+    ],
+    [
+     "05-tras-elegir.png",
+     "«¿Borrarlos de tu iCloud?» → «Borrar y volver a tu iCloud».",
+     ""
+    ],
+    [
+     "06-volviendo.png",
+     "«Volviendo a tu iCloud»: Borrar los datos de antes (0 borrados).",
+     ""
+    ],
+    [
+     "07-volviendo-30s.png",
+     "A los 30 s: 554 borrados.",
+     "La bienvenida decía que ese iCloud solo tenía 62 categorías."
+    ],
+    [
+     "08-trayendo.png",
+     "Pasa a «Traer tus datos de tu cuenta de Yala».",
+     ""
+    ],
+    [
+     "09-volviendo-1min.png",
+     "Un minuto después, igual.",
+     ""
+    ],
+    [
+     "10-volviendo-5min.png",
+     "Cinco minutos después, igual, sin contador.",
+     "Card de prioridad alta, con la causa medida: la fase no avanzó desde las 15:06:02 y 3090 cambios seguían sin subir."
+    ],
+    [
+     "11-tras-reabrir.png",
+     "Cierro y abro Yala: Panel con datos y una guía abajo.",
+     ""
+    ],
+    [
+     "12-guia-tapada-por-la-barra.png",
+     "La guía «Tu saldo se mueve solo» queda debajo de la barra de pestañas.",
+     "Card creada."
+    ],
+    [
+     "13-donde-tras-reabrir.png",
+     "«Dónde viven tus datos» sigue atascado tras reabrir.",
+     ""
+    ],
+    [
+     "14-tras-cancelar.png",
+     "«Cancelar y seguir en tu cuenta de Yala» no hace nada: está desactivado.",
+     "La persona no puede ni avanzar ni salir."
+    ]
+   ]
+  },
+  {
+   "id": "e03b",
+   "titulo": "iCloud de verdad vacío · Entrar con mi iCloud",
+   "partida": "Tras reinstalar; el iCloud quedó vacío después del borrado de E07.",
+   "salida": "(siguió cargando datos de prueba para E08)",
+   "pasos": [
+    [
+     "00-icloud.png",
+     "«Entrar con mi iCloud» va directo a «Un último paso: reabre Yala», sin «Ya tienes datos».",
+     "Así es el camino sin datos: comparar con E03, donde 62 categorías bastaron para tratarlo como «con datos»."
+    ],
+    [
+     "01-reabre.png",
+     "Mismo paso, capturado al entrar.",
+     ""
+    ],
+    [
+     "02-tras-reabrir.png",
+     "Tras reabrir: «¿Cómo te llamo?».",
+     ""
+    ],
+    [
+     "03-panel.png",
+     "Panel vacío en modo iCloud.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e08",
+   "titulo": "iCloud con datos · Google con cuenta existente (jur211296)",
+   "partida": "«Cargar datos de prueba» en modo iCloud y «Quitar mis datos»: el iCloud queda con unos 3000 cambios.",
+   "salida": "Cerrar sesión",
+   "pasos": [
+    [
+     "00-quitar-con-datos.png",
+     "Al quitar los datos: «Subiendo tus cambios a iCloud… Cambios por subir: 3168».",
+     "Bien: no sale hasta subirlos (13 s)."
+    ],
+    [
+     "00b-tras-subir.png",
+     "«Ya casi está».",
+     ""
+    ],
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Google» → jur211296.",
+     ""
+    ],
+    [
+     "02-tras-verificar.png",
+     "«Ya tienes una cuenta».",
+     "Mismas pantallas que con iCloud vacío: los datos de iCloud no se mencionan. Card de pregunta creada."
+    ],
+    [
+     "03-cargando.png",
+     "«Conectando con tu cuenta… 0 %» (47 s).",
+     ""
+    ],
+    [
+     "04-tras-cargar.png",
+     "«¡Tu cuenta está lista!».",
+     ""
+    ],
+    [
+     "05-panel.png",
+     "Panel a S/ 0.",
+     "El fallo del Panel vacío otra vez."
+    ],
+    [
+     "06-panel-de-nuevo.png",
+     "Paso por Registros y vuelvo: sigue a S/ 0.",
+     "Aquí ni cambiar de pestaña lo arregla."
+    ],
+    [
+     "07-registros.png",
+     "Registros: «Sin registros» y «aún no tienes ninguna categoría».",
+     ""
+    ],
+    [
+     "08-registros-30s.png",
+     "30 s después, igual.",
+     "Medí el store: 8 registros, 6 cuentas y 13 categorías YA estaban en el teléfono. Card subida a muy alta."
+    ],
+    [
+     "09-tras-reabrir.png",
+     "Cierro y abro Yala: aparece todo (S/ 1353).",
+     "No hay pérdida de datos; las pantallas no se enteran."
+    ]
+   ]
+  },
+  {
+   "id": "e10",
+   "titulo": "iCloud con datos · Apple con cuenta existente",
+   "partida": "El Apple ID del iPhone 14 usa test@yala-app.pe, así que abre la misma cuenta que Google test.",
+   "salida": "(eliminada para E11)",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Apple».",
+     ""
+    ],
+    [
+     "02-tras-tocar-apple.png",
+     "Hoja de Apple con «JURGEN TEST» → «Iniciar sesión» → Face ID (Jürgen).",
+     ""
+    ],
+    [
+     "03-tras-apple.png",
+     "«Ya tienes una cuenta» con la etiqueta «Apple».",
+     "Dice «Ese correo ya tiene una cuenta» aunque arriba no se ve ningún correo."
+    ],
+    [
+     "04-cargando.png",
+     "«Conectando con tu cuenta…» (22 s).",
+     ""
+    ],
+    [
+     "05-tras-cargar.png",
+     "«¡Tu cuenta está lista!».",
+     ""
+    ],
+    [
+     "06-panel.png",
+     "Panel a S/ 0, «Crea tu primera cuenta».",
+     ""
+    ],
+    [
+     "07-tras-reabrir.png",
+     "Tras cerrar y abrir Yala, sigue a S/ 0.",
+     "En el teléfono había 989 registros y 2 cuentas (medido con Yala cerrada). Añadido a la card del Panel vacío."
+    ],
+    [
+     "08-tu-cuenta-apple.png",
+     "«Tu cuenta de Yala» muestra test@yala-app.pe con el logo de Apple: «Si usas el mismo correo, Apple y Google abren esta misma cuenta».",
+     ""
+    ],
+    [
+     "09-eliminar-alerta.png",
+     "«Eliminar mi cuenta» → «Esto es definitivo».",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e11",
+   "titulo": "iCloud con datos · Apple con cuenta nueva",
+   "partida": "Cuenta test recién eliminada; iCloud con datos.",
+   "salida": "(siguió en E12)",
+   "pasos": [
+    [
+     "01-welcome.png",
+     "Bienvenida. «Entrar con Apple».",
+     ""
+    ],
+    [
+     "02-hoja-apple.png",
+     "Apple pide crear cuenta: nombre y compartir u ocultar correo → Continuar → Face ID.",
+     "Eliminar la cuenta también revocó el acceso de Apple."
+    ],
+    [
+     "03-tras-apple.png",
+     "«Vamos a crear tu cuenta».",
+     "Abajo dice «¿Creaste tu cuenta con Google? … con Apple sería una cuenta nueva», y en E10 Apple abrió la cuenta de Google. Card creada."
+    ],
+    [
+     "04-botones.png",
+     "«Crear mi cuenta», «Entrar con Google», «Usar otra cuenta».",
+     ""
+    ],
+    [
+     "05-lista.png",
+     "«¡Tu cuenta está lista!».",
+     ""
+    ],
+    [
+     "06-tras-empezar.png",
+     "«¿Te llamo JURGEN?» en mayúsculas.",
+     ""
+    ],
+    [
+     "07-panel.png",
+     "Panel vacío (correcto) con «Descargando tus datos…».",
+     "La cuenta nueva no ofrece traer los datos que hay en iCloud."
+    ]
+   ]
+  },
+  {
+   "id": "e12",
+   "titulo": "Usar otra cuenta (Google y Apple)",
+   "partida": "Bienvenida, con cuentas test y jur211296 existentes.",
+   "salida": "Vuelta limpia a la bienvenida",
+   "pasos": [
+    [
+     "01-ya-tienes-cuenta.png",
+     "Google test → «Ya tienes una cuenta».",
+     ""
+    ],
+    [
+     "02-botones.png",
+     "Abajo: «Cargar mis datos y entrar» y «Usar otra cuenta».",
+     ""
+    ],
+    [
+     "03-otra-cuenta-abre-google.png",
+     "«Usar otra cuenta» vuelve a abrir Google al instante.",
+     "Arreglo de «otra cuenta» verificado."
+    ],
+    [
+     "04-otra-cuenta-resultado.png",
+     "Elijo jur211296: «Ya tienes una cuenta» con el otro correo.",
+     ""
+    ],
+    [
+     "05-apple-ya-tienes.png",
+     "Con Apple: «Ya tienes una cuenta» y «Otra cuenta de Apple».",
+     ""
+    ],
+    [
+     "06-otra-cuenta-apple.png",
+     "Abre el inicio de Apple por web con «Usar otra cuenta de Apple». Sin bucle.",
+     "La hoja web se llama «Yala — Finanzas sin esfuerzo», no «Yala Dev»."
+    ],
+    [
+     "07-tras-cerrar-apple-web.png",
+     "Cierro la hoja web: vuelve limpio a la bienvenida.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e13",
+   "titulo": "Dividir con amigos",
+   "partida": "Bienvenida, sin sesión; jur211296 tiene dos grupos.",
+   "salida": "Entra en Grupos",
+   "pasos": [
+    [
+     "01-vitrina-grupos.png",
+     "El enlace «Dividir gastos con amigos» solo sale en las tarjetas de Grupos de la vitrina.",
+     "En el iPhone 14 empuja «Entrar con mi iCloud» fuera de la pantalla. Card creada."
+    ],
+    [
+     "02-puerta-grupos.png",
+     "«Cuentas claras con tus amigos»: solo Google y Apple.",
+     ""
+    ],
+    [
+     "03-como-empiezas.png",
+     "«¿Cómo empiezas?»: crear grupo, me invitaron, solo crear cuenta, o «¿Ya tienes cuenta? Entra aquí».",
+     ""
+    ],
+    [
+     "04-entra-aqui.png",
+     "«¡Hola de nuevo!» con Apple, Google y «Restaurar desde iCloud».",
+     "Desde la puerta de Grupos ofrece iCloud, y bajo Apple dice «La que usaste en este dispositivo» aunque la última fue Google."
+    ],
+    [
+     "05-hoja-tres-cosas.png",
+     "Las «tres cosas que conviene saber» en otra hoja y antes de elegir cuenta.",
+     "En el camino principal salen después y con otro diseño. Card creada."
+    ],
+    [
+     "06-tras-google.png",
+     "«Conectando con tu cuenta…» (43 s).",
+     ""
+    ],
+    [
+     "07-tras-conectar.png",
+     "«¡Tu cuenta está lista!».",
+     ""
+    ],
+    [
+     "08-tras-empezar.png",
+     "Llega al Panel personal (vacío), no a Grupos.",
+     "Card creada."
+    ],
+    [
+     "09-grupos.png",
+     "Grupos: intro «Comparte gastos sin perderles el rastro».",
+     ""
+    ],
+    [
+     "10-intro-2.png",
+     "Intro 2.",
+     ""
+    ],
+    [
+     "11-intro-3.png",
+     "«Grupos en tu cuenta de Yala» con «Aceptar y continuar».",
+     "Vuelve a pedir el consentimiento aunque la cuenta ya tiene grupos."
+    ],
+    [
+     "12-grupos-lista.png",
+     "Lista de grupos: Depa Barranco y Depa Miraflores, te deben S/ 60.",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "e14",
+   "titulo": "Tutoriales, Bandeja y los 7 primeros pasos (con el correo)",
+   "partida": "Cuenta jur211296 con datos para la biblioteca y la Bandeja; cuenta nueva de Apple (vacía) para los 7 pasos.",
+   "salida": "«¡Primeros pasos completos!»",
+   "pasos": [
+    [
+     "02-tutoriales.png",
+     "Ajustes › Tutoriales: Primeros pasos (cuenta, categorías, etiquetas).",
+     ""
+    ],
+    [
+     "03-tutoriales-2.png",
+     "Uso diario.",
+     ""
+    ],
+    [
+     "04-tutoriales-3.png",
+     "Avanzado: Personalizar el Panel, Filtros, Bandeja de entrada, Apple Pay.",
+     "No hay tutorial del correo («Tu dirección de Yala») en la biblioteca."
+    ],
+    [
+     "05-tuto-bandeja-1.png",
+     "Tutorial «Bandeja de entrada»: «Tu bandeja inteligente».",
+     "La lista dice «4 pasos» y el tutorial tiene 6 puntos."
+    ],
+    [
+     "09-tuto-bandeja-5.png",
+     "Paso 4 con vídeo: «Gestiona tu bandeja».",
+     ""
+    ],
+    [
+     "10-tuto-bandeja-6.png",
+     "«Ya sabes cómo usar la Bandeja»: «Hacerlo ahora» / «Entendido».",
+     ""
+    ],
+    [
+     "11-bandeja.png",
+     "«Hacerlo ahora» abre la Bandeja: 3 pendientes, uno llegó por correo (PLAZA VEA).",
+     "Bien."
+    ],
+    [
+     "12-panel-cuenta-nueva.png",
+     "Cuenta nueva: Primeros pasos 1 de 7.",
+     ""
+    ],
+    [
+     "14-siete-pasos-scroll.png",
+     "«Ver los 7 pasos».",
+     "Al abrirse, la hoja solo muestra 6 y «Seguir donde iba» tapa la descripción del sexto (captura anterior); hay que subirla. Los pasos no se pueden abrir sueltos."
+    ],
+    [
+     "17-paso1-b.png",
+     "Paso 1: «¿Qué es una cuenta?» → «Crear mi primera cuenta».",
+     ""
+    ],
+    [
+     "18-paso1-c.png",
+     "«¿Cuál creamos primero?» → Efectivo.",
+     ""
+    ],
+    [
+     "19-paso1-d.png",
+     "Moneda → Soles.",
+     ""
+    ],
+    [
+     "20-paso1-e.png",
+     "«¿La llamamos «Efectivo»?».",
+     ""
+    ],
+    [
+     "21-paso1-f.png",
+     "«¿Cuánto tienes hoy?» → S/ 200.",
+     ""
+    ],
+    [
+     "22-paso1-g.png",
+     "«¡Lista!» → «Ver mi Yala».",
+     ""
+    ],
+    [
+     "24-paso2-a.png",
+     "Paso 2: «Cuatro maneras de apuntar» (lo omito).",
+     ""
+    ],
+    [
+     "25-tras-omitir-paso2.png",
+     "Al omitir el paso 2 sale la guía «Lo que Yala apunta solo» de la Bandeja.",
+     "Dos guías con «Entendido» a la vez en pantalla."
+    ],
+    [
+     "26-paso3-a.png",
+     "Paso 3: presupuesto (omitido).",
+     ""
+    ],
+    [
+     "27-paso4-a.png",
+     "Paso 4: pagos fijos (omitido).",
+     ""
+    ],
+    [
+     "28-paso5-a.png",
+     "Paso 5: Grupos (omitido).",
+     ""
+    ],
+    [
+     "29-paso6-a.png",
+     "Paso 6: «Tus gráficas viven en Más». Toco Más.",
+     ""
+    ],
+    [
+     "32-paso7-a.png",
+     "Paso 7 «Anota sin abrir Yala»: cinco maneras porque hay cuenta.",
+     ""
+    ],
+    [
+     "33-paso7-b.png",
+     "Las páginas avanzan solas; la del correo pasa en plena transición.",
+     "Va rápido para leer «Tu correo, en automático»."
+    ],
+    [
+     "35-paso7-empezar.png",
+     "«Empezar»: 1 de 5 · Widget, con los cuatro pasos.",
+     ""
+    ],
+    [
+     "36-mini-2.png",
+     "«Sigamos»: Widget · Apple Pay · Compartir · Correo · Siri.",
+     ""
+    ],
+    [
+     "38-mini-correo.png",
+     "«Ahora: Correo — Los avisos de tu banco, directo a tu Bandeja» → «Ver mi dirección».",
+     ""
+    ],
+    [
+     "39-correo-direccion.png",
+     "«Tu dirección de Yala»: la dirección real con «Copiar» y los tres pasos del filtro.",
+     "Bien. En el iPhone 14 la nota de Gmail queda tapada por «Listo» hasta desplazar."
+    ],
+    [
+     "40-correo-nota-gmail.png",
+     "Al desplazar: la nota de Gmail y «Pronto: conectar Gmail y Outlook directamente».",
+     ""
+    ],
+    [
+     "42-final.png",
+     "«¡Primeros pasos completos!».",
+     "Lo dice aunque omití del 2 al 5."
+    ]
+   ]
+  }
+ ]
+}

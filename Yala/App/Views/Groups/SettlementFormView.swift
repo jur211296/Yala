@@ -27,7 +27,9 @@ struct SettlementFormView: View {
     /// Member ID del current user en este grupo (para distinguir Caso C/D). `nil` si
     /// no se pudo resolver — el alert opt-in no se mostrará (defensivo).
     let currentUserMemberID: String?
-    let onSave: () -> Void
+    /// Recibe el pago guardado y si se puede deshacer: Saldos enseña con él el aviso del saldo nuevo y «Deshacer»
+    /// (decisión 37 de 2.3, C3). Tras «Sí, registrar» en tus cuentas no se puede: ver `optInDraftCreated`.
+    let onSave: (SplitSettlement, Bool) -> Void
 
     // MARK: - State
 
@@ -37,6 +39,13 @@ struct SettlementFormView: View {
     @State private var isSaving: Bool = false
     @State private var showSaveError: Bool = false
     @State private var saveErrorMessage: String = ""
+    /// El pago ya apuntado, para el `onSave` que llega después del «¿Registrarlo en tus cuentas?».
+    @State private var savedSettlement: SplitSettlement?
+    /// Se creó el borrador del «Sí, registrar»: lo que se apruebe en su hoja es un movimiento sin enlace al pago, que
+    /// «Deshacer» no se llevaría.
+    @State private var optInDraftCreated = false
+    /// Decisión 37 de 2.3 (C2): «Todo» deja a mano; «Una parte» deja escribir lo que se paga.
+    @State private var paymentScope: SettlementSaldar23Logic.PaymentScope = .all
 
     // A0-Bridge: Caso C proactivo — cuenta para liquidación (solo .full/.completed)
     @State private var selectedAccount: Account? = nil
@@ -61,6 +70,18 @@ struct SettlementFormView: View {
     @State private var showsMissingAmount = false
     @FocusState private var amountFocused: Bool
 
+    /// Decisión 39 de 2.3 (F1): lo que la persona puede cambiar aquí. El importe llega precargado con la deuda, así que
+    /// solo pregunta si se cambió algo respecto a lo de partida.
+    private struct FormSnapshot: Equatable {
+        let amountString: String
+        let note: String
+        let date: Date
+        let useSuggestedAmount: Bool
+        let accountID: PersistentIdentifier?
+    }
+    @State private var formBaseline: FormSnapshot?
+    @State private var showDiscardAlert = false
+
     // MARK: - Init
 
     init(
@@ -68,14 +89,39 @@ struct SettlementFormView: View {
         debt: Debt,
         memberNameLookup: [String: String],
         currentUserMemberID: String?,
-        onSave: @escaping () -> Void
+        onSave: @escaping (SplitSettlement, Bool) -> Void
     ) {
         self.group = group
         self.debt = debt
         self.memberNameLookup = memberNameLookup
         self.currentUserMemberID = currentUserMemberID
         self.onSave = onSave
-        self._amountString = State(initialValue: AmountInputHelper.formatWithGrouping(debt.amount))
+        let initialAmount = AmountInputHelper.formatWithGrouping(debt.amount)
+        let initialDate = Date.now
+        self._amountString = State(initialValue: initialAmount)
+        self._date = State(initialValue: initialDate)
+        self._formBaseline = State(initialValue: FormSnapshot(
+            amountString: initialAmount, note: "", date: initialDate, useSuggestedAmount: false, accountID: nil))
+    }
+
+    private var formSnapshot: FormSnapshot {
+        FormSnapshot(amountString: amountString, note: note, date: date, useSuggestedAmount: useSuggestedAmount,
+                     accountID: selectedAccount?.persistentModelID)
+    }
+
+    /// Algo distinto de lo que había al abrir. Con el pago ya apuntado (el «Sí» del puente en curso) no hay nada que perder.
+    private var hasUnsavedInput: Bool {
+        guard !optInInFlight else { return false }
+        return GroupFormDiscardLogic.asksBeforeDiscarding(current: formSnapshot, baseline: formBaseline)
+    }
+
+    private func closeOrAskToDiscard() {
+        if hasUnsavedInput {
+            amountFocused = false
+            showDiscardAlert = true
+        } else {
+            dismiss()
+        }
     }
 
     // MARK: - Body
@@ -129,8 +175,14 @@ struct SettlementFormView: View {
                     // Segmented currency picker (solo si hay suggested amount real)
                     currencySegmentedControl
 
+                    // C2: «Todo» o «Una parte»
+                    paymentScopeControl
+
                     // Amount
                     amountSection
+
+                    // C2: lo que queda, o el aviso de pagar de más
+                    amountOutcomeHint
 
                     // A0-Bridge: cuenta de origen (oculto en una sesión solo-grupos)
                     accountSection
@@ -142,7 +194,7 @@ struct SettlementFormView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         missingAmountHint
                         // El id va en el botón y no en la pila: puesto en el contenedor pisaría el de la línea de arriba.
-                        YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
+                        YalaPrimaryButton(saveButtonTitle, icon: "checkmark.circle.fill") {
                             handleSave()
                         }
                         .accessibilityIdentifier("settlement_form_save")
@@ -161,10 +213,17 @@ struct SettlementFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        closeOrAskToDiscard()
                     }
+                    .accessibilityIdentifier("settlement_form_close")
                 }
             }
+            .asksBeforeDiscardingGroupForm(
+                hasUnsavedInput: hasUnsavedInput,
+                title: L10n.GroupsDiscard.paymentTitle,
+                isPresented: $showDiscardAlert,
+                onDiscard: { dismiss() }
+            )
             .alert(L10n.Common.error, isPresented: $showSaveError) {
                 Button(L10n.Common.ok) {}
             } message: {
@@ -193,6 +252,8 @@ struct SettlementFormView: View {
             // deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
             .onChange(of: date) { oldDate, _ in refreshSuggestedAmount(changedFrom: oldDate) }
             .onChange(of: useSuggestedAmount) { _, _ in
+                // Otra moneda: el importe vuelve a la deuda entera en ella, así que vuelve a «Todo» (C2).
+                paymentScope = .all
                 let newAmount = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
                 if amountString != newAmount {
                     amountString = newAmount
@@ -216,6 +277,8 @@ struct SettlementFormView: View {
                     .tag(true)
             }
             .pickerStyle(.segmented)
+            // Un segmentado no pasa su título a VoiceOver (regla de `swiftui-ds.md`); lote 06 de mejoras 2.3.
+            .accessibilityLabel(L10n.GroupsNecesarias06.settlementCurrencyA11y)
             .padding(.horizontal, DS.Spacing.lg)
         }
     }
@@ -283,6 +346,17 @@ struct SettlementFormView: View {
 
                 memberBubble(debt.toMemberID)
             }
+
+            // C1: si no lo pagas ni lo recibes tú, queda esperando a quien recibe.
+            if recorderRole == .thirdParty {
+                Text(L10n.GruposSaldar23.thirdPartyHint(memberNameLookup[debt.toMemberID] ?? "?"))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .accessibilityIdentifier("settlement_form_third_party_hint")
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, DS.Spacing.lg)
@@ -325,12 +399,18 @@ struct SettlementFormView: View {
                     .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
                     .focused($amountFocused)
+                    // Lote 06 de mejoras 2.3: sin nombre, VoiceOver leía el ejemplo «0.00».
+                    .accessibilityLabel(L10n.GroupsNecesarias06.settlementAmountA11y)
+                    .accessibilityValue(parsedAmount > 0
+                                        ? appPreferences.currency(parsedAmount, currencyCode: effectiveCurrency)
+                                        : L10n.GroupsNecesarias06.amountEmptyA11y)
                     .accessibilityIdentifier("settlement_form_amount")
-                    .onChange(of: amountString) { _, newValue in
+                    .onChange(of: amountString) { oldValue, newValue in
                         let filtered = AmountInputHelper.filterAmountInput(newValue)
                         if filtered != newValue {
                             amountString = filtered
                         }
+                        followTypedAmount(from: oldValue)
                     }
             }
             .frame(maxWidth: .infinity)
@@ -441,15 +521,20 @@ struct SettlementFormView: View {
                 accountForCurrentUser: accountToPass
             )
 
-            // Marca confirmed + dispara bridge con cuenta (Caso C proactivo end-to-end).
-            try GroupExpenseService.shared.confirmSettlement(
-                settlement,
-                in: group,
-                accountForCurrentUser: accountToPass
-            )
+            // Marca confirmed + dispara bridge con cuenta (Caso C proactivo end-to-end). C1 (decisión 37 de 2.3): si lo
+            // apunta alguien que no paga ni recibe, queda «Falta que <quien recibe> lo confirme».
+            if SettlementSaldar23Logic.confirmsOnRecord(
+                recorderMemberID: currentUserMemberID, fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID) {
+                try GroupExpenseService.shared.confirmSettlement(
+                    settlement,
+                    in: group,
+                    accountForCurrentUser: accountToPass
+                )
+            }
 
             DS.Haptic.success()
             isSaving = false
+            savedSettlement = settlement
 
             // Opt-out: solo Caso C (yo pago) con bridge OFF dispara el alert opt-in que crea
             // un draft personal. Caso D (yo recibo) ya tiene su draft auto del bridge — un
@@ -467,7 +552,7 @@ struct SettlementFormView: View {
                 return  // diferir dismiss hasta resolver alert
             }
 
-            onSave()
+            onSave(settlement, true)
             dismiss()
         } catch {
             #if DEBUG
@@ -493,10 +578,11 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: createGroupSettlementOptInDraft failed: \(error)")
             #endif
-            onSave()
+            notifySaved()
             dismiss()
             return
         }
+        optInDraftCreated = true
         optInSheetAppeared = false
         optInInFlight = true
         presentOptInSheet(draft, attempt: 1)
@@ -523,13 +609,140 @@ struct SettlementFormView: View {
     private func finishOptIn() {
         guard optInInFlight else { return }
         optInInFlight = false
-        onSave()
+        notifySaved()
         dismiss()
     }
 
     private func declineOptIn() {
         pendingOptInSettlementID = nil
-        onSave()
+        notifySaved()
         dismiss()
+    }
+
+    private func notifySaved() {
+        guard let savedSettlement else { return }
+        onSave(savedSettlement, !optInDraftCreated)
+    }
+
+    // MARK: - Decisión 37 de 2.3 · C1 y C2
+
+    private var recorderRole: SettlementSaldar23Logic.RecorderRole {
+        SettlementSaldar23Logic.recorderRole(
+            recorderMemberID: currentUserMemberID, fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID)
+    }
+
+    /// La deuda en la moneda elegida, tal como se escribe en el campo.
+    private var shownDebtAmount: String { AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount) }
+
+    private var matchesShownDebt: Bool { amountString == shownDebtAmount }
+
+    private var amountOutcome: SettlementSaldar23Logic.AmountOutcome? {
+        SettlementSaldar23Logic.amountOutcome(
+            owed: effectiveCanonicalAmount, paying: parsedAmount, matchesShownDebt: matchesShownDebt)
+    }
+
+    private var saveButtonTitle: String {
+        if case .overpays = amountOutcome { return L10n.GruposSaldar23.saveAnyway }
+        return L10n.Groups.Settlement.registerPayment
+    }
+
+    private var paymentScopeControl: some View {
+        Picker(L10n.GruposSaldar23.scopeA11y, selection: $paymentScope) {
+            Text(L10n.GruposSaldar23.scopeAll(appPreferences.currency(effectiveCanonicalAmount,
+                                                                      currencyCode: effectiveCurrency)))
+                .tag(SettlementSaldar23Logic.PaymentScope.all)
+            Text(L10n.GruposSaldar23.scopePart)
+                .tag(SettlementSaldar23Logic.PaymentScope.part)
+        }
+        .pickerStyle(.segmented)
+        // Un segmentado no pasa su título a VoiceOver (regla de `swiftui-ds.md`).
+        .accessibilityLabel(L10n.GruposSaldar23.scopeA11y)
+        .accessibilityIdentifier("settlement_form_scope")
+        .padding(.horizontal, DS.Spacing.lg)
+        .onChange(of: paymentScope) { _, newValue in applyScope(newValue) }
+    }
+
+    /// «Todo» pone la deuda; «Una parte» vacía el campo para escribir lo que se paga.
+    private func applyScope(_ scope: SettlementSaldar23Logic.PaymentScope) {
+        switch scope {
+        case .all:
+            if !matchesShownDebt { amountString = shownDebtAmount }
+        case .part:
+            if matchesShownDebt {
+                amountString = ""
+                amountFocused = true
+            }
+        }
+    }
+
+    /// Cuelga del `VStack` del formulario, que siempre existe: el «Todo → Una parte» al escribir va en el `onChange` del
+    /// campo (un `onChange` en una vista que se queda sin hijos con el campo vacío no correría).
+    @ViewBuilder
+    private var amountOutcomeHint: some View {
+        if let text = amountOutcomeText {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                if case .overpays = amountOutcome {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(DS.Typography.caption)
+                        .accessibilityHidden(true)
+                }
+                Text(text)
+                    .font(DS.Typography.subheadline)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(isOverpaying ? DS.Semantic.warningForeground : Color.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, DS.Spacing.lg)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("settlement_form_outcome")
+        }
+    }
+
+    /// Escribir otro importe con «Todo» elegido pasa a «Una parte». Y si el importe pasa a ser más de lo que se debe,
+    /// VoiceOver lo dice: el texto y el botón cambian sin que nada se anuncie.
+    private func followTypedAmount(from oldValue: String) {
+        let next = SettlementSaldar23Logic.scopeAfterTyping(paymentScope, matchesShownDebt: matchesShownDebt)
+        if next != paymentScope { paymentScope = next }
+        let wasOverpaying: Bool = {
+            if case .overpays = SettlementSaldar23Logic.amountOutcome(
+                owed: effectiveCanonicalAmount, paying: AmountInputHelper.parseDecimal(oldValue)) { return true }
+            return false
+        }()
+        if isOverpaying, !wasOverpaying, let text = amountOutcomeText {
+            UIAccessibility.post(notification: .announcement, argument: text)
+        }
+    }
+
+    private var isOverpaying: Bool {
+        if case .overpays = amountOutcome { return true }
+        return false
+    }
+
+    private var amountOutcomeText: String? {
+        guard let outcome = amountOutcome else { return nil }
+        let from = memberNameLookup[debt.fromMemberID] ?? "?"
+        let to = memberNameLookup[debt.toMemberID] ?? "?"
+        let money = { (value: Double) in appPreferences.currency(value, currencyCode: effectiveCurrency) }
+        let role = GroupBalancesPresentationLogic.pairRole(
+            fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID, currentUserMemberID: currentUserMemberID)
+        switch (outcome, role) {
+        case (.settles, .youPay): return L10n.GruposSaldar23.settlesWith(to)
+        case (.settles, .paysYou): return L10n.GruposSaldar23.settlesWith(from)
+        case (.settles, .others): return L10n.GruposSaldar23.settlesOthers(from: from, to: to)
+        case (.leaves(let rest), .youPay): return L10n.GruposSaldar23.leavesYouPay(amount: money(rest), to: to)
+        case (.leaves(let rest), .paysYou): return L10n.GruposSaldar23.leavesPaysYou(from: from, amount: money(rest))
+        case (.leaves(let rest), .others):
+            return L10n.GruposSaldar23.leavesOthers(from: from, amount: money(rest), to: to)
+        case (.overpays(let excess), .youPay):
+            return L10n.GruposSaldar23.overpaysYouPay(
+                owed: money(effectiveCanonicalAmount), to: to, excess: money(excess))
+        case (.overpays(let excess), .paysYou):
+            return L10n.GruposSaldar23.overpaysPaysYou(
+                owed: money(effectiveCanonicalAmount), excess: money(excess), from: from)
+        case (.overpays(let excess), .others):
+            return L10n.GruposSaldar23.overpaysOthers(
+                from: from, to: to, owed: money(effectiveCanonicalAmount), excess: money(excess))
+        }
     }
 }

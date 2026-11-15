@@ -50,6 +50,13 @@ final class AccountCardReportsUITests: XCTestCase {
         XCTAssertTrue(comparativa.waitForExistence(timeout: 10), "No se abrió Reportes.")
         comparativa.tap()
 
+        // La Comparativa abre por categoría (decisión 32 de 2.3): se quita para que la tarjeta salga una sola vez, sumada,
+        // y no una por categoría.
+        let categoryChip = app.buttons["report_grouping_chip_categoria"]
+        XCTAssertTrue(categoryChip.waitForExistence(timeout: 10), "La Comparativa no abrió por categoría.")
+        categoryChip.tap()
+        XCTAssertTrue(categoryChip.waitForNonExistence(timeout: 5), "No se quitó el nivel Categoría.")
+
         // Sin agrupar por cuenta, el selector no sale.
         let drillDown = app.buttons["report_grouping_drill_down"]
         XCTAssertTrue(drillDown.waitForExistence(timeout: 10), "No está «Desglosar».")

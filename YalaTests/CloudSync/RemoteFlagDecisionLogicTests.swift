@@ -378,7 +378,7 @@ struct StorageRowGroupsAssociationWiringTests {
         // `#if DEBUG` le quita la card a un iPhone con App Attest, y ningún test que corra en Debug lo ve.
         let idle = Self.segment(of: storage, from: "case .idle:", to: "case .cloudActive:")
         let idleIsIntact = idle == "case .idle: statusCard(controller) "
-            + "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount) "
+            + "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest) "
             + "if offersCloudMigrationEntry { migrateCard(controller) } "
         #expect(idleIsIntact, """
             el `case .idle` de la pantalla cambió: «\(idle ?? "no encontrado")». La card de la nube tiene que \

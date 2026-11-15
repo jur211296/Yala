@@ -41,7 +41,8 @@ struct ProjectedFlowToggle: View {
     }
 }
 
-/// Bajo la gráfica: «Proyectado al cierre  S/ 3.200» y de dónde sale la estimación. La cifra se oculta con «Ocultar
+/// Bajo la gráfica: «Al 30 de noviembre tendrías  S/ 3.200» y de dónde sale la estimación (decisión 30 de 2.3: la
+/// misma cifra que el mes en curso del flujo de caja, `MonthEndBalanceLogic`). La cifra se oculta con «Ocultar
 /// montos» (lo hace `AmountText`), y lleva «≈» si alguna tasa fue aproximada (respuesta 11A).
 ///
 /// Debajo, el camino al plan de flujo de caja, que es lo que afina la estimación (card «Mejorar el flujo de caja para
@@ -67,7 +68,7 @@ struct ProjectedFlowCaption: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                    Text(L10n.ProjectedFlow.closing)
+                    Text(MonthEndBalanceLogic.closingLabel(metric: projection.metric, endDate: projection.endDate))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
                     AmountText(

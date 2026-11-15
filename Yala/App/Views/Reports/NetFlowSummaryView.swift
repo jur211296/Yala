@@ -20,6 +20,9 @@ struct NetFlowSummaryView: View {
     var showsComparison: Bool = true
     /// El período anterior dentro de una frase («setiembre», «el 1–21 de septiembre» no: aquí va sin artículo).
     var previousPeriodName: String = ""
+    /// El período anterior es un tramo de días («1–7 de octubre»): «En 1–7 de octubre te quedaron…» no se lee bien y la
+    /// frase pasa a «El 1–7 de octubre te quedaron…» (decisión 32 de 2.3).
+    var previousIsDayRange: Bool = false
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -28,6 +31,11 @@ struct NetFlowSummaryView: View {
     private var caption: String {
         guard showsComparison, let previousAmount, !previousPeriodName.isEmpty else { return L10n.UXL18.netCaption }
         let amount = appPreferences.currency(abs(previousAmount), currencyCode: currencyCode)
+        if previousIsDayRange {
+            return previousAmount >= 0
+                ? L10n.UXL18.netCaptionGainBeforeRange(previousPeriodName, amount)
+                : L10n.UXL18.netCaptionLossBeforeRange(previousPeriodName, amount)
+        }
         return previousAmount >= 0
             ? L10n.UXL18.netCaptionGainBefore(previousPeriodName, amount)
             : L10n.UXL18.netCaptionLossBefore(previousPeriodName, amount)
@@ -79,7 +87,9 @@ struct NetFlowSummaryView: View {
             value: abs(currentAmount),
             currencyCode: currencyCode,
             font: DS.Typography.label.weight(.semibold),
-            tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+            // Tokens de TEXTO que pasan AA en claro y oscuro; índigo y rosa de la paleta no llegan como texto sobre la
+            // tarjeta (lote 08 de 2.3, regla de color en `swiftui-ds.md`).
+            tint: .color(currentAmount >= 0 ? Color.incomeAmount : Color.groupOweAmount)
         )
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -92,7 +102,8 @@ struct NetFlowSummaryView: View {
                 variation: variation,
                 size: .small,
                 showNAWhenNil: previousAmount == nil,
-                isExpenseContext: false
+                isExpenseContext: false,
+                usesAccessibleTextTone: true
             )
         }
     }

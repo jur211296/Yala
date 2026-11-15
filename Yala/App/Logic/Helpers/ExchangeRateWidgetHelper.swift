@@ -93,6 +93,9 @@ struct ExchangeRateWidgetHelper {
             case .month:
                 bucketEnd =
                     calendar.date(byAdding: .month, value: 1, to: currentDate) ?? currentDate
+            case .year:
+                bucketEnd =
+                    calendar.date(byAdding: .year, value: 1, to: currentDate) ?? currentDate
             }
 
             // Get rates for this bucket (average if multiple days)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeBalances, type BalanceTx } from "../src/logic/balances";
+import { computeBalances, sumsInBalance, type BalanceTx } from "../src/logic/balances";
 import { addDays } from "../src/logic/dates";
 import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
@@ -134,6 +134,36 @@ describe("saldos", () => {
     // Sin fila de hoy se usa la última anterior, y eso es «≈», igual que en la app.
     expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26", ...cut }).total.aproximado).toBe(true);
     expect(r.cuentas.map((c) => c.nombre)).not.toContain("Vieja");
+  });
+
+  it("la cuenta sistema de Grupos que archiva la app sigue sumando, como `Account.sumsInBalance` de la app", () => {
+    // Decisión 6 de 2.3: archivar saca del saldo solo lo que archiva la persona. La cuenta sistema de Grupos archivada
+    // la archivó la app al fundir duplicadas tras una carrera entre dispositivos: su saldo sigue en el total.
+    const duplicated = uuid(1005);
+    const withSystem = [
+      ...accounts,
+      account({ sync_id: duplicated, name: "Grupos (duplicada)", is_archived: true, is_system_account: true }),
+    ];
+    const r = computeBalances(
+      withSystem,
+      [...txs, { account_ref: duplicated, amount: 300, currency_code: "PEN", ...past }],
+      "PEN",
+      RATES,
+      { incluirArchivadas: false, todayUtc: TODAY_UTC, ...cut },
+    );
+    expect(r.total.importe).toBeCloseTo(849.5 + 340 + 300);
+    // La regla entera, las cuatro combinaciones de los dos flags y la de la cuenta sistema.
+    const row = (exclude_from_statistics: boolean, is_archived: boolean, is_system_account = false) => ({
+      exclude_from_statistics,
+      is_archived,
+      is_system_account,
+    });
+    expect(sumsInBalance(row(false, false))).toBe(true);
+    expect(sumsInBalance(row(true, false))).toBe(false);
+    expect(sumsInBalance(row(false, true))).toBe(false);
+    expect(sumsInBalance(row(true, true))).toBe(false);
+    expect(sumsInBalance(row(false, true, true))).toBe(true);
+    expect(sumsInBalance(row(true, true, true))).toBe(false);
   });
 
   it("una divisa con tasa de otro día que no pesa no marca el total, como el panorama de la app", () => {

@@ -26,7 +26,7 @@ struct GroupsLote19FixesTests {
         ("Yala/App/Views/Groups/GroupSettingsView.swift",
          ["group_settings_leave_cancel", "group_settings_archive_cancel", "group_budget_remove_cancel",
           "group_settings_delete_cancel", "group_settings_transfer_cancel"]),
-        ("Yala/App/Views/Settings/GroupsAssociationSection.swift", ["storage_groups_detach_cancel"]),
+        ("Yala/App/Views/Settings/GroupsDetachSheet.swift", ["storage_groups_detach_cancel"]),
     ])
     func dialogs_showAPlainCancel(path: String, cancelIDs: [String]) throws {
         let source = try Self.source(path)

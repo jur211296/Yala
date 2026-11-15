@@ -39,6 +39,9 @@ final class CashFlowPlanViewModel {
     private(set) var plan: CashFlowPlan?
     var hasPlan: Bool { plan != nil }
     private(set) var projection: CashFlowProjection?
+    /// «Al 30 de noviembre tendrías» del mes en curso, con su cuenta (decisión 30 de 2.3): la misma cifra que «Ver
+    /// proyectado» del Panel. `nil` sin plan o sin cuentas que sumen.
+    private(set) var monthEnd: MonthEndBalanceLogic.Result?
     /// Sube cuando un cambio del plan llega sin hoja de por medio que recalcule al cerrarse (borrar una
     /// línea desde su menú, guardar el horizonte). `CashFlowTableView` lo observa y recalcula: la proyección
     /// es un valor calculado y no ve sola que el plan cambió. Antes, la línea borrada seguía en pantalla y el
@@ -339,11 +342,29 @@ final class CashFlowPlanViewModel {
 
     // MARK: - Create Plan
 
-    func createPlan(startingBalance: Double) {
+    /// `typedIncome`: lo que la persona contestó a «¿Cuánto recibes al mes?» (decisión 33 de 2.3) cuando no había
+    /// ningún ingreso que sugerir. Entra como una línea de ingreso con ese monto fijo, atada a `incomeCategory` para que
+    /// el sueldo real cuente en ella al llegar (`CashFlowSetupLogic.typedIncomeCategory`).
+    func createPlan(startingBalance: Double, typedIncome: Double? = nil, incomeCategory: Category? = nil) {
         guard let ctx = modelContext else { return }
 
         let newPlan = CashFlowPlan(name: "", startingBalance: startingBalance)
         ctx.insert(newPlan)
+
+        var sortOffset = 0
+        if let typedIncome, typedIncome > 0 {
+            let line = CashFlowLine(
+                name: incomeCategory?.name ?? L10n.UXL18.typedIncomeLineName,
+                isIncome: true,
+                sortOrder: 0,
+                estimationMethod: .manual,
+                manualAmount: typedIncome,
+                category: incomeCategory
+            )
+            ctx.insert(line)
+            line.plan = newPlan
+            sortOffset = 1
+        }
 
         let selectedSuggestions = suggestedLines.filter(\.isSelected)
         for (index, suggestion) in selectedSuggestions.enumerated() {
@@ -351,7 +372,7 @@ final class CashFlowPlanViewModel {
             let line = CashFlowLine(
                 name: suggestion.name,
                 isIncome: suggestion.isIncome,
-                sortOrder: index,
+                sortOrder: index + sortOffset,
                 estimationMethod: method,
                 manualAmount: method == .manual ? suggestion.suggestedAmount : nil,
                 category: suggestion.category,
@@ -594,28 +615,22 @@ final class CashFlowPlanViewModel {
         allIncomeCategories: [Category] = [],
         scheduledPayments: [ScheduledPayment],
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        accounts: [Account] = [],
+        includeGroups: Bool = true
     ) {
         guard let plan else {
             projection = nil
+            monthEnd = nil
             return
         }
 
         let lines = (plan.lines ?? []).filter(\.isEnabled)
 
-        let monthsAhead: Int
-        if FeatureGateService.shared.canAccess(.cashFlowAdvanced) {
-            monthsAhead = plan.defaultMonthsAhead
-        } else {
-            monthsAhead = min(3, plan.defaultMonthsAhead)
-        }
-
-        let monthsBack: Int
-        if FeatureGateService.shared.canAccess(.cashFlowAdvanced) {
-            monthsBack = plan.defaultMonthsBack
-        } else {
-            monthsBack = 0 // Free: only current month
-        }
+        // El horizonte entero es gratis a propósito (decisión 2 de la revisión 2.3, 2026-11-09): Free lo tiene desde 2.1,
+        // y el recorte a 3 meses adelante y ninguno atrás que había aquí nunca actuaba.
+        let monthsAhead = plan.defaultMonthsAhead
+        let monthsBack = plan.defaultMonthsBack
 
         // Netea los gastos de grupo bridgeados a "mi parte" en la proyección. Set AMPLIO
         // (`transactions`, con AMBAS hermanas); sin context cae al `build(from:)` puro.
@@ -635,6 +650,16 @@ final class CashFlowPlanViewModel {
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
+        )
+        monthEnd = MonthEndBalanceLogic.compute(
+            accounts: accounts,
+            transactions: transactions,
+            scheduledPayments: scheduledPayments,
+            currencyCode: currencyCode,
+            includeGroups: includeGroups,
+            adjustment: adjustment,
+            converter: converter,
+            context: modelContext
         )
         LoadTimeMarks.ready(.cashFlow)
     }
@@ -788,22 +813,30 @@ final class CashFlowPlanViewModel {
         return L10n.CashFlowPlan.commentDefault(months.count)
     }
 
+    /// La frase de «Gastos por revisar». Las cifras son promedios por mes de `monthCount` meses (los de la gráfica), y la
+    /// frase lo dice (decisión 35 de la revisión 2.3); con un solo mes, ese mes es el actual y no hay promedio.
     static func generateDeviationRuleComment(
         _ deviations: [(name: String, amount: Double)],
+        monthCount: Int,
         currencyCode: String
     ) -> String {
         guard !deviations.isEmpty else { return "" }
 
         let top = deviations[0]
         let topFormatted = YalaFormatterStatic.currency(value: top.amount, currencyCode: currencyCode)
+        let averages = monthCount > 1
 
         if deviations.count == 1 {
-            return L10n.CashFlowPlan.deviationCommentSingle(top.name, topFormatted)
+            return averages
+                ? L10n.CashFlowPlan.deviationAverageSingle(monthCount, top.name, topFormatted)
+                : L10n.CashFlowPlan.deviationThisMonthSingle(top.name, topFormatted)
         }
 
         let totalExcess = deviations.reduce(0.0) { $0 + $1.amount }
         let totalFormatted = YalaFormatterStatic.currency(value: totalExcess, currencyCode: currencyCode)
-        return L10n.CashFlowPlan.deviationCommentMultiple(top.name, topFormatted, totalFormatted)
+        return averages
+            ? L10n.CashFlowPlan.deviationAverageMultiple(monthCount, top.name, topFormatted, totalFormatted)
+            : L10n.CashFlowPlan.deviationThisMonthMultiple(top.name, topFormatted, totalFormatted)
     }
 
     static func generateCombinedComment(

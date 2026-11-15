@@ -36,6 +36,8 @@ final class SceneNavigation: Identifiable {
             if oldValue != selectedMainTab, let screen = LoadTimeMarks.screen(for: selectedMainTab) {
                 LoadTimeMarks.begin(screen)
             }
+            // La pestaña viaja a Sentry: un cierre por memoria llega sin stack (YALA-IOS-B).
+            if oldValue != selectedMainTab { MemoryDiagnostics.shared.noteTab(selectedMainTab) }
             // Al salir de Estadísticas vuelve el período que tenía la persona antes de que un informe pusiera el suyo
             // (UX 2.2 · L11-2). Sin visita en curso no hace nada.
             if oldValue == .statistics && selectedMainTab != .statistics {

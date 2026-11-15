@@ -58,7 +58,7 @@ struct MonthSummaryPortraitView: View {
     private var figures: some View {
         Grid(alignment: .leading, horizontalSpacing: WidgetDS.Spacing.xl, verticalSpacing: WidgetDS.Spacing.md) {
             GridRow {
-                MonthSummaryFigure(label: "widget.ui.available", value: entry.balance,
+                MonthSummaryFigure(label: "widget.ui.balance", value: entry.balance,
                                    entry: entry, isEstimate: entry.balanceIsApproximate)
                 MonthSummaryFigure(label: "widget.ui.spent", value: entry.totalExpense,
                                    entry: entry, isEstimate: entry.expenseIsApproximate)

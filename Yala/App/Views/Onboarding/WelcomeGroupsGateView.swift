@@ -192,7 +192,13 @@ struct WelcomeGroupsGateView: View {
         /// suben con una sesión que no está— y la persona acepta perder los cambios de grupos que no suben
         /// (`CloudSessionSignOut.exitDiscardingUnsyncedGroups`).
         case discardingUnsyncedGroups(intento: Int)
+        /// Card 285z (opción A de Jürgen, 13-nov): se cancela el paso de datos a medias de otro intento y, al aterrizar,
+        /// la puerta vuelve a medir y sigue con la entrada limpia.
+        case cancellingStaleMigration(intento: Int)
     }
+
+    /// El diálogo de «Cancelar la activación» del aviso del paso a medias (card 285z).
+    @State private var confirmStaleMigrationCancel = false
 
     /// Cuántas veces se ha vuelto a lanzar el trabajo. Vive fuera de `Phase` porque es lo que la hace
     /// distinta de sí misma, no un dato de la pantalla.
@@ -228,6 +234,9 @@ struct WelcomeGroupsGateView: View {
         // **La FASE conduce**, como en la puerta privada: `id: phase` da cancelación real al desmontar el
         // step, y los botones solo cambian de fase en vez de lanzar `Task { }` sueltos.
         .task(id: phase) { await runPhase() }
+        // Card 285z: el diálogo cuelga del `body` y no del botón, que sale del árbol si la oferta cambia con él abierto.
+        .modifier(StaleMigrationCancelAlert(isPresented: $confirmStaleMigrationCancel, message: staleMigrationCancelBody,
+                                            onConfirm: startStaleMigrationCancel))
         // El arm es la última escritura del cierre y va pegada a `.awaitingRelaunch`, sin `await` en medio.
         // `initial: true` **no es cinturón**: sin él, un step que se montara con el coordinador YA en su fase
         // terminal no avisaría nunca, el Welcome no se cerraría y el cover que cuenta el relanzamiento no
@@ -246,6 +255,9 @@ struct WelcomeGroupsGateView: View {
         case .wipeFailed:
             // El «volver» de arriba también es salir de este aviso, así que también retira la marca.
             return leaveAfterWipeFailure
+        case .cancellingStaleMigration:
+            // Cancelando el paso a medias: como la vuelta al neutro, sin salida mientras trabaja.
+            return nil
         case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait, .discardingUnsyncedGroups:
             // Con un aviso en pantalla la salida es su propio botón; mientras trabaja, no hay ninguna.
             if case .blocked = exitPhase { return leaveAfterBlock }
@@ -263,6 +275,9 @@ struct WelcomeGroupsGateView: View {
             // así que enseñar una pantalla de éxito sería un parpadeo.
             progressContent(text: L10n.Welcome.Groups.checking,
                             identifier: "welcome_groups_gate_checking")
+        case .cancellingStaleMigration:
+            progressContent(text: L10n.Welcome.Groups.cloudAsideWorking,
+                            identifier: "welcome_groups_gate_cancelling_stale_migration")
         case .blockedChannelOff:
             blockedContent(
                 icon: "person.2.slash",
@@ -570,12 +585,27 @@ struct WelcomeGroupsGateView: View {
             // borrar ahí se llevaría lo que falta por subir. Un adopt que se retoma tras un kill puede estar en marcha con
             // esta pantalla delante. **El texto no es el de Ajustes**: aquel manda a «Dónde viven tus datos» en Perfil, y
             // en el Welcome no hay Perfil. Este vale para los dos motivos porque no afirma cuál de los dos es.
+            //
+            // **Card 285z (opción A de Jürgen, 2026-11-13): con un paso a medias que se puede cancelar sin riesgo, se
+            // ofrece cancelarlo.** Medido ese día: la cuenta estaba entera en el servidor y el paso a medias vivía solo en
+            // el journal del teléfono, de otro intento; «Volver» era la única salida y cada «Entrar con Google» acababa
+            // aquí. Lo de iCloud se queda en iCloud y lo de la cuenta en el servidor. El texto del botón y del diálogo es
+            // el de «Cancelar la activación» de Almacenamiento: el mismo gesto dice lo mismo.
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralUnavailableTitle,
                         body: L10n.Welcome.Groups.neutralMigrationBody,
                         identifier: "welcome_groups_gate_neutral_migration") {
-                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
-                    .accessibilityIdentifier("welcome_groups_gate_neutral_migration_back")
+                if WelcomeStaleMigrationCancel.offers(controller: CloudMigrationController.shared) {
+                    VStack(spacing: DS.Spacing.sm) {
+                        YalaPrimaryButton(L10n.Storage.Progress.cancelMigration) { confirmStaleMigrationCancel = true }
+                            .accessibilityIdentifier("welcome_groups_gate_neutral_migration_cancel")
+                        YalaSecondaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                            .accessibilityIdentifier("welcome_groups_gate_neutral_migration_back")
+                    }
+                } else {
+                    YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_migration_back")
+                }
             }
         case .blocked(let pending, let reason):
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
@@ -707,6 +737,8 @@ struct WelcomeGroupsGateView: View {
             await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext)
         case .discardingUnsyncedGroups:
             await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext)
+        case .cancellingStaleMigration:
+            await cancelStaleMigration()
         case .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable, .inviteNeedsRelaunch, .inviteNeedsCloudSignIn, .wipeFailed:
             return
@@ -993,6 +1025,53 @@ struct WelcomeGroupsGateView: View {
     /// Salir tras un bloqueo. **Devuelve el coordinador a `.idle`**, porque un `.blocked` que sobrevive a
     /// esta pantalla le cierra la puerta al siguiente intento: `signOut` empieza con `guard phase == .idle`
     /// y volvería sin hacer nada, en silencio.
+    /// El cuerpo del diálogo, el de Almacenamiento para la misma fase (`surface: .welcome`: al confirmar no se queda aquí).
+    private var staleMigrationCancelBody: String {
+        let controller = CloudMigrationController.shared
+        return StorageFailureCopyLogic.cancelMigrationBody(
+            isAdoptClaim: controller?.isAdoptClaim ?? false,
+            isAdoptEffectPending: controller?.isAdoptEffectPending ?? false,
+            surface: .welcome)
+    }
+
+    /// **Card 285z · cancelar el paso a medias y volver a medir.** El «sí» va al runner como el de Almacenamiento
+    /// (`cancelMigration`); se espera a que aterrice como mucho `WelcomeStaleMigrationCancel.maxWaitSeconds` y, aterrice o
+    /// no, la puerta vuelve a `.checking`: si aterrizó, la vuelta al neutro ya no se para y la entrada sigue; si no, sale el
+    /// mismo aviso con el mismo botón. La marca de la entrada a medias se retira: esta persona eligió entrar limpia.
+    ///
+    /// Review adversarial: el «sí» va en su propia tarea, porque `cancelMigration` espera a que termine la pasada del runner
+    /// (y a la pre-espera del import) sin tope; la puerta mira sola si aterrizó, como mucho el plazo. Y la marca de la entrada
+    /// a medias solo se retira si aterrizó: retirada sin aterrizar, el arranque siguiente montaba el espejo sobre el paso.
+    private func cancelStaleMigration() async {
+        guard let controller = CloudMigrationController.shared else {
+            phase = .unavailable
+            return
+        }
+        Task { @MainActor in await controller.cancelMigration() }
+        var landed = false
+        for _ in 0..<WelcomeStaleMigrationCancel.maxWaitSeconds {
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return  // el step se desmontó
+            }
+            controller.refresh()
+            landed = WelcomeStaleMigrationCancel.landed(
+                journaledPhase: controller.journaledPhase, adoptEffectJournaled: controller.adoptEffectJournaled,
+                journalUnreadable: controller.isJournalUnreadable)
+            if landed { break }
+        }
+        if landed { WelcomeAdoptInFlight.clear() }
+        CloudSessionSignOut.shared.acknowledgeBlocked()
+        phase = .checking
+    }
+
+    /// El «sí» del diálogo: una línea, para el type-checker del CI (`swiftui-ds.md`).
+    private func startStaleMigrationCancel() {
+        intento += 1
+        phase = .cancellingStaleMigration(intento: intento)
+    }
+
     private func leaveAfterBlock() {
         CloudSessionSignOut.shared.acknowledgeBlocked()
         onBack()
@@ -1013,5 +1092,22 @@ struct WelcomeGroupsGateView: View {
         guard purpose.invitedGroupID != nil else { return }
         GroupsGateWipeFailureMarker.clear()
         phase = .checking
+    }
+}
+
+/// Card 285z · el diálogo de «Cancelar la activación» del aviso del paso a medias, con los textos de Almacenamiento.
+/// Modificador propio: el `body` de la puerta ya lleva su cadena, y el CI compila con un type-checker más corto.
+private struct StaleMigrationCancelAlert: ViewModifier {
+    @Binding var isPresented: Bool
+    let message: String
+    let onConfirm: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(L10n.Storage.Confirm.cancelMigrationTitle, isPresented: $isPresented) {
+            Button(L10n.Storage.Confirm.cancelMigrationConfirm, role: .destructive, action: onConfirm)
+            Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
+        } message: {
+            Text(message)
+        }
     }
 }

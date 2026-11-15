@@ -246,7 +246,8 @@ struct FinancialReportView: View {
                             variation: viewModel.netFlowVariation,
                             currencyCode: preferredCurrencyCode,
                             showsComparison: viewModel.supportsComparison,
-                            previousPeriodName: comparedPeriodName?.inSentence ?? ""
+                            previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                            previousIsDayRange: comparedPeriodName?.isDayRange ?? false
                         )
                     }
                 } else {
@@ -276,9 +277,14 @@ struct FinancialReportView: View {
         PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth)
     }
 
-    /// El nombre del período que se mira («Octubre»).
+    /// El nombre del período que se mira («Octubre»; en curso, el tramo que entra: «1–7 nov», decisión 32 de 2.3).
     private var currentPeriodName: ComparativeLabelsLogic.Name {
-        ComparativeLabelsLogic.currentName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+        ComparativeLabelsLogic.currentName(
+            period: viewModel.detailPeriod,
+            customRange: viewModel.customDateRange,
+            mode: viewModel.supportsComparison ? sessionState.comparisonMode : nil,
+            dataEnd: viewModel.currentDataEnd
+        )
     }
 
     /// El nombre del tramo con el que se compara («setiembre», «1–21 sept»); `nil` en «Todo el tiempo».
@@ -328,7 +334,8 @@ struct FinancialReportView: View {
     private var cashFlowContent: some View {
         if transactions.isEmpty {
             ScrollView {
-                emptyState
+                // El flujo de caja no tiene período: su vacío no dice «en este período» (lote 08 de 2.3).
+                emptyState(message: L10n.Report.cashFlowNoDataDescription)
                     .padding(.top, DS.Spacing.xxl)
             }
         } else if cashFlowViewModel.hasPlan {
@@ -471,10 +478,14 @@ struct FinancialReportView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
+        emptyState(message: L10n.Report.noDataDescription)
+    }
+
+    private func emptyState(message: String) -> some View {
         YalaEmptyState(
             icon: "tablecells",
             title: L10n.Report.noData,
-            message: L10n.Report.noDataDescription
+            message: message
         )
     }
 

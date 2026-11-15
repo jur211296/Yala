@@ -157,15 +157,13 @@ final class GroupsViewModel {
     private func recalculate() {
         guard modelContext != nil else { return }
 
-        var allExpenses: [SplitExpense] = []
-        var allShares: [SplitShare] = []
-        var allSettlements: [SplitSettlement] = []
+        // El resumen suma cada grupo con SUS opciones (`GroupBalanceService.globalSummary(groups:)`): las mismas deudas
+        // que su tarjeta, no todas juntas y simplificadas.
+        var summarySources: [GroupBalanceService.GroupSummarySource] = []
         var currentUserMemberIDs = Set<String>()
         var newBalancesByGroup: [String: [MemberBalance]] = [:]
         var newDebtsByGroup: [String: [DebtRow]] = [:]
-        var archivedExpenses: [SplitExpense] = []
-        var archivedShares: [SplitShare] = []
-        var archivedSettlements: [SplitSettlement] = []
+        var archivedSources: [GroupBalanceService.GroupSummarySource] = []
         var archivedMemberIDs = Set<String>()
 
         for group in groups {
@@ -182,9 +180,11 @@ final class GroupsViewModel {
             if group.isArchived {
                 // L19-9: la deuda de los archivados va a su propio resumen, con la misma identidad resuelta.
                 guard !group.isHiddenForAll else { continue }
-                archivedExpenses.append(contentsOf: expensesByGroup[zoneID] ?? [])
-                archivedShares.append(contentsOf: sharesByGroup[zoneID] ?? [])
-                archivedSettlements.append(contentsOf: settlementsByGroup[zoneID] ?? [])
+                archivedSources.append(GroupBalanceService.GroupSummarySource(
+                    group: group,
+                    expenses: expensesByGroup[zoneID] ?? [],
+                    shares: sharesByGroup[zoneID] ?? [],
+                    settlements: settlementsByGroup[zoneID] ?? []))
                 for member in members where member.isCurrentUser && member.isActive {
                     archivedMemberIDs.insert(member.id.uuidString)
                 }
@@ -205,9 +205,8 @@ final class GroupsViewModel {
                 settlements: settlements
             )
 
-            allExpenses.append(contentsOf: expenses)
-            allShares.append(contentsOf: shares)
-            allSettlements.append(contentsOf: settlements)
+            summarySources.append(GroupBalanceService.GroupSummarySource(
+                group: group, expenses: expenses, shares: shares, settlements: settlements))
 
             for member in members where member.isCurrentUser && member.isActive {
                 currentUserMemberIDs.insert(member.id.uuidString)
@@ -232,9 +231,7 @@ final class GroupsViewModel {
         let newSummary: GroupGlobalSummary?
         if !groups.isEmpty {
             newSummary = GroupBalanceService.globalSummary(
-                allExpenses: allExpenses,
-                allShares: allShares,
-                allSettlements: allSettlements,
+                groups: summarySources,
                 currentUserMemberIDs: currentUserMemberIDs
             )
         } else {
@@ -242,10 +239,9 @@ final class GroupsViewModel {
         }
         if newSummary != globalSummary { globalSummary = newSummary }
 
-        let newArchivedSummary: GroupGlobalSummary? = archivedExpenses.isEmpty ? nil : GroupBalanceService.globalSummary(
-            allExpenses: archivedExpenses,
-            allShares: archivedShares,
-            allSettlements: archivedSettlements,
+        let hasArchivedExpenses = archivedSources.contains { !$0.expenses.isEmpty }
+        let newArchivedSummary: GroupGlobalSummary? = !hasArchivedExpenses ? nil : GroupBalanceService.globalSummary(
+            groups: archivedSources,
             currentUserMemberIDs: archivedMemberIDs
         )
         if newArchivedSummary != archivedSummary { archivedSummary = newArchivedSummary }

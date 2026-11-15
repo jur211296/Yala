@@ -443,6 +443,7 @@ struct GroupSettingsView: View {
         // Ver las deudas en una sola moneda — solo quien creó el grupo (visible para todos, apagado si no).
         YalaSettingsSection {
             YalaSettingsToggleRow(L10n.UXL19.singleCurrency, isOn: $showDebtsInSingleCurrency, isDisabled: !group.isOwner)
+                .accessibilityIdentifier("group_settings_single_currency_toggle")
             if showDebtsInSingleCurrency {
                 Button {
                     showCurrencyPicker = true
@@ -451,6 +452,7 @@ struct GroupSettingsView: View {
                     YalaSettingsRowLabel(title: L10n.Groups.Form.currency, value: "\(info.flag) \(info.code)")
                 }
                 .disabled(!group.isOwner)
+                .accessibilityIdentifier("group_settings_currency_row")
             }
         } footer: {
             Text(group.isOwner
@@ -460,14 +462,11 @@ struct GroupSettingsView: View {
         .onChange(of: showDebtsInSingleCurrency) { _, newValue in
             guard newValue != group.showDebtsInSingleCurrency else { return }
             dsWithAnimation(reduceMotion, DS.Animation.appear) {
+                // Decisión 3 de la revisión 2.3 (opción A): apagar la vista en una moneda NO toca la moneda del grupo.
+                // Antes la cambiaba a la divisa por defecto de quien apagaba, y con ella la de los gastos nuevos y el
+                // presupuesto de todos los miembros.
                 updateGroupOption { group in
                     group.showDebtsInSingleCurrency = newValue
-                    if !newValue {
-                        group.currencyCode = appPreferences.defaultCurrencyCode.rawValue
-                    }
-                }
-                if !newValue {
-                    selectedCurrency = appPreferences.defaultCurrencyCode
                 }
             }
         }
@@ -526,6 +525,7 @@ struct GroupSettingsView: View {
             }
         } footer: {
             Text(budgetFooterText)
+                .accessibilityIdentifier("group_settings_budget_footer")
         }
     }
 

@@ -213,7 +213,7 @@ struct BalanceWidgetView: View {
 
 /// Lo que comparten los dos tamaños: el título, la variación y su tono.
 private extension BalanceEntry {
-    var title: String { String(localized: "widget.ui.available", bundle: .main) }
+    var title: String { String(localized: "widget.ui.balance", bundle: .main) }
     var periodName: String { period.toWidgetPeriod.localizedDisplayName }
 
     /// Hacia dónde se movió el saldo tal como se pinta la variación (sin decimales): `0` si se pinta como cero.
@@ -281,6 +281,13 @@ struct MediumBalanceView: View {
                         isEstimate: entry.balanceIsApproximate
                     )
                     BalanceChangeLine(entry: entry, showsPeriod: false)
+                    if let end = WidgetInsightsLogic.projectedEnd(entry.projected.map { (date: $0.date, value: $0.balance) }) {
+                        WidgetProjectedEndLine(end: end, amountText: WidgetAmountSplitter.split(
+                            value: end.value,
+                            symbol: CurrencySymbols.display(for: entry.currencyCode, format: entry.currencyDisplayFormat),
+                            fractionDigits: 0
+                        ).accessibilityFormatted)
+                    }
                     WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -374,7 +381,7 @@ struct BalanceTrendChart: View {
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round,
                                            dash: WidgetDS.Chart.projectedDash))
-                    .foregroundStyle(WidgetColors.electricIndigo.opacity(WidgetDS.Chart.projectedOpacity))
+                    .foregroundStyle(WidgetColors.estimate.opacity(WidgetDS.Chart.projectedOpacity))
             }
             if let last = points.last {
                 PointMark(x: .value("Fecha", last.date), y: .value("Saldo", last.balance))

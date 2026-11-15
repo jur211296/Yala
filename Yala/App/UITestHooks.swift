@@ -112,6 +112,29 @@ final class UITestHooks {
     /// limpia.
     nonisolated static var showsProTourPanel: Bool { hasArg("-uitest-pro-tour-panel") }
 
+    /// `-uitest-show-setup-deck`: el mazo de Primeros pasos (Y23-05) se pinta también bajo `-uitest`, donde por defecto
+    /// se calla para no tapar lo que cada test busca. Solo para los tests del propio mazo.
+    nonisolated static var showsSetupDeck: Bool { hasArg("-uitest-show-setup-deck") }
+
+    /// `-uitest-setup-deck-at <n>`: con `-uitest-show-setup-deck`, el mazo arranca en el paso `n` (1…7, y 8 = completo):
+    /// los anteriores quedan omitidos. Para probar los pasos 6 y 7 y el final (Y23-14, Y23-16, Y23-18) sin recorrer
+    /// los cinco primeros.
+    nonisolated static var setupDeckPosition: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-setup-deck-at", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-later-charts-guide`: la guía de «días después» (Y23-15) puede salir bajo `-uitest`. Solo su XCUITest.
+    nonisolated static var showsLaterChartsGuide: Bool { hasArg("-uitest-later-charts-guide") }
+
+    /// `-uitest-fresh-install`: con `-uitest-reset`, la instalación arranca como una nueva de 2.3 (pestañas Panel ·
+    /// Grupos · Registros, llegada tranquila). Sin él, el reset deja la barra de antes (`TabBarDefaultsMigration`).
+    nonisolated static var freshInstall: Bool { hasArg("-uitest-fresh-install") }
+
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
@@ -128,6 +151,15 @@ final class UITestHooks {
     /// (`DevSeedTodayRecord`), el registro más reciente del corpus, para que el Panel enseñe un registro conocido en «Este
     /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedTodayRecord: Bool { hasArg("-uitest-seed-today-record") }
+
+    /// `-uitest-seed-records-search`: añade un «Almuerzo de trabajo» de 45,90 de hoy en la cuenta principal
+    /// (`DevSeedRecordsSearch`), para buscarlo por importe en Registros (decisión 14 de 2.3). Aditivo a `-uitest-seed`.
+    nonisolated static var seedRecordsSearch: Bool { hasArg("-uitest-seed-records-search") }
+
+    /// `-uitest-seed-budget-states`: añade cuatro presupuestos de 1.000 con lo gastado exacto —al día, en el límite (90 %,
+    /// con el cupo de hoy superado), justo al límite (100 %) y pasado (118 %)— (`DevSeedBudgetStates`). Aditivo al perfil
+    /// de `-uitest-seed`.
+    nonisolated static var seedBudgetStates: Bool { hasArg("-uitest-seed-budget-states") }
 
     /// `-uitest-seed-uncategorized-expense`: añade un gasto de 40 SIN categoría en la cuenta principal
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
@@ -196,6 +228,9 @@ final class UITestHooks {
     /// diálogo y lo que hace cada botón son los de producción. No escribe el arm de verdad porque el arranque del XCUITest
     /// lo reanudaría (`ContentView.runLateICloudMirrorCheck`) y borraría la semilla. Solo DEBUG.
     nonisolated static var fakePendingICloudWipe: Bool { hasArg("-uitest-pending-icloud-wipe") }
+    /// El mismo borrado pendiente, pero A MEDIAS (la zona de iCloud ya se borró): la hoja de «Dónde viven tus datos» dice
+    /// la verdad de ese estado (revisión 2.3, decisión 57). Finge solo la ENTRADA, como el de arriba.
+    nonisolated static var fakePendingICloudWipeHalfway: Bool { hasArg("-uitest-pending-icloud-wipe-halfway") }
 
     /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
     /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de
@@ -390,6 +425,31 @@ final class UITestHooks {
         return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-probe-stalled")
         #else
         return false
+        #endif
+    }
+
+    /// `-uitest-private-gate-icloud-has-data`: la revisión de iCloud de la puerta privada contesta que hay datos (214
+    /// registros, 3 cuentas, 2 presupuestos) sin tocar CloudKit. Bienvenida 2.3 (Y23-03): con la vitrina, «Traer mis datos»
+    /// solo se alcanza por «Entrar con mi iCloud» con datos, y sin esto no hay XCUITest de ese camino. **Finge la entrada,
+    /// no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. Solo DEBUG.
+    nonisolated static var privateGateICloudHasData: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-icloud-has-data")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-unified-access-phase <create|confirm>`: el acceso único de la vitrina (bienvenida 2.3, Y23-02) aterriza en
+    /// «Vamos a crear tu cuenta» o en «¿Cargamos tus datos y entramos?» sin firmar ni preguntar al servidor, que el
+    /// simulador no puede. **Solo pinta la pantalla**: sus botones no tienen sesión detrás (el XCUITest prueba el
+    /// contenido; el recorrido con sesión es QA de iPhone). Solo DEBUG.
+    nonisolated static var unifiedAccessPhase: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-unified-access-phase", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
         #endif
     }
 
@@ -1077,6 +1137,11 @@ final class UITestHooks {
     /// no dependen de la red.
     nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
 
+    /// `-uitest-network-offline`: `NetworkMonitor` dice «sin conexión» y no escucha a la red real (decisión 42 de 2.3,
+    /// Yala IA sin conexión). Finge la ENTRADA: qué dicen el chat y el muro de Pro lo deciden `ChatAvailabilityLogic`
+    /// y `ProGateOfflineLogic`. Solo DEBUG.
+    nonisolated static var networkOffline: Bool { hasArg("-uitest-network-offline") }
+
     /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
     /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
     /// en pantalla para capturar y probar su diseño.
@@ -1264,12 +1329,30 @@ final class UITestHooks {
     /// llega de otro dispositivo.
     nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
 
+    /// `-uitest-seed-pending-settlement-already-settled`: con `-uitest-seed-pending-settlement`, Ana ya saldó en soles con
+    /// otro pago, confirmado. Su pago de S/ 50 por confirmar ya no cabe en la deuda: «Sí, lo recibí» avisa antes de
+    /// confirmarlo (Grupos 2.3, pago por confirmar, opción B).
+    nonisolated static var seedPendingSettlementAlreadySettled: Bool {
+        hasArg("-uitest-seed-pending-settlement-already-settled")
+    }
+
     /// `-uitest-seed-group-sale`: con el perfil `grupos`, un grupo más, «Ventas con Ana», con una venta tuya a Ana de S/ 50
     /// ya puenteada (por cobrar) y el pago de Ana de S/ 50 por confirmar, que la cobra entera (Grupos B · card 10).
     nonisolated static var seedGroupSale: Bool { hasArg("-uitest-seed-group-sale") }
     /// La descripción de esa venta y el nombre de su grupo.
     nonisolated static let seededGroupSaleName = "Venta de bici"
     nonisolated static let seededSaleGroupName = "Ventas con Ana"
+
+    /// `-uitest-seed-group-cross-debts`: con el perfil `grupos`, dos grupos más (mejoras necesarias 2.3 · lote 06).
+    /// «Piso compartido», con «Menos pagos» apagado: debes S/ 40 a Ana y Beto te debe S/ 30 (pagó 10 de 40), y tu nombre
+    /// es «Lucía», no «Tú», para ver dónde la app lo cambia. Y «Grupo sin gastos», recién creado y sin nada apuntado.
+    nonisolated static var seedGroupCrossDebts: Bool { hasArg("-uitest-seed-group-cross-debts") }
+    nonisolated static let seededCrossDebtsGroupName = "Piso compartido"
+    /// `-uitest-seed-group-cross-debts-simplified`: con la semilla de arriba, «Piso compartido» con «Menos pagos»
+    /// ENCENDIDO (lote chico de 2.3, decisión 36): juntadas quedan Beto → Ana S/ 70 y tú → Ana S/ 10, distintas de las de
+    /// cada par (tú → Ana 40, Beto → Ana 40, Beto → tú 30), así que Saldos enseña la línea al pie.
+    nonisolated static var seedGroupCrossDebtsSimplified: Bool { hasArg("-uitest-seed-group-cross-debts-simplified") }
+    nonisolated static let seededEmptyGroupName = "Grupo sin gastos"
 
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
     /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
@@ -1501,12 +1584,41 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-records-load-fails`: la lectura de los movimientos de Registros y Estadísticas falla siempre
+    /// (`DetailContainerViewModel.loadData`). Finge el ENTORNO —un almacén que no se deja leer, que el simulador no
+    /// reproduce—; qué enseña la lista con eso lo decide `RecordsListStateLogic`, sin seam (decisión 78 de 2.3).
+    nonisolated static var recordsLoadFails: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-records-load-fails")
+        #else
+        return false
+        #endif
+    }
+
+    /// El error que lanza la lectura fingida de `recordsLoadFails`.
+    struct SimulatedLoadFailure: Error {}
+
     /// `-uitest-skeleton-fade-seconds <N>`: alarga el fundido del esqueleto a los datos (card C1). A 0,25 s un XCUITest
     /// no llega a mirar el árbol de accesibilidad mientras dura; alargado, puede contar las copias de un botón a mitad del
     /// fundido. Solo cambia CUÁNTO dura, no qué decide nadie.
     nonisolated static var skeletonFadeSeconds: Double? {
         #if DEBUG
         guard isActive, let raw = parseValue(after: "-uitest-skeleton-fade-seconds", from: ProcessInfo.processInfo.arguments),
+              let seconds = Double(raw), seconds > 0
+        else { return nil }
+        return seconds
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-stats-calculation-delay-seconds <N>`: alarga la espera antes de la pasada de Estadísticas (G1 de la
+    /// decisión 28). Con los datos de un XCUITest la pasada dura décimas y el esqueleto no llega a verse; alargada, el
+    /// test puede comprobar que la pestaña respondió al toque antes de tener cifras. Solo cambia CUÁNTO se espera.
+    nonisolated static var statisticsCalculationDelaySeconds: Double? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-stats-calculation-delay-seconds", from: ProcessInfo.processInfo.arguments),
               let seconds = Double(raw), seconds > 0
         else { return nil }
         return seconds

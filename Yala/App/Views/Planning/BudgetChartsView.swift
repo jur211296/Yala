@@ -309,8 +309,9 @@ struct BudgetChartsView: View {
                         x: .value("Period", item.label),
                         y: .value("Spent", item.spent)
                     )
-                    // Tono neutro y rosa solo en los que pasaron el límite; sólidos, sin degradado (UX 2.2 · L9-7).
-                    .foregroundStyle(item.spent > item.limit ? Color.hotPink : Color.budgetBarNeutral)
+                    // El color del estado de cada período, con los umbrales de la barra (decisión 23 de 2.3): neutro, naranja
+                    // en el límite o justo en él, rosa solo al pasarse. Sólidos, sin degradado (UX 2.2 · L9-7).
+                    .foregroundStyle(Self.historyBarColor(spent: item.spent, limit: item.limit))
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                     // Data label on top of each bar
@@ -599,6 +600,15 @@ struct BudgetChartsView: View {
                 // Bar
                 BreakdownBarView(amount: amount, maxAmount: maxAmount, color: color)
             }
+        }
+    }
+
+    /// El color de una barra del historial: el del estado de ese período (`BudgetStatusCounter`).
+    static func historyBarColor(spent: Double, limit: Double) -> Color {
+        switch BudgetStatusCounter.classify(spent: spent, limit: limit) {
+        case .overLimit: Color.hotPink
+        case .atLimit, .reachedLimit: DS.Semantic.warningForeground
+        case .onTrack: Color.budgetBarNeutral
         }
     }
 

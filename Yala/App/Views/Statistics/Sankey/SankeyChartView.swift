@@ -30,28 +30,37 @@ struct SankeyChartView: View {
 
     // MARK: - Layout constants
 
-    /// Uniform width across columns so long names (categorías + subcategorías)
-    /// don't truncate mid-word.
-    private let columnWidth: CGFloat = 220
-    private let columnGap: CGFloat = 10
     private let nodeWidth: CGFloat = 8
     private let nodeGap: CGFloat = 6
     private let minNodeHeight: CGFloat = 4
     /// Floor per node so even tiny amounts keep room for a readable caption.
-    /// `buildLayout` distributes leftover height proportionally on top of this.
-    private let minLabelHeight: CGFloat = 20
+    /// `buildLayout` distributes leftover height proportionally on top of this. Con la etiqueta en dos líneas (tres
+    /// columnas en el iPhone), el suelo sube para que nombre y cifra quepan.
+    private var minLabelHeight: CGFloat { columns.stacksLabels ? 28 : 20 }
     private let verticalPadding: CGFloat = 8
-    private let rowHeightEstimate: CGFloat = 24
+    private var rowHeightEstimate: CGFloat { columns.stacksLabels ? 32 : 24 }
     private let dimmedOpacity: Double = 0.25
 
-    private func originX(for column: SankeyColumn) -> CGFloat {
-        CGFloat(column.rawValue) * (columnWidth + columnGap)
+    /// El ancho que ocupa la gráfica, medido. Con él se decide cuántas columnas caben (`SankeyColumnLayoutLogic`).
+    @State private var containerWidth: CGFloat = 0
+
+    /// Columnas visibles y su ancho (G3, decisión 28): en el iPhone, ingresos, flujo y categorías sin desplazar.
+    private var columns: SankeyColumnLayoutLogic.Columns {
+        SankeyColumnLayoutLogic.columns(
+            containerWidth: containerWidth,
+            hasCategorySelection: !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty
+        )
     }
 
-    private var totalWidth: CGFloat {
-        let count = CGFloat(SankeyColumn.allCases.count)
-        return count * columnWidth + (count - 1) * columnGap
+    private func originX(for column: SankeyColumn) -> CGFloat {
+        columns.originX[column] ?? 0
     }
+
+    private func columnWidth(for column: SankeyColumn) -> CGFloat {
+        columns.width[column] ?? SankeyColumnLayoutLogic.scrollingColumnWidth
+    }
+
+    private var totalWidth: CGFloat { columns.totalWidth }
 
     /// Adaptive height: reserves `minLabelHeight` on every node of the densest
     /// column PLUS a `flexBudget` of leftover space that gets prorated by
@@ -60,7 +69,7 @@ struct SankeyChartView: View {
     /// Cap sized for typical phones — past ~18 subcategorías the layout starts
     /// to degrade to pure proportional (small ones lose their floor).
     private var cardHeight: CGFloat {
-        let maxNodes = SankeyColumn.allCases
+        let maxNodes = columns.visible
             .map { visibleData.nodes(in: $0).count }
             .max() ?? 0
         let estimate = CGFloat(max(maxNodes, 3)) * rowHeightEstimate + verticalPadding * 2
@@ -187,7 +196,7 @@ struct SankeyChartView: View {
                     if let layout {
                         ForEach(layout.nodes, id: \.node.id) { placed in
                             nodeLabel(for: placed)
-                                .frame(width: columnWidth - nodeWidth - DS.Spacing.sm)
+                                .frame(width: max(columnWidth(for: placed.node.column) - nodeWidth - DS.Spacing.sm, 0))
                                 .position(x: placed.labelOrigin.x, y: placed.labelOrigin.y)
                         }
                     }
@@ -195,6 +204,9 @@ struct SankeyChartView: View {
                 .frame(width: totalWidth, height: cardHeight)
             }
             .frame(height: cardHeight)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                if abs(width - containerWidth) > 0.5 { containerWidth = width }
+            }
             .mask { edgeFadeMask }
             .onScrollGeometryChange(for: ScrollMetrics.self) { geom in
                 ScrollMetrics(
@@ -220,6 +232,7 @@ struct SankeyChartView: View {
         }
         .onAppear { layout = buildLayout() }
         .onChange(of: visibleData) { layout = buildLayout() }
+        .onChange(of: columns) { layout = buildLayout() }
     }
 
     /// Opaco en el centro y transparente hacia el borde por el que queda contenido (lote 07 de 2.3).
@@ -259,7 +272,11 @@ struct SankeyChartView: View {
         let node = placed.node
         let valueString = formattedValue(for: node)
 
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+        // En tres columnas (iPhone) nombre y cifra no caben en una línea: la cifra baja debajo del nombre.
+        let labelLayout = columns.stacksLabels
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: DS.Spacing.xs))
+        labelLayout {
             Text(node.name)
                 .font(DS.Typography.captionSmall)
                 .fontWeight(.medium)
@@ -405,8 +422,9 @@ struct SankeyChartView: View {
 
     private func buildLayout() -> SankeyLayout {
         let source = visibleData
+        // Solo las columnas visibles: sin la de subcategorías, sus nodos y sus enlaces no se colocan.
         let columnBuckets: [(column: SankeyColumn, nodes: [SankeyNode])] =
-            SankeyColumn.allCases.map { ($0, source.nodes(in: $0)) }
+            columns.visible.map { ($0, source.nodes(in: $0)) }
 
         // Each column fills its full available height. Reserve `minLabelHeight`
         // per node first so even tiny amounts stay readable, then distribute
@@ -440,13 +458,14 @@ struct SankeyChartView: View {
 
         for (column, nodes) in columnBuckets {
             let colX = originX(for: column)
+            let colWidth = columnWidth(for: column)
             var y = verticalPadding
 
             for node in nodes {
                 let height = nodeHeights[node.id] ?? minNodeHeight
                 let rect = CGRect(x: colX, y: y, width: nodeWidth, height: height)
                 let labelOrigin = CGPoint(
-                    x: colX + nodeWidth + DS.Spacing.sm + (columnWidth - nodeWidth - DS.Spacing.sm) / 2,
+                    x: colX + nodeWidth + DS.Spacing.sm + (colWidth - nodeWidth - DS.Spacing.sm) / 2,
                     y: y + height / 2
                 )
                 let dim = dimOpacity(for: node)

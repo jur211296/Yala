@@ -203,6 +203,31 @@ struct ArchivedAccountKeepsHistoryTests {
         }
     }
 
+    @Test("«Al 30 tendrías» y las cuentas en rojo de la nota de salud dejan fuera toda cuenta archivada")
+    func archivedAccounts_leaveMonthEndAndScoreAlerts() throws {
+        // Dos saldos que entraron en 2.3 después de esta decisión (`MonthEndBalanceLogic`, `FinancialScoreAlertsLogic`):
+        // los dos son la pregunta del saldo, `Account.sumsInBalance`. En las alertas, con `keepsHistory` la archivada y
+        // excluida (−20) saldría en rojo. En «Al 30» el recorte de `PanelBalanceScopeLogic` ya la deja fuera: aquí se
+        // fija la cifra (solo la activa), venga de donde venga el filtro.
+        let context = try makeTestContext()
+        let f = try fixture(context)
+        try withCleanSession {
+            let monthEnd = try #require(MonthEndBalanceLogic.compute(
+                accounts: f.accounts, transactions: f.txs, scheduledPayments: [], currencyCode: "PEN",
+                includeGroups: true, adjustment: .none, converter: MockCurrencyConverter(), context: context
+            ))
+            #expect(close(monthEnd.today, expectedBalance), "«Al 30 tendrías», hoy: \(monthEnd.today)")
+
+            let negative = FinancialScoreAlertsLogic.negativeAccounts(
+                accounts: f.accounts, transactions: f.txs, now: .now, converter: MockCurrencyConverter()
+            )
+            #expect(negative.isEmpty, "Cuentas en rojo de la nota de salud: \(negative)")
+            #expect(!FinancialScoreAlertsLogic.isWatched(f.archivedExcluded))
+            #expect(!FinancialScoreAlertsLogic.isWatched(f.archived))
+            #expect(FinancialScoreAlertsLogic.isWatched(f.active))
+        }
+    }
+
     @Test("Archivar desde el formulario no enciende «Excluir de las estadísticas»")
     func archivingFromTheForm_leavesExcludeAlone() {
         let account = Account(name: "Visa", currencyCode: "PEN", colorHex: "#6366F1", iconName: "creditcard.fill",

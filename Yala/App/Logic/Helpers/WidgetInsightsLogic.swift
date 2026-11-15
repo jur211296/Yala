@@ -27,6 +27,20 @@ nonisolated enum WidgetInsightsLogic {
         return balance - before.balance
     }
 
+    // MARK: - Cifra corta del tramo estimado (decisión 34 de la revisión 2.3)
+
+    /// Dónde acaba el tramo punteado: su último día y lo que vale ahí («Estimado S/ X al 31 dic»). `nil` sin tramo (el
+    /// ancla sola no es una estimación).
+    struct ProjectedEnd: Equatable {
+        let date: Date
+        let value: Double
+    }
+
+    static func projectedEnd(_ points: [(date: Date, value: Double)]) -> ProjectedEnd? {
+        guard points.count > 1, let last = points.last else { return nil }
+        return ProjectedEnd(date: last.date, value: last.value)
+    }
+
     // MARK: - Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», respuesta 12A)
 
     /// La continuación punteada de un widget: el ancla en el día de la foto y, cada día siguiente hasta `end`, el ancla

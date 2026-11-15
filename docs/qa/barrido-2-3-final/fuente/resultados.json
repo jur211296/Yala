@@ -1,0 +1,961 @@
+[
+ {
+  "id": "tablero-2-2-registrar-movimientos-desde-correos-3w7z",
+  "sid": "3w7z",
+  "titulo": "Registrar movimientos desde correos de alertas del banco",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "espera",
+  "donde": "Infraestructura",
+  "que": "Sin probar: el buzón de correo y el gateway con el lector no están en marcha.",
+  "motivo": "Lo activan Jürgen o Dan (dominio, buzón y despliegue); después se prueba con un reenvío real.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-2-2-registrar-movimientos-desde-la-notif-phhl",
+  "sid": "phhl",
+  "titulo": "Atajo del banco: registrar desde la notificación del banco o el correo de Mail, leído en el iPhone (Atajos + App Intent)",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "Tu iPhone con la app del banco",
+  "que": "B0 y B1 probados por su sesión con un aviso simulado en el iPhone 14 (el iPhone 14 no tiene app de banco).",
+  "motivo": "Solo un aviso real de tu banco dice si funciona.",
+  "evidencia": [],
+  "pasos": [
+   "Atajos › + › Automatización › Notificación › App: la de tu banco.",
+   "Añade «Registrar movimiento desde texto» de Yala › Texto › Notificación. Haz un pago pequeño: debe aparecer en la Bandeja."
+  ]
+ },
+ {
+  "id": "tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj",
+  "sid": "gphj",
+  "titulo": "2.3 · Con texto al máximo el Panel se sale de la pantalla por los dos lados (carrusel de cuentas)",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Simulador + tests",
+  "que": "Accesibilidad/tamaño de texto (criterio de Jürgen: se confía en el código). PanelQuickActionsLargeTextUITests y StatisticsHeroLikePanelUITests verdes en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro); BugsUILote1Tests en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-2-3-hueco-de-mas-bajo-los-chips-en-estad-4wqy",
+  "sid": "4wqy",
+  "titulo": "2.3 · Hueco de más bajo los chips en Estadísticas › Registros (el buscador oculto ocupa sitio)",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Simulador + tests",
+  "que": "StatisticsHeroLikePanelUITests (en todas las pestañas) y RecordsListSearchUITests verdes en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro): sin hueco bajo los chips y el buscador sigue asomando al tirar.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-activar-la-nube-con-pocos-datos-tarda-mi-vfg1",
+  "sid": "vfg1",
+  "titulo": "«Activar la nube» con pocos datos tarda minutos: falta medir en qué paso (canarios nuevos)",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "espera",
+  "donde": "Medición",
+  "que": "Medido hoy lo que sube (446 elementos para 0 registros, ver la card de los 3333). Falta cronometrar una activación entera con una cuenta nueva.",
+  "motivo": "Necesita una cuenta de Apple o Google sin Yala que entre sin contraseña; en el iPhone 14 no queda ninguna. Se mide en la próxima activación real (TestFlight).",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-activar-la-nube-sube-3333-elementos-para-i9wh",
+  "sid": "i9wh",
+  "titulo": "Activar la nube sube 3333 elementos para 2 registros y 2 cuentas, y por eso tarda 8 minutos",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Medido en el almacén del teléfono (devicectl + sqlite) en modo iCloud con 0 registros: 446 elementos (366 tipos de cambio, 62 subcategorías, 11 categorías, 7 avisos), y la vuelta a iCloud subió exactamente «446». Antes eran 3.333 por copias repetidas de los tipos de cambio; hoy hay una por día. Cientos, no miles.",
+  "motivo": "La activación entera con una cuenta nueva no se pudo repetir: test@ ya no deja volver a pasar a la nube («todavía no está disponible») y las otras cuentas de Google ya tienen cuenta o piden contraseña. El tiempo por paso queda en la card de la medición.",
+  "evidencia": [
+   "H04-en-tu-icloud-terminado.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-al-entrar-con-tu-cuenta-el-pro-pagado-pu-4afh",
+  "sid": "4afh",
+  "titulo": "Al entrar con tu cuenta, el Pro pagado puede no aparecer hasta volver a abrir la app",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "TestFlight",
+  "que": "Sin probar en el barrido.",
+  "motivo": "Necesita una cuenta con Pro pagado (la compra de Sandbox de la prueba anterior).",
+  "evidencia": [],
+  "pasos": [
+   "Tras comprar Pro en la prueba anterior: Ajustes › Cerrar sesión › entra otra vez con la misma cuenta.",
+   "Ajustes › Yala Pro debe decir Pro sin cerrar y abrir la app."
+  ]
+ },
+ {
+  "id": "tablero-analizar-una-mascota-en-la-app-56ze",
+  "sid": "56ze",
+  "titulo": "Exploración 2.3 · Mascota «Yalitto»: direcciones visuales, dónde vive en la app y prototipos animados",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Decisión",
+  "que": "Jürgen decidió las 7 preguntas de la mascota el 14-nov, todas la opción A: se hace después de 2.3 (gota, encendida en siete sitios, nombre tras revisar marcas, SwiftUI nativo). La 7.ª (texto de presupuesto pasado) ya está hecha en 2.3. La exploración de 2.3 queda cerrada.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-apple-y-google-con-el-mismo-correo-una-p-188b",
+  "sid": "188b",
+  "titulo": "Apple y Google con el mismo correo: una pantalla dice que es la misma cuenta y otra que sería una cuenta nueva",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14",
+  "que": "Con Google se ve bien «Ya tienes una cuenta» y «Vamos a crear tu cuenta», con la nota «Con el mismo correo, Apple y Google abren la misma cuenta».",
+  "motivo": "La otra mitad es entrar con Apple (Face ID).",
+  "evidencia": [],
+  "pasos": [
+   "En la misma prueba de Apple: si tu Apple ID usa el correo de una cuenta de Google que ya tiene Yala, la hoja debe decir «Ya tienes una cuenta» con ese correo.",
+   "Si en algún punto una pantalla dice que es la misma cuenta y otra que sería una nueva, es el fallo: captura las dos."
+  ]
+ },
+ {
+  "id": "tablero-bienvenida-2-3-acceso-con-google-o-apple-11hi",
+  "sid": "11hi",
+  "titulo": "Bienvenida 2.3 · Acceso con Google o Apple: el servidor decide",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14 + tests",
+  "que": "Casos vistos en el teléfono con Google: «Ya tienes una cuenta» (correo arriba, tres cosas, «Cargar mis datos y entrar») y «Vamos a crear tu cuenta» (cuenta nueva, consentimiento de la nube en la misma hoja, nota de Apple y Google con el mismo correo). Bienvenida23AltaUITests (8) y WelcomeAccountExistsUITests verdes en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro), incluidos Apple sin web y «Usar otra cuenta». Lo de Apple con Face ID va en la prueba de Apple de Jürgen.",
+  "motivo": "",
+  "evidencia": [
+   "G01-vamos-a-crear-tu-cuenta.jpg",
+   "G02-hemos-creado-tu-cuenta.jpg",
+   "A01-cuenta-lista-15s.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-bienvenida-2-3-correo-automatico-i9d8",
+  "sid": "i9d8",
+  "titulo": "Bienvenida 2.3 · Correo automático",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "espera",
+  "donde": "Infraestructura",
+  "que": "Sin probar: misma infraestructura que el correo del banco (dominio y buzón).",
+  "motivo": "Depende de que se active el correo por reenvío.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-bienvenida-2-3-entrada-por-grupos-hmaf",
+  "sid": "hmaf",
+  "titulo": "Bienvenida 2.3 · Entrada por Grupos",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14 + tests",
+  "que": "Puerta de Grupos: «¿Cómo empiezas?» con los tres caminos; «Entra aquí» con cuenta existente aterriza en Grupos; «Crear mi primer grupo» deja Grupos en «Ponle nombre al grupo e invita». Bienvenida23AltaUITests.test_groupsDoor_hasNoICloud_andLeadsToThreePaths verde. Ver la card nueva del bug: una intención de Grupos vieja sobrevive a cerrar sesión y secuestra la entrada siguiente.",
+  "motivo": "",
+  "evidencia": [
+   "C01-como-empiezas.jpg",
+   "C02-puerta-grupos-aterriza-en-grupos.jpg",
+   "E06-test-solo-grupos-donde-guardamos.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-bienvenida-2-3-final-primeros-pasos-comp-l1c5",
+  "sid": "l1c5",
+  "titulo": "Bienvenida 2.3 · Final: Primeros pasos completos y prueba de Pro",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "TestFlight",
+  "que": "Primeros pasos completos hasta «1 de 7» vistos en el iPhone; la prueba de Pro no carga precios en Yala Dev instalada desde la Mac.",
+  "motivo": "La hoja de pago real solo sale en TestFlight con el tester de Sandbox (contraseña o Face ID tuyos).",
+  "evidencia": [],
+  "pasos": [
+   "TestFlight de 2.3 › termina los 7 Primeros pasos › en el final toca la prueba de Pro.",
+   "Confirma con la cuenta de Sandbox: Ajustes › Yala Pro debe decir Pro."
+  ]
+ },
+ {
+  "id": "tablero-bienvenida-2-3-paso-2-voz-foto-y-yala-ia-d1ab",
+  "sid": "d1ab",
+  "titulo": "Bienvenida 2.3 · Paso 2: voz, foto y Yala IA con prueba de cortesía",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14",
+  "que": "La parte escrita de Yala IA se probó en Grupos. Voz y foto reales no se pueden conducir desde la Mac.",
+  "motivo": "Necesita tu voz y la cámara.",
+  "evidencia": [],
+  "pasos": [
+   "Cuenta Free nueva o Primeros pasos en el paso 2: toca Voz y di «almuerzo 18 soles»; luego Foto de un recibo.",
+   "Los dos deben dejar un borrador correcto con la prueba de cortesía."
+  ]
+ },
+ {
+  "id": "tablero-bienvenida-2-3-paso-5-grupos-con-el-esti-yuyn",
+  "sid": "yuyn",
+  "titulo": "Bienvenida 2.3 · Paso 5: Grupos con el estilo del tutorial",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "El paso 5 lo recorre entero Bienvenida23PlanificacionUITests (consentimiento, «Ahora no», mazo a 6 de 7), verde en la nocturna completa del 14-nov; la lógica, Bienvenida23PasosPlanificacionTests. En el iPhone vi el estado final de Grupos «Tu primer grupo, en tres pasos» con los dos primeros tachados.",
+  "motivo": "",
+  "evidencia": [
+   "E06-test-solo-grupos-donde-guardamos.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-cancelar-la-activacion-desde-la-bienveni-l4m0",
+  "sid": "l4m0",
+  "titulo": "Cancelar la activación desde la bienvenida mientras comprueba tus datos te deja en la barra al 35 % sin salida",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Entrar con Google › Cargar mis datos y entrar › Cancelar la activación: el aviso trae «Sí, cancelar» y «Seguir pasando a mi cuenta de Yala», sin nombrar «Ya tengo cuenta». «Sí, cancelar» → «Cancelando…» ~3 s → bienvenida.",
+  "motivo": "Ver la card nueva del bug que destapó: tras cancelar quedan en el teléfono gastos del grupo de la cuenta cancelada.",
+  "evidencia": [
+   "D01-cancelar-activacion-dialogo.jpg",
+   "D02-cancelada-vuelve-a-bienvenida.jpg",
+   "D-cancelar-y-reabrir.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-cancelar-la-entrada-a-la-cuenta-en-la-bi-0f7h",
+  "sid": "0f7h",
+  "titulo": "Cancelar la entrada a la cuenta en la bienvenida y cerrar la app monta el iCloud privado y entra a la app",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Tras «Sí, cancelar», cerrar Yala y abrirla: bienvenida, y no retoma «Conectando con tu cuenta» (8 s mirando).",
+  "motivo": "Ver la card nueva: lo que queda en el almacén tras cancelar.",
+  "evidencia": [
+   "D02-cancelada-vuelve-a-bienvenida.jpg",
+   "D-cancelar-y-reabrir.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-cerrar-sesion-una-vista-propia-con-spinn-p9q0",
+  "sid": "p9q0",
+  "titulo": "Cerrar sesión: una vista propia con spinner y sin pedir reabrir Yala salvo que haya iCloud de por medio",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Cuenta en la nube › Ajustes › Cerrar sesión: «Cerrando sesión…» con spinner ~6 s y vuelve a la bienvenida sin pedir reabrir (3 de 3). Eliminar mi cuenta (test@, solo Grupos): «Eliminando tu cuenta…» → «Tu cuenta se ha eliminado» → Continuar → bienvenida.",
+  "motivo": "",
+  "evidencia": [
+   "B01-cerrar-sesion-vuelve-a-bienvenida.jpg",
+   "B02-cuenta-eliminada.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-con-ajustes-abierto-un-aviso-importante-ulks",
+  "sid": "ulks",
+  "titulo": "Con Ajustes abierto, un aviso importante (cambio de Apple ID, vaciado remoto) puede perderse hasta el siguiente arranque",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "ShellNoticeOverSettingsUITests verde en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro). Caso raro (cambio de Apple ID o vaciado remoto con Ajustes abierto).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-con-apple-solo-puedes-entrar-en-la-nube-pboq",
+  "sid": "pboq",
+  "titulo": "Con Apple solo puedes entrar en la nube con el Apple ID del teléfono",
+  "prioridad": "medium",
+  "asignado": "jurgen",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14",
+  "que": "Sin probar en el barrido: pide entrar con Apple y, después, con otro Apple ID.",
+  "motivo": "Card tuya: necesita Face ID y otro Apple ID con su contraseña.",
+  "evidencia": [],
+  "pasos": [
+   "Bienvenida › Entrar con Apple (Face ID). En la hoja «Ya tienes una cuenta» o «Vamos a crear tu cuenta», toca abajo «Otra cuenta de Apple».",
+   "Entra con un Apple ID que no sea el del teléfono: debe abrir esa cuenta y seguir dentro tras cerrar y abrir Yala."
+  ]
+ },
+ {
+  "id": "tablero-con-icloud-drive-apagado-cerrar-sesion-c-jzti",
+  "sid": "jzti",
+  "titulo": "Con iCloud Drive apagado, cerrar sesión con grupos puede guardar en plena importación de iCloud y cerrar la app",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Caso de pocos usuarios (iCloud Drive apagado + grupos + cerrar sesión). CloudSignOutFlowLogicTests y BootWaitsICloudAccountWiringTests verdes en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-conectar-con-la-cuenta-tarda-2250-s-sin-g8un",
+  "sid": "g8un",
+  "titulo": "Conectar con la cuenta tarda 22–50 s sin progreso real (se queda en 0 % y salta a lista)",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Instalación limpia › Entrar con Google (cuenta con datos) › Cargar mis datos y entrar: «¡Tu cuenta está lista!» en 13,5–15 s (tres veces) y la barra avanza de verdad (22 % → 28 % → 74 % → lista). Antes, 22–50 s en 0 %.",
+  "motivo": "",
+  "evidencia": [
+   "A01-cuenta-lista-15s.jpg",
+   "A-entrar-cuenta-panel-vacio-10s.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-conectar-yala-en-claude-iniciando-sesion-r8hi",
+  "sid": "r8hi",
+  "titulo": "Conectar Yala en Claude iniciando sesión con Apple o Google",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "Claude",
+  "que": "Sin probar en el barrido.",
+  "motivo": "Es tu cuenta de Claude: conectar el conector de Yala de staging entrando con Apple y con Google.",
+  "evidencia": [],
+  "pasos": [
+   "En Claude › Conectores › añade el conector de Yala de staging y entra con Google; repite con Apple.",
+   "Pregunta «¿cuánto gasté este mes?»: debe responder con tus datos de staging."
+  ]
+ },
+ {
+  "id": "tablero-detectar-gastos-hormiga-y-decir-cuanto-s-ea78",
+  "sid": "ea78",
+  "titulo": "Detectar gastos hormiga y decir cuánto suman al mes",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "jurgen-visto",
+  "donde": "iPhone 14 (barrido del 14-nov)",
+  "que": "Funciona: Estadísticas › Resumen muestra «Gastos hormiga» con su suma y la fila del más repetido. Sin cambios de código desde entonces.",
+  "motivo": "¿Te convence el texto y dónde sale la tarjeta? Capturas en el barrido del 14-nov.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-donde-viven-tus-datos-dice-todo-al-dia-c-39ww",
+  "sid": "39ww",
+  "titulo": "«Dónde viven tus datos» dice «Todo al día» con la sincronización parada y tus movimientos sin subir",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Ya arreglada (ticket en done); SyncStatusSectionLogicTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes). Solo se ve si la sincronización se para, y no se dio en el barrido.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-en-una-cuenta-en-la-nube-el-idioma-de-la-p9wf",
+  "sid": "p9wf",
+  "titulo": "En una cuenta en la nube, el idioma de la app no llega a tus otros dispositivos y va al iCloud del teléfono",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Necesitaría dos dispositivos y no rompe datos (es el idioma). LanguageOverrideCloudChannelTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-en-una-sesion-solo-de-grupos-donde-viven-6dz5",
+  "sid": "6dz5",
+  "titulo": "En una sesión solo de grupos, «Dónde viven tus datos» dice que tus datos viven en tu iCloud privado",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Sesión solo Grupos (test@): Ajustes ya no tiene la fila «Dónde viven tus datos»; en Tu cuenta de Yala dice «Tu cuenta solo guarda tus grupos; en este dispositivo no hay datos personales». XCUITest GroupsAssociationRowUITests en la corrida del barrido.",
+  "motivo": "",
+  "evidencia": [
+   "F01-solo-grupos-ajustes-sin-donde-viven.jpg",
+   "F02-solo-grupos-donde-viven-correcto.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-endurecer-el-conector-mcp-en-produccion-pv2l",
+  "sid": "pv2l",
+  "titulo": "Endurecer el conector MCP en producción cuando la nube esté estable",
+  "prioridad": "low",
+  "asignado": "jurgen",
+  "destino": "espera",
+  "donde": "Infraestructura",
+  "que": "Decidido el 14-nov: mcp.yala-app.pe. Falta desplegar el conector endurecido a producción.",
+  "motivo": "Lo despliega Dan; no es una prueba.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-entrar-por-dividir-con-amigos-lleva-al-p-x5tm",
+  "sid": "x5tm",
+  "titulo": "Entrar por «Dividir con amigos» lleva al Panel personal en vez de a Grupos",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Bienvenida › Dividir gastos con amigos › Entrar con Google › «¿Cómo empiezas?» › Entra aquí › Google › Cargar mis datos y entrar › Empezar: aterriza en Grupos y a los ~3 s salen sus dos grupos. Al reabrir, el Panel con datos (la cuenta tiene parte personal).",
+  "motivo": "",
+  "evidencia": [
+   "C01-como-empiezas.jpg",
+   "C02-puerta-grupos-aterriza-en-grupos.jpg",
+   "C-puerta-grupos-aterriza-en-grupos.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-flujo-de-caja-una-linea-de-un-mes-pasado-eqw2",
+  "sid": "eqw2",
+  "titulo": "Flujo de caja: ¿una línea de un mes pasado dice «Te quedan»? (mismo patrón que el mes cerrado de Presupuestos)",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests + iPhone del arreglo",
+  "que": "BugsUILote1Tests verdes en los tests unitarios del barrido (254 tests en 32 suites, verdes) («Te sobró» en un mes pasado por debajo de lo planeado); la sesión del arreglo lo vio en el iPhone 14 en inglés.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-grupos-repartir-un-recibo-con-ia-foto-o-fu74",
+  "sid": "fu74",
+  "titulo": "Grupos: repartir un recibo con IA — foto o voz, «quién comió qué» y elegir a quién se cobra cada cosa (Pro)",
+  "prioridad": "high",
+  "asignado": "jurgen",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14",
+  "que": "Yala IA escrito desde un grupo: «pizza 40 entre todos, cerveza 12 Jurgen, ensalada 18 yo» quedó bien repartido a la primera (Jur 38, Jurgen 32, total 70) y se guardó como gasto de grupo. Pide descripción a mano (hallazgo menor).",
+  "motivo": "Voz y foto del recibo necesitan tu voz y la cámara.",
+  "evidencia": [
+   "N01-grupos-ia-reparto-correcto.jpg",
+   "N02-grupos-ia-gasto-guardado.jpg"
+  ],
+  "pasos": [
+   "Grupos › un grupo › Voz: «pizza cuarenta entre todos, cerveza doce Jurgen».",
+   "Grupos › Foto de un recibo de restaurante: el reparto debe salir bien a la primera o con un ajuste."
+  ]
+ },
+ {
+  "id": "tablero-icloud-recien-vaciado-yala-dice-ya-tiene-zy1d",
+  "sid": "zy1d",
+  "titulo": "iCloud recién vaciado: Yala dice «Ya tienes datos en tu iCloud — 62 categorías» y «copia de antes de pasar a tu cuenta»",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "iCloud sin registros ni cuentas (solo categorías) › reinstalar › Entrar con iCloud privado: va directo a «Un último paso: reabre Yala», sin «Ya tienes datos»; al reabrir, las tres preguntas desde cero, sin nombre recordado y sin el aviso de copia antigua. «Revisando qué hay en tu iCloud» tardó ~31 s (ticket aparte, ya abierto).",
+  "motivo": "",
+  "evidencia": [
+   "J01-icloud-vacio-sin-ya-tienes-datos.jpg",
+   "J02-icloud-vacio-tres-preguntas.jpg",
+   "K-icloud-vacio-y-recuperar.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-la-app-se-cuelga-del-todo-al-aplicar-cam-9a98",
+  "sid": "9a98",
+  "titulo": "La app se cuelga del todo al aplicar cambios de la nube (sincronización) · YALA-IOS-J",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14 + tests",
+  "que": "Entré 4 veces en una cuenta en la nube con datos y grupos (jur211296) y toqué Panel, Registros y Grupos mientras bajaba: respondió siempre. ApplyPageBatchLookupTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [
+   "A-entrar-cuenta-panel-vacio-10s.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-la-fila-de-chips-de-nuevo-registro-avisa-deur",
+  "sid": "deur",
+  "titulo": "¿La fila de chips de «Nuevo registro» avisa de que hay un chip más a la derecha en un iPhone de 402 pt?",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Decisión",
+  "que": "Jürgen eligió el 14-nov la opción A, «Dejarlo como está» (artifact de decisiones del barrido anterior). No hay nada que construir.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-las-esperas-del-arranque-siguen-leyendo-dtex",
+  "sid": "dtex",
+  "titulo": "Las esperas del arranque siguen leyendo el token de iCloud Drive",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Caso de pocos usuarios (iCloud Drive apagado). BootWaitsICloudAccountWiringTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-logos-de-suscripcion-en-pagos-planificad-9nn7",
+  "sid": "9nn7",
+  "titulo": "Logos de suscripción en pagos planificados (Netflix, Spotify…)",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "jurgen-visto",
+  "donde": "iPhone 14 (barrido del 14-nov)",
+  "que": "Funciona: Netflix y Spotify ponen su logo solo, «Sin logo» lo quita y el logo sale en la lista, la línea de tiempo y el calendario. Se ve en Planificación del iPhone 14 hoy (Netflix con su N roja).",
+  "motivo": "¿Se ven bien los logos? Es un visto bueno de diseño.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-los-goldens-del-gateway-hacen-en-serie-l-j93f",
+  "sid": "j93f",
+  "titulo": "Los goldens del gateway hacen en serie las llamadas que el Worker lanza en paralelo: el fetch de Node 26 encola los POST",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "espera",
+  "donde": "Credencial",
+  "que": "La sonda medida el 14-nov cumple; los goldens de Grupos contra staging no corren en el CI (sin credenciales) ni en la Max (no hay .dev.vars).",
+  "motivo": "Necesitan USER_A/B/C_PASS y GROUPS_ENC_KEY de staging, que el barrido no tiene.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-mezcla-con-voz-de-los-reels-ig-semana-3-vfsf",
+  "sid": "vfsf",
+  "titulo": "Mezcla con voz de los reels IG semana 3",
+  "prioridad": "medium",
+  "asignado": "jurgen",
+  "destino": "espera",
+  "donde": "Marketing",
+  "que": "No es de esta sesión: los reels son de Lola (marketing/).",
+  "motivo": "Fuera del territorio de Frank: lo escucha Jürgen con Lola.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-no-se-guarda-cuantos-tokens-gasta-cada-f-3z6j",
+  "sid": "3z6j",
+  "titulo": "No se guarda cuántos tokens gasta cada función de IA, así que no hay coste por pregunta, foto o nota de voz",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "espera",
+  "donde": "Infraestructura + tiempo",
+  "que": "Falta el gateway en producción y una semana de datos para leer el coste por función.",
+  "motivo": "Depende del despliegue de Dan; no es una prueba.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-nuevo-registro-sugerencias-de-descripcio-y6du",
+  "sid": "y6du",
+  "titulo": "Nuevo registro · sugerencias de descripción a partir de gastos anteriores",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "jurgen-visto",
+  "donde": "iPhone 14 (barrido del 14-nov)",
+  "que": "Funciona: «de» sugiere Delivery comida, Delivery app, Despensa; en Ingreso solo sugiere ingresos.",
+  "motivo": "¿Son las sugerencias que esperabas y en ese orden?",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-pega-tu-enlace-de-invitacion-con-el-tecl-b72m",
+  "sid": "b72m",
+  "titulo": "«Pega tu enlace de invitación»: con el teclado abierto, el aviso de enlace no válido queda debajo de «Unirme al grupo»",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Simulador + tests",
+  "que": "InviteRecoveryPasteVisibleUITests verde en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro): con el teclado abierto el aviso de enlace no válido se lee entero encima de «Unirme al grupo». Es de tamaño/teclado, y la sesión del arreglo lo midió en el iPhone 14.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-que-el-conector-de-claude-sepa-en-que-zo-lhca",
+  "sid": "lhca",
+  "titulo": "Que el conector de Claude sepa en qué zona horaria vives para que «este mes» cuadre con la app",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Tests del conector (mcp/test/app.test.ts) cubren la zona horaria de la persona (Europe/Madrid) y una zona inválida; la app sube timeZoneIdentifier con sus preferencias. CI «mcp» en verde. Es caso de pocos usuarios (fuera de la hora de Lima).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-quien-recupera-sus-datos-no-pasa-por-las-ptuf",
+  "sid": "ptuf",
+  "titulo": "Quien recupera sus datos no pasa por las tres preguntas (nombre, moneda, qué llevar)",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Tras recuperar desde iCloud, «Continuar» lleva directo al Panel (S/ 250, la cuenta Efectivo) sin ninguna de las tres preguntas y recordando el nombre.",
+  "motivo": "",
+  "evidencia": [
+   "K03-hola-de-nuevo-un-continuar-62.jpg",
+   "K-icloud-vacio-y-recuperar.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-recuperar-desde-icloud-el-resumen-dice-6-iio7",
+  "sid": "iio7",
+  "titulo": "Recuperar desde iCloud: el resumen dice 63 categorías y dos pantallas después 65",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "iCloud con 1 cuenta y 1 registro › reinstalar › Entrar con iCloud privado: «Ya tienes datos» dice 62 categorías, «Trayendo tus datos» 62 y «¡Hola Barrido! Qué bien volver a verte» 62. El mismo número en las tres pantallas.",
+  "motivo": "",
+  "evidencia": [
+   "K01-ya-tienes-datos-62-categorias.jpg",
+   "K02-trayendo-62-categorias.jpg",
+   "K03-hola-de-nuevo-un-continuar-62.jpg",
+   "K-icloud-vacio-y-recuperar.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-recuperar-desde-icloud-un-solo-continuar-lwv1",
+  "sid": "lwv1",
+  "titulo": "Recuperar desde iCloud: un solo «Continuar», sin volver a preguntar «Traer mis datos» ni flecha atrás",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Traer mis datos › reabrir › carga › «¡Hola Barrido! Qué bien volver a verte»: un solo botón «Continuar», sin volver a preguntar «Traer mis datos» y sin flecha atrás.",
+  "motivo": "",
+  "evidencia": [
+   "K03-hola-de-nuevo-un-continuar-62.jpg",
+   "K-icloud-vacio-y-recuperar.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-restaurar-no-trae-nada-con-icloud-drive-6a12",
+  "sid": "6a12",
+  "titulo": "Restaurar no trae nada con iCloud Drive apagado",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Caso de pocos usuarios (iCloud Drive apagado). RestoreICloudDriveOffUITests verde en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro) y RestoreICloudDriveOffTests en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-revision-por-vistas-2-3-indice-de-cobert-f8pd",
+  "sid": "f8pd",
+  "titulo": "Revisión por vistas 2.3 · Índice de cobertura y resumen de decisiones pendientes",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Repo",
+  "que": "docs/ux/revision-vistas-2.3/README.md dice «Las 11 zonas están revisadas», con su estado, enlaces (los 11 existen) y las decisiones del 9-nov marcadas como «Decidido».",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-si-la-app-se-cierra-mientras-borra-tus-d-ca5b",
+  "sid": "ca5b",
+  "titulo": "Si la app se cierra mientras borra tus datos viejos de iCloud, pueden volver a aparecer",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Cerrar la app en un instante preciso del borrado. CorpusWipeCrossingTheZoneMountTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes). En el iPhone probé el caso vecino (cerrar durante «Borrar los datos de antes» de la vuelta a iCloud): no volvieron datos viejos; la vuelta se canceló sin aviso (hallazgo menor, en la lista).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-si-la-senal-de-vaciado-llega-antes-que-l-r380",
+  "sid": "r380",
+  "titulo": "Si la señal de vaciado llega antes que la marca del parque, el receptor se lleva la semilla del origen",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Carrera entre dos dispositivos, imposible de provocar a mano. RemoteWipeSignalDetectionTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-si-reinstalas-yala-o-cierras-sesion-a-mi-w90g",
+  "sid": "w90g",
+  "titulo": "Si reinstalas Yala o cierras sesión a mitad de activar la nube, ese iPhone no puede volver a intentarlo",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Reinstalar a mitad de activar la nube: caso raro. StorageMigrationIdentityBlockUITests verde en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro) y StorageMigrationIdentityGateLogicTests en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-telemetria-propia-en-cloudflare-y-dashbo-dyhx",
+  "sid": "dyhx",
+  "titulo": "Telemetría propia en Cloudflare y dashboard en lenguaje natural, para reemplazar TelemetryDeck",
+  "prioridad": "high",
+  "asignado": "jurgen",
+  "destino": "espera",
+  "donde": "Decisión",
+  "que": "Propuesta de telemetría propia entregada; espera tu elección.",
+  "motivo": "Decisión tuya, no prueba.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-tengo-una-invitacion-pide-reabrir-yala-p-840a",
+  "sid": "840a",
+  "titulo": "«Tengo una invitación» pide reabrir Yala para encender una copia en iCloud que ese camino no usa",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Arreglado en 2.1; InviteThreeDoorsTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes). Es la puerta del invitado, cubierta también por la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro) (InviteRecoveryPasteVisibleUITests).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-textos-de-entrada-y-salida-que-no-cuenta-luc1",
+  "sid": "luc1",
+  "titulo": "Textos de entrada y salida que no cuentan lo que acaba de pasar",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14 + tests",
+  "que": "Los cinco textos: (1) eliminar cuenta termina en «Tu cuenta se ha eliminado»; (2) cuenta nueva sin «Descargando tus datos…» (sale un esqueleto de carga); (3) «Hemos creado tu cuenta. Ahora, tres preguntas rápidas» antes de las preguntas; (4) nombre de Apple en mayúsculas → «Jurgen» (WelcomeConversationLogic.naturalCase, test SameEmailAndHonestCopyTests verde); (5) Vaciar datos: hoja de alcance + una confirmación, sin la línea de Pro.",
+  "motivo": "",
+  "evidencia": [
+   "B02-cuenta-eliminada.jpg",
+   "G02-hemos-creado-tu-cuenta.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-tras-tu-cuenta-esta-lista-el-panel-sale-c8i9",
+  "sid": "c8i9",
+  "titulo": "Tras «¡Tu cuenta está lista!» el Panel sale vacío (S/ 0, «Crea tu primera cuenta») hasta salir y volver",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "backlog",
+  "donde": "iPhone 14",
+  "que": "Entrar con Google › Cargar mis datos y entrar › «¡Tu cuenta está lista!» › Empezar. Esperado: el Panel con los datos. Pasó (2 de 2, también en la primera entrada tras instalar): el Panel sale ~10 s con «S/ 0 · Aún no tienes registros en este período» y «Crear categorías · aún no tienes ninguna»; Registros ya tenía 7 movimientos (−S/ 127). A los ~10 s, sin tocar nada, pasa a S/ 1353. Mismo patrón en Grupos: «Tu primer grupo, en tres pasos» ~3 s antes de cargar los grupos. Es justo lo que Jürgen pidió evitar el 13-nov («pongamos un spinner, pero no confundamos al usuario»). Una cuenta NUEVA sí muestra esqueleto de carga, aunque dura ~40 s. Repetido una 4.ª vez antes de probar la web: S/ 1353 llegó 18 s después de «Empezar».",
+  "motivo": "",
+  "evidencia": [
+   "A02-panel-tras-empezar-jur211296.jpg",
+   "A03-registros-si-tiene-7.jpg",
+   "A04-panel-tras-volver-1353.jpg",
+   "A-entrar-cuenta-panel-vacio-10s.mp4",
+   "C02-puerta-grupos-aterriza-en-grupos.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-tras-vaciar-datos-los-gastos-de-grupo-no-spfw",
+  "sid": "spfw",
+  "titulo": "Tras «Vaciar datos», los gastos de grupo no vuelven a Registros y al Panel hasta que la app se cierra y se abre de nuevo",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "WipeDataGroupRowsInSessionUITests verde en la corrida de XCUITest del barrido (43/43 verdes, simulador iPhone 17 Pro): tras «Vaciar datos» los gastos de grupo vuelven en la misma sesión.",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-un-ipad-con-version-anterior-borra-los-r-z07r",
+  "sid": "z07r",
+  "titulo": "Un iPad con versión anterior borra los recordatorios que «Vaciar datos» conserva",
+  "prioridad": "low",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "iPad con la versión vieja: pocos usuarios. KeepingWipeOldReceiverRemindersTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-una-compra-de-apple-pay-en-una-sesion-so-qvaz",
+  "sid": "qvaz",
+  "titulo": "Una compra de Apple Pay en una sesión solo grupos se convierte en un borrador personal que esa sesión no enseña",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Apple Pay en una sesión solo Grupos: pocos usuarios. PrivateExitInboundCaptureLogicTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-una-cuenta-en-la-nube-copia-sus-datos-al-4lld",
+  "sid": "4lld",
+  "titulo": "Una cuenta en la nube copia sus datos al iCloud privado del teléfono",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Cuenta en la nube recién creada y vacía: «Volver a tu iCloud» dijo que el iCloud tenía 2.351 registros, 2 cuentas y 6 presupuestos, que son los datos de prueba viejos que ya estaban ahí (la cuenta tenía 0). Con la vuelta hecha, el iCloud solo tenía lo que subió la vuelta. Coincide con la medición del arreglo (14-nov): la cifra igual era por la semilla fija de los datos de prueba, sin exportar nada al espejo.",
+  "motivo": "",
+  "evidencia": [
+   "H02-tu-icloud-ya-tiene-datos.jpg"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-volver-a-icloud-no-aparece-en-el-segundo-7usr",
+  "sid": "7usr",
+  "titulo": "«Volver a iCloud» no aparece en el segundo dispositivo de quien creó su cuenta en la nube",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "Tests",
+  "que": "Segundo dispositivo de una cuenta nacida en la nube: caso raro; CloudIdentityDiscoveryTests verde en los tests unitarios del barrido (254 tests en 32 suites, verdes) (ticket ya en done).",
+  "motivo": "",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-volver-a-tu-icloud-se-queda-en-traer-tus-atde",
+  "sid": "atde",
+  "titulo": "«Volver a tu iCloud» se queda en «Traer tus datos de tu cuenta de Yala» más de 6 minutos, también tras reabrir",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "done",
+  "donde": "iPhone 14",
+  "que": "Cuenta en la nube recién creada › Dónde viven tus datos › Volver a tu iCloud › Empezar sin ellos › Borrar y volver: «Borrar los datos de antes» con contador (2.800 borrados), «Traer tus datos» al momento, pide reabrir; al reabrir «iCloud revisa lo que ya tiene» y «Subir a iCloud · 446 por subir» con «Cancelar y seguir en tu cuenta de Yala» activo. Terminó en «En tu iCloud» en ~3,5 min, casi todo borrando ~2.900 elementos viejos del iCloud. Ya no se queda en «Traer tus datos».",
+  "motivo": "Hallazgo aparte (menor): cerrar Yala durante «Borrar los datos de antes» cancela la vuelta en silencio; al reabrir vuelve a salir el botón y hay que empezar otra vez.",
+  "evidencia": [
+   "H01-donde-viven-cuenta-nueva.jpg",
+   "H02-tu-icloud-ya-tiene-datos.jpg",
+   "H03-vuelta-icloud-ya-casi-esta.jpg",
+   "H04-en-tu-icloud-terminado.jpg",
+   "H-volver-a-icloud.mp4"
+  ],
+  "pasos": []
+ },
+ {
+  "id": "tablero-yala-ia-detectar-medio-de-pago-yape-plin-v466",
+  "sid": "v466",
+  "titulo": "Yala IA: detectar medio de pago (Yape, Plin, efectivo, tarjeta) en el chat",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "jurgen-visto",
+  "donde": "iPhone 14 (barrido del 14-nov)",
+  "que": "Funciona: «25 almuerzo yape» deja el borrador con la cuenta Yape; sin medio de pago pide la cuenta.",
+  "motivo": "¿Te gusta que Yala IA pregunte antes de cada borrador? Es un texto/flujo que eliges tú.",
+  "evidencia": [],
+  "pasos": []
+ },
+ {
+  "id": "tablero-yala-web-beta-ver-tu-panel-y-apuntar-bor-4yc7",
+  "sid": "4yc7",
+  "titulo": "Yala web beta: ver tu Panel y apuntar borradores desde el navegador (cuentas en la nube)",
+  "prioridad": "high",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14 (Safari + Yala Dev)",
+  "que": "Con Google: la web de staging entra, muestra el mismo saldo que el iPhone (S/ 1353, salidas 127, Bandeja 4) y un gasto apuntado en la web («Barrido web», S/ 7) llega a la Bandeja del iPhone. Falta Apple.",
+  "motivo": "Entrar con Apple pide Face ID: solo Jürgen.",
+  "evidencia": [
+   "L01-web-panel-mismo-saldo-1353.jpg",
+   "L04-bandeja-recibe-borrador-web.jpg"
+  ],
+  "pasos": [
+   "En el iPhone, abre Safari en yala-web-staging.misty-surf-6866.workers.dev y toca «Continuar con Apple» (Face ID).",
+   "Mira que el saldo total sea el mismo que en el Panel de Yala Dev."
+  ]
+ },
+ {
+  "id": "tablero-yala-web-definir-y-maquetar-la-app-web-c-ljz7",
+  "sid": "ljz7",
+  "titulo": "Yala web: definir y maquetar la app web como un dispositivo más en modo nube",
+  "prioridad": "medium",
+  "asignado": "jurgen",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14 (Safari)",
+  "que": "Entrar con Google en la web de staging: hecho en el barrido. Falta entrar con Apple.",
+  "motivo": "Card de Jürgen; Apple pide Face ID.",
+  "evidencia": [
+   "L01-web-panel-mismo-saldo-1353.jpg"
+  ],
+  "pasos": [
+   "La misma prueba de Apple en la web de la card de Yala web beta."
+  ]
+ },
+ {
+  "id": "tablero-yala-web-lote-2-segun-el-plan-aprobado-7yhc",
+  "sid": "7yhc",
+  "titulo": "Yala web, lote 2 según el plan aprobado",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "jurgen-prueba",
+  "donde": "iPhone 14 (Safari)",
+  "que": "Estadísticas (neto −127, 8,47 al día en 15 días) y Pagos planificados (Netflix S/ 45 el 9 dic) cuadran con el iPhone. La página se sale por la derecha: card nueva (media). Falta «Entrar con tu iPhone» por QR.",
+  "motivo": "El QR se escanea con la cámara del iPhone apuntando a la pantalla de un ordenador: es una prueba física.",
+  "evidencia": [
+   "L05-web-estadisticas.jpg",
+   "L06-web-pagos-cortado-derecha.jpg"
+  ],
+  "pasos": [
+   "En el Mac abre yala-web-staging.misty-surf-6866.workers.dev y toca «Entrar con tu iPhone».",
+   "Escanea el QR con la cámara del iPhone 14 (Yala Dev con sesión en la nube) y confirma: la web debe entrar con tu cuenta."
+  ]
+ },
+ {
+  "id": "tablero-yala-web-lote-3-segun-el-plan-aprobado-qf6g",
+  "sid": "qf6g",
+  "titulo": "Yala web, lote 3 según el plan aprobado",
+  "prioridad": "medium",
+  "asignado": "frank",
+  "destino": "backlog",
+  "donde": "iPhone 14 (Safari + Yala Dev)",
+  "que": "Web staging › Más › Grupos: la lista dice «Todo saldado» con una deuda de S/ 60; dentro, los dos miembros salen «Sin nombre». Un gasto de S/ 4 hecho en la web deja 4 personas en un grupo de 2 y «Te deben 2,00» en vez de 62; en la app llega como «? pagó S/ 4.00 · No participaste». Borrarlo desde el iPhone sí funciona. Card nueva con el detalle.",
+  "motivo": "Arreglar antes de encender la escritura de Grupos de la web en producción (decisión del 14-nov). Producción aún no tiene la web.",
+  "evidencia": [
+   "M01-web-grupos-todo-saldado.jpg",
+   "M02-web-grupo-saldado-pero-debe-60-sin-nombre.jpg",
+   "M04-web-tras-gasto-cuatro-personas.jpg",
+   "M05-app-gasto-web-pago-interrogacion.jpg"
+  ],
+  "pasos": []
+ }
+]

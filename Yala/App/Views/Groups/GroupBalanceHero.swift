@@ -28,6 +28,9 @@ struct GroupBalanceHero: View {
     var isEstimate = false
     /// Tocar la cifra lleva a Saldos (desde Gastos). `nil`: no se toca.
     var onTap: (() -> Void)?
+    /// Lote 06 de mejoras 2.3: lo que te deben y lo que debes sin netear, cuando en una moneda van los dos sentidos
+    /// («Menos pagos» apagado). Con él, la frase dice las dos sumas en vez de «Nadie te debe nada».
+    var crossDebts: GroupBalancesPresentationLogic.CrossDebts?
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -81,13 +84,20 @@ struct GroupBalanceHero: View {
     }
 
     private var caption: String {
-        switch (scope, isOwedSide, iOwe.isEmpty) {
-        case (.group, true, _): L10n.UXL13.summaryOwedToMe
-        case (.group, false, false): L10n.UXL13.summaryIOwe
-        case (.group, false, true): L10n.UXL13.summarySettled
-        case (.allGroups, true, _): L10n.UXL13.heroAllOwedToMe
-        case (.allGroups, false, false): L10n.UXL13.heroAllIOwe
-        case (.allGroups, false, true): L10n.Groups.Summary.allSettled
+        if scope == .group {
+            let summary = GroupBalancesPresentationLogic.Summary(owedToMe: owedToMe, iOwe: iOwe)
+            switch GroupBalancesPresentationLogic.groupCaption(summary: summary, cross: crossDebts) {
+            case .owedToMe: return L10n.UXL13.summaryOwedToMe
+            case .iOwe: return L10n.UXL13.summaryIOwe
+            case .settled: return L10n.UXL13.summarySettled
+            // Lote 06 de mejoras 2.3: neto cero con deudas cruzadas no es «estar a mano».
+            case .evenWithDebts: return L10n.GroupsNecesarias06.summaryEvenCaption
+            }
+        }
+        return switch (isOwedSide, iOwe.isEmpty) {
+        case (true, _): L10n.UXL13.heroAllOwedToMe
+        case (false, false): L10n.UXL13.heroAllIOwe
+        case (false, true): L10n.Groups.Summary.allSettled
         }
     }
 
@@ -102,14 +112,27 @@ struct GroupBalanceHero: View {
     }
 
     private var sentence: String? {
-        if isOwedSide, !iOwe.isEmpty {
-            return L10n.UXL13.summaryAlsoOwe(iOwe.map { formatted($0) }.joined(separator: " + "))
+        let summary = GroupBalancesPresentationLogic.Summary(owedToMe: owedToMe, iOwe: iOwe)
+        // En la lista de grupos la frase de «nadie te debe» sobra: el rótulo ya lo dice todo. Y no hay cruce que contar:
+        // se debe a personas distintas en grupos distintos.
+        let cross = scope == .group ? crossDebts : nil
+        switch GroupBalancesPresentationLogic.summarySentence(summary: summary, cross: cross) {
+        // Lote 06 de mejoras 2.3: con un cruce, las dos sumas; la frase de siempre lo negaba.
+        case .both(let owed, let owe):
+            return L10n.GroupsNecesarias06.summaryBoth(owedToMe: joined(owed), iOwe: joined(owe))
+        case .alsoOwe(let owe):
+            return L10n.UXL13.summaryAlsoOwe(joined(owe))
+        case .owedToMeOnly:
+            return scope == .group ? L10n.UXL13.summaryOwedToMeDetail : nil
+        case .iOweOnly:
+            return scope == .group ? L10n.UXL13.summaryIOweDetail : nil
+        case .settled:
+            return scope == .group ? L10n.UXL13.summarySettledDetail : nil
         }
-        // En la lista de grupos la frase de «nadie te debe» sobra: el rótulo ya lo dice todo.
-        guard scope == .group else { return nil }
-        if isOwedSide { return L10n.UXL13.summaryOwedToMeDetail }
-        if !iOwe.isEmpty { return L10n.UXL13.summaryIOweDetail }
-        return L10n.UXL13.summarySettledDetail
+    }
+
+    private func joined(_ amounts: [GroupBalancesPresentationLogic.CurrencyAmount]) -> String {
+        amounts.map { formatted($0) }.joined(separator: " + ")
     }
 
     private func formatted(_ amount: GroupBalancesPresentationLogic.CurrencyAmount) -> String {
@@ -119,7 +142,10 @@ struct GroupBalanceHero: View {
 
 extension GroupBalanceHero {
     /// Desde el saldo neto del grupo (`GroupHeaderBalance`, el de la banda de antes), ordenado por divisa.
-    init(balance: GroupHeaderBalance, scope: Scope, isEstimate: Bool = false, onTap: (() -> Void)? = nil) {
+    init(
+        balance: GroupHeaderBalance, scope: Scope, isEstimate: Bool = false, onTap: (() -> Void)? = nil,
+        crossDebts: GroupBalancesPresentationLogic.CrossDebts? = nil
+    ) {
         func amounts(_ byCurrency: [String: Double]) -> [GroupBalancesPresentationLogic.CurrencyAmount] {
             byCurrency
                 .filter { $0.value > 0.01 }
@@ -128,7 +154,7 @@ extension GroupBalanceHero {
         }
         self.init(
             owedToMe: amounts(balance.owedToMe), iOwe: amounts(balance.iOwe), scope: scope,
-            isEstimate: isEstimate, onTap: onTap
+            isEstimate: isEstimate, onTap: onTap, crossDebts: crossDebts
         )
     }
 }

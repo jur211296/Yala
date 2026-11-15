@@ -97,14 +97,17 @@ struct StatsHeroCaptionTests {
 
     // MARK: - Contrato del enum
 
-    @Test("Los cinco rótulos resuelven a texto no vacío y distinto entre sí")
+    @Test("Los cinco rótulos resuelven a texto no vacío y distinto entre sí, en curso y cerrados")
     func everyCaptionHasDistinctText() {
-        let texts = StatsHeroCaption.allCases.map(\.text)
-        for text in texts {
-            #expect(!text.isEmpty)
-            // Si la key faltara en el bundle, `ls()` devuelve la key cruda.
-            #expect(!text.hasPrefix("stats.hero."))
+        for isClosed in [false, true] {
+            let texts = StatsHeroCaption.allCases.map { $0.text(isClosed: isClosed) }
+            for text in texts {
+                #expect(!text.isEmpty)
+                // Si la key faltara en el bundle, `ls()` devuelve la key cruda.
+                #expect(!text.hasPrefix("stats.hero."))
+                #expect(!text.hasPrefix("panel.hero."))
+            }
+            #expect(Set(texts).count == StatsHeroCaption.allCases.count)
         }
-        #expect(Set(texts).count == StatsHeroCaption.allCases.count)
     }
 }

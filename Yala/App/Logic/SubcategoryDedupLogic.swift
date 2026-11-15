@@ -58,6 +58,21 @@ enum SubcategoryDedupLogic {
         "\(categoryKey)|\(sortOrder)|\(iconName ?? "nil")|\(name)"
     }
 
+    /// Cuántas categorías verá la persona cuando el deduplicador haya fundido las copias de fábrica: cada identidad
+    /// (`identityKey(for:)`) cuenta una vez y lo que no tiene identidad —las del usuario, las huérfanas— cuenta una a una.
+    ///
+    /// **Es la cifra de la sonda de iCloud** (`ICloudCorpusCategoryTally`, misma clave): «Ya tienes datos en tu iCloud»
+    /// decía 63 y «Conectando con iCloud» y «¡Qué bien volver a verte!», que contaban las filas del teléfono antes del
+    /// deduplicador, 65 (card del recorrido del 13-nov). Contadas así, las tres pantallas dan el mismo número.
+    static func visibleCount(identityKeys: [String?]) -> Int {
+        var keys = Set<String>()
+        var standalone = 0
+        for key in identityKeys {
+            if let key { keys.insert(key) } else { standalone += 1 }
+        }
+        return standalone + keys.count
+    }
+
     /// Orden determinista para elegir keeper (el que "va antes" se conserva).
     /// `sortOrder` asc → `name` asc → `shortcutID.uuidString` asc (desempate local).
     /// Determinista para que dos devices converjan al mismo keeper; aunque difieran

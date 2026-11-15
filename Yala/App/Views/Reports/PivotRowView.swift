@@ -161,7 +161,8 @@ struct PivotRowView: View {
                 variation: node.variation,
                 size: .small,
                 showNAWhenNil: node.previousAmount == nil,
-                isExpenseContext: !node.isIncome
+                isExpenseContext: !node.isIncome,
+                usesWords: true
             )
             // Un cambio largo («+385.2%») no se parte en dos líneas: la columna crece y el nombre cede.
             .fixedSize()
@@ -179,6 +180,9 @@ struct PivotRowView: View {
         var parts = [node.label, L10n.UXL18.rowAmountsA11y(current, currentPeriodName, previous, previousPeriodName)]
         if showVariations, let variation = node.variation {
             parts.append(VariationChip.accessibilityText(for: variation))
+        } else if showVariations, node.previousAmount == nil {
+            // Sin nada antes, el chip dice «nuevo» (decisión 32 de 2.3); VoiceOver también.
+            parts.append(L10n.UXL18.changeNew)
         }
         return parts.joined(separator: ", ")
     }

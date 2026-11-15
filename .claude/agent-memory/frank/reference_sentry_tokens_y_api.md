@@ -11,7 +11,8 @@ iniciada (pide login): se lee por API.
 - **Token de solo lectura** (event:read + project:read), creado por Jürgen el 2026-10-26: `~/Secrets/yala-sentry/read-token`.
   Se pegó en el chat de aquella sesión, así que está en su transcript: Jürgen quedó en revocarlo cuando tenga el del llavero.
 - **Token con escritura** (project:write, event:write): en el Llavero de la Mini, servicio `sentry-yala`, cuenta `jur`,
-  desde el 2026-11-04. Leer con `security find-generic-password -s sentry-yala -a jur -w`, sin imprimirlo; nunca al repo
+  desde el 2026-11-04. **También en el Llavero de la Max** con el mismo servicio y cuenta (medido el 2026-11-12; en la Max
+  no existe `~/Secrets/yala-sentry/`). Leer con `security find-generic-password -s sentry-yala -a jur -w`, sin imprimirlo; nunca al repo
   ni por chat (lo pidió el bot dueño). Pendiente ese día: que Jürgen lo copie al vault de Yala en 1Password.
 - **Resolver un issue «en la release que trae el arreglo»**: `PUT /api/0/organizations/yala-is/issues/?id=<id numérico>`
   con `{"status":"resolved","statusDetails":{"inRelease":"com.jurgenschmidt.yala@2.2+6"}}`. Las releases se llaman así
@@ -25,3 +26,9 @@ porque nadie sube dSYM a Sentry. `asc builds dsyms --build-id …` contestó «N
 `.xcarchive` en la Mini; recompilar Release del mismo commit dio otro UUID y otro tamaño de `__TEXT`, y `atos` devolvió
 basura. No repetirlo: diagnosticar por la forma del stack (qué framework, qué executor) y medir en local. Desde el 2026-11-04 el
 post-action «Archive» del scheme `Yala` sube los dSYM de cada archivado (`scripts/sentry-subir-dsym.sh`).
+
+**Un issue entero por API** (2026-11-12): `GET /api/0/organizations/yala-is/issues/?query=<SHORT-ID>&shortIdLookup=1` da el id
+numérico; `…/issues/<id>/events/?full=true&limit=100` pagina de 10 en 10 (cabecera `link`, `cursor=0:10:0`). Las sesiones
+por release salen de `GET /api/0/organizations/yala-is/sessions/?field=sum(session)&groupBy=release&groupBy=session.status`.
+Y App Store Connect por `asc` (`asc review history --app 6758253109`) da la hora de cada envío a revisión: un evento de
+producción minutos después es el iPhone de revisión de Apple (kernel `DEVELOPMENT_ARM64`).

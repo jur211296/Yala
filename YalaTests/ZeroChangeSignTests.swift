@@ -131,7 +131,12 @@ struct ZeroChangeSignWidgetWiringTests {
         let capsule = Self.codeOnly(try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowMonthCapsule.swift"))
         #expect(capsule.contains("CashFlowMonthSummaryLogic.capsuleNetText(month.netFlow)"))
         let setup = Self.codeOnly(try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowSetupView.swift"))
-        #expect(setup.contains("label: CashFlowMonthSummaryLogic.isShortfall(netFlow) ? L10n.UXL18.summaryShortfall"))
+        // Desde la decisión 33 de 2.3 el resumen decide por `CashFlowSetupLogic.summaryOutcome`, que sigue preguntando a
+        // la lógica del cero (y suma «Falta tu ingreso» cuando no hay ingresos a la vista).
+        #expect(setup.contains("CashFlowSetupLogic.summaryOutcome("))
+        #expect(setup.contains("case .shortfall(let amount):"))
+        let setupLogic = Self.codeOnly(try Self.source("Yala/App/Logic/CashFlowSetupLogic.swift"))
+        #expect(setupLogic.contains("return CashFlowMonthSummaryLogic.isShortfall(net) ? .shortfall(abs(net)) : .surplus(abs(net))"))
         let logic = Self.codeOnly(try Self.source("Yala/App/Logic/CashFlowMonthSummaryLogic.swift"))
         #expect(logic.contains("let surplus = !isShortfall(month.netFlow)"))
     }

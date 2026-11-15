@@ -50,7 +50,7 @@ export async function forgetAccountQuota(env: Env, sub: string): Promise<void> {
   });
 }
 
-const NON_AI_CATEGORIES: ReadonlySet<Category> = new Set<Category>(["rates", "sync"]);
+const NON_AI_CATEGORIES: ReadonlySet<Category> = new Set<Category>(["rates", "sync", "web_groups_write"]);
 
 export async function gateAIRequest(
   env: Env,
@@ -104,4 +104,20 @@ export async function refundQuota(env: Env, claims: SessionClaims, category: Cat
 /** ¿Este status del proveedor es un fallo suyo (no del usuario) que no debe gastar cupo? */
 export function isProviderFailure(status: number): boolean {
   return status >= 500 || status === 429 || status === 408;
+}
+
+/**
+ * Límite que se aplica SIEMPRE, también en `observe` (a diferencia de `gateAIRequest`). Lo usa la escritura de Grupos
+ * desde la web, que no tiene App Attest: el límite por cuenta es parte de lo que lo sustituye. `false` = bloqueado.
+ */
+export async function withinHardLimit(env: Env, keyId: string, category: Category): Promise<boolean> {
+  const limits = limitsFor("free", category);
+  if (!limits) return false;
+  const check: CheckRequest = { category, burstPerMin: limits.burstPerMin, daily: limits.daily };
+  const res = await env.RATE_LIMITER.get(env.RATE_LIMITER.idFromName(keyId)).fetch("https://ratelimiter/check", {
+    method: "POST",
+    body: JSON.stringify(check),
+  });
+  const { allowed } = (await res.json()) as RateLimitResult;
+  return allowed === true;
 }

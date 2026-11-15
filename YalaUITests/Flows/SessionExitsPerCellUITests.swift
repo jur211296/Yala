@@ -225,7 +225,7 @@ final class SessionExitsPerCellUITests: XCTestCase {
 
         // La puerta va ANTES de la espera de iCloud: el aviso sale sin pasar por «Aún faltan cambios por subir».
         let migration = app.alerts.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS %@", "en qué punto va el paso de tus datos entre iCloud y la nube"))
+            .matching(NSPredicate(format: "label CONTAINS %@", "en qué punto va el paso de tus datos entre tu iCloud y tu cuenta de Yala"))
             .firstMatch
         XCTAssertTrue(migration.waitForExistence(timeout: 15), """
             No salió el aviso de la migración: el cierre siguió con el registro de la migración ilegible, se paró en \

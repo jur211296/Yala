@@ -34,7 +34,9 @@ enum ReturningUserBeginnerTips {
 
     /// Los tours y avisos de principiante que no son guías.
     static let tourKeys = ["hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
-                           "hasSeenChatContextHint", AppPreferences.Keys.hasSeenTodayFXCoachMark]
+                           "hasSeenChatContextHint", AppPreferences.Keys.hasSeenTodayFXCoachMark,
+                           // «Días después» (Y23-15): quien vuelve con datos ya sabe dónde están sus gráficas.
+                           LaterChartsGuideLogic.shownKey]
 
     /// Todas las marcas de «visto» que se ponen a quien vuelve con datos.
     static var seenKeys: [String] { guideIDs.map { "guide.\($0).dismissed" } + tourKeys }

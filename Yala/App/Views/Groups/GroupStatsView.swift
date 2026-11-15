@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Charts
 import SwiftData
 
 struct GroupStatsView: View {
@@ -24,6 +23,11 @@ struct GroupStatsView: View {
     /// Fecha enfocada (scrub) de la gráfica de tendencia en modo moneda única.
     @State private var trendFocusedDate: Date?
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .caption) private var memberBarHeight: CGFloat = 16 // A11Y-DT: @ScaledMetric
+    /// Alto medido de cada página del carrusel de «Todas» (lote 06 de mejoras 2.3): con filas de texto, la estimación
+    /// fija se quedaba corta con texto grande y cortaba la página.
+    @State private var carouselPageHeights: [String: CGFloat] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
@@ -258,41 +262,68 @@ struct GroupStatsView: View {
 
     // MARK: - Member Bar Chart (Who Pays Most)
 
+    /// Una fila por persona: el nombre arriba y, debajo, la barra con el importe al final. Lote 06 de mejoras 2.3: era
+    /// una gráfica con 44 pt fijos por persona y la barra pasaba por encima del nombre, también a tamaño normal; con
+    /// filas, el alto lo da el texto.
     private func memberBarChart(spending: [MemberSpending], currencyCode: String) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        let top = spending.map(\.totalPaid).max() ?? 0
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionHeader(L10n.Groups.Stats.whoMadeMostPayments)
 
-            Chart(spending) { member in
-                BarMark(
-                    x: .value("amount", member.totalPaid),
-                    y: .value("member", member.displayName)
-                )
-                // El acento liso de la app, como las barras de Distribución (antes, en degradado).
-                .foregroundStyle(theme.accent)
-                .cornerRadius(DS.Radius.xs)
-                .annotation(position: .trailing) {
-                    // El contenido de `.annotation` se hostea fuera del árbol de
-                    // la vista y no propaga environment objects @Observable, así
-                    // que aquí NO se puede usar `AmountText` (lee
-                    // `@Environment(AppPreferences.self)`). Se formatea con el
-                    // `appPreferences` ya resuelto de la vista y el `currencyCode`
-                    // recibido como parámetro — mismo patrón que el resto de la app.
-                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
-            }
-            .chartXAxis(.hidden)
-            .chartYAxis {
-                AxisMarks { _ in
-                    AxisValueLabel()
-                        .font(DS.Typography.caption)
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                ForEach(spending) { member in
+                    memberRow(member, ratio: top > 0 ? member.totalPaid / top : 0, currencyCode: currencyCode)
                 }
             }
-            .frame(height: CGFloat(max(spending.count, 1)) * 44)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .panelCard()
         }
+    }
+
+    private func memberRow(_ member: MemberSpending, ratio: Double, currencyCode: String) -> some View {
+        let amount = appPreferences.currency(member.totalPaid, currencyCode: currencyCode)
+        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(member.displayName)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if dynamicTypeSize.isAccessibilitySize {
+                // Con texto de accesibilidad el importe baja a su línea (regla de `swiftui-ds.md`).
+                memberBar(ratio: ratio)
+                memberAmount(amount)
+            } else {
+                HStack(spacing: DS.Spacing.sm) {
+                    memberBar(ratio: ratio)
+                    memberAmount(amount)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(member.displayName): \(amount)")
+        .accessibilityIdentifier("group_stats_who_paid_row")
+    }
+
+    /// La barra se dibuja en el `overlay` de su carril, que es lo que se mide (regla del iPhone Duo de `swiftui-ds.md`).
+    private func memberBar(ratio: Double) -> some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: memberBarHeight)
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
+                        .fill(theme.accent)
+                        .frame(width: max(proxy.size.width * ratio, memberBarHeight / 2))
+                }
+            }
+            .accessibilityHidden(true)
+    }
+
+    private func memberAmount(_ amount: String) -> some View {
+        Text(amount)
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .fixedSize()
     }
 
     // MARK: - Uncategorized Hint (placeholder en vez del pie chart de 1 segmento)
@@ -397,10 +428,17 @@ struct GroupStatsView: View {
             TabView(selection: $allCurrenciesPage) {
                 ForEach(viewModel.perCurrencyStats) { stat in
                     VStack(spacing: DS.Spacing.lg) {
-                        currencyPeriodHeader(currencyCode: stat.currencyCode)
-                        memberBarChart(spending: stat.memberSpending, currencyCode: stat.currencyCode)
-                        if let trendInput = GroupTrendChartAdapter.makeInput(from: stat.monthlyTrend) {
-                            monthlyTrendChart(input: trendInput, currencyCode: stat.currencyCode, focusedDate: .constant(nil), scrubbable: false)
+                        VStack(spacing: DS.Spacing.lg) {
+                            currencyPeriodHeader(currencyCode: stat.currencyCode)
+                            memberBarChart(spending: stat.memberSpending, currencyCode: stat.currencyCode)
+                            if let trendInput = GroupTrendChartAdapter.makeInput(from: stat.monthlyTrend) {
+                                monthlyTrendChart(input: trendInput, currencyCode: stat.currencyCode, focusedDate: .constant(nil), scrubbable: false)
+                            }
+                        }
+                        // Su alto ideal, no el de la página: así la medida no depende del alto que se le da.
+                        .fixedSize(horizontal: false, vertical: true)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            carouselPageHeights[stat.currencyCode] = height
                         }
                         Spacer(minLength: 0)
                     }
@@ -457,7 +495,9 @@ struct GroupStatsView: View {
             let trendBlock: CGFloat = hasTrend ? (170 + sectionChrome + dataLabelPad) : 0
             return currencyHeader + interBlock + memberBlock + (hasTrend ? interBlock + trendBlock : 0)
         }
-        return heights.max() ?? 360
+        // Lo medido manda cuando es mayor: la estimación se queda como suelo para las páginas aún sin medir.
+        let measured = carouselPageHeights.values.max() ?? 0
+        return max(heights.max() ?? 360, measured)
     }
 
     // MARK: - Helpers

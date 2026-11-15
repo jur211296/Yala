@@ -21,6 +21,9 @@ struct PivotTableCalculator {
     ///   - accountGrouping: con `.byCard`, la dimensión de cuenta junta cada tarjeta con varias divisas en una fila,
     ///     convertida a `preferredCurrency` (entrega 4). Con `.byLine`, cada línea sale como su cuenta, como antes.
     ///   - cards: a qué tarjeta pertenece cada cuenta (`AccountCardIndex`). Vacío = ninguna cuenta tiene líneas.
+    ///   - sortsByChange: con un período con el que comparar, dentro de «Ingresos» y «Gastos» las filas van por lo que
+    ///     cambiaron en dinero, de más a menos (decisión 32 de 2.3, opción B: un «+205 %» sobre S/ 76 no tapa los S/ 143
+    ///     de Hogar). Sin comparación, por monto como siempre.
     /// - Returns: Root-level pivot nodes
     static func buildTree(
         currentTransactions: [TransactionItem],
@@ -31,7 +34,8 @@ struct PivotTableCalculator {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared,
         accountGrouping: AccountCardGrouping = .byLine,
-        cards: AccountCardIndex = .empty
+        cards: AccountCardIndex = .empty,
+        sortsByChange: Bool = false
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
@@ -111,7 +115,8 @@ struct PivotTableCalculator {
                     adjustment: adjustment,
                     converter: converter,
                     accountGrouping: accountGrouping,
-                    cards: cards
+                    cards: cards,
+                    sortsByChange: sortsByChange
                 )
             }
 
@@ -133,13 +138,27 @@ struct PivotTableCalculator {
             )
         }
 
-        // Sort: income first, then expense; within each, by absolute amount descending
+        // Sort: income first, then expense; within each, by change (when comparing) or by absolute amount descending.
+        // La fila de «Ingresos y gastos» no entra en el orden por cambio: Ingresos va siempre arriba.
+        let byChange = sortsByChange && dimension != .tipo
         nodes.sort { a, b in
             if a.isIncome != b.isIncome { return a.isIncome }
-            return abs(a.amount) > abs(b.amount)
+            if byChange {
+                let changeA = shownChange(of: a), changeB = shownChange(of: b)
+                if changeA != changeB { return changeA > changeB }
+            }
+            if abs(a.amount) != abs(b.amount) { return abs(a.amount) > abs(b.amount) }
+            return a.label < b.label
         }
 
         return nodes
+    }
+
+    /// Lo que cambió una fila en dinero, como se lee en la tabla: un gasto más alto es un cambio positivo (la tabla lo
+    /// pinta sin signo, ya está bajo «Gastos»). Sin nada antes, todo lo de ahora es cambio.
+    static func shownChange(of node: PivotNode) -> Double {
+        let shown: (Double) -> Double = { node.isIncome ? $0 : -$0 }
+        return shown(node.amount) - shown(node.previousAmount ?? 0)
     }
 
     /// Calculate net flow from root nodes

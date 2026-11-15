@@ -55,6 +55,53 @@ nonisolated enum MetricsUseFeature: String, CaseIterable {
     case altaPasoConfirmacion = "alta.paso.confirmation"
     case altaTermina = "alta.termina"
 
+    // Después del alta (card 4b7h, 2026-11-13): el reinicio del camino privado y lo que la persona hace en sus primeros
+    // días. **UNA VEZ POR INSTALACIÓN, no una al día** (`isOncePerInstall`), y los `primeros.*` solo en una instalación que
+    // cerró el alta con esta versión (`requiresNewUser`): quien actualiza con años de datos no tiene «primer registro».
+    // Qué mide cada uno y cuándo sale: `docs/telemetria/eventos-usuario-nuevo.md`.
+    case altaReabrirPide = "alta.reabrir.pide"
+    case altaReabrirVuelve = "alta.reabrir.vuelve"
+    case primerosRegistro = "primeros.registro"
+    case primerosPresupuesto = "primeros.presupuesto"
+    case primerosPago = "primeros.pago"
+    case primerosCuenta2 = "primeros.cuenta2"
+    case primerosPasosVe = "primeros.pasos.ve"
+    case primerosPasosCuenta = "primeros.pasos.cuenta"
+    case primerosPasosRegistrar = "primeros.pasos.registrar"
+    case primerosPasosPresupuesto = "primeros.pasos.presupuesto"
+    case primerosPasosPagos = "primeros.pasos.pagos"
+    case primerosPasosGrupo = "primeros.pasos.grupo"
+    case primerosPasosDinero = "primeros.pasos.dinero"
+    case primerosPasosInicio = "primeros.pasos.inicio"
+    case primerosPasosCompleta = "primeros.pasos.completa"
+
+    /// Sale una vez por instalación y no una al día (`MetricsOnceLogic`). Va por prefijo para que un evento nuevo de la
+    /// familia herede la regla sin acordarse.
+    var isOncePerInstall: Bool {
+        rawValue.hasPrefix("primeros.") || rawValue.hasPrefix("alta.reabrir.")
+    }
+
+    /// Solo cuenta en una instalación que cerró el alta con esta versión o una posterior (`MetricsService.newUserKey`). El
+    /// reinicio no: ocurre ANTES de terminar el alta.
+    var requiresNewUser: Bool {
+        rawValue.hasPrefix("primeros.")
+    }
+
+    /// «Reabre Yala» se le pidió a alguien que se está dando de alta: el onboarding privado o restaurar de iCloud. Las demás
+    /// salidas que piden reabrir (activar Yala completo, volver al neutro por un grupo) no son el alta.
+    static func relaunchAsked(destination: WelcomeMirrorRelaunchLogic.Destination?) -> MetricsUseFeature? {
+        isSignUpRelaunch(destination) ? .altaReabrirPide : nil
+    }
+
+    /// Volvió a abrir Yala y el arranque retomó ese destino.
+    static func relaunchReturned(destination: WelcomeMirrorRelaunchLogic.Destination?) -> MetricsUseFeature? {
+        isSignUpRelaunch(destination) ? .altaReabrirVuelve : nil
+    }
+
+    private static func isSignUpRelaunch(_ destination: WelcomeMirrorRelaunchLogic.Destination?) -> Bool {
+        destination == .privateOnboarding || destination == .restoreICloud
+    }
+
     /// El paso del onboarding por su `trackingName` (`OnboardingStep`). `nil` si es uno que no se mide.
     static func onboardingStep(trackingName: String) -> MetricsUseFeature? {
         MetricsUseFeature(rawValue: "alta.paso.\(trackingName)")
@@ -83,6 +130,14 @@ nonisolated enum MetricsUseLogic {
     /// emite, como el ping: mejor un doble raro que un silencio hasta que el reloj vuelva.
     static func shouldEmit(_ feature: MetricsUseFeature, lastDays: [String: String], now: Date) -> Bool {
         lastDays[feature.rawValue] != MetricsPingLogic.dayString(for: now)
+    }
+}
+
+/// Decisión pura del «una vez por instalación» (card 4b7h). `emitted` = los slugs que esta instalación ya mandó.
+nonisolated enum MetricsOnceLogic {
+    static func shouldEmit(_ feature: MetricsUseFeature, emitted: Set<String>, isNewUser: Bool) -> Bool {
+        guard !emitted.contains(feature.rawValue) else { return false }
+        return !feature.requiresNewUser || isNewUser
     }
 }
 

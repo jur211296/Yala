@@ -56,7 +56,18 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
 
     // MARK: - Body
 
+    /// Bug del 2026-11-09: la limpieza tras una sincronización puede retirar este borrador con la hoja abierta (ya lo
+    /// tenía la de iCloud). Leer un `InboxDraft` borrado aborta en el iPhone (regla de filas montadas de `swiftui-ds.md`):
+    /// sin borrador, la hoja no pinta nada y se cierra.
     var body: some View {
+        if draft.isDeleted || draft.modelContext == nil {
+            Color.clear.onAppear { dismiss() }
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         NavigationStack {
             GroupDraftFinalizationScaffold(
                 bannerMessage: String(format: L10n.Inbox.GroupExpenseAccountSubcategoryDraft.banner, groupName),
