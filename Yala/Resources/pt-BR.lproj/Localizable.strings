@@ -8680,7 +8680,7 @@
 "bankEmail.outlookRuleDetail" = "No Outlook, pelo navegador: Configurações › Email › Regras › Adicionar nova regra. Condição: “De” o endereço do seu banco. Ação: “Encaminhar para” o seu endereço do Yala. Salve a regra.";
 "bankEmail.icloudRuleDetail" = "No iCloud.com, abra o Mail e vá em Ajustes › Regras › Adicionar uma regra. Se uma mensagem for do endereço do seu banco, encaminhe para o seu endereço do Yala. Salve a regra.";
 "bankEmail.stepWaitTitle" = "Espere o próximo aviso";
-"bankEmail.stepWaitDetail" = "Quando seu banco mandar o próximo, a movimentação aparece na sua Caixa de entrada para confirmar.";
+"bankEmail.stepWaitDetail" = "Quando seu banco mandar o próximo, a movimentação aparece na sua Caixa de Entrada para confirmar.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Não foi possível salvar tudo. Parte das alterações pode já aparecer; confira a conta e salve de novo.";
@@ -9237,7 +9237,7 @@
 "pasos23.record.state.skipped" = "pulado";
 "pasos23.record.state.next" = "o próximo";
 "pasos23.record.state.pending" = "pendente";
-"pasos23.record.inInbox" = "na sua Caixa de entrada";
+"pasos23.record.inInbox" = "na sua Caixa de Entrada";
 "pasos23.record.trial.voice" = "Teste de cortesia: a voz, uma vez de graça";
 "pasos23.record.trial.photo" = "Teste de cortesia: a foto, uma vez de graça";
 "pasos23.record.trial.ai" = "Teste de cortesia: a Yala IA, uma vez de graça";
@@ -9619,3 +9619,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Sua conta não usa a nuvem do Yala. Ative-a em Armazenamento para usar o Yala web.";
 "connectedBrowsers.link.problem.sessionExpired" = "Sua sessão da nuvem expirou. Entre de novo em Sua conta Yala.";
 "connectedBrowsers.link.problem.network" = "Não foi possível conectar ao Yala web. Tente de novo.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Registrar movimentação a partir de texto";
+"shortcut.bankNotice.description" = "Lê a notificação do seu banco e deixa a movimentação na sua Caixa de Entrada para confirmar. Use na automação “Ao receber uma notificação” do app do seu banco, com a variável Notificação.";
+"shortcut.bankNotice.param.text" = "Texto";
+"shortcut.bankNotice.param.text.description" = "O texto da notificação (a variável Notificação)";
+"shortcut.bankNotice.param.bank" = "Banco";
+"shortcut.bankNotice.bank.other" = "Outro banco";
+"Record a movement from the text ${text}" = "Registrar movimentação a partir do texto ${text}";
+"inbox.sourceBankNotice" = "Notificação de %@";
+"inbox.sourceBankNoticeOther" = "Notificação do banco";
+"inbox.sourceBankNoticeNotUnderstood" = "Não entendemos esta notificação";

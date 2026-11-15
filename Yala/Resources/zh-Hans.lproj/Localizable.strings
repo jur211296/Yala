@@ -9631,3 +9631,15 @@
 "connectedBrowsers.link.problem.noCloud" = "你的账户未使用 Yala 云。请在“存储”中开启后再使用 Yala web。";
 "connectedBrowsers.link.problem.sessionExpired" = "你的云端会话已过期。请在“你的 Yala 账户”中重新登录。";
 "connectedBrowsers.link.problem.network" = "无法连接 Yala web。请重试。";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "从文本记录交易";
+"shortcut.bankNotice.description" = "读取银行通知，并把交易放进收件箱等你确认。在银行 App 的“收到通知时”自动化中配合“通知”变量使用。";
+"shortcut.bankNotice.param.text" = "文本";
+"shortcut.bankNotice.param.text.description" = "通知的文本（“通知”变量）";
+"shortcut.bankNotice.param.bank" = "银行";
+"shortcut.bankNotice.bank.other" = "其他银行";
+"Record a movement from the text ${text}" = "从文本 ${text} 记录交易";
+"inbox.sourceBankNotice" = "%@ 通知";
+"inbox.sourceBankNoticeOther" = "银行通知";
+"inbox.sourceBankNoticeNotUnderstood" = "我们没能读懂这条通知";

@@ -9629,3 +9629,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Il tuo account non usa il cloud di Yala. Attivalo in Archiviazione per usare Yala web.";
 "connectedBrowsers.link.problem.sessionExpired" = "La tua sessione cloud è scaduta. Accedi di nuovo in Il tuo account Yala.";
 "connectedBrowsers.link.problem.network" = "Impossibile connettersi a Yala web. Riprova.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Registra movimento da testo";
+"shortcut.bankNotice.description" = "Legge la notifica della tua banca e lascia il movimento nella tua Posta in arrivo da confermare. Usalo nell’automazione «Quando ricevo una notifica» dell’app della tua banca, con la variabile Notifica.";
+"shortcut.bankNotice.param.text" = "Testo";
+"shortcut.bankNotice.param.text.description" = "Il testo della notifica (la variabile Notifica)";
+"shortcut.bankNotice.param.bank" = "Banca";
+"shortcut.bankNotice.bank.other" = "Altra banca";
+"Record a movement from the text ${text}" = "Registra movimento dal testo ${text}";
+"inbox.sourceBankNotice" = "Notifica di %@";
+"inbox.sourceBankNoticeOther" = "Notifica della banca";
+"inbox.sourceBankNoticeNotUnderstood" = "Non abbiamo capito questa notifica";

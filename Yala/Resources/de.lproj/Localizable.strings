@@ -9619,3 +9619,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Dein Konto nutzt die Yala-Cloud nicht. Aktiviere sie unter Speicher, um Yala web zu nutzen.";
 "connectedBrowsers.link.problem.sessionExpired" = "Deine Cloud-Sitzung ist abgelaufen. Melde dich unter Dein Yala-Konto erneut an.";
 "connectedBrowsers.link.problem.network" = "Keine Verbindung zu Yala web. Versuche es noch einmal.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Buchung aus Text erfassen";
+"shortcut.bankNotice.description" = "Liest die Mitteilung deiner Bank und legt die Buchung zur Bestätigung in deinen Posteingang. Nutze es in der Automation „Wenn ich eine Mitteilung erhalte“ deiner Bank-App, mit der Variable „Mitteilung“.";
+"shortcut.bankNotice.param.text" = "Text";
+"shortcut.bankNotice.param.text.description" = "Der Text der Mitteilung (die Variable „Mitteilung“)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Andere Bank";
+"Record a movement from the text ${text}" = "Buchung aus dem Text ${text} erfassen";
+"inbox.sourceBankNotice" = "Mitteilung von %@";
+"inbox.sourceBankNoticeOther" = "Bankmitteilung";
+"inbox.sourceBankNoticeNotUnderstood" = "Diese Mitteilung haben wir nicht verstanden";
