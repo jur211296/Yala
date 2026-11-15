@@ -174,13 +174,14 @@ final class LargeTextSecondaryScreensUITests: XCTestCase {
         app.openProfile()
         XCTAssertTrue(app.buttons["profile_accounts"].waitForExistence(timeout: 10), "No se abrió Ajustes.")
 
-        // «Favoritos» cabe en una línea con o sin arreglo: su fila es la medida de una fila cuyo título no se parte. El
+        // «Etiquetas» cabe en una línea con o sin arreglo: su fila es la medida de una fila cuyo título no se parte. El
         // título de una fila de Ajustes expone el marco de la fila entera (medido), así que se comparan filas: con el
-        // título partido, la de Personalización mide una línea más (124 frente a 76 pt en la base).
-        let favorites = app.buttons["profile_favorites"]
-        scrollUntilVisible(favorites, in: app)
-        let oneLine = favorites.staticTexts["Favoritos"]
-        XCTAssertTrue(oneLine.exists, "La fila de Favoritos no expone su título: \(favorites.debugDescription)")
+        // título partido, la de Personalización mide una línea más (124 frente a 76 pt en la base). Hasta 2.3 la medida
+        // era «Favoritos»; la decisión 48 la renombró «Registros favoritos», que con AX3 ya ocupa dos líneas.
+        let tags = app.buttons["profile_tags"]
+        scrollUntilVisible(tags, in: app)
+        let oneLine = tags.staticTexts["Etiquetas"]
+        XCTAssertTrue(oneLine.exists, "La fila de Etiquetas no expone su título: \(tags.debugDescription)")
         let oneLineHeight = oneLine.frame.height
 
         let personalization = app.buttons["profile_personalization"]
