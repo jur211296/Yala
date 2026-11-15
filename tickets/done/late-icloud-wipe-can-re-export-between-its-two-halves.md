@@ -1,10 +1,10 @@
 ---
 id: late-icloud-wipe-can-re-export-between-its-two-halves
-status: qa
+status: done
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-10
-updated: 2026-11-06
+updated: 2026-11-15
 source: "review adversarial del paso 4 (`welcome-private-fresh-start-skips-icloud-check`), lente CloudKit"
 ---
 
@@ -107,3 +107,5 @@ empieza vacío y los datos viejos no vuelven.
 pendiente sin borrar las filas importadas (`afterEmptyMeasure` → `discardPendingWipe`): igual que antes de este arreglo.
 Y un dispositivo con un borrado a medias que active la nube desde Ajustes corre la ida con el montaje sin espejo, como ya
 pasaba con el neutro de solo-grupos.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

@@ -1,10 +1,10 @@
 ---
 id: old-receivers-of-a-keeping-wipe-delete-the-origin-reminders
-status: qa
+status: done
 priority: low
 area: "borrado, sync iCloud"
 created: 2026-10-29
-updated: 2026-11-07
+updated: 2026-11-15
 source: "review adversarial del encargo 2026-10-29-vaciar-datos-mantiene-cuenta (S27i)"
 ---
 
@@ -42,3 +42,5 @@ lleva ninguno y salen iguales) + su scan de cableado.
 
 Nota: Yala Dev usa otro contenedor de iCloud y otro almacén de ajustes que la app publicada, así que con Yala Dev la
 señal no llega a la 2.1: este guion pide el TestFlight. Va en la tanda de TestFlight de 2.3, no antes.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

@@ -1,10 +1,10 @@
 ---
 id: wipe-data-group-rows-return-only-on-the-next-cold-launch
-status: qa
+status: done
 priority: medium
 area: "groups, settings"
 created: 2026-09-27
-updated: 2026-11-06
+updated: 2026-11-15
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lentes de momento y de reglas); inferido por lectura, NO reproducido"
 ---
 
@@ -71,3 +71,5 @@ con la llamada quitada, rojo con Registros vacío. Unit: `GroupsConvergeInSessio
 
 Pendiente de device-QA (no bloquea): en el iPhone de pruebas con grupos, Ajustes › Vaciar datos → abrir Registros sin
 cerrar la app: los gastos de grupo están ahí y la Bandeja pregunta de qué cuenta salieron.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

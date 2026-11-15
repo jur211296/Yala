@@ -1,10 +1,10 @@
 ---
 id: onboarding-2-3-groups-tutorial-step
-status: qa
+status: done
 priority: high
 area: onboarding
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-15
 source: tablero-bienvenida-2-3-paso-5-grupos-con-el-esti-yuyn (docs/onboarding-2-3/SPEC.md, Y23-13)
 qa-status: partial
 qa-date: 2026-11-12
@@ -45,3 +45,5 @@ como página del tutorial», así que se reusa el formulario.
 
 Pruebas: `YalaTests/Bienvenida23PasosPlanificacionTests` y
 `YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step5_groupsTutorial_acceptThenNotNow_thenDeckMovesToStep6`.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

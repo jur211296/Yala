@@ -1,11 +1,11 @@
 ---
 id: groups-sign-out-quiescence-gate-fails-open-with-drive-off
-status: qa
+status: done
 priority: medium
 area: "modo-nube, groups, sync"
 created: 2026-09-11
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lente de celdas"
-updated: 2026-11-05
+updated: 2026-11-15
 ---
 
 # Con iCloud Drive apagado, el cierre con grupos puede guardar en plena importación de iCloud
@@ -73,3 +73,5 @@ Triage 2026-10-08: abierto · medium → medium · La puerta de quiescencia sigu
    pendientes…» más de un minuto, y la app no se cierra sola.
 5. Repite el paso 3 recién abierta la app (en los primeros 10 segundos): puede tardar hasta un minuto, pero tiene que
    terminar.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

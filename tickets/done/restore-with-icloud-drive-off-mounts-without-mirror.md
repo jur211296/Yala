@@ -1,10 +1,10 @@
 ---
 id: restore-with-icloud-drive-off-mounts-without-mirror
-status: qa
+status: done
 priority: medium
 area: "icloud, restaurar, arranque"
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-15
 source: "lote N4 (iCloud Drive y preferencias), medido leyendo el código al cerrar la card de las esperas del arranque"
 ---
 
@@ -63,3 +63,5 @@ vive sobre esos ficheros. Device-QA en un iPhone con iCloud Drive apagado.
 4. Esperado: Yala pide reabrir una vez; al volver, «Buscando…» y luego «Encontramos tus datos» con tus cifras.
    No debe salir «Activa iCloud para continuar» ni volver a pedir reabrir.
 5. Control: cierra sesión de iCloud en el iPhone y repite 2-3. Esperado: «Activa iCloud para continuar».
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

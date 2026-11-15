@@ -137,7 +137,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-id-close-loss-notice-uitest-fails-on-2-1 | done | tickets/done/apple-id-close-loss-notice-uitest-fails-on-2-1.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | done | tickets/done/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
-| apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | qa | tickets/qa/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
+| apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | done | tickets/done/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
 | applied-amount-filter-keeps-filtering-after-its-currency-changes | done | tickets/done/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
@@ -171,7 +171,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | done | tickets/done/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
-| boot-gates-still-read-the-icloud-drive-token | qa | tickets/qa/boot-gates-still-read-the-icloud-drive-token.md |
+| boot-gates-still-read-the-icloud-drive-token | done | tickets/done/boot-gates-still-read-the-icloud-drive-token.md |
 | born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check | backlog | tickets/backlog/born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check.md |
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
 | born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
@@ -630,7 +630,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |
 | groups-shareable-summary | done | tickets/done/groups-shareable-summary.md |
-| groups-sign-out-quiescence-gate-fails-open-with-drive-off | qa | tickets/qa/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
+| groups-sign-out-quiescence-gate-fails-open-with-drive-off | done | tickets/done/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
 | groups-smoke-account-row-times-out-inside-the-suite | discarded | tickets/discarded/groups-smoke-account-row-times-out-inside-the-suite.md |
 | groups-stats-no-deduplica-gastos | done | tickets/done/groups-stats-no-deduplica-gastos.md |
@@ -725,7 +725,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
 | invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | done | tickets/done/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-paste-under-join-button-on-iphone-18-pro | backlog | tickets/backlog/invite-paste-under-join-button-on-iphone-18-pro.md |
-| invite-recovery-relaunches-for-a-mirror-it-never-uses | qa | tickets/qa/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
+| invite-recovery-relaunches-for-a-mirror-it-never-uses | done | tickets/done/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | done | tickets/done/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
 | ipad-account-form-uitest-times-out-inside-a-long-run | backlog | tickets/backlog/ipad-account-form-uitest-times-out-inside-a-long-run.md |
@@ -764,7 +764,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | l10n-terminology-follows-the-tab-names | done | tickets/done/l10n-terminology-follows-the-tab-names.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | landscape-records-test-misses-the-first-row-in-long-runs | done | tickets/done/landscape-records-test-misses-the-first-row-in-long-runs.md |
-| language-override-bypasses-the-cloud-prefs-channel | qa | tickets/qa/language-override-bypasses-the-cloud-prefs-channel.md |
+| language-override-bypasses-the-cloud-prefs-channel | done | tickets/done/language-override-bypasses-the-cloud-prefs-channel.md |
 | large-text-leftovers-outside-the-main-iphone-screens | backlog | tickets/backlog/large-text-leftovers-outside-the-main-iphone-screens.md |
 | large-text-secondary-screens-lote-05-necessary-2-3 | done | tickets/done/large-text-secondary-screens-lote-05-necessary-2-3.md |
 | large-text-splits-favorite-amounts-and-the-type-selector | done | tickets/done/large-text-splits-favorite-amounts-and-the-type-selector.md |
@@ -772,7 +772,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
-| late-icloud-wipe-can-re-export-between-its-two-halves | qa | tickets/qa/late-icloud-wipe-can-re-export-between-its-two-halves.md |
+| late-icloud-wipe-can-re-export-between-its-two-halves | done | tickets/done/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |
 | late-icloud-wipe-stays-frozen-after-a-settled-failed-migration | done | tickets/done/late-icloud-wipe-stays-frozen-after-a-settled-failed-migration.md |
 | late-notice-of-a-welcome-private-session-purges-groups-joined-later | done | tickets/done/late-notice-of-a-welcome-private-session-purges-groups-joined-later.md |
@@ -826,7 +826,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
-| new-record-chip-row-hides-the-tags-chip-without-a-hint | qa | tickets/qa/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
+| new-record-chip-row-hides-the-tags-chip-without-a-hint | done | tickets/done/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
 | new-record-suggests-previous-descriptions | qa | tickets/qa/new-record-suggests-previous-descriptions.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
@@ -843,7 +843,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-delegate-assigned-after-launch | done | tickets/done/notification-delegate-assigned-after-launch.md |
 | notification-tap-opens-inbox-then-inbox-notice-pops-after | done | tickets/done/notification-tap-opens-inbox-then-inbox-notice-pops-after.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
-| old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | qa | tickets/qa/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
+| old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | done | tickets/done/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-2-3-arrival-and-getting-started-deck | done | tickets/done/onboarding-2-3-arrival-and-getting-started-deck.md |
 | onboarding-2-3-bank-email-step | blocked | tickets/blocked/onboarding-2-3-bank-email-step.md |
 | onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
@@ -852,7 +852,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-2-3-first-scheduled-payment-questions | done | tickets/done/onboarding-2-3-first-scheduled-payment-questions.md |
 | onboarding-2-3-getting-started-complete-and-pro-trial | qa | tickets/qa/onboarding-2-3-getting-started-complete-and-pro-trial.md |
 | onboarding-2-3-groups-entry | qa | tickets/qa/onboarding-2-3-groups-entry.md |
-| onboarding-2-3-groups-tutorial-step | qa | tickets/qa/onboarding-2-3-groups-tutorial-step.md |
+| onboarding-2-3-groups-tutorial-step | done | tickets/done/onboarding-2-3-groups-tutorial-step.md |
 | onboarding-2-3-learn-to-record-cleanup | done | tickets/done/onboarding-2-3-learn-to-record-cleanup.md |
 | onboarding-2-3-learn-to-record-courtesy-trial | qa | tickets/qa/onboarding-2-3-learn-to-record-courtesy-trial.md |
 | onboarding-2-3-learn-to-record-guide | done | tickets/done/onboarding-2-3-learn-to-record-guide.md |
@@ -1008,7 +1008,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | regional-variants-show-the-plural-form-for-one | done | tickets/done/regional-variants-show-the-plural-form-for-one.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
 | reimported-group-legs-become-transfers | done | tickets/done/reimported-group-legs-become-transfers.md |
-| reinstall-mid-migration-has-no-exit-from-the-identity-gate | qa | tickets/qa/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
+| reinstall-mid-migration-has-no-exit-from-the-identity-gate | done | tickets/done/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
@@ -1050,7 +1050,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-timeout-closes-the-session-window-with-the-import-still-running | done | tickets/done/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
 | restore-treats-budgets-and-groups-as-no-data | done | tickets/done/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
-| restore-with-icloud-drive-off-mounts-without-mirror | qa | tickets/qa/restore-with-icloud-drive-off-mounts-without-mirror.md |
+| restore-with-icloud-drive-off-mounts-without-mirror | done | tickets/done/restore-with-icloud-drive-off-mounts-without-mirror.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | retrying-a-group-creation-after-a-lost-response-creates-a-second-group | done | tickets/done/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |
@@ -1329,7 +1329,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | done | tickets/done/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | done | tickets/done/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
-| wipe-data-group-rows-return-only-on-the-next-cold-launch | qa | tickets/qa/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
+| wipe-data-group-rows-return-only-on-the-next-cold-launch | done | tickets/done/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
 | wipe-data-keeps-groups-but-drops-their-bridged-rows | done | tickets/done/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
 | wipe-data-keeps-the-account-and-delete-account-wipes-everything | done | tickets/done/wipe-data-keeps-the-account-and-delete-account-wipes-everything.md |
 | wipe-division-complement-can-be-bridged-twice | backlog | tickets/backlog/wipe-division-complement-can-be-bridged-twice.md |
@@ -1337,7 +1337,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-division-kv-key-has-no-quota-ceiling | backlog | tickets/backlog/wipe-division-kv-key-has-no-quota-ceiling.md |
 | wipe-division-takeover-can-cross-a-late-origin-before-the-mirror | backlog | tickets/backlog/wipe-division-takeover-can-cross-a-late-origin-before-the-mirror.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
-| wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed | qa | tickets/qa/wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed.md |
+| wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed | done | tickets/done/wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
 | worktree-stamp-depends-on-whether-a-rename-is-staged | done | tickets/done/worktree-stamp-depends-on-whether-a-rename-is-staged.md |

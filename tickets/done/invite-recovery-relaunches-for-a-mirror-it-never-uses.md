@@ -1,10 +1,10 @@
 ---
 id: invite-recovery-relaunches-for-a-mirror-it-never-uses
-status: qa
+status: done
 priority: medium
 area: "modo-nube, groups"
 created: 2026-09-11
-updated: 2026-11-06
+updated: 2026-11-15
 source: "medido de camino en la mitad 2 de `groups-entry-on-a-mirrored-store-still-blocks-the-owner` (2026-09-11)"
 ---
 
@@ -64,3 +64,5 @@ join). Los cuatro criterios se cumplen; no hizo falta código.
 
 **QA en el iPhone:** instalación nueva → «Vengo por un grupo» → «Tengo una invitación» → pegar un enlace: no sale «reabre
 Yala» y la invitación se abre.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

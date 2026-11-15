@@ -1,10 +1,10 @@
 ---
 id: new-record-chip-row-hides-the-tags-chip-without-a-hint
-status: qa
+status: done
 priority: low
 area: "registro, ui"
 created: 2026-11-05
-updated: 2026-11-14
+updated: 2026-11-15
 source: "mitad de producto de record-selectors-uitest-taps-the-tags-chip-off-screen (lote T8)"
 ---
 
@@ -68,3 +68,5 @@ En el SE, ¿qué hace «Etiquetas» cuando no cabe sobre «Guardar»?
 2. Elige una cuenta y una categoría.
 3. Mira el pie: «Etiquetas» no se ve; desliza el formulario hacia arriba y aparece encima de «Guardar».
 4. Decide A/B/C/D en la tarjeta.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

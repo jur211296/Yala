@@ -1,10 +1,10 @@
 ---
 id: language-override-bypasses-the-cloud-prefs-channel
-status: qa
+status: done
 priority: medium
 area: "modo-nube, settings, sync, l10n"
 created: 2026-09-14
-updated: 2026-11-05
+updated: 2026-11-15
 source: "medido al reponer el guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), celda E"
 ---
 
@@ -65,3 +65,5 @@ Triage 2026-10-08: abierto · medium → medium · el setter de `LanguageManager
 2. En el segundo, abre Yala y espera un minuto con la app delante (o ciérrala y ábrela).
 3. Lo que tiene que pasar: el segundo cambia al mismo idioma.
 4. Vuelve en el primero a «Idioma del sistema»: el segundo vuelve también al del sistema.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

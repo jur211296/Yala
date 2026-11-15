@@ -1,10 +1,10 @@
 ---
 id: wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed
-status: qa
+status: done
 priority: low
 area: "borrado, sync iCloud"
 created: 2026-10-29
-updated: 2026-11-07
+updated: 2026-11-15
 source: "review adversarial del encargo 2026-10-29-vaciar-datos-mantiene-cuenta (S27i)"
 ---
 
@@ -41,3 +41,5 @@ iCloud KV no se puede forzar en el simulador.
    datos desde otro dispositivo»), **sin** volver a la bienvenida.
 4. En el iPhone 14: el Panel sigue con las categorías (no ofrece «Crear categorías») y los recordatorios siguen en
    Ajustes › Notificaciones.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

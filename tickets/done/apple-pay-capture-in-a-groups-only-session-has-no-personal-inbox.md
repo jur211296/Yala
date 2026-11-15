@@ -1,10 +1,10 @@
 ---
 id: apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox
-status: qa
+status: done
 priority: medium
 area: "intents, inbox, sesiones"
 created: 2026-10-08
-updated: 2026-11-06
+updated: 2026-11-15
 source: "medido de paso en `after-session-redesign-review-widgets-siri-applepay-and-web-copy` (punto «Siri y Apple Pay con sesión solo grupos»)"
 ---
 
@@ -54,3 +54,5 @@ Tests: `PrivateExitInboundCaptureLogicTests` (con y sin sesión privada) y el so
 
 Pendiente de device-QA (no bloquea): con un teléfono en solo grupos sin sesión privada, un pago de Apple Pay que ya
 estaba en cola no aparece como borrador; al activar Yala completo, sí.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

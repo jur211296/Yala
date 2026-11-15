@@ -1,10 +1,10 @@
 ---
 id: reinstall-mid-migration-has-no-exit-from-the-identity-gate
-status: qa
+status: done
 priority: medium
 area: "modo-nube, settings"
 created: 2026-10-09
-updated: 2026-11-06
+updated: 2026-11-15
 source: "Paso 0 (D7) de `settings-migrate-blocks-a-second-device-before-its-marker`, 2026-10-09"
 ---
 
@@ -91,3 +91,5 @@ recuerda, el texto en español) y `StorageMigrationIdentityBlockUITests` (hoja c
 **QA en el iPhone (Yala Dev, staging):** empezar «Activar la nube» con datos, borrar Yala a mitad, reinstalar y volver a
 tocarlo: antes de una hora sale «Hay una activación a medias con esta cuenta…»; pasada la hora, la activación sigue y
 termina. Con «Cerrar sesión» en vez de reinstalar, sigue al momento.
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.

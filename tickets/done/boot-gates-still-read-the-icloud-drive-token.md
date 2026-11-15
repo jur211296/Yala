@@ -1,10 +1,10 @@
 ---
 id: boot-gates-still-read-the-icloud-drive-token
-status: qa
+status: done
 priority: low
 area: "icloud, arranque"
 created: 2026-10-25
-updated: 2026-11-05
+updated: 2026-11-15
 source: "review adversarial del lote 12.2 (cards 90yc y 2taf), medido leyendo el código"
 ---
 
@@ -50,3 +50,5 @@ import y no se queda colgado.
    primer minuto. Repite el paso 2 tres veces.
 4. Si se cierra sola: anota la hora y mándame el informe de fallos (Ajustes → Privacidad → Análisis → Datos de análisis,
    el que empiece por «Yala»).
+
+Cerrado en el barrido de QA 2026-11-15 (barrido final de 2.3): pasa con sus tests verdes o por decisión ya tomada; detalle en docs/qa/barrido-2-3-final/lista.md.
