@@ -117,6 +117,41 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
             """)
     }
 
+    /// G1 de la revisión 2.3 (decisión 55): el mismo aviso —la cuenta de sus grupos ya tiene datos propios— deja de ser un
+    /// callejón que manda a buscar «Desasociar». Ofrece «Cambiar de cuenta», que baja el aviso y abre la hoja de
+    /// consecuencias de siempre: **no se la salta**. Cancelarla no suelta nada y la fila sigue ofreciendo el cambio. Con el
+    /// código de antes el botón no existía y el aviso solo decía «Entendido».
+    func test_liveSession_accountWithPersonalData_changeAccountOpensTheConsequencesSheet() {
+        let (app, migrate) = openMigrateCard(fakeMigrationIdentity: "personalData")
+        migrate.tap()
+
+        let title = app.staticTexts["storage_migrate_block_title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Tocar «Activar la nube» con una cuenta que ya tiene datos no avisa.")
+        let change = app.buttons["storage_migrate_block_change_account"]
+        XCTAssertTrue(change.waitForExistence(timeout: 5), """
+            El aviso no ofrece «Cambiar de cuenta»: sigue siendo un callejón que manda a buscar la salida en otra parte.
+            """)
+        XCTAssertTrue(app.buttons["storage_migrate_block_close"].exists, "El aviso perdió la salida de no hacer nada.")
+        change.tap()
+
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5), "«Cambiar de cuenta» no cerró el aviso.")
+        let sheet = app.staticTexts["storage_groups_detach_sheet"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), """
+            «Cambiar de cuenta» cerró el aviso y no abrió la hoja de consecuencias. Si además la cuenta se soltó, se la saltó.
+            """)
+        XCTAssertTrue(app.buttons.matching(identifier: "storage_groups_detach_keep").firstMatch.exists)
+        XCTAssertTrue(app.buttons.matching(identifier: "storage_groups_detach_remove").firstMatch.exists)
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
+                       "Detrás del aviso se abrió el consentimiento de activar la nube.")
+
+        app.buttons["storage_groups_detach_cancel"].tap()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), "Cancelar no cerró la hoja.")
+        XCTAssertTrue(app.buttons["storage_groups_change_account"].waitForExistence(timeout: 5), """
+            Tras cancelar la hoja ya no se ofrece «Cambiar de cuenta»: la cuenta se soltó sin elegir ninguna salida.
+            """)
+        XCTAssertEqual(app.alerts.count, 0, "Cancelar disparó el gesto: salió un aviso.")
+    }
+
     /// Una activación a medias de esta misma cuenta con el líder vivo (tickets
     /// `settings-migrate-blocks-a-second-device-before-its-marker` y `reinstall-mid-migration-has-no-exit-from-the-identity-gate`,
     /// opción 1 de Jürgen del 2026-11-06): el aviso no nombra «otro dispositivo» —puede ser este, reinstalado— y dice la
@@ -138,6 +173,9 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
             """)
         let body = app.staticTexts["storage_migrate_block_body"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
+        // G1: esperar lo arregla, así que no se ofrece soltar la cuenta (`MigrationBlockChangeAccountLogic`).
+        XCTAssertFalse(app.buttons["storage_migrate_block_change_account"].exists,
+                       "Una activación a medias ofrece «Cambiar de cuenta», y no se arregla soltando la cuenta.")
         XCTAssertTrue(body.label.contains("vuelve a intentarlo en una hora"), "El aviso no nombra la salida: \(body.label)")
         XCTAssertFalse(body.label.contains("finanzas personales"), "El cuerpo repite el texto falso: \(body.label)")
         XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,

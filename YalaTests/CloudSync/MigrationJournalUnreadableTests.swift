@@ -911,7 +911,7 @@ struct MigrationJournalUnreadableWiringTests {
         #expect(Array(code[start...]) == [
             "case .journalUnreadable:",
             "journalUnreadableCard()",
-            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)",
             "}",
         ])
     }
@@ -930,10 +930,10 @@ struct MigrationJournalUnreadableWiringTests {
             "relaunchCard(controller, direction)",
             "case .waitingForLeader:",
             "waitingCard(controller)",
-            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)",
             "case .failed(let kind):",
             "failedCard(controller, kind: kind)",
-            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)",
         ])
     }
 
