@@ -415,7 +415,11 @@ struct MigrationIdentityGateWiringTests {
         #expect(Self.lines(tap) == [
             "pendingICloudWipeWaived = false",
             "guard !hasPendingICloudWipe else {",
-            "confirmPendingICloudWipe = true",
+            "pendingWipeAnswer = nil",
+            "let halfway = pendingWipeLeftHalfway",
+            "pendingWipeRequest = PendingICloudWipeRequest(",
+            "leftHalfway: halfway, isAdopt: isAdopt,",
+            "finishPurgesGroups: LateICloudNotice.finishingPendingWipePurgesGroups(leftHalfway: halfway))",
             "return",
             "}",
             "beginActivation(controller, isAdopt: isAdopt)",
