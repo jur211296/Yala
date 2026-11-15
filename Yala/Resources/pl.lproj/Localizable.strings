@@ -9631,3 +9631,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Twoje konto nie korzysta z chmury Yala. Włącz ją w Pamięci, aby używać Yala web.";
 "connectedBrowsers.link.problem.sessionExpired" = "Twoja sesja w chmurze wygasła. Zaloguj się ponownie w Twoim koncie Yala.";
 "connectedBrowsers.link.problem.network" = "Nie udało się połączyć z Yala web. Spróbuj ponownie.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Zapisz transakcję z tekstu";
+"shortcut.bankNotice.description" = "Odczytuje powiadomienie z banku i zostawia transakcję w Skrzynce do potwierdzenia. Użyj w automatyzacji „Gdy otrzymam powiadomienie” aplikacji banku, ze zmienną Powiadomienie.";
+"shortcut.bankNotice.param.text" = "Tekst";
+"shortcut.bankNotice.param.text.description" = "Tekst powiadomienia (zmienna Powiadomienie)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Inny bank";
+"Record a movement from the text ${text}" = "Zapisz transakcję z tekstu ${text}";
+"inbox.sourceBankNotice" = "Powiadomienie: %@";
+"inbox.sourceBankNoticeOther" = "Powiadomienie z banku";
+"inbox.sourceBankNoticeNotUnderstood" = "Nie zrozumieliśmy tego powiadomienia";

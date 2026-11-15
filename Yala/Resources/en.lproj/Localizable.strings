@@ -9625,3 +9625,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Your account doesn't use the Yala cloud. Turn it on in Storage to use Yala web.";
 "connectedBrowsers.link.problem.sessionExpired" = "Your cloud session expired. Sign in again in Your Yala account.";
 "connectedBrowsers.link.problem.network" = "Couldn't reach Yala web. Please try again.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Record transaction from text";
+"shortcut.bankNotice.description" = "Reads your bank’s notification and leaves the transaction in your Inbox to confirm. Use it in your bank app’s “When I get a notification” automation, with the Notification variable.";
+"shortcut.bankNotice.param.text" = "Text";
+"shortcut.bankNotice.param.text.description" = "The notification text (the Notification variable)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Other bank";
+"Record a movement from the text ${text}" = "Record a movement from the text ${text}";
+"inbox.sourceBankNotice" = "%@ notification";
+"inbox.sourceBankNoticeOther" = "Bank notification";
+"inbox.sourceBankNoticeNotUnderstood" = "We couldn’t read this notification";

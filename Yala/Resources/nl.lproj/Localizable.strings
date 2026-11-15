@@ -9631,3 +9631,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Je account gebruikt de Yala-cloud niet. Zet die aan bij Opslag om Yala web te gebruiken.";
 "connectedBrowsers.link.problem.sessionExpired" = "Je cloudsessie is verlopen. Log opnieuw in bij Je Yala-account.";
 "connectedBrowsers.link.problem.network" = "Kan geen verbinding maken met Yala web. Probeer het opnieuw.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Transactie vastleggen uit tekst";
+"shortcut.bankNotice.description" = "Leest de melding van je bank en zet de transactie in je Inbox om te bevestigen. Gebruik het in de automatisering ‘Als ik een melding krijg’ van je bank-app, met de variabele Melding.";
+"shortcut.bankNotice.param.text" = "Tekst";
+"shortcut.bankNotice.param.text.description" = "De tekst van de melding (de variabele Melding)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Andere bank";
+"Record a movement from the text ${text}" = "Transactie vastleggen uit de tekst ${text}";
+"inbox.sourceBankNotice" = "Melding van %@";
+"inbox.sourceBankNoticeOther" = "Bankmelding";
+"inbox.sourceBankNoticeNotUnderstood" = "We begrepen deze melding niet";

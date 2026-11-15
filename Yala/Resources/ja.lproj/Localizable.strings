@@ -9631,3 +9631,15 @@
 "connectedBrowsers.link.problem.noCloud" = "このアカウントは Yala クラウドを使っていません。Yala web を使うには「ストレージ」でオンにしてください。";
 "connectedBrowsers.link.problem.sessionExpired" = "クラウドのセッションが切れました。「Yala アカウント」で再度ログインしてください。";
 "connectedBrowsers.link.problem.network" = "Yala web に接続できませんでした。もう一度お試しください。";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "テキストから取引を記録";
+"shortcut.bankNotice.description" = "銀行の通知を読み取り、確認用の取引を受信箱に追加します。銀行アプリの「通知を受け取ったとき」オートメーションで「通知」変数と一緒に使ってください。";
+"shortcut.bankNotice.param.text" = "テキスト";
+"shortcut.bankNotice.param.text.description" = "通知のテキスト（「通知」変数）";
+"shortcut.bankNotice.param.bank" = "銀行";
+"shortcut.bankNotice.bank.other" = "その他の銀行";
+"Record a movement from the text ${text}" = "テキスト ${text} から取引を記録";
+"inbox.sourceBankNotice" = "%@ の通知";
+"inbox.sourceBankNoticeOther" = "銀行の通知";
+"inbox.sourceBankNoticeNotUnderstood" = "この通知を読み取れませんでした";

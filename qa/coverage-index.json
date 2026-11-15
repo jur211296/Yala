@@ -157,6 +157,20 @@
       "lastVerified": "2026-10-27"
     },
     {
+      "area": "atajo-banco",
+      "codeGlobs": [
+        "Yala/App/Intents/BankNoticeIntent.swift",
+        "Yala/App/Intents/BankNoticeTestEmitIntent.swift",
+        "Yala/App/Logic/AtajoBanco/**",
+        "Yala/App/Logic/InboxDraftSourceName.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "2026-11-14 (atajo del banco, B0+B1): la acción «Registrar movimiento desde texto» lee el aviso con reglas por banco (BCP, Yape, Interbank, Plin, BBVA, Scotiabank y genéricas), el modelo del iPhone de respaldo con el importe validado contra el texto, «No entendimos este aviso» y «No eran compras»; cola propia en el App Group drenada por InboundCaptureDrain y purgada en las fronteras de cuenta; origen «Aviso de BCP» en la Bandeja. unit:YalaTests/AtajoBanco (BankNoticeParserTests, BankNoticeAmountTests, BankNoticeReadingFlowTests, BankNoticePendingStoreTests, BankNoticeDraftServiceTests, BankNoticeOriginTests, BankNoticeWiringTests) + YalaTests/CloudSync/PrivateExitInboundCaptureTests. La automatización real de Notificación: device-QA en el iPhone 14 (el simulador no la ejecuta), evidencia en docs/ux/atajo-banco-y-suscripciones/prueba-b0/.",
+      "owner": "",
+      "lastVerified": "2026-11-14"
+    },
+    {
       "area": "average-line-bar-charts",
       "codeGlobs": [
         "Yala/App/Views/Panel/CashFlowWidget.swift",

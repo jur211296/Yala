@@ -8872,3 +8872,15 @@
 "connectedBrowsers.link.problem.noCloud" = "Tus datos están en tu iCloud. Para usar Yala web, llevalos a tu cuenta de Yala en Almacenamiento.";
 "connectedBrowsers.link.problem.sessionExpired" = "Tu sesión de la nube venció. Volvé a entrar en Tu cuenta de Yala.";
 "connectedBrowsers.link.problem.network" = "No se pudo conectar con Yala web. Volvé a intentarlo.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Registrar movimiento desde texto";
+"shortcut.bankNotice.description" = "Lee el aviso de tu banco y deja el movimiento en tu Bandeja para que lo confirmes. Usalo en la automatización «Al recibir una notificación» de la app de tu banco, con la variable Notificación.";
+"shortcut.bankNotice.param.text" = "Texto";
+"shortcut.bankNotice.param.text.description" = "El texto del aviso (la variable Notificación)";
+"shortcut.bankNotice.param.bank" = "Banco";
+"shortcut.bankNotice.bank.other" = "Otro banco";
+"Record a movement from the text ${text}" = "Registrar movimiento desde el texto ${text}";
+"inbox.sourceBankNotice" = "Aviso de %@";
+"inbox.sourceBankNoticeOther" = "Aviso del banco";
+"inbox.sourceBankNoticeNotUnderstood" = "No entendimos este aviso";
