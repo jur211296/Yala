@@ -1,332 +1,113 @@
 /**
- * Textos de la página en español e inglés (decisión D12). El idioma es el que la persona eligió en Configurar (se guarda
- * en este navegador) o, si no eligió, el del navegador; por defecto, español.
+ * Idiomas de Yala web: los 16 de la app (lote 2b; antes, español e inglés, decisión D12). El idioma es el que la persona
+ * eligió en Configurar (se guarda en este navegador) o, si no eligió, el primero de su navegador que Yala tenga; si no
+ * tiene ninguno, español.
+ *
+ * Un fichero por idioma en `i18n/`. El español es la base y su forma (`Texts`) es el contrato: si a un idioma le falta una
+ * clave, no compila. Como en la app, tres variantes son diferencias sobre su base (es-AR y es-ES sobre el español, en-GB
+ * sobre el inglés), y es-419 y pt usan la base de su idioma (en la app son iguales a es y a pt-BR).
+ *
+ * `loadTexts()` se espera ANTES de importar la página (`main.tsx`): cada pantalla lee `texts()` al cargarse. Así solo
+ * viaja el idioma que se usa.
  */
-const ES = {
-  titulo: "Entra a tu Yala",
-  subtitulo: "Usa la misma cuenta que en tu iPhone.",
-  apple: "Continuar con Apple",
-  google: "Continuar con Google",
-  compartido: "Es un equipo compartido: no recordar esta sesión",
-  protegido: "Protegido contra bots. Al entrar aceptas la",
-  politica: "política de privacidad",
-  esperandoVerificacion: "Comprobando que eres tú…",
-  cargando: "Cargando…",
-  hola: (nombre: string) => (nombre ? `Hola, ${nombre}` : "Hola"),
-  dentro: "Ya estás dentro de Yala web. Lo próximo que vas a ver aquí es tu Panel.",
-  cuenta: "Tu cuenta",
-  equipoCompartido: "Equipo compartido: la sesión se cierra al cerrar el navegador o tras 30 minutos sin uso.",
-  salir: "Salir",
-  volver: "Volver a intentar",
-  sinNubeTitulo: "Tu Yala vive en iCloud",
-  sinNube:
-    "Yala web solo abre cuentas que usan la nube de Yala. Tus datos siguen en tu iCloud y no se mueven sin que lo pidas.",
-  sinNubeComo: "Para usarla, activa la nube en los ajustes de Yala en tu iPhone. Tus registros se copian y vuelves aquí.",
-  soloGruposTitulo: "Pronto podrás ver tus Grupos aquí",
-  soloGrupos: "Por ahora Yala web abre cuentas que usan la nube de Yala para sus finanzas personales. Grupos llega en una próxima versión.",
-  avisos: {
-    salida: "Saliste de Yala web. ¡Hasta pronto!",
-    cancelado: "No se completó el inicio de sesión. Puedes intentarlo otra vez.",
-    caducada: "El inicio de sesión tardó demasiado. Vuelve a intentarlo.",
-    verificacion: "No pudimos comprobar que eres tú. Vuelve a intentarlo.",
-    limite: "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo.",
-    error: "Algo salió mal al entrar. Vuelve a intentarlo en un momento.",
-    cerrada: "Esta sesión se cerró desde otro aparato. Vuelve a entrar si quieres seguir.",
-  } as Record<string, string>,
-  noDisponible: "Yala web no responde ahora mismo. Vuelve a intentarlo en un momento.",
-  app: {
-    panel: "Panel",
-    bandeja: "Bandeja",
-    registros: "Registros",
-    configurar: "Configurar",
-    mas: "Más",
-    planificacion: "Planificación",
-    presupuestos: "Presupuestos",
-    pagos: "Pagos planificados",
-    estadisticas: "Estadísticas",
-    grupos: "Grupos",
-    ia: "Yala IA",
-    pronto: "Pronto",
-    beta: "Beta",
-    apuntar: "Apuntar",
-    ocultarMontos: "Ocultar montos",
-    mostrarMontos: "Mostrar montos",
-    saldoTotal: "Saldo total",
-    entradas: "Entradas",
-    salidas: "Salidas",
-    delMes: "este mes",
-    aproximado: "Aproximado: alguna divisa se convirtió sin la cotización exacta de hoy.",
-    ultimos: "Últimos registros",
-    verTodos: "Ver todos",
-    enQueGastaste: "En qué gastaste este mes",
-    sinGastos: "Todavía no hay gastos este mes.",
-    sinRegistros: "No hay registros que mostrar.",
-    sinCuentas: "Todavía no tienes cuentas. Créalas en tu iPhone.",
-    hoy: "Hoy",
-    ayer: "Ayer",
-    buscar: "Buscar en las notas",
-    esteMes: "Este mes",
-    mesPasado: "Mes pasado",
-    todo: "Todo",
-    todasLasCuentas: "Todas las cuentas",
-    todasLasCategorias: "Todas las categorías",
-    cargarMas: "Cargar más",
-    registrosNota: "En la beta los registros se miran. Para cambiar uno, ábrelo en tu iPhone.",
-    detalle: "Detalle del registro",
-    cerrar: "Cerrar",
-    fecha: "Fecha",
-    importe: "Importe",
-    cuenta: "Cuenta",
-    categoria: "Categoría",
-    subcategoria: "Subcategoría",
-    etiquetas: "Etiquetas",
-    nota: "Nota",
-    tipo: "Tipo",
-    tipos: { gasto: "Gasto", ingreso: "Ingreso", transferencia: "Transferencia", ajuste_de_saldo: "Ajuste de saldo" } as Record<string, string>,
-    gastoDeGrupo: "Es un gasto de grupo",
-    sinCuenta: "Sin cuenta",
-    sinCategoria: "Sin categoría",
-    bandejaNota: "En la beta la Bandeja se ve aquí y se aprueba en tu iPhone. Lo que apuntas en la web llega con la etiqueta «Yala web».",
-    esperando: "Enviado, esperando a tu iPhone",
-    esperandoNota: "Abre Yala en tu iPhone y lo verás en la Bandeja.",
-    porRevisar: (n: number) => (n === 1 ? "1 por revisar en tu iPhone" : `${n} por revisar en tu iPhone`),
-    todoRevisado: "Todo revisado",
-    nadaPendiente: "No queda nada por revisar.",
-    enviado: (fecha: string) => `Enviado ${fecha}`,
-    origen: {
-      voice: "Voz",
-      receiptPhoto: "Foto",
-      screenshotList: "Captura",
-      screenshotSingle: "Captura",
-      emailAlert: "Correo",
-      scheduledPayment: "Pago planificado",
-      subscription: "Suscripción",
-      applePay: "Apple Pay",
-      automation: "Automatización",
-      siri: "Siri",
-      groupExpense: "Grupo",
-      groupSettlement: "Grupo",
-      manual: "Manual",
-      groupScheduledExpense: "Grupo",
-      web: "Yala web",
-    } as Record<string, string>,
-    falta: "Falta completar en el iPhone",
-    apuntarTitulo: "Apuntar",
-    cancelar: "Cancelar",
-    gasto: "Gasto",
-    ingreso: "Ingreso",
-    descripcion: "Descripción",
-    descripcionPh: "Almuerzo",
-    eligeCategoria: "Elegir en el iPhone",
-    eligeCuenta: "Elegir en el iPhone",
-    apuntarNota: "Va a la Bandeja de tu iPhone. Ahí lo confirmas con un toque y entra en tus saldos.",
-    enviar: "Enviar a la Bandeja",
-    enviando: "Enviando…",
-    enviadoToast: "Enviado a la Bandeja de tu iPhone",
-    errores: {
-      importe: "Escribe un importe mayor que cero.",
-      fecha: "Elige una fecha de hoy o anterior.",
-      descripcion: "La descripción es demasiado larga.",
-      tope_diario: "Llegaste al tope de borradores de hoy. Vuelve a intentarlo mañana.",
-      otro: "No se pudo enviar. Vuelve a intentarlo.",
-    } as Record<string, string>,
-    tuCuenta: "Tu cuenta de Yala",
-    nombre: "Nombre",
-    correo: "Correo",
-    datos: "Tus datos",
-    datosValor: "En tu cuenta de Yala",
-    sesiones: "Sesiones web",
-    estaSesion: "Este navegador",
-    navegador: "Navegador",
-    en: (nav: string, so: string) => (so ? `${nav} en ${so}` : nav),
-    ahora: "ahora",
-    hace: (texto: string) => `hace ${texto}`,
-    equipoCompartidoCorto: "equipo compartido",
-    cerrarSesion: "Cerrar",
-    cerrarLasDemas: "Cerrar las demás sesiones web",
-    sesionesNota: "Al cerrar una, esa pestaña se vacía en menos de un minuto. También puedes cerrarlas desde tu iPhone: Ajustes › Tu cuenta de Yala › Navegadores conectados.",
-    soloEsta: "Solo está abierta esta sesión.",
-    enEstaWeb: "En esta web",
-    ocultarAlAbrir: "Ocultar montos al abrir",
-    tema: "Tema",
-    temaValor: "Como el sistema",
-    idioma: "Idioma",
-    idiomaAuto: "Como el navegador",
-    configurarNota: "Categorías, cuentas, divisas, avisos y Yala Pro se cambian en tu iPhone.",
-    salirDeYala: "Salir de Yala web",
-    noCargo: "No se pudo cargar. Vuelve a intentarlo.",
-    reintentar: "Reintentar",
-    cerradaToast: "Sesión cerrada",
-  },
+import { ES, type Texts } from "./i18n/es";
+
+export type { Texts };
+
+export type Lang =
+  | "es"
+  | "es-419"
+  | "es-AR"
+  | "es-ES"
+  | "en"
+  | "en-GB"
+  | "de"
+  | "fr"
+  | "it"
+  | "ja"
+  | "nl"
+  | "pl"
+  | "pt"
+  | "pt-BR"
+  | "pt-PT"
+  | "zh-Hans";
+
+/** Los 16, con su nombre en su propio idioma (así se reconoce aunque la página esté en otro). */
+export const LANGS: { code: Lang; name: string }[] = [
+  { code: "es", name: "Español" },
+  { code: "es-419", name: "Español (Latinoamérica)" },
+  { code: "es-AR", name: "Español (Argentina)" },
+  { code: "es-ES", name: "Español (España)" },
+  { code: "en", name: "English" },
+  { code: "en-GB", name: "English (UK)" },
+  { code: "de", name: "Deutsch" },
+  { code: "fr", name: "Français" },
+  { code: "it", name: "Italiano" },
+  { code: "ja", name: "日本語" },
+  { code: "nl", name: "Nederlands" },
+  { code: "pl", name: "Polski" },
+  { code: "pt", name: "Português" },
+  { code: "pt-BR", name: "Português (Brasil)" },
+  { code: "pt-PT", name: "Português (Portugal)" },
+  { code: "zh-Hans", name: "简体中文" },
+];
+
+const CODES = new Set<string>(LANGS.map((l) => l.code));
+
+/** Un objeto parcial de `Texts`: lo que una variante cambia de su base. */
+export type TextsPatch<T = Texts> = {
+  [K in keyof T]?: T[K] extends (...args: never[]) => unknown ? T[K] : T[K] extends object ? TextsPatch<T[K]> : T[K];
 };
 
-type Texts = typeof ES;
+/** La base con la variante encima, clave a clave. */
+export function applyPatch<T>(base: T, patch: TextsPatch<T>): T {
+  const out = { ...base } as Record<string, unknown>;
+  for (const [k, v] of Object.entries(patch as Record<string, unknown>)) {
+    const b = out[k];
+    out[k] = v && typeof v === "object" && b && typeof b === "object" ? applyPatch(b, v as TextsPatch<typeof b>) : v;
+  }
+  return out as T;
+}
 
-const EN: Texts = {
-  titulo: "Sign in to Yala",
-  subtitulo: "Use the same account as on your iPhone.",
-  apple: "Continue with Apple",
-  google: "Continue with Google",
-  compartido: "This is a shared computer: don't remember this session",
-  protegido: "Protected against bots. By signing in you accept the",
-  politica: "privacy policy",
-  esperandoVerificacion: "Checking it's you…",
-  cargando: "Loading…",
-  hola: (nombre: string) => (nombre ? `Hi, ${nombre}` : "Hi"),
-  dentro: "You're in Yala web. Your Dashboard is the next thing you'll see here.",
-  cuenta: "Your account",
-  equipoCompartido: "Shared computer: the session ends when you close the browser or after 30 minutes of inactivity.",
-  salir: "Sign out",
-  volver: "Try again",
-  sinNubeTitulo: "Your Yala lives in iCloud",
-  sinNube: "Yala web only opens accounts that use the Yala cloud. Your data stays in your iCloud and doesn't move unless you ask.",
-  sinNubeComo: "To use it, turn on the cloud in Yala's settings on your iPhone. Your records are copied and you can come back here.",
-  soloGruposTitulo: "Your Groups are coming here soon",
-  soloGrupos: "For now, Yala web opens accounts that use the Yala cloud for personal finances. Groups arrive in an upcoming version.",
-  avisos: {
-    salida: "You signed out of Yala web. See you soon!",
-    cancelado: "Sign-in wasn't completed. You can try again.",
-    caducada: "Sign-in took too long. Please try again.",
-    verificacion: "We couldn't check it's you. Please try again.",
-    limite: "Too many attempts in a row. Wait a minute and try again.",
-    error: "Something went wrong while signing in. Try again in a moment.",
-    cerrada: "This session was signed out from another device. Sign in again to continue.",
+const LOADERS: Record<Lang, () => Promise<Texts>> = {
+  es: async () => ES,
+  "es-419": async () => ES,
+  "es-AR": async () => applyPatch(ES, (await import("./i18n/es-AR")).ES_AR),
+  "es-ES": async () => applyPatch(ES, (await import("./i18n/es-ES")).ES_ES),
+  en: async () => (await import("./i18n/en")).EN,
+  "en-GB": async () => {
+    const [{ EN }, { EN_GB }] = await Promise.all([import("./i18n/en"), import("./i18n/en-GB")]);
+    return applyPatch(EN, EN_GB);
   },
-  noDisponible: "Yala web isn't responding right now. Try again in a moment.",
-  app: {
-    panel: "Dashboard",
-    bandeja: "Inbox",
-    registros: "Records",
-    configurar: "Settings",
-    mas: "More",
-    planificacion: "Planning",
-    presupuestos: "Budgets",
-    pagos: "Scheduled payments",
-    estadisticas: "Statistics",
-    grupos: "Groups",
-    ia: "Yala AI",
-    pronto: "Soon",
-    beta: "Beta",
-    apuntar: "Add",
-    ocultarMontos: "Hide amounts",
-    mostrarMontos: "Show amounts",
-    saldoTotal: "Total balance",
-    entradas: "Income",
-    salidas: "Expenses",
-    delMes: "this month",
-    aproximado: "Approximate: a currency was converted without today's exact rate.",
-    ultimos: "Latest records",
-    verTodos: "See all",
-    enQueGastaste: "Where your money went this month",
-    sinGastos: "No expenses yet this month.",
-    sinRegistros: "No records to show.",
-    sinCuentas: "You don't have any accounts yet. Create them on your iPhone.",
-    hoy: "Today",
-    ayer: "Yesterday",
-    buscar: "Search notes",
-    esteMes: "This month",
-    mesPasado: "Last month",
-    todo: "All",
-    todasLasCuentas: "All accounts",
-    todasLasCategorias: "All categories",
-    cargarMas: "Load more",
-    registrosNota: "In the beta, records are view-only. To change one, open it on your iPhone.",
-    detalle: "Record details",
-    cerrar: "Close",
-    fecha: "Date",
-    importe: "Amount",
-    cuenta: "Account",
-    categoria: "Category",
-    subcategoria: "Subcategory",
-    etiquetas: "Tags",
-    nota: "Note",
-    tipo: "Type",
-    tipos: { gasto: "Expense", ingreso: "Income", transferencia: "Transfer", ajuste_de_saldo: "Balance adjustment" },
-    gastoDeGrupo: "It's a group expense",
-    sinCuenta: "No account",
-    sinCategoria: "No category",
-    bandejaNota: "In the beta, your Inbox shows here and you approve it on your iPhone. What you add on the web arrives labeled “Yala web”.",
-    esperando: "Sent, waiting for your iPhone",
-    esperandoNota: "Open Yala on your iPhone and you'll see it in your Inbox.",
-    porRevisar: (n: number) => (n === 1 ? "1 to review on your iPhone" : `${n} to review on your iPhone`),
-    todoRevisado: "All reviewed",
-    nadaPendiente: "Nothing left to review.",
-    enviado: (fecha: string) => `Sent ${fecha}`,
-    origen: {
-      voice: "Voice",
-      receiptPhoto: "Photo",
-      screenshotList: "Screenshot",
-      screenshotSingle: "Screenshot",
-      emailAlert: "Email",
-      scheduledPayment: "Scheduled payment",
-      subscription: "Subscription",
-      applePay: "Apple Pay",
-      automation: "Automation",
-      siri: "Siri",
-      groupExpense: "Group",
-      groupSettlement: "Group",
-      manual: "Manual",
-      groupScheduledExpense: "Group",
-      web: "Yala web",
-    },
-    falta: "Needs finishing on your iPhone",
-    apuntarTitulo: "Add",
-    cancelar: "Cancel",
-    gasto: "Expense",
-    ingreso: "Income",
-    descripcion: "Description",
-    descripcionPh: "Lunch",
-    eligeCategoria: "Choose on iPhone",
-    eligeCuenta: "Choose on iPhone",
-    apuntarNota: "It goes to your iPhone's Inbox. Confirm it there with one tap and it's added to your balances.",
-    enviar: "Send to Inbox",
-    enviando: "Sending…",
-    enviadoToast: "Sent to your iPhone's Inbox",
-    errores: {
-      importe: "Enter an amount greater than zero.",
-      fecha: "Pick today or an earlier date.",
-      descripcion: "The description is too long.",
-      tope_diario: "You've reached today's limit of drafts. Try again tomorrow.",
-      otro: "Couldn't send it. Please try again.",
-    },
-    tuCuenta: "Your Yala account",
-    nombre: "Name",
-    correo: "Email",
-    datos: "Your data",
-    datosValor: "In your Yala account",
-    sesiones: "Web sessions",
-    estaSesion: "This browser",
-    navegador: "Browser",
-    en: (nav: string, so: string) => (so ? `${nav} on ${so}` : nav),
-    ahora: "now",
-    hace: (texto: string) => `${texto} ago`,
-    equipoCompartidoCorto: "shared computer",
-    cerrarSesion: "Sign out",
-    cerrarLasDemas: "Sign out of all other web sessions",
-    sesionesNota: "When you sign one out, that tab empties in under a minute. You can also do it from your iPhone: Settings › Your Yala account › Connected browsers.",
-    soloEsta: "Only this session is open.",
-    enEstaWeb: "On this website",
-    ocultarAlAbrir: "Hide amounts when opening",
-    tema: "Theme",
-    temaValor: "Same as system",
-    idioma: "Language",
-    idiomaAuto: "Same as browser",
-    configurarNota: "Categories, accounts, currencies, notifications and Yala Pro are changed on your iPhone.",
-    salirDeYala: "Sign out of Yala web",
-    noCargo: "Couldn't load. Please try again.",
-    reintentar: "Retry",
-    cerradaToast: "Session signed out",
-  },
+  de: async () => (await import("./i18n/de")).DE,
+  fr: async () => (await import("./i18n/fr")).FR,
+  it: async () => (await import("./i18n/it")).IT,
+  ja: async () => (await import("./i18n/ja")).JA,
+  nl: async () => (await import("./i18n/nl")).NL,
+  pl: async () => (await import("./i18n/pl")).PL,
+  pt: async () => (await import("./i18n/pt-BR")).PT_BR,
+  "pt-BR": async () => (await import("./i18n/pt-BR")).PT_BR,
+  "pt-PT": async () => (await import("./i18n/pt-PT")).PT_PT,
+  "zh-Hans": async () => (await import("./i18n/zh-Hans")).ZH_HANS,
 };
 
-export type Lang = "es" | "en";
 const LANG_KEY = "yala-web-idioma";
+/** Países donde iOS cae en el inglés británico si la app lo tiene. */
+const EN_GB_REGIONS = new Set(["GB", "IE", "AU", "NZ", "IN", "ZA", "SG", "HK"]);
+
+/** El almacén del navegador, si lo hay (también compila con los tipos del Worker, donde lo leen las pruebas). */
+function storage(): { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void } | undefined {
+  return (globalThis as { localStorage?: ReturnType<typeof storage> }).localStorage;
+}
+
+let current: Texts = ES;
+let currentLang: Lang = "es";
 
 /** El idioma elegido en Configurar, si lo hay. En una ventana privada o con el almacenamiento bloqueado, ninguno. */
 export function chosenLang(): Lang | null {
   try {
-    const v = window.localStorage.getItem(LANG_KEY);
-    return v === "es" || v === "en" ? v : null;
+    const v = storage()?.getItem(LANG_KEY) ?? null;
+    return v && CODES.has(v) ? (v as Lang) : null;
   } catch {
     return null;
   }
@@ -335,22 +116,117 @@ export function chosenLang(): Lang | null {
 /** Guarda el idioma elegido (`null`: el del navegador). La página se vuelve a cargar con él. */
 export function setChosenLang(v: Lang | null): void {
   try {
-    if (v) window.localStorage.setItem(LANG_KEY, v);
-    else window.localStorage.removeItem(LANG_KEY);
+    if (v) storage()?.setItem(LANG_KEY, v);
+    else storage()?.removeItem(LANG_KEY);
   } catch {
     // Sin almacenamiento, se queda el del navegador.
   }
 }
 
+/** El idioma de Yala para una etiqueta del navegador (`es-PE`, `pt`, `zh-TW`…), o `null` si Yala no lo tiene. */
+export function matchLang(tag: string): Lang | null {
+  const parts = tag.trim().replace(/_/g, "-").split("-");
+  const base = (parts[0] ?? "").toLowerCase();
+  const region = parts.find((p, i) => i > 0 && /^([A-Za-z]{2}|\d{3})$/.test(p))?.toUpperCase() ?? "";
+  switch (base) {
+    case "es":
+      if (region === "ES") return "es-ES";
+      if (region === "AR") return "es-AR";
+      if (region === "419") return "es-419";
+      return "es";
+    case "en":
+      return EN_GB_REGIONS.has(region) ? "en-GB" : "en";
+    case "pt":
+      return region === "PT" || region === "AO" || region === "MZ" ? "pt-PT" : "pt-BR";
+    case "zh":
+      return "zh-Hans";
+    case "de":
+    case "fr":
+    case "it":
+    case "ja":
+    case "nl":
+    case "pl":
+      return base;
+    default:
+      return null;
+  }
+}
+
+function detect(): Lang {
+  const chosen = chosenLang();
+  if (chosen) return chosen;
+  const tags = navigator.languages?.length ? navigator.languages : [navigator.language || "es"];
+  for (const tag of tags) {
+    const m = matchLang(tag);
+    if (m) return m;
+  }
+  return "es";
+}
+
+/** Los textos de un idioma (lo usan `loadTexts` y las pruebas). */
+export function loadLang(l: Lang): Promise<Texts> {
+  return LOADERS[l]();
+}
+
+/** Carga los textos del idioma de esta visita. Si el fichero no llega (red), se queda en español. */
+export async function loadTexts(): Promise<void> {
+  const l = detect();
+  try {
+    current = await loadLang(l);
+    currentLang = l;
+  } catch {
+    current = ES;
+    currentLang = "es";
+  }
+}
+
 export function lang(): Lang {
-  return chosenLang() ?? ((navigator.language || "es").toLowerCase().startsWith("en") ? "en" : "es");
+  return currentLang;
 }
 
 export function texts(): Texts {
-  return lang() === "en" ? EN : ES;
+  return current;
 }
 
-/** Para formatear importes y fechas: soles con «S/» en español, como en la app. */
+/** Para formatear importes y fechas con `Intl`. El español base sigue en `es-PE`: soles con «S/», como en la app. */
 export function locale(): string {
-  return lang() === "en" ? "en-US" : "es-PE";
+  switch (currentLang) {
+    case "es":
+      return "es-PE";
+    case "en":
+      return "en-US";
+    case "de":
+      return "de-DE";
+    case "fr":
+      return "fr-FR";
+    case "it":
+      return "it-IT";
+    case "ja":
+      return "ja-JP";
+    case "nl":
+      return "nl-NL";
+    case "pl":
+      return "pl-PL";
+    case "pt":
+      return "pt-BR";
+    case "zh-Hans":
+      return "zh-Hans-CN";
+    default:
+      return currentLang;
+  }
+}
+
+/** La política de privacidad en el idioma más cercano que tiene la web de Yala (español, inglés, alemán, francés, italiano y portugués). */
+export function privacyUrl(): string {
+  const base = currentLang.slice(0, 2);
+  if (base === "es") return "https://yala-app.pe/privacy";
+  if (base === "de" || base === "fr" || base === "it" || base === "pt") return `https://yala-app.pe/${base}/privacy`;
+  return "https://yala-app.pe/en/privacy";
+}
+
+/** El código de idioma que entiende Turnstile para el desafío anti-bots. */
+export function turnstileLang(): string {
+  if (currentLang === "zh-Hans") return "zh-cn";
+  if (currentLang.startsWith("pt")) return "pt-br";
+  return currentLang.slice(0, 2);
 }

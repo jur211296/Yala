@@ -1,10 +1,13 @@
 /**
  * La Bandeja en la beta: se ve aquí y se aprueba en el iPhone. Arriba, lo apuntado en la web que el iPhone aún no
  * recogió; debajo, lo que espera en la Bandeja del iPhone (de cualquier origen).
+ *
+ * Lote 3: lo apuntado en la web que el iPhone aún no recogió se puede editar o descartar. Descartar pide un segundo toque
+ * en la misma fila (sin diálogos del navegador). Si el iPhone ya lo recogió, se dice y la lista se recarga.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { texts } from "../i18n";
-import type { Bandeja as BandejaData, Pendiente } from "./api";
+import { ApiError, postJson, type Bandeja as BandejaData, type Enviado, type Pendiente } from "./api";
 import { ago, badge, money, shortDate } from "./format";
 
 const t = texts();
@@ -20,10 +23,36 @@ function amount(raw: number | string | null): number | null {
   return n == null || !Number.isFinite(n) ? null : n;
 }
 
-export function Bandeja({ data, reload }: { data: BandejaData | null; reload: () => void }) {
+export function Bandeja({
+  data,
+  reload,
+  onEdit,
+  onToast,
+}: {
+  data: BandejaData | null;
+  reload: () => void;
+  onEdit: (d: Enviado) => void;
+  onToast: (msg: string) => void;
+}) {
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
   useEffect(() => {
     reload();
   }, [reload]);
+
+  const discard = async (id: string) => {
+    setBusy(id);
+    try {
+      await postJson("/api/borradores/descartar", { id });
+      onToast(t.app.descartadoToast);
+    } catch (err) {
+      onToast(err instanceof ApiError && err.status === 409 ? t.app.recogidoToast : t.app.noCargo);
+    } finally {
+      setBusy(null);
+      setConfirming(null);
+      reload();
+    }
+  };
 
   if (!data) {
     return (
@@ -55,8 +84,29 @@ export function Bandeja({ data, reload }: { data: BandejaData | null; reload: ()
                   <b>{d.descripcion || (d.tipo === "ingreso" ? t.app.ingreso : t.app.gasto)}</b>
                   <span>{t.app.enviado(ago(d.enviado / 1000))}</span>
                 </span>
-                <span className="src">{t.app.origen.web}</span>
                 <span className={`amt${d.tipo === "ingreso" ? " in" : ""}`}>{money(d.tipo === "ingreso" ? d.importe : -d.importe, d.divisa, { sign: d.tipo === "ingreso" })}</span>
+                <span className="row-acts">
+                  {confirming === d.id ? (
+                    <>
+                      <span className="confirm-q">{t.app.descartarPregunta}</span>
+                      <button className="btn-s" type="button" onClick={() => setConfirming(null)}>
+                        {t.app.cancelar}
+                      </button>
+                      <button className="btn-s danger" type="button" disabled={busy === d.id} onClick={() => void discard(d.id)}>
+                        {t.app.descartarSeguro}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn-s" type="button" onClick={() => onEdit(d)}>
+                        {t.app.editar}
+                      </button>
+                      <button className="btn-s" type="button" onClick={() => setConfirming(d.id)}>
+                        {t.app.descartar}
+                      </button>
+                    </>
+                  )}
+                </span>
               </div>
             );
           })}

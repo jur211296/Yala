@@ -2,12 +2,15 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (103 entradas)
+## Índice (106 entradas)
 
-> **No hace falta leer este fichero entero** — son 288 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 293 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
+- `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
 - `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
+- `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
@@ -130,9 +133,30 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
+### [2026-11-14] Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a producción, iCloud fuera del camino de cuenta y el gateway más rápido
+**Contexto:** Dos decisiones de Jürgen capturadas en el chat por el bot dueño (ADR-082 de casa) y dos que contestó en la sesión del lote 1 de bugs de entrada de 2.3. Las incorpora esa sesión; no ejecuta las dos primeras.
+**Decisión:** (1) **Atajo del banco y pagos recurrentes** (14-nov, 16:56): se toman todas las opciones recomendadas de la propuesta visual (A1 a A6 y S1 a S5, entre ellas I2, L2 y P1); la prueba B0 la corre una sesión en el iPhone 14 de Device MCP con un aviso de banco simulado, no el iPhone personal de Jürgen. (2) **La escritura en Grupos de Yala web** (permiso de escritura dedicado vía gateway, opción A) **pasa de staging a producción ya** (14-nov, 17:50); sustituye al «solo en staging hasta que se revise» de la entrada de abajo. (3) **Con datos en el iCloud del teléfono, entrar con Google o Apple no menciona esos datos** (card «Pregunta: con datos en iCloud…»): se queda como está, coherente con «en el camino de cuenta no debería mencionarse iCloud nunca» (13-nov). (4) **El gateway que lee las tablas en paralelo** (card «Conectar con la cuenta tarda 22–50 s») lo despliega la sesión en staging y en producción.
+**Razones:** (1) y (2) son de Jürgen sin más motivo escrito. (3) Los datos siguen en iCloud y vuelven con «Entrar con iCloud privado»; ofrecer traerlos a la cuenta sería fusionar dos corpus, otro trabajo. (4) El cambio no altera la respuesta y baja entrar con la cuenta de 55 s a 16 s en el iPhone 14.
+**Consecuencias:** la card de iCloud en el camino de cuenta se cierra sin código. Producción del gateway quedó en `3b8529af1` + el paralelo (detalle en `docs/RUNBOOK-staging-ddl.md`): el próximo despliegue desde 2.3 subirá además el cupo de recibos de Grupos y Yala web lote 3, que es lo que (2) pide para la escritura. (1) se ejecutó esa noche: B0 en el iPhone 14 (la notificación entrega «título␤cuerpo» con el importe y corre bloqueado sin pedir nada; el atajo por enlace de iCloud lleva su disparador pero llega apagado, así que la guía de I2 son dos toques; el disparador Correo entrega el cuerpo y B3 queda permitido) y B1 construido y probado de punta a punta (ticket `tickets/done/2026-11-14-atajo-banco-b0-b1.md`). Pidió reglas también para Plin: B1 cubre seis bancos más reglas genéricas.
+**Estado:** Activa
+
+### [2026-11-14] Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3
+**Contexto:** El PR de ajustes visuales de la bienvenida (13-nov) llamó al tercer acceso «Entrar con iCloud privado». La decisión 51 de 2.3 retiró «iCloud privado» como nombre de sitio («En tu iCloud» / «En tu cuenta de Yala»), y `DosNombresDeSitioTests` lo puso en rojo en 12 idiomas, lo que paraba el merge.
+**Decisión:** Jürgen (14-nov, 14:30 Lima) mantiene «Entrar con iCloud privado» en ese botón (clave `bienvenida23.access.iCloud`), y solo ahí, para dejar claro en la bienvenida que es la vía privada. La clave entra en `outOfScope` de `DosNombresDeSitioTests`; el resto de la regla sigue igual.
+**Razones:** En la bienvenida, junto a «Entrar con Google» y «Entrar con Apple», el adjetivo explica la diferencia; dentro de la app el sitio sigue llamándose «En tu iCloud».
+**Consecuencias:** No se abre ninguna otra excepción: un texto nuevo con «iCloud privado» vuelve a poner rojo el test.
+**Estado:** Activa
+
+### [2026-11-14] Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a criterio de Frank
+**Contexto:** Dos decisiones de Jürgen del 14-nov a las 13:53 (Lima), capturadas en el chat por el bot dueño (ADR-082 de casa) y pendientes de pasar al repo. Las incorpora la sesión que preparó las decisiones del barrido del iPhone; no las ejecuta.
+**Decisión:** (1) **Lote 3 de Yala web: escribir en Grupos desde la web con la opción A**: la web tiene su propio permiso de escritura por el gateway, **solo en staging hasta que se revise**. (2) **El resto del lote 2** (Presupuestos, Grupos en lectura, buscar, exportar CSV y los 16 idiomas) **se hace como Frank recomiende**; Jürgen acepta que vaya en un lote aparte antes del lote 3 o junto con él.
+**Razones:** Un permiso propio para la web separa lo que puede escribir el navegador de lo que puede hacer la app, y staging primero deja revisar el riesgo antes de abrirlo a cuentas reales. Lo demás del lote 2 es lectura y no pide una decisión de producto.
+**Consecuencias:** la sesión del lote 3 no despliega el permiso de escritura de la web a producción sin una revisión de Jürgen. La sesión que retome el lote 2 elige si va aparte o con el lote 3 y lo deja escrito en su Paso 0.
+**Estado:** Activa
+
 ### [2026-11-14] Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit
 **Contexto:** Decisiones que Jürgen tomó en el chat el 14-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran desde la sesión «Yala web beta», que las recibió pendientes.
-**Decisión:** (1) **Los lotes 2 y 3 de Yala web se avanzan ya en 2.3** (01:21), sin esperar a 3.0; ese mismo día, barrido de todas las cards en QA en el iPhone 14. (2) **Los 11 bugs altos que devolvió el barrido de QA en el iPhone del 14-nov se encolan ya**, en lotes de 3 a 5, delante de las mejoras (07:08). (3) **Las sesiones de Yala web (beta y lotes) no se fijan a la Mini**: van a la máquina que elija el coordinador (07:08). (4) **El despliegue a Production de CloudKit del campo `CD_systemRoleRaw` lo hace Dan**, por encargo de Jürgen (07:08). (5) **Hecho (07:16)**: `CD_systemRoleRaw` (String, `CD_Subcategory`) quedó desplegado por Dan el 14-nov en Production de `iCloud.com.jurgenschmidt.yala` (sin índices) y de `.yala.dev` (con Queryable, Searchable y Sortable), solo altas; ya no se le pide a Jürgen.
+**Decisión:** (1) **Los lotes 2 y 3 de Yala web se avanzan ya en 2.3** (01:21), sin esperar a 3.0; ese mismo día, barrido de todas las cards en QA en el iPhone 14. (2) **Los 11 bugs altos que devolvió el barrido de QA en el iPhone del 14-nov se encolan ya**, en lotes de 3 a 5, delante de las mejoras (07:08). (3) **Las sesiones de Yala web (beta y lotes) no se fijan a la Mini**: van a la máquina que elija el coordinador (07:08). (4) **El despliegue a Production de CloudKit del campo `CD_systemRoleRaw` lo hace Dan**, por encargo de Jürgen (07:08). (5) **Hecho ese mismo día** (07:16): Dan desplegó `CD_systemRoleRaw` (String, en `CD_Subcategory`) a Production en `iCloud.com.jurgenschmidt.yala` (sin índices) y en `.yala.dev` (con Queryable, Searchable y Sortable), solo altas; ya no se le pide a Jürgen. Lo incorporó la sesión del lote 2 de Yala web.
 **Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
 **Consecuencias:** (1) cambia la decisión D10 del plan de Yala web (`docs/web-app/index.html`: lote 2 en 2.4 y lote 3 en 2.5): los dos van ahora en 2.3. La beta (lote 1) quedó en staging el 14-nov. (2), (3) y (4) son de la cola y de la operación: no dejan regla en el código. (3) es lo que permitió hacer la beta en la Max, con los secretos de staging usados desde la Mini por `ssh`.
 **Estado:** Activa

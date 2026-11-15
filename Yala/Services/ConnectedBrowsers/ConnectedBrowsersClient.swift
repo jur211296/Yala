@@ -7,6 +7,8 @@
 //    - `GET  /api/dispositivo/sesiones`               → la lista.
 //    - `POST /api/dispositivo/sesiones/cerrar`        → `{id}`: cierra una.
 //    - `POST /api/dispositivo/sesiones/cerrar-todas`  → cierra todas.
+//    - `GET  /api/dispositivo/vincular?codigo=`        → lee un código QR de la web (lote 2): qué navegador lo pidió.
+//    - `POST /api/dispositivo/vincular`                → `{codigo}`: lo aprueba, tras Face ID (lote 2).
 //
 //  Se identifica con el token de la sesión de la nube (`CloudAuthService`), sin App Attest: la web solo deja ver y cerrar
 //  las sesiones web PROPIAS (decisión P9 del lote 1). Solo hay web en staging, así que solo Yala Dev la conoce
@@ -50,6 +52,17 @@ struct WebSession: Decodable, Equatable, Identifiable, Sendable {
     let equipoCompartido: Bool
 }
 
+/// Lo que la web cuenta del navegador que pidió un código QR (`qrPeek` en `webapp/src/worker/app.ts`).
+struct WebLinkRequest: Decodable, Equatable, Sendable {
+    let codigo: String
+    let navegador: String
+    let sistema: String
+    let ciudad: String?
+    /// Epoch en segundos.
+    let creada: Double
+    let expira: Double
+}
+
 @MainActor
 final class ConnectedBrowsersClient {
     private let baseURL: URL?
@@ -79,6 +92,24 @@ final class ConnectedBrowsersClient {
         }
     }
 
+    /// Lee un código QR de la web: desde ahí, solo esta cuenta puede aprobarlo. `rejected(404)` = caducado o ajeno.
+    func peekLink(code: String) async throws -> WebLinkRequest {
+        let data = try await send(method: "GET", path: "api/dispositivo/vincular", body: nil, query: [URLQueryItem(name: "codigo", value: code)])
+        do {
+            return try JSONDecoder().decode(WebLinkRequest.self, from: data)
+        } catch {
+            #if DEBUG
+            print("ConnectedBrowsersClient: Error: \(error)")
+            #endif
+            throw ConnectedBrowsersClientError.transient(status: -1)
+        }
+    }
+
+    /// Aprueba el código: ese navegador entra en Yala web. `rejected(404)` = caducado; `rejected(409)` = sin la nube.
+    func approveLink(code: String) async throws {
+        _ = try await send(method: "POST", path: "api/dispositivo/vincular", body: ["codigo": code])
+    }
+
     func close(id: String) async throws {
         _ = try await send(method: "POST", path: "api/dispositivo/sesiones/cerrar", body: ["id": id])
     }
@@ -87,10 +118,15 @@ final class ConnectedBrowsersClient {
         _ = try await send(method: "POST", path: "api/dispositivo/sesiones/cerrar-todas", body: [:])
     }
 
-    private func send(method: String, path: String, body: [String: Any]?) async throws -> Data {
+    private func send(method: String, path: String, body: [String: Any]?, query: [URLQueryItem] = []) async throws -> Data {
         guard let baseURL else { throw ConnectedBrowsersClientError.unavailable }
         guard let token = await tokenProvider(), !token.isEmpty else { throw ConnectedBrowsersClientError.sessionExpired }
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        var url = baseURL.appendingPathComponent(path)
+        if !query.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems = query
+            if let withQuery = components.url { url = withQuery }
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.timeoutInterval = 20
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

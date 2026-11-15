@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "剩余 %@ 天";
 "budgets.period.past" = "已结束";
 "budgets.amount.of" = "/ %@";
-"budgets.exceeded.encouragement" = "你超出了预算 — 下一个周期会更好!";
+"budgets.exceeded.overByAdjust %@" = "超出了 %@。要调整限额吗？";
+"budgets.exceeded.adjustLimit" = "调整限额";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "预算名称";
@@ -9011,19 +9012,19 @@
 "bienvenida23.showcase.groupsTitle" = "账目清清楚楚";
 "bienvenida23.showcase.groupsTitleAccent" = "和朋友一起。";
 "bienvenida23.showcase.receipt.name" = "识别你的小票";
-"bienvenida23.showcase.receipt.caption" = "把相机对准小票，Yala 会识别并记下来。";
+"bienvenida23.showcase.receipt.caption" = "Yala 读取小票并记账。";
 "bienvenida23.showcase.voice.name" = "用声音记账";
-"bienvenida23.showcase.voice.caption" = "像跟别人聊天一样，告诉 Yala 你花了多少。";
+"bienvenida23.showcase.voice.caption" = "说出花了多少就行。";
 "bienvenida23.showcase.organize.name" = "整理你的支出";
-"bienvenida23.showcase.organize.caption" = "Yala 按分类汇总支出，让你看清钱花到哪里。";
+"bienvenida23.showcase.organize.caption" = "看清钱花在哪里。";
 "bienvenida23.showcase.split.name" = "分摊任何支出";
-"bienvenida23.showcase.split.caption" = "聚餐、房租或旅行：Yala 帮你分摊并记账。";
+"bienvenida23.showcase.split.caption" = "Yala 帮你分摊记账。";
 "bienvenida23.showcase.budget.name" = "守住预算";
-"bienvenida23.showcase.budget.caption" = "设定上限，随时看还剩多少。";
+"bienvenida23.showcase.budget.caption" = "设个上限，看看还剩多少。";
 "bienvenida23.showcase.whoOwes.name" = "谁欠谁多少";
-"bienvenida23.showcase.whoOwes.caption" = "不用电子表格：每人都能看到自己那份。";
+"bienvenida23.showcase.whoOwes.caption" = "每人都能看到自己的份额。";
 "bienvenida23.showcase.settle.name" = "一键结清";
-"bienvenida23.showcase.settle.caption" = "记下付款，一切归零。";
+"bienvenida23.showcase.settle.caption" = "记下付款，账目清零。";
 "bienvenida23.showcase.example" = "示例";
 "bienvenida23.showcase.groupsDoorLink" = "和朋友分摊费用";
 "bienvenida23.showcase.pause" = "暂停展示";
@@ -9031,7 +9032,7 @@
 "bienvenida23.showcase.position" = "%1$@，第 %2$d 个，共 %3$d 个";
 "bienvenida23.access.google" = "通过 Google 继续";
 "bienvenida23.access.apple" = "通过 Apple 继续";
-"bienvenida23.access.iCloud" = "使用我的 iCloud 继续";
+"bienvenida23.access.iCloud" = "使用私人 iCloud 继续";
 "bienvenida23.access.iCloudLine" = "你的数据只保存在你的 Apple 设备上。";
 "bienvenida23.access.groupsNeedAccount" = "要和其他人分摊费用，你需要一个 Yala 账户。";
 "bienvenida23.demo.lunch" = "午餐";
@@ -9607,3 +9608,38 @@
 "connectedBrowsers.sharedComputer" = "共用电脑";
 "connectedBrowsers.justNow" = "刚刚";
 "connectedBrowsers.browserOn" = "%2$@ 上的 %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "关联浏览器";
+"connectedBrowsers.link.rowFooter" = "无需输入密码即可在电脑上打开 Yala：扫描 Yala web 显示的二维码。";
+"connectedBrowsers.link.title" = "关联浏览器";
+"connectedBrowsers.link.intro" = "在电脑上打开 Yala web，选择“用 iPhone 登录”。将相机对准二维码。";
+"connectedBrowsers.link.scanner" = "用于读取二维码的相机";
+"connectedBrowsers.link.typeHeader" = "或输入代码";
+"connectedBrowsers.link.continue" = "继续";
+"connectedBrowsers.link.confirmHeader" = "在此浏览器中打开 Yala？";
+"connectedBrowsers.link.whereCity" = "来自 %1$@ 的请求 · 代码 %2$@";
+"connectedBrowsers.link.whereNoCity" = "代码 %@";
+"connectedBrowsers.link.warning" = "仅当你在自己的屏幕上看到此代码时才确认。Yala 的任何人都不会向你索要。";
+"connectedBrowsers.link.confirm" = "用面容 ID 确认";
+"connectedBrowsers.link.faceIDReason" = "确认要在该浏览器中打开你的 Yala。";
+"connectedBrowsers.link.doneTitle" = "已关联浏览器";
+"connectedBrowsers.link.doneBody" = "%@ 现在显示你的 Yala（只读）。你可以随时在这里退出。";
+"connectedBrowsers.link.doneButton" = "完成";
+"connectedBrowsers.link.problem.invalidCode" = "这不是 Yala web 的代码。请确认它有 8 个字符。";
+"connectedBrowsers.link.problem.expired" = "代码已过期或已被使用。请在 Yala web 上获取新的代码。";
+"connectedBrowsers.link.problem.noCloud" = "你的账户未使用 Yala 云。请在“存储”中开启后再使用 Yala web。";
+"connectedBrowsers.link.problem.sessionExpired" = "你的云端会话已过期。请在“你的 Yala 账户”中重新登录。";
+"connectedBrowsers.link.problem.network" = "无法连接 Yala web。请重试。";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "从文本记录交易";
+"shortcut.bankNotice.description" = "读取银行通知，并把交易放进收件箱等你确认。在银行 App 的“收到通知时”自动化中配合“通知”变量使用。";
+"shortcut.bankNotice.param.text" = "文本";
+"shortcut.bankNotice.param.text.description" = "通知的文本（“通知”变量）";
+"shortcut.bankNotice.param.bank" = "银行";
+"shortcut.bankNotice.bank.other" = "其他银行";
+"Record a movement from the text ${text}" = "从文本 ${text} 记录交易";
+"inbox.sourceBankNotice" = "%@ 通知";
+"inbox.sourceBankNoticeOther" = "银行通知";
+"inbox.sourceBankNoticeNotUnderstood" = "我们没能读懂这条通知";

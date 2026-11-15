@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "Pozostało dni: %@";
 "budgets.period.past" = "Zamknięty";
 "budgets.amount.of" = "z %@";
-"budgets.exceeded.encouragement" = "Przekroczono budżet — następny okres pójdzie lepiej!";
+"budgets.exceeded.overByAdjust %@" = "Przekroczono o %@. Zmienić limit?";
+"budgets.exceeded.adjustLimit" = "Zmień limit";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Nazwa budżetu";
@@ -9011,19 +9012,19 @@
 "bienvenida23.showcase.groupsTitle" = "Jasne rozliczenia";
 "bienvenida23.showcase.groupsTitleAccent" = "z przyjaciółmi.";
 "bienvenida23.showcase.receipt.name" = "Czyta twoje paragony";
-"bienvenida23.showcase.receipt.caption" = "Skieruj aparat na paragon. Yala go odczyta i zapisze.";
+"bienvenida23.showcase.receipt.caption" = "Yala odczyta paragon i go zapisze.";
 "bienvenida23.showcase.voice.name" = "Zapisuj głosem";
-"bienvenida23.showcase.voice.caption" = "Powiedz Yali, ile wydałeś, tak jak powiedziałbyś komuś.";
+"bienvenida23.showcase.voice.caption" = "Powiedz Yali, ile wydałeś.";
 "bienvenida23.showcase.organize.name" = "Porządkuje wydatki";
-"bienvenida23.showcase.organize.caption" = "Yala grupuje wydatki według kategorii. Widzisz, na co idą pieniądze.";
+"bienvenida23.showcase.organize.caption" = "Zobacz, na co idą pieniądze.";
 "bienvenida23.showcase.split.name" = "Dziel każdy wydatek";
-"bienvenida23.showcase.split.caption" = "Kolacja, czynsz czy wyjazd: Yala dzieli i pilnuje rachunku.";
+"bienvenida23.showcase.split.caption" = "Yala dzieli i pilnuje rachunku.";
 "bienvenida23.showcase.budget.name" = "Pilnuj budżetu";
-"bienvenida23.showcase.budget.caption" = "Ustal limit i zobacz, ile ci zostało.";
+"bienvenida23.showcase.budget.caption" = "Ustal limit i zobacz, ile zostało.";
 "bienvenida23.showcase.whoOwes.name" = "Kto komu ile winien";
-"bienvenida23.showcase.whoOwes.caption" = "Bez arkuszy: każdy widzi swoją część.";
+"bienvenida23.showcase.whoOwes.caption" = "Każdy widzi swoją część.";
 "bienvenida23.showcase.settle.name" = "Rozlicz jednym dotknięciem";
-"bienvenida23.showcase.settle.caption" = "Zapisz płatność i wszystko wraca do zera.";
+"bienvenida23.showcase.settle.caption" = "Zapisz płatność i jesteście kwita.";
 "bienvenida23.showcase.example" = "Przykład";
 "bienvenida23.showcase.groupsDoorLink" = "Dziel wydatki ze znajomymi";
 "bienvenida23.showcase.pause" = "Wstrzymaj prezentację";
@@ -9031,7 +9032,7 @@
 "bienvenida23.showcase.position" = "%1$@, %2$d z %3$d";
 "bienvenida23.access.google" = "Kontynuuj z Google";
 "bienvenida23.access.apple" = "Kontynuuj z Apple";
-"bienvenida23.access.iCloud" = "Kontynuuj z moim iCloud";
+"bienvenida23.access.iCloud" = "Kontynuuj z prywatnym iCloud";
 "bienvenida23.access.iCloudLine" = "Twoje dane tylko na twoich urządzeniach Apple.";
 "bienvenida23.access.groupsNeedAccount" = "Aby dzielić wydatki z innymi, potrzebujesz konta Yala.";
 "bienvenida23.demo.lunch" = "Obiad";
@@ -9607,3 +9608,38 @@
 "connectedBrowsers.sharedComputer" = "komputer współdzielony";
 "connectedBrowsers.justNow" = "teraz";
 "connectedBrowsers.browserOn" = "%1$@ na %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Połącz przeglądarkę";
+"connectedBrowsers.link.rowFooter" = "Otwórz Yala na komputerze bez wpisywania hasła: zeskanuj kod, który pokazuje Yala web.";
+"connectedBrowsers.link.title" = "Połącz przeglądarkę";
+"connectedBrowsers.link.intro" = "Na komputerze otwórz Yala web i wybierz „Zaloguj się iPhone’em”. Skieruj aparat na kod.";
+"connectedBrowsers.link.scanner" = "Aparat do odczytu kodu";
+"connectedBrowsers.link.typeHeader" = "Albo wpisz kod";
+"connectedBrowsers.link.continue" = "Dalej";
+"connectedBrowsers.link.confirmHeader" = "Otworzyć Yala w tej przeglądarce?";
+"connectedBrowsers.link.whereCity" = "Prośba z: %1$@ · kod %2$@";
+"connectedBrowsers.link.whereNoCity" = "Kod %@";
+"connectedBrowsers.link.warning" = "Potwierdź tylko wtedy, gdy widzisz ten kod na własnym ekranie. Nikt z Yala nigdy cię o niego nie poprosi.";
+"connectedBrowsers.link.confirm" = "Potwierdź Face ID";
+"connectedBrowsers.link.faceIDReason" = "Potwierdź, że chcesz otworzyć Yala w tej przeglądarce.";
+"connectedBrowsers.link.doneTitle" = "Przeglądarka połączona";
+"connectedBrowsers.link.doneBody" = "%@ pokazuje teraz twoje Yala, tylko do odczytu. W każdej chwili możesz ją stąd wylogować.";
+"connectedBrowsers.link.doneButton" = "Gotowe";
+"connectedBrowsers.link.problem.invalidCode" = "To nie jest kod Yala web. Sprawdź, czy ma 8 znaków.";
+"connectedBrowsers.link.problem.expired" = "Kod wygasł lub został już użyty. Wyświetl nowy w Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Twoje konto nie korzysta z chmury Yala. Włącz ją w Pamięci, aby używać Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "Twoja sesja w chmurze wygasła. Zaloguj się ponownie w Twoim koncie Yala.";
+"connectedBrowsers.link.problem.network" = "Nie udało się połączyć z Yala web. Spróbuj ponownie.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Zapisz transakcję z tekstu";
+"shortcut.bankNotice.description" = "Odczytuje powiadomienie z banku i zostawia transakcję w Skrzynce do potwierdzenia. Użyj w automatyzacji „Gdy otrzymam powiadomienie” aplikacji banku, ze zmienną Powiadomienie.";
+"shortcut.bankNotice.param.text" = "Tekst";
+"shortcut.bankNotice.param.text.description" = "Tekst powiadomienia (zmienna Powiadomienie)";
+"shortcut.bankNotice.param.bank" = "Bank";
+"shortcut.bankNotice.bank.other" = "Inny bank";
+"Record a movement from the text ${text}" = "Zapisz transakcję z tekstu ${text}";
+"inbox.sourceBankNotice" = "Powiadomienie: %@";
+"inbox.sourceBankNoticeOther" = "Powiadomienie z banku";
+"inbox.sourceBankNoticeNotUnderstood" = "Nie zrozumieliśmy tego powiadomienia";

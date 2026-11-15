@@ -1,10 +1,14 @@
 /**
  * Registros: lista por días, de 50 en 50, con buscar (en la nota), filtrar por mes, cuenta y categoría, y el detalle de
  * cada uno. En la beta solo se mira: editar llega cuando la web sea un aparato más (lote 4).
+ *
+ * Lote 2b: «Exportar CSV» baja lo que se está viendo (mismos filtros) con el formato del iPhone (`csv.ts`), y la búsqueda
+ * ⌘K abre Registros ya filtrado (`inicial`).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { texts } from "../i18n";
 import { getJson, type Categoria, type Cuenta, type Movimiento, type PaginaRegistros } from "./api";
+import { buildCsv, CSV_MAX_ROWS } from "./csv";
 import { dayLabel, money, todayKey } from "./format";
 import { MovimientoRow } from "./Panel";
 
@@ -21,12 +25,32 @@ function range(p: Periodo): { desde?: string; hasta?: string } {
   return { desde: `${year}-${mm}-01`, hasta: `${year}-${mm}-${String(last).padStart(2, "0")}` };
 }
 
-export function Registros({ cuentas }: { cuentas: Cuenta[] }) {
-  const [periodo, setPeriodo] = useState<Periodo>("mes");
-  const [cuenta, setCuenta] = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [texto, setTexto] = useState("");
-  const [buscar, setBuscar] = useState("");
+/** El filtro con el que abre Registros la búsqueda ⌘K. Un texto busca en todo el tiempo; una cuenta o una categoría, en el mes. */
+export interface FiltroInicial {
+  cuenta?: string;
+  categoria?: string;
+  texto?: string;
+}
+
+/** Descarga un texto como archivo, sin pasar por el servidor. */
+function download(name: string, content: string): void {
+  const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; inicial?: FiltroInicial; onToast?: (s: string) => void }) {
+  const [periodo, setPeriodo] = useState<Periodo>(inicial?.texto ? "todo" : "mes");
+  const [cuenta, setCuenta] = useState(inicial?.cuenta ?? "");
+  const [categoria, setCategoria] = useState(inicial?.categoria ?? "");
+  const [texto, setTexto] = useState(inicial?.texto ?? "");
+  const [buscar, setBuscar] = useState(inicial?.texto?.trim() ?? "");
+  const [exportando, setExportando] = useState<number | null>(null);
   const [cats, setCats] = useState<Categoria[]>([]);
   const [items, setItems] = useState<Movimiento[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -85,6 +109,37 @@ export function Registros({ cuentas }: { cuentas: Cuenta[] }) {
       .finally(() => setLoadingMore(false));
   };
 
+  // Exportar: de 200 en 200 con los filtros que se ven, hasta el tope. El archivo se arma aquí.
+  const exportCsv = async () => {
+    if (exportando !== null) return;
+    setExportando(0);
+    const rows: Movimiento[] = [];
+    let next: string | null = null;
+    let cut = false;
+    try {
+      do {
+        const q = new URLSearchParams(query);
+        q.set("limite", "200");
+        if (next) q.set("cursor", next);
+        const p: PaginaRegistros = await getJson<PaginaRegistros>(`/api/registros?${q}`);
+        rows.push(...p.movimientos);
+        next = p.siguiente_cursor;
+        setExportando(rows.length);
+        if (next && rows.length >= CSV_MAX_ROWS) cut = true;
+      } while (next && !cut);
+      if (rows.length === 0) {
+        onToast?.(t.csv.vacio);
+        return;
+      }
+      download(`${t.csv.archivo}-${todayKey()}.csv`, buildCsv(rows.slice(0, CSV_MAX_ROWS)));
+      onToast?.(cut ? t.csv.cortado(Math.min(rows.length, CSV_MAX_ROWS)) : t.csv.listo(rows.length));
+    } catch {
+      onToast?.(t.csv.error);
+    } finally {
+      setExportando(null);
+    }
+  };
+
   const groups = useMemo(() => {
     const out: { day: string | null; rows: Movimiento[] }[] = [];
     for (const m of items ?? []) {
@@ -124,6 +179,9 @@ export function Registros({ cuentas }: { cuentas: Cuenta[] }) {
             ))}
         </select>
         <input type="search" aria-label={t.app.buscar} placeholder={t.app.buscar} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={60} />
+        <button className="chip exp" type="button" onClick={() => void exportCsv()} disabled={exportando !== null} aria-live="polite">
+          {exportando === null ? t.csv.exportar : t.csv.exportando(exportando)}
+        </button>
       </div>
 
       <section className="cd" aria-busy={items === null}>
@@ -157,7 +215,7 @@ export function Registros({ cuentas }: { cuentas: Cuenta[] }) {
   );
 }
 
-function Detalle({ m, onClose }: { m: Movimiento; onClose: () => void }) {
+export function Detalle({ m, onClose }: { m: Movimiento; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);

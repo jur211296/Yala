@@ -104,6 +104,11 @@ export const COLUMNS = {
   scheduled:
     "sync_id,name,amount,currency_code,transaction_type,is_recurring,recurrence_type,recurrence_interval,next_due_date,end_date," +
     "payment_category,is_active,last_paid_date,subcategory_ref,account_ref",
+  /** Lo de `scheduled` más lo que pide el calendario de cobros (Yala web, `logic/schedule.ts`). */
+  scheduledCalendar:
+    "sync_id,name,amount,currency_code,transaction_type,is_recurring,recurrence_type,recurrence_interval,next_due_date,end_date," +
+    "payment_category,is_active,last_paid_date,subcategory_ref,account_ref,created_at,day_of_month,selected_weekdays," +
+    "yearly_month,yearly_day,skipped_dates_raw",
   rates: "sync_id,date_key,base,rates,timestamp",
   prefs: "key,value",
 } as const;

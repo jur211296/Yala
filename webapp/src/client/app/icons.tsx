@@ -73,6 +73,12 @@ export const Icons = {
       <path d="M12 5v14M5 12h14" />
     </svg>
   ),
+  search: (
+    <svg {...P}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  ),
   eye: (
     <svg {...P}>
       <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />

@@ -1,6 +1,6 @@
 ---
 name: conducir-el-iphone-real-con-device-mcp
-description: Cómo conducir y grabar el iPhone 14 de pruebas desde la Max con Device MCP, y qué no hace (teclado, open_url, PasteButton, Google).
+description: Cómo conducir y grabar el iPhone 14 de pruebas desde la Max con Device MCP, y qué no hace (teclado, open_url, PasteButton, Google, bloqueo, Atajos).
 metadata:
   type: reference
 ---
@@ -59,3 +59,15 @@ Medido el 2026-11-14 (lote B del barrido):
   `CloudSignOut swap COMPLETED`). Engánchala en segundo plano y **no uses `launch_app` después**: relanza y corta la consola.
 - Tras eliminar la cuenta en la nube, Google vuelve a pedir el consentimiento («Iniciar sesión en Yala» → «Continuar»
   abajo, con scroll).
+
+Medido el 2026-11-14 (prueba B0 del atajo del banco):
+
+- **El iPhone 14 se bloquea solo a los pocos minutos y tiene código**: desbloquearlo es de Jürgen
+  (`request_human_action` + `preguntar-bot`). Deja la prueba «con el iPhone bloqueado» para el final, después de todo lo
+  que pida el teléfono desbloqueado; si no, la sesión se queda esperando su mano a mitad.
+- **`tap_text` cae por OCR en lo que haya debajo si el diálogo ya se fue**: buscando «OK» de un `Mostrar contenido` tocó
+  el icono de Grok Bot (chats personales) en el dock. Para un botón de un diálogo, `tap` por coordenadas tras la captura.
+- **Atajos se conduce bien con Device MCP**: buscador de acciones, «Seleccionar variable», renombrar. Para leer qué
+  recibe una automatización, añade «Copiar en el portapapeles» y lee con `get_clipboard` (sobrevive al bloqueo).
+- **Una acción de Atajos solo DEBUG en Yala Dev** que programa una notificación local con retardo sirve para simular
+  avisos de otras apps («Al recibir una notificación de Yala Dev»): el molde es `BankNoticeTestEmitIntent`.

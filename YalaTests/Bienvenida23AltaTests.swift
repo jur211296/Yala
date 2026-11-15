@@ -30,12 +30,11 @@ struct Bienvenida23ShowcaseTests {
         #expect(WelcomeShowcaseLogic.accesses(for: .finances) == [.google, .apple, .iCloud])
     }
 
-    @Test("«Dividir gastos con amigos» sale solo en las funciones de grupos y solo desde «Mis finanzas»")
+    @Test("«Dividir gastos con amigos» sale debajo de los accesos en «Mis finanzas», y solo con entrada a la cuenta")
     func groupsDoorShortcut() {
-        #expect(WelcomeShowcaseLogic.offersGroupsDoor(.splitAny, on: .finances))
-        #expect(WelcomeShowcaseLogic.offersGroupsDoor(.whoOwes, on: .finances))
-        #expect(!WelcomeShowcaseLogic.offersGroupsDoor(.receipt, on: .finances))
-        #expect(!WelcomeShowcaseLogic.offersGroupsDoor(.splitAny, on: .groups))
+        #expect(WelcomeShowcaseLogic.offersGroupsDoor(on: .finances, providersAvailable: true))
+        #expect(!WelcomeShowcaseLogic.offersGroupsDoor(on: .finances, providersAvailable: false))
+        #expect(!WelcomeShowcaseLogic.offersGroupsDoor(on: .groups, providersAvailable: true))
     }
 
     @Test("Rota sola solo sin pausa, sin Reducir movimiento y sin VoiceOver",

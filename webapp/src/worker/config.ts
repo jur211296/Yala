@@ -70,6 +70,7 @@ export function configProblems(env: Partial<Env>): string[] {
   if (!env.DRAFTS_DB) problems.push("falta el D1 DRAFTS_DB (la cola de borradores)");
   if (!env.DEFAULT_TIMEZONE) problems.push("falta DEFAULT_TIMEZONE");
   if (!env.SESSION_INDEX) problems.push("falta el Durable Object SESSION_INDEX (la lista de sesiones)");
+  if (!env.QR_PAIRING) problems.push("falta el Durable Object QR_PAIRING (los códigos de entrar con el iPhone)");
 
   // Staging tiene el login con contraseña y acepta las claves de prueba de Turnstile: solo vale contra el Supabase de
   // staging. Un Worker de producción copiado a mano con ENVIRONMENT=staging no atiende.
@@ -91,7 +92,7 @@ export function configProblems(env: Partial<Env>): string[] {
     if (isTurnstileTestKey(env.TURNSTILE_SITE_KEY) || isTurnstileTestKey(env.TURNSTILE_SECRET_KEY)) {
       problems.push("Turnstile usa las claves de prueba de Cloudflare");
     }
-    if (!env.RL_AUTH || !env.RL_API) problems.push("faltan los límites de peticiones (RL_AUTH, RL_API)");
+    if (!env.RL_AUTH || !env.RL_API || !env.RL_QR) problems.push("faltan los límites de peticiones (RL_AUTH, RL_API, RL_QR)");
   }
   return problems;
 }

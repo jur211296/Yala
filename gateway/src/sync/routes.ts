@@ -299,10 +299,16 @@ export async function handleSyncPull(c: Ctx): Promise<Response> {
     row: Record<string, unknown>;
     server_seq: number;
   }
+  // Las consultas por tabla van EN PARALELO (2026-11-14, card «Conectar con la cuenta tarda 22–50 s»): en serie, cada
+  // página costaba ~2,2 s fijos aunque viniera vacía —medido en el iPhone 14: 15 páginas, 41 s de los 55 de entrar con
+  // una cuenta—. Cada consulta es independiente y el resultado se ordena después, así que la página es la misma. El
+  // primer fallo se reporta en el orden de siempre (el de `SYNCABLE_ENTITIES`).
+  const q = `select=*&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`;
+  const results = await Promise.all(
+    SYNCABLE_ENTITIES.map(async (entity) => ({ entity, ...(await getRows(c.env, auth.userJWT, entity, q)) })),
+  );
   const collected: Raw[] = [];
-  for (const entity of SYNCABLE_ENTITIES) {
-    const q = `select=*&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`;
-    const { ok, status, rows } = await getRows(c.env, auth.userJWT, entity, q);
+  for (const { entity, ok, status, rows } of results) {
     if (!ok) {
       return jsonError("yala_unavailable", `pull upstream ${status} (${entity})`, 502);
     }
@@ -360,8 +366,11 @@ export async function handleSyncMerkle(c: Ctx): Promise<Response> {
   const channel2 = new Map<string, Uint8Array>();
   const entities: Record<string, { count: number; hash: string }> = {};
 
+  // Las tablas se leen EN PARALELO (2026-11-14, misma card que el pull): en serie, el Merkle tardaba 4–6 s en el iPhone 14
+  // con una cuenta de 7.000 filas. Dentro de cada tabla la paginación sigue en serie (keyset). Los mapas se rellenan
+  // después, en el orden de `SYNCABLE_ENTITIES`, y la raíz ordena sus claves (`merkleRoot`): el resultado es el mismo.
   try {
-    for (const entity of SYNCABLE_ENTITIES) {
+    const perEntity = await Promise.all(SYNCABLE_ENTITIES.map(async (entity) => {
       const columns = merkleColumns(entity, cap);
       const select = merkleSelect(entity, columns);
       const leaves1: Array<{ syncId: string; leaf: Uint8Array }> = [];
@@ -378,7 +387,7 @@ export async function handleSyncMerkle(c: Ctx): Promise<Response> {
         const q = `select=${select}&order=sync_id.asc&limit=${pageSize}${keyset}`;
         const { ok, status, rows } = await getRows(c.env, auth.userJWT, entity, q);
         if (!ok) {
-          return jsonError("yala_unavailable", `merkle upstream ${status} (${entity})`, 502);
+          return { entity, upstreamStatus: status } as const;
         }
         for (const row of rows) {
           const syncId = String(row.sync_id).toLowerCase();
@@ -393,9 +402,18 @@ export async function handleSyncMerkle(c: Ctx): Promise<Response> {
         lastSyncId = String(rows[rows.length - 1].sync_id);
       }
       const eh = await entityHash(leaves1);
-      channel1.set(entity, eh);
-      channel2.set(entity, await entityHash(leaves2));
-      entities[entity] = { count: leaves1.length, hash: hex(eh) };
+      return { entity, eh, eh2: await entityHash(leaves2), count: leaves1.length };
+    }));
+    for (const r of perEntity) {
+      if ("upstreamStatus" in r) {
+        return jsonError("yala_unavailable", `merkle upstream ${r.upstreamStatus} (${r.entity})`, 502);
+      }
+    }
+    for (const r of perEntity) {
+      if ("upstreamStatus" in r) continue;
+      channel1.set(r.entity, r.eh);
+      channel2.set(r.entity, r.eh2);
+      entities[r.entity] = { count: r.count, hash: hex(r.eh) };
     }
   } catch (e) {
     if (e instanceof CanonError) {

@@ -1,9 +1,10 @@
 /**
- * Configurar en la beta: la cuenta, las sesiones web (cerrar las demás), ocultar montos al abrir, el idioma y salir.
+ * Configurar en la beta: la cuenta, las sesiones web (cerrar las demás), ocultar montos al abrir, el idioma (los 16 de
+ * la app, lote 2b) y salir.
  * Lo demás (categorías, cuentas, divisas, avisos, Pro) se cambia en el iPhone.
  */
 import { useCallback, useEffect, useState } from "react";
-import { chosenLang, setChosenLang, texts, type Lang } from "../i18n";
+import { chosenLang, LANGS, setChosenLang, texts, type Lang } from "../i18n";
 import { getJson, postJson, type Sesion } from "./api";
 import { ago } from "./format";
 import { readHidePref, writeHidePref, type Me } from "./Shell";
@@ -139,8 +140,11 @@ export function Configurar({ me, onToast }: { me: Me; onToast: (msg: string) => 
             }}
           >
             <option value="">{t.app.idiomaAuto}</option>
-            <option value="es">Español</option>
-            <option value="en">English</option>
+            {LANGS.map((l) => (
+              <option key={l.code} value={l.code} lang={l.code}>
+                {l.name}
+              </option>
+            ))}
           </select>
         </label>
         <p className="note-y">{t.app.configurarNota}</p>

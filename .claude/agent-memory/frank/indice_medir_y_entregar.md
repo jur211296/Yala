@@ -97,3 +97,6 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [La nota de la card manda sobre su «hecha cuando»](feedback_la_nota_de_la_card_manda_sobre_su_hecha_cuando.md) — el «hecha cuando» es de Tim y anterior; si chocan, la nota de Jürgen.
 - [iPhone ocupado: avanza y prueba después](feedback_iphone_ocupado_avanza_y_prueba_despues.md) — código y sim mientras; nada completo sin probarlo en el iPhone.
 - [Una cifra igual a la semilla no prueba nada](feedback_una_cifra_igual_a_la_semilla_no_prueba_nada.md) — seed 42: 2351 en todos los modos; mide N antes y después.
+- [El toca se amplía con la causa medida](feedback_toca_se_amplia_con_la_causa_medida.md) — si la causa medida cae fuera del toca, se pregunta A ampliar ESE archivo / B card; Jürgen eligió A (14-nov).
+- [Medir la entrada a la cuenta en el iPhone](reference_medir_la_entrada_a_la_cuenta_en_el_iphone.md) — prints DEBUG + devicectl --console; reinstalar entre corridas.
+- [Gateway medido va a producción](feedback_gateway_medido_va_a_produccion.md) — 14-nov: eligió staging y producción por la sesión; pregunta igual.

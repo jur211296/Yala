@@ -3,13 +3,15 @@
  * es `HttpOnly`) y todo lo que sabe se lo pregunta al Worker en `/api/*`.
  */
 import { useEffect, useRef, useState } from "react";
-import { lang, texts } from "./i18n";
+import { lang, texts, privacyUrl, turnstileLang } from "./i18n";
 import { Shell } from "./app/Shell";
+import { QrLogin } from "./QrLogin";
 
 interface Me {
   nombre: string;
   correo: string | null;
   equipoCompartido: boolean;
+  soloGrupos?: boolean;
 }
 
 type State =
@@ -28,7 +30,7 @@ declare global {
 }
 
 const t = texts();
-const PRIVACY_URL = lang() === "en" ? "https://yala-app.pe/en/privacy" : "https://yala-app.pe/privacy";
+const PRIVACY_URL = privacyUrl();
 
 /** El aviso con el que el Worker devolvió aquí, si lo hay. Se lee una vez y se quita de la dirección. */
 function takeAviso(): string | null {
@@ -65,6 +67,24 @@ export function App() {
   }, []);
 
   if (state.kind === "dentro" && !aviso) return <Shell me={state.me} />;
+  // Quien escanea el QR con la cámara del iPhone (y no desde Yala) llega aquí: se le explica dónde leerlo.
+  if (window.location.pathname.startsWith("/v/")) {
+    return (
+      <main className="shell">
+        <div className="card">
+          <div className="brand" aria-hidden="true">
+            <i />
+            Yala
+          </div>
+          <h1>{t.qr.titulo}</h1>
+          <p className="muted">{t.qr.pasos}</p>
+          <a className="btn" href="/">
+            {t.qr.volver}
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="shell">
@@ -109,7 +129,15 @@ function SinNube({ titulo, cuerpo, como }: { titulo: string; cuerpo: string; com
 }
 
 function Login({ siteKey }: { siteKey: string }) {
+  const [round, setRound] = useState(0);
+  const [qr, setQr] = useState<{ token: string; compartido: boolean } | null>(null);
+  if (qr) return <QrLogin turnstile={qr.token} compartido={qr.compartido} onBack={() => (setQr(null), setRound((r) => r + 1))} />;
+  return <SsoLogin key={round} siteKey={siteKey} onQr={(token, compartido) => setQr({ token, compartido })} />;
+}
+
+function SsoLogin({ siteKey, onQr }: { siteKey: string; onQr: (token: string, compartido: boolean) => void }) {
   const widget = useRef<HTMLDivElement>(null);
+  const shared = useRef<HTMLInputElement>(null);
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,7 +146,7 @@ function Login({ siteKey }: { siteKey: string }) {
       if (!widget.current || !window.turnstile || id) return;
       id = window.turnstile.render(widget.current, {
         sitekey: siteKey,
-        language: lang(),
+        language: turnstileLang(),
         appearance: "interaction-only",
         callback: (tok: string) => setToken(tok),
         "expired-callback": () => setToken(null),
@@ -149,10 +177,16 @@ function Login({ siteKey }: { siteKey: string }) {
       <button className="btn" type="submit" name="provider" value="google" disabled={!token}>
         {t.google}
       </button>
+      <p className="or" aria-hidden="true">
+        {t.qr.otraForma}
+      </p>
+      <button className="btn" type="button" disabled={!token} onClick={() => token && onQr(token, shared.current?.checked === true)}>
+        {t.qr.entrarConIphone}
+      </button>
       <div ref={widget} className="turnstile" />
       {!token ? <p className="fade">{t.esperandoVerificacion}</p> : null}
       <label className="check">
-        <input type="checkbox" name="compartido" value="1" />
+        <input ref={shared} type="checkbox" name="compartido" value="1" />
         {t.compartido}
       </label>
       <p className="fade">

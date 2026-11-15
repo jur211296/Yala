@@ -189,6 +189,152 @@
             "value" : 64.705882000000003
           }
         ],
+        "estadisticas" : {
+          "periodos" : {
+            "anio_actual" : {
+              "dias" : 258,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 2419.48504,
+                  "porcentaje" : 86.364374999999995
+                },
+                {
+                  "categoria" : null,
+                  "importe" : 382,
+                  "porcentaje" : 13.635624999999999
+                }
+              ],
+              "gasto_mas_alto" : 888,
+              "gasto_medio_diario" : 10.858468999999999,
+              "gastos" : 2801.48504,
+              "ingresos" : 7430,
+              "neto" : 4628.5149600000004,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 2419.48504,
+                  "porcentaje" : 86.364374999999995
+                },
+                {
+                  "categoria" : null,
+                  "importe" : 382,
+                  "porcentaje" : 13.635624999999999
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            },
+            "mes_actual" : {
+              "dias" : 15,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1933.48504,
+                  "porcentaje" : 83.502376999999996
+                },
+                {
+                  "categoria" : null,
+                  "importe" : 382,
+                  "porcentaje" : 16.497623000000001
+                }
+              ],
+              "gasto_mas_alto" : 888,
+              "gasto_medio_diario" : 154.365669,
+              "gastos" : 2315.48504,
+              "ingresos" : 4430,
+              "neto" : 2114.51496,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1933.48504,
+                  "porcentaje" : 83.502376999999996
+                },
+                {
+                  "categoria" : null,
+                  "importe" : 382,
+                  "porcentaje" : 16.497623000000001
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : 881.13772900000004,
+                "gastos" : 881.13772900000004,
+                "ingresos" : 47.666666999999997,
+                "neto" : -23.498011999999999
+              }
+            },
+            "mes_pasado" : {
+              "dias" : 31,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 236,
+                  "porcentaje" : 100
+                }
+              ],
+              "gasto_mas_alto" : 200,
+              "gasto_medio_diario" : 7.6129030000000002,
+              "gastos" : 236,
+              "ingresos" : 3000,
+              "neto" : 2764,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 236,
+                  "porcentaje" : 100
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            }
+          },
+          "tendencias" : [
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-04",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-05",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-06",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-07",
+              "neto" : 0
+            },
+            {
+              "gastos" : 236,
+              "ingresos" : 3000,
+              "mes" : "2026-08",
+              "neto" : 2764
+            },
+            {
+              "gastos" : 2315.48504,
+              "ingresos" : 4430,
+              "mes" : "2026-09",
+              "neto" : 2114.51496
+            }
+          ]
+        },
         "groups" : {
           "00000000-0000-4000-8000-00000000700a" : {
             "amount" : 200,
@@ -292,6 +438,147 @@
           "00000000-0000-4000-8000-000000007021" : "ingreso",
           "00000000-0000-4000-8000-000000007022" : "gasto",
           "00000000-0000-4000-8000-000000007023" : "gasto"
+        },
+        "pagos" : {
+          "fechas" : {
+            "00000000-0000-4000-8000-000000008001" : [
+              "2026-09-30",
+              "2026-10-31",
+              "2026-11-30",
+              "2026-12-31",
+              "2027-01-31",
+              "2027-02-28"
+            ],
+            "00000000-0000-4000-8000-000000008002" : [
+              "2026-09-01",
+              "2026-10-01",
+              "2026-11-01",
+              "2026-12-01",
+              "2027-01-01",
+              "2027-02-01"
+            ],
+            "00000000-0000-4000-8000-000000008003" : [
+              "2026-10-01",
+              "2026-11-01",
+              "2026-12-01",
+              "2027-01-01",
+              "2027-02-01"
+            ],
+            "00000000-0000-4000-8000-000000008004" : [
+              "2026-09-01",
+              "2026-09-04",
+              "2026-09-15",
+              "2026-09-18",
+              "2026-09-29",
+              "2026-10-02",
+              "2026-10-13",
+              "2026-10-16",
+              "2026-10-27",
+              "2026-10-30",
+              "2026-11-10",
+              "2026-11-13",
+              "2026-11-24",
+              "2026-11-27",
+              "2026-12-08",
+              "2026-12-11",
+              "2026-12-22",
+              "2026-12-25",
+              "2027-01-05",
+              "2027-01-08",
+              "2027-01-19",
+              "2027-01-22",
+              "2027-02-02",
+              "2027-02-05",
+              "2027-02-16",
+              "2027-02-19"
+            ],
+            "00000000-0000-4000-8000-000000008005" : [
+              "2027-02-28"
+            ],
+            "00000000-0000-4000-8000-000000008006" : [
+              "2026-09-01",
+              "2026-10-01",
+              "2026-11-01",
+              "2026-12-01",
+              "2027-01-01",
+              "2027-02-01"
+            ],
+            "00000000-0000-4000-8000-000000008007" : [
+              "2026-09-05",
+              "2026-10-05",
+              "2026-11-05",
+              "2026-12-05",
+              "2027-01-05",
+              "2027-02-05"
+            ],
+            "00000000-0000-4000-8000-000000008008" : [
+              "2026-09-01",
+              "2026-09-02",
+              "2026-09-03",
+              "2026-09-04",
+              "2026-09-05",
+              "2026-09-06",
+              "2026-09-07",
+              "2026-09-08",
+              "2026-09-09",
+              "2026-09-10",
+              "2026-09-11",
+              "2026-09-12",
+              "2026-09-13",
+              "2026-09-14",
+              "2026-09-15",
+              "2026-09-16",
+              "2026-09-17",
+              "2026-09-18",
+              "2026-09-19",
+              "2026-09-20",
+              "2026-09-21",
+              "2026-09-22",
+              "2026-09-23",
+              "2026-09-24",
+              "2026-09-25",
+              "2026-09-26",
+              "2026-09-27",
+              "2026-09-28",
+              "2026-09-29",
+              "2026-09-30",
+              "2026-10-01",
+              "2026-10-02",
+              "2026-10-03"
+            ],
+            "00000000-0000-4000-8000-000000008009" : [
+              "2026-10-20"
+            ]
+          },
+          "proximos" : [
+            "00000000-0000-4000-8000-000000008001 2026-09-30",
+            "00000000-0000-4000-8000-000000008002 2026-10-01",
+            "00000000-0000-4000-8000-000000008003 2026-10-01",
+            "00000000-0000-4000-8000-000000008004 2026-09-15",
+            "00000000-0000-4000-8000-000000008004 2026-09-18",
+            "00000000-0000-4000-8000-000000008004 2026-09-29",
+            "00000000-0000-4000-8000-000000008004 2026-10-02",
+            "00000000-0000-4000-8000-000000008004 2026-10-13",
+            "00000000-0000-4000-8000-000000008007 2026-10-05",
+            "00000000-0000-4000-8000-000000008008 2026-09-15",
+            "00000000-0000-4000-8000-000000008008 2026-09-16",
+            "00000000-0000-4000-8000-000000008008 2026-09-17",
+            "00000000-0000-4000-8000-000000008008 2026-09-19",
+            "00000000-0000-4000-8000-000000008008 2026-09-20",
+            "00000000-0000-4000-8000-000000008008 2026-09-21",
+            "00000000-0000-4000-8000-000000008008 2026-09-22",
+            "00000000-0000-4000-8000-000000008008 2026-09-23",
+            "00000000-0000-4000-8000-000000008008 2026-09-24",
+            "00000000-0000-4000-8000-000000008008 2026-09-25",
+            "00000000-0000-4000-8000-000000008008 2026-09-26",
+            "00000000-0000-4000-8000-000000008008 2026-09-27",
+            "00000000-0000-4000-8000-000000008008 2026-09-28",
+            "00000000-0000-4000-8000-000000008008 2026-09-29",
+            "00000000-0000-4000-8000-000000008008 2026-09-30",
+            "00000000-0000-4000-8000-000000008008 2026-10-01",
+            "00000000-0000-4000-8000-000000008008 2026-10-02",
+            "00000000-0000-4000-8000-000000008008 2026-10-03"
+          ]
         },
         "periods" : {
           "anio_actual" : {
@@ -606,7 +893,9 @@
         "scheduled_payments" : [
           {
             "amount" : 44.899999999999999,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
+            "day_of_month" : 31,
             "is_active" : true,
             "is_recurring" : true,
             "name" : "Netflix",
@@ -619,6 +908,7 @@
           },
           {
             "amount" : 9.9900000000000002,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "USD",
             "is_active" : true,
             "is_recurring" : true,
@@ -632,6 +922,7 @@
           },
           {
             "amount" : 1500,
+            "created_at" : "2026-09-20T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : true,
             "is_recurring" : true,
@@ -645,6 +936,7 @@
           },
           {
             "amount" : 30,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : true,
             "is_recurring" : true,
@@ -653,11 +945,16 @@
             "payment_category" : "recurring",
             "recurrence_interval" : 2,
             "recurrence_type" : "weekly",
+            "selected_weekdays" : [
+              "3",
+              "6"
+            ],
             "sync_id" : "00000000-0000-4000-8000-000000008004",
             "transaction_type" : "expense"
           },
           {
             "amount" : 1200,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "EUR",
             "is_active" : true,
             "is_recurring" : true,
@@ -667,10 +964,13 @@
             "recurrence_interval" : 1,
             "recurrence_type" : "yearly",
             "sync_id" : "00000000-0000-4000-8000-000000008005",
-            "transaction_type" : "expense"
+            "transaction_type" : "expense",
+            "yearly_day" : 29,
+            "yearly_month" : 2
           },
           {
             "amount" : 10,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : false,
             "is_recurring" : true,
@@ -684,6 +984,7 @@
           },
           {
             "amount" : 4000,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : true,
             "is_recurring" : true,
@@ -697,7 +998,9 @@
           },
           {
             "amount" : 8,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
+            "end_date" : "2026-10-03T12:00:00Z",
             "is_active" : true,
             "is_recurring" : true,
             "name" : "Café diario",
@@ -705,11 +1008,15 @@
             "payment_category" : "recurring",
             "recurrence_interval" : 1,
             "recurrence_type" : "daily",
+            "skipped_dates_raw" : [
+              "2026-09-18"
+            ],
             "sync_id" : "00000000-0000-4000-8000-000000008008",
             "transaction_type" : "expense"
           },
           {
             "amount" : 600,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : true,
             "is_recurring" : false,
@@ -1585,6 +1892,124 @@
             "value" : 10
           }
         ],
+        "estadisticas" : {
+          "periodos" : {
+            "anio_actual" : {
+              "dias" : 258,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 30,
+                  "porcentaje" : 100
+                }
+              ],
+              "gasto_mas_alto" : 20,
+              "gasto_medio_diario" : 0.11627899999999999,
+              "gastos" : 30,
+              "ingresos" : 500,
+              "neto" : 470,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 30,
+                  "porcentaje" : 100
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            },
+            "mes_actual" : {
+              "dias" : 15,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 30,
+                  "porcentaje" : 100
+                }
+              ],
+              "gasto_mas_alto" : 20,
+              "gasto_medio_diario" : 2,
+              "gastos" : 30,
+              "ingresos" : 500,
+              "neto" : 470,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 30,
+                  "porcentaje" : 100
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            },
+            "mes_pasado" : {
+              "dias" : 31,
+              "distribucion" : [
+
+              ],
+              "gasto_mas_alto" : null,
+              "gasto_medio_diario" : 0,
+              "gastos" : 0,
+              "ingresos" : 0,
+              "neto" : 0,
+              "top_categorias" : [
+
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            }
+          },
+          "tendencias" : [
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-04",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-05",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-06",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-07",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-08",
+              "neto" : 0
+            },
+            {
+              "gastos" : 30,
+              "ingresos" : 500,
+              "mes" : "2026-09",
+              "neto" : 470
+            }
+          ]
+        },
         "groups" : {
 
         },
@@ -1593,6 +2018,21 @@
           "00000000-0000-4000-8000-000000007102" : "gasto",
           "00000000-0000-4000-8000-000000007103" : "ingreso",
           "00000000-0000-4000-8000-000000007104" : "gasto"
+        },
+        "pagos" : {
+          "fechas" : {
+            "00000000-0000-4000-8000-000000008101" : [
+              "2026-09-01",
+              "2026-10-01",
+              "2026-11-01",
+              "2026-12-01",
+              "2027-01-01",
+              "2027-02-01"
+            ]
+          },
+          "proximos" : [
+            "00000000-0000-4000-8000-000000008101 2026-10-01"
+          ]
         },
         "periods" : {
           "anio_actual" : {
@@ -1695,6 +2135,7 @@
         "scheduled_payments" : [
           {
             "amount" : 93,
+            "created_at" : "2026-01-01T12:00:00Z",
             "currency_code" : "PEN",
             "is_active" : true,
             "is_recurring" : true,
@@ -1842,6 +2283,124 @@
             "value" : 296
           }
         ],
+        "estadisticas" : {
+          "periodos" : {
+            "anio_actual" : {
+              "dias" : 258,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1752.5,
+                  "porcentaje" : 100
+                }
+              ],
+              "gasto_mas_alto" : 1250,
+              "gasto_medio_diario" : 6.7926359999999999,
+              "gastos" : 1752.5,
+              "ingresos" : 3045,
+              "neto" : 1292.5,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1752.5,
+                  "porcentaje" : 100
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            },
+            "mes_actual" : {
+              "dias" : 15,
+              "distribucion" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1752.5,
+                  "porcentaje" : 100
+                }
+              ],
+              "gasto_mas_alto" : 1250,
+              "gasto_medio_diario" : 116.833333,
+              "gastos" : 1752.5,
+              "ingresos" : 3045,
+              "neto" : 1292.5,
+              "top_categorias" : [
+                {
+                  "categoria" : "Comida",
+                  "importe" : 1752.5,
+                  "porcentaje" : 100
+                }
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            },
+            "mes_pasado" : {
+              "dias" : 31,
+              "distribucion" : [
+
+              ],
+              "gasto_mas_alto" : null,
+              "gasto_medio_diario" : 0,
+              "gastos" : 0,
+              "ingresos" : 0,
+              "neto" : 0,
+              "top_categorias" : [
+
+              ],
+              "variacion" : {
+                "gasto_medio_diario" : null,
+                "gastos" : null,
+                "ingresos" : null,
+                "neto" : null
+              }
+            }
+          },
+          "tendencias" : [
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-04",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-05",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-06",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-07",
+              "neto" : 0
+            },
+            {
+              "gastos" : 0,
+              "ingresos" : 0,
+              "mes" : "2026-08",
+              "neto" : 0
+            },
+            {
+              "gastos" : 1752.5,
+              "ingresos" : 3045,
+              "mes" : "2026-09",
+              "neto" : 1292.5
+            }
+          ]
+        },
         "groups" : {
 
         },
@@ -1854,6 +2413,14 @@
           "00000000-0000-4000-8000-000000007206" : "ingreso",
           "00000000-0000-4000-8000-000000007207" : "transferencia",
           "00000000-0000-4000-8000-000000007208" : "transferencia"
+        },
+        "pagos" : {
+          "fechas" : {
+
+          },
+          "proximos" : [
+
+          ]
         },
         "periods" : {
           "anio_actual" : {

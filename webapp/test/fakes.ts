@@ -14,6 +14,7 @@ import { makeAppVerifier } from "../src/worker/device";
 import type { Env, RateLimiter } from "../src/worker/env";
 import { makeReaderVerifier } from "../src/worker/verify";
 import { TURNSTILE_VERIFY_URL } from "../src/worker/egress";
+import { PairingCell, type PairingRecord } from "../src/worker/pairing";
 
 // El proyecto de staging: un Worker con ENVIRONMENT=staging solo atiende contra él (config.ts).
 export const SB_URL = "https://fostjbbwstyuunmmefuk.supabase.co";
@@ -53,6 +54,24 @@ export class MemoryKV {
 }
 
 /** El doble del Durable Object de la lista de sesiones: un mapa por cuenta, con la misma API RPC. */
+/** Los objetos de los códigos QR: la lógica REAL (`PairingCell`) sobre un `Map` por código. */
+export class FakeQrPairingNamespace {
+  readonly records = new Map<string, PairingRecord>();
+  idFromName(name: string) {
+    return name;
+  }
+  get(id: string) {
+    return new PairingCell({
+      read: async () => {
+        const r = this.records.get(id);
+        return r ? (JSON.parse(JSON.stringify(r)) as PairingRecord) : null;
+      },
+      write: async (rec) => void this.records.set(id, JSON.parse(JSON.stringify(rec)) as PairingRecord),
+      drop: async () => void this.records.delete(id),
+    });
+  }
+}
+
 export class FakeSessionIndexNamespace {
   readonly byUser = new Map<string, Map<string, { entry: Record<string, unknown>; expira: number }>>();
   readonly slots = new Map<string, number>();
@@ -169,10 +188,12 @@ export class FakeSupabase {
   readonly authorizations = new Map<string, Authz>();
   readonly socialFlows = new Map<string, { userId: string; challenge: string; used?: boolean }>();
   readonly calls: { method: string; path: string; search: string; auth: string | null }[] = [];
-  /** Clientes OAuth a los que el hook da `yala_mcp_reader`. Sin la web aquí, el hook la rechaza (403). */
+  /** Clientes OAuth a los que el hook da token (la web `yala_web`, el conector `yala_mcp_reader`). Sin la web aquí, el hook la rechaza (403). */
   readonly hookAllow = new Set([CONNECTOR_CLIENT, WEB_CLIENT]);
   /** El hook apagado: los tokens OAuth salen con `authenticated` (el riesgo que la web tiene que rechazar). */
   hookOff = false;
+  /** El hook de antes de web3_02: la web sale con `yala_mcp_reader`, como el conector. */
+  oldWebRole = false;
   /** El usuario ya dio el permiso antes: Supabase devuelve `redirect_url` sin pedir consentimiento. */
   alreadyConsented = false;
   failRefresh: { status: number; code: string } | null = null;
@@ -217,7 +238,7 @@ export class FakeSupabase {
 
   private async sign(s: Sess): Promise<string> {
     let role = "authenticated";
-    if (s.clientId && !this.hookOff) role = "yala_mcp_reader";
+    if (s.clientId && !this.hookOff) role = s.clientId === WEB_CLIENT && !this.oldWebRole ? "yala_web" : "yala_mcp_reader";
     const claims: Record<string, unknown> = { role, session_id: s.id };
     if (s.clientId) claims.client_id = s.clientId;
     return new SignJWT(claims)
@@ -251,6 +272,11 @@ export class FakeSupabase {
   /** El token de la sesión de la APP de un usuario (lo que manda el iPhone): `authenticated` y sin `client_id`. */
   async appToken(user: TestUser): Promise<string> {
     return (await this.issue(user.id, null)).access_token;
+  }
+
+  /** Un token de una sesión de cliente OAuth (la web, el conector): lleva `client_id`. */
+  async clientToken(user: TestUser, clientId: string): Promise<string> {
+    return (await this.issue(user.id, clientId)).access_token;
   }
 
   /** Mete filas en una tabla de la nube, de este usuario. */
@@ -425,6 +451,7 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
     WEB_KV: new MemoryKV() as unknown as KVNamespace,
     DRAFTS_DB: new MemoryD1() as unknown as D1Database,
     SESSION_INDEX: new FakeSessionIndexNamespace() as unknown as DurableObjectNamespace,
+    QR_PAIRING: new FakeQrPairingNamespace() as unknown as DurableObjectNamespace,
     DEFAULT_TIMEZONE: "America/Lima",
     ASSETS: { fetch: async () => new Response("<!doctype html><title>Yala</title>", { headers: { "Content-Type": "text/html" } }) } as unknown as Fetcher,
     ...overrides,

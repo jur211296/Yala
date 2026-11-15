@@ -154,8 +154,10 @@ struct RestoreLoteN3WiringTests {
         let content = try Self.body(of: "private func foundContent(summary: ICloudAccountSummary) -> some View {", in: view)
         let note = try #require(content.firstIndex(of: "if foundCopyPredatesCloud {"))
         #expect(content[note + 2] == "Text(L10n.Welcome.Restore.foundPreCloudNote)")
-        // La nota no toca los botones (decisión A).
-        #expect(content.contains("YalaPrimaryButton(L10n.UXLote6.restoreBringBack) {"))
+        // La nota no toca los botones (decisión A). El texto del principal lo elige desde el 2026-11-14 si «Traer mis
+        // datos» ya se eligió en la puerta (lote 1 de bugs de entrada, `RestoreFoundActionsLogic`), no la nota.
+        #expect(content.contains(
+            "YalaPrimaryButton(foundActions.primaryIsContinue ? L10n.Action.continueAction : L10n.UXLote6.restoreBringBack) {"))
     }
 }
 

@@ -19,6 +19,7 @@ function productionEnv(overrides: Partial<Env> = {}): Env {
     TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secreto-real",
     RL_AUTH: new FakeLimiter(),
     RL_API: new FakeLimiter(),
+    RL_QR: new FakeLimiter(),
     ...overrides,
   });
 }
@@ -39,7 +40,7 @@ describe("configuración: mal configurado = 503 a todo", () => {
     );
     expect(p).toContain("SUPABASE_URL apunta al proyecto de STAGING");
     expect(p).toContain("Turnstile usa las claves de prueba de Cloudflare");
-    expect(p).toContain("faltan los límites de peticiones (RL_AUTH, RL_API)");
+    expect(p).toContain("faltan los límites de peticiones (RL_AUTH, RL_API, RL_QR)");
   });
 
   it("un Worker con ENVIRONMENT=staging contra otro Supabase no atiende (no abre la contraseña contra producción)", () => {

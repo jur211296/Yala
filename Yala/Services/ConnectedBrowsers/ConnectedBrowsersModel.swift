@@ -111,6 +111,45 @@ enum ConnectedBrowsersText {
     static var sharedComputer: String { text("connectedBrowsers.sharedComputer") }
     static var justNow: String { text("connectedBrowsers.justNow") }
 
+    // «Vincular un navegador» (lote 2)
+    static var linkRow: String { text("connectedBrowsers.link.row") }
+    static var linkRowFooter: String { text("connectedBrowsers.link.rowFooter") }
+    static var linkTitle: String { text("connectedBrowsers.link.title") }
+    static var linkIntro: String { text("connectedBrowsers.link.intro") }
+    static var linkScannerLabel: String { text("connectedBrowsers.link.scanner") }
+    static var linkTypeHeader: String { text("connectedBrowsers.link.typeHeader") }
+    static var linkCodePlaceholder: String { "K7Q4-MD2X" }
+    static var linkContinue: String { text("connectedBrowsers.link.continue") }
+    static var linkConfirmHeader: String { text("connectedBrowsers.link.confirmHeader") }
+    static var linkWarning: String { text("connectedBrowsers.link.warning") }
+    static var linkConfirm: String { text("connectedBrowsers.link.confirm") }
+    static var linkFaceIDReason: String { text("connectedBrowsers.link.faceIDReason") }
+    static var linkDoneTitle: String { text("connectedBrowsers.link.doneTitle") }
+    static var linkDoneButton: String { text("connectedBrowsers.link.doneButton") }
+
+    /// «Lo pidió desde Lima · código K7Q4-MD2X» (sin ciudad, solo el código).
+    static func linkWhere(city: String?, code: String) -> String {
+        let locale = LanguageManager.resolved.locale
+        if let city, !city.isEmpty {
+            return String(format: text("connectedBrowsers.link.whereCity"), locale: locale, city, code)
+        }
+        return String(format: text("connectedBrowsers.link.whereNoCity"), locale: locale, code)
+    }
+
+    static func linkDoneBody(_ browser: String) -> String {
+        String(format: text("connectedBrowsers.link.doneBody"), locale: LanguageManager.resolved.locale, browser)
+    }
+
+    static func linkProblem(_ problem: LinkBrowserModel.Problem) -> String {
+        switch problem {
+        case .invalidCode: text("connectedBrowsers.link.problem.invalidCode")
+        case .expired: text("connectedBrowsers.link.problem.expired")
+        case .noCloud: text("connectedBrowsers.link.problem.noCloud")
+        case .sessionExpired: text("connectedBrowsers.link.problem.sessionExpired")
+        case .network: text("connectedBrowsers.link.problem.network")
+        }
+    }
+
     /// «Chrome en Mac». Sin sistema, solo el navegador; sin navegador, «Navegador».
     static func browserTitle(navegador: String, sistema: String) -> String {
         let browser = navegador.isEmpty ? unknownBrowser : navegador

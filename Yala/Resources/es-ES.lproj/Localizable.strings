@@ -781,7 +781,8 @@
 "budgets.editor.start.date" = "Fecha inicial";
 "budgets.empty.message" = "Crea presupuestos para controlar mejor tus gastos.";
 "budgets.empty.title" = "Aún no tienes presupuestos";
-"budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
+"budgets.exceeded.overByAdjust %@" = "Te pasaste por %@. ¿Ajustamos el límite?";
+"budgets.exceeded.adjustLimit" = "Ajustar límite";
 "budgets.favorites.previewEmpty" = "Selecciona favoritos para ver la vista previa";
 "budgets.favorites.previewTitle" = "Así se verá en el Panel";
 "budgets.includeSharedExpenses" = "Contar mi parte de los gastos de grupo";
@@ -8259,19 +8260,19 @@
 "bienvenida23.showcase.groupsTitle" = "Cuentas claras";
 "bienvenida23.showcase.groupsTitleAccent" = "con tus amigos.";
 "bienvenida23.showcase.receipt.name" = "Lee tus tickets";
-"bienvenida23.showcase.receipt.caption" = "Apunta la cámara al ticket. Yala lo lee y lo anota.";
+"bienvenida23.showcase.receipt.caption" = "Yala lee tu ticket y lo anota.";
 "bienvenida23.showcase.voice.name" = "Anota con tu voz";
-"bienvenida23.showcase.voice.caption" = "Cuéntale a Yala lo que gastaste, como se lo dirías a alguien.";
+"bienvenida23.showcase.voice.caption" = "Dile a Yala lo que gastaste.";
 "bienvenida23.showcase.organize.name" = "Ordena tus gastos";
-"bienvenida23.showcase.organize.caption" = "Yala junta tus gastos por categoría. Así ves a dónde se va el dinero.";
+"bienvenida23.showcase.organize.caption" = "Mira a dónde se va tu dinero.";
 "bienvenida23.showcase.split.name" = "Divide cualquier gasto";
-"bienvenida23.showcase.split.caption" = "Una cena, el alquiler o un viaje: Yala reparte y lleva la cuenta.";
+"bienvenida23.showcase.split.caption" = "Yala reparte y lleva la cuenta.";
 "bienvenida23.showcase.budget.name" = "Cuida un presupuesto";
-"bienvenida23.showcase.budget.caption" = "Ponte un límite y mira cuánto te queda.";
+"bienvenida23.showcase.budget.caption" = "Ponte un límite y mira cuánto queda.";
 "bienvenida23.showcase.whoOwes.name" = "Quién le debe a quién";
-"bienvenida23.showcase.whoOwes.caption" = "Sin hojas de cálculo: cada uno ve lo suyo.";
+"bienvenida23.showcase.whoOwes.caption" = "Cada uno ve lo que le toca.";
 "bienvenida23.showcase.settle.name" = "Salda con un toque";
-"bienvenida23.showcase.settle.caption" = "Apuntas el pago y todo queda en cero.";
+"bienvenida23.showcase.settle.caption" = "Anota el pago y todo queda en cero.";
 "bienvenida23.showcase.example" = "Ejemplo";
 "bienvenida23.showcase.groupsDoorLink" = "Dividir gastos con amigos";
 "bienvenida23.showcase.pause" = "Pausar la vitrina";
@@ -8279,7 +8280,7 @@
 "bienvenida23.showcase.position" = "%1$@, %2$d de %3$d";
 "bienvenida23.access.google" = "Entrar con Google";
 "bienvenida23.access.apple" = "Entrar con Apple";
-"bienvenida23.access.iCloud" = "Entrar con mi iCloud";
+"bienvenida23.access.iCloud" = "Entrar con iCloud privado";
 "bienvenida23.access.iCloudLine" = "Tus datos solo en tus dispositivos Apple.";
 "bienvenida23.access.groupsNeedAccount" = "Para compartir gastos con otras personas necesitas una cuenta de Yala.";
 "bienvenida23.demo.lunch" = "Almuerzo";
@@ -8855,3 +8856,38 @@
 "connectedBrowsers.sharedComputer" = "ordenador compartido";
 "connectedBrowsers.justNow" = "ahora";
 "connectedBrowsers.browserOn" = "%1$@ en %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Vincular un navegador";
+"connectedBrowsers.link.rowFooter" = "Abre tu Yala en un ordenador sin escribir tu contraseña: escanea el código que muestra Yala web.";
+"connectedBrowsers.link.title" = "Vincular un navegador";
+"connectedBrowsers.link.intro" = "En el ordenador, abre Yala web y elige «Entrar con tu iPhone». Apunta la cámara al código.";
+"connectedBrowsers.link.scanner" = "Cámara para leer el código";
+"connectedBrowsers.link.typeHeader" = "O escribe el código";
+"connectedBrowsers.link.continue" = "Continuar";
+"connectedBrowsers.link.confirmHeader" = "¿Abrir Yala en este navegador?";
+"connectedBrowsers.link.whereCity" = "Lo pidió desde %1$@ · código %2$@";
+"connectedBrowsers.link.whereNoCity" = "Código %@";
+"connectedBrowsers.link.warning" = "Confirma solo si ves este código en tu propia pantalla. Nadie de Yala te lo va a pedir.";
+"connectedBrowsers.link.confirm" = "Confirmar con Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirma que quieres abrir tu Yala en ese navegador.";
+"connectedBrowsers.link.doneTitle" = "Navegador vinculado";
+"connectedBrowsers.link.doneBody" = "%@ ya muestra tu Yala, en lectura. Puedes cerrarlo desde aquí cuando quieras.";
+"connectedBrowsers.link.doneButton" = "Listo";
+"connectedBrowsers.link.problem.invalidCode" = "Ese código no es de Yala web. Comprueba que tenga 8 caracteres.";
+"connectedBrowsers.link.problem.expired" = "El código ha caducado o ya se ha usado. Pide otro en Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Tus datos están en tu iCloud. Para usar Yala web, llévalos a tu cuenta de Yala en Almacenamiento.";
+"connectedBrowsers.link.problem.sessionExpired" = "Tu sesión de la nube ha caducado. Vuelve a entrar en Tu cuenta de Yala.";
+"connectedBrowsers.link.problem.network" = "No se ha podido conectar con Yala web. Vuelve a intentarlo.";
+
+// MARK: - Atajo del banco (2.3, B1)
+"shortcut.bankNotice.title" = "Registrar movimiento desde texto";
+"shortcut.bankNotice.description" = "Lee el aviso de tu banco y deja el movimiento en tu Bandeja por confirmar. Úsalo en la automatización «Al recibir una notificación» de la app de tu banco, con la variable Notificación.";
+"shortcut.bankNotice.param.text" = "Texto";
+"shortcut.bankNotice.param.text.description" = "El texto del aviso (la variable Notificación)";
+"shortcut.bankNotice.param.bank" = "Banco";
+"shortcut.bankNotice.bank.other" = "Otro banco";
+"Record a movement from the text ${text}" = "Registrar movimiento desde el texto ${text}";
+"inbox.sourceBankNotice" = "Aviso de %@";
+"inbox.sourceBankNoticeOther" = "Aviso del banco";
+"inbox.sourceBankNoticeNotUnderstood" = "No hemos entendido este aviso";

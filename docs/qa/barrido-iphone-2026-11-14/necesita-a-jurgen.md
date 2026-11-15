@@ -3,6 +3,9 @@
 Cada fila dice la card, el paso que no se pudo dar sin ti y qué hace falta. Lo que sí se pudo ver
 antes de ese paso está en `lista.md`.
 
+> **Chips del SE, dominio del conector y mascota:** sus opciones, la recomendada y el selector están en el artifact
+> https://claude.ai/artifact/Jd1oX9jTnuj8HxPofbTQzh (fuente en `decisiones/`).
+
 ## Una cuenta o una mano tuya en el teléfono
 
 | Card | Paso que se para | Qué hace falta |

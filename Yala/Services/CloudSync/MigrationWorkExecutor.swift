@@ -2234,14 +2234,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
         // Card jxbp: cuántas filas tiene la cuenta, para que la barra avance con la lectura. Solo informa: la comprobación
         // de que la lectura salió entera sigue siendo el Merkle de DESPUÉS, y sin respuesta aquí la lectura va sin cifra.
-        var expectedRows: Int?
-        if case .snapshot(let merkle) = await merkleClient.fetchMerkle() {
-            expectedRows = AdoptEffectProgress.expectedRows(merkleCounts: merkle.entities.values.map(\.count))
+        //
+        // **Esa cifra se pide EN PARALELO con la lectura, no antes** (card «Conectar con la cuenta tarda 22–50 s», 2026-11-14):
+        // medido en el iPhone 14, el Merkle tardaba ~6 s y la lectura no empezaba hasta que contestaba. Mientras no llega, la
+        // barra se queda al principio del tramo de lectura; cuando llega, avanza con lo que ya se leyó. Al terminar la lectura
+        // se cancela: una cifra que llegue tarde ya no pinta nada.
+        adoptEffectProgress = AdoptEffectProgress(stage: .readingAccount, rowsRead: 0, rowsExpected: nil)
+        let expectedRowsTask = Task { @MainActor [weak self] in
+            guard let self, case .snapshot(let merkle) = await self.merkleClient.fetchMerkle(), !Task.isCancelled else { return }
+            self.adoptEffectProgress?.rowsExpected =
+                AdoptEffectProgress.expectedRows(merkleCounts: merkle.entities.values.map(\.count))
         }
-        adoptEffectProgress = AdoptEffectProgress(stage: .readingAccount, rowsRead: 0, rowsExpected: expectedRows)
-        guard let enumeration = await enumerateBackendSyncIDs(onPage: { [weak self] rows in
+        let readEnumeration = await enumerateBackendSyncIDs(onPage: { [weak self] rows in
             self?.adoptEffectProgress?.rowsRead += rows
-        }) else { return .transient }
+        })
+        expectedRowsTask.cancel()
+        guard let enumeration = readEnumeration else { return .transient }
         adoptEffectProgress?.stage = .verifyingAccount
         // Verificación POSITIVA de completitud contra los counts del Merkle (SERIO 1 — ver doc del método).
         // El merkle se consulta DESPUÉS de la enumeración: sesgo a abortar, jamás a proceder.
@@ -3461,6 +3469,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var liveExchangeRateAnchors: [UUID: String] = [:]
     }
 
+    /// Filas por página al leer la cuenta en el adopt: el máximo que sirve `/sync/pull` (`clamp(limit, 1, 1000)` en
+    /// `gateway/src/sync/routes.ts`). Era 500, y cada página cuesta un viaje con coste fijo: medido en el iPhone 14 el
+    /// 2026-11-14, 15 páginas de ~2,5 s para 7.221 filas (card «Conectar con la cuenta tarda 22–50 s»). Pedir más de 1000
+    /// no rompe nada (el servidor recorta) pero tampoco ahorra.
+    static let adoptEnumerationPageSize = 1000
+
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
     /// `sweepZombies`). `nil` = red (transient). El loop copia el shape de `sweepZombies`: cursor, high-water,
     /// break si página vacía o sin progreso.
@@ -3474,7 +3488,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var liveExchangeRateAnchors: [UUID: String] = [:]
         var cursor: Int64 = 0
         while true {
-            switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
+            switch await tombstoneSource.pullPage(since: cursor, limit: Self.adoptEnumerationPageSize) {
             case let .page(page):
                 // Las vivas: el total con el que se compara (Merkle) cuenta solo filas vivas.
                 onPage?(page.deltas.lazy.filter { $0.op != .tombstone }.count)

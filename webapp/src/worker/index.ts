@@ -2,6 +2,7 @@ import { createApp } from "./app";
 import type { Env } from "./env";
 
 export { SessionIndex } from "./sessionIndex";
+export { QrPairing } from "./qrPairing";
 
 const app = createApp();
 
