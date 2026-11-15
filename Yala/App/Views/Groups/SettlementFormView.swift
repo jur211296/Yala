@@ -510,6 +510,10 @@ struct SettlementFormView: View {
             // seleccionada; en una sesión solo-grupos o con el bridge OFF no aplica (solo TX virtual).
             let accountToPass = (!sessionState.hasPrivateSession || !bridgeEnabled) ? nil : selectedAccount
 
+            // Nace (confirmado o pendiente, ver C1 abajo) en un solo guardado; si nace confirmado, dispara el puente con
+            // la cuenta (Caso C proactivo). Antes eran dos
+            // guardados, y si fallaba el de confirmar, reintentar apuntaba el pago dos veces (ticket
+            // settlement-retry-after-a-failed-confirmation-duplicates-the-payment).
             let settlement = try GroupExpenseService.shared.createSettlement(
                 in: group,
                 fromMemberID: debt.fromMemberID,
@@ -518,19 +522,12 @@ struct SettlementFormView: View {
                 currencyCode: effectiveCurrency,
                 note: note.isEmpty ? nil : note,
                 date: date,
-                accountForCurrentUser: accountToPass
+                accountForCurrentUser: accountToPass,
+                // C1 (decisión 37 de 2.3): si lo apunta alguien que no paga ni recibe, nace pendiente («Falta que
+                // <quien recibe> lo confirme») y sin puente; si no, nace confirmado en el mismo guardado.
+                confirmed: SettlementSaldar23Logic.confirmsOnRecord(
+                    recorderMemberID: currentUserMemberID, fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID)
             )
-
-            // Marca confirmed + dispara bridge con cuenta (Caso C proactivo end-to-end). C1 (decisión 37 de 2.3): si lo
-            // apunta alguien que no paga ni recibe, queda «Falta que <quien recibe> lo confirme».
-            if SettlementSaldar23Logic.confirmsOnRecord(
-                recorderMemberID: currentUserMemberID, fromMemberID: debt.fromMemberID, toMemberID: debt.toMemberID) {
-                try GroupExpenseService.shared.confirmSettlement(
-                    settlement,
-                    in: group,
-                    accountForCurrentUser: accountToPass
-                )
-            }
 
             DS.Haptic.success()
             isSaving = false

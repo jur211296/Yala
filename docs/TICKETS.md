@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1313)
+## Index (1320)
 
 | id | status | path |
 |---|---|---|
@@ -148,7 +148,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | done | tickets/done/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | archived-accounts-still-count-in-the-panel-total | done | tickets/done/archived-accounts-still-count-in-the-panel-total.md |
-| archived-group-still-allows-expenses-and-payments-from-inside | backlog | tickets/backlog/archived-group-still-allows-expenses-and-payments-from-inside.md |
+| archived-group-still-allows-adding-an-opening-balance | backlog | tickets/backlog/archived-group-still-allows-adding-an-opening-balance.md |
+| archived-group-still-allows-expenses-and-payments-from-inside | done | tickets/done/archived-group-still-allows-expenses-and-payments-from-inside.md |
 | archiving-exclusion-open-decisions | done | tickets/done/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
@@ -182,7 +183,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
 | brand-voice-example-opines-on-spending | backlog | tickets/backlog/brand-voice-example-opines-on-spending.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
-| bridge-history-import-is-only-offered-when-something-was-already-bridged | backlog | tickets/backlog/bridge-history-import-is-only-offered-when-something-was-already-bridged.md |
+| bridge-history-import-is-only-offered-when-something-was-already-bridged | done | tickets/done/bridge-history-import-is-only-offered-when-something-was-already-bridged.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
 | budget-category-picker-offers-income-categories | qa | tickets/qa/budget-category-picker-offers-income-categories.md |
@@ -321,6 +322,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | done | tickets/done/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
+| confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge | backlog | tickets/backlog/confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge.md |
 | connection-errors-put-the-fix-on-the-user | backlog | tickets/backlog/connection-errors-put-the-fix-on-the-user.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
@@ -513,6 +515,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-from-a-receipt-with-ai | qa | tickets/qa/group-expense-from-a-receipt-with-ai.md |
+| group-expense-retry-after-a-failed-save-duplicates-the-expense | backlog | tickets/backlog/group-expense-retry-after-a-failed-save-duplicates-the-expense.md |
 | group-expense-success-claims-a-bridge-write-that-did-not-happen | done | tickets/done/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
 | group-expense-views-redesign | done | tickets/done/group-expense-views-redesign.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
@@ -523,7 +526,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-settings-options-read-their-value-from-a-lazy-section | backlog | tickets/backlog/group-settings-options-read-their-value-from-a-lazy-section.md |
 | group-share-to-zero-leaves-the-recharge-entry-orphaned | backlog | tickets/backlog/group-share-to-zero-leaves-the-recharge-entry-orphaned.md |
 | group-single-currency-off-changes-the-group-currency-for-everyone | backlog | tickets/backlog/group-single-currency-off-changes-the-group-currency-for-everyone.md |
-| group-split-amount-field-keeps-the-old-value-and-drops-typed-digits | backlog | tickets/backlog/group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md |
+| group-split-amount-field-keeps-the-old-value-and-drops-typed-digits | done | tickets/done/group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md |
 | group-split-line-entry-reads-as-a-loose-transfer-in-records | done | tickets/done/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
 | group-split-lines-recipe-lost-on-payer-or-currency-change | done | tickets/done/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
 | group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass | backlog | tickets/backlog/group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass.md |
@@ -872,6 +875,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | one-shot-prompts-burned-before-they-are-seen | backlog | tickets/backlog/one-shot-prompts-burned-before-they-are-seen.md |
 | only-testing-filters-may-be-silently-empty | done | tickets/done/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
+| opening-balance-replaced-without-asking-and-its-locked-error-talks-about-deleting | done | tickets/done/opening-balance-replaced-without-asking-and-its-locked-error-talks-about-deleting.md |
 | opening-balance-ticks-the-first-expense-step | done | tickets/done/opening-balance-ticks-the-first-expense-step.md |
 | orphan-alerts-behind-fullscreen-covers | done | tickets/done/orphan-alerts-behind-fullscreen-covers.md |
 | orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
@@ -910,6 +914,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | pending-settlement-leaves-the-debt-card-with-settle | done | tickets/done/pending-settlement-leaves-the-debt-card-with-settle.md |
 | pending-settlements-spend-the-bridge-retry-budget | backlog | tickets/backlog/pending-settlements-spend-the-bridge-retry-budget.md |
+| per-group-history-import-can-leave-a-second-draft-for-an-opted-in-expense | backlog | tickets/backlog/per-group-history-import-can-leave-a-second-draft-for-an-opted-in-expense.md |
 | period-totals-count-a-row-dated-at-tomorrows-midnight | done | tickets/done/period-totals-count-a-row-dated-at-tomorrows-midnight.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
@@ -928,6 +933,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | practice-cleanup-prompt-outside-the-presentation-locks | backlog | tickets/backlog/practice-cleanup-prompt-outside-the-presentation-locks.md |
 | preferred-currency-has-three-different-defaults | done | tickets/done/preferred-currency-has-three-different-defaults.md |
+| prefilled-amount-fields-keep-the-caret-where-the-tap-lands | backlog | tickets/backlog/prefilled-amount-fields-keep-the-caret-where-the-tap-lands.md |
 | prefs-change-is-dropped-when-the-outbox-cannot-take-it | backlog | tickets/backlog/prefs-change-is-dropped-when-the-outbox-cannot-take-it.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | done | tickets/done/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
@@ -1140,7 +1146,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
 | settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-notification-states-a-third-party-payment-as-fact | backlog | tickets/backlog/settlement-notification-states-a-third-party-payment-as-fact.md |
-| settlement-retry-after-a-failed-confirmation-duplicates-the-payment | backlog | tickets/backlog/settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md |
+| settlement-retry-after-a-failed-confirmation-duplicates-the-payment | done | tickets/done/settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |

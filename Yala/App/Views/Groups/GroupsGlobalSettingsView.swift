@@ -215,20 +215,38 @@ struct GroupsGlobalSettingsView: View {
                 // Invalidar cache del resolver (override per-grupo no cambia pero el
                 // effective sí depende del global).
                 BridgeModeResolver.shared.invalidateCache()
-                let hasBridged = hasBridgedTransactions()
-                if hasBridged {
-                    if newValue {
-                        showActivationSheet = true
-                    } else {
-                        showDeactivationSheet = true
-                    }
-                } else {
-                    // Sin TX bridgeadas: no se presentará sheet → reset pendingBridgeValue
+                // Al encender, la hoja de importar sale si hay gastos de grupo que importar, no solo si ya hay algo
+                // reflejado (la primera vez no lo hay). Ticket bridge-history-import-is-only-offered-when-something-was-
+                // already-bridged.
+                let sheet = BridgeToggleSheetLogic.sheet(
+                    turningOn: newValue,
+                    hasGroupExpenses: newValue && hasGroupExpenses(),
+                    hasBridgedTransactions: !newValue && hasBridgedTransactions()
+                )
+                switch sheet {
+                case .activation:
+                    showActivationSheet = true
+                case .deactivation:
+                    showDeactivationSheet = true
+                case nil:
+                    // Sin hoja que presentar → reset pendingBridgeValue
                     // para evitar que un cancel futuro de OTRO toggle use este stale value.
                     pendingBridgeValue = nil
                 }
             }
         )
+    }
+
+    /// ¿Hay gastos de grupo que la hoja de activación pueda importar? Los mismos que cuenta la hoja (`SplitExpense`).
+    private func hasGroupExpenses() -> Bool {
+        do {
+            return try modelContext.fetchCount(FetchDescriptor<SplitExpense>()) > 0
+        } catch {
+            #if DEBUG
+            print("hasGroupExpenses: fetchCount failed: \(error)")
+            #endif
+            return false
+        }
     }
 
     private func hasBridgedTransactions() -> Bool {

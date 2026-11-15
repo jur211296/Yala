@@ -97,7 +97,10 @@ struct GroupsLote13FixesTests {
     func screens_doNotShowTheRawError(path: String) throws {
         let source = try Self.source(path)
         #expect(!source.contains("= error.localizedDescription"), "\(path) vuelve a enseñar el error en crudo")
-        #expect(source.contains("GroupsUserFacingErrorLogic.message(for: error)"))
+        // El saldo inicial pasa por `OpeningBalanceErrorCopyLogic` (lote 01 de mejoras 2.3), que delega en la misma lógica
+        // salvo el aviso de pagos confirmados; su delegación la fija `GroupsNecesarias23Lote01Tests`.
+        #expect(source.contains("GroupsUserFacingErrorLogic.message(for: error)")
+                || source.contains("OpeningBalanceErrorCopyLogic.message(for: error)"))
     }
 
     // MARK: - B1 · «1 parte», no «1 partes»
