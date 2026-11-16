@@ -12,5 +12,9 @@ los XCUITest que escriben caen: `xcrun simctl spawn <udid> defaults write com.ap
 HardwareKeyboardLastSeen -int 0` lo devolvió a 0 y `CardDesignUITests` (que teclea) pasó a continuación, sin borrar el
 simulador.
 
+Repetido el mismo día en la caja del chat de Yala IA (`chat_input`, guiados): `type_text` tampoco escribió, y
+`defaults delete … HardwareKeyboardLastSeen` sirvió igual que el `write 0` (los cuatro XCUITest que teclean pasaron).
+Para capturas de un flujo con texto, un XCUITest con `XCTAttachment` sale más barato que conducir a mano.
+
 **Cómo aplicarlo:** capturas con texto, al final y con el reseteo de la preferencia antes del siguiente XCUITest.
 Relacionado: [[feedback-capturas-en-el-chat-antes-de-preguntar]].
