@@ -1,0 +1,756 @@
+<title>Yala web como la app</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Maqueta de revisión: la página es un cuaderno sobrio; el color de Yala vive solo dentro de los marcos. */
+:root{
+  --bg:#F4F4F8; --surface:#FFFFFF; --fg:#16161D; --muted:#5D5D6C; --line:#E2E2EA; --soft:#EDEDF4;
+  --accent:#4E51DE; --accent-soft:#E8E8FC; --ok:#13804F; --ok-soft:#E2F4EA; --warn:#9A5B00; --warn-soft:#FFF1D6;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Segoe UI",system-ui,sans-serif;
+  --round:ui-rounded,"SF Pro Rounded",Nunito,-apple-system,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C0C11; --surface:#16161E; --fg:#ECECF2; --muted:#A0A0B0; --line:#2A2A36; --soft:#1E1E28;
+  --accent:#9497FA; --accent-soft:#25264A; --ok:#4FD393; --ok-soft:#143325; --warn:#FBBF24; --warn-soft:#3A2C0C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C0C11; --surface:#16161E; --fg:#ECECF2; --muted:#A0A0B0; --line:#2A2A36; --soft:#1E1E28;
+  --accent:#9497FA; --accent-soft:#25264A; --ok:#4FD393; --ok-soft:#143325; --warn:#FBBF24; --warn-soft:#3A2C0C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 80px}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4.4vw,44px);line-height:1.08;font-weight:700}
+h2{font-size:26px;font-weight:700;margin-bottom:6px}
+h3{font-size:18px;font-weight:650}
+p{margin:0}
+.lede{font-size:17px;color:var(--muted);max-width:68ch}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+section.block{margin-top:56px;display:grid;gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.grid3{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+ul.tight{margin:0;padding-left:18px;display:grid;gap:6px}
+code{font-family:var(--mono);font-size:.88em;background:var(--soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.pill.rec{background:var(--ok-soft);color:var(--ok)}
+.pill.dec{background:var(--warn-soft);color:var(--warn)}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;justify-content:space-between}
+.nav{display:flex;gap:2px;flex-wrap:wrap}
+.nav a{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 9px;border-radius:99px}
+.nav a:hover,.nav a:focus-visible{background:var(--soft);color:var(--fg)}
+.seg{display:inline-flex;background:var(--soft);border-radius:99px;padding:3px;gap:2px}
+.seg button{font:600 13px var(--font);border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctrls .lbl{font-size:12px;color:var(--muted);font-weight:600}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:11px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--soft)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+.sw{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.12)}
+
+.screen{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:grid;gap:18px;scroll-margin-top:80px;min-width:0}
+.screen-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.where{display:flex;flex-wrap:wrap;gap:6px}
+.today{display:grid;gap:12px;grid-template-columns:minmax(0,2.2fr) minmax(0,.8fr) minmax(0,.8fr)}
+.shot{margin:0;display:grid;gap:6px;min-width:0;align-content:start}
+.shot img{width:100%;border-radius:12px;border:1px solid var(--line);display:block;background:var(--soft)}
+.shot figcaption{font-size:12px;color:var(--muted);font-weight:600}
+.diffs{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.diffs h3{font-size:15px;margin-bottom:8px}
+.mocks{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 320px;align-items:start}
+.mocks.solo-phone{grid-template-columns:minmax(0,320px)}
+.mocks>div{min-width:0}
+.mlabel{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
+.fwrap{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#000;max-width:100%}
+.frame{position:absolute;top:0;left:0;transform-origin:top left}
+.vote{display:grid;gap:10px;background:var(--soft);border-radius:14px;padding:14px}
+.vote .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vbtn{font:600 14px var(--font);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:99px;cursor:pointer}
+.vbtn[aria-pressed="true"].like{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.vbtn[aria-pressed="true"].change{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+textarea{width:100%;min-height:72px;font:14px/1.45 var(--font);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical}
+.saved{font-size:12px;color:var(--muted)}
+@media (max-width:980px){.today{grid-template-columns:1fr 1fr!important}.today .shot:first-child{grid-column:1/-1}.mocks{grid-template-columns:minmax(0,1fr)}.mocks .phonecol{max-width:340px}}
+
+.dec-card{display:grid;gap:12px}
+.opts{display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;background:var(--surface)}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt b{font-weight:650}
+
+.lote{display:grid;gap:10px}
+.files{display:flex;flex-wrap:wrap;gap:6px}
+.files code{font-size:12px}
+pre{margin:0;background:var(--soft);border-radius:12px;padding:14px;overflow-x:auto;font:12.5px/1.5 var(--mono)}
+.export textarea{min-height:220px;font-family:var(--mono);font-size:12.5px}
+
+/* ───────── Piezas de la maqueta (tokens de Yala, medidos en el código Swift) ───────── */
+.ym{--y-acc:#6063F1;--y-on:#FFFFFF;--y-round:var(--round);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;position:relative;overflow:hidden;color:var(--y-ink);background:var(--y-bg-grad),var(--y-bg);line-height:1.3}
+.ym[data-t="claro"]{--y-bg:#FAFBFF;--y-bg-grad:linear-gradient(180deg,#FCFCFF 0%,#EFEFFD 100%);--y-card:#FFFFFF;--y-card-b:rgba(20,20,60,.06);--y-ink:#111114;--y-ink2:rgba(60,60,67,.64);--y-ink3:rgba(60,60,67,.4);--y-acc-t:#6063F1;--y-in:#0F7A80;--y-owe:#C80066;--y-owed:#15803D;--y-over:#D6006B;--y-warn:#FF9500;--y-gold:#8A6100;--y-ring:#F5B400;--y-glass:rgba(255,255,255,.72);--y-glass-b:rgba(0,0,0,.07);--y-track:rgba(120,120,128,.16);--y-chip:rgba(120,120,128,.12);--y-side:rgba(255,255,255,.66);--y-shadow:0 5px 10px rgba(0,0,0,.05);--y-sheet:#F7F7FC}
+.ym[data-t="oscuro"]{--y-bg:#060612;--y-bg-grad:linear-gradient(180deg,#26275F 0%,#11112B 34%,#060612 70%);--y-card:rgba(255,255,255,.055);--y-card-b:rgba(255,255,255,.09);--y-ink:#F2F2F7;--y-ink2:rgba(235,235,245,.62);--y-ink3:rgba(235,235,245,.36);--y-acc-t:#818CF8;--y-in:#00C2CB;--y-owe:#FF4DA6;--y-owed:#4ADE80;--y-over:#FF0080;--y-warn:#FF9F0A;--y-gold:#F5B400;--y-ring:#F5B400;--y-glass:rgba(58,58,110,.5);--y-glass-b:rgba(255,255,255,.12);--y-track:rgba(255,255,255,.12);--y-chip:rgba(255,255,255,.1);--y-side:rgba(30,30,62,.55);--y-shadow:none;--y-sheet:#0E0E1A}
+.ym *{box-sizing:border-box}
+.ym svg{width:1em;height:1em;stroke-width:2;flex:none}
+.ym .glass{background:var(--y-glass);border:1px solid var(--y-glass-b);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6)}
+.ym .y-sb{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 44px;font:600 17px -apple-system,system-ui,sans-serif}
+.ym .y-sb i{display:flex;gap:6px;font-size:15px}
+.ym .y-top{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 0}
+.ym .y-top .grp{display:flex;gap:10px;align-items:center}
+.ym .y-ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;color:var(--y-acc-t);position:relative}
+.ym .y-ibs{height:44px;border-radius:22px;display:flex;align-items:center;gap:22px;padding:0 18px;font-size:20px;color:var(--y-acc-t)}
+.ym .y-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:2.5px solid var(--y-ring);background:var(--y-card);color:var(--y-acc-t);font-size:22px;position:relative;flex:none}
+.ym .y-av::after{content:"✦";position:absolute;right:-3px;bottom:-3px;font-size:11px;color:var(--y-ring)}
+.ym .badge{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:10px;background:#FF0080;color:#fff;font:700 11px/19px system-ui;text-align:center;padding:0 5px}
+.ym .y-title{font-size:34px;font-weight:700;letter-spacing:.2px;padding:10px 16px 4px}
+.ym .y-pad{padding:0 16px}
+.ym .y-lblrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ym .y-lbl{font-size:16px;color:var(--y-ink2);display:flex;align-items:center;gap:6px}
+.ym .y-q{width:22px;height:22px;border-radius:50%;background:var(--y-chip);display:inline-grid;place-items:center;font:700 12px system-ui;color:var(--y-ink2)}
+.ym .y-pillbtn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:17px;font-size:14px;font-weight:600;color:var(--y-ink);white-space:nowrap}
+.ym .y-pillbtn svg{font-size:14px}
+.ym .m{font-family:var(--y-round);font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.2px}
+.ym .m .c,.ym .m .d{font-size:.47em;font-weight:500;color:var(--y-ink2)}
+.ym .m .c{margin-right:3px}
+.ym .m .i{font-weight:700}
+.ym .m.hero{font-size:44px;line-height:1.1}
+.ym .m.hero .i{font-weight:600}
+.ym .m.row{font-size:19px}
+.ym .m.row .c,.ym .m.row .d{font-size:.68em}
+.ym .m.sm{font-size:15px}
+.ym .m.mid{font-size:24px}
+.ym .m.in .i,.ym .m.in .c,.ym .m.in .d{color:var(--y-in)}
+.ym .m.owed .i,.ym .m.owed .c,.ym .m.owed .d{color:var(--y-owed)}
+.ym .m.owe .i,.ym .m.owe .c,.ym .m.owe .d{color:var(--y-owe)}
+.ym .m.over .i,.ym .m.over .c,.ym .m.over .d{color:var(--y-over)}
+.ym .y-acts{display:flex;gap:10px;align-items:flex-start}
+.ym .y-primary{height:48px;border-radius:24px;background:var(--y-acc);color:var(--y-on);display:inline-flex;align-items:center;gap:8px;padding:0 20px;font-size:17px;font-weight:600;border:0;white-space:nowrap}
+.ym .y-primary svg{font-size:19px}
+.ym .y-sec{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.ym .y-chev{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;font-size:15px;color:var(--y-ink)}
+.ym .y-acc-chip{display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 14px 0 8px;border-radius:23px;white-space:nowrap;font-size:16px;font-weight:600;flex:none}
+.ym .y-sq{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;font-size:16px;flex:none}
+.ym .y-card{background:var(--y-card);border:1px solid var(--y-card-b);border-radius:22px;padding:16px;box-shadow:var(--y-shadow)}
+.ym .y-rowcard{background:var(--y-card);border:1px solid var(--y-card-b);border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:var(--y-shadow)}
+.ym .y-ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:19px;flex:none}
+.ym .y-rt{flex:1;min-width:0;display:grid;gap:2px}
+.ym .y-rt b{font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ym .y-rt span{font-size:14px;color:var(--y-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ym .y-ra{display:grid;justify-items:end;gap:4px}
+.ym .need{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--y-chip);color:var(--y-ink2);white-space:nowrap;width:max-content}
+.ym .need::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dot)}
+.ym .day{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--y-ink2);padding:14px 2px 8px;font-weight:500}
+.ym .y-list{display:grid;gap:8px}
+.ym .y-segs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ym .y-seg{height:40px;border-radius:20px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;font-size:16px;font-weight:600;white-space:nowrap;color:var(--y-ink)}
+.ym .y-seg.on{background:var(--y-acc);color:#fff;border:0}
+.ym .y-seg.ic{padding:0 14px;font-size:18px}
+.ym .bar{height:8px;border-radius:4px;background:var(--y-track);overflow:hidden}
+.ym .bar i{display:block;height:100%;border-radius:4px;background:var(--b)}
+.ym .tag-warn{font-size:13px;font-weight:600;color:var(--y-warn)}
+.ym .tag-over{font-size:13px;font-weight:600;color:var(--y-over)}
+.ym .sub{font-size:13px;color:var(--y-ink2)}
+.ym .up{color:var(--y-in)}
+.ym .down{color:#FF0080}
+.ym.phone{width:390px;height:844px;border-radius:44px}
+.ym.phone .scroll{position:absolute;inset:0;overflow-y:auto;padding-bottom:120px;scrollbar-width:none}
+.ym.phone .scroll::-webkit-scrollbar{display:none}
+.ym .tabbar{position:absolute;left:14px;right:14px;bottom:22px;display:flex;align-items:center;gap:10px;z-index:3}
+.ym .tabs{flex:1;height:62px;border-radius:31px;display:flex;justify-content:space-around;align-items:center;padding:0 6px}
+.ym .tab{display:grid;justify-items:center;gap:2px;font-size:10px;font-weight:600;color:var(--y-ink);padding:6px 8px;border-radius:24px;min-width:58px}
+.ym .tab svg{font-size:22px}
+.ym .tab.on{color:var(--y-acc-t);background:var(--y-chip)}
+.ym .tabsearch{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:23px;color:var(--y-ink);flex:none}
+.ym .tabsearch.on{color:var(--y-acc-t)}
+.ym .fab{position:absolute;right:20px;bottom:100px;width:56px;height:56px;border-radius:50%;background:var(--y-acc);color:#fff;display:grid;place-items:center;font-size:26px;box-shadow:0 10px 20px rgba(0,0,0,.2);z-index:3}
+.ym .home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--y-ink);opacity:.85;z-index:7}
+.ym.desk{width:1240px;height:780px;display:grid;grid-template-columns:268px 1fr}
+.ym .side{margin:12px 0 12px 12px;border-radius:26px;padding:16px 12px;display:flex;flex-direction:column;gap:4px;background:var(--y-side);border:1px solid var(--y-glass-b);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.ym .brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;padding:4px 10px 12px}
+.ym .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6063F1,#FF0080);display:block}
+.ym .sfield{display:flex;align-items:center;gap:8px;height:38px;border-radius:19px;padding:0 12px;font-size:15px;color:var(--y-ink2);background:var(--y-chip);margin-bottom:10px}
+.ym .sfield kbd{margin-left:auto;font:600 12px system-ui;color:var(--y-ink3)}
+.ym .sitem{display:flex;align-items:center;gap:12px;height:42px;border-radius:21px;padding:0 12px;font-size:16px;font-weight:500;color:var(--y-ink)}
+.ym .sitem svg{font-size:20px;color:var(--y-acc-t)}
+.ym .sitem.on{background:var(--y-acc);color:#fff}
+.ym .sitem.on svg{color:#fff}
+.ym .sitem .cnt{margin-left:auto;background:#FF0080;color:#fff;font:700 11px/19px system-ui;min-width:20px;height:19px;border-radius:10px;text-align:center;padding:0 6px}
+.ym .sitem .soon{margin-left:auto;font-size:11px;font-weight:700;color:var(--y-gold);border:1px solid var(--y-gold);border-radius:9px;padding:0 6px;line-height:17px}
+.ym .sgroup{font-size:12px;font-weight:600;color:var(--y-ink3);padding:12px 12px 4px;text-transform:uppercase;letter-spacing:.06em}
+.ym .sfoot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px 6px 0}
+.ym .sfoot .y-av{width:38px;height:38px;font-size:18px}
+.ym .sfoot b{font-size:15px;display:block}
+.ym .sfoot span{font-size:12px;color:var(--y-ink2)}
+.ym .main{overflow-y:auto;padding:14px 28px 40px 28px;scrollbar-width:thin;min-width:0}
+.ym .dtop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 4px}
+.ym .dtop .y-title{padding:0}
+.ym .dgrid{display:grid;gap:16px;grid-template-columns:repeat(12,minmax(0,1fr));align-items:start}
+.ym .s3{grid-column:span 3}.ym .s5{grid-column:span 5}.ym .s6{grid-column:span 6}.ym .s7{grid-column:span 7}.ym .s12{grid-column:span 12}
+.ym .detail{border-left:1px solid var(--y-card-b);padding-left:22px;min-width:0}
+.ym .sheet{position:absolute;inset:auto 0 0 0;top:54px;border-radius:38px 38px 0 0;background:var(--y-sheet);z-index:5;padding:14px 18px;box-shadow:0 -10px 30px rgba(0,0,0,.15);overflow:hidden}
+.ym .scrim{position:absolute;inset:0;background:rgba(0,0,0,.32);z-index:4}
+.ym .dsheet{position:absolute;top:40px;bottom:40px;left:50%;transform:translateX(-50%);width:560px;border-radius:30px;background:var(--y-sheet);z-index:5;padding:18px 22px;box-shadow:0 30px 60px rgba(0,0,0,.3);overflow:hidden;border:1px solid var(--y-card-b)}
+.ym .x{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;color:var(--y-ink);flex:none}
+.ym .shead{display:flex;justify-content:space-between;align-items:center}
+.ym .shead b{font-size:17px;font-weight:600}
+.ym .bigamt{font:700 76px var(--y-round);color:var(--y-ink3);text-align:center;letter-spacing:-1px}
+.ym .bigamt .c{font-size:34px;color:#FF0080;font-weight:500;margin-right:6px}
+.ym .chipc{display:inline-flex;align-items:center;gap:8px;height:38px;border-radius:19px;padding:0 14px;font-size:16px;color:var(--y-ink);background:var(--y-card);border:1px solid var(--y-card-b);white-space:nowrap}
+.ym .save{height:52px;border-radius:26px;background:var(--y-acc);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:600}
+.ym .lgroup{background:var(--y-card);border:1px solid var(--y-card-b);border-radius:22px;overflow:hidden}
+.ym .litem{display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:17px;min-height:52px}
+.ym .litem+.litem{border-top:1px solid var(--y-card-b)}
+.ym .litem .v{margin-left:auto;color:var(--y-ink2);font-size:15px;display:flex;align-items:center;gap:6px}
+.ym .ghead{font-size:15px;font-weight:600;color:var(--y-ink2);padding:18px 6px 8px}
+.ym .switch{width:51px;height:31px;border-radius:16px;background:var(--y-track);position:relative;margin-left:auto;flex:none}
+.ym .switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.ym .tile{background:var(--y-card);border:1px solid var(--y-card-b);border-radius:22px;padding:14px;display:grid;gap:8px;min-height:128px;align-content:start;position:relative}
+.ym .tsq{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:20px;flex:none}
+.ym .tile b{font-size:18px}
+.ym .tile span.t{font-size:14px;color:var(--y-ink2);line-height:1.3}
+.ym .tile .tc{position:absolute;right:14px;top:14px;color:var(--y-ink3);font-size:15px}
+.ym .cmdk{position:absolute;top:90px;left:50%;transform:translateX(-50%);width:620px;border-radius:26px;z-index:6;padding:14px;box-shadow:0 30px 60px rgba(0,0,0,.3);background:var(--y-sheet);border:1px solid var(--y-card-b)}
+.ym .acard{border-radius:20px;padding:16px;color:#fff;min-height:132px;display:grid;align-content:space-between;gap:16px;background:radial-gradient(120% 120% at 100% 0%,rgba(255,255,255,.16),transparent 50%),linear-gradient(140deg,var(--a1),var(--a2));position:relative;overflow:hidden}
+.ym .acard .chip{width:34px;height:26px;border-radius:6px;background:linear-gradient(135deg,#E9C46A,#B08A2E);position:absolute;right:16px;top:16px}
+.ym .acard small{opacity:.8;font-size:13px}
+.ym .acard .m .c,.ym .acard .m .d{color:rgba(255,255,255,.75)}
+.ym svg.chart{width:100%;height:150px;display:block}
+.ym .gbar{height:10px;border-radius:5px;background:var(--y-owed)}
+@media (prefers-reduced-motion:no-preference){.vbtn,.seg button{transition:background .15s}}
+</style>
+
+<header class="top">
+  <div class="in">
+    <nav class="nav" aria-label="Secciones">
+      <a href="#resumen">Resumen</a><a href="#diferencias">Diferencias</a><a href="#pantallas">Pantallas</a><a href="#sistema">Sistema visual</a><a href="#decisiones">Decisiones</a><a href="#plan">Plan</a><a href="#exportar">Exportar</a>
+    </nav>
+    <div class="ctrls">
+      <span class="lbl">Maqueta en</span>
+      <div class="seg" role="group" aria-label="Tema de la maqueta"><button id="t-claro" data-t="claro">Claro</button><button id="t-oscuro" data-t="oscuro">Oscuro</button></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="resumen" class="block" style="margin-top:8px">
+    <span class="eyebrow">Maqueta para revisar · 16 de noviembre de 2026</span>
+    <h1>Yala web, con la cara de Yala</h1>
+    <p class="lede">Puse cada pantalla de la web junto a su equivalente en la app de iPhone, saqué el sistema visual de la app desde su código y rediseñé la web con esas mismas piezas. Abajo ves la web de hoy, la app y la propuesta, en escritorio y en celular. Cambia entre claro y oscuro arriba a la derecha.</p>
+    <div class="grid3">
+      <div class="card"><h3>Qué encontré</h3><ul class="tight small" style="margin-top:8px">
+        <li>La web comparte el índigo de la app y casi nada más: fondo plano, tarjetas con borde gris, cifras en letra normal y una inicial donde la app pone un ícono de color.</li>
+        <li>La navegación es otra. La app usa una barra flotante de cristal con tres pestañas, Más y Buscar. La web usa una barra lateral de nueve entradas y, en celular, una barra fija con «+» en el medio.</li>
+        <li>En oscuro, la app abre por defecto en Liquid Glass: azul noche con un degradado índigo. La web usa negro puro.</li>
+        <li>Para que las filas lleven el ícono y el color de cada categoría, el servidor tiene que mandarlos. Ya están en la nube; la web todavía no los pide.</li>
+      </ul></div>
+      <div class="card"><h3>Cómo comentar</h3><ul class="tight small" style="margin-top:8px">
+        <li>En cada pantalla marca <b>Me gusta</b> o <b>Cambiar</b> y escribe lo que quieras.</li>
+        <li>En <a href="#decisiones">Decisiones</a> elige una opción. La que recomiendo ya viene marcada.</li>
+        <li>Si la abres con tu cuenta de Claude, todo se guarda en la maqueta y yo lo leo. Si no, se guarda en este navegador, y en <a href="#exportar">Exportar</a> lo copias en un solo bloque.</li>
+      </ul></div>
+      <div class="card"><h3>Qué no es</h3><ul class="tight small" style="margin-top:8px">
+        <li>No cambia nada de la web ni de la app: es una maqueta. El código se toca después de tu visto bueno, por lotes.</li>
+        <li>Las cifras son de ejemplo. Las capturas de la web salen de un servidor local con datos inventados; las de la app, de su modo de demostración en el simulador.</li>
+        <li>No agrega funciones que la web no tiene. Lo que sería nuevo está marcado como decisión.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section id="diferencias" class="block">
+    <span class="eyebrow">Diagnóstico</span>
+    <h2>Lo que separa a la web de la app</h2>
+    <p class="lede">Doce diferencias que se repiten en todas las pantallas. Arreglarlas una vez, en la base, arregla la mayor parte.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Aspecto</th><th>App (iPhone)</th><th>Web hoy</th><th>Propuesta para la web</th></tr></thead>
+      <tbody id="diff-rows"></tbody>
+    </table></div>
+  </section>
+
+  <section id="pantallas" class="block">
+    <span class="eyebrow">Pantalla por pantalla</span>
+    <h2>Hoy y rediseño</h2>
+    <p class="lede">En cada pantalla, primero la web de hoy en escritorio y en celular, y la app. Después, el rediseño en vivo: se desplaza dentro del marco igual que una página. Los marcos usan los colores, radios y tamaños de la app medidos en su código.</p>
+    <div id="screens" style="display:grid;gap:22px"></div>
+  </section>
+
+  <section id="sistema" class="block">
+    <span class="eyebrow">Sistema visual</span>
+    <h2>De la app a la web</h2>
+    <p class="lede">Valores tomados de <code>DesignTokens.swift</code>, <code>UIHelpers.swift</code> y <code>YalaTheme.swift</code>. La columna web es lo que propongo poner en <code>app.css</code> como variables.</p>
+    <div class="grid2">
+      <div class="card"><h3>Color</h3><div class="tbl" style="margin-top:10px;border:0"><table style="min-width:0"><thead><tr><th>Uso</th><th>Claro</th><th>Oscuro (Liquid Glass)</th></tr></thead><tbody id="tok-color"></tbody></table></div></div>
+      <div class="card"><h3>Forma y letra</h3><div class="tbl" style="margin-top:10px;border:0"><table style="min-width:0"><thead><tr><th>Pieza</th><th>App</th><th>Web propuesta</th></tr></thead><tbody id="tok-forma"></tbody></table></div></div>
+    </div>
+    <div class="card"><h3>Variables CSS propuestas</h3><p class="small muted" style="margin:6px 0 10px">Una sola fuente para las dos superficies: claro, Liquid Glass en oscuro y el atributo <code>data-tema</code> para que Ajustes pueda forzar uno.</p><pre id="css-tokens"></pre></div>
+    <div class="card"><h3>Componentes</h3><p class="small muted" style="margin:6px 0 12px">Las piezas que se repiten. Cada una tiene su equivalente en la app y vive en un componente React propio.</p><div class="tbl" style="border:0"><table style="min-width:640px"><thead><tr><th>Componente web</th><th>En la app</th><th>Cómo se ve</th></tr></thead><tbody id="tok-comp"></tbody></table></div></div>
+    <div class="card"><h3>SF Symbols y su equivalente web</h3><p class="small muted" style="margin:6px 0 12px">La licencia de Apple solo permite SF Symbols dentro de apps para sus plataformas, así que la web no puede usarlos. Propongo Lucide (licencia MIT, paquete para React). El selector de íconos de categoría de la app tiene 187 símbolos: los traduce una tabla, y lo que no esté en ella muestra una etiqueta. Esta maqueta ya usa Lucide.</p><div class="tbl" style="border:0"><table style="min-width:560px"><thead><tr><th>SF Symbol</th><th>Dónde</th><th>Lucide</th></tr></thead><tbody id="tok-ico"></tbody></table></div></div>
+  </section>
+
+  <section id="decisiones" class="block">
+    <span class="eyebrow">Decisiones tuyas</span>
+    <h2>Siete cosas que decides tú</h2>
+    <p class="lede">Cada una trae mi recomendación marcada. Si no cambias nada, se implementa la recomendada.</p>
+    <div id="decs" class="grid2"></div>
+  </section>
+
+  <section id="plan" class="block">
+    <span class="eyebrow">Después de tu visto bueno</span>
+    <h2>Plan por lotes</h2>
+    <p class="lede">Seis lotes, en este orden: primero la base, que ya cambia todas las pantallas, y después pantalla por pantalla. Cada lote sale con capturas de antes y después en claro y oscuro, escritorio y celular, y con las pruebas de la web en verde. Las direcciones de hoy (<code>/registros</code>, <code>/presupuestos</code>…) siguen funcionando.</p>
+    <div id="lotes" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section id="exportar" class="block export">
+    <span class="eyebrow">Tus comentarios</span>
+    <h2>Exportar en un bloque</h2>
+    <p class="lede">Todo lo que marcaste y escribiste, listo para pegar en el chat.</p>
+    <textarea id="export" readonly aria-label="Comentarios exportados"></textarea>
+    <div class="ctrls"><button class="vbtn" id="copy">Copiar</button><span class="saved" id="copied" aria-live="polite"></span><span class="saved" id="store-state"></span></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ic=(n,s="")=>`<i data-lucide="${n}" ${s}></i>`;
+const fmt=n=>Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+/* Monto como AmountText: símbolo y decimales a la mitad, entero en redondeada. */
+function money(v,cls="row",opt={}){
+  const s=fmt(v).split(".");const neg=v<0&&!opt.nosign;const plus=opt.plus&&v>0;
+  return `<span class="m ${cls}"${opt.style?` style="${opt.style}"`:""}><span class="c">${opt.cur||"S/"}</span><span class="i">${neg?"-":""}${plus?"+":""}${s[0]}</span><span class="d">.${s[1]}</span></span>`;
+}
+/* ───── datos de ejemplo ───── */
+const NEED={E:["Esencial","#F59E0B"],P:["Prioritaria","#8B5CF6"],O:["Opcional","#FB7185"]};
+const DAYS=[
+ ["lun, 16 nov.",-51.40,[["Almuerzo menú","Comidas fuera · Cuenta Principal","utensils","#F97316",-38.5,"O"],["Café y pan","Cafetería · Cuenta Principal","coffee","#F59E0B",-12.9,"O"]]],
+ ["dom, 15 nov.",-276.30,[["Uber a casa","Taxis y apps · Tarjeta Visa","car","#0EA5E9",-64,"E"],["Plaza Vea","Supermercados · Tarjeta Visa","shopping-basket","#22C55E",-212.3,"E"]]],
+ ["sáb, 14 nov.",8455.00,[["Cine con Ana","Cine · Cuenta Principal","clapperboard","#D946EF",-45,"O","Compartido"],["Sueldo noviembre","Sueldo · Cuenta Principal","briefcase","#0F7A80",8500,null]]],
+ ["vie, 13 nov.",-89.90,[["Netflix + Spotify","Streaming · Tarjeta Visa","tv","#EF4444",-89.9,"O","Fijo"]]],
+ ["jue, 12 nov.",-137.00,[["Veterinaria Maia","Mascotas · Cuenta Principal","paw-print","#8B5CF6",-137,"P"]]],
+];
+const ACC=[["Cuenta Principal","credit-card","#5E5CE6",12840.65,"S/","#3B3FA8","#22245E"],["Ahorros USD","banknote","#30A46C",26183,"$","#1F6F57","#0E3B2F"],["Tarjeta Visa","credit-card","#0A84FF",-1420.3,"S/","#1E3A8A","#0F1E4A"],["Efectivo","banknote","#FF9F0A",320,"S/","#8A4B08","#4A2805"]];
+const BUD=[["Comidas fuera","shopping-cart","#22C55E",1461,1800,"warn"],["Cuidado personal","user-round","#A855F7",512,800],["Fijos casa","house","#475569",2453,3200],["Maia","paw-print","#84CC16",137,500],["Ocio","clapperboard","#D946EF",391.4,350,"over"]];
+const CAT=[["Fijos casa","house","#475569",2453,41.2],["Comida","utensils","#F97316",1461,24.5],["Transporte","car","#0EA5E9",642.5,10.8],["Cuidado personal","user-round","#A855F7",512,8.6],["Ocio","clapperboard","#D946EF",391.4,6.6]];
+const PAY=[["Mañana · 17 nov.",[["Alquiler depa","Fijos casa · mensual","house","#475569",-2400]]],["En 4 días · 20 nov.",[["Luz del Sur","Fijos casa · mensual","zap","#EAB308",-165]]],["En 8 días · 24 nov.",[["Netflix","Suscripción · mensual","tv","#EF4444",-44.9]]],["En 12 días · 28 nov.",[["Gimnasio","Cuidado personal · mensual","dumbbell","#A855F7",-645]]]];
+const GRP=[["Viaje a Cusco","plane","#8B5CF6","4 personas · 23 gastos",[["Luis te debe",274],["Ana te debe",212.5]]],["Depa Miraflores","house","#0EA5E9","3 personas · 41 gastos",[["Le debes a Carla",-120]]],["Cumple de Maia","gift","#EC4899","5 personas · 6 gastos",[]]];
+
+function row(r){
+  const [t,s,i,c,v,n,tag]=r;
+  const amt=money(v,"row"+(v>0?" in":""),{plus:v>0});
+  const need=n?`<span class="need" style="--dot:${NEED[n][1]}">${NEED[n][0]}</span>`:"";
+  const tg=tag?`<span class="need" style="--dot:${tag==="Compartido"?"#22C55E":"#6063F1"}">${esc(tag)}</span>`:"";
+  return `<div class="y-rowcard"><div class="y-ico" style="background:${c}">${ic(i)}</div><div class="y-rt"><b>${esc(t)}</b><span>${esc(s)}</span>${tg?`<div>${tg}</div>`:""}</div><div class="y-ra">${amt}${need}</div></div>`;
+}
+function dayList(days,max=99){
+  return days.slice(0,max).map(d=>`<div class="day"><span>${d[0]}</span>${money(d[1],"sm"+(d[1]>0?" in":""),{plus:d[1]>0})}</div><div class="y-list">${d[2].map(row).join("")}</div>`).join("");
+}
+function hero(label,v,extra=""){
+  return `<div class="y-pad" style="display:grid;gap:6px;margin-top:6px"><div class="y-lblrow"><span class="y-lbl">${label} <span class="y-q">?</span></span><span class="y-pillbtn glass">${ic("calendar")}Este mes</span></div>${money(v,"hero")}${extra}</div>`;
+}
+const ACTS=`<div class="y-acts y-pad" style="margin-top:14px"><span class="y-primary">${ic("plus")}Nuevo registro</span></div>`;
+const INOUT=`<span class="sub">Entradas ${money(8500,"sm in")} · Salidas ${money(5960,"sm")} este mes</span>`;
+function accChips(){return `<div style="display:flex;gap:10px;overflow:hidden;padding:2px 16px">${ACC.map(a=>`<span class="y-acc-chip glass"><span class="y-sq" style="background:${a[2]}">${ic(a[1])}</span>${a[0]} ${money(a[3],"sm",{cur:a[4],style:"color:var(--y-ink2)"})}</span>`).join("")}</div>`}
+function secTitle(t,btn=true){return `<div class="y-sec">${t}${btn?`<span class="y-chev glass">${ic("chevron-right")}</span>`:""}</div>`}
+function catBars(list){return `<div class="y-card" style="display:grid;gap:12px">${list.map(c=>`<div style="display:grid;gap:6px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;gap:8px"><span style="display:flex;gap:8px;align-items:center"><span class="y-sq" style="background:${c[2]};width:24px;height:24px;border-radius:7px;font-size:13px">${ic(c[1])}</span>${c[0]}</span>${money(c[3],"sm")}</div><div class="bar"><i style="width:${c[4]*2.2}%;--b:${c[2]}"></i></div></div>`).join("")}</div>`}
+function chart(){
+  const pts=[[0,40],[40,42],[80,48],[120,96],[160,100],[200,104],[240,112],[280,108],[320,118],[360,130],[400,126],[440,136]];
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0]+" "+(150-p[1])).join(" ");
+  return `<svg class="chart" viewBox="0 0 460 150" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="70" x2="440" y2="70" stroke="var(--y-ink3)" stroke-dasharray="4 4"/><path d="${d} L440 150 L0 150 Z" fill="#FF0080" opacity=".12"/><path d="${d}" fill="none" stroke="#FF0080" stroke-width="3" stroke-linejoin="round"/><circle cx="440" cy="14" r="5" fill="#FF0080"/></svg>`;
+}
+function budgetCard(b){
+  const [n,i,c,g,l,st]=b;const pct=Math.min(100,g/l*100);const left=l-g;
+  const col=st==="over"?"var(--y-over)":st==="warn"?"var(--y-warn)":c;
+  return `<div class="y-card" style="display:grid;gap:10px;padding:14px 16px"><div style="display:flex;gap:12px;align-items:center"><div class="y-ico" style="background:${c}">${ic(i)}</div><div class="y-rt"><b style="font-size:18px">${n}</b><span>S/ ${fmt(g)} de S/ ${fmt(l)}</span></div>${money(left,"row"+(left<0?" over":""))}</div><div class="bar"><i style="width:${pct}%;--b:${col}"></i></div>${st==="warn"?'<span class="tag-warn">En el límite</span>':st==="over"?'<span class="tag-over">Te pasaste por S/ 41.40</span>':""}</div>`;
+}
+/* ───── marcos ───── */
+const STATUS=`<div class="y-sb"><span>9:41</span><i>${ic("signal")}${ic("wifi")}${ic("battery-full")}</i></div>`;
+function topBar(opts={}){
+  const left=opts.inbox!==false?`<span class="y-ib glass">${ic("inbox")}<span class="badge">3</span></span>`:"<span></span>";
+  return `<div class="y-top">${left}<div class="grp">${opts.mid||""}<span class="y-av">${ic("user-round")}</span></div></div>`;
+}
+const TABS_NUEVO=[["Panel","layout-grid"],["Registros","list"],["Grupos","users"],["Más","ellipsis"]];
+function phone(t,content,tab,opts={}){
+  const tabs=(opts.tabs||TABS_NUEVO).map(x=>`<span class="tab${x[0]===tab?" on":""}">${ic(x[1])}${x[0]}</span>`).join("");
+  return `<div class="ym phone" data-t="${t}"><div class="scroll">${STATUS}${content}</div>${opts.fab?`<span class="fab">${ic("plus")}</span>`:""}${opts.overlay||""}<div class="tabbar"><div class="tabs glass">${tabs}</div><span class="tabsearch glass${tab==="Buscar"?" on":""}">${ic("search")}</span></div><span class="home"></span></div>`;
+}
+const SIDE=[["Panel","layout-grid"],["Registros","list"],["Estadísticas","chart-column"],["Planificación","calendar"],["Grupos","users"]];
+function desk(t,active,title,content,opts={}){
+  const items=SIDE.map(x=>`<span class="sitem${x[0]===active?" on":""}">${ic(x[1])}${x[0]}</span>`).join("");
+  return `<div class="ym desk" data-t="${t}"><aside class="side"><div class="brand"><span class="logo"></span>Yala</div><div class="sfield">${ic("search")}Buscar<kbd>⌘K</kbd></div>${items}<div class="sgroup">Más</div><span class="sitem${active==="Bandeja"?" on":""}">${ic("inbox")}Bandeja<span class="cnt">3</span></span><span class="sitem">${ic("sparkles")}Yala IA<span class="soon">Pronto</span></span><div class="sfoot"><span class="y-av">${ic("user-round")}</span><div><b>Jürgen</b><span>Ajustes</span></div></div></aside><div class="main"><div class="dtop"><div class="y-title">${title}</div><div class="y-top" style="padding:0">${opts.tools||""}</div></div>${content}</div>${opts.overlay||""}</div>`;
+}
+const TOOLS=`<div class="grp" style="display:flex;gap:10px"><span class="y-ibs glass">${ic("eye")}${ic("sliders-horizontal")}</span><span class="y-primary">${ic("plus")}Nuevo registro</span></div>`;
+const TABS_VIEJO=[["Panel","layout-grid"],["Estadísticas","chart-column"],["Planificación","calendar"],["Más","ellipsis"]];
+
+/* ───── pantallas ───── */
+const SCREENS=[
+{id:"panel",name:"Panel",web:"/ (Panel)",app:"Pestaña Panel",
+ shots:{web:"panel",app:["app-panel-claro.jpg","app-panel-oscuro.jpg"],app2:"app-panel3-claro.jpg"},
+ diffs:["La web abre con «Saldo total ≈ S/ 55,997.65» en una tarjeta con borde. La app abre con «Tu saldo hoy» sobre el fondo, sin tarjeta, con la cifra redondeada grande y los decimales pequeños.",
+  "Las cuentas en la web son bloques de colores saturados. En la app son cápsulas de cristal con un cuadrito de color e ícono y, desplegadas, tarjetas con arte de tarjeta bancaria.",
+  "La app pone la acción principal dentro del contenido: «+ Nuevo registro» en cápsula índigo. La web la pone arriba a la derecha como «+ Apuntar».",
+  "Las filas de la web llevan una inicial en un cuadrado. Las de la app llevan el ícono de la categoría en un círculo de su color, la cifra con signo y la píldora de necesidad.",
+  "Arriba, la app tiene la Bandeja como botón redondo con contador, el filtro de período y el avatar con aro dorado. La web los reparte entre la barra lateral y la barra superior.",
+  "La app ordena por secciones con título grande y flecha: Tus finanzas, Tendencias, Planificación y Últimos registros. La web tiene dos columnas sin títulos de sección."],
+ adapt:["El saldo y el botón van arriba, a ancho completo: es lo primero que se lee en la app y conserva ese lugar.","Debajo, las secciones de la app en una cuadrícula: Últimos registros a la izquierda, más ancho, y Distribución y Planificación a la derecha. El orden de lectura es el del iPhone, de arriba abajo y de izquierda a derecha.","Las tarjetas de cuenta van desplegadas y en fila: en escritorio caben cuatro sin carrusel."],
+ render(t){
+  const cont=`${topBar({mid:`<span class="y-ibs glass">${ic("align-left")}${ic("layout-grid")}</span>`})}${hero("Tu saldo hoy",55997.65,INOUT)}${ACTS}
+   <div class="y-pad" style="margin-top:22px;display:flex;justify-content:space-between">${secTitle("Tus finanzas",false)}<span class="y-chev glass">${ic("chevron-down")}</span></div><div style="margin-top:10px">${accChips()}</div>
+   <div class="y-pad" style="margin-top:24px">${secTitle("Últimos registros")}</div><div class="y-pad y-list" style="margin-top:10px">${DAYS.slice(0,2).flatMap(d=>d[2]).map(row).join("")}</div>
+   <div class="y-pad" style="margin-top:24px">${secTitle("Distribución")}</div><div class="y-pad" style="margin-top:10px">${catBars(CAT.slice(0,4))}</div>`;
+  const p=phone(t,cont,"Panel");
+  const d=desk(t,"Panel","Panel",`<div class="dgrid" style="margin-top:6px"><div class="s12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px"><div style="display:grid;gap:6px"><span class="y-lbl">Tu saldo hoy <span class="y-q">?</span></span>${money(55997.65,"hero")}${INOUT}</div><span class="y-pillbtn glass">${ic("calendar")}Este mes</span></div>
+   <div class="s12" style="margin-top:4px">${secTitle("Tus finanzas",false)}</div>
+   ${ACC.map(a=>`<div class="s3"><div class="acard" style="--a1:${a[5]};--a2:${a[6]}"><span class="chip"></span><div style="display:flex;gap:8px;align-items:center;padding-right:44px;min-width:0"><span class="y-sq" style="background:rgba(255,255,255,.18)">${ic(a[1])}</span><b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a[0]}</b></div><div><small>Saldo</small><div>${money(a[3],"mid",{cur:a[4]})}</div></div></div></div>`).join("")}
+   <div class="s7" style="display:grid;gap:10px;margin-top:8px">${secTitle("Últimos registros")}<div class="y-list">${DAYS.slice(0,3).flatMap(d=>d[2]).map(row).join("")}</div></div>
+   <div class="s5" style="display:grid;gap:10px;margin-top:8px">${secTitle("Distribución")}${catBars(CAT)}
+   ${secTitle("Planificación")}<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="y-card" style="display:grid;gap:4px"><span class="sub">Pagos planificados</span>${money(3254.9,"mid")}<span class="sub">por pagar en 30 días</span></div><div class="y-card" style="display:grid;gap:8px"><span class="sub">Presupuestos</span>${BUD.slice(0,2).map(b=>`<div style="display:grid;gap:4px"><span style="font-size:14px;font-weight:600">${b[0]}</span><div class="bar" style="height:6px"><i style="width:${Math.min(100,b[3]/b[4]*100)}%;--b:${b[5]==="warn"?"var(--y-warn)":b[2]}"></i></div></div>`).join("")}</div></div></div></div>`,{tools:TOOLS});
+  return {d,p};
+ }},
+{id:"registros",name:"Registros",web:"/registros",app:"Pestaña Registros",
+ shots:{web:"registros",app:["app-registros-oscuro.jpg","app-registros-oscuro.jpg"],app2:"app-registros-lista-oscuro.jpg"},
+ diffs:["La app abre Registros con un resumen del período: «Te queda S/ 2,540», entradas, salidas y número de registros. La web va directo a la lista.",
+  "Los filtros de la app son cápsulas de cristal: Cuenta, Categoría, Este mes y Más filtros. En la web son pestañas de período y dos selectores del navegador.",
+  "Cada día de la app lleva su total a la derecha. La web solo pone la fecha en mayúsculas.",
+  "Cada registro de la app es una tarjeta propia. En la web son líneas dentro de una tarjeta grande.",
+  "La app muestra etiquetas (Compartido, Trabajo, Fijo) y la necesidad (Esencial, Prioritaria, Opcional). La web no recibe esos datos.",
+  "La web tiene «Exportar CSV» y búsqueda en las notas, que la app resuelve con Buscar y Seleccionar. Se conservan, en el menú «…»."],
+ adapt:["En escritorio la lista ocupa la columna izquierda y el detalle del registro se abre a la derecha, no en una ventana: en pantalla ancha ves la lista sin perder tu lugar, como en la app en iPad.","El resumen del período pasa a una franja horizontal arriba, porque en ancho cabe en una línea.","«Exportar CSV» y «Buscar en las notas» quedan en el menú «…» y en ⌘K."],
+ render(t){
+  const sum=`<div class="y-pad" style="display:grid;gap:4px"><div class="y-lblrow"><span class="y-lbl">Te queda</span><span class="y-pillbtn glass">${ic("chevron-left")}${ic("calendar")}Este mes</span></div>${money(2540,"hero")}<span class="sub" style="display:flex;gap:12px;align-items:center"><span class="up">↗ S/ 8,500.00</span><span class="down">↘ S/ 5,960.00</span></span><span class="sub">49 registros · Sigue así</span></div>`;
+  const filters=`<div class="y-segs y-pad" style="margin-top:14px"><span class="y-seg glass">Cuenta ${ic("chevron-down")}</span><span class="y-seg glass">Categoría ${ic("chevron-down")}</span><span class="y-seg on">Este mes ${ic("chevron-down")}</span><span class="y-seg glass">Más filtros</span></div>`;
+  const cont=`${topBar({inbox:false,mid:`<span class="y-pillbtn glass" style="height:44px;border-radius:22px;padding:0 16px;color:var(--y-acc-t);font-size:16px">Seleccionar</span><span class="y-ib glass">${ic("ellipsis")}</span>`})}<div class="y-title">Registros</div>${sum}${ACTS}${filters}<div class="y-pad" style="margin-top:6px">${dayList(DAYS)}</div>`;
+  const p=phone(t,cont,"Registros",{fab:true});
+  const det=`<div class="detail" style="display:grid;gap:14px;align-content:start"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Detalle</b><span class="y-ib glass" style="width:36px;height:36px;font-size:16px">${ic("pencil")}</span></div><div style="display:grid;justify-items:center;gap:8px;padding:10px 0"><div class="y-ico" style="background:#22C55E;width:64px;height:64px;font-size:30px">${ic("shopping-basket")}</div><b style="font-size:20px">Plaza Vea</b>${money(-212.3,"hero",{style:"font-size:38px"})}<span class="need" style="--dot:#F59E0B">Esencial</span></div><div class="lgroup">${[["Categoría","Supermercados"],["Cuenta","Tarjeta Visa"],["Fecha","dom, 15 nov. · 11:05"],["Nota","Compra de la semana"]].map(x=>`<div class="litem" style="font-size:15px"><span class="sub" style="font-size:15px">${x[0]}</span><span class="v" style="color:var(--y-ink)">${x[1]}</span></div>`).join("")}</div></div>`;
+  const d=desk(t,"Registros","Registros",`<div class="y-card" style="display:flex;gap:28px;align-items:center;margin:6px 0 4px"><div style="display:grid;gap:2px"><span class="y-lbl">Te queda</span>${money(2540,"mid")}</div><div style="display:grid;gap:2px"><span class="sub">Entradas</span>${money(8500,"row in")}</div><div style="display:grid;gap:2px"><span class="sub">Salidas</span>${money(5960,"row")}</div><span class="sub" style="margin-left:auto">49 registros · Sigue así</span></div><div class="y-segs" style="margin:12px 0 4px"><span class="y-seg glass">Cuenta ${ic("chevron-down")}</span><span class="y-seg glass">Categoría ${ic("chevron-down")}</span><span class="y-seg on">Este mes ${ic("chevron-down")}</span><span class="y-seg glass">Más filtros</span></div><div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px"><div>${dayList(DAYS,4)}</div>${det}</div>`,{tools:`<div class="grp" style="display:flex;gap:10px"><span class="y-ib glass">${ic("ellipsis")}</span><span class="y-primary">${ic("plus")}Nuevo registro</span></div>`});
+  return {d,p};
+ }},
+{id:"planificacion",name:"Planificación · Presupuestos",web:"/presupuestos",app:"Pestaña Planificación › Presupuestos",
+ shots:{web:"presupuestos",app:["app-planificacion-claro.jpg","app-planificacion-oscuro.jpg"]},
+ diffs:["En la app, Presupuestos y Pagos planificados son una sola pestaña, Planificación, con dos segmentos arriba. En la web son dos entradas sueltas del menú.",
+  "La tarjeta de la app pone el ícono de la categoría en círculo, el nombre, «S/ 1,461.00 de S/ 1,800.00» y, a la derecha y en grande, lo que queda. La web pone en grande lo gastado y en letra chica lo que queda.",
+  "La barra de la app usa el color de la categoría, pasa a naranja desde el 80 % («En el límite») y a rosa si te pasas. La web usa índigo para todo y una etiqueta de estado arriba a la derecha.",
+  "La app agrupa con «Activos · 15 días» y un navegador de período. La web separa Excedidos, Activos e Inactivos en tarjetas contenedoras."],
+ adapt:["En escritorio las tarjetas de presupuesto van en dos columnas: cada una conserva el ancho de un iPhone y no se estira.","Los segmentos Presupuestos y Pagos planificados quedan arriba, igual que en la app, y cambian la dirección de la página para que cada uno tenga su enlace."],
+ render(t){
+  const segs=`<div class="y-segs y-pad"><span class="y-seg on">${ic("chart-pie")}Presupuestos</span><span class="y-seg glass">${ic("calendar-clock")}Pagos planificados</span></div>`;
+  const nav=`<div class="y-pad" style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 6px;font-size:18px;font-weight:600"><span style="color:var(--y-ink2)">${ic("chevron-left")}</span><span style="display:flex;gap:6px;align-items:center">Este mes ${ic("chevron-down")}</span><span style="color:var(--y-ink2)">${ic("chevron-right")}</span></div><div class="y-pad" style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-bottom:8px"><span>Activos · 15 días</span><span class="sub">Te quedan</span></div>`;
+  const cont=`${topBar({inbox:false})}<div class="y-title">Planificación</div>${segs}${nav}<div class="y-pad y-list" style="gap:12px">${BUD.map(budgetCard).join("")}</div>`;
+  const p=phone(t,cont,"Planificación",{tabs:TABS_VIEJO});
+  const d=desk(t,"Planificación","Planificación",`<div class="y-segs" style="margin:8px 0 4px"><span class="y-seg on">${ic("chart-pie")}Presupuestos</span><span class="y-seg glass">${ic("calendar-clock")}Pagos planificados</span><span style="margin-left:auto" class="y-pillbtn glass">${ic("chevron-left")} Este mes ${ic("chevron-right")}</span></div><div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin:14px 2px 10px"><span>Activos · 15 días</span><span class="sub">Te quedan</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${BUD.map(budgetCard).join("")}</div>`,{tools:""});
+  return {d,p};
+ }},
+{id:"pagos",name:"Planificación · Pagos planificados",web:"/pagos",app:"Pestaña Planificación › Pagos planificados",
+ shots:{web:"pagos",app:["app-pagos-oscuro.jpg","app-pagos-oscuro.jpg"]},
+ diffs:["Igual que Presupuestos: en la app vive bajo Planificación, con el segmento arriba.",
+  "La app muestra el total por pagar como cifra grande sobre el fondo. La web lo pone en una tarjeta con borde.",
+  "Las filas de la web llevan una inicial. Las de la app llevan el ícono de la categoría, con los cobros agrupados por día como en Registros.",
+  "La web lista aparte las suscripciones con su equivalente mensual. Se conserva, con las filas de la app."],
+ adapt:["En escritorio, Próximos cobros a la izquierda y Suscripciones a la derecha: son dos listas independientes y en ancho se leen sin bajar."],
+ render(t){
+  const segs=`<div class="y-segs y-pad"><span class="y-seg glass">${ic("chart-pie")}Presupuestos</span><span class="y-seg on">${ic("calendar-clock")}Pagos planificados</span></div>`;
+  const list=PAY.map(g=>`<div class="day"><span>${g[0]}</span></div><div class="y-list">${g[1].map(r=>row([r[0],r[1],r[2],r[3],r[4],null])).join("")}</div>`).join("");
+  const subs=`<div class="y-list">${[["Netflix","Próximo: 24 nov.","tv","#EF4444",-44.9],["Spotify","Próximo: 2 dic.","music","#22C55E",-45]].map(r=>row([r[0],r[1],r[2],r[3],r[4],null])).join("")}</div>`;
+  const cont=`${topBar({inbox:false})}<div class="y-title">Planificación</div>${segs}<div class="y-pad" style="display:grid;gap:4px;margin-top:14px"><span class="y-lbl">Por pagar en 30 días</span>${money(3254.9,"hero")}<span class="sub">1 cobro de la lista ya está pagado y no suma aquí.</span></div><div class="y-pad" style="margin-top:8px">${list}</div><div class="y-pad" style="margin-top:18px">${secTitle("Suscripciones",false)}<p class="sub" style="margin:4px 0 8px">Equivalen a S/ 89.90 al mes</p>${subs}</div>`;
+  const p=phone(t,cont,"Planificación",{tabs:TABS_VIEJO});
+  const d=desk(t,"Planificación","Planificación",`<div class="y-segs" style="margin:8px 0 10px"><span class="y-seg glass">${ic("chart-pie")}Presupuestos</span><span class="y-seg on">${ic("calendar-clock")}Pagos planificados</span></div><div style="display:grid;gap:4px;margin-bottom:6px"><span class="y-lbl">Por pagar en 30 días</span>${money(3254.9,"hero")}<span class="sub">1 cobro de la lista ya está pagado y no suma aquí.</span></div><div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px"><div>${secTitle("Próximos cobros",false)}${list}</div><div>${secTitle("Suscripciones",false)}<p class="sub" style="margin:4px 0 12px">Equivalen a S/ 89.90 al mes</p>${subs}</div></div>`,{tools:""});
+  return {d,p};
+ }},
+{id:"estadisticas",name:"Estadísticas",web:"/estadisticas",app:"Pestaña Estadísticas",
+ shots:{web:"estadisticas",app:["app-estadisticas-claro.jpg","app-estadisticas-oscuro.jpg"]},
+ diffs:["La app usa segmentos con ícono (Resumen con texto, el resto solo ícono) y un selector de período en cápsula con flechas. La web usa pestañas de texto y un control de tres períodos.",
+  "La cifra principal de la app es «Te queda» o «Gastos del período», en grande sobre el fondo, con entradas y salidas debajo y flechas de color. La web la mete en una tarjeta como «Neto».",
+  "La app tiene «Tu salud financiera», un aro de 0 a 100; la web no. La nota se calcula en el iPhone, así que queda fuera de la maqueta.",
+  "Las barras por categoría de la web usan una inicial. En la app llevan el ícono y el color de cada categoría."],
+ adapt:["En escritorio, la cifra y las tarjetas de Gasto medio diario y Gasto más alto van en una fila. Dónde gastaste más ocupa el ancho de abajo, con la tendencia del mes al lado.","Los segmentos con ícono llevan también el texto: con el ratón no hay pulsación larga que lo explique."],
+ render(t){
+  const segs=`<div class="y-segs y-pad"><span class="y-seg on">${ic("sparkles")}Resumen</span><span class="y-seg glass ic">${ic("chart-line")}</span><span class="y-seg glass ic">${ic("chart-pie")}</span></div>`;
+  const cats=`<div class="y-card" style="display:grid;gap:12px">${CAT.map(c=>`<div style="display:flex;gap:12px;align-items:center"><div class="y-ico" style="background:${c[2]};width:34px;height:34px;font-size:16px">${ic(c[1])}</div><div style="flex:1;display:grid;gap:5px;min-width:0"><div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;gap:8px"><span>${c[0]}</span>${money(c[3],"sm")}</div><div class="bar" style="height:6px"><i style="width:${c[4]*2.2}%;--b:${c[2]}"></i></div><span class="sub">${String(c[4]).replace(".",",")} %</span></div></div>`).join("")}</div>`;
+  const cont=`${topBar({inbox:false,mid:`<span class="y-ib glass">${ic("align-left")}</span>`})}<div class="y-title">Estadísticas</div>${segs}<div class="y-pad" style="display:grid;gap:4px;margin-top:16px"><div class="y-lblrow"><span class="y-lbl">Te queda</span><span class="y-pillbtn glass">${ic("chevron-left")}${ic("calendar")}Este mes</span></div>${money(2540,"hero")}<span class="sub" style="display:flex;gap:12px"><span class="up">↗ S/ 8,500.00</span><span class="down">↘ S/ 5,960.00 · +13 %</span></span><span class="sub">49 registros · Sigue así</span></div>${ACTS}<div class="y-pad" style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="y-card" style="display:grid;gap:2px;padding:14px"><span class="sub">Gasto medio diario</span>${money(372.5,"mid")}<span class="sub">en 16 días</span></div><div class="y-card" style="display:grid;gap:2px;padding:14px"><span class="sub">Gasto más alto</span>${money(2400,"mid")}<span class="sub">Alquiler depa</span></div></div><div class="y-pad" style="margin-top:20px">${secTitle("Dónde gastaste más",false)}<div style="margin-top:10px">${cats}</div></div>`;
+  const p=phone(t,cont,"Estadísticas",{tabs:TABS_VIEJO});
+  const d=desk(t,"Estadísticas","Estadísticas",`<div class="y-segs" style="margin:8px 0 12px"><span class="y-seg on">${ic("sparkles")}Resumen</span><span class="y-seg glass">${ic("chart-line")}Tendencias</span><span class="y-seg glass">${ic("chart-pie")}Distribución</span><span style="margin-left:auto" class="y-pillbtn glass">${ic("chevron-left")}${ic("calendar")}Este mes ${ic("chevron-right")}</span></div><div class="dgrid"><div class="s6" style="display:grid;gap:4px"><span class="y-lbl">Te queda</span>${money(2540,"hero")}<span class="sub" style="display:flex;gap:12px"><span class="up">↗ S/ 8,500.00</span><span class="down">↘ S/ 5,960.00 · +13 %</span></span></div><div class="s3 y-card" style="display:grid;gap:2px"><span class="sub">Gasto medio diario</span>${money(372.5,"mid")}<span class="sub">en 16 días</span></div><div class="s3 y-card" style="display:grid;gap:2px"><span class="sub">Gasto más alto</span>${money(2400,"mid")}<span class="sub">Alquiler depa · 1 nov.</span></div><div class="s7" style="display:grid;gap:10px">${secTitle("Dónde gastaste más",false)}${cats}</div><div class="s5" style="display:grid;gap:10px">${secTitle("Gastos del mes",false)}<div class="y-card"><span class="sub">Acumulado día a día</span>${chart()}</div></div></div>`,{tools:TOOLS});
+  return {d,p};
+ }},
+{id:"grupos",name:"Grupos",web:"/grupos",app:"Pestaña Grupos",
+ shots:{web:"grupos",app:["app-grupos-oscuro.jpg","app-grupos-oscuro.jpg"]},
+ diffs:["La app abre con «Te deben en total» como cifra verde grande, una barra y «Debes» y «Te deben» a los lados. La web pone «Te deben» y «Debes» en dos líneas de color dentro de una tarjeta.",
+  "Las tarjetas de grupo de la app llevan el ícono del grupo en un círculo y la lista de quién debe qué. La web lleva una inicial en un cuadrado.",
+  "En la app, «Nuevo gasto» es la acción principal de la portada. En la web se llega entrando al grupo.",
+  "Los textos coinciden («Luis te debe», «Le debes a Carla»), así que el cambio es solo visual."],
+ adapt:["En escritorio la lista de grupos queda a la izquierda y el grupo abierto a la derecha, con sus pestañas Saldos, Gastos y Pagos. Hoy la web cambia de pantalla para entrar a un grupo; en ancho se ven los dos.","«Nuevo gasto», «Saldar» e «Invitar» van como cápsulas en la cabecera del grupo abierto."],
+ render(t){
+  const head=`<div class="y-pad" style="display:grid;gap:6px"><span class="y-lbl">Te deben en total · en S/</span>${money(366.5,"hero owed")}<div class="gbar"></div><div style="display:flex;justify-content:space-between;font-size:15px"><span style="display:grid"><span style="color:var(--y-owe)">↗ Debes</span>${money(120,"row")}</span><span style="display:grid;justify-items:end"><span style="color:var(--y-owed)">Te deben ↙</span>${money(486.5,"row")}</span></div></div>`;
+  const cards=GRP.map(g=>`<div class="y-card" style="display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><div class="y-ico" style="background:${g[2]}">${ic(g[1])}</div><div class="y-rt"><b style="font-size:19px">${g[0]}</b><span>${g[3]}</span></div>${g[4].length?"":`<span class="sub" style="font-weight:600">Todo saldado</span>`}</div>${g[4].map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:16px"><span>${x[0]}</span>${money(Math.abs(x[1]),"row "+(x[1]>0?"owed":"owe"))}</div>`).join("")}</div>`).join("");
+  const cont=`${topBar({inbox:false,mid:`<span class="y-ib glass">${ic("user-plus")}</span><span class="y-ib glass">${ic("settings")}</span>`})}<div class="y-title">Grupos</div>${head}<div class="y-acts y-pad" style="margin-top:14px"><span class="y-primary">${ic("pencil")}Nuevo gasto</span></div><div class="y-pad y-list" style="margin-top:18px;gap:12px">${cards}</div>`;
+  const p=phone(t,cont,"Grupos");
+  const det=`<div class="detail" style="display:grid;gap:14px;align-content:start"><div style="display:flex;gap:12px;align-items:center"><div class="y-ico" style="background:#8B5CF6;width:52px;height:52px;font-size:24px">${ic("plane")}</div><div class="y-rt"><b style="font-size:22px">Viaje a Cusco</b><span>4 personas · 23 gastos</span></div></div><div class="y-segs"><span class="y-seg on">${ic("pencil")}Nuevo gasto</span><span class="y-seg glass">${ic("arrow-left-right")}Saldar</span><span class="y-seg glass">${ic("user-plus")}Invitar</span></div><div class="y-segs"><span class="y-pillbtn" style="background:var(--y-acc);color:#fff">Saldos</span><span class="y-pillbtn glass">Gastos</span><span class="y-pillbtn glass">Pagos</span></div><div class="lgroup">${[["Ana te debe",212.5],["Luis te debe",274],["Sofía",0]].map(x=>`<div class="litem" style="font-size:16px">${x[0]}<span class="v">${x[1]===0?"Al día":money(x[1],"row owed")}</span></div>`).join("")}</div><span class="sub">Los mismos saldos que en tu iPhone.</span></div>`;
+  const d=desk(t,"Grupos","Grupos",`<div style="display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px;margin-top:6px"><div style="display:grid;gap:14px;align-content:start"><div style="display:grid;gap:6px"><span class="y-lbl">Te deben en total · en S/</span>${money(366.5,"hero owed")}<div class="gbar"></div><div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--y-owe)">↗ Debes S/ 120.00</span><span style="color:var(--y-owed)">Te deben S/ 486.50 ↙</span></div></div>${cards}</div>${det}</div>`,{tools:`<div class="grp" style="display:flex;gap:10px"><span class="y-ib glass">${ic("user-plus")}</span><span class="y-primary">${ic("pencil")}Nuevo gasto</span></div>`});
+  return {d,p};
+ }},
+{id:"bandeja",name:"Bandeja de Entrada",web:"/bandeja",app:"Botón de bandeja, arriba a la izquierda del Panel",
+ shots:{web:"bandeja",app:["app-bandeja-oscuro.jpg","app-bandeja-oscuro.jpg"]},
+ diffs:["En la app la Bandeja es una hoja que se abre desde el botón con contador del Panel. En la web es una sección del menú con su propia página.",
+  "El título de la app es «Bandeja de Entrada», con un contador en cápsula y los segmentos Pendientes y Archivados.",
+  "La app guarda desde la Bandeja («Guardar los 2 listos»). La web, por ahora, solo envía al iPhone: ese botón no se copia y se queda «Esperando a tu iPhone».",
+  "Las filas de la app usan el estilo de Registros, con la píldora del origen («Manual»). La web usa una lista con la etiqueta a la derecha."],
+ adapt:["En escritorio la Bandeja se abre como panel lateral encima de la pantalla en la que estás, y tiene su entrada en la barra lateral: igual que en la app, revisar no te saca de donde estabas.","En celular, la hoja sube desde abajo como en el iPhone."],
+ render(t){
+  const body=`<div class="shead"><span class="x glass">${ic("x")}</span><span></span><span class="x glass">${ic("check")}</span></div><div style="font-size:30px;font-weight:700;margin:12px 0 6px">Bandeja de Entrada</div><span class="need" style="--dot:var(--y-acc);color:var(--y-acc-t)">3 pendientes</span><p class="sub" style="font-size:15px;margin:8px 0 12px">Aquí llega lo que apuntaste en la web y lo que Yala apuntó por ti. Se revisa y se guarda en tu iPhone.</p><div class="y-segs"><span class="y-seg on">${ic("inbox")}Pendientes 3</span><span class="y-seg glass">${ic("archive")}Archivados</span></div><div class="day"><span>Esperando a tu iPhone</span></div><div class="y-list">${row(["Estacionamiento","Enviado desde la web · Efectivo","car","#0EA5E9",-25,null])}</div><div class="day"><span>Por revisar en tu iPhone</span></div><div class="y-list">${row(["Farmacia Inkafarma","Sin categoría · Tarjeta Visa","pill","#FF0080",-46.8,null,"Correo"])}${row(["Rappi pedido","Comidas fuera · Tarjeta Visa","utensils","#F97316",-58.9,null,"Aviso"])}</div>`;
+  const p=phone(t,`${topBar({})}${hero("Tu saldo hoy",55997.65)}`,"Panel",{overlay:`<div class="scrim"></div><div class="sheet">${body}</div>`});
+  const d=desk(t,"Bandeja","Panel",`${money(55997.65,"hero")}<div class="y-list" style="margin-top:18px;max-width:600px">${DAYS[0][2].map(row).join("")}</div>`,{tools:TOOLS,overlay:`<div class="scrim"></div><div class="dsheet" style="left:auto;right:24px;transform:none;width:500px">${body}</div>`});
+  return {d,p};
+ }},
+{id:"nuevo",name:"Nuevo registro (hoy «Apuntar»)",web:"botón «+ Apuntar»",app:"Botón «+ Nuevo registro»",
+ shots:{web:null,app:["app-nuevo-claro.jpg","app-nuevo-claro.jpg"]},
+ diffs:["La web abre un formulario clásico, con etiquetas y campos en columna. La app abre una hoja centrada en el monto: el importe enorme al medio, la descripción arriba y las categorías sugeridas como cápsulas.",
+  "La app ofrece Mi parte, Favorito y Recurrente como círculos de color. La web no los tiene, así que no se copian.",
+  "Cuenta, Categoría y Etiquetas son cápsulas en la app y selectores del navegador en la web.",
+  "El botón final de la app es «Guardar» y te dice qué falta. En la web el registro va a la Bandeja, así que el botón dice «Enviar a la Bandeja», con el mismo estilo."],
+ adapt:["En escritorio la hoja aparece centrada, de 560 px, sobre la pantalla oscurecida: el foco queda en el monto, como en el iPhone.","Manda el teclado: el monto recibe el foco al abrir, Tab recorre los campos y Enter envía."],
+ render(t){
+  const body=`<div class="shead"><span class="x glass">${ic("x")}</span><b>Nuevo registro</b><span style="width:44px"></span></div><div style="display:grid;justify-items:center;gap:12px;margin-top:14px"><span class="y-pillbtn glass" style="height:40px;border-radius:20px;font-size:16px">${ic("calendar")}Hoy</span><span style="font-size:24px;color:var(--y-ink3);font-weight:500">Ej.: almuerzo con Carla</span><span class="sub" style="font-size:16px">¿Cuánto gastaste?</span><div class="bigamt"><span class="c">S/</span>0.00</div><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"><span class="chipc">${ic("bus")}Transporte público</span><span class="chipc">${ic("shopping-basket")}Supermercados</span><span class="chipc">${ic("car")}Taxis y apps</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px"><span class="chipc">${ic("credit-card")}Cuenta</span><span class="chipc">${ic("tag")}Categoría</span><span class="chipc">${ic("hash")}Etiquetas</span></div><span class="sub" style="margin-top:8px">Para enviar, falta el monto, la cuenta y la categoría</span><div class="save" style="width:100%;opacity:.45">${ic("send")}Enviar a la Bandeja</div></div>`;
+  const p=phone(t,`${topBar({})}${hero("Tu saldo hoy",55997.65)}`,"Panel",{overlay:`<div class="scrim"></div><div class="sheet">${body}</div>`});
+  const d=desk(t,"Panel","Panel",`${money(55997.65,"hero")}`,{tools:TOOLS,overlay:`<div class="scrim"></div><div class="dsheet">${body}</div>`});
+  return {d,p};
+ }},
+{id:"ajustes",name:"Ajustes (hoy «Configurar»)",web:"/configurar",app:"Avatar › Ajustes",
+ shots:{web:"configurar",app:["app-ajustes-oscuro.jpg","app-ajustes-oscuro.jpg"]},
+ diffs:["En la app se llega desde el avatar con aro dorado, arriba a la derecha de cada pantalla. En la web es la última entrada del menú.",
+  "La app empieza con el avatar grande, el nombre, la insignia Yala Pro y «Editar perfil». La web empieza con una tabla de nombre y correo.",
+  "Las filas de la app llevan un cuadrito de color con ícono, como los Ajustes de iOS. Las de la web son solo texto.",
+  "La web tiene cosas propias que se quedan: Sesiones web, Ocultar montos al abrir, Idioma y Salir de Yala web. El Tema deja de ser texto fijo y pasa a ser un selector."],
+ adapt:["En escritorio Ajustes ocupa una columna centrada de 700 px, el ancho legible que usa la app. Una lista de ajustes estirada a 1200 px se lee peor.","Se abre desde el avatar del pie de la barra lateral, que muestra tu nombre."],
+ render(t){
+  const g=(h,items)=>`<div class="ghead">${h}</div><div class="lgroup">${items.map(x=>`<div class="litem"><span class="y-sq" style="background:${x[2]}">${ic(x[1])}</span>${x[0]}${x[4]==="sw"?'<span class="switch"></span>':`<span class="v">${x[3]||""}${x[4]===false?"":ic("chevron-right")}</span>`}</div>`).join("")}</div>`;
+  const body=`<div style="display:grid;justify-items:center;gap:8px;margin-top:6px"><span class="y-av" style="width:96px;height:96px;font-size:44px;border-width:4px">${ic("user-round")}</span><b style="font-size:26px">Jürgen</b><span class="need" style="--dot:#1C1500;background:#F5B400;color:#1C1500">Yala Pro</span><span style="font-size:16px">jurgen@ejemplo.pe</span></div>${g("Sesiones web",[["Este navegador","monitor","#0A84FF","Chrome en macOS",false],["Safari en iOS","smartphone","#5E5CE6","Cerrar",false]])}${g("En esta web",[["Tema","palette","#FF0080","Liquid Glass"],["Ocultar montos al abrir","eye-off","#636366","","sw"],["Idioma","globe","#30A46C","Como el navegador"]])}<div class="lgroup" style="margin-top:22px"><div class="litem" style="color:var(--y-over);justify-content:center">Salir de Yala web</div></div>`;
+  const p=phone(t,`<div class="shead" style="padding:4px 16px"><span style="width:44px"></span><b>Ajustes</b><span class="x glass">${ic("x")}</span></div><div class="y-pad">${body}</div>`,"Más");
+  const d=desk(t,"","Ajustes",`<div style="max-width:700px;margin:0 auto">${body}</div>`,{tools:""});
+  return {d,p};
+ }},
+{id:"mas",name:"Más (solo celular)",web:"/mas",app:"Pestaña Más",phoneOnly:true,
+ shots:{webOnlyMobile:"web-mas-claro-movil.jpg",app:["app-mas-oscuro.jpg","app-mas-oscuro.jpg"]},
+ diffs:["La web lista seis enlaces con íconos de trazo fino. La app muestra tarjetas grandes en dos columnas, agrupadas en Estadísticas, Planificación y Más herramientas, cada una con un ícono de color y una línea que dice qué hay dentro.",
+  "La app pone arriba Panel y Registros como tarjetas anchas."],
+ adapt:["En escritorio Más no existe: la barra lateral ya muestra todo. Es lo que hace la app en iPad, donde la barra lateral reemplaza a las pestañas."],
+ render(t){
+  const tile=(n,s,i,c,bg)=>`<div class="tile"><span class="tc">${ic("chevron-right")}</span><span class="tsq" style="background:${bg};color:${c}">${ic(i)}</span><b>${n}</b><span class="t">${s}</span></div>`;
+  const wide=(n,s,i,c,bg)=>`<div class="y-card" style="display:flex;gap:14px;align-items:center;padding:14px"><span class="tsq" style="width:44px;height:44px;border-radius:12px;font-size:22px;background:${bg};color:${c}">${ic(i)}</span><div class="y-rt"><b style="font-size:18px">${n}</b><span>${s}</span></div><span style="color:var(--y-ink3)">${ic("chevron-right")}</span></div>`;
+  const cont=`<div class="shead" style="padding:4px 16px"><span style="width:44px"></span><b>Más</b><span class="y-av">${ic("user-round")}</span></div><div class="y-pad" style="display:grid;gap:12px;margin-top:12px">${wide("Registros","Todos tus registros en un lugar","list","#EAB308","rgba(234,179,8,.16)")}${wide("Bandeja de Entrada","3 por revisar","inbox","#FF0080","rgba(255,0,128,.14)")}<div class="y-sec" style="font-size:20px;margin-top:8px"><span style="color:var(--y-acc-t);display:flex">${ic("chart-column")}</span>Estadísticas</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${tile("Resumen","Lo más importante de tu período","sparkles","#0A84FF","rgba(10,132,255,.16)")}${tile("Tendencias","Mira cómo evoluciona tu dinero","chart-line","#30A46C","rgba(48,164,108,.16)")}</div><div class="y-sec" style="font-size:20px;margin-top:8px"><span style="color:var(--y-acc-t);display:flex">${ic("calendar")}</span>Planificación</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${tile("Presupuestos","Pon límites y mira cómo vas","chart-pie","#D946EF","rgba(217,70,239,.16)")}${tile("Pagos planificados","Lo que se viene: pagos y suscripciones","calendar-clock","#14B8A6","rgba(20,184,166,.16)")}</div></div>`;
+  return {d:null,p:phone(t,cont,"Más")};
+ }},
+{id:"buscar",name:"Buscar (⌘K)",web:"⌘K o la lupa",app:"Pestaña Buscar",
+ shots:{web:null,app:null},
+ diffs:["En la app, Buscar es una pestaña propia: un círculo de cristal a la derecha de la barra. En la web es una ventana que se abre con ⌘K o con la lupa de arriba.",
+  "La búsqueda de la web ya busca en cuentas, categorías, presupuestos y registros. Solo cambia su aspecto: cristal, filas con ícono de color y cifras redondeadas."],
+ adapt:["En escritorio se queda la ventana con ⌘K: es el atajo que la gente espera en una web, y el campo «Buscar» de la barra lateral la abre.","En celular, la lupa redonda de la barra de pestañas, como en el iPhone."],
+ render(t){
+  const res=`<div class="sfield" style="height:48px;font-size:17px;color:var(--y-ink);margin:0 0 10px">${ic("search")}plaza<kbd>esc</kbd></div><div class="ghead" style="padding-top:4px">Registros</div><div class="y-list">${row(["Plaza Vea","Supermercados · Tarjeta Visa","shopping-basket","#22C55E",-212.3,"E"])}${row(["Plaza San Miguel","Ropa · Tarjeta Visa","shirt","#EC4899",-189,"O"])}</div><div class="ghead">Ir a</div><div class="lgroup"><div class="litem" style="font-size:16px"><span class="y-sq" style="background:#6063F1">${ic("list")}</span>Ver todos los registros con «plaza»</div></div>`;
+  const p=phone(t,`<div class="y-title" style="padding-top:8px">Buscar</div><div class="y-pad">${res}</div>`,"Buscar");
+  const d=desk(t,"Panel","Panel",`${money(55997.65,"hero")}`,{tools:TOOLS,overlay:`<div class="scrim"></div><div class="cmdk">${res}</div>`});
+  return {d,p};
+ }},
+{id:"entrar",name:"Entrar",web:"/ sin sesión",app:"Bienvenida de la app",
+ shots:{web:"login",app:null},
+ diffs:["La web de entrada es una tarjeta blanca sobre fondo gris azulado, con un botón gris oscuro y dos con borde. La app abre con el degradado índigo a negro de la bienvenida y botones en cápsula.",
+  "El logo de la web es un cuadrado con degradado índigo a rosa. Se mantiene, a juego con el ícono de la app."],
+ adapt:["En escritorio la tarjeta queda centrada, de 420 px, sobre el degradado de la bienvenida. En celular ocupa el ancho."],
+ render(t){
+  const card=`<div style="display:grid;gap:12px;justify-items:center;text-align:center"><span class="logo" style="width:64px;height:64px;border-radius:18px"></span><b style="font-size:30px">Entra a tu Yala</b><span class="sub" style="font-size:16px">Usa la misma cuenta que en tu iPhone.</span><div style="display:grid;gap:10px;width:100%;margin-top:10px"><div class="save" style="background:#fff;color:#000">${ic("apple")}Continuar con Apple</div><div class="save glass" style="color:var(--y-ink)">Continuar con Google</div><div class="save" style="background:transparent;color:var(--y-acc-t);border:1px solid var(--y-glass-b)">${ic("smartphone")}Entrar con tu iPhone</div></div><span class="sub">Es un equipo compartido: no recordar esta sesión</span></div>`;
+  const bg="background:linear-gradient(180deg,#6063F1 0%,#1B1B4A 45%,#000 100%)";
+  const p=`<div class="ym phone" data-t="oscuro" style="${bg}"><div class="scroll">${STATUS}<div class="y-pad" style="padding-top:140px">${card}</div></div><span class="home"></span></div>`;
+  const d=`<div class="ym desk" data-t="oscuro" style="display:grid;place-items:center;grid-template-columns:1fr;${bg}"><div style="width:420px">${card}</div></div>`;
+  return {d,p};
+ }},
+];
+
+/* ───── tablas ───── */
+const DIFF=[
+ ["Fondo","Liquid Glass por defecto: azul noche con degradado índigo arriba. En claro, blanco azulado con un velo índigo al 10 %.","#FAFBFF plano en claro y negro puro en oscuro.","El mismo fondo que la app en los dos temas."],
+ ["Tarjetas","Radio de 20 a 24, cristal translúcido en oscuro, sombra mínima en claro y sin borde visible.","Radio 16 con borde gris de 1 px.","Radio 22, cristal en oscuro, sombra suave en claro."],
+ ["Cifras","Letra redondeada, entero grande, símbolo y decimales a la mitad y en gris. Los gastos llevan signo «-».","Letra normal en negrita, todo del mismo tamaño y sin signo.","Componente Monto con las mismas proporciones y la redondeada del sistema."],
+ ["Ícono de categoría","Círculo de 40 px del color de la categoría con su símbolo.","Cuadrado de 32 px con la inicial.","Círculo de 40 px con el ícono equivalente en Lucide."],
+ ["Etiquetas y necesidad","Píldoras «Esencial», «Opcional», «Compartido».","No las muestra: el servidor no las manda.","Las mismas píldoras, con los datos que mande el servidor."],
+ ["Navegación","Barra flotante de cristal abajo: tres pestañas, Más y Buscar. En iPad, barra lateral.","Barra lateral sólida de nueve entradas; en celular, barra fija con «+» en el medio.","Escritorio: barra lateral de cristal como en iPad. Celular: la barra flotante de la app."],
+ ["Títulos","Título grande de 34 px a la izquierda; botones redondos de cristal y avatar con aro dorado arriba a la derecha.","Título de 24 px y botones cuadrados con borde gris.","Como en la app."],
+ ["Acción principal","«+ Nuevo registro», cápsula índigo dentro del contenido; un «+» flotante al bajar.","«+ Apuntar», rectángulo arriba a la derecha.","«+ Nuevo registro» en la cabecera en escritorio y en el contenido en celular."],
+ ["Agrupación","Planificación reúne Presupuestos y Pagos planificados.","Dos secciones sueltas.","Planificación con dos segmentos."],
+ ["Nombres","Nuevo registro, Bandeja de Entrada, Ajustes, Tu saldo hoy.","Apuntar, Bandeja, Configurar, Saldo total.","Los de la app."],
+ ["Cuentas","Cápsulas de cristal y, desplegadas, tarjetas con arte de tarjeta bancaria.","Bloques de colores saturados.","Cápsulas en celular y tarjetas en escritorio."],
+ ["Letra","SF Pro; SF Rounded en las cifras.","Letra del sistema, con Inter de respaldo; títulos muy gruesos.","Letra del sistema; redondeada del sistema en las cifras, con Nunito de respaldo fuera de Apple."],
+];
+const TOKC=[["Acento (relleno)","#6063F1","#6063F1"],["Acento como texto","#6063F1","#818CF8"],["Fondo","#FAFBFF","#060612"],["Tarjeta","#FFFFFF","blanco al 5,5 %"],["Texto","#111114","#F2F2F7"],["Ingreso","#0F7A80","#00C2CB"],["Te deben","#15803D","#4ADE80"],["Debes","#C80066","#FF4DA6"],["Te pasaste","#D6006B","#FF0080"],["En el límite","#FF9500","#FF9F0A"],["Rosa de marca","#FF0080","#FF0080"],["Dorado Pro (aro)","#F5B400","#F5B400"]];
+const TOKF=[["Radio de tarjeta","24 (tarjeta del sistema de diseño), 20 en los widgets","22px"],["Radio de fila","14 a 16","16px"],["Botón principal","Cápsula de 50 pt (48 en la fila de acciones)","48px, radio 24px"],["Botón redondo","44 pt, cristal","44px, cristal"],["Ícono de fila","Círculo de 40 pt","40px"],["Barra de progreso","8 pt en Presupuestos, 6 pt en los widgets","8px y 6px"],["Título de pantalla","34 pt","34px, 700"],["Cifra principal","36 pt, decimales a 17 pt","44px en web por la distancia de lectura; decimales al 47 %"],["Título de sección","20 pt","22px, 700"],["Texto de fila","17 pt","17px, 600"],["Espaciado","4 · 8 · 12 · 16 · 20 · 24 · 32","Los mismos, en px"],["Ancho legible","700 pt","700px en Ajustes"]];
+const COMP=[["Monto","AmountText","Símbolo y decimales a la mitad, entero en redondeada."],["FilaRegistro","RecordRowView","Círculo de color con ícono, título, categoría · cuenta, cifra y píldora."],["Tarjeta","panelCard y solidCard","Radio 22, cristal en oscuro."],["BotonPrincipal","YalaPrimaryButton","Cápsula índigo con ícono."],["BotonRedondo","botones de barra con glassEffect","Círculo de cristal de 44."],["Capsula","FilterChipView","Filtro o segmento; el activo, en índigo."],["Pildora","píldora de necesidad","Punto de color y texto pequeño."],["BarraPresupuesto","BudgetProgressBar","Color de la categoría; naranja desde el 80 %, rosa al pasarse."],["Hoja","sheet","Celular: sube desde abajo. Escritorio: centrada o lateral."],["BarraLateral","TabView con sidebarAdaptable","Cristal flotante, como en iPad."],["BarraPestanas","TabView","Cápsula flotante de cristal y la lupa aparte."],["Avatar","avatar de la barra","Círculo con aro dorado de Pro."]];
+const ICO=[["rectangle.grid.2x2.fill","Pestaña Panel","layout-grid"],["chart.bar.fill","Estadísticas","chart-column"],["calendar","Planificación","calendar"],["list.bullet.rectangle","Registros","list"],["person.2.fill","Grupos","users"],["ellipsis","Más","ellipsis"],["magnifyingglass","Buscar","search"],["tray.full","Bandeja","inbox"],["archivebox","Archivados","archive"],["sparkles","Yala IA, Resumen","sparkles"],["chart.pie.fill","Presupuestos, Distribución","chart-pie"],["calendar.badge.clock","Pagos planificados","calendar-clock"],["chart.line.uptrend.xyaxis","Tendencias","chart-line"],["creditcard / creditcard.fill","Cuentas","credit-card"],["banknote.fill","Efectivo","banknote"],["building.columns.fill","Banco","landmark"],["tag.fill","Categoría por defecto","tag"],["cart.fill","Compras","shopping-cart"],["fork.knife","Comida","utensils"],["car.fill","Taxi","car"],["bus.fill","Transporte público","bus"],["house.fill","Casa","house"],["pawprint.fill","Mascotas","paw-print"],["airplane","Viajes, grupos","plane"],["percent","Mi parte","percent"],["exclamationmark.triangle","Avisos","triangle-alert"],["person.crop.circle.fill","Perfil","circle-user-round"],["slider.horizontal.3","Filtros","sliders-horizontal"]];
+const DECS=[
+ {id:"tema",t:"Tema oscuro de la web",o:[["a","Liquid Glass por defecto, con selector de tema","Azul noche con degradado índigo, como la app. En Ajustes: Como el sistema, Claro, Oscuro o Liquid Glass.",1],["b","Seguir al sistema con negro plano","El tema «Oscuro» de la app: fondo negro y tarjetas grises. Sin selector."],["c","Los nueve temas de la app","Incluye los de Pro (Índigo, Rosa, Teal…). Es más trabajo y hay que leer en el iPhone el tema elegido."]]},
+ {id:"nav-escritorio",t:"Navegación en escritorio",o:[["a","Barra lateral de cristal, como la app en iPad","La app usa una barra adaptable: en iPad sus pestañas se vuelven barra lateral. Es lo que ves en la maqueta.",1],["b","Pestañas arriba en una cápsula de cristal","La barra de pestañas del iPhone, centrada arriba."],["c","La barra lateral de hoy con colores nuevos","Menos trabajo, menos parecido."]]},
+ {id:"pestanas",t:"Pestañas en el celular",o:[["a","Las de la app por defecto","Panel, Registros, Grupos y Más, con Buscar aparte. La Bandeja arriba a la izquierda y «+ Nuevo registro» en el contenido.",1],["b","Las de hoy","Panel, Registros, «+», Bandeja y Más."],["c","Las que cada persona eligió en su iPhone","Hay que subir esa preferencia a la nube; hoy vive solo en el teléfono."]]},
+ {id:"voz-foto-ia",t:"Botones Voz, Foto y Yala IA",o:[["a","No mostrarlos hasta que la web los tenga","Un botón que no hace nada confunde. Yala IA sigue en la barra lateral con «Pronto».",1],["b","Mostrarlos con «Pronto»","Se parece más a la app, pero son tres promesas."]]},
+ {id:"iconos",t:"Íconos",o:[["a","Lucide","Licencia MIT, paquete para React y trazo parecido a SF Symbols. Una tabla traduce los 187 símbolos del selector de la app.",1],["b","Phosphor","Tiene versión rellena, más cerca de los símbolos rellenos de la app, pero el dibujo se aleja más."]]},
+ {id:"cifras",t:"Letra de las cifras",o:[["a","Redondeada del sistema, con Nunito de respaldo","En iPhone, iPad y Mac con Safari sale SF Rounded, la de la app. En Windows, Android y Chrome sale Nunito.",1],["b","Letra normal con cifras tabulares","Más simple, menos parecido."]]},
+ {id:"panel-widgets",t:"Planificación y Distribución en el Panel",o:[["a","Sumarlas, como en la app","La web ya tiene los datos de Presupuestos, Pagos y Distribución. Solo cambia dónde se ven.",1],["b","Dejar el Panel como hoy","Saldo, cuentas, últimos registros y en qué gastaste."]]},
+];
+const LOTES=[
+ ["1 · Base visual","Variables de color, fondo, tarjetas, cristal y cifras para los dos temas; selector de tema en Ajustes; componente Monto. Ya cambia todas las pantallas sin tocar su estructura.",["webapp/src/client/styles.css","webapp/src/client/app.css","webapp/index.html","webapp/src/client/app/Configurar.tsx","webapp/src/client/app/Monto.tsx (nuevo)","webapp/src/client/app/format.ts","webapp/src/client/i18n/*.ts (16 idiomas)"],"Pruebas: npm run typecheck, npm test y capturas de antes y después en claro, oscuro, escritorio y celular."],
+ ["2 · Íconos y datos de categoría","El servidor manda el ícono y el color de categoría, subcategoría y cuenta, y la necesidad de cada registro. Ya están en la nube; hoy la web no los pide. Tabla de SF Symbol a Lucide y cambio de los íconos propios por Lucide.",["shared-core/src/toolCore.ts","shared-core/src/data.ts","webapp/src/worker/data.ts","webapp/src/client/app/api.ts","webapp/src/client/app/simbolos.ts (nuevo)","webapp/src/client/app/icons.tsx","webapp/package.json (lucide-react)"],"Toca el núcleo que comparten el gateway y la web: va con revisión adversarial y con las pruebas de shared-core, del gateway y de la web."],
+ ["3 · Navegación","Barra lateral de cristal en escritorio; barra flotante con Buscar aparte en celular; Bandeja desde su botón; avatar hacia Ajustes; «+ Nuevo registro» en la cabecera. Planificación reúne Presupuestos y Pagos, y /presupuestos y /pagos siguen abriendo su segmento.",["webapp/src/client/app/Shell.tsx","webapp/src/client/app.css","webapp/src/client/app/Busqueda.tsx","webapp/wrangler.toml (ruta /planificacion)","webapp/test/movil.test.ts"],"Pruebas: navegación con teclado, ⌘K, enlaces viejos y 390 px de ancho sin scroll lateral."],
+ ["4 · Panel, Registros y Nuevo registro","Saldo de hoy, cuentas, filas con ícono y píldoras, días con su total, detalle a la derecha en escritorio y la hoja «Nuevo registro» centrada en el monto.",["webapp/src/client/app/Panel.tsx","webapp/src/client/app/Registros.tsx","webapp/src/client/app/Apuntar.tsx","webapp/src/client/app/FilaRegistro.tsx (nuevo)","webapp/src/client/app.css"],"Pruebas: las de Registros (filtros, CSV, cargar más) y las de borradores siguen en verde."],
+ ["5 · Planificación, Estadísticas, Grupos, Bandeja y Ajustes","Cada pantalla con las piezas de la app y su adaptación a escritorio: dos columnas en Presupuestos, grupo abierto a la derecha, Bandeja como panel lateral y Ajustes a 700 px.",["webapp/src/client/app/Presupuestos.tsx","webapp/src/client/app/Pagos.tsx","webapp/src/client/app/Estadisticas.tsx","webapp/src/client/app/Grupos.tsx","webapp/src/client/app/Bandeja.tsx","webapp/src/client/app/Configurar.tsx","webapp/src/client/app.css","webapp/src/client/i18n/*.ts"],"Pruebas: escritura en Grupos en staging (nuevo gasto, saldar, invitar) antes de producción."],
+ ["6 · Entrar","Pantalla de entrada y del código QR sobre el degradado de la bienvenida de la app.",["webapp/src/client/App.tsx","webapp/src/client/QrLogin.tsx","webapp/src/client/styles.css"],"Pruebas: entrar con Apple, Google y QR en staging; Turnstile visible en los dos temas."],
+];
+
+/* ───── estado de comentarios ───── */
+const LS="yala-web-parecida-v1";
+let state={c:{},d:{}};
+try{const raw=localStorage.getItem(LS);if(raw){const o=JSON.parse(raw);state.c=o.c||{};state.d=o.d||{};}}catch(e){}
+let db=null,canWrite=false;
+function persistLocal(){try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}}
+const timers={};
+function mark(kind,id,txt){const el=document.getElementById("st-"+kind+"-"+id);if(el)el.textContent=txt;}
+function save(kind,id){
+  persistLocal();renderExport();
+  if(!db||!canWrite){mark(kind,id,"Guardado en este navegador");return;}
+  clearTimeout(timers[kind+id]);
+  timers[kind+id]=setTimeout(()=>{
+    const now=new Date().toISOString();
+    const data=kind==="c"?{voto:state.c[id]?.voto||"",texto:state.c[id]?.texto||"",pantalla:id,actualizado:now}:{opcion:state.d[id]?.opcion||"",nota:state.d[id]?.nota||"",decision:id,actualizado:now};
+    db.collection(kind==="c"?"comentarios":"decisiones").doc(id).set(data).then(()=>mark(kind,id,"Guardado"),()=>mark(kind,id,"Guardado solo en este navegador"));
+  },700);
+}
+
+/* ───── render ───── */
+let theme="claro";
+try{theme=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"oscuro":"claro";const tt=localStorage.getItem(LS+"-t");if(tt==="claro"||tt==="oscuro")theme=tt;}catch(e){}
+const shot=(f,cap)=>f?`<figure class="shot"><img loading="lazy" src="capturas/${f}" alt="${esc(cap)}"><figcaption>${esc(cap)}</figcaption></figure>`:"";
+function screenHTML(s){
+  const T=theme,w=s.shots.web,a=s.shots.app;
+  const appShot=a?shot(a[T==="claro"?0:1],"App · iPhone"+(a[0]===a[1]&&T==="claro"&&a[0].includes("oscuro")?" (captura en oscuro)":"")):"";
+  let today="";
+  if(w==="login") today=`<div class="today" style="grid-template-columns:minmax(0,1fr)">${shot("web-login-1280.jpg","Web hoy · escritorio")}</div>`;
+  else if(s.shots.webOnlyMobile) today=`<div class="today" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:620px">${shot(s.shots.webOnlyMobile,"Web hoy · celular")}${appShot}</div>`;
+  else if(w){
+    const extra=s.shots.app2?shot(s.shots.app2,"App · al bajar"):"";
+    const cols=extra?"minmax(0,2fr) repeat(3,minmax(0,.75fr))":"minmax(0,2.2fr) minmax(0,.8fr) minmax(0,.8fr)";
+    today=`<div class="today" style="grid-template-columns:${cols}">${shot(`web-${w}-${T}-escritorio.jpg`,"Web hoy · escritorio")}${shot(`web-${w}-${T}-movil.jpg`,"Web hoy · celular")}${appShot}${extra}</div>`;
+  }
+  else if(a) today=`<div class="today" style="grid-template-columns:minmax(0,1fr);max-width:300px">${appShot}</div>`;
+  const c=state.c[s.id]||{};
+  return `<article class="screen" id="p-${s.id}" aria-labelledby="h-${s.id}">
+   <div class="screen-head"><h3 id="h-${s.id}" style="font-size:22px">${esc(s.name)}</h3><div class="where"><span class="pill">Web: ${esc(s.web)}</span><span class="pill">App: ${esc(s.app)}</span></div></div>
+   ${today?`<div><div class="mlabel">Hoy</div>${today}</div>`:`<p class="small muted">Sin captura de hoy: se abre desde otra pantalla.</p>`}
+   <div class="diffs"><div><h3>Qué se ve distinto</h3><ul class="tight small">${s.diffs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div><div><h3>Adaptación a pantalla grande</h3><ul class="tight small">${s.adapt.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>
+   <div><div class="mlabel">Rediseño · ${s.id==="entrar"?"degradado de la bienvenida":T==="claro"?"claro":"oscuro (Liquid Glass)"}</div><div class="mocks${s.phoneOnly?" solo-phone":""}">${s.phoneOnly?"":`<div><div class="small muted" style="margin-bottom:6px">Escritorio</div><div class="fwrap" data-w="1240" data-h="780"><div class="frame" data-k="d"></div></div></div>`}<div class="phonecol"><div class="small muted" style="margin-bottom:6px">Celular</div><div class="fwrap" data-w="390" data-h="844" style="border-radius:28px"><div class="frame" data-k="p"></div></div></div></div></div>
+   <div class="vote"><div class="row"><b style="font-size:14px;margin-right:4px">Tu opinión</b><button class="vbtn like" data-s="${s.id}" data-v="gusta" aria-pressed="${c.voto==="gusta"}">Me gusta</button><button class="vbtn change" data-s="${s.id}" data-v="cambiar" aria-pressed="${c.voto==="cambiar"}">Cambiar</button><span class="saved" id="st-c-${s.id}"></span></div><label class="small muted" for="tx-${s.id}">Comentario</label><textarea id="tx-${s.id}" data-s="${s.id}" placeholder="Qué cambiarías, qué falta, qué sobra">${esc(c.texto||"")}</textarea></div>
+  </article>`;
+}
+function fit(){
+  document.querySelectorAll(".fwrap").forEach(w=>{
+    const W=+w.dataset.w,H=+w.dataset.h;const avail=w.parentElement.clientWidth;if(!avail)return;const s=Math.min(1,avail/W);
+    w.style.width=(W*s)+"px";w.style.height=(H*s)+"px";w.firstElementChild.style.transform=`scale(${s})`;
+  });
+}
+function renderScreens(){
+  $("#screens").innerHTML=SCREENS.map(screenHTML).join("");
+  SCREENS.forEach(s=>{
+    let r;try{r=s.render(theme);}catch(e){return;}
+    const art=$("#p-"+s.id);
+    const fd=art.querySelector('[data-k="d"]');if(fd&&r.d)fd.innerHTML=r.d;
+    const fp=art.querySelector('[data-k="p"]');if(fp)fp.innerHTML=r.p;
+  });
+  if(window.lucide)try{lucide.createIcons();}catch(e){}
+  fit();
+}
+function renderTables(){
+  $("#diff-rows").innerHTML=DIFF.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("");
+  const swc=v=>v.startsWith("#")?`<span class="sw" style="background:${v}"></span><code>${esc(v)}</code>`:esc(v);
+  $("#tok-color").innerHTML=TOKC.map(r=>`<tr><td>${esc(r[0])}</td><td>${swc(r[1])}</td><td>${swc(r[2])}</td></tr>`).join("");
+  $("#tok-forma").innerHTML=TOKF.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("");
+  $("#tok-comp").innerHTML=COMP.map(r=>`<tr><td><code>${esc(r[0])}</code></td><td><code>${esc(r[1])}</code></td><td>${esc(r[2])}</td></tr>`).join("");
+  $("#tok-ico").innerHTML=ICO.map(r=>`<tr><td><code>${esc(r[0])}</code></td><td>${esc(r[1])}</td><td><span style="display:inline-flex;align-items:center;gap:8px">${ic(r[2],'style="width:18px;height:18px"')}<code>${esc(r[2])}</code></span></td></tr>`).join("");
+  $("#css-tokens").textContent=`:root {                                /* claro */
+  --y-acento: #6063F1;      --y-acento-texto: #6063F1;   --y-sobre-acento: #FFFFFF;
+  --y-fondo: #FAFBFF;       --y-fondo-velo: linear-gradient(180deg, #FCFCFF, #EFEFFD);
+  --y-tarjeta: #FFFFFF;     --y-tarjeta-borde: rgba(20,20,60,.06);  --y-sombra: 0 5px 10px rgba(0,0,0,.05);
+  --y-texto: #111114;       --y-texto-2: rgba(60,60,67,.64);        --y-texto-3: rgba(60,60,67,.4);
+  --y-cristal: rgba(255,255,255,.72);  --y-cristal-borde: rgba(0,0,0,.07);  --y-pista: rgba(120,120,128,.16);
+  --y-ingreso: #0F7A80;  --y-te-deben: #15803D;  --y-debes: #C80066;  --y-excedido: #D6006B;  --y-limite: #FF9500;
+  --y-rosa: #FF0080;     --y-oro: #F5B400;
+  --y-radio-tarjeta: 22px;  --y-radio-fila: 16px;  --y-boton: 48px;  --y-icono-fila: 40px;
+  --y-letra: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  --y-cifras: ui-rounded, "SF Pro Rounded", Nunito, var(--y-letra);
+}
+/* Liquid Glass: por defecto en oscuro (prefers-color-scheme) y forzado con data-tema="liquid" */
+:root[data-tema="liquid"] {
+  --y-acento-texto: #818CF8;
+  --y-fondo: #060612;       --y-fondo-velo: linear-gradient(180deg, #26275F 0%, #11112B 34%, #060612 70%);
+  --y-tarjeta: rgba(255,255,255,.055);  --y-tarjeta-borde: rgba(255,255,255,.09);  --y-sombra: none;
+  --y-texto: #F2F2F7;       --y-texto-2: rgba(235,235,245,.62);     --y-texto-3: rgba(235,235,245,.36);
+  --y-cristal: rgba(58,58,110,.5);  --y-cristal-borde: rgba(255,255,255,.12);  --y-pista: rgba(255,255,255,.12);
+  --y-ingreso: #00C2CB;  --y-te-deben: #4ADE80;  --y-debes: #FF4DA6;  --y-excedido: #FF0080;  --y-limite: #FF9F0A;
+}`;
+}
+function recOf(d){return d.o.find(o=>o[3])[0];}
+function renderDecs(){
+  $("#decs").innerHTML=DECS.map((d,i)=>{const cur=state.d[d.id]?.opcion||recOf(d);return `<div class="card dec-card"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill dec">Decisión ${i+1}</span><h3>${esc(d.t)}</h3></div><div class="opts" role="radiogroup" aria-label="${esc(d.t)}">${d.o.map(o=>`<label class="opt"><input type="radio" name="d-${d.id}" value="${o[0]}" data-d="${d.id}" ${cur===o[0]?"checked":""}><span><b>${esc(o[1])}</b> ${o[3]?'<span class="pill rec">Recomendada</span>':""}<br><span class="small muted">${esc(o[2])}</span></span></label>`).join("")}</div><label class="small muted" for="dn-${d.id}">Nota</label><textarea id="dn-${d.id}" data-dn="${d.id}" style="min-height:52px" placeholder="Opcional">${esc(state.d[d.id]?.nota||"")}</textarea><span class="saved" id="st-d-${d.id}"></span></div>`}).join("");
+}
+function renderLotes(){
+  $("#lotes").innerHTML=LOTES.map(l=>`<div class="card lote"><h3>Lote ${esc(l[0])}</h3><p class="small">${esc(l[1])}</p><div class="files">${l[2].map(f=>`<code>${esc(f)}</code>`).join("")}</div><p class="small muted">${esc(l[3])}</p></div>`).join("");
+}
+function renderExport(){
+  const L=["Comentarios sobre la maqueta «Yala web como la app»",""];
+  SCREENS.forEach(s=>{const c=state.c[s.id];if(c&&(c.voto||(c.texto&&c.texto.trim())))L.push(`- ${s.name}: ${c.voto==="gusta"?"Me gusta":c.voto==="cambiar"?"Cambiar":"Sin voto"}${c.texto&&c.texto.trim()?" — "+c.texto.trim():""}`);});
+  if(L.length===2)L.push("- Sin comentarios de pantalla.");
+  L.push("","Decisiones:");
+  DECS.forEach((d,i)=>{const chosen=state.d[d.id]?.opcion;const o=chosen||recOf(d);const opt=d.o.find(x=>x[0]===o);const nota=state.d[d.id]?.nota;L.push(`- ${i+1}. ${d.t}: ${opt?opt[1]:o}${chosen?"":" (la recomendada, sin tocar)"}${nota&&nota.trim()?" — "+nota.trim():""}`);});
+  $("#export").value=L.join("\n");
+}
+function setTheme(t){theme=t;try{localStorage.setItem(LS+"-t",t);}catch(e){}["claro","oscuro"].forEach(x=>$("#t-"+x).setAttribute("aria-pressed",String(x===t)));renderScreens();}
+
+document.addEventListener("click",e=>{
+  const tb=e.target.closest("button[data-t]");if(tb){setTheme(tb.dataset.t);return;}
+  const v=e.target.closest(".vbtn[data-s]");if(v){const id=v.dataset.s;const cur=state.c[id]||{};cur.voto=cur.voto===v.dataset.v?"":v.dataset.v;state.c[id]=cur;v.parentElement.querySelectorAll(".vbtn[data-v]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===cur.voto)));save("c",id);return;}
+  if(e.target.id==="copy"){const ta=$("#export");const fallback=()=>{ta.focus();ta.select();$("#copied").textContent="Texto seleccionado: cópialo con el teclado";};try{navigator.clipboard.writeText(ta.value).then(()=>{$("#copied").textContent="Copiado";},fallback);}catch(err){fallback();}}
+});
+document.addEventListener("input",e=>{
+  const s=e.target.dataset.s;if(s&&e.target.tagName==="TEXTAREA"){state.c[s]=Object.assign(state.c[s]||{},{texto:e.target.value});save("c",s);}
+  const dn=e.target.dataset.dn;if(dn){state.d[dn]=Object.assign(state.d[dn]||{},{nota:e.target.value});save("d",dn);}
+});
+document.addEventListener("change",e=>{const d=e.target.dataset.d;if(d){state.d[d]=Object.assign(state.d[d]||{},{opcion:e.target.value});save("d",d);}});
+let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(fit,120);});
+
+renderTables();renderDecs();renderLotes();setTheme(theme);renderExport();
+$("#store-state").textContent="Se guarda en este navegador.";
+
+/* Base de datos de la maqueta: escribe el dueño, el resto lee. */
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const dbx=await window.claude.use("db");if(!dbx)return;
+    const user=await window.claude.use("user");
+    db=dbx;canWrite=!!(user&&user.isOwner&&user.isOwner());
+    $("#store-state").textContent=canWrite?"Se guarda en la maqueta: Frank lo lee.":"Se guarda en este navegador.";
+    const [cs,ds]=await Promise.all([db.collection("comentarios").get(),db.collection("decisiones").get()]);
+    cs.docs.forEach(d=>{const x=d.data()||{};const loc=state.c[d.id];if(!loc||(!loc.voto&&!loc.texto))state.c[d.id]={voto:x.voto||"",texto:x.texto||""};});
+    ds.docs.forEach(d=>{const x=d.data()||{};const loc=state.d[d.id];if(!loc||!loc.opcion)state.d[d.id]={opcion:x.opcion||"",nota:x.nota||""};});
+    persistLocal();renderDecs();renderScreens();renderExport();
+  }catch(e){}
+})();
+})();
+</script>
