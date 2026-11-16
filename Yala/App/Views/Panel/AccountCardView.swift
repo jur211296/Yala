@@ -18,6 +18,7 @@ struct AccountCardView: View {
     /// «Ocultar montos» del Panel (`AmountPrivacy`).
     @Environment(\.amountsHidden) private var amountsHidden
     @Environment(CurrencyConverter.self) private var currencyConverter
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let account: Account
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
@@ -49,8 +50,18 @@ struct AccountCardView: View {
     /// El nombre que se pinta, si no es el de la cuenta («Grupos» en vez de «Grupos PEN»).
     var title: String?
 
-    /// Alto mínimo de la tarjeta. Crece con el texto grande: la tarjeta no recorta.
-    static let minHeight: CGFloat = 168
+    /// El diseño que se pinta en vez del guardado: la vista previa del editor (`CardDesignEditorView`).
+    var designOverride: CardDesign?
+
+    /// Si deja libre la esquina de arriba a la derecha para el botón de paleta del carrusel.
+    var reservesDesignButton: Bool = false
+
+    /// Lo que mide el botón de paleta del carrusel (área de toque).
+    static let designButtonSize: CGFloat = 44
+
+    /// Alto mínimo de la tarjeta: la proporción de una tarjeta bancaria con el ancho habitual del carrusel. Crece con el
+    /// texto grande: la tarjeta no recorta.
+    static let minHeight: CGFloat = 188
 
     init(
         account: Account,
@@ -60,7 +71,9 @@ struct AccountCardView: View {
         periodName: String = "",
         lines: [AccountCardLogic.LineAmount] = [],
         groupRows: [GroupRow] = [],
-        title: String? = nil
+        title: String? = nil,
+        designOverride: CardDesign? = nil,
+        reservesDesignButton: Bool = false
     ) {
         self.account = account
         self.currentBalance = currentBalance
@@ -70,6 +83,8 @@ struct AccountCardView: View {
         self.lines = lines
         self.groupRows = groupRows
         self.title = title
+        self.designOverride = designOverride
+        self.reservesDesignButton = reservesDesignButton
     }
 
     private var hasLines: Bool { lines.count > 1 }
@@ -110,32 +125,34 @@ struct AccountCardView: View {
         }
     }
 
-    /// Las cuentas de sistema (`Grupos [moneda]`) van en gris neutro: no son cuentas del usuario y no deben competir
-    /// con las suyas. `Color(.systemGray)` es dark-mode safe.
-    private var accountColor: Color {
-        account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex)
+    /// Lo que se pinta de la tarjeta: el diseño que eligió la persona (o el de por defecto de su cuenta) ya resuelto, con
+    /// el contraste del texto garantizado (`CardLookLogic`). Las cuentas de sistema (`Grupos [moneda]`) van en grafito
+    /// neutro: no son cuentas del usuario y no se diseñan.
+    private var look: CardLook {
+        Self.look(for: account, storedDesigns: appPreferences.accountCardDesigns, override: designOverride)
+    }
+
+    /// Lo que se pinta para una cuenta. Lo comparten la tarjeta y el botón de paleta del carrusel (que se tiñe con ella).
+    static func look(for account: Account, storedDesigns: String, override: CardDesign? = nil) -> CardLook {
+        if account.isSystemAccount { return CardLookLogic.systemLook(iconName: account.iconName) }
+        let type = PanelMoneyScopeLogic.accountType(account)
+        let design = override ?? CardDesignLogic.design(for: account.shortcutID, type: type, in: storedDesigns)
+        return CardLookLogic.look(
+            for: design, type: type, accountColorHex: account.colorHex, accountIconName: account.iconName)
     }
 
     var body: some View {
         let style = PanelAccountCardLogic.style(membership: filterMembership)
-        let color = accountColor
-        // La cuenta que filtra el Panel va RELLENA de su color y dice «Filtrando» (UX 2.2 · L3-16, variante 2): el
-        // tinte al 16 % no se distinguía sobre el glass oscuro. El texto pasa al color que contrasta con el relleno.
+        let look = self.look
+        // La tarjeta va siempre rellena con su diseño, así que la que filtra el Panel se marca con su cápsula «Filtrando»
+        // y un borde en el color del texto (antes, rellenarla era la marca: UX 2.2 · L3-16).
         let isFilled = style == .tinted
-        let primaryText = isFilled ? Color.contrastingText(for: color) : theme.primaryText
-        let secondaryText = isFilled ? Color.contrastingText(for: color).opacity(0.8) : theme.secondaryText
+        let primaryText = Color(card: look.foreground)
+        let secondaryText = primaryText.opacity(CardLook.secondaryOpacity)
 
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(alignment: .center, spacing: DS.Spacing.md) {
-                Image(systemName: account.iconName)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(Color.contrastingText(for: color))
-                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                            .fill(isFilled ? Color.black.opacity(0.18) : color)
-                    )
-                    .accessibilityHidden(true)
+                CardIconBadge(iconName: look.iconName, foreground: primaryText)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(displayName)
@@ -159,7 +176,7 @@ struct AccountCardView: View {
                         .foregroundStyle(primaryText)
                         .padding(.horizontal, DS.Spacing.sm)
                         .padding(.vertical, DS.Spacing.xxs)
-                        .background(Capsule().fill(Color.black.opacity(0.18)))
+                        .background(Capsule().fill(look.hasLightText ? Color.black.opacity(0.28) : Color.white.opacity(0.6)))
                         .lineLimit(1)
                         .fixedSize()
                         .accessibilityIdentifier("panel_account_card_filtering")
@@ -171,10 +188,42 @@ struct AccountCardView: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                         .accessibilityHidden(true)
                 }
+
+                // Hueco para el botón de paleta que el carrusel pone encima, en la esquina (`AccountsCarouselView`).
+                if reservesDesignButton {
+                    Color.clear.frame(width: Self.designButtonSize - DS.Spacing.sm, height: 1)
+                }
+            }
+
+            if look.showsChip {
+                CardChipView(silver: look.silverChip)
             }
 
             Spacer(minLength: 0)
 
+            amountsAndDigits(look: look, primaryText: primaryText, secondaryText: secondaryText)
+        }
+        .padding(DS.Spacing.lg)
+        // `maxHeight: .infinity`: en el carrusel iguala el alto de la tarjeta más alta (`AccountsCarouselView`).
+        .frame(maxWidth: .infinity, minHeight: Self.minHeight, maxHeight: .infinity, alignment: .leading)
+        .background { CardBackgroundView(look: look) }
+        .overlay {
+            if isFilled {
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .strokeBorder(primaryText.opacity(0.9), lineWidth: 2.5)
+            }
+        }
+        .opacity(style == .excluded ? 0.5 : 1.0)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityAddTraits(style == .tinted ? .isSelected : [])
+    }
+
+    /// El saldo abajo a la izquierda y «•••• 1256» abajo a la derecha, como en una tarjeta de verdad. Con texto de
+    /// accesibilidad, los dígitos bajan a su propia línea: no le quitan sitio al importe.
+    @ViewBuilder
+    private func amountsAndDigits(look: CardLook, primaryText: Color, secondaryText: Color) -> some View {
+        let amounts = Group {
             if hasGroupRows {
                 groupAmounts(primaryText: primaryText, secondaryText: secondaryText)
             } else if hasLines {
@@ -183,29 +232,28 @@ struct AccountCardView: View {
                 singleAmount(primaryText: primaryText, secondaryText: secondaryText)
             }
         }
-        .padding(DS.Spacing.lg)
-        // `maxHeight: .infinity`: en el carrusel iguala el alto de la tarjeta más alta (`AccountsCarouselView`).
-        .frame(maxWidth: .infinity, minHeight: Self.minHeight, maxHeight: .infinity, alignment: .leading)
-        .background {
-            // La cuenta que filtra va rellena de su color sobre el fondo de la tarjeta; el texto de encima pasa a
-            // `contrastingText(for:)`, así que el contraste sale del color que el usuario eligió para la cuenta.
-            ZStack {
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(theme.card)
-                if isFilled {
-                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(color)
+        if let digits = look.lastFour {
+            let digitsText = Text(verbatim: CardFaceText.maskedDigits(digits, hidden: amountsHidden))
+                .font(DS.Typography.subheadline.monospacedDigit())
+                .foregroundStyle(secondaryText)
+                .lineLimit(1)
+                .fixedSize()
+                .accessibilityIdentifier("panel_account_card_last_four")
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    amounts
+                    digitsText
+                }
+            } else {
+                HStack(alignment: .lastTextBaseline, spacing: DS.Spacing.sm) {
+                    amounts.layoutPriority(1)
+                    Spacer(minLength: 0)
+                    digitsText
                 }
             }
+        } else {
+            amounts
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(isFilled ? color : DS.Colors.borderDark, lineWidth: 1)
-        )
-        .opacity(style == .excluded ? 0.5 : 1.0)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilitySummary)
-        .accessibilityAddTraits(style == .tinted ? .isSelected : [])
     }
 
     // MARK: - Importes
@@ -378,6 +426,10 @@ struct AccountCardView: View {
     /// «Sueldo. Saldo: S/ 4,820.50» — nombre, qué es el número y el número. Solo puntuación entre piezas ya
     /// traducidas.
     private var accessibilitySummary: String {
+        CardFaceText.spokenSummary(amountsAccessibilitySummary, lastFour: look.lastFour, hidden: amountsHidden)
+    }
+
+    private var amountsAccessibilitySummary: String {
         if hasGroupRows { return groupsAccessibilitySummary }
         if hasLines { return linesAccessibilitySummary }
         let kind = amountKind

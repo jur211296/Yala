@@ -9863,3 +9863,77 @@
 "panel.saldo.countsToggle" = "计入“今日可用的钱”";
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "如果不是能用的钱（比如信用卡），就关掉它。";
+
+/* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
+/* Card design editor: sheet title */
+"cardDesign.title" = "卡片设计";
+/* Context menu action on an account card in the Panel */
+"cardDesign.open" = "设计卡片";
+/* VoiceOver label of the palette button on an account card. %@ = account name */
+"cardDesign.openFor" = "设计%@的卡片";
+/* Card design editor: save */
+"cardDesign.save" = "保存";
+/* Card design editor: cancel */
+"cardDesign.cancel" = "取消";
+/* Card design editor: restore the default design */
+"cardDesign.reset" = "恢复原始设计";
+/* VoiceOver, appended to an account card: last 4 digits. %@ = 4 digits */
+"cardDesign.endingIn" = "尾号 %@";
+"cardDesign.section.templates" = "模板";
+"cardDesign.section.color" = "颜色";
+"cardDesign.section.pattern" = "图案";
+"cardDesign.section.icon" = "图标";
+"cardDesign.section.details" = "详情";
+"cardDesign.color.template" = "模板颜色";
+"cardDesign.color.account" = "账户颜色";
+"cardDesign.color.custom" = "其他颜色";
+/* VoiceOver label of a color swatch. %d = its number */
+"cardDesign.color.swatch" = "颜色 %d";
+"cardDesign.icon.account" = "账户图标";
+/* VoiceOver label of an icon choice. %d = its number */
+"cardDesign.icon.choice" = "图标 %d";
+"cardDesign.chip" = "显示芯片";
+"cardDesign.lastFour.title" = "后4位数字";
+"cardDesign.lastFour.prompt" = "可选，例如 1256";
+/* Card design editor: help under the last-4-digits field. Only 4 digits are ever stored */
+"cardDesign.lastFour.footer" = "只需最后4位数字，方便你一眼认出这张卡。Yala 绝不会要求完整卡号。";
+"cardDesign.category.gradients" = "渐变";
+"cardDesign.category.metallic" = "金属";
+"cardDesign.category.minimal" = "极简";
+"cardDesign.category.dark" = "深色";
+"cardDesign.category.pastel" = "马卡龙";
+"cardDesign.category.patterned" = "图案";
+"cardDesign.template.account" = "你的颜色";
+"cardDesign.template.aurora" = "极光";
+"cardDesign.template.forest" = "森林";
+"cardDesign.template.ocean" = "海洋";
+"cardDesign.template.sunset" = "日落";
+"cardDesign.template.raspberry" = "树莓";
+"cardDesign.template.gold" = "金色";
+"cardDesign.template.silver" = "银色";
+"cardDesign.template.graphite" = "石墨";
+"cardDesign.template.roseGold" = "玫瑰金";
+"cardDesign.template.bronze" = "古铜";
+"cardDesign.template.snow" = "雪白";
+"cardDesign.template.sand" = "沙色";
+"cardDesign.template.mist" = "薄雾";
+"cardDesign.template.ink" = "墨黑";
+"cardDesign.template.midnight" = "午夜";
+"cardDesign.template.obsidian" = "黑曜石";
+"cardDesign.template.charcoal" = "炭灰";
+"cardDesign.template.borealis" = "北境";
+"cardDesign.template.lavender" = "薰衣草";
+"cardDesign.template.mint" = "薄荷";
+"cardDesign.template.peach" = "蜜桃";
+"cardDesign.template.sky" = "天空";
+"cardDesign.template.neon" = "霓虹";
+"cardDesign.template.terrain" = "地貌";
+"cardDesign.template.mosaic" = "马赛克";
+"cardDesign.template.polkadot" = "波点";
+"cardDesign.pattern.none" = "无";
+"cardDesign.pattern.grid" = "网格";
+"cardDesign.pattern.waves" = "波纹";
+"cardDesign.pattern.lines" = "线条";
+"cardDesign.pattern.dots" = "圆点";
+"cardDesign.pattern.topographic" = "等高线";
+"cardDesign.pattern.diamonds" = "菱形";

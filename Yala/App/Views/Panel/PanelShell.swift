@@ -26,6 +26,9 @@ struct PanelShell: View {
                 viewModel: viewModel
             ))
             .modifier(PanelRecordSheetsModifier(sheets: $sheets, viewModel: viewModel))
+            // El editor de diseño de la tarjeta de una cuenta (2026-11-16), en su propio modificador: dentro de
+            // `PanelSheetsModifier` la cadena ya no tipa en un tiempo razonable.
+            .modifier(CardDesignEditorSheetModifier(item: $sheets.cardDesignEditor))
             // «Editar» del aviso tras guardar abre el registro con la misma hoja de editar del Panel (UX 2.2 · L2-5).
             .environment(\.savedRecordEditorOpener, SavedRecordEditorOpener { record in
                 sheets.recordToEdit = PanelRecordPresentation(record: record)

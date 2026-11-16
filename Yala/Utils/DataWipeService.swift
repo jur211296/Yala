@@ -1395,6 +1395,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsHidden)
         defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelMoneyAccountOverrides)  // Qué cuentas suman en «Tu dinero hoy»
+        defaults.removeObject(forKey: AppPreferences.Keys.accountCardDesigns)  // El diseño de la tarjeta de cada cuenta
         defaults.removeObject(forKey: AppPreferences.Keys.moreSectionOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelAccountsCollapsed)
         defaults.removeObject(forKey: AppPreferences.Keys.panelAmountsHidden)

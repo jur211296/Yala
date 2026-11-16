@@ -9863,3 +9863,77 @@
 "panel.saldo.countsToggle" = "Meetellen in ‘Je geld vandaag’";
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Zet het uit als het geen geld is om te gebruiken, zoals een creditcard.";
+
+/* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
+/* Card design editor: sheet title */
+"cardDesign.title" = "Kaartontwerp";
+/* Context menu action on an account card in the Panel */
+"cardDesign.open" = "Kaart ontwerpen";
+/* VoiceOver label of the palette button on an account card. %@ = account name */
+"cardDesign.openFor" = "Kaart %@ ontwerpen";
+/* Card design editor: save */
+"cardDesign.save" = "Bewaar";
+/* Card design editor: cancel */
+"cardDesign.cancel" = "Annuleer";
+/* Card design editor: restore the default design */
+"cardDesign.reset" = "Terug naar het oorspronkelijke ontwerp";
+/* VoiceOver, appended to an account card: last 4 digits. %@ = 4 digits */
+"cardDesign.endingIn" = "eindigend op %@";
+"cardDesign.section.templates" = "Sjablonen";
+"cardDesign.section.color" = "Kleur";
+"cardDesign.section.pattern" = "Patroon";
+"cardDesign.section.icon" = "Symbool";
+"cardDesign.section.details" = "Details";
+"cardDesign.color.template" = "Die van het sjabloon";
+"cardDesign.color.account" = "Die van je rekening";
+"cardDesign.color.custom" = "Andere kleur";
+/* VoiceOver label of a color swatch. %d = its number */
+"cardDesign.color.swatch" = "Kleur %d";
+"cardDesign.icon.account" = "Dat van je rekening";
+/* VoiceOver label of an icon choice. %d = its number */
+"cardDesign.icon.choice" = "Symbool %d";
+"cardDesign.chip" = "Chip tonen";
+"cardDesign.lastFour.title" = "Laatste 4 cijfers";
+"cardDesign.lastFour.prompt" = "Optioneel, bijv. 1256";
+/* Card design editor: help under the last-4-digits field. Only 4 digits are ever stored */
+"cardDesign.lastFour.footer" = "Alleen de laatste 4 cijfers, zodat je de kaart in één oogopslag herkent. Yala vraagt nooit om het volledige nummer.";
+"cardDesign.category.gradients" = "Verlopen";
+"cardDesign.category.metallic" = "Metallic";
+"cardDesign.category.minimal" = "Minimalistisch";
+"cardDesign.category.dark" = "Donker";
+"cardDesign.category.pastel" = "Pastel";
+"cardDesign.category.patterned" = "Met patroon";
+"cardDesign.template.account" = "Jouw kleur";
+"cardDesign.template.aurora" = "Aurora";
+"cardDesign.template.forest" = "Bos";
+"cardDesign.template.ocean" = "Oceaan";
+"cardDesign.template.sunset" = "Zonsondergang";
+"cardDesign.template.raspberry" = "Framboos";
+"cardDesign.template.gold" = "Goud";
+"cardDesign.template.silver" = "Zilver";
+"cardDesign.template.graphite" = "Grafiet";
+"cardDesign.template.roseGold" = "Roségoud";
+"cardDesign.template.bronze" = "Brons";
+"cardDesign.template.snow" = "Sneeuw";
+"cardDesign.template.sand" = "Zand";
+"cardDesign.template.mist" = "Mist";
+"cardDesign.template.ink" = "Inkt";
+"cardDesign.template.midnight" = "Middernacht";
+"cardDesign.template.obsidian" = "Obsidiaan";
+"cardDesign.template.charcoal" = "Houtskool";
+"cardDesign.template.borealis" = "Noorderlicht";
+"cardDesign.template.lavender" = "Lavendel";
+"cardDesign.template.mint" = "Munt";
+"cardDesign.template.peach" = "Perzik";
+"cardDesign.template.sky" = "Lucht";
+"cardDesign.template.neon" = "Neon";
+"cardDesign.template.terrain" = "Reliëf";
+"cardDesign.template.mosaic" = "Mozaïek";
+"cardDesign.template.polkadot" = "Stippen";
+"cardDesign.pattern.none" = "Geen";
+"cardDesign.pattern.grid" = "Raster";
+"cardDesign.pattern.waves" = "Golven";
+"cardDesign.pattern.lines" = "Lijnen";
+"cardDesign.pattern.dots" = "Stippen";
+"cardDesign.pattern.topographic" = "Topografisch";
+"cardDesign.pattern.diamonds" = "Ruiten";

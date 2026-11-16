@@ -254,6 +254,12 @@ paths:
   **Y las dos pantallas llevan `.zIndex(1)` (medido el 2026-10-28, iOS 27.0, card feer)**: sin él, la que SALE se pinta
   por debajo del degradado opaco del `ZStack` y desaparece en un fotograma; solo se veía fundirse la que entraba. Vale
   para cualquier `ZStack` con un fondo opaco y un `switch` con `.transition` encima.
+- **`.allowsHitTesting(false)` en un fondo dentro de la etiqueta de un `Button` deja esa zona sin toque, aunque el contenedor
+  lleve `.contentShape` (medido el 2026-11-16, iOS 27.2, tarjetas personalizables).** Las miniaturas del editor de diseño
+  de tarjeta solo respondían sobre su texto: el toque sobre el dibujo (`CardBackgroundView`) no llegaba al botón. Un fondo
+  decorativo no se marca «no tocable»: basta `accessibilityHidden(true)` para que VoiceOver no lo lea. Y una vista que se
+  estira (`maxHeight: .infinity`, la tarjeta del carrusel) fija encima de un `ScrollView` se come media pantalla: ahí va
+  con `.fixedSize(horizontal: false, vertical: true)`.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).
