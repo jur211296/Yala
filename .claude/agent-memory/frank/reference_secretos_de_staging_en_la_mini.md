@@ -20,4 +20,10 @@ con OAuth de la cuenta de Cloudflare.
 - **El OAuth de wrangler en la Mini caduca** («Invalid access token» de la API de Cloudflare): `cd /tmp/x && npx -y
   wrangler@4.141.0 whoami` lo refresca; luego el token de `~/Library/Preferences/.wrangler/config/default.toml` sirve para
   la API (zonas, dominios de Workers, D1). No lee registros DNS (falta el permiso).
+- **Desde el 2026-11-16 hay DOS sesiones de wrangler en la Mini.** `~/.wrangler/config` (la que wrangler lee primero)
+  es la cuenta PERSONAL de Jürgen; la de Yala (86c270…) sigue en `~/Library/Preferences/.wrangler/config/default.toml`
+  y su token caduca cada hora. Renovarla: POST `https://dash.cloudflare.com/oauth2/token` con su `refresh_token`, el
+  `client_id` de wrangler y **`User-Agent: wrangler/…`** (sin él, 403 `error code: 1010`). Usarla sin pisar la otra:
+  `CLOUDFLARE_API_TOKEN=<ese token> CLOUDFLARE_ACCOUNT_ID=86c270…` delante de wrangler. **Ese OAuth no trae Turnstile**
+  (`challenge-widgets`): un widget lo crea Dan en el panel.
 Relacionado: [[decisiones-py-no-esta-en-la-max]].
