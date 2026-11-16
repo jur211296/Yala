@@ -113,6 +113,7 @@ app.post("/mail/address", handleMailAddress);
 app.get("/mail/drafts", handleMailDrafts);
 app.post("/mail/drafts/ack", handleMailDraftsAck);
 
+
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 
 // Un throw sin capturar (D1 caída, binding ausente) salía como 500 en TEXTO PLANO: el SDK de
@@ -137,3 +138,4 @@ const worker = Object.assign(app, {
 });
 export default Sentry.withSentry((env: Env) => sentryOptions(env), worker);
 export { RateLimiter } from "./rate_limiter";
+export { ConnectorDrafts } from "./connector/entrypoint";

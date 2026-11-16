@@ -50,6 +50,7 @@
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 - [Merge corto que falta: lo hace la sesión](feedback_merge_corto_que_falta_lo_hace_la_sesion.md) — BLOQUEANTE y ofrecerlo; el lote sobre la rama del merge, sin rebase.
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
+- [El gate en serie, también contra ti](feedback_gate_en_serie_tambien_contra_ti.md) — gate-ci con tu XCUITest vivo agota la cola; build y test chocan en build.db.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 - [Segundo simulador en la Max](feedback_segundo_simulador_en_la_max.md) — simulador ajeno ocupado: segundo (tope 2) o iPhone 14; Mini, tope 1.

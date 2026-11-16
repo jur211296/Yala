@@ -40,7 +40,7 @@ struct ScheduledDraftOccurrenceLogicTests {
         let holding: Set<DraftSourceType> = [.scheduledPayment, .subscription, .groupScheduledExpense]
         let all: [DraftSourceType] = [.voice, .receiptPhoto, .screenshotList, .screenshotSingle, .emailAlert,
                                       .scheduledPayment, .subscription, .applePay, .automation, .siri,
-                                      .groupExpense, .groupSettlement, .manual, .groupScheduledExpense]
+                                      .groupExpense, .groupSettlement, .manual, .groupScheduledExpense, .aiConnector]
         for source in all {
             #expect(ScheduledDraftOccurrenceLogic.holdsAnOccurrence(source) == holding.contains(source), "\(source)")
         }

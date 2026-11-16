@@ -195,7 +195,7 @@ export async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, pr
 }
 
 /** Solo se avisa cuando ni Claude ni la app dieron la zona y se ha tenido que suponer. */
-function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
+export function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
   return zone.assumed
     ? [`No se indicó zona horaria: se usa ${zone.tz} para decidir qué día es hoy y dónde empieza cada periodo. Si el usuario está en otra, las cifras del borde del periodo pueden cambiar.`]
     : [];

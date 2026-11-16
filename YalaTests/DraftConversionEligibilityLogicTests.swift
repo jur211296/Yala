@@ -14,15 +14,15 @@ import Testing
 @Suite("Draft Conversion Eligibility")
 struct DraftConversionEligibilityLogicTests {
 
-    /// Los 14 cases del enum (sin CaseIterable): sirve para el barrido exhaustivo.
+    /// Los 15 cases del enum (sin CaseIterable): sirve para el barrido exhaustivo.
     private static let allSources: [DraftSourceType] = [
         .voice, .receiptPhoto, .screenshotList, .screenshotSingle, .emailAlert,
         .scheduledPayment, .subscription, .applePay, .automation, .siri,
-        .groupExpense, .groupSettlement, .manual, .groupScheduledExpense
+        .groupExpense, .groupSettlement, .manual, .groupScheduledExpense, .aiConnector
     ]
 
-    @Test func enumHasFourteenCases() {
-        #expect(Self.allSources.count == 14)
+    @Test func enumHasFifteenCases() {
+        #expect(Self.allSources.count == 15)
     }
 
     @Test func allowlistSources_offerButton_whenConditionsMet() {
@@ -79,7 +79,7 @@ struct DraftConversionEligibilityLogicTests {
         ))
     }
 
-    /// Barrido de los 14: solo el allowlist ofrece (con el resto de gates satisfechos).
+    /// Barrido de los 15: solo el allowlist ofrece (con el resto de gates satisfechos).
     @Test func fullSweep_onlyAllowlistOffers() {
         for source in Self.allSources {
             let expected = DraftConversionEligibilityLogic.convertibleSources.contains(source)

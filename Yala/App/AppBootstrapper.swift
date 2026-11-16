@@ -1947,6 +1947,15 @@ final class AppBootstrapper {
                        InboundCaptureDrain.drain(context: ctx) > 0 {
                         bootstrapper.sessionState.incrementDataVersion()
                     }
+                    // La cola común de borradores (correo, web y lo que apuntó la IA de la persona) que no se recogió al
+                    // abrir porque el import seguía activo.
+                    if let ctx = bootstrapper.remoteChangeModelContext {
+                        Task { @MainActor in
+                            if await BankEmailDraftService.syncIfDeferredByImport(context: ctx) > 0 {
+                                bootstrapper.sessionState.incrementDataVersion()
+                            }
+                        }
+                    }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif
@@ -2583,6 +2592,7 @@ final class AppBootstrapper {
         // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
         // Lo apuntado en Yala web llega por la misma cola: antes, se pregunta a la web si hay sesiones abiertas (lote 1).
+        // Y lo que apuntó la IA de la persona por el conector también: sin correo ni web, pregunta cada 2 minutos.
         Task { @MainActor in
             let webConnected = await ConnectedBrowsersPresence.refreshIfDue(client: ConnectedBrowsersClient())
             if await BankEmailDraftService.syncIfNeeded(context: context, webConnected: webConnected) > 0 {

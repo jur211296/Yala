@@ -395,6 +395,8 @@ struct InboxDraftRowView: View {
             return theme.secondaryText       // neutro — draft convertido (FU-02 cleanup)
         case .groupScheduledExpense:
             return Color.hotPink             // brand pink — gasto de grupo recurrente
+        case .aiConnector:
+            return theme.accent              // tema — lo apuntó la IA de la persona
         }
     }
 

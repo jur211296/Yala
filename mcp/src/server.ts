@@ -10,6 +10,17 @@ import type { Env } from "./env";
 import { InvalidInputError } from "./logic/dates";
 import { planAllows, TOOLS, type ToolDef } from "./tools";
 import { audit } from "./audit";
+import {
+  clientLabelFromRedirects,
+  enqueueRejectedMessage,
+  EnqueueRejectedError,
+  runWriteTool,
+  WRITE_TOOL_DESCRIPTION,
+  WRITE_TOOL_INPUT,
+  WRITE_TOOL_NAME,
+  WRITE_TOOL_TITLE,
+  type ConnectorDraftsBinding,
+} from "./writeTool";
 
 /** Lo que una petición a /mcp sabe de quién llama. */
 export interface McpSession {
@@ -21,6 +32,8 @@ export interface McpSession {
   upstreamToken: string;
   /** Caducidad del token de Claude, en segundos Unix. */
   expiresAt: number;
+  /** La persona aprobó un permiso que decía que la IA podrá apuntar borradores (`GrantProps.drafts`). */
+  canDraft?: boolean;
 }
 
 export const SERVER_INFO = { name: "yala", version: "0.0.1" };
@@ -29,7 +42,8 @@ export function buildServer(env: Env, session: McpSession, deps: { fetcher?: Fet
   const server = new McpServer(SERVER_INFO, {
     capabilities: { tools: {} },
     instructions:
-      "Yala es una app de finanzas personales. Estas herramientas leen los datos del usuario en la nube de Yala y no pueden modificarlos. " +
+      "Yala es una app de finanzas personales. Estas herramientas leen los datos del usuario en la nube de Yala. " +
+      "La única que escribe, apuntar_movimiento, deja un borrador en la Bandeja que el usuario confirma en la app; ninguna modifica ni borra datos. " +
       "Los importes ya vienen calculados con las reglas de la app; el campo «avisos» dice cuándo una cifra es aproximada.",
   });
   const reader = new YalaReader(env, session.upstreamToken, deps.fetcher);
@@ -46,7 +60,72 @@ export function buildServer(env: Env, session: McpSession, deps: { fetcher?: Fet
       async (args: Record<string, unknown>) => runTool(def, env, session, reader, args, deps.now),
     );
   }
+  // Hacen falta las dos cosas: la cola enlazada y un permiso que lo dijera. Una conexión aprobada como solo lectura no
+  // gana escritura por un despliegue.
+  const queue = env.CONNECTOR_DRAFTS;
+  if (queue && session.canDraft) registerWriteTool(server, env, session, reader, queue, deps.now);
   return server;
+}
+
+/** La IA conectada, por la vuelta que registró su cliente en este Worker. Si no se puede saber, `null`. */
+async function clientLabel(env: Env, clientId: string): Promise<string | null> {
+  try {
+    const client = await env.OAUTH_PROVIDER?.lookupClient(clientId);
+    return client ? clientLabelFromRedirects(client.redirectUris ?? []) : null;
+  } catch {
+    return null;
+  }
+}
+
+function registerWriteTool(
+  server: McpServer,
+  env: Env,
+  session: McpSession,
+  reader: YalaReader,
+  queue: ConnectorDraftsBinding,
+  now?: () => Date,
+): void {
+  server.registerTool(
+    WRITE_TOOL_NAME,
+    {
+      title: WRITE_TOOL_TITLE,
+      description: WRITE_TOOL_DESCRIPTION,
+      inputSchema: WRITE_TOOL_INPUT,
+      // Crea un borrador nuevo en cada llamada (no es idempotente) y no destruye nada: no edita ni borra.
+      annotations: { title: WRITE_TOOL_TITLE, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    async (args: Record<string, unknown>) => {
+      const started = Date.now();
+      try {
+        const result = await runWriteTool(
+          { reader, env, now: now ? now() : new Date() },
+          { queue, sub: session.sub, clientLabel: () => clientLabel(env, session.clientId) },
+          args ?? {},
+        );
+        audit({ tool: WRITE_TOOL_NAME, session, ms: Date.now() - started, outcome: "ok" });
+        return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+      } catch (err) {
+        if (err instanceof InvalidInputError) {
+          audit({ tool: WRITE_TOOL_NAME, session, ms: Date.now() - started, outcome: "input" });
+          return errorResult(err.message);
+        }
+        if (err instanceof EnqueueRejectedError) {
+          audit({ tool: WRITE_TOOL_NAME, session, ms: Date.now() - started, outcome: `cola_${err.reason}` });
+          return errorResult(enqueueRejectedMessage(err.reason));
+        }
+        if (err instanceof UpstreamError) {
+          audit({ tool: WRITE_TOOL_NAME, session, ms: Date.now() - started, outcome: `upstream_${err.status}` });
+          return errorResult(
+            err.status === 401 || err.status === 403
+              ? "La sesión con Yala ya no es válida. Vuelve a conectar Yala."
+              : "La nube de Yala no respondió. Prueba de nuevo en un momento.",
+          );
+        }
+        audit({ tool: WRITE_TOOL_NAME, session, ms: Date.now() - started, outcome: "error" });
+        return errorResult("No se pudo dejar el movimiento en Yala. Prueba de nuevo en un momento.");
+      }
+    },
+  );
 }
 
 async function runTool(

@@ -154,7 +154,7 @@
       "classification": "manual",
       "coverage": "2026-10-21 (auditoría UX 2.2 · lote 15, L15-8/9/10): notificación «Pago de … por revisar · Tócalo para aprobarlo» en la moneda del borrador (`ApplePayCurrencyHint`, escrita por la app con la regla de `ApplePayDraftService`); guía con un texto para iOS 26 y 27 y capturas de iOS 27 (`tutorial-applePay-stepN`); sin «Listo» hasta el último paso y avance guardado. unit:YalaTests/UXAudit22Lote15DecisionsTests,ApplePayCurrencyHintTests. xcuitest:YalaUITests/StepGuideUITests. Notificación real: device-QA (el simulador no ejecuta la automatización de Wallet). | unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual + unit:YalaTests/ApplePayDraftServiceTests (processPending: divisa/cuenta, drop cero, MerchantMemory, consume-after-save, idempotencia — App Group e quiescencia inyectables) (TestFlight 2.0.5 b2 2026-07-11: patrón de cola verificado en device por el owner — warm/cold/acumulados, gasto se crea al abrir, sin pérdida ni duplicado) | 2026-10-08: un pago de Apple Pay descartado no vuelve en el pase siguiente; dos idénticos siguen siendo dos. unit:YalaTests/InboxDismissCapturedDraftTests. || 2026-10-15 (lote 15): la guía nombra la acción por su título real y el campo «Cantidad» en los 16 idiomas — unit:YalaTests/ApplePayGuideNamesTests. | 2026-10-27 (encargo S11e): con la shell de solo grupos el intent no encola ni contesta finanzas; dice «Activa / Vuelve a Yala completo» (Apple Pay, por notificación con enlace a la vuelta). unit:YalaTests/GroupsOnlyIntentGateTests + UsageModeWiringTests; la voz y la notificación reales, device-QA.",
       "owner": "",
-      "lastVerified": "2026-10-27"
+      "lastVerified": "2026-11-05"
     },
     {
       "area": "atajo-banco",
@@ -3940,9 +3940,9 @@
         "F-MAIL-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BankEmailGuideUITests (seam -uitest-bank-email, sin red) + unit:YalaTests/BankEmailTests + gateway:test/mail.test.ts | 2026-11-04 (encargo S2 de 2.3, correo del banco por reenvío): Ajustes › «Correo del banco» con la dirección auto+<código>@yalainbox.com, el cupo de prueba y guías de Gmail, Outlook e iCloud Mail; el código de Gmail en su paso. unit:YalaTests/BankEmailTests (del aviso al borrador: signo, fecha, divisa, cuenta por banco o divisa, divisa del aviso sin cuenta; fila de Ajustes; cuándo pregunta; transporte con attest). gateway:test/mail.test.ts (cupo de 5, devolución, código de Gmail, rechazo de dirección ajena, techo diario, duplicados, ack por cuenta, tope de tokens). De punta a punta con un aviso real: espera al buzón (card de Jürgen). | 2026-11-14 (Yala web, lote 1): la misma cola trae lo apuntado en la web (`source: \"web\"`); la recogida corre también con sesiones web abiertas (`ConnectedBrowsersPresence`) y lo de la web entra con su cuenta y subcategoría por `shortcutID`, origen `.automation` y evidencia «Yala web». Unit: YalaTests/ConnectedBrowsers/WebDraftMaterializeTests y ConnectedBrowsersClientTests (gates).",
+      "coverage": "xcuitest:YalaUITests/BankEmailGuideUITests (seam -uitest-bank-email, sin red) + unit:YalaTests/BankEmailTests + gateway:test/mail.test.ts | 2026-11-04 (encargo S2 de 2.3, correo del banco por reenvío): Ajustes › «Correo del banco» con la dirección auto+<código>@yalainbox.com, el cupo de prueba y guías de Gmail, Outlook e iCloud Mail; el código de Gmail en su paso. unit:YalaTests/BankEmailTests (del aviso al borrador: signo, fecha, divisa, cuenta por banco o divisa, divisa del aviso sin cuenta; fila de Ajustes; cuándo pregunta; transporte con attest). gateway:test/mail.test.ts (cupo de 5, devolución, código de Gmail, rechazo de dirección ajena, techo diario, duplicados, ack por cuenta, tope de tokens). De punta a punta con un aviso real: espera al buzón (card de Jürgen). | 2026-11-14 (Yala web, lote 1): la misma cola trae lo apuntado en la web (`source: \"web\"`); la recogida corre también con sesiones web abiertas (`ConnectedBrowsersPresence`) y lo de la web entra con su cuenta y subcategoría por `shortcutID`, origen `.automation` y evidencia «Yala web». Unit: YalaTests/ConnectedBrowsers/WebDraftMaterializeTests y ConnectedBrowsersClientTests (gates). | 2026-11-16: la misma cola trae lo que apuntó la IA (source ai, área ai-connector-drafts): shouldSync gana aiPollDue (cada 2 min sin correo ni web) y la recogida que se saltó por el import se reintenta al asentarse (syncIfDeferredByImport).",
       "owner": "frank",
-      "lastVerified": "2026-11-14"
+      "lastVerified": "2026-11-16"
     },
     {
       "area": "insights-ant-expenses",
@@ -4197,6 +4197,19 @@
       "coverage": "xcuitest:YalaUITests/RecurrenteDesdeRegistroUITests + unit:YalaTests/RecurrenteDesdeRegistro/RecurrenteDesdeRegistroTests | 2026-11-15 (encargo «crear un recurrente a partir de un registro»): «Hacer recurrente» en el menú y el detalle del registro, «Aprobar y hacer recurrente» en la Bandeja y «Desde un registro» en Planificación › Pagos llegan al mismo editor prellenado; el registro queda como primer pago (scheduledPaymentID + lastPaidDate, la próxima fecha avanza sin dejar vencidos atrás) y no se crea otro gasto. Con un recurrente parecido (misma moneda y tipo, monto ±15 %, mismo comercio o, sin nombre, misma subcategoría) se ofrece «Vincular a …», que archiva el borrador pendiente del vencimiento cubierto. No se ofrece en registros de grupo, transferencias, ajustes ni ya vinculados.",
       "owner": "",
       "lastVerified": "2026-11-15"
+    },
+    {
+      "area": "ai-connector-drafts",
+      "codeGlobs": [
+        "Yala/App/Logic/AIConnectorDraftLogic.swift",
+        "gateway/src/connector/**",
+        "mcp/src/writeTool.ts"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/AIConnectorDraftTests + gateway:test/connector.test.ts + mcp:test/writeTool.test.ts + device-qa (ticket ai-connector-drafts-in-the-inbox) | 2026-11-16 (desbloqueo del PR, D9): lo apuntado entra en la cola COMÚN (mail_drafts, source ai) por la clase RPC ConnectorDrafts y la app lo recoge con el correo y la web (BankEmailDraftService, /mail/drafts); sin correo ni web pregunta cada 2 min. Se retiraron la cola connector_drafts, las rutas /connector/drafts y AIConnectorDraftService. Los unit fijan: la forma de la fila del gateway se decodifica entera, en la misma vuelta correo/web/IA salen con su origen, la IA abre la recogida sola y con 2 min de cadencia; el gateway, la forma de la fila, el techo de 100 contando solo source ai (mutante) y que el ack del iPhone no devuelve el cupo diario. | 2026-11-05 (encargo «Tu IA registra en Yala», 2.3): Claude/ChatGPT/Grok apuntan con apuntar_movimiento y la app lo recoge como borrador .aiConnector («Tu IA»). Manual porque el camino entero cruza la IA, dos Workers y la red: sin seam de XCUITest. Los unit fijan: el almuerzo resuelto sale listo para guardar de un toque (InboxSaveReadyLogic.ready), cuenta en otra divisa o subcategoría del otro lado no se ponen. Device-QA en staging cuando Dan despliegue (guion en el ticket).",
+      "owner": "frank",
+      "lastVerified": "2026-11-16"
     }
   ]
 }

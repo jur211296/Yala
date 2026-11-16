@@ -7,6 +7,9 @@
 //    - `GET  /mail/drafts`      → los movimientos que el gateway leyó de los avisos reenviados.
 //    - `POST /mail/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
 //
+//  La cola es COMÚN (decisión D9 del plan de Yala web): por `/mail/drafts` llega también lo apuntado en Yala web
+//  (`source: "web"`) y lo que apuntó la IA de la persona por el conector (`source: "ai"`, `apuntar_movimiento`).
+//
 //  Las tres rutas pasan por `requireUserAndAttest` (`gateway/src/mail/routes.ts`, que reusa la guard de
 //  `groups/routes.ts`): producción pasa `AttestSessionProvider.live`; el default `{ nil }` es solo para tests
 //  (`AttestWiringTests` cuenta la construcción). Sin logging de datos: logs bajo `#if DEBUG`.
@@ -56,7 +59,7 @@ struct BankEmailAddressInfo: Decodable, Equatable, Sendable {
 }
 
 /// Un movimiento leído de un aviso reenviado (`GET /mail/drafts`).
-struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
+nonisolated struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     let id: String
     let receivedAtMs: Double
     let kind: String?
@@ -71,13 +74,20 @@ struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     var source: String? = nil
     var accountRef: String? = nil
     var subcategoryRef: String? = nil
+    /// Tu IA registra en Yala (2.3): `source: "ai"` en lo que apuntó la IA por el conector (`AIConnectorDraftLogic`). Trae
+    /// además el nombre de la cuenta y de la subcategoría (por si el id aún no casa aquí) y qué IA lo apuntó («Claude»).
+    var accountName: String? = nil
+    var subcategoryName: String? = nil
+    var client: String? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, amount, currency, merchant, date, bank, source
+        case id, kind, amount, currency, merchant, date, bank, source, client
         case receivedAtMs = "received_at_ms"
         case accountLast4 = "account_last4"
         case accountRef = "account_ref"
         case subcategoryRef = "subcategory_ref"
+        case accountName = "account_name"
+        case subcategoryName = "subcategory_name"
     }
 }
 
@@ -117,6 +127,7 @@ final class BankEmailClient {
         guard !ids.isEmpty else { return }
         _ = try await send(method: "POST", path: "mail/drafts/ack", body: ["ids": ids])
     }
+
 
     // MARK: - Red
 

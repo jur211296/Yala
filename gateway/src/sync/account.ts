@@ -11,6 +11,7 @@
  */
 import type { Context } from "hono";
 import type { Env } from "../env";
+import { deleteConnectorData } from "../connector/store";
 import { deleteMailData } from "../mail/store";
 import { errorBody, jsonError } from "../errors";
 import { accountQuotaBucket, forgetAccountQuota, gateRequest } from "../ratelimit";
@@ -278,6 +279,12 @@ export async function handleAccountDelete(c: Ctx): Promise<Response> {
     await deleteMailData(c.env, auth.sub);
   } catch (e) {
     console.log(`[account-delete] mail cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+  // La cola de lo que apuntó la IA de la persona por el conector (2.3): mismo trato.
+  try {
+    await deleteConnectorData(c.env, auth.sub);
+  } catch (e) {
+    console.log(`[account-delete] connector cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
   }
 
   // El contador de uso de la CUENTA (Durable Object `sub:<sub>`) tampoco lo alcanza el RPC. Mismo trato que el

@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (109 entradas)
+## Índice (110 entradas)
 
-> **No hace falta leer este fichero entero** — son 299 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 301 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
@@ -24,6 +24,7 @@
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-11-06` [IA en la nube: lee todo lo que haga falta, y el permiso lo dice](#2026-11-06-ia-en-la-nube-lee-todo-lo-que-haga-falta-y-el-permiso-lo-dice)
+- `2026-11-05` [Tu IA registra en Yala: el conector deja borradores en la cola común, nunca en la nube de la persona](#2026-11-05-tu-ia-registra-en-yala-el-conector-deja-borradores-en-la-cola-comn-nunca-en-la-nube-de-la-persona)
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
@@ -307,6 +308,40 @@ ventaja. En privado se mantiene lo mínimo. Y un permiso que cambia lo que prome
 envía en cada modo y, si manda algo que su permiso no decía, sube su versión (`AIConsentRevision`).
 
 **Estado:** Activa
+
+### [2026-11-05] Tu IA registra en Yala: el conector deja borradores en la cola común, nunca en la nube de la persona
+
+**Contexto.** La decisión del 21-oct pasó los conectores de IA a 2.3 con escritura: «la IA solo deja borradores en la
+Bandeja, por confirmar». El conector lee con una sesión de Supabase de solo lectura (`yala_mcp_reader`, ADR del
+2026-09-26), y escribir `inbox_drafts` en la nube obliga a estampar el HLC del protocolo de sync desde un Worker que
+habla con la IA.
+
+**Decisión.** La herramienta `apuntar_movimiento` del conector deja el movimiento en la cola COMÚN de borradores del
+gateway (`mail_drafts`, la del correo del banco y Yala web; decisión D9 del plan de Yala web) con `source: "ai"`, por una
+llamada interna entre Workers (service binding a la clase RPC `ConnectorDrafts`, sin ruta pública). La app la recoge con
+lo demás (`GET /mail/drafts`, con App Attest), crea el borrador local `.aiConnector` —que sincroniza como cualquier
+otro— y confirma (`ack`).
+
+**Razones.** La sesión del conector sigue sin poder escribir nada en la base; el conector solo puede encolar para el
+usuario que ya verificó; y la app es la única que escribe datos de la persona, con su protocolo de sync. Descartado:
+(1) un rol de Supabase con escritura en `inbox_drafts` (abre escritura en la base a un Worker expuesto a la IA y le
+exige el HLC); (2) darle al conector el binding del D1 del gateway, como tiene la web (alcanzaría entitlements y correo);
+(3) una cola y unas rutas propias (`connector_drafts`, `/connector/drafts`): fue la primera versión, y se retiró el
+16-nov sin desplegarse, al desbloquear el PR, por la D9.
+
+**Consecuencias.**
+- El conector despliega **después** del gateway (migración `0004_connector_quota` + la clase), en staging y en producción.
+- Lo apuntado llega a la Bandeja cuando la app se abre con la nube y sesión; con la app sin abrir espera 30 días (la
+  caducidad de la cola). Una app anterior a 2.3 no lo recoge, y un borrador `.aiConnector` que le llegue por sync lo
+  pinta como «Voz». Un build de 2.3 anterior a este cambio (la 2.3 (1) de TestFlight) con el correo o la web puestos
+  lo recogería como si viniera del correo.
+- La app no sabe si hay una IA conectada: sin correo ni web, pregunta a la cola como mucho cada 2 minutos (la cadencia
+  con que pregunta a la web por sus sesiones).
+- Techos por cuenta: 50 al día (`connector_quota`, aparte porque el `ack` vacía la cola) y 100 de la IA esperando. Gratis.
+- Quien añada otra herramienta que escriba en el conector va por la misma cola, nunca por Supabase.
+
+**Estado:** Activa.
+
 
 ### [2026-11-05] Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits
 

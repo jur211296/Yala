@@ -9,7 +9,7 @@ staging. No se ha enviado al directorio de Anthropic.
 
 ## Qué trae
 
-- `.mcp.json`: el conector MCP remoto de Yala (seis herramientas de solo lectura).
+- `.mcp.json`: el conector MCP remoto de Yala (seis herramientas de lectura y `apuntar_movimiento`, que solo deja borradores en la Bandeja).
 - `skills/gasto-del-mes`: cuánto has gastado y en qué.
 - `skills/presupuesto`: qué presupuestos van en riesgo y cuánto te queda.
 - `skills/recurrentes-a-revisar`: tu gasto fijo mensual y anual, y qué pagos conviene revisar.

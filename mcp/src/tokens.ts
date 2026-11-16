@@ -49,6 +49,11 @@ export interface GrantProps {
   /** Solo entre `completeAuthorization` y el canje del código: luego pasa al access token y sale del grant. */
   access?: string;
   accessExp?: number;
+  /**
+   * `true` si la pantalla de permiso dijo que la IA podrá apuntar borradores en la Bandeja (`apuntar_movimiento`). Una
+   * conexión aprobada con el permiso de solo lectura no la gana después por un despliegue: tiene que volver a conectar.
+   */
+  drafts?: true;
 }
 
 export interface AccessProps {
@@ -57,6 +62,8 @@ export interface AccessProps {
   sid: string;
   access: string;
   accessExp: number;
+  /** Copia de `GrantProps.drafts`: lo que vio la persona al conectar. */
+  drafts?: true;
 }
 
 export function isAccessProps(p: unknown): p is AccessProps {
@@ -113,8 +120,9 @@ export function makeTokenExchangeCallback(env: Env, deps: TokenDeps) {
       if (!isGrantProps(p) || !p.access || typeof p.accessExp !== "number") revoke("Conexión incompleta");
       const ttl = grantTtlFor(p.authorizedAt, nowSec);
       if (ttl < MIN_TTL_SECONDS) revoke("La conexión caducó");
-      const access: AccessProps = { v: 1, sub: p.sub, sid: p.sid, access: p.access, accessExp: p.accessExp };
-      const grant: GrantProps = { v: 1, sub: p.sub, sid: p.sid, authorizedAt: p.authorizedAt, refresh: p.refresh };
+      const drafts = p.drafts === true ? ({ drafts: true } as const) : {};
+      const access: AccessProps = { v: 1, sub: p.sub, sid: p.sid, access: p.access, accessExp: p.accessExp, ...drafts };
+      const grant: GrantProps = { v: 1, sub: p.sub, sid: p.sid, authorizedAt: p.authorizedAt, refresh: p.refresh, ...drafts };
       return { accessTokenProps: access, newProps: grant, accessTokenTTL: accessTtlFor(p.accessExp, nowSec), refreshTokenTTL: ttl };
     }
 
@@ -152,8 +160,23 @@ export function makeTokenExchangeCallback(env: Env, deps: TokenDeps) {
         auditEvent("mcp_revocacion", { motivo: `token_${check.reason}`, cliente: opts.clientId, sub: p.sub });
         revoke("Yala no entregó un acceso de solo lectura");
       }
-      const access: AccessProps = { v: 1, sub: p.sub, sid: check.claims.sessionId, access: r.value.access, accessExp: check.claims.exp };
-      const grant: GrantProps = { v: 1, sub: p.sub, sid: check.claims.sessionId, authorizedAt: p.authorizedAt, refresh: r.value.refresh };
+      const drafts = p.drafts === true ? ({ drafts: true } as const) : {};
+      const access: AccessProps = {
+        v: 1,
+        sub: p.sub,
+        sid: check.claims.sessionId,
+        access: r.value.access,
+        accessExp: check.claims.exp,
+        ...drafts,
+      };
+      const grant: GrantProps = {
+        v: 1,
+        sub: p.sub,
+        sid: check.claims.sessionId,
+        authorizedAt: p.authorizedAt,
+        refresh: r.value.refresh,
+        ...drafts,
+      };
       return {
         accessTokenProps: access,
         newProps: grant,

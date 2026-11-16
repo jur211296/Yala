@@ -1755,6 +1755,7 @@
 "inbox.sourceScreenshot" = "Captura de ecrã";
 "inbox.sourceScreenshotList" = "Lista";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "A tua IA";
 "inbox.sourceSubscription" = "Subscrição";
 "inbox.sourceVoice" = "Voz";
 "inbox.subtitleAllDone" = "Caixa vazia, ótimo trabalho.";

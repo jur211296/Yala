@@ -46,16 +46,51 @@ import {
 /**
  * Vueltas a las que se acepta devolver el código de autorización. La lista es por URL EXACTA, no por dominio: con
  * registro dinámico cualquiera registra un cliente que vuelve a `https://claude.ai/algo-suyo`, y basta un open
- * redirect en ese dominio para robar el código. Se acepta solo lo que la propia documentación de Claude declara
- * ([auth]): el callback fijo de las apps (claude.ai / claude.com, que cubre Desktop y móvil) y el loopback de Claude
- * Code, con puerto variable pero ruta `/callback`. Se comprueba al registrar el cliente y otra vez al autorizar.
+ * redirect en ese dominio para robar el código. Se comprueba al registrar el cliente y otra vez al autorizar. Entra:
  *
- * [auth]: https://claude.com/docs/connectors/building/authentication
+ * - **Claude** ([claude]): el callback fijo de las apps (claude.ai / claude.com, que cubre Desktop y móvil) y el
+ *   loopback de Claude Code, con puerto variable pero ruta `/callback`.
+ * - **ChatGPT** ([chatgpt]): la vuelta estable `https://chatgpt.com/connector_platform_oauth_redirect` —la que usa con
+ *   un servidor que cumple RFC 9207, como este (la librería manda `iss`)— y la de id de callback,
+ *   `https://chatgpt.com/connector/oauth/{callback_id}`, que OpenAI documenta para el resto. Solo esa ruta y un id sin
+ *   barras ni query.
+ * - **Las de `EXTRA_REDIRECT_URIS`**, exactas y https: para la IA que no publica la suya (Grok). Una vuelta rechazada
+ *   se anota en el log (`mcp_autorizacion`, motivo `vuelta_no_permitida`, con origen y ruta) para poder fijarla.
+ *
+ * [claude]: https://claude.com/docs/connectors/building/authentication
+ * [chatgpt]: https://developers.openai.com/apps-sdk/build/auth
  */
-const HOSTED_CALLBACKS = new Set(["https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback"]);
+const HOSTED_CALLBACKS = new Set([
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback",
+  "https://chatgpt.com/connector_platform_oauth_redirect",
+]);
+const CHATGPT_CALLBACK_ID_RE = /^https:\/\/chatgpt\.com\/connector\/oauth\/[A-Za-z0-9_-]{1,128}$/;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
-export function isAllowedRedirect(uri: string | undefined): boolean {
+/**
+ * Las vueltas extra de la configuración: solo las que son URLs https canónicas, sin credenciales ni fragmento. Una
+ * entrada mal escrita no abre nada y se avisa en el log; NO es un problema de configuración, porque eso dejaría el
+ * Worker entero respondiendo 503 (Claude incluido) por una errata en la vuelta de otra IA.
+ */
+export function extraRedirects(raw: string | undefined): Set<string> {
+  const out = new Set<string>();
+  for (const item of (raw ?? "").split(/[\s,]+/)) {
+    if (!item) continue;
+    let ok = false;
+    try {
+      const u = new URL(item);
+      ok = u.protocol === "https:" && u.href === item && !u.username && !u.password && !u.hash;
+    } catch {
+      ok = false;
+    }
+    if (ok) out.add(item);
+    else auditEvent("mcp_autorizacion", { motivo: "vuelta_extra_mal_escrita", resultado: redirectForLog(item) });
+  }
+  return out;
+}
+
+export function isAllowedRedirect(uri: string | undefined, extra: ReadonlySet<string> = new Set()): boolean {
   if (!uri) return false;
   let u: URL;
   try {
@@ -69,14 +104,34 @@ export function isAllowedRedirect(uri: string | undefined): boolean {
     // Claude Code: loopback en cualquier puerto, ruta /callback, sin query. RFC 8252.
     return u.protocol === "http:" && u.pathname === "/callback" && u.search === "";
   }
-  return HOSTED_CALLBACKS.has(uri);
+  return HOSTED_CALLBACKS.has(uri) || CHATGPT_CALLBACK_ID_RE.test(uri) || extra.has(uri);
+}
+
+/**
+ * La vuelta, sin query: lo que se puede anotar en el log para fijarla en `EXTRA_REDIRECT_URIS`. Si traía query se dice
+ * («+query»): la lista compara la URL entera, así que copiar solo origen y ruta no casaría y hay que pedir la exacta.
+ */
+function redirectForLog(uri: unknown): string {
+  if (typeof uri !== "string") return "(no es texto)";
+  try {
+    const u = new URL(uri);
+    return `${u.protocol}//${u.host}${u.pathname}${u.search ? " +query" : ""}`.slice(0, 200);
+  } catch {
+    return "(no es una URL)";
+  }
 }
 
 /** Política del registro dinámico: todas las vueltas tienen que estar en la lista. */
-export function registrationPolicy({ clientMetadata }: { clientMetadata: Record<string, unknown> }) {
+export function registrationPolicy({ clientMetadata }: { clientMetadata: Record<string, unknown> }, env?: Pick<Env, "EXTRA_REDIRECT_URIS">) {
   const uris = clientMetadata["redirect_uris"];
-  if (!Array.isArray(uris) || uris.length === 0 || !uris.every((u) => typeof u === "string" && isAllowedRedirect(u))) {
-    return { code: "invalid_redirect_uri", description: "Solo Claude puede conectarse a Yala", status: 400 };
+  const extra = extraRedirects(env?.EXTRA_REDIRECT_URIS);
+  if (!Array.isArray(uris) || uris.length === 0 || !uris.every((u) => typeof u === "string" && isAllowedRedirect(u, extra))) {
+    const rejected = Array.isArray(uris) ? uris.filter((u) => !(typeof u === "string" && isAllowedRedirect(u, extra))) : [];
+    auditEvent("mcp_autorizacion", {
+      motivo: "vuelta_no_permitida",
+      resultado: rejected.slice(0, 3).map(redirectForLog).join(" ") || "(sin redirect_uris)",
+    });
+    return { code: "invalid_redirect_uri", description: "Esta aplicación no está autorizada a conectarse con Yala", status: 400 };
   }
   return undefined;
 }
@@ -137,19 +192,19 @@ async function showConsent(request: Request, env: Env): Promise<Response> {
   } catch (err) {
     if (!(err instanceof AuthorizationError)) throw err;
     // Con `redirectUri`, la librería ya validó cliente y vuelta; aun así, solo se redirige a la lista.
-    if (err.redirectUri && isAllowedRedirect(err.redirectUri)) return errorRedirect(err.redirectUri, err.code, err.state, err.issuer);
-    return errorPage("La solicitud de conexión no es válida. Vuelve a conectar desde Claude.");
+    if (err.redirectUri && isAllowedRedirect(err.redirectUri, extraRedirects(env.EXTRA_REDIRECT_URIS))) return errorRedirect(err.redirectUri, err.code, err.state, err.issuer);
+    return errorPage("La solicitud de conexión no es válida. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
   }
-  if (!isAllowedRedirect(req.redirectUri)) {
+  if (!isAllowedRedirect(req.redirectUri, extraRedirects(env.EXTRA_REDIRECT_URIS))) {
     return errorPage("Esta aplicación no está autorizada a conectarse con Yala.", 403);
   }
   // PKCE obligatorio para todos. La librería ya lo exige a los clientes públicos; un cliente confidencial que se
   // registrara por DCR podría saltárselo, y Claude siempre manda PKCE S256, así que esto solo frena a otros.
   if (!req.codeChallenge) return errorRedirect(req.redirectUri, "invalid_request", req.state, req.issuer);
   const client = await oauth.lookupClient(req.clientId);
-  if (!client) return errorPage("La solicitud de conexión no es válida. Vuelve a conectar desde Claude.");
+  if (!client) return errorPage("La solicitud de conexión no es válida. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
   const consent = await oauth.beginConsent(req);
-  return consentPage(client, req, consent.handle, consent.headers, env.ENVIRONMENT === "staging");
+  return consentPage(client, req, consent.handle, consent.headers, env.ENVIRONMENT === "staging", !!env.CONNECTOR_DRAFTS);
 }
 
 // ─── 2 · POST /authorize ───────────────────────────────────────────────────────────────────────────────────────
@@ -157,7 +212,7 @@ async function showConsent(request: Request, env: Env): Promise<Response> {
 async function decideConsent(request: Request, env: Env): Promise<Response> {
   const oauth = helpers(env);
   const form = await readForm(request);
-  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
   const handle = String(form.get("handle") ?? "");
   const decision = String(form.get("decision") ?? "");
   try {
@@ -175,7 +230,7 @@ async function decideConsent(request: Request, env: Env): Promise<Response> {
     return new Response(null, { status: 302, headers: upstream.headers });
   } catch (err) {
     if (err instanceof AuthorizationError) {
-      return errorPage("Esta página caducó, ya se usó o se abrió en otro navegador. Vuelve a conectar desde Claude.");
+      return errorPage("Esta página caducó, ya se usó o se abrió en otro navegador. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
     }
     throw err;
   }
@@ -190,19 +245,19 @@ function isStaging(env: Env): boolean {
 function showLogin(request: Request, env: Env): Response {
   const authorizationId = new URL(request.url).searchParams.get("authorization_id") ?? "";
   if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
-  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde tu IA (Claude, ChatGPT…).");
   return loginPage(authorizationId, { staging: isStaging(env) });
 }
 
 async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps): Promise<Response> {
   const form = await readForm(request);
-  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
   const authorizationId = String(form.get("authorization_id") ?? "");
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
   // Un POST de otro sitio no trae la cookie (SameSite=Lax): esto también frena el login forzado.
-  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde tu IA (Claude, ChatGPT…).");
   if (!isStaging(env)) return errorPage("El inicio de sesión con contraseña solo existe en staging.", 403);
   if (!email || !password) return loginPage(authorizationId, { staging: true, message: "Escribe tu email y tu contraseña." });
 
@@ -218,7 +273,7 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
 
 /** Lo que ve quien entra con una cuenta que no usa la nube de Yala. */
 export const NO_CLOUD_MESSAGE =
-  "Esta cuenta todavía no usa la nube de Yala, así que Claude no tendría nada que leer. En Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube» con esta misma cuenta, y luego vuelve a conectar. Si tu nube está en tu otra cuenta, elige esa.";
+  "Esta cuenta todavía no usa la nube de Yala, así que tu IA no tendría nada que leer. En Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube» con esta misma cuenta, y luego vuelve a conectar. Si tu nube está en tu otra cuenta, elige esa.";
 
 /**
  * Con la sesión web recién abierta (contraseña o Apple/Google), comprueba que la cuenta usa la nube, aprueba la
@@ -241,7 +296,7 @@ async function approveWithWebSession(
       return res;
     }
     const got = await getAuthorization(env, deps.fetcher, session, authorizationId);
-    if (!got.ok) return errorPage("La solicitud de autorización caducó o no existe. Vuelve a conectar desde Claude.");
+    if (!got.ok) return errorPage("La solicitud de autorización caducó o no existe. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
     let redirectUrl: string | null;
     if (!got.details.authorization_id && got.details.redirect_url) {
       // Ya había permiso para el cliente del Worker: Supabase aprueba solo. La vuelta se valida abajo.
@@ -249,12 +304,12 @@ async function approveWithWebSession(
     } else {
       // Solo se aprueba la autorización que pidió ESTE Worker, hacia su propia vuelta.
       if (got.details.client?.id !== env.SUPABASE_OAUTH_CLIENT_ID || got.details.redirect_uri !== upstreamCallbackUrl(env)) {
-        return errorPage("Esta solicitud no viene de la conexión de Yala con Claude.", 403);
+        return errorPage("Esta solicitud no viene de la conexión de Yala con tu IA.", 403);
       }
       redirectUrl = await approveAuthorization(env, deps.fetcher, session, authorizationId);
     }
     const target = callbackTarget(env, redirectUrl);
-    if (!target) return errorPage("Yala no aceptó la conexión. Vuelve a conectar desde Claude.", 502);
+    if (!target) return errorPage("Yala no aceptó la conexión. Vuelve a conectar desde tu IA (Claude, ChatGPT…).", 502);
     const headers = new Headers(extraHeaders);
     headers.set("Location", target);
     headers.set("Cache-Control", "no-store");
@@ -308,12 +363,12 @@ function socialCookie(value: string, maxAge: number): string {
  */
 async function startSocialLogin(request: Request, env: Env): Promise<Response> {
   const form = await readForm(request);
-  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
   const authorizationId = String(form.get("authorization_id") ?? "");
   const provider = String(form.get("provider") ?? "");
   if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
   if (provider !== "apple" && provider !== "google") return errorPage("Elige Apple o Google para iniciar sesión.");
-  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde tu IA (Claude, ChatGPT…).");
 
   const nonce = b64url(crypto.getRandomValues(new Uint8Array(32)));
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
@@ -344,7 +399,7 @@ async function finishSocialLogin(request: Request, env: Env, deps: AuthorizeDeps
   const clear = new Headers({ "Set-Cookie": socialCookie("", 0) });
   const nonce = readCookie(request, SOCIAL_COOKIE);
   if (!nonce || !NONCE_RE.test(nonce)) {
-    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde Claude.", 400, clear);
+    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde tu IA (Claude, ChatGPT…).", 400, clear);
   }
   const key = SOCIAL_KEY_PREFIX + nonce;
   const raw = await env.OAUTH_KV.get(key);
@@ -352,9 +407,9 @@ async function finishSocialLogin(request: Request, env: Env, deps: AuthorizeDeps
   if (raw) await env.OAUTH_KV.delete(key);
   const pending = parsePending(raw);
   if (!pending) {
-    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde Claude.", 400, clear);
+    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde tu IA (Claude, ChatGPT…).", 400, clear);
   }
-  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.", 400, clear);
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde tu IA (Claude, ChatGPT…).", 400, clear);
 
   const retry = (message: string, status: number) => {
     const res = loginPage(pending.authorizationId, { staging: isStaging(env), message, status });
@@ -413,7 +468,7 @@ async function finishAuthorization(request: Request, env: Env, deps: AuthorizeDe
     ({ request: original, data, headers } = await oauth.finishUpstream<{ verifier?: string }>(request));
   } catch (err) {
     if (err instanceof AuthorizationError) {
-      return errorPage("Esta conexión caducó o se abrió en otro navegador. Vuelve a conectar desde Claude.");
+      return errorPage("Esta conexión caducó o se abrió en otro navegador. Vuelve a conectar desde tu IA (Claude, ChatGPT…).");
     }
     throw err;
   }
@@ -447,6 +502,8 @@ async function finishAuthorization(request: Request, env: Env, deps: AuthorizeDe
     refresh: exchanged.value.refresh,
     access: exchanged.value.access,
     accessExp: check.claims.exp,
+    // La pantalla de permiso lo dijo si la cola estaba enlazada (`consentPage(…, canDraft)`): el mismo `env`.
+    ...(env.CONNECTOR_DRAFTS ? { drafts: true as const } : {}),
   };
   let redirectTo: string;
   try {

@@ -144,7 +144,7 @@ async function authorize(meta: AsMetadata, clientId: string, user: { email: stri
   const consent = await jar.fetch(auth.toString());
   const html = await consent.text();
   expect(consent.status, html.slice(0, 300)).toBe(200);
-  expect(html).toContain("quiere leer tus datos de Yala");
+  expect(html).toMatch(/quiere (leer|usar) tus datos de Yala/);
   expect(html).toContain("ni tus finanzas ni los datos de tu cuenta");
   const handle = /name="handle" value="([^"]+)"/.exec(html)?.[1];
   expect(handle).toBeTruthy();
