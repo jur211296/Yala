@@ -144,6 +144,9 @@ struct ChatAttachmentsView: View {
                 }
                 saveAllButton
             }
+        case .guided:
+            // Lo pinta `ChatMessageBubble` a todo lo ancho (`ChatGuidedFlowCard`).
+            EmptyView()
         case .ambiguous(_, let choices):
             HStack(spacing: DS.Spacing.sm) {
                 ForEach(choices) { chip in

@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "testing, transactions"
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-16
 source: "lote T3 de XCUITest intermitentes en iPhone (encargo 2026-11-05-lote-t3-xcuitest-intermitentes-iphone)"
 ---
 
@@ -25,6 +25,12 @@ source: "lote T3 de XCUITest intermitentes en iPhone (encargo 2026-11-05-lote-t3
   llegó la consulta, el caso falló y XCUITest **se colgó casi 2 h** en «Requesting snapshot of accessibility hierarchy»
   hasta que se mató la corrida. En ese tiempo el simulador acumuló 16 GB de adjuntos en el `tmp/Attachments` de su daemon
   de tests.
+
+- **iPhone 17 Pro, iOS 27.2, 2026-11-16 (gate de los guiados de Yala IA)**: `EdgeCasesUITests.test_extremeMinimumAmountSaves`
+  y `Bienvenida23PasosUITests.test_step2_manualWithGuide_thenCleanupAndInboxGuide` cayeron 3 de 3 con «…_chip no dejó de
+  moverse (¿el teclado sigue entrando o saliendo?)», también **con el código de la base sin los guiados** (worktree
+  limpio desde `git archive`) y con `HardwareKeyboardLastSeen = 0`, tras reiniciar el simulador. Ninguno de los dos toca
+  el chat. El resto de la tanda (28 casos) pasó en la misma corrida, con el centinela en 0.
 
 ## Por qué importa
 

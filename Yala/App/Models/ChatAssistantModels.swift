@@ -301,14 +301,17 @@ nonisolated struct QuickReply: Codable, Identifiable, Equatable {
 enum ChatAttachment: Codable, Equatable {
     case drafts([ChatTransactionDraft])
     case ambiguous(canned: String, choices: [QuickReply])
+    /// Un guiado de Yala IA (crear un presupuesto, un pago planificado…) con sus tarjetas y su estado.
+    case guided(ChatGuidedFlowState)
 
     enum CodingKeys: String, CodingKey {
-        case kind, drafts, canned, choices
+        case kind, drafts, canned, choices, guided
     }
 
     enum Kind: String, Codable {
         case drafts
         case ambiguous
+        case guided
     }
 
     func encode(to encoder: Encoder) throws {
@@ -321,6 +324,9 @@ enum ChatAttachment: Codable, Equatable {
             try c.encode(Kind.ambiguous, forKey: .kind)
             try c.encode(canned, forKey: .canned)
             try c.encode(choices, forKey: .choices)
+        case .guided(let state):
+            try c.encode(Kind.guided, forKey: .kind)
+            try c.encode(state, forKey: .guided)
         }
     }
 
@@ -335,6 +341,8 @@ enum ChatAttachment: Codable, Equatable {
             let canned = try c.decode(String.self, forKey: .canned)
             let choices = try c.decode([QuickReply].self, forKey: .choices)
             self = .ambiguous(canned: canned, choices: choices)
+        case .guided:
+            self = .guided(try c.decode(ChatGuidedFlowState.self, forKey: .guided))
         }
     }
 }

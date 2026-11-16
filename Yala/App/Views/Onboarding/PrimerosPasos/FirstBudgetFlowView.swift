@@ -434,17 +434,9 @@ struct FirstBudgetFlowView: View {
     }
 
     private func spent(subcategoryIDs: [UUID], period: BudgetPeriodType) -> Double {
-        // Sin nombre a propósito: un presupuesto sin filtros CON nombre dispara el canario `budgetFiltersAppearEmpty`.
-        let probe = Budget(
-            currencyCode: draft.currencyCode,
-            limitAmount: 1,
-            periodType: period.rawValue,
-            startDate: period == .unique ? draft.startDate : nil,
-            endDate: period == .unique ? draft.endDate : nil,
-            subcategoryIDs: CSVMirrorCodec.encode(subcategoryIDs)
-        )
-        let interval = BudgetPeriodInterval.current(for: probe, now: .now, calendar: .current)
-        return BudgetsViewModel.calculateSpending(budget: probe, transactions: transactions, interval: interval)
+        TutorialPlanningMath.budgetSpent(
+            subcategoryIDs: subcategoryIDs, period: period, currencyCode: draft.currencyCode,
+            transactions: transactions, startDate: draft.startDate, endDate: draft.endDate)
     }
 
     private func money(_ value: Double) -> String {
