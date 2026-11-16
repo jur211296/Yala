@@ -71,7 +71,7 @@ struct FluidezWiringTests {
 
     /// (fichero, cuántas cifras ruedan en él).
     static let rollingHeroes: [(path: String, count: Int)] = [
-        ("Yala/App/Views/Panel/HeroMonthView.swift", 2),
+        ("Yala/App/Views/Panel/HeroMonthView.swift", 3),
         ("Yala/App/Views/Groups/GroupBalanceHero.swift", 1),
         ("Yala/App/Views/Statistics/CategoriesTabView.swift", 1),
         ("Yala/App/Views/Statistics/TrendsTabView.swift", 1),

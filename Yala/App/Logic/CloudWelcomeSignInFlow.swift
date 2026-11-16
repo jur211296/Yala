@@ -440,6 +440,17 @@ nonisolated enum WelcomeAdoptCancel {
               adoptClaimExit == .cancelled else { return .keepPolling }
         return .back
     }
+
+    /// ¿Se suelta la sesión al volver tras una cancelación que aterrizó? (card xhbn, barrido final de 2.3.) Desde la vitrina
+    /// —el acceso único— sí, la abriera esta pantalla o no: «Cancelar la activación» es no entrar en esa cuenta, y en la
+    /// vitrina no hay sesión legítima que conservar (la misma regla que `leaveUnifiedAccess`). Medido en el iPhone 14 el
+    /// 16-nov: con la sesión de un intento anterior la marca del adopt no la reconoce (`AdoptSessionOwnership`, `owned=nil`),
+    /// la pantalla se cierra, el candado de Grupos se suelta y el canal baja los grupos de esa cuenta: el puente escribía
+    /// «Grupos PEN», sus categorías y el gasto del grupo en el teléfono, y la entrada siguiente acababa en Grupos. Desde la
+    /// puerta de Grupos no: esa sesión es la de los grupos de la persona y no se cierra nunca.
+    static func releasesSessionAfterCancel(isUnifiedAccess: Bool, hasSession: Bool) -> Bool {
+        isUnifiedAccess && hasSession
+    }
 }
 
 /// **Salir hacia atrás de un adopt que no dejó nada devuelve el teléfono a como estaba** (card 0f7h, ticket

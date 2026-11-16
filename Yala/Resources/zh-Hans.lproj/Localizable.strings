@@ -2848,7 +2848,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala 帮你记下来";
-"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务。数据在你的 Yala 账户中时，AI 还可以读取为准确、详细所需的你的所有数据。这些数据不会用于训练 AI。";
+"aiConsent.processingMessage" = "打字、说出来或选一张收据照片，Yala 就会记下这笔支出。为此，你输入的内容、音频或照片只会在当时发送给 AI 服务。数据在你的 Yala 账户中时，AI 还可以读取为准确、详细所需的你的所有数据。这些数据不会用于训练 AI。";
 "aiConsent.insightsTitle" = "AI 总结";
 "aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算、定期付款，以及你重复的小额消费的名称、次数和合计——发送给 AI 服务，不会发送你的完整记录历史。数据在你的 Yala 账户中时，AI 还可以读取为了准确所需的一切，例如每笔消费的日期和金额。这些数据不会用于训练 AI。";
 "aiConsent.accept" = "接受并启用";
@@ -3285,7 +3285,7 @@
 
 "contextualGuide.dismiss" = "明白了";
 "guide.panel.title" = "这是你的概览";
-"guide.panel.message" = "一眼看清你花了多少、还剩多少。点按“新记录”添加支出。";
+"guide.panel.message" = "一眼看清你今天的余额和可用的钱。点按“新记录”添加支出。";
 "guide.trends.title" = "你的钱怎么样？";
 "guide.trends.message" = "此图显示你的余额、收入或支出随时间的变化。如果线上升，说明这个数字增加了。";
 "guide.categories.title" = "你的钱花到哪去了?";
@@ -7472,6 +7472,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "卡片币种";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "最大的几笔支出";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "%@ 子账户";
 
@@ -9830,3 +9833,33 @@
 "rfr.choice.nextDue" = "下次扣款：%@";
 "rfr.notice.linked" = "已关联到“%@”";
 "rfr.notice.created" = "已创建定期付款 · 这条记录是第一次付款";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "今日可用的钱";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "余额和可用的钱是什么意思";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "余额和可用的钱";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "把你所有的账户加起来，包括信用卡。刷卡花了但还没还的钱会被减掉。";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "你可以用的钱。算法一样，只是不算信用卡。";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "举个例子";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "储蓄账户里有";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "刷卡花了";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "还清信用卡后，两个金额就一样了。";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "选择要计入的账户";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "信用卡默认是关闭的。你随时可以更改。";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "计入的账户";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "计入“今日可用的钱”";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "如果不是能用的钱（比如信用卡），就关掉它。";

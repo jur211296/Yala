@@ -2845,7 +2845,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala l’enregistre pour toi";
-"aiConsent.processingMessage" = "Dictez ou choisissez une photo du reçu, et Yala enregistre la dépense. Pour cela, l’audio ou la photo est envoyé à un service d’IA, uniquement à ce moment-là. Avec tes données dans ton compte Yala, l’IA peut aussi lire toutes tes données nécessaires pour être précise et détaillée. Il ne sert pas à entraîner l’IA.";
+"aiConsent.processingMessage" = "Écrivez, dictez ou choisissez une photo du reçu, et Yala enregistre la dépense. Pour cela, le texte, l’audio ou la photo est envoyé à un service d’IA, uniquement à ce moment-là. Avec tes données dans ton compte Yala, l’IA peut aussi lire toutes tes données nécessaires pour être précise et détaillée. Il ne sert pas à entraîner l’IA.";
 "aiConsent.insightsTitle" = "Résumé IA";
 "aiConsent.insightsMessage" = "Yala analyse tes finances et t’explique où tu en es. Pour cela, il envoie à un service d’IA un résumé — totaux et tendances par catégorie, budgets, paiements récurrents et les noms des petits achats que tu répètes, avec combien de fois et combien ils font —, pas ton historique complet d’enregistrements. Avec tes données dans ton compte Yala, il peut aussi lire tout ce qu’il faut pour être précis, comme chaque achat avec sa date et son montant. Il ne sert pas à entraîner l’IA.";
 "aiConsent.accept" = "Accepter et activer";
@@ -3275,7 +3275,7 @@
 
 "contextualGuide.dismiss" = "Compris";
 "guide.panel.title" = "Voici ton résumé";
-"guide.panel.message" = "Vois d'un coup d'œil combien tu as dépensé et combien il te reste. Touche Nouvel enregistrement pour ajouter une dépense.";
+"guide.panel.message" = "Vois d'un coup d'œil ton solde et ton argent d'aujourd'hui. Touche Nouvel enregistrement pour ajouter une dépense.";
 "guide.trends.title" = "Comment va ton argent ?";
 "guide.trends.message" = "Ce graphique suit ton solde, tes revenus ou tes dépenses au fil du temps. Si la ligne monte, ce chiffre a augmenté.";
 "guide.categories.title" = "Où va ton argent ?";
@@ -7461,6 +7461,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "Devise de la carte";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "Tes plus grosses dépenses";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "Ligne en %@";
 
@@ -8894,12 +8897,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld sur %2$lld : impossible d’en ajouter plus";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Tu as aujourd'hui";
+"panel.hero.haveToday" = "Ton solde aujourd'hui";
 "panel.hero.oweToday" = "Tu dois aujourd'hui";
 "panel.hero.leftNow" = "Il te reste";
 "panel.hero.leftPast" = "Il t'est resté";
 "panel.hero.leftInMonth" = "En %@, il t'est resté";
-"stats.hero.captionAccountsBalanceClosed" = "Solde à la clôture";
+"stats.hero.captionAccountsBalanceClosed" = "Ton solde à la clôture";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Pas encore de note : elle apparaît quand deux des trois parties ont des données.";
@@ -9819,3 +9822,33 @@
 "rfr.choice.nextDue" = "Prochain prélèvement : %@";
 "rfr.notice.linked" = "Associé à « %@ »";
 "rfr.notice.created" = "Récurrent créé · cette opération est son premier paiement";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Ton argent aujourd'hui";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "Ce que signifient ton solde et ton argent";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Ton solde et ton argent";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Additionne tous tes comptes, cartes comprises. Ce que tu as dépensé par carte et pas encore payé est déduit.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "L'argent que tu as pour dépenser. C'est pareil, mais sans les cartes de crédit.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Un exemple";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "Sur ton compte épargne";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Dépensé avec ta carte";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Quand tu paies la carte, les deux montants deviennent égaux.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Choisir les comptes qui comptent";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Les cartes de crédit sont désactivées au départ. Tu peux changer ça quand tu veux.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Comptes qui comptent";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Compter dans « Ton argent aujourd'hui »";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Désactive-le si ce n'est pas de l'argent à dépenser, comme une carte de crédit.";

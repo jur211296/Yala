@@ -200,6 +200,22 @@ nonisolated enum AccountDetailCalculator {
         )
     }
 
+    static let largestLimit = 3
+
+    /// Los gastos más grandes del período, de mayor a menor, con la regla de lo gastado (`spent`): sin ingresos,
+    /// transferencias ni ajustes, y una devolución no entra. Empate: el más reciente primero. Rediseño del 2026-11-16.
+    static func largestExpenses(entries: [Entry], interval: DateInterval, limit: Int = largestLimit) -> [Entry] {
+        let expenses: [(entry: Entry, spent: Double)] = entries.compactMap { entry in
+            guard interval.contains(entry.date), let spent = spent(entry), spent > 0 else { return nil }
+            return (entry, spent)
+        }
+        let sorted = expenses.sorted { lhs, rhs in
+            if lhs.spent != rhs.spent { return lhs.spent > rhs.spent }
+            return lhs.entry.date == rhs.entry.date ? lhs.entry.id > rhs.entry.id : lhs.entry.date > rhs.entry.date
+        }
+        return Array(sorted.prefix(limit).map(\.entry))
+    }
+
     static func topCategories(in entries: [Entry]) -> [CategoryTotal] {
         var totals: [String: CategoryTotal] = [:]
         for entry in entries {

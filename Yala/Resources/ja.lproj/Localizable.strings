@@ -2848,7 +2848,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yalaが代わりに記録します";
-"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
+"aiConsent.processingMessage" = "入力するか、話すか、レシートの写真を選ぶと、Yalaが支出を記録します。そのために、入力した内容や音声、写真をその時だけAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
 "aiConsent.insightsTitle" = "AIサマリー";
 "aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い、くり返している小さな買い物の名前と回数・合計）をAIサービスに送ります。記録の履歴全体は送りません。データがあなたの Yala アカウントにある場合は、正確に読み取るために必要なもの（買い物ごとの日付や金額など）も読み取れます。AIの学習には使われません。";
 "aiConsent.accept" = "同意して有効化";
@@ -3285,7 +3285,7 @@
 
 "contextualGuide.dismiss" = "了解";
 "guide.panel.title" = "ここがあなたの概要です";
-"guide.panel.message" = "支出と残金がひと目で分かります。「新規記録」をタップすると支出を追加できます。";
+"guide.panel.message" = "今日の残高と使えるお金がひと目で分かります。「新規記録」をタップすると支出を追加できます。";
 "guide.trends.title" = "お金の流れはどうですか？";
 "guide.trends.message" = "このグラフは残高・収入・支出の推移を示します。線が上がっていれば、その数値が増えています。";
 "guide.categories.title" = "お金はどこに使っていますか？";
@@ -7472,6 +7472,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "カードの通貨";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "大きな支出";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "%@ の明細";
 
@@ -9830,3 +9833,33 @@
 "rfr.choice.nextDue" = "次回の請求: %@";
 "rfr.notice.linked" = "「%@」に紐づけました";
 "rfr.notice.created" = "定期支払いを作成しました · この記録が最初の支払いです";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "今日使えるお金";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "残高と使えるお金の意味";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "残高と使えるお金";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "カードも含めて、すべての口座を合計します。カードで使ってまだ払っていない分は差し引かれます。";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "使えるお金です。同じ計算ですが、クレジットカードは入りません。";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "例";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "普通預金にある分";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "カードで使った分";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "カードを払うと、ふたつの金額は同じになります。";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "合計する口座を選ぶ";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "クレジットカードは最初オフになっています。いつでも変えられます。";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "合計する口座";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "「今日使えるお金」に含める";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "クレジットカードのように、使えるお金でなければオフにしてください。";

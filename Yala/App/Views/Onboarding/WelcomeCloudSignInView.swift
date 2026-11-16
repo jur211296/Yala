@@ -1889,6 +1889,12 @@ struct WelcomeCloudSignInView: View {
             // La cancelación que pidió la persona, en cuanto aterrice: al chooser. Va ANTES del mapeo, que pintaría el
             // `.idle` que deja como `.adopting(0)` con un «Retomar» que volvería a reclamar la cuenta.
             if cancelLanded(controller) {
+                // Card xhbn: la sesión se suelta ANTES de cerrar la pantalla. Cerrarla suelta el candado de Grupos
+                // (`onDisappear`), y con la sesión viva el canal bajaba los grupos de la cuenta cancelada.
+                if WelcomeAdoptCancel.releasesSessionAfterCancel(
+                    isUnifiedAccess: isUnifiedAccess, hasSession: CloudAuthService.shared.hasSession) {
+                    await CloudAuthService.shared.signOut()
+                }
                 onBack()
                 return
             }

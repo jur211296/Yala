@@ -17,6 +17,8 @@ struct AccountFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
+    /// «Sumar en Tu dinero hoy» vive en una preferencia sincronizada, no en la cuenta (2026-11-16).
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel: AccountFormViewModel
     @State private var showBalanceCalculator: Bool = false
@@ -183,10 +185,13 @@ struct AccountFormView: View {
             }
             .onChange(of: viewModel.selectedType) {
                 calcFieldState.reset()
+                viewModel.followTypeForCountsInMoney()
             }
             .onAppear {
-                // Antes del contexto: decide qué pide el campo del saldo al abrir una cuenta ya creada (L7-6).
+                // Antes del contexto: decide qué pide el campo del saldo al abrir una cuenta ya creada (L7-6), y el
+                // interruptor de «Tu dinero hoy», que entra en la foto de partida del formulario.
                 viewModel.editsTodayBalance = !sessionState.isExpensesOnlyMode
+                viewModel.loadCountsInMoney(overrides: PanelMoneyScopeLogic.decode(appPreferences.panelMoneyAccountOverrides))
                 viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
@@ -851,6 +856,12 @@ struct AccountFormView: View {
             VStack(spacing: DS.Spacing.none) {
                 // Con la cuenta archivada «Excluir» no haría nada: no suma en el saldo y su historial se ve igual
                 // (`AccountScopeLogic`, decisión 6 de 2.3). El valor guardado se conserva y vuelve a mandar al desarchivar.
+                if viewModel.showsCountsInMoneyToggle {
+                    countsInMoneyToggle
+
+                    SubsectionDivider()
+                }
+
                 if !viewModel.isArchived {
                     Toggle(isOn: $viewModel.excludeFromStatistics) {
                         Text(L10n.Account.excludeFromStats)
@@ -1046,6 +1057,10 @@ struct AccountFormView: View {
                 .accessibilityIdentifier("account_more_options")
 
                 if showsMoreOptions {
+                    if viewModel.showsCountsInMoneyToggle {
+                        SubsectionDivider()
+                        countsInMoneyToggle
+                    }
                     SubsectionDivider()
                     Toggle(isOn: $viewModel.excludeFromStatistics) {
                         Text(L10n.Account.excludeFromStats)
@@ -1055,6 +1070,23 @@ struct AccountFormView: View {
                 }
             }
         }
+    }
+
+    /// «Sumar en Tu dinero hoy»: si la cuenta cuenta como dinero para usar en la cifra chica del Panel. Por defecto
+    /// encendido, salvo en tarjetas de crédito (`PanelMoneyScopeLogic.countsByDefault`).
+    private var countsInMoneyToggle: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Toggle(isOn: $viewModel.countsInMoney) {
+                Text(L10n.SaldoPanel.countsToggle)
+            }
+            .accessibilityIdentifier("account_counts_in_money_toggle")
+            Text(L10n.SaldoPanel.countsHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
     }
 
     // MARK: - Editar el saldo (L7-6)
@@ -1385,12 +1417,21 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
+            persistCountsInMoney()
             DS.Haptic.success()
             if viewModel.secondaryCurrencySuggestion == nil {
                 closeOrOfferLine()
             }
             // else: alert will show and dismiss after user responds
         }
+    }
+
+    /// Tras guardar bien: «Sumar en Tu dinero hoy» va a su preferencia, con el `shortcutID` de la cuenta guardada (la
+    /// nueva ya lo tiene). Solo si el formulario lo enseñaba: en una archivada o excluida no hay nada que guardar.
+    private func persistCountsInMoney() {
+        guard let saved = viewModel.createdAccount ?? viewModel.accountToEdit else { return }
+        let next = viewModel.moneyOverridesAfterSave(for: saved, stored: appPreferences.panelMoneyAccountOverrides)
+        if next != appPreferences.panelMoneyAccountOverrides { appPreferences.panelMoneyAccountOverrides = next }
     }
 
     /// Tras guardar: si se acaba de crear una cuenta que puede tener líneas, la hoja pregunta por otra divisa
@@ -1425,6 +1466,7 @@ struct AccountFormView: View {
     ) {
         Task {
             if await viewModel.confirmCurrencyConversion(pending, context: modelContext) {
+                persistCountsInMoney()
                 if viewModel.secondaryCurrencySuggestion == nil {
                     dismiss()
                 }

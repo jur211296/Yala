@@ -1418,6 +1418,11 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
   (`sessionOpenedHere`). La sesión de Grupos (`.useLiveSession`) y la que trae la puerta de Grupos al cover
   (`adoptCompleteAccountFromGroups`) no se cierran nunca. Un intento que no abrió la suya conserva la marca solo si ya
   describe la sesión viva (`markToRecord`: un «Retomar» tras relanzar), y «Migrar» la borra;
+  **la cancelación de la bienvenida desde la vitrina no depende de la marca** (2026-11-16, card xhbn): medido en el iPhone
+  14, la marca quedaba en `nil` también con la sesión abierta por la pantalla, la sesión sobrevivía, al cerrarse la
+  pantalla se soltaba `AccountEntryGroupsHold` y el canal bajaba los grupos de la cuenta cancelada (el puente dejaba
+  «Grupos PEN» en el teléfono). Ahora suelta la sesión viva ANTES de `onBack()` (`WelcomeAdoptCancel.releasesSessionAfterCancel`,
+  solo en el acceso único: la de la puerta de Grupos sigue sin cerrarse). Por qué la marca queda en `nil` ahí no está aislado;
   (4) **se mira por NIVEL** (`closeSessionOfExitedAdopt`) tras `resume`, `pollLeader` y `cancelMigration` y al empezar
   `resumeIfNeeded`, que es el arranque y el re-kick. El adopt que llega a la nube la olvida sin cerrar, y sin sesión
   legible no se decide (un llavero aún protegido no es «otra sesión»);

@@ -172,7 +172,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
         // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
         // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
         let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
-        let expensePill = app.buttons["panel_hero_expense_pill"]
+        // La cifra grande del hero («Tu saldo hoy»): el gasto la baja y «Deshacer» la devuelve. Desde el 2026-11-16 el hero
+        // ya no tiene la píldora de gastos.
+        let expensePill = app.descendants(matching: .any)["panel_hero_figure"].firstMatch
         XCTAssertTrue(expensePill.waitForExistence(timeout: 10))
         let emptyLabel = expensePill.label
 

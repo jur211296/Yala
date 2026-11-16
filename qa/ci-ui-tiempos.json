@@ -103,7 +103,7 @@
     "PanelAccountsUITests": 104,
     "PanelCreateCategoriesUITests": 82,
     "PanelDashboardUITests": 210,
-    "PanelHeroFilterUITests": 30,
+    "PanelHeroSaldoUITests": 45,
     "PanelSyncSignInNoticeUITests": 52,
     "PaywallInboxAlertRoutingUITests": 103,
     "PendingICloudWipeMigrationUITests": 126,

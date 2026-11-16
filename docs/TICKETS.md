@@ -43,12 +43,15 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1327)
+## Index (1332)
 
 | id | status | path |
+| 2026-11-16-bugs-barrido-final-2-3-app | qa | tickets/qa/2026-11-16-bugs-barrido-final-2-3-app.md |
+| 2026-11-16-competencia-prestamos-ia | done | tickets/done/2026-11-16-competencia-prestamos-ia.md |
 |---|---|---|
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
+| 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
 | 2026-11-15-exploracion-formularios-guiados | done | tickets/done/2026-11-15-exploracion-formularios-guiados.md |
 | 2026-11-14-atajo-banco-b0-b1 | done | tickets/done/2026-11-14-atajo-banco-b0-b1.md |
 | 2026-11-14-pagos-recurrentes-s1 | done | tickets/done/2026-11-14-pagos-recurrentes-s1.md |
@@ -276,6 +279,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claude-plugin-read-only-mcp-connector | done | tickets/done/claude-plugin-read-only-mcp-connector.md |
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
+| closing-yala-during-the-icloud-return-wipe-cancels-it-silently | backlog | tickets/backlog/closing-yala-during-the-icloud-return-wipe-cancels-it-silently.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
 | cloud-activation-sheet-folds-encryption-and-photos | done | tickets/done/cloud-activation-sheet-folds-encryption-and-photos.md |
 | cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
@@ -826,6 +830,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | month-year-titles-capitalize-every-word | qa | tickets/qa/month-year-titles-capitalize-every-word.md |
 | more-forms-read-their-deleted-model-while-closing | done | tickets/done/more-forms-read-their-deleted-model-while-closing.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
+| move-to-yala-account-sheet-offers-a-sign-in-it-will-refuse | backlog | tickets/backlog/move-to-yala-account-sheet-offers-a-sign-in-it-will-refuse.md |
 | multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
 | multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |

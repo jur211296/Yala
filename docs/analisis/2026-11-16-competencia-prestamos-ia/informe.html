@@ -1,0 +1,578 @@
+<title>Préstamos y conectores de IA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: informe de una columna que alterna prosa, tablas comparativas y teléfonos dibujados con piezas de Yala; cierra con el bloque de decisión. */
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --sunk:#eaefed; --line:#d5dedb;
+  --fg:#14201d; --muted:#5a6a66;
+  --accent:#0d7a6a; --accent-soft:#d6efe9;
+  --ok:#1f7a3d; --ok-soft:#dcf1e2;
+  --warn:#9a5b00; --warn-soft:#fbecd2;
+  --no:#a3302a; --no-soft:#f8dfdc;
+  --phone:#0e1513; --phone-fg:#eef4f2; --phone-card:#1b2422; --phone-muted:#93a39f; --phone-line:#2a3532;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Figtree", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-num: ui-rounded, "SF Pro Rounded", "Figtree", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --surface:#161e1c; --sunk:#1c2624; --line:#2b3835;
+  --fg:#e6eeeb; --muted:#9aaba6;
+  --accent:#4cc3ad; --accent-soft:#16342e;
+  --ok:#6fd38f; --ok-soft:#173222; --warn:#f0b65a; --warn-soft:#3a2a10; --no:#f08a80; --no-soft:#3b1a17;
+  --phone:#050908; --phone-fg:#eef4f2; --phone-card:#151d1b; --phone-muted:#8d9d99; --phone-line:#25302d;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --surface:#161e1c; --sunk:#1c2624; --line:#2b3835;
+  --fg:#e6eeeb; --muted:#9aaba6;
+  --accent:#4cc3ad; --accent-soft:#16342e;
+  --ok:#6fd38f; --ok-soft:#173222; --warn:#f0b65a; --warn-soft:#3a2a10; --no:#f08a80; --no-soft:#3b1a17;
+  --phone:#050908; --phone-fg:#eef4f2; --phone-card:#151d1b; --phone-muted:#8d9d99; --phone-line:#25302d;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:28px 64px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,5vw,44px);letter-spacing:-.01em}
+h2{font-size:clamp(24px,3.4vw,32px)}
+h3{font-size:19px}
+p{margin:0;max-width:68ch}
+a{color:var(--accent)}
+.eyebrow{font:600 12px/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.section{display:flex;flex-direction:column;gap:22px}
+.lede{font-size:18px;color:var(--fg)}
+.meta{font-size:13px;color:var(--muted)}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+
+/* Veredicto */
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.vcard b{font-family:var(--f-display);font-size:17px}
+
+/* Tablas */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--sunk);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;min-width:170px}
+.yala-col{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.no{background:var(--no-soft);color:var(--no)}
+.chip.na{background:var(--sunk);color:var(--muted)}
+.cell-note{display:block;font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.inf{font-style:italic}
+
+/* Aviso medido */
+.callout{border:1px solid var(--warn);background:var(--warn-soft);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.callout b{color:var(--warn)}
+
+/* Opciones */
+.options{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.opt.rec{border:2px solid var(--accent)}
+.opt header{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.opt .tag{font:700 12px/1 var(--f-body);color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.opt ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.opt .cost{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+
+/* Teléfonos */
+.phones{display:flex;flex-wrap:wrap;justify-content:center;gap:22px 18px;padding:4px 2px 12px}
+.phone-fig{display:flex;flex-direction:column;gap:8px;flex:0 0 auto;scroll-snap-align:start}
+.phone-fig figcaption{font-size:13px;color:var(--muted);max-width:250px}
+.phone{width:250px;background:var(--phone);color:var(--phone-fg);border-radius:34px;padding:14px 12px 16px;border:1px solid var(--phone-line);
+  display:flex;flex-direction:column;gap:10px;font-size:12.5px;min-height:470px}
+.ph-status{display:flex;justify-content:space-between;font:600 11px/1 var(--f-num);color:var(--phone-fg);padding:2px 10px 4px}
+.ph-nav{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.ph-nav .back{color:var(--phone-muted);font-size:12px}
+.ph-title{font:700 20px/1.1 var(--f-num);padding:0 4px}
+.ph-seg{display:flex;background:var(--phone-card);border-radius:9px;padding:2px;gap:2px}
+.ph-seg span{flex:1;text-align:center;padding:5px 0;border-radius:7px;color:var(--phone-muted);font-weight:600;font-size:11.5px}
+.ph-seg span.on{background:var(--phone-line);color:var(--phone-fg)}
+.ph-card{background:var(--phone-card);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ph-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ph-kpi{background:var(--phone-card);border-radius:14px;padding:10px 12px}
+.ph-kpi small{display:block;color:var(--phone-muted);font-size:10.5px}
+.ph-kpi b{font:700 17px/1.2 var(--f-num);font-variant-numeric:tabular-nums}
+.ph-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--phone-line)}
+.ph-row:last-child{border-bottom:0}
+.ph-ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 var(--f-num);flex:0 0 auto}
+.ph-row .t{flex:1;min-width:0}
+.ph-row .t div{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-row .t small{color:var(--phone-muted);font-size:10.5px}
+.ph-amt{font:600 13px/1 var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:#6fd38f}.neg{color:#f08a80}.mut{color:var(--phone-muted)}
+.ph-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.ph-pill.g{background:#173222;color:#6fd38f}.ph-pill.r{background:#3b1a17;color:#f08a80}.ph-pill.n{background:#25302d;color:#93a39f}
+.ph-btns{display:flex;gap:8px}
+.ph-btn{flex:1;text-align:center;padding:9px 0;border-radius:999px;background:#4cc3ad;color:#05221c;font-weight:700;font-size:12px}
+.ph-btn.sec{background:var(--phone-line);color:var(--phone-fg)}
+.ph-bar{height:7px;border-radius:99px;background:var(--phone-line);overflow:hidden}
+.ph-bar i{display:block;height:100%;background:#4cc3ad;border-radius:99px}
+.ph-sched{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;font-variant-numeric:tabular-nums;font-size:11.5px}
+.ph-sched .h{color:var(--phone-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.ph-label{color:var(--phone-muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:4px 4px 0}
+.ph-toggle{width:30px;height:18px;border-radius:99px;background:#4cc3ad;position:relative;flex:0 0 auto}
+.ph-toggle::after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff}
+.ph-link{color:#4cc3ad;font-weight:600}
+.ph-danger{color:#f08a80;font-weight:600;text-align:center;padding:8px 0}
+
+/* Flujos */
+.flows{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.flow ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+.flow .count{font:700 13px/1 var(--f-body);color:var(--muted)}
+.flow.yala{border-color:var(--accent)}
+.src{font-size:12.5px;color:var(--muted)}
+
+/* Decisión */
+.decide{display:flex;flex-direction:column;gap:12px}
+.dq{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.dq .q{font-weight:600}
+.dq .choices{display:flex;flex-wrap:wrap;gap:8px}
+.dq button{font:600 14px/1 var(--f-body);padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);cursor:pointer}
+.dq button:hover{border-color:var(--accent)}
+.dq button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dq button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.dq button:disabled{cursor:default;opacity:.75}
+.dq .state{font-size:13px;color:var(--muted)}
+.dq textarea{font:14px/1.4 var(--f-body);width:100%;min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 10px;resize:vertical}
+.foot{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:18px}
+.foot ul{margin:0;padding-left:18px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+
+<header class="stack">
+  <span class="eyebrow">Competencia · 16 de noviembre de 2026</span>
+  <h1>Préstamos y conectores de IA: dónde está Yala frente a Vuelto, Neto y Qalta</h1>
+  <p class="lede">Esta semana salieron dos novedades en la competencia. Vuelto 1.0.7 agregó préstamos, y Neto 2.4.28 se conecta con Claude y ChatGPT y muestra qué hizo la IA. Aquí está lo que ya tenemos, lo que nos falta y lo que recomiendo. Al final puedes elegir.</p>
+  <p class="meta">Todo sale de fuentes públicas: las fichas de la App Store de Perú, el sitio de Qalta y nuestro propio código y tablero. Lo que no está escrito en esas fuentes va marcado como <span class="inf">inferido</span>.</p>
+</header>
+
+<section class="verdict" aria-label="Resumen">
+  <div class="vcard"><span class="eyebrow">Préstamos</span><b>Nos falta lo básico: prestarle a una persona fuera de un grupo.</b><p class="muted">Grupos ya resuelve el saldo por persona, pero solo dentro de un grupo. Las dos cards de la 2.4 se pisan entre sí. Recomiendo repartirlas por cómo funciona el préstamo: con personas, o con cuotas.</p></div>
+  <div class="vcard"><span class="eyebrow">Conexión con IA</span><b>Nuestro conector hace más, pero llegar a él cuesta más.</b><p class="muted">Qalta se instala con un toque en ChatGPT porque está publicada en su directorio. Neto vende el control desde la app. Recomiendo agregar la pantalla «Tu IA» en Ajustes y mandar primero la solicitud al directorio de ChatGPT.</p></div>
+</section>
+
+<!-- ============ PARTE 1 ============ -->
+<section class="section" id="prestamos">
+  <div class="stack">
+    <span class="eyebrow">Parte 1</span>
+    <h2>Préstamos</h2>
+    <p>Las notas de la versión 1.0.7 de Vuelto, del 13 de noviembre, dicen textualmente: «Anota lo que prestas y lo que te prestan, y lleva la cuenta de cada persona. Registra cobros y pagos en segundos. Al elegir a quién, ves si te debe, si le debes o si ya está saldado. Préstamos de banco con cuotas e intereses.» Qalta tiene «Deudas» desde la 1.17 (1 de septiembre), y Neto resta deudas y préstamos del patrimonio.</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Qué puede hacer la persona</th><th>Vuelto 1.0.7</th><th>Qalta 2.2</th><th>Neto 2.4.28</th><th class="yala-col">Yala hoy (2.3)</th></tr></thead>
+      <tbody>
+        <tr><td>Anotar que le prestó a alguien, o que alguien le prestó</td>
+          <td><span class="chip ok">Sí</span></td>
+          <td><span class="chip ok">Sí</span><span class="cell-note">«Lo que debes y lo que te deben»</span></td>
+          <td><span class="chip warn">Parcial</span><span class="cell-note">«Registra tus deudas y préstamos», visto desde el patrimonio</span></td>
+          <td class="yala-col"><span class="chip warn">Solo en Grupos</span><span class="cell-note">Hay que crear un grupo de dos personas y cargar un gasto. No existe «le presté a Carla».</span></td></tr>
+        <tr><td>Ver el saldo por persona: te debe, le debes, saldado</td>
+          <td><span class="chip ok">Sí</span></td>
+          <td><span class="chip warn">Parcial</span><span class="cell-note">Cerrar la deuda cuando se paga. No describe un saldo por persona.</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip ok">Sí, por grupo</span><span class="cell-note">«Saldos» con «Te deben» y «Debes», más «Simplificar deudas»</span></td></tr>
+        <tr><td>Registrar cobros y pagos parciales</td>
+          <td><span class="chip ok">Sí</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip ok">Sí, por grupo</span><span class="cell-note">«Liquidar», y la otra persona confirma o rechaza</span></td></tr>
+        <tr><td>Recordatorio de lo que te deben</td>
+          <td><span class="chip na">No consta</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip ok">Sí, por grupo</span><span class="cell-note">«Recordatorios de deudas» le avisan al que debe cuando su deuda lleva semanas quieta</span></td></tr>
+        <tr><td>Préstamo de banco: monto, plazo y cuota</td>
+          <td><span class="chip ok">Sí</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td><span class="chip warn">Parcial</span><span class="cell-note">Como deuda que resta del patrimonio</span></td>
+          <td class="yala-col"><span class="chip no">No</span><span class="cell-note">Existe el tipo de cuenta «Préstamo», pero es solo una etiqueta: no guarda cuotas, plazo ni tasa</span></td></tr>
+        <tr><td>Intereses (TEA) y cuota calculada</td>
+          <td><span class="chip ok">Sí</span><span class="cell-note inf">La ficha no dice cómo los calcula</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip no">No</span></td></tr>
+        <tr><td>Aviso antes de pagar</td>
+          <td><span class="chip warn">Parcial</span><span class="cell-note">Recordatorios de gastos recurrentes, no de cuotas</span></td>
+          <td><span class="chip warn">Parcial</span><span class="cell-note">Aviso un día antes de un pago recurrente</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip warn">Solo tarjeta</span><span class="cell-note">«Avisarme antes de pagar» en la tarjeta de crédito</span></td></tr>
+        <tr><td>Precio</td>
+          <td><span class="chip na">No consta</span><span class="cell-note inf">La ficha no dice si es Premium</span></td>
+          <td><span class="chip na">Plan gratis con límites</span></td>
+          <td><span class="chip na">No consta</span></td>
+          <td class="yala-col"><span class="chip na">Por decidir</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <b>Medido en el tablero: los préstamos de banco no están huérfanos, pero tampoco tienen dueño.</b>
+    <p>El encargo decía que los préstamos de banco con cuotas e intereses no tienen card. En el tablero aparecen en la nota de las <em>dos</em> cards de la 2.4. «Seguimiento de deudas personales» pide «registrar un préstamo propio (monto, TEA o TCEA, plazo, cuota)». «Pagos en cuotas» pide «cuotas con tasa (interés y cuota)». Ninguno de los dos títulos lo dice, así que cada card puede asumir que lo hace la otra. Además, las dos todavía dicen «implementada en 2.2» en su criterio de cierre, cuando ya son de la 2.4.</p>
+  </div>
+
+  <div class="stack">
+    <h3>Tres maneras de repartir el trabajo</h3>
+    <p class="muted">Las tres cubren lo que trae Vuelto. Cambia cómo se agrupan las piezas y qué tan grande queda cada card.</p>
+  </div>
+  <div class="options">
+    <article class="opt rec">
+      <header><h3>A · Repartir por cómo funciona</h3><span class="tag">Recomendada</span></header>
+      <ul>
+        <li><b>Card 1, «Préstamos con personas»</b>, reemplaza a «Seguimiento de deudas personales». Le prestaste a alguien o te prestaron: saldo por persona, cobros parciales, recordatorio. Reusa las piezas de Grupos.</li>
+        <li><b>Card 2, «Cuotas: préstamos de banco y compras a plazos»</b>, amplía «Pagos en cuotas». Un préstamo del banco y una compra en cuotas usan la misma cuenta: monto, tasa, número de cuotas y calendario.</li>
+      </ul>
+      <p class="cost">Dos cards, sin crear ninguna. Cada una tiene un solo tipo de cálculo, así que se diseña y se prueba por separado.</p>
+    </article>
+    <article class="opt">
+      <header><h3>B · Una sola sección «Préstamos»</h3></header>
+      <ul>
+        <li>Se fusionan las dos cards en una pantalla con dos pestañas: «Personas» y «Banco».</li>
+        <li>Las compras en cuotas quedan fuera, o se meten como si fueran un préstamo más.</li>
+      </ul>
+      <p class="cost">Una card grande. Se parece más a Vuelto. El riesgo es que la compra en cuotas con tarjeta quede como un préstamo raro, cuando la persona la piensa como una compra.</p>
+    </article>
+    <article class="opt">
+      <header><h3>C · Igualar a Vuelto en lo mínimo</h3></header>
+      <ul>
+        <li>Solo préstamos con personas, más un préstamo de banco donde la persona escribe su cuota a mano.</li>
+        <li>Sin calcular intereses ni el calendario.</li>
+      </ul>
+      <p class="cost">Lo más corto. Se queda por debajo de Vuelto en intereses, y el cálculo de la cuota llegaría después con otra card.</p>
+    </article>
+  </div>
+  <p>Recomiendo la A por producto, no por esfuerzo. Prestarle a un amigo y pagarle al banco son problemas distintos. El primero es un saldo que sube y baja sin calendario, y la persona ya lo conoce de Grupos. El segundo es un calendario fijo con tasa, igual que una compra en cuotas. Si cada card agrupa un solo tipo de cálculo, ninguna tiene que resolver las dos cosas.</p>
+  <p class="muted"><b>Antes de construir hay que decidir algo de cálculo financiero</b> (va en el /spec, no aquí): cómo cuenta un préstamo en el Panel. Prestar no es un gasto y que te devuelvan no es un ingreso. Grupos ya lo resuelve con las subcategorías de sistema «Préstamo a grupos» y «Cobro de préstamo», y tiene un bug abierto en la 2.4: el widget suma esas partes en el saldo y las excluye del gasto. La card 1 debería reusar esa regla y no inventar otra.</p>
+
+  <div class="stack">
+    <h3>Cómo se vería (opción A)</h3>
+    <p class="muted">Son maquetas con las piezas de la app: filas de registro, importes redondeados y la cápsula de estado. Los datos son de ejemplo. La cuota está calculada de verdad: S/ 10 000 a una TEA de 18,5 % en 24 cuotas da una TEM de 1,425 % y una cuota de S/ 494,88.</p>
+  </div>
+  <div class="phones" role="list">
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: lista de préstamos con personas">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-title">Préstamos</div>
+        <div class="ph-seg"><span class="on">Personas</span><span>Cuotas</span></div>
+        <div class="ph-kpis">
+          <div class="ph-kpi"><small>Te deben</small><b class="pos">S/ 450,00</b></div>
+          <div class="ph-kpi"><small>Debes</small><b class="neg">S/ 120,00</b></div>
+        </div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#16342e;color:#4cc3ad">CR</div><div class="t"><div>Carla</div><small>Te pagó S/ 50 · 1 nov</small></div><span class="ph-pill g">Te debe</span><span class="ph-amt pos">150,00</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#2c2340;color:#b9a3f0">MT</div><div class="t"><div>Mateo</div><small>Le prestaste · 28 oct</small></div><span class="ph-pill g">Te debe</span><span class="ph-amt pos">300,00</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#3a2a10;color:#f0b65a">PA</div><div class="t"><div>Papá</div><small>Te prestó · 15 oct</small></div><span class="ph-pill r">Le debes</span><span class="ph-amt neg">120,00</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#25302d;color:#93a39f">LU</div><div class="t"><div>Lucía</div><small>Saldado · 3 oct</small></div><span class="ph-pill n">Saldado</span><span class="ph-amt mut">0,00</span></div>
+        </div>
+        <div class="ph-btns"><span class="ph-btn">Prestar</span><span class="ph-btn sec">Me prestaron</span></div>
+      </div>
+      <figcaption>Lista por persona, con el mismo «Te deben / Debes» de Grupos y una cápsula de estado como la de Vuelto.</figcaption>
+    </figure>
+
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: detalle de una persona">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-nav"><span class="back">‹ Préstamos</span><span class="back">Editar</span></div>
+        <div class="ph-card" style="align-items:center;text-align:center;gap:4px">
+          <div class="ph-ico" style="background:#16342e;color:#4cc3ad;width:44px;height:44px;font-size:14px">CR</div>
+          <div style="font-weight:700;font-size:15px">Carla</div>
+          <small class="mut">Te debe</small>
+          <b style="font:700 26px/1.1 var(--f-num)" class="pos">S/ 150,00</b>
+          <div class="ph-bar" style="width:100%"><i style="width:25%"></i></div>
+          <small class="mut">Te devolvió S/ 50 de S/ 200</small>
+        </div>
+        <div class="ph-label">Movimientos</div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#173222;color:#6fd38f">↓</div><div class="t"><div>Te pagó</div><small>1 nov · Yape → BCP Soles</small></div><span class="ph-amt pos">+50,00</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#3b1a17;color:#f08a80">↑</div><div class="t"><div>Le prestaste</div><small>3 oct · Efectivo</small></div><span class="ph-amt neg">−200,00</span></div>
+        </div>
+        <div class="ph-card" style="flex-direction:row;align-items:center;justify-content:space-between"><span>Recordarle el 1 dic</span><span class="ph-toggle" aria-hidden="true"></span></div>
+        <div class="ph-btns"><span class="ph-btn">Registrar cobro</span><span class="ph-btn sec">Prestar más</span></div>
+      </div>
+      <figcaption>Cada persona con su historia. El cobro mueve dinero a una cuenta, pero no cuenta como ingreso.</figcaption>
+    </figure>
+
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: préstamo de banco con cuotas">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-nav"><span class="back">‹ Cuotas</span><span class="back">Editar</span></div>
+        <div class="ph-title" style="font-size:17px">Préstamo personal BCP</div>
+        <div class="ph-card">
+          <small class="mut">Te falta pagar</small>
+          <b style="font:700 24px/1.1 var(--f-num)">S/ 7 425,08</b>
+          <div class="ph-bar"><i style="width:29%"></i></div>
+          <small class="mut">7 de 24 cuotas · cuota S/ 494,88 · TEA 18,5 %</small>
+        </div>
+        <div class="ph-card" style="flex-direction:row;align-items:center;gap:10px">
+          <div class="ph-ico" style="background:#3a2a10;color:#f0b65a">5</div>
+          <div class="t" style="flex:1"><div style="font-weight:600">Próxima cuota: 5 dic</div><small class="mut">Te aviso 1 día antes · desde BCP Soles</small></div>
+        </div>
+        <div class="ph-label">Calendario</div>
+        <div class="ph-card">
+          <div class="ph-sched">
+            <span class="h">N.º</span><span class="h">Fecha</span><span class="h">Cuota</span>
+            <span class="mut">7</span><span>5 nov · pagada</span><span class="pos">494,88</span>
+            <span>8</span><span>5 dic</span><span>494,88</span>
+            <span>9</span><span>5 ene</span><span>494,88</span>
+            <span class="mut">…</span><span class="mut">hasta 5 abr 2028</span><span class="mut"></span>
+          </div>
+        </div>
+        <small class="mut" style="padding:0 4px">En total pagarás S/ 1 877,09 de intereses.</small>
+      </div>
+      <figcaption>Préstamo de banco: con la TEA, el plazo y el monto, Yala calcula la cuota y arma el calendario.</figcaption>
+    </figure>
+
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: compra en cuotas">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-title">Préstamos</div>
+        <div class="ph-seg"><span>Personas</span><span class="on">Cuotas</span></div>
+        <div class="ph-card"><small class="mut">Este mes pagas en cuotas</small><b style="font:700 22px/1.1 var(--f-num)">S/ 1 094,88</b></div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#1d2a44;color:#8fb2f5">BCP</div><div class="t"><div>Préstamo personal</div><small>8 de 24 · 5 dic</small></div><span class="ph-amt">494,88</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#2c2340;color:#b9a3f0">LP</div><div class="t"><div>Laptop · Visa Interbank</div><small>3 de 6 · sin intereses</small></div><span class="ph-amt">600,00</span></div>
+        </div>
+        <div class="ph-label">Ya pagadas</div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#25302d;color:#93a39f">✓</div><div class="t"><div>Celular · Mastercard BBVA</div><small>12 de 12 · terminó en oct</small></div><span class="ph-amt mut">—</span></div>
+        </div>
+        <div class="ph-btns"><span class="ph-btn">Agregar cuotas</span></div>
+      </div>
+      <figcaption>Préstamos de banco y compras a plazos en una sola lista, porque se pagan igual: una cuota al mes.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ PARTE 2 ============ -->
+<section class="section" id="ia">
+  <div class="stack">
+    <span class="eyebrow">Parte 2</span>
+    <h2>Conexión con asistentes de IA</h2>
+    <p>Neto 2.4.28 salió el 15 de noviembre con esta nota: «Conecta Neto con tu asistente de IA (Claude, ChatGPT) y pregúntale por tus gastos. En Ajustes › Conexiones ves qué ha hecho y lo desconectas cuando quieras.» Es solo para Neto Pro. Qalta lo tiene desde la 2.1.0, del 30 de octubre, y hoy va en la 2.2.0. El encargo mencionaba la 2.1.</p>
+  </div>
+
+  <div class="flows">
+    <article class="flow">
+      <header class="stack" style="gap:4px"><h3>Neto</h3><span class="count">Pasos no publicados</span></header>
+      <ol>
+        <li>Tener Neto Pro.</li>
+        <li class="inf">Conectarlo desde Claude o ChatGPT. La ficha no dice cómo; su sitio y su guía de uso no hablan del conector.</li>
+        <li>Preguntar «¿cuánto llevo gastado este mes?» o pedirle que apunte un gasto.</li>
+        <li><b>En la app: Ajustes › Conexiones</b> muestra qué hizo cada asistente y permite desconectarlo.</li>
+      </ol>
+      <p class="src">Fuente: ficha de la App Store y netoapp.es. Lo que destacan es el control desde la app.</p>
+    </article>
+    <article class="flow">
+      <header class="stack" style="gap:4px"><h3>Qalta en ChatGPT</h3><span class="count">4 pasos, sin URL</span></header>
+      <ol>
+        <li>Botón «Abrir Qalta en ChatGPT» en su sitio.</li>
+        <li>«Instalar plugin» → «Conectar».</li>
+        <li>Iniciar sesión en Qalta, revisar los permisos y aprobar.</li>
+        <li>En un chat, elegir Qalta en el menú de apps y preguntar.</li>
+      </ol>
+      <p class="src">Para Claude y otros, es manual: pegar <span class="mono">mcp.qalta.app/mcp</span> e iniciar sesión. Pide un espacio sincronizado en la nube, igual que Yala. No muestra panel en la app. Fuente: qalta.app/es/mcp.</p>
+    </article>
+    <article class="flow yala">
+      <header class="stack" style="gap:4px"><h3>Yala hoy</h3><span class="count">5–7 pasos, con URL</span></header>
+      <ol>
+        <li>En Yala: Ajustes → «Dónde viven tus datos» → «Activar la nube».</li>
+        <li>En Claude: Ajustes → Conectores → «Añadir conector personalizado» → pegar la URL.</li>
+        <li>Pantalla de permiso de Yala → «Continuar».</li>
+        <li>Iniciar sesión con Apple o Google.</li>
+        <li>Pedir «apunta 25 soles de almuerzo»: queda un borrador en la Bandeja con origen «Tu IA».</li>
+      </ol>
+      <p class="src">En ChatGPT hay que activar el modo desarrollador (plan de pago) y crear el conector con OAuth. Todavía no se ha probado con una cuenta real. Grok acepta conectores propios, pero su vuelta todavía no está en nuestra lista. Fuente: <span class="mono">mcp/CONECTAR-TU-IA.md</span>.</p>
+    </article>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th></th><th>Neto</th><th>Qalta</th><th class="yala-col">Yala</th></tr></thead>
+      <tbody>
+        <tr><td>Asistentes</td><td>Claude, ChatGPT</td><td>ChatGPT con app publicada; otros por MCP</td><td class="yala-col">Claude (probado), ChatGPT y Grok (sin probar)</td></tr>
+        <tr><td>Instalar sin pegar una URL</td><td><span class="chip na">No consta</span></td><td><span class="chip ok">Sí, en ChatGPT</span></td><td class="yala-col"><span class="chip no">No</span><span class="cell-note">Es la card «Pedir que Yala salga en los directorios», en la 2.3</span></td></tr>
+        <tr><td>Leer gastos y saldos</td><td><span class="chip ok">Sí</span></td><td><span class="chip ok">Sí</span></td><td class="yala-col"><span class="chip ok">Sí</span><span class="cell-note">Seis herramientas: cuentas, categorías, movimientos, resumen, presupuestos y recurrentes</span></td></tr>
+        <tr><td>Apuntar un gasto</td><td><span class="chip ok">Sí</span><span class="cell-note inf">No dice si entra directo o a revisión</span></td><td><span class="chip na">No consta</span></td><td class="yala-col"><span class="chip ok">Sí, como borrador</span><span class="cell-note">Va a la Bandeja y solo cuenta cuando lo confirmas. 50 al día, 100 en espera.</span></td></tr>
+        <tr><td>Ver en la app qué hizo la IA</td><td><span class="chip ok">Sí</span></td><td><span class="chip na">No consta</span></td><td class="yala-col"><span class="chip warn">Parcial</span><span class="cell-note">Solo lo que escribió, con el origen «Tu IA» en la Bandeja. Las lecturas no se ven.</span></td></tr>
+        <tr><td>Desconectar desde la app</td><td><span class="chip ok">Sí</span></td><td><span class="chip na">No consta</span></td><td class="yala-col"><span class="chip no">No</span><span class="cell-note">Solo desde Claude. La pantalla está propuesta en el backlog, solo para Claude.</span></td></tr>
+        <tr><td>Precio</td><td>Solo Pro</td><td><span class="inf">No dice</span></td><td class="yala-col">Gratis: la IA la paga la persona (decisión del 21 de octubre)</td></tr>
+        <tr><td>Estado</td><td>Publicado</td><td>Publicado</td><td class="yala-col">Solo en pruebas. Falta desplegar producción y elegir el dominio (<span class="mono">mcp.yala-app.pe</span>)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stack">
+    <h3>¿Es más sencillo lo de ellos?</h3>
+    <p><b>El de Qalta en ChatGPT, sí</b>, por una sola razón: su app está publicada en ChatGPT. La persona no copia una URL ni activa el modo desarrollador, y no necesita un plan de pago solo para eso. En Claude, Qalta está igual que nosotros: hay que pegar una URL. Para nosotros, ChatGPT es el paso más difícil (el modo desarrollador), así que en ese asistente su ventaja es mayor.</p>
+    <p><b>El de Neto, no se puede saber</b>, porque no publica los pasos. Lo que ofrece es otra cosa: confianza. Promete que desde la app ves qué hizo la IA y la apagas. Hoy no podemos prometer eso, aunque nuestro conector es más prudente: la IA solo deja borradores y nunca cambia un saldo.</p>
+  </div>
+
+  <div class="stack">
+    <h3>Pantalla «Tu IA» en Ajustes</h3>
+    <p class="muted">Iría en Ajustes, junto a «Dónde viven tus datos», porque el conector solo funciona con la nube. Sin nada conectado, la pantalla enseña cómo conectar y deja copiar la URL. Con algo conectado, muestra una fila por asistente.</p>
+  </div>
+  <div class="phones" role="list">
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: Tu IA sin conexiones">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-nav"><span class="back">‹ Ajustes</span><span></span></div>
+        <div class="ph-title">Tu IA</div>
+        <div class="ph-card" style="gap:8px">
+          <b style="font-size:13.5px">Pregúntale a tu IA por tus gastos y pídele que apunte</b>
+          <small class="mut">Lo que apunte llega a tu Bandeja como borrador. No cuenta hasta que lo confirmes.</small>
+        </div>
+        <div class="ph-label">Conectar</div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#3a2a10;color:#f0b65a">C</div><div class="t"><div>Claude</div><small>Pega la dirección en Conectores</small></div><span class="ph-link">Copiar</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#173222;color:#6fd38f">G</div><div class="t"><div>ChatGPT</div><small>Ábrelo en ChatGPT</small></div><span class="ph-link">Abrir</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#25302d;color:#93a39f">X</div><div class="t"><div>Grok</div><small>Pega la dirección en Connectors</small></div><span class="ph-link">Copiar</span></div>
+        </div>
+        <small class="mut" style="padding:0 4px">Necesita la nube activada.</small>
+      </div>
+      <figcaption>Sin conexiones: es la puerta de entrada. «Abrir» en ChatGPT funciona cuando Yala esté en su directorio. Mientras tanto, copia la URL.</figcaption>
+    </figure>
+    <figure class="phone-fig" role="listitem">
+      <div class="phone" aria-label="Maqueta: Tu IA con conexiones">
+        <div class="ph-status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="ph-nav"><span class="back">‹ Ajustes</span><span></span></div>
+        <div class="ph-title">Tu IA</div>
+        <div class="ph-label">Conectadas</div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#3a2a10;color:#f0b65a">C</div><div class="t"><div>Claude</div><small>Desde el 2 nov · usó Yala hoy</small></div><span class="mut">›</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#173222;color:#6fd38f">G</div><div class="t"><div>ChatGPT</div><small>Desde el 10 nov · hace 3 días</small></div><span class="mut">›</span></div>
+        </div>
+        <div class="ph-label">Claude esta semana</div>
+        <div class="ph-card">
+          <div class="ph-row"><div class="ph-ico" style="background:#16342e;color:#4cc3ad">↧</div><div class="t"><div>Apuntó 4 borradores</div><small>2 confirmados · 2 en tu Bandeja</small></div><span class="ph-link">Ver</span></div>
+          <div class="ph-row"><div class="ph-ico" style="background:#25302d;color:#93a39f">◎</div><div class="t"><div>Consultó tus datos 12 veces</div><small>Movimientos, resumen y presupuestos</small></div></div>
+        </div>
+        <div class="ph-danger">Desconectar Claude</div>
+      </div>
+      <figcaption>Con conexiones: qué hizo cada IA y el botón para desconectarla. «Ver» abre la Bandeja filtrada por «Tu IA».</figcaption>
+    </figure>
+  </div>
+
+  <div class="options">
+    <article class="opt">
+      <header><h3>A · Solo «Desconectar»</h3></header>
+      <ul><li>La propuesta del backlog: una fila por app de Claude, la fecha y «Desconectar».</li><li>Se amplía a ChatGPT y Grok.</li></ul>
+      <p class="cost">Lo mínimo para igualar a Neto en control. No muestra qué hizo la IA, aparte de la Bandeja.</p>
+    </article>
+    <article class="opt rec">
+      <header><h3>B · Pantalla «Tu IA» completa</h3><span class="tag">Recomendada</span></header>
+      <ul><li>Cómo conectar cuando está vacía, una fila por asistente, qué hizo (borradores y lecturas) y «Desconectar».</li><li>Va en la 2.4, cuando el conector ya esté en producción.</li></ul>
+      <p class="cost">Hay que guardar cuándo fue la última lectura, que el ticket dejó pendiente: una escritura por consulta o por renovación. Es la que más confianza da y la que lleva a más gente a conectar.</p>
+    </article>
+    <article class="opt">
+      <header><h3>C · Sin pantalla por ahora</h3></header>
+      <ul><li>Se desconecta desde Claude o ChatGPT, y lo escrito ya se ve en la Bandeja.</li></ul>
+      <p class="cost">No cuesta nada. Neto ya vende el control en su ficha, y aquí quedamos por debajo.</p>
+    </article>
+  </div>
+  <p>Recomiendo la B, en la 2.4. Mientras tanto, la Bandeja ya muestra todo lo que la IA puede cambiar. El orden que propongo: primero el conector en producción, que ya está en la 2.3. Después, la solicitud al directorio de ChatGPT antes que al de Claude, porque en ChatGPT nos cuesta más llegar. Al final, la pantalla «Tu IA».</p>
+</section>
+
+<!-- ============ DECISIÓN ============ -->
+<section class="section" id="decidir">
+  <div class="stack">
+    <span class="eyebrow">Tu turno</span>
+    <h2>Decide aquí</h2>
+    <p class="muted">Tu elección se guarda en esta página y Frank la lee para mover las cards. Solo tú puedes marcar.</p>
+  </div>
+  <div class="decide" id="decide">
+    <div class="dq" data-key="prestamos">
+      <div class="q">1. Préstamos: ¿cómo repartimos las dos cards de la 2.4?</div>
+      <div class="choices">
+        <button type="button" data-v="A">A · Por cómo funciona (recomendada)</button>
+        <button type="button" data-v="B">B · Una sola sección</button>
+        <button type="button" data-v="C">C · Mínimo Vuelto</button>
+      </div>
+      <textarea id="nota-prestamos" placeholder="Nota opcional" aria-label="Nota sobre préstamos"></textarea>
+      <div class="state" aria-live="polite"></div>
+    </div>
+    <div class="dq" data-key="panel">
+      <div class="q">2. ¿Sumamos la pantalla «Tu IA» en Ajustes?</div>
+      <div class="choices">
+        <button type="button" data-v="A">A · Solo desconectar</button>
+        <button type="button" data-v="B">B · Completa en 2.4 (recomendada)</button>
+        <button type="button" data-v="C">C · Por ahora no</button>
+      </div>
+      <textarea id="nota-panel" placeholder="Nota opcional" aria-label="Nota sobre la pantalla Tu IA"></textarea>
+      <div class="state" aria-live="polite"></div>
+    </div>
+    <div class="dq" data-key="directorio">
+      <div class="q">3. ¿Pedimos primero el directorio de ChatGPT y después el de Claude?</div>
+      <div class="choices">
+        <button type="button" data-v="si">Sí (recomendado)</button>
+        <button type="button" data-v="no">No, los dos a la vez</button>
+        <button type="button" data-v="despues">Después</button>
+      </div>
+      <textarea id="nota-directorio" placeholder="Nota opcional" aria-label="Nota sobre el directorio"></textarea>
+      <div class="state" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <b>Fuentes</b>
+  <ul>
+    <li><a href="https://apps.apple.com/pe/app/vuelto-control-de-gastos/id6816194818">Vuelto en la App Store (Perú)</a>, versión 1.0.7 del 13 de noviembre de 2026.</li>
+    <li><a href="https://apps.apple.com/pe/app/neto-finanzas-y-patrimonio/id6757704061">Neto en la App Store (Perú)</a>, versión 2.4.28 del 15 de noviembre de 2026, y <a href="https://www.netoapp.es/como-usar-neto/">su guía de uso</a>.</li>
+    <li><a href="https://apps.apple.com/pe/app/qalta-ai-control-de-gastos/id6756010294">Qalta AI en la App Store (Perú)</a>, versión 2.2.0, y <a href="https://qalta.app/es/mcp">qalta.app/es/mcp</a>.</li>
+    <li>Yala: el código de la rama 2.3 (Grupos, cuentas, <span class="mono">mcp/</span>), el ticket de la pantalla de conexiones en el backlog y las cards del tablero.</li>
+  </ul>
+  <span>Las capturas de las fichas no tienen texto alternativo, así que no se usaron. Todo lo marcado como «No consta» significa que la fuente pública no lo menciona, no que no exista.</span>
+</footer>
+</div>
+
+<script>
+(async () => {
+  const blocks = [...document.querySelectorAll('.dq')];
+  const setState = (el, txt) => { el.querySelector('.state').textContent = txt; };
+  const paint = (el, v) => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  blocks.forEach(el => setState(el, 'Cargando…'));
+  let db = null, user = null;
+  try { db = await window.claude?.use?.('db'); user = await window.claude?.use?.('user'); } catch (e) { db = null; }
+  if (!db) {
+    blocks.forEach(el => { setState(el, 'Para guardar tu elección, abre esta página en claude.ai con tu sesión.'); el.querySelectorAll('button,textarea').forEach(c => c.disabled = true); });
+    return;
+  }
+  const owner = user?.isOwner?.() ?? false;
+  blocks.forEach(el => {
+    const key = el.dataset.key;
+    const ref = db.doc('decisiones/' + key);
+    const ta = el.querySelector('textarea');
+    let current = null, loaded = false;
+    const timer = setTimeout(() => { if (!loaded) setState(el, 'No se pudo leer la elección guardada.'); }, 10000);
+    ref.onSnapshot(snap => {
+      loaded = true; clearTimeout(timer);
+      const d = snap.exists ? snap.data() : null;
+      current = d?.opcion ?? null;
+      paint(el, current);
+      if (d?.nota != null && document.activeElement !== ta) ta.value = d.nota;
+      setState(el, current ? 'Guardado.' : (owner ? 'Sin elegir todavía.' : 'Jürgen aún no elige.'));
+    }, () => { loaded = true; clearTimeout(timer); setState(el, 'No se pudo leer la elección guardada.'); });
+    if (!owner) { el.querySelectorAll('button,textarea').forEach(c => c.disabled = true); return; }
+    const save = async (opcion) => {
+      setState(el, 'Guardando…');
+      try { await ref.set({ opcion, nota: ta.value.trim(), en: new Date().toISOString() }); }
+      catch (e) { setState(el, 'No se guardó. Prueba otra vez.'); }
+    };
+    el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { paint(el, b.dataset.v); save(b.dataset.v); }));
+    ta.addEventListener('change', () => { if (current) save(current); });
+  });
+})();
+</script>

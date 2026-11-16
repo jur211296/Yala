@@ -112,6 +112,10 @@ paths:
   Registros se quedaban vacíos con los datos ya en el teléfono. Y el Panel que carga VACÍO con el motor sin su primer
   tirón enseña su esqueleto hasta que el tirón termina (`PanelAccountDataWait`, techo 60 s), no S/ 0. El aviso de
   CloudKit (`NSPersistentStoreRemoteChange`) sigue solo marcando pendiente. Pin: `PanelWaitsForAccountDataTests`.
+  **Y tras «Empezar» la espera arranca aunque ya haya cuentas (2026-11-16, barrido final de 2.3):** medido en el iPhone 14,
+  al tocarlo habían llegado 2 de 6 cuentas y ningún movimiento, y «sin cuentas» no la encendía. `onFinishedToApp` arma
+  `AccountEntryPanelWait` (en memoria, caduca con el techo) y el Panel la consume al empezar a esperar. Una entrada nueva a
+  una cuenta que termine dentro del proceso la arma igual. Pin: `PanelWaitsAfterEmpezarTests`.
 
 - **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
   no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
@@ -187,6 +191,11 @@ paths:
   `UIApplication.didBecomeActiveNotification` en `PanelActivationObserver`). `RecalculationDebouncer` (Grupos) tiene el
   mismo freno sin repetición; en las capturas del barrido Grupos sí cargó al relanzar en el iPad (no se buscó la carrera
   a propósito). Pin: `PanelColdLaunchActivationTests`.
+- **Dos botones en la MISMA fila de una `List` llevan cada uno estilo propio (`.plain`, `.borderless`), nunca el automático
+  (medido el 2026-11-16, iPhone 14, card lplc).** Con el estilo automático, la fila entera pasa a ser zona de toque y el
+  centro de «Vaciar mis datos» abría «Exportar una copia antes» (3 de 3). **El simulador no lo reproduce**: un XCUITest
+  que tocaba el centro por coordenada salió verde también sin el arreglo. Se prueba en el teléfono. Pin:
+  `WipeButtonOwnTapWiringTests`.
 - **Un `PasteButton` con un `.onTapGesture` en un PADRE no recibe el dedo (medido el 2026-11-05, iPhone 14, iOS 27.2,
   QA de Grupos L12-16).** `.dismissKeyboardOnTap()` colgado del `ScrollView` de «Pega tu enlace de invitación» se quedaba
   con el toque y «Pegar» no hacía nada; quitado, pegaba. ⇒ en una pantalla con `PasteButton`, el gesto que oculta el

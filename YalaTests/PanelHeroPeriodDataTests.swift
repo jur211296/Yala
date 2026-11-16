@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Tests puros del payload period-scoped del Hero. Cubre:
-//   • La cifra del hero: balance con signo, o el lado que filtra la píldora (UX 2.2 · L3-1/L3-3).
+//   • El mes al que pone nombre el rótulo de «Solo gastos» («Gastos de noviembre»).
 //   • `spentVariation` (chip "vs período anterior" del hero en Solo Gastos):
 //     % del gasto del período vs el previo comparable; nil sin previo o previo 0.
 //
@@ -15,29 +15,7 @@ import Testing
 
 struct PanelHeroPeriodDataTests {
 
-    // MARK: - Cifra del hero (UX 2.2 · L3-1 y L3-3)
-
-    /// Desde el lote 3 de la auditoría UX la cifra es el BALANCE y puede ser negativo: tiene que cuadrar con las pastillas
-    /// «Entró» y «Salió» de debajo. «Disponible» se quedaba en 0.
-    @Test func balance_isSigned_whenExpenseExceedsIncome() {
-        #expect(PanelHeroFigure.balance.value(income: 0, expense: 1250) == -1250)
-    }
-
-    @Test func balance_isIncomeMinusExpense_whenPositive() {
-        #expect(PanelHeroFigure.balance.value(income: 4500, expense: 900) == 3600)
-    }
-
-    @Test func filteredFigure_countsWhatThePillFilters() {
-        #expect(PanelHeroFigure.expense.value(income: 4500, expense: 900) == 900)
-        #expect(PanelHeroFigure.income.value(income: 4500, expense: 900) == 4500)
-    }
-
-    @Test func figure_followsTheNatureFilter() {
-        #expect(PanelHeroFigureLogic.figure(natures: []) == .balance)
-        #expect(PanelHeroFigureLogic.figure(natures: [.income, .expense]) == .balance)
-        #expect(PanelHeroFigureLogic.figure(natures: [.expense]) == .expense)
-        #expect(PanelHeroFigureLogic.figure(natures: [.income]) == .income)
-    }
+    // MARK: - Mes con nombre del rótulo de «Solo gastos»
 
     @Test func namedMonth_onlyForCalendarMonths() throws {
         var calendar = Calendar(identifier: .gregorian)

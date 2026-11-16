@@ -73,6 +73,54 @@ final class AccountFormViewModel {
 
     // Actions
     var excludeFromStatistics: Bool = false
+    /// Si la cuenta suma en «Tu dinero hoy» (2026-11-16). No es un campo de la cuenta: vive en la preferencia sincronizada
+    /// `panelMoneyAccountOverrides`, que la vista lee al abrir (`loadCountsInMoney`) y escribe al guardar.
+    var countsInMoney: Bool = true {
+        didSet { if isApplyingCountsInMoney == false { countsInMoneyWasChosen = true } }
+    }
+    /// La persona eligió el valor: lo tocó en el formulario, o la cuenta ya tenía uno guardado. Desde ahí deja de seguir
+    /// al tipo de cuenta (cambiar «Ahorros» a «Corriente» no borra una exclusión que la persona hizo antes).
+    private(set) var countsInMoneyWasChosen = false
+    @ObservationIgnored private var isApplyingCountsInMoney = false
+    /// Se carga una sola vez: el `onAppear` de la raíz del formulario vuelve a correr al volver de «Moneda» o de
+    /// «Ajuste», y recargar ahí borraba lo que la persona acababa de elegir.
+    @ObservationIgnored private var countsInMoneyLoaded = false
+
+    /// Pone el interruptor como abre: lo guardado o el valor del tipo. Va antes de la foto de partida del formulario.
+    func loadCountsInMoney(overrides: [UUID: Bool]) {
+        guard !countsInMoneyLoaded else { return }
+        countsInMoneyLoaded = true
+        applyCountsInMoney(AccountMoneyToggleLogic.initialValue(
+            shortcutID: accountToEdit?.shortcutID, type: selectedType, overrides: overrides
+        ))
+        if let id = accountToEdit?.shortcutID, overrides[id] != nil { countsInMoneyWasChosen = true }
+    }
+
+    /// El tipo cambió: el interruptor lo sigue si nadie lo tocó.
+    func followTypeForCountsInMoney() {
+        applyCountsInMoney(AccountMoneyToggleLogic.valueAfterTypeChange(
+            current: countsInMoney, wasChosen: countsInMoneyWasChosen, newType: selectedType
+        ))
+    }
+
+    private func applyCountsInMoney(_ value: Bool) {
+        isApplyingCountsInMoney = true
+        countsInMoney = value
+        isApplyingCountsInMoney = false
+    }
+
+    /// Si el formulario enseña el interruptor de «Tu dinero hoy».
+    var showsCountsInMoneyToggle: Bool {
+        AccountMoneyToggleLogic.showsToggle(
+            isArchived: isArchived, excludeFromStatistics: excludeFromStatistics, ownsCardSettings: ownsCardSettings
+        )
+    }
+
+    /// La preferencia tras guardar la cuenta `account` con el interruptor como está. Sin cambio, la misma.
+    func moneyOverridesAfterSave(for account: Account, stored: String) -> String {
+        guard showsCountsInMoneyToggle else { return stored }
+        return PanelMoneyScopeLogic.setting(countsInMoney, for: account.shortcutID, type: selectedType, in: stored)
+    }
     /// El toggle lo escribe por binding; la vista llama a `setArchived(_:)` en su `onChange` para preguntar si se
     /// archivan también las líneas de la tarjeta.
     var isArchived: Bool = false
@@ -292,6 +340,7 @@ final class AccountFormViewModel {
         let colorHex: String
         let excludeFromStatistics: Bool
         let isArchived: Bool
+        let countsInMoney: Bool
         let creditCardPaymentReminder: Bool
         let creditCardPaymentDay: Int
         let creditCardStatementDay: Int?
@@ -308,7 +357,7 @@ final class AccountFormViewModel {
             isPositive: balanceText.isEmpty ? true : isPositive,
             balanceValue: ((parsedBalanceAmount ?? 0) * 100).rounded() / 100, currency: selectedCurrency, mode: selectedAdjustmentMode,
             adjustmentDate: adjustmentDate, colorHex: selectedColorHex,
-            excludeFromStatistics: excludeFromStatistics, isArchived: isArchived,
+            excludeFromStatistics: excludeFromStatistics, isArchived: isArchived, countsInMoney: countsInMoney,
             creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay,
             creditCardStatementDay: creditCardStatementDay, creditCardReminderDaysBefore: creditCardReminderDaysBefore
         )

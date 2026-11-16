@@ -36,3 +36,5 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Playwright en la Mini](reference_playwright_en_la_mini.md) — capturas de staging con A/B: la descarga de Chromium se atasca; copiar el de la Max (1243 + playwright 1.63.0).
 - [Desplegar el gateway desde la Mini](reference_desplegar_el_gateway_desde_la_mini.md) — prod no corre la cabeza de 2.3: base verificada byte a byte + solo tu parche.
 - [TestFlight del iPhone 14](reference_testflight_del_iphone_14_es_externo.md) — cuenta test, interna desde el 15-nov; el admin@ de la ficha es el contacto; sin invitar por API.
+- [Suelta el turno antes del paso 5](feedback_suelta_el_turno_antes_del_paso_5.md) — el sleep de QA bloquea sim-lock-test; rm -rf $VAR y ${(f)} los rechaza el chequeo de Bash.
+- [Limpiar staging = sus cuentas](feedback_limpiar_staging_es_sus_cuentas.md) — sus 3 de Google con todo; los 4 sintéticos i5 de los goldens se quedan.

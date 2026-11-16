@@ -241,6 +241,7 @@ struct AppPreferencesSyncedMirrorResetTests {
         .panelPlanificacionHidden: { $0.panelPlanificacionHidden },
         .panelSectionsHidden: { $0.panelSectionsHidden },
         .panelSectionsOrder: { $0.panelSectionsOrder },
+        .panelMoneyAccountOverrides: { $0.panelMoneyAccountOverrides },
         .budgetAlertsEnabled: { $0.budgetAlertsEnabled },
         .expensesOnlyMode: { $0.expensesOnlyMode },
         .colorfulIcons: { $0.colorfulIcons },
@@ -282,6 +283,7 @@ struct AppPreferencesSyncedMirrorResetTests {
                     AppPreferences.Keys.panelSectionsHidden, AppPreferences.Keys.panelSectionsOrder] {
             d.set("a,b", forKey: key)
         }
+        d.set("00000000-0000-0000-0000-00000000000A:1", forKey: AppPreferences.Keys.panelMoneyAccountOverrides)
         d.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
         d.set(true, forKey: AppPreferences.Keys.budgetAlertsEnabled)
         d.set(true, forKey: AppPreferences.Keys.expensesOnlyMode)

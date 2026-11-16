@@ -709,7 +709,7 @@
 "aiConsent.insightsMessage" = "Yala analiza tus finanzas y te explica cómo vas. Para eso envía a un servicio de IA un resumen —totales y tendencias por categoría, presupuestos, pagos recurrentes y los nombres de tus compras pequeñas que se repiten, con cuántas veces y cuánto suman—, no tu historial completo de registros. Con tus datos en tu cuenta de Yala, puede leer además todo lo que haga falta para precisar, como cada compra con su fecha e importe. No se usa para entrenar a la IA.";
 "aiConsent.insightsTitle" = "Resumen con IA";
 "aiConsent.privacyPolicy" = "Política de privacidad";
-"aiConsent.processingMessage" = "Dictas o eliges una foto del recibo y Yala apunta el gasto. Para eso envía el audio o la foto a un servicio de IA, solo en ese momento. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No se usan para entrenar a la IA.";
+"aiConsent.processingMessage" = "Escribes, dictas o eliges una foto del recibo y Yala apunta el gasto. Para eso envía lo que escribiste, el audio o la foto a un servicio de IA, solo en ese momento. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No se usan para entrenar a la IA.";
 "aiConsent.processingTitle" = "Yala lo apunta por ti";
 "aiPrivacy.chatRow" = "Yala IA";
 "aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas una de estas funciones, y llegan a un servicio de IA a través de nuestro servidor. Con tus datos en tu cuenta de Yala, la IA puede leer además todos tus datos que hagan falta para ser precisa y detallada. No los vendemos ni los usamos para publicidad.";
@@ -1563,7 +1563,7 @@
 "guide.inbox.title" = "Por revisar y guardar";
 "guide.insights.message" = "Basado en tus gastos, Yala te dice cosas útiles: tu día más caro, si estás gastando más de lo normal, etc.";
 "guide.insights.title" = "Yala analiza por ti";
-"guide.panel.message" = "Aquí ves de un vistazo cuánto has gastado y cuánto te queda. Toca Nuevo registro para apuntar un gasto.";
+"guide.panel.message" = "Aquí ves de un vistazo tu saldo y tu dinero de hoy. Toca Nuevo registro para apuntar un gasto.";
 "guide.panel.title" = "Este es tu resumen";
 "guide.records.message" = "Aquí están tus ingresos y gastos del período, ordenados por fecha. Toca uno para ver los detalles.";
 "guide.records.title" = "Todos tus registros";
@@ -6720,6 +6720,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "Divisa de la tarjeta";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "Tus gastos más grandes";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "Línea en %@";
 
@@ -8153,12 +8156,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld de %2$lld: el resto no cabe";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Tienes hoy";
+"panel.hero.haveToday" = "Tu saldo hoy";
 "panel.hero.oweToday" = "Debes hoy";
 "panel.hero.leftNow" = "Te queda";
 "panel.hero.leftPast" = "Te quedó";
 "panel.hero.leftInMonth" = "En %@ te quedó";
-"stats.hero.captionAccountsBalanceClosed" = "Tenías al cierre";
+"stats.hero.captionAccountsBalanceClosed" = "Tu saldo al cierre";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Aún sin nota: sale cuando dos de las tres partes tengan datos.";
@@ -9078,3 +9081,33 @@
 "rfr.choice.nextDue" = "Próximo cobro: %@";
 "rfr.notice.linked" = "Vinculado a «%@»";
 "rfr.notice.created" = "Recurrente creado · este registro es su primer pago";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Tu dinero hoy";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "Qué significan tu saldo y tu dinero";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Tu saldo y tu dinero";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Suma todas tus cuentas, también las tarjetas. Lo que gastaste con tarjeta y aún no pagas se resta.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "El dinero que tienes para usar. Es lo mismo, pero sin las tarjetas de crédito.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Un ejemplo";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "En tu cuenta de ahorros";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Gastaste con tu tarjeta";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Cuando pagues la tarjeta, los dos montos quedan iguales.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Elegir qué cuentas suman";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Las tarjetas de crédito vienen apagadas. Puedes cambiarlo cuando quieras.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Qué cuentas suman";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Sumar en «Tu dinero hoy»";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Apágalo si no es dinero para usar, como una tarjeta de crédito.";

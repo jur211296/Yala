@@ -190,7 +190,8 @@ struct FreshStartAfterAdoptExitWiringTests {
         for exit in [".error,", ".adoptExit,", ".lineageExit,"] {
             #expect(arrowCase.contains(exit), "la flecha ya no saca de \(exit)")
         }
-        #expect(Self.flat(view).contains("if cancelLanded(controller) { onBack() return }"))
+        // Card xhbn (16-nov): desde la vitrina, la sesión se suelta antes de volver.
+        #expect(Self.flat(view).contains("if cancelLanded(controller) { if WelcomeAdoptCancel.releasesSessionAfterCancel( isUnifiedAccess: isUnifiedAccess, hasSession: CloudAuthService.shared.hasSession) { await CloudAuthService.shared.signOut() } onBack() return }"))
         #expect(!view.contains("hasCompletedOnboarding = false"), "una salida del adopt que bajara el flag sería la opción B")
 
         let content = Self.code(try Self.source(Self.contentView))
