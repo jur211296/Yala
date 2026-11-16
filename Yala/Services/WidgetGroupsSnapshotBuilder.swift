@@ -51,8 +51,8 @@ enum WidgetGroupsSnapshotBuilder {
 
     /// La cuenta, sin leer nada: la parte que el test de paridad compara con la app.
     ///
-    /// - Resumen: `GroupBalanceService.globalSummary` sobre los grupos NO archivados (ocultos para todos incluidos), con
-    ///   los ids de «yo» de cada grupo: `isCurrentUser` activo y la identidad resuelta sobre los activos. Es el bucle de
+    /// - Resumen: `GroupBalanceService.globalSummary(groups:)` sobre los grupos NO archivados (ocultos para todos
+    ///   incluidos), cada uno con su «Menos pagos» y su «una sola moneda», con los ids de «yo» de cada grupo: `isCurrentUser` activo y la identidad resuelta sobre los activos. Es el bucle de
     ///   `GroupsViewModel.recalculate()`, y lo que enseña arriba la lista (`GroupSummaryHeader`).
     /// - Archivados: la misma cuenta sobre los archivados no ocultos (`GroupsViewModel.archivedSummary`): la línea
     ///   «+ S/ 190.00 que te deben en grupos archivados» de la lista (L19-9). Archivar no salda nada.
@@ -62,13 +62,9 @@ enum WidgetGroupsSnapshotBuilder {
     ///   (`GroupDetailViewModel.headerBalance`): las deudas del grupo con su «simplificar» y, con «una sola moneda»,
     ///   consolidadas; neteadas por divisa con `computeGroupHeaderBalance`. La tarjeta de la lista las enseña por persona.
     static func summary(from sources: [Sources]) -> WidgetGroupsSummary {
-        var allExpenses: [SplitExpense] = []
-        var allShares: [SplitShare] = []
-        var allSettlements: [SplitSettlement] = []
+        var summarySources: [GroupBalanceService.GroupSummarySource] = []
         var currentUserMemberIDs = Set<String>()
-        var archivedExpenses: [SplitExpense] = []
-        var archivedShares: [SplitShare] = []
-        var archivedSettlements: [SplitSettlement] = []
+        var archivedSources: [GroupBalanceService.GroupSummarySource] = []
         var archivedMemberIDs = Set<String>()
         var activeGroupCount = 0
         var rows: [WidgetGroupBalance] = []
@@ -77,15 +73,11 @@ enum WidgetGroupsSnapshotBuilder {
             let group = source.group
             if group.isArchived {
                 guard !group.isHiddenForAll else { continue }
-                archivedExpenses.append(contentsOf: source.expenses)
-                archivedShares.append(contentsOf: source.shares)
-                archivedSettlements.append(contentsOf: source.settlements)
+                archivedSources.append(summarySource(source))
                 archivedMemberIDs.formUnion(myMemberIDs(in: source.members))
                 continue
             }
-            allExpenses.append(contentsOf: source.expenses)
-            allShares.append(contentsOf: source.shares)
-            allSettlements.append(contentsOf: source.settlements)
+            summarySources.append(summarySource(source))
             currentUserMemberIDs.formUnion(myMemberIDs(in: source.members))
 
             guard !group.isHiddenForAll else { continue }
@@ -106,15 +98,12 @@ enum WidgetGroupsSnapshotBuilder {
         }
 
         let global = GroupBalanceService.globalSummary(
-            allExpenses: allExpenses,
-            allShares: allShares,
-            allSettlements: allSettlements,
+            groups: summarySources,
             currentUserMemberIDs: currentUserMemberIDs
         )
-        let archived = archivedExpenses.isEmpty ? nil : GroupBalanceService.globalSummary(
-            allExpenses: archivedExpenses,
-            allShares: archivedShares,
-            allSettlements: archivedSettlements,
+        let hasArchivedExpenses = archivedSources.contains { !$0.expenses.isEmpty }
+        let archived = !hasArchivedExpenses ? nil : GroupBalanceService.globalSummary(
+            groups: archivedSources,
             currentUserMemberIDs: archivedMemberIDs
         )
 
@@ -126,6 +115,12 @@ enum WidgetGroupsSnapshotBuilder {
             archivedIOwe: amounts(archived?.totalIOwe ?? [:]),
             archivedOwedToMe: amounts(archived?.totalOwedToMe ?? [:])
         )
+    }
+
+    /// Las fuentes de un grupo para el resumen, con sus opciones de cómo enseñar las deudas.
+    private static func summarySource(_ source: Sources) -> GroupBalanceService.GroupSummarySource {
+        GroupBalanceService.GroupSummarySource(
+            group: source.group, expenses: source.expenses, shares: source.shares, settlements: source.settlements)
     }
 
     /// Los ids de «yo» en un grupo para el resumen: el flag activo y la identidad resuelta sobre los activos (las dos

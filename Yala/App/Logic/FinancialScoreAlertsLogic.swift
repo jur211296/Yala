@@ -99,7 +99,8 @@ enum FinancialScoreAlertsLogic {
     }
 
     /// El saldo de hoy de cada cuenta, el de su tarjeta en el carrusel (`AccountBalanceCalculator`). Fuera: tarjetas de
-    /// crédito y sus líneas (el negativo es la deuda), cuentas de Grupos, archivadas y excluidas de las estadísticas.
+    /// crédito y sus líneas (el negativo es la deuda), cuentas de Grupos y las que no suman en un saldo
+    /// (`Account.sumsInBalance`: excluidas de las estadísticas o archivadas, decisión 6 de 2.3).
     static func negativeAccounts(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -121,8 +122,7 @@ enum FinancialScoreAlertsLogic {
     }
 
     static func isWatched(_ account: Account) -> Bool {
-        !account.isArchived
-            && !account.excludeFromStatistics
+        account.sumsInBalance
             && !account.isSystemAccount
             && account.parentAccountID == nil
             && AccountType(rawValue: account.type) != .creditCard

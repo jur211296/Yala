@@ -61,8 +61,9 @@ struct WelcomeUnfinishedAccountEntryTests {
     func everyAccountPath_marksTheEntry() throws {
         let lines = try Self.codeLines("Yala/App/ContentView.swift")
         let marks = lines.indices.filter { lines[$0] == "WelcomeUnfinishedAccountEntry.mark()" }
-        // Restaurar (nivel 1), «Ya tengo cuenta» (Google, Apple, iCloud), cuenta en la nube nueva y el faro.
-        #expect(marks.count == 4)
+        // Restaurar (nivel 1), «Ya tengo cuenta» (Google, Apple, iCloud), cuenta en la nube nueva, el faro y el acceso
+        // único de la vitrina (bienvenida 2.3).
+        #expect(marks.count == 5)
         for mark in marks {
             #expect(lines[mark - 1] == "hasShownWelcomeChooser = true")
         }

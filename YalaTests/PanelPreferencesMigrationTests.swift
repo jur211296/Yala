@@ -152,17 +152,17 @@ struct PanelPreferencesMigrationTests {
         ])
         #expect(prefs.panelPlanificacionHidden == [])
 
-        // Tres secciones nacen ocultas.
-        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+        // Dos secciones nacen ocultas (la salud, a la vista desde la 2.3).
+        #expect(prefs.panelSectionsHidden == ["distribucion", "tools"])
         #expect(prefs.panelSectionsOrder == [])
     }
 
     // MARK: - El encargo, en una sola aserción de alto nivel
 
-    /// Pin del contrato de producto: un usuario nuevo ve CUATRO secciones y CUATRO
+    /// Pin del contrato de producto: un usuario nuevo ve CINCO secciones (la salud, desde la 2.3) y CUATRO
     /// widgets. Si alguien cambia la tabla de `PanelDefaults` sin querer, cae aquí y
     /// no en un test de bajo nivel que no dice qué se rompió.
-    @Test func freshInstall_muestraCuatroSeccionesYCuatroWidgets() {
+    @Test func freshInstall_muestraCincoSeccionesYCuatroWidgets() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
         prefs.setupDefaultsForNewUser()
@@ -173,7 +173,7 @@ struct PanelPreferencesMigrationTests {
         let visibleSections = PanelSectionKind.allCases.filter {
             !prefs.resolvedSectionsHidden.contains($0.rawValue)
         }
-        #expect(visibleSections == [.accounts, .tendencias, .planificacion, .latestRecords])
+        #expect(visibleSections == [.accounts, .health, .tendencias, .planificacion, .latestRecords])
 
         let vm = PanelViewModel()
         vm.setAppPreferences(prefs)
@@ -198,7 +198,7 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelTendenciasOrder.first == "tendencia_saldo")
         #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
         #expect(prefs.panelDistribucionHidden.contains("categorias_principales"))
-        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(prefs.panelSectionsHidden == ["distribucion", "tools"])
     }
 
     // MARK: - Desde el init, la siembra fresca se difiere siempre (card cmvc)

@@ -130,7 +130,7 @@ app.onError((err, c) => {
 // `withSentry` instrumenta el `fetch` de la app en el sitio y devuelve la misma app (los tests siguen usando
 // `app.request`). Sin `SENTRY_DSN`, `sentryOptions` devuelve `undefined` y el SDK no arranca.
 //
-// `email`: Email Routing entrega aquí lo que llega a `auto+<code>@yala-app.pe` (src/mail/email.ts). Va colgado de la misma
+// `email`: Email Routing entrega aquí lo que llega a `auto+<code>@yalainbox.com` (src/mail/email.ts). Va colgado de la misma
 // instancia para que `withSentry` lo instrumente y los tests sigan usando `app.request`.
 const worker = Object.assign(app, {
   email: (message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext) => handleEmail(message, env),

@@ -282,6 +282,8 @@ struct RecordsStandaloneView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
                 showsQuickFilters: true,
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() },
                 keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
             )
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
@@ -465,15 +467,7 @@ struct RecordsStandaloneView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            let allSelected = recordsViewModel.selectedRecordIDs.count ==
-                recordsViewModel.groupedRecords.flatMap(\.records).count
-            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
-                if allSelected {
-                    recordsViewModel.deselectAll()
-                } else {
-                    recordsViewModel.selectAll()
-                }
-            }
+            RecordsSelectAllButton(viewModel: recordsViewModel)
         }
     }
 
@@ -601,7 +595,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $showChatSheet)
+            .yalaAIChat(isPresented: $showChatSheet, onManualEntry: { recordsViewModel.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -609,9 +603,11 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 launcher: .records,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,
@@ -666,8 +662,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
                 viewModel: recordsViewModel
-            ) {
-                recordsViewModel.deleteSelected(context: modelContext)
+            ) { nameFor in
+                recordsViewModel.deleteSelected(context: modelContext, nameFor: nameFor)
                 reloadAndRecalculate()
             })
             .sheet(isPresented: $showBulkEditSheet) {

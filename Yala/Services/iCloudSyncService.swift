@@ -1015,9 +1015,12 @@ extension ModelContext {
         let groups = try fetchCount(FetchDescriptor<SplitGroup>(
             predicate: #Predicate { !$0.isArchived }
         ))
-        let categories = try fetchCount(FetchDescriptor<Subcategory>(
+        // Las copias de fábrica repetidas cuentan una vez, como las cuenta la sonda de iCloud y como quedarán tras el
+        // deduplicador (`SubcategoryDedupLogic.visibleCount`): contadas fila a fila, esta cifra salía mayor que la de
+        // «Ya tienes datos en tu iCloud» para el mismo iCloud.
+        let categories = SubcategoryDedupLogic.visibleCount(identityKeys: try fetch(FetchDescriptor<Subcategory>(
             predicate: #Predicate { !$0.isSystem }
-        ))
+        )).map(SubcategoryDedupLogic.identityKey(for:)))
         let trimmedName = appPreferences.userName.trimmingCharacters(in: .whitespacesAndNewlines)
         let userName: String? = (trimmedName.isEmpty || trimmedName == "Usuario") ? nil : trimmedName
         return ICloudAccountSummary(

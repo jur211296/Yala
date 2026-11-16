@@ -255,15 +255,17 @@ struct DistributionCountsAgreeTests {
         #expect(DistributionCountLogic.subcategoryCount(items) == 1)
     }
 
-    /// La cabecera y las dos tartas leen el mismo recuento.
+    /// La cabecera cuenta con `DistributionCountLogic`. Las tartas ya no dicen un recuento a VoiceOver: desde la decisión
+    /// 26 de la revisión 2.3 (V1) dicen el total y las partes (`Estadisticas23GraficasVoiceOverTests`), así que no
+    /// pueden contradecir a la cabecera.
     @Test func cabeceraYTartasUsanElMismoRecuento() throws {
         let header = try Lote07Source.code("Yala/App/Views/Statistics/CategoriesTabView.swift")
         #expect(header.contains("DistributionCountLogic.categoryCount(categorySpending)"))
         #expect(header.contains("DistributionCountLogic.subcategoryCount(subcategorySpending)"))
         let pie = try Lote07Source.code("Yala/App/Views/Panel/CategoriesPieWidget.swift")
-        #expect(pie.contains("categoriesCount(DistributionCountLogic.categoryCount(categories)"))
+        #expect(!pie.contains("categoriesCount("))
         let subPie = try Lote07Source.code("Yala/App/Views/Panel/SubcategoriesPieWidget.swift")
-        #expect(subPie.contains("subcategoriesCount(DistributionCountLogic.subcategoryCount(subcategories)"))
+        #expect(!subPie.contains("subcategoriesCount("))
     }
 
     /// «11696 registros» salía sin separador junto a importes que sí lo llevan. Ahora el número lleva el del formato

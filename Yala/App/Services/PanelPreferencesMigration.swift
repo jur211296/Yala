@@ -107,6 +107,33 @@ enum PanelPreferencesMigration {
         #endif
     }
 
+    // MARK: - La salud a la vista (lote 1 de la nota de salud, 11-nov-2026)
+
+    /// Marca local (por iPhone, sin sincronizar) de que ya se decidió encender la salud.
+    static let healthShownOnceKey = "panelHealthShownOnceV23"
+
+    /// Decisión de Jürgen (opción A, 11-nov-2026): la nota de salud se enciende UNA vez a quien la tiene oculta solo
+    /// porque venía así, es decir, con la lista de secciones ocultas exactamente igual a la de fábrica hasta la 2.2.
+    /// Quien tocó Configurar Panel tiene otra lista y no se toca. Corre en el arranque, tras el seed y el sync de
+    /// preferencias; sin siembra todavía, o con la lista vacía (puede no haber bajado aún la de iCloud), no decide y
+    /// vuelve a mirar en el próximo arranque.
+    @MainActor
+    static func showHealthOnceIfUntouched(appPreferences: AppPreferences, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: healthShownOnceKey), appPreferences.panelPrefsMigratedV2 else { return }
+        let hidden = appPreferences.panelSectionsHidden
+        guard !hidden.isEmpty else { return }
+        if let next = healthShownSections(from: hidden) {
+            appPreferences.panelSectionsHidden = next
+        }
+        defaults.set(true, forKey: healthShownOnceKey)
+    }
+
+    /// La lista con la salud a la vista, o `nil` si no es la de fábrica anterior (quien la tocó decide).
+    static func healthShownSections(from hidden: [String]) -> [String]? {
+        guard hidden == PanelDefaults.hiddenSectionsUntil22 else { return nil }
+        return hidden.filter { $0 != PanelSectionKind.health.rawValue }
+    }
+
     // MARK: - Decisión de siembra (pura)
 
     enum FreshSeedDecision: Equatable {

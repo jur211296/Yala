@@ -64,8 +64,10 @@ export const TASKS = {
   // Repartir un recibo en un grupo (2.3): líneas del recibo + frase de quién comió qué. La foto gasta foto y la nota gasta
   // nota (la de voz se transcribe antes con `voice.transcribe`, que abre la nota). `legacyModel` no se usa: ninguna
   // versión instalada la manda, siempre llega con cabecera.
-  "receipt.photo": { category: "vision", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ReceiptSplitService.readPhoto", maxBodyBytes: 32 * MB, requiresImage: true },
-  "receipt.voice": { category: "voice", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ReceiptSplitService.readNote", maxBodyBytes: 128 * KB, notePairing: "consume" },
+  "receipt.photo": { category: "receipt", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ReceiptSplitService.readPhoto", maxBodyBytes: 32 * MB, requiresImage: true },
+  "receipt.voice": { category: "receipt", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ReceiptSplitService.readNote", maxBodyBytes: 128 * KB, notePairing: "consume" },
+  // La nota de un recibo se transcribe con su propia tarea para contar en `receipt` y no en la prueba de voz de personal.
+  "receipt.transcribe": { category: "receipt", endpoint: "transcription", legacyModel: "whisper-1", source: "VoiceTranscriptionService (repartir un recibo)", maxBodyBytes: 26 * MB, notePairing: "grant" },
   "insights.cards": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateInsights", maxBodyBytes: 256 * KB },
   "insights.cashflow": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateCashFlowInsight", maxBodyBytes: 128 * KB },
   "insights.deviation": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateDeviationInsight", maxBodyBytes: 128 * KB },

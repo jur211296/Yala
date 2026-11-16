@@ -1,8 +1,10 @@
 /**
  * Repartir un recibo en un grupo (2.3): `receipt.photo` y `receipt.voice`.
  *
- * Fija el contrato de las dos tareas nuevas: la foto exige imagen y gasta foto, la nota gasta nota (y leerla tras
- * transcribir no gasta otra), y las dos salen con JSON estricto con el esquema que decodifica la app.
+ * Fija el contrato de las tareas: la foto exige imagen, la nota se transcribe con `receipt.transcribe` y leerla tras
+ * transcribir no gasta otra, y las dos salen con JSON estricto con el esquema que decodifica la app.
+ * Desde el 2026-11-14 (Jürgen) todo cuenta en el cubo `receipt`: 5 recibos al día en Free y 50 en Pro, foto o voz, sin
+ * tocar las 5 fotos y 5 notas de prueba de personal.
  * El arnés es el de `ai.session2.test.ts` (limitador real con un Durable Object falso).
  */
 import { readFileSync } from "node:fs";
@@ -175,9 +177,9 @@ describe("receipt.photo · la foto de un recibo con su frase", () => {
     expect(sent).toHaveLength(0);
   });
 
-  it("con imagen pasa, gasta del cubo de visión y sale con JSON estricto y la imagen en alta", async () => {
+  it("con imagen pasa, gasta del cubo de recibos y sale con JSON estricto y la imagen en alta", async () => {
     expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" })).status).toBe(200);
-    expect(checks.map((c) => c.category)).toEqual(["vision"]);
+    expect(checks.map((c) => c.category)).toEqual(["receipt"]);
     const body = sent[0]?.json as Record<string, any>;
     expect(body.model).toBe("gpt-6-luna");
     expect(body.response_format).toMatchObject({ type: "json_schema", json_schema: { name: "receipt_split", strict: true } });
@@ -185,11 +187,26 @@ describe("receipt.photo · la foto de un recibo con su frase", () => {
     expect(typeof body.max_completion_tokens).toBe("number");
   });
 
-  it("comparte las 5 fotos de prueba con photo.read: tras cinco, la 6.ª se rechaza", async () => {
+  it("no toca las 5 fotos de prueba de personal: con la prueba agotada, el recibo pasa", async () => {
     for (let i = 0; i < 5; i++) await chat(PHOTO, { "X-Yala-Task": "photo.read" });
+    expect((await chat(PHOTO, { "X-Yala-Task": "photo.read" })).status).toBe(403);
+    expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" })).status).toBe(200);
+    expect(stores.get("unit-device")?.trial?.vision).toBe(5);
+  });
+
+  it("Free: 5 recibos al día; el 6.º es 429 de cupo diario, y al día siguiente vuelve", async () => {
+    for (let i = 0; i < 5; i++) expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" })).status).toBe(200);
     const sixth = await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" });
-    expect(sixth.status).toBe(403);
-    expect(await errorType(sixth)).toBe("yala_trial_exhausted");
+    expect(sixth.status).toBe(429);
+    expect(await errorType(sixth)).toBe("yala_quota_daily");
+    now += 24 * 60 * 60 * 1000;
+    expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" })).status).toBe(200);
+  });
+
+  it("Pro: 50 recibos al día con su propio contador; el 51.º es 429", async () => {
+    for (let i = 0; i < 50; i++) expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" }, "pro")).status).toBe(200);
+    expect((await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" }, "pro")).status).toBe(429);
+    expect((await chat(PHOTO, { "X-Yala-Task": "photo.read" }, "pro")).status).toBe(200);
   });
 
   it("una categoría declarada que no casa (voz) → 400", async () => {
@@ -200,16 +217,32 @@ describe("receipt.photo · la foto de un recibo con su frase", () => {
 });
 
 describe("receipt.voice · una nota con las líneas y el reparto", () => {
-  it("transcribir y leer el recibo es UNA nota", async () => {
-    expect((await transcribe({ "X-Yala-Task": "voice.transcribe" })).status).toBe(200);
+  it("transcribir y leer el recibo es UN recibo del día, y no gasta notas de prueba", async () => {
+    expect((await transcribe({ "X-Yala-Task": "receipt.transcribe", "X-Yala-Category": "receipt" })).status).toBe(200);
     expect((await chat(RECEIPT_TEXT, { "X-Yala-Task": "receipt.voice" })).status).toBe(200);
-    expect(stores.get("unit-device")?.trial?.voice).toBe(1);
+    expect(checks.map((c) => c.category)).toEqual(["receipt", "receipt"]);
+    expect(stores.get("unit-device")?.counts?.receipt).toBe(1);
+    expect(stores.get("unit-device")?.trial?.voice).toBeUndefined();
   });
 
-  it("leer sin haber transcrito gasta su propio uso de voz", async () => {
+  it("la transcripción del recibo va con el modelo de voz de siempre", async () => {
+    await transcribe({ "X-Yala-Task": "receipt.transcribe" });
+    expect(sent[0]?.url).toContain("/audio/transcriptions");
+  });
+
+  it("foto y voz comparten los 5 del día", async () => {
+    for (let i = 0; i < 3; i++) await chat(RECEIPT_PHOTO, { "X-Yala-Task": "receipt.photo" });
+    for (let i = 0; i < 2; i++) {
+      await transcribe({ "X-Yala-Task": "receipt.transcribe" });
+      await chat(RECEIPT_TEXT, { "X-Yala-Task": "receipt.voice" });
+    }
+    expect((await transcribe({ "X-Yala-Task": "receipt.transcribe" })).status).toBe(429);
+  });
+
+  it("leer sin haber transcrito gasta su propio recibo del día", async () => {
     await chat(RECEIPT_TEXT, { "X-Yala-Task": "receipt.voice" });
-    expect(checks.map((c) => c.category)).toEqual(["voice"]);
-    expect(stores.get("unit-device")?.trial?.voice).toBe(1);
+    expect(checks.map((c) => c.category)).toEqual(["receipt"]);
+    expect(stores.get("unit-device")?.counts?.receipt).toBe(1);
   });
 
   it("sale con JSON estricto con el mismo esquema que la foto", async () => {

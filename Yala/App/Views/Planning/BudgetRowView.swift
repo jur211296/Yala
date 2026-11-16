@@ -98,12 +98,8 @@ struct BudgetRowView: View {
                     BudgetCountsAllExpensesNote()
                 }
 
-                // Exceeded encouragement (brand voice: constructive, never scolding)
-                if summary.status == .exceeded {
-                    Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
+                // Presupuesto pasado: el monto ya sale arriba («Te pasaste por …»); la acción «Ajustar límite» vive en el
+                // detalle, porque la fila entera es un botón (Jürgen, 14-nov).
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())

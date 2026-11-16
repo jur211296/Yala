@@ -10,6 +10,9 @@
 //    shell se reduce después, como en «Vaciar datos»: con Ajustes encima, la página que la presenta podría desmontarse.
 //  - Solo grupos → «Yala completo»: pide `.presentFullModeActivation`. Con sesión privada es la vuelta y cierra Ajustes
 //    antes (`ContentView` espera a que se vaya); sin ella es la activación de siempre, encima de Ajustes.
+//  - Decisión 48 de la revisión 2.3 (F1): «Solo gastos» vive aquí, como interruptor bajo «Yala completo» y solo con él
+//    elegido (en Solo grupos no aplica), con sus dos avisos de siempre (UX 2.2 · L16-6). Antes estaba en Personalización ›
+//    «Modo de uso», un nombre casi igual a este en otro sitio.
 //
 
 import SwiftUI
@@ -26,6 +29,9 @@ struct UsageModeSettingsView: View {
 
     @State private var showsLeaveConfirmation = false
     @State private var confirmedLeave = false
+    /// UX 2.2 · L16-6: dos avisos, uno por sentido, con el texto de sus botones LITERAL (`swiftui-ds.md`).
+    @State private var showingExpensesOnlyActivate = false
+    @State private var showingExpensesOnlyDeactivate = false
 
     private var isGroupsOnly: Bool { sessionState.isGroupsFocusedShell }
 
@@ -44,6 +50,9 @@ struct UsageModeSettingsView: View {
                     title: L10n.UsageMode.fullTitle, body: L10n.UsageMode.fullBody, isSelected: !isGroupsOnly
                 ) {
                     chooseFull()
+                }
+                if !isGroupsOnly {
+                    expensesOnlyRow
                 }
                 option(
                     id: "usage_mode_groups_only", icon: "person.3.fill", tint: .orange,
@@ -73,6 +82,23 @@ struct UsageModeSettingsView: View {
                     }
                 }
             }
+        }
+        // UX 2.2 · L16-6: un aviso del sistema y no un diálogo anclado al interruptor, que no pintaba «Cancelar»
+        // (`swiftui-ds.md`); y «Activar» sin rojo: activar no borra nada, solo oculta.
+        .alert(L10n.Settings.expensesOnlyActivateTitle, isPresented: $showingExpensesOnlyActivate) {
+            Button(L10n.Settings.expensesOnlyActivateConfirm) { setExpensesOnlyMode(true) }
+                .accessibilityIdentifier("expenses_only_activate_confirm")
+            Button(L10n.Settings.cancel, role: .cancel) {}
+                .accessibilityIdentifier("expenses_only_cancel")
+        } message: {
+            Text(L10n.Settings.expensesOnlyActivateMessage)
+        }
+        .alert(L10n.Settings.expensesOnlyDeactivateTitle, isPresented: $showingExpensesOnlyDeactivate) {
+            Button(L10n.Settings.expensesOnlyDeactivateConfirm) { setExpensesOnlyMode(false) }
+                .accessibilityIdentifier("expenses_only_deactivate_confirm")
+            Button(L10n.Settings.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Settings.expensesOnlyDeactivateMessage)
         }
         // Hoja → cerrar Ajustes en su `onDismiss`: dos contenedores distintos, sin carrera en el mismo anchor.
         .sheet(isPresented: $showsLeaveConfirmation, onDismiss: applyLeaveIfConfirmed) {
@@ -116,7 +142,54 @@ struct UsageModeSettingsView: View {
         }
     }
 
+    // MARK: - Solo gastos (F1)
+
+    private func setExpensesOnlyMode(_ newValue: Bool) {
+        // El interruptor es el punto de INTENCIÓN del usuario y la key es `synced: true`, así que publica ÉL — mismo orden
+        // que `OnboardingView`. El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group + recarga
+        // widgets, pero NO encola: a ese `didSet` llegan también el merge remoto y el reset de `-uitest-reset`, y publicar
+        // ahí devolvería el eco. (Venía tal cual de Personalización, de donde salió con la decisión 48.)
+        guard newValue != sessionState.isExpensesOnlyMode else { return }
+        PreferenceSyncService.shared.set(
+            bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
+        sessionState.isExpensesOnlyMode = newValue
+    }
+
+    /// Bajo «Yala completo», con el texto alineado al de las tarjetas: es una forma de ese modo, no un tercer modo.
+    ///
+    /// El interruptor lee el modo de la sesión y el toque solo PREGUNTA: el cambio lo hace `setExpensesOnlyMode` al
+    /// confirmar. Es el enlace que tenía en Personalización, movido tal cual: con un `@State` espejo y dos `onChange`
+    /// el interruptor se encendía un instante y rebotaba debajo del aviso (review del lote chico de 2.3).
+    private var expensesOnlyRow: some View {
+        Toggle(isOn: Binding(
+            get: { sessionState.isExpensesOnlyMode },
+            set: { _ in
+                if sessionState.isExpensesOnlyMode {
+                    showingExpensesOnlyDeactivate = true
+                } else {
+                    showingExpensesOnlyActivate = true
+                }
+            }
+        )) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Settings.expensesOnlyMode)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                Text(L10n.Settings.expensesOnlyModeDescription)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.leading, Self.optionIconSize + DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.xs)
+        .accessibilityIdentifier("usage_mode_expenses_only")
+    }
+
     // MARK: - Tarjeta
+
+    /// El lado del icono de cada tarjeta: la fila de «Solo gastos» alinea su texto con el de las tarjetas.
+    private static let optionIconSize: CGFloat = 36
 
     private func option(id: String, icon: String, tint: Color, title: String, body: String, isSelected: Bool,
                         action: @escaping () -> Void) -> some View {
@@ -125,7 +198,7 @@ struct UsageModeSettingsView: View {
                 Image(systemName: icon)
                     .font(DS.Typography.body)
                     .foregroundStyle(theme.onFill(tint))
-                    .frame(width: 36, height: 36)
+                    .frame(width: Self.optionIconSize, height: Self.optionIconSize)
                     .background(tint, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

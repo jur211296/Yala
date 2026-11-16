@@ -1439,6 +1439,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
         defaults.removeObject(forKey: WelcomeUnfinishedAccountEntry.key) // Card 7e60: va con el chooser
+        for key in WelcomeAdoptInFlight.allKeys { defaults.removeObject(forKey: key) } // Card gd78: va con el onboarding
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)

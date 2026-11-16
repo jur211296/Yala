@@ -16,7 +16,8 @@ struct SubcategorySelectorSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var viewModel = SubcategorySelectorViewModel()
-    /// Buscador de la hoja (UX 2.2 · L2-3): nombre de la categoría y de su grupo, sin tildes ni mayúsculas.
+    /// Buscador de la hoja (UX 2.2 · L2-3): nombre de la categoría y de su grupo, sin tildes ni mayúsculas; y desde la
+    /// decisión 21 de 2.3 (C3), las palabras del día a día de cada categoría sembrada («café», «uber», «menú»).
     @State private var searchText = ""
 
     private var isSearching: Bool { !CategorySearchLogic.folded(searchText).isEmpty }
@@ -26,7 +27,8 @@ struct SubcategorySelectorSheet: View {
             viewModel.groupedSubcategories,
             query: searchText,
             groupName: { $0.name },
-            itemName: { $0.name }
+            itemName: { $0.name },
+            itemWords: { CategoryEverydayWords.words(forName: $0.name) }
         )
     }
 

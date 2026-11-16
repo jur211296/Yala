@@ -13,6 +13,12 @@
 //  tiene DOS salidas —conservar o quitar los movimientos del Panel, decisión de Jürgen del 2026-09-09— y
 //  mezclarlas con las cuatro confirmaciones de la migración haría de `StorageConfirmations` un nudo.
 //
+//  **Desde el 2026-11-11 (G1 de la revisión 2.3, decisión 55)**, con una cuenta que se puede soltar la sección deja de ser
+//  la tarjeta «Grupos» con «Desasociar» en naranja encima de «Activar la nube»: es una fila de datos —«Tu cuenta de Yala»,
+//  con qué se entra y el correo, «La usan tus grupos»— y un enlace «Cambiar de cuenta». El enlace abre la hoja de
+//  consecuencias (`GroupsDetachSheet`, decisión 59), igual que el botón del aviso de bloqueo, que la pide por
+//  `changeAccountRequest`. La hoja no se salta nunca: soltar la cuenta mueve datos de grupos.
+//
 
 import SwiftData
 import SwiftUI
@@ -24,13 +30,21 @@ struct GroupsAssociationSection: View {
     /// `ContentView`) y presentarlo encima de Ajustes sería un segundo anchor del mismo sheet, que es lo
     /// que el contrato de presentaciones prohíbe. Opcional para previews y para el resto de call-sites.
     var onAssociate: (() -> Void)?
+    /// Sube cada vez que el aviso de bloqueo de «Activar la nube» pide «Cambiar de cuenta» (G1). La sección abre su hoja de
+    /// consecuencias, la misma del enlace: un solo dueño de esa presentación. Un contador y no un `Binding`: la pantalla no
+    /// necesita saber cuándo se cierra, y un valor que solo sube no se queda «pedido» si la sección no estaba montada.
+    var changeAccountRequest: Int = 0
 
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
 
-    @State private var confirmDetach = false
-    /// L19-14: lo que «Dejar en mis cuentas lo que pagué» dejaría, leído al tocar «Desasociar».
-    @State private var detachKeepPreview: GroupsAssociationDetach.KeepPreview?
+    /// La hoja de consecuencias abierta, con la cifra de lo que «Dejar en mis cuentas lo que pagué» dejaría (L19-14), leída
+    /// al pedirla. `.sheet(item:)` y no `isPresented` con la cifra en otro `@State`: así la hoja nunca sale vacía
+    /// (`.claude/rules/swiftui-ds.md`).
+    @State private var detachSheet: DetachSheetRequest?
+    /// La salida elegida en la hoja. Se aplica en su `onDismiss`, con la hoja ya abajo: el aviso de bloqueo o de borrado que
+    /// pueda salir después no choca con una hoja bajando en el mismo anchor.
+    @State private var chosenDetach: GroupsAssociationDetach.BridgedRowsChoice?
     /// El aviso de bloqueo de ESTE gesto. **Propio y no el de `ProfileView`**: aquel dice «No pudimos
     /// cerrar tu sesión», que es otra cosa y en una secundaria llega a ofrecer salir de la sesión entera a
     /// quien solo pidió soltar una cuenta de grupos. **El motivo llega por el retorno del gesto, y cerrar el
@@ -111,40 +125,36 @@ struct GroupsAssociationSection: View {
                 // de todos sus hijos, y los botones de la sección dejan de existir con su propio id en el
                 // árbol de accesibilidad: es la regla medida en `.claude/rules/testing.md`, y aquí costó
                 // una corrida de XCUITest con tres rojos mudos.
-                Text(L10n.Storage.Groups.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .accessibilityIdentifier("storage_groups_section")
+                if showsAccountRow {
+                    accountRow
+                } else {
+                    Text(L10n.Storage.Groups.title)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                        .accessibilityIdentifier("storage_groups_section")
 
-                Text(bodyText)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                    Text(bodyText)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 actions
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .storageGroupsCardStyle()
-            .confirmationDialog(
-                L10n.Storage.Groups.detachTitle,
-                isPresented: $confirmDetach,
-                titleVisibility: .visible
-            ) {
-                // Las DOS salidas son botones de la MISMA hoja, y el orden no es casual: conservar va
-                // primero porque es la que no destruye nada. Ninguna de las dos es `.destructive` a
-                // secas — quitar sí lo es, conservar no lo es en absoluto.
-                // L19-14 (decisión C de Jürgen): cada salida dice su efecto. Las etiquetas van fijas; la cifra, en el
-                // mensaje (los botones de una presentación no admiten texto que dependa del estado).
-                Button(L10n.UXL19.detachKeep) { detach(.keep) }
-                    .accessibilityIdentifier("storage_groups_detach_keep")
-                Button(L10n.UXL19.detachRemove, role: .destructive) { detach(.remove) }
-                    .accessibilityIdentifier("storage_groups_detach_remove")
-                // Sin `role: .cancel`: con él, el diálogo (globo anclado en iOS 26) no pinta la salida de no hacer
-                // nada (medido en el lote 19 de la auditoría UX; molde del lote 13).
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("storage_groups_detach_cancel")
-            } message: {
-                Text(detachMessage)
+            // Las DOS salidas en la MISMA hoja, cada una con su consecuencia debajo y lo común arriba (decisión 59). Hasta el
+            // 2026-11-11 era un `confirmationDialog` con la diferencia en un párrafo. La hoja es pura: devuelve la elección
+            // y el gesto corre aquí, al cerrarse.
+            .sheet(item: $detachSheet, onDismiss: applyChosenDetach) { request in
+                GroupsDetachSheet(
+                    keepCountLine: request.keepCountLine,
+                    onChoose: { choice in
+                        chosenDetach = choice
+                        detachSheet = nil
+                    },
+                    onCancel: { detachSheet = nil })
             }
+            .onChange(of: changeAccountRequest) { _, _ in openDetachSheet() }
             .alert(
                 L10n.Storage.Groups.detachBlockedTitle,
                 isPresented: Binding(
@@ -259,6 +269,45 @@ struct GroupsAssociationSection: View {
         }
     }
 
+    // MARK: - La fila de la cuenta (G1)
+
+    /// Con una cuenta que se puede soltar, y nada a medias, la sección es la fila de la cuenta. Con un soltar a medias
+    /// sigue diciendo que quedó a medias: ahí la persona no está eligiendo cuenta.
+    private var showsAccountRow: Bool {
+        GroupsAssociationLogic.offersDetach(state) && !hasPendingPurge
+    }
+
+    /// «Tu cuenta de Yala» · «Apple · correo» · «La usan tus grupos». El id de la sección va en el rótulo, como iba en el
+    /// título: en el contenedor pisaría el de los botones.
+    private var accountRow: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(L10n.Settings.yalaAccountRowTitle)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("storage_groups_section")
+            if let accountLine {
+                Text(accountLine)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("storage_groups_account")
+            }
+            Text(L10n.Storage.Groups.usedByGroups)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("storage_groups_used_by")
+        }
+    }
+
+    /// Con qué se entra y el correo. Lee lo mismo que `accountDisplayName`: el registro de la asociación y, si falta, lo
+    /// capturado al firmar. **Nunca se inventa un correo.**
+    private var accountLine: String? {
+        let record = GroupsAccountAssociation.shared.read()
+        return GroupsAssociationLogic.accountLine(
+            email: record?.email ?? CloudAuthService.shared.capturedEmail(),
+            provider: record?.provider ?? CloudAuthService.shared.storedProvider())
+    }
+
     // MARK: - Acciones
 
     @ViewBuilder
@@ -332,20 +381,22 @@ struct GroupsAssociationSection: View {
                 .tint(DS.Semantic.warningForeground)
                 .accessibilityIdentifier("storage_groups_detach_finish_button")
             } else if GroupsAssociationLogic.offersDetach(state) {
-                Button {
-                    detachKeepPreview = GroupsAssociationDetach.keepPreview(context: modelContext)
-                    confirmDetach = true
-                } label: {
-                    Text(L10n.Storage.Groups.detachButton)
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(DS.Semantic.warningForeground)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+                // G1: un enlace y no un botón relleno. Lo que la persona vino a hacer a esta pantalla es «Activar la nube»;
+                // cambiar la cuenta de sus grupos es la excepción, y abre la hoja de consecuencias antes de soltar nada.
+                Button(action: openDetachSheet) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Storage.Groups.changeAccount)
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.caption.weight(.semibold))
+                            .accessibilityHidden(true)
+                    }
+                    .font(DS.Typography.subheadline.weight(.medium))
+                    .foregroundStyle(.thAccentText)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.bordered)
-                .tint(DS.Semantic.warningForeground)
-                .accessibilityIdentifier("storage_groups_detach_button")
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("storage_groups_change_account")
             }
         }
     }
@@ -361,24 +412,43 @@ struct GroupsAssociationSection: View {
     /// en `.idle` —es verdad: no está haciendo nada— así que mirar `phase` no lo distinguiría del éxito.
     /// Es exactamente la confusión que este ticket arregla, y leerla aquí la reintroduciría en la única
     /// pantalla que la sufre.
-    /// «Tus grupos se van de este iPhone; siguen en tu cuenta y vuelven si la conectas otra vez.» y, debajo, el efecto
-    /// de cada salida con su cifra: «Gastos que pagaste y se quedan en tus cuentas: 12 (S/ 840.00)».
-    private var detachMessage: String {
-        var lines = [L10n.UXL19.detachBody]
-        if let preview = detachKeepPreview, preview.expenseCount > 0 {
-            let amounts = GroupDebtCopyLogic.amounts(
-                preview.amountsByCurrency.map { ($0.value, $0.key) },
-                money: { appPreferences.currency($0, currencyCode: $1) })
-            lines.append(L10n.UXL19.detachKeepCount(preview.expenseCount, amounts))
-            lines.append(L10n.UXL19.detachRemoveEffect)
-        }
-        return lines.joined(separator: "\n\n")
+    /// La consecuencia de conservar con su cifra: «Los gastos que pagaste se quedan en tus cuentas como registros normales:
+    /// 12 (S/ 840.00)». `nil` sin gastos que conservar o sin poder leerlos: la hoja la dice sin cifra.
+    private func keepCountLine(_ preview: GroupsAssociationDetach.KeepPreview?) -> String? {
+        guard let preview, preview.expenseCount > 0 else { return nil }
+        let amounts = GroupDebtCopyLogic.amounts(
+            preview.amountsByCurrency.map { ($0.value, $0.key) },
+            money: { appPreferences.currency($0, currencyCode: $1) })
+        return L10n.Storage.Groups.changeAccountKeepEffectCount(preview.expenseCount, amounts)
     }
 
-    private func detach(_ choice: GroupsAssociationDetach.BridgedRowsChoice) {
+    /// Abre la hoja de consecuencias, desde el enlace o desde el aviso de bloqueo. **Solo si la sección ofrece soltar en
+    /// este instante**: entre el aviso y su cierre pudo empezar otro soltar, o quedar uno a medias, y entonces la hoja
+    /// ofrecería una elección que ya no puede aplicarse.
+    private func openDetachSheet() {
+        guard GroupsAssociationLogic.offersDetach(state), !hasPendingPurge, !isWorking, detachSheet == nil else { return }
+        detachSheet = DetachSheetRequest(
+            keepCountLine: keepCountLine(GroupsAssociationDetach.keepPreview(context: modelContext)))
+    }
+
+    /// `onDismiss` de la hoja: corre la salida elegida, si hubo. Cancelar o arrastrarla abajo no suelta nada.
+    private func applyChosenDetach() {
+        guard let choice = chosenDetach else { return }
+        chosenDetach = nil
         Task { @MainActor in
             apply(await signOutCoordinator.detachGroupsAccount(context: modelContext, choice: choice))
         }
+    }
+
+    /// ¿La pantalla puede soltar la cuenta de grupos AHORA? Lo pregunta el aviso de bloqueo de «Activar la nube» antes de
+    /// ofrecer «Cambiar de cuenta» (`MigrationBlockChangeAccountLogic`). Las mismas tres condiciones que `openDetachSheet`.
+    static func canReleaseGroupsAccount(hasCompletedOnboarding: Bool) -> Bool {
+        let state = GroupsAssociationPresence.sectionState(hasCompletedOnboarding: hasCompletedOnboarding)
+        guard GroupsAssociationLogic.offersDetach(state) else { return false }
+        guard !CloudSessionSignOut.shared.isDetaching else { return false }
+        let pending = GroupsDetachPendingPurge.isArmed(for: GroupsAccountAssociation.shared.associatedSub)
+            && CloudAuthService.shared.currentUserID != GroupsDetachPendingPurge.armedSub()
+        return !pending
     }
 
     /// «Asociar» / «Entrar»: **el canal se re-mide al tocar, y el refresco va ANTES de leer el flag.** El
@@ -442,6 +512,12 @@ struct GroupsAssociationSection: View {
         }
         refreshTick.toggle()
     }
+}
+
+/// Lo que la hoja de consecuencias enseña, fijado al pedirla.
+private struct DetachSheetRequest: Identifiable {
+    let id = UUID()
+    let keepCountLine: String?
 }
 
 // MARK: - Estilo

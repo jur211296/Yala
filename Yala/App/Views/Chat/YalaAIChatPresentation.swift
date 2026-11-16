@@ -26,14 +26,24 @@ extension View {
     ///
     /// `insideNavigationStack`: la vista que lo lleva está DENTRO de una `NavigationStack` (Estadísticas). La columna
     /// no abre entonces otra pila: pinta su cabecera bajo la barra de quien la contiene.
-    func yalaAIChat(isPresented: Binding<Bool>, insideNavigationStack: Bool = false) -> some View {
-        modifier(YalaAIChatPresentation(isPresented: isPresented, insideNavigationStack: insideNavigationStack))
+    ///
+    /// `onManualEntry`: abre «Nuevo registro» en quien monta el chat. Lo ofrece el chat sin conexión (decisión 42 de 2.3)
+    /// y corre con el chat ya cerrado: en hoja, al terminar de bajar (dos presentaciones a la vez en el mismo ancla se
+    /// tumban); en columna, en el acto, porque la columna no es una presentación.
+    func yalaAIChat(
+        isPresented: Binding<Bool>, insideNavigationStack: Bool = false, onManualEntry: (() -> Void)? = nil
+    ) -> some View {
+        modifier(YalaAIChatPresentation(
+            isPresented: isPresented, insideNavigationStack: insideNavigationStack, onManualEntry: onManualEntry))
     }
 }
 
 private struct YalaAIChatPresentation: ViewModifier {
     @Binding var isPresented: Bool
     let insideNavigationStack: Bool
+    let onManualEntry: (() -> Void)?
+    /// «Nuevo registro» tocado en la hoja: se abre al terminar de cerrarse.
+    @State private var wantsManualEntry = false
     /// Size class de la VENTANA en el sitio donde se cuelga el chat (fuera de cualquier split).
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -48,21 +58,28 @@ private struct YalaAIChatPresentation: ViewModifier {
             : .constant(false)
     }
 
+    private func openManualEntryIfRequested() {
+        guard wantsManualEntry else { return }
+        wantsManualEntry = false
+        onManualEntry?()
+    }
+
     func body(content: Content) -> some View {
         HStack(spacing: DS.Spacing.none) {
             content
             if showsColumn {
                 Divider()
-                ChatSheetView(presentation: .column(
-                    onClose: { isPresented = false }, insideNavigationStack: insideNavigationStack))
+                ChatSheetView(
+                    presentation: .column(onClose: { isPresented = false }, insideNavigationStack: insideNavigationStack),
+                    onManualEntry: onManualEntry.map { open in { isPresented = false; open() } })
                     .frame(width: DS.Adaptive.listColumnMinWidth)
                     .transition(.move(edge: .trailing))
             }
         }
         // La columna entra desde la derecha; con Reducir movimiento, aparece en seco (card C6).
         .animation(reduceMotion ? nil : DS.Animation.appear, value: showsColumn)
-        .sheet(isPresented: showsSheet) {
-            ChatSheetView()
+        .sheet(isPresented: showsSheet, onDismiss: openManualEntryIfRequested) {
+            ChatSheetView(onManualEntry: onManualEntry.map { _ in { wantsManualEntry = true; isPresented = false } })
         }
     }
 }

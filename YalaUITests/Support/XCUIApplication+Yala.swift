@@ -71,6 +71,7 @@ extension XCUIApplication {
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
         pendingICloudWipe: Bool = false,
+        pendingICloudWipeHalfway: Bool = false,
         // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
@@ -307,6 +308,7 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if pendingICloudWipeHalfway { args.append("-uitest-pending-icloud-wipe-halfway") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
         if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
         if syncNeedsSignIn { args.append("-uitest-sync-needs-sign-in") }
@@ -752,7 +754,11 @@ extension XCUIApplication {
         let tops = covers.compactMap { cover -> CGFloat? in
             guard cover.exists else { return nil }
             let frame = cover.frame
-            return frame.minY < chipFrame.maxY && frame.maxY > chipFrame.minY ? frame.minY : nil
+            // Pisa si su borde de arriba queda por encima del de abajo del chip, también con el chip ENTERO por debajo:
+            // la barra y el teclado llegan hasta el borde de la pantalla. Con la fila de categorías a un toque (decisión 21
+            // de 2.3) y una cuenta en dólares, el chip de categoría quedaba bajo «Guardar», sin solaparse con el botón, y
+            // el toque caía en la barra (medido el 2026-11-11 en el vídeo del `.xcresult`).
+            return frame.minY < chipFrame.maxY ? frame.minY : nil
         }
         return tops.min()
     }

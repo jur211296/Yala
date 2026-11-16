@@ -392,9 +392,25 @@ struct BudgetDetailView: View {
                 .foregroundStyle(Color.hotPink)
                 .accessibilityHidden(true)
 
-            Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Presupuesto pasado: cuánto y una salida (Jürgen, 14-nov), en vez de un consuelo sin dato.
+                Text(String(
+                    format: NSLocalizedString("budgets.exceeded.overByAdjust %@", comment: ""),
+                    appPreferences.currency(
+                        max((summary?.spent ?? 0) - budget.limitAmount, 0),
+                        currencyCode: budget.currencyCode
+                    )
+                ))
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("budget_detail_over_by")
+
+                Button(NSLocalizedString("budgets.exceeded.adjustLimit", comment: "")) {
+                    showEditor = true
+                }
+                .font(DS.Typography.caption.weight(.semibold))
+                .accessibilityIdentifier("budget_detail_adjust_limit")
+            }
         }
         .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)

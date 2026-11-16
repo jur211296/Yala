@@ -134,7 +134,7 @@ struct PanelDefaultsTests {
     @Test func lecturaSinSembrar_devuelveElCurado() {
         let prefs = Self.makeUnseeded()
 
-        #expect(prefs.resolvedSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(prefs.resolvedSectionsHidden == ["distribucion", "tools"])
         #expect(prefs.order(for: .tendencias) == [
             "tendencia_saldo", "gasto_por_dia", "flujo_efectivo",
         ])
@@ -209,7 +209,7 @@ struct PanelDefaultsTests {
             .map(\.rawValue)
             .filter { Set(prefs.resolvedSectionsHidden).subtracting(["distribucion"]).contains($0) }
 
-        #expect(prefs.resolvedSectionsHidden == ["health", "tools"])
+        #expect(prefs.resolvedSectionsHidden == ["tools"])
         #expect(prefs.panelPrefsMigratedV2 == true)
     }
 
@@ -222,13 +222,13 @@ struct PanelDefaultsTests {
         let a = Self.makeUnseeded()
         a.movePanelSection(from: IndexSet(integer: 0), to: 2)
         #expect(a.panelPrefsMigratedV2 == true)
-        #expect(a.resolvedSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(a.resolvedSectionsHidden == ["distribucion", "tools"])
 
         // Restablecer el orden de secciones.
         let b = Self.makeUnseeded()
         b.resetPanelSectionsOrder()
         #expect(b.panelPrefsMigratedV2 == true)
-        #expect(b.resolvedSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(b.resolvedSectionsHidden == ["distribucion", "tools"])
 
         // Cambiar un tamaño (escribe en el almacén legacy, no en estas listas).
         let c = Self.makeUnseeded()
@@ -237,7 +237,7 @@ struct PanelDefaultsTests {
         vm.setWidgetSize(.trend, size: .small)
         #expect(c.panelPrefsMigratedV2 == true,
                 "sin esto el blob legacy desvía la migración a la rama de actualización")
-        #expect(c.resolvedSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(c.resolvedSectionsHidden == ["distribucion", "tools"])
     }
 
     /// Las secciones sin almacén por widget no tienen tabla y sus setters son no-op:

@@ -139,9 +139,11 @@ struct CashFlowStartingBalanceSheet: View {
             Toggle(L10n.CashFlowPlan.startingBalanceDateLabel, isOn: $hasDate)
                 .font(DS.Typography.label)
             if hasDate {
-                DatePicker("", selection: $balanceDate, displayedComponents: .date)
+                DatePicker(L10n.CashFlowPlan.startingBalanceDateLabel, selection: $balanceDate, displayedComponents: .date)
                     .datePickerStyle(.compact)
                     .labelsHidden()
+                    // El interruptor de arriba lleva el rótulo; sin esto VoiceOver lee solo la fecha.
+                    .accessibilityLabel(L10n.CashFlowPlan.startingBalanceDateLabel)
             }
             Text(L10n.CashFlowPlan.startingBalanceDateHelper)
                 .font(DS.Typography.caption)

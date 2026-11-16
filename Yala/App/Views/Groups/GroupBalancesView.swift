@@ -6,8 +6,15 @@
 //  - L13-2 (variante 2): un pago que te toca confirmar sube a una tarjeta arriba de todo, «Ana dice que te pagó S/ 50 ·
 //    ¿Lo recibiste?», con «Sí, lo recibí» y «No me llegó», que pregunta antes de quitarlo.
 //  - L13-1 (variante 3 combinada): arriba lo tuyo (cuánto te deben o debes) y debajo «Para quedar a mano» con cada deuda
-//    en una tarjeta con avatares; las tuyas, resaltadas y con «Saldar»; las de los demás, sin botón. Sin la lista de
-//    saldo por miembro: el cuadro de arriba y las deudas ya dicen quién debe a quién con palabras, no solo con color.
+//    en una tarjeta con avatares; las tuyas, resaltadas y con «Saldar». Sin la lista de saldo por miembro: el cuadro de
+//    arriba y las deudas ya dicen quién debe a quién con palabras, no solo con color.
+//  - Decisión 37 de la revisión 2.3 (C1, reabre L13-1): las deudas de los demás también llevan «Saldar». Lo que apunta
+//    alguien que no paga ni recibe queda «Falta que <quien recibe> lo confirme», y la lista dice quién lo apuntó.
+//  - Decisión 36 de la revisión 2.3 (A1): con «Menos pagos» juntando deudas en un grupo de 3 o más, una línea al pie lo
+//    dice y deja ver las de cada par (solo mirar: sin «Saldar», y la opción del grupo no se toca).
+//  - Pago por confirmar, opción B (Jürgen, 2026-11-13): una deuda con un pago esperando lo dice en su tarjeta, «Saldar»
+//    ofrece solo lo que queda fuera de ese pago, y «Sí, lo recibí» avisa si el pago ya no cabe en la deuda
+//    (`GroupPendingSettlementLogic`).
 //
 
 import SwiftUI
@@ -16,10 +23,17 @@ struct GroupBalancesView: View {
 
     let balances: [MemberBalance]
     let debts: [Debt]
+    /// Las de cada par, sin juntar (`GroupDetailViewModel.pairDebts`). Vacías sin «Menos pagos».
+    var pairDebts: [Debt] = []
+    var pairDebtsWereConverted = false
+    /// «Menos pagos entre ustedes» del grupo.
+    var simplifyDebts = false
     let settlements: [SplitSettlement]
     let memberNameLookup: [String: String]
     /// Quién eres en este grupo. `nil` (sin resolver): no hay «lo tuyo» y ninguna deuda lleva botón.
     var currentUserMemberID: String?
+    /// Miembros activos: en una deuda entre otros, «Saldar» solo si quien recibe puede confirmarlo (decisión 37, C1).
+    var activeMemberIDs: Set<String> = []
     var groupColorHex: String = "#8B5CF6"
 
     /// True si los balances/debts vienen de consolidar multiples monedas a una sola.
@@ -54,6 +68,22 @@ struct GroupBalancesView: View {
     /// L13-2: «No me llegó» pregunta antes de quitar el pago (antes la ✗ lo borraba al primer toque).
     @State private var settlementToReject: SplitSettlement?
     @State private var showRejectConfirm = false
+    /// A1: qué deudas se ven en «Para quedar a mano». Local a esta pantalla: mirar las de cada par no cambia el grupo.
+    @State private var shownDebts: GroupMenosPagosNoteLogic.Shown = .simplified
+    /// Opción B: un «Sí, lo recibí» cuyo pago ya no cabe en la deuda espera aquí la respuesta del aviso.
+    @State private var settlementToConfirmOver: SplitSettlement?
+    @State private var showConfirmOver = false
+
+    private var showsMenosPagosNote: Bool {
+        GroupMenosPagosNoteLogic.showsNote(
+            simplifyDebts: simplifyDebts, activeMemberCount: activeMemberIDs.count, simplified: debts, pairs: pairDebts)
+    }
+
+    /// Las de cada par solo con la línea a la vista: si deja de salir (alguien saldó), vuelven las juntadas.
+    private var showsPairs: Bool { showsMenosPagosNote && shownDebts == .pairs }
+
+    /// «≈» de lo que se ve en «Para quedar a mano»: el de las juntadas o el de las de cada par.
+    private var listedDebtsWereConverted: Bool { showsPairs ? pairDebtsWereConverted : debtsWereConverted }
 
     private var pendingForMe: [SplitSettlement] {
         guard onConfirmSettlement != nil else { return [] }
@@ -61,6 +91,17 @@ struct GroupBalancesView: View {
             GroupBalancesPresentationLogic.needsMyConfirmation(
                 isConfirmed: $0.isConfirmed, toMemberID: $0.toMemberID, currentUserMemberID: currentUserMemberID)
         }
+    }
+
+    /// Los pagos tal como los lee `GroupPendingSettlementLogic`.
+    private var payments: [GroupPendingSettlementLogic.Payment] {
+        settlements.map { Self.payment($0) }
+    }
+
+    private static func payment(_ settlement: SplitSettlement) -> GroupPendingSettlementLogic.Payment {
+        GroupPendingSettlementLogic.Payment(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID, amount: settlement.amount,
+            currencyCode: settlement.currencyCode, isConfirmed: settlement.isConfirmed)
     }
 
     private var listedSettlements: [SplitSettlement] {
@@ -150,6 +191,26 @@ struct GroupBalancesView: View {
                      ? L10n.UXL13.pendingRejectMessage(name(settlement.fromMemberID))
                      : L10n.UXL13.pendingRejectMessageOther)
             }
+            // Opción B: «Sí, lo recibí» con un pago que ya no cabe en la deuda. Confirmarlo dejaría pagado de más; si es el
+            // mismo pago apuntado dos veces, se quita aquí mismo.
+            .alert(L10n.GruposSaldar23.confirmOverTitle, isPresented: $showConfirmOver,
+                   presenting: settlementToConfirmOver) { settlement in
+                Button(L10n.UXL13.pendingRejectConfirm, role: .destructive) {
+                    onRejectSettlement?(settlement)
+                    settlementToConfirmOver = nil
+                }
+                .accessibilityIdentifier("group_pending_over_remove")
+                Button(L10n.GruposSaldar23.confirmAnyway) {
+                    onConfirmSettlement?(settlement)
+                    settlementToConfirmOver = nil
+                }
+                .accessibilityIdentifier("group_pending_over_confirm")
+                // Con `.cancel`: con tres botones y ninguno de cancelar, el sistema añade otro «Cancelar» (salían dos).
+                Button(L10n.Common.cancel, role: .cancel) { settlementToConfirmOver = nil }
+                    .accessibilityIdentifier("group_pending_over_cancel")
+            } message: { settlement in
+                Text(confirmOverMessage(settlement))
+            }
         }
     }
 
@@ -162,7 +223,7 @@ struct GroupBalancesView: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 avatar(fromName, size: largeAvatarSize)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.UXL13.pendingTitle(name: fromName, amount: amount))
+                    Text(pendingTitle(settlement, fromName: fromName, amount: amount))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -184,12 +245,29 @@ struct GroupBalancesView: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 
+    /// «Ana dice que te pagó S/ 50» o, si lo apuntó un tercero (C1), «Lucía apuntó que Ana te pagó S/ 50».
+    private func pendingTitle(_ settlement: SplitSettlement, fromName: String, amount: String) -> String {
+        if SettlementSaldar23Logic.recordedByThirdParty(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID,
+            recordedByMemberID: settlement.recordedByMemberID),
+           let recorder = settlement.recordedByMemberID {
+            return L10n.GruposSaldar23.pendingTitleOther(recorder: name(recorder), from: fromName, amount: amount)
+        }
+        return L10n.UXL13.pendingTitle(name: fromName, amount: amount)
+    }
+
     @ViewBuilder
     private func pendingButtons(_ settlement: SplitSettlement) -> some View {
         Button {
             // El éxito lo vibra `GroupDetailViewModel.confirmSettlement` cuando el servicio confirma: aquí vibraba dos
             // veces, y también si fallaba (card pjum).
-            onConfirmSettlement?(settlement)
+            // Opción B: si el pago ya no cabe en la deuda (otro pago la saldó), antes de confirmar se pregunta.
+            if confirmCheck(settlement) == .fits {
+                onConfirmSettlement?(settlement)
+            } else {
+                settlementToConfirmOver = settlement
+                showConfirmOver = true
+            }
         } label: {
             Text(L10n.UXL13.pendingYes)
                 .font(DS.Typography.label)
@@ -217,6 +295,26 @@ struct GroupBalancesView: View {
         .accessibilityIdentifier("group_pending_confirm_no")
     }
 
+    /// Contra las deudas de cada par: «Menos pagos» junta deudas y la de esta pareja puede no salir como tarjeta.
+    private func confirmCheck(_ settlement: SplitSettlement) -> GroupPendingSettlementLogic.ConfirmCheck {
+        GroupPendingSettlementLogic.confirmCheck(
+            Self.payment(settlement),
+            pairDebts: simplifyDebts ? pairDebts : debts,
+            debtsWereConverted: simplifyDebts ? pairDebtsWereConverted : debtsWereConverted)
+    }
+
+    private func confirmOverMessage(_ settlement: SplitSettlement) -> String {
+        let from = name(settlement.fromMemberID)
+        let amount = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
+        switch confirmCheck(settlement) {
+        case .exceeds(let owed):
+            return L10n.GruposSaldar23.confirmOverExceeds(
+                from: from, owed: appPreferences.currency(owed, currencyCode: settlement.currencyCode), amount: amount)
+        case .alreadySettled, .fits:
+            return L10n.GruposSaldar23.confirmOverSettled(from: from, amount: amount)
+        }
+    }
+
     // MARK: - L13-1 · Lo tuyo, arriba
 
     /// La misma cifra grande que en Gastos (lienzo «Una sola Yala», 3A): antes, una tarjeta en cristal teñido.
@@ -233,7 +331,8 @@ struct GroupBalancesView: View {
     // MARK: - L13-1 · Para quedar a mano
 
     private var debtsSection: some View {
-        let cards = GroupBalancesPresentationLogic.debtCards(debts: debts, currentUserMemberID: currentUserMemberID)
+        let cards = GroupBalancesPresentationLogic.debtCards(
+            debts: showsPairs ? pairDebts : debts, currentUserMemberID: currentUserMemberID)
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             YalaSectionHeader(L10n.UXL13.settleUpTitle)
                 .accessibilityAddTraits(.isHeader)
@@ -241,14 +340,48 @@ struct GroupBalancesView: View {
             VStack(spacing: DS.Spacing.md) {
                 ForEach(cards) { debtCard($0) }
             }
+
+            if showsMenosPagosNote {
+                menosPagosNote
+            }
         }
+        // Si la línea se va (alguien saldó, o se apagó «Menos pagos»), la próxima vez que vuelva enseña las juntadas,
+        // que son las que se saldan: no se queda pegada en las de cada par.
+        .onChange(of: showsMenosPagosNote) { _, shows in
+            if !shows { shownDebts = .simplified }
+        }
+    }
+
+    /// A1 · «Yala juntó las deudas…» con «Ver las deudas de cada par», o al revés cuando ya se ven las de cada par.
+    private var menosPagosNote: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(showsPairs ? L10n.Lote23Chico.pairsNote : L10n.Lote23Chico.simplifiedNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("group_balances_menos_pagos_note")
+            Button {
+                DS.Haptic.selection()
+                shownDebts = showsPairs ? .simplified : .pairs
+            } label: {
+                Text(showsPairs ? L10n.Lote23Chico.showSimplified : L10n.Lote23Chico.showPairs)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thAccentText)
+                    .frame(minHeight: DS.Button.actionSize, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_balances_menos_pagos_toggle")
+        }
+        .padding(.horizontal, DS.Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func debtCard(_ card: GroupBalancesPresentationLogic.DebtCard) -> some View {
         let fromName = name(card.fromMemberID)
         let toName = name(card.toMemberID)
         let amounts = card.debts.map { GroupBalancesPresentationLogic.CurrencyAmount(currencyCode: $0.currencyCode, amount: $0.amount) }
-        let amountsText = joined(amounts, isEstimate: debtsWereConverted)
+        let amountsText = joined(amounts, isEstimate: listedDebtsWereConverted)
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Spacing.sm) { pairLabel(card, from: fromName, to: toName) }
@@ -264,8 +397,19 @@ struct GroupBalancesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityHidden(true)
                 Spacer(minLength: DS.Spacing.sm)
-                if card.involvesMe, onSettleDebt != nil {
-                    settleButton(card)
+                // Las de cada par son para mirar: se salda sobre las del grupo (A1).
+                // Opción B: lo que ya cubre un pago por confirmar no se ofrece saldar otra vez.
+                let settleable = card.debts.compactMap { GroupPendingSettlementLogic.debtToSettle($0, payments: payments) }
+                if !showsPairs, onSettleDebt != nil, !settleable.isEmpty, SettlementSaldar23Logic.offersSettle(
+                    involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,
+                    receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {
+                    settleButton(card, debts: settleable)
+                }
+            }
+
+            ForEach(card.debts) { debt in
+                if let pending = GroupPendingSettlementLogic.pending(on: debt, payments: payments) {
+                    pendingNote(pending, currencyCode: debt.currencyCode)
                 }
             }
         }
@@ -307,6 +451,24 @@ struct GroupBalancesView: View {
         }
     }
 
+    /// «Hay un pago de S/ 50 por confirmar»: la deuda sigue (los saldos solo cuentan lo confirmado), pero ya hay un pago
+    /// esperando.
+    private func pendingNote(_ pending: GroupPendingSettlementLogic.PendingOnDebt, currencyCode: String) -> some View {
+        let amount = appPreferences.currency(pending.pendingAmount, currencyCode: currencyCode)
+        return Label {
+            Text(pending.count == 1
+                 ? L10n.GruposSaldar23.pendingOnDebtOne(amount)
+                 : L10n.GruposSaldar23.pendingOnDebtMany(amount))
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "clock")
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_debt_pending_note")
+    }
+
     private func debtA11yLabel(
         _ card: GroupBalancesPresentationLogic.DebtCard, from: String, to: String, amounts: String
     ) -> String {
@@ -319,17 +481,19 @@ struct GroupBalancesView: View {
     }
 
     /// Una moneda: un botón. Varias: un menú con un «Saldar» por moneda — cada pago se apunta en su moneda y nunca se
-    /// mezclan.
+    /// mezclan. Las deudas entre otros llevan su propio id (`group_debt_settle_others`, C1).
     @ViewBuilder
-    private func settleButton(_ card: GroupBalancesPresentationLogic.DebtCard) -> some View {
-        if card.debts.count == 1, let debt = card.debts.first {
+    /// `debts`: las de la tarjeta menos lo que ya cubren los pagos por confirmar (opción B).
+    private func settleButton(_ card: GroupBalancesPresentationLogic.DebtCard, debts: [Debt]) -> some View {
+        let id = card.involvesMe ? "group_debt_settle" : "group_debt_settle_others"
+        if debts.count == 1, let debt = debts.first {
             Button { onSettleDebt?(debt) } label: { settleLabel }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Groups.Settlement.settleHint)
-                .accessibilityIdentifier("group_debt_settle")
+                .accessibilityIdentifier(id)
         } else {
             Menu {
-                ForEach(card.debts) { debt in
+                ForEach(debts) { debt in
                     Button(appPreferences.currency(debt.amount, currencyCode: debt.currencyCode,
                                                    isEstimate: debtsWereConverted)) {
                         onSettleDebt?(debt)
@@ -338,7 +502,7 @@ struct GroupBalancesView: View {
             } label: { settleLabel }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Groups.Settlement.settleHint)
-                .accessibilityIdentifier("group_debt_settle")
+                .accessibilityIdentifier(id)
         }
     }
 
@@ -502,10 +666,20 @@ struct GroupBalancesView: View {
     }
 
     /// L13-2: un pendiente que queda en la lista espera a otra persona, y lo dice: «Falta que Beto lo confirme».
+    /// C1 (decisión 37 de 2.3): si lo apuntó alguien que no paga ni recibe, delante va quién: «Lo apuntó Lucía · Falta
+    /// que Ana lo confirme».
     private func statusText(_ settlement: SplitSettlement) -> String {
         if settlement.isConfirmed { return L10n.Groups.Balance.confirmed }
         if settlement.toMemberID == currentUserMemberID { return L10n.Groups.Balance.pending }
-        return L10n.UXL13.pendingWaitingFor(name(settlement.toMemberID))
+        let waiting = L10n.UXL13.pendingWaitingFor(name(settlement.toMemberID))
+        guard SettlementSaldar23Logic.recordedByThirdParty(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID,
+            recordedByMemberID: settlement.recordedByMemberID),
+              let recorder = settlement.recordedByMemberID else { return waiting }
+        let who = recorder == currentUserMemberID
+            ? L10n.GruposSaldar23.recordedByYou
+            : L10n.GruposSaldar23.recordedBy(name(recorder))
+        return who + " · " + waiting
     }
 
     // MARK: - Helpers

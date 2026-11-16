@@ -339,17 +339,19 @@ struct PrivateExitInboundCaptureWiringTests {
         return out
     }
 
-    @Test("nadie fuera de InboundCaptureDrain drena las colas de Apple Pay y Siri")
+    @Test("nadie fuera de InboundCaptureDrain drena las colas de Apple Pay, Siri y avisos del banco")
     func onlyTheDrainCallsProcessPending() throws {
         var callers: [String] = []
         for (path, text) in try Self.appSources() {
-            for call in ["ApplePayDraftService.processPending(", "SiriDraftService.processPending("]
+            for call in ["ApplePayDraftService.processPending(", "SiriDraftService.processPending(",
+                         "BankNoticeDraftService.processPending("]
             where text.contains(call) {
                 callers.append("\(path): \(call)")
             }
         }
         #expect(callers.sorted() == [
             "\(Self.drainPath): ApplePayDraftService.processPending(",
+            "\(Self.drainPath): BankNoticeDraftService.processPending(",
             "\(Self.drainPath): SiriDraftService.processPending(",
         ], """
             Un drenaje fuera del helper se salta el guard del borrado armado: escribe en el store condenado.
@@ -370,6 +372,7 @@ struct PrivateExitInboundCaptureWiringTests {
         #expect(guardRange.lowerBound < firstDrain.lowerBound)
         #expect(drain.contains("let applePayCreated = hasPrivateSession ? applePay(context) : 0"))
         #expect(drain.contains("let siriCreated = hasPrivateSession ? siri(context) : 0"))
+        #expect(drain.contains("let bankNoticeCreated = hasPrivateSession ? bankNotice(context) : 0"))
         let forSignOut = try Self.body(of: "static func forSignOut(", in: src)
         #expect(forSignOut.contains("let created = drain(context)"))
         #expect(src.contains("drain: @MainActor (ModelContext) -> Int = { InboundCaptureDrain.drain(context: $0) },"))
@@ -377,6 +380,7 @@ struct PrivateExitInboundCaptureWiringTests {
         let queuedCount = try Self.body(of: "static func queuedCount(", in: src)
         #expect(queuedCount.contains("ApplePayPendingStore.peekAll(defaults: applePayDefaults).count"))
         #expect(queuedCount.contains("SiriPendingStore.peekAll(defaults: siriDefaults).count"))
+        #expect(queuedCount.contains("BankNoticePendingStore.peekAll(defaults: bankNoticeDefaults).count"))
     }
 
     @Test("el remote-change, el foreground y el arranque drenan por el helper")

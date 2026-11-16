@@ -69,6 +69,38 @@ struct TrendChartView: View {
         )
     }
 
+    /// Los puntos que se dicen: los reales (sin suavizar) y, con saldo vivo, el de hoy, que es la cifra de la tarjeta.
+    private var spokenPoints: [(date: Date, value: Double)] {
+        var points = (rawPoints.isEmpty ? trendPoints : rawPoints).map { (date: $0.date, value: $0.value) }
+        if let liveAnchor, liveAnchor.date > (points.map(\.date).max() ?? .distantPast) {
+            points.append((date: liveAnchor.date, value: liveAnchor.value))
+        }
+        return points
+    }
+
+    private var amountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    /// V1 de la decisión 26 de 2.3: de dónde a dónde fue y el punto más alto o más bajo, con cifras («7 puntos» antes).
+    private var spokenSummary: String {
+        ChartSpokenSummary.trend(points: spokenPoints, grouping: grouping, format: amountFormat)
+    }
+
+    /// V2: la línea para el rotor «Describir gráfica» y el sonido.
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.trendChart(trendType.displayName),
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: trendType.displayName,
+            series: [.init(name: trendType.displayName, isContinuous: true,
+                           points: spokenPoints.map { .at($0.date, $0.value) })],
+            format: amountFormat
+        )
+    }
+
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
         // This fixes the visual glitch when switching between Balance/Income/Expense
@@ -352,8 +384,9 @@ struct TrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
-        .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
-            L10n.Accessibility.dataPoints(trendPoints.count))
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
+        .accessibilityIdentifier("trend_chart")
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chartWidth = $0 }

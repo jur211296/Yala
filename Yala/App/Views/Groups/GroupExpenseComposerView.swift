@@ -20,6 +20,8 @@ struct GroupExpenseComposerView: View {
     let memberCount: (SplitGroup) -> Int
     /// L13-8 · aviso arriba del formulario cuando el gasto sigue a la creación del grupo.
     let notice: String?
+    /// El reparto de un recibo (Voz o Foto de Grupos). Va por miembros de SU grupo: con él, el grupo no se cambia.
+    let receiptSplit: GroupExpensePrefillTemplate?
     let onSave: () -> Void
 
     @State private var selectedGroup: SplitGroup
@@ -36,6 +38,7 @@ struct GroupExpenseComposerView: View {
         memberNameLookup: @escaping (SplitGroup) -> [String: String],
         memberCount: @escaping (SplitGroup) -> Int,
         notice: String? = nil,
+        receiptSplit: GroupExpensePrefillTemplate? = nil,
         onSave: @escaping () -> Void
     ) {
         self.groups = groups
@@ -43,6 +46,7 @@ struct GroupExpenseComposerView: View {
         self.memberNameLookup = memberNameLookup
         self.memberCount = memberCount
         self.notice = notice
+        self.receiptSplit = receiptSplit
         self.onSave = onSave
         self._selectedGroup = State(initialValue: initialGroup)
     }
@@ -58,7 +62,8 @@ struct GroupExpenseComposerView: View {
                 groupChip: chipMode,
                 notice: notice,
                 onSave: onSave,
-                carriedOver: carriedOver
+                carriedOver: carriedOver,
+                receiptSplit: receiptSplit
             )
             .id(selectedGroup.id)
         }
@@ -80,7 +85,7 @@ struct GroupExpenseComposerView: View {
 
     /// Editable solo si hay más de un grupo elegible (si hay uno solo, no hay a dónde cambiar).
     private var chipMode: GroupContextChipMode {
-        groups.count > 1 ? .editable { written in
+        groups.count > 1 && receiptSplit == nil ? .editable { written in
             pendingCarryOver = written
             showGroupPicker = true
         } : .readOnly

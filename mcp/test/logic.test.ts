@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeBalances, type BalanceTx } from "../src/logic/balances";
+import { computeBalances, sumsInBalance, type BalanceTx } from "../src/logic/balances";
 import { addDays } from "../src/logic/dates";
 import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
@@ -125,14 +125,45 @@ describe("saldos", () => {
     expect(byName).toEqual({ BCP: 849.5, "Ahorro USD": 100, Vieja: 50, Préstamo: -999 });
   });
 
-  it("el total deja fuera las excluidas, no las archivadas, y convierte cada divisa con la tasa de hoy", () => {
-    // Archivar no decide la suma (2026-10-03): «Vieja» no se lista sin pedirla, pero su saldo cuenta, como en el Panel.
+  it("el total deja fuera las excluidas y las archivadas, y convierte cada divisa con la tasa de hoy", () => {
+    // Archivar saca del saldo y conserva el historial (decisión 6 de 2.3, como `Account.sumsInBalance` de la app):
+    // «Vieja» ni se lista sin pedirla ni suma.
     const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: TODAY_UTC, ...cut });
-    expect(r.total.importe).toBeCloseTo(849.5 + 340 + 50);
+    expect(r.total.importe).toBeCloseTo(849.5 + 340);
     expect(r.total.aproximado).toBe(false);
     // Sin fila de hoy se usa la última anterior, y eso es «≈», igual que en la app.
     expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26", ...cut }).total.aproximado).toBe(true);
     expect(r.cuentas.map((c) => c.nombre)).not.toContain("Vieja");
+  });
+
+  it("la cuenta sistema de Grupos que archiva la app sigue sumando, como `Account.sumsInBalance` de la app", () => {
+    // Decisión 6 de 2.3: archivar saca del saldo solo lo que archiva la persona. La cuenta sistema de Grupos archivada
+    // la archivó la app al fundir duplicadas tras una carrera entre dispositivos: su saldo sigue en el total.
+    const duplicated = uuid(1005);
+    const withSystem = [
+      ...accounts,
+      account({ sync_id: duplicated, name: "Grupos (duplicada)", is_archived: true, is_system_account: true }),
+    ];
+    const r = computeBalances(
+      withSystem,
+      [...txs, { account_ref: duplicated, amount: 300, currency_code: "PEN", ...past }],
+      "PEN",
+      RATES,
+      { incluirArchivadas: false, todayUtc: TODAY_UTC, ...cut },
+    );
+    expect(r.total.importe).toBeCloseTo(849.5 + 340 + 300);
+    // La regla entera, las cuatro combinaciones de los dos flags y la de la cuenta sistema.
+    const row = (exclude_from_statistics: boolean, is_archived: boolean, is_system_account = false) => ({
+      exclude_from_statistics,
+      is_archived,
+      is_system_account,
+    });
+    expect(sumsInBalance(row(false, false))).toBe(true);
+    expect(sumsInBalance(row(true, false))).toBe(false);
+    expect(sumsInBalance(row(false, true))).toBe(false);
+    expect(sumsInBalance(row(true, true))).toBe(false);
+    expect(sumsInBalance(row(false, true, true))).toBe(true);
+    expect(sumsInBalance(row(true, true, true))).toBe(false);
   });
 
   it("una divisa con tasa de otro día que no pesa no marca el total, como el panorama de la app", () => {
@@ -255,6 +286,31 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
       ctx,
     );
     expect(agosto.gasto_medio_diario).toBe(10);
+  });
+
+  it("una cuenta archivada conserva su historial aunque esté excluida, como `Account.keepsHistory` de la app", () => {
+    // Decisión 6 de 2.3: archivar saca del saldo y conserva el historial. La archivada y excluida (como la dejaba
+    // archivar desde el formulario hasta entonces) cuenta en el resumen; la excluida a secas, no.
+    const archivedExcluded = uuid(2003);
+    const withArchived = buildLookup({
+      accounts: [
+        account({ sync_id: acc }),
+        account({ sync_id: excludedAcc, exclude_from_statistics: true }),
+        account({ sync_id: archivedExcluded, is_archived: true, exclude_from_statistics: true }),
+      ],
+      categories: [category({ sync_id: food, name: "Comida" })],
+    });
+    const r = summarize(
+      [
+        tx({ ...base, account_ref: archivedExcluded, category_ref: food, amount: -40, amount_in_preferred_currency: -40 }),
+        tx({ ...base, account_ref: excludedAcc, category_ref: food, amount: -7, amount_in_preferred_currency: -7 }),
+      ],
+      withArchived,
+      period,
+      ctx,
+    );
+    expect(r.gastos).toBeCloseTo(40);
+    expect(r.movimientos).toBe(1);
   });
 
   it("una fila suelta con el importe convertido a 0 se reconvierte con la tasa de su día, con «≈»", () => {

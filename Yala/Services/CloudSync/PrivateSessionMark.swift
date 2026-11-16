@@ -48,14 +48,15 @@
 //  falla.
 //
 //  LA VIDA DE LA MARCA. Tres reglas, y la de en medio es la que no se ve venir:
-//    · NACE / CAMBIA en los NUEVE sitios donde el modelo dice que la sesión privada empieza o deja de
+//    · NACE / CAMBIA en los DIEZ sitios donde el modelo dice que la sesión privada empieza o deja de
 //      existir. La encienden el onboarding personal terminado, restaurar de iCloud a la app y adoptar
 //      una cuenta existente (los tres en `ContentView`) y activar Yala completo; la apagan las DOS
 //      puertas de entrada por grupo (invitación y organizador), la reposición tras vaciar en
 //      solo-grupos, el seam de uitest y salir hacia atrás de un adopt que no dejó nada, que devuelve
-//      el valor de antes de adoptar (`ContentView`, card 0f7h).
+//      el valor de antes de adoptar (`ContentView`, card 0f7h), también desde el arranque que encuentra esa entrada a
+//      medias tras un cierre (`ContentView.resumeWelcomeAdoptAfterRelaunch`, card gd78).
 //
-//      **Los nueve pasan por `SessionState.hasPrivateSession`, y eso es un invariante, no un estilo.**
+//      **Los diez pasan por `SessionState.hasPrivateSession`, y eso es un invariante, no un estilo.**
 //      Su `didSet` es el ÚNICO escritor de la marca en toda la app; asignar ahí persiste Y refresca la
 //      shell en el mismo render, mientras que un `set` directo haría lo primero y no lo segundo —
 //      dejando la pestaña de Grupos puesta hasta el arranque siguiente. Lo cuenta

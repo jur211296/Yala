@@ -24,6 +24,8 @@ enum WhatsNewConfig {
             return version2_1
         case "2.2":
             return version2_2
+        case "2.3":
+            return version2_3
         default:
             return nil
         }
@@ -173,6 +175,19 @@ enum WhatsNewConfig {
             iconColor: .green,
             title: L10n.WhatsNew.v22LeftToPayTitle,
             description: L10n.WhatsNew.v22LeftToPayDescription
+        ),
+    ]
+
+    // MARK: - Version 2.3
+
+    /// La nota de salud, más precisa (lote 1 de la nota de salud, 11-nov-2026).
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
+    private static let version2_3: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "heart.text.square",
+            iconColor: .indigo,
+            title: L10n.WhatsNew.v23HealthScoreTitle,
+            description: L10n.WhatsNew.v23HealthScoreDescription
         ),
     ]
 }

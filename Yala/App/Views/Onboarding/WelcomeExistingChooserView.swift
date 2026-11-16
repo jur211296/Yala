@@ -69,7 +69,10 @@ struct WelcomeExistingChooserView: View {
     var body: some View {
         WelcomeFormScreen(
             title: L10n.Welcome.Existing.title,
-            subtitle: L10n.Welcome.Existing.subtitle
+            // «Entra con tu cuenta de Yala o recupera tus datos desde iCloud»: sin «Restaurar desde iCloud» (la puerta de
+            // Grupos, E13 del 13-nov) la frase prometería algo que la pantalla no ofrece, y la etiqueta de la tarjeta ya
+            // dice qué se elige.
+            subtitle: offersRestore ? L10n.Welcome.Existing.subtitle : nil
         ) {
             if offersBothPaths {
                 dontRememberHelp

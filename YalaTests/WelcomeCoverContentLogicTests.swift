@@ -124,7 +124,7 @@ struct WelcomeCoverContentLogicTests {
     @Test("el contenido se funde sobre el degradado quieto, con la duración de la lógica")
     func crossfadeOverAStillGradient() throws {
         let cover = Self.flat(try Self.body(of: "private var welcomeCover: some View {", in: try Self.modifier))
-        #expect(cover.hasPrefix("ZStack { LinearGradient(colors: DS.Gradients.heroIndigoBlack, startPoint: .top, endPoint: .bottom) .ignoresSafeArea() switch displayedWelcomeCoverContent {"),
+        #expect(cover.hasPrefix("ZStack { WelcomeF2Background() .ignoresSafeArea() switch displayedWelcomeCoverContent {"),
                 "el degradado tiene que ir DEBAJO de las dos pantallas: \(cover)")
         // El `zIndex` es lo que deja ver fundirse a la pantalla que SALE (card feer): sin él, en el `ZStack` se pinta por
         // debajo del degradado opaco y desaparece en un fotograma.
@@ -172,12 +172,14 @@ struct WelcomeCoverContentLogicTests {
     func cleanupAndFallbackWiring() throws {
         let modifier = try Self.modifier
         let note = Self.flat(try Self.body(of: "private func noteWelcomeCoverContent(_ now: WelcomeCoverContentLogic.Content?) {", in: modifier))
-        #expect(note == "if WelcomeCoverContentLogic.cloudSignInLeftForFlow(last: lastWelcomeCoverContent, now: now) { resetCloudSignInEntry() } if let now { lastWelcomeCoverContent = now }")
+        // Card gd78: el modo «retomar» de la entrada se apaga en cuanto el cover deja de enseñarla.
+        #expect(note == "if WelcomeCoverContentLogic.cloudSignInLeftForFlow(last: lastWelcomeCoverContent, now: now) { resetCloudSignInEntry() } if let now { lastWelcomeCoverContent = now } if now != .cloudSignIn { welcomeCloudResumesAdopt = false }")
         let reset = Self.flat(try Self.body(of: "private func resetCloudSignInEntry() {", in: modifier))
         #expect(reset == "adoptStartsAtConsent = false cloudSignInFromExistingChooser = false")
         let dismiss = Self.flat(try Self.body(of: "private func welcomeCoverDidDismiss() {", in: modifier))
         #expect(dismiss.hasPrefix("guard WelcomeCoverContentLogic.runsCloudSignInDismissFallback(last: lastWelcomeCoverContent) else { return } resetCloudSignInEntry()"))
-        #expect(dismiss.hasSuffix("if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding && !showWelcomeFlow { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
+        // Barrido del 14-nov (c8i9): el onboarding se lee de disco, no del `@Binding` que el `onDismiss` se quedó.
+        #expect(dismiss.hasSuffix("let onboardingCompletedNow = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) if WelcomeCoverContentLogic.reopensChooserAfterCloudSignIn( onboardingCompletedNow: onboardingCompletedNow, inviteOnboardingShown: showGroupInviteOnboarding, onboardingShown: showOnboarding, welcomeFlowShown: showWelcomeFlow) { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
     }
 
     @Test("si UIKit cierra el cover, se apaga el flag de lo que enseñaba, no los dos")

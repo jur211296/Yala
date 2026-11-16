@@ -1,0 +1,84 @@
+<title>TestFlight Yala 2.3 (1)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Una columna de parte de release: cabecera con el build, estado por pasos, y lo que mira Jürgen. */
+:root{
+  --bg:#f6f5fb; --card:#ffffff; --fg:#1c1a2b; --muted:#625e78; --line:#e3e0ef;
+  --accent:#5b4fd6; --ok:#1f8a4c; --warn:#b26a00; --okbg:#e6f4ec; --warnbg:#fbf0dc;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12111a; --card:#1c1a28; --fg:#ecebf5; --muted:#a29fbb; --line:#2e2b40;
+  --accent:#9d94ff; --ok:#5fd394; --warn:#f2b552; --okbg:#173125; --warnbg:#3a2c12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12111a; --card:#1c1a28; --fg:#ecebf5; --muted:#a29fbb; --line:#2e2b40;
+  --accent:#9d94ff; --ok:#5fd394; --warn:#f2b552; --okbg:#173125; --warnbg:#3a2c12; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+main{max-width:720px;margin:0 auto;display:grid;gap:28px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:2rem;letter-spacing:-.01em}
+h2{font-size:1.15rem}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}
+.build{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;color:var(--muted)}
+.build strong{font-family:var(--display);color:var(--accent);font-size:1.25rem;font-variant-numeric:tabular-nums}
+section{display:grid;gap:12px}
+ul.steps{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+ul.steps li{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+ul.steps li:first-child{border-top:0}
+.pill{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap;align-self:start;margin-top:2px}
+.ok{background:var(--okbg);color:var(--ok)} .warn{background:var(--warnbg);color:var(--warn)}
+.li-body{min-width:0} .li-body b{font-weight:600} .li-body p{margin:2px 0 0;color:var(--muted)}
+pre{white-space:pre-wrap;margin:0;font-family:var(--body);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:.9rem}
+ol{margin:0;padding-left:1.3em;display:grid;gap:8px}
+ol li span{color:var(--muted)}
+a{color:var(--accent)}
+footer{color:var(--muted);font-size:.85rem}
+</style>
+<main>
+  <header>
+    <p class="eyebrow">Yala · TestFlight · 15 nov 2026</p>
+    <h1>Yala 2.3 ya está en TestFlight</h1>
+    <div class="build"><strong>2.3 (1)</strong><span>subido 08:06 · procesado 08:10 (Lima)</span></div>
+  </header>
+
+  <section>
+    <h2>Estado</h2>
+    <ul class="steps">
+      <li><span class="pill ok">Listo</span><div class="li-body"><b>Esquema de iCloud</b><p>El campo del logo de las suscripciones ya estaba en Production (lo revisó Dan). No hubo que desplegar nada.</p></div></li>
+      <li><span class="pill ok">Listo</span><div class="li-body"><b>Versión 2.3 (1)</b><p>App, compartir y widgets. Compila en Yala y Yala Dev; pruebas de versión y checks del CI en verde.</p></div></li>
+      <li><span class="pill ok">Listo</span><div class="li-body"><b>Subido y procesado</b><p>App Store Connect lo marca como válido. Sin claves en el binario.</p></div></li>
+      <li><span class="pill ok">Listo</span><div class="li-body"><b>Grupo interno «Test interno»</b><p>Lo recibe solo, con las notas de «Qué probar» en español. Dan sumó la cuenta del iPhone 14 a este grupo.</p></div></li>
+      <li id="externo"><span class="pill warn">En revisión</span><div class="li-body"><b>Grupo externo «Testers Yala»</b><p>Agregado y enviado a la revisión beta de Apple: esperando revisión. Los testers externos lo ven cuando Apple lo apruebe (08:29: seguía esperando).</p></div></li>
+      <li id="humo"><span class="pill ok">Pasó</span><div class="li-body"><b>Prueba de humo en el iPhone 14, desde TestFlight</b><p>Instalada en 9 s. Abre en la bienvenida nueva. Con Google (cuenta de prueba) crea la cuenta en la nube y el Panel carga en ~17 s. Gasto de S/ 12.50 guardado. «Dónde viven tus datos»: en tu cuenta de Yala, todo sincronizado. Grupos: grupo creado y listo para invitar.</p></div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Notas para quien prueba</h2>
+    <pre>Novedades de Yala 2.3:
+• Bienvenida nueva: entra con Google o Apple y Yala te dice si ya tienes cuenta.
+• Cuentas en varias monedas.
+• Logos de tus suscripciones en los pagos planificados.
+• Gastos hormiga: cuánto suman al mes.
+• Flujo proyectado en Tendencias y en el Panel.
+• El ojo del Panel oculta tus montos.
+• Al registrar, Yala sugiere descripciones de gastos anteriores.
+• Grupos: reparte un recibo con IA, con foto o voz.
+
+Qué probar: registrar un gasto, la nube y Grupos. Si algo falla, envía una captura desde TestFlight.</pre>
+  </section>
+
+  <section>
+    <h2>Lo que te toca mirar en TestFlight</h2>
+    <p style="margin:0;color:var(--muted)">De la tanda de indispensables del barrido final. Estas dos solo se pueden hacer con el build de TestFlight.</p>
+    <ol>
+      <li><b>Pro con la compra de Sandbox (8 min).</b> <span>Entra con una cuenta Free, termina los 7 Primeros pasos, acepta la prueba de Pro con el tester de Sandbox. Ajustes › Yala Pro debe decir Pro. Cierra sesión y vuelve a entrar: debe seguir en Pro sin cerrar la app.</span></li>
+      <li><b>Panel vacío tras «¡Tu cuenta está lista!».</b> <span>Es el fallo del barrido que va en este build: el Panel sale en S/ 0 unos 10 segundos antes de cargar. Si lo ves, ya está en la cola de arreglos; no hace falta reportarlo.</span></li>
+    </ol>
+    <p style="margin:0;color:var(--muted)">El resto de la tanda (Apple con Face ID, voz y foto, aviso del banco, conector de Claude, QR de la web) se hace igual en Yala Dev o en TestFlight.</p>
+  </section>
+
+  <footer>PR de la versión: <a href="https://github.com/jur211296/Yala/pull/987">chore(release): Yala 2.3 (1) a TestFlight</a></footer>
+</main>

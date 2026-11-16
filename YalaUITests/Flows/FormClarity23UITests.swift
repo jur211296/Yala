@@ -47,6 +47,17 @@ final class FormClarity23UITests: XCTestCase {
 
     private func typeAmount(_ app: XCUIApplication, _ value: String) {
         let amount = app.textFields["new_transaction_amount"]
+        // Con texto de accesibilidad el importe cae bajo la barra de «Guardar» (`safeAreaBar`): el toque se lo queda la
+        // barra y el campo no toma el foco («Neither element nor any descendant has keyboard focus», nocturnas del 13 y
+        // 14-nov). Se sube el formulario hasta que el campo quede entero encima de la barra, con arrastres cortos desde el
+        // centro (molde de `KeyboardSaveBar23UITests`). A tamaño normal ya está encima y no se arrastra nada.
+        let save = app.buttons["new_transaction_save"]
+        var drags = 0
+        while save.exists, amount.frame.maxY > save.frame.minY - 8, drags < 8 {
+            let start = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -160)))
+            drags += 1
+        }
         amount.tap()
         amount.typeText(value)
     }
