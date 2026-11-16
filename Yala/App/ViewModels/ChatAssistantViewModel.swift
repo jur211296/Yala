@@ -381,6 +381,13 @@ final class ChatAssistantViewModel {
         let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date.now)
         messages.append(userMessage)
 
+        // Un pedido de crear algo que Yala IA sabe guiar abre su tarjeta, sin pasar por el servidor. La prueba de
+        // cortesía (intención forzada) apunta siempre.
+        if forceIntent == nil, startGuidedFlowIfAsked(trimmed, context: context) {
+            isLoading = false
+            return
+        }
+
         #if DEBUG
         if let profile = UITestHooks.chatReply {
             await answerForUITest(profile: profile, question: trimmed, context: context)
@@ -1235,6 +1242,121 @@ final class ChatAssistantViewModel {
 }
 
 /// Lo que «Nueva conversación» borra, para poder deshacerlo.
+// MARK: - Guiados (crear un presupuesto o un pago planificado desde el chat)
+
+extension ChatAssistantViewModel {
+
+    /// Si la frase pide un guiado, lo abre con lo que ya dice y devuelve `true`. El turno entra en el historial del día
+    /// como cualquier respuesta, para que la conversación siga teniendo sentido para el modelo.
+    func startGuidedFlowIfAsked(_ text: String, context: ModelContext) -> Bool {
+        guard ChatIntentClassifierService.guidedFlow(for: text) != nil else { return false }
+        let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
+        guard let detected = ChatGuidedIntentDetector.detect(text, catalog: catalog) else { return false }
+        let detection = ChatGuidedDataSource.prepareStart(detected, context: context)
+        let state = ChatGuidedEngine.start(detection.kind, answers: detection.answers, prefilled: detection.prefilled)
+        let reply = detection.kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
+        appendAssistantTurn(question: text, reply: reply, attachments: [.guided(state)])
+        return true
+    }
+
+    /// El guiado de un mensaje, si lo tiene.
+    func guidedState(messageID: UUID) -> ChatGuidedFlowState? {
+        guard let message = messages.first(where: { $0.id == messageID }) else { return nil }
+        for attachment in message.attachments ?? [] {
+            if case .guided(let state) = attachment { return state }
+        }
+        return nil
+    }
+
+    /// Contesta la pregunta de ahora: `change` escribe las respuestas y el motor pasa a la siguiente pendiente.
+    func answerGuided(
+        messageID: UUID,
+        clearing fields: Set<ChatGuidedField> = [],
+        _ change: (inout ChatGuidedAnswers) -> Void
+    ) {
+        updateGuided(messageID: messageID) { state in
+            var answers = state.answers
+            change(&answers)
+            return ChatGuidedEngine.answer(state, with: answers, clearing: fields)
+        }
+    }
+
+    func guidedBack(messageID: UUID) {
+        updateGuided(messageID: messageID) { ChatGuidedEngine.back($0) }
+    }
+
+    func guidedEdit(messageID: UUID, step: ChatGuidedStep) {
+        updateGuided(messageID: messageID) { ChatGuidedEngine.edit($0, step: step) }
+    }
+
+    func guidedCancel(messageID: UUID) {
+        updateGuided(messageID: messageID) { ChatGuidedEngine.cancel($0) }
+    }
+
+    /// «Crear»: guarda por los ViewModels de los editores y deja la tarjeta de éxito. Devuelve el texto del error si
+    /// no se pudo (la tarjeta se queda en la confirmación para reintentar).
+    func createGuided(messageID: UUID, data: ChatGuidedData) -> String? {
+        guard let context = modelContext, let state = guidedState(messageID: messageID),
+              ChatGuidedEngine.canCreate(state) else { return L10n.Common.saveError }
+        do {
+            let created = try ChatGuidedCreator.create(
+                state, data: data, context: context,
+                budgetAlertsEnabled: appPreferences?.budgetAlertsEnabled ?? false
+            )
+            updateGuided(messageID: messageID) {
+                ChatGuidedEngine.markCreated($0, id: created.id, name: created.name, dueDate: created.dueDate)
+            }
+            DS.Haptic.success()
+            return nil
+        } catch ChatGuidedCreationError.planLimitReached {
+            DS.Haptic.error()
+            return L10n.IAGuiados.planLimitReached
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: Error: creating from the guided flow: \(error)")
+            #endif
+            DS.Haptic.error()
+            return L10n.Common.saveError
+        }
+    }
+
+    // MARK: Piezas
+
+    private func appendAssistantTurn(question: String, reply: String, attachments: [ChatAttachment]) {
+        let message = ChatMessage(role: .assistant, text: reply, timestamp: Date.now, attachments: attachments)
+        messages.append(message)
+        allTurns.append(QAPair(question: question, response: reply, timestamp: Date.now, messageID: message.id,
+                               attachments: attachments))
+        trimTurnsIfNeeded()
+        persistSession()
+    }
+
+    private func trimTurnsIfNeeded() {
+        if allTurns.count > Self.maxTurns {
+            allTurns.removeFirst(allTurns.count - Self.maxTurns)
+        }
+    }
+
+    private func replaceTurnAttachments(messageID: UUID, with attachments: [ChatAttachment]) {
+        guard let turnIndex = allTurns.firstIndex(where: { $0.messageID == messageID }) else { return }
+        allTurns[turnIndex].attachments = attachments
+    }
+
+    /// Cambia el guiado de un mensaje en el hilo y en el historial, y guarda la sesión.
+    private func updateGuided(messageID: UUID, _ transform: (ChatGuidedFlowState) -> ChatGuidedFlowState) {
+        guard let index = messages.firstIndex(where: { $0.id == messageID }),
+              var attachments = messages[index].attachments,
+              let slot = attachments.firstIndex(where: { if case .guided = $0 { true } else { false } }),
+              case .guided(let state) = attachments[slot] else { return }
+        let updated = transform(state)
+        guard updated != state else { return }
+        attachments[slot] = .guided(updated)
+        messages[index].attachments = attachments
+        replaceTurnAttachments(messageID: messageID, with: attachments)
+        persistSession()
+    }
+}
+
 struct ChatConversationSnapshot {
     let messages: [ChatMessage]
     let allTurns: [QAPair]

@@ -17,30 +17,46 @@ struct ChatMessageBubble: View {
 
     private var isUser: Bool { message.role == .user }
 
+    /// Los adjuntos que van dentro de la columna de la burbuja; el guiado va aparte, a todo lo ancho.
+    private var columnAttachments: [ChatAttachment] {
+        (message.attachments ?? []).filter { if case .guided = $0 { false } else { true } }
+    }
+
+    private var guidedState: ChatGuidedFlowState? {
+        for attachment in message.attachments ?? [] {
+            if case .guided(let state) = attachment { return state }
+        }
+        return nil
+    }
+
     var body: some View {
-        HStack {
-            if isUser { Spacer(minLength: DS.Spacing.xxxl) }
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack {
+                if isUser { Spacer(minLength: DS.Spacing.xxxl) }
 
-            VStack(alignment: isUser ? .trailing : .leading, spacing: DS.Spacing.sm) {
-                bubbleText
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(isUser ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
-                    .clipShape(ChatBubbleShape())
+                VStack(alignment: isUser ? .trailing : .leading, spacing: DS.Spacing.sm) {
+                    bubbleText
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.md)
+                        .background(isUser ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
+                        .clipShape(ChatBubbleShape())
 
-                if let attachments = message.attachments,
-                   !attachments.isEmpty,
-                   let viewModel
-                {
-                    ChatAttachmentsView(
-                        messageID: message.id,
-                        attachments: attachments,
-                        viewModel: viewModel
-                    )
+                    if !columnAttachments.isEmpty, let viewModel {
+                        ChatAttachmentsView(
+                            messageID: message.id,
+                            attachments: columnAttachments,
+                            viewModel: viewModel
+                        )
+                    }
                 }
+
+                if !isUser { Spacer(minLength: DS.Spacing.xxxl) }
             }
 
-            if !isUser { Spacer(minLength: DS.Spacing.xxxl) }
+            // El guiado ocupa el ancho del hilo, como las pantallas de Primeros pasos.
+            if let guidedState, let viewModel {
+                ChatGuidedFlowCard(messageID: message.id, state: guidedState, viewModel: viewModel)
+            }
         }
     }
 

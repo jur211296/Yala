@@ -432,30 +432,13 @@ struct FirstScheduledPaymentFlowView: View {
     /// La fecha del primer pago con lo elegido hasta ahora (la misma cuenta que el editor).
     private var firstDue: Date? {
         guard step != .kind, step != .details || draft.amount != nil else { return nil }
-        let calendar = Calendar.current
-        let frequency = draft.frequency
-        guard frequency.isRecurring else { return calendar.startOfDay(for: draft.date) }
-        return ScheduledPaymentEditorViewModel.firstDueDate(
-            start: calendar.startOfDay(for: .now),
-            recurrenceType: frequency.recurrenceType,
-            recurrenceInterval: 1,
-            dayOfMonth: frequency == .monthly ? draft.dayOfMonth : nil,
-            weekdays: frequency == .weekly ? String(draft.weekday) : "",
-            yearlyMonth: frequency == .yearly ? calendar.component(.month, from: draft.date) : nil,
-            yearlyDay: frequency == .yearly ? calendar.component(.day, from: draft.date) : nil,
-            endDate: nil
-        )
+        return TutorialPlanningMath.paymentFirstDue(
+            frequency: draft.frequency, dayOfMonth: draft.dayOfMonth, weekday: draft.weekday, date: draft.date)
     }
 
     private var dueText: String? {
         guard step == .when || step == .reminder || step == .panel || step == .done, let due = firstDue else { return nil }
-        let calendar = Calendar.current
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: calendar.startOfDay(for: due)).day ?? 0
-        switch days {
-        case ..<1: return L10n.UXL10.stateToday
-        case 1: return L10n.UXL10.stateTomorrow
-        default: return L10n.UXL10.stateInDays(days)
-        }
+        return TutorialPlanningMath.dueInText(due)
     }
 
     /// «≈ S/ 80.00 cada mes, el día 1. Primer pago: 1 de diciembre.» (el resumen del editor).
@@ -463,17 +446,8 @@ struct FirstScheduledPaymentFlowView: View {
         guard let amount = draft.amount, let due = dueText != nil ? firstDue : nil else { return nil }
         let amountText = appPreferences.currency(amount, currencyCode: currencyCode, forceFullPrecision: true,
                                                  isEstimate: draft.isVariableAmount)
-        let dueDay = Calendar.current.isDateInToday(due) ? L10n.UXL10.today : ScheduledPaymentDateText.dayMonthLong(due)
-        switch draft.frequency {
-        case .once: return L10n.UXL10.summaryOnce(amountText, dueDay)
-        case .monthly:
-            return L10n.UXL10.summaryRecurring(amountText, L10n.UXL10.cadenceMonthly(interval: 1, day: draft.dayOfMonth), dueDay)
-        case .weekly:
-            return L10n.UXL10.summaryRecurring(amountText, L10n.UXL10.cadenceWeekly(interval: 1), dueDay)
-        case .yearly:
-            let cadence = L10n.UXL10.cadenceYearly(interval: 1, date: ScheduledPaymentDateText.dayMonthLong(draft.date))
-            return L10n.UXL10.summaryRecurring(amountText, cadence, dueDay)
-        }
+        return TutorialPlanningMath.paymentSummary(
+            amountText: amountText, frequency: draft.frequency, dayOfMonth: draft.dayOfMonth, date: draft.date, due: due)
     }
 
     // MARK: - Textos
