@@ -41,6 +41,22 @@
 # gana a crear uno en el bueno. Con SIM_HASTA_SDK=si (job `ui`) el nivel 3 se descarta entero:
 # ahí un runtime más nuevo no es un mal menor, es una tanda que no ejecuta ningún test.
 #
+# EL DESTINO LO VALIDA XCODEBUILD, NO SIMCTL (2026-11-16). La imagen `xcode-27-arm64` 20261112.0361.1
+# trae el mismo runtime iOS 27.0 (24A434) que la 20261104, y `simctl create` crea ahí el iPhone 17 Pro
+# sin quejarse, pero el Xcode 27.1 del CI ya no lo ofrece como destino: «Build for testing» moría con
+# exit 70 y `Unable to find a device matching…`, listando solo iPhones de iOS 27.1 y 27.2 (run
+# 43807611829). Lo que `simctl` acepta no es lo que el esquema ve. Por eso, elegido o creado el
+# device, se pregunta a `xcodebuild -showdestinations` del esquema:
+#   - si lo lista, vale;
+#   - si no, ese runtime se excluye y se busca otra vez con el orden de siempre (hoy: crear el
+#     iPhone 17 Pro en el 27.2, que en el modo tolerante es un mal menor con aviso);
+#   - si no queda ninguno, falla con la lista de destinos iOS que xcodebuild SÍ ve;
+#   - si `-showdestinations` no contesta, se avisa y se sigue: el build es la prueba siguiente.
+# No se filtra ANTES por lo que lista xcodebuild: solo lista devices que ya existen, y en la imagen
+# buena el iPhone 17 Pro del 27.0 se crea aquí, así que ese filtro lo habría descartado también.
+# `-derivedDataPath` es el mismo que el del build: la resolución de paquetes que pide el esquema se
+# paga una vez y el build la reutiliza.
+#
 # Al acabar imprime el ENTORNO (preflight): imagen, Xcode, SDK y runtime elegido con su build, y lo
 # deja en $GITHUB_OUTPUT (`runtime=…`) y en el resumen del paso.
 #
@@ -51,6 +67,10 @@
 #   SIM_DESCARGA_TRAS  vuelta vacía tras la que se descarga la plataforma (3)
 #   SIM_ESPERA      segundos entre vueltas         (20)
 #   SIM_HASTA_SDK   si = descartar runtimes más nuevos que el SDK  (no)
+#   SIM_VALIDAR     no = no preguntar a xcodebuild por el destino  (si)
+#   SIM_SCHEME      esquema con el que se valida   (Yala Dev)
+#   SIM_PROJECT     proyecto con el que se valida  (Yala.xcodeproj; si no existe, no se valida)
+#   SIM_DERIVED     -derivedDataPath de la validación (.ddp, el del build)
 #   XCRUN           binario de xcrun; el banco lo sustituye por uno falso
 #   XCODEBUILD      binario de xcodebuild; el banco lo sustituye
 #   KILLALL         binario de killall; el banco lo sustituye para no tocar el
@@ -69,6 +89,10 @@ SIM_HASTA_SDK="${SIM_HASTA_SDK:-no}"
 XCRUN="${XCRUN:-xcrun}"
 KILLALL="${KILLALL:-killall}"
 XCODEBUILD="${XCODEBUILD:-xcodebuild}"
+SIM_VALIDAR="${SIM_VALIDAR:-si}"
+SIM_SCHEME="${SIM_SCHEME:-Yala Dev}"
+SIM_PROJECT="${SIM_PROJECT:-Yala.xcodeproj}"
+SIM_DERIVED="${SIM_DERIVED:-.ddp}"
 
 SDK="$("$XCRUN" --sdk iphonesimulator --show-sdk-version 2>/dev/null || true)"
 echo "SDK de simulador: ${SDK:-desconocido}"
@@ -134,10 +158,13 @@ elif ios:
 '
 }
 
-UDID=""
 vacias=0
 descargado=no
-for intento in $(seq 1 "$SIM_INTENTOS"); do
+# Busca o crea el device en hasta $1 vueltas. Deja UDID, RT, RT_VERSION y RT_BUILD (UDID vacío si no).
+buscar() {
+local vueltas="$1" intento respuesta err
+UDID=""
+for intento in $(seq 1 "$vueltas"); do
   respuesta="$("$XCRUN" simctl list -j 2>/dev/null | elegir || true)"
   case "$respuesta" in
     device\ *)
@@ -164,21 +191,69 @@ for intento in $(seq 1 "$SIM_INTENTOS"); do
       echo "::warning title=Simulador::intento $intento: no se pudo crear $SIM_NAME en $RT" ;;
     incompatible\ *)
       vacias=$((vacias+1))
-      echo "::warning title=Simulador::intento $intento/$SIM_INTENTOS: ningún runtime iOS sirve para $SIM_TYPE con el SDK ${SDK:-desconocido} (${respuesta#incompatible }); se reinicia" ;;
+      echo "::warning title=Simulador::intento $intento/$vueltas: ningún runtime iOS sirve para $SIM_TYPE con el SDK ${SDK:-desconocido} (${respuesta#incompatible }); se reinicia" ;;
     *)
       vacias=$((vacias+1))
-      echo "::warning title=Simulador::intento $intento/$SIM_INTENTOS: CoreSimulator no devuelve devices ni runtimes iOS; se reinicia" ;;
+      echo "::warning title=Simulador::intento $intento/$vueltas: CoreSimulator no devuelve devices ni runtimes iOS; se reinicia" ;;
   esac
   if [ "$vacias" -ge "$SIM_DESCARGA_TRAS" ] && [ "$descargado" = no ]; then
     descargado=si
     echo "::warning title=Simulador::$vacias vueltas sin runtime iOS: se descarga la plataforma"
     "$XCODEBUILD" -downloadPlatform iOS || echo "::warning title=Simulador::la descarga de la plataforma falló"
   fi
-  [ "$intento" -lt "$SIM_INTENTOS" ] || break
+  [ "$intento" -lt "$vueltas" ] || break
   # Solo procesos del usuario del runner: en el hospedado es una VM de un solo uso.
   "$KILLALL" -9 com.apple.CoreSimulator.CoreSimulatorService 2>/dev/null || true
   sleep "$SIM_ESPERA"
 done
+}
+
+# Destinos iOS Simulator que el esquema ofrece (solo los «Available»; los placeholders y los que
+# traen `error:` no cuentan). Devuelve 1 si `xcodebuild -showdestinations` no contesta.
+DESTINOS=""
+destinos_ios() {
+  local salida
+  if ! salida="$("$XCODEBUILD" -showdestinations -scheme "$SIM_SCHEME" -project "$SIM_PROJECT" \
+        -derivedDataPath "$SIM_DERIVED" 2>&1)"; then
+    printf '%s\n' "$salida" | tail -5 >&2
+    return 1
+  fi
+  DESTINOS="$(printf '%s\n' "$salida" | awk '/Ineligible destinations/ {exit}
+    /platform:iOS Simulator/ && /id:/ && !/error:/ && !/placeholder/ {sub(/^[ \t]+/, ""); print}')"
+}
+
+buscar "$SIM_INTENTOS"
+
+# ── Validación con xcodebuild (ver «EL DESTINO LO VALIDA XCODEBUILD» arriba) ─────────────────
+no_ve=""
+validar=no
+if [ "$SIM_VALIDAR" = si ] && [ -e "$SIM_PROJECT" ]; then validar=si
+elif [ "$SIM_VALIDAR" = si ]; then echo "Sin $SIM_PROJECT aquí: no se valida el destino con xcodebuild."
+fi
+while [ -n "$UDID" ] && [ "$validar" = si ]; do
+  if ! destinos_ios; then
+    echo "::warning title=Simulador::xcodebuild -showdestinations no contestó; se sigue con $UDID sin validar (el build lo dirá)"
+    break
+  fi
+  if printf '%s\n' "$DESTINOS" | grep -qF "id:$UDID,"; then
+    echo "xcodebuild ve $SIM_NAME $UDID como destino de «$SIM_SCHEME»."
+    break
+  fi
+  echo "::warning title=Simulador::xcodebuild no ve $SIM_NAME $UDID (runtime $RT, iOS ${RT_VERSION:-?}) como destino de «$SIM_SCHEME»; se excluye ese runtime y se busca otro"
+  no_ve="$no_ve $RT"
+  EXCLUIDOS="$EXCLUIDOS $RT"
+  # CoreSimulator ya contestó: lo que falla es la visibilidad en Xcode, y descargar la plataforma
+  # no la arregla. Dos vueltas bastan para un `create` incompatible seguido de otro runtime.
+  descargado=si
+  buscar 2
+done
+
+if [ -z "$UDID" ] && [ -n "$no_ve" ]; then
+  echo "::error title=Simulador::ningún runtime iOS deja un $SIM_NAME que xcodebuild vea como destino de «$SIM_SCHEME». Excluidos por no verse:$no_ve. Hace falta otro Xcode (qa/scripts/ci-xcode.sh) o una imagen cuyo Xcode vea un runtime con el modelo. Destinos iOS que xcodebuild SÍ ve:"
+  printf '%s\n' "${DESTINOS:-(ninguno)}"
+  "$XCRUN" simctl list runtimes 2>&1 || true
+  exit 1
+fi
 
 if [ -z "$UDID" ]; then
   if [ "$SIM_HASTA_SDK" = si ]; then

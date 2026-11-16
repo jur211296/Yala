@@ -3,6 +3,9 @@
 # `killall` por falsos que leen el escenario de un directorio temporal.
 #
 #   bash qa/scripts/ci-simulador-test.sh
+#
+# El `xcodebuild` falso también contesta `-showdestinations` (casos 18-22): por defecto ve todos los
+# devices del escenario, y `NO_VE` le quita los UDID que la imagen de turno no ofrece como destino.
 set -uo pipefail
 
 AQUI="$(cd "$(dirname "$0")" && pwd)"
@@ -42,9 +45,27 @@ echo "$*" >> "$ESCENARIO/reinicios"
 FAKE
 cat > "$T/xcodebuild" <<'FAKE'
 #!/usr/bin/env bash
+D="$ESCENARIO"
 # `-version` es el preflight, no una descarga.
 if [ "$*" = "-version" ]; then printf 'Xcode 27.1\nBuild version 27A9275\n'; exit 0; fi
-echo "$*" >> "$ESCENARIO/descargas"
+# `-showdestinations`: por defecto ve todo device del escenario (los de las listas y los creados),
+# salvo los UDID de `no-ve`. Con `destinos-falla`, contesta con error, como un xcodebuild roto.
+if [ "${1:-}" = "-showdestinations" ]; then
+  echo "$*" >> "$D/validaciones"
+  if [ -f "$D/destinos-falla" ]; then echo "xcodebuild: error: no se pudo abrir el proyecto" >&2; exit 74; fi
+  echo 'Available destinations for the "Yala Dev" scheme:'
+  echo '		{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }'
+  { cat "$D"/lista.* | grep -o '"udid":"[^"]*"' | cut -d'"' -f4; sed 's/.* com.apple.CoreSimulator.SimRuntime./CREADO-/' "$D/creados"; } |
+    sort -u | while read -r u; do
+      grep -qx "$u" "$D/no-ve" 2>/dev/null || echo "		{ platform:iOS Simulator, arch:arm64, id:$u, OS:27.x, name:iPhone 17 Pro }"
+    done
+  echo '		{ platform:iOS Simulator, arch:arm64, id:VISIBLE-272, OS:27.2, name:iPhone 17 }'
+  echo
+  echo 'Ineligible destinations for the "Yala Dev" scheme:'
+  echo "		{ platform:iOS Simulator, id:$(cat "$D/no-ve" 2>/dev/null | head -1), name:iPhone 17 Pro, error:no se ve }"
+  exit 0
+fi
+echo "$*" >> "$D/descargas"
 FAKE
 chmod +x "$T/xcrun" "$T/killall" "$T/xcodebuild"
 
@@ -75,8 +96,10 @@ caso() {
   local i=0; for l in "$@"; do i=$((i+1)); echo "$l" > "$d/lista.$i"; done
   : > "$d/out"; : > "$d/reinicios"; : > "$d/creados"; : > "$d/descargas"
   printf '%s\n' ${INCOMPATIBLES:-} > "$d/incompatibles"; [ -z "${FALLA_UNA:-}" ] || : > "$d/falla-una"
+  printf '%s\n' ${NO_VE:-} > "$d/no-ve"; [ -z "${DESTINOS_FALLA:-}" ] || : > "$d/destinos-falla"
   ESCENARIO="$d" XCRUN="$T/xcrun" KILLALL="$T/killall" XCODEBUILD="$T/xcodebuild" GITHUB_OUTPUT="$d/out" \
-    SIM_INTENTOS=4 SIM_DESCARGA_TRAS=2 SIM_ESPERA=0 SIM_HASTA_SDK="${HASTA_SDK:-no}" bash "$SCRIPT" > "$d/log" 2>&1
+    SIM_INTENTOS=4 SIM_DESCARGA_TRAS=2 SIM_ESPERA=0 SIM_HASTA_SDK="${HASTA_SDK:-no}" \
+    SIM_PROJECT="$T" SIM_DERIVED="$d/ddp" bash "$SCRIPT" > "$d/log" 2>&1
   local ex=$? udid; udid="$(sed -n 's/^udid=//p' "$d/out")"; [ -n "$udid" ] || udid="-"
   local rein crea; rein=$(wc -l < "$d/reinicios" 2>/dev/null || echo 0); rein=$((rein+0))
   crea=$(wc -l < "$d/creados" 2>/dev/null || echo 0); crea=$((crea+0)); local desc; desc=$(wc -l < "$d/descargas"); desc=$((desc+0))
@@ -163,5 +186,30 @@ HASTA_SDK=si LOG_TIENE="más nuevo que el SDK 27.1 de este Xcode" \
 caso estricto-imagen-1104 27.1 0 CREADO-iOS-27-0 0 1 0 \
   "{\"runtimes\":[$RT27_1_DUO,$RT27_2_17PRO,$RT27_2_DUO,$RT27_0_B],\"devices\":{}}"
 
+# 18. La caída del 2026-11-16 (imagen 20261112.0361.1, run 43807611829): mismos runtimes que la
+#     20261104, el iPhone 17 Pro se crea en el 27.0, pero xcodebuild no lo ofrece como destino. Se
+#     excluye el 27.0 y se crea en el 27.2, que sí ve; el preflight lo marca como más nuevo.
+NO_VE=CREADO-iOS-27-0 LOG_TIENE="xcodebuild no ve iPhone 17 Pro CREADO-iOS-27-0" \
+SALIDA_TIENE="runtime=iOS 27.2 (24B8117)" \
+caso imagen-1112-xcodebuild-no-ve-27-0 27.1 0 CREADO-iOS-27-2 0 2 0 \
+  "{\"runtimes\":[$RT27_1_DUO,$RT27_2_17PRO,$RT27_2_DUO,$RT27_0_B],\"devices\":{}}"
+# 19. Un device YA creado que xcodebuild no ve tampoco vale: se crea otro en el runtime siguiente.
+NO_VE=VIEJO LOG_TIENE="xcodebuild ve iPhone 17 Pro CREADO-iOS-27-2" \
+caso device-existente-invisible 27.1 0 CREADO-iOS-27-2 0 1 0 \
+  "{\"runtimes\":[$RT27_2_17PRO,$RT27_0_B],\"devices\":{\"com.apple.CoreSimulator.SimRuntime.iOS-27-0\":[$(dev 'iPhone 17 Pro' VIEJO)]}}"
+# 20. Modo estricto (job `ui`) con la imagen 20261112: el 27.2 no vale y el 27.0 no se ve. Falla con
+#     la lista de lo que xcodebuild sí ve, sin descargar la plataforma (no arregla la visibilidad).
+HASTA_SDK=si NO_VE=CREADO-iOS-27-0 LOG_TIENE="platform:iOS Simulator, arch:arm64, id:VISIBLE-272, OS:27.2, name:iPhone 17" \
+caso estricto-imagen-1112-falla-claro 27.1 1 - 1 1 0 \
+  "{\"runtimes\":[$RT27_1_DUO,$RT27_2_17PRO,$RT27_2_DUO,$RT27_0_B],\"devices\":{}}"
+# 21. Ningún runtime deja un destino visible: exit 1 y el mensaje nombra los excluidos.
+NO_VE="CREADO-iOS-27-0 CREADO-iOS-27-2" LOG_TIENE="Excluidos por no verse: com.apple.CoreSimulator.SimRuntime.iOS-27-0 com.apple.CoreSimulator.SimRuntime.iOS-27-2" \
+caso nada-visible 27.1 1 - 1 2 0 \
+  "{\"runtimes\":[$RT27_2_17PRO,$RT27_0_B],\"devices\":{}}"
+# 22. `-showdestinations` no contesta: se avisa y se sigue con el device elegido (el build lo dirá).
+DESTINOS_FALLA=si LOG_TIENE="no contestó; se sigue con CREADO-iOS-27-0 sin validar" \
+caso destinos-sin-respuesta 27.1 0 CREADO-iOS-27-0 0 1 0 \
+  "{\"runtimes\":[$RT27_2_17PRO,$RT27_0_B],\"devices\":{}}"
+
 echo
-if [ "$fallos" -eq 0 ]; then echo "ci-simulador: 17/17 verdes"; else echo "ci-simulador: $fallos en rojo"; exit 1; fi
+if [ "$fallos" -eq 0 ]; then echo "ci-simulador: 22/22 verdes"; else echo "ci-simulador: $fallos en rojo"; exit 1; fi
