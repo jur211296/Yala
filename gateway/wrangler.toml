@@ -58,10 +58,10 @@ AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "100"
 # Supabase (Services ID `pe.yala.app.web`); producción NO (2026-11-06). Ver test/config.test.ts.
 APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
 # Yala web, lote 3: la entrada interna `WebGroupsReader` (src/web/groupsReader.ts) que lee Grupos para la web por un
-# service binding. SOLO staging; producción no lo declara y la entrada responde «disabled».
+# service binding. Encendida también en producción desde el 16-nov (ver [env.production.vars]).
 WEB_GROUPS_READER = "on"
 # Yala web, lote 3 (opción A de Jürgen, 14-nov): la entrada interna `WebGroupsWriter` (src/web/groupsWriter.ts) que
-# añade gastos y pagos e invita desde la web, con el rol `yala_web` (web3_02). SOLO staging hasta una revisión.
+# añade gastos y pagos e invita desde la web, con el rol `yala_web` (web3_02). En producción desde el 16-nov.
 WEB_GROUPS_WRITER = "on"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
@@ -203,6 +203,12 @@ MIN_SUPPORTED_BUILD = "0"
 # Correo del banco por reenvío: `auto+<code>@yalainbox.com` (ver la nota de staging).
 MAIL_ADDRESS_LOCAL = "auto"
 MAIL_ADDRESS_DOMAIN = "yalainbox.com"
+# Yala web en producción (16-nov, Jürgen: la escritura en Grupos sube junto con toda la web, opción A). Las dos entradas
+# internas que la web alcanza por service binding (src/web/): leer Grupos y añadir gastos, pagos e invitaciones con el
+# rol `yala_web`. Apagarlas: quitar estas dos líneas + `npm run deploy:production`; la web responde 503 en Grupos y
+# el resto sigue. El kill-switch de Grupos (GROUPS_BACKEND_ROLLOUT_PERCENT) también las corta.
+WEB_GROUPS_READER = "on"
+WEB_GROUPS_WRITER = "on"
 
 [[env.production.d1_databases]]
 binding = "DB"

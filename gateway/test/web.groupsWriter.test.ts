@@ -146,12 +146,18 @@ describe("WebGroupsWriter · quién puede", () => {
     }
   });
 
-  it("apagado sin el interruptor y siempre en producción", async () => {
-    for (const env of [baseEnv({ WEB_GROUPS_WRITER: undefined }), baseEnv({ ENVIRONMENT: "production" })]) {
+  it("apagado sin el interruptor, también en producción", async () => {
+    for (const env of [baseEnv({ WEB_GROUPS_WRITER: undefined }), baseEnv({ ENVIRONMENT: "production", WEB_GROUPS_WRITER: undefined })]) {
       const calls = stub(world());
       expect(await addWebSettlement(env, WEB, { groupId: GID, id: PAY, from: "m-beto", to: "m-ana", amount: 5, currency: "PEN", date: "2026-11-14T15:00:00Z" }, defer, NOW)).toEqual({ ok: false, error: "disabled" });
       expect(calls).toHaveLength(0);
     }
+  });
+
+  it("en producción lo abre el mismo interruptor (desde el 16-nov)", async () => {
+    stub(world());
+    const r = await addWebSettlement(baseEnv({ ENVIRONMENT: "production" }), WEB, { groupId: GID, id: PAY, from: "m-beto", to: "m-ana", amount: 5, currency: "PEN", date: "2026-11-14T15:00:00Z" }, defer, NOW);
+    expect(r).not.toEqual({ ok: false, error: "disabled" });
   });
 
   it("con el límite por cuenta agotado no lee ni escribe, y el cubo es el de la cuenta en la web", async () => {

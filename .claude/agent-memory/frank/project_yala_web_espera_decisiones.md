@@ -1,6 +1,6 @@
 ---
 name: yala-web-espera-decisiones
-description: Yala web: lotes 0 a 3 en staging desde el 14-nov (lote 3 = Grupos en lectura y escritura con la opción A); producción de la escritura espera una revisión de Jürgen; device-QA de la beta y del QR pendientes.
+description: Yala web: en PRODUCCIÓN (app.yala-app.pe) desde el 16-nov, entera y con Grupos; sin enlace público; la app publicada aún no recoge lo apuntado en la web (2.3 del iPhone).
 metadata:
   type: project
 ---
@@ -26,6 +26,11 @@ escritura escribe ahí y lo borra al acabar con el token de la app de A).
 Lo que se intentó y no funcionó (14-nov): dar al rol `yala_web` INSERT + RLS y EXECUTE de `apply_group_delta`. Sin USAGE
 en el esquema `auth` (que `postgres` no puede conceder) la función INVOKER falla; se cambió a funciones DEFINER
 por operación (`web_add_group_expense`/`_settlement`). Detalle en `docs/aprendizajes-tecnicos.md`.
+
+**16-nov: en producción**, probada de punta a punta con test@yala-app.pe (Google y Apple, Face ID de Jürgen). Jürgen
+la prueba con su cuenta personal; no se enlaza desde la web pública hasta que él lo diga. Lo que falta es de la 2.3 del
+iPhone (`ConnectedBrowsersConfig.baseURL` fuera de DEV_BUILD). El 15-nov el informe daba por hecho que bastaba
+`wrangler.toml` para encender Grupos en el gateway: el código lo apagaba en producción. Mide el código, no el plan.
 
 **Why:** la web reusa el núcleo de `shared-core` y la cola de borradores del gateway; cada lote lo aprueba él.
 

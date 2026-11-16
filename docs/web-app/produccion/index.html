@@ -1,0 +1,167 @@
+<title>Yala web a producción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: una columna de informe (≈ 760 px) con bandas por pregunta: ¿qué quedó arriba?, ¿cómo se probó?, ¿qué falta y quién lo hace? */
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --ink: #161a2e;
+  --muted: #5b6178;
+  --line: #dfe2ec;
+  --accent: #4b47d6;
+  --accent-soft: #ecebff;
+  --ok: #1d7a4f;
+  --ok-soft: #e3f4ea;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --stop: #b3261e;
+  --stop-soft: #fbe6e4;
+  --code-bg: #eef0f6;
+  --f-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1220; --surface: #171b2e; --ink: #e8eaf4; --muted: #a0a6bf; --line: #2a3050;
+    --accent: #9d9aff; --accent-soft: #24264a; --ok: #6fd3a0; --ok-soft: #14301f; --warn: #f0b25a; --warn-soft: #33260f;
+    --stop: #ff8a80; --stop-soft: #3a1714; --code-bg: #20253d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1220; --surface: #171b2e; --ink: #e8eaf4; --muted: #a0a6bf; --line: #2a3050;
+  --accent: #9d9aff; --accent-soft: #24264a; --ok: #6fd3a0; --ok-soft: #14301f; --warn: #f0b25a; --warn-soft: #33260f;
+  --stop: #ff8a80; --stop-soft: #3a1714; --code-bg: #20253d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+main { max-width: 780px; margin: 0 auto; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(30px, 6vw, 42px); line-height: 1.1; }
+h2 { font-size: 24px; }
+h3 { font-size: 17px; }
+p { margin: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.lead { font-size: 18px; color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 16px; }
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
+.verdict .line { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.pill { font-family: var(--f-mono); font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.stop { color: var(--stop); background: var(--stop-soft); }
+.pill.acc { color: var(--accent); background: var(--accent-soft); }
+.rows { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 170px 1fr; gap: 6px 18px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.row > * { min-width: 0; }
+.row .k { font-weight: 600; }
+.row .v { display: grid; gap: 6px; }
+.row .v .pill { justify-self: start; }
+.muted { color: var(--muted); }
+code { font-family: var(--f-mono); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: paso; }
+ol.steps > li { counter-increment: paso; display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+ol.steps > li::before { content: counter(paso); font-family: var(--f-display); font-weight: 700; font-size: 15px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+ol.steps > li > div { min-width: 0; display: grid; gap: 4px; }
+.who { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.opt { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; align-content: start; }
+.opt.rec { border: 2px solid var(--accent); }
+.opt dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
+.opt dt { color: var(--muted); }
+.opt dd { margin: 0; min-width: 0; }
+.check { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; }
+.check ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.url { font-family: var(--f-mono); font-size: 13px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.callout { border-left: 3px solid var(--stop); background: var(--stop-soft); padding: 14px 16px; border-radius: 0 10px 10px 0; display: grid; gap: 8px; }
+.tests { display: grid; gap: 10px; }
+.tests li { list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; }
+.tests ul { margin: 0; padding: 0; display: grid; gap: 10px; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 620px) {
+  .row { grid-template-columns: 1fr; }
+  .options { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Yala web · producción · 16 nov 2026</span>
+    <h1>Yala web a producción</h1>
+    <p class="lead">Yala web funciona en producción en <code>app.yala-app.pe</code>, sin enlace desde la web pública. Con Google y con Apple entra en la cuenta de prueba, enseña el mismo saldo que el iPhone, apunta un borrador y lee Grupos.</p>
+  </header>
+
+  <section aria-labelledby="estado">
+    <h2 id="estado">En una mirada</h2>
+    <div class="verdict">
+      <div class="line"><span class="pill ok">Arriba</span><span>Supabase de producción con todo lo de la web, el hook de token encendido y Apple y Google configurados para la web.</span></div>
+      <div class="line"><span class="pill ok">Probado</span><span>Login y renovación reales en producción tras encender el hook: el token de la app sale igual que antes.</span></div>
+      <div class="line"><span class="pill ok">Abierta</span><span><code>app.yala-app.pe</code> atiende con su widget anti-bots real.</span></div>
+      <div class="line"><span class="pill ok">Grupos</span><span>Lectura y escritura de la web encendidas en el gateway de producción (opción A que elegiste hoy).</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="piezas">
+    <h2 id="piezas">Qué hay en producción, pieza por pieza</h2>
+    <div class="rows">
+      <div class="row"><div class="k">Base de la nube</div><div class="v"><span class="pill ok">aplicada</span><span>El rol de solo lectura, el hook de token, lo que la web lee de la Bandeja y de Grupos, cerrar sesiones web desde el iPhone, su barrido diario y la escritura en Grupos con permiso propio. Siete pasos, uno a uno, comprobando el hook tras cada uno.</span></div></div>
+      <div class="row"><div class="k">Login de la nube</div><div class="v"><span class="pill ok">encendido</span><span>Hook de token y servidor OAuth (sin registro abierto). Cliente «Yala web» registrado. Apple aprende el identificador web <code>pe.yala.app.web</code> y Google su cliente web, delante de los de la app. Vuelta permitida: <code>https://app.yala-app.pe/auth/callback</code>.</span></div></div>
+      <div class="row"><div class="k">Yala web</div><div class="v"><span class="pill ok">atiende</span><span>En <code>https://app.yala-app.pe</code>, con su certificado, sus sesiones propias, el secreto del cliente y el widget de Turnstile que creó Dan.</span></div></div>
+      <div class="row"><div class="k">Grupos en la web</div><div class="v"><span class="pill ok">encendido</span><span>El código del gateway negaba Grupos a la web en producción aunque el interruptor estuviera encendido. Quité esa condición (opción A) y desplegué el gateway desde 2.3. Con ese despliegue llegó también el cupo de recibos de Grupos. La app del iPhone 14 sincroniza Grupos igual después.</span></div></div>
+      <div class="row"><div class="k">App del iPhone</div><div class="v"><span class="pill acc">sin cambios</span><span>La app publicada no conoce la web: lo apuntado en la web no llega a su Bandeja (solo a quien tenga el correo del banco preparado). Eso llega con la 2.3 del iPhone.</span></div></div>
+      <div class="row"><div class="k">Web pública</div><div class="v"><span class="pill acc">intacta</span><span><code>yala-app.pe</code> sigue en Vercel y no enlaza a la web de la app.</span></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="prueba">
+    <h2 id="prueba">Cómo se probó antes de tocar nada</h2>
+    <div class="tests"><ul>
+      <li><span class="pill ok">staging</span><span>Las marchas atrás y los cuatro SQL de la web, en una transacción que se deshace. La primera corrida cazó un fallo: la marcha atrás de Grupos dejaba una función que añadió el arreglo del 15-nov. Arreglado.</span></li>
+      <li><span class="pill ok">simulación</span><span>La cadena de producción entera sobre staging sin conector: aplica, vuelve atrás limpia y se reaplica idéntica.</span></li>
+      <li><span class="pill ok">ensayo</span><span>La misma cadena <strong>dentro de producción</strong>: aplicar, volver atrás, reaplicar y volver atrás, en una transacción que el final deshace. Las huellas coincidieron con la simulación.</span></li>
+      <li><span class="pill ok">hook</span><span>Llamado con las 21 sesiones de la app que había en producción: las 21 salen intactas. La web sale con su rol; un cliente desconocido, rechazado.</span></li>
+      <li><span class="pill ok">login real</span><span>Con el hook encendido: una cuenta de prueba desechable entra y renueva su sesión en producción, con el mismo token de siempre. Se borró al acabar.</span></li>
+      <li><span class="pill ok">teléfono</span><span>La app de producción del iPhone 14 (cuenta de prueba) renovó su sesión con el hook encendido y sigue «Todo sincronizado»; tras desplegar el gateway, Grupos carga igual.</span></li>
+    </ul></div>
+  </section>
+
+  <section aria-labelledby="e2e">
+    <h2 id="e2e">La prueba de punta a punta</h2>
+    <div class="tests"><ul>
+      <li><span class="pill ok">entrar</span><span>Safari del iPhone 14, cuenta de prueba: Turnstile pasa solo y «Continuar con Google» entra.</span></li>
+      <li><span class="pill ok">saldo</span><span>El Panel de la web enseña lo mismo que la app: Efectivo −12,50 S/ y el mismo registro.</span></li>
+      <li><span class="pill ok">apuntar</span><span>Un gasto de 3,50 S/ queda en la cola de producción, camino de la Bandeja del iPhone.</span></li>
+      <li><span class="pill ok">grupos</span><span>Grupos se lee igual que en la app.</span></li>
+      <li><span class="pill ok">apple</span><span>«Continuar con Apple», con tu Face ID, entra en la misma cuenta: mismo saldo y el borrador esperando en la Bandeja.</span></li>
+    </ul></div>
+  </section>
+
+  <section aria-labelledby="falta">
+    <h2 id="falta">Qué falta</h2>
+    <ol class="steps">
+      <li><div><h3>Que la app recoja lo apuntado en la web</h3><span class="who">versión 2.3 del iPhone</span><p>Poner <code>https://app.yala-app.pe</code> en la configuración de «Navegadores conectados» fuera de Yala Dev (hoy está vacía). Hasta entonces el borrador espera en la cola y solo lo recoge una app con el correo del banco preparado.</p></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="atras">
+    <h2 id="atras">Si algo va mal</h2>
+    <div class="callout">
+      <p><strong>Login de la app:</strong> apagar el hook de token en Supabase es un solo cambio de configuración, con efecto inmediato.</p>
+      <p><strong>La base:</strong> las siete marchas atrás, ya probadas dentro de producción, dejan la huella de partida. Hay copia física diaria de Supabase y una foto de la configuración de login de antes.</p>
+      <p><strong>Grupos en la web:</strong> quitar los dos interruptores del gateway y desplegarlo, o volver a la versión anterior del gateway (la del 14-nov) con un comando. El resto de la app no depende de ellos.</p>
+      <p><strong>La web:</strong> sin enlace público; borrar el dominio propio del Worker la quita de internet.</p>
+    </div>
+  </section>
+
+  <footer>Fuente: <code>docs/web-app/produccion/index.html</code> · medido el 16-nov-2026 · detalle técnico en <code>webapp/README.md</code>, sección «Producción».</footer>
+</main>
