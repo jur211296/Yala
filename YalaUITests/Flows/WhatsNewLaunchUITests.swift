@@ -16,19 +16,16 @@ final class WhatsNewLaunchUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Un usuario de 2.1 que actualiza ve la hoja de 2.2 con sus cuatro tarjetas, y no vuelve a verla
-    /// (card `tablero-la-hoja-de-novedades-de-2-2-pasa-a-cuatr-mbcb`).
+    /// Un usuario de 2.1 que actualiza ve la hoja de la versión que corre, y no vuelve a verla. Desde la 2.3 (15-nov-2026)
+    /// es la hoja de 2.3, que abre con la nota de salud; no se fija cuántas tarjetas trae, porque cada lote de 2.3 añade la
+    /// suya. La de 2.2 y sus cuatro tarjetas la fija `UXAudit22Lote5LogicTests`.
     func test_updateFrom2_1_showsTheSheetOnce() {
         let app = XCUIApplication()
         app.launchForUITest(lastSeenAppVersion: "2.1.3")
 
         let title = app.staticTexts["whats_new_title"]
         XCTAssertTrue(title.waitForExistence(timeout: 60), "La hoja de Novedades no salió al venir de 2.1.3.")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_0"].label, "Tu tarjeta en dos monedas")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_1"].label, "Pregúntale a Siri")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_2"].label, "Anotar en menos toques")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_3"].label, "Lo que te falta pagar")
-        XCTAssertFalse(app.staticTexts["whats_new_feature_title_4"].exists, "La hoja de 2.2 tiene cuatro tarjetas.")
+        XCTAssertEqual(app.staticTexts["whats_new_feature_title_0"].label, "Tu nota de salud, más precisa")
 
         app.buttons["whats_new_continue"].tap()
         XCTAssertTrue(title.waitForNonExistence(timeout: 10), "La hoja no se cerró con Continuar.")
@@ -73,8 +70,9 @@ final class WhatsNewLaunchUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true, lastSeenAppVersion: "none")
         XCTAssertTrue(
-            app.textFields["onboarding_name_field"].waitForExistence(timeout: 60),
-            "No montó el onboarding."
+            // Bienvenida 2.3 (Y23-04): `-uitest-onboarding` monta la conversación de tres preguntas; su primera es el nombre.
+            app.textFields["welcome_chat_name_field"].waitForExistence(timeout: 60),
+            "No montó el alta."
         )
         app.terminate()
 

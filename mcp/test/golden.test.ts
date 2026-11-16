@@ -20,6 +20,9 @@ import { buildGroupAdjustment, LOAN_TO_GROUPS_NAMES } from "../src/logic/groups"
 import { buildLookup, categoryOf } from "../src/logic/lookup";
 import { listRecurring } from "../src/logic/recurring";
 import { summarize, txKindOf, type TxKind } from "../src/logic/summary";
+import { distribution, monthlyTrend, statsPeriods, statsSummary, type DistributionEntry } from "../../shared-core/src/logic/stats";
+import { paymentDatesInMonth, upcomingPayments, type ScheduleRow } from "../../shared-core/src/logic/schedule";
+import { addMonths, monthStart } from "../src/logic/dates";
 import type {
   AccountRow,
   BudgetRow,
@@ -40,7 +43,31 @@ interface PeriodExpected {
   aproximado: { ingresos: boolean; gastos: boolean; neto: boolean };
 }
 
+/** Yala web, lote 2: lo que pintan Estadísticas y Pagos planificados (ver el bloque del .swift). */
+interface SliceExpected {
+  categoria: string | null;
+  importe: number;
+  porcentaje: number;
+}
+
+interface WebPeriodExpected {
+  ingresos: number;
+  gastos: number;
+  neto: number;
+  variacion: { ingresos: number | null; gastos: number | null; neto: number | null; gasto_medio_diario: number | null };
+  gasto_medio_diario: number;
+  dias: number;
+  gasto_mas_alto: number | null;
+  top_categorias: SliceExpected[];
+  distribucion: SliceExpected[];
+}
+
 interface Expected {
+  estadisticas: {
+    periodos: Record<"mes_actual" | "mes_pasado" | "anio_actual", WebPeriodExpected>;
+    tendencias: { mes: string; ingresos: number; gastos: number; neto: number }[];
+  };
+  pagos: { fechas: Record<string, string[]>; proximos: string[] };
   balances: { accounts: Record<string, number>; total: number; aproximado: boolean };
   periods: Record<"mes_actual" | "mes_pasado" | "anio_actual", PeriodExpected>;
   budgets: Record<string, number>;
@@ -63,7 +90,7 @@ interface Scenario {
     exchange_rates: ExchangeRateRow[];
     tx_items: TxRow[];
     budgets: BudgetRow[];
-    scheduled_payments: ScheduledPaymentRow[];
+    scheduled_payments: ScheduleRow[];
   };
   budgetPeriod: { desde: string; hasta: string };
   conversions: { amount: number; from: string; to: string; dateKey: string }[];
@@ -206,6 +233,68 @@ for (const s of golden.scenarios) {
         close(got?.value, want.value, `${c.amount} ${c.from}→${c.to} el ${c.dateKey}`, 1e-6);
         expect(got?.quality, `calidad de ${c.from}→${c.to} el ${c.dateKey}`).toBe(want.quality);
       });
+    });
+
+    // ─── Yala web, lote 2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    const slices = (got: DistributionEntry[], want: SliceExpected[], label: string) => {
+      expect(got.length, `${label}: trozos`).toBe(want.length);
+      want.forEach((w, i) => {
+        expect(got[i]?.categoria ?? null, `${label}[${i}] categoría`).toBe(w.categoria);
+        close(got[i]?.importe, w.importe, `${label}[${i}] importe`);
+        close(got[i]?.porcentaje, w.porcentaje, `${label}[${i}] porcentaje`, 0.01);
+      });
+    };
+
+    for (const kind of ["mes_actual", "mes_pasado", "anio_actual"] as const) {
+      it(`Yala web · Estadísticas ${kind} (InsightsCalculator y TopSpendingCategoriesCalculator)`, () => {
+        const want = exp.estadisticas.periodos[kind];
+        const ctx = { today, tz, preferredCurrency: s.preferredCurrency, rates: book, groups };
+        const r = statsSummary(s.rows.tx_items, lookup, kind, ctx);
+        close(r.ingresos, want.ingresos, "ingresos");
+        close(r.gastos, want.gastos, "gastos");
+        close(r.neto, want.neto, "neto");
+        // Porcentajes sobre cifras ya redondeadas a céntimos: una centésima de punto de margen.
+        close(r.variacion.ingresos, want.variacion.ingresos, "variación de ingresos", 0.01);
+        close(r.variacion.gastos, want.variacion.gastos, "variación de gastos", 0.01);
+        close(r.variacion.neto, want.variacion.neto, "variación del neto", 0.01);
+        close(r.variacion.gasto_medio_diario, want.variacion.gasto_medio_diario, "variación del gasto medio", 0.01);
+        close(r.gasto_medio_diario, want.gasto_medio_diario, "gasto medio diario");
+        expect(r.dias, "días del promedio").toBe(want.dias);
+        close(r.gasto_mas_alto?.importe ?? null, want.gasto_mas_alto, "gasto más alto");
+        slices(r.top_categorias, want.top_categorias, "top");
+        slices(distribution(s.rows.tx_items, lookup, statsPeriods(kind, today).actual, ctx).categorias, want.distribucion, "distribución");
+      });
+    }
+
+    it("Yala web · Tendencias, entradas y salidas de seis meses (CashFlowCalculator por mes)", () => {
+      const r = monthlyTrend(s.rows.tx_items, lookup, 6, { today, tz, preferredCurrency: s.preferredCurrency, rates: book, groups });
+      expect(r.map((m) => m.mes)).toEqual(exp.estadisticas.tendencias.map((m) => m.mes));
+      exp.estadisticas.tendencias.forEach((w, i) => {
+        close(r[i]?.ingresos, w.ingresos, `${w.mes} ingresos`);
+        close(r[i]?.gastos, w.gastos, `${w.mes} gastos`);
+        close(r[i]?.neto, w.neto, `${w.mes} neto`);
+      });
+    });
+
+    it("Yala web · fechas de cobro de seis meses (ScheduledPaymentDateCalculator.paymentDatesInMonth)", () => {
+      for (const p of s.rows.scheduled_payments) {
+        const got: string[] = [];
+        for (let i = 0; i < 6; i++) got.push(...paymentDatesInMonth(p, addMonths(monthStart(today), i), tz));
+        expect(got, `fechas de ${p.name}`).toEqual(exp.pagos.fechas[p.sync_id]);
+      }
+    });
+
+    it("Yala web · próximos cobros de 30 días, sin los saltados (paymentDatesInMonth + isDateSkipped)", () => {
+      const r = upcomingPayments(s.rows.scheduled_payments, lookup, {
+        today,
+        todayUtc: nowUtc,
+        tz,
+        preferredCurrency: s.preferredCurrency,
+        rates: book,
+        days: 30,
+      });
+      expect(r.proximos.map((c) => `${c.id} ${c.dia}`).sort()).toEqual(exp.pagos.proximos);
     });
   });
 }

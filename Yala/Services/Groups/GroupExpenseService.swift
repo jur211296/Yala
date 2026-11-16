@@ -535,6 +535,55 @@ final class GroupExpenseService {
         ).flatMap { byID[$0.id] }
     }
 
+    /// El saldo inicial que `setOpeningBalance` con estos datos EDITARÍA en vez de crear otro, o `nil` (lote 2.3 de Grupos,
+    /// 10-nov). El formulario lo pregunta antes de guardar: hasta entonces el reemplazo pasaba sin avisar. Sigue el mismo
+    /// camino que `setOpeningBalance`: el de esa pareja y moneda (`openingBalanceToReplace`), salvo que un pago confirmado
+    /// no deje editarlo (entonces el nuevo va aparte y no reemplaza nada). Solo lee.
+    func openingBalanceThatAddingWouldReplace(
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String,
+        currencyCode: String
+    ) throws -> SplitExpense? {
+        // Las mismas comprobaciones que `setOpeningBalance` hace antes de mirar nada: en un grupo congelado o sin permiso,
+        // el aviso de por qué no se puede, no la pregunta.
+        try validateGroupIsWritable(group)
+        try validateCurrentUserCanManageOpeningBalances(in: group)
+        guard debtorMemberID != creditorMemberID,
+              let existing = try openingBalanceToReplace(
+                in: group, memberA: debtorMemberID, memberB: creditorMemberID, currencyCode: currencyCode
+              ) else { return nil }
+        let locked = try openingBalanceEditIsLocked(
+            existing, in: group, debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID
+        )
+        return locked ? nil : existing
+    }
+
+    /// Quién debe en un saldo inicial: su única share. `nil` si no se puede leer.
+    func openingBalanceDebtorMemberID(of expense: SplitExpense) -> String? {
+        do {
+            return try fetchShares(for: expense).first?.memberID
+        } catch {
+            #if DEBUG
+            print("GroupExpenseService: Error: no se pudo leer el deudor del saldo inicial: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// El guard de `updateOpeningBalance`, compartido con la pregunta de reemplazo para que no diverjan: sobre la UNIÓN del
+    /// par ORIGINAL (lo que se va a mutar) y el par NUEVO.
+    private func openingBalanceEditIsLocked(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String
+    ) throws -> Bool {
+        let oldEdgeMembers = Set(try fetchShares(for: expense).map(\.memberID) + [expense.paidByMemberID])
+        let guardMembers = oldEdgeMembers.union([debtorMemberID, creditorMemberID])
+        return try confirmedSettlementsBlock(forMembers: guardMembers, in: group)
+    }
+
     /// Actualiza un saldo inicial existente (el dueño o un admin). Guard targeted: bloquea si una
     /// liquidación confirmada involucra al deudor o al acreedor de esta arista.
     /// `date` es la fecha del saldo (card t3fq): editarlo ya no lo devuelve a `group.createdAt`.
@@ -554,9 +603,9 @@ final class GroupExpenseService {
         // Guard sobre la UNIÓN del par ORIGINAL (lo que se va a mutar/borrar) y el par NUEVO:
         // editar para alejarse de un par ya saldado corromperia ese neto histórico tanto como
         // editar hacia él. (removeOpeningBalance solo necesita el par original.)
-        let oldEdgeMembers = Set(try fetchShares(for: expense).map(\.memberID) + [expense.paidByMemberID])
-        let guardMembers = oldEdgeMembers.union([debtorMemberID, creditorMemberID])
-        guard try !confirmedSettlementsBlock(forMembers: guardMembers, in: group) else {
+        guard try !openingBalanceEditIsLocked(
+            expense, in: group, debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID
+        ) else {
             throw GroupExpenseServiceError.expenseHasAssociatedSettlements
         }
 
@@ -625,11 +674,23 @@ final class GroupExpenseService {
 
     // MARK: - Settlement CRUD
 
+    #if DEBUG
+    /// Seam de tests: el próximo guardado de un pago nuevo falla, para medir que reintentar no deja dos. Se apaga solo
+    /// tras usarse; estático, así que resetéalo en `defer`.
+    static var _testFailNextSettlementSave = false
+    #endif
+
     /// Create a settlement (payment from one member to another).
     @discardableResult
     /// Crea un settlement. A0-Bridge: si `accountForCurrentUser` proveído (Caso C proactivo
     /// con cuenta seleccionada en form) Y settlement nace con `isConfirmed=true`,
     /// el bridge se invoca al instante. Sino, el bridge se dispara en `confirmSettlement`.
+    ///
+    /// `confirmed: true` (ticket `settlement-retry-after-a-failed-confirmation-duplicates-the-payment`): «Apuntar pago»
+    /// nace confirmado en un solo guardado. Hasta el 2026-11-10 creaba y luego confirmaba con otro guardado; si fallaba el
+    /// segundo, la hoja dejaba reintentar con el pago ya creado y quedaban dos. Si el guardado falla, el pago se retira
+    /// del contexto: sin eso seguiría pendiente de insertar y el siguiente guardado (el del reintento) lo escribiría junto
+    /// al nuevo.
     func createSettlement(
         in group: SplitGroup,
         fromMemberID: String,
@@ -638,7 +699,8 @@ final class GroupExpenseService {
         currencyCode: String,
         note: String?,
         date: Date,
-        accountForCurrentUser: Account? = nil
+        accountForCurrentUser: Account? = nil,
+        confirmed: Bool = false
     ) throws -> SplitSettlement {
         let context = try requireContext()
 
@@ -658,11 +720,19 @@ final class GroupExpenseService {
         // Quien registra la liquidación = el usuario actual (autoexclusión del eco Caso D: registro
         // "X me pagó" y no me llega "X te pagó"). La atribución "X te pagó" sigue siendo fromMemberID.
         settlement.recordedByMemberID = currentUserMemberID(in: group)
+        settlement.isConfirmed = confirmed
         context.insert(settlement)
 
         do {
+            #if DEBUG
+            if Self._testFailNextSettlementSave {
+                Self._testFailNextSettlementSave = false
+                throw CocoaError(.fileWriteUnknown)
+            }
+            #endif
             try context.save()
         } catch {
+            context.delete(settlement)
             throw GroupExpenseServiceError.saveFailed(error)
         }
 

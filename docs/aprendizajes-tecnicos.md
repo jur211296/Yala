@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-11-12` [Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11-12)](#un-watchdogtermination-de-sentry-no-prueba-que-la-ram-se-agotara-ni-que-fuera-un-usuario-2026-11-12)
 - `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
 - `2026-11-09` [Un `shouldSave: false` del puente de Grupos no impide que se guarde a mitad (2026-11-09)](#un-shouldsave-false-del-puente-de-grupos-no-impide-que-se-guarde-a-mitad-2026-11-09)
 - `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
@@ -660,6 +661,30 @@ Sentry (Security & Privacy › Prevent Storing of IP Addresses), no en el códig
 **La lección.** Una limpieza por lista negra no se da por buena leyendo el código: se manda un evento con datos
 falsos reconocibles y se busca cada uno en el JSON entero del evento (API de Sentry, `/events/<id>/`).
 
+### Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11-12)
+
+**Qué pasó.** YALA-IOS-B llegó como «regresión en producción de un usuario real» con 17 casos. Medido por la API de
+Sentry: 16 eran de Yala Dev en el iPhone 14 de QA (cierres de `devicectl … --terminate-existing`, ya apagados en
+desarrollo por el PR 875), y el único de producción empezó **5 minutos después de enviar la 2.2 a revisión de Apple**
+(App Store Connect, `asc review history`), en un iPhone con kernel `DEVELOPMENT_ARM64` (los de la calle dicen
+`RELEASE_ARM64`), en `en_US`, recién instalado, y la app volvió a abrirse 2 s después del último rastro. Ninguno de los
+17 traía un aviso de memoria baja.
+
+**Por qué engaña.** El SDK (`SentryWatchdogTerminationLogic`, 9.31) llama «memoria agotada» a cualquier cierre con la app
+activa que no sea crash, actualización, reinicio, depurador ni cuelgue: un `kill` de una herramienta o del entorno de
+revisión de Apple cuenta igual. Y la limpieza de Yala borraba el `data` de todo rastro que no fuera HTTP, así que el
+estado del ciclo de vida (`active`/`background`) y la acción `LOW_MEMORY` llegaban vacíos: el evento no decía nada.
+
+**Cómo se lee ahora.** Antes de tratar un WatchdogTermination como bug: (1) cruza `release` y hora con las fechas de
+envío a revisión; (2) mira `contexts.os.kernel_version`; (3) busca un rastro `memory` con `LOW_MEMORY` o el contexto
+`memory` (desde este día los trae: `MemoryDiagnostics`). Sin aviso de memoria baja y con el contexto en cifras normales,
+es un cierre externo.
+
+**Lo que sí era memoria.** Una foto decodificada con `UIImage(data:)` y pintada con SwiftUI ocupa su tamaño completo en
+memoria aunque se vea en una miniatura: diez de 48 MP subieron la app de 65 MB a 1.929 MB en el simulador. Dibujarla
+con CoreGraphics (`draw(in:)`) no la retiene: una prueba que mida con `UIGraphicsImageRenderer` da 1 MB y esconde el
+problema. Se mide pintando en una ventana con `UIHostingController` (molde: `PhotoIntakeTests`).
+
 ### `context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (2026-11-05)
 
 Medido con sondas, una por proceso (iPhone 17 Pro, iOS 27.2, `ModelContext` en memoria y en disco, `cloudKitDatabase:
@@ -683,3 +708,63 @@ puente con `shouldSave: false` para guardar todo junto siembra antes de escribir
 resto de llamadores sigue expuesto: ticket `group-system-category-seed-saves-the-context-mid-bridge`. Y el `rollback()` de
 ese camino (registro editado, gasto, repartos y préstamo insertados, «Grupos» desarchivada) NO aborta: medido en las dos
 formas, a diferencia del de la sección anterior.
+
+### Desinstalar Yala Dev no vacía su App Group: un «teléfono nuevo» de QA hay que vaciarlo a mano (2026-11-13)
+
+Medido en el iPhone 14 durante la sesión del minitutorial del correo: tras `devicectl device uninstall` de Yala Dev, el
+store de `group.com.jurgenschmidt.yala.dev` volvió intacto al reinstalar. Lo que vive en el App Group (el store personal,
+`UserDefaults` compartidos, el espejo del outbox) sobrevive, así que **una reinstalación no es un teléfono nuevo**: un QA
+que necesite «entrar desde un teléfono nuevo» tiene que vaciar los stores a mano (receta: `devicectl` sobre el App Group,
+`reference_contar_el_store_del_iphone_con_devicectl` en la memoria de Frank) y comprobar que quedaron vacíos antes de
+empezar. **No fue la causa** del bloqueo de 15 minutos al entrar en una cuenta con grupos (ticket
+`adopt-lineage-block-shows-connecting-for-fifteen-minutes`): la segunda y la tercera prueba vaciaron los stores y se
+reprodujo igual, porque las filas las creaba el puente de Grupos en el mismo intento. Lo que sí hace es convertir una
+prueba de «teléfono nuevo» en una de «teléfono con datos de antes» sin avisar, y entonces un bloqueo de linaje puede ser
+legítimo. Sin medir si una persona real que desinstala y reinstala de la App Store conserva el App Group igual.
+
+### Web: una cookie `__Host-` con `Path` distinto de `/` se descarta, y `no-referrer` manda `Origin: null` en los formularios (2026-11-13)
+
+Dos trampas del navegador que las pruebas con un navegador falso no ven, cazadas por la revisión de seguridad del lote 0
+de Yala web (`webapp/`) antes de que nadie entrara:
+
+- **`__Host-` exige `Path=/`, `Secure` y ningún `Domain`.** Con `Path=/auth`, Chrome, Firefox y Safari la tiran en
+  silencio: el `Set-Cookie` sale bien en la respuesta y la cookie no vuelve nunca. El login social volvía siempre a
+  «caducada», fallando cerrado y sin ningún error.
+- **`Referrer-Policy: no-referrer` cambia el `Origin` de los POST de formulario a `null`** (estándar Fetch, «append a
+  request Origin header»). Un control «`Origin` tiene que ser el mío» rechaza entonces los formularios PROPIOS. Para no
+  filtrar la URL a otros sitios sin romper eso, `same-origin`.
+
+Lo que cuesta poco y lo evita: el navegador falso de las pruebas aplica las reglas de `__Host-` (`webapp/test/fakes.ts`),
+y una prueba fija el `Referrer-Policy` con el porqué al lado. Y un clic real en el navegador antes de dar por bueno un
+flujo de entrada: las pruebas ponían `Origin` a mano.
+
+### Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierres va en un Durable Object (2026-11-14)
+
+La primera versión de la lista de sesiones de Yala web guardaba una clave del KV por sesión y la leía con `list({prefix})`.
+Las 64 pruebas unitarias pasaban (el KV de las pruebas es un `Map`) y el e2e contra staging cayó: con dos sesiones recién
+abiertas, la lista salía **vacía** y «Cerrar todas» desde el iPhone cerraba **cero**. El `list` del KV es de consistencia
+eventual (hasta un minuto) incluso en el mismo punto de presencia donde se escribió.
+
+Para algo que solo se enseña, un minuto de retraso es aceptable; para algo que decide qué se cierra, no: la sesión que
+alguien acaba de abrir en un equipo ajeno es justo la que quiere cerrar. Se pasó a un Durable Object por cuenta
+(`webapp/src/worker/sessionIndex.ts`, SQLite), que es uno solo en el mundo y lee lo que se escribió. El mismo riesgo
+tiene borrar una sesión del KV: otra ubicación puede seguir sirviendo la copia vieja hasta un minuto. Por eso «cerrar»
+cierra también la sesión de Supabase, y cada petición de datos comprueba antes `GET /auth/v1/user`, que sí es inmediato
+(lo fija `webapp/test/lote1.test.ts`, «aunque el KV aún devuelva la sesión cerrada»).
+
+Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.
+
+### Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)
+
+**Qué pasó.** Para que Yala web escribiera en Grupos (lote 3, opción A) se creó el rol `yala_web` con INSERT y RLS en las
+tablas de Grupos y EXECUTE de `apply_group_delta`. Cada escritura daba 503: `apply_group_delta` es SECURITY INVOKER y su
+primera línea lee `auth.uid()`, y el rol no tenía USAGE en el esquema `auth` («permission denied for schema auth»).
+
+**Por qué no se arregla con un GRANT.** El esquema `auth` es de `supabase_admin`, y `postgres` (el usuario de la Management
+API) solo tiene USAGE, sin opción de concederlo: `grant usage on schema auth to yala_web` no da error, da un aviso y no hace
+nada (`has_schema_privilege` sigue en `false`). `authenticated` lo tiene porque lo concedió `supabase_admin`.
+
+**Qué hacer.** Para un rol propio, las escrituras van por una función SECURITY DEFINER del dueño, que sí lee `auth.uid()`.
+Dentro la RLS no actúa, así que la función comprueba antes todo lo que la RLS decidía (miembro, grupo vivo, solo filas
+nuevas, id nuevo en todos los grupos): `webapp/supabase/web3_02_grupos_escritura.sql`, `web_add_group_expense`. Se verifica con `set local role <rol>` y
+`set_config('request.jwt.claims', …)` dentro de un bloque `do` que acaba en `raise exception` (no deja nada escrito).

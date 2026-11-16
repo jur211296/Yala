@@ -21,7 +21,7 @@ type Ctx = Context<{ Bindings: Env }>;
 // esta ruta, y sin `voice` en la lista caía al cubo `chat`, que en free no existe → 403 «requiere Pro» en
 // cada nota de voz de la prueba gratuita desde el 2026-06-15. Decisión de Jürgen: arreglarlo ya; la cuota
 // nueva (una nota = un uso) llega con la sesión 2.
-const CHAT_CATEGORIES: readonly Category[] = ["chat", "vision", "voice", "insights", "suggestions"];
+const CHAT_CATEGORIES: readonly Category[] = ["chat", "vision", "voice", "insights", "suggestions", "receipt"];
 
 /**
  * La categoría que DECLARA el cliente en `X-Yala-Category`, si es una de las de la ruta; si no, `null`.
@@ -320,7 +320,7 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
 export async function handleAudioTranscriptions(c: Ctx): Promise<Response> {
   const claims = await requireSession(c);
   if (claims instanceof Response) return claims;
-  const declared = declaredCategory(c, ["voice"]);
+  const declared = declaredCategory(c, ["voice", "receipt"]);
 
   const bytes = new Uint8Array(await c.req.arrayBuffer());
   const model = multipartField(bytes, c.req.header("content-type") ?? null, "model");

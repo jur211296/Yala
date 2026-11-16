@@ -38,9 +38,10 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
 
     /// Lanza con App Attest fingido (sin él la tarjeta de la nube no sale en el simulador), abre «¿Dónde viven tus datos?»
     /// y devuelve «Activar la nube».
-    private func openMigrateCard(pendingICloudWipe: Bool) -> (XCUIApplication, XCUIElement) {
+    private func openMigrateCard(pendingICloudWipe: Bool, halfway: Bool = false) -> (XCUIApplication, XCUIElement) {
         let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingICloudWipe: pendingICloudWipe)
+        app.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingICloudWipe: pendingICloudWipe,
+                            pendingICloudWipeHalfway: halfway)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
         app.openProfile()
 
@@ -56,8 +57,9 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         return (app, migrate)
     }
 
+    /// Desde la revisión 2.3 (decisión 57) es una hoja, no un globo: sus botones no viven en `app.sheets`.
     private func proceedButton(_ app: XCUIApplication) -> XCUIElement {
-        app.sheets.buttons["storage_pending_icloud_wipe_proceed"].firstMatch
+        app.buttons["storage_pending_icloud_wipe_proceed"].firstMatch
     }
 
     /// La hoja única de activar la nube (UX 2.2 · L20-11), por su título: desde ese día es lo que abre el toque, en vez
@@ -88,13 +90,80 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
             """)
         XCTAssertFalse(consentAccept(app).exists, "El consentimiento se abrió detrás del diálogo del borrado pendiente.")
 
-        let wait = app.sheets.buttons["storage_pending_icloud_wipe_wait"].firstMatch
+        let wait = app.buttons["storage_pending_icloud_wipe_wait"].firstMatch
         XCTAssertTrue(wait.waitForExistence(timeout: 2), "El diálogo no ofrece «Ahora no».")
         wait.tap()
 
         XCTAssertFalse(consentAccept(app).waitForExistence(timeout: 3),
                        "«Ahora no» abrió la hoja de activar: la activación siguió aunque la persona dijo que no.")
         XCTAssertFalse(proceedButton(app).exists, "«Ahora no» dejó el diálogo abierto.")
+    }
+
+    /// **La regresión de la decisión 57**: la hoja dice que el borrado no terminó y ofrece terminarlo; el globo de antes
+    /// solo ofrecía «Activar sin borrar» y «Ahora no». Sin empezar, iCloud sigue intacto y la hoja lo dice.
+    func test_pendingWipe_sheetOffersToFinishTheDeletion() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: true)
+        migrate.tap()
+
+        XCTAssertTrue(app.descendants(matching: .any)["storage_pending_icloud_wipe_sheet"].waitForExistence(timeout: 5),
+                      "Con un borrado pendiente no salió la hoja.")
+        let finish = app.buttons["storage_pending_icloud_wipe_finish"].firstMatch
+        XCTAssertTrue(finish.exists, "La hoja no ofrece terminar el borrado.")
+        XCTAssertTrue(proceedButton(app).exists, "La hoja no ofrece activar y conservar.")
+        let body = app.descendants(matching: .any)["storage_pending_icloud_wipe_body"]
+        XCTAssertTrue(body.label.contains("se quedan"), "Sin empezar, la hoja no dice que los datos de iCloud se quedan.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-4-borrado-pendiente"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
+    /// «Terminar de borrar y empezar de cero» no borra desde Ajustes: cierra Ajustes y abre la hoja que ya termina ese
+    /// borrado, en su «¿seguro?». «Mantener» la cierra sin tocar nada (el caso no toca el botón que borra).
+    func test_pendingWipe_finishOpensTheExistingWipeSheetAtItsConfirmation() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: true)
+        migrate.tap()
+
+        let finish = app.buttons["storage_pending_icloud_wipe_finish"].firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout: 5), "No salió la hoja del borrado pendiente.")
+        finish.tap()
+
+        let confirm = app.descendants(matching: .any)["late_icloud_armed_finish_confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), """
+            «Terminar de borrar y empezar de cero» no abrió el «¿seguro?» de la hoja que termina el borrado.
+            """)
+        XCTAssertFalse(app.descendants(matching: .any)["storage_migrate_button"].exists,
+                       "Ajustes sigue abierto detrás de la hoja del borrado.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-5-terminar-el-borrado"
+        shot.lifetime = .keepAlways
+        add(shot)
+        let keep = app.buttons["late_icloud_armed_finish_confirm_primary"].firstMatch
+        XCTAssertTrue(keep.exists, "El «¿seguro?» no ofrece quedarse como estaba.")
+        keep.tap()
+        XCTAssertFalse(confirm.waitForExistence(timeout: 3), "«Mantener» dejó la hoja abierta.")
+        XCTAssertFalse(app.descendants(matching: .any)["late_icloud_wiping"].exists, "«Mantener» empezó a borrar.")
+    }
+
+    /// A medias, iCloud ya está vacío: la hoja no dice que sus datos se quedan, y terminar abre el «¿seguro?» de la hoja
+    /// que termina el borrado (no la pantalla cuyo botón principal es «Déjalo así»).
+    func test_halfwayWipe_tellsItsOwnTruth_andFinishOpensTheHalfwayScreen() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: false, halfway: true)
+        migrate.tap()
+
+        let body = app.descendants(matching: .any)["storage_pending_icloud_wipe_body"]
+        XCTAssertTrue(body.waitForExistence(timeout: 5), "A medias no salió la hoja del borrado pendiente.")
+        XCTAssertTrue(body.label.contains("ya se borró"), "A medias, la hoja no dice que lo de iCloud ya se borró.")
+        XCTAssertFalse(body.label.contains("se quedan"), "A medias, la hoja promete que los datos de iCloud se quedan.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-6-borrado-a-medias"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        app.buttons["storage_pending_icloud_wipe_finish"].firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["late_icloud_left_halfway_confirm"].waitForExistence(timeout: 10),
+                      "A medias, terminar no abrió el «¿seguro?» de terminar el borrado.")
+        app.buttons["late_icloud_close"].firstMatch.tap()
     }
 
     /// «Activar la nube sin borrar» sigue a la cadena de siempre: la hoja de activar.
@@ -112,9 +181,9 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
             """)
     }
 
-    /// UX 2.2 · L20-11/12 (decisión de Jürgen, opción C): activar es UNA hoja con los dos botones de entrar, «Ver los
-    /// detalles», «Exportar una copia antes» y «Cancelar» a la vista. «Cancelar» la cierra sin abrir «¿Activar la nube?»,
-    /// «¿Seguro?» ni el selector de Apple o Google, y la tarjeta sigue ahí: no arrancó nada.
+    /// UX 2.2 · L20-11/12 (decisión de Jürgen, opción C): activar es UNA hoja con los dos botones de entrar, «Exportar una
+    /// copia antes» y «Cancelar» a la vista. «Cancelar» la cierra sin abrir «¿Activar la nube?», «¿Seguro?» ni el selector
+    /// de Apple o Google, y la tarjeta sigue ahí: no arrancó nada. Lo que la hoja dice lo fija el caso de abajo (H1).
     func test_activationSheet_isOneStep_andCancelStops() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
         migrate.tap()
@@ -123,13 +192,6 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["storage_activation_apple"].exists, "La hoja no ofrece «Continuar con Apple».")
         XCTAssertTrue(app.buttons["storage_activation_google"].exists, "La hoja no ofrece «Continuar con Google».")
         XCTAssertTrue(app.buttons["storage_activation_export"].exists, "La hoja no ofrece «Exportar una copia antes».")
-
-        // «Ver los detalles» despliega el texto legal entero, a un toque.
-        let details = app.buttons["storage_activation_details"]
-        XCTAssertTrue(details.exists, "La hoja no ofrece «Ver los detalles».")
-        details.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["storage_activation_details_text"].waitForExistence(timeout: 3),
-                      "«Ver los detalles» no desplegó el texto legal.")
 
         let cancel = app.buttons["storage_activation_cancel"]
         XCTAssertTrue(cancel.exists, "La hoja no enseña «Cancelar».")
@@ -142,5 +204,39 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
                        "«Cancelar» arrancó la activación.")
         XCTAssertTrue(app.descendants(matching: .any)["storage_migrate_button"].waitForExistence(timeout: 3),
                       "La tarjeta de la nube desapareció tras cancelar.")
+    }
+
+    /// Revisión 2.3, zona 41, decisión 52 (H1, Jürgen, 2026-11-09): lo que no se deshace solo se lee DE ENTRADA. La hoja
+    /// enseña, sin tocar nada, que Yala puede ver los datos y no hay cifrado de extremo a extremo, que las fotos de los
+    /// recibos no viajan, y «Exportar una copia antes»; «Ver los detalles» ya no existe. «A la vista» es dentro de la
+    /// hoja tal como abre y por encima de los botones de entrar, no solo en el árbol: el texto plegado también estaba en
+    /// el árbol al desplegarlo.
+    func test_activationSheet_showsEncryptionPhotosAndExport_atFirstSight() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
+        migrate.tap()
+        XCTAssertTrue(consentAccept(app).waitForExistence(timeout: 10), "«Activar la nube» no abrió la hoja de activar.")
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "hoja-activar-la-nube"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        XCTAssertFalse(app.buttons["storage_activation_details"].exists,
+                       "La hoja sigue plegando el cifrado y las fotos tras «Ver los detalles».")
+
+        let apple = app.buttons["storage_activation_apple"]
+        XCTAssertTrue(apple.waitForExistence(timeout: 3), "La hoja no ofrece «Continuar con Apple».")
+        let window = app.windows.firstMatch.frame
+        for (id, what) in [("storage_activation_row_sees", "Yala puede ver tus datos · sin cifrado de extremo a extremo"),
+                           ("storage_activation_row_photos", "Las fotos de tus recibos no viajan"),
+                           ("storage_activation_export", "Exportar una copia antes")] {
+            let element = app.descendants(matching: .any)[id].firstMatch
+            XCTAssertTrue(element.waitForExistence(timeout: 3), "La hoja no enseña «\(what)».")
+            let frame = element.frame
+            XCTAssertTrue(window.contains(frame) && frame.maxY <= apple.frame.minY, """
+                «\(what)» no se ve al abrir la hoja (marco \(frame), botón de Apple en \(apple.frame.minY)): hay que \
+                desplazar para leerlo.
+                """)
+        }
     }
 }

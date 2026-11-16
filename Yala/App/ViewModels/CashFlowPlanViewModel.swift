@@ -627,19 +627,10 @@ final class CashFlowPlanViewModel {
 
         let lines = (plan.lines ?? []).filter(\.isEnabled)
 
-        let monthsAhead: Int
-        if FeatureGateService.shared.canAccess(.cashFlowAdvanced) {
-            monthsAhead = plan.defaultMonthsAhead
-        } else {
-            monthsAhead = min(3, plan.defaultMonthsAhead)
-        }
-
-        let monthsBack: Int
-        if FeatureGateService.shared.canAccess(.cashFlowAdvanced) {
-            monthsBack = plan.defaultMonthsBack
-        } else {
-            monthsBack = 0 // Free: only current month
-        }
+        // El horizonte entero es gratis a propósito (decisión 2 de la revisión 2.3, 2026-11-09): Free lo tiene desde 2.1,
+        // y el recorte a 3 meses adelante y ninguno atrás que había aquí nunca actuaba.
+        let monthsAhead = plan.defaultMonthsAhead
+        let monthsBack = plan.defaultMonthsBack
 
         // Netea los gastos de grupo bridgeados a "mi parte" en la proyección. Set AMPLIO
         // (`transactions`, con AMBAS hermanas); sin context cae al `build(from:)` puro.
@@ -822,22 +813,30 @@ final class CashFlowPlanViewModel {
         return L10n.CashFlowPlan.commentDefault(months.count)
     }
 
+    /// La frase de «Gastos por revisar». Las cifras son promedios por mes de `monthCount` meses (los de la gráfica), y la
+    /// frase lo dice (decisión 35 de la revisión 2.3); con un solo mes, ese mes es el actual y no hay promedio.
     static func generateDeviationRuleComment(
         _ deviations: [(name: String, amount: Double)],
+        monthCount: Int,
         currencyCode: String
     ) -> String {
         guard !deviations.isEmpty else { return "" }
 
         let top = deviations[0]
         let topFormatted = YalaFormatterStatic.currency(value: top.amount, currencyCode: currencyCode)
+        let averages = monthCount > 1
 
         if deviations.count == 1 {
-            return L10n.CashFlowPlan.deviationCommentSingle(top.name, topFormatted)
+            return averages
+                ? L10n.CashFlowPlan.deviationAverageSingle(monthCount, top.name, topFormatted)
+                : L10n.CashFlowPlan.deviationThisMonthSingle(top.name, topFormatted)
         }
 
         let totalExcess = deviations.reduce(0.0) { $0 + $1.amount }
         let totalFormatted = YalaFormatterStatic.currency(value: totalExcess, currencyCode: currencyCode)
-        return L10n.CashFlowPlan.deviationCommentMultiple(top.name, topFormatted, totalFormatted)
+        return averages
+            ? L10n.CashFlowPlan.deviationAverageMultiple(monthCount, top.name, topFormatted, totalFormatted)
+            : L10n.CashFlowPlan.deviationThisMonthMultiple(top.name, topFormatted, totalFormatted)
     }
 
     static func generateCombinedComment(

@@ -701,7 +701,8 @@ struct UITestSeamPersistenceIsolationTests {
                 "activar las notificaciones desde el primer sheet deja de propagar a los otros devices las alertas de presupuesto o el recordatorio de deudas"
             ),
             (
-                "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+                // «Solo gastos» pasó de Personalización a «Cómo usas Yala» (decisión 48 de 2.3, F1).
+                "Yala/App/Views/Settings/UsageModeSettingsView.swift",
                 ["AppPreferences.Keys.expensesOnlyMode"],
                 "el toggle de «solo gastos» de Ajustes deja de propagar, mientras el de onboarding sigue haciéndolo ⇒ sincroniza a veces sí y a veces no, que es el peor síntoma posible"
             ),

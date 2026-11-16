@@ -530,8 +530,16 @@ struct TagsPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.tagPieChart)
-            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
-                L10n.Accessibility.tagsCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
+            // V1 + V2 de la decisión 26 de 2.3: el total y las partes con su porcentaje, no un recuento.
+            .accessibilityValue(ChartSpokenSummary.parts(
+                safeData.map { (name: $0.name, amount: $0.amount) },
+                format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+            ))
+            .accessibilityChartDescriptor(ChartAccessibilityDescriptor.parts(
+                title: L10n.Accessibility.tagPieChart, xTitle: L10n.Accessibility.Chart.axisCategory,
+                items: safeData.map { (name: $0.name, amount: $0.amount) },
+                format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+            ))
         }
     }
 

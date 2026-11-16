@@ -30,9 +30,9 @@ struct UXAudit22Lote3LogicTests {
     @Test func notices_keepTheirPriorityOrder() {
         var flags = PanelNoticeQueueLogic.Flags()
         flags.siriTip = true
-        flags.setupChecklist = true
+        flags.updateAvailable = true
         flags.panelGuide = true
-        #expect(PanelNoticeQueueLogic.visible(flags) == [.panelGuide, .setupChecklist, .siriTip])
+        #expect(PanelNoticeQueueLogic.visible(flags) == [.panelGuide, .updateAvailable, .siriTip])
     }
 
     @Test func notices_noneVisible_showsNothing() {
@@ -42,8 +42,8 @@ struct UXAudit22Lote3LogicTests {
 
     /// Cerrar el aviso que se está viendo pasa al primero que queda, sin índice fuera de rango.
     @Test func notices_closingTheShownOne_fallsBackToTheFirst() {
-        #expect(PanelNoticeQueueLogic.current(in: [.setupChecklist, .siriTip], selected: .panelGuide) == .setupChecklist)
-        #expect(PanelNoticeQueueLogic.current(in: [.setupChecklist, .siriTip], selected: .siriTip) == .siriTip)
+        #expect(PanelNoticeQueueLogic.current(in: [.updateAvailable, .siriTip], selected: .panelGuide) == .updateAvailable)
+        #expect(PanelNoticeQueueLogic.current(in: [.updateAvailable, .siriTip], selected: .siriTip) == .siriTip)
     }
 
     @Test func notices_nextWrapsAround() {

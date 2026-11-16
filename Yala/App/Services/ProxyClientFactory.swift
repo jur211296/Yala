@@ -33,19 +33,23 @@ nonisolated enum ProxyTask: String, CaseIterable, Sendable {
     case trendsSummary = "trends.summary"
     /// Gastos hormiga Pro: qué compras pequeñas son la misma tienda escrita de otra forma, y un consejo corto.
     case insightsAnts = "insights.ants"
-    /// Repartir un recibo en un grupo (2.3): la foto del recibo y la frase de quién comió qué. Gasta foto.
+    /// Repartir un recibo en un grupo (2.3): la foto del recibo y la frase de quién comió qué. Gasta un recibo del día.
     case receiptPhoto = "receipt.photo"
-    /// Repartir un recibo dictado en una nota: líneas y reparto. Va tras `voiceTranscribe` y no gasta otra nota.
+    /// Repartir un recibo dictado en una nota: líneas y reparto. Va tras `receiptTranscribe` y no gasta otro recibo.
     case receiptVoice = "receipt.voice"
+    /// La nota de un recibo, transcrita con su propia tarea para contar en el cubo `receipt` (5 al día en Free, 50 en
+    /// Pro; decisión de Jürgen del 2026-11-14) y no en la prueba de voz de personal.
+    case receiptTranscribe = "receipt.transcribe"
 
     /// El cubo de cuota de la tarea: el mismo que el gateway asigna a esa tarea. Se manda también en
     /// `X-Yala-Category` para los gateways anteriores a la sesión 2, que lo leían de ahí.
     var category: ProxyClientFactory.Category {
         switch self {
-        case .photoRead, .receiptPhoto: .vision
+        case .photoRead: .vision
         case .chatIntent, .chatSuggestions, .chatRewrite: .suggestions
         case .chatAnswer, .chatExplore: .chat
-        case .textParse, .voiceTranscribe, .receiptVoice: .voice
+        case .textParse, .voiceTranscribe: .voice
+        case .receiptPhoto, .receiptVoice, .receiptTranscribe: .receipt
         case .insightsCards, .insightsCashflow, .insightsDeviation, .trendsSummary, .insightsAnts: .insights
         }
     }
@@ -54,7 +58,7 @@ nonisolated enum ProxyTask: String, CaseIterable, Sendable {
 enum ProxyClientFactory {
     /// Categoría de cuota (header X-Yala-Category) — el gateway elige el bucket de límite.
     nonisolated enum Category: String, Sendable {
-        case chat, vision, voice, insights, suggestions
+        case chat, vision, voice, insights, suggestions, receipt
     }
 
     /// Timeout de red de cada petición, el de siempre. El camino ampliado de Yala IA pasa otro (varias llamadas al

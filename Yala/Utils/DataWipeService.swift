@@ -1326,6 +1326,8 @@ final class DataWipeService {
         // vaciado de la shell sin sesión privada) devuelven a Yala completo. «Vaciar datos» con vida personal conserva los
         // ajustes, y con ellos esta marca: la persona sigue en la vista que eligió (encargo S27i).
         GroupsOnlyViewMark.clear(defaults)
+        // El grupo en el que abre «Nuevo gasto» (decisión 39 de 2.3): de esta persona, no de la siguiente.
+        LastExpenseGroupMark.clear(defaults)
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
@@ -1437,6 +1439,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
         defaults.removeObject(forKey: WelcomeUnfinishedAccountEntry.key) // Card 7e60: va con el chooser
+        for key in WelcomeAdoptInFlight.allKeys { defaults.removeObject(forKey: key) } // Card gd78: va con el onboarding
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)

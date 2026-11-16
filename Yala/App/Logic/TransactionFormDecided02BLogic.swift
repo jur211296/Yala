@@ -12,8 +12,12 @@ import Foundation
 // MARK: - L2-3 · Buscar una categoría
 
 /// Busca en el nombre de la categoría y en el de su grupo, sin distinguir tildes ni mayúsculas: «alimentacion» trae todo
-/// Alimentación y «tax» trae «Taxis y apps». Sin sinónimos (decisión de Jürgen: después, con datos).
+/// Alimentación y «tax» trae «Taxis y apps». Desde la decisión 21 de la revisión 2.3 (9-nov-2026, C3) mira además las
+/// palabras del día a día de la categoría (`CategoryEverydayWords`): «café» trae Restaurantes y «uber», Taxis y apps.
 enum CategorySearchLogic {
+
+    /// Lo mínimo que hay que escribir para buscar entre las palabras: con una letra, casi todas casarían.
+    static let minimumWordQueryLength = 2
 
     /// El texto como lo compara el buscador: sin tildes, sin mayúsculas y sin espacios en los extremos.
     static func folded(_ text: String, locale: Locale = .current) -> String {
@@ -22,10 +26,16 @@ enum CategorySearchLogic {
     }
 
     /// ¿La categoría `name`, del grupo `groupName`, sale con lo escrito? Lo vacío lo trae todo.
-    static func matches(query: String, name: String, groupName: String, locale: Locale = .current) -> Bool {
+    static func matches(
+        query: String, name: String, groupName: String, words: [String] = [], locale: Locale = .current
+    ) -> Bool {
         let needle = folded(query, locale: locale)
         guard !needle.isEmpty else { return true }
-        return folded(name, locale: locale).contains(needle) || folded(groupName, locale: locale).contains(needle)
+        if folded(name, locale: locale).contains(needle) || folded(groupName, locale: locale).contains(needle) {
+            return true
+        }
+        guard needle.count >= minimumWordQueryLength else { return false }
+        return words.contains { folded($0, locale: locale).contains(needle) }
     }
 
     /// Los grupos con lo que queda de cada uno. Un grupo cuyo nombre casa trae todas sus categorías; si no, solo las que
@@ -35,13 +45,14 @@ enum CategorySearchLogic {
         query: String,
         groupName: (Group) -> String,
         itemName: (Item) -> String,
+        itemWords: (Item) -> [String] = { _ in [] },
         locale: Locale = .current
     ) -> [(category: Group, subcategories: [Item])] {
         guard !folded(query, locale: locale).isEmpty else { return groups }
         return groups.compactMap { group in
             let parent = groupName(group.category)
             let kept = group.subcategories.filter {
-                matches(query: query, name: itemName($0), groupName: parent, locale: locale)
+                matches(query: query, name: itemName($0), groupName: parent, words: itemWords($0), locale: locale)
             }
             return kept.isEmpty ? nil : (category: group.category, subcategories: kept)
         }

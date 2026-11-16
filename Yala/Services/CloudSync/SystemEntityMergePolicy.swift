@@ -8,8 +8,8 @@
 //
 //   - `Account.isSystemAccount` (cuentas virtuales `Grupos [moneda]` del bridge de Grupos): la identidad
 //     lógica real es `(isSystemAccount, currencyCode)` — el nombre lo interpola `L10n.Account.System.groups`.
-//   - Subcategoría `balanceAdjustment` (sembrada por nombre del idioma actual; matching multi-idioma en
-//     `Subcategory.balanceAdjustmentNames`).
+//   - Subcategoría `balanceAdjustment` (sembrada con el nombre del idioma actual; se reconoce por su papel,
+//     `Subcategory.systemRole`).
 //
 //  Sin política, cada device acuña la suya → 2+ filas vivas server-side → el saldo virtual de Grupos queda
 //  PARTIDO entre dos cuentas y el dedup local del bridge (`GroupBridgeSystemEntities.ensureSystemAccount`)

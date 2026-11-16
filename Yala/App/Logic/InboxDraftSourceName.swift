@@ -19,7 +19,10 @@ extension InboxDraft {
         case .scheduledPayment: return L10n.Inbox.sourceScheduledPayment
         case .subscription: return L10n.Inbox.sourceSubscription
         case .applePay: return L10n.Inbox.sourceApplePay
-        case .automation: return L10n.Inbox.sourceAutomation
+        case .automation:
+            // Atajo del banco (2.3, B1): «Aviso de BCP» / «No entendimos este aviso».
+            return BankNoticeOrigin.label(sourceType: sourceType, evidence: evidence, hasAmount: amount != nil)
+                ?? L10n.Inbox.sourceAutomation
         case .siri: return L10n.Inbox.sourceSiri
         case .groupExpense: return L10n.Inbox.sourceGroupExpense
         case .groupSettlement: return L10n.Inbox.sourceGroupSettlement

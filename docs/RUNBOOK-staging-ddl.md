@@ -790,6 +790,23 @@ la función: `qa/cloud/g22_01_rollback.sql`, idempotente y con su propia guarda:
 están: son el estado real del grupo. Con la función retirada y la app 2.2 instalada, hacer o quitar administrador en un grupo de la nube da el
 error genérico hasta que vuelva.
 
+## `/sync/pull` y `/sync/merkle` consultan las tablas en paralelo — solo Worker, sin SQL (staging y producción, 2026-11-14)
+
+Card «Conectar con la cuenta tarda 22–50 s». Medido en el iPhone 14 (jur211296, 7.221 filas): cada página del pull costaba
+~2,5 s aunque viniera vacía, porque el handler consultaba las ~22 tablas en serie. Ahora van en paralelo (misma respuesta;
+`gateway/test/sync.parallelFanout.test.ts`). Entrar con la cuenta: 55 s → 32 s con la app sola → 16 s con este Worker.
+
+**Desplegado desde la Mini** con un wrangler limpio en `/tmp`, sobre el árbol que YA corría en cada entorno más este
+parche, comprobado byte a byte antes contra el script descargado (`/workers/scripts/<w>/content/v2`):
+
+| Entorno | Base (lo que corría) | Versión nueva | Humo |
+|---|---|---|---|
+| Staging | `9f2677a03` (2.3 con Yala web lote 3), versión `91ce70fc…` | `63c3ba2a-8695-48bf-8c25-0a35a36a205e` | medido en el iPhone: 16 s |
+| Producción | `3b8529af1` (2.3 hasta el correo del banco; SIN el cupo de recibos de Grupos ni Yala web lote 3), versión `07a72c09…` | `307ce4f4-11e5-4a10-81ee-8bece4df1b5f` | `/config` 200; `/sync/pull` y `/sync/merkle` sin JWT → 401 `yala_attest_required`; script subido idéntico al verificado |
+
+**Ojo al próximo despliegue de producción desde 2.3:** subirá también el cupo de recibos de Grupos (`8706398c4`) y Yala web
+lote 3, que hoy NO están en producción.
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

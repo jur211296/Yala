@@ -696,7 +696,8 @@ struct GroupsAssociationWiringTests {
         let modificador = Self.flattened("Yala/App/Views/Shared/GroupsBackendInviteModifier.swift")
         // Desde el 2026-10-15 la hoja recibe además si hay invitación detrás (auditoría UX 2.2, lote 12); lo que se fija
         // aquí sigue siendo que el cierre recibe el destino y el origen de la sesión.
-        #expect(modificador.contains("GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? \"\").isEmpty) { destino, origen in"))
+        // Bienvenida 2.3 (Y23-06): la hoja recibe además el proveedor de la vitrina, solo en la rama del organizador.
+        #expect(modificador.contains("GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? \"\").isEmpty, preselectedProvider: preselectedOrganizerProvider) { destino, origen in"))
         #expect(modificador.contains("""
             kind: AccountKindService.shared.current, sessionOpenedByThisSignIn: origen == .signedInHere)
             """), "el modificador no le pasa al escritor el origen de la sesión")

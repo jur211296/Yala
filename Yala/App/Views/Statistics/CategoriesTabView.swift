@@ -64,6 +64,10 @@ struct CategoriesTabView: View {
     @Bindable var viewModel: StatisticsViewModel
     @Bindable var insightsViewModel: InsightsViewModel
     let defaultCurrencyCode: String
+    /// Tocar un registro del detalle de una categoría: abre su hoja, la misma del chip Registros (lo monta el contenedor).
+    var onOpenRecord: ((TransactionItem) -> Void)? = nil
+    /// «Ver en Registros» del detalle de una categoría: el contenedor pasa al chip Registros.
+    var onShowRecordsTab: (() -> Void)? = nil
 
     // MARK: - State
 
@@ -86,9 +90,13 @@ struct CategoriesTabView: View {
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
     @State private var previousNeedTotal: Double? = nil
-    /// El último día con movimientos del período: lo usa la frase de comparación (UX 2.2 · L11-4).
-    @State private var comparisonDataEnd: Date?
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
+
+    /// La categoría abierta en su detalle (decisión 25 de la revisión 2.3, B1). Tocar una categoría ya no filtra.
+    @State private var openCategoryDetail: CategoryDetailRoute?
+    /// Lo que el detalle necesita del último cálculo. Una clase sin observar: escribirla no repinta; el detalle se
+    /// repinta con `categorySpending`, que cambia en la misma pasada.
+    @State private var detailSource = CategoryDetailSource()
 
     /// Local pool-node selection for Sankey filtering. Single-select (tap toggles).
     /// Not persisted in SessionState — lives only within the tab's render lifecycle.
@@ -206,6 +214,7 @@ struct CategoriesTabView: View {
 
     var body: some View {
         scrollBody
+            .navigationDestination(item: $openCategoryDetail) { route in categoryDetailDestination(route) }
             .sheet(isPresented: $showUpgradeSheet) {
                 UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
             }
@@ -484,10 +493,10 @@ struct CategoriesTabView: View {
                 .minimumScaleFactor(0.8)
 
             if showComparisonSelector {
+                // Hasta hoy, como Resumen y Tendencias (decisión 29 de la revisión 2.3): sin `dataEnd`.
                 ComparisonModeSelector(
                     period: viewModel.detailPeriod,
-                    customRange: sessionState.customDateRange,
-                    dataEnd: comparisonDataEnd
+                    customRange: sessionState.customDateRange
                 )
             }
         }
@@ -618,7 +627,7 @@ struct CategoriesTabView: View {
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryIDs: effectiveCategoryIDsForDim,
                     onSelectCategory: { categoryID in
-                        askAboutCategory(categoryID)
+                        openCategory(categoryID)
                     },
                     size: .large,
                     headerInfoButton: AnyView(WidgetInfoButton(kind: .categoriesPie)),
@@ -743,7 +752,7 @@ struct CategoriesTabView: View {
                 selectedSubcategoryIDs: viewModel.selectedSubcategories,
                 selectedPoolNodeIDs: selectedSankeyPoolNodeIDs,
                 onTapCategory: { catID in
-                    askAboutCategory(catID)
+                    openCategory(catID)
                 },
                 onTapSubcategory: { subID in
                     askAboutSubcategory(subID)
@@ -816,24 +825,63 @@ struct CategoriesTabView: View {
         }
     }
 
-    private func askAboutCategory(_ categoryID: PersistentIdentifier) {
-        let summary = categorySpending.first { $0.id == categoryID }
-        let name = summary?.name ?? categories.first { $0.persistentModelID == categoryID }?.name ?? ""
-        askAboutSegment(
-            .category(categoryID), name: name, amount: summary?.amount,
-            hide: {
-                // Ocultar la categoría de una subcategoría vista sola dejaba «Solo Restaurantes» + «Sin Comida»: todo
-                // a 0. Esas subcategorías se van con ella.
-                let inside = Set(allSubcategories.filter { $0.category?.persistentModelID == categoryID }
-                    .map(\.persistentModelID))
-                viewModel.selectedSubcategories.subtract(inside)
-                sessionState.hide(.category(categoryID))
-            }
-        ) {
-            viewModel.selectedCategories = [categoryID]
-            // Ver solo una categoría deja de lado las subcategorías que se veían solas; las ocultas siguen ocultas.
-            viewModel.selectedSubcategories.removeAll()
+    // MARK: - Tocar una categoría: abre su detalle (decisión 25 de la revisión 2.3, B1)
+
+    /// Abre el detalle de la categoría. No escribe ningún filtro: «atrás» deja Distribución como estaba. «Sin
+    /// categoría» no llega aquí (no tiene id).
+    private func openCategory(_ categoryID: PersistentIdentifier) {
+        guard categorySpending.contains(where: { $0.id == categoryID }) else { return }
+        openCategoryDetail = CategoryDetailRoute(categoryID: categoryID)
+    }
+
+    @ViewBuilder
+    private func categoryDetailDestination(_ route: CategoryDetailRoute) -> some View {
+        if let summary = categorySpending.first(where: { $0.id == route.categoryID }),
+           let detail = StatisticsCategoryDetailLogic.build(
+               summary: summary,
+               current: detailSource.current,
+               previous: detailSource.previous,
+               interval: detailSource.interval ?? viewModel.panelDateInterval,
+               previousInterval: detailSource.previousInterval,
+               currencyCode: defaultCurrencyCode,
+               natures: detailSource.natures,
+               adjustment: detailSource.adjustment
+           ) {
+            StatisticsCategoryDetailView(
+                detail: detail,
+                currencyCode: defaultCurrencyCode,
+                amountTitle: categoryDetailAmountTitle,
+                period: viewModel.detailPeriod,
+                customRange: sessionState.customDateRange,
+                comparisonMode: sessionState.comparisonMode,
+                showsVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                onSeeInRecords: { seeCategoryInRecords(route.categoryID) },
+                onOpenRecord: { record in onOpenRecord?(record) }
+            )
+        } else {
+            // La categoría ya no tiene movimientos con lo que se ve (un borrado, otro período): nada que enseñar.
+            YalaEmptyState(icon: "chart.pie", title: L10n.Statistics.noDataToShow)
+                .yalaScreenBackground()
         }
+    }
+
+    /// Qué es la cifra del detalle, según la naturaleza elegida en Distribución.
+    private var categoryDetailAmountTitle: String {
+        switch viewModel.selectedTransactionNatures {
+        case [.income]: return L10n.TrendType.income
+        case [], [.expense]: return L10n.Panel.spent
+        default: return L10n.Widget.total
+        }
+    }
+
+    /// «Ver en Registros»: el único gesto del detalle que filtra, y lo dice. Ve solo esa categoría y pasa al chip
+    /// Registros, con el mismo período.
+    private func seeCategoryInRecords(_ categoryID: PersistentIdentifier) {
+        viewModel.selectedCategories = [categoryID]
+        // Ver solo una categoría deja de lado las subcategorías que se veían solas; las ocultas siguen ocultas.
+        viewModel.selectedSubcategories.removeAll()
+        openCategoryDetail = nil
+        onShowRecordsTab?()
     }
 
     private func askAboutSubcategory(_ subcategoryID: PersistentIdentifier) {
@@ -1012,7 +1060,7 @@ struct CategoriesTabView: View {
                     showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                     onToggleExpanded: { isListExpanded.toggle() },
                     onSelectCategory: { categoryID in
-                        askAboutCategory(categoryID)
+                        openCategory(categoryID)
                     }
                 )
             }
@@ -1463,6 +1511,10 @@ struct CategoriesTabView: View {
             adjustment: adjustment
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
+        detailSource.current = pieFiltered
+        detailSource.interval = interval
+        detailSource.natures = naturesFilter
+        detailSource.adjustment = adjustment
         let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
         if newTotal != totalAmount { totalAmount = newTotal }
 
@@ -1570,20 +1622,13 @@ struct CategoriesTabView: View {
         currentTagSource: [TransactionItem],
         currentNeedSource: [TransactionItem]
     ) {
-        // El último movimiento del actual: el tramo anterior se corta en su día equivalente, y la frase de comparación
-        // lo dice (UX 2.2 · L11-4).
-        let lastCurrentDate = DistributionPreviousPeriodCalculator.currentDates(
-            from: currentCategorySource,
-            in: viewModel.panelDateInterval,
-            natures: viewModel.selectedTransactionNatures.isEmpty ? nil : viewModel.selectedTransactionNatures
-        ).max()
-        if lastCurrentDate != comparisonDataEnd { comparisonDataEnd = lastCurrentDate }
-
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard viewModel.detailPeriod != .allTime else {
+            detailSource.previous = []
+            detailSource.previousInterval = nil
             previousCategoryTotal = nil
             previousSubcategoryTotal = nil
             previousTagTotal = nil
@@ -1603,21 +1648,23 @@ struct CategoriesTabView: View {
             ? nil
             : viewModel.selectedTransactionNatures
 
+        // El anterior llega hasta el día equivalente a HOY (entero si el período ya cerró), con la regla de Resumen:
+        // decisión 29 de la revisión 2.3. Hasta ese día se cortaba en el último día con movimientos del actual, y
+        // Resumen y Distribución comparaban contra tramos distintos en la misma pantalla.
+        let today = Date.now
         func alignedPrevious(
             _ previous: [TransactionItem],
             currentSource: [TransactionItem],
             natures: Set<TransactionNature>?
         ) -> [TransactionItem] {
-            DistributionPreviousPeriodCalculator.alignedPrevious(
+            DateAlignmentHelper.previousItemsUntilToday(
                 previous,
-                currentDates: DistributionPreviousPeriodCalculator.currentDates(
-                    from: currentSource, in: currentInterval, natures: natures
-                ),
                 currentInterval: currentInterval,
                 previousInterval: previousInterval,
                 period: viewModel.detailPeriod,
-                comparisonMode: sessionState.comparisonMode
-            )
+                comparisonMode: sessionState.comparisonMode,
+                asOf: today
+            ) { $0.date }
         }
 
         // Build filter criteria for previous period
@@ -1654,6 +1701,9 @@ struct CategoriesTabView: View {
             currentSource: currentCategorySource,
             natures: naturesFilter
         )
+
+        detailSource.previous = previousFiltered
+        detailSource.previousInterval = previousInterval
 
         // Calculate previous period category spending
         // Use same need filter as current period for consistent comparison
@@ -1876,7 +1926,9 @@ private struct AllCategoriesListContent: View {
                             summary: summary,
                             maxAmount: maxAmount,
                             currencyCode: currencyCode,
-                            showVariation: showVariation
+                            showVariation: showVariation,
+                            // Abre su detalle: la fila lo dice con «›». «Sin categoría» no abre nada.
+                            showsChevron: summary.id != nil
                         )
                         .opacity(shouldDim ? 0.3 : 1.0)
                         .contentShape(Rectangle())
@@ -1969,6 +2021,7 @@ private struct AllSubcategoriesListContent: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("distribution_subcategory_row")
                 }
 
                 if showExpandButton {
@@ -2014,6 +2067,7 @@ private struct CategoryRowView: View {
     let maxAmount: Double
     let currencyCode: String
     var showVariation: Bool = true
+    var showsChevron: Bool = false
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -2078,6 +2132,13 @@ private struct CategoryRowView: View {
                     .frame(height: 6)
                 }
             }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -2088,7 +2149,8 @@ private struct CategoryRowView: View {
 
 // MARK: - Subcategory Row Component
 
-private struct SubcategoryRowView: View {
+/// También la usa el detalle de una categoría (`StatisticsCategoryDetailView`).
+struct SubcategoryRowView: View {
     private static let percentFormatter: NumberFormatter = {
         let f = NumberFormatter()
         f.numberStyle = .percent
@@ -2203,4 +2265,23 @@ private struct CategoriesFilterRecalcObservers: ViewModifier {
             // lista y el carrusel antes de recalcular. Observarla dos veces corría `calculateData()` dos veces por toque
             // (ticket `distribucion-recalcula-dos-veces-por-toque-y-sin-debounce`).
     }
+}
+
+// MARK: - Detalle de una categoría
+
+/// La categoría abierta en su detalle desde Distribución.
+struct CategoryDetailRoute: Hashable, Identifiable {
+    let categoryID: PersistentIdentifier
+    var id: PersistentIdentifier { categoryID }
+}
+
+/// Lo que el último cálculo de Distribución deja para el detalle: los movimientos de la tarta (con los filtros de la
+/// pantalla) del período y del anterior. Clase y sin observar a propósito: guardarlos no repinta la pestaña.
+final class CategoryDetailSource {
+    var current: [TransactionItem] = []
+    var previous: [TransactionItem] = []
+    var interval: DateInterval?
+    var previousInterval: DateInterval?
+    var natures: Set<TransactionNature>?
+    var adjustment: GroupBridgeStatsAdjustment = .none
 }

@@ -112,6 +112,12 @@ struct FavoritesListView: View {
                 FavoriteEditorView(favorite: nil)
             }
         }
+        .alert(L10n.UXL7.Favorites.deleteConfirmTitle, isPresented: $viewModel.showDeleteConfirmation) {
+            Button(L10n.Action.delete, role: .destructive) { viewModel.confirmPendingDeletion() }
+            Button(L10n.Action.cancel, role: .cancel) { viewModel.cancelPendingDeletion() }
+        } message: {
+            Text(L10n.UXL7.Favorites.deleteConfirmMessage)
+        }
         .alert(
             L10n.Common.error,
             isPresented: $viewModel.showSaveError,
@@ -158,7 +164,8 @@ struct FavoritesListView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onDelete(perform: viewModel.deleteFavorites)
+            // Pregunta antes de borrar, como el editor (decisión 71 de 2.3).
+            .onDelete(perform: viewModel.requestDeletion)
             // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
             .onMove { source, destination in
                 DS.Haptic.selection()

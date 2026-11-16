@@ -1,0 +1,122 @@
+<title>Conciliación de PR de Yala 2.3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura; resumen arriba, luego una fila por PR que en el teléfono se apila como ficha. */
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --fg:#1d2420; --muted:#5d6862; --line:#dde2de;
+  --accent:#1f6f54;
+  --ok-bg:#e3f1ea; --ok-fg:#185c44;
+  --warn-bg:#fbf0d9; --warn-fg:#7a5410;
+  --bad-bg:#f8e3df; --bad-fg:#8a2e20;
+  --gone-bg:#e9ecef; --gone-fg:#4a545c;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1a201d; --fg:#e4e9e6; --muted:#9aa59f; --line:#2c3531;
+  --accent:#5cc49b;
+  --ok-bg:#173328; --ok-fg:#86d8b4; --warn-bg:#352a12; --warn-fg:#e8c27a;
+  --bad-bg:#3a1d18; --bad-fg:#f0a294; --gone-bg:#262c30; --gone-fg:#b3bcc3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1a201d; --fg:#e4e9e6; --muted:#9aa59f; --line:#2c3531;
+  --accent:#5cc49b;
+  --ok-bg:#173328; --ok-fg:#86d8b4; --warn-bg:#352a12; --warn-fg:#e8c27a;
+  --bad-bg:#3a1d18; --bad-fg:#f0a294; --gone-bg:#262c30; --gone-fg:#b3bcc3; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1{font-size:1.75rem;line-height:1.2;margin:0;text-wrap:balance;font-weight:600}
+h2{font-size:1.1rem;margin:0 0 10px;font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{color:var(--muted)}
+.eyebrow{font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:1.6rem;font-variant-numeric:tabular-nums;font-weight:600}
+.stat span{color:var(--muted);font-size:.85rem}
+.pill{display:inline-block;font:500 .74rem var(--sans);padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--ok-bg);color:var(--ok-fg)} .warn{background:var(--warn-bg);color:var(--warn-fg)}
+.bad{background:var(--bad-bg);color:var(--bad-fg)} .gone{background:var(--gone-bg);color:var(--gone-fg)}
+.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tbl th{text-align:left;font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl a{color:var(--accent);font:500 .9rem var(--mono);text-decoration:none}
+.tbl a:hover,.tbl a:focus-visible{text-decoration:underline}
+.what{font-weight:500}
+.why,.cards{color:var(--muted);font-size:.9rem}
+.chain{font:.78rem var(--mono);color:var(--muted);display:block;margin-top:4px}
+section{display:flex;flex-direction:column;gap:10px}
+.note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--warn-fg);border-radius:10px;padding:14px 16px}
+ol.chains{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+@media (max-width:720px){
+  .tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:100%;box-sizing:border-box}
+  .tbl thead{display:none}
+  .tbl tr{border-bottom:1px solid var(--line);padding:6px 0}
+  .tbl tr:last-child{border-bottom:0}
+  .tbl td{border:0;padding:4px 14px}
+  .tbl td[data-k]::before{content:attr(data-k);display:block;font:500 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <span class="eyebrow">Yala · rama 2.3 · 14-nov-2026</span>
+    <h1>Qué pasó con los PR abiertos de 2.3</h1>
+    <p class="lede">Los 15 PR en juego estaban en conflicto con 2.3, y 14 de ellos llevaban días en la cola de auto-merge sin poder entrar. Sus cards decían «done» o «in qa», pero su código no estaba en la rama. Tres se cerraron porque ya estaban cubiertos; los otros doce siguen valiendo y quedan en cola para desbloquearse uno a uno.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b>15</b><span>PR revisados (sin Gmail ni los dos de esta tarde)</span></div>
+    <div class="stat"><b>3</b><span>cerrados: ya cubiertos por 2.3</span></div>
+    <div class="stat"><b>12</b><span>vigentes, en cola de desbloqueo</span></div>
+    <div class="stat"><b>0</b><span>mergeados hoy: ninguno estaba libre de conflicto</span></div>
+    <div class="stat"><b>16</b><span>cards corregidas en el tablero</span></div>
+  </div>
+
+  <section>
+    <h2>PR por PR</h2>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr><th>PR</th><th>Qué es</th><th>Decisión</th><th>Motivo</th><th>Cards</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/954">#954</a></td><td data-k="Qué es" class="what">«Empezar» tras «¡Tu cuenta está lista!» lleva al Panel</td><td data-k="Decisión"><span class="pill gone">Cerrado · reemplazado</span></td><td data-k="Motivo" class="why">El arreglo de «Empezar» mergeado hoy corrige el mismo bug, con la misma causa y el mismo arreglo, probado en el iPhone 14.</td><td data-k="Cards" class="cards">Ya en done, correcto</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/962">#962</a></td><td data-k="Qué es" class="what">Volver a tu iCloud sin atasco</td><td data-k="Decisión"><span class="pill gone">Cerrado · va dentro de #973</span></td><td data-k="Motivo" class="why">Sus tres commits ya están en la rama de «iCloud y cerrar sesión».</td><td data-k="Cards" class="cards">Viajan con #973</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/882">#882</a></td><td data-k="Qué es" class="what">Subir a TestFlight desde la Mini o la Max</td><td data-k="Decisión"><span class="pill gone">Cerrado · ya en 2.3</span></td><td data-k="Motivo" class="why">El CLAUDE.md de 2.3 ya lo dice desde el 11-nov.</td><td data-k="Cards" class="cards">—</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/973">#973</a></td><td data-k="Qué es" class="what">iCloud y cerrar sesión (lote B del barrido)</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 1 · 1.º</span></td><td data-k="Motivo" class="why">Solo choca en el registro de decisiones y el índice de QA. El primero de la cola, como autorizaste.</td><td data-k="Cards" class="cards">5 cards: in qa → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/930">#930</a></td><td data-k="Qué es" class="what">Nube: cifrado, fotos y exportar a la vista al activar</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 1 · 2.º</span></td><td data-k="Motivo" class="why">Solo el índice de tickets y el de QA.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/910">#910</a></td><td data-k="Qué es" class="what">Nube: volver a tu iCloud y activar con un borrado pendiente</td><td data-k="Decisión"><span class="pill warn">Vigente · choque de textos</span><span class="chain">cadena 1 · 3.º</span></td><td data-k="Motivo" class="why">Los dos nombres fijos («En tu iCloud», «En tu cuenta de Yala») renombraron sus mismas frases; hay que reescribirlas en los 16 idiomas.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/916">#916</a></td><td data-k="Qué es" class="what">Nube: «Cambiar de cuenta» y la hoja de soltar</td><td data-k="Decisión"><span class="pill warn">Vigente · choque de textos</span><span class="chain">cadena 1 · 4.º</span></td><td data-k="Motivo" class="why">Igual que el anterior; mergeado tal cual, rompería la prueba de los dos nombres en cuatro frases.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/899">#899</a></td><td data-k="Qué es" class="what">Cuentas: archivar saca del saldo y conserva el historial</td><td data-k="Decisión"><span class="pill warn">Vigente · traslado</span><span class="chain">cadena 1 · 5.º</span></td><td data-k="Motivo" class="why">El cálculo del conector se mudó al núcleo que comparte con Yala web. Su rojo de CI fue una caída del servidor de pruebas, no un test.</td><td data-k="Cards" class="cards">La de la decisión sigue en done</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/894">#894</a></td><td data-k="Qué es" class="what">Grupos: pagos sin duplicar y reparto sin dígitos perdidos</td><td data-k="Decisión"><span class="pill warn">Vigente · un choque de lógica</span><span class="chain">cadena 2 · 1.º</span></td><td data-k="Motivo" class="why">Choca con «saldar como en Splitwise» en cuándo un pago nace confirmado. Lleva revisión adversarial.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/943">#943</a></td><td data-k="Qué es" class="what">VoiceOver: cinco selectores con su nombre</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 2 · 2.º</span></td><td data-k="Motivo" class="why">Solo textos añadidos al final e índice de QA.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/924">#924</a></td><td data-k="Qué es" class="what">Estadísticas: Tendencias y VoiceOver de las gráficas</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 2 · 3.º</span></td><td data-k="Motivo" class="why">Textos, índice de QA y una línea de regla.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/920">#920</a></td><td data-k="Qué es" class="what">Nuevo registro: categorías a un toque y buscador</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 2 · 4.º</span></td><td data-k="Motivo" class="why">Textos, índice y listas que se suman. Falta ver cómo convive con la fila de favoritos.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/912">#912</a></td><td data-k="Qué es" class="what">Nota de salud honesta (lote 1)</td><td data-k="Decisión"><span class="pill ok">Vigente · conflicto trivial</span><span class="chain">cadena 2 · 5.º</span></td><td data-k="Motivo" class="why">Textos, índice y memoria. Falta probarlo con la bienvenida 2.3.</td><td data-k="Cards" class="cards">La de la decisión sigue en done</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/922">#922</a></td><td data-k="Qué es" class="what">Registros: el calendario se pliega a la semana</td><td data-k="Decisión"><span class="pill bad">Vigente · hay que rehacer una parte</span><span class="chain">cadena 2 · 6.º</span></td><td data-k="Motivo" class="why">En 2.3 el calendario cambió de sitio y ganó estados de carga y error; la mitad de la pantalla se reescribe encima.</td><td data-k="Cards" class="cards">done → blocked</td></tr>
+        <tr><td><a href="https://github.com/jur211296/Yala/pull/818">#818</a></td><td data-k="Qué es" class="what">Tu IA registra en Yala</td><td data-k="Decisión"><span class="pill bad">Vigente en parte</span><span class="chain">cadena 2 · 7.º</span></td><td data-k="Motivo" class="why">Su cola propia de borradores la reemplaza la cola común que decidió y montó Yala web. La herramienta, el permiso y «Tu IA» en la Bandeja siguen haciendo falta.</td><td data-k="Cards" class="cards">in qa → blocked</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cómo se desbloquean</h2>
+    <p>Cada continuación trabaja sobre la rama del PR, trae lo nuevo de 2.3, resuelve, pasa el gate y espera a que su PR entre antes de cerrar. Al entrar, devuelve sus cards a «in qa». Van en dos cadenas para no pisarse los textos:</p>
+    <ol class="chains">
+      <li><b>Cadena 1:</b> iCloud y cerrar sesión → cifrado y fotos → volver a iCloud → cambiar de cuenta → archivar cuenta.</li>
+      <li><b>Cadena 2:</b> pagos de Grupos → VoiceOver selectores → Estadísticas → categorías recientes → nota de salud → calendario → Tu IA.</li>
+    </ol>
+    <p class="lede">Entraron al final de la cola de Yala. Si quieres alguno antes, súbelo desde el Mando.</p>
+  </section>
+
+  <section>
+    <h2>Cards en curso sin sesión</h2>
+    <p>La guía visual para decidir la experiencia de usuario nuevo y el onboarding 2.3 desde cero pasaron a <span class="pill ok">done</span>. La primera tiene sus dos PR mergeados desde el 7-nov. La segunda terminó en el diseño oficial de la bienvenida 2.3, ya construido.</p>
+  </section>
+
+  <div class="note">
+    <h2>Lo que esto destapa</h2>
+    <p>Cerrar en modo cola deja el PR en cola y da el trabajo por hecho. Si después otro PR le provoca un conflicto, se queda colgado sin avisar: en una semana fueron 14 PR y sus cards. Falta quien vigile la cola, o que las cards no se muevan hasta el merge.</p>
+  </div>
+</div>

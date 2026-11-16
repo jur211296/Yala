@@ -18,7 +18,7 @@ import {
 } from "./store";
 
 /**
- * Entrada de Email Routing: `auto+<code>@yala-app.pe` → este Worker (el `email` del export de `index.ts`).
+ * Entrada de Email Routing: `auto+<code>@yalainbox.com` → este Worker (el `email` del export de `index.ts`).
  *
  * El orden importa, y cada paso corta antes de gastar en el siguiente:
  *   1. ¿Es nuestra la dirección? Si no, se rechaza (rebota a quien la mandó).

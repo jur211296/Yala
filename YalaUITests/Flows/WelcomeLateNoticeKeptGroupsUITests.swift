@@ -23,14 +23,10 @@ final class WelcomeLateNoticeKeptGroupsUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// Bienvenida 2.3: «Es mi primera vez» → privado es «Entrar con mi iCloud» de la vitrina. `uitest_ready` vive en el
+    /// root de ContentView, que queda cubierto por el cover del Welcome: se espera la vitrina.
     private func goToFirstTime(_ app: XCUIApplication) {
-        // `uitest_ready` vive en el root de ContentView, que queda cubierto por el cover del Welcome: se espera el Hero.
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        app.tapWelcomeICloud()
     }
 
     /// Misma persona: los grupos que conservó el aviso no levantan el alert y el onboarding abre directo.
@@ -39,7 +35,8 @@ final class WelcomeLateNoticeKeptGroupsUITests: XCTestCase {
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "solo-grupos-tras-aviso", lateNoticeKeptGroups: true)
         goToFirstTime(app)
 
-        XCTAssertTrue(app.buttons["onboarding_next_button"].waitForExistence(timeout: 15), """
+        // Bienvenida 2.3 (Y23-04): el alta es la conversación de tres preguntas; su primera pregunta es el nombre.
+        XCTAssertTrue(app.textFields["welcome_chat_name_field"].waitForExistence(timeout: 15), """
             Con los grupos que conservó el aviso tardío, «Es mi primera vez» no llegó al onboarding. Si en pantalla está \
             «Empezar desde cero», el Welcome sigue viendo esos grupos como datos de otra persona y le ofrece borrarlos.
             """)
@@ -56,7 +53,7 @@ final class WelcomeLateNoticeKeptGroupsUITests: XCTestCase {
             Sin la marca del aviso tardío, los grupos de otra persona ya no piden «Empezar desde cero»: el handover real \
             dejó de preguntar, o el seed `solo-grupos-tras-aviso` dejó de producir grupos (y el caso de la misma persona no prueba nada).
             """)
-        XCTAssertFalse(app.buttons["onboarding_next_button"].exists,
-                       "El onboarding se abrió debajo del alert: el handover real siguió sin esperar la respuesta.")
+        XCTAssertFalse(app.textFields["welcome_chat_name_field"].exists,
+                       "El alta se abrió debajo del alert: el handover real siguió sin esperar la respuesta.")
     }
 }

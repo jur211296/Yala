@@ -229,12 +229,16 @@ struct GoogleCredentialReuseWiringTests {
     func ensureSignedIn_spendsItOnce() throws {
         let ensure = Self.lines(try Self.body(of: "private func ensureSignedIn() async -> Bool {", in: Self.welcomePath))
         let guardSession = try #require(ensure.firstIndex(of: "guard !CloudAuthService.shared.hasSession else { return true }"))
-        #expect(Array(ensure[(guardSession + 1)...(guardSession + 7)]) == [
+        // Ticket `other-account-sign-in-bounces-to-welcome`: «Otra cuenta de Apple» se gasta igual, una sola vez.
+        #expect(Array(ensure[(guardSession + 1)...(guardSession + 10)]) == [
             "let reusable = GoogleCredentialReuseLogic.credentialForNextSignIn(",
             "pendingGoogleCredential, provider: provider, now: Date())",
             "pendingGoogleCredential = nil",
+            "let appleOnTheWeb = signsInWithAppleOnTheWeb && provider == .apple",
+            "signsInWithAppleOnTheWeb = false",
             "do {",
-            "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)",
+            "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable,",
+            "appleOnTheWeb: appleOnTheWeb)",
             "sessionOpenedHere = true",
             "return true",
         ])
@@ -244,7 +248,7 @@ struct GoogleCredentialReuseWiringTests {
     @Test("el despacho intenta la credencial y cae a la hoja")
     func dispatch_triesTheCredentialThenTheSheet() throws {
         let dispatch = Self.lines(try Self.body(
-            of: "reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {", in: Self.authPath))
+            of: "appleOnTheWeb: Bool = false) async throws {", in: Self.authPath))
         // Delante, el seam de XCUITest de la card er5c (`-uitest-fake-account-exists`), solo en DEBUG y sin red. Se fija
         // entero: un `return` que se colara fuera del `if` dejaría sin iniciar sesión a todo el mundo.
         #expect(Array(dispatch.prefix(7)) == [
@@ -256,9 +260,10 @@ struct GoogleCredentialReuseWiringTests {
             "}",
             "#endif",
         ])
-        #expect(Array(dispatch.dropFirst(7).prefix(6)) == [
+        #expect(Array(dispatch.dropFirst(7).prefix(7)) == [
             "switch provider {",
-            "case .apple: try await signInWithApple()",
+            "case .apple:",
+            "if appleOnTheWeb { try await signInWithAppleOnTheWeb() } else { try await signInWithApple() }",
             "case .google:",
             "if let reusable, await signInWithReusedGoogleCredential(reusable) { break }",
             "try await signInWithGoogle()",

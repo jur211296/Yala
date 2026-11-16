@@ -9,10 +9,10 @@
 //  Edge cases handled (per plan):
 //   - 0 transacciones → shape válido con arrays vacíos
 //   - tx.category == nil → bucket `uncategorized` explícito
-//   - account.excludeFromStatistics → excluido + listado en metadata. Archivar NO decide la suma
-//     (decisión de Jürgen, 2026-10-03, `.claude/rules/session-filters.md`): una cuenta archivada
-//     que el usuario volvió a incluir suma aquí igual que en el Panel. Las cuentas que salen en
-//     `balances` son las del conteo del Panel (`PanelTotalAccountsLogic.countableAccounts`).
+//   - Una cuenta que oculta su historial (activa y excluida de estadísticas) → fuera de los movimientos y listada en
+//     metadata. Una archivada conserva su historial y sale del saldo, como en el Panel (`AccountScopeLogic`, decisión
+//     6 de 2.3, `.claude/rules/session-filters.md`). Las cuentas que salen en `balances` son las del conteo del Panel
+//     (`PanelTotalAccountsLogic.countableAccounts`).
 //   - «Grupos en el total» apagado → `balances.total_balance` deja fuera las cuentas de Grupos con la misma regla
 //     que el Panel (`PanelTotalAccountsLogic.accountsForTotal`); siguen listadas en `balances.accounts`
 //   - «Incluir gastos de grupo en estadísticas» apagado → los movimientos de grupo (`splitExpenseID` o
@@ -145,10 +145,10 @@ final class FullFinancialContextBuilder {
         let allAccounts = accounts
         let allTags = tags
         let scheduledPayments = scheduledPayments
-        // Solo «Excluir de las estadísticas» decide si una cuenta suma, igual que en el Panel
-        // (`computeEligibleAccounts`). Archivar no: el usuario puede volver a incluir una archivada.
+        // Las cuentas que ocultan su historial, igual que en el Panel (`computeEligibleAccounts`): una archivada lo
+        // conserva aunque tenga «Excluir» encendido (`Account.keepsHistory`).
         let excludedAccountNames = allAccounts
-            .filter { $0.excludeFromStatistics }
+            .filter { !$0.keepsHistory }
             .map(\.name)
 
         // Filter excluded/balance-adjustment/future TX once. «Futuro» es después de HOY, no de este instante: la foto y la
@@ -156,7 +156,7 @@ final class FullFinancialContextBuilder {
         let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar)
         let eligibleTx = allTx.filter { tx in
             tx.balanceAdjustmentType == nil
-                && tx.account?.excludeFromStatistics != true
+                && tx.account?.keepsHistory != false
                 && cutoff.counts(tx.date)
         }
         // Lo que cuentan las estadísticas: con el interruptor de grupos apagado, sin movimientos de grupo
@@ -593,19 +593,14 @@ final class FullFinancialContextBuilder {
     ) -> FullFinancialContext.BalancesSection {
         // Una tarjeta con varias divisas sale una vez, con sus líneas dentro (entrega 4): suelta, el modelo las leía como
         // dos cuentas y podía sumarlas en crudo. Como la tarjeta del Panel (`PanelViewModel.orderedActiveAccountCards`):
-        // los roles salen de TODAS las cuentas, y una línea archivada no entra en la tarjeta ni en su total. Aquí sigue
-        // listada aparte, porque cuenta en `total_balance` (archivar no decide la suma). Una línea cuya principal no
-        // cuenta sale suelta, como en el resto de la app.
+        // los roles salen de TODAS las cuentas, y una línea archivada no entra en la tarjeta ni en su total. Tampoco sale
+        // aparte: `accounts` son las que suman (`countableAccounts`), y una cuenta archivada ya no suma (decisión 6 de 2.3).
+        // Una línea cuya principal no cuenta sale suelta, como en el resto de la app.
         var entries: [FullFinancialContext.AccountEntry] = []
         for card in accounts.accountCards(roles: lineRoles) {
             let live = AccountCard(head: card.head, lines: card.lines.filter { !$0.isArchived })
             entries.append(accountEntry(
                 live, allRawTx: allRawTx, preferredCurrency: preferredCurrency, converter: converter, now: now))
-            for archived in card.lines where archived.isArchived {
-                entries.append(accountEntry(
-                    AccountCard(head: archived, lines: []), allRawTx: allRawTx, preferredCurrency: preferredCurrency,
-                    converter: converter, now: now))
-            }
         }
         // Balance enviado al LLM: TC actual sobre saldo nativo (LiveBalanceCalculator)
         // en vez de suma de snapshots históricos — el LLM debe ver el saldo

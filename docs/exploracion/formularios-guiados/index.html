@@ -1,0 +1,1019 @@
+<title>Formularios guiados de Yala</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Mesa de revisión oscura: barra fija arriba con los flujos; cada flujo es una fila de iPhones con su ficha y su comentario al lado. */
+:root {
+  color-scheme: dark;
+  /* página */
+  --bg: #08080d; --panel: #111119; --panel-2: #171722; --line: #262634; --fg: #ececf4; --muted: #9b9bb2; --faint: #6c6c82;
+  --accent: #6063f1; --accent-text: #8f94fb; --pink: #ff4da6; --teal: #00c2cb; --ok: #34c77b; --warn: #f5b041;
+  /* Yala oscuro (YalaTheme: fondo OLED, tarjeta #1C1C1E) */
+  --y-bg: #000; --y-card: #1c1c1e; --y-card-2: #2c2c2e; --y-border: rgba(255,255,255,.08); --y-fg: #fff;
+  --y-2: rgba(235,235,245,.6); --y-3: rgba(235,235,245,.3); --y-accent: #6063f1; --y-accent-text: #818cf8;
+  --f-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --f-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+a { color: var(--accent-text); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+
+/* ---------- barra ---------- */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: rgba(17,17,25,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.top-in { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; display: flex; flex-direction: column; gap: 8px; max-width: 1440px; margin: 0 auto; }
+.top-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { font-family: var(--f-head); font-weight: 700; font-size: 16px; letter-spacing: -.01em; margin-right: auto; }
+.brand small { font-family: var(--f-ui); font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 8px; }
+.copy-btn { border: 0; background: var(--accent); color: #fff; font-weight: 600; padding: 8px 14px; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.copy-btn .n { background: rgba(255,255,255,.22); border-radius: 999px; padding: 0 7px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { flex: none; text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--panel); padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+.nav a.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.nav a .c { font-size: 11px; font-variant-numeric: tabular-nums; background: rgba(255,255,255,.12); border-radius: 999px; padding: 0 6px; min-width: 18px; text-align: center; }
+.nav a .c:empty { display: none; }
+.nav .sep { flex: none; width: 1px; background: var(--line); margin: 4px 2px; }
+
+/* ---------- página ---------- */
+main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 80px; max-width: 1440px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-head); letter-spacing: -.015em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(24px, 4vw, 34px); line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 16px; }
+.lede { color: var(--muted); max-width: 70ch; margin: 8px 0 0; font-size: 15px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 600; color: var(--accent-text); }
+section.view { display: flex; flex-direction: column; gap: 28px; }
+.block { display: flex; flex-direction: column; gap: 12px; }
+.prose p { margin: 0; max-width: 72ch; color: #d4d4e0; }
+.prose ul { margin: 0; padding-left: 18px; max-width: 72ch; color: #d4d4e0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: var(--panel-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.yes { background: rgba(52,199,123,.15); color: #6fe0a5; }
+.pill.no { background: rgba(255,255,255,.07); color: var(--muted); }
+.pill.later { background: rgba(245,176,65,.14); color: #f7c873; }
+.pill.lvl { background: rgba(96,99,241,.16); color: var(--accent-text); }
+.order { font-family: var(--f-head); font-weight: 700; color: var(--accent-text); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.note { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.note b { font-family: var(--f-head); }
+.note p { margin: 0; color: #cfcfdc; font-size: 13px; }
+.inv-form { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.inv-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.inv-head h3 { margin-right: auto; }
+.inv-meta { color: var(--muted); font-size: 12px; }
+.inv-form ul { margin: 0; padding-left: 18px; color: #d4d4e0; font-size: 13px; }
+.inv-form .conf { color: #f7c873; }
+details.fields summary { cursor: pointer; color: var(--accent-text); font-size: 13px; }
+details.fields table { margin-top: 8px; }
+
+/* ---------- flujo ---------- */
+.flow-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.flow-facts { display: flex; gap: 8px; flex-wrap: wrap; }
+.flow-facts .pill { white-space: normal; }
+.mode { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--panel); }
+.mode button { border: 0; background: transparent; padding: 5px 12px; border-radius: 999px; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; }
+.mode button.on { background: var(--panel-2); color: #fff; }
+.screens { display: flex; flex-direction: column; gap: 22px; }
+.screen-row { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 22px; align-items: start; border-top: 1px solid var(--line); padding-top: 22px; }
+.screen-row:first-child { border-top: 0; padding-top: 0; }
+@media (max-width: 760px) { .screen-row { grid-template-columns: minmax(0, 1fr); justify-items: center; } .spec { width: 100%; } }
+.spec { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.spec-title .idx { font-family: var(--f-head); font-weight: 700; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.spec dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: 13px; }
+.spec dt { color: var(--muted); }
+.spec dd { margin: 0; color: #e2e2ec; }
+.cmt { display: flex; flex-direction: column; gap: 4px; }
+.cmt label { font-size: 12px; color: var(--muted); }
+.cmt textarea { width: 100%; min-height: 54px; resize: vertical; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13px; }
+.cmt textarea:focus { border-color: var(--accent); outline: none; }
+.cmt.has textarea { border-color: rgba(96,99,241,.6); background: #14142a; }
+.walk { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.walk-nav { display: flex; gap: 10px; align-items: center; }
+.walk-nav button { border: 1px solid var(--line); background: var(--panel); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.walk-nav button:disabled { opacity: .35; cursor: default; }
+.walk-nav span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+/* ---------- iPhone ---------- */
+.phone { width: 300px; max-width: 100%; height: 640px; border-radius: 46px; padding: 9px; background: #1a1a20; box-shadow: 0 0 0 1px #34343e, 0 18px 40px rgba(0,0,0,.55); flex: none; }
+.scr { position: relative; width: 100%; height: 100%; border-radius: 38px; overflow: hidden; font-family: var(--f-ios); color: var(--y-fg); font-size: 13px; line-height: 1.32;
+  background: radial-gradient(120% 55% at 50% -5%, rgba(96,99,241,.34), rgba(96,99,241,0) 70%), radial-gradient(90% 40% at 100% 100%, rgba(255,0,128,.12), rgba(255,0,128,0) 70%), var(--y-bg); display: flex; flex-direction: column; }
+.sb { height: 34px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 26px 0 30px; font-weight: 600; font-size: 13px; }
+.sb .isl { width: 86px; height: 24px; background: #000; border-radius: 14px; box-shadow: 0 0 0 1px #111; }
+.sb .bat { display: inline-flex; gap: 4px; align-items: center; }
+.sb .bat i { width: 20px; height: 10px; border: 1.5px solid rgba(255,255,255,.8); border-radius: 3px; display: inline-block; position: relative; }
+.sb .bat i::after { content: ""; position: absolute; inset: 1px 4px 1px 1px; background: #fff; border-radius: 1px; }
+.hdr { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 12px 4px; }
+.gbtn { width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.18); display: grid; place-items: center; flex: none; }
+.gbtn svg { width: 14px; height: 14px; }
+.hdr .ttl { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.hdr .ttl b { font-size: 14px; }
+.hdr .ttl span { font-size: 10.5px; color: var(--y-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.useform { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.18); color: var(--y-fg); }
+.useform svg { width: 12px; height: 12px; }
+.dots { flex: none; display: flex; gap: 4px; padding: 2px 16px 6px 50px; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.2); }
+.dots i.on { background: var(--y-accent); }
+.body { flex: 1; overflow-y: auto; padding: 4px 14px 18px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: none; }
+.body::-webkit-scrollbar { display: none; }
+.q { font-size: 18px; font-weight: 700; line-height: 1.22; letter-spacing: -.01em; }
+.qd { color: var(--y-2); font-size: 12.5px; margin-top: 4px; }
+.dock { display: flex; flex-direction: column; gap: 8px; }
+.opt { display: flex; align-items: center; gap: 10px; background: var(--y-card); border-radius: 16px; padding: 10px 12px; box-shadow: inset 0 0 0 1.5px transparent; }
+.opt.hl { box-shadow: inset 0 0 0 1.5px rgba(96,99,241,.6); }
+.opt .ic { width: 22px; display: grid; place-items: center; color: var(--y-accent-text); flex: none; }
+.opt .ic svg { width: 17px; height: 17px; }
+.opt .tx { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.opt .tx b { font-size: 13px; font-weight: 600; }
+.opt .tx span { font-size: 10.5px; color: var(--y-2); }
+.opt .chev { color: var(--y-3); font-size: 13px; }
+.tiles { display: grid; gap: 8px; }
+.tile { background: var(--y-card); border-radius: 16px; padding: 9px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; min-height: 88px; position: relative; box-shadow: inset 0 0 0 2px transparent; }
+.tile .circ { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.tile .circ svg { width: 15px; height: 15px; }
+.tile b { font-size: 10.5px; font-weight: 600; line-height: 1.15; }
+.tile span { font-size: 9px; color: var(--y-2); line-height: 1.15; }
+.tile .chk { position: absolute; top: 5px; right: 5px; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; }
+.tile .chk svg { width: 9px; height: 9px; color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 999px; background: var(--y-card); }
+.chip.on { background: var(--y-accent); color: #fff; }
+.lbl { font-size: 11px; color: var(--y-2); font-weight: 500; margin-top: 2px; }
+.field { display: flex; align-items: center; gap: 8px; }
+.input { flex: 1; min-width: 0; min-height: 40px; background: var(--y-card); border-radius: 16px; display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+.input .sym { color: var(--y-2); font-weight: 600; font-size: 13px; }
+.input .val { font-size: 16px; font-weight: 600; }
+.input .val.txt { font-size: 13.5px; font-weight: 500; }
+.input .ph { color: var(--y-3); font-size: 14px; font-weight: 500; }
+.input .caret { width: 1.5px; height: 18px; background: var(--y-accent-text); }
+.send { width: 36px; height: 36px; border-radius: 50%; background: var(--y-accent); display: grid; place-items: center; flex: none; }
+.send.off { background: rgba(255,255,255,.12); }
+.send svg { width: 15px; height: 15px; color: #fff; }
+.tog { background: var(--y-card); border-radius: 16px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; }
+.tog .tx { flex: 1; display: flex; flex-direction: column; }
+.tog .tx b { font-size: 13px; font-weight: 600; }
+.tog .tx span { font-size: 10.5px; color: var(--y-2); }
+.sw { width: 40px; height: 24px; border-radius: 999px; background: rgba(120,120,128,.36); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; }
+.sw.on { background: #34c759; }
+.sw.on::after { left: 18px; }
+.row2 { background: var(--y-card); border-radius: 16px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
+.row2 span { color: var(--y-2); }
+.row2 b { font-weight: 600; }
+.row2 em { font-style: normal; color: var(--y-accent-text); font-weight: 600; font-size: 12px; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; background: var(--y-card); border-radius: 16px; padding: 8px; }
+.days i { font-style: normal; text-align: center; font-size: 11px; padding: 5px 0; border-radius: 8px; color: var(--y-fg); }
+.days i.on { background: var(--y-accent); color: #fff; font-weight: 700; }
+.days i.h { color: var(--y-2); font-size: 9.5px; }
+.seg { display: flex; background: rgba(118,118,128,.24); border-radius: 10px; padding: 2px; }
+.seg i { flex: 1; text-align: center; font-style: normal; font-size: 11.5px; font-weight: 600; padding: 6px 4px; border-radius: 8px; color: var(--y-fg); }
+.seg i.on { background: #636366; }
+.list { background: var(--y-card); border-radius: 16px; overflow: hidden; }
+.list .li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-top: .5px solid rgba(84,84,88,.6); font-size: 12.5px; }
+.list .li:first-child { border-top: 0; }
+.list .li .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; flex: none; }
+.list .li .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.list .li .tx span { font-size: 10.5px; color: var(--y-2); }
+.list .li .rt { color: var(--y-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.list .li .rt.acc { color: var(--y-accent-text); font-weight: 600; }
+.primary { background: var(--y-accent); color: #fff; font-weight: 600; font-size: 14px; text-align: center; border-radius: 999px; padding: 12px; }
+.primary.off { background: rgba(96,99,241,.35); color: rgba(255,255,255,.55); }
+.textlink { text-align: center; color: var(--y-accent-text); font-weight: 600; font-size: 13px; padding: 4px; }
+.hint { font-size: 11px; color: var(--y-2); }
+.hint.warn { color: #ffb86b; }
+.bubble { align-self: flex-start; max-width: 88%; background: var(--y-card-2); border-radius: 16px 16px 16px 4px; padding: 8px 11px; font-size: 12.5px; }
+.palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; background: var(--y-card); border-radius: 16px; padding: 10px; }
+.palette i { aspect-ratio: 1; border-radius: 50%; }
+.palette i.on { box-shadow: 0 0 0 2px var(--y-bg), 0 0 0 3.5px #fff; }
+.icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; background: var(--y-card); border-radius: 16px; padding: 10px; }
+.icons i { aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center; color: var(--y-2); background: rgba(255,255,255,.05); }
+.icons i svg { width: 15px; height: 15px; }
+.icons i.on { background: var(--y-accent); color: #fff; }
+/* tarjeta que se llena */
+.ycard { background: var(--y-card); border-radius: 18px; padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 0 .5px var(--y-border); }
+.ycard .top1 { display: flex; gap: 10px; align-items: center; }
+.ycard .ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
+.ycard .ico svg { width: 16px; height: 16px; }
+.ycard .nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.ycard .nm b { font-size: 14px; }
+.ycard .nm span { font-size: 10.5px; color: var(--y-2); }
+.ycard .ph { color: var(--y-3) !important; }
+.ycard .amt { font-size: 22px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ycard .amt small { font-size: 11px; color: var(--y-2); font-weight: 500; display: block; letter-spacing: 0; }
+.ycard .lines { display: flex; flex-wrap: wrap; gap: 5px; }
+.ycard .lines i { font-style: normal; font-size: 10.5px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--y-2); }
+.ycard .bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.ycard .bar i { display: block; height: 100%; background: var(--y-accent); border-radius: 999px; }
+/* confirmación y éxito */
+.sum { background: var(--y-card); border-radius: 16px; overflow: hidden; }
+.sum .sr { display: flex; gap: 10px; padding: 9px 12px; border-top: .5px solid rgba(84,84,88,.6); align-items: baseline; }
+.sum .sr:first-child { border-top: 0; }
+.sum .sr span { color: var(--y-2); font-size: 11.5px; width: 92px; flex: none; }
+.sum .sr b { flex: 1; font-size: 12.5px; font-weight: 600; min-width: 0; }
+.sum .sr em { font-style: normal; font-size: 11.5px; color: var(--y-accent-text); font-weight: 600; }
+.done-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 10px 6px; }
+.done-wrap .big { width: 64px; height: 64px; border-radius: 50%; background: rgba(52,199,89,.18); display: grid; place-items: center; color: #34c759; }
+.done-wrap .big svg { width: 30px; height: 30px; }
+.done-wrap h4 { margin: 0; font-size: 22px; font-weight: 700; }
+.done-wrap p { margin: 0; color: var(--y-2); font-size: 13px; }
+.foot { flex: none; padding: 8px 14px 22px; display: flex; flex-direction: column; gap: 6px; background: linear-gradient(to top, rgba(0,0,0,.9) 60%, rgba(0,0,0,0)); }
+.kb { flex: none; height: 150px; background: #2b2b2f; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 7px 6px 20px; }
+.kb i { background: #6b6b6f; border-radius: 6px; display: grid; place-items: center; font-style: normal; font-size: 15px; color: #fff; }
+/* formulario de siempre (miniatura) */
+.formmini { display: flex; flex-direction: column; gap: 8px; }
+.formmini .sec { font-size: 10px; text-transform: uppercase; color: var(--y-2); letter-spacing: .04em; padding: 0 4px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #fff; color: #111; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 13px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.fallback { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 30; display: grid; place-items: center; padding: 16px; }
+.fallback > div { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; width: min(640px, 100%); display: flex; flex-direction: column; gap: 10px; }
+.fallback textarea { width: 100%; height: 50vh; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+.fallback button { align-self: flex-end; border: 0; background: var(--accent); color: #fff; padding: 8px 14px; border-radius: 999px; font-weight: 600; cursor: pointer; }
+.clear-btn { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .sw::after { transition: none; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="top-row">
+      <div class="brand">Formularios guiados<small>Yala · exploración 15-nov</small></div>
+      <button class="copy-btn" id="copyAll" type="button">Copiar todos los comentarios <span class="n" id="totalCount">0</span></button>
+    </div>
+    <nav class="nav" id="nav" aria-label="Secciones"></nav>
+  </div>
+</header>
+<main id="main"></main>
+
+<script>
+/* ===================== DATOS ===================== */
+const C = { indigo: '#6063F1', pink: '#FF0080', teal: '#00A8B0', orange: '#FF9F0A', green: '#30B158', blue: '#0A84FF', purple: '#8B5CF6', yellow: '#E0B300', red: '#FF453A', gray: '#636366', brown: '#A2845E' };
+const Q = o => Object.assign({ kind: 'q' }, o);
+
+/* ---------- 1. CUENTA ---------- */
+const F_CUENTA = {
+  id: 'cuenta', name: 'Crear una cuenta', short: 'Cuenta', order: 1, entry: 'Desde Ajustes › Cuentas, el Panel y el selector de cuenta', value: 'alto', effort: 'bajo', fieldsNow: '16 campos al crear (11 a la vista)',
+  chatSubtitle: 'Tu nueva cuenta',
+  summary: 'Es la base de todo: sin cuenta no hay registro. El formulario de hoy pide 11 cosas en una pantalla, con jerga («Signo», «Día de corte», «Excluir de las estadísticas») y en una tarjeta de crédito llega a seis bloques antes de «Más opciones». Primeros pasos ya resuelve casi todo esto en su paso 1: el guiado es ese mismo flujo, sin las páginas de presentación.',
+  notes: [
+    ['Reutiliza', 'FirstAccountFlowView entero: tipo, monedas, nombre, saldo por moneda con «Ayúdame a sacarlo», cierre, pago y recordatorio. Faltan solo dos preguntas: número de cuenta y «cuenta en tus reportes».'],
+    ['Lo que hoy el formulario no deja elegir', 'Color e icono existen en la cuenta pero no tienen control. Cuando entren las tarjetas personalizables de 2.3 (color, patrón, icono y últimos 4 dígitos, decisión del 15-nov), su pregunta va después del nombre.'],
+    ['Editar sigue siendo formulario', 'El guiado es para CREAR. Editar una cuenta (corregir saldo, líneas en otra divisa, archivar) abre el formulario de siempre.'],
+  ],
+  cardBase: { icon: 'question', color: C.gray, namePh: 'Tu cuenta', typePh: 'Tipo', amountLabel: 'Saldo' },
+  cardSeq: [
+    { icon: 'card', color: C.indigo, type: 'Tarjeta de crédito', amountLabel: 'Debes' },
+    { addLines: ['S/ Soles', 'US$ Dólares'] },
+    { name: 'Visa del trabajo' },
+    { addLines: ['•••• 4821'] },
+    { amount: 'S/ 1,240.00' },
+    { addLines: ['En US$: 85.00'] },
+    { addLines: ['Cierra el 20'] },
+    { addLines: ['Pagas hasta el 5'] },
+    { addLines: ['Te recordamos 3 días antes'] },
+  ],
+  screens: [
+    Q({ id: 'tipo', label: 'Tipo de cuenta', q: '¿Qué cuenta quieres crear?', d: 'Elige la que se parece más. Puedes crear otra después.', fill: 0,
+      dock: [{ t: 'opts', items: [
+        { ti: 'Efectivo', su: 'Billetes y monedas que tienes a la mano', ic: 'cash' },
+        { ti: 'Cuenta de banco', su: 'Tu cuenta de banco del día a día', ic: 'bank' },
+        { ti: 'Ahorros', su: 'Donde guardas lo que ahorras', ic: 'piggy' },
+        { ti: 'Tarjeta de crédito', su: 'Lo que compras con ella y aún debes al banco', ic: 'card', hl: true },
+        { ti: 'Todo junto', su: 'Todo tu dinero junto, sin separarlo', ic: 'stack' } ] }],
+      spec: { campo: 'Tipo (General · Efectivo · Cuenta corriente · Ahorros · Tarjeta de crédito)', tipo: 'Tarjetas de opción con icono y frase', def: 'Ninguna marcada. El formulario arranca en «General», aquí llamado «Todo junto».', salta: 'Nunca. Si se entra desde «Nueva tarjeta» se puede saltar con el tipo ya puesto.', nota: '«Cuenta corriente» pasa a «Cuenta de banco»: «corriente» no se usa igual en todos los países.' } }),
+    Q({ id: 'monedas', label: 'Monedas', q: '¿En qué moneda usas esta tarjeta?', d: '¿También pagas en dólares u otra moneda? Añádela.', fill: 1,
+      dock: [{ t: 'chips', items: [{ ti: 'S/ Soles', on: true }, { ti: 'US$ Dólares', on: true }, { ti: '+ Añadir moneda' }] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Moneda + Otras divisas (las «líneas» de una tarjeta)', tipo: 'Chips de moneda, varias a la vez', def: 'Tu moneda principal de Yala marcada. Ojo: el formulario de hoy pone siempre soles (PEN), no lee tu moneda principal.', salta: 'Si solo usas una moneda en Yala: se pone esa y no se pregunta. Se puede cambiar en la confirmación.', nota: 'Hoy la segunda moneda de una tarjeta se ofrece en OTRA pantalla después de guardar («Tu cuenta puede tener más de una divisa»). Aquí se pregunta de una vez, como en Primeros pasos.' } }),
+    Q({ id: 'nombre', label: 'Nombre', q: '¿Cómo se llama esta tarjeta?', d: 'Ponle el nombre con el que la reconoces.', fill: 2,
+      dock: [{ t: 'text', val: 'Visa del trabajo' }, { t: 'chips', label: 'Ejemplos', items: ['Visa del trabajo', 'Mastercard', 'Tarjeta BCP'] }],
+      spec: { campo: 'Nombre de la cuenta (obligatorio, sin repetir)', tipo: 'Texto con ejemplos tocables', def: 'Vacío. En efectivo y «Todo junto» se propone el nombre («¿La llamamos «Efectivo»?» con «Sí, así está bien»).', salta: 'Nunca.', nota: 'Si el nombre ya existe, se dice debajo del campo: «Ya tienes una cuenta con ese nombre». Hoy «Guardar» se apaga sin explicar por qué.' } }),
+    Q({ id: 'numero', label: 'Número de cuenta', q: '¿Quieres anotar los últimos 4 números?', d: 'Solo para que la reconozcas. Nadie más los ve.', fill: 3,
+      dock: [{ t: 'amount', sym: '••••', val: '4821' }, { t: 'opts', items: [{ ti: 'No hace falta', ic: 'x' }] }],
+      spec: { campo: 'Número de cuenta (opcional)', tipo: 'Campo numérico corto + «No hace falta»', def: 'Vacío', salta: 'Efectivo y «Todo junto» (no tienen número).', nota: 'Hoy pide el número entero. Proponemos solo 4 dígitos, que es lo que usarán las tarjetas personalizables de 2.3.' } }),
+    Q({ id: 'saldo', label: 'Saldo en la primera moneda', q: '¿Cuánto debes hoy en soles?', d: 'Lo que compraste y todavía no pagas. Un aproximado basta.', fill: 4, kb: true,
+      dock: [{ t: 'amount', sym: 'S/', val: '1,240' }, { t: 'opts', items: [{ ti: 'No sé, ayúdame a sacarlo', ic: 'question' }, { ti: 'No debo nada', ic: 'check' }] }, { t: 'chips', items: [{ ti: 'Tengo saldo a favor' }] }],
+      spec: { campo: 'Saldo inicial (obligatorio al crear) + Signo', tipo: 'Monto con teclado + atajos', def: 'Vacío', salta: 'Nunca.', nota: 'El «Signo» (Positivo/Negativo, o «A favor/Consumido» en tarjeta) deja de ser un control: en tarjeta se pregunta «cuánto debes» y el chip «Tengo saldo a favor» cubre el caso raro; en las demás, «Estoy en negativo (sobregiro)».' } }),
+    Q({ id: 'ayuda', label: 'Ayúdame a sacarlo (solo si lo pide)', q: 'Lo sacamos con la app de tu banco', d: 'Abre tu tarjeta en la app del banco y busca estos dos números.', fill: 4,
+      dock: [{ t: 'amount', label: 'Tu límite · lo máximo que puedes gastar', sym: 'S/', val: '5,000', noSend: true }, { t: 'amount', label: 'Lo que te queda · lo que aún puedes gastar hoy', sym: 'S/', val: '3,760', noSend: true }, { t: 'row', l: 'Debes', v: 'S/ 1,240.00' }, { t: 'primary', ti: 'Usar S/ 1,240.00' }, { t: 'hint', ti: 'Siempre puedes ajustarlo después.' }],
+      spec: { campo: '«¿No sabes tu saldo?» (la calculadora de saldo del formulario)', tipo: 'Dos montos y el resultado', def: '—', salta: 'Si no toca «No sé, ayúdame a sacarlo».', nota: 'Es el ayudante de Primeros pasos. En efectivo pide contar billetes; en «Todo junto», sumar banco, ahorro y efectivo.' } }),
+    Q({ id: 'saldo2', label: 'Saldo en la segunda moneda', q: '¿Y en dólares?', d: 'Si no usaste la tarjeta en dólares, deja 0.', fill: 5, kb: true,
+      dock: [{ t: 'amount', sym: 'US$', val: '85' }, { t: 'opts', items: [{ ti: 'No debo nada en dólares', ic: 'check' }] }],
+      spec: { campo: 'Saldo inicial de la línea en otra divisa', tipo: 'Monto', def: 'Vacío', salta: 'Si eligió una sola moneda.', nota: '' } }),
+    Q({ id: 'corte', label: 'Día de cierre', q: '¿Qué día cierra tu tarjeta?', d: 'Es el día en que el banco suma tus compras del mes. Con él te decimos cuánto vas a pagar.', fill: 6,
+      dock: [{ t: 'days', sel: 20 }, { t: 'opts', items: [{ ti: 'No lo sé', ic: 'question' }, { ti: 'Prefiero no decirlo', ic: 'x' }] }],
+      spec: { campo: 'Día de corte (opcional)', tipo: 'Rejilla de días 1-31', def: 'Ninguno («Sin definir»)', salta: 'Si no es tarjeta de crédito.', nota: '«Día de corte» pasa a «día de cierre»: es como lo llama el estado de cuenta en casi todos los bancos.' } }),
+    Q({ id: 'pago', label: 'Día de pago', q: '¿Hasta qué día puedes pagarla?', d: 'Es tu fecha límite. La usamos para recordarte pagar a tiempo y que no te cobren intereses.', fill: 7,
+      dock: [{ t: 'days', sel: 5 }, { t: 'opts', items: [{ ti: 'No lo sé', ic: 'question' }] }],
+      spec: { campo: 'Día de pago', tipo: 'Rejilla de días 1-31', def: 'Ninguno marcado (el formulario pone el 1 sin preguntar)', salta: 'Si no es tarjeta de crédito.', nota: '' } }),
+    Q({ id: 'aviso', label: 'Recordatorio de pago', q: '¿Cuándo te recordamos pagarla?', d: 'Te avisamos con el monto que te toca pagar en cada moneda.', fill: 8,
+      dock: [{ t: 'opts', items: [{ ti: '5 días antes', ic: 'bell' }, { ti: '3 días antes', ic: 'bell', hl: true }, { ti: '1 día antes', ic: 'bell' }, { ti: 'El mismo día', ic: 'bell' }, { ti: 'No me lo recuerdes', ic: 'x' }] }],
+      spec: { campo: 'Avisarme antes de pagar + Cuándo', tipo: 'Tarjetas de opción', def: '3 días antes (destacada). El formulario arranca apagado.', salta: 'Si no es tarjeta, o si dijo «No lo sé» al día de pago. Sin día de cierre solo ofrece «El mismo día» y avisa sin monto.', nota: 'Si las notificaciones están apagadas, la respuesta pide el permiso en ese momento.' } }),
+    Q({ id: 'reportes', label: 'Cuenta en tus reportes', q: '¿Lo que pasa en esta tarjeta cuenta en tus reportes?', d: 'Casi siempre sí. Déjala fuera si no es dinero tuyo, por ejemplo una tarjeta que usas para tu negocio.', fill: 9,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, que cuente', su: 'Lo normal', ic: 'chart', hl: true }, { ti: 'No, déjala fuera', su: 'No suma en Estadísticas ni en presupuestos', ic: 'eye' }] }],
+      spec: { campo: 'Excluir de las estadísticas (en «Más opciones»)', tipo: 'Dos tarjetas de opción', def: 'Sí, que cuente', salta: 'Propuesta: no preguntarlo y dejarlo solo en la confirmación y en el formulario. Está aquí porque el encargo pide no quitar ninguna.', nota: '' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de crear', d: 'Toca «Cambiar» en lo que quieras corregir.', fill: 9,
+      dock: [{ t: 'sum', rows: [['Tipo', 'Tarjeta de crédito'], ['Monedas', 'Soles y dólares'], ['Nombre', 'Visa del trabajo'], ['Últimos 4', '4821'], ['Debes', 'S/ 1,240.00 · US$ 85.00'], ['Cierra', 'El 20 de cada mes'], ['Pagas', 'Hasta el 5'], ['Aviso', '3 días antes'], ['Reportes', 'Cuenta en tus reportes']] }],
+      foot: [{ t: 'primary', ti: 'Crear tarjeta' }],
+      spec: { campo: 'Todas las respuestas', tipo: 'Resumen con «Cambiar» por fila', nota: '«Cambiar» vuelve a esa pregunta y regresa aquí, sin rehacer las demás.' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Lista!', d: '«Visa del trabajo» ya está en Yala, con soles y dólares.', card: { icon: 'card', color: C.indigo, name: 'Visa del trabajo', type: 'Tarjeta de crédito', amountLabel: 'Debes', amount: 'S/ 1,240.00', lines: ['En US$: 85.00', 'Pagas hasta el 5'] },
+      foot: [{ t: 'primary', ti: 'Ver mi cuenta' }, { t: 'link', ti: 'Crear otra cuenta' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: 'Si entró desde el selector de cuenta de un registro, «Ver mi cuenta» se cambia por «Volver al registro» con la cuenta ya elegida.' } },
+    { kind: 'form', id: 'formulario', label: '«Usar formulario» con lo ya respondido', sub: 'Nueva cuenta',
+      dock: [{ t: 'bubble', ti: 'Seguimos en el formulario. Lo que ya respondiste está puesto.' }, { t: 'lbl', ti: 'NOMBRE DE LA CUENTA' }, { t: 'text', val: 'Visa del trabajo', noSend: true }, { t: 'lbl', ti: 'TIPO' }, { t: 'seg', items: ['General', 'Efectivo', 'Banco', 'Ahorros', 'Tarjeta'], sel: 4 }, { t: 'row', l: 'Moneda', v: 'Soles (PEN)' }, { t: 'row', l: 'Día de corte', v: '20' }, { t: 'row', l: 'Día de pago', v: 'Sin elegir', em: true }, { t: 'amount', label: 'SALDO INICIAL', sym: 'S/', ph: 'Ej. 1500', noSend: true }],
+      spec: { campo: '—', tipo: 'El formulario de siempre', nota: 'Así queda si toca «Usar formulario» después de responder tipo, monedas, nombre y cierre. Vale para todos los flujos: lo respondido viaja. Elegirlo una vez se puede recordar («Abrir siempre el formulario»), por decidir.' } },
+  ],
+};
+
+/* ---------- 2. PAGO PLANIFICADO ---------- */
+const F_PAGO = {
+  id: 'pago', name: 'Crear un pago planificado', short: 'Pago planificado', order: 2, entry: 'Desde Planificación › Pagos y «Más opciones…» de Hacer recurrente', value: 'alto', effort: 'medio', fieldsNow: '≈25 campos, 8 escondidos en «Más opciones»',
+  chatSubtitle: 'Nuevo pago planificado',
+  summary: 'Es el formulario más largo de Yala: tipo, nombre, logo, monto, categoría, cuenta, cuándo (cinco variantes), aviso, fin, suscripción, gasto compartido con su grupo y reparto, etiquetas y nota. Ocho de esos campos viven plegados. El guiado pregunta primero lo que casi todos necesitan y deja lo raro al final, con «Saltar».',
+  notes: [
+    ['Reutiliza', 'FirstScheduledPaymentFlowView: tipos en tarjetas, nombre y monto juntos, «Cambia cada vez», cuándo, aviso. Es también uno de los dos flujos del motor de guiados de Yala IA: las preguntas son las mismas.'],
+    ['Lo que no tiene control hoy', 'La «necesidad del gasto» se guarda pero no se pregunta (sale de la categoría). La vista previa de las próximas fechas se calcula y no se pinta: aquí aparece en la confirmación.'],
+    ['Hacer recurrente desde un registro', 'Se queda como está: ya es un toque («Cada mes, el día 14»). Su «Más opciones…» abre este guiado con todo lo del registro ya respondido, empezando por la primera pregunta sin respuesta.'],
+  ],
+  cardBase: { icon: 'question', color: C.gray, namePh: 'Tu pago', typePh: 'Tipo', amountLabel: 'Cada mes' },
+  cardSeq: [
+    { type: 'Pago' },
+    { icon: 'play', color: C.pink, type: 'Suscripción de ocio' },
+    { name: 'Spotify' },
+    { amount: 'S/ 21.90' },
+    { addLines: ['Visa del trabajo'] },
+    { amountLabel: 'Cada mes' },
+    { addLines: ['El día 14'] },
+    { addLines: ['Desde hoy'] },
+    { addLines: ['Sin fecha de fin'] },
+    { addLines: ['Aviso 1 día antes'] },
+    { addLines: ['Solo tuyo'] },
+    { addLines: ['#entretenimiento'] },
+  ],
+  screens: [
+    Q({ id: 'tipo', label: 'Pago o cobro', q: '¿Es algo que pagas o algo que te pagan?', d: 'La mayoría son pagos: alquiler, luz, suscripciones.', fill: 0,
+      dock: [{ t: 'opts', items: [{ ti: 'Algo que pago', su: 'Alquiler, servicios, suscripciones, cuotas', ic: 'cart', hl: true }, { ti: 'Algo que me pagan', su: 'Sueldo, un alquiler que cobras, una mesada', ic: 'coins' }] }],
+      spec: { campo: 'Gasto / Ingreso', tipo: 'Dos tarjetas de opción', def: 'Algo que pago (Gasto)', salta: 'Modo «solo gastos», o si viene de «Hacer recurrente» con un registro.', nota: '' } }),
+    Q({ id: 'categoria', label: 'Qué es', q: '¿Qué pagas cada cierto tiempo?', d: 'Elige el tipo; el nombre lo pones después.', fill: 1,
+      dock: [{ t: 'tiles', cols: 3, items: [
+        { ti: 'Renta', ic: 'home', c: C.orange }, { ti: 'Servicios', ic: 'bolt', c: C.yellow }, { ti: 'Comunicación', ic: 'phone', c: C.blue },
+        { ti: 'Suscripción de utilidad', ic: 'cloud', c: C.teal }, { ti: 'Suscripción de ocio', ic: 'play', c: C.pink, on: true }, { ti: 'Fitness', ic: 'gym', c: C.green } ] },
+        { t: 'opts', items: [{ ti: 'Otra categoría', ic: 'folder' }] },
+        { t: 'toggle', ti: 'Es una suscripción', hint: 'Aparece en la pestaña Suscripciones', on: true }],
+      spec: { campo: 'Categoría (obligatoria) + ¿Es una suscripción?', tipo: 'Tarjetas con icono + interruptor', def: 'Ninguna marcada. «Es una suscripción» se enciende solo con las dos suscripciones.', salta: 'Si viene de un registro con categoría.', nota: 'Para cobros, las tarjetas cambian: Sueldo, Alquiler que cobras, Otros ingresos. La «necesidad del gasto» sale de la categoría, sin pregunta (igual que hoy).' } }),
+    Q({ id: 'nombre', label: 'Nombre y logo', q: '¿Cómo se llama?', d: 'Suscripción de ocio · Es como lo verás en tus pagos.', fill: 2,
+      dock: [{ t: 'text', val: 'Spotify' }, { t: 'chips', label: 'Ejemplos', items: ['Música', 'Películas y series', 'Videojuegos'] }, { t: 'row', l: 'Logo', v: 'Spotify · cambiar', em: true }],
+      spec: { campo: 'Nombre del pago (obligatorio) + Logo', tipo: 'Texto con ejemplos; el logo se detecta solo', def: 'El nombre del registro si viene de uno. Logo: Automático.', salta: 'Nunca.', nota: 'El logo hoy es un menú que solo aparece con marca o suscripción. Aquí se ve el detectado y «cambiar» abre Automático · Sin logo · lista de marcas.' } }),
+    Q({ id: 'monto', label: 'Monto', q: '¿Cuánto pagas?', d: 'Si cambia cada vez, pon un aproximado.', fill: 3, kb: true,
+      dock: [{ t: 'amount', sym: 'S/', val: '21.90' }, { t: 'toggle', ti: 'Cambia cada vez', hint: 'Monto estimado: lo ajustas al aprobarlo' }],
+      spec: { campo: 'Monto (obligatorio) + Monto estimado', tipo: 'Monto + interruptor', def: 'Vacío · interruptor apagado', salta: 'Nunca.', nota: 'La moneda es la de la cuenta que se elige después; si la cuenta tiene otra, se ajusta el símbolo y se avisa en la confirmación.' } }),
+    Q({ id: 'cuenta', label: 'Cuenta', q: '¿Con qué lo pagas?', d: 'De aquí saldrá el pago cada vez que lo apruebes.', fill: 4,
+      dock: [{ t: 'list', items: [{ ti: 'Visa del trabajo', su: 'Tarjeta de crédito', ic: 'card', rt: 'Última usada', acc: true }, { ti: 'Cuenta sueldo', su: 'Cuenta de banco', ic: 'bank' }, { ti: 'Efectivo', su: 'Efectivo', ic: 'cash' }] }],
+      spec: { campo: 'Cuenta (obligatoria; opcional si es compartido)', tipo: 'Lista de cuentas', def: 'La última usada, arriba', salta: 'Si solo tienes una cuenta (se usa esa).', nota: '' } }),
+    Q({ id: 'cada', label: 'Cada cuánto', q: '¿Cada cuánto toca pagar?', d: 'Lo más común es cada mes.', fill: 5,
+      dock: [{ t: 'opts', items: [{ ti: 'Cada mes', ic: 'cal', hl: true }, { ti: 'Cada semana', ic: 'cal' }, { ti: 'Cada año', ic: 'cal' }, { ti: 'Una sola vez', su: 'Un pago con fecha, no se repite', ic: 'cal' }, { ti: 'Otro intervalo', su: 'Cada 2 meses, cada 15 días…', ic: 'repeat' }] }],
+      spec: { campo: 'Una sola vez / Repetir + Cada [N] [frecuencia]', tipo: 'Tarjetas de opción', def: 'Cada mes', salta: 'Nunca.', nota: '«Otro intervalo» abre los dos menús de hoy (número y Días/Semanas/Meses/Años). «Diario» vive ahí, no arriba.' } }),
+    Q({ id: 'dia', label: 'Qué día', q: '¿Qué día del mes?', d: 'Si el mes no tiene ese día, se paga el último.', fill: 6,
+      dock: [{ t: 'days', sel: 14 }],
+      spec: { campo: 'Día del mes · ¿Qué días? (semana) · Fecha anual · Fecha de pago (una vez)', tipo: 'Cambia según la respuesta anterior: rejilla de días, días de la semana, mes y día, o fecha', def: 'Hoy', salta: 'Nunca (cambia de forma).', nota: 'Semanal: chips L M M J V S D, varios a la vez. Anual: mes y día. Una sola vez: calendario desde hoy.' } }),
+    Q({ id: 'desde', label: 'Desde cuándo', q: '¿Desde cuándo empieza?', d: 'El primer pago llega a tu Bandeja ese día.', fill: 7,
+      dock: [{ t: 'opts', items: [{ ti: 'Este mes, el 14', su: 'Hoy', ic: 'cal', hl: true }, { ti: 'El próximo mes, el 14', ic: 'cal' }, { ti: 'Otra fecha', ic: 'cal' }] }],
+      spec: { campo: 'Fecha de inicio', tipo: 'Tarjetas de opción + calendario en «Otra fecha»', def: 'La próxima vez que toque (hoy si hoy es el día)', salta: 'Si es «Una sola vez» (ya eligió la fecha).', nota: 'Hoy el formulario pone «hoy» sin decirlo; si hoy es el día 14, el primer pago cae hoy.' } }),
+    Q({ id: 'fin', label: 'Hasta cuándo', q: '¿Tiene fecha de fin?', d: 'Por ejemplo, cuotas que terminan o un contrato de un año.', fill: 8,
+      dock: [{ t: 'opts', items: [{ ti: 'No, sigue hasta que lo pare', ic: 'repeat', hl: true }, { ti: 'Sí, hasta una fecha', ic: 'cal' }, { ti: 'Sí, son unas cuotas', su: 'Dime cuántas y calculo el final', ic: 'chart' }] }],
+      spec: { campo: 'Tiene fecha de fin + Fecha de fin (en «Más opciones»)', tipo: 'Tarjetas de opción', def: 'No tiene fin. (Hoy, al encenderlo, pone un año sin decirlo.)', salta: 'Si es «Una sola vez».', nota: '«Son unas cuotas» es nuevo: calcula la fecha de fin con el número de cuotas. Si no se quiere, se quita.' } }),
+    Q({ id: 'aviso', label: 'Aviso', q: '¿Te avisamos antes de que toque pagar?', d: 'El aviso llega con el nombre y el monto.', fill: 9,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, 3 días antes', ic: 'bell' }, { ti: 'Sí, 1 día antes', ic: 'bell', hl: true }, { ti: 'Sí, el mismo día', ic: 'bell' }, { ti: 'Otro momento', su: '2, 5, 7, 14 o 30 días antes', ic: 'bell' }, { ti: 'No me avises', ic: 'x' }] }],
+      spec: { campo: 'Notificar en fecha de vencimiento + Notificar días antes', tipo: 'Tarjetas de opción', def: '3 días antes (el de hoy)', salta: 'Nunca.', nota: 'El menú de hoy enseña «1, 2, 3…» sin unidad; aquí siempre dice «días antes».' } }),
+    Q({ id: 'compartido', label: 'Compartido', q: '¿Lo pagas con alguien más?', d: 'Si lo dividen en un grupo, Yala lo apunta en el grupo y cuenta solo tu parte.', fill: 10,
+      dock: [{ t: 'opts', items: [{ ti: 'No, es solo mío', ic: 'check', hl: true }, { ti: 'Sí, lo dividimos en un grupo', ic: 'users' }] }],
+      spec: { campo: '¿Es un gasto compartido? (en «Más opciones»)', tipo: 'Dos tarjetas de opción', def: 'No, es solo mío', salta: 'Si no tienes grupos, o si es un cobro.', nota: '' } }),
+    Q({ id: 'grupo', label: 'Grupo y reparto (solo si se comparte)', q: '¿En qué grupo y cómo lo dividen?', d: 'El monto que pusiste es el total de la factura.', fill: 10,
+      dock: [{ t: 'list', label: 'Grupo', items: [{ ti: 'Depa Miraflores', su: '3 personas · Soles', av: 'DM', c: C.purple, rt: '✓', acc: true }, { ti: 'Viaje a Cusco', su: '4 personas · Dólares', av: 'VC', c: C.teal }] }, { t: 'chips', label: 'Cómo lo dividen', items: [{ ti: 'Partes iguales', on: true }, { ti: 'Porcentaje' }, { ti: 'Monto exacto' }, { ti: 'Proporciones' }] }, { t: 'hint', ti: 'Tu parte: S/ 7.30 de S/ 21.90' }],
+      subq: [{ id: 'grupo', q: '¿En qué grupo?' }, { id: 'moneda', q: '¿En qué moneda? (solo si el grupo usa varias)' }, { id: 'reparto', q: '¿Cómo lo dividen?' }],
+      spec: { campo: 'Grupo + Moneda (compartido) + División', tipo: 'Lista de grupos + chips de reparto', def: 'Reparto: el del grupo', salta: 'Si respondió «No, es solo mío».', nota: 'Son tres campos de hoy en una sola pantalla porque se deciden juntos. La moneda toma la del grupo al elegirlo, como hoy; solo se pregunta si el grupo lleva varias.' } }),
+    Q({ id: 'etiquetas', label: 'Etiquetas', q: '¿Le pones alguna etiqueta?', d: 'Sirven para filtrar después. Es opcional.', fill: 11,
+      dock: [{ t: 'chips', items: [{ ti: '#entretenimiento', on: true }, { ti: '#casa' }, { ti: '#trabajo' }, { ti: '+ Nueva' }] }, { t: 'primary', ti: 'Continuar' }, { t: 'link', ti: 'Sin etiquetas' }],
+      spec: { campo: 'Etiquetas (en «Más opciones»)', tipo: 'Chips, varias a la vez', def: 'Ninguna', salta: 'Si no tienes etiquetas, o si es compartido (hoy se oculta).', nota: '' } }),
+    Q({ id: 'nota', label: 'Nota', q: '¿Quieres que el registro lleve una nota?', d: 'Saldrá en el registro cada vez que lo apruebes.', fill: 12,
+      dock: [{ t: 'text', ph: 'Ej. Plan familiar' }, { t: 'opts', items: [{ ti: 'Sin nota', ic: 'x' }] }],
+      spec: { campo: 'Descripción del gasto (opcional) — es la nota', tipo: 'Texto + «Sin nota»', def: 'Vacía', salta: 'Propuesta: saltarla siempre y dejarla en el formulario. Hoy se confunde con el nombre.', nota: '' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de guardar', d: 'S/ 21.90 cada mes, el día 14. Primer pago: hoy.', fill: 12,
+      dock: [{ t: 'sum', rows: [['Tipo', 'Pago · Suscripción de ocio'], ['Nombre', 'Spotify'], ['Monto', 'S/ 21.90'], ['Cuenta', 'Visa del trabajo'], ['Cuándo', 'Cada mes, el 14'], ['Desde', 'Hoy'], ['Fin', 'Sin fecha de fin'], ['Aviso', '1 día antes'], ['Compartido', 'No'], ['Etiquetas', '#entretenimiento'], ['Nota', 'Sin nota'], ['Estado', 'Activo']] }, { t: 'lbl', ti: 'PRÓXIMOS PAGOS' }, { t: 'chips', items: ['14 nov', '14 dic', '14 ene'] }],
+      foot: [{ t: 'primary', ti: 'Guardar pago' }],
+      spec: { campo: 'Todas las respuestas + Activo', tipo: 'Resumen con «Cambiar»', nota: '«Activo» no se pregunta: un pago nuevo nace activo. Se ve aquí y se cambia en el formulario. Las próximas fechas ya se calculan hoy y no se enseñan en ningún sitio.' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Anotado!', d: 'El 14 de noviembre llegará a tu Bandeja para que lo apruebes.', card: { icon: 'play', color: C.pink, name: 'Spotify', type: 'Suscripción de ocio', amountLabel: 'Cada mes', amount: 'S/ 21.90', lines: ['El día 14', 'Aviso 1 día antes'] },
+      foot: [{ t: 'primary', ti: 'Ver mis pagos' }, { t: 'link', ti: 'Anotar otro pago' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: 'Si las notificaciones están apagadas, aquí se pide el permiso (hoy se pide al guardar).' } },
+  ],
+};
+
+/* ---------- 3. PRESUPUESTO ---------- */
+const F_PRESU = {
+  id: 'presupuesto', name: 'Crear un presupuesto', short: 'Presupuesto', order: 3, entry: 'Desde Planificación › Presupuestos', value: 'alto', effort: 'bajo',
+  fieldsNow: '13 campos + 4 filtros',
+  chatSubtitle: 'Nuevo presupuesto',
+  summary: 'El formulario pide el nombre ANTES de saber qué cuenta, repite el mismo criterio dos veces («¿Qué gastos cuenta?» y «Subcategorías» en Filtros) y tiene dos interruptores de aviso que dicen casi lo mismo. El guiado sigue el orden natural: qué cuenta, cada cuánto, cuánto, y el nombre al final, propuesto.',
+  notes: [
+    ['Reutiliza', 'FirstBudgetFlowView casi entero: alcance, categorías, subcategorías, período, fechas, tope con «ya llevas», aviso, Panel y nombre. Es el otro flujo del motor de guiados de Yala IA.'],
+    ['Filtros', 'Cuentas, etiquetas y necesidad del gasto hoy viven al fondo, en «Filtros». Aquí son preguntas que casi todos saltan con la primera opción («En todas»).'],
+  ],
+  cardBase: { icon: 'chart', color: C.gray, namePh: 'Tu presupuesto', typePh: 'Elige qué cuenta', amountLabel: 'Tope' },
+  cardSeq: [
+    { color: C.orange, icon: 'food', type: 'Solo algunas categorías' },
+    { type: 'Comida · Salidas' },
+    { addLines: ['Sin delivery'] },
+    { amountLabel: 'Tope del mes' },
+    { amount: 'S/ 800.00', bar: 80, addLines: ['Llevas S/ 640'] },
+    { addLines: ['Todas las cuentas'] },
+    { addLines: ['Todas las etiquetas'] },
+    { addLines: ['Todo tipo de gasto'] },
+    { addLines: ['Con tu parte de grupos'] },
+    { addLines: ['Aviso al 75 % y al 100 %'] },
+    { addLines: ['En tu Panel'] },
+    { name: 'Comida y salidas' },
+  ],
+  screens: [
+    Q({ id: 'alcance', label: 'Qué gastos cuenta', q: '¿Qué gastos cuenta?', d: 'Puedes poner un tope a todo o solo a lo que más te preocupa.', fill: 0,
+      dock: [{ t: 'opts', items: [{ ti: 'Todos mis gastos', su: 'Un solo tope para todo', ic: 'stack' }, { ti: 'Solo algunas categorías', su: 'Por ejemplo, comida o salidas', ic: 'folder', hl: true }] }],
+      spec: { campo: '¿Qué gastos cuenta? (Todos mis gastos / Elegir categorías)', tipo: 'Dos tarjetas de opción', def: 'Ninguna marcada (el formulario arranca en «Todos»)', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'categorias', label: 'Categorías', q: '¿Cuáles?', d: 'Toca las que quieras. Después afinamos.', fill: 1,
+      dock: [{ t: 'tiles', cols: 3, items: [
+        { ti: 'Comida', cap: 'Llevas S/ 480', ic: 'food', c: C.orange, on: true }, { ti: 'Salidas', cap: 'Llevas S/ 160', ic: 'heart', c: C.pink, on: true }, { ti: 'Transporte', cap: 'Llevas S/ 210', ic: 'car', c: C.blue },
+        { ti: 'Casa', cap: 'Llevas S/ 1,200', ic: 'home', c: C.brown }, { ti: 'Compras', cap: 'Llevas S/ 95', ic: 'cart', c: C.purple }, { ti: 'Viajes', cap: 'Llevas S/ 0', ic: 'plane', c: C.teal } ] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Categorías (hoja «Elegir categorías»)', tipo: 'Tarjetas que se marcan, con lo gastado este mes', def: 'Ninguna', salta: 'Si eligió «Todos mis gastos».', nota: 'Solo categorías de gasto, como hoy.' } }),
+    Q({ id: 'subcategorias', label: 'Subcategorías', q: '¿Algo que no quieras contar?', d: 'Van todas marcadas. Quita las que no entran en este presupuesto.', fill: 2,
+      dock: [{ t: 'chips', label: 'Comida', items: [{ ti: 'Supermercado', on: true }, { ti: 'Restaurantes', on: true }, { ti: 'Delivery' }, { ti: 'Cafeterías', on: true }] }, { t: 'chips', label: 'Salidas', items: [{ ti: 'Bares', on: true }, { ti: 'Cine', on: true }, { ti: 'Conciertos', on: true }] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Filtros › Subcategorías', tipo: 'Chips, todas encendidas', def: 'Todas', salta: 'Si eligió «Todos mis gastos».', nota: 'Hoy es el mismo criterio en dos sitios del formulario. Aquí es uno.' } }),
+    Q({ id: 'periodo', label: 'Período', q: '¿Cada cuánto se renueva?', d: 'Lo más común es cada mes.', fill: 3,
+      dock: [{ t: 'opts', items: [{ ti: 'Cada mes', su: 'Se renueva cada mes', ic: 'cal', hl: true }, { ti: 'Cada semana', su: 'Se renueva cada semana', ic: 'cal' }, { ti: 'Cada año', su: 'Se renueva cada año', ic: 'cal' }, { ti: 'Una sola vez', su: 'Entre dos fechas; no se repite', ic: 'plane' }] }],
+      spec: { campo: 'Período (Semanal · Mensual · Anual · Único)', tipo: 'Tarjetas de opción', def: 'El de la pestaña desde la que se abrió (Mensual si no hay)', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'fechas', label: 'Fechas (solo «Una sola vez»)', q: '¿Entre qué fechas?', d: 'Para un viaje o un mes especial.', fill: 3,
+      dock: [{ t: 'row', l: 'Desde', v: '20 dic 2026' }, { t: 'row', l: 'Hasta', v: '3 ene 2027' }, { t: 'primary', ti: 'Continuar' }],
+      subq: [{ id: 'desde', q: 'Desde' }, { id: 'hasta', q: 'Hasta' }],
+      spec: { campo: 'Fecha inicial + Fecha final', tipo: 'Dos fechas', def: 'Hoy y hoy', salta: 'Si no es «Una sola vez».', nota: '' } }),
+    Q({ id: 'tope', label: 'Tope', q: '¿Cuánto quieres gastar como máximo al mes?', d: 'En lo que elegiste ya llevas S/ 640 este mes.', fill: 4, kb: true,
+      dock: [{ t: 'amount', sym: 'S/', val: '800' }, { t: 'chips', items: ['S/ 700', 'S/ 800', 'S/ 1,000'] }, { t: 'hint', ti: 'Un número redondo está bien; lo puedes cambiar cuando quieras.' }],
+      spec: { campo: 'Límite (obligatorio) + su moneda', tipo: 'Monto + sugerencias redondeadas de lo gastado', def: 'Vacío', salta: 'Nunca.', nota: 'La moneda es la principal de Yala. Hoy cambia sola si eliges una única cuenta en Filtros: aquí se dice en la pregunta de cuentas.' } }),
+    Q({ id: 'cuentas', label: 'Cuentas', q: '¿Cuenta lo que gastas en todas tus cuentas?', d: 'Casi siempre sí.', fill: 5,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, en todas', ic: 'stack', hl: true }, { ti: 'Solo en algunas', su: 'Si eliges una sola, el tope va en su moneda', ic: 'wallet' }] }],
+      spec: { campo: 'Filtros › Cuentas', tipo: 'Dos opciones; la segunda abre la lista de cuentas', def: 'En todas', salta: 'Si solo tienes una cuenta.', nota: '' } }),
+    Q({ id: 'etiquetas', label: 'Etiquetas', q: '¿Solo los gastos con alguna etiqueta?', d: 'Útil para un proyecto o un viaje que etiquetas.', fill: 6,
+      dock: [{ t: 'opts', items: [{ ti: 'No, todos', ic: 'check', hl: true }, { ti: 'Solo con estas etiquetas', ic: 'tag' }] }],
+      spec: { campo: 'Filtros › Etiquetas', tipo: 'Dos opciones; la segunda abre los chips de etiquetas', def: 'Todas', salta: 'Si no tienes etiquetas.', nota: '' } }),
+    Q({ id: 'necesidad', label: 'Necesidad del gasto', q: '¿Qué tipo de gasto cuenta?', d: 'Cada gasto puede ser esencial, prioritario u opcional.', fill: 7,
+      dock: [{ t: 'chips', items: [{ ti: 'Esencial', on: true }, { ti: 'Prioritario', on: true }, { ti: 'Opcional', on: true }, { ti: 'Sin clasificar', on: true }] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Filtros › Necesidad del gasto', tipo: 'Chips, todos encendidos', def: 'Todos', salta: 'Propuesta: saltarla siempre y dejarla en el formulario. Pocos la usan y pide entender la «necesidad».', nota: '' } }),
+    Q({ id: 'grupos', label: 'Gastos de grupo', q: '¿Cuenta tu parte de los gastos de grupo?', d: 'Si compartes la comida en un grupo, solo suma lo que te toca.', fill: 8,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, mi parte cuenta', ic: 'users', hl: true }, { ti: 'No, solo mis gastos', ic: 'wallet' }] }],
+      spec: { campo: 'Contar mi parte de los gastos de grupo', tipo: 'Dos tarjetas de opción', def: 'Sí', salta: 'Si no tienes grupos (como hoy).', nota: '' } }),
+    Q({ id: 'aviso', label: 'Aviso', q: '¿Te avisamos cuando vayas llegando al tope?', d: 'Un aviso a tiempo te deja corregir antes de pasarte.', fill: 9,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, al 75 % y al 100 %', su: 'Te da margen para frenar', ic: 'bell', hl: true }, { ti: 'Sí, solo al llegar al tope', ic: 'bell' }, { ti: 'Elegir otros porcentajes', su: '50 %, 90 % o el que quieras', ic: 'pct' }, { ti: 'No me avises', ic: 'x' }] }],
+      spec: { campo: 'Notificar al alcanzar límite + porcentajes', tipo: 'Tarjetas de opción', def: '75 % y 100 % (el formulario arranca apagado)', salta: 'Nunca.', nota: 'Los dos controles de hoy (interruptor y chips) son uno. Si las alertas generales están apagadas, se piden aquí.' } }),
+    Q({ id: 'panel', label: 'En el Panel', q: '¿Lo quieres ver en tu Panel?', d: 'Así lo ves cada vez que abres Yala.', fill: 10,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, en mi Panel', su: 'En el widget de Presupuestos', ic: 'chart', hl: true }, { ti: 'No, solo en Planificación', ic: 'x' }] }],
+      spec: { campo: 'Mostrar en el widget', tipo: 'Dos tarjetas de opción', def: 'Sí (el formulario arranca apagado)', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'nombre', label: 'Nombre', q: '¿Lo llamamos «Comida y salidas»?', d: 'Es como lo verás en tu Panel.', fill: 11,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, así está bien', ic: 'check', hl: true }, { ti: 'Ponerle otro nombre', ic: 'pencil' }] }],
+      spec: { campo: 'Nombre del presupuesto (obligatorio)', tipo: 'Propuesta + «Ponerle otro nombre»', def: 'Se arma con lo elegido: «Mis gastos del mes», «Comida y salidas», «Viaje a Cusco» (fechas)', salta: 'Nunca.', nota: 'Hoy es lo primero que pide, antes de saber qué cuenta.' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de crear', d: 'Tope de S/ 800 al mes para Comida y Salidas.', fill: 12,
+      dock: [{ t: 'sum', rows: [['Cuenta', 'Comida y Salidas, sin Delivery'], ['Se renueva', 'Cada mes'], ['Tope', 'S/ 800.00'], ['Cuentas', 'Todas'], ['Etiquetas', 'Todas'], ['Tipo de gasto', 'Todos'], ['Grupos', 'Tu parte cuenta'], ['Aviso', 'Al 75 % y al 100 %'], ['Panel', 'Sí'], ['Nombre', 'Comida y salidas'], ['Estado', 'Activo']] }],
+      foot: [{ t: 'primary', ti: 'Crear presupuesto' }],
+      spec: { campo: 'Todas las respuestas + Activo', tipo: 'Resumen con «Cambiar»', nota: '«Activo» no se pregunta: un presupuesto nuevo nace activo. Si el plan Free está lleno, el muro sale al tocar «Crear», como hoy.' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Listo!', d: '«Comida y salidas» ya está en Planificación y en tu Panel.', card: { icon: 'food', color: C.orange, name: 'Comida y salidas', type: 'Comida · Salidas', amountLabel: 'Tope del mes', amount: 'S/ 800.00', bar: 80, lines: ['Llevas S/ 640', 'Te quedan S/ 160'] },
+      foot: [{ t: 'primary', ti: 'Ver mi presupuesto' }, { t: 'link', ti: 'Crear otro' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: '' } },
+  ],
+};
+
+/* ---------- 4. GRUPO ---------- */
+const F_GRUPO = {
+  id: 'grupo', name: 'Crear un grupo', short: 'Grupo', order: 4, entry: 'Desde Grupos › Nuevo grupo y la bienvenida', value: 'alto', effort: 'medio',
+  fieldsNow: '7 campos, 4 escondidos en «Más opciones»',
+  chatSubtitle: 'Tu nuevo grupo',
+  summary: 'Grupos es la puerta de entrada de mucha gente nueva. El formulario se ve corto, pero esconde en «Más opciones» las tres decisiones que cambian cómo se reparte todo (moneda, «menos pagos» y cómo se divide), y la moneda del grupo ni se ve si no se enciende un interruptor. El guiado las pregunta con ejemplos y termina invitando.',
+  notes: [
+    ['Reutiliza', 'Las piezas de Primeros pasos (tarjetas, chips, texto) y la hoja «Invitar» de hoy, que pasa a ser la pantalla de éxito.'],
+    ['Puertas que no cambian', 'Sesión, consentimiento y canal de Grupos se siguen comprobando ANTES de abrir el guiado (GroupCreateRoutingLogic), igual que hoy antes del formulario.'],
+  ],
+  cardBase: { icon: 'users', color: C.purple, namePh: 'Tu grupo', typePh: 'Para qué es', amountLabel: null },
+  cardSeq: [
+    { icon: 'plane', color: C.teal, type: 'Viaje' },
+    { name: 'Viaje a Cusco' },
+    { addLines: ['Tú: Jürgen'] },
+    { icon: 'plane', color: C.teal },
+    { addLines: ['Cada gasto en su moneda'] },
+    { addLines: ['Partes iguales'] },
+    { addLines: ['Menos pagos'] },
+  ],
+  screens: [
+    Q({ id: 'para', label: 'Para qué es', q: '¿Para qué es el grupo?', d: 'Así te proponemos un nombre y un ícono.', fill: 0,
+      dock: [{ t: 'tiles', cols: 3, items: [
+        { ti: 'Viaje', ic: 'plane', c: C.teal, on: true }, { ti: 'Casa compartida', ic: 'home', c: C.orange }, { ti: 'Pareja', ic: 'heart', c: C.pink },
+        { ti: 'Amigos y salidas', ic: 'food', c: C.yellow }, { ti: 'Un evento', ic: 'star', c: C.blue }, { ti: 'Otro', ic: 'users', c: C.purple } ] }],
+      spec: { campo: 'Icono y color (indirecto)', tipo: 'Tarjetas con icono', def: 'Ninguna marcada', salta: 'Nunca.', nota: 'No es un campo de hoy: elige icono, color y ejemplos de nombre. Si no aporta, se quita y el icono se pregunta aparte (pantalla 4).' } }),
+    Q({ id: 'nombre', label: 'Nombre', q: '¿Cómo se llama?', d: 'Es como lo verán todos en el grupo.', fill: 1,
+      dock: [{ t: 'text', val: 'Viaje a Cusco' }, { t: 'chips', label: 'Ejemplos', items: ['Viaje a Cusco', 'Playa en enero', 'Paseo de fin de año'] }],
+      spec: { campo: 'Nombre (obligatorio)', tipo: 'Texto con ejemplos según «para qué es»', def: 'Vacío', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'tunombre', label: 'Tu nombre (primer grupo)', q: '¿Cómo te llamas?', d: 'Es el nombre que verán los demás en el grupo.', fill: 2,
+      dock: [{ t: 'text', val: 'Jürgen' }],
+      spec: { campo: 'Tu nombre en el grupo (obligatorio en el primer grupo)', tipo: 'Texto', def: 'Vacío', salta: 'Si ya tienes otro grupo (ya sabemos tu nombre).', nota: 'Hoy, si lo dejas vacío y cierras, sale una alerta aparte «¿Cómo te llamas?».' } }),
+    Q({ id: 'icono', label: 'Ícono y color', q: '¿Le cambiamos el ícono o el color?', d: 'Te ayuda a reconocerlo en la lista.', fill: 3,
+      dock: [{ t: 'icons', sel: 0, items: ['plane', 'home', 'heart', 'food', 'star', 'users'] }, { t: 'palette', sel: 2, items: [C.indigo, C.pink, C.teal, C.orange, C.yellow, C.green, C.blue, C.purple] }, { t: 'primary', ti: 'Así está bien' }],
+      spec: { campo: 'Icono y color (sin etiqueta hoy)', tipo: 'Rejilla de iconos + paleta', def: 'Los de «para qué es»', salta: 'Propuesta: saltarla y dejarla en el formulario.', nota: '' } }),
+    Q({ id: 'moneda', label: 'Moneda', q: '¿Cómo llevamos las monedas?', d: 'En un viaje se suele pagar en varias.', fill: 4,
+      dock: [{ t: 'opts', items: [{ ti: 'Cada gasto en su moneda', su: 'Las deudas se ven por moneda: S/ 120 y US$ 30', ic: 'coins', hl: true }, { ti: 'Todo en una sola moneda', su: 'Convertimos al tipo de cambio de hoy', ic: 'swap' }] }],
+      spec: { campo: 'Ver las deudas en una sola moneda (en «Más opciones»)', tipo: 'Dos tarjetas de opción con ejemplo', def: 'Cada gasto en su moneda (apagado, como hoy)', salta: 'Propuesta: si nunca usaste otra moneda en Yala, se salta y queda «cada gasto en su moneda».', nota: '«Tipo de cambio» se explica con el ejemplo.' } }),
+    Q({ id: 'cualmoneda', label: 'Qué moneda (solo «una sola moneda»)', q: '¿En qué moneda?', d: 'Las deudas se verán siempre en esta.', fill: 4,
+      dock: [{ t: 'chips', items: [{ ti: 'S/ Soles', on: true }, { ti: 'US$ Dólares' }, { ti: '€ Euros' }, { ti: 'Otra' }] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Moneda del grupo', tipo: 'Chips de moneda', def: 'Tu moneda principal (en el primer grupo, la de tu región)', salta: 'Si eligió «Cada gasto en su moneda».', nota: 'Hoy esta moneda no se ve si el interruptor está apagado, pero se guarda igual.' } }),
+    Q({ id: 'reparto', label: 'Cómo dividen', q: '¿Cómo suelen dividir los gastos?', d: 'Es lo que saldrá marcado en cada gasto nuevo. Se puede cambiar en cada uno.', fill: 5,
+      dock: [{ t: 'opts', items: [{ ti: 'En partes iguales', su: 'Todos ponen lo mismo', ic: 'equal', hl: true }, { ti: 'Por porcentaje', su: 'Por ejemplo, 60 % y 40 %', ic: 'pct' }, { ti: 'Por monto', su: 'Cada uno pone una cantidad fija', ic: 'coins' }, { ti: 'Por proporciones', su: 'Por ejemplo, 2 partes para una pareja y 1 para uno solo', ic: 'split' }] }],
+      spec: { campo: 'Cómo se reparte un gasto nuevo (en «Más opciones»)', tipo: 'Tarjetas con ejemplo', def: 'En partes iguales', salta: 'Nunca.', nota: 'Los mismos cuatro nombres que verá en el gasto («Iguales» y «Partes iguales» hoy son dos nombres para lo mismo).' } }),
+    Q({ id: 'menos', label: 'Menos pagos', q: '¿Juntamos las deudas para que haya menos pagos?', d: 'Si Ana te debe a ti y tú le debes a Luis, Ana le paga directo a Luis.', fill: 6,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, menos pagos', su: 'Lo recomendado', ic: 'swap', hl: true }, { ti: 'No, cada quien paga a quien le prestó', ic: 'users' }] }],
+      spec: { campo: 'Menos pagos entre ustedes (en «Más opciones»)', tipo: 'Dos tarjetas con ejemplo', def: 'Sí (como hoy)', salta: 'Propuesta: saltarla y dejar «Sí». Pocos la cambian.', nota: 'Hoy dice «transferencias», que suena a banco.' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de crear', d: 'Después invitas a los demás.', fill: 7,
+      dock: [{ t: 'sum', rows: [['Nombre', 'Viaje a Cusco'], ['Tu nombre', 'Jürgen'], ['Ícono', 'Avión · turquesa'], ['Monedas', 'Cada gasto en su moneda'], ['Dividen', 'En partes iguales'], ['Menos pagos', 'Sí']] }],
+      foot: [{ t: 'primary', ti: 'Crear grupo' }],
+      spec: { campo: 'Todas las respuestas', tipo: 'Resumen con «Cambiar»', nota: '' } },
+    { kind: 'done', id: 'exito', label: 'Éxito + invitar', q: '«Viaje a Cusco» está listo', d: 'Ahora invita a quienes comparten los gastos contigo. Les llega un enlace y entran con un toque.', card: { icon: 'plane', color: C.teal, name: 'Viaje a Cusco', type: 'Solo tú, por ahora', lines: ['Partes iguales', 'Menos pagos'] },
+      foot: [{ t: 'primary', ti: 'Invitar por WhatsApp u otra app' }, { t: 'link', ti: 'Más tarde' }],
+      spec: { campo: '—', tipo: 'Éxito = la hoja «Invitar» de hoy', nota: 'El enlace se genera al tocar, como hoy. La tarjeta de avisos del grupo va debajo.' } },
+  ],
+};
+
+/* ---------- 5. FAVORITO ---------- */
+const F_FAV = {
+  id: 'favorito', name: 'Crear un favorito', short: 'Favorito', order: 5, entry: 'Desde Favoritos › Nuevo', value: 'medio', effort: 'bajo',
+  fieldsNow: '8 campos (10 en transferencia)',
+  chatSubtitle: 'Nuevo favorito',
+  summary: 'Un favorito es un registro que haces seguido, ya relleno. El editor de hoy pone nombre y descripción como dos textos centrados uno encima del otro, enseña «0.00» cuando el monto está vacío (y vacío quiere decir «sin monto») y los chips sin elegir dicen el nombre del campo. El guiado arranca por lo que se repite y deja el nombre para el final.',
+  notes: [
+    ['Guardar como favorito desde un registro', 'Se queda como está: ya viene relleno y solo pide el nombre.'],
+  ],
+  cardBase: { icon: 'star', color: C.gray, namePh: 'Tu favorito', typePh: 'Qué registras', amountLabel: 'Monto' },
+  cardSeq: [
+    { type: 'Gasto', color: C.yellow },
+    { icon: 'food', color: C.orange, type: 'Cafeterías' },
+    { addLines: ['Efectivo'] },
+    { amount: 'S/ 9.50' },
+    { addLines: ['Opcional'] },
+    { addLines: ['#trabajo'] },
+    { addLines: ['«Americano»'] },
+    { name: 'Café de la mañana' },
+  ],
+  screens: [
+    Q({ id: 'tipo', label: 'Qué registras', q: '¿Qué registras seguido?', d: 'Un favorito lo dejas listo una vez y lo registras con un toque.', fill: 0,
+      dock: [{ t: 'opts', items: [{ ti: 'Un gasto', su: 'El café, el pasaje, el almuerzo', ic: 'cart', hl: true }, { ti: 'Un ingreso', su: 'Una venta, una propina', ic: 'coins' }, { ti: 'Un paso de dinero entre tus cuentas', su: 'Por ejemplo, del banco al efectivo', ic: 'swap' }] }],
+      spec: { campo: 'Gasto / Ingreso / Transferencia', tipo: 'Tarjetas de opción', def: 'Un gasto', salta: 'Modo «solo gastos».', nota: '«Transferencia» se dice con palabras de todos los días.' } }),
+    Q({ id: 'categoria', label: 'Categoría', q: '¿De qué es?', d: 'Elige la categoría que usarás siempre.', fill: 1,
+      dock: [{ t: 'tiles', cols: 3, items: [
+        { ti: 'Cafeterías', ic: 'food', c: C.orange, on: true }, { ti: 'Transporte', ic: 'car', c: C.blue }, { ti: 'Supermercado', ic: 'cart', c: C.green },
+        { ti: 'Restaurantes', ic: 'food', c: C.red }, { ti: 'Salidas', ic: 'heart', c: C.pink }, { ti: 'Otra', ic: 'folder', c: C.gray } ] }, { t: 'link', ti: 'Elegir cada vez' }],
+      spec: { campo: 'Categoría (opcional)', tipo: 'Tarjetas de tus categorías más usadas + «Otra»', def: 'Ninguna', salta: 'Si es transferencia.', nota: '«Elegir cada vez» = favorito sin categoría.' } }),
+    Q({ id: 'cuenta', label: 'Cuenta', q: '¿Con qué lo pagas casi siempre?', d: 'Si cambia, elige «Cada vez distinta».', fill: 2,
+      dock: [{ t: 'list', items: [{ ti: 'Efectivo', su: 'Efectivo', ic: 'cash', rt: '✓', acc: true }, { ti: 'Cuenta sueldo', su: 'Cuenta de banco', ic: 'bank' }, { ti: 'Visa del trabajo', su: 'Tarjeta de crédito', ic: 'card' }] }, { t: 'link', ti: 'Cada vez distinta' }],
+      subq: [{ id: 'origen', q: 'Transferencia: ¿De qué cuenta sale?' }, { id: 'destino', q: 'Transferencia: ¿A qué cuenta va?' }],
+      spec: { campo: 'Cuenta · (transferencia: Origen y Destino)', tipo: 'Lista de cuentas', def: 'Ninguna', salta: 'Nunca. En transferencia son dos preguntas seguidas, y la segunda no ofrece la primera.', nota: '' } }),
+    Q({ id: 'monto', label: 'Monto', q: '¿Es siempre el mismo monto?', d: 'Si cambia, lo escribes al registrarlo.', fill: 3, kb: true,
+      dock: [{ t: 'amount', sym: 'S/', val: '9.50' }, { t: 'opts', items: [{ ti: 'Cambia cada vez', su: 'El favorito se guarda sin monto', ic: 'repeat' }] }],
+      spec: { campo: 'Monto (opcional)', tipo: 'Monto + «Cambia cada vez»', def: 'Vacío', salta: 'Nunca.', nota: 'Hoy un monto vacío se ve como «0.00».' } }),
+    Q({ id: 'necesidad', label: 'Necesidad', q: '¿Qué tan necesario es este gasto?', d: 'Te ayuda a ver en qué podrías ahorrar.', fill: 4,
+      dock: [{ t: 'opts', items: [{ ti: 'Esencial', su: 'No puedes dejar de pagarlo', ic: 'home' }, { ti: 'Prioritario', su: 'Importante, pero se puede ajustar', ic: 'star' }, { ti: 'Opcional', su: 'Un gusto', ic: 'heart', hl: true }] }],
+      spec: { campo: 'Necesidad (chip)', tipo: 'Tarjetas con frase', def: 'La de la categoría (Cafeterías → Opcional)', salta: 'Ingreso, transferencia o sin categoría (como hoy).', nota: 'Propuesta: no preguntarla y dejar la de la categoría.' } }),
+    Q({ id: 'etiquetas', label: 'Etiquetas', q: '¿Le pones alguna etiqueta?', d: 'Es opcional.', fill: 5,
+      dock: [{ t: 'chips', items: [{ ti: '#trabajo', on: true }, { ti: '#casa' }, { ti: '#viaje' }] }, { t: 'primary', ti: 'Continuar' }, { t: 'link', ti: 'Sin etiquetas' }],
+      spec: { campo: 'Etiquetas (chip)', tipo: 'Chips', def: 'Ninguna', salta: 'Si no tienes etiquetas, o es transferencia.', nota: '' } }),
+    Q({ id: 'nota', label: 'Nota', q: '¿Quieres que lleve una nota?', d: 'Saldrá en el registro.', fill: 6,
+      dock: [{ t: 'text', val: 'Americano' }, { t: 'opts', items: [{ ti: 'Sin nota', ic: 'x' }] }],
+      spec: { campo: 'Descripción (opcional)', tipo: 'Texto + «Sin nota»', def: 'Vacía', salta: 'Propuesta: saltarla y dejarla en el formulario.', nota: '' } }),
+    Q({ id: 'nombre', label: 'Nombre', q: '¿Cómo lo llamamos?', d: 'Así lo verás en Favoritos.', fill: 7,
+      dock: [{ t: 'text', val: 'Café de la mañana' }, { t: 'chips', label: 'Ideas', items: ['Café', 'Café de la mañana', 'Cafetería'] }],
+      spec: { campo: 'Nombre del favorito (obligatorio)', tipo: 'Texto con ideas (categoría + nota)', def: 'Vacío', salta: 'Nunca.', nota: '' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de guardar', d: '', fill: 8,
+      dock: [{ t: 'sum', rows: [['Tipo', 'Gasto'], ['Categoría', 'Cafeterías'], ['Cuenta', 'Efectivo'], ['Monto', 'S/ 9.50'], ['Necesidad', 'Opcional'], ['Etiquetas', '#trabajo'], ['Nota', 'Americano'], ['Nombre', 'Café de la mañana']] }],
+      foot: [{ t: 'primary', ti: 'Guardar favorito' }],
+      spec: { campo: 'Todas las respuestas', tipo: 'Resumen con «Cambiar»', nota: '' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Guardado!', d: 'La próxima vez regístralo con un toque desde Favoritos.', card: { icon: 'food', color: C.orange, name: 'Café de la mañana', type: 'Cafeterías · Efectivo', amountLabel: 'Monto', amount: 'S/ 9.50', lines: ['#trabajo'] },
+      foot: [{ t: 'primary', ti: 'Registrarlo ahora' }, { t: 'link', ti: 'Listo' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: '«Registrarlo ahora» es nuevo: abre Nuevo registro con el favorito puesto. Si no se quiere, se quita.' } },
+  ],
+};
+
+/* ---------- 6. SALDO INICIAL ---------- */
+const F_SALDO = {
+  id: 'saldo-inicial', name: 'Anotar una deuda de antes (saldo inicial)', short: 'Saldo inicial', order: 6, entry: 'Desde el detalle del grupo y al aprobar a alguien', value: 'medio', effort: 'bajo',
+  fieldsNow: '5 campos',
+  chatSubtitle: 'Una deuda de antes',
+  summary: 'Pocos campos, pero el concepto confunde: «Saldo inicial» no dice que es lo que alguien ya debía antes de usar Yala, y el sentido de la deuda depende de dos filas («Quién debe» y «A quién»). El guiado lo pregunta como una frase y la confirma en voz alta: «Luis le debe S/ 120 a Ana desde hoy».',
+  notes: [
+    ['Quién lo ve', 'Solo dueño o administradores, como hoy (OpeningBalancePermissionLogic). Si ya había uno entre esas dos personas en esa moneda, la confirmación lo dice y el botón pasa a «Reemplazar».'],
+  ],
+  cardBase: { icon: 'users', color: C.purple, namePh: '¿Quién le debe a quién?', typePh: 'Viaje a Cusco', amountLabel: 'Debe' },
+  cardSeq: [
+    { name: 'Luis le debe…' },
+    { name: 'Luis le debe a Ana' },
+    { amountLabel: 'Debe · soles' },
+    { amount: 'S/ 120.00' },
+    { addLines: ['Desde hoy'] },
+  ],
+  screens: [
+    Q({ id: 'quien', label: 'Quién debe', q: '¿Quién debía dinero antes de usar Yala?', d: 'Anota lo que alguien ya debía cuando empezaron el grupo.', fill: 0,
+      dock: [{ t: 'list', items: [{ ti: 'Luis', av: 'L', c: C.blue, rt: '✓', acc: true }, { ti: 'Ana', av: 'A', c: C.pink }, { ti: 'Tú', av: 'J', c: C.indigo }] }],
+      spec: { campo: 'Quién debe (obligatorio)', tipo: 'Lista de miembros', def: 'La persona recién aprobada, si se entra desde ahí', salta: 'Nunca (si viene precargado, se ve marcado).', nota: '' } }),
+    Q({ id: 'aquien', label: 'A quién', q: '¿A quién le debe Luis?', d: '', fill: 1,
+      dock: [{ t: 'list', items: [{ ti: 'Ana', av: 'A', c: C.pink, rt: '✓', acc: true }, { ti: 'Tú', av: 'J', c: C.indigo }] }],
+      spec: { campo: 'A quién (obligatorio)', tipo: 'Lista de miembros sin el anterior', def: 'Vacío', salta: 'Si el grupo es de dos: es la otra persona.', nota: 'No deja elegir a la misma persona, así no hace falta el error «Elige dos personas distintas».' } }),
+    Q({ id: 'moneda', label: 'Moneda', q: '¿En qué moneda?', d: '', fill: 2,
+      dock: [{ t: 'chips', items: [{ ti: 'S/ Soles', on: true }, { ti: 'US$ Dólares' }, { ti: 'Otra' }] }],
+      spec: { campo: 'Moneda (obligatoria)', tipo: 'Chips de moneda', def: 'La del grupo', salta: 'Propuesta: si el grupo lleva una sola moneda, se salta (se cambia en la confirmación).', nota: '' } }),
+    Q({ id: 'monto', label: 'Monto', q: '¿Cuánto le debe?', d: '', fill: 3, kb: true,
+      dock: [{ t: 'amount', sym: 'S/', val: '120' }],
+      spec: { campo: 'Monto (obligatorio)', tipo: 'Monto', def: 'Vacío', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'fecha', label: 'Fecha', q: '¿Desde cuándo?', d: 'Si no te acuerdas, deja hoy.', fill: 4,
+      dock: [{ t: 'opts', items: [{ ti: 'Hoy', ic: 'cal', hl: true }, { ti: 'Otra fecha', su: 'Solo fechas pasadas', ic: 'cal' }] }],
+      spec: { campo: 'Fecha (solo pasado)', tipo: 'Dos opciones + calendario', def: 'Hoy', salta: 'Propuesta: saltarla y dejar hoy.', nota: '' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Luis le debe S/ 120 a Ana', d: 'Desde hoy. Lo verán todos en el grupo.', fill: 5,
+      dock: [{ t: 'sum', rows: [['Quién debe', 'Luis'], ['A quién', 'Ana'], ['Moneda', 'Soles'], ['Monto', 'S/ 120.00'], ['Desde', 'Hoy']] }, { t: 'hint', warn: true, ti: 'Si ya había una deuda de antes entre Luis y Ana en soles, aquí se dice cuánto era y el botón cambia a «Reemplazar».' }],
+      foot: [{ t: 'primary', ti: 'Guardar' }],
+      spec: { campo: 'Todas las respuestas', tipo: 'Frase + resumen con «Cambiar»', nota: '' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Anotado!', d: 'Ya cuenta en los saldos de «Viaje a Cusco».', card: false,
+      foot: [{ t: 'primary', ti: 'Ver saldos' }, { t: 'link', ti: 'Anotar otra' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: '' } },
+  ],
+};
+
+/* ---------- 7. CATEGORÍA ---------- */
+const F_CAT = {
+  id: 'categoria', name: 'Crear una categoría', short: 'Categoría', order: 7, entry: 'Desde Ajustes › Categorías › Añadir', value: 'medio', effort: 'bajo',
+  fieldsNow: '4 campos + 4 por cada subcategoría, en dos pantallas',
+  chatSubtitle: 'Nueva categoría',
+  summary: 'Crear una categoría pide entrar a otra pantalla por cada subcategoría, y la regla «al menos una subcategoría» solo aparece al tocar «Guardar». El guiado pide las subcategorías como chips en la misma pantalla, con sugerencias, y la necesidad de cada una se elige de una vez.',
+  notes: [
+    ['No hay tipo', 'Toda categoría nueva nace de gasto: el formulario no ofrece ingreso. El guiado tampoco lo pregunta. Si se quiere categoría de ingreso, es una decisión aparte.'],
+    ['Editar sigue siendo formulario', 'Ocultar, reordenar y mover subcategorías se queda en la pantalla de siempre.'],
+  ],
+  cardBase: { icon: 'folder', color: C.indigo, namePh: 'Tu categoría', typePh: 'Subcategorías', amountLabel: null },
+  cardSeq: [
+    { name: 'Mascotas' },
+    { icon: 'heart', color: C.brown },
+    { type: '3 subcategorías', addLines: ['Comida', 'Veterinario', 'Juguetes'] },
+    { type: 'Comida esencial · Veterinario esencial · Juguetes opcional' },
+    { addLines: ['Aparece al registrar'] },
+  ],
+  screens: [
+    Q({ id: 'nombre', label: 'Nombre', q: '¿Cómo se llama la categoría?', d: 'Es el grupo grande, por ejemplo «Mascotas» o «Hijos».', fill: 0,
+      dock: [{ t: 'text', val: 'Mascotas' }, { t: 'chips', label: 'Ideas', items: ['Mascotas', 'Hijos', 'Negocio', 'Estudios'] }],
+      spec: { campo: 'Nombre de la categoría (obligatorio)', tipo: 'Texto con ideas', def: 'Vacío', salta: 'Nunca.', nota: '' } }),
+    Q({ id: 'icono', label: 'Ícono y color', q: '¿Con qué ícono y color la reconoces?', d: 'Sus subcategorías usan el mismo color.', fill: 1,
+      dock: [{ t: 'icons', sel: 2, items: ['folder', 'home', 'heart', 'star', 'cart', 'food', 'car', 'plane', 'gym', 'phone', 'note', 'tag'] }, { t: 'palette', sel: 6, items: [C.indigo, C.pink, C.teal, C.orange, C.yellow, C.green, C.brown, C.purple] }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Ícono y color', tipo: 'Rejilla de íconos sugeridos por el nombre + paleta', def: 'Ícono «tag» e índigo (los de hoy). Propuesta: sugerir el ícono por el nombre.', salta: 'Nunca.', nota: '«Más íconos» abre la hoja «Personalizar» de hoy, con sus 21 grupos.' } }),
+    Q({ id: 'subcategorias', label: 'Subcategorías', q: '¿Qué entra en «Mascotas»?', d: 'Añade al menos una. Por ejemplo, la comida y el veterinario.', fill: 2,
+      dock: [{ t: 'chips', items: [{ ti: 'Comida', on: true }, { ti: 'Veterinario', on: true }, { ti: 'Juguetes', on: true }, { ti: 'Baño y peluquería' }, { ti: 'Accesorios' }] }, { t: 'text', ph: 'Otra subcategoría' }, { t: 'primary', ti: 'Continuar' }],
+      spec: { campo: 'Subcategorías (al menos una) · Nombre de cada subcategoría', tipo: 'Chips sugeridos + campo para añadir', def: 'Ninguna marcada', salta: 'Nunca.', nota: 'La regla de «al menos una» se dice en la pregunta, no en una alerta al guardar. El ícono de cada subcategoría hereda el de la categoría; se cambia en el formulario.' } }),
+    Q({ id: 'necesidad', label: 'Necesidad de cada subcategoría', q: '¿Qué tan necesario es cada uno?', d: 'Sirve para ver en Estadísticas cuánto gastas en lo esencial y cuánto en gustos.', fill: 3,
+      dock: [{ t: 'lbl', ti: 'Comida' }, { t: 'seg', items: ['Esencial', 'Prioritario', 'Opcional'], sel: 0 }, { t: 'lbl', ti: 'Veterinario' }, { t: 'seg', items: ['Esencial', 'Prioritario', 'Opcional'], sel: 0 }, { t: 'lbl', ti: 'Juguetes' }, { t: 'seg', items: ['Esencial', 'Prioritario', 'Opcional'], sel: 2 }, { t: 'link', ti: 'Decidir después' }],
+      spec: { campo: 'Necesidad (de cada subcategoría)', tipo: 'Un selector por subcategoría', def: 'Sin clasificación (el de hoy)', salta: 'Propuesta: se puede saltar con «Decidir después».', nota: 'Hoy se elige entrando a cada subcategoría por separado.' } }),
+    Q({ id: 'usar', label: 'Usar al registrar', q: '¿La usas ya al registrar?', d: 'Si la apagas, deja de aparecer al registrar. Tus registros no cambian.', fill: 4,
+      dock: [{ t: 'opts', items: [{ ti: 'Sí, que aparezca', ic: 'check', hl: true }, { ti: 'Todavía no', ic: 'eye' }] }],
+      spec: { campo: 'Usar al registrar (categoría y cada subcategoría)', tipo: 'Dos opciones', def: 'Sí', salta: 'Propuesta: no preguntarla al crear (nadie crea una categoría para esconderla) y dejarla en el formulario.', nota: '' } }),
+    { kind: 'confirm', id: 'confirmar', label: 'Confirmación', q: 'Revisa antes de crear', d: '', fill: 5,
+      dock: [{ t: 'sum', rows: [['Nombre', 'Mascotas'], ['Ícono', 'Corazón · marrón'], ['Subcategorías', 'Comida, Veterinario, Juguetes'], ['Necesidad', 'Esencial, Esencial, Opcional'], ['Al registrar', 'Aparece']] }],
+      foot: [{ t: 'primary', ti: 'Crear categoría' }],
+      spec: { campo: 'Todas las respuestas', tipo: 'Resumen con «Cambiar»', nota: '' } },
+    { kind: 'done', id: 'exito', label: 'Éxito', q: '¡Lista!', d: '«Mascotas» ya aparece al registrar un gasto.', card: { icon: 'heart', color: C.brown, name: 'Mascotas', type: '3 subcategorías', lines: ['Comida', 'Veterinario', 'Juguetes'] },
+      foot: [{ t: 'primary', ti: 'Listo' }, { t: 'link', ti: 'Crear otra' }],
+      spec: { campo: '—', tipo: 'Pantalla de éxito', nota: '' } },
+  ],
+};
+
+const FLOWS = [F_CUENTA, F_PAGO, F_PRESU, F_GRUPO, F_FAV, F_SALDO, F_CAT];
+
+/* ---------- INVENTARIO ---------- */
+/* v: yes = convertir (con maqueta) · later = más adelante · no = se queda como formulario */
+const INVENTORY = [
+  { id: 'cuenta', name: 'Crear o editar cuenta', file: 'Accounts/AccountFormView.swift', where: 'Ajustes › Cuentas, Panel, selector de cuenta', n: '16 al crear (11 a la vista); edición añade ajuste de saldo, líneas en otra divisa y archivar', req: 'Nombre (sin repetir), tipo, moneda, saldo inicial; en tarjeta, día de pago', conf: ['«Signo» con «A favor / Consumido» en tarjeta, sin explicación', 'El mismo dato se llama «Saldo inicial», «Nuevo saldo», «Saldo actual» y «Saldo»', 'La moneda arranca siempre en soles (PEN), no en tu moneda principal', '«Guardar» se apaga sin decir por qué si el nombre está repetido', 'En tarjeta, seis bloques antes de «Más opciones»; la otra divisa se ofrece en otra pantalla después de guardar'], v: 'yes', flow: 'cuenta',
+    fields: [['Nombre de la cuenta', 'Texto', 'Sí'], ['Tipo', '5 fichas', 'Sí'], ['Número de cuenta', 'Texto', 'No'], ['Moneda', 'Selector', 'Sí'], ['Día de corte', 'Menú 1-31', 'No (tarjeta)'], ['Día de pago', 'Menú 1-31', 'Sí (tarjeta)'], ['Avisarme antes de pagar', 'Interruptor', 'No (tarjeta)'], ['Cuándo', 'Menú', 'No (tarjeta)'], ['Signo', 'Segmentado', 'Sí'], ['Saldo inicial', 'Monto', 'Sí'], ['¿No sabes tu saldo?', 'Calculadora', 'No'], ['Excluir de las estadísticas', 'Interruptor', 'No'], ['Color e icono', 'Sin control (existen en la cuenta)', '—']] },
+  { id: 'pago', name: 'Crear o editar pago planificado', file: 'Planning/ScheduledPaymentEditorView.swift', where: 'Planificación › Pagos, «Más opciones…» de Hacer recurrente', n: '≈25 campos; 8 escondidos en «Más opciones»', req: 'Nombre, monto, categoría, cuenta, cuándo (fecha o recurrencia)', conf: ['«Fecha de pago» y «Fecha de inicio» son el mismo control con dos nombres', '«Notificar días antes» enseña números sin unidad', '«Descripción del gasto» es la nota, no el nombre', '«Tiene fecha de fin» pone un año sin decirlo', 'En compartido el monto pasa a ser «Total de la factura» y la cuenta pasa a opcional'], v: 'yes', flow: 'pago',
+    fields: [['Gasto / Ingreso', 'Segmentado', 'No'], ['Nombre del pago', 'Texto', 'Sí'], ['Logo', 'Menú', 'No'], ['Monto', 'Monto', 'Sí'], ['Monto estimado', 'Interruptor', 'No'], ['Descripción (nota)', 'Texto', 'No'], ['Etiquetas', 'Chips', 'No'], ['¿Es una suscripción?', 'Interruptor', 'No'], ['¿Es un gasto compartido?', 'Interruptor', 'No'], ['Grupo · Moneda · División', 'Filas', 'Sí si compartido'], ['Notificar', 'Interruptor + menú', 'No'], ['Fecha de fin', 'Interruptor + fecha', 'No'], ['Activo', 'Interruptor', 'No'], ['Categoría', 'Selector', 'Sí'], ['Cuenta', 'Menú', 'Sí'], ['Una vez / Repetir', 'Segmentado', 'Sí'], ['Cada N + frecuencia', 'Dos menús', 'Sí'], ['Días · día del mes · fecha anual · fecha', 'Según frecuencia', 'Sí'], ['Fecha de inicio', 'Fecha', 'Sí']] },
+  { id: 'presupuesto', name: 'Crear o editar presupuesto', file: 'Planning/BudgetEditorView.swift', where: 'Planificación › Presupuestos', n: '13 campos + 4 filtros', req: 'Nombre, límite, período; fechas si es «Único»', conf: ['Pide el nombre antes de saber qué cuenta', '«¿Qué gastos cuenta?» y «Subcategorías» en Filtros aplican el mismo criterio', 'Dos controles de aviso que dicen casi lo mismo', 'La moneda no se elige: cambia sola si eliges una sola cuenta', '«X» cierra sin preguntar aunque haya cambios'], v: 'yes', flow: 'presupuesto',
+    fields: [['Nombre', 'Texto', 'Sí'], ['Límite', 'Monto', 'Sí'], ['¿Qué gastos cuenta?', 'Chips + hoja', 'No'], ['Período', 'Segmentado', 'Sí'], ['Fecha inicial y final', 'Fechas', 'Sí si Único'], ['Activo', 'Interruptor', 'No'], ['Mostrar en el widget', 'Interruptor', 'No'], ['Notificar al alcanzar límite', 'Interruptor', 'No'], ['Porcentajes de aviso', 'Chips', 'No'], ['Filtro: Cuentas', 'Chips', 'No'], ['Filtro: Subcategorías', 'Chips', 'No'], ['Filtro: Etiquetas', 'Chips', 'No'], ['Filtro: Necesidad', 'Chips', 'No'], ['Contar mi parte de grupos', 'Interruptor', 'No']] },
+  { id: 'grupo', name: 'Crear o editar grupo', file: 'Groups/GroupFormView.swift', where: 'Grupos › Nuevo grupo, bienvenida', n: '7 campos; 4 en «Más opciones»', req: 'Nombre; tu nombre en el primer grupo', conf: ['La moneda del grupo no se ve hasta encender «una sola moneda»', '«Menos pagos… transferencias» suena a banco', 'Icono y color sin etiqueta', 'Las tres decisiones que cambian cómo se reparte viven plegadas'], v: 'yes', flow: 'grupo',
+    fields: [['Icono y color', 'Hoja', 'No'], ['Tu nombre en el grupo', 'Texto', 'Sí (primer grupo)'], ['Nombre', 'Texto', 'Sí'], ['Menos pagos entre ustedes', 'Interruptor', 'No'], ['Una sola moneda', 'Interruptor', 'No'], ['Moneda', 'Selector', 'No'], ['Cómo se reparte un gasto nuevo', 'Menú', 'No']] },
+  { id: 'favorito', name: 'Crear o editar favorito', file: 'Favorites/FavoriteEditorView.swift', where: 'Favoritos › Nuevo', n: '8 campos (10 en transferencia)', req: 'Nombre', conf: ['Nombre y descripción son dos textos centrados iguales', 'Monto vacío se ve como «0.00» y quiere decir «sin monto»', 'Los chips vacíos enseñan el nombre del campo', 'La necesidad solo aparece tras elegir categoría'], v: 'yes', flow: 'favorito',
+    fields: [['Gasto / Ingreso / Transferencia', 'Segmentado', 'No'], ['Nombre', 'Texto', 'Sí'], ['Descripción', 'Texto', 'No'], ['Monto', 'Monto', 'No'], ['Necesidad', 'Chip', 'No'], ['Cuenta', 'Chip', 'No'], ['Categoría', 'Chip', 'No'], ['Etiquetas', 'Chip', 'No'], ['Origen y Destino', 'Chips', 'No (transferencia)']] },
+  { id: 'saldo-inicial', name: 'Saldo inicial de un miembro', file: 'Groups/GroupOpeningBalanceFormView.swift', where: 'Detalle del grupo, al aprobar a alguien', n: '5 campos', req: 'Todos', conf: ['«Saldo inicial» no dice que es una deuda de antes', 'El sentido de la deuda depende de dos filas', '«Reemplazar» cambia uno anterior'], v: 'yes', flow: 'saldo-inicial',
+    fields: [['Quién debe', 'Miembros', 'Sí'], ['A quién', 'Miembros', 'Sí'], ['Moneda', 'Selector', 'Sí'], ['Monto', 'Monto', 'Sí'], ['Fecha', 'Fecha (pasado)', 'Sí']] },
+  { id: 'categoria', name: 'Crear o editar categoría y subcategoría', file: 'Categories/CategoryDetailView.swift · SubcategoryDetailView.swift', where: 'Ajustes › Categorías', n: '4 campos + 4 por subcategoría, en pantallas empujadas', req: 'Nombre y al menos una subcategoría', conf: ['«Al menos una subcategoría» solo se dice al tocar «Guardar»', 'Cada subcategoría es otra pantalla', 'La necesidad se elige subcategoría por subcategoría', 'No se puede crear una categoría de ingreso'], v: 'yes', flow: 'categoria',
+    fields: [['Ícono y color', 'Hoja', 'No'], ['Nombre', 'Texto', 'Sí'], ['Usar al registrar', 'Interruptor', 'No'], ['Subcategorías', 'Lista', 'Sí (una)'], ['Sub: ícono', 'Hoja', 'No'], ['Sub: nombre', 'Texto', 'Sí'], ['Sub: necesidad', 'Hoja', 'No'], ['Sub: usar al registrar', 'Interruptor', 'No']] },
+  { id: 'registro', name: 'Nuevo registro (gasto, ingreso, transferencia)', file: 'Transactions/NewTransactionView.swift', where: 'Botón «+», Registros, Estadísticas, voz e imagen', n: '10 a la vista (gasto) · cuenta pasa a origen y destino en transferencia', req: 'Monto, cuenta y categoría; origen y destino distintos en transferencia', conf: ['«Categoría» es la subcategoría', 'Descripción y monto sin rótulo', '«Mi parte» cambia el monto por tu parte', 'Atajos ! # @ solo los explica una pista que se apaga'], v: 'no', why: 'Se usa varias veces al día y ya es una sola pantalla con la pregunta del monto. Un guiado lo haría más lento. Lo que sí ayuda ya existe: el tutorial de registro, los favoritos, la voz y la foto.',
+    fields: [['Tipo', 'Segmentado', 'Sí'], ['Fecha', 'Píldora', 'Sí'], ['Descripción', 'Texto', 'No'], ['Monto', 'Monto', 'Sí'], ['Tipo de cambio', 'Cápsula', 'No'], ['Categoría', 'Chip', 'Sí'], ['Necesidad', 'Chip', 'No'], ['Cuenta / Origen y Destino', 'Chip', 'Sí'], ['Etiquetas', 'Chip', 'No'], ['Mi parte · Favorito · Recurrente', 'Acciones', '—']] },
+  { id: 'editar-registro', name: 'Editar registro', file: 'Records/TransactionDetailSheet.swift → NewTransactionView', where: 'Detalle del registro › Editar', n: 'El mismo formulario', req: 'Los del registro', conf: ['En gastos de grupo, una parte queda bloqueada'], v: 'no', why: 'Editar es corregir un dato concreto: el formulario lo deja a la vista. Regla para todos: el guiado es para crear; editar abre el formulario.' },
+  { id: 'gasto-grupo', name: 'Gasto de grupo', file: 'Groups/GroupExpenseFormView.swift', where: 'Detalle del grupo, composer, Bandeja', n: '10 campos', req: 'Descripción, moneda, monto, quién pagó, reparto; cuenta si pagas tú con reflejo', conf: ['«Pagado por [ti] y dividido [en partes iguales]» son botones dentro de una frase', 'El mismo modo con dos nombres («Iguales» / «Partes iguales»)', 'Un campo vacío en porcentaje o monto deja fuera a la persona sin decirlo', 'Una categoría de ingreso lo vuelve venta sin aviso'], v: 'later', why: 'Es frecuente y ya va casi todo a un toque. Antes que un guiado conviene pulir sus confusiones en el formulario. El reparto sí podría ser un mini guiado al abrirlo («¿Quién pagó?» → «¿Cómo lo dividen?»).' },
+  { id: 'liquidacion', name: 'Saldar una deuda (liquidación)', file: 'Groups/SettlementFormView.swift', where: 'Saldos › Saldar', n: '6 campos', req: 'Monto', conf: ['La fecha vive bajo el título «Nota»', '«Saldar» suena a «saldo»', '«≈» sin explicar'], v: 'no', why: 'Llega con todo relleno desde la deuda: es un toque. Basta sacar la fecha de la caja «Nota».' },
+  { id: 'presupuesto-grupo', name: 'Presupuesto del grupo', file: 'Groups/GroupBudgetSheet.swift', where: 'Ajustes del grupo', n: '1 campo', req: 'Monto', conf: ['«Tope» y «presupuesto» a la vez'], v: 'no', why: 'Ya es una sola pregunta con su vista previa.' },
+  { id: 'reflejar', name: 'Reflejar en tus cuentas (puente)', file: 'Groups/BridgeActivationSheet.swift', where: 'Ajustes de Grupos o del grupo', n: '1 decisión', req: '—', conf: ['«Importar todo el historial» crea borradores en la Bandeja y no lo dice'], v: 'no', why: 'Es una decisión, no un formulario. Solo falta decir dónde llega el historial.' },
+  { id: 'tu-parte', name: '«Tu parte» y «Mi parte» (calculadoras)', file: 'Groups/SplitLines/ · Shared/SplitCalculatorSheet.swift', where: 'Éxito de un gasto de grupo, registro', n: '3-4 por línea', req: 'Monto y categoría o cuenta', conf: ['«Guardar línea» se apaga sin decir por qué', '«Cuadra / Faltan / Sobran» sin decir de qué'], v: 'no', why: 'Son calculadoras: se entienden mejor viendo todo a la vez.' },
+  { id: 'etiqueta', name: 'Crear o editar etiqueta', file: 'Tags/TagFormView.swift', where: 'Ajustes › Etiquetas (y al vuelo en el registro)', n: '4 campos', req: 'Nombre (1-20, sin repetir)', conf: ['Nombre repetido apaga «Guardar» sin mensaje', '«Activas» no dice qué pasa al apagarla'], v: 'no', why: 'Nombre y color: ya es corto. Además casi todas se crean al vuelo desde el registro, con icono y color automáticos.' },
+  { id: 'recordatorio', name: 'Recordatorio personalizado', file: 'Settings/NotificationEditorSheet.swift', where: 'Ajustes › Notificaciones › Añadir', n: '5 campos', req: 'Nombre y mensaje', conf: ['El nombre vive bajo el título «Mensaje»', '«¿Qué días?» vacío quiere decir todos'], v: 'no', why: 'Lo usa poca gente y son cinco campos a la vista.' },
+  { id: 'flujo-caja', name: 'Línea del flujo de caja', file: 'Reports/CashFlow/CashFlowAddLineSheet.swift', where: 'Reportes › Flujo de caja', n: 'Tipo + 3 caminos de 2-4 campos', req: 'Nombre y origen', conf: ['La línea personalizada acepta monto 0 o texto que no es número'], v: 'no', why: 'Ya es un pequeño guiado (tipo → camino → datos).' },
+  { id: 'recurrente-rapido', name: 'Hacer recurrente (desde un registro)', file: 'Transactions/RecurringQuickSheet.swift · PagosRecurrentes/', where: 'Registro, detalle, Bandeja', n: '0-1 (elige una fila)', req: '—', conf: ['—'], v: 'no', why: 'Ya es un toque. Su «Más opciones…» abrirá el guiado de pago con lo del registro respondido.' },
+  { id: 'propuesta', name: 'Propuesta de pago que se repite', file: 'PagosRecurrentes/RecurringProposalSheet.swift', where: 'Tarjeta «Pagos que se repiten»', n: '6 (casi todo detectado)', req: 'Monto y cuenta', conf: ['«No es fijo» y «Ahora no» no dicen cuál es para siempre'], v: 'no', why: 'Es la confirmación de algo que Yala detectó.' },
+  { id: 'guardar-favorito', name: 'Guardar como favorito', file: 'Transactions/SaveAsFavoriteSheet.swift', where: 'Registro › Favorito', n: '1 + detalles ya rellenos', req: 'Nombre', conf: ['Si falla al guardar, no dice nada'], v: 'no', why: 'Viene relleno: solo pide el nombre.' },
+  { id: 'corregir-saldo', name: 'Corregir el saldo de una cuenta', file: 'Accounts/AccountFormView.swift (edición, «Tu saldo»)', where: 'Editar cuenta', n: '4-5 (según Yala, cuánto tienes, diferencia, cómo corregir)', req: 'Saldo real', conf: ['«Ajustar por registro» y «Cambiar saldo inicial» son dos caminos con jerga'], v: 'later', why: 'Buen candidato a un guiado corto («¿Cuánto tienes de verdad hoy?» → «¿Cómo lo corregimos?»), pero vive dentro de editar. Después de los siete.' },
+];
+
+const RESUMEN_HTML = () => {
+  const rows = INVENTORY.filter(f => f.v === 'yes').map(f => { const fl = FLOWS.find(x => x.id === f.flow); return `<tr><td class="order">${fl.order}</td><td><a href="#f-${fl.id}">${esc(fl.name)}</a><div class="inv-meta">${esc(fl.entry)}</div></td><td><span class="pill yes">Convertir</span></td><td>${esc(fl.value)}</td><td>${esc(fl.effort)}</td><td>${esc(fl.fieldsNow)}</td></tr>`; }).join('');
+  const others = INVENTORY.filter(f => f.v !== 'yes').map(f => `<tr><td></td><td>${esc(f.name)}</td><td><span class="pill ${f.v === 'later' ? 'later' : 'no'}">${f.v === 'later' ? 'Más adelante' : 'Se queda'}</span></td><td colspan="3">${esc(f.why)}</td></tr>`).join('');
+  return `<section class="view">
+  <div><div class="eyebrow">Exploración · 15 de noviembre</div><h1>¿Qué formularios pasan a guiado?</h1>
+  <p class="lede">Siete de los veintiún formularios de crear y editar de Yala ganan con un guiado como el de Primeros pasos: una pregunta por pantalla, la tarjeta que se llena arriba y «Usar formulario» siempre a mano. Los demás se quedan como están porque se usan a diario, ya vienen rellenos o son de un solo dato. Cada maqueta cubre todos los campos del formulario de hoy, sin quitar ninguno: las preguntas que proponemos saltar llevan «Propuesta» en «Se salta si».</p></div>
+  <div class="block"><h2>Orden recomendado</h2>
+  <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Flujo</th><th>Veredicto</th><th>Valor</th><th>Esfuerzo</th><th>Hoy</th></tr></thead><tbody>${rows}${others}</tbody></table></div></div>
+  <div class="block"><h2>El criterio</h2><div class="cards">
+    <div class="note"><b>Guiado: crear algo que se hace pocas veces</b><p>Cuenta, pago, presupuesto, grupo, favorito, categoría. Son decisiones con jerga o con campos que dependen de otros, y la persona no tiene el formulario en la memoria.</p></div>
+    <div class="note"><b>Formulario: lo diario y lo que ya viene relleno</b><p>Nuevo registro, gasto de grupo, saldar, guardar como favorito. Ahí un guiado añade toques, no claridad.</p></div>
+    <div class="note"><b>Editar siempre abre el formulario</b><p>Quien edita quiere cambiar un dato concreto y verlo todo. El guiado es solo para crear.</p></div>
+  </div></div>
+  <div class="block"><h2>Lo que comparten los siete guiados</h2><div class="prose"><ul>
+    <li><b>«Usar formulario» arriba a la derecha</b>, en cada pregunta y en la confirmación. Lo ya respondido pasa al formulario. Si se toca, ¿Yala lo recuerda para la próxima? Está por decidir.</li>
+    <li><b>Una pregunta por pantalla</b>, con la tarjeta de lo que se está creando arriba, llenándose. Lo que ya se sabe no se pregunta (una sola moneda, una sola cuenta, sin grupos, sin etiquetas).</li>
+    <li><b>Confirmación «Revisa antes de crear»</b> con cada respuesta y «Cambiar» al lado. Primeros pasos no la tiene: va directo a «¡Lista!».</li>
+    <li><b>Éxito con el siguiente paso</b>: ver lo creado o crear otro. En grupo, invitar.</li>
+    <li>Las piezas son las de Primeros pasos: <code>TutorialQuestionScreen</code>, <code>TutorialOptionButton</code>, <code>TutorialSelectableTile</code>, <code>TutorialChip</code>, <code>TutorialToggleRow</code> y <code>TutorialAmountField</code>.</li>
+  </ul></div></div>
+  <div class="block"><h2>Un solo motor con Yala IA</h2><div class="prose">
+    <p>Hay en cola una sesión que hará un motor de guiados dentro de Yala IA para presupuestos y pagos recurrentes. Estas maquetas están escritas para ese mismo motor: cada pregunta es un dato (texto, tipo de respuesta, valor por defecto, cuándo se salta, qué campo llena). Con una sola definición por flujo salen las dos formas: a pantalla completa desde el «+» y como conversación dentro del chat. Por eso el orden empieza por pago y presupuesto justo después de cuenta: lo que construya esa sesión es la base de los siete.</p>
+    <p>No encontré el encargo de esa sesión en esta máquina. Si su motor no sigue este contrato, el primer paso es acordarlo con ella.</p></div></div>
+  <div class="block"><h2>Lo que te toca decidir</h2><div class="prose"><ul>
+    <li>Las preguntas marcadas «Propuesta: saltar»: número de cuenta y «cuenta en tus reportes» (cuenta), nota (pago y favorito), necesidad (presupuesto, favorito), ícono y «menos pagos» (grupo), fecha (deuda de antes), «usar al registrar» (categoría).</li>
+    <li>¿El «+» abre siempre el guiado, o solo las primeras veces y después el formulario?</li>
+    <li>Dos ideas nuevas que no existen hoy: «Son unas cuotas» en el fin de un pago, y «Registrarlo ahora» al crear un favorito.</li>
+  </ul></div></div>
+  <div class="block"><h2>Encontrado por el camino (no se tocó)</h2><div class="prose"><ul>
+    <li>Una cuenta nueva arranca siempre en soles (PEN), no en la moneda principal de la persona.</li>
+    <li>El color de la cuenta tiene su sección escrita en el formulario, pero ninguna parte la enseña.</li>
+    <li>El editor de pagos calcula las próximas fechas y no las pinta en ningún sitio.</li>
+    <li>«Guardar como favorito» no dice nada si falla al guardar.</li>
+    <li>La línea personalizada del flujo de caja acepta monto 0 o texto que no es número.</li>
+    <li>«Metas» no existe en Yala: no hay formulario que convertir.</li>
+  </ul></div></div>
+  ${cmtBox('resumen', 'Comentario sobre la recomendación')}
+  </section>`;
+};
+const INVENTARIO_HTML = () => {
+  const lbl = { yes: ['yes', 'Convertir'], later: ['later', 'Más adelante'], no: ['no', 'Se queda'] };
+  return `<section class="view"><div><div class="eyebrow">Medido en el código de 2.3 · 15 de noviembre</div><h1>Inventario de formularios</h1>
+  <p class="lede">Todos los formularios de crear y editar que hay hoy en Yala, con cuántos campos tienen, cuáles son obligatorios y qué confunde. Medido leyendo el código, no en la app.</p></div>
+  <div class="block">${INVENTORY.map(f => `<div class="inv-form"><div class="inv-head"><h3>${esc(f.name)}</h3><span class="pill ${lbl[f.v][0]}">${lbl[f.v][1]}</span>${f.flow ? `<a href="#f-${f.flow}">Ver maqueta</a>` : ''}</div>
+    <div class="inv-meta">${esc(f.where)} · <code>${esc(f.file)}</code></div>
+    <div><b>Campos:</b> ${esc(f.n)}<br><b>Obligatorios:</b> ${esc(f.req)}</div>
+    <div class="conf"><b>Qué confunde</b></div><ul>${f.conf.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+    ${f.why ? `<div><b>Por qué ${f.v === 'later' ? 'más adelante' : 'se queda'}:</b> ${esc(f.why)}</div>` : ''}
+    ${f.fields ? `<details class="fields"><summary>Ver los ${f.fields.length} campos</summary><div class="tbl-wrap"><table><thead><tr><th>Campo</th><th>Control</th><th>Obligatorio</th></tr></thead><tbody>${f.fields.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
+    ${cmtBox('inv/' + f.id, 'Comentario sobre este formulario')}</div>`).join('')}</div></section>`;
+};
+
+/* ===================== ICONOS ===================== */
+const IC = {
+  back: '<path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  form: '<path d="M5 6h14M5 12h14M5 18h9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  up: '<path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  cash: '<rect x="3" y="6" width="18" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/>',
+  bank: '<path d="M3 9l9-5 9 5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  card: '<rect x="3" y="5.5" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2.4"/>',
+  piggy: '<path d="M5 11a6 5 0 0 1 11-2.5h2.5l-.5 2.5 2 1v3l-2 .5-1.5 2.5H15v1.5h-2.5V18h-3v1.5H7V17.5C5.8 16.5 5 14.5 5 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  wallet: '<path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3M4 7.5V17a2 2 0 0 0 2 2h14V9H6.5A2.5 2.5 0 0 1 4 7.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="14" r="1.4" fill="currentColor"/>',
+  stack: '<path d="M12 4l9 4.5-9 4.5-9-4.5L12 4zM3 13l9 4.5 9-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  globe: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 12h17M12 3.5c2.5 2.4 3.5 5.3 3.5 8.5s-1 6.1-3.5 8.5c-2.5-2.4-3.5-5.3-3.5-8.5s1-6.1 3.5-8.5z" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  cal: '<rect x="4" y="5.5" width="16" height="14.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M8 3.5v4M16 3.5v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15L6 16.5zM10 20.5h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>',
+  repeat: '<path d="M5 11V9.5A2.5 2.5 0 0 1 7.5 7H19l-3-3M19 13v1.5a2.5 2.5 0 0 1-2.5 2.5H5l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  chart: '<path d="M5 19V11M10 19V6M15 19v-5M20 19V9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  star: '<path d="M12 4l2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6L12 4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+  users: '<circle cx="9" cy="9" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16.5" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.5 13c2.2 0 3.6 1.2 4 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  tag: '<path d="M4 12.5V5h7.5l8.5 8.5-7.5 7.5L4 12.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="8.3" cy="9.3" r="1.5" fill="currentColor"/>',
+  folder: '<path d="M3.5 7.5A2 2 0 0 1 5.5 5.5H10l2 2.5h6.5a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  cart: '<path d="M3.5 5h2.5l2 10h10l2-7H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19" r="1.4" fill="currentColor"/><circle cx="16.5" cy="19" r="1.4" fill="currentColor"/>',
+  food: '<path d="M7 3.5v7.5M4.5 3.5v4a2.5 2.5 0 0 0 5 0v-4M7 11v9.5M16.5 3.5c-2 1-3 3.5-3 6.5h3v10.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  car: '<path d="M4 15.5l1.5-5A2 2 0 0 1 7.4 9h9.2a2 2 0 0 1 1.9 1.5l1.5 5V18a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1v-1H7.5v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  home: '<path d="M4 11l8-6.5 8 6.5v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1V11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  bolt: '<path d="M13 3L5.5 13H12l-1 8 7.5-10H12l1-8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  play: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8.5l5.5 3.5-5.5 3.5v-7z" fill="currentColor"/>',
+  gym: '<path d="M3 12h18M6 8v8M18 8v8M3.5 10v4M20.5 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  cloud: '<path d="M7 18a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18 10a4 4 0 0 1-.5 8H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  swap: '<path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  split: '<path d="M12 20v-6L6 8M12 14l6-6M6 8V4M6 4h4M18 8V4M18 4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  pencil: '<path d="M5 19l1-4L16 5l3 3L9 18l-4 1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  plus: '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  question: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.7v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/>',
+  pct: '<path d="M6 18L18 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16.5" cy="16.5" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/>',
+  equal: '<path d="M5 9h14M5 15h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  coins: '<ellipse cx="10" cy="7" rx="6" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M4 7v4c0 1.4 2.7 2.5 6 2.5M4 11v4c0 1.4 2.7 2.5 6 2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><ellipse cx="15.5" cy="13.5" rx="4.5" ry="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M11 13.5v3.5c0 1.1 2 2 4.5 2s4.5-.9 4.5-2v-3.5" fill="none" stroke="currentColor" stroke-width="1.9"/>',
+  inbox: '<path d="M4 13.5l2-7.5h12l2 7.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18v-4.5zM4 13.5h4.5l1 2h5l1-2H20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.9"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  photo: '<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="1.8" fill="currentColor"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  note: '<path d="M6 4h9l4 4v12H6V4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12h7M9 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  heart: '<path d="M12 19.5s-7.5-4.4-7.5-10A4 4 0 0 1 12 7.2a4 4 0 0 1 7.5 2.3c0 5.6-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  plane: '<path d="M10.5 13.5L4 11l1.5-1.5 7 .5 4-4.5a1.8 1.8 0 0 1 2.5 2.5l-4.5 4 .5 7L13.5 20.5 11 14z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+};
+const svg = (k, cls) => `<svg viewBox="0 0 24 24" aria-hidden="true"${cls ? ` class="${cls}"` : ''}>${IC[k] || IC.question}</svg>`;
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/* ===================== PIEZAS DEL GUIADO (calcadas de TutorialQuestionPieces) ===================== */
+function renderCard(c) {
+  if (!c) return '';
+  const nm = c.name ? `<b>${esc(c.name)}</b>` : `<b class="ph">${esc(c.namePh || 'Sin nombre')}</b>`;
+  const ty = c.type ? `<span>${esc(c.type)}</span>` : `<span class="ph">${esc(c.typePh || 'Tipo')}</span>`;
+  const amt = c.amount != null
+    ? `<div class="amt"><small>${esc(c.amountLabel || 'Saldo')}</small>${esc(c.amount)}</div>`
+    : (c.amountLabel ? `<div class="amt"><small>${esc(c.amountLabel)}</small><span class="ph">—</span></div>` : '');
+  const bar = c.bar != null ? `<div class="bar"><i style="width:${c.bar}%"></i></div>` : '';
+  const lines = (c.lines || []).length ? `<div class="lines">${c.lines.map(l => `<i>${esc(l)}</i>`).join('')}</div>` : '';
+  return `<div class="ycard"><div class="top1"><div class="ico" style="background:${c.color || '#3a3a3c'}">${svg(c.icon || 'question')}</div><div class="nm">${nm}${ty}</div></div>${amt}${bar}${lines}</div>`;
+}
+/* La tarjeta de arriba se llena con las respuestas: base del flujo + los primeros `fill` parches. */
+function cardFor(flow, s) {
+  if (!flow.cardBase) return null;
+  const c = Object.assign({}, flow.cardBase, { lines: [...(flow.cardBase.lines || [])] });
+  (flow.cardSeq || []).slice(0, s.fill || 0).forEach(p => {
+    const { addLines, ...rest } = p;
+    Object.assign(c, rest);
+    if (addLines) c.lines.push(...addLines);
+  });
+  return c;
+}
+function renderDock(items) {
+  return (items || []).map(d => {
+    switch (d.t) {
+      case 'opts': return d.items.map(o => `<div class="opt${o.hl ? ' hl' : ''}">${o.ic ? `<div class="ic"${o.c ? ` style="color:${o.c}"` : ''}>${svg(o.ic)}</div>` : ''}<div class="tx"><b>${esc(o.ti)}</b>${o.su ? `<span>${esc(o.su)}</span>` : ''}</div><div class="chev">›</div></div>`).join('');
+      case 'tiles': return `<div class="tiles" style="grid-template-columns:repeat(${d.cols || 3},1fr)">${d.items.map(o => `<div class="tile" style="${o.on ? `box-shadow:inset 0 0 0 2px ${o.c}` : ''}"><div class="circ" style="background:${o.c}">${svg(o.ic)}</div><b>${esc(o.ti)}</b>${o.cap ? `<span>${esc(o.cap)}</span>` : ''}${o.on ? `<div class="chk" style="background:${o.c}">${svg('check')}</div>` : ''}</div>`).join('')}</div>`;
+      case 'chips': return `${d.label ? `<div class="lbl">${esc(d.label)}</div>` : ''}<div class="chips">${d.items.map(o => `<span class="chip${o.on ? ' on' : ''}">${esc(o.ti || o)}</span>`).join('')}</div>`;
+      case 'amount': return `${d.label ? `<div class="lbl">${esc(d.label)}</div>` : ''}<div class="field"><div class="input"><span class="sym">${esc(d.sym || 'S/')}</span>${d.val ? `<span class="val">${esc(d.val)}</span><span class="caret"></span>` : `<span class="caret"></span><span class="ph">${esc(d.ph || '0.00')}</span>`}</div>${d.noSend ? '' : `<div class="send${d.val ? '' : ' off'}">${svg('up')}</div>`}</div>`;
+      case 'text': return `${d.label ? `<div class="lbl">${esc(d.label)}</div>` : ''}<div class="field"><div class="input">${d.val ? `<span class="val txt">${esc(d.val)}</span><span class="caret"></span>` : `<span class="caret"></span><span class="ph">${esc(d.ph || '')}</span>`}</div>${d.noSend ? '' : `<div class="send${d.val ? '' : ' off'}">${svg('up')}</div>`}</div>`;
+      case 'toggle': return `<div class="tog"><div class="tx"><b>${esc(d.ti)}</b>${d.hint ? `<span>${esc(d.hint)}</span>` : ''}</div><div class="sw${d.on ? ' on' : ''}"></div></div>`;
+      case 'row': return `<div class="row2"><span>${esc(d.l)}</span>${d.em ? `<em>${esc(d.v)}</em>` : `<b>${esc(d.v)}</b>`}</div>`;
+      case 'days': { const sel = d.sel || 0; let h = '<div class="days">'; for (let i = 1; i <= 31; i++) h += `<i class="${i === sel ? 'on' : ''}">${i}</i>`; return h + '</div>'; }
+      case 'week': return `<div class="days">${['L','M','M','J','V','S','D'].map((x, i) => `<i class="${i === d.sel ? 'on' : ''}">${x}</i>`).join('')}</div>`;
+      case 'seg': return `<div class="seg">${d.items.map((x, i) => `<i class="${i === d.sel ? 'on' : ''}">${esc(x)}</i>`).join('')}</div>`;
+      case 'list': return `${d.label ? `<div class="lbl">${esc(d.label)}</div>` : ''}<div class="list">${d.items.map(o => `<div class="li">${o.av ? `<div class="av" style="background:${o.c || '#5856d6'}">${esc(o.av)}</div>` : (o.ic ? `<div class="ic" style="color:${o.c || 'var(--y-accent-text)'};width:20px">${svg(o.ic)}</div>` : '')}<div class="tx"><b>${esc(o.ti)}</b>${o.su ? `<span>${esc(o.su)}</span>` : ''}</div>${o.rt ? `<div class="rt${o.acc ? ' acc' : ''}">${esc(o.rt)}</div>` : ''}</div>`).join('')}</div>`;
+      case 'palette': return `<div class="palette">${d.items.map((c, i) => `<i style="background:${c}" class="${i === d.sel ? 'on' : ''}"></i>`).join('')}</div>`;
+      case 'icons': return `<div class="icons">${d.items.map((k, i) => `<i class="${i === d.sel ? 'on' : ''}">${svg(k)}</i>`).join('')}</div>`;
+      case 'primary': return `<div class="primary${d.off ? ' off' : ''}">${esc(d.ti)}</div>`;
+      case 'link': return `<div class="textlink">${esc(d.ti)}</div>`;
+      case 'hint': return `<div class="hint${d.warn ? ' warn' : ''}">${esc(d.ti)}</div>`;
+      case 'bubble': return `<div class="bubble">${esc(d.ti)}</div>`;
+      case 'sum': return `<div class="sum">${d.rows.map(r => `<div class="sr"><span>${esc(r[0])}</span><b>${esc(r[1])}</b>${r[2] === false ? '' : '<em>Cambiar</em>'}</div>`).join('')}</div>`;
+      case 'lbl': return `<div class="lbl">${esc(d.ti)}</div>`;
+      default: return '';
+    }
+  }).join('');
+}
+function renderPhone(flow, s, i) {
+  const qScreens = flow.screens.filter(x => x.kind === 'q');
+  const qi = qScreens.indexOf(s);
+  const total = qScreens.length;
+  const sub = s.sub || flow.chatSubtitle;
+  const showForm = s.kind === 'q' || s.kind === 'confirm';
+  const hdr = `<div class="hdr"><div class="gbtn">${svg(s.kind === 'done' ? 'x' : 'back')}</div><div class="ttl"><b>Yala</b><span>${esc(sub)}</span></div>${showForm ? `<div class="useform">${svg('form')}Usar formulario</div>` : ''}</div>`;
+  const dots = s.kind === 'q' ? `<div class="dots" aria-hidden="true">${qScreens.map((_, k) => `<i class="${k <= qi ? 'on' : ''}"></i>`).join('')}</div>` : (s.kind === 'confirm' ? `<div class="dots" aria-hidden="true">${qScreens.map(() => '<i class="on"></i>').join('')}</div>` : '');
+  let inner = '';
+  if (s.kind === 'done') {
+    inner = `<div class="body"><div class="done-wrap"><div class="big">${svg('check')}</div><h4>${esc(s.q)}</h4><p>${esc(s.d || '')}</p>${s.card ? `<div style="width:100%;text-align:left">${renderCard(s.card)}</div>` : ''}</div></div><div class="foot">${renderDock(s.foot)}</div>`;
+  } else if (s.kind === 'form') {
+    inner = `<div class="body"><div class="formmini">${renderDock(s.dock)}</div></div>`;
+  } else {
+    const card = s.card === false ? '' : renderCard(s.card || cardFor(flow, s));
+    inner = `<div class="body">${card}<div><div class="q">${esc(s.q)}</div>${s.d ? `<div class="qd">${esc(s.d)}</div>` : ''}</div><div class="dock">${renderDock(s.dock)}</div></div>${s.foot ? `<div class="foot">${renderDock(s.foot)}</div>` : ''}${s.kb ? `<div class="kb">${'1 2 3 4 5 6 7 8 9 . 0 ⌫'.split(' ').map(k => `<i>${k}</i>`).join('')}</div>` : ''}`;
+  }
+  return `<div class="phone" aria-label="Pantalla ${i + 1} de ${esc(flow.name)}"><div class="scr"><div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"><i></i></span></div>${hdr}${dots}${inner}</div></div>`;
+}
+
+/* ===================== COMENTARIOS ===================== */
+const STORE_KEY = 'yala-formularios-guiados-v1';
+let comments = {};
+try { comments = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { comments = {}; }
+function saveComments() { try { localStorage.setItem(STORE_KEY, JSON.stringify(comments)); } catch (e) { /* sin almacenamiento: se queda en memoria */ } }
+const filled = v => typeof v === 'string' && v.trim().length > 0;
+function countFor(prefix) { return Object.keys(comments).filter(k => (k === prefix || k.startsWith(prefix + '/')) && filled(comments[k])).length; }
+function updateCounts() {
+  document.getElementById('totalCount').textContent = Object.values(comments).filter(filled).length;
+  document.querySelectorAll('[data-count]').forEach(el => { const n = countFor(el.dataset.count); el.textContent = n ? n : ''; });
+}
+function cmtBox(key, label) {
+  const v = comments[key] || '';
+  return `<div class="cmt${filled(v) ? ' has' : ''}"><label for="c-${esc(key)}">${esc(label)}</label><textarea id="c-${esc(key)}" data-key="${esc(key)}" placeholder="Quitar, cambiar el texto, reordenar…">${esc(v)}</textarea></div>`;
+}
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.matches && t.matches('textarea[data-key]')) {
+    comments[t.dataset.key] = t.value;
+    t.parentElement.classList.toggle('has', filled(t.value));
+    saveComments(); updateCounts();
+  }
+});
+function allCommentsText() {
+  const out = [];
+  const add = (head, key) => { if (filled(comments[key])) out.push(`${head}\n  → ${comments[key].trim().replace(/\n/g, '\n    ')}`); };
+  out.push('COMENTARIOS · Formularios guiados de Yala');
+  add('[General] Resumen y recomendación', 'resumen');
+  INVENTORY.forEach(f => add(`[Inventario] ${f.name}`, 'inv/' + f.id));
+  FLOWS.forEach(flow => {
+    const before = out.length;
+    add(`[${flow.name}] Sobre el flujo entero`, flow.id + '/general');
+    flow.screens.forEach((s, i) => {
+      const head = `[${flow.name}] Pantalla ${i + 1} · ${s.label || s.q}`;
+      add(head, `${flow.id}/${s.id}`);
+      (s.subq || []).forEach(sq => add(`${head} · Pregunta: ${sq.q}`, `${flow.id}/${s.id}/${sq.id}`));
+    });
+    if (out.length === before) return;
+  });
+  if (out.length === 1) out.push('(Sin comentarios todavía)');
+  return out.join('\n\n');
+}
+function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+document.getElementById('copyAll').addEventListener('click', () => {
+  const text = allCommentsText();
+  const fallback = () => {
+    const w = document.createElement('div'); w.className = 'fallback';
+    w.innerHTML = `<div><b>Copia este texto</b><textarea readonly></textarea><button type="button">Cerrar</button></div>`;
+    w.querySelector('textarea').value = text; document.body.appendChild(w);
+    const ta = w.querySelector('textarea'); ta.focus(); ta.select();
+    w.querySelector('button').onclick = () => w.remove();
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('Comentarios copiados'), fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+});
+
+/* ===================== VISTAS ===================== */
+const walkIndex = {};
+const viewMode = {};
+function navHTML(cur) {
+  const a = (id, label, countKey) => `<a href="#${id}" class="${cur === id ? 'on' : ''}">${esc(label)}${countKey ? `<span class="c" data-count="${countKey}"></span>` : ''}</a>`;
+  return a('resumen', 'Recomendación', 'resumen') + a('inventario', 'Inventario', 'inv') + '<span class="sep"></span>' + FLOWS.map(f => a('f-' + f.id, f.short || f.name, f.id)).join('');
+}
+function specHTML(flow, s, i) {
+  const rows = [];
+  if (s.spec) {
+    if (s.spec.campo) rows.push(['Cubre', s.spec.campo]);
+    if (s.spec.tipo) rows.push(['Respuesta', s.spec.tipo]);
+    if (s.spec.def) rows.push(['Por defecto', s.spec.def]);
+    if (s.spec.salta) rows.push(['Se salta si', s.spec.salta]);
+    if (s.spec.nota) rows.push(['Nota', s.spec.nota]);
+  }
+  const subs = (s.subq || []).map(sq => cmtBox(`${flow.id}/${s.id}/${sq.id}`, `Comentario sobre «${sq.q}»`)).join('');
+  const kindLbl = { q: 'Pregunta', confirm: 'Confirmación', done: 'Éxito', form: 'Formulario' }[s.kind] || '';
+  return `<div class="spec"><div class="spec-title"><span class="idx">${String(i + 1).padStart(2, '0')}</span><h3>${esc(s.label || s.q)}</h3><span class="pill lvl">${kindLbl}</span></div>${rows.length ? `<dl>${rows.map(r => `<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>` : ''}${cmtBox(`${flow.id}/${s.id}`, s.subq ? 'Comentario sobre esta pantalla' : (s.kind === 'q' ? 'Comentario sobre esta pregunta' : 'Comentario sobre esta pantalla'))}${subs}</div>`;
+}
+function flowView(flow) {
+  const mode = viewMode[flow.id] || 'all';
+  const head = `<div class="flow-head"><div><div class="eyebrow">Maqueta · orden ${flow.order}</div><h1>${esc(flow.name)}</h1><p class="lede">${esc(flow.summary)}</p></div>
+    <div class="flow-facts"><span class="pill lvl">${esc(flow.entry)}</span><span class="pill yes">Valor ${esc(flow.value)}</span><span class="pill later">Esfuerzo ${esc(flow.effort)}</span><span class="pill no">${flow.screens.filter(s => s.kind === 'q').length} preguntas · ${flow.fieldsNow}</span></div>
+    ${flow.notes ? `<div class="cards">${flow.notes.map(n => `<div class="note"><b>${esc(n[0])}</b><p>${esc(n[1])}</p></div>`).join('')}</div>` : ''}
+    ${cmtBox(flow.id + '/general', 'Comentario sobre el flujo entero')}
+    <div class="mode" role="group" aria-label="Cómo ver las pantallas"><button type="button" data-mode="all" class="${mode === 'all' ? 'on' : ''}">Todas las pantallas</button><button type="button" data-mode="walk" class="${mode === 'walk' ? 'on' : ''}">Recorrer una a una</button></div></div>`;
+  let body;
+  if (mode === 'walk') {
+    const i = Math.min(walkIndex[flow.id] || 0, flow.screens.length - 1);
+    const s = flow.screens[i];
+    body = `<div class="walk"><div class="walk-nav"><button type="button" data-step="-1" ${i === 0 ? 'disabled' : ''}>‹ Anterior</button><span>${i + 1} / ${flow.screens.length}</span><button type="button" data-step="1" ${i === flow.screens.length - 1 ? 'disabled' : ''}>Siguiente ›</button></div><div class="screen-row" style="border:0;padding:0">${renderPhone(flow, s, i)}${specHTML(flow, s, i)}</div></div>`;
+  } else {
+    body = `<div class="screens">${flow.screens.map((s, i) => `<div class="screen-row">${renderPhone(flow, s, i)}${specHTML(flow, s, i)}</div>`).join('')}</div>`;
+  }
+  return `<section class="view" data-flow="${flow.id}">${head}${body}</section>`;
+}
+function render() {
+  const h = (location.hash || '#resumen').slice(1);
+  const cur = h === 'inventario' || h.startsWith('f-') ? h : 'resumen';
+  document.getElementById('nav').innerHTML = navHTML(cur);
+  const main = document.getElementById('main');
+  if (cur === 'resumen') main.innerHTML = RESUMEN_HTML();
+  else if (cur === 'inventario') main.innerHTML = INVENTARIO_HTML();
+  else { const f = FLOWS.find(x => 'f-' + x.id === cur); main.innerHTML = f ? flowView(f) : RESUMEN_HTML(); }
+  updateCounts();
+  const on = document.querySelector('.nav a.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+}
+document.addEventListener('click', e => {
+  const m = e.target.closest('[data-mode]');
+  if (m) { const id = m.closest('[data-flow]').dataset.flow; viewMode[id] = m.dataset.mode; render(); return; }
+  const st = e.target.closest('[data-step]');
+  if (st) { const id = st.closest('[data-flow]').dataset.flow; const f = FLOWS.find(x => x.id === id); walkIndex[id] = Math.max(0, Math.min(f.screens.length - 1, (walkIndex[id] || 0) + Number(st.dataset.step))); render(); }
+});
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+render();
+</script>

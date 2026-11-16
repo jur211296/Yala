@@ -15,6 +15,10 @@
 //   - medium → `Form` plain, fondo material glass nativo iOS 26.
 //   - large  → `PanelBackgroundView` + `List.solidCard()` (UI-PATTERNS.md).
 //
+//  Decisión 47 de la revisión 2.3 (B1): «Presupuestos en el Panel» —las estrellas que eligen qué presupuestos salen en
+//  su tarjeta— vive aquí, con lo demás que decide qué enseña el Panel. Antes era la fila «Presupuestos» de Ajustes, que
+//  prometía tus presupuestos y abría otra cosa.
+//
 
 import SwiftUI
 
@@ -105,6 +109,15 @@ struct PanelSectionsConfigView: View {
             } footer: {
                 Text(L10n.Panel.SectionsConfig.footer)
             }
+
+            Section {
+                NavigationLink {
+                    BudgetsFavoritesSettingsView()
+                } label: {
+                    budgetsOnPanelLabel(showsChevron: false)
+                }
+                .accessibilityIdentifier("panel_sections_config_budgets_on_panel")
+            }
         }
     }
 
@@ -135,12 +148,54 @@ struct PanelSectionsConfigView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.sm)
+
+                    NavigationLink {
+                        BudgetsFavoritesSettingsView()
+                    } label: {
+                        budgetsOnPanelLabel(showsChevron: true)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.md)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .solidCard()
+                    .accessibilityIdentifier("panel_sections_config_budgets_on_panel")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
         }
+    }
+
+    // MARK: - Presupuestos en el Panel (B1)
+
+    /// La fila que abre las estrellas de la tarjeta de Presupuestos. En el `Form` el sistema pinta el chevron.
+    private func budgetsOnPanelLabel(showsChevron: Bool) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "chart.pie.fill")
+                .font(DS.Typography.body)
+                .foregroundStyle(.thAccentText)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Lote23Chico.budgetsOnPanel)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                Text(L10n.Lote23Chico.budgetsOnPanelHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: DS.Spacing.sm)
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption).fontWeight(.semibold)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Row (compartido entre ambos layouts)

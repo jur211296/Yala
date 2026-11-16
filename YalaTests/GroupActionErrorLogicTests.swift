@@ -210,7 +210,7 @@ struct GroupsLot12WiringTests {
     /// El texto del inicio de sesión solo habla de invitación cuando la hay.
     @Test func signIn_knowsWhetherThereIsAnInvitation() throws {
         let modifier = try fuente("Yala/App/Views/Shared/GroupsBackendInviteModifier.swift")
-        #expect(modifier.contains("GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? \"\").isEmpty)"))
+        #expect(modifier.contains("GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? \"\").isEmpty,"))
         let view = try fuente("Yala/App/Views/Groups/GroupsSignInView.swift")
         #expect(view.contains("isForInvitation ? L10n.Groups.SignIn.body : L10n.Groups.SignIn.bodyNoInvite"))
     }

@@ -42,6 +42,21 @@ struct GroupOpeningBalanceFormView: View {
     @FocusState private var amountFocused: Bool
     /// Lote 12.3 (card rhgi, molde de L13-9): «Guardar» siempre activo; tocarlo con algo pendiente marca el campo y lo dice.
     @State private var showsMissingField = false
+    /// Lote 2.3 de Grupos: añadir uno entre dos personas que ya tienen otro lo reemplaza, y antes se preguntaba nada.
+    @State private var showReplaceConfirmation = false
+    @State private var replaceTitle = ""
+    @State private var replaceMessage = ""
+
+    /// Decisión 39 de 2.3 (F1): lo que la persona puede cambiar aquí, para preguntar antes de tirarlo.
+    private struct FormSnapshot: Equatable {
+        let debtorMemberID: String
+        let creditorMemberID: String
+        let amountString: String
+        let currency: CurrencyCode
+        let date: Date
+    }
+    @State private var formBaseline: FormSnapshot?
+    @State private var showDiscardAlert = false
 
     init(
         group: SplitGroup,
@@ -60,19 +75,49 @@ struct GroupOpeningBalanceFormView: View {
         self.prefillDebtorMemberID = prefillDebtorMemberID
         self.onSave = onSave
 
+        let debtor: String
+        let creditor: String
+        let amount: String
+        let currency: CurrencyCode
+        let initialDate: Date
         if let edit = expenseToEdit {
-            _debtorMemberID = State(initialValue: existingDebtorMemberID ?? "")
-            _creditorMemberID = State(initialValue: edit.paidByMemberID)
-            _amountString = State(initialValue: AmountInputHelper.formatWithGrouping(edit.amount))
+            debtor = existingDebtorMemberID ?? ""
+            creditor = edit.paidByMemberID
+            amount = AmountInputHelper.formatWithGrouping(edit.amount)
             // Fallback a la moneda del grupo (no .usd) si el código guardado fuese inválido/legacy.
-            _selectedCurrency = State(initialValue: CurrencyCode(rawValue: edit.currencyCode) ?? CurrencyCode(rawValue: group.currencyCode) ?? .usd)
-            _date = State(initialValue: edit.date)
+            currency = CurrencyCode(rawValue: edit.currencyCode) ?? CurrencyCode(rawValue: group.currencyCode) ?? .usd
+            initialDate = edit.date
         } else {
-            _debtorMemberID = State(initialValue: prefillDebtorMemberID ?? "")
-            _creditorMemberID = State(initialValue: "")
-            _amountString = State(initialValue: "")
-            _selectedCurrency = State(initialValue: CurrencyCode(rawValue: group.currencyCode) ?? .usd)
-            _date = State(initialValue: Date.now)
+            debtor = prefillDebtorMemberID ?? ""
+            creditor = ""
+            amount = ""
+            currency = CurrencyCode(rawValue: group.currencyCode) ?? .usd
+            initialDate = Date.now
+        }
+        _debtorMemberID = State(initialValue: debtor)
+        _creditorMemberID = State(initialValue: creditor)
+        _amountString = State(initialValue: amount)
+        _selectedCurrency = State(initialValue: currency)
+        _date = State(initialValue: initialDate)
+        _formBaseline = State(initialValue: FormSnapshot(
+            debtorMemberID: debtor, creditorMemberID: creditor, amountString: amount, currency: currency, date: initialDate))
+    }
+
+    private var formSnapshot: FormSnapshot {
+        FormSnapshot(debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID, amountString: amountString,
+                     currency: selectedCurrency, date: date)
+    }
+
+    private var hasUnsavedInput: Bool {
+        GroupFormDiscardLogic.asksBeforeDiscarding(current: formSnapshot, baseline: formBaseline)
+    }
+
+    private func closeOrAskToDiscard() {
+        if hasUnsavedInput {
+            amountFocused = false
+            showDiscardAlert = true
+        } else {
+            dismiss()
         }
     }
 
@@ -123,13 +168,24 @@ struct GroupOpeningBalanceFormView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
             }
+            // Comparte ancla con el aviso de error: por eso, si guardar falla tras «Reemplazar», ese aviso espera a que
+            // este termine de cerrarse (`performSave(afterConfirmation:)`). Encendido en la misma vuelta, UIKit lo tira.
+            .alert(replaceTitle, isPresented: $showReplaceConfirmation) {
+                Button(L10n.Groups.OpeningBalance.replaceConfirm) { performSave(afterConfirmation: true) }
+                    .accessibilityIdentifier("opening_balance_replace_confirm")
+                Button(L10n.Action.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("opening_balance_replace_cancel")
+            } message: {
+                Text(replaceMessage)
+            }
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Groups.OpeningBalance.editorTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { closeOrAskToDiscard() }
+                        .accessibilityIdentifier("opening_balance_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.save) { save() }
@@ -159,6 +215,12 @@ struct GroupOpeningBalanceFormView: View {
                 }
                 .yalaSheetDetents([.large])
             }
+            .asksBeforeDiscardingGroupForm(
+                hasUnsavedInput: hasUnsavedInput,
+                title: L10n.GroupsDiscard.openingBalanceTitle,
+                isPresented: $showDiscardAlert,
+                onDiscard: { dismiss() }
+            )
             .alert(L10n.Common.error, isPresented: $showError) {
                 Button(L10n.Common.ok) {}
             } message: {
@@ -307,6 +369,39 @@ struct GroupOpeningBalanceFormView: View {
             return
         }
         showsMissingField = false
+        if expenseToEdit == nil, askBeforeReplacing() { return }
+        performSave()
+    }
+
+    /// Si añadir este saldo reemplazaría el que ya tienen esas dos personas en esa moneda, prepara la pregunta y devuelve
+    /// `true`. Lo que se guarda al confirmar no cambia: `setOpeningBalance` edita ese mismo saldo, como siempre.
+    private func askBeforeReplacing() -> Bool {
+        let existing: SplitExpense?
+        do {
+            existing = try GroupExpenseService.shared.openingBalanceThatAddingWouldReplace(
+                in: group,
+                debtorMemberID: debtorMemberID,
+                creditorMemberID: creditorMemberID,
+                currencyCode: selectedCurrency.rawValue
+            )
+        } catch {
+            errorMessage = OpeningBalanceErrorCopyLogic.message(for: error)
+            showError = true
+            return true
+        }
+        guard let existing else { return false }
+        let name = { (id: String) in memberNameLookup[id] ?? "?" }
+        let currentDebtor = GroupExpenseService.shared.openingBalanceDebtorMemberID(of: existing) ?? ""
+        replaceTitle = L10n.Groups.OpeningBalance.replaceTitle(name(debtorMemberID), name(creditorMemberID))
+        replaceMessage = L10n.Groups.OpeningBalance.replaceMessage(
+            L10n.Groups.OpeningBalance.feedRow(name(currentDebtor), name(existing.paidByMemberID))
+                + " · " + appPreferences.currency(existing.amount, currencyCode: existing.currencyCode)
+        )
+        showReplaceConfirmation = true
+        return true
+    }
+
+    private func performSave(afterConfirmation: Bool = false) {
         do {
             if let edit = expenseToEdit {
                 try GroupExpenseService.shared.updateOpeningBalance(
@@ -332,8 +427,20 @@ struct GroupOpeningBalanceFormView: View {
             onSave()
             dismiss()
         } catch {
-            errorMessage = GroupsUserFacingErrorLogic.message(for: error)
-            showError = true
+            errorMessage = OpeningBalanceErrorCopyLogic.message(for: error)
+            guard afterConfirmation else {
+                showError = true
+                return
+            }
+            // El aviso de «Reemplazar» aún se está cerrando (~0,3-0,5 s): el de error, después.
+            Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .milliseconds(600))
+                } catch {
+                    return
+                }
+                showError = true
+            }
         }
     }
 }
