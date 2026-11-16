@@ -15,8 +15,12 @@
 //  No asume ser hoja de pantalla completa: el contenido va a ancho legible, por si algún día vive en la columna de
 //  detalle de una lista en iPad. El tamaño lo decide la ventana (`yalaSheetDetents`).
 //
+//  Rediseño del 2026-11-16 (ticket `analisis-por-cuenta`): bajo «Filtrar por esta cuenta», las gráficas de los widgets
+//  del Panel con los datos de esta cuenta (`AccountAnalysisCharts`: la curva de Tendencias, el flujo de caja y la
+//  distribución por categoría, con la comparación contra el período anterior), y abajo los gastos más grandes y los
+//  últimos registros. Se fue la curva propia y la lista de barras de «En qué se fue»: no seguían el design system.
+//
 
-import Charts
 import SwiftData
 import SwiftUI
 
@@ -37,6 +41,8 @@ struct AccountDetailSheet: View {
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var summary: AccountDetailCalculator.Summary?
     @State private var reconciliation: AccountDetailCalculator.Reconciliation?
+    /// Lo que pintan las gráficas de los widgets con los datos de esta cuenta (rediseño del 2026-11-16).
+    @State private var analysis: AccountAnalysis?
     /// El estado de cuenta de la tarjeta (card nmtk). `nil` = no es una tarjeta con día de corte.
     @State private var statement: CreditCardStatementSummary.Card?
     @Environment(CurrencyConverter.self) private var currencyConverter
@@ -101,7 +107,16 @@ struct AccountDetailSheet: View {
                     linePicker
                     balanceEquation
                     filterButton
-                    chart
+                    if let analysis {
+                        AccountAnalysisCharts(
+                            analysis: analysis,
+                            currencyCode: currencyCode,
+                            period: sessionState.selectedPeriod,
+                            customRange: sessionState.customDateRange,
+                            interval: viewModel.panelDateInterval,
+                            isExpensesOnlyMode: isExpensesOnlyMode
+                        )
+                    }
                     if let summary {
                         detailSections(summary)
                     }
@@ -405,74 +420,19 @@ struct AccountDetailSheet: View {
         }
     }
 
-    @ViewBuilder
-    private var chart: some View {
-        if let summary, summary.series.count > 1 {
-            Chart(summary.series, id: \.day) { point in
-                AreaMark(x: .value("Día", point.day), y: .value("Saldo", point.balance))
-                    .foregroundStyle(accountColor.opacity(0.14))
-                    .interpolationMethod(.monotone)
-                LineMark(x: .value("Día", point.day), y: .value("Saldo", point.balance))
-                    .foregroundStyle(accountColor)
-                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                    .interpolationMethod(.monotone)
-                // Valor de inicio y fin sobre la curva (UX 2.2 · L3-11): sin escala era una línea sin cifras. Texto ya
-                // resuelto: dentro de una anotación no llega el entorno (`AmountText` tumbaría la app).
-                if point.day == summary.series.first?.day || point.day == summary.series.last?.day {
-                    PointMark(x: .value("Día", point.day), y: .value("Saldo", point.balance))
-                        .foregroundStyle(accountColor)
-                        .symbolSize(36)
-                        .annotation(
-                            position: .top,
-                            alignment: point.day == summary.series.first?.day ? .leading : .trailing,
-                            spacing: DS.Spacing.xxs
-                        ) {
-                            Text(appPreferences.currency(point.balance, currencyCode: currencyCode))
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(theme.secondaryText)
-                                .lineLimit(1)
-                                .fixedSize()
-                        }
-                }
-            }
-            .chartYScale(domain: .automatic(includesZero: false))
-            .chartPlotStyle { plot in plot.padding(.top, DS.Spacing.lg) }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
-                    // Con más de medio año en pantalla el día no ubica nada y dos «1 ene.» no se distinguen: mes y año.
-                    if spansMoreThanHalfAYear(summary.series) {
-                        AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits))
-                    } else {
-                        AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                    }
-                }
-            }
-            .chartYAxis(.hidden)
-            .frame(height: 120)
-            .accessibilityElement()
-            .accessibilityLabel(L10n.AccountDetail.chartLabel(account: shown.name, period: periodName))
-        }
-    }
-
-    private func spansMoreThanHalfAYear(_ series: [AccountDetailCalculator.DayBalance]) -> Bool {
-        guard let first = series.first?.day, let last = series.last?.day else { return false }
-        return last.timeIntervalSince(first) > 183 * 24 * 3600
-    }
-
     // MARK: - Lo de abajo (al subir la hoja)
 
     @ViewBuilder
     private func detailSections(_ summary: AccountDetailCalculator.Summary) -> some View {
-        Divider()
-
-        if !summary.topCategories.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(L10n.AccountDetail.topCategories)
+        if let largest = analysis?.largestExpenses, !largest.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.AnalisisCuenta.largestTitle)
                     .font(DS.Typography.headline)
                     .foregroundStyle(theme.primaryText)
-                let top = summary.topCategories.first?.amount ?? 1
-                ForEach(summary.topCategories, id: \.key) { item in
-                    categoryRow(item, fraction: top > 0 ? item.amount / top : 0)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("account_analysis_largest_title")
+                ForEach(largest, id: \.id) { entry in
+                    latestRow(entry)
                 }
             }
         }
@@ -481,6 +441,7 @@ struct AccountDetailSheet: View {
             Text(L10n.AccountDetail.latest)
                 .font(DS.Typography.headline)
                 .foregroundStyle(theme.primaryText)
+                .accessibilityAddTraits(.isHeader)
             if summary.latest.isEmpty {
                 Text(L10n.AccountDetail.empty)
                     .font(DS.Typography.subheadline)
@@ -492,37 +453,6 @@ struct AccountDetailSheet: View {
                 }
             }
         }
-    }
-
-    private func categoryRow(_ item: AccountDetailCalculator.CategoryTotal, fraction: Double) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack {
-                Text(item.name)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(1)
-                Spacer(minLength: DS.Spacing.sm)
-                AmountText(
-                    value: item.amount,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.subheadlineEmphasized,
-                    secondaryFont: DS.Typography.caption,
-                    tint: .color(theme.primaryText)
-                )
-            }
-            GeometryReader { proxy in
-                Capsule()
-                    .fill(theme.card)
-                    .overlay(alignment: .leading) {
-                        Capsule()
-                            .fill(Color(hex: item.colorHex ?? AppConstants.defaultColorHex))
-                            .frame(width: max(DS.Spacing.sm, proxy.size.width * fraction))
-                    }
-            }
-            .frame(height: DS.Spacing.sm)
-            .accessibilityHidden(true)
-        }
-        .accessibilityElement(children: .combine)
     }
 
     private func latestRow(_ entry: AccountDetailCalculator.Entry) -> some View {
@@ -600,7 +530,8 @@ struct AccountDetailSheet: View {
     private func recompute() {
         guard !isStale else { return }
         // Lo que espera su borrado con «Deshacer» no cuenta en la ficha (`RecordPendingDeletion`).
-        let entries = RecordPendingDeletion.shared.visible(shown.transactions ?? []).map { tx in
+        let transactions = RecordPendingDeletion.shared.visible(shown.transactions ?? [])
+        let entries = transactions.map { tx in
             AccountDetailCalculator.Entry(
                 id: String(describing: tx.persistentModelID),
                 date: tx.date,
@@ -629,6 +560,19 @@ struct AccountDetailSheet: View {
             )
         }
         summary = result
+        analysis = AccountAnalysisBuilder.build(
+            transactions: transactions,
+            entries: entries,
+            series: result.series,
+            period: sessionState.selectedPeriod,
+            customRange: sessionState.customDateRange,
+            interval: interval,
+            currencyCode: currencyCode,
+            isExpensesOnlyMode: isExpensesOnlyMode,
+            now: now,
+            calendar: calendar,
+            converter: currencyConverter
+        )
         reconciliation = AccountDetailCalculator.reconciliation(entries: entries, interval: interval, calendar: calendar)
         statement = CreditCardStatementSummary.card(head: account, members: cardMembers, now: now, calendar: calendar)
     }
