@@ -15,6 +15,10 @@
 //   - medium → `Form` plain, fondo material glass nativo iOS 26.
 //   - large  → `PanelBackgroundView` + `List.solidCard()` (UI-PATTERNS.md).
 //
+//  Decisión 47 de la revisión 2.3 (B1): «Presupuestos en el Panel» —las estrellas que eligen qué presupuestos salen en
+//  su tarjeta— vive aquí, con lo demás que decide qué enseña el Panel. Antes era la fila «Presupuestos» de Ajustes, que
+//  prometía tus presupuestos y abría otra cosa.
+//
 
 import SwiftUI
 
@@ -24,6 +28,8 @@ struct PanelSectionsConfigView: View {
 
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showingReorderSheet = false
+    /// ↻ pregunta antes (revisión por vistas 2.3, PN-8): devolvía el orden original sin aviso.
+    @State private var confirmingReset = false
 
     private var isLargeDetent: Bool { selectedDetent == .large }
 
@@ -49,13 +55,15 @@ struct PanelSectionsConfigView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        appPreferences.resetPanelSectionsOrder()
+                        confirmingReset = true
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(Color.primary)
                     }
-                    .accessibilityLabel(L10n.Widget.resetLayout)
+                    // Lo que hace de verdad: solo el orden de las secciones; encendidas y apagadas no cambian.
+                    .accessibilityLabel(L10n.Panel.SectionsConfig.resetOrder)
+                    .accessibilityIdentifier("panel_sections_config_reset")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -66,11 +74,22 @@ struct PanelSectionsConfigView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Action.reorder)
+                    .accessibilityIdentifier("panel_sections_config_reorder")
 
-                    YalaSaveButton(action: { dismiss() })
+                    // Los cambios se aplican al tocarlos: el ✓ solo cierra, y VoiceOver dice «Listo», no «Guardar».
+                    YalaSaveButton(action: { dismiss() }, accessibilityName: L10n.Action.done)
                 }
             }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
+            // `.alert` y no `confirmationDialog`: anclado a un botón, en iOS 26 este no pinta «Cancelar» (swiftui-ds.md).
+            .alert(L10n.Panel.SectionsConfig.resetOrderTitle, isPresented: $confirmingReset) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Panel.SectionsConfig.resetConfirm) {
+                    appPreferences.resetPanelSectionsOrder()
+                }
+            } message: {
+                Text(L10n.Panel.SectionsConfig.resetOrderMessage)
+            }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
@@ -89,6 +108,15 @@ struct PanelSectionsConfigView: View {
                 }
             } footer: {
                 Text(L10n.Panel.SectionsConfig.footer)
+            }
+
+            Section {
+                NavigationLink {
+                    BudgetsFavoritesSettingsView()
+                } label: {
+                    budgetsOnPanelLabel(showsChevron: false)
+                }
+                .accessibilityIdentifier("panel_sections_config_budgets_on_panel")
             }
         }
     }
@@ -120,12 +148,54 @@ struct PanelSectionsConfigView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.sm)
+
+                    NavigationLink {
+                        BudgetsFavoritesSettingsView()
+                    } label: {
+                        budgetsOnPanelLabel(showsChevron: true)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.md)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .solidCard()
+                    .accessibilityIdentifier("panel_sections_config_budgets_on_panel")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
         }
+    }
+
+    // MARK: - Presupuestos en el Panel (B1)
+
+    /// La fila que abre las estrellas de la tarjeta de Presupuestos. En el `Form` el sistema pinta el chevron.
+    private func budgetsOnPanelLabel(showsChevron: Bool) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "chart.pie.fill")
+                .font(DS.Typography.body)
+                .foregroundStyle(.thAccentText)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Lote23Chico.budgetsOnPanel)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                Text(L10n.Lote23Chico.budgetsOnPanelHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: DS.Spacing.sm)
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption).fontWeight(.semibold)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Row (compartido entre ambos layouts)
@@ -218,6 +288,7 @@ struct PanelSectionsConfigView: View {
                         Text(kind.localizedTitle)
                             .font(DS.Typography.body)
                     }
+                    .accessibilityIdentifier("panel_sections_reorder_row_\(kind.rawValue)")
                 }
                 .onMove { source, destination in
                     DS.Haptic.selection()
@@ -230,7 +301,11 @@ struct PanelSectionsConfigView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { showingReorderSheet = false })
+                    YalaSaveButton(
+                        action: { showingReorderSheet = false },
+                        accessibilityID: "panel_sections_reorder_done",
+                        accessibilityName: L10n.Action.done
+                    )
                 }
             }
         }

@@ -18,6 +18,9 @@ struct ScheduledPaymentPrefill {
     let needOverride: SubcategoryNeed?
     let currencyCode: String
     let transactionDate: Date
+    /// El nombre del pago. `nil`: la descripción del registro, como desde «Hacer recurrente › Más opciones…». Desde un
+    /// registro ya guardado sin nota, su subcategoría (`RecurringFromRecordLogic.paymentName`).
+    var name: String? = nil
 }
 
 struct ScheduledPaymentEditorView: View {
@@ -53,6 +56,9 @@ struct ScheduledPaymentEditorView: View {
     @State private var transactionType: String = "expense"
     @State private var paymentCategory: PaymentCategory = .recurring
     @State private var isSubscription: Bool = false
+    /// Logo de suscripción (card 9nn7, 2.3): `nil` = automático por el nombre, `SubscriptionBrandCatalog.noneID` =
+    /// quitado, o el id del servicio elegido.
+    @State private var brandLogoID: String?
 
     // Classification
     @State private var selectedAccount: Account?
@@ -290,11 +296,15 @@ struct ScheduledPaymentEditorView: View {
             VStack(spacing: DS.Spacing.none) {
                 // Transaction Type (Income/Expense) — oculto en gasto compartido (siempre gasto)
                 if !sessionState.isExpensesOnlyMode && !isGroupExpense {
-                    Picker("", selection: $transactionType) {
+                    // Con nombre para VoiceOver, sin rótulo visible: los selectores de esta pantalla se leían sin
+                    // nombre (lote 04 de mejoras necesarias 2.3).
+                    Picker(L10n.Transaction.type, selection: $transactionType) {
                         Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
                         Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
                     }
+                    .labelsHidden()
                     .pickerStyle(.segmented)
+                    .accessibilityLabel(L10n.Transaction.type)
                     .padding()
                 }
 
@@ -302,9 +312,16 @@ struct ScheduledPaymentEditorView: View {
 
                 // Name Field
                 HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "textformat")
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
+                    // Con un servicio conocido, su logo en lugar del icono genérico: así se ve que se propuso.
+                    if let brand = resolvedBrand {
+                        SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall)
+                            // Id propio: la lista de debajo de la hoja tiene los suyos con el mismo servicio.
+                            .accessibilityIdentifier("scheduled_editor_brand_badge_\(brand.id)")
+                    } else {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
                     TextField(
                         NSLocalizedString("scheduled.editor.name.placeholder", comment: ""),
                         text: $name
@@ -316,6 +333,11 @@ struct ScheduledPaymentEditorView: View {
                 }
                 .padding()
                 .id(EditorField.name)
+
+                if showsLogoRow {
+                    SubsectionDivider()
+                    logoRow
+                }
 
                 SubsectionDivider()
 
@@ -493,6 +515,79 @@ struct ScheduledPaymentEditorView: View {
                 loadAvailableGroups()
             }
         }
+    }
+
+    // MARK: - Logo de suscripción (card 9nn7, 2.3)
+
+    private var resolvedBrand: SubscriptionBrand? {
+        SubscriptionBrandCatalog.resolve(storedID: brandLogoID, name: name)
+    }
+
+    /// Solo donde aporta: hay un logo (propuesto o elegido), se quitó uno, o el pago es una suscripción.
+    private var showsLogoRow: Bool {
+        !isGroupExpense && (resolvedBrand != nil || brandLogoID != nil || isSubscription)
+    }
+
+    private var logoRowValue: String {
+        if brandLogoID == SubscriptionBrandCatalog.noneID { return L10n.Scheduled.logoNone }
+        if brandLogoID == nil {
+            return resolvedBrand.map { L10n.Scheduled.logoAutoNamed($0.name) } ?? L10n.Scheduled.logoNone
+        }
+        return resolvedBrand?.name ?? L10n.Scheduled.logoNone
+    }
+
+    private var logoRow: some View {
+        Menu {
+            Button {
+                brandLogoID = nil
+            } label: {
+                let auto = SubscriptionBrandCatalog.match(name: name)
+                Label(auto.map { L10n.Scheduled.logoAutoNamed($0.name) } ?? L10n.Scheduled.logoAuto,
+                      systemImage: brandLogoID == nil ? "checkmark" : "wand.and.stars")
+            }
+            .accessibilityIdentifier("scheduled_logo_option_auto")
+            Button {
+                brandLogoID = SubscriptionBrandCatalog.noneID
+            } label: {
+                Label(L10n.Scheduled.logoNone,
+                      systemImage: brandLogoID == SubscriptionBrandCatalog.noneID ? "checkmark" : "circle.slash")
+            }
+            .accessibilityIdentifier("scheduled_logo_option_none")
+            Divider()
+            ForEach(SubscriptionBrandCatalog.sortedForPicking) { brand in
+                Button {
+                    brandLogoID = brand.id
+                } label: {
+                    if brandLogoID == brand.id {
+                        Label(brand.name, systemImage: "checkmark")
+                    } else {
+                        Text(brand.name)
+                    }
+                }
+                .accessibilityIdentifier("scheduled_logo_option_\(brand.id)")
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                // Colores fijos: dentro de un `Menu`, `.primary`/`.secondary` salen del tinte (swiftui-ds.md).
+                Image(systemName: "seal")
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                Text(L10n.Scheduled.logoTitle)
+                    .foregroundStyle(Color(.label))
+                Spacer(minLength: DS.Spacing.sm)
+                Text(logoRowValue)
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(Color(.tertiaryLabel))
+                    .accessibilityHidden(true)
+            }
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("scheduled_logo_row")
     }
 
     private var subscriptionToggle: some View {
@@ -824,11 +919,13 @@ struct ScheduledPaymentEditorView: View {
 
             VStack(spacing: DS.Spacing.none) {
                 // One-time vs Recurring toggle
-                Picker("", selection: $isRecurring) {
+                Picker(L10n.UXL10.when, selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
                 }
+                .labelsHidden()
                 .pickerStyle(.segmented)
+                .accessibilityLabel(L10n.UXL10.when)
                 // Sin este id el control es INALCANZABLE desde automatización: un `Picker`
                 // segmentado no aparece como elemento tapeable en el árbol de accesibilidad (sale
                 // como texto), y targetear por el rótulo está prohibido porque está localizado.
@@ -919,11 +1016,12 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            Picker("", selection: $recurrenceInterval) {
+            Picker(NSLocalizedString("scheduled.every", comment: ""), selection: $recurrenceInterval) {
                 ForEach(1...maxInterval, id: \.self) { num in
                     Text("\(num)").tag(num)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
             .frame(width: 60)
             .onChange(of: recurrenceType) {
@@ -933,12 +1031,13 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
 
-            Picker("", selection: $recurrenceType) {
+            Picker(L10n.Scheduled.Detail.frequency, selection: $recurrenceType) {
                 ForEach(RecurrenceType.allCases) { type in
                     Text(recurrenceInterval == 1 ? type.localizedNameSingular : type.localizedNamePlural)
                         .tag(type)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
         }
         .padding()
@@ -1020,11 +1119,12 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            Picker("", selection: $dayOfMonth) {
+            Picker(NSLocalizedString("scheduled.editor.day.of.month", comment: ""), selection: $dayOfMonth) {
                 ForEach(1...31, id: \.self) { day in
                     Text("\(day)").tag(day)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
             // Hermano del id del selector de recurrencia: es la otra vía para que un pago
             // recurrente venza HOY (poner aquí el día de hoy) y tampoco era alcanzable.
@@ -1046,19 +1146,21 @@ struct ScheduledPaymentEditorView: View {
             Spacer()
 
             // Month picker
-            Picker("", selection: $yearlyMonth) {
+            Picker(L10n.Scheduled.Recurrence.month, selection: $yearlyMonth) {
                 ForEach(1...12, id: \.self) { month in
                     Text(monthName(month)).tag(month)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
 
             // Day picker
-            Picker("", selection: $yearlyDay) {
+            Picker(L10n.Scheduled.Recurrence.day, selection: $yearlyDay) {
                 ForEach(1...daysInMonth(yearlyMonth), id: \.self) { day in
                     Text("\(day)").tag(day)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
         }
         .padding()
@@ -1206,7 +1308,7 @@ struct ScheduledPaymentEditorView: View {
 
                     Spacer()
 
-                    Picker("", selection: $notifyDaysBefore) {
+                    Picker(NSLocalizedString("scheduled.notify.days.before", comment: ""), selection: $notifyDaysBefore) {
                         Text(NSLocalizedString("common.disabled", comment: "")).tag(0)
                         Text("1").tag(1)
                         Text("2").tag(2)
@@ -1216,6 +1318,7 @@ struct ScheduledPaymentEditorView: View {
                         Text("14").tag(14)
                         Text("30").tag(30)
                     }
+                    .labelsHidden()
                     .pickerStyle(.menu)
                 }
                 .padding()
@@ -1378,15 +1481,18 @@ struct ScheduledPaymentEditorView: View {
         vm.splitType = splitConfigType
         vm.selectedMemberIDs = Set(splitParticipantIDs.map { $0.uuidString })
         vm.exactAmounts = [:]; vm.percentages = [:]; vm.sharesCounts = [:]
+        var percentages: [(id: String, percentage: Double)] = []
         for (uuid, value) in splitValues {
             let id = uuid.uuidString
             switch splitConfigType {
             case .exact: vm.exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
-            case .percentage: vm.percentages[id] = String(format: "%.1f", value)
+            case .percentage: percentages.append((id: id, percentage: value))
             case .shares: vm.sharesCounts[id] = String(Int(value.rounded()))
             case .equal: break
             }
         }
+        // Que sumen 100 al reabrir: «Porcentaje» se exige al céntimo desde el lote 02 de mejoras necesarias de 2.3.
+        if !percentages.isEmpty { vm.loadPercentages(percentages) }
     }
 
     private func resetSplitConfig() {
@@ -1554,7 +1660,7 @@ struct ScheduledPaymentEditorView: View {
         if payment == nil, let prefill = prefill {
             let calendar = Calendar.current
             // Desde «Hacer recurrente › Más opciones…» el nombre es la descripción del registro (UX 2.2 · L2-15).
-            name = prefill.note.trimmingCharacters(in: .whitespacesAndNewlines)
+            name = prefill.name ?? prefill.note.trimmingCharacters(in: .whitespacesAndNewlines)
             amount = prefill.amount
             note = prefill.note
             transactionType = prefill.transactionType
@@ -1579,6 +1685,7 @@ struct ScheduledPaymentEditorView: View {
         transactionType = payment.transactionType
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
         isSubscription = paymentCategory == .subscription
+        brandLogoID = payment.brandLogoID
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
         // CSV-mirror SSOT via resolver + TagResolver → set of persistentModelIDs.
@@ -1692,7 +1799,8 @@ struct ScheduledPaymentEditorView: View {
             groupZoneID: isGroupExpense ? selectedGroup?.cloudKitZoneID : nil,
             splitType: isGroupExpense ? splitConfigType.rawValue : nil,
             splitParticipantIDs: isGroupExpense ? splitParticipantIDs : [],
-            splitValues: isGroupExpense ? splitValues : [:]
+            splitValues: isGroupExpense ? splitValues : [:],
+            brandLogoID: .some(isGroupExpense ? nil : brandLogoID)
         )
 
         if let id = savedID {

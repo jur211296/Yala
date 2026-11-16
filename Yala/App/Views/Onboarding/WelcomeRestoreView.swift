@@ -62,6 +62,43 @@ struct WelcomeRestoreView: View {
     /// anterior (la del migrado se queda congelada al migrar) y «Encontramos tus datos» lo avisa con una nota (card lokl,
     /// ticket `restore-beacon-outlives-account-deletion` §3, decisión A de Jürgen del 2026-11-05: nota, mismos botones).
     @State private var foundCopyPredatesCloud = false
+    /// La persona ya eligió «Traer mis datos» en la puerta de iCloud privado antes de reabrir Yala: «¡Qué bien volver a
+    /// verte!» no vuelve a preguntar (`RestoreFoundActionsLogic`). Se lee una vez al montar; la marca la apagan las salidas.
+    @State private var bringChosenAtGate = RestoreBringChoiceStore.wasChosenAtGate()
+
+    /// ¿Va la nota «Esta copia de iCloud es de antes de que pasaras tus datos a tu cuenta de Yala»? Con el faro puesto
+    /// **y** movimientos o cuentas en la copia (card `icloud-recien-vaciado-yala-dice-ya-tiene`, E03 del 13-nov): una copia con
+    /// solo las categorías de serie que la app vuelve a sembrar tras «Vaciar datos» no es «la de antes» de nada, y la nota
+    /// salía igual porque el faro sobrevive en el iCloud-KV.
+    ///
+    /// **Y ningún movimiento de la copia es posterior al enlace** (barrido del iPhone 14, 14-nov, lote B): el faro guarda
+    /// cuándo se enlazó la cuenta (`CloudBeacon.linkedAt`). Una copia con un movimiento creado DESPUÉS siguió viva en iCloud
+    /// tras el enlace —la persona volvió a iCloud y apuntó ahí—, así que no es «de antes» de nada: el barrido creó
+    /// «Prueba» solo en iCloud y la nota lo negaba. Sin fecha de enlace (faro anterior a ella) o sin movimientos con fecha
+    /// no se puede saber, y se conserva la regla de antes.
+    static func showsPreCloudNote(beaconLinked: Bool, transactions: Int, accounts: Int,
+                                  linkedAt: Date? = nil, newestTransactionCreatedAt: Date? = nil) -> Bool {
+        guard beaconLinked && (transactions > 0 || accounts > 0) else { return false }
+        if let linkedAt, let newestTransactionCreatedAt, newestTransactionCreatedAt > linkedAt { return false }
+        return true
+    }
+
+    /// El movimiento propio (sin los de Grupos) más reciente de la copia restaurada, por fecha de creación. `nil` si no hay
+    /// ninguno o si no se pudo leer: la nota decide entonces como antes.
+    static func newestOwnTransactionCreatedAt(in context: ModelContext) -> Date? {
+        var descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == nil && $0.splitSettlementID == nil },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first?.createdAt
+        } catch {
+            #if DEBUG
+            print("WelcomeRestoreView: Error: no se pudo leer el movimiento más reciente: \(error)")
+            #endif
+            return nil
+        }
+    }
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
     var onStartFresh: () -> Void
@@ -95,6 +132,18 @@ struct WelcomeRestoreView: View {
         }
     }
 
+    /// Lo que ofrece «¡Qué bien volver a verte!» según si la elección ya se hizo en la puerta.
+    private var foundActions: RestoreFoundActionsLogic.Actions {
+        RestoreFoundActionsLogic.actions(bringChosenAtGate: bringChosenAtGate)
+    }
+
+    /// La flecha atrás desaparece solo en «¡Qué bien volver a verte!» con la elección ya hecha: durante la búsqueda y en
+    /// los demás desenlaces sigue siendo la salida.
+    private var showsBackButton: Bool {
+        guard case .found = state else { return true }
+        return foundActions.offersBack
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -121,7 +170,12 @@ struct WelcomeRestoreView: View {
                             // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
                             // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
                             if summary.hasAnyData {
-                                foundCopyPredatesCloud = CloudBeacon().isCloudAccountLinked
+                                let beacon = CloudBeacon()
+                                foundCopyPredatesCloud = Self.showsPreCloudNote(
+                                    beaconLinked: beacon.isCloudAccountLinked,
+                                    transactions: summary.transactionsCount, accounts: summary.accountsCount,
+                                    linkedAt: beacon.linkedAt,
+                                    newestTransactionCreatedAt: Self.newestOwnTransactionCreatedAt(in: modelContext))
                                 RestoreBreadcrumb.found(summary, settlement: settlement,
                                                         beaconLinked: foundCopyPredatesCloud)
                                 state = .found(summary)
@@ -156,9 +210,12 @@ struct WelcomeRestoreView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                        onBack()
+                if showsBackButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                            RestoreBringChoiceStore.clear()
+                            onBack()
+                        }
                     }
                 }
                 if showRefreshToolbar {
@@ -253,18 +310,40 @@ struct WelcomeRestoreView: View {
     /// Decide el estado inicial; la espera con quiescencia + el progreso en vivo
     /// los hace `RestoreProgressView` (estado `.searching`). Respeta el wipe: si el
     /// último acto del usuario fue un wipe, no ofrecemos restaurar (estado `.wiped`).
-    private func startSearch() {
-        // **Los dos `return` de abajo TIRAN el reloj que la puerta de descarte pudiera haber
-        // aparcado**, y esa línea la trajo la review (`restore-session-window-has-no-reachable-ceiling`).
-        // Aquí no se enciende la señal —no hay import que la justifique— así que el aparcado se
-        // quedaba VARADO esperando a un estreno futuro que no tiene nada que ver con él: el recorrido
-        // medido es volver de la puerta sin iCloud, caer en `.iCloudDisabled`, encenderlo, y que el
-        // «volver a buscar» estrene heredando un reloj de hace minutos sobre una descarga que acaba
-        // de empezar. Su tope duro caducaría a media bajada.
-        guard iCloudSyncService.shared.isAccountAvailable else {
+    private func startSearch(afterAskingCloudKit: Bool = false) {
+        // **«¿Hay iCloud?» es la cuenta de CloudKit, no el token de iCloud Drive** (card 6a12, ticket
+        // `restore-with-icloud-drive-off-mounts-without-mirror`). Con la sesión abierta y Drive apagado el token es `nil`
+        // y CloudKit funciona: esta pantalla decía «Activa iCloud» a quien tenía sus datos ahí. Si CloudKit todavía no
+        // contestó en este proceso, se le pregunta UNA vez antes de decidir; mientras, la pantalla sigue en `.searching`
+        // sin intento (la espera no se monta sin `flowToken`).
+        let sync = iCloudSyncService.shared
+        switch WelcomeRestoreRelaunchLogic.accountCheck(
+            tokenPresent: sync.isAccountAvailable,
+            cloudKitStatus: sync.cloudKitAccountStatus,
+            alreadyAsked: afterAskingCloudKit) {
+        case .askCloudKit:
+            Task { @MainActor in
+                await sync.awaitCloudKitAccountStatus()
+                if sync.cloudKitAccountStatus == nil {
+                    sync.refreshCloudKitAccountStatus()
+                    await sync.awaitCloudKitAccountStatus()
+                }
+                startSearch(afterAskingCloudKit: true)
+            }
+            return
+        case .absent:
+            // **Los dos `return` de abajo TIRAN el reloj que la puerta de descarte pudiera haber
+            // aparcado**, y esa línea la trajo la review (`restore-session-window-has-no-reachable-ceiling`).
+            // Aquí no se enciende la señal —no hay import que la justifique— así que el aparcado se
+            // quedaba VARADO esperando a un estreno futuro que no tiene nada que ver con él: el recorrido
+            // medido es volver de la puerta sin iCloud, caer en `.iCloudDisabled`, encenderlo, y que el
+            // «volver a buscar» estrene heredando un reloj de hace minutos sobre una descarga que acaba
+            // de empezar. Su tope duro caducaría a media bajada.
             ICloudRestoreSessionSignal.noteRestoreUnavailable()
             state = .iCloudDisabled
             return
+        case .present:
+            break
         }
         // L6-2 · iCloud está, pero este proceso montó el store sin su espejo (el Welcome no relanzó porque al elegir
         // «Restaurar» no había iCloud). Buscar aquí no puede traer nada: toca reabrir, y es ahora cuando se pide.
@@ -272,7 +351,7 @@ struct WelcomeRestoreView: View {
         // muere en el relanzamiento.
         if let onNeedsMirrorRelaunch,
            WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(
-               iCloudAvailable: true,
+               iCloudAccountPresent: true,
                mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) {
             onNeedsMirrorRelaunch()
             return
@@ -490,21 +569,25 @@ struct WelcomeRestoreView: View {
             Spacer()
 
             VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(L10n.UXLote6.restoreBringBack) {
+                YalaPrimaryButton(foundActions.primaryIsContinue ? L10n.Action.continueAction : L10n.UXLote6.restoreBringBack) {
                     DS.Haptic.success()
+                    RestoreBringChoiceStore.clear()
                     // El destino (directo / onboarding) lo decide el caller con
                     // RestoreRouter, según lo que traiga el resumen restaurado.
                     onContinueWithSummary(summary)
                 }
                 .accessibilityIdentifier("welcome_restore_continue")
 
-                Button {
-                    showStartFreshConfirm = true
-                } label: {
-                    Text(L10n.Welcome.Restore.startFresh)
-                        .font(DS.Typography.label)
-                        // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
-                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                if foundActions.offersStartFresh {
+                    Button {
+                        showStartFreshConfirm = true
+                    } label: {
+                        Text(L10n.Welcome.Restore.startFresh)
+                            .font(DS.Typography.label)
+                            // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    }
+                    .accessibilityIdentifier("welcome_restore_found_start_fresh")
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -584,6 +667,7 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.startFresh,
             primaryAction: { showStartFreshConfirm = true }
         )
+        .accessibilityIdentifier("welcome_restore_not_found")
     }
 
     /// El tope se agotó con el import en marcha: los datos vienen.
@@ -610,8 +694,12 @@ struct WelcomeRestoreView: View {
 
     /// iCloud apagado: **no hubo búsqueda**, así que este estado no sabe si hay datos.
     ///
+    /// **Desde el 2026-11-05 (card 6a12) la puerta ya no es el token**: `startSearch` decide con la cuenta de CloudKit
+    /// (`WelcomeRestoreRelaunchLogic.accountCheck`), así que con Drive apagado y la sesión abierta ya no se llega aquí.
+    /// El párrafo de abajo cuenta por qué la red de «Empezar desde cero» se quedó: sigue valiendo si CloudKit no contesta.
+    ///
     /// Confirma desde el 2026-09-20, y no por coherencia: **su población tiene datos**. La puerta que
-    /// manda aquí es `startSearch`, con `iCloudSyncService.isAccountAvailable`, que es
+    /// mandaba aquí era `startSearch`, con `iCloudSyncService.isAccountAvailable`, que es
     /// `SwiftDataConfiguration.isICloudAvailable()` = `FileManager.ubiquityIdentityToken != nil`
     /// (`Yala/Utils/SwiftDataConfiguration.swift:36-38`). **Ese token mide iCloud DRIVE, no CloudKit**
     /// (`.claude/rules/swiftdata-cloudkit.md`, la regla del 2026-09-10): con Drive apagado y la sesión
@@ -634,6 +722,7 @@ struct WelcomeRestoreView: View {
             secondaryTitle: L10n.Welcome.Restore.startFresh,
             secondaryAction: { showStartFreshConfirm = true }
         )
+        .accessibilityIdentifier("welcome_restore_icloud_disabled")
     }
 
     private var errorView: some View {

@@ -1,0 +1,1 @@
+0,63 s de mediana (0,60–0,87; 604 · 632 · 600 · 631 · 867 ms), corpus «rendimiento». No es comparable sin más con la de octubre: cambió el runtime (27.0 → 27.2)

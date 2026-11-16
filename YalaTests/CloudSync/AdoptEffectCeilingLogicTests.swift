@@ -221,7 +221,7 @@ struct AdoptEffectCeilingLogicTests {
             "case .migrating(let step):",
             "progressCard(controller, step: step, reverse: false)",
             "if controller.isAdoptEffectPending {",
-            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)",
+            "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)",
             "}",
         ])
     }

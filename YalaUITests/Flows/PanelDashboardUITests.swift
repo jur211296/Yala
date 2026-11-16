@@ -109,8 +109,8 @@ final class PanelDashboardUITests: XCTestCase {
         XCTAssertTrue(waitForSwitchValue(toggleAgain, equals: "0"), "La preferencia de ocultar Planificación no persistió.")
     }
 
-    /// Predeterminados: un usuario recién instalado ve CUATRO secciones —Cuentas,
-    /// Tendencias, Planificación y Últimos registros— y no las otras tres.
+    /// Predeterminados: un usuario recién instalado ve CINCO secciones —Cuentas, Salud (desde el lote 1 de la nota de
+    /// salud, 2.3), Tendencias, Planificación y Últimos registros— y no las otras dos.
     ///
     /// Se comprueba en el sheet de configuración porque es la única superficie con un
     /// identificador para las siete (`panel_section_toggle_<kind>`); las secciones sin
@@ -119,7 +119,7 @@ final class PanelDashboardUITests: XCTestCase {
     /// Este test solo es honesto gracias al reset del centinela de siembra en
     /// `applyUITestHooksEarly`: ese flag es monotónico y, sin limpiarlo, la corrida
     /// medía lo que dejó la anterior y pasaba en verde sin ejercitar nada.
-    func test_freshInstallShowsFourSectionsByDefault() {
+    func test_freshInstallShowsFiveSectionsByDefault() {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
@@ -130,8 +130,8 @@ final class PanelDashboardUITests: XCTestCase {
         )
         app.buttons["panel_sections_config"].tap()
 
-        let visibles = ["accounts", "tendencias", "planificacion", "latestRecords"]
-        let ocultas = ["health", "distribucion", "tools"]
+        let visibles = ["accounts", "health", "tendencias", "planificacion", "latestRecords"]
+        let ocultas = ["distribucion", "tools"]
 
         // Desde el lote 3 de la auditoría UX 2.2 (L3-6) cada fila lleva una línea de qué contiene, y a media altura no
         // caben todas: la lista solo monta las visibles. Se pasa a la hoja grande antes de buscarlas.

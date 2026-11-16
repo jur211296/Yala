@@ -11,6 +11,7 @@
 
 import Foundation
 import Sentry
+import UIKit
 
 nonisolated enum ErrorReportingService {
 
@@ -44,13 +45,31 @@ nonisolated enum ErrorReportingService {
             // Un fallo HTTP no es una caída; y su captura llevaría la petición.
             options.enableCaptureFailedRequests = false
             options.enableLogs = false
+            // Memoria agotada y cuelgues: solo en producción (ver `tracksHangsAndWatchdog`).
+            let tracksHangs = tracksHangsAndWatchdog(environment: environment)
+            options.enableWatchdogTerminationTracking = tracksHangs
+            options.enableAppHangTracking = tracksHangs
             options.beforeSend = { event in scrub(event) }
             options.beforeBreadcrumb = { crumb in scrub(crumb) }
         }
+        // Memoria, avisos de memoria baja y pestaña: lo que un cierre por memoria necesita traer (YALA-IOS-B).
+        Task { @MainActor in MemoryDiagnostics.shared.start() }
 
         #if DEV_BUILD
         // `-sentry-test-error`: manda el error de prueba al arrancar, para comprobarlo sin navegar hasta el botón.
         if ProcessInfo.processInfo.arguments.contains("-sentry-test-error") { _ = sendTestError() }
+        // `-sentry-test-memory-warning`: un aviso de memoria baja a los 3 s, para ver en Sentry el evento, el contexto
+        // `memory` y los rastros sin esperar a que iOS lo mande (el simulador no tiene cómo pedirlo por línea de comandos).
+        if ProcessInfo.processInfo.arguments.contains("-sentry-test-memory-warning") {
+            Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .seconds(3))
+                } catch {
+                    return
+                }
+                NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+            }
+        }
         #endif
     }
 
@@ -60,6 +79,15 @@ nonisolated enum ErrorReportingService {
     static func shouldStart(isRunningTests: Bool, isUITest: Bool, environment: [String: String]) -> Bool {
         guard !isRunningTests, !isUITest else { return false }
         return environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
+    }
+
+    /// El aviso de «el sistema la mató por memoria» (WatchdogTermination) y los cuelgues solo salen de la app de
+    /// producción. En las builds de desarrollo eran ruido de las pruebas en el iPhone de QA (YALA-IOS-B y YALA-IOS-D,
+    /// 2026-11-05/06): Sentry da por muerte por RAM cualquier cierre en primer plano sin crash, y cada
+    /// `devicectl … --terminate-existing` de una sesión lo era (app en ~80 MB); los cuelgues caían mientras Device MCP
+    /// leía la pantalla por accesibilidad. Los crashes de desarrollo siguen llegando (así salieron YALA-IOS-C y E).
+    static func tracksHangsAndWatchdog(environment: String) -> Bool {
+        environment == "production"
     }
 
     /// Error de prueba (Ajustes › Almacenamiento › panel de Modo Nube, o `-sentry-test-error`; solo DEV_BUILD). El mensaje lleva un correo y un importe FALSOS: en

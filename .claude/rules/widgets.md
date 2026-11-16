@@ -98,3 +98,12 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   congelada de `fixtures/` antes y después; el tintado del banco es aproximado. Mira también el tamaño del iPhone SE
   (`m-se`, `l-se`): es donde se corta. Un widget con una pieza de alto fijo (un aro) deja que la leyenda pida su alto y
   la pieza encoja (`WidgetPieBreakdown`).
+- **Pocos datos no deja huecos (card dz6c, 2026-11-04).** Un widget se mira con la matriz de estados del banco
+  (`qa/widget-render/estados.py` + `matriz.sh`: vacío, pocos, sin ingresos, sin presupuestos, sin gastos, completo), no
+  solo con la foto completa. Tres moldes: (1) **una lista reparte puestos, no filas**: los que no tienen fila llevan una
+  copia `.hidden()` de la primera (`WidgetRankingList.slots`, `LatestRecordsWidgetView`), o con dos filas la segunda se
+  iba al fondo; (2) **nunca `Spacer` entre bloques para repartir el alto**: las secciones van con aire fijo y el alto que
+  sobra lo toma la pieza que puede crecer (el aro: `WidgetPieBreakdown.maxDiameter`, `MonthSummaryCategories(layout:)`
+  con `ViewThatFits` en el extragrande vertical); (3) **un bloque de gráfica sin datos pinta su forma vacía**
+  (`WidgetEmptyRing`, la línea de cero de `CashFlowBarsChart`), no un texto suelto. Una lista corta deja lo que sobra
+  DEBAJO, como fin de lista: no se rellena con un pie.

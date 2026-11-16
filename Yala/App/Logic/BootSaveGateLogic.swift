@@ -97,7 +97,9 @@ enum BootSaveGateLogic {
     /// Resolution of the boot-save gate. `isRun` opens the save; each run case names WHY (for path-
     /// specific breadcrumbs at the call site).
     enum Decision: Equatable {
-        /// No CloudKit account → no mirror → no half-imported personal graph can exist → save is safe.
+        /// No CloudKit account → no mirror → no half-imported personal graph can exist → save is safe. «Cuenta» es
+        /// `iCloudSyncService.hasICloudAccount` desde la card dtex, no el token de iCloud Drive: con Drive apagado el
+        /// token falta y el espejo importa igual, así que con él esta rama se abría justo durante el import.
         case runNoAccount
         /// The real personal import fired AND went quiet (fast-path). Protects a genuine restore: while
         /// it's still importing (`hasObservedImportActivity == true`, `hasCompletedFirstImport` not yet),

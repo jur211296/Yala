@@ -23,7 +23,11 @@ struct SankeyFlowCalculator {
     private static let deficitColor = "#9CA3AF"         // neutral gray for "Otros fondos"
 
     private static var expensesLabel: String { L10n.Statistics.Sankey.expenses }
-    private static var availableLabel: String { L10n.Statistics.Sankey.available }
+    /// El sobrante (lo que entró menos lo que salió y lo planificado) con la palabra del Panel: «Te queda» en un período
+    /// en curso, «Te quedó» en uno cerrado (decisión 8 de 2.3; antes, «Disponible»).
+    static func leftoverLabel(periodIsClosed: Bool) -> String {
+        periodIsClosed ? L10n.Panel.Hero.leftPast : L10n.Panel.Hero.leftNow
+    }
     private static var otrosLabel: String { L10n.Statistics.Sankey.others }
     private static var plannedLabel: String { L10n.Statistics.Sankey.planned }
     private static var plannedRecurringLabel: String { L10n.Statistics.Sankey.plannedRecurring }
@@ -56,7 +60,8 @@ struct SankeyFlowCalculator {
         plannedPending: [PlannedOccurrence] = [],
         plannedSplit: PlannedSplit = .unified,
         propagatePlannedToCategories: Bool = false,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        periodIsClosed: Bool = false
     ) -> SankeyData {
 
         // Income aggregations — by subcategory, plus orphan-per-parent-category for tx without subcat.
@@ -199,7 +204,7 @@ struct SankeyFlowCalculator {
             poolNodes.append(SankeyNode(
                 id: SankeyNodeID.poolAvailable,
                 column: .pool,
-                name: availableLabel,
+                name: leftoverLabel(periodIsClosed: periodIsClosed),
                 amount: surplus,
                 colorHex: availableColor,
                 persistentID: nil,

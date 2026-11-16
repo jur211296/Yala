@@ -37,3 +37,20 @@ struct ErrorReportingPreviewGateTests {
         #expect(!ErrorReportingService.shouldStart(isRunningTests: false, isUITest: true, environment: [:]))
     }
 }
+
+/// YALA-IOS-B y YALA-IOS-D (2026-11-06): los avisos de memoria y de cuelgues de la build de desarrollo eran los
+/// relanzamientos y lecturas de pantalla de las sesiones de QA en el iPhone de pruebas. Solo producción los manda.
+@Suite("Sentry · memoria y cuelgues solo en producción")
+struct ErrorReportingHangTrackingTests {
+
+    @Test("producción los vigila")
+    func productionTracks() {
+        #expect(ErrorReportingService.tracksHangsAndWatchdog(environment: "production"))
+    }
+
+    @Test("desarrollo y debug no")
+    func developmentDoesNot() {
+        #expect(!ErrorReportingService.tracksHangsAndWatchdog(environment: "development"))
+        #expect(!ErrorReportingService.tracksHangsAndWatchdog(environment: "debug"))
+    }
+}

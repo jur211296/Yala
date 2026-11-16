@@ -26,11 +26,20 @@ struct ScheduledPaymentsView: View {
     @State private var newlySavedPaymentID: UUID?
     /// El «+» flotante, solo cuando el scroll se lleva «Nuevo pago planificado» de arriba (card kzhe).
     @State private var showFloatingNew = false
+    /// «Desde un registro» (encargo del 15-nov): el selector de registros que lleva al editor prellenado.
+    @State private var showsRecordPicker = false
 
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
+                    // Pagos que se repiten (lote S1, opción P1): lo que Yala encontró en el historial, arriba de la lista
+                    // mientras haya algo por responder.
+                    RecurringProposalsCard { month in
+                        viewModel.selectedMonth = month
+                        viewModel.recalculateData()
+                    }
+
                     // Tab segmented control
                     tabSelector
                         .padding(.horizontal, DS.Spacing.lg)
@@ -44,8 +53,12 @@ struct ScheduledPaymentsView: View {
                         tab: viewModel.selectedTab,
                         currencyCode: appPreferences.defaultCurrencyCode.rawValue,
                         onRefresh: { refreshData() },
-                        showsFloatingNew: $showFloatingNew
+                        showsFloatingNew: $showFloatingNew,
+                        onCreateFromRecord: { showsRecordPicker = true }
                     )
+
+                    // Volver a encender las propuestas o recuperar lo descartado sin tarjeta a la vista (lote S1).
+                    RecurringProposalsFooterLink()
                 }
             }
 
@@ -79,6 +92,9 @@ struct ScheduledPaymentsView: View {
                         refreshData()
                     }
             }
+        }
+        .sheet(isPresented: $showsRecordPicker, onDismiss: { refreshData() }) {
+            RecurringRecordPickerSheet()
         }
         // «¿Era de prueba?» del primer pago, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
         .practiceCleanupPrompt(for: [.scheduledPayment], editorClosedToken: paymentEditorClosedToken) { refreshData() }
@@ -123,12 +139,16 @@ struct ScheduledPaymentsView: View {
     // MARK: - Tab Selector
 
     private var tabSelector: some View {
-        Picker("Tab", selection: $viewModel.selectedTab) {
+        // El nombre es lo que VoiceOver lee del segmentado: decía «Tab» (lote 04 de mejoras necesarias 2.3).
+        Picker(L10n.Scheduled.Tab.pickerLabel, selection: $viewModel.selectedTab) {
             ForEach(ScheduledPaymentsTab.allCases) { tab in
                 Text(tab.localizedName).tag(tab)
             }
         }
         .pickerStyle(.segmented)
+        // Un segmentado no pasa el título del `Picker` a accesibilidad (medido en el árbol: etiqueta vacía).
+        .accessibilityLabel(L10n.Scheduled.Tab.pickerLabel)
+        .accessibilityIdentifier("scheduled_tab_picker")
     }
 
 

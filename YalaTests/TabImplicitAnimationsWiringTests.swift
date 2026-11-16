@@ -109,7 +109,7 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
          ".dsAnimation(DS.Animation.selection, value: viewModel.selectedTransactionNatures, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
-         ".dsAnimation(DS.Animation.selection, value: recordsViewMode, reduceMotion: reduceMotion)"),
+         ".dsAnimation(DS.Animation.selection, value: viewModel.recordsViewMode, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Records/Components/RecordsCalendarView.swift",
          ".dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Records/Components/RecordsCalendarView.swift",
@@ -139,6 +139,9 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Statistics/CategoriesTabView.swift",
          ".dsAnimation(DS.Animation.selection, value: listViewType, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Statistics/DetailContainerView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)"),
+        // Registros (página): los flotantes salen al perder de vista la fila de acciones, como en Estadísticas (card rtyu).
+        ("Yala/App/Views/Records/RecordsStandaloneView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)"),
         ("Yala/App/Views/Planning/Components/BudgetProgressBar.swift",
          ".animation(reduceMotion ? nil : DS.Animation.number, value: percentage)"),

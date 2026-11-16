@@ -24,6 +24,8 @@ struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -144,7 +146,7 @@ struct TopSubcategoriesWidget: View {
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
-                                Text("vs \(appPreferences.number(prevAmount))")
+                                Text("vs \(AmountPrivacy.text(appPreferences.number(prevAmount), hidden: amountsHidden))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -457,7 +459,7 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Formatters
 
     private func formattedAmount(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
     }
 
     private func formattedPercentage(_ value: Double) -> String {

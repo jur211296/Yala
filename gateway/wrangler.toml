@@ -21,7 +21,7 @@
 #   responde 503 yala_siwa_not_configured. NUNCA commitear la .p8.
 
 name = "yala-gateway-staging"
-main = "src/index.ts"
+main = "src/worker.ts"  # reexporta la app de src/index.ts y la entrada interna de Yala web (src/web/)
 compatibility_date = "2026-06-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "86c270a7776be98639700bd5959b303b"
@@ -51,14 +51,27 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "100"
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
-# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). APAGADO en los dos entornos a propósito:
-# encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
-# `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
-AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). STAGING al 100 (paso previo a 2.2):
+# QA con Yala Dev. Producción sigue en 0 hasta 2.2 publicada (luego 10→50→100). Ver docs/ai-cloud-vs-private-2026-10.md §7.
+AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "100"
+# «Otra cuenta de Apple» en la app (inicio de sesión web de Apple). Staging tiene el proveedor web de Apple en su
+# Supabase (Services ID `pe.yala.app.web`); producción NO (2026-11-06). Ver test/config.test.ts.
+APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
+# Yala web, lote 3: la entrada interna `WebGroupsReader` (src/web/groupsReader.ts) que lee Grupos para la web por un
+# service binding. SOLO staging; producción no lo declara y la entrada responde «disabled».
+WEB_GROUPS_READER = "on"
+# Yala web, lote 3 (opción A de Jürgen, 14-nov): la entrada interna `WebGroupsWriter` (src/web/groupsWriter.ts) que
+# añade gastos y pagos e invita desde la web, con el rol `yala_web` (web3_02). SOLO staging hasta una revisión.
+WEB_GROUPS_WRITER = "on"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
 MIN_SUPPORTED_BUILD = "0"
+# Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Dominio aparte, solo para
+# recibir (decisión de Jürgen del 2026-11-10): nunca yala-app.pe. Staging usa su propio local para que Email Routing
+# mande `auto-staging@` a este Worker y `auto@` al de producción. Lo fija test/mail.wrangler.test.ts.
+MAIL_ADDRESS_LOCAL = "auto-staging"
+MAIL_ADDRESS_DOMAIN = "yalainbox.com"
 
 [[d1_databases]]
 binding = "DB"
@@ -178,13 +191,18 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 # viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
 # owner en TestFlight.
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
-# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). APAGADO en los dos entornos a propósito:
-# encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
-# `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
+# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). PRODUCCIÓN en 0 a propósito:
+# staging ya va al 100; prod 10→50→100 solo con 2.2 publicada. Ver docs/ai-cloud-vs-private-2026-10.md §7.
 AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# «Otra cuenta de Apple»: APAGADO hasta que el Services ID tenga la URL de vuelta del Supabase de producción y ese
+# Supabase tenga `pe.yala.app.web` + su secreto (decisión A de Jürgen, 2026-11-06).
+APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "0"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
 MIN_SUPPORTED_BUILD = "0"
+# Correo del banco por reenvío: `auto+<code>@yalainbox.com` (ver la nota de staging).
+MAIL_ADDRESS_LOCAL = "auto"
+MAIL_ADDRESS_DOMAIN = "yalainbox.com"
 
 [[env.production.d1_databases]]
 binding = "DB"

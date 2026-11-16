@@ -4,7 +4,8 @@
 //
 //  Grupos B, card 5: las dos piezas de «Partir» en las hojas de la Bandeja de un gasto de grupo. La pastilla «Partir» va
 //  junto a las de la hoja (maqueta `opcion-b.html`, escenario 1, pantalla 2) y la tarjeta «Tu parte» ocupa su sitio al
-//  tocarla. El estado lo lleva `GroupDraftSplitState`.
+//  tocarla, con la línea resumen debajo («Debes S/ 510 a Pía · Sip sube S/ 500»). El estado lo lleva
+//  `GroupDraftSplitState`.
 //
 
 import SwiftUI
@@ -27,13 +28,16 @@ struct GroupDraftSplitCard: View {
 
     var body: some View {
         if let target = state.target {
-            GroupSplitLinesCard(
-                lines: $state.lines,
-                share: target.share,
-                currencyCode: target.currencyCode,
-                transferSourceName: sourceAccount?.name ?? target.transferSourceName,
-                transferSourceAccount: sourceAccount ?? target.transferSourceAccount
-            )
+            VStack(spacing: DS.Spacing.md) {
+                GroupSplitLinesCard(
+                    lines: $state.lines,
+                    share: target.share,
+                    currencyCode: target.currencyCode,
+                    transferSourceName: sourceAccount?.name ?? target.transferSourceName,
+                    transferSourceAccount: sourceAccount ?? target.transferSourceAccount
+                )
+                GroupSplitLinesSummaryLine(target: target, lines: state.lines)
+            }
         }
     }
 }

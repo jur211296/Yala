@@ -107,6 +107,9 @@ struct AverageSegment {
             return .month
         case .month:
             return dataCount >= 6 ? .quarter : nil
+        case .year:
+            // Barras por año: la media es la del total, sin tramos.
+            return nil
         }
     }
 }

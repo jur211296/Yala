@@ -36,10 +36,10 @@ struct InboxView: View {
     @State private var selectedDraftIDs: Set<PersistentIdentifier> = []
     @State private var showBulkActions = false
 
-    // Success view state (for swipe approve)
-    @State private var showSwipeSuccessView = false
-    @State private var swipeSuccessData: InboxApproveSuccessData?
-    @State private var swipeApprovedTransaction: TransactionItem?
+    // La pantalla de éxito de guardar deslizando. Un solo valor con los datos y el registro: con un flag
+    // `isPresented:` y los datos en otro `@State`, la hoja salía vacía a ratos (ticket
+    // `inbox-swipe-save-success-sheet-shows-blank`, regla de `swiftui-ds.md`).
+    @State private var swipeSuccess: InboxSwipeSuccess?
 
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
@@ -56,6 +56,11 @@ struct InboxView: View {
     @State private var saveReadyCount = 0
     @State private var saveReadySummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
     @State private var saveReadyLeftover: String?
+    /// Lo que el lote dejó en la Bandeja por posible duplicado (lote 03 de las necesarias 2.3).
+    @State private var saveReadyDuplicatesLine: String?
+    /// Deslizar para guardar un borrador que se parece a un registro que ya existe: pregunta, como el borrador abierto.
+    @State private var swipeDuplicateDraft: InboxDraft?
+    @State private var showSwipeDuplicateAlert = false
 
     // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
     // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
@@ -472,34 +477,30 @@ struct InboxView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showSwipeSuccessView) {
-                if let data = swipeSuccessData {
-                    InboxApproveSuccessView(
-                        data: data,
-                        hasNextDraft: viewModel.hasPendingDrafts,
-                        onEdit: {
-                            showSwipeSuccessView = false
-                            if let transaction = swipeApprovedTransaction {
-                                Task {
-                                    do {
-                                        try await Task.sleep(for: .milliseconds(300))
-                                    } catch { return }
-                                    selectedTransaction = transaction
-                                }
-                            }
-                        },
-                        onAccept: {
-                            showSwipeSuccessView = false
-                            dismissIfNoPendingDrafts()
-                        },
-                        onApproveNext: {
-                            showSwipeSuccessView = false
-                            if let next = viewModel.firstPendingDraft() {
-                                openDraftAfterDelay(next)
-                            }
+            .sheet(item: $swipeSuccess) { success in
+                InboxApproveSuccessView(
+                    data: success.data,
+                    hasNextDraft: viewModel.hasPendingDrafts,
+                    onEdit: {
+                        swipeSuccess = nil
+                        Task {
+                            do {
+                                try await Task.sleep(for: .milliseconds(300))
+                            } catch { return }
+                            selectedTransaction = success.transaction
                         }
-                    )
-                }
+                    },
+                    onAccept: {
+                        swipeSuccess = nil
+                        dismissIfNoPendingDrafts()
+                    },
+                    onApproveNext: {
+                        swipeSuccess = nil
+                        if let next = viewModel.firstPendingDraft() {
+                            openDraftAfterDelay(next)
+                        }
+                    }
+                )
             }
             .alert(L10n.Inbox.cannotApprove, isPresented: $showArchivedAccountAlert) {
                 Button(L10n.Common.ok, role: .cancel) {}
@@ -513,6 +514,7 @@ struct InboxView: View {
                 confirmCount: readyDrafts.count,
                 summary: saveReadySummary,
                 leftover: saveReadyLeftover,
+                duplicatesLine: saveReadyDuplicatesLine,
                 onConfirm: saveReadyDrafts,
                 onViewRecords: {
                     showSaveReadySuccess = false
@@ -523,6 +525,11 @@ struct InboxView: View {
                     showSaveReadySuccess = false
                     dismissIfNoPendingDrafts()
                 }
+            ))
+            .modifier(InboxSwipeDuplicatePresentation(
+                isPresented: $showSwipeDuplicateAlert,
+                draft: swipeDuplicateDraft,
+                onSaveAnyway: saveSwipedDuplicateAnyway
             ))
             .safeAreaInset(edge: .bottom) {
                 if isSelectionMode {
@@ -543,49 +550,29 @@ struct InboxView: View {
 
     // MARK: - Selection Bar
 
+    /// Con texto de accesibilidad «Editar» baja a su propia línea, a todo lo ancho: junto al contador se partía por
+    /// sílabas («Edi-tar», «seleccio-nados»; lote 05 de 2.3, zona 38 P7). A tamaño normal, la barra de siempre.
     private var selectionBar: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            // Select all / Deselect all
-            Button {
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    if selectedDraftIDs.count == filteredDrafts.count {
-                        selectedDraftIDs.removeAll()
-                    } else {
-                        selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    HStack(spacing: DS.Spacing.lg) {
+                        selectAllButton
+                        selectedCountText
                     }
+                    bulkEditButton(fillsWidth: true)
                 }
-            } label: {
-                Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(theme.accentText)
-                    .frame(minWidth: 44, minHeight: 44)
+            } else {
+                HStack(spacing: DS.Spacing.lg) {
+                    selectAllButton
+
+                    selectedCountText
+
+                    Spacer()
+
+                    bulkEditButton(fillsWidth: false)
+                }
             }
-            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
-
-            // Count
-            Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
-                .font(DS.Typography.label)
-
-            Spacer()
-
-            // Actions button
-            Button {
-                showBulkActions = true
-            } label: {
-                Text(L10n.Action.edit)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thOnAccent)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .frame(minHeight: 44)
-                    .background(
-                        Capsule()
-                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
-                    )
-            }
-            .disabled(selectedDraftIDs.isEmpty)
-            .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -594,6 +581,53 @@ struct InboxView: View {
                 .fill(.ultraThinMaterial)
                 .ignoresSafeArea()
         )
+    }
+
+    /// Select all / Deselect all
+    private var selectAllButton: some View {
+        Button {
+            DS.Haptic.selection()
+            dsWithAnimation(reduceMotion) {
+                if selectedDraftIDs.count == filteredDrafts.count {
+                    selectedDraftIDs.removeAll()
+                } else {
+                    selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                }
+            }
+        } label: {
+            Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
+                .font(DS.Typography.title)
+                .foregroundStyle(theme.accentText)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
+    }
+
+    private var selectedCountText: some View {
+        Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
+            .font(DS.Typography.label)
+            .accessibilityIdentifier("inbox_selected_count")
+    }
+
+    /// Actions button. `fillsWidth`: apilado, a todo lo ancho de la barra.
+    private func bulkEditButton(fillsWidth: Bool) -> some View {
+        Button {
+            showBulkActions = true
+        } label: {
+            Text(L10n.Action.edit)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thOnAccent)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: 44)
+                .background(
+                    Capsule()
+                        .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
+                )
+        }
+        .disabled(selectedDraftIDs.isEmpty)
+        .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
+        .accessibilityIdentifier("inbox_bulk_edit")
     }
 
     private var selectedDrafts: [InboxDraft] {
@@ -625,6 +659,13 @@ struct InboxView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.md)
+
+            // Gastos de grupo a los que les sobra un borrador o un préstamo (bug del 2026-11-09): se quitan aquí, viendo qué.
+            if !isSelectionMode && selectedFilter == .pending {
+                GroupBridgeLeftoversNotice(count: viewModel.groupLeftoverCount) { viewModel.loadData() }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, viewModel.groupLeftoverCount > 0 ? DS.Spacing.sm : DS.Spacing.none)
+            }
 
             // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
             // Seleccionar todo, Editar y Aprobar.
@@ -800,7 +841,7 @@ struct InboxView: View {
     private func draftRow(for draft: InboxDraft) -> some View {
         InboxDraftRowView(
             draft: draft,
-            currencyCode: draft.displayCurrencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
+            currencyCode: viewModel.displayCurrencyCode(for: draft, fallback: appPreferences.defaultCurrencyCode.rawValue),
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
             onTap: {
@@ -971,17 +1012,25 @@ struct InboxView: View {
         }
         draftService.setContext(modelContext)
         do {
-            let transactions = try draftService.bulkApprove(ready, currencyConverter: currencyConverter)
+            let outcome = try draftService.bulkApproveOutcome(ready, currencyConverter: currencyConverter)
+            let transactions = outcome.transactions
             viewModel.loadData()
+            saveReadyDuplicatesLine = InboxBulkDuplicatesLogic.skippedLine(outcome.skippedAsPossibleDuplicate)
             saveReadyCount = transactions.count
             saveReadySummary = InboxBulkApproveSummaryLogic.summary(
                 of: transactions.map {
                     .init(amount: $0.amount, currencyCode: $0.currencyCode, accountName: $0.account?.name)
                 }
             )
-            saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(viewModel.filteredDrafts(for: .pending))
-            guard !transactions.isEmpty else { return }
-            DS.Haptic.success()
+            // Lo saltado por parecido tiene su propia línea: aquí contarlo otra vez se leía como dos borradores.
+            let skippedIDs = Set(outcome.skippedPossibleDuplicates.map(\.persistentModelID))
+            saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(
+                viewModel.filteredDrafts(for: .pending).filter { !skippedIDs.contains($0.persistentModelID) }
+            )
+            // Con nada guardado por parecido también sale la pantalla final, que lo dice: una segunda alerta pedida
+            // mientras se cierra la confirmación puede no llegar a presentarse.
+            guard InboxBulkDuplicatesLogic.showsSummary(saved: transactions.count, skipped: outcome.skippedAsPossibleDuplicate) else { return }
+            if !transactions.isEmpty { DS.Haptic.success() }
             // La alerta de confirmación se está cerrando: la hoja de éxito espera a que termine (mismo anchor).
             Task {
                 do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
@@ -1078,7 +1127,7 @@ struct InboxView: View {
         }
     }
 
-    private func approveDraft(_ draft: InboxDraft) {
+    private func approveDraft(_ draft: InboxDraft, skipDuplicateCheck: Bool = false) {
         // Gasto planificado de grupo: no se aprueba inline (crearía una TX personal por el path
         // genérico). Abre el form dedicado que crea el SplitExpense de grupo.
         if draft.requiresApprovalForm {
@@ -1095,6 +1144,22 @@ struct InboxView: View {
             return
         }
 
+        // Posible duplicado: pregunta antes de guardar, como el borrador abierto (lote 03 de las necesarias 2.3). Una
+        // lectura que falla guarda, como el borrador abierto: el aviso diría «ya existe» sin saberlo.
+        if !skipDuplicateCheck {
+            do {
+                if try InboxDuplicateCheck.possibleDuplicate(of: draft, in: modelContext) != nil {
+                    swipeDuplicateDraft = draft
+                    showSwipeDuplicateAlert = true
+                    return
+                }
+            } catch {
+                #if DEBUG
+                print("InboxView: Error checking duplicates: \(error)")
+                #endif
+            }
+        }
+
         // DB work OUTSIDE animation — only animate UI state changes
         draftService.setContext(modelContext)
         do {
@@ -1107,20 +1172,21 @@ struct InboxView: View {
 
             // Animate only the UI transition
             dsWithAnimation(reduceMotion) {
-                swipeApprovedTransaction = transaction
-                swipeSuccessData = InboxApproveSuccessData(
-                    date: draft.effectiveDate,
-                    accountName: account.name,
-                    accountColorHex: account.colorHex,
-                    note: draft.note,
-                    amount: amount,
-                    currencyCode: account.currencyCode,
-                    subcategoryName: subcategory.name,
-                    categoryName: subcategory.safeCategory.name,
-                    categoryColorHex: subcategory.safeCategory.colorHex,
-                    isExpense: amount < 0
+                swipeSuccess = InboxSwipeSuccess(
+                    data: InboxApproveSuccessData(
+                        date: draft.effectiveDate,
+                        accountName: account.name,
+                        accountColorHex: account.colorHex,
+                        note: draft.note,
+                        amount: amount,
+                        currencyCode: account.currencyCode,
+                        subcategoryName: subcategory.name,
+                        categoryName: subcategory.safeCategory.name,
+                        categoryColorHex: subcategory.safeCategory.colorHex,
+                        isExpense: amount < 0
+                    ),
+                    transaction: transaction
                 )
-                showSwipeSuccessView = true
             }
         } catch {
             #if DEBUG
@@ -1130,6 +1196,19 @@ struct InboxView: View {
             if case DraftServiceError.groupExpenseTargetMissing = error {
                 draftService.retireStaleGroupExpenseDraftWithoutSheet(draft)
             }
+        }
+    }
+
+    /// «Guardar de todas formas» del aviso de deslizar. El aviso se está cerrando: la pantalla de éxito espera a que
+    /// termine (mismo molde que «Guardar los listos»).
+    private func saveSwipedDuplicateAnyway(_ draft: InboxDraft) {
+        Task {
+            do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
+            // Si en ese rato se abrió otra hoja, no se guarda: la pantalla de éxito no podría salir y el borrador sigue
+            // en la Bandeja para volver a intentarlo.
+            guard selectedDraft == nil, swipeSuccess == nil,
+                  draft.isReadableInInbox, draft.status == .pending else { return }
+            approveDraft(draft, skipDuplicateCheck: true)
         }
     }
 
@@ -1184,6 +1263,7 @@ private struct InboxSaveReadyPresentations: ViewModifier {
     let confirmCount: Int
     let summary: InboxBulkApproveSummaryLogic.Summary
     let leftover: String?
+    let duplicatesLine: String?
     let onConfirm: () -> Void
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
@@ -1202,9 +1282,53 @@ private struct InboxSaveReadyPresentations: ViewModifier {
                     approvedCount: count,
                     summary: summary,
                     leftoverLine: leftover,
+                    duplicatesLine: duplicatesLine,
                     onViewRecords: onViewRecords,
                     onBackToInbox: onBackToInbox
                 )
             }
+    }
+}
+
+// MARK: - Deslizar para guardar un posible duplicado (lote 03 de las necesarias 2.3)
+
+/// El aviso «Posible duplicado» al deslizar, con las dos salidas del borrador abierto. Aparte del cuerpo de
+/// `InboxView` por el mismo motivo que `InboxSaveReadyPresentations`.
+private struct InboxSwipeDuplicatePresentation: ViewModifier {
+    @Binding var isPresented: Bool
+    let draft: InboxDraft?
+    let onSaveAnyway: (InboxDraft) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.Inbox.duplicateWarningTitle, isPresented: $isPresented, presenting: draft) { pending in
+                Button(L10n.Common.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("inbox_swipe_duplicate_cancel")
+                Button(L10n.Inbox.createAnyway) { onSaveAnyway(pending) }
+                    .accessibilityIdentifier("inbox_swipe_duplicate_save_anyway")
+            } message: { _ in
+                Text(L10n.Inbox.duplicateWarningMessage)
+            }
+    }
+}
+
+/// Lo que presenta la pantalla de éxito tras guardar deslizando: el resumen y el registro guardado (lo abre «Editar»).
+/// Cada guardado es un valor nuevo, así que `.sheet(item:)` lo presenta con SUS datos.
+private struct InboxSwipeSuccess: Identifiable {
+    let id = UUID()
+    let data: InboxApproveSuccessData
+    let transaction: TransactionItem
+}
+
+/// Qué dice el lote de lo que dejó por posible duplicado. Pura: la fija `InboxDuplicateCheckTests`.
+enum InboxBulkDuplicatesLogic {
+    static func skippedLine(_ skipped: Int) -> String? {
+        skipped > 0 ? L10n.Inbox.bulkSkippedDuplicates(skipped) : nil
+    }
+
+    /// Cuándo sale la pantalla final: con algo guardado, como siempre, y también con nada guardado si algo se quedó
+    /// por parecido, para decirlo. Sin nada guardado por otros motivos (fechas futuras) se queda como estaba.
+    static func showsSummary(saved: Int, skipped: Int) -> Bool {
+        saved > 0 || skipped > 0
     }
 }

@@ -32,7 +32,11 @@ final class ExportHiddenCurrencyAmountUITests: XCTestCase {
         while !(principal.exists && principal.isHittable) && swipes < 8 { app.swipeUp(); swipes += 1 }
         XCTAssertTrue(principal.isHittable, "No se llega al chip de «Cuenta Principal».")
         principal.tap()
-        XCTAssertTrue(waitForLabel(app.descendants(matching: .any)["export_count_line"], containing: "Saldrán"),
+        // «Saldrá», que casa con el singular y con el plural. Lo que queda a la vista es «Ahorros USD», y cuántos
+        // registros tiene depende del DÍA: el seed `minimal` cubre los últimos 7 días (`DevSeedService`) y la cuenta solo
+        // se mueve los días 10 y 25 (`DevSeedTransactions`). Del 2 al 9 y del 18 al 24 queda solo su saldo inicial y la app
+        // dice, bien, «Saldrá 1 registro». Con «Saldrán» el caso cayó cada noche desde el 2-nov (dispatch 41931406144).
+        XCTAssertTrue(waitForLabel(app.descendants(matching: .any)["export_count_line"], containing: "Saldrá"),
                       "Con «Ahorros USD» a la vista tiene que salir algo: el escenario no es el del ticket.")
 
         var condition: XCUIElement?

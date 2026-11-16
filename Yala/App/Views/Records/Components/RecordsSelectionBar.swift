@@ -133,15 +133,44 @@ struct RecordsSelectionBar: View {
 /// también en el menú, que es lo que cuenta la ayuda.
 struct RecordsSelectToolbarButton: View {
     let viewModel: RecordsViewModel
+    /// Decisión 67 de 2.3: en la columna de la lista del iPad el título salía «Registr…» junto a «Seleccionar», «···», el
+    /// avatar y el botón de la barra lateral. Ahí el botón va con su icono (el de «···»); el nombre lo dice VoiceOver.
+    var iconOnly = false
 
     var body: some View {
-        Button(L10n.Action.select) {
+        Button {
             viewModel.enterSelectionMode()
+        } label: {
+            if iconOnly {
+                Label(L10n.Action.select, systemImage: "checklist")
+                    .labelStyle(.iconOnly)
+            } else {
+                Text(L10n.Action.select)
+            }
         }
         .fontWeight(.semibold)
         .accessibilityIdentifier("records_select_visible")
         // Solo texto: en la barra vertical del iPhone Duo cerrado se quedaba en una barra aparte arriba, junto al
         // título. Ahí no sale; sigue en «···».
         .hiddenInVerticalBar()
+    }
+}
+
+/// «Seleccionar los 2.334» / «Deseleccionar todo», arriba a la derecha del modo selección, igual en Registros y en
+/// Estadísticas › Registros (decisión 18 de 2.3, E2). Dice cuántos marca: antes decía «Seleccionar todo» y marcaba el
+/// período entero, también lo que no se veía en pantalla.
+struct RecordsSelectAllButton: View {
+    let viewModel: RecordsViewModel
+
+    var body: some View {
+        let allSelected = viewModel.allRecordsSelected
+        Button(allSelected ? L10n.Export.deselectAll : L10n.RecordsBulkUndo.selectAll(viewModel.selectableRecordCount)) {
+            if allSelected {
+                viewModel.deselectAll()
+            } else {
+                viewModel.selectAll()
+            }
+        }
+        .accessibilityIdentifier("records_select_all_button")
     }
 }

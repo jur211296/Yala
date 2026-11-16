@@ -20,6 +20,10 @@ struct ExpenseWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
+    /// «Mostrar proyectado» (respuesta 12A): la continuación punteada hasta el final del período. Apagada por defecto.
+    @Parameter(title: "widget.intent.showProjected", default: false)
+    var showProjected: Bool
+
 }
 
 // MARK: - Timeline Entry
@@ -45,6 +49,11 @@ struct ExpenseEntry: TimelineEntry {
     var periodDays: Int = 0
     /// Cuándo escribió la app la foto.
     var lastUpdated: Date? = nil
+    /// «Mostrar proyectado»: el gasto acumulado esperado desde el día de la foto (el primero es el ancla, el último
+    /// punto de la línea rosa) hasta el final del período. Vacío si está apagado o no quedan días.
+    var projected: [Double] = []
+    /// La cifra corta del tramo estimado: el gasto esperado al final del período y ese día (decisión 34 de 2.3).
+    var projectedEnd: WidgetInsightsLogic.ProjectedEnd? = nil
 
     static var placeholder: ExpenseEntry {
         let current: [Double] = [120, 180, 640, 700, 760, 900, 1_350, 1_420, 1_510, 1_690, 2_060, 2_150, 2_240, 2_600,
@@ -141,6 +150,20 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             guard let day = calendar.date(byAdding: .day, value: index, to: calendar.startOfDay(for: start)) else { return nil }
             return WidgetTrendPoint(date: day, balance: value)
         }
+        // «Mostrar proyectado»: lo esperado por día que dejó la app, acumulado sobre el último punto de la línea.
+        let projectedPoints: [(date: Date, value: Double)]
+        if configuration.showProjected, !cumulative.isEmpty, let flow = WidgetDataService.getProjectedFlow() {
+            projectedPoints = WidgetInsightsLogic.projectedCumulative(
+                anchor: cumulative.last ?? 0,
+                deltas: flow.days.map { (date: $0.date, value: $0.expense) },
+                asOf: asOf,
+                end: Self.fullPeriodEnd(for: period, interval: interval, asOf: asOf, calendar: calendar),
+                calendar: calendar
+            )
+        } else {
+            projectedPoints = []
+        }
+        let projected = projectedPoints.map(\.value)
 
         return ExpenseEntry(
             date: now,
@@ -158,7 +181,9 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             dailyAverage: WidgetInsightsLogic.dailyAverage(
                 total: totalExpense, start: start, end: interval.end, now: asOf, calendar: calendar),
             periodDays: periodDays,
-            lastUpdated: lastUpdated
+            lastUpdated: lastUpdated,
+            projected: projected,
+            projectedEnd: WidgetInsightsLogic.projectedEnd(projectedPoints)
         )
     }
 
@@ -239,6 +264,13 @@ private extension ExpenseEntry {
         return fraction > 0 ? .bad : .good
     }
 
+    /// «+21 %» o «-4 %» para VoiceOver; lo que se pinta como «0 %» va sin signo.
+    static func signedPercent(_ fraction: Double) -> String {
+        let shown = abs(fraction).formatted(.percent.precision(.fractionLength(0)))
+        guard shown != Double(0).formatted(.percent.precision(.fractionLength(0))) else { return shown }
+        return (fraction >= 0 ? "+" : "-") + shown
+    }
+
     /// Hay gráfica con un día de datos (el día 1 ya tiene su punto) o con la curva del período anterior.
     var hasChart: Bool { !trendData.isEmpty || comparison != nil }
 
@@ -272,7 +304,7 @@ private struct ExpenseComparisonLine: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(String(
                 format: String(localized: "widget.expense.comparison.a11y", bundle: .main),
-                (fraction >= 0 ? "+" : "-") + abs(fraction).formatted(.percent.precision(.fractionLength(0))),
+                ExpenseEntry.signedPercent(fraction),
                 comparison.previousLabel)))
         } else {
             Text(String(format: String(localized: "widget.expense.perDay", bundle: .main), entry.amountText(entry.dailyAverage)))
@@ -344,6 +376,9 @@ struct MediumExpenseView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
                     }
+                    if let end = entry.projectedEnd {
+                        WidgetProjectedEndLine(end: end, amountText: entry.amountText(end.value))
+                    }
                     WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -379,10 +414,20 @@ struct ExpensePaceChart: View {
         return points
     }
 
+    /// La proyección en días absolutos: arranca en el último día de la línea rosa.
+    private var projectedPoints: [(day: Int, value: Double)] {
+        guard entry.projected.count > 1 else { return [] }
+        let first = max(entry.trendData.count - 1, 0)
+        let all = entry.projected.enumerated().map { (day: first + $0.offset, value: $0.element) }
+        return all.filter { ($0.day - first) % step == 0 || $0.day == all.last?.day }
+    }
+
     var body: some View {
         let current = sampled(entry.trendData.map(\.balance))
         let previous = sampled(entry.comparison?.previousCumulative ?? [])
-        let top = max(current.map(\.value).max() ?? 0, previous.map(\.value).max() ?? 0, 1) * 1.1
+        let projected = projectedPoints
+        let highest: Double = (current.map(\.value) + previous.map(\.value) + projected.map(\.value)).max() ?? 0
+        let top: Double = max(highest, 1) * 1.1
         // Índices de día, no número de puntos muestreados: el año se dibuja por semanas pero llega al día 365.
         let lastDay = max(entry.periodDays, entry.comparison?.previousCumulative.count ?? 0, entry.trendData.count, 2) - 1
 
@@ -402,6 +447,15 @@ struct ExpensePaceChart: View {
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round, lineJoin: .round))
                     .foregroundStyle(WidgetColors.hotPink)
+            }
+            // «Mostrar proyectado»: punteado de trazo corto en el color de lo estimado (decisión 34 de 2.3), distinto
+            // del rosa de lo gastado y del gris de raya larga del período anterior.
+            ForEach(projected, id: \.day) { point in
+                LineMark(x: .value("Día", point.day), y: .value("Gasto", point.value), series: .value("Serie", "proyectado"))
+                    .interpolationMethod(.monotone)
+                    .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round,
+                                           dash: WidgetDS.Chart.projectedDash))
+                    .foregroundStyle(WidgetColors.estimate.opacity(WidgetDS.Chart.projectedOpacity))
             }
             if let last = current.last {
                 PointMark(x: .value("Día", last.day), y: .value("Gasto", last.value))

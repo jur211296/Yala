@@ -62,7 +62,43 @@ export const CHAT_REWRITE_SCHEMA = {
   },
 } as const;
 
+/**
+ * `ReceiptSplitResponse` de `ReceiptSplitService` (repartir un recibo en un grupo, 2.3): las líneas del recibo y, por
+ * línea, los nombres tal como los escribió la persona en la frase («Ana», `@me` para «yo», `@all` para «todos»). El
+ * miembro lo elige la app: los nombres del grupo no viajan. Las mismas claves para foto (`receipt.photo`) y voz
+ * (`receipt.voice`).
+ */
+export const RECEIPT_SPLIT_SCHEMA = {
+  name: "receipt_split",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["merchant", "currency", "printedTotal", "lines"],
+    properties: {
+      merchant: { type: ["string", "null"] },
+      currency: { type: ["string", "null"] },
+      printedTotal: { type: ["number", "null"] },
+      lines: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["description", "amount", "kind", "people"],
+          properties: {
+            description: { type: "string" },
+            amount: { type: "number" },
+            kind: { type: "string", enum: ["item", "tip", "tax", "service", "discount"] },
+            people: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
 export const CHAT_AND_NOTE_SCHEMAS = {
   "text.parse": TEXT_PARSE_SCHEMA,
   "chat.rewrite": CHAT_REWRITE_SCHEMA,
+  "receipt.photo": RECEIPT_SPLIT_SCHEMA,
+  "receipt.voice": RECEIPT_SPLIT_SCHEMA,
 } as const;

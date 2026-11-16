@@ -150,7 +150,8 @@ struct CategoriesPieWidgetView: View {
             }
 
             if entry.categories.isEmpty {
-                WidgetBreakdownEmpty()
+                // El aro vacío ocupa el sitio de la tarta (card dz6c): un texto suelto dejaba el widget en blanco.
+                WidgetEmptyRing(maxDiameter: WidgetDS.Chart.donutSizeLargeMax)
             } else {
                 WidgetPieBreakdown(
                     items: items,

@@ -4,7 +4,7 @@ status: done
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-11-05
+updated: 2026-11-06
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -87,3 +87,32 @@ personales), así que la hipótesis de la nota del 27-oct no era la causa.
 
 La mitad de producto (si la fila de chips de «Nuevo registro» enseña en 402 pt que hay un chip más a la derecha) pasa a
 su propio ticket: [[new-record-chip-row-hides-the-tags-chip-without-a-hint]].
+
+## 2026-11-06 · tercer mensaje: el chip de etiquetas «existe pero no es alcanzable»
+
+Gate de `seleccion-cuentas-doble-linea-moneda` (card betc), `iPhone 17 Pro` iOS 27.2: falla en la línea 124 con
+«`new_transaction_tags_chip` existe pero no es alcanzable» (el `waitForHittable` de `openSelectorFirstRow`). El chip ya
+no está a la derecha de la fila: sale en una segunda fila, en `{20, 767}` de una ventana de 874 pt. **Rojo con la base
+`origin/2.2` @ `7777e9bbf` extraída con `git archive` y compilada aparte** (1 de 1 con el centinela limpio; el otro
+runner vivo era el de Mando, en otro simulador) y rojo 3 de 3 con la rama, que solo cambia el texto de las filas del
+selector de cuenta y ninguna semilla `minimal` tiene tarjetas con líneas. La nocturna del 2026-11-05 (16:27 UTC) lo dio
+verde; desde entonces el único cambio en `Views/Transactions` es `545bb1cc9` («con el texto al máximo, cifras enteras y
+«Guardar» sin pisar el formulario»). Hipótesis sin medir: la barra de «Guardar» tapa ahora la segunda fila de chips.
+
+## 2026-11-06 · cerrado (lote XCUITest y neto del flujo, PR a 2.2)
+
+Medido en `2.2` @ `b7cb32539`, iPhone 17 Pro iOS 27.2: rojo 1 de 1 con «existe pero no es alcanzable». En el último
+fotograma del vídeo del `.xcresult` la fila de chips baja a dos líneas («Ahorros USD» y «Mantenimiento y reparaciones»,
+que es largo) y el de etiquetas queda **debajo de la barra de «Guardar»**: desde el barrido final de 2.2 es un
+`safeAreaBar` y el formulario se desplaza por debajo del botón. La hipótesis de la nota anterior era buena.
+
+¿Es también de producto? No: el formulario se desplaza y el chip sube por encima de la barra (medido con el mismo test,
+que arrastra el formulario y entonces lo alcanza y abre el selector). Lo que queda es si a primera vista se nota que hay
+un chip más debajo de la barra; en `2.3` eso ya tiene su ticket, `new-record-chip-row-hides-the-tags-chip-without-a-hint`.
+
+Arreglo, solo del test: `openSelectorFirstRow` sube el formulario con arrastres cortos desde la mitad de la ventana
+hasta que el chip deja de estar tapado, como haría una persona. Verde 1 de 1 con el arreglo; rojo sin él (la corrida de
+arriba).
+
+En `2.3` el helper ya traía su propio arreglo (lote T8 y la nota del 2026-11-06 en el comentario de
+`openSelectorFirstRow`); al llevar 2.2 a 2.3 (2026-11-09) se quedó el de 2.3, que cubre teclado y barra.

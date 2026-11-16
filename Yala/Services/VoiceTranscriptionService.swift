@@ -27,7 +27,7 @@ enum TranscriptionError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noAPIKey:
-            return "OpenAI API key not configured"
+            return "AI service not configured"
         case .emptyAudio:
             return "Audio data is empty"
         case .transcriptionFailed(let message):
@@ -146,11 +146,12 @@ final class VoiceTranscriptionService {
     func transcribe(
         audioData: Data,
         language: VoiceLanguage = .system,
-        keywords: [String] = []
+        keywords: [String] = [],
+        task: ProxyTask = .voiceTranscribe
     ) async throws -> TranscriptionResult {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(task: .voiceTranscribe)
+            client = try await ProxyClientFactory.makeOpenAI(task: task)
         } catch {
             throw TranscriptionError.networkError(error)
         }

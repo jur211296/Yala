@@ -26,6 +26,7 @@ struct ScheduledPaymentDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let payment: ScheduledPayment
     @Bindable var viewModel: ScheduledPaymentsViewModel
@@ -210,6 +211,45 @@ struct ScheduledPaymentDetailView: View {
         ) { linked[$0] != nil || payment.isDateSkipped($0) }
     }
 
+    /// Con el mes en curso hecho, si se pagó, se saltó o las dos cosas: saltar no es pagar (lote 04 de mejoras
+    /// necesarias 2.3; tras «Saltar este mes» el detalle decía «Noviembre de 2026 ya está pagado»).
+    private var settledMonth: ScheduledPaymentDetailLogic.SettledMonth {
+        let linked = linkedByOccurrence
+        return ScheduledPaymentDetailLogic.settledMonth(
+            datesThisMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: .now)
+        ) { linked[$0] != nil }
+    }
+
+    @ViewBuilder
+    private var settledMonthLabel: some View {
+        switch settledMonth {
+        case .paid:
+            Label(
+                L10n.UXL10.monthAlreadyPaid(ScheduledPaymentDateText.monthYear(.now)),
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(theme.accentText)
+            .accessibilityIdentifier("scheduled_detail_month_paid")
+        case .skipped:
+            Label(
+                L10n.UXL10.monthSkipped(ScheduledPaymentDateText.monthYearInline(.now)),
+                systemImage: "forward.end.fill"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("scheduled_detail_month_skipped")
+        case .mixed:
+            Label(
+                L10n.UXL10.monthSettled(ScheduledPaymentDateText.monthYear(.now)),
+                systemImage: "checkmark.circle"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(theme.accentText)
+            .accessibilityIdentifier("scheduled_detail_month_settled")
+        }
+    }
+
     /// A qué fecha apuntan «Ya lo pagué» y «Saltar»: con el mes en curso hecho, a la próxima, y lo dicen (card 3zva).
     private func actionTarget(for date: Date) -> ScheduledPaymentDetailLogic.ActionTarget {
         ScheduledPaymentDetailLogic.actionTarget(
@@ -249,13 +289,7 @@ struct ScheduledPaymentDetailView: View {
                 }
 
                 if currentMonthSettled {
-                    Label(
-                        L10n.UXL10.monthAlreadyPaid(ScheduledPaymentDateText.monthYear(.now)),
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .font(DS.Typography.label)
-                    .foregroundStyle(theme.accentText)
-                    .accessibilityIdentifier("scheduled_detail_month_paid")
+                    settledMonthLabel
                 }
             }
 
@@ -279,15 +313,12 @@ struct ScheduledPaymentDetailView: View {
                 if target != .current {
                     nextTargetHeader(target)
                 }
-                if target == .current {
+                // Si los dos botones no caben en una fila van uno debajo del otro: con el mes o la fecha en el texto, y
+                // también con el mes en curso y el texto al máximo, donde salían «Ya lo… / Salta…» (barrido final 2.2).
+                // A tamaño normal, la fila de siempre.
+                ViewThatFits(in: .horizontal) {
                     HStack(spacing: DS.Spacing.md) { actionButtonPair(date: date, target: target) }
-                } else {
-                    // Con el mes o la fecha en el texto, los dos botones pueden no caber en una fila: entonces van uno
-                    // debajo del otro. Con el mes en curso sin hacer, la fila de siempre.
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: DS.Spacing.md) { actionButtonPair(date: date, target: target) }
-                        VStack(spacing: DS.Spacing.sm) { actionButtonPair(date: date, target: target) }
-                    }
+                    VStack(spacing: DS.Spacing.sm) { actionButtonPair(date: date, target: target) }
                 }
                 if payment.isRecurring {
                     Text(skipHelp(target))
@@ -307,6 +338,8 @@ struct ScheduledPaymentDetailView: View {
             glassButton(skipTitle(target), identifier: "scheduled_detail_skip_button") {
                 skip(date)
             }
+            // La línea de debajo explica Saltar; VoiceOver la oye en el propio botón (lote 04 de mejoras necesarias 2.3).
+            .accessibilityHint(skipHelp(target))
         }
     }
 
@@ -372,7 +405,9 @@ struct ScheduledPaymentDetailView: View {
             Text(title)
                 .font(DS.Typography.bodyBold)
                 .foregroundStyle(.thOnAccent)
-                .lineLimit(1)
+                // Con el texto al máximo, apilado, el título baja de línea entero en vez de cortarse.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .center : .leading)
                 .minimumScaleFactor(0.8)
                 // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
                 // la pareja se apila (card 3zva).
@@ -391,7 +426,9 @@ struct ScheduledPaymentDetailView: View {
             Text(title)
                 .font(DS.Typography.bodyBold)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                // Con el texto al máximo, apilado, el título baja de línea entero en vez de cortarse.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .center : .leading)
                 .minimumScaleFactor(0.8)
                 // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
                 // la pareja se apila (card 3zva).

@@ -44,7 +44,7 @@ DEFAULT_TIMEZONE = "America/Lima"
 
 # La cola de la Bandeja (src/writeTool.ts, `apuntar_movimiento`): llamada interna a la clase RPC `ConnectorDrafts` del
 # gateway, sin ruta pública. Sin este binding la herramienta de escritura no se ofrece. ORDEN DE DESPLIEGUE: primero el
-# gateway (migración 0004 + el código con la clase), después este Worker.
+# gateway (migración 0004_connector_quota + el código con la clase), después este Worker.
 [[services]]
 binding = "CONNECTOR_DRAFTS"
 service = "yala-gateway-staging"
@@ -117,7 +117,7 @@ name = "RL_MCP"
 namespace_id = "7313"
 simple = { limit = 120, period = 60 }
 
-# La cola de la Bandeja en producción: el gateway de producción con la migración 0004 y la clase `ConnectorDrafts`
+# La cola de la Bandeja en producción: el gateway de producción con la migración 0004_connector_quota y la clase `ConnectorDrafts`
 # desplegados ANTES que este Worker (mcp/RUNBOOK-produccion.md, «Tu IA registra en Yala»).
 [[env.production.services]]
 binding = "CONNECTOR_DRAFTS"

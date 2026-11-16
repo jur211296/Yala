@@ -8,6 +8,11 @@
 //  a mano en sim). NAVEGACIÓN determinista pura: jamás se tapea el botón de sign-in real
 //  (nada de red/SIWA/sheets de Google).
 //
+//  **Bienvenida 2.3 (Y23-01):** el elector de tres cards dejó de ser el primer nivel; ahora es la vitrina. Los
+//  sub-electores siguen vivos y se alcanzan por caminos nuevos: «¡Hola de nuevo!» por la puerta de Grupos → «¿Ya tienes
+//  una cuenta? Entra aquí», y «Es mi primera vez» desde ahí, por «¿Es tu primera vez en Yala?». Lo que antes volvía al
+//  elector ahora vuelve a la vitrina. Ningún caso se retiró: todos prueban flujos que siguen vivos.
+//
 
 import XCTest
 
@@ -17,58 +22,44 @@ final class WelcomeChooserUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleOpensTheConsent() throws {
+    /// **E13 del recorrido del 13-nov** · «¡Hola de nuevo!» desde la puerta de Grupos: Apple y Google, sin «Restaurar desde
+    /// iCloud» (y por tanto sin la ayuda de «¿No te acuerdas?», que solo sale con los dos caminos). Y Google va por el
+    /// acceso único: firma y enseña el consentimiento DENTRO de «Vamos a crear tu cuenta», sin la hoja aparte de «tres
+    /// cosas que conviene saber» antes de elegir la cuenta. `-uitest-fake-account-exists new` finge la firma y la
+    /// respuesta (sin red); la pantalla que sale la decide la tabla de siempre.
+    func testExistingChooser_fromTheGroupsDoor_offersTheAccounts_andGoogleGoesThroughTheUnifiedAccess() throws {
         let app = XCUIApplication()
         // Sin skipOnboarding (el flow Welcome ES el sujeto) y sin seed (no hace falta data).
         app.launchForUITest(
             reset: true,
             skipOnboarding: false,
             seed: nil,
-            extraArguments: ["-uitest-cloud-chooser"]
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser", "-uitest-fake-account-exists", "new"]
         )
         // NOTA: `uitest_ready` vive en el root de ContentView, que queda CUBIERTO por el
         // fullScreenCover del Welcome → no usar waitForUITestReady aquí (patrón
         // OnboardingFlowUITests); se espera el Hero directamente con timeout generoso.
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        // "Ya tengo una cuenta" → 2º nivel (con el opt-in hay >1 opción, no hay bypass).
-        let restoreBranch = app.buttons["welcome_chooser_restore"]
-        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció la card 'Ya tengo una cuenta'.")
-        restoreBranch.tap()
+        openExistingChooser(app)
 
-        // 2º nivel: las TRES cards por identifier.
-        let restoreCard = app.buttons["welcome_existing_restore"]
-        XCTAssertTrue(restoreCard.waitForExistence(timeout: 10), "No apareció la card de restaurar iCloud.")
-        XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
         let googleCard = app.buttons["welcome_existing_google"]
-        XCTAssertTrue(googleCard.exists, "No apareció la card de Google.")
-        // UX 2.2 · L6-1: con los dos caminos a la vista, la ayuda de «¿No te acuerdas?» está.
-        XCTAssertTrue(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
-                      "No apareció la ayuda para quien no recuerda dónde guardó sus datos.")
+        XCTAssertTrue(googleCard.waitForExistence(timeout: 10), "No apareció la card de Google.")
+        XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
+                       "La ayuda de «¿No te acuerdas?» habla de iCloud: desde Grupos no tiene sentido.")
 
-        // UX 2.2 · L6-3: la card Google abre DIRECTAMENTE el consentimiento (sin la pantalla intermedia que repetía
-        // el botón). Nada se firma: el test no acepta.
         googleCard.tap()
-        let consentAccept = app.buttons["storage_consent_accept"]
-        XCTAssertTrue(consentAccept.waitForExistence(timeout: 10),
-                      "La card de Google no abrió el consentimiento de la nube.")
-        // Lo que importa es que el consentimiento es lo que está DELANTE, sin un toque más. La pantalla de la entrada
-        // sigue montada debajo de la hoja (es la salida si se cancela Apple/Google), y con una hoja presentada la vista
-        // de fondo sigue entera en el árbol: un `exists` sobre su botón no dice nada (`.claude/rules/testing.md`).
-        XCTAssertTrue(consentAccept.isHittable, "El consentimiento no quedó delante: hay otra pantalla que tocar antes.")
-
-        // Paso 6 · CONTROL del test del faro de abajo: «Crear otra cuenta» es SOLO de la entrada a la que
-        // encamina el faro. Quien entra por «Ya tengo cuenta» dijo que tenía una; si no la tiene, «No
-        // encontramos una cuenta» ya le ofrece crearla.
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_create_account"].waitForExistence(timeout: 20),
+                      "Google no llevó a «Vamos a crear tu cuenta» por el acceso único.")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_create_consent"].exists,
+                      "El consentimiento no va dentro de «Vamos a crear tu cuenta».")
+        XCTAssertFalse(app.buttons["storage_consent_accept"].exists,
+                       "Salió la hoja aparte de «tres cosas que conviene saber».")
+        // Paso 6 · «Crear otra cuenta» es SOLO de la entrada a la que encamina el faro.
         XCTAssertFalse(app.buttons["welcome_cloud_create_another"].exists,
                        "«Crear otra cuenta» apareció en la re-entrada normal: se coló fuera del faro.")
-
-        // L6-3 + L6-11: cancelar el consentimiento vuelve a «¡Hola de nuevo!», de donde se salió, y no al chooser.
-        app.buttons["storage_consent_cancel"].tap()
-        XCTAssertTrue(app.buttons["welcome_existing_restore"].waitForExistence(timeout: 10),
-                      "Cancelar el consentimiento no volvió a «¡Hola de nuevo!».")
     }
 
     /// A4 + A5 de D-A7: el 2º nivel de "Soy nuevo" y el destino REAL de su card de nube. Mismo
@@ -91,14 +82,10 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        // "Soy nuevo" → 2º nivel (con el opt-in hay 2 opciones, no hay bypass).
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
-        newBranch.tap()
+        // «Es mi primera vez» → 2º nivel (con el opt-in hay 2 opciones, no hay bypass). Desde la bienvenida 2.3 se llega
+        // por «¡Hola de nuevo!» → «¿Es tu primera vez en Yala?».
+        openFirstTimeBranch(app)
 
         let privateCard = app.buttons["welcome_new_private"]
         XCTAssertTrue(privateCard.waitForExistence(timeout: 10), "No apareció la card de privacidad total.")
@@ -117,13 +104,14 @@ final class WelcomeChooserUITests: XCTestCase {
             .matching(identifier: "welcome_borncloud_signup_google").firstMatch.exists,
                       "Falta el método Google (prominencia equivalente, guideline 4.8).")
 
-        // Back → de vuelta al chooser (nivel 1). Nada se ha comprometido todavía: el consent ni se
-        // ha pedido, así que la fase `.intro` permite salir (`canGoBack`).
+        // Back → de vuelta al primer nivel, que desde la bienvenida 2.3 es la vitrina. Nada se ha comprometido
+        // todavía: el consent ni se ha pedido, así que la fase `.intro` permite salir (`canGoBack`).
         let backButton = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del 2º nivel.")
         backButton.tap()
-        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10),
-                      "El back no volvió al chooser.")
+        // Se entró por la puerta de Grupos, así que la vitrina vuelve en ella (sin iCloud): basta su titular.
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_showcase_title"].waitForExistence(timeout: 10),
+                      "El back no volvió a la vitrina.")
     }
 
     /// **La salida a grupos de «Es mi primera vez»** (propuesta B del estudio de solo-grupos, decisión de Jürgen del
@@ -132,7 +120,7 @@ final class WelcomeChooserUITests: XCTestCase {
     /// elector, y su «Volver» devuelve a «Es mi primera vez», no al elector.
     ///
     /// Discrimina las dos mitades: las cards de grupos prueban que se llegó al 2.º nivel y no a otro sitio, y la card de
-    /// nube tras el «Volver» prueba el origen — con el «Volver» fijo al elector de siempre, sale `welcome_chooser_new`.
+    /// nube tras el «Volver» prueba el origen — con el «Volver» fijo al primer nivel, sale la vitrina.
     /// Con faro o con una sola opción de nube esta pantalla no se monta (lo fijan los hermanos de abajo) y B no se ve.
     func testNewChooser_groupsFooter_opensGroupsAndBackReturnsHere() throws {
         let app = XCUIApplication()
@@ -143,13 +131,8 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
         let cloudCard = app.buttons["welcome_new_cloud"]
         XCTAssertTrue(cloudCard.waitForExistence(timeout: 10), "No apareció «Es mi primera vez» con la elección de nube.")
@@ -174,7 +157,7 @@ final class WelcomeChooserUITests: XCTestCase {
     /// `ContentView` guarda el origen y se lo devuelve al contenedor al montarlo.
     ///
     /// Discrimina con la card de nube de «Es mi primera vez», que el elector no tiene: con el bug, tras el último «Volver»
-    /// sale `welcome_chooser_new` y no `welcome_new_cloud`.
+    /// sale la vitrina y no `welcome_new_cloud`.
     func testNewChooser_groupsFooter_throughInviteRecovery_backStillReturnsToFirstTime() throws {
         let app = XCUIApplication()
         app.launchForUITest(
@@ -184,13 +167,8 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
         let cloudCard = app.buttons["welcome_new_cloud"]
         XCTAssertTrue(cloudCard.waitForExistence(timeout: 10), "No apareció «Es mi primera vez» con la elección de nube.")
@@ -226,13 +204,8 @@ final class WelcomeChooserUITests: XCTestCase {
             seed: nil,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let groupsBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(groupsBranch.waitForExistence(timeout: 10), "No apareció la fila de grupos del elector.")
-        groupsBranch.tap()
+        app.openWelcomeGroupsPaths()
 
         let createCard = app.buttons["welcome_groups_create"]
         XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció el 2.º nivel de grupos.")
@@ -267,15 +240,11 @@ final class WelcomeChooserUITests: XCTestCase {
             seed: nil,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
-        XCTAssertTrue(app.buttons["onboarding_next_button"].waitForExistence(timeout: 15), """
+        // Bienvenida 2.3 (Y23-04): el alta es la conversación de tres preguntas; su primera pregunta es el nombre.
+        XCTAssertTrue(app.textFields["welcome_chat_name_field"].waitForExistence(timeout: 15), """
             Sin App Attest, «Es mi primera vez» no llegó al onboarding privado. Si en pantalla está «Elige dónde quieres \
             guardar tus datos», la puerta del attest no esconde la nube y este teléfono podría elegir una cuenta que \
             nunca sube nada.
@@ -304,13 +273,8 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
         // El faro ENCAMINA: el intro de entrar, con el método DEL FARO (Google) y no el fallback.
         let googleSignIn = app.descendants(matching: .any)
@@ -356,13 +320,8 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeBeacon: "google",
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
         let createAnother = app.buttons["welcome_cloud_create_another"]
         XCTAssertTrue(createAnother.waitForExistence(timeout: 10),
@@ -390,13 +349,8 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeBeacon: "microsoft",
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
-        newBranch.tap()
+        openFirstTimeBranch(app)
 
         let genericOrigin = app.staticTexts["welcome_cloud_beacon_origin_generic"]
         XCTAssertTrue(genericOrigin.waitForExistence(timeout: 10),
@@ -418,31 +372,29 @@ final class WelcomeChooserUITests: XCTestCase {
     /// consume, y su card ni se pinta. Un test que la esperase estaría afirmando un stub.
     func testGroupsChooser_inviteCardOpensTwoPaths_andJoinStillReachesInviteRecovery() throws {
         let app = XCUIApplication()
-        app.launchForUITest(reset: true, skipOnboarding: false, seed: nil)
+        // Bienvenida 2.3 (Y23-06): la entrada por Grupos es la puerta de Grupos de la vitrina con un proveedor, y bajo
+        // `-uitest` los proveedores solo se pintan con `-uitest-cloud-chooser`.
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: nil,
+                            extraArguments: [XCUIApplication.welcomeProvidersArgument])
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-
-        // La card conserva su identifier (`Branch.invite` no se renombra: es lo que tocan los XCUI
-        // deterministas del área `onboarding-flow`); lo que cambia es su destino.
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
-        inviteBranch.tap()
+        app.openWelcomeGroupsPaths()
 
         let joinCard = app.buttons["welcome_groups_join"]
         XCTAssertTrue(joinCard.waitForExistence(timeout: 10),
-                      "La card de grupos no abrió el step de dos caminos.")
+                      "La puerta de Grupos no abrió el step de los caminos.")
 
-        // El back del step vuelve al chooser (nivel 1).
+        // El back del step vuelve al primer nivel: la vitrina, que se queda en su puerta de Grupos.
         let backButton = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del step.")
         backButton.tap()
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "El back no volvió al chooser.")
+        let google = app.buttons["welcome_access_google"]
+        XCTAssertTrue(google.waitForExistence(timeout: 10), "El back no volvió a la vitrina.")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_access_groups_note"].exists,
+                      "La vitrina no se quedó en la puerta de Grupos, de donde se vino.")
 
-        // Y el invitado no pierde nada: «Tengo una invitación» sale por el MISMO destino de siempre y
+        // Y el invitado no pierde nada: «Tengo un enlace» sale por el MISMO destino de siempre y
         // aterriza en la recuperación de invitación, que NO es una pantalla del WelcomeFlow.
-        inviteBranch.tap()
+        google.tap()
         XCTAssertTrue(joinCard.waitForExistence(timeout: 10), "El step no volvió a montarse.")
         joinCard.tap()
 
@@ -480,16 +432,13 @@ final class WelcomeChooserUITests: XCTestCase {
             cloudSession: true,
             groupsConsent: true,
             // C2 · el educativo es el PRIMER escalón de esta rama, y bajo `-uitest` no se monta sin el seam.
-            groupsEducativo: true
+            groupsEducativo: true,
+            // Bienvenida 2.3 (Y23-06): la puerta de Grupos de la vitrina necesita los proveedores pintados.
+            extraArguments: [XCUIApplication.welcomeProvidersArgument]
         )
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
-        inviteBranch.tap()
+        app.openWelcomeGroupsPaths()
 
         // G3 cableó `onCreate`, así que la card ya se pinta: en G2 `visiblePaths` la filtraba y solo había una.
         let createCard = app.buttons["welcome_groups_create"]
@@ -541,15 +490,11 @@ final class WelcomeChooserUITests: XCTestCase {
             cloudSession: true,
             slowBootstrapSeconds: 25,
             groupsConsent: true,
-            groupsEducativo: true
+            groupsEducativo: true,
+            extraArguments: [XCUIApplication.welcomeProvidersArgument]
         )
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 20), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
-        inviteBranch.tap()
+        app.openWelcomeGroupsPaths()
         let createCard = app.buttons["welcome_groups_create"]
         XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
         createCard.tap()
@@ -591,16 +536,12 @@ final class WelcomeChooserUITests: XCTestCase {
             skipOnboarding: false,
             seed: "grupos",
             groupsGateMirrorLive: true,
-            groupsGateWipeFailed: true
+            groupsGateWipeFailed: true,
+            extraArguments: [XCUIApplication.welcomeProvidersArgument]
         )
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
-        inviteBranch.tap()
+        app.openWelcomeGroupsPaths()
 
         let createCard = app.buttons["welcome_groups_create"]
         XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
@@ -631,6 +572,23 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertFalse(working.waitForExistence(timeout: 3), "Salir del aviso arrancó la vuelta al neutro.")
     }
 
+    /// «¡Hola de nuevo!»: puerta de Grupos de la vitrina → «¿Ya tienes una cuenta? Entra aquí» (bienvenida 2.3).
+    private func openExistingChooser(_ app: XCUIApplication) {
+        app.openWelcomeGroupsPaths()
+        let signIn = app.buttons["welcome_groups_sign_in"]
+        XCTAssertTrue(signIn.waitForExistence(timeout: 10), "No apareció «¿Ya tienes una cuenta? Entra aquí».")
+        signIn.tap()
+    }
+
+    /// La rama de «Es mi primera vez» (`handleNewBranch`, con su faro y su bypass): «¡Hola de nuevo!» → «¿Es tu primera
+    /// vez en Yala?». Es la misma puerta que la card del elector viejo.
+    private func openFirstTimeBranch(_ app: XCUIApplication) {
+        openExistingChooser(app)
+        let startNew = app.buttons["welcome_existing_start_new"]
+        XCTAssertTrue(startNew.waitForExistence(timeout: 10), "No apareció «¿Es tu primera vez en Yala?».")
+        startNew.tap()
+    }
+
     /// `waitForNonExistence` local: el helper compartido de `Support/` cubre `isHittable`, y aquí lo que
     /// prueba el desmontaje es la AUSENCIA del elemento.
     private func waitForNonExistence(of element: XCUIElement, timeout: TimeInterval) -> Bool {
@@ -654,20 +612,15 @@ final class WelcomeChooserUITests: XCTestCase {
             fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let restoreBranch = app.buttons["welcome_chooser_restore"]
-        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció la card 'Ya tengo una cuenta'.")
-        restoreBranch.tap()
+        openExistingChooser(app)
 
         XCTAssertTrue(app.buttons["welcome_existing_cloud"].waitForExistence(timeout: 10),
                       "No apareció el botón de Apple de la tarjeta.")
         XCTAssertTrue(app.buttons["welcome_existing_google"].exists, "No apareció el botón de Google.")
-        XCTAssertTrue(app.buttons["welcome_existing_restore"].exists, "No apareció Restaurar desde iCloud.")
-        // vb1f · CONTROL del test del faro de abajo: sin faro, ninguna entrada lleva «La que usaste en este iPhone» y
-        // Apple sigue primero. La presencia de los tres botones de arriba es la que discrimina esta ausencia.
+        // E13 (13-nov): desde la puerta de Grupos no se ofrece iCloud («Grupos no tiene iCloud»).
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
+        // Sin faro, ninguna entrada lleva «La que usaste en este iPhone» y Apple sigue primero.
         XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_used_on_this_device"].exists,
                        "La nota del método usado salió sin faro.")
         XCTAssertLessThan(app.buttons["welcome_existing_cloud"].frame.minY,
@@ -691,11 +644,12 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_new_private"].exists, "Falta la opción privada en «Es mi primera vez».")
     }
 
-    /// **vb1f (opción A)** · con el faro diciendo que la cuenta de este Apple ID se creó con Google, «¡Hola de nuevo!»
-    /// pone Google por delante de Apple y le cuelga «La que usaste en este iPhone»; Apple sigue ahí. El faro se finge
-    /// con `-uitest-fake-beacon`, que no persiste nada; el orden lo decide la lógica real. Su control —sin faro, sin
-    /// nota y Apple primero— va en `testExistingChooser_footerQuestion_opensTheFirstTimeBranch`.
-    func testExistingChooser_googleBeacon_putsGoogleFirst_withTheUsedHereNote() throws {
+    /// **E13 del recorrido del 13-nov** · desde la puerta de Grupos, «¡Hola de nuevo!» no lleva la nota del faro aunque
+    /// el faro diga Google: el faro habla de la cuenta PERSONAL de este Apple ID, no de con qué entró este teléfono la
+    /// última vez (con la última en Google, la nota salía bajo Apple). Antes (vb1f) Google subía primero con «La que usaste
+    /// en este iPhone». El faro se finge con `-uitest-fake-beacon`, que no persiste nada; la lógica es la real
+    /// (`WelcomeAccountChoiceLogic.existingChooserOrder`, fijada también en `GroupsDoorExistingChooserTests`).
+    func testExistingChooser_fromTheGroupsDoor_ignoresTheBeacon() throws {
         let app = XCUIApplication()
         app.launchForUITest(
             reset: true,
@@ -703,24 +657,17 @@ final class WelcomeChooserUITests: XCTestCase {
             seed: nil,
             extraArguments: ["-uitest-cloud-chooser", "-uitest-fake-beacon", "google"]
         )
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
 
-        let restoreBranch = app.buttons["welcome_chooser_restore"]
-        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció la card 'Ya tengo una cuenta'.")
-        restoreBranch.tap()
+        openExistingChooser(app)
 
         let google = app.buttons["welcome_existing_google"]
         let apple = app.buttons["welcome_existing_cloud"]
         XCTAssertTrue(google.waitForExistence(timeout: 10), "No apareció el botón de Google.")
         XCTAssertTrue(apple.exists, "Apple tiene que seguir disponible.")
-        XCTAssertLessThan(google.frame.minY, apple.frame.minY, "Con el faro de Google, Google va primero.")
-
-        let note = app.descendants(matching: .any)["welcome_existing_used_on_this_device"]
-        XCTAssertTrue(note.exists, "Falta «La que usaste en este dispositivo».")
-        XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
-        XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
+        XCTAssertLessThan(apple.frame.minY, google.frame.minY, "Desde Grupos el faro no reordena: Apple y luego Google.")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_used_on_this_device"].exists,
+                       "Desde Grupos salió la nota del faro.")
+        XCTAssertFalse(app.buttons["welcome_existing_restore"].exists, "Desde Grupos se ofreció Restaurar desde iCloud.")
     }
 }
 

@@ -13,6 +13,8 @@ struct VariationChip: View {
     // MARK: - Settings
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// Los días 1 y 2 de «Este mes» el Panel no compara con el período anterior: solo el monto (decisión 10 de 2.3).
+    @Environment(\.hidesPeriodVariations) private var hidesPeriodVariations
 
     // MARK: - Properties
 
@@ -30,6 +32,15 @@ struct VariationChip: View {
     /// - Expense context: +% = pink (bad, spent more), -% = purple (good, spent less)
     /// - Income/Balance context: +% = purple (good, earned more), -% = pink (bad, earned less)
     var isExpenseContext: Bool = true
+
+    /// La Comparativa de Reportes (decisión 32 de 2.3): «igual» en vez de «= +0 %» y «nuevo» en vez de «N/A». El resto de
+    /// la app sigue con el signo y las siglas.
+    var usesWords: Bool = false
+
+    /// El texto en los tokens que pasan AA sobre la tarjeta (`incomeAmount` lo bueno, `groupOweAmount` lo malo) en vez de
+    /// índigo y rosa de la paleta, que como texto no llegan. Hoy solo lo pide «Te quedó» de la Comparativa (lote 08 de
+    /// 2.3); el resto de la app sigue con la paleta.
+    var usesAccessibleTextTone: Bool = false
 
     // MARK: - Size Configuration
 
@@ -72,6 +83,11 @@ struct VariationChip: View {
             return DS.Semantic.disabledForeground
         }
 
+        if usesAccessibleTextTone {
+            let isGood = isExpenseContext ? variation < 0 : variation >= 0
+            return isGood ? .incomeAmount : .groupOweAmount
+        }
+
         if isExpenseContext {
             // Expense context: +% = pink (bad, spent more), -% = purple (good, spent less)
             return variation >= 0 ? .hotPink : .electricIndigo
@@ -85,9 +101,12 @@ struct VariationChip: View {
 
     @ViewBuilder
     var body: some View {
-        // Hide entirely when showVariations is OFF
-        if !appPreferences.showVariations {
+        // Hide entirely when showVariations is OFF, or when the Panel says the month just started.
+        if !appPreferences.showVariations || hidesPeriodVariations {
             EmptyView()
+        } else if usesWords, let variation, abs(variation) < 0.05 {
+            wordChip(L10n.UXL18.changeSame)
+                .accessibilityLabel(Self.accessibilityText(for: variation))
         } else if let variation = variation {
             // Show formatted variation percentage
             HStack(spacing: DS.Spacing.xxs) {
@@ -107,6 +126,8 @@ struct VariationChip: View {
                         .fill(variationColor.opacity(0.1))
                 )
                 .accessibilityLabel(Self.accessibilityText(for: variation))
+        } else if showNAWhenNil && usesWords {
+            wordChip(L10n.UXL18.changeNew)
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
@@ -121,6 +142,27 @@ struct VariationChip: View {
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)
     }
+
+    /// «igual» / «nuevo»: el mismo gris que «N/A», sin color de bueno o malo.
+    private func wordChip(_ text: String) -> some View {
+        Text(text)
+            .font(size.font)
+            .foregroundStyle(DS.Semantic.disabledForeground)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
+            .background(
+                Capsule()
+                    .fill(DS.Semantic.neutralBackground)
+            )
+    }
+}
+
+// MARK: - Mes recién empezado
+
+extension EnvironmentValues {
+    /// `true` en el Panel los días 1 y 2 de «Este mes» (`PanelEarlyMonthLogic`): las comparaciones con el período
+    /// anterior (chips de variación, «vs S/ X») no se pintan; queda el monto. Fuera del Panel, siempre `false`.
+    @Entry var hidesPeriodVariations: Bool = false
 }
 
 // MARK: - Accesibilidad

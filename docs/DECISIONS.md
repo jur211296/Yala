@@ -2,22 +2,39 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (93 entradas)
+## Índice (110 entradas)
 
-> **No hace falta leer este fichero entero** — son 269 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 301 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-05` [Tu IA registra en Yala: el conector escribe en una cola del gateway, nunca en la nube de la persona](#2026-11-05-tu-ia-registra-en-yala-el-conector-escribe-en-una-cola-del-gateway-nunca-en-la-nube-de-la-persona)
+- `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
+- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
+- `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
+- `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
+- `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
+- `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
+- `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
+- `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
+- `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
+- `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
+- `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
+- `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
+- `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
+- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
+- `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
+- `2026-11-06` [IA en la nube: lee todo lo que haga falta, y el permiso lo dice](#2026-11-06-ia-en-la-nube-lee-todo-lo-que-haga-falta-y-el-permiso-lo-dice)
+- `2026-11-05` [Tu IA registra en Yala: el conector deja borradores en la cola común, nunca en la nube de la persona](#2026-11-05-tu-ia-registra-en-yala-el-conector-deja-borradores-en-la-cola-comn-nunca-en-la-nube-de-la-persona)
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
-- `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
+- `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
-- `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
+- `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
 - `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
@@ -28,23 +45,23 @@
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - `2026-07-24` [Tanda 2026-07-24 (cierre): últimas 5 entradas de la fase 2.0.5](#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - `2026-07-06` [Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)](#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
-- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-05` [Siri — migrado al mismo patrón de cola (cierra el ciclo de Apple Pay)](#2026-07-05-siri--migrado-al-mismo-patrn-de-cola-cierra-el-ciclo-de-apple-pay)
 - `2026-07-05` [Cold launch — share-image al share sheet no hacía nada (intent no-serializable pre-init)](#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init)
 - `2026-07-05` [Stats — clasificación income/expense por categoría (fase 2 de p20-14)](#2026-07-05-stats--clasificacin-incomeexpense-por-categora-fase-2-de-p20-14)
+- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-04` [Apple Pay — el intent deja de tocar SwiftData (patrón de cola App Group)](#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group)
 - `2026-07-02` [INCIDENTE PROD — sync de grupos muerto 4 días por campo sin deploy de schema + hardening](#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
-- `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
+- `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
-- `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
+- `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-24` [Rediseño Welcome → Restore → Onboarding + invitaciones (6 commits)](#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
-- `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
 - `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
+- `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
@@ -54,8 +71,8 @@
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
-- `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
+- `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
 - `2026-05-17` [Panel polish — AmountText API simplificada (cierre de sprint)](#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - `2026-05-13` [Stats polish — 4 tabs de Statistics panel-aligned (épico completo, Registros→Insights→Tendencias→Dis](#2026-05-13-stats-polish--4-tabs-de-statistics-panel-aligned-pico-completo-registrosinsightstendenciasdistribucin)
@@ -66,9 +83,9 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
-- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
+- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
@@ -85,8 +102,8 @@
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
@@ -120,31 +137,211 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
-### [2026-11-05] Tu IA registra en Yala: el conector escribe en una cola del gateway, nunca en la nube de la persona
+### [2026-11-15] Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta previa y tarjetas de cuentas personalizables
+**Contexto:** Cuatro decisiones que Jürgen tomó en el chat el 15-nov (17:27, 20:02, 20:04 y 20:12, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que desbloqueó el PR «Nuevo registro: categorías a un toque y un buscador que entiende «café»», que las recibió pendientes y no ejecuta ninguna.
+**Decisión:** (1) **Para 2.3, la IA predice mejor la categoría y la cuenta**, sobre todo por voz e imagen (17:27): reconoce cuentas por su nombre en la imagen («tarjeta de crédito BCP»), usa lo que la IA ya sabe de los comercios (Starbucks = cafetería; Wong o Carrefour = supermercado en Perú) además del histórico propio, y se evalúa un histórico agregado de comercios a partir de quienes usan la cuenta de Yala, para completar más rápido lo de la Bandeja. (2) **El saldo del Panel** (y las vistas que reusan esos textos) (20:02): el monto grande es siempre el saldo de todas las cuentas («Tu saldo hoy» / «Tienes hoy»; nunca «Debes hoy», que el brand voice prohíbe); debajo, en chico, el dinero sin contar tarjetas ni préstamos (nombre por definir; ni «liquidez» ni «Disponible»); sale del hero la línea del mes («Te queda»), que ya está en Flujo de caja; un botón «?» en círculo de vidrio, como los que ya hay, abre una explicación visual de los dos montos y lleva al ajuste por cuenta «cuenta o no» de ese segundo monto. (3) **Ese cambio se implementa directo, sin maqueta previa** (20:04; sustituye el «primero maqueta visual para decidir el nombre» de las 20:02): la sesión lee el brand voice y lo hace muy sencillo para quien no sabe nada de dinero, sin recargar la pantalla. (4) **Tarjetas de cuentas personalizables en el Panel entran en 2.3** (20:12): solo diseño (color, patrón, ícono y últimos 4 dígitos), sin foto de la tarjeta real.
+**Razones:** Son decisiones de producto que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (2) y (3) van juntas: la sesión del saldo del Panel elige el nombre del segundo monto con el brand voice y lo deja en su Paso 0. (1) toca el prompt y el contexto de Yala IA; el histórico agregado se evalúa antes de construirlo, porque usa datos de varias personas. (4) excluye a propósito la foto de la tarjeta.
+**Estado:** Activa
+
+### [2026-11-15] Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y recurrentes desde un registro
+**Contexto:** Decisiones que Jürgen tomó en el chat el 15-nov (capturadas por el bot dueño, ADR-082 de casa). Las registra la sesión que desbloqueó el PR «Nube 2.3: volver a tu iCloud», que las recibió pendientes; ninguna tenía todavía su propia entrada aquí.
+**Decisión:** (1) **La escritura en Grupos de Yala web** (permiso de escritura propio por el gateway, opción A) pasa de staging a producción ya, junto con toda la web (05:49); sustituye a la del 14-nov 17:50, que la subía sola. (2) **Dominio de Yala web en producción: `app.yala-app.pe`** (07:43). (3) **Dan hace sus cuatro pasos de panel** de Yala web a producción cuando Frank lo recomiende, después de arreglar lo que bloquea (07:43). (4) **Dan despliega ya en Production de iCloud el campo `CD_brandLogoID` de `CD_ScheduledPayment`** si no está, y se lanza la subida de Yala 2.3 (1) a TestFlight (07:43). (5) **Todos los fallos y bugs del barrido final de 2.3 se encolan** (07:43). (6) **OK a encender en Supabase Production el hook de token del login** (reconoce el cliente de Yala web con rol de solo lectura) y a aplicar los SQL de Yala web, en la salida a producción y junto con los pasos de Dan (07:46). (7) **En 2.3 se puede crear un recurrente a partir de un registro existente** desde el menú y el detalle del registro, desde la bandeja («Aprobar y hacer recurrente») y desde Recurrentes («A partir de un registro»), vinculando el registro como primer pago y evitando duplicados; favoritos queda fuera (08:41). (8) A las 09:55 Jürgen dio por respondido todo lo de Yala web a producción: la salida espera solo el arreglo de Grupos en la web.
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (1) y (8) cierran la revisión que pedía la decisión del 14-nov sobre Grupos en la web: ya no hace falta otra antes de producción. (4) se cumplió el mismo día con la subida de 2.3 (1) (su PR mergeado en 2.3). (7) la implementa su propio lote; aquí solo queda el alcance.
+**Estado:** Activa
+
+### [2026-11-14] Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a producción, iCloud fuera del camino de cuenta y el gateway más rápido
+**Contexto:** Dos decisiones de Jürgen capturadas en el chat por el bot dueño (ADR-082 de casa) y dos que contestó en la sesión del lote 1 de bugs de entrada de 2.3. Las incorpora esa sesión; no ejecuta las dos primeras.
+**Decisión:** (1) **Atajo del banco y pagos recurrentes** (14-nov, 16:56): se toman todas las opciones recomendadas de la propuesta visual (A1 a A6 y S1 a S5, entre ellas I2, L2 y P1); la prueba B0 la corre una sesión en el iPhone 14 de Device MCP con un aviso de banco simulado, no el iPhone personal de Jürgen. (2) **La escritura en Grupos de Yala web** (permiso de escritura dedicado vía gateway, opción A) **pasa de staging a producción ya** (14-nov, 17:50); sustituye al «solo en staging hasta que se revise» de la entrada de abajo. (3) **Con datos en el iCloud del teléfono, entrar con Google o Apple no menciona esos datos** (card «Pregunta: con datos en iCloud…»): se queda como está, coherente con «en el camino de cuenta no debería mencionarse iCloud nunca» (13-nov). (4) **El gateway que lee las tablas en paralelo** (card «Conectar con la cuenta tarda 22–50 s») lo despliega la sesión en staging y en producción.
+**Razones:** (1) y (2) son de Jürgen sin más motivo escrito. (3) Los datos siguen en iCloud y vuelven con «Entrar con iCloud privado»; ofrecer traerlos a la cuenta sería fusionar dos corpus, otro trabajo. (4) El cambio no altera la respuesta y baja entrar con la cuenta de 55 s a 16 s en el iPhone 14.
+**Consecuencias:** la card de iCloud en el camino de cuenta se cierra sin código. Producción del gateway quedó en `3b8529af1` + el paralelo (detalle en `docs/RUNBOOK-staging-ddl.md`): el próximo despliegue desde 2.3 subirá además el cupo de recibos de Grupos y Yala web lote 3, que es lo que (2) pide para la escritura. (1) se ejecutó esa noche: B0 en el iPhone 14 (la notificación entrega «título␤cuerpo» con el importe y corre bloqueado sin pedir nada; el atajo por enlace de iCloud lleva su disparador pero llega apagado, así que la guía de I2 son dos toques; el disparador Correo entrega el cuerpo y B3 queda permitido) y B1 construido y probado de punta a punta (ticket `tickets/done/2026-11-14-atajo-banco-b0-b1.md`). Pidió reglas también para Plin: B1 cubre seis bancos más reglas genéricas.
+**Estado:** Activa
+
+### [2026-11-14] Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3
+**Contexto:** El PR de ajustes visuales de la bienvenida (13-nov) llamó al tercer acceso «Entrar con iCloud privado». La decisión 51 de 2.3 retiró «iCloud privado» como nombre de sitio («En tu iCloud» / «En tu cuenta de Yala»), y `DosNombresDeSitioTests` lo puso en rojo en 12 idiomas, lo que paraba el merge.
+**Decisión:** Jürgen (14-nov, 14:30 Lima) mantiene «Entrar con iCloud privado» en ese botón (clave `bienvenida23.access.iCloud`), y solo ahí, para dejar claro en la bienvenida que es la vía privada. La clave entra en `outOfScope` de `DosNombresDeSitioTests`; el resto de la regla sigue igual.
+**Razones:** En la bienvenida, junto a «Entrar con Google» y «Entrar con Apple», el adjetivo explica la diferencia; dentro de la app el sitio sigue llamándose «En tu iCloud».
+**Consecuencias:** No se abre ninguna otra excepción: un texto nuevo con «iCloud privado» vuelve a poner rojo el test.
+**Estado:** Activa
+
+### [2026-11-14] Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a criterio de Frank
+**Contexto:** Dos decisiones de Jürgen del 14-nov a las 13:53 (Lima), capturadas en el chat por el bot dueño (ADR-082 de casa) y pendientes de pasar al repo. Las incorpora la sesión que preparó las decisiones del barrido del iPhone; no las ejecuta.
+**Decisión:** (1) **Lote 3 de Yala web: escribir en Grupos desde la web con la opción A**: la web tiene su propio permiso de escritura por el gateway, **solo en staging hasta que se revise**. (2) **El resto del lote 2** (Presupuestos, Grupos en lectura, buscar, exportar CSV y los 16 idiomas) **se hace como Frank recomiende**; Jürgen acepta que vaya en un lote aparte antes del lote 3 o junto con él.
+**Razones:** Un permiso propio para la web separa lo que puede escribir el navegador de lo que puede hacer la app, y staging primero deja revisar el riesgo antes de abrirlo a cuentas reales. Lo demás del lote 2 es lectura y no pide una decisión de producto.
+**Consecuencias:** la sesión del lote 3 no despliega el permiso de escritura de la web a producción sin una revisión de Jürgen. La sesión que retome el lote 2 elige si va aparte o con el lote 3 y lo deja escrito en su Paso 0.
+**Estado:** Activa
+
+### [2026-11-14] Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit
+**Contexto:** Decisiones que Jürgen tomó en el chat el 14-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran desde la sesión «Yala web beta», que las recibió pendientes.
+**Decisión:** (1) **Los lotes 2 y 3 de Yala web se avanzan ya en 2.3** (01:21), sin esperar a 3.0; ese mismo día, barrido de todas las cards en QA en el iPhone 14. (2) **Los 11 bugs altos que devolvió el barrido de QA en el iPhone del 14-nov se encolan ya**, en lotes de 3 a 5, delante de las mejoras (07:08). (3) **Las sesiones de Yala web (beta y lotes) no se fijan a la Mini**: van a la máquina que elija el coordinador (07:08). (4) **El despliegue a Production de CloudKit del campo `CD_systemRoleRaw` lo hace Dan**, por encargo de Jürgen (07:08). (5) **Hecho ese mismo día** (07:16): Dan desplegó `CD_systemRoleRaw` (String, en `CD_Subcategory`) a Production en `iCloud.com.jurgenschmidt.yala` (sin índices) y en `.yala.dev` (con Queryable, Searchable y Sortable), solo altas; ya no se le pide a Jürgen. Lo incorporó la sesión del lote 2 de Yala web.
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (1) cambia la decisión D10 del plan de Yala web (`docs/web-app/index.html`: lote 2 en 2.4 y lote 3 en 2.5): los dos van ahora en 2.3. La beta (lote 1) quedó en staging el 14-nov. (2), (3) y (4) son de la cola y de la operación: no dejan regla en el código. (3) es lo que permitió hacer la beta en la Max, con los secretos de staging usados desde la Mini por `ssh`.
+**Estado:** Activa
+
+### [2026-11-13] Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y orden de la cola
+**Contexto:** Decisiones que Jürgen tomó en el chat el 13-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran juntas desde la sesión «Al entrar, el Panel y Grupos muestran lo que ya tienes», que las recibió pendientes.
+**Decisión:** (1) **Grupos 2.3, deuda con un pago esperando confirmación: opción B** (06:39): la tarjeta dice «Hay un pago de S/ X por confirmar», «Todo» ofrece solo lo que falta y «Sí, lo recibí» avisa si la deuda ya quedó saldada por otro pago. (2) **Bienvenida 2.3, ajustes visuales** (06:51): sin círculo de mascota, logo más grande, lema en dos líneas con la fuente del artifact, sin etiqueta EJEMPLO, minidescripciones de una línea, «Dividir con amigos» debajo de los tres botones, tercer botón «iCloud privado», los tres botones de entrada iguales al estilo Vercel, otra cuenta de Google y Apple sin bucle y logo nítido; después, recorrido interactivo manual con Jürgen en el iPhone 14. (3) **Todo encargo de Yala declara en `toca:` solo las carpetas y archivos que de verdad toca** (07:25), nunca `Yala/`, `YalaTests/` o `tickets/` enteros, para que la Mini y la Max corran dos sesiones a la vez sin bloquearse; tests nuevos en subcarpeta propia y tickets por archivo. (4) **Toda card de Yala con prioridad very-high o crítica se encola de inmediato**, delante de lo no crítico, y todos los bugs que reporta Jürgen van a la cola, priorizados (09:54). (5) **Orden de la cola del 13-nov** (09:54): primero los bugs, luego el recorrido interactivo en el iPhone 14, luego Grupos pago por confirmar y al final los ajustes visuales del Welcome. (6) **Repartir un recibo con IA en Grupos** (10:05): los botones de foto y voz van en el inicio de Grupos como botones, igual que en personal, no dentro de «Nuevo gasto». Antes de decidir cambios, Jürgen pide que se le explique la barrera de uso de IA en Grupos (Grupos es gratis). (7) **La subcategoría sembrada de transferencia es de sistema** (12:18): no se borra ni se renombra en ningún idioma; Yala reconoce transferencias y ajustes por su papel, no por el nombre, y una creada por el usuario con el mismo nombre queda normal. (8) **«Ahora mismo no podemos preparar este dispositivo»: opción A** (14:08): si hay un traspaso local que quedó a medias de otro intento, Yala lo deshace y entra limpio.
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (2) la implementa el PR «Bienvenida 2.3: ajustes visuales…», que además deja «Entrar con mi iCloud» entero en un iPhone 14 con «Dividir gastos con amigos» a la vista (medido el 13-nov en un simulador de 390×844). (3) y (4) son de proceso: viven en el lanzador y en la cola, no en el código. (6) espera la explicación de la barrera de IA antes de tocar nada.
+**Estado:** Activa
+
+### [2026-11-12] Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y prioridades de la cola
+**Contexto:** Decisiones que Jürgen tomó en el chat entre el 11 y el 12-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran aquí juntas porque ninguna tiene todavía su propia sesión cerrada.
+**Decisión:** (1) **Cierre de la 2.2 como la 2.1** (11-nov 18:41): tag `v2.2` y release sobre el commit de la build 9 distribuida, merge de 2.2 en 1.0, rama por defecto `2.3` y se borra `2.2`; los encargos nuevos van solo a `2.3`. (2) **Propuestas de mejora como artifact visual** de Claude, no como Markdown (11-nov 14:11). (3) **Nota de salud, lote 1** (11-nov 15:05): «Ritmo hasta hoy» con 3 días de gracia, bajada suave al pasarse de un presupuesto, sin suelo de 50 pero con curva amable (no desanimar), mensaje breve positivo o neutro, y tarjeta chata en Mis finanzas encendida por defecto. Lote 2: lo que te queda del mes. Las cuentas en rojo esperan datos. (4) **Nota de salud encendida una vez para los usuarios existentes** que nunca tocaron Configurar Panel (ocultas = fábrica); a quien la apagó a mano no se le toca (11-nov 16:35). (5) **Nube 2.3, «Activar sin borrar»: opción 1** (11-nov 15:06): la hoja dice la verdad en cada estado; el botón pasa a «Terminar de borrar y empezar de cero», con «Se borran tus datos de este iPhone y de tu iCloud. No queda copia», y abre la hoja existente de terminar el borrado; en el caso a medias dice que lo de iCloud ya se borró y que lo que quedó en el iPhone pasa a la cuenta de Yala al activar. (6) **Merge corto de 2.2 en 2.3** lo hace la sesión de Grupos (no tirar el gasto a medias) antes de su lote; el de la cola queda como verificación (11-nov 15:22). (7) **Verificación de Gmail**: Google pidió un video nuevo para `gmail.readonly`; se graba un demo nuevo en vez de quitar la conexión de Gmail, y se encola el arreglo del CI del PR de deshacer en lote (11-nov 16:34). (8) **La falla de memoria en producción** (Sentry YALA-IOS-B, usuario real con iPhone 16 Pro Max) va con prioridad en 2.3: primer encargo de Yala pendiente de la cola, para encontrar la causa (12-nov 06:18). (9) **Grupos: saldar como en Splitwise y la moneda del grupo que no cambia sola** se encola al final de la cola de 2.3 (12-nov 06:22). (10) **Bienvenida 2.3, acceso:** se implementa exactamente como el artifact v35 de Jürgen (un botón único de entrar con Google o Apple, sin volver al elector), aunque hoy el servidor no devuelva el proveedor de la cuenta: lo diseñó así a propósito (12-nov 11:15).
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (1) se cumplió el 12-nov: `v2.2` sobre el commit de la build 9 (no sobre el merge en 1.0, a diferencia de `v2.1`), y `docs/FLUJO-RAMAS-Y-HOTFIX.md` y `CLAUDE.md` pasan a `2.3`. (3), (4) y (5) definen el alcance de sus lotes de 2.3; (10) acepta a sabiendas que el botón único no sabe aún el proveedor.
+**Estado:** Activa
+
+### [2026-11-11] Las propuestas de mejora se entregan como artifact visual, no como Markdown
+**Contexto:** Decisión de Jürgen del 11-nov (14:11, Lima), capturada en el chat y pendiente de pasar al repo. Vino de la propuesta de la nota de salud del Panel, que se entregó en Markdown; se encargó una mini sesión para rehacerla. La incorpora la sesión del lote de la nube de 2.3 (volver a iCloud), que no la ejecuta.
+**Decisión:** Toda propuesta de mejora para Jürgen (alternativas, maquetas, recomendaciones de una revisión) se le entrega como artifact visual de Claude, no como un `.md`.
+**Razones:** Jürgen decide mirando, y lee desde el móvil: un Markdown con rutas o maquetas en texto no le deja comparar las opciones.
+**Consecuencias:** una sesión que proponga en vez de implementar publica su propuesta como artifact y le pasa el enlace; el `.md` puede quedar como fuente o anexo, nunca como la entrega.
+**Estado:** Activa
+
+### [2026-11-10] El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir
+**Contexto:** Tres decisiones de Jürgen del 10-nov (20:05, 20:18 y 20:24, Lima), capturadas en el chat y pendientes de pasar al repo, sobre dónde recibe Yala los correos que el banco reenvía para crear borradores. La de las 20:05 (un subdominio de yala-app.pe, como `auto@correo.yala-app.pe`) la sustituyó la de las 20:18: no se puede sin tocar los MX de Google del dominio principal. Las incorpora la sesión del lote 09 de mejoras necesarias 2.3, que no las ejecuta.
+**Decisión:** El correo del banco va en un dominio propio, **yalainbox.com**, solo para recibir: registrado en Cloudflare Registrar, con su zona propia y Cloudflare Email Routing hacia el gateway de producción (`yala-gateway-production`). Las direcciones son `auto+<código>@yalainbox.com`. No se toca el correo de Google de yala-app.pe ni se reenvía desde Gmail.
+**Razones:** un subdominio de yala-app.pe obligaría a tocar los MX que usa el correo de Google del dominio principal; un dominio aparte aísla la recepción automática del correo de la empresa.
+**Consecuencias:** cualquier texto o código que muestre o valide la dirección de reenvío usa `@yalainbox.com`, nunca `@yala-app.pe`. La configuración del dominio y del enrutado vive fuera del repo (Cloudflare y el gateway).
+**Estado:** Activa
+
+### [2026-11-10] Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin declarar el catálogo de textos
+**Contexto:** Tres decisiones de Jürgen del 10-nov (10:47, 12:50 y 12:55, Lima), capturadas en el chat y pendientes de pasar al repo. Las incorpora la sesión del lote 05 de las mejoras necesarias 2.3 (texto grande), que no las ejecuta.
+**Decisión:** (1) Una sesión deja mergeados en 2.2 todos los PR abiertos contra 2.2 (esperando el CI o arreglándolo) y luego sube la build a TestFlight, con prioridad sobre los lotes de 2.3. (2) Esa sesión corre en paralelo con los lotes de 2.3, con un `toca:` acotado (tests, proyecto, scripts, docs, qa), y puede tocar código de la app dentro de los PR de 2.2 si el CI lo exige. (3) Los lotes de 2.3 no declaran `Yala/Resources` (el catálogo de textos) en su `toca:`, para que corran dos sesiones a la vez; cada una resuelve el cruce del catálogo al ponerse al día antes de su PR.
+**Razones:** la 2.2 es la versión que sale; los lotes de 2.3 no deben frenarla ni frenarse entre sí por un fichero que casi todos tocan y que se fusiona bien.
+**Consecuencias:** un encargo de 2.3 que cambie textos los añade al catálogo y resuelve el conflicto en su `git fetch` y rebase de antes del gate. Las tres se ejecutan en el reparto de la cola, fuera del repo: no dejan regla en `CLAUDE.md` ni en `.claude/rules/`.
+**Estado:** Activa
+
+### [2026-11-10] Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lotes 2.3
+**Contexto:** El 10-nov quedaban PR abiertos contra 2.2 (el arreglo de Grupos repetidos en rojo, dos de documentación) y la 2.2 (8) ya estaba en TestFlight sin ellos. A la vez arrancaban los lotes de la 2.3.
+**Decisión:** (1) Una sola sesión deja mergeados en 2.2 todos los PR abiertos contra 2.2, esperando su CI o arreglándolo, y después sube la build siguiente a TestFlight; tiene prioridad sobre los lotes 2.3 (10:47 Lima). (2) Esa sesión corre en paralelo con los lotes 2.3 con un `toca:` acotado (tests, proyecto, scripts, docs, qa), y puede tocar código de la app dentro de un PR de 2.2 si el CI lo exige (12:50). (3) Los lotes 2.3 no declaran `Yala/Resources` (catálogo de textos) en `toca:`, para que corran dos sesiones a la vez; cada una resuelve el cruce del catálogo al ponerse al día antes de su PR (12:55).
+**Razones:** Son decisiones de operación que Jürgen tomó en el chat: la 2.2 tenía que salir completa antes de seguir con la 2.3, sin frenar la 2.3.
+**Consecuencias:** (1) y (2) se cumplieron con la 2.2 (9). (3) cambia cómo se escriben los encargos de la 2.3, no deja regla en el código: un choque en `Localizable.strings` al ponerse al día se resuelve quedándose con las claves de los dos lados.
+**Estado:** Activa
+
+### [2026-11-10] Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y el lote del 9 y 10-nov
+**Contexto:** El 9-nov Jürgen eligió la opción C (preguntar al dueño si pasa sus datos de iCloud a la nube). La sesión nocturna midió que no hay prueba fiable de que el iCloud del teléfono sea de quien entra, que «pasar» sería mezclar dos finanzas (fusión ya descartada) y que «dejarlos aparte» pedía un flujo nuevo. El 10-nov a las 6:45 (Lima) Jürgen volvió a la B. Quedaban además otras decisiones del 9 y 10-nov capturadas en el chat.
+**Decisión:** (1) **Opción B** (sustituye a la C): al entrar con Google o Apple desde el Welcome con el corpus del iCloud privado en el teléfono, se abre la nube con la cuenta que entra y los datos de iCloud se quedan en iCloud sin tocar: ni se suben, ni se mezclan, ni se borran de iCloud. No se pregunta. Solo sale la copia local, por la vuelta al neutro que ya usa la puerta de Grupos (espera al export, borrado por archivos antes del mount, relanzar), y tras reabrir se vuelve a la entrada con el mismo método. Sin copia en iCloud, con grupos de la era CloudKit sin migrar o con el teléfono en la nube, sigue el bloqueo, que ya no dice «de otra cuenta». Desde esa pantalla nada de lo que no llegó a iCloud se puede descartar: quien entra puede no ser el dueño. (2) Volver a la nube con la misma cuenta tras volver a iCloud (V4 de la decisión 53) va en 2.3. (3) Yala IA ampliada se enciende en producción en cuanto la 2.2 esté publicada en el App Store. (4) TestFlight de Yala podrá subirse desde la Mini o la Max cuando la Max tenga el certificado de distribución y la llave de App Store Connect. (5) Siri gratis con el modelo del propio iPhone se enciende para quien no tiene Pro y sí tiene el modelo (9-nov, opción A), y las cards de 2.2 en qa pasan a done. (6) Los lotes de mejoras de 2.3 esperan al merge de 2.2 en 2.3. (7) La prueba de «Tu IA registra en Yala» la prepara Dan en staging (gateway y conector).
+**Razones:** (1) no se puede probar que el iCloud es del dueño, y pasar datos mezclaría dos finanzas; dejar iCloud aparte vale igual para el dueño y para el teléfono prestado porque no mueve datos de nadie. Las demás son decisiones de calendario y de operación que Jürgen tomó en el chat.
+**Consecuencias:** (1) vive en `ICloudAsideEntryLogic` y en el propósito `.enterCloudAccount` de `WelcomeGroupsGateView`; un cambio en la vuelta al neutro del cierre privado cambia también esta entrada. (4) cambia la línea de TestFlight de `CLAUDE.md`. (5), (6) y (7) no dejan regla en el repo: se ejecutan fuera de él.
+**Estado:** Activa
+
+### [2026-11-09] Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa una sola cuenta «Grupos»
+**Contexto:** Dos decisiones de Jürgen del 9-nov, capturadas en el chat y pendientes de pasar al repo. (1) Card «Entrar con Google bloqueado por tus propios datos de iCloud privado»: con los datos de su iCloud privado en el teléfono, el dueño que entra con Google/Apple acababa en «Este dispositivo tiene datos de otra cuenta», porque el guard cross-cuenta (`CrossAccountEntryGuardLogic`) cuenta filas sin claim y no separa las propias de las ajenas. (2) Las cuentas de sistema de Grupos (una por divisa).
+**Decisión:** (1) **Opción C** (sustituye a la B, decidida minutos antes): no se bloquea como «datos de otra cuenta»; Yala le pregunta al dueño si prefiere pasar sus datos de iCloud a la nube o entrar en la nube dejándolos aparte. La protección del teléfono prestado o heredado no se rompe. (2) Las cuentas de sistema de Grupos se presentan como una sola «Grupos».
+**Razones:** (1) mover o no mover datos es una decisión que cambia dónde viven, y en Yala eso se pregunta, no se decide por la persona; la B decidía por ella. (2) Jürgen la aprobó junto con el cierre de las cards de 2.2 que no se prueban en el teléfono.
+**Consecuencias:** quien construya (1) diferencia «datos de mi iCloud privado» de «datos ajenos» antes del guard, y la pantalla de bloqueo deja de nombrar como ajenos los propios. Ese mismo día se ejecutaron también el GO del hotfix de política y términos con la sección de Gmail (PR 871 a 1.0 y 872 a 2.2) y el paso a 2.2 del arreglo de la foto de perfil con el filtro de Sentry de desarrollo (PR 875): no dejan regla en el repo.
+**Estado:** Activa en (2). La (1) quedó superada el 2026-11-10 por la opción B (entrada de arriba).
+
+
+### [2026-11-09] Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono
+
+**Contexto.** Google tiene que verificar el permiso `gmail.readonly` del proyecto `yala-502622` antes de que
+«Conectar Gmail» pueda salir a todos. Había dos versiones posibles que describir: la fase 1, que lee el correo en el
+iPhone, y la de 2.3, que lo procesaría en el servidor con IA. La política publicada no mencionaba Gmail.
+
+**Decisión.** Jürgen decidió el 9-nov a las 17:48 (Lima) pedir la verificación ya, con la versión de **lectura en el
+teléfono** (opción A) y el video ya editado de esa versión. La política y los términos de la web se dejan listos por
+hotfix desde `1.0`, con la sección «5. Si conectas tu Gmail» y la declaración de Uso Limitado. Dan se encarga de
+Search Console y del dominio.
+
+**Razones.** Es la única versión que existe hoy. Cada frase de la política tiene que ser verdad el día que se
+publica, y lo del servidor (borrado inmediato, token cifrado, proveedor de IA sin entrenamiento) es trabajo de 2.3.
+
+**Consecuencias.** Cuando la lectura pase al servidor, la sección 5 de la política se reescribe antes de publicar esa
+versión, y puede pedir una verificación nueva. El texto alternativo está en
+`docs/verificacion-google/propuesta-politica-y-terminos.md`, en la rama del PR de «Conectar Gmail» mínimo.
+
+**Estado:** Activa
+
+---
+
+### [2026-11-09] La memoria de Frank viaja en el PR de la sesión que la escribió
+
+**Contexto.** La memoria de Frank (`.claude/agent-memory/frank/`, 444 notas versionadas) ensuciaba el checkout
+principal de `~/Yala`, y eso frenó el `git pull --ff-only` de `lanzar-sesion` el 6 y el 9 de noviembre. Casa quitó el
+síntoma apartando la memoria en el pull (ADR-095 de casa, punto 6). Medido el 9-nov en ~100 transcripts de worktree:
+Claude Code declara la memoria en el worktree, y las notas sueltas del principal las habían movido sesiones a mano.
+
+**Decisión.** Jürgen eligió el 9-nov la opción (a) del ADR-095 de casa. Al cerrar, cada sesión de worktree lleva a su
+PR los cambios de memoria que hizo ella, con `scripts/memoria_al_pr.py`:
+
+- `llevar`, antes del push, commitea en la rama lo del worktree y lo del principal que el transcript de la sesión
+  prueba que escribió ella;
+- `limpiar`, tras el push, devuelve el principal a limpio en esas rutas, solo si `origin/<rama>` ya las tiene.
+
+Lo que escribió otra sesión viva se queda. Lo dudoso no se copia ni se borra: va al cuerpo del PR. El paso está en
+`/cerrar`, bloque 0, y en la cadena autónoma de `CLAUDE.md`.
+
+**Razones.** Una marca de arranque no distingue las notas de otra sesión viva del mismo agente, y el transcript sí:
+lo escribe Claude Code por sesión, con cada ruta escrita y su hora. La opción (b) escribía en la rama principal sin PR,
+y la (c) perdía la historia de la memoria.
+
+**Consecuencias.** `/cerrar-total` es de casa y no corre el paso por sí mismo. Queda descrito en el PR del encargo
+el cambio que le falta allí. Sin respaldo no se borra nada del principal: la copia va a
+`~/Claude/flota/memoria-apartada/Yala/`.
+
+**Estado:** Activa
+
+### [2026-11-06] IA en la nube: lee todo lo que haga falta, y el permiso lo dice
+
+**Contexto.** Al diseñar los gastos hormiga con IA para Pro (ticket `insights-ant-expenses-ai-version-for-pro`), juntar
+grafías del mismo comercio pedía enviar nombres de compras, y el permiso de Estadísticas solo prometía agregados.
+
+**Decisión.** Jürgen, 2026-11-06, en cuatro pasos:
+1. **Privado (1A):** los gastos hormiga envían solo nombre, veces y total de las compras pequeñas; el permiso de
+   Estadísticas lo dice en los 16 idiomas.
+2. **Gateway (2A):** tarea propia `insights.ants`; se despliega a producción antes de publicar 2.3 y, hasta entonces,
+   Pro solo ve la tarjeta gratis, sin error.
+3. **Nube, para TODA función de IA, pasada y futura:** con la cuenta en la nube la IA puede leer todo lo que haga falta
+   para ser precisa y detallada. Es la ventaja de la nube. Los permisos de IA lo dicen, de forma general, en los 16
+   idiomas, y las funciones que ya existían se alinean (el resumen de Estadísticas manda la nota del gasto más alto).
+4. **Permiso con versión (A):** quien aceptó el texto anterior vuelve a verlo para lo nuevo. Hasta aceptarlo, los gastos
+   hormiga le muestran un botón en vez de salir solos; el resumen de siempre sigue igual.
+
+**Razones.** La nube existe para que Yala entienda mejor tus datos; recortar contexto ahí por privacidad le quita su
+ventaja. En privado se mantiene lo mínimo. Y un permiso que cambia lo que promete se vuelve a pedir.
+
+**Consecuencias.** La regla operativa vive en `.claude/rules/ai-gateway.md` («Modo nube»): una función nueva decide qué
+envía en cada modo y, si manda algo que su permiso no decía, sube su versión (`AIConsentRevision`).
+
+**Estado:** Activa
+
+### [2026-11-05] Tu IA registra en Yala: el conector deja borradores en la cola común, nunca en la nube de la persona
 
 **Contexto.** La decisión del 21-oct pasó los conectores de IA a 2.3 con escritura: «la IA solo deja borradores en la
 Bandeja, por confirmar». El conector lee con una sesión de Supabase de solo lectura (`yala_mcp_reader`, ADR del
 2026-09-26), y escribir `inbox_drafts` en la nube obliga a estampar el HLC del protocolo de sync desde un Worker que
 habla con la IA.
 
-**Decisión.** La herramienta `apuntar_movimiento` del conector deja el movimiento en una cola por cuenta del D1 del
-gateway (`connector_drafts`), por una llamada interna entre Workers (service binding a la clase RPC `ConnectorDrafts`,
-sin ruta pública). La app la recoge (`GET /connector/drafts`, con App Attest), crea el borrador local
-—que sincroniza como cualquier otro— y confirma (`ack`). Es el molde del correo del banco (`mail_drafts`).
+**Decisión.** La herramienta `apuntar_movimiento` del conector deja el movimiento en la cola COMÚN de borradores del
+gateway (`mail_drafts`, la del correo del banco y Yala web; decisión D9 del plan de Yala web) con `source: "ai"`, por una
+llamada interna entre Workers (service binding a la clase RPC `ConnectorDrafts`, sin ruta pública). La app la recoge con
+lo demás (`GET /mail/drafts`, con App Attest), crea el borrador local `.aiConnector` —que sincroniza como cualquier
+otro— y confirma (`ack`).
 
 **Razones.** La sesión del conector sigue sin poder escribir nada en la base; el conector solo puede encolar para el
 usuario que ya verificó; y la app es la única que escribe datos de la persona, con su protocolo de sync. Descartado:
 (1) un rol de Supabase con escritura en `inbox_drafts` (abre escritura en la base a un Worker expuesto a la IA y le
-exige el HLC); (2) darle al conector el binding del D1 del gateway (alcanzaría entitlements y correo).
+exige el HLC); (2) darle al conector el binding del D1 del gateway, como tiene la web (alcanzaría entitlements y correo);
+(3) una cola y unas rutas propias (`connector_drafts`, `/connector/drafts`): fue la primera versión, y se retiró el
+16-nov sin desplegarse, al desbloquear el PR, por la D9.
 
 **Consecuencias.**
-- El conector despliega **después** del gateway (migración 0004 + la clase), en staging y en producción.
-- Lo apuntado llega a la Bandeja cuando la app se abre con la nube y sesión; con la app sin abrir espera 30 días. Una
-  app anterior a 2.3 no lo recoge (y si un borrador `.aiConnector` le llega por sync, lo pinta como «Voz»).
-- Techos por cuenta: 50 al día y 100 en cola. Gratis.
+- El conector despliega **después** del gateway (migración `0004_connector_quota` + la clase), en staging y en producción.
+- Lo apuntado llega a la Bandeja cuando la app se abre con la nube y sesión; con la app sin abrir espera 30 días (la
+  caducidad de la cola). Una app anterior a 2.3 no lo recoge, y un borrador `.aiConnector` que le llegue por sync lo
+  pinta como «Voz». Un build de 2.3 anterior a este cambio (la 2.3 (1) de TestFlight) con el correo o la web puestos
+  lo recogería como si viniera del correo.
+- La app no sabe si hay una IA conectada: sin correo ni web, pregunta a la cola como mucho cada 2 minutos (la cadencia
+  con que pregunta a la web por sus sesiones).
+- Techos por cuenta: 50 al día (`connector_quota`, aparte porque el `ack` vacía la cola) y 100 de la IA esperando. Gratis.
 - Quien añada otra herramienta que escriba en el conector va por la misma cola, nunca por Supabase.
 
 **Estado:** Activa.
+
 
 ### [2026-11-05] Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits
 

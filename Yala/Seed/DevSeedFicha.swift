@@ -52,6 +52,16 @@ enum DevSeedFicha {
             return Cifras(groupFactor: 1, groupSecondaryCurrency: "EUR", foreignCurrency: "EUR",
                           foreignBalance: 1_850, phone: 65, spotify: 11.99,
                           cash: 140, cardDebt: -612.40, pizza: 28)
+        case "GBP":
+            // en-GB (4-nov-2026): el viaje a Lisboa con su mitad en euros, como en-US; precios británicos.
+            return Cifras(groupFactor: 1, groupSecondaryCurrency: "EUR", foreignCurrency: "EUR",
+                          foreignBalance: 1_850, phone: 18, spotify: 11.99,
+                          cash: 120, cardDebt: -540.20, pizza: 24)
+        case "EUR":
+            // pt-PT (4-nov-2026): «Viagem ao Algarve», todo en euros; la cuenta extranjera, en dólares.
+            return Cifras(groupFactor: 1, groupSecondaryCurrency: nil, foreignCurrency: "USD",
+                          foreignBalance: 2_400, phone: 25, spotify: 7.99,
+                          cash: 150, cardDebt: -680.50, pizza: 26)
         case "BRL":
             return Cifras(groupFactor: 2, groupSecondaryCurrency: nil, foreignCurrency: "USD",
                           foreignBalance: 3_615, phone: 59.90, spotify: 21.90,

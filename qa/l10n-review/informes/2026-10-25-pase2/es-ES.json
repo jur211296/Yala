@@ -1,0 +1,87 @@
+[
+ {
+  "k": "budgets.favorites.previewEmpty",
+  "categoria": "regional",
+  "gravedad": "baja",
+  "propuesta": "Selecciona favoritos para ver la vista previa",
+  "motivo": "«preview» es anglicismo; el original usa «vista previa» y la app es coherente con el español.",
+  "fuente": "llm",
+  "actual": "Selecciona favoritos para ver el preview",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "gravedad baja"
+ },
+ {
+  "k": "cashFlow.net",
+  "categoria": "sin_traducir",
+  "gravedad": "alta",
+  "propuesta": "Neto",
+  "motivo": "La traducción es «Yala», un texto erróneo que no corresponde a «Neto».",
+  "fuente": "llm",
+  "actual": "Yala",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.offlineCached",
+  "categoria": "ortografia",
+  "gravedad": "media",
+  "propuesta": "Sin conexión. Mostrando último análisis.",
+  "motivo": "Faltan las tildes en «conexión», «último» y «análisis».",
+  "fuente": "llm",
+  "actual": "Sin conexion. Mostrando ultimo analisis.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.offlineNoCache",
+  "categoria": "ortografia",
+  "gravedad": "media",
+  "propuesta": "Sin conexión. Los insights personalizados estarán disponibles al conectarte.",
+  "motivo": "Faltan las tildes en «conexión» y «estarán».",
+  "fuente": "llm",
+  "actual": "Sin conexion. Los insights personalizados estaran disponibles al conectarte.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.yearComparison",
+  "categoria": "ortografia",
+  "gravedad": "alta",
+  "propuesta": "Año pasado: %@. Este año: %@.",
+  "motivo": "«Ano» sin eñe cambia el significado; debe ser «año».",
+  "fuente": "llm",
+  "actual": "Ano pasado: %@. Este ano: %@.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "split.you",
+  "categoria": "ortografia",
+  "gravedad": "media",
+  "propuesta": "Tú",
+  "motivo": "Falta la tilde diacrítica en el pronombre «Tú».",
+  "fuente": "llm",
+  "actual": "Tu",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "whatsNew.v12.comparative.title",
+  "categoria": "ortografia",
+  "gravedad": "media",
+  "propuesta": "Informe comparativo",
+  "motivo": "No hay concordancia («Comparativa» con «Reporte») y sobran las mayúsculas; «Informe» es lo habitual en España.",
+  "fuente": "llm",
+  "actual": "Reporte Comparativa",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ }
+]

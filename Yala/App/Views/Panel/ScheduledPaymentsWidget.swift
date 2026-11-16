@@ -15,6 +15,8 @@ struct ScheduledPaymentsWidget: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     let data: PanelScheduledPaymentsData
     let currencyCode: String
@@ -110,7 +112,7 @@ struct ScheduledPaymentsWidget: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(String(
                 format: L10n.Scheduled.Widget.smallPaidAmount,
-                appPreferences.currency(data.paidAmount, currencyCode: currencyCode)
+                AmountPrivacy.text(appPreferences.currency(data.paidAmount, currencyCode: currencyCode), hidden: amountsHidden)
             ))
             .font(DS.Typography.captionSmall)
             .foregroundStyle(.secondary)

@@ -1,0 +1,595 @@
+//
+//  Revision40CapturasUITests.swift — TEMPORAL, no se publica.
+//  Conductor de capturas de la revisión por vistas 2.3, zona 40 (Perfil, Más, Ajustes generales, Pro y ayuda).
+//  `TEST_RUNNER_REV_OUT=<carpeta>` escribe ahí los PNG; `TEST_RUNNER_REV_AX3=1` lanza con texto grande (AX3);
+//  `TEST_RUNNER_REV_PREFIX` antepone un prefijo. Cada caso tolera fallos: captura lo que alcance.
+//
+
+import XCTest
+
+final class Revision40CapturasUITests: XCTestCase {
+
+    private static let ax3 = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+    private var prefix: String { ProcessInfo.processInfo.environment["REV_PREFIX"] ?? "" }
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = true
+    }
+
+    // MARK: - Utilidades
+
+    private func cap(_ name: String, wait: TimeInterval = 0.8) {
+        Thread.sleep(forTimeInterval: wait)
+        guard let dir = ProcessInfo.processInfo.environment["REV_OUT"], !dir.isEmpty else { return }
+        let data = XCUIScreen.main.screenshot().pngRepresentation
+        let url = URL(fileURLWithPath: dir).appendingPathComponent(prefix + name + ".png")
+        do { try data.write(to: url) } catch { print("REV: no se pudo escribir \(url): \(error)") }
+    }
+
+    private func launch(seed: String? = "realista", pro: Bool = false, extra: [String] = [],
+                        fakePrices: Bool = false, fakePurchase: Bool = false, proTrialDays: Int? = nil,
+                        notificationsDenied: Bool = false, cloudSession: Bool = false) -> XCUIApplication {
+        let app = XCUIApplication()
+        let large = ProcessInfo.processInfo.environment["REV_AX3"] == "1" ? Self.ax3 : []
+        app.launchForUITest(pro: pro, seed: seed, cloudSession: cloudSession,
+                            notificationsDenied: notificationsDenied, fakePrices: fakePrices,
+                            fakePurchase: fakePurchase, proTrialDays: proTrialDays,
+                            extraArguments: extra + large + ["-defaultCurrencyCode", "PEN"])
+        _ = app.waitForUITestReady()
+        Thread.sleep(forTimeInterval: 3)
+        return app
+    }
+
+    @discardableResult
+    private func tapIf(_ el: XCUIElement, timeout: TimeInterval = 8) -> Bool {
+        guard el.waitForExistence(timeout: timeout) else { print("REV: no apareció \(el)"); return false }
+        el.tap()
+        return true
+    }
+
+    private func openSettings(_ app: XCUIApplication) {
+        tapIf(app.buttons["profile_avatar"].firstMatch, timeout: 20)
+        Thread.sleep(forTimeInterval: 1.2)
+    }
+
+    @discardableResult
+    private func scrollTo(_ app: XCUIApplication, _ el: XCUIElement, max: Int = 10) -> Bool {
+        var n = 0
+        while !(el.exists && el.isHittable) && n < max { app.swipeUp(); n += 1 }
+        return el.exists
+    }
+
+    private func openSettingsRow(_ app: XCUIApplication, _ id: String) {
+        openSettings(app)
+        let row = app.buttons[id].firstMatch
+        scrollTo(app, row, max: 8)
+        tapIf(row, timeout: 6)
+        Thread.sleep(forTimeInterval: 1.0)
+    }
+
+    private func openSettingsRowByLabel(_ app: XCUIApplication, _ label: String) {
+        openSettings(app)
+        let row = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+        scrollTo(app, row, max: 8)
+        tapIf(row, timeout: 6)
+        Thread.sleep(forTimeInterval: 1.0)
+    }
+
+    private func scrollCaps(_ app: XCUIApplication, _ base: String, count: Int) {
+        for i in 1...count {
+            app.swipeUp()
+            cap("\(base)-\(i)", wait: 0.6)
+        }
+    }
+
+    private func label(_ text: String) -> NSPredicate {
+        NSPredicate(format: "label CONTAINS[c] %@", text)
+    }
+
+    // MARK: - Ajustes y Más
+
+    func test_01_ajustesRaiz() {
+        let app = launch()
+        cap("a00-panel", wait: 1.5)
+        openSettings(app)
+        cap("a01-ajustes", wait: 1.2)
+        scrollCaps(app, "a01-ajustes-abajo", count: 6)
+    }
+
+    func test_02_mas() {
+        let app = launch()
+        let more = app.tabBars.buttons.containing(label("Más")).firstMatch
+        if !tapIf(more, timeout: 10) { tapIf(app.tabBars.buttons.element(boundBy: 3), timeout: 3) }
+        cap("m01-mas", wait: 1.2)
+        scrollCaps(app, "m01-mas-abajo", count: 3)
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
+        if tapIf(app.buttons["more_editor_button"].firstMatch, timeout: 5) {
+            cap("m02-editor", wait: 1.2)
+            scrollCaps(app, "m02-editor-abajo", count: 2)
+        }
+    }
+
+    func test_03_perfilYCuenta() {
+        let app = launch(cloudSession: true)
+        openSettings(app)
+        cap("p00-ajustes-con-cuenta", wait: 0.8)
+        // La cabecera (avatar + nombre) abre Datos personales: es el primer botón de la lista.
+        let header = app.scrollViews.firstMatch.buttons.firstMatch
+        if tapIf(header, timeout: 6) {
+            cap("p01-datos-personales", wait: 1.2)
+            app.swipeUp()
+            cap("p01-datos-personales-abajo", wait: 0.8)
+            let more = app.buttons["personal_details_more_about_data"].firstMatch
+            if scrollTo(app, more, max: 3) { more.tap(); cap("p02-mas-sobre-tus-datos", wait: 1.2) }
+        }
+        app.terminate()
+        let app2 = launch(cloudSession: true)
+        openSettingsRow(app2, "profile_yala_account")
+        cap("p03-tu-cuenta", wait: 1.5)
+        app2.swipeUp()
+        cap("p03-tu-cuenta-abajo", wait: 0.8)
+    }
+
+    // MARK: - Preferencias
+
+    func test_04_preferencias() {
+        let app = launch()
+        openSettingsRow(app, "profile_usage_mode")
+        cap("g01-como-usas", wait: 1.2)
+        app.terminate()
+
+        let a2 = launch()
+        openSettingsRow(a2, "profile_personalization")
+        cap("g02-personalizacion", wait: 1.2)
+        scrollCaps(a2, "g02-personalizacion-abajo", count: 6)
+        for _ in 0..<6 { a2.swipeDown() }
+        let ins = a2.buttons["personalization_row_ai_summary"].firstMatch
+        if scrollTo(a2, ins, max: 8) {
+            ins.tap()
+            cap("g03-resumen-ia", wait: 1.2)
+            a2.swipeUp()
+            cap("g03-resumen-ia-abajo", wait: 0.8)
+        }
+        a2.terminate()
+
+        let a3 = launch()
+        openSettingsRow(a3, "profile_theme")
+        cap("g04-temas", wait: 1.2)
+        scrollCaps(a3, "g04-temas-abajo", count: 2)
+        a3.terminate()
+
+        let a4 = launch()
+        openSettingsRow(a4, "profile_app_icon")
+        cap("g05-icono", wait: 1.2)
+        a4.swipeUp()
+        cap("g05-icono-abajo", wait: 0.8)
+        a4.terminate()
+
+        let a5 = launch()
+        openSettingsRow(a5, "profile_notifications")
+        cap("g06-notificaciones", wait: 1.2)
+        scrollCaps(a5, "g06-notificaciones-abajo", count: 3)
+        a5.terminate()
+
+        let a6 = launch(notificationsDenied: true)
+        openSettingsRow(a6, "profile_notifications")
+        cap("g07-notificaciones-denegadas", wait: 1.2)
+    }
+
+    func test_05_presupuestosFavoritos() {
+        let app = launch()
+        openSettingsRowByLabel(app, "Presupuestos")
+        cap("g09-presupuestos-favoritos", wait: 1.2)
+        scrollCaps(app, "g09-presupuestos-favoritos-abajo", count: 2)
+    }
+
+    // MARK: - Seguridad
+
+    func test_06_seguridad() {
+        let app = launch()
+        openSettingsRow(app, "profile_security_faceid")
+        cap("s01-face-id", wait: 1.2)
+        scrollCaps(app, "s01-face-id-abajo", count: 2)
+        app.terminate()
+
+        let a2 = launch()
+        openSettingsRow(a2, "profile_permissions")
+        cap("s02-permisos", wait: 1.2)
+        a2.swipeUp()
+        cap("s02-permisos-abajo", wait: 0.8)
+        a2.terminate()
+
+        let a3 = launch()
+        openSettingsRow(a3, "profile_ai_privacy")
+        cap("s03-privacidad-ia", wait: 1.2)
+        scrollCaps(a3, "s03-privacidad-ia-abajo", count: 2)
+    }
+
+    // MARK: - Pro
+
+    func test_07_proGratis() {
+        let app = launch(fakePrices: true)
+        openSettings(app)
+        cap("r00-ajustes-gratis", wait: 0.6)
+        let row = app.buttons["profile_yala_pro"].firstMatch
+        if tapIf(row, timeout: 5) {
+            cap("r01-pro-gratis", wait: 2.0)
+            scrollCaps(app, "r01-pro-gratis-abajo", count: 5)
+        }
+    }
+
+    func test_08_proActivo() {
+        let app = launch(pro: true)
+        openSettings(app)
+        cap("r02-ajustes-pro", wait: 0.6)
+        if tapIf(app.buttons["profile_yala_pro"].firstMatch, timeout: 5) {
+            cap("r02-pro-activo", wait: 1.5)
+            app.swipeUp()
+            cap("r02-pro-activo-abajo", wait: 0.8)
+        }
+    }
+
+    func test_09_proPrueba() {
+        let app = launch(fakePrices: true, proTrialDays: 3)
+        openSettings(app)
+        cap("r03-ajustes-en-prueba", wait: 1.0)
+        if tapIf(app.buttons["profile_yala_pro"].firstMatch, timeout: 5) {
+            cap("r03-pro-en-prueba", wait: 1.5)
+            app.swipeUp()
+            cap("r03-pro-en-prueba-abajo", wait: 0.8)
+        }
+    }
+
+    func test_10_proCompra() {
+        let app = launch(fakePrices: true, fakePurchase: true)
+        openSettingsRow(app, "profile_yala_pro")
+        Thread.sleep(forTimeInterval: 1.5)
+        let cta = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@ OR label CONTAINS[c] %@ OR label CONTAINS[c] %@",
+                                                     "Prueba", "Continuar", "Suscrib", "Empezar")).firstMatch
+        if scrollTo(app, cta, max: 4) {
+            cap("r04-antes-de-comprar", wait: 0.5)
+            cta.tap()
+            cap("r05-exito", wait: 3.0)
+            app.swipeUp()
+            cap("r05-exito-abajo", wait: 0.8)
+            if tapIf(app.buttons["subscription_success_continue"].firstMatch, timeout: 4) {
+                cap("r06-tras-exito", wait: 1.5)
+            }
+        }
+    }
+
+    // MARK: - Ayuda
+
+    func test_11_tutoriales() {
+        let app = launch()
+        openSettingsRow(app, "profile_help_tutorials")
+        cap("h01-tutoriales", wait: 1.2)
+        app.swipeUp()
+        cap("h01-tutoriales-abajo", wait: 0.8)
+        app.swipeDown(); app.swipeDown()
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tutorial_row_'"))
+        if rows.firstMatch.waitForExistence(timeout: 5) {
+            rows.firstMatch.tap()
+            cap("h02-tutorial-detalle", wait: 1.2)
+            scrollCaps(app, "h02-tutorial-detalle-abajo", count: 3)
+        }
+        app.terminate()
+
+        let a2 = launch()
+        openSettingsRow(a2, "profile_help_tutorials")
+        let r2 = a2.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tutorial_row_'"))
+        if r2.firstMatch.waitForExistence(timeout: 5), r2.count > 1 {
+            r2.element(boundBy: 1).tap()
+            cap("h03-tutorial-2", wait: 1.2)
+            for i in 0..<10 {
+                let next = a2.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@ OR label CONTAINS[c] %@ OR label CONTAINS[c] %@",
+                                                              "Siguiente", "Hecho", "Terminar", "Entendido")).firstMatch
+                guard next.waitForExistence(timeout: 2), next.isHittable else { app.swipeUp(); continue }
+                next.tap()
+                cap("h03-paso-\(i + 1)", wait: 0.8)
+                if a2.buttons["tutorial_understood"].exists { cap("h04-tutorial-completado", wait: 0.5); break }
+            }
+        }
+    }
+
+    func test_12_faqYContacto() {
+        let app = launch()
+        openSettingsRowByLabel(app, "Preguntas frecuentes")
+        cap("h05-faq", wait: 1.2)
+        let q = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'faq_row_'")).firstMatch
+        if tapIf(q, timeout: 4) { cap("h06-faq-abierta", wait: 1.0) }
+        scrollCaps(app, "h05-faq-abajo", count: 5)
+        app.terminate()
+
+        let a2 = launch()
+        openSettingsRow(a2, "profile_help_contact")
+        cap("h07-contacto", wait: 1.5)
+    }
+
+    // MARK: - Datos
+
+    private func openExport(_ app: XCUIApplication, capName: String) -> Bool {
+        openSettings(app)
+        let row = app.buttons.containing(NSPredicate(format: "label BEGINSWITH[c] %@", "Exportar")).firstMatch
+        scrollTo(app, row, max: 6)
+        cap(capName, wait: 0.8)
+        return tapIf(row, timeout: 5)
+    }
+
+    func test_13_exportar() {
+        let app = launch(pro: true)
+        if openExport(app, capName: "d00-ajustes-datos") {
+            cap("d01-exportar", wait: 1.5)
+            scrollCaps(app, "d01-exportar-abajo", count: 2)
+            let more = app.buttons["export_more_options"].firstMatch
+            if scrollTo(app, more, max: 4) {
+                more.tap()
+                cap("d02-mas-opciones", wait: 1.0)
+                scrollCaps(app, "d02-mas-opciones-abajo", count: 5)
+            }
+        }
+    }
+
+    func test_14_exportarGratis() {
+        let app = launch(pro: false)
+        if openExport(app, capName: "d03-ajustes-datos-gratis") {
+            cap("d03-exportar-gratis", wait: 1.5)
+            scrollCaps(app, "d03-exportar-gratis-abajo", count: 3)
+            let more = app.buttons["export_more_options"].firstMatch
+            if scrollTo(app, more, max: 4) { more.tap(); cap("d03-mas-opciones-gratis", wait: 1.0); app.swipeUp(); cap("d03-mas-opciones-gratis-abajo", wait: 0.6) }
+        }
+    }
+
+    func test_15_exportarVacio() {
+        let app = launch(seed: "sin-registros", pro: true)
+        if openExport(app, capName: "d04-ajustes-sin-registros") {
+            cap("d04-exportar-vacio", wait: 1.5)
+        }
+    }
+
+    func test_16_vaciar() {
+        let app = launch()
+        openSettingsRow(app, "profile_security_reset_data")
+        cap("d05-vaciar", wait: 1.2)
+        scrollCaps(app, "d05-vaciar-abajo", count: 2)
+        let start = app.buttons["wipe_data_start"].firstMatch
+        if scrollTo(app, start, max: 4) {
+            start.tap()
+            cap("d06-vaciar-confirmar", wait: 1.2)
+        }
+    }
+
+    func test_17_soloGrupos() {
+        let app = launch(seed: "solo-grupos")
+        openSettingsRow(app, "profile_usage_mode")
+        cap("q01-como-usas", wait: 1.0)
+        let groups = app.buttons.containing(label("Solo")).firstMatch
+        if tapIf(groups, timeout: 4) {
+            cap("q02-elegir-solo-grupos", wait: 1.2)
+            for _ in 0..<2 {
+                let alertBtn = app.alerts.buttons.element(boundBy: 0)
+                if alertBtn.waitForExistence(timeout: 2) { cap("q03-confirmar-solo-grupos", wait: 0.3); alertBtn.tap() }
+            }
+            cap("q04-tras-elegir", wait: 2.5)
+        }
+        // Vuelve a abrir Ajustes en la shell que haya quedado.
+        let close = app.buttons["Cerrar"].firstMatch
+        if close.waitForExistence(timeout: 2) { close.tap() }
+        Thread.sleep(forTimeInterval: 2)
+        cap("q05-shell-tras-elegir", wait: 1.0)
+        openSettings(app)
+        cap("q06-ajustes-solo-grupos", wait: 1.2)
+        scrollCaps(app, "q06-ajustes-solo-grupos-abajo", count: 4)
+        for _ in 0..<5 { app.swipeDown() }
+        let exp = app.buttons.containing(NSPredicate(format: "label BEGINSWITH[c] %@", "Exportar")).firstMatch
+        if scrollTo(app, exp, max: 6), exp.isHittable {
+            exp.tap()
+            cap("q07-exportar-grupos", wait: 1.5)
+            app.swipeUp()
+            cap("q07-exportar-grupos-abajo", wait: 0.8)
+        }
+    }
+
+    // MARK: - Segunda vuelta
+
+    func test_30_compra() {
+        let app = launch(fakePrices: true, fakePurchase: true)
+        openSettingsRow(app, "profile_yala_pro")
+        Thread.sleep(forTimeInterval: 1.5)
+        let cta = app.buttons.containing(label("Probar gratis")).firstMatch
+        if tapIf(cta, timeout: 5) {
+            cap("r05-exito", wait: 3.0)
+            app.swipeUp()
+            cap("r05-exito-abajo", wait: 0.8)
+            if tapIf(app.buttons["subscription_success_continue"].firstMatch, timeout: 4) {
+                cap("r06-tras-exito", wait: 1.5)
+            }
+        }
+    }
+
+    func test_31_tutorialCompleto() {
+        let app = launch()
+        openSettingsRow(app, "profile_help_tutorials")
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tutorial_row_'"))
+        guard rows.firstMatch.waitForExistence(timeout: 5) else { return }
+        rows.firstMatch.tap()
+        Thread.sleep(forTimeInterval: 1.0)
+        for i in 0..<10 {
+            if app.buttons["tutorial_understood"].exists || app.buttons["tutorial_do_it_now"].exists {
+                cap("h04-tutorial-completado", wait: 0.6); break
+            }
+            let next = app.buttons.containing(NSPredicate(format: "label == %@ OR label == %@", "Empezar", "Siguiente")).firstMatch
+            guard next.waitForExistence(timeout: 3) else { break }
+            next.tap()
+            cap("h03-paso-\(i + 1)", wait: 0.8)
+        }
+        if app.buttons["tutorial_understood"].exists { cap("h04-tutorial-completado", wait: 0.3) }
+    }
+
+    func test_32_soloGrupos() {
+        let app = launch(seed: "solo-grupos")
+        openSettingsRow(app, "profile_usage_mode")
+        if tapIf(app.buttons.containing(label("Solo grupos")).firstMatch, timeout: 4) {
+            Thread.sleep(forTimeInterval: 1.0)
+            if tapIf(app.buttons.containing(label("Usar solo grupos")).firstMatch, timeout: 4) {
+                cap("q03-tras-usar-solo-grupos", wait: 2.5)
+            }
+        }
+        let close = app.buttons["Cerrar"].firstMatch
+        if close.waitForExistence(timeout: 2) { close.tap() }
+        cap("q05-shell-solo-grupos", wait: 2.0)
+        openSettings(app)
+        cap("q06-ajustes-solo-grupos", wait: 1.2)
+        scrollCaps(app, "q06-ajustes-solo-grupos-abajo", count: 3)
+        for _ in 0..<5 { app.swipeDown() }
+        let exp = app.buttons.containing(NSPredicate(format: "label BEGINSWITH[c] %@", "Exportar")).firstMatch
+        if scrollTo(app, exp, max: 6), exp.isHittable {
+            exp.tap()
+            cap("q07-exportar-grupos", wait: 1.5)
+            app.swipeUp()
+            cap("q07-exportar-grupos-abajo", wait: 0.8)
+        }
+    }
+
+    func test_33_pestanas() {
+        let app = launch()
+        let more = app.tabBars.buttons.containing(label("Más")).firstMatch
+        tapIf(more, timeout: 10)
+        if tapIf(app.buttons["more_editor_button"].firstMatch, timeout: 5) {
+            if tapIf(app.buttons.containing(label("Pestañas de abajo")).firstMatch, timeout: 4) {
+                cap("m03-pestanas", wait: 1.2)
+                app.swipeUp()
+                cap("m03-pestanas-abajo", wait: 0.8)
+            }
+        }
+    }
+
+    func test_34_masSobreDatosYPagos() {
+        let app = launch()
+        openSettings(app)
+        let header = app.scrollViews.firstMatch.buttons.firstMatch
+        if tapIf(header, timeout: 6) {
+            let more = app.buttons["personal_details_more_about_data"].firstMatch
+            if tapIf(more, timeout: 4) { cap("p02-mas-sobre-tus-datos", wait: 5.0) }
+        }
+        app.terminate()
+        let a2 = launch()
+        openSettingsRow(a2, "profile_planned")
+        cap("a02-pagos-desde-ajustes", wait: 2.0)
+    }
+
+    func test_35_buscarAjuste() {
+        let app = launch()
+        let search = app.tabBars.buttons.containing(label("Buscar")).firstMatch
+        if tapIf(search, timeout: 10) {
+            Thread.sleep(forTimeInterval: 1.0)
+            let field = app.searchFields.firstMatch
+            if field.waitForExistence(timeout: 4) {
+                field.tap()
+                field.typeText("decimales")
+                cap("b01-buscar-decimales", wait: 2.0)
+                field.typeText(XCUIKeyboardKey.delete.rawValue.padding(toLength: 9, withPad: XCUIKeyboardKey.delete.rawValue, startingAt: 0))
+                field.typeText("exportar")
+                cap("b02-buscar-exportar", wait: 2.0)
+            } else { cap("b00-buscar", wait: 0.5) }
+        }
+    }
+
+    func test_36_proConPlan() {
+        let app = launch(pro: true, extra: ["-uitest-pro-plan", "yearly"])
+        openSettings(app)
+        cap("r07-ajustes-pro-anual", wait: 1.0)
+        if tapIf(app.buttons["profile_yala_pro"].firstMatch, timeout: 5) { cap("r07-pro-anual", wait: 1.5) }
+        app.terminate()
+        let a2 = launch(pro: true, proTrialDays: 3)
+        openSettings(a2)
+        cap("r08-ajustes-pro-prueba", wait: 1.0)
+        if tapIf(a2.buttons["profile_yala_pro"].firstMatch, timeout: 5) { cap("r08-pro-prueba", wait: 1.5) }
+        a2.terminate()
+        let a3 = launch(extra: ["-uitest-fake-prices-unavailable"])
+        openSettingsRow(a3, "profile_yala_pro")
+        cap("r09-pro-sin-precios", wait: 3.0)
+    }
+
+    /// Texto grande: se lanza con `REV_AX3=1` y prefijo `ax-`.
+    func test_40_textoGrande() {
+        let app = launch()
+        openSettings(app)
+        cap("a01-ajustes", wait: 1.2)
+        scrollCaps(app, "a01-ajustes-abajo", count: 3)
+        app.terminate()
+        let a2 = launch()
+        openSettingsRow(a2, "profile_personalization")
+        cap("g02-personalizacion", wait: 1.2)
+        scrollCaps(a2, "g02-personalizacion-abajo", count: 2)
+        a2.terminate()
+        let a3 = launch(fakePrices: true)
+        openSettingsRow(a3, "profile_yala_pro")
+        cap("r01-pro-gratis", wait: 1.5)
+        a3.swipeUp()
+        cap("r01-pro-gratis-abajo-1", wait: 0.8)
+        a3.terminate()
+        let a4 = launch(pro: true)
+        if openExport(a4, capName: "d00-ajustes-datos") { cap("d01-exportar", wait: 1.5) }
+        a4.terminate()
+        let a5 = launch()
+        openSettingsRowByLabel(a5, "Preguntas frecuentes")
+        cap("h05-faq", wait: 1.2)
+        a5.terminate()
+        let a6 = launch()
+        tapIf(a6.tabBars.buttons.containing(label("Más")).firstMatch, timeout: 10)
+        cap("m01-mas", wait: 1.2)
+    }
+
+    /// Texto grande: Ajustes de arriba abajo, para contar pantallas (se para cuando dos capturas seguidas son iguales).
+    func test_41_textoGrandeLargo() {
+        let app = launch()
+        openSettings(app)
+        cap("largo-00", wait: 1.0)
+        for i in 1...14 { app.swipeUp(); cap(String(format: "largo-%02d", i), wait: 0.5) }
+    }
+
+    /// iPad: se lanza con prefijo `ipad-` en un iPad simulado.
+    func test_50_ipad() {
+        let app = launch()
+        openSettings(app)
+        cap("a01-ajustes", wait: 1.5)
+        let row = app.buttons["profile_personalization"].firstMatch
+        if tapIf(row, timeout: 4) { cap("g02-personalizacion", wait: 1.2) }
+        let pro = app.buttons["profile_yala_pro"].firstMatch
+        if tapIf(pro, timeout: 4) { cap("r01-pro-gratis", wait: 1.5) }
+        let faq = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Preguntas frecuentes")).firstMatch
+        if scrollTo(app, faq, max: 6) { faq.tap(); cap("h05-faq", wait: 1.2) }
+        app.terminate()
+        let a2 = launch(pro: true)
+        if openExport(a2, capName: "d00-ajustes-datos") { cap("d01-exportar", wait: 1.5) }
+    }
+
+    // MARK: - Medida de carga (Ajustes): 7 aperturas en el mismo arranque.
+
+    /// La misma medida, abriendo Ajustes desde Más (sin el Panel delante): separa el coste de Ajustes del de quien lo presenta.
+    func test_21_medirAjustesDesdeMas() {
+        let app = launch(seed: ProcessInfo.processInfo.environment["REV_SEED"] ?? "realista")
+        tapIf(app.tabBars.buttons.containing(label("Más")).firstMatch, timeout: 10)
+        Thread.sleep(forTimeInterval: 2.0)
+        for _ in 0..<7 {
+            openSettings(app)
+            Thread.sleep(forTimeInterval: 1.0)
+            let close = app.buttons["Cerrar"].firstMatch
+            if close.waitForExistence(timeout: 3) { close.tap() } else { app.swipeDown(velocity: .fast) }
+            Thread.sleep(forTimeInterval: 1.2)
+        }
+    }
+
+    func test_20_medirAjustes() {
+        let app = launch(seed: ProcessInfo.processInfo.environment["REV_SEED"] ?? "realista")
+        for _ in 0..<7 {
+            openSettings(app)
+            Thread.sleep(forTimeInterval: 1.0)
+            let close = app.buttons["Cerrar"].firstMatch
+            if close.waitForExistence(timeout: 3) { close.tap() } else { app.swipeDown(velocity: .fast) }
+            Thread.sleep(forTimeInterval: 1.2)
+        }
+    }
+}

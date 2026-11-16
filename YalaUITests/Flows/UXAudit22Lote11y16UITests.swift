@@ -91,6 +91,10 @@ final class UXAudit22Lote11y16UITests: XCTestCase {
         XCTAssertTrue(month.isSelected, "Por defecto se compara con el período anterior.")
 
         let monthPhrase = phrase.label
+        // En el runner del CI el scroll de los arrastres sigue moviéndose al tocar, y el toque caía fuera del chip (3 de 3
+        // vueltas en la corrida del 14-nov; en local pasa). Se toca con el chip quieto, y la frase se espera: se recalcula
+        // una vuelta después de elegir el chip, y en el runner la lectura inmediata aún traía la del mes.
+        XCTAssertTrue(app.waitForSettledLayout(of: year), "El chip del año pasado no se quedó quieto para tocarlo.")
         year.tap()
         XCTAssertTrue(
             XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: year)],
@@ -98,7 +102,8 @@ final class UXAudit22Lote11y16UITests: XCTestCase {
             "El chip del año pasado no quedó elegido."
         )
         XCTAssertFalse(month.isSelected, "Los dos chips quedaron elegidos a la vez.")
-        XCTAssertNotEqual(phrase.label, monthPhrase, "La frase no dice con qué se compara ahora.")
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", monthPhrase), object: phrase)
+        XCTAssertEqual(XCTWaiter().wait(for: [changed], timeout: 5), .completed, "La frase no dice con qué se compara ahora.")
 
         month.tap()
         let back = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", monthPhrase), object: phrase)

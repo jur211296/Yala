@@ -22,6 +22,9 @@ if [ ! -d "$XCODE_APP" ]; then
   exit 1
 fi
 
+# La imagen, primero: es lo que cambia sin aviso entre dos runs del mismo commit (2026-11-05:
+# 20261026.0314.1 → 20261104.0337.1 y la UI dejó de cargar). El runtime lo dice `ci-simulador.sh`.
+echo "Imagen del runner: ${ImageOS:-?} ${ImageVersion:-?}"
 sudo xcode-select -s "$XCODE_APP/Contents/Developer"
 version="$(xcodebuild -version)"
 echo "$version"

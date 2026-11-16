@@ -22,28 +22,62 @@ struct ScheduledPaymentsListView: View {
     let onRefresh: () -> Void
     /// `true` cuando el scroll se lleva «Nuevo pago planificado» de arriba: entonces sale el «+» flotante (card kzhe).
     @Binding var showsFloatingNew: Bool
+    /// «Desde un registro» (encargo del 15-nov): el selector de registros recientes para crear el recurrente a partir de
+    /// uno. `nil`: no se ofrece.
+    var onCreateFromRecord: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
+
+    private var newPaymentPill: some View {
+        TopPrimaryActionPill(
+            title: L10n.Accessibility.newPayment,
+            systemImage: "plus",
+            accessibilityIdentifier: "scheduled_payments_create_button"
+        ) {
+            viewModel.createNewPayment()
+        }
+    }
+
+    @ViewBuilder
+    private var createActions: some View {
+        if let onCreateFromRecord {
+            let fromRecord = TopPrimaryActionPill(
+                title: L10n.RecurringFromRecord.fromRecord,
+                systemImage: "doc.text.magnifyingglass",
+                isPrimary: false,
+                accessibilityIdentifier: "scheduled_payments_create_from_record_button",
+                action: onCreateFromRecord
+            )
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.sm) {
+                    newPaymentPill
+                    fromRecord
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    newPaymentPill
+                    fromRecord
+                }
+            }
+        } else {
+            newPaymentPill
+        }
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
             heroSection
                 .padding(.bottom, DS.Spacing.xs)
 
-            // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe).
-            TopPrimaryActionPill(
-                title: L10n.Accessibility.newPayment,
-                systemImage: "plus",
-                accessibilityIdentifier: "scheduled_payments_create_button"
-            ) {
-                viewModel.createNewPayment()
-            }
+            // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe). A su lado,
+            // «Desde un registro» (encargo del 15-nov); si no caben los dos en una fila, va debajo.
+            createActions
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xs)
@@ -154,6 +188,22 @@ struct ScheduledPaymentsListView: View {
         .accessibilityHidden(true)
     }
 
+    /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
+    /// dos formas (`AnyLayout`).
+    @ViewBuilder
+    private func timelineBrandBadge(_ summary: ScheduledPaymentSummary) -> some View {
+        if let brand = summary.payment.subscriptionBrand {
+            SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall, isDecorative: true)
+        }
+    }
+
+    private func statusLineLayout<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: spacing))
+        return layout { content() }
+    }
+
     // MARK: - View Mode
 
     private var viewModeSelector: some View {
@@ -177,6 +227,9 @@ struct ScheduledPaymentsListView: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
+                // El círculo es de tamaño fijo: con el texto al máximo el icono crecía fuera de él y los tres se montaban
+                // (QA físico 2.2, iPhone 14). Tope como el de una barra, y el visor de contenido grande al mantenerlo.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -191,6 +244,9 @@ struct ScheduledPaymentsListView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityShowsLargeContentViewer {
+            Label(mode.accessibilityLabel, systemImage: mode.iconName)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("scheduled_view_mode_\(mode.rawValue)")
     }
@@ -280,6 +336,13 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    private func timelineAmount(_ summary: ScheduledPaymentSummary, state: ScheduledPaymentRowState) -> some View {
+        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
+            .font(DS.Typography.label)
+            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
+            .lineLimit(1)
+    }
+
     private func timelineRow(_ summary: ScheduledPaymentSummary, isLast: Bool) -> some View {
         let state = summary.rowState
         let isToday = Calendar.current.isDateInToday(summary.dueDate)
@@ -311,18 +374,31 @@ struct ScheduledPaymentsListView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(summary.payment.name)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Spacer(minLength: DS.Spacing.sm)
-                        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
-                            .font(DS.Typography.label)
-                            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
-                            .lineLimit(1)
+                    // Con el texto al máximo el importe baja bajo el nombre, entero (barrido final 2.2): al lado se cortaba.
+                    // El logo del servicio va delante del nombre en las dos formas (card 9nn7, 2.3). El día sigue en el
+                    // círculo de la línea, que es lo que la ordena.
+                    if dynamicTypeSize.isAccessibilitySize {
+                        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                            timelineBrandBadge(summary)
+                            Text(summary.payment.name)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                                .lineLimit(2)
+                        }
+                        timelineAmount(summary, state: state)
+                    } else {
+                        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                            timelineBrandBadge(summary)
+                            Text(summary.payment.name)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: DS.Spacing.sm)
+                            timelineAmount(summary, state: state)
+                        }
                     }
-                    HStack(spacing: DS.Spacing.sm) {
+                    // Con el texto al máximo, la insignia y la cuenta una debajo de otra: al lado, «Pagado» salía «Paga…».
+                    statusLineLayout(spacing: DS.Spacing.sm) {
                         ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
                         if let account = summary.payment.account?.name, !summary.payment.isGroupPayment {
                             Text(account)
@@ -426,16 +502,14 @@ struct ScheduledPaymentsListView: View {
                     .foregroundStyle(isSelected ? theme.onAccent : (isToday ? theme.accentText : .secondary))
 
                 if hasPayments {
+                    // Con algún logo caben dos marcas por celda en vez de tres puntos (card 9nn7, 2.3).
+                    let markLimit = summaries.contains { $0.payment.subscriptionBrand != nil } ? 2 : 3
                     HStack(spacing: 3) {
-                        ForEach(Array(summaries.prefix(3).enumerated()), id: \.offset) { _, summary in
-                            Circle()
-                                .fill(isSelected
-                                      ? theme.onAccent
-                                      : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent))
-                                .frame(width: 6, height: 6)
+                        ForEach(Array(summaries.prefix(markLimit).enumerated()), id: \.offset) { _, summary in
+                            calendarMark(summary, isSelected: isSelected)
                         }
-                        if summaries.count > 3 {
-                            Text("+\(summaries.count - 3)")
+                        if summaries.count > markLimit {
+                            Text("+\(summaries.count - markLimit)")
                                 .font(.system(size: 8, weight: .medium)) // A11Y-DT: fixed size — calendar micro-badge
                                 .foregroundStyle(isSelected ? theme.onAccent.opacity(0.8) : .secondary)
                         }
@@ -463,6 +537,31 @@ struct ScheduledPaymentsListView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// La marca de un pago en su día: el punto de estado o, si tiene logo, su círculo con la inicial y un aro del color
+    /// del estado (pagado, vencido, pendiente), para no perder lo que decían los puntos.
+    @ViewBuilder
+    private func calendarMark(_ summary: ScheduledPaymentSummary, isSelected: Bool) -> some View {
+        let stateColor = isSelected
+            ? theme.onAccent
+            : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent)
+        if let brand = summary.payment.subscriptionBrand {
+            let fill = Color(hex: brand.colorHex)
+            ZStack {
+                Circle().fill(fill).frame(width: 12, height: 12)
+                Text(verbatim: String(brand.monogram.prefix(1)))
+                    .font(.system(size: 7, weight: .heavy, design: .rounded)) // A11Y-DT: micro-marca del calendario
+                    .foregroundStyle(theme.onFill(fill))
+                Circle().stroke(stateColor, lineWidth: 1.5).frame(width: 15, height: 15)
+            }
+            .frame(width: 15, height: 15)
+            .accessibilityHidden(true)
+        } else {
+            Circle()
+                .fill(stateColor)
+                .frame(width: 6, height: 6)
+        }
     }
 
     private func backgroundColor(isToday: Bool, isSelected: Bool, hasPayments: Bool) -> Color {

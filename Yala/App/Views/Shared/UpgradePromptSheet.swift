@@ -31,6 +31,19 @@ enum UpgradeContext {
     }
 }
 
+/// «Apuntarlo a mano» en el muro de Pro (mejoras necesarias 2.3 · V3): el muro de voz y foto dice «Apuntar a mano sigue
+/// gratis, como siempre» y no traía cómo. Sale solo donde lo promete el texto y quien presenta la hoja sabe abrir el
+/// formulario; sin salida, el botón no se pinta (un botón que no lleva a nada es peor que ninguno).
+enum ProGateManualEntryLogic {
+    static func offersManualEntry(feature: ProFeature, context: UpgradeContext, hasExit: Bool) -> Bool {
+        guard hasExit, context == .proFeature else { return false }
+        switch feature {
+        case .voiceInput, .imageInput: return true
+        default: return false
+        }
+    }
+}
+
 /// Lo que la hoja enseña en lugar del icono de la función cuando se tocó un tema o un icono (L16-11): cómo se vería.
 enum ProGatePreview: Equatable {
     case theme(AppTheme, variant: TranslucentVariant)
@@ -54,6 +67,8 @@ struct UpgradePromptSheet: View {
     var preview: ProGatePreview?
     /// La compra salió bien dentro de esta hoja. Lo usa `proUpgradeSheet` para abrir la función al cerrarse.
     var onPurchased: () -> Void = {}
+    /// «Apuntarlo a mano» (V3): la hoja se cierra y quien la presentó abre el formulario. `nil` = sin botón.
+    var onManualEntry: (() -> Void)?
 
     // MARK: - State
 
@@ -102,10 +117,26 @@ struct UpgradePromptSheet: View {
                     Spacer(minLength: DS.Spacing.md)
 
                     VStack(spacing: DS.Spacing.md) {
-                        YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
-                            Task { await purchaseSelected() }
+                        // Sin conexión y sin precios no hay compra posible: nada apagado (decisión 42 de 2.3, F3).
+                        if !showsOfflineAlternatives {
+                            YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
+                                Task { await purchaseSelected() }
+                            }
+                            .accessibilityIdentifier("upgrade_prompt_cta")
                         }
-                        .accessibilityIdentifier("upgrade_prompt_cta")
+
+                        if ProGateManualEntryLogic.offersManualEntry(
+                            feature: feature, context: context, hasExit: onManualEntry != nil) {
+                            // Lo que el texto promete, sin competir con la compra: un botón de texto, en primario.
+                            Button(L10n.Voice.enterManually) {
+                                onManualEntry?()
+                                dismiss()
+                            }
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(.thPrimaryText)
+                            .disabled(store.isPurchasing)
+                            .accessibilityIdentifier("upgrade_prompt_manual_entry")
+                        }
 
                         Button(L10n.Action.notNow) {
                             dismiss()
@@ -128,7 +159,10 @@ struct UpgradePromptSheet: View {
         }
         .yalaScreenBackground(.subtle)
         .interactiveDismissDisabled(store.isPurchasing)
-        .task { await loadPrices() }
+        .task {
+            MetricsService.usedProOffer(limitHit: context == .limitReached ? feature : nil)
+            await loadPrices()
+        }
         .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
             // Vaciar el aviso al cerrarlo: con el mismo error otra vez, el `onChange` no volvía a saltar.
             Button(L10n.Common.ok, role: .cancel) { clearStoreAlert() }
@@ -137,6 +171,10 @@ struct UpgradePromptSheet: View {
         }
         .onChange(of: store.errorMessage) { _, newValue in
             if newValue != nil { showError = true }
+        }
+        // Al volver la conexión, los precios se cargan solos.
+        .onChange(of: NetworkMonitor.shared.isConnected) { _, connected in
+            reloadPricesOnReconnect(connected)
         }
         // «Comenzar» cierra la bienvenida y esta hoja; quien la abrió abre la función (UX 2.2 · L17-9).
         .fullScreenCover(isPresented: $showSuccess, onDismiss: { dismiss() }) {
@@ -208,7 +246,9 @@ struct UpgradePromptSheet: View {
 
     @ViewBuilder
     private var plans: some View {
-        if !store.planOffers.isEmpty {
+        if showsOfflineAlternatives {
+            offlineAlternatives
+        } else if !store.planOffers.isEmpty {
             ProPlanPicker(offers: store.planOffers, selectedID: $selectedPlan, showsMonthlyEquivalent: false)
         } else if pricesFailed {
             ProPricesUnavailable {
@@ -218,6 +258,83 @@ struct UpgradePromptSheet: View {
         } else {
             ProgressView().frame(maxWidth: .infinity)
         }
+    }
+
+    // MARK: - Sin conexión (decisión 42 de 2.3, F3)
+
+    /// El muro de Yala IA sin red y sin precios. Lee `NetworkMonitor` (`@Observable`): al volver la red se repinta.
+    private var showsOfflineAlternatives: Bool {
+        ProGateOfflineLogic.showsOfflineAlternatives(
+            feature: feature, context: context,
+            isConnected: NetworkMonitor.shared.isConnected, hasOffers: !store.planOffers.isEmpty)
+    }
+
+    /// Cuándo se verá el precio y lo que es gratis hoy: apuntar a mano (si quien abrió la hoja sabe abrir el formulario)
+    /// y, con el modelo del propio iPhone listo, Siri.
+    private var offlineAlternatives: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.UXPro.gateOfflinePrices)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("upgrade_prompt_offline_prices")
+
+            Text(L10n.UXPro.gateOfflineMeanwhile)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.top, DS.Spacing.xs)
+
+            if let onManualEntry {
+                Button {
+                    onManualEntry()
+                    dismiss()
+                } label: {
+                    offlineRow(systemName: "square.and.pencil",
+                               title: L10n.Voice.enterManually, detail: L10n.UXPro.gateBodyManualStaysFree)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("upgrade_prompt_offline_manual")
+            }
+
+            if ProGateOfflineLogic.offersSiri(
+                model: SiriOnDeviceEntry.modelState, onDeviceEnabled: SiriOnDeviceEntry.isEnabled) {
+                // Informativa: Siri no se abre desde la app. Dice la frase.
+                offlineRow(systemName: "mic", title: L10n.UXPro.gateOfflineSiriTitle, detail: L10n.Tips.Siri.detail)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("upgrade_prompt_offline_siri")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func offlineRow(systemName: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            Image(systemName: systemName)
+                .font(DS.Typography.headline)
+                .foregroundStyle(theme.accentText)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(.thPrimaryText)
+                Text(detail)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thSecondaryText)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: DS.Spacing.none)
+        }
+        .padding(DS.Spacing.lg)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.thCard))
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+
+    private func reloadPricesOnReconnect(_ connected: Bool) {
+        guard connected, store.planOffers.isEmpty else { return }
+        pricesFailed = false
+        Task { await loadPrices() }
     }
 
     // MARK: - Texts
@@ -239,7 +356,6 @@ struct UpgradePromptSheet: View {
             case .imageInput: return L10n.UXPro.gateTitlePhoto
             case .smartInsightsAI: return L10n.UXPro.gateTitleInsights
             case .chatAssistant: return L10n.UXPro.gateTitleChat
-            case .cashFlowAdvanced: return L10n.UXPro.gateTitleCashFlow
             case .proThemes:
                 if case .theme(let appTheme, _) = preview { return L10n.UXPro.gateTitleTheme(appTheme.label) }
                 return L10n.UXPro.gateTitleThemeGeneric
@@ -264,7 +380,6 @@ struct UpgradePromptSheet: View {
             case .smartInsightsAI, .chatAssistant: return L10n.UXPro.gateBodyDataStaysFree
             case .proThemes: return L10n.UXPro.gateBodyThemeStays
             case .premiumIcons: return L10n.UXPro.gateBodyIconStays
-            case .cashFlowAdvanced: return L10n.UXPro.gateBodyCashFlowStays
             }
         }
     }
@@ -326,7 +441,23 @@ extension View {
     ) -> some View {
         modifier(ProUpgradeSheetModifier(
             isPresented: isPresented, feature: feature, context: context,
-            preview: preview, source: source, onClosedWithoutUnlock: nil, onUnlocked: onUnlocked))
+            preview: preview, source: source, onClosedWithoutUnlock: nil, onManualEntry: nil, onUnlocked: onUnlocked))
+    }
+
+    /// La misma hoja con «Apuntarlo a mano» (mejoras necesarias 2.3 · V3): para el muro de voz y foto, que lo promete.
+    /// Sobrecarga aparte y con la salida obligatoria: un segundo cierre opcional en la de arriba haría que el `{ … }`
+    /// final de los demás llamadores se enganchara por la regla vieja («backward matching», avisada como obsoleta).
+    func proUpgradeSheet(
+        isPresented: Binding<Bool>,
+        feature: ProFeature,
+        context: UpgradeContext,
+        onManualEntry: @escaping () -> Void,
+        onUnlocked: @escaping () -> Void
+    ) -> some View {
+        modifier(ProUpgradeSheetModifier(
+            isPresented: isPresented, feature: feature, context: context,
+            preview: nil, source: "featureGate", onClosedWithoutUnlock: nil, onManualEntry: onManualEntry,
+            onUnlocked: onUnlocked))
     }
 
     /// La misma hoja, con lo que hacer si se cierra sin comprar (la foto compartida retenida, card fazw). Sobrecarga
@@ -337,11 +468,13 @@ extension View {
         feature: ProFeature,
         context: UpgradeContext,
         onClosedWithoutUnlock: @escaping () -> Void,
+        onManualEntry: @escaping () -> Void,
         onUnlocked: @escaping () -> Void
     ) -> some View {
         modifier(ProUpgradeSheetModifier(
             isPresented: isPresented, feature: feature, context: context,
-            preview: nil, source: "featureGate", onClosedWithoutUnlock: onClosedWithoutUnlock, onUnlocked: onUnlocked))
+            preview: nil, source: "featureGate", onClosedWithoutUnlock: onClosedWithoutUnlock,
+            onManualEntry: onManualEntry, onUnlocked: onUnlocked))
     }
 }
 
@@ -353,22 +486,35 @@ private struct ProUpgradeSheetModifier: ViewModifier {
     let source: String
     /// Se cerró sin comprar (o sin que la compra dejara Pro activo). Lo usa la foto compartida retenida (card fazw).
     let onClosedWithoutUnlock: (() -> Void)?
+    /// «Apuntarlo a mano» (V3). Corre al TERMINAR de cerrarse la hoja, como `onUnlocked`: abrir el formulario con el muro
+    /// aún bajando serían dos presentaciones a la vez en el mismo ancla.
+    let onManualEntry: (() -> Void)?
     let onUnlocked: (() -> Void)?
 
     @State private var purchased = false
+    @State private var wantsManualEntry = false
 
     func body(content: Content) -> some View {
         content.sheet(isPresented: $isPresented, onDismiss: handleDismiss) {
-            UpgradePromptSheet(feature: feature, context: context, source: source, preview: preview) {
-                purchased = true
-            }
+            UpgradePromptSheet(
+                feature: feature, context: context, source: source, preview: preview,
+                onPurchased: { purchased = true },
+                onManualEntry: onManualEntry.map { _ in { wantsManualEntry = true } }
+            )
         }
     }
 
     private func handleDismiss() {
         let opens = purchased && FeatureGateService.shared.isProUser
+        let manual = wantsManualEntry
         purchased = false
-        if opens { onUnlocked?() } else { onClosedWithoutUnlock?() }
+        wantsManualEntry = false
+        if opens {
+            onUnlocked?()
+        } else {
+            onClosedWithoutUnlock?()
+            if manual { onManualEntry?() }
+        }
     }
 }
 

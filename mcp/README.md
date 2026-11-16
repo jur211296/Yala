@@ -14,7 +14,7 @@ fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8). Cómo conectar cada 
   que solo tiene SELECT sobre las filas del usuario. La guarda cifrada en KV y nunca la devuelve.
 - **Nada del Worker puede escribir en los datos de la cuenta:** todas sus salidas a Supabase pasan por una lista
   cerrada (`src/egress.ts`). Lo único que «escribe» es `apuntar_movimiento`, y no lo hace en Supabase: deja el
-  movimiento en una cola del gateway por un service binding (`CONNECTOR_DRAFTS` → clase RPC `ConnectorDrafts`, sin ruta
+  movimiento en la cola común de borradores del gateway (la del correo y la web, `source: "ai"`) por un service binding (`CONNECTOR_DRAFTS` → clase RPC `ConnectorDrafts`, sin ruta
   pública) y la app lo recoge como borrador (ADR «Tu IA registra en Yala», `docs/DECISIONS.md`). Sin ese binding la
   herramienta no se ofrece.
 - **Vueltas OAuth:** las de Claude y las de ChatGPT, exactas (`src/authorize.ts`); las demás, por `EXTRA_REDIRECT_URIS`.

@@ -24,6 +24,7 @@ struct StoreKitAlertClearedOnDismissTests {
         "UpgradePromptSheet.swift",
         "SubscriptionView.swift",
         "ProTrialOfferSheet.swift",
+        "SetupCompleteTrialOfferSheet.swift",
     ]
 
     @Test func everyStoreAlertClearsItsMessageAndTitleOnDismiss() throws {

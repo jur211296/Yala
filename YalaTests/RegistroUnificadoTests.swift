@@ -258,6 +258,8 @@ struct RegistroUnificadoWiringTests {
         #expect(chips.contains(".accessibilityIdentifier(\"group_expense_account_row\")"))
         #expect(chips.contains("isMissing: markedMissingField == .account"))
         let central = try Self.section(code, from: "private var centralContent: some View {", to: "private var dateChip")
+        // «Desde un recibo» salió de aquí el 2026-11-14 (Voz, Foto y Yala IA de Grupos): la fecha vuelve a ir sola y
+        // encabeza el bloque.
         #expect(central.contains("dateChip\n            descriptionField\n            amountDisplay"))
         #expect(!central.contains("groupContextChip"), "el grupo va arriba, no junto a la fecha")
         #expect(code.contains("groupContextChip\n                            .padding(.top, DS.Spacing.sm)"))

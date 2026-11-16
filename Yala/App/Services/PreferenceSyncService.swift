@@ -62,6 +62,10 @@ final class PreferenceSyncService {
         static let remoteOnboarding = "lastOnboardingTimestamp" // iKV
         static let localWipe = "lastKnownWipeTimestamp"       // UserDefaults
         static let localOnboarding = "lastKnownOnboardingTimestamp" // UserDefaults
+        /// La señal aparcada a la espera de la marca del parque, y desde cuándo (reloj de este dispositivo). Ver
+        /// `wipeMarkWait`. Sobreviven a matar la app: el arranque siguiente cierra la espera.
+        static let awaitedMarkSignal = "wipeSignal.awaitedMarkSignal"   // UserDefaults
+        static let awaitedMarkSince = "wipeSignal.awaitedMarkSince"     // UserDefaults
     }
 
     /// Key for notification userInfo
@@ -78,8 +82,8 @@ final class PreferenceSyncService {
     // MARK: - Modo Nube (I13) — cola durable de prefs para la rama `.cloud`
 
     /// Cola durable App Group de las prefs salientes (`.cloud`). `nil` = App Group no disponible. Lazy:
-    /// solo se resuelve al primer uso. DARK: `CloudSyncFlags.storageMode` es SIEMPRE `.icloud` hoy, así
-    /// que la rama que la usa no corre en producción.
+    /// solo se resuelve al primer uso. Vivo: el Modo Nube sirve al 100 % (`CLOUD_MODE_ROLLOUT_PERCENT`), así
+    /// que toda cuenta en la nube escribe aquí.
     private lazy var prefsOutbox: PrefsOutbox? = PrefsOutbox()
 
     /// El `sub` de la sesión Nube actual (owner-scoping M1 del outbox). Inyectable para tests; por
@@ -111,8 +115,16 @@ final class PreferenceSyncService {
         switch behavior {
         case .icloudKeyValue:
             iKV.synchronize()
-            applyRemoteValues()
+            // Tras un cierre de sesión, el KV del Apple ID no se aplica hasta que alguien restaure o termine un
+            // onboarding (card ij0i, `SignOutPreferenceHold`): quien entra después no hereda el nombre ni la moneda
+            // del dueño.
+            if !holdsAppleIDPreferences() {
+                applyRemoteValues()
+            }
         case .cloudOutbox:
+            // En la nube las preferencias bajan del backend: la retención del cierre no tiene nada que retener, y
+            // olvidada aquí bloquearía el KV si la cuenta vuelve a iCloud.
+            SignOutPreferenceHold.release(local)
             // La fuente de las 37 keys es el BACKEND vía `CloudSyncRuntime` (pull + merge en su ciclo);
             // NO se lee iKV aquí. Las señales wipe/onboarding (WipeKeys) SÍ siguen en iKV en ambos modos
             // v1 (su reemplazo por el summary del backend es I14/§k.4 — documentado).
@@ -144,9 +156,8 @@ final class PreferenceSyncService {
     // MARK: - Write (rama por storageMode: `.icloud` dual-write local+iKV · `.cloud` local + outbox)
     //
     // Los call-sites NO cambian (contrato §k.7/#18): la rama vive 100% dentro del service. `local.set`
-    // corre SIEMPRE (fuente de lectura local en ambos modos). `appLanguageOverride` NO pasa por aquí
-    // (lo escribe `LanguageManager.overrideLanguage` directo a iKV → su migración a `.cloud` es DIFERIDA,
-    // fuera de I13; DARK, sin efecto hoy).
+    // corre SIEMPRE (fuente de lectura local en ambos modos). `appLanguageOverride` entra por su propio
+    // `syncLanguageOverride`, porque su destino local es el App Group y no `.standard` (card p9wf).
 
     func set(string value: String, forKey key: String) {
         local.set(value, forKey: key)
@@ -178,6 +189,35 @@ final class PreferenceSyncService {
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .int(value))
+        }
+    }
+
+    /// El idioma de la app (`appLanguageOverride`), por el canal de esta sesión (card p9wf). Lo llama
+    /// `LanguageManager.overrideLanguage` después de escribir el App Group, que es su destino local (el de los widgets).
+    /// `nil` = «idioma del sistema»: en `.icloud` se retira la key del iCloud-KV, y en `.cloud` viaja como `""`, que el
+    /// merge de los otros dispositivos lee como quitar el override (`PreferenceMergeLogic`, «vacío = removeObject»).
+    /// En `.cloud` NO toca el iCloud-KV: es del Apple ID del teléfono, no de la cuenta.
+    func syncLanguageOverride(_ value: String?) {
+        Self.routeLanguageOverride(value, behavior: behavior, store: iKV) { prefValue in
+            enqueuePref(key: PrefSyncKey.appLanguageOverride.rawValue, value: prefValue)
+        }
+    }
+
+    /// El cuerpo de `syncLanguageOverride`, sin el singleton: lo fija `LanguageOverrideCloudChannelTests`.
+    static func routeLanguageOverride(
+        _ value: String?, behavior: PrefsSyncBehavior, store: OwnerKeyValueWriting, enqueue: (PrefValue) -> Void
+    ) {
+        let key = PrefSyncKey.appLanguageOverride.rawValue
+        switch behavior {
+        case .icloudKeyValue:
+            if let value {
+                store.setString(value, forKey: key)
+            } else {
+                store.removeObject(forKey: key)
+            }
+            store.synchronize()
+        case .cloudOutbox:
+            enqueue(.string(value ?? ""))
         }
     }
 
@@ -306,6 +346,32 @@ final class PreferenceSyncService {
             sentinelDefaults.set(true, forKey: sentinelKey)
         }
         CloudSyncBreadcrumb.prefsCutoverDrained(count: planned.count - failures, failures: failures)
+    }
+
+    // MARK: - La retención del cierre de sesión (card ij0i)
+
+    /// ¿Sigue retenido el iCloud-KV del Apple ID? Con el onboarding ya hecho la retención no tiene a quién proteger —quien
+    /// usa la app ya eligió lo suyo— y se suelta aquí: es la red de los caminos que completan el onboarding sin pasar por
+    /// `signalOnboardingCompleted` (el adopt de una cuenta en la nube que sale antes de arrancar en `.cloud`, el invitado
+    /// que ya tenía cuenta). Sin ella, esa sesión no recibiría nunca lo que cambian sus otros dispositivos (review del
+    /// lote N4).
+    private func holdsAppleIDPreferences() -> Bool {
+        guard SignOutPreferenceHold.isArmed(local) else { return false }
+        guard !local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) else {
+            SignOutPreferenceHold.release(local)
+            return false
+        }
+        return true
+    }
+
+    /// Suelta la retención del iCloud-KV que arma el cierre de sesión y, si estaba armada y la sesión va por el KV,
+    /// aplica en el acto las preferencias del Apple ID. Lo llaman quienes presentan Restaurar al abrirla: restaurar es
+    /// decir «soy el dueño de este Apple ID», y el resumen del restore necesita su `userName`
+    /// (`ICloudAccountSummary.isFullyPrefilled`). Sin retención no hace nada.
+    func releaseSignOutPreferenceHoldForRestore() {
+        guard SignOutPreferenceHold.release(local), behavior == .icloudKeyValue else { return }
+        iKV.synchronize()
+        applyRemoteValues()
     }
 
     // MARK: - Apply Detected Defaults (Risk 1 — "data found" with no currency)
@@ -531,6 +597,8 @@ final class PreferenceSyncService {
 
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
+        // Quien terminó el onboarding ya eligió lo suyo: la retención del cierre (card ij0i) se suelta sin aplicar.
+        SignOutPreferenceHold.release(local)
         let timestamp = Date.now.timeIntervalSince1970
         iKV.setDouble(timestamp, forKey: WipeKey.remoteOnboarding)
         iKV.synchronize()
@@ -546,42 +614,111 @@ final class PreferenceSyncService {
     /// Checks for remote wipe/onboarding signals and posts notifications.
     /// Called from iCloudDidChange and bootstrap (offline catch-up).
     private func checkForRemoteWipeSignal() {
+        Self.checkForRemoteWipeSignal(
+            iKV: iKV,
+            local: local,
+            isWipingData: SessionState.shared.isWipingData,
+            submit: { RouterEntryGate.shared.submit($0) },
+            postRemoteOnboardingCompleted: {
+                NotificationCenter.default.post(name: .remoteOnboardingCompleted, object: nil)
+            },
+            scheduleRecheck: { [weak self] delay in self?.scheduleWipeMarkRecheck(after: delay) })
+    }
+
+    /// La vuelta que cierra la espera de la marca (`wipeMarkWait`) si en ese rato no llega ningún cambio del KV. Una sola
+    /// a la vez: la que llega después sustituye a la anterior.
+    private var wipeMarkRecheckTask: Task<Void, Never>?
+
+    private func scheduleWipeMarkRecheck(after delay: TimeInterval) {
+        wipeMarkRecheckTask?.cancel()
+        wipeMarkRecheckTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(delay))
+            } catch {
+                return
+            }
+            self?.checkForRemoteWipeSignal()
+        }
+    }
+
+    /// **Cuánto espera el receptor la marca del parque antes de decidir** (ticket
+    /// `wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed`). `signalWipeKeepingSetup` sube la marca
+    /// (`lastOnboardingTimestamp`) y la señal (`lastWipeTimestamp`) en el mismo `synchronize`, pero el iCloud KV no garantiza
+    /// el orden de entrega entre claves. Si la señal llega sola, decidir en el acto es decidir «el parque empezó de cero»:
+    /// el receptor resetea sus ajustes, vuelve al onboarding y su corte se lleva la semilla de categorías del origen y sus
+    /// recordatorios, que viajan borrados al origen. Con la espera, una señal sin marca se aparca y se decide cuando llega la
+    /// marca o cuando pasa este rato; un vaciado de los de antes (el origen sí repite la bienvenida) solo se retrasa esto.
+    static let wipeMarkWait: TimeInterval = 20
+
+    /// **El cuerpo de la detección, sin el singleton** (card os7l, 2026-11-05; ticket
+    /// `remote-wipe-receiver-has-no-behaviour-test`). Recibe el iCloud-KV y el dominio local, y lo que hace con lo que
+    /// detecta —encolar el intent, avisar del onboarding remoto— va por los dos cierres: así un test puede afirmar el
+    /// COMPORTAMIENTO («sesión en la nube + señal remota ⇒ cero intents», con su control en una sesión privada) en vez de
+    /// solo el cableado. El modo de almacenamiento sigue leyéndose de `CloudSyncFlags.storageMode`, que los tests fijan
+    /// con su override: la sentencia del eje es la que fija `RemoteWipeSignalWiringTests`. Mismo molde que
+    /// `readRemote(_:from:)`/`readLocal(_:from:)`.
+    static func checkForRemoteWipeSignal(
+        iKV: OwnerKeyValueWriting,
+        local: UserDefaults,
+        isWipingData: Bool,
+        submit: (RouterIntent) -> Void,
+        postRemoteOnboardingCompleted: () -> Void,
+        now: Date = .now,
+        scheduleRecheck: (TimeInterval) -> Void = { _ in }
+    ) {
         let remoteWipe = iKV.double(forKey: WipeKey.remoteWipe)
         let localWipe = local.double(forKey: WipeKey.localWipe)
         let remoteOnboarding = iKV.double(forKey: WipeKey.remoteOnboarding)
         let localOnboarding = local.double(forKey: WipeKey.localOnboarding)
 
-        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
-        if remoteWipe > 0 && remoteWipe > localWipe {
-            // Mark as processed so we don't react again
-            local.set(remoteWipe, forKey: WipeKey.localWipe)
-
-            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
-
-            // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
-            // time). If hasCompletedOnboarding=false right now (fresh-install with
-            // contaminated KV-Store), don't submit the intent — otherwise the
-            // readiness gate would park it across the onboarding session and
-            // process it post-onboarding, wiping the user's fresh data.
+        // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
+        // time). If hasCompletedOnboarding=false right now (fresh-install with
+        // contaminated KV-Store), don't submit the intent — otherwise the
+        // readiness gate would park it across the onboarding session and
+        // process it post-onboarding, wiping the user's fresh data.
+        //
+        // Una función y no un valor: la usan la señal nueva (caso A) y la que se cierra tras esperar la marca (caso A2), y
+        // la segunda decide con lo que valga AL CERRARSE, no con lo de hace 20 s.
+        func decideNow() -> RemoteWipeSignalDecision {
             let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
             // El eje de SESIÓN, evaluado aquí y no solo en el drenaje: este es el punto donde la señal
             // se DETECTA, y el `submit` de abajo es lo único que la hace viajar. Una sesión en la nube
-            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de arriba
-            // (`WipeKey.localWipe`) ya salió incondicionalmente, así que la señal queda procesada.
+            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de abajo
+            // (`WipeKey.localWipe`) sale incondicionalmente, así que la señal queda procesada.
             let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
                 confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(local),
                 storageMode: CloudSyncFlags.storageMode)
             let decision = RemoteWipeSignalDecider.decide(
                 hasCompletedOnboarding: hasCompletedOnboarding,
-                isWipingData: SessionState.shared.isWipingData,
+                isWipingData: isWipingData,
                 hasRemoteWipeTimestamp: remoteWipe > 0,
                 sessionObeysWipeSignal: sessionObeysWipeSignal
             )
+            return decision
+        }
+
+        // El ÚNICO emisor del intent: lo llaman la señal nueva con su marca (caso A) y la espera cerrada (caso A2), los
+        // dos después de consumir la señal y de pasar por `decideNow()`.
+        func submitRemoteWipe(skipOnboarding: Bool) {
+            submit(.remoteWipe(skipOnboarding: skipOnboarding))
+        }
+
+        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
+        if remoteWipe > 0 && remoteWipe > localWipe {
+            // Mark as processed so we don't react again
+            local.set(remoteWipe, forKey: WipeKey.localWipe)
+            // Una espera de una señal anterior ya no vale: manda esta.
+            local.removeObject(forKey: WipeKey.awaitedMarkSignal)
+            local.removeObject(forKey: WipeKey.awaitedMarkSince)
+
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+
+            let decision = decideNow()
 
             #if DEBUG
-            // `sessionObeys` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
+            // `shouldMark` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
             // dice por qué: puede ser una instalación sin estado local o una sesión que no obedece.
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), sessionObeys=\(sessionObeysWipeSignal))")
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), shouldMark=\(decision.shouldMarkSignalsAsProcessed))")
             #endif
 
             // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
@@ -594,7 +731,43 @@ final class PreferenceSyncService {
 
             guard decision.shouldProcess else { return }
 
-            RouterEntryGate.shared.submit(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
+            // Sin la marca del parque, todavía no se decide: puede venir detrás (ver `wipeMarkWait`). La señal ya quedó
+            // consumida arriba; lo que se apunta es la espera, y la cierra el caso A2.
+            if !onboardingAlreadyDone {
+                local.set(remoteWipe, forKey: WipeKey.awaitedMarkSignal)
+                local.set(now.timeIntervalSince1970, forKey: WipeKey.awaitedMarkSince)
+                scheduleRecheck(wipeMarkWait)
+                return
+            }
+
+            submitRemoteWipe(skipOnboarding: onboardingAlreadyDone)
+            return
+        }
+
+        // Caso A2: la señal de arriba, aparcada esperando la marca del parque. Se cierra cuando llega la marca o cuando
+        // vence la espera, lo que pase antes. Va antes del caso B: la marca que llega aquí no es un onboarding remoto
+        // «después de un vaciado ya procesado», es la otra mitad de esta misma señal.
+        let awaitedSignal = local.double(forKey: WipeKey.awaitedMarkSignal)
+        if awaitedSignal > 0 && awaitedSignal == remoteWipe && remoteWipe == localWipe {
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+            let since = local.double(forKey: WipeKey.awaitedMarkSince)
+            let elapsed = now.timeIntervalSince1970 - since
+            // Un reloj que va hacia atrás (elapsed < 0) no alarga la espera: se cierra.
+            if !onboardingAlreadyDone && elapsed >= 0 && elapsed < wipeMarkWait {
+                scheduleRecheck(wipeMarkWait - elapsed)
+                return
+            }
+            local.removeObject(forKey: WipeKey.awaitedMarkSignal)
+            local.removeObject(forKey: WipeKey.awaitedMarkSince)
+
+            #if DEBUG
+            print("PreferenceSyncService: Awaited wipe mark resolved (onboardingAlreadyDone=\(onboardingAlreadyDone), waited=\(elapsed)s)")
+            #endif
+
+            // Lo que valga AHORA: en la espera pudo cambiar la sesión o empezar otro borrado.
+            let decision = decideNow()
+            guard decision.shouldProcess else { return }
+            submitRemoteWipe(skipOnboarding: onboardingAlreadyDone)
             return
         }
 
@@ -614,8 +787,8 @@ final class PreferenceSyncService {
             // observer can dismiss a visible onboarding screen INSTANTLY,
             // bypassing the readiness gate (which blocks .contentView drain
             // while showOnboarding=true — defeating the purpose of this signal).
-            NotificationCenter.default.post(name: .remoteOnboardingCompleted, object: nil)
-            RouterEntryGate.shared.submit(.remoteOnboardingCompleted)
+            postRemoteOnboardingCompleted()
+            submit(.remoteOnboardingCompleted)
         }
     }
 
@@ -627,7 +800,9 @@ final class PreferenceSyncService {
             // señales wipe/onboarding, que SÍ viven en iKV en ambos modos v1. En `.icloud`, ambos.
             switch self.behavior {
             case .icloudKeyValue:
-                self.applyRemoteValues()
+                if !self.holdsAppleIDPreferences() {
+                    self.applyRemoteValues()
+                }
                 self.checkForRemoteWipeSignal()
             case .cloudOutbox:
                 self.checkForRemoteWipeSignal()

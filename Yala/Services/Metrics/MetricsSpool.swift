@@ -61,14 +61,29 @@ nonisolated enum MetricsSpool {
     }
 
     /// Encola al final; si supera el cap, cae el MÁS VIEJO (los canarios recientes
-    /// valen más que los antiguos — el gate mira "ahora", no historia).
+    /// valen más que los antiguos — el gate mira "ahora", no historia). Desde el 2026-11-06 caen PRIMERO los `use`
+    /// («usó esta función»): con el teléfono días sin red llegan a ~20 al día y, sin esta regla, empujarían fuera de la
+    /// cola los canarios, que es lo que vigila el gate. Un `use` perdido es una función contada de menos ese día.
+    /// **Los de una vez por instalación (card 4b7h) caen los últimos**: un `primeros.*` perdido no vuelve nunca, y son 15
+    /// como mucho, así que no pueden llenar la cola por sí solos.
     static func enqueue(_ event: MetricsEvent, defaults: UserDefaults = .standard) {
         var queue = pendingEntries(defaults)
         queue.append(MetricsSpoolEntry(id: UUID(), event: event))
-        if queue.count > capacity {
-            queue.removeFirst(queue.count - capacity)
+        while queue.count > capacity {
+            if let oldestDailyUse = queue.firstIndex(where: { $0.event.e == "use" && !isOncePerInstall($0.event) }) {
+                queue.remove(at: oldestDailyUse)
+            } else if let oldestOther = queue.firstIndex(where: { !isOncePerInstall($0.event) }) {
+                queue.remove(at: oldestOther)
+            } else {
+                queue.removeFirst()
+            }
         }
         write(queue, defaults: defaults)
+    }
+
+    private static func isOncePerInstall(_ event: MetricsEvent) -> Bool {
+        guard event.e == "use", let name = event.n else { return false }
+        return MetricsUseFeature(rawValue: name)?.isOncePerInstall == true
     }
 
     /// Retira los eventos que un envío acaba de entregar (o el servidor rechazó), POR IDENTIDAD. Hasta el 2026-11-05 se

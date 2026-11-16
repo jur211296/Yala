@@ -492,4 +492,32 @@ struct WidgetInsightsLogicTests {
         #expect(WidgetInsightsLogic.breakdownPercentage(30, of: 0) == 0)
         #expect(WidgetInsightsLogic.breakdownTotal([]) == 0)
     }
+
+    // MARK: - Flujo proyectado (respuesta 12A)
+
+    /// El ancla en el día de la foto y cada día siguiente hasta el final del período; un día sin nada esperado repite
+    /// el valor. Lo esperado después del final no entra.
+    @Test func projectedCumulative_accumulatesFromThePhotoDayToThePeriodEnd() {
+        let points = WidgetInsightsLogic.projectedCumulative(
+            anchor: 1_000,
+            deltas: [
+                (date: Self.day(2026, 11, 7), value: 30),
+                (date: Self.day(2026, 11, 9), value: 20),
+                (date: Self.day(2026, 12, 1), value: 999),
+            ],
+            asOf: Self.day(2026, 11, 6, hour: 15),
+            end: Self.day(2026, 11, 9, hour: 23),
+            calendar: Self.calendar
+        )
+        #expect(points.map(\.value) == [1_000, 1_030, 1_030, 1_050])
+        #expect(points.first?.date == Self.calendar.startOfDay(for: Self.day(2026, 11, 6)))
+    }
+
+    @Test func projectedCumulative_withoutDaysAhead_isEmpty() {
+        let points = WidgetInsightsLogic.projectedCumulative(
+            anchor: 10, deltas: [], asOf: Self.day(2026, 11, 30, hour: 9), end: Self.day(2026, 11, 30, hour: 23),
+            calendar: Self.calendar
+        )
+        #expect(points.isEmpty)
+    }
 }

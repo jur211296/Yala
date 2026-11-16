@@ -41,6 +41,34 @@ enum Catalog {
             })
         }
 
+        // Saldo y Gastos de «Este año», sin y con «Mostrar proyectado» (card «Flujo proyectado en Tendencias y Panel»).
+        // La proyección pide una foto con `projectedFlow` y días por delante; con la de `fixtures/` (31-oct, sin el
+        // campo y el último día del mes) sale igual que sin la opción.
+        for spec in [FamilySpec.small, .medium] {
+            items.append(RenderItem(slug: "saldo-anio", spec: spec) {
+                var intent = BalanceWidgetIntent()
+                intent.period = .thisYear
+                return AnyView(BalanceWidgetView(entry: BalanceWidgetProvider().createEntry(for: intent)))
+            })
+            items.append(RenderItem(slug: "gastos-anio", spec: spec) {
+                var intent = ExpenseWidgetIntent()
+                intent.period = .thisYear
+                return AnyView(ExpenseWidgetView(entry: ExpenseWidgetProvider().createEntry(for: intent)))
+            })
+            items.append(RenderItem(slug: "saldo-proyectado", spec: spec) {
+                var intent = BalanceWidgetIntent()
+                intent.period = .thisYear
+                intent.showProjected = true
+                return AnyView(BalanceWidgetView(entry: BalanceWidgetProvider().createEntry(for: intent)))
+            })
+            items.append(RenderItem(slug: "gastos-proyectado", spec: spec) {
+                var intent = ExpenseWidgetIntent()
+                intent.period = .thisYear
+                intent.showProjected = true
+                return AnyView(ExpenseWidgetView(entry: ExpenseWidgetProvider().createEntry(for: intent)))
+            })
+        }
+
         // Entradas y salidas
         for spec in [FamilySpec.small, .medium, .large] + (xlv.map { [$0] } ?? []) {
             items.append(RenderItem(slug: "entradas-y-salidas", spec: spec) {

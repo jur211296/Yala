@@ -80,6 +80,11 @@ struct ImageSelectionView: View {
     /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la foto o el archivo no se pueden leer, Nuevo registro sube encima y,
     /// al cerrarse, se cierra también esta hoja.
     @State private var showManualEntry = false
+    /// «Apuntarlo a mano» desde el muro de Pro con lo leído a la vista (el aviso de fotos que no entraron): al cerrar el
+    /// formulario se vuelve a «Lo leído», no se cierra la hoja (mejoras necesarias 2.3 · V3).
+    @State private var manualEntryReturnsToReview = false
+    /// «Otra foto» con lo leído sin guardar pregunta antes de borrarlo (decisión 81 de la revisión 2.3).
+    @State private var showOtherPhotoConfirmation = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -90,6 +95,13 @@ struct ImageSelectionView: View {
 
     /// Práctica guiada: «Ahora no».
     var onSetupTrialSkipped: (() -> Void)?
+
+    /// La prueba de cortesía de «Aprender a registrar» (Y23-09): con texto, arriba va la franja «Prueba de cortesía: la
+    /// foto, una vez gratis» con «Omitir», y de los ejemplos solo el recibo: «Usar el recibo de ejemplo».
+    var courtesyTrialText: String?
+    /// La prueba de cortesía: los borradores de más de una foto con varias líneas (se revisa el primero; los demás
+    /// quedan en la Bandeja). Van a «¿Borramos los de prueba?» con los demás.
+    var onCourtesyExtraDrafts: (([PersistentIdentifier]) -> Void)?
 
     private enum Phase: Equatable {
         case choose
@@ -113,14 +125,25 @@ struct ImageSelectionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
         .yalaScreenBackground(
-            SelectorSheetSizing.mediumFirst.background(
+            ImageEntrySheetHeightLogic.background(
+                detents: sheetDetents,
                 selectedDetent: selectedDetent,
-                usesLargeSheets: usesLargeSheets,
-                dynamicTypeSize: dynamicTypeSize
+                usesLargeSheets: usesLargeSheets
             )
         )
-        .selectorSheetSizing(.mediumFirst, selectedDetent: $selectedDetent)
+        // Con varios leídos, la hoja pasa a grande sola: a media altura enseñaba una fila (decisión 80 de la revisión 2.3).
+        .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
+        .onChange(of: showsSeveralToReview) { _, several in growForSeveral(several) }
+        .growsSheetToLarge(when: showsSeveralToReview)
         .interactiveDismissDisabled(phase == .reading)
+        // Cada fase y cada fallo se anuncia a VoiceOver (decisión 62 de la revisión 2.3).
+        .announcesEntryPhase(phaseAnnouncement)
+        .asksBeforeDiscardingEntry(
+            title: L10n.EntryDiscard.photoTitle,
+            message: L10n.EntryDiscard.photoMessage,
+            isPresented: $showOtherPhotoConfirmation,
+            onDiscard: chooseAnother
+        )
         .photosPicker(
             isPresented: $showPhotosPicker,
             selection: $selectedPhotos,
@@ -138,10 +161,14 @@ struct ImageSelectionView: View {
                 .ignoresSafeArea()
         }
         // Si compra Pro ahí, al volver se lee lo que faltaba (UX 2.2 · L17-9).
-        .proUpgradeSheet(isPresented: $showUpgrade, feature: .imageInput, context: .proFeature) {
+        // «Apuntarlo a mano» va al mismo formulario que su botón de los fallos (mejoras necesarias 2.3 · V3).
+        .proUpgradeSheet(
+            isPresented: $showUpgrade, feature: .imageInput, context: .proFeature,
+            onManualEntry: openManualEntryFromProGate
+        ) {
             continueAfterProUnlock()
         }
-        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+        .sheet(isPresented: $showManualEntry, onDismiss: manualEntryClosed) {
             NewTransactionView()
         }
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
@@ -161,12 +188,69 @@ struct ImageSelectionView: View {
 
     private var isSetupTrial: Bool { onSetupTrialCompleted != nil }
 
+    // MARK: - Altura de la hoja y anuncios
+
+    /// Lo leído trae más de un registro y la hoja lo está enseñando.
+    private var showsSeveralToReview: Bool { phase == .review && isMulti }
+
+    private var sheetDetents: Set<PresentationDetent> {
+        ImageEntrySheetHeightLogic.detents(showsSeveralToReview: showsSeveralToReview, dynamicTypeSize: dynamicTypeSize)
+    }
+
+    /// SwiftUI no mueve la hoja por sí solo (`ImageEntrySheetHeight.swift`): la sube `growsSheetToLarge`. El elegido se
+    /// pone a grande para que coincida con el único detent que queda.
+    private func growForSeveral(_ several: Bool) {
+        guard several else { return }
+        selectedDetent = .large
+    }
+
+    /// Lo que VoiceOver oye al cambiar de fase: el título y, en un fallo, su porqué. Al abrir no se anuncia nada: el
+    /// título de «Elegir» ya tiene el foco.
+    private var phaseAnnouncement: String {
+        switch phase {
+        case .choose:
+            return EntryPhaseFeedbackLogic.announcement(title: L10n.Image.Entry.title)
+        case .password(let wrongPassword):
+            return EntryPhaseFeedbackLogic.announcement(
+                title: L10n.Image.Entry.passwordTitle, detail: wrongPassword ? L10n.Image.Entry.passwordWrong : nil)
+        case .reading:
+            return EntryPhaseFeedbackLogic.announcement(
+                title: readingImages.count > 1 ? L10n.Image.Entry.readingMany : L10n.Image.Entry.readingOne)
+        case .review:
+            return EntryPhaseFeedbackLogic.announcement(title: reviewTitle, detail: reviewProblems)
+        case .failure(let failure):
+            return EntryPhaseFeedbackLogic.announcement(title: failureTitle(failure), detail: failureMessage(failure))
+        }
+    }
+
+    /// Los fallos que lo leído enseña aparte: fotos que no se leyeron y un guardado que no salió.
+    private var reviewProblems: String? {
+        var problems: [String] = []
+        if let notice = ImageEntryFlowLogic.failedPhotosNotice(for: failedReasons) {
+            switch notice {
+            case .retry(let count): problems.append(L10n.Image.Entry.photosFailed(count))
+            case .dailyLimit(let count): problems.append(L10n.Image.Entry.dailyLimitLeftOut(count))
+            case .trialUsedUp(let count): problems.append(L10n.Image.Entry.trialLeftOut(count))
+            }
+        }
+        if saveFailed { problems.append(L10n.Chat.Draft.saveFailedGeneric) }
+        return problems.isEmpty ? nil : problems.joined(separator: " ")
+    }
+
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    @ViewBuilder
     private var header: some View {
+        if let courtesyTrialText, let skip = onSetupTrialSkipped {
+            CourtesyTrialStrip(text: courtesyTrialText) {
+                skip()
+                dismiss()
+            }
+            .padding(.top, DS.Spacing.md)
+        }
         HStack {
-            if let skip = onSetupTrialSkipped, phase != .review, phase != .reading {
+            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .reading {
                 Button(L10n.SetupChecklist.skipStep) {
                     skip()
                     dismiss()
@@ -219,11 +303,15 @@ struct ImageSelectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let examples = exampleImages, !examples.isEmpty {
+            if courtesyTrialText == nil, let examples = exampleImages, !examples.isEmpty {
                 exampleRow(examples)
             }
 
             sourceTiles
+
+            if courtesyTrialText != nil, let receipt = exampleImages?.first {
+                exampleReceiptButton(receipt)
+            }
 
             if !isSetupTrial {
                 Text(L10n.Image.Entry.multipleHint)
@@ -325,6 +413,37 @@ struct ImageSelectionView: View {
                 }
             }
         }
+    }
+
+    /// «Usar el recibo de ejemplo» (Y23-09): la imagen de ejemplo de la app, para probar sin buscar una foto.
+    private func exampleReceiptButton(_ receipt: UIImage) -> some View {
+        Button {
+            startReading([receipt])
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(uiImage: receipt)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 60) // A11Y-DT: miniatura del recibo de ejemplo
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.PrimerosPasos23.Record.useExampleReceipt)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(L10n.PrimerosPasos23.Record.useExampleReceiptHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "chevron.right").font(DS.Typography.caption).foregroundStyle(.tertiary)
+            }
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(.thCard))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("image_example_receipt")
     }
 
     private func exampleLabel(_ index: Int) -> String {
@@ -508,6 +627,10 @@ struct ImageSelectionView: View {
                         thumbnails
                     }
 
+                    if dynamicTypeSize.isAccessibilitySize {
+                        missingHint
+                    }
+
                     if isMulti {
                         MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
                     } else {
@@ -541,12 +664,8 @@ struct ImageSelectionView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
-                Text(L10n.Voice.reviewMissingHint)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("multi_review_missing_hint")
+            if !dynamicTypeSize.isAccessibilitySize {
+                missingHint
             }
 
             if saveFailed {
@@ -556,19 +675,41 @@ struct ImageSelectionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: DS.Spacing.md) {
+            actionsLayout {
                 if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "image_finish") {
                         dismiss()
                     }
                 } else {
-                    secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
+                    secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: otherPhotoTapped)
                     primaryButton(saveTitle, isEnabled: canSave, identifier: "image_save", action: saveAll)
                 }
             }
         }
         .padding(.top, DS.Spacing.xs)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
+    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
+    /// scroll, bajo el título.
+    @ViewBuilder
+    private var missingHint: some View {
+        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+            Text(L10n.Voice.reviewMissingHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("multi_review_missing_hint")
+        }
+    }
+
+    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
+    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
+    private var actionsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
@@ -741,7 +882,7 @@ struct ImageSelectionView: View {
     private func failureActions(_ failure: ImageEntryFailure) -> some View {
         switch failure {
         case .cameraPermission:
-            secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
+            secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: otherPhotoTapped)
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
         case .serviceUnavailable, .dailyLimit:
             secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
@@ -751,15 +892,15 @@ struct ImageSelectionView: View {
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "image_trial_see_pro") { showUpgrade = true }
         case .noAmount, .unreadable, .unreadableFile:
             secondaryButton(L10n.Voice.enterManually, identifier: "image_enter_manually") { showManualEntry = true }
-            primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
+            primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: otherPhotoTapped)
         case .noConnection, .generic, .saveFailed, .busy:
             if failure.retriesSamePhotos, !readingImages.isEmpty {
-                secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
+                secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: otherPhotoTapped)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "image_retry") {
                     startReading(readingImages)
                 }
             } else {
-                primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
+                primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: otherPhotoTapped)
             }
         }
     }
@@ -880,16 +1021,18 @@ struct ImageSelectionView: View {
     private func cameraFinished(_ image: UIImage?) {
         showCamera = false
         guard let image else { return }
-        startReading([image])
+        startReading([PhotoIntake.image(reducing: image, maxEdge: PhotoIntake.currentIntakeMaxEdge())])
     }
 
     private func loadPickedPhotos(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         Task {
             var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
             for item in items {
                 do {
-                    if let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                    if let data = try await item.loadTransferable(type: Data.self),
+                       let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
                         loaded.append(image)
                     }
                 } catch {
@@ -1020,25 +1163,29 @@ struct ImageSelectionView: View {
             readSharedFiles(batch)
             return
         }
-        var loaded: [UIImage] = []
-        for member in batch {
-            do {
-                let data = try Data(contentsOf: member)
-                if let image = UIImage(data: data) {
-                    loaded.append(image)
+        // Las fotos se reducen fuera del hilo principal: una tanda de diez grandes congelaba la pantalla (YALA-IOS-B).
+        Task {
+            var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
+            for member in batch {
+                do {
+                    let data = try Data(contentsOf: member)
+                    if let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
+                        loaded.append(image)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
+                    #endif
                 }
-            } catch {
-                #if DEBUG
-                print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
-                #endif
+                SharedContainerService.removePendingImage(at: member)
             }
-            SharedContainerService.removePendingImage(at: member)
+            guard !loaded.isEmpty else {
+                phase = .failure(.unreadable)
+                return
+            }
+            startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
         }
-        guard !loaded.isEmpty else {
-            phase = .failure(.unreadable)
-            return
-        }
-        startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
     }
 
     /// Una tanda soltada con algún PDF: fotos y PDF juntos, por el mismo camino que varios archivos elegidos en Archivo.
@@ -1069,7 +1216,7 @@ struct ImageSelectionView: View {
                 openFiles([.pdf(data)])
                 return
             }
-            guard let image = UIImage(data: data) else {
+            guard let image = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge()) else {
                 phase = .failure(.unreadable)
                 return
             }
@@ -1147,6 +1294,8 @@ struct ImageSelectionView: View {
     }
 
     private func read(_ batch: [UIImage], appending: Bool) async {
+        // Telemetría propia: «usó esta función» (uno al día). Cuenta el intento, salga o no la lectura.
+        MetricsService.used(.leerFoto)
         // Foto de los pendientes ANTES de crear los nuevos, para que el auto-insert de SwiftData no se cuele en la
         // deduplicación.
         let existingDrafts = fetchPendingDrafts()
@@ -1221,6 +1370,7 @@ struct ImageSelectionView: View {
             let combined = appending ? drafts + shown : shown
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja.
             drafts = isSetupTrial ? Array(combined.prefix(1)) : combined
+            if isSetupTrial, combined.count > 1 { onCourtesyExtraDrafts?(combined.dropFirst().map(\.persistentModelID)) }
             failedImages = failed
             failedReasons = reasons
             phase = .review
@@ -1282,6 +1432,15 @@ struct ImageSelectionView: View {
             print("ImageSelectionView: Error fetching account currencies: \(error)")
             #endif
             return VisionCurrencyContext(mainCurrency: main, accountCurrencies: [])
+        }
+    }
+
+    /// «Otra foto»: con lo leído a la vista y algo sin guardar, pregunta antes; si no, vuelve a elegir.
+    private func otherPhotoTapped() {
+        if EntryPhaseFeedbackLogic.asksBeforeDiscarding(isReviewing: phase == .review, unsavedCount: pendingDrafts.count) {
+            showOtherPhotoConfirmation = true
+        } else {
+            chooseAnother()
         }
     }
 
@@ -1369,6 +1528,20 @@ struct ImageSelectionView: View {
 
     /// Al cerrar: corta lo que se estuviera leyendo y, en la práctica guiada, da el paso por cumplido con el borrador
     /// que quedó en la Bandeja.
+    private func openManualEntryFromProGate() {
+        manualEntryReturnsToReview = phase == .review
+        showManualEntry = true
+    }
+
+    /// Tras el formulario a mano se cierra la hoja, como siempre; si se abrió con lo leído a la vista, se vuelve ahí.
+    private func manualEntryClosed() {
+        if manualEntryReturnsToReview {
+            manualEntryReturnsToReview = false
+        } else {
+            dismiss()
+        }
+    }
+
     private func tearDown() {
         readTask?.cancel()
         readTask = nil
@@ -1466,7 +1639,8 @@ struct ImageSelectionView: View {
             }
         }
         if profile != "incomplete" {
-            let subcategory = uiTestExpenseSubcategory()
+            // La segunda foto es la del taxi: va a su subcategoría de transporte, no a la de la comida.
+            let subcategory = uiTestExpenseSubcategory(isTaxi: !perPage && !isFirst)
             for draft in made where draft.subcategory == nil {
                 draft.subcategory = subcategory
                 draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
@@ -1548,11 +1722,14 @@ struct ImageSelectionView: View {
         }
     }
 
-    private func uiTestExpenseSubcategory() -> Subcategory? {
+    private func uiTestExpenseSubcategory(isTaxi: Bool) -> Subcategory? {
         let descriptor = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
         do {
             let expense = try modelContext.fetch(descriptor).filter { $0.isVisible && !$0.safeCategory.isIncome }
-            return expense.first { $0.name.hasPrefix("Restaurant") } ?? expense.first
+            let food = expense.first { $0.name.hasPrefix("Restaurant") } ?? expense.first
+            guard isTaxi else { return food }
+            let name = UITestDemoSubcategoryLogic.taxiSubcategory(among: expense.map(\.name), fallback: food?.name)
+            return expense.first { $0.name == name } ?? food
         } catch {
             print("ImageSelectionView: Error fetching subcategories for the UI-test seam: \(error)")
             return nil

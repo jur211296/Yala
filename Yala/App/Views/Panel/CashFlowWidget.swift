@@ -11,6 +11,8 @@ import SwiftUI
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): etiquetas, ejes y resumen de VoiceOver sin cifras.
+    @Environment(\.amountsHidden) private var amountsHidden
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -157,6 +159,51 @@ struct CashFlowWidget: View {
         return totalExpense == 0 && totalIncome > 0
     }
 
+    // MARK: - VoiceOver (decisión 26 de la revisión 2.3)
+
+    private var cashFlowAmountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: summary.currencyCode, hidden: amountsHidden)
+    }
+
+    /// V1: lo que entró, lo que salió y lo que queda (o quedó, si el período ya cerró). Con un solo lado a la vista no
+    /// se resta: sería el mismo número con otro nombre.
+    private var cashFlowSpokenSummary: String {
+        guard !activeChartData.isEmpty else { return L10n.Accessibility.noData }
+        // El `isEstimate` va también aquí: son los mismos dos totales que las barras pintan con «≈», y dejar la marca
+        // solo en el glifo la esconde de quien no puede verlo.
+        let income = AmountPrivacy.spoken(appPreferences.currency(
+            summary.totalIncome, currencyCode: summary.currencyCode, isEstimate: summary.incomeAmountsAreApproximate
+        ), hidden: amountsHidden)
+        let expense = AmountPrivacy.spoken(appPreferences.currency(
+            summary.totalExpense, currencyCode: summary.currencyCode, isEstimate: summary.expenseAmountsAreApproximate
+        ), hidden: amountsHidden)
+        let showsBothSides = !hasOnlyExpenses && !hasOnlyIncome && !isExpensesOnlyMode
+        return ChartSpokenSummary.cashFlow(
+            income: income, expense: expense,
+            net: showsBothSides ? summary.totalIncome - summary.totalExpense : nil,
+            isClosed: interval.end < Calendar.current.startOfDay(for: .now),
+            format: cashFlowAmountFormat
+        )
+    }
+
+    /// V2: entradas y salidas por fecha, para el rotor «Describir gráfica».
+    private var cashFlowChartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.cashFlowChart,
+            summary: cashFlowSpokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: L10n.Accessibility.Chart.axisAmount,
+            series: [
+                .init(name: L10n.CashFlow.income, isContinuous: false,
+                      points: nonEmptyChartData.map { .at($0.date, $0.income) }),
+                .init(name: L10n.CashFlow.expense, isContinuous: false,
+                      points: nonEmptyChartData.map { .at($0.date, $0.expense) }),
+            ],
+            format: cashFlowAmountFormat
+        )
+    }
+
     /// Waterfall mode: daily grouping + bidirectional data (not expenses-only or income-only)
     private var isWaterfallMode: Bool {
         grouping == .day && !hasOnlyExpenses && !hasOnlyIncome
@@ -205,6 +252,7 @@ struct CashFlowWidget: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -215,9 +263,13 @@ struct CashFlowWidget: View {
 
         guard let firstDate = activeChartData.first?.date,
               let lastDate = activeChartData.last?.date else { return rawDates }
-        return SmartAxisHelper.deduplicatedAxisDates(
+        let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
+        // Barras por año: la penúltima marca caía pegada a la última, anclada al borde («2023 2025» se tocaban en el
+        // iPhone 14; G2 de la decisión 28). El mismo filtro que la curva de Tendencias.
+        guard grouping == .year else { return deduplicated }
+        return SmartAxisHelper.droppingCrowdedNeighbors(deduplicated)
     }
 
     /// Format axis label based on data span and grouping
@@ -246,6 +298,7 @@ struct CashFlowWidget: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -515,7 +568,8 @@ struct CashFlowWidget: View {
     /// La barra bajo el dedo (la misma que enseña el tooltip): cambia solo al pasar de una barra a la siguiente.
     private var selectedBarDate: Date? {
         guard let selectedDate else { return nil }
-        let granularity: Calendar.Component = grouping == .month ? .month : (grouping == .week ? .weekOfYear : .day)
+        // La unidad de la barra: con barras por año, el dedo cae casi nunca en el 1 de enero (G2 de la decisión 28).
+        let granularity = calendarUnit(for: grouping)
         return activeChartData.first { Calendar.current.isDate($0.date, equalTo: selectedDate, toGranularity: granularity) }?
             .date
     }
@@ -676,8 +730,8 @@ struct CashFlowWidget: View {
                             }
                         }
 
-                        // Net Flow Line - always indigo regardless of theme
-                        if grouping == .month {
+                        // Net Flow Line - always indigo regardless of theme. También con barras por año (G2).
+                        if grouping == .month || grouping == .year {
                             LineMark(
                                 x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                 y: .value("Net", data.net)
@@ -699,19 +753,9 @@ struct CashFlowWidget: View {
                 }  // Close Chart
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
-                // El `isEstimate` va también aquí: son los mismos dos totales que las barras pintan
-                // con «≈», y dejar la marca solo en el glifo la esconde de quien no puede verlo.
-                .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
-                    L10n.Accessibility.cashFlowSummary(
-                        income: appPreferences.currency(
-                            summary.totalIncome, currencyCode: summary.currencyCode,
-                            isEstimate: summary.incomeAmountsAreApproximate
-                        ),
-                        expense: appPreferences.currency(
-                            summary.totalExpense, currencyCode: summary.currencyCode,
-                            isEstimate: summary.expenseAmountsAreApproximate
-                        )
-                    ))
+                .accessibilityValue(cashFlowSpokenSummary)
+                .accessibilityChartDescriptor(cashFlowChartDescriptor)
+                .accessibilityIdentifier("cash_flow_chart")
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
@@ -744,7 +788,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(.thSecondaryText.opacity(0.1))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
-                                Text(YalaFormatter.axisK(doubleValue, domain: dataYDomain))
+                                Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: dataYDomain), hidden: amountsHidden))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
                             }
@@ -764,8 +808,7 @@ struct CashFlowWidget: View {
                             let selectedData = activeChartData.first(where: {
                                 Calendar.current.isDate(
                                     $0.date, equalTo: activeDate,
-                                    toGranularity: grouping == .month
-                                        ? .month : (grouping == .week ? .weekOfYear : .day))
+                                    toGranularity: calendarUnit(for: grouping))
                             }),
                             let xPos = proxy.position(forX: selectedData.date)
                         {
@@ -860,7 +903,7 @@ struct CashFlowWidget: View {
 
                 // Legend (only for bidirectional mode, hidden in waterfall — colors are self-evident)
                 if !isWaterfallMode && !hasOnlyExpenses && !hasOnlyIncome {
-                    CashFlowLegendView(showNet: grouping == .month)
+                    CashFlowLegendView(showNet: grouping == .month || grouping == .year)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -1031,6 +1074,7 @@ struct CashFlowWidget: View {
 
     // Helpers
     private func formatK(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 ? "-" : (value > 0 ? "" : "")  // Only negative sign for Y axis usually
         // Note: User image had "-40K".
@@ -1048,20 +1092,21 @@ struct CashFlowWidget: View {
         case .day: return .day
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
 
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 
@@ -1070,6 +1115,7 @@ struct CashFlowWidget: View {
         switch grouping {
         case .day, .week: formatter = Self.tooltipDayFormatter
         case .month: formatter = Self.tooltipMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date).lowercased().replacing(".", with: "")
     }

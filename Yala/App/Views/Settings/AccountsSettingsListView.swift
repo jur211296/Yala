@@ -24,6 +24,7 @@ struct AccountsSettingsListView: View {
     /// Alto de cada fila de la lista (el `List` no se desplaza: su alto lo calcula la pantalla). Escala con el tamaño del
     /// texto: fijo, la línea anidada de una tarjeta quedaba fuera con texto grande. A tamaño normal, los 80 y 48 de
     /// siempre.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .headline) private var rowHeight: CGFloat = 80 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .subheadline) private var lineRowHeight: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -126,6 +127,7 @@ struct AccountsSettingsListView: View {
         }
         .onAppear {
             LoadTimeMarks.begin(.settingsAccounts)
+            MetricsService.used(.cuentas)
             viewModel.setContext(modelContext)
             viewModel.accountsSortOrderNames = appPreferences.accountsSortOrderNames
             LoadTimeMarks.ready(.settingsAccounts)
@@ -240,7 +242,7 @@ struct AccountsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
+            .contentSizedListHeight(estimated: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
             .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
@@ -265,7 +267,7 @@ struct AccountsSettingsListView: View {
 
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: line))
+                    Text(viewModel.formattedBalance(for: line, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.subheadlineEmphasized)
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
@@ -291,7 +293,11 @@ struct AccountsSettingsListView: View {
             return account.name
         }()
 
-        return HStack(spacing: DS.Spacing.md) {
+        // Con el texto en los tamaños de accesibilidad, el importe (de ancho fijo) se comía la fila entera: el nombre
+        // desaparecía y la cifra se cortaba contra el borde (barrido final 2.2, 2026-11-05). Apilada, como las demás
+        // filas de concepto e importe; a tamaño normal es el mismo `HStack` de siempre.
+        let isAccessibilityText = dynamicTypeSize.isAccessibilitySize
+        return AdaptiveRowStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(colorForHex(account.colorHex))
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
@@ -321,15 +327,14 @@ struct AccountsSettingsListView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-
-            Spacer()
-
+        } trailing: {
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: account))
+                    Text(viewModel.formattedBalance(for: account, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.headline)
                         .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                        .fixedSize(horizontal: !isAccessibilityText, vertical: false)
+                        .minimumScaleFactor(isAccessibilityText ? 0.6 : 1)
                         .foregroundStyle(.primary)
                 }
 
@@ -400,7 +405,7 @@ struct AccountsSettingsListView: View {
 
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: account))
+                    Text(viewModel.formattedBalance(for: account, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }

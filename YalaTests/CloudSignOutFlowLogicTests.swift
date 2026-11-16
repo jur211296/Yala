@@ -61,26 +61,63 @@ struct CloudSignOutFlowLogicTests {
     /// La puerta de quiescencia de los cierres que drenan grupos. Sin espejo no hay import con el que
     /// chocar: el término del mount es la corrección del cierre solo-grupos, que con iCloud Drive activo
     /// esperaba un «primer import» que un store neutro no emite nunca.
+    private static func safe(mirror: Bool = true, account: Bool = true, first: Bool = false, quiet: Bool = false,
+                             observed: Bool = false, grace: Bool = false, syncing: Bool = false) -> Bool {
+        CloudSignOutFlowLogic.isPersonalSaveSafe(
+            mountAttachesMirror: mirror, accountPresent: account, firstImportCompleted: first, importQuiescent: quiet,
+            observedImportActivity: observed, noImportGraceElapsed: grace, syncingAnyPhase: syncing)
+    }
+
     @Test("la puerta de quiescencia: sin espejo es seguro siempre; con espejo y cuenta, solo asentado")
     func personalSaveSafety() {
-        typealias L = CloudSignOutFlowLogic
         for account in [true, false] {
             for first in [true, false] {
                 for quiet in [true, false] {
-                    #expect(L.isPersonalSaveSafe(mountAttachesMirror: false, accountAvailable: account,
-                                                 firstImportCompleted: first, importQuiescent: quiet))
+                    #expect(Self.safe(mirror: false, account: account, first: first, quiet: quiet, syncing: true))
                 }
             }
         }
-        #expect(L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: false,
-                                     firstImportCompleted: false, importQuiescent: false))
-        #expect(L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                     firstImportCompleted: true, importQuiescent: true))
-        #expect(!L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                      firstImportCompleted: false, importQuiescent: true),
+        #expect(Self.safe(account: false, first: false, quiet: false, observed: true, syncing: true),
+                "sin cuenta (ni token ni CloudKit `.available`) no hay import que esperar: el teléfono sin iCloud no se queda colgado")
+        #expect(Self.safe(first: true, quiet: true))
+        #expect(!Self.safe(first: false, quiet: true),
                 "`isImportQuiescent` a secas es true ANTES del primer import: señal prematura en un restore")
-        #expect(!L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                      firstImportCompleted: true, importQuiescent: false))
+        #expect(!Self.safe(first: true, quiet: false))
+    }
+
+    /// Card jzti: con iCloud Drive apagado y ningún `.import` en el proceso, la puerta no espera para siempre.
+    @Test("sin ningún import en el proceso, pasada la gracia y quieto, abre; con un import observado, no")
+    func emptyStoreEscape() {
+        #expect(Self.safe(quiet: true, grace: true), "store que no importa nada: sin import con el que chocar")
+        #expect(!Self.safe(quiet: true, grace: false), "dentro de la gracia el primer import puede estar por llegar")
+        #expect(!Self.safe(quiet: true, observed: true, grace: true),
+                "con actividad de import observada, un restore a medias espera a su primer import")
+        #expect(!Self.safe(quiet: true, grace: true, syncing: true), "con una fase de sync en vuelo (.setup/.export) no")
+        #expect(!Self.safe(quiet: false, grace: true))
+    }
+
+    /// La fórmula está escrita a mano porque esta lógica es `nonisolated`; tiene que dar lo mismo que el gate del arranque
+    /// (`BootSaveGateLogic.decide`) en las 48 combinaciones posibles con espejo.
+    @MainActor
+    @Test("paridad con el gate de los guardados del arranque, en las 48 combinaciones posibles con espejo")
+    func parityWithTheBootSaveGate() {
+        let bools = [true, false]
+        var checked = 0
+        for account in bools { for first in bools { for quiet in bools {
+            for observed in bools { for grace in bools { for syncing in bools {
+                // `hasCompletedFirstImport` implica actividad observada (ver `BootSaveGateLogic.decide`): la combinación
+                // contraria no existe fuera del seam de uitest.
+                if first && !observed { continue }
+                let boot = BootSaveGateLogic.decide(
+                    isAccountAvailable: account, hasCompletedFirstImport: first, hasObservedImportActivity: observed,
+                    isQuiescent: quiet, noImportGraceElapsed: grace, isSyncingAnyPhase: syncing).isRun
+                #expect(Self.safe(account: account, first: first, quiet: quiet, observed: observed, grace: grace,
+                                  syncing: syncing) == boot,
+                        "account=\(account) first=\(first) quiet=\(quiet) observed=\(observed) grace=\(grace) syncing=\(syncing)")
+                checked += 1
+            }}}
+        }}}
+        #expect(checked == 48)
     }
 
     @Test("las cuatro salidas son alcanzables y distintas: ninguna celda comparte camino")
@@ -1091,9 +1128,17 @@ struct PausedChannelReasonWiringTests {
         // mutante: cambiar el `Text(...)` por un literal deja las dos computed MUERTAS —Swift no avisa de
         // una computed privada sin usar—, devuelve el copy genérico a las dos pantallas y deja verde todo
         // lo demás. O sea el bug del ticket, entero, invisible.
+        // Desde el 2026-11-06 el texto del desasociar vive en `SignOutBlockedCopy.detachBlockedMessage(for:)`: el copy se
+        // mira en la tabla y el consumo, en la vista (ticket `blocked-copy-mapping-lives-in-three-views-untestable`).
         let sectionFile = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
-        let section = try Self.body(of: "private var blockedMessage: String {", in: sectionFile)
+        let section = try Self.body(
+            of: "static func detachBlockedMessage(for notice: CloudSignOutFlowLogic.DetachBlockedNotice?) -> String {",
+            in: try Self.source("Yala/App/Views/Shared/SignOutBlockedCopy.swift"))
         #expect(section.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(try Self.body(of: "private var blockedMessage: String {", in: sectionFile)
+            .contains("SignOutBlockedCopy.detachBlockedMessage(for: blockedNotice)"), """
+            El aviso del desasociar dejó de leer su texto de la tabla compartida.
+            """)
         #expect(sectionFile.contains("Text(blockedMessage)"), """
             El aviso del desasociar dejó de leer su mensaje por motivo: la propiedad queda muerta y el copy
             vuelve al genérico.
@@ -1244,7 +1289,9 @@ struct WelcomeGateTransientBlockWiringTests {
     /// momento no basta sin cobertura, y ese texto no dice lo único que tranquiliza: que no se pierde nada.
     @Test("el desasociar separa la subida fallida del outbox que drena")
     func detachSplitsTheFailedUploadFromTheSettlingOutbox() throws {
-        let section = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
+        // El texto del desasociar vive en la tabla compartida desde el 2026-11-06.
+        // Acotado a su función: `message(for:)` tiene las mismas líneas y el scan pasaría por ella.
+        let section = try detachCopyBody()
         #expect(section.contains("case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater"), """
             El desasociar dejó de decirle a quien está sin red que sus cambios no llegaron al servidor.
             """)
@@ -1695,7 +1742,7 @@ struct AttestUnavailableSignOutWiringTests {
     func welcomeGateNeverOffersTheLossToTheInvitee() throws {
         let gate = Self.squashed(try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"))
         #expect(gate.contains(Self.squashed(
-            "let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit")), """
+            "let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit")), """
             La puerta del Welcome dejó de negarle la salida al invitado: la persona del teléfono prestado perdería \
             cambios de grupos que no son suyos.
             """)
@@ -1707,7 +1754,7 @@ struct AttestUnavailableSignOutWiringTests {
         // botón, el invitado vería «Continuar y perderlos» con la decisión intacta dos líneas más arriba (lente de la
         // review, 2026-09-15). Aquí se fija que el cuerpo y el botón leen la misma decisión y que el botón retoma el cierre.
         #expect(gate.contains(Self.squashed("""
-            let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit
+            let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Groups.Errors.attestUnavailableTitle,
                         body: offersLoss
@@ -1727,7 +1774,7 @@ struct AttestUnavailableSignOutWiringTests {
         // La sesión caducada y los cambios de otra cuenta (2026-09-28): la misma rama, el mismo guard del invitado.
         #expect(gate.contains(Self.squashed("""
             let cause = CloudSignOutFlowLogic.lossCause(reason)
-            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+            let offersLoss = purpose.mayDiscardUnsavedChanges && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
             let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
@@ -1735,7 +1782,9 @@ struct AttestUnavailableSignOutWiringTests {
                         body: offersLoss
                             ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
                                 pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
-                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
+                            : (purpose.isCloudAccountEntry && !namesBothCauses
+                                ? L10n.Welcome.Groups.cloudAsideBlockedBody
+                                : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses)),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
@@ -1745,7 +1794,8 @@ struct AttestUnavailableSignOutWiringTests {
                             intento += 1
                             phase = .discardingUnsyncedGroups(intento: intento)
             """)), "La rama de la sesión caducada dejó de negarle la salida al invitado, o su botón no retoma el cierre.")
-        let association = Self.squashed(try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift"))
+        // El texto del desasociar vive en la tabla compartida desde el 2026-11-06.
+        let association = Self.squashed(try detachCopyBody())
         #expect(association.contains("case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable"))
         #expect(association.contains(
             "case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount"))
@@ -1776,4 +1826,16 @@ struct AttestUnavailableSignOutWiringTests {
         #expect(lista.components(separatedBy: "GroupLeaveErrorLogic.classify(").count - 1 == 1)
         #expect(lista.components(separatedBy: lectura).count - 1 == 1)
     }
+}
+
+/// El cuerpo de `SignOutBlockedCopy.detachBlockedMessage(for:)`, el texto del aviso del desasociar desde el 2026-11-06. Los
+/// scans lo leen ACOTADO: `message(for:)` del mismo fichero comparte líneas y un `contains` sobre el fichero entero pasaría
+/// por ella aunque el desasociar dijera otra cosa.
+private func detachCopyBody() throws -> String {
+    let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    let source = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Shared/SignOutBlockedCopy.swift"),
+                            encoding: .utf8)
+    let start = try #require(source.range(of: "static func detachBlockedMessage(for notice:"))
+    let end = try #require(source.range(of: "static func attestLossMessage(", range: start.upperBound..<source.endIndex))
+    return String(source[start.lowerBound..<end.lowerBound])
 }

@@ -24,6 +24,9 @@ struct PanelSheetsModifier: ViewModifier {
 
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
     @State private var showPracticeAlert = false
 
     /// La hoja de filtros escribe en `SessionState` a través de este puente; el Panel recalcula solo al cambiar.
@@ -41,6 +44,12 @@ struct PanelSheetsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Primeros pasos 2.3: el paso 1, el tutorial del paso 2 y su cierre (Y23-07 a Y23-10).
+            .modifier(PrimerosPasosPanelPresentations(sheets: $sheets, viewModel: viewModel))
+            // Primeros pasos 2.3: los pasos 3, 4 y 5 (Y23-11 a Y23-13).
+            .modifier(PrimerosPasosPlanningPresentations(sheets: $sheets, viewModel: viewModel))
+            // Primeros pasos 2.3: el paso 7 (Y23-16).
+            .modifier(PrimerosPasosHomeScreenPresentation(sheets: $sheets))
             .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {
@@ -95,6 +104,7 @@ struct PanelSheetsModifier: ViewModifier {
                 PanelSectionPreferencesSheet(kind: kind, viewModel: viewModel)
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
+                newRecordDraft.discard()
                 viewModel.reloadAndRecalculate()
             }) {
                 let subcategoryName = viewModel.selectedSubcategoryIDs.first.flatMap { id in
@@ -104,8 +114,10 @@ struct PanelSheetsModifier: ViewModifier {
                 // una cuenta al azar con dos filtradas y la excluida en modo excluir.
                 NewTransactionView(
                     prefillCategoryID: viewModel.selectedCategoryID,
-                    prefillSubcategoryName: subcategoryName
+                    prefillSubcategoryName: subcategoryName,
+                    draft: newRecordDraft
                 )
+                .newRecordSheetIdentity()
                 .presentationDetents([.large])
             }
             .sheet(
@@ -185,7 +197,11 @@ struct PanelSheetsModifier: ViewModifier {
                 .onDisappear { navigation.isInboxSheetVisible = false }
             }
             // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
-            .proUpgradeSheet(isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+            // «Apuntarlo a mano» abre Nuevo registro, como el «+» (mejoras necesarias 2.3 · V3).
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature,
+                onManualEntry: { sheets.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.voice)
             }
             // Si la hoja salió por una foto compartida (card fazw), comprar abre el registro por imagen con esa foto y
@@ -193,6 +209,7 @@ struct PanelSheetsModifier: ViewModifier {
             .proUpgradeSheet(
                 isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature,
                 onClosedWithoutUnlock: { SharedImageProGateHold.discard() },
+                onManualEntry: { sheets.showNewTransaction = true },
                 onUnlocked: {
                     if let shared = SharedImageProGateHold.takeForUnlock() {
                         navigation.pendingSharedImageURL = shared
@@ -204,7 +221,7 @@ struct PanelSheetsModifier: ViewModifier {
                 sheets.accountFormSheet = AccountFormSheet(account: nil)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $sheets.showChatSheet)
+            .yalaAIChat(isPresented: $sheets.showChatSheet, onManualEntry: { sheets.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $sheets.showYalaAIOnboarding,
                 pendingOpenChat: $sheets.pendingOpenChatAfterOnboarding,
@@ -212,9 +229,11 @@ struct PanelSheetsModifier: ViewModifier {
                 launcher: .panel,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { sheets.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
                 // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
                 switch YalaAIOnboardingLogic.nextScreen(
@@ -252,6 +271,7 @@ struct PanelSheetsModifier: ViewModifier {
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: true)
                     sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
@@ -259,6 +279,7 @@ struct PanelSheetsModifier: ViewModifier {
                         viewModel.deletePracticeItem(item)
                     }
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: false)
                     sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }

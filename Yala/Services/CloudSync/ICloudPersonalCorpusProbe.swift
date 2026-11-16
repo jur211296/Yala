@@ -195,8 +195,15 @@ enum ICloudPersonalCorpusProbe {
     ///
     /// Una key que falte degrada la CIFRA, nunca la decisión: sin `CD_splitExpenseID` las bridgeadas
     /// contarían como movimientos y el aviso diría un número de más.
+    ///
+    /// **Las ocho últimas son del recuento de categorías** (card k15r, 2026-11-06): las subcategorías de
+    /// fábrica repetidas se cuentan una vez, con la clave con que la restauración las funde
+    /// (`ICloudCorpusCategoryTally`). Sin ellas el recuento vuelve a contar copias: una cifra de más, nunca
+    /// una de menos.
     static let desiredKeys: [CKRecord.FieldKey] = [
-        "CD_splitExpenseID", "CD_splitSettlementID", "CD_isSystemAccount", "CD_isSystem", "CD_date"
+        "CD_splitExpenseID", "CD_splitSettlementID", "CD_isSystemAccount", "CD_isSystem", "CD_date",
+        "CD_isDefaultSeed", "CD_isSystemSubcategory", "CD_sortOrder", "CD_iconName", "CD_name", "CD_category",
+        "CD_colorHex", "CD_isIncome",
     ]
 
     // MARK: Seams
@@ -359,7 +366,7 @@ enum ICloudPersonalCorpusProbe {
         do {
             var transactions = 0
             var accounts = 0
-            var categories = 0
+            var categories = ICloudCorpusCategoryTally()
             var budgets = 0
             var oldest: Date?
             var scanned = 0
@@ -397,7 +404,7 @@ enum ICloudPersonalCorpusProbe {
             return .measured(ICloudPersonalCorpus(
                 transactions: transactions,
                 accounts: accounts,
-                categories: categories,
+                categories: categories.count,
                 budgets: budgets,
                 oldestTransactionDate: oldest,
                 truncated: truncated))
@@ -434,7 +441,7 @@ enum ICloudPersonalCorpusProbe {
     private static func classify(_ record: CKRecord,
                                  transactions: inout Int,
                                  accounts: inout Int,
-                                 categories: inout Int,
+                                 categories: inout ICloudCorpusCategoryTally,
                                  budgets: inout Int,
                                  oldest: inout Date?) {
         switch record.recordType {
@@ -449,7 +456,19 @@ enum ICloudPersonalCorpusProbe {
             accounts += 1
         case "CD_Subcategory":
             guard !isFlagSet(record["CD_isSystem"]) else { return }
-            categories += 1
+            categories.addSubcategory(
+                isDefaultSeed: isFlagSet(record["CD_isDefaultSeed"]),
+                isSystemSubcategory: isFlagSet(record["CD_isSystemSubcategory"]),
+                categoryRecordName: record["CD_category"] as? String,
+                sortOrder: (record["CD_sortOrder"] as? NSNumber)?.intValue,
+                iconName: record["CD_iconName"] as? String,
+                name: record["CD_name"] as? String)
+        case "CD_Category":
+            categories.addCategory(
+                recordName: record.recordID.recordName,
+                iconName: record["CD_iconName"] as? String,
+                colorHex: record["CD_colorHex"] as? String,
+                isIncome: isFlagSet(record["CD_isIncome"]))
         case "CD_Budget":
             // Sin `guard`: no hay presupuestos de sistema de los que defenderse (ver `budgets`). Y sin
             // keys nuevas en `desiredKeys` —el tipo basta para contar—, así que el punto bloqueante del
@@ -1049,5 +1068,67 @@ nonisolated enum ForeignWipeErrorLogic {
         }
         if let longestDelay { verdict.retryAfter = longestDelay }
         return verdict
+    }
+}
+
+// MARK: - Recuento de categorías
+
+/// Cuenta las subcategorías como las verá la persona después de restaurar (card k15r).
+///
+/// La zona puede traer la MISMA subcategoría de fábrica varias veces —dos siembras que subieron antes de que
+/// el deduplicador las fundiera—, y la restauración las funde (`SubcategoryDedupLogic`): «Ya tienes datos en
+/// tu iCloud» decía 124 y la pantalla siguiente 62. Aquí se cuentan una vez por la misma clave
+/// (`categoría | orden | icono | nombre`, con la categoría por `icono | color | ingreso`). La clave sale de
+/// `SubcategoryDedupLogic.identityKey(categoryIconName:…)`: si cambia allí, cambia aquí.
+///
+/// Lo que el deduplicador no toca se cuenta una a una, igual que él: las del usuario, las de sistema y las
+/// que no tienen categoría legible (su categoría puede no haber llegado o no existir). Un campo que falte
+/// hace que la fila cuente sola: la cifra puede salir de más, nunca de menos, y nunca en cero si hay alguna.
+nonisolated struct ICloudCorpusCategoryTally: Sendable {
+    private struct SeedSubcategory: Sendable {
+        let categoryRecordName: String
+        let sortOrder: Int
+        let iconName: String?
+        let name: String
+    }
+
+    private var categoryKeys: [String: String] = [:]
+    private var seeds: [SeedSubcategory] = []
+    private var standalone = 0
+
+    init() {}
+
+    mutating func addCategory(recordName: String, iconName: String?, colorHex: String?, isIncome: Bool) {
+        guard let colorHex else { return }
+        categoryKeys[recordName] = SubcategoryDedupLogic.categoryKey(
+            iconName: iconName, colorHex: colorHex, isIncome: isIncome)
+    }
+
+    mutating func addSubcategory(
+        isDefaultSeed: Bool, isSystemSubcategory: Bool, categoryRecordName: String?,
+        sortOrder: Int?, iconName: String?, name: String?
+    ) {
+        guard isDefaultSeed, !isSystemSubcategory,
+              let categoryRecordName, let sortOrder, let name else {
+            standalone += 1
+            return
+        }
+        seeds.append(SeedSubcategory(
+            categoryRecordName: categoryRecordName, sortOrder: sortOrder, iconName: iconName, name: name))
+    }
+
+    /// Las categorías pueden llegar en una página posterior a sus subcategorías: se resuelve al final.
+    var count: Int {
+        var keys = Set<String>()
+        var unresolved = 0
+        for seed in seeds {
+            guard let categoryKey = categoryKeys[seed.categoryRecordName] else {
+                unresolved += 1
+                continue
+            }
+            keys.insert(SubcategoryDedupLogic.identityKey(
+                categoryKey: categoryKey, sortOrder: seed.sortOrder, iconName: seed.iconName, name: seed.name))
+        }
+        return standalone + unresolved + keys.count
     }
 }

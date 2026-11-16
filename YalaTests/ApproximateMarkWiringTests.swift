@@ -44,8 +44,8 @@ struct ApproximateMarkWiringTests {
             El hero en modo Solo Gastos pinta `periodSummary.expense`: su marca tiene que ser la del
             gasto, no la del período entero.
             """)
-        // Desde el lote 3 de la auditoría UX 2.2 (L3-1/L3-3) la cifra del hero normal es el balance, o el lado que
-        // filtra la píldora puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
+        // Desde la decisión 8 de 2.3 la línea del mes (bajo «Tienes hoy») es el neto, o el lado que filtra la píldora
+        // puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
         // casos intercambiados, un `contains` suelto seguiría verde.
         #expect(src.contains("case .balance: return periodSummary.amountsAreApproximate"), """
             El balance agrega los dos lados: su marca es la del período entero.
@@ -56,7 +56,7 @@ struct ApproximateMarkWiringTests {
         #expect(src.contains("case .income: return periodSummary.incomeApproximate"), """
             Con «solo ingresos» la cifra es el ingreso: su marca es la del ingreso.
             """)
-        #expect(src.contains("isEstimate: figureIsApproximate"), "La cifra grande no lee la marca de su caso.")
+        #expect(src.contains("isEstimate: figureIsApproximate"), "La línea del mes no lee la marca de su caso.")
     }
 
     /// VoiceOver tiene que oír lo mismo que se ve. La marca es información, y dejarla solo en el
@@ -82,9 +82,14 @@ struct ApproximateMarkWiringTests {
         let section = try Self.source("Yala/App/Views/Panel/Sections/PanelHeroSection.swift")
         #expect(section.contains("totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate"),
                 "El hero no recibe la marca del saldo total.")
+        // Desde la decisión 8 de 2.3 el saldo total es la cifra grande del hero («Tienes hoy»): la marca va en la cifra
+        // y en lo que oye VoiceOver.
         let hero = try Self.source("Yala/App/Views/Panel/HeroMonthView.swift")
-        #expect(hero.contains("appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)"),
-                "«Tienes X en tus cuentas» pinta el saldo total sin su marca.")
+        let bigFigure = try #require(hero.range(of: "value: PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),"))
+        #expect(String(hero[bigFigure.upperBound...].prefix(300)).contains("isEstimate: totalBalanceIsApproximate"),
+                "«Tienes hoy» pinta el saldo total sin su marca.")
+        let spoken = try #require(hero.range(of: "PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),\n            currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate"))
+        #expect(!spoken.isEmpty, "VoiceOver lee «Tienes hoy» sin su marca.")
         let help = try Self.source("Yala/App/Views/Panel/InfoSheets/WidgetInfoSheet.swift")
         #expect(help.contains("money(viewModel.panelTotalBalance, isEstimate: viewModel.panelTotalBalanceIsApproximate)"),
                 "La ayuda de la gráfica de saldo pinta el saldo total sin su marca.")
@@ -203,12 +208,14 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     @Test("La etiqueta de accesibilidad del gráfico de flujo lleva la marca")
     func cashFlowChartAccessibilityCarriesTheMark() throws {
         let src = try Self.source("Yala/App/Views/Panel/CashFlowWidget.swift")
-        let label = try #require(src.range(of: "L10n.Accessibility.cashFlowSummary("))
-        // 700 y no 500: el bloque mide 454 caracteres hasta el segundo `isEstimate` y 501 hasta su
-        // final, así que con 500 el test se ponía rojo por el recorte y no por el cableado.
-        let scope = String(src[label.lowerBound...].prefix(700))
+        // Desde la decisión 26 de la revisión 2.3 la frase la arma `cashFlowSpokenSummary` (V1: entradas, salidas y lo
+        // que queda) y la pasa a `ChartSpokenSummary.cashFlow`, que lleva dentro `cashFlowSummary`.
+        let label = try #require(src.range(of: "private var cashFlowSpokenSummary: String {"))
+        let scope = String(src[label.lowerBound...].prefix(1_400))
         #expect(scope.contains("isEstimate: summary.incomeAmountsAreApproximate"))
         #expect(scope.contains("isEstimate: summary.expenseAmountsAreApproximate"))
+        #expect(scope.contains("ChartSpokenSummary.cashFlow("))
+        #expect(src.contains(".accessibilityValue(cashFlowSpokenSummary)"))
     }
 
     /// La peor omisión del ticket: la hoja existe PORQUE el saldo es multimoneda, y declaraba
@@ -321,8 +328,10 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         #expect(expense == 4, "se esperaban 4 y hay \(expense)")
         // La etiqueta de VoiceOver de cada pastilla lleva la marca de su importe: sin ella, VoiceOver leería exacto
         // lo que en pantalla sale con «≈».
-        #expect(hero.contains("L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
-        #expect(hero.contains("L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
+        // Desde el 2026-11-06 el importe pasa por `AmountPrivacy.spoken` («Monto oculto» con el ojo del Panel puesto): la
+        // marca sigue dentro, en el `appPreferences.currency` que se le pasa.
+        #expect(hero.contains("L10n.Panel.Hero.incomePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))"))
+        #expect(hero.contains("L10n.Panel.Hero.expensePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))"))
     }
 
     /// El widget de inicio es el único donde la señal no existía: había que producirla.

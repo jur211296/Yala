@@ -42,8 +42,35 @@ enum SubcategoryDedupLogic {
         guard sub.isDefaultSeed, !sub.isAnySystem, let category = sub.category else { return nil }
         // Misma fórmula que CategoryDeduplicationService.identityKey (icon+color+isIncome),
         // inline para no acoplar Logic → Service.
-        let categoryKey = "\(category.iconName ?? "nil")|\(category.colorHex)|\(category.isIncome)"
-        return "\(categoryKey)|\(sub.sortOrder)|\(sub.iconName ?? "nil")|\(sub.name)"
+        return identityKey(
+            categoryKey: categoryKey(
+                iconName: category.iconName, colorHex: category.colorHex, isIncome: category.isIncome),
+            sortOrder: sub.sortOrder, iconName: sub.iconName, name: sub.name)
+    }
+
+    /// La parte de la categoría de la clave. La comparte la sonda de iCloud (`ICloudCorpusCategoryTally`), que
+    /// cuenta registros de CloudKit sin `@Model`: una sola fórmula para las dos.
+    nonisolated static func categoryKey(iconName: String?, colorHex: String, isIncome: Bool) -> String {
+        "\(iconName ?? "nil")|\(colorHex)|\(isIncome)"
+    }
+
+    nonisolated static func identityKey(categoryKey: String, sortOrder: Int, iconName: String?, name: String) -> String {
+        "\(categoryKey)|\(sortOrder)|\(iconName ?? "nil")|\(name)"
+    }
+
+    /// Cuántas categorías verá la persona cuando el deduplicador haya fundido las copias de fábrica: cada identidad
+    /// (`identityKey(for:)`) cuenta una vez y lo que no tiene identidad —las del usuario, las huérfanas— cuenta una a una.
+    ///
+    /// **Es la cifra de la sonda de iCloud** (`ICloudCorpusCategoryTally`, misma clave): «Ya tienes datos en tu iCloud»
+    /// decía 63 y «Conectando con iCloud» y «¡Qué bien volver a verte!», que contaban las filas del teléfono antes del
+    /// deduplicador, 65 (card del recorrido del 13-nov). Contadas así, las tres pantallas dan el mismo número.
+    static func visibleCount(identityKeys: [String?]) -> Int {
+        var keys = Set<String>()
+        var standalone = 0
+        for key in identityKeys {
+            if let key { keys.insert(key) } else { standalone += 1 }
+        }
+        return standalone + keys.count
     }
 
     /// Orden determinista para elegir keeper (el que "va antes" se conserva).

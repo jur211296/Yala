@@ -64,7 +64,7 @@ struct FluidezHapticosWiringTests {
     /// Aprobar deslizando vibra éxito DESPUÉS de aprobar: antes vibraba al deslizar, también si fallaba.
     @Test func inboxSwipeApprove_vibratesAfterTheApprovalSucceeded() throws {
         let lines = try Self.code("Yala/App/Views/Inbox/InboxView.swift")
-        guard let start = Self.index(of: "private func approveDraft(_ draft: InboxDraft)", in: lines),
+        guard let start = Self.index(of: "private func approveDraft(_ draft: InboxDraft", in: lines),
               let approve = lines[start...].firstIndex(where: { $0.contains("try draftService.approveDraft(") }),
               let success = lines[start...].firstIndex(where: { $0.contains("DS.Haptic.success()") })
         else {

@@ -94,6 +94,17 @@ final class GroupSplitLinesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["split_lines_row_1"].waitForExistence(timeout: 5), "No quedó la segunda línea.")
         XCTAssertTrue(approve.isEnabled, "Con las líneas cuadradas, «Aprobar» se enciende.")
         capture(app, "flujo-bandeja-cuadra")
+
+        // La línea resumen bajo la tarjeta: lo que debes a Pía no cambia y Sip sube lo de la recarga.
+        let summary = element(app, "split_lines_summary")
+        XCTAssertTrue(summary.waitForExistence(timeout: 5), "Falta la línea resumen bajo «Tu parte».")
+        let summaryText = summary.label
+        XCTAssertTrue(summaryText.contains("Pía") && summaryText.contains("510"),
+                      "La línea no dice lo que debes a Pía: «\(summaryText)».")
+        XCTAssertTrue(summaryText.contains("Sip") && summaryText.contains("500"),
+                      "La línea no dice cuánto sube Sip: «\(summaryText)».")
+        XCTAssertEqual(summaryText.components(separatedBy: " · ").count, 2,
+                       "Solo la deuda y la recarga: la comisión es un gasto y no sube ninguna cuenta: «\(summaryText)».")
         approve.tap()
         XCTAssertTrue(element(app, "group_draft_banner").waitForNonExistence(timeout: 8), "La hoja no se cerró al aprobar.")
         XCTAssertTrue(app.buttons["inbox_draft_row_Recarga Sip"].waitForNonExistence(timeout: 8),
@@ -151,6 +162,9 @@ final class GroupSplitLinesUITests: XCTestCase {
         app.chooseFirstSelectorRow(chip: "split_line_subcategory", rowPrefix: "subcategory_selector_row_")
         saveLine(app)
         XCTAssertTrue(save.isEnabled, "Con las líneas cuadradas, «Guardar» se enciende.")
+        // Pagaste tú y las dos líneas son gasto: no debes nada ni sube ninguna cuenta, así que no hay línea resumen.
+        XCTAssertFalse(element(app, "split_lines_summary").exists,
+                       "Pagando tú y sin recargas, la línea resumen no tiene nada que decir.")
         save.tap()
         XCTAssertTrue(element(app, "split_lines_card").waitForNonExistence(timeout: 8), "La hoja no se cerró al guardar.")
         app.buttons["group_expense_success_accept"].tap()

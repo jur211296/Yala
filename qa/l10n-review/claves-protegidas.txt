@@ -1,0 +1,22 @@
+# Claves cuyo VALOR la app compara por texto con lo que ya guardó en la base del usuario.
+# Cambiar su valor sin migrar rompe el emparejamiento: duplica categorías o deja de reconocer
+# un texto por defecto. `apply.py` no las toca nunca; el informe las marca como «protegida».
+#
+# Una clave por línea; un `*` final vale como prefijo. Detrás del `#`, quién la empareja.
+# Los nombres de la siembra que solo se escriben una vez (p. ej. `subcategory.supermarkets`)
+# NO están aquí a propósito: el deduplicador funde por icono y color, no por nombre, y el
+# usuario existente conserva el nombre que ya tiene.
+
+category.other                    # InitialBalanceService (busca «Otros» por nombre), NewTransactionViewModel
+category.income                   # NewTransactionViewModel (crea la categoría de ingresos si falta)
+subcategory.balanceAdjustment     # InitialBalanceService + TransactionCSVImportService (4 sitios)
+subcategory.unassigned            # SubcategoryTransferViewModel (se busca por nombre; cambiar su valor exige añadir el viejo a legacyUnassignedNames)
+category.others                   # SubcategoryTransferViewModel (busca «Otros» por nombre)
+subcategory.noSubcategory         # TopSubcategoriesCalculator
+category.system.*                 # seedSystemGroupCategoriesIfNeeded (empareja por nombre)
+subcategory.system.*              # seedSystemGroupCategoriesIfNeeded
+account.system.*                  # cuenta de sistema de Grupos
+notifications.endOfDay.text       # NotificationItem.collectDefaults (reconoce el texto por defecto en los 16 idiomas)
+notifications.lunchTime.text      # idem
+devseed.*                         # semillas DEBUG: los tests y las capturas buscan por estos nombres
+uitestDemo.*                      # seams DEBUG de capturas

@@ -56,10 +56,10 @@ struct GroupCardView: View {
 
     var body: some View {
         Button(action: handleTap) {
-            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Sin Divider: el aire (lg) ya separa la cabecera de sus filas, y en oscuro la raya no se veía.
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 header
                 if displayMode == .active, !personRows.shown.isEmpty {
-                    Divider()
                     personList
                 }
             }
@@ -82,8 +82,9 @@ struct GroupCardView: View {
             groupIcon
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                // headline: el nombre es el título de la tarjeta; en `label` pesaba igual que «Caro te debe».
                 Text(group.name)
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 

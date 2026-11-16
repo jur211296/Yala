@@ -14,10 +14,10 @@ struct PanelHealthSection: View {
 
     var body: some View {
         if let score = viewModel.healthWidget.score {
-            FinancialScoreView(
+            // Lote 1 de la nota de salud (11-nov-2026): en el Panel, la tarjeta chata; el desglose, al tocarla.
+            FinancialScoreCompactCard(
                 score: score,
                 sessionState: sessionState,
-                subtitle: viewModel.selectedPeriod.displayName,
                 hasBudgets: viewModel.budgets.contains { $0.isActive }
             )
         }

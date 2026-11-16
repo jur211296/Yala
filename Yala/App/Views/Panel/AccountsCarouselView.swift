@@ -5,6 +5,9 @@ struct AccountsCarouselView: View {
     @Environment(\.yalaTheme) private var theme
     /// Nombre de cada grupo por su zona, para las filas de la tarjeta «Grupos» (`providesGroupNames()` en la sección).
     @Environment(\.groupNameCatalog) private var groupNameCatalog
+    /// En ventana ancha las cuentas van en cuadrícula, no en carrusel (decisión 12 de 2.3, opción D).
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let viewModel: PanelViewModel
     /// Una tarjeta por cuenta principal o suelta; las líneas en otra divisa van dentro de la suya.
     let orderedCards: [AccountCard<Account>]
@@ -28,6 +31,45 @@ struct AccountsCarouselView: View {
     @State private var carouselWidth: CGFloat = 0
 
     var body: some View {
+        Group {
+            if PanelAccountCardLogic.usesGrid(
+                isWideScreen: DS.Adaptive.isWideScreen(sizeClass),
+                isAccessibilityText: dynamicTypeSize.isAccessibilitySize,
+                containerWidth: carouselWidth,
+                spacing: DS.Spacing.md
+            ) {
+                accountsGrid
+            } else {
+                carousel
+            }
+        }
+        // El ancho se mide fuera de las dos formas: decide cuál se pinta, y el carrusel saca de él su tarjeta.
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { carouselWidth = $0 }
+    }
+
+    /// En el iPad, junto a la cifra grande: todas las cuentas de un vistazo, de dos en dos. Las tarjetas de una fila
+    /// miden lo que la más alta, como en el carrusel.
+    private var accountsGrid: some View {
+        let allCards = orderedCards
+        let totalCards = allCards.count + 1  // accounts + add button
+        return Grid(alignment: .topLeading, horizontalSpacing: DS.Spacing.md, verticalSpacing: DS.Spacing.md) {
+            ForEach(PanelAccountCardLogic.gridRows(cardCount: totalCards), id: \.self) { row in
+                GridRow {
+                    ForEach(row, id: \.self) { index in
+                        cardView(at: index, accounts: allCards)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    if row.count == 1 {
+                        Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("panel_accounts_grid")
+    }
+
+    private var carousel: some View {
         let allCards = orderedCards
         let totalCards = allCards.count + 1  // accounts + add button
         let cardWidth = PanelAccountCardLogic.cardWidth(containerWidth: carouselWidth)
@@ -42,7 +84,7 @@ struct AccountsCarouselView: View {
             return max(0, min(pageCount - 1, rawIndex))
         }()
 
-        VStack(spacing: DS.Spacing.sm) {
+        return VStack(spacing: DS.Spacing.sm) {
             ScrollView(.horizontal, showsIndicators: false) {
                 // Todas las tarjetas miden lo que la más alta (S12j, Jürgen 2026-10-27): la de varias divisas trae una
                 // fila por divisa y el total, y a su lado las demás quedaban más bajas. El `HStack` toma el alto ideal
@@ -62,7 +104,6 @@ struct AccountsCarouselView: View {
             .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByFew))
             .scrollPosition(id: $leadingColumnIndex)
             .contentMargins(.horizontal, 0, for: .scrollContent)
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { carouselWidth = $0 }
             // iPhone Duo cerrado: se funde contra la barra vertical en vez de cortarse en seco.
             .fadesTowardVerticalBar()
 

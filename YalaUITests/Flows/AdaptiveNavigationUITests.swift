@@ -67,9 +67,9 @@ final class AdaptiveNavigationUITests: XCTestCase {
                 app.navigationBars["Grupos"].waitForExistence(timeout: 10),
                 "Tocar Grupos en la barra lateral no abrió Grupos.")
         } else {
-            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10), "No hay barra de pestañas en iPhone.")
-            XCTAssertTrue(app.tabBars.buttons["Más"].exists, "La barra de pestañas perdió «Más».")
-            XCTAssertFalse(app.tabBars.buttons["Registros"].exists, "Registros no está en la configuración por defecto.")
+            XCTAssertTrue(app.compactTabBar.waitForExistence(timeout: 10), "No hay barra de pestañas en iPhone.")
+            XCTAssertTrue(app.compactTabBar.buttons["Más"].exists, "La barra de pestañas perdió «Más».")
+            XCTAssertFalse(app.compactTabBar.buttons["Registros"].exists, "Registros no está en la configuración por defecto.")
         }
     }
 
@@ -256,7 +256,7 @@ final class AdaptiveNavigationUITests: XCTestCase {
             XCTAssertFalse(app.buttons["group_detail_back"].exists, "En columna el grupo no lleva chevron de volver.")
         } else {
             XCTAssertFalse(card.isHittable, "En iPhone el grupo se empuja sobre la lista.")
-            XCTAssertFalse(app.tabBars.firstMatch.isHittable, "En iPhone el grupo abierto oculta la barra de pestañas.")
+            XCTAssertFalse(app.compactTabBar.isHittable, "En iPhone el grupo abierto oculta la barra de pestañas.")
             app.buttons["group_detail_back"].tap()
             XCTAssertTrue(card.waitForHittable(timeout: 5), "El chevron no volvió a la lista.")
         }
@@ -368,10 +368,11 @@ final class AdaptiveNavigationUITests: XCTestCase {
         XCTAssertTrue(listRow.waitForExistence(timeout: 10), "No apareció la lista de Ajustes.")
         app.openSettingsSection("profile_personalization")
 
-        let firstRow = app.switches["personalization_row_expenses_only"]
+        // «Idioma de la app» es la primera fila desde que «Solo gastos» pasó a «Cómo usas Yala» (decisión 48 de 2.3).
+        let firstRow = app.buttons["personalization_row_app_language"]
         XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No se abrió Personalización.")
         let rowText = firstRow.staticTexts.firstMatch
-        XCTAssertTrue(rowText.exists, "La fila «Solo gastos» no tiene texto.")
+        XCTAssertTrue(rowText.exists, "La fila «Idioma de la app» no tiene texto.")
         // Donde lista y ajuste no caben a la vez (iPad mini en vertical) la lista flota y se aparta al abrir el ajuste:
         // no hay columna al lado que medir. Que la lista siga a la vista donde sí caben lo fija el caso de arriba.
         guard listRow.isHittable else {
@@ -614,15 +615,17 @@ final class AdaptiveNavigationUITests: XCTestCase {
             entry.tap()
 
             app.narrowWindow()
-            let tab = app.tabBars.buttons[page]
+            let tab = app.compactTabBar.buttons[page]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "Al estrechar con «\(page)», no hay pestaña «\(page)» abajo.")
             XCTAssertTrue(tab.isSelected, "Al estrechar con «\(page)», la pestaña seleccionada es otra.")
-            XCTAssertTrue(app.tabBars.buttons["Más"].exists, "La barra estrecha perdió «Más».")
+            XCTAssertTrue(app.compactTabBar.buttons["Más"].waitForExistence(timeout: 5),
+                          "La barra estrecha perdió «Más». Botones: \(app.compactTabBar.buttons.allElementsBoundByIndex.map(\.label)); "
+                          + "otros: \(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Más")).allElementsBoundByIndex.map { "\($0.elementType.rawValue)" })")
             XCTAssertEqual(app.state, .runningForeground, "La app se cerró al estrechar con «\(page)».")
 
             app.maximizeWindow()
             XCTAssertTrue(
-                app.tabBars.buttons["Más"].waitForNonExistence(timeout: 10),
+                app.compactTabBar.buttons["Más"].waitForNonExistence(timeout: 10),
                 "Al volver a ancho con «\(page)», «Más» sigue a la vista.")
             XCTAssertTrue(
                 sidebarEntry(pages.last ?? page, in: app).waitForExistence(timeout: 10),
@@ -653,7 +656,7 @@ final class AdaptiveNavigationUITests: XCTestCase {
         XCTAssertTrue(periodPill.waitForExistence(timeout: 5), "El período no cambió.")
 
         app.narrowWindow()
-        XCTAssertTrue(app.tabBars.buttons["Estadísticas"].waitForExistence(timeout: 10), "Al estrechar no queda Estadísticas.")
+        XCTAssertTrue(app.compactTabBar.buttons["Estadísticas"].waitForExistence(timeout: 10), "Al estrechar no queda Estadísticas.")
         XCTAssertTrue(app.buttons["detail_chip_tendencias"].isSelected || app.otherElements["stats_tab_trends"].exists
             || app.descendants(matching: .any)["stats_tab_trends"].exists, "Al estrechar se perdió Tendencias.")
         XCTAssertTrue(periodPill.waitForExistence(timeout: 5), "Al estrechar se perdió el período.")

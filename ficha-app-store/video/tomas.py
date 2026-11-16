@@ -17,7 +17,7 @@ import json, os, pathlib, subprocess, sys
 
 MOLDE = pathlib.Path(__file__).resolve().parent.parent
 IDIOMA = sys.argv[1] if len(sys.argv) > 1 else sys.exit(__doc__)
-SALIDA = pathlib.Path(os.environ.get("YALA_FICHA_SALIDA", pathlib.Path.home() / "Claude/propuestas/ficha-app-store-2.1")) / IDIOMA / "video"
+SALIDA = pathlib.Path(os.environ.get("YALA_FICHA_SALIDA", pathlib.Path.home() / "Claude/propuestas/ficha-app-store-2.2")) / IDIOMA / "video"
 TOMAS = SALIDA / "tomas"
 BUILD = SALIDA / "_build"
 A = BUILD / "assets"

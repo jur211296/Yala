@@ -228,6 +228,8 @@ struct FullModeActivationView: View {
                 onStartFresh: { go(to: .restoreDiscardGate) },
                 onOpenSettings: { openSettings() },
                 onBack: { backFromRestore() })
+            // Card ij0i: lo mismo que el Restaurar del Welcome (`ContentView.welcomeRestoreCover`).
+            .onAppear { PreferenceSyncService.shared.releaseSignOutPreferenceHoldForRestore() }
         case .reinstallNotice:
             FullModeActivationFinaleView(
                 finale: .reinstallRequired,
@@ -639,6 +641,8 @@ struct FullModeActivationView: View {
         // Y se paga en cuanto la puerta se abre, que es ahora. Sin deuda apuntada no hace nada; el arranque la paga
         // si este proceso muere antes.
         PrivateBirthKeyValueHandover.consumeIfArmed()
+        // Card ij0i: nació la sesión privada y lo suyo ya está en el KV: la retención de un cierre anterior se suelta.
+        SignOutPreferenceHold.release()
         // La reanudación, fuera — DESPUÉS de la marca, a propósito: un kill entre las dos escrituras deja
         // la marca puesta, y el arranque retira la reanudación sola (`resolveAtBoot`, fuera de solo-grupos).
         // Al revés dejaría a quien ya guardó su onboarding en solo-grupos y sin nada que retome la activación.

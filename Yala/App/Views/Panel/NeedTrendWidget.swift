@@ -17,6 +17,8 @@ private let needPercentFormatter: NumberFormatter = {
 
 struct NeedTrendWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let trendPoints: [NeedTrendPoint]
     /// Las necesidades del filtro: un conjunto, nunca su `.first` (`NeedSelectionLogic`).
     let selectedNeeds: Set<SubcategoryNeed>
@@ -261,7 +263,7 @@ struct NeedTrendWidget: View {
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
-                                Text("vs \(appPreferences.number(prevAmount))")
+                                Text("vs \(AmountPrivacy.text(appPreferences.number(prevAmount), hidden: amountsHidden))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -405,6 +407,8 @@ struct NeedTrendWidget: View {
 struct NeedTrendChartView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): ejes, promedios y total del tooltip sin cifras.
+    @Environment(\.amountsHidden) private var amountsHidden
 
     let points: [NeedTrendPoint]
     let selectedNeeds: Set<SubcategoryNeed>
@@ -413,6 +417,37 @@ struct NeedTrendChartView: View {
     let interval: DateInterval
     let onSelectNeed: ((SubcategoryNeed) -> Void)?
     @State private var selectedDate: Date?
+
+    /// Las necesidades que la gráfica pinta, en el orden de la leyenda.
+    private var spokenNeeds: [SubcategoryNeed] {
+        [.essential, .priority, .optional, .unclassified].filter { NeedSelectionLogic.includes($0, in: selectedNeeds) }
+    }
+
+    private var amountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    private var spokenSummary: String {
+        ChartSpokenSummary.parts(
+            spokenNeeds.map { need in (name: need.displayName, amount: points.reduce(0) { $0 + $1.amount(for: need) }) },
+            format: amountFormat, shown: 4
+        )
+    }
+
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.needTrend,
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: L10n.Accessibility.Chart.axisAmount,
+            series: spokenNeeds.map { need in
+                .init(name: need.displayName, isContinuous: false,
+                      points: points.map { .at($0.date, $0.amount(for: need)) })
+            },
+            format: amountFormat
+        )
+    }
 
     // Flattened data struct for the chart
     struct ChartItem: Identifiable {
@@ -434,6 +469,7 @@ struct NeedTrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -474,6 +510,7 @@ struct NeedTrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -531,8 +568,10 @@ struct NeedTrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.needTrend)
-        .accessibilityValue(points.isEmpty ? L10n.Accessibility.noData :
-            L10n.Accessibility.periodsCount(points.count))
+        // Decisión 26 de la revisión 2.3: el total y cuánto es cada necesidad (V1), no «7 periodos», y una serie por
+        // necesidad en la descripción de gráficas de iOS (V2).
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
@@ -574,7 +613,7 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
-                        Text(YalaFormatter.axisK(amount, domain: yDomain))
+                        Text(AmountPrivacy.text(YalaFormatter.axisK(amount, domain: yDomain), hidden: amountsHidden))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                     }
@@ -636,7 +675,7 @@ struct NeedTrendChartView: View {
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
-                                    appPreferences.currency(selectedData.total, currencyCode: currencyCode)
+                                    AmountPrivacy.text(appPreferences.currency(selectedData.total, currencyCode: currencyCode), hidden: amountsHidden)
                                 )
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
@@ -651,7 +690,7 @@ struct NeedTrendChartView: View {
                                         .foregroundStyle(Color.secondary)
                                     Spacer()
                                     Text(
-                                        appPreferences.currency(avg, currencyCode: currencyCode)
+                                        AmountPrivacy.text(appPreferences.currency(avg, currencyCode: currencyCode), hidden: amountsHidden)
                                     )
                                     .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.primary)
@@ -753,14 +792,14 @@ struct NeedTrendChartView: View {
     private static let fullDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let fullMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 
@@ -769,6 +808,7 @@ struct NeedTrendChartView: View {
         switch grouping {
         case .day, .week: formatter = Self.fullDayFormatter
         case .month: formatter = Self.fullMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
@@ -801,6 +841,7 @@ struct NeedTrendChartView: View {
         case .day: return .day
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
 
@@ -831,6 +872,7 @@ struct NeedTrendChartView: View {
     }
 
     private func formatAxisAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 ? "-" : ""
         if absValue >= 1000 {

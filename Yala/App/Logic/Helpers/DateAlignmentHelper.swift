@@ -231,6 +231,9 @@ enum DateAlignmentHelper {
     /// Garantiza `alignedPreviousTotal == clippedPreviousPoints.last?.value`
     /// (verificado por `DateAlignmentHelperTests`). `nil` si no hay puntos
     /// anteriores visibles (sin variación comparable).
+    ///
+    /// `untilToday`: Estadísticas no corta en el último día con datos sino en el día equivalente a HOY, con la regla de
+    /// Resumen (`alignedPreviousInterval`; decisión 29 de la revisión 2.3). `nil` (el Panel) deja la regla de arriba.
     static func alignedPreviousTotal(
         previousPoints: [BarPoint],
         currentPoints: [BarPoint],
@@ -238,6 +241,7 @@ enum DateAlignmentHelper {
         previousInterval: DateInterval,
         period: DetailPeriod,
         comparisonMode: ComparisonMode,
+        untilToday asOf: Date? = nil,
         calendar: Calendar = .current
     ) -> Double? {
         clippedPreviousPoints(
@@ -247,8 +251,33 @@ enum DateAlignmentHelper {
             previousInterval: previousInterval,
             period: period,
             comparisonMode: comparisonMode,
+            untilToday: asOf,
             calendar: calendar
         ).last?.value
+    }
+
+    /// El punto del período anterior contra el que compara `alignedPreviousTotal`, con su fecha REAL (no la alineada):
+    /// el chip de la gráfica de saldo del Panel la dice («vs 20 oct», decisión 11 de la revisión 2.3). Sale del mismo
+    /// recorte que el total, así que su valor es siempre `alignedPreviousTotal`.
+    static func alignedPreviousReference(
+        previousPoints: [BarPoint],
+        currentPoints: [BarPoint],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        calendar: Calendar = .current
+    ) -> BarPoint? {
+        clippedPreviousPairs(
+            previousPoints: previousPoints,
+            currentPoints: currentPoints,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: period,
+            comparisonMode: comparisonMode,
+            untilToday: nil,
+            calendar: calendar
+        ).last?.original
     }
 
     /// Dominio X de la comparación: rango de datos del período ACTUAL (puntos
@@ -256,9 +285,13 @@ enum DateAlignmentHelper {
     /// datos. **SSOT** del dominio — la curva (`chartXScale` + clipping) y el
     /// KPI leen de aquí, así el padding no puede divergir entre ambos (p20-15).
     /// `currentPoints` debe venir ORDENADO por fecha.
+    ///
+    /// Con `untilToday` (Estadísticas, decisión 29 de 2.3) el eje cubre además desde el inicio del período hasta hoy (o
+    /// hasta su cierre, si ya terminó): ahí llega la curva del período anterior, aunque el actual empiece o acabe antes.
     static func currentDataDomain(
         currentPoints: [BarPoint],
         currentInterval: DateInterval,
+        untilToday asOf: Date? = nil,
         calendar: Calendar = .current
     ) -> ClosedRange<Date> {
         let filteredCurrent = currentPoints.filter { $0.value != 0 }
@@ -268,7 +301,10 @@ enum DateAlignmentHelper {
         }
         let paddedStart = calendar.date(byAdding: .day, value: -1, to: firstDate) ?? firstDate
         let paddedEnd = calendar.date(byAdding: .day, value: 1, to: lastDate) ?? lastDate
-        return paddedStart...paddedEnd
+        guard let asOf else { return paddedStart...paddedEnd }
+        let lastDay = calendar.startOfDay(for: min(asOf, currentInterval.end))
+        let todayEnd = calendar.date(byAdding: .day, value: 1, to: lastDay) ?? lastDay
+        return min(paddedStart, currentInterval.start)...max(paddedEnd, todayEnd)
     }
 
     /// Puntos del período ANTERIOR mapeados al dominio del actual y clippeados:
@@ -283,8 +319,40 @@ enum DateAlignmentHelper {
         previousInterval: DateInterval,
         period: DetailPeriod,
         comparisonMode: ComparisonMode,
+        untilToday asOf: Date? = nil,
         calendar: Calendar = .current
     ) -> [BarPoint] {
+        clippedPreviousPairs(
+            previousPoints: previousPoints,
+            currentPoints: currentPoints,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: period,
+            comparisonMode: comparisonMode,
+            untilToday: asOf,
+            calendar: calendar
+        ).map(\.aligned)
+    }
+
+    /// El recorte de `clippedPreviousPoints`, con cada punto alineado junto al original del que sale.
+    private static func clippedPreviousPairs(
+        previousPoints: [BarPoint],
+        currentPoints: [BarPoint],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        untilToday asOf: Date?,
+        calendar: Calendar
+    ) -> [(aligned: BarPoint, original: BarPoint)] {
+        // «Hasta hoy»: el anterior se corta por SUS fechas con el intervalo de Resumen (día equivalente a hoy en un
+        // período en curso; entero si ya cerró), no por el dominio de datos del actual.
+        let todayCut = asOf.map {
+            alignedPreviousInterval(
+                currentInterval: currentInterval, previousInterval: previousInterval, asOf: $0,
+                period: period, comparisonMode: comparisonMode, calendar: calendar
+            )
+        }
         let domain = currentDataDomain(
             currentPoints: currentPoints,
             currentInterval: currentInterval,
@@ -292,7 +360,19 @@ enum DateAlignmentHelper {
         )
         return previousPoints
             .filter { $0.value != 0 }
-            .compactMap { point -> BarPoint? in
+            .compactMap { point -> (aligned: BarPoint, original: BarPoint)? in
+                if let todayCut {
+                    guard todayCut.contains(point.date) else { return nil }
+                    let adjustedDate = adjustDateToCurrent(
+                        point.date,
+                        currentInterval: currentInterval,
+                        previousInterval: previousInterval,
+                        period: period,
+                        comparisonMode: comparisonMode,
+                        calendar: calendar
+                    )
+                    return (BarPoint(date: adjustedDate, value: point.value), point)
+                }
                 let adjustedDate = adjustDateToCurrent(
                     point.date,
                     currentInterval: currentInterval,
@@ -304,9 +384,9 @@ enum DateAlignmentHelper {
                 guard adjustedDate >= domain.lowerBound && adjustedDate <= domain.upperBound else {
                     return nil
                 }
-                return BarPoint(date: adjustedDate, value: point.value)
+                return (BarPoint(date: adjustedDate, value: point.value), point)
             }
-            .sorted { $0.date < $1.date }
+            .sorted { $0.aligned.date < $1.aligned.date }
     }
 
     // MARK: - Sumas agregadas (VariationChips del Panel, p20-15 fase 2)
@@ -388,5 +468,27 @@ enum DateAlignmentHelper {
             )
             return adjusted >= currentInterval.start && adjusted <= lastCurrentDate
         }
+    }
+
+    /// Los movimientos del período ANTERIOR que cuentan en una comparación de Estadísticas: hasta el día equivalente a
+    /// HOY en un período en curso, y el anterior entero si ya cerró (decisión 29 de la revisión 2.3, A). Es la regla de
+    /// Resumen (`alignedPreviousInterval`), así que Resumen, Distribución y Tendencias comparan contra el mismo tramo y
+    /// la frase «Comparado con…» lo dice igual en las tres. A diferencia de `alignedPreviousItems` (el Panel), no mira
+    /// el último día con datos del actual: un mes cuyo último gasto fue el día 5 se compara igual hasta hoy.
+    static func previousItemsUntilToday<T>(
+        _ previous: [T],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        asOf: Date,
+        calendar: Calendar = .current,
+        date: (T) -> Date
+    ) -> [T] {
+        let cut = alignedPreviousInterval(
+            currentInterval: currentInterval, previousInterval: previousInterval, asOf: asOf,
+            period: period, comparisonMode: comparisonMode, calendar: calendar
+        )
+        return previous.filter { cut.contains(date($0)) }
     }
 }

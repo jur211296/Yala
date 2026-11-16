@@ -15,7 +15,12 @@ final class DetailContainerViewModel {
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: atado al almacén con el que se dio (`BoundStoreContext`); con otro almacén montado se lee `nil`.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
+
+    /// El almacén de este ViewModel ya no es el montado: quien recalcule con sus arrays (filas de ese almacén) para.
+    var isDetachedFromMountedStore: Bool { boundStore.isDetached }
 
     // MARK: - Data
 
@@ -42,6 +47,9 @@ final class DetailContainerViewModel {
     private(set) var dataGeneration = 0
     /// Ya hubo una carga del store. Antes de ella no hay cuentas en memoria y «lo que falta» no se puede afirmar.
     private(set) var hasLoadedOnce = false
+    /// La última lectura de los movimientos falló (decisión 78 de 2.3). Con la lista vacía, Registros enseña el error y
+    /// «Reintentar» en vez de «Sin registros»; una lectura buena lo apaga.
+    private(set) var transactionsLoadFailed = false
 
     /// `dataVersion` de la última recarga: lo que permite saber si la siguiente trae una mutación nueva.
     private var lastLoadedDataVersion: Int?
@@ -50,7 +58,7 @@ final class DetailContainerViewModel {
 
     func setContext(_ context: ModelContext) {
         let isNewContext = self.modelContext !== context
-        self.modelContext = context
+        boundStore.bind(context)
         if isNewContext { loadData() }
     }
 
@@ -70,9 +78,14 @@ final class DetailContainerViewModel {
         )
         do {
             // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
+            #if DEBUG
+            if UITestHooks.recordsLoadFails { throw UITestHooks.SimulatedLoadFailure() }
+            #endif
             let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDescriptor))
             if fetched != allTransactions { allTransactions = fetched; changed = true }
+            if transactionsLoadFailed { transactionsLoadFailed = false }
         } catch {
+            if !transactionsLoadFailed { transactionsLoadFailed = true }
             #if DEBUG
             print("DetailContainerViewModel: Error loading transactions: \(error)")
             #endif

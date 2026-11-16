@@ -1,32 +1,32 @@
 {
-  "_que": "Tramos [desde, hasta, velocidad] de cada toma de <salida>/en/video/tomas, medidos fotograma a fotograma el 16-oct-2026 (foto y voz regrabadas con el Panel de usuario nuevo; ia regrabada con la pizza a 28 tras la revisión de Lola). Los toques, en segundos de la grabación y puntos de pantalla (iPhone 17 Pro, 402×874).",
+  "_que": "Trasladados de cortes/en.json con las marcas de las tomas de en (video/cortes_desde_marcas.py, 4-nov-2026) y revisados con una tira de fotogramas.",
   "escenas": {
     "ia": {
       "tramos": [
         [
-          9.3,
-          12.5,
+          22.6,
+          25.8,
           1.6
         ],
         [
-          12.5,
-          19.3,
-          6.8
+          25.8,
+          42.33,
+          16.53
         ],
         [
-          19.3,
-          21.6,
-          1.0
+          42.33,
+          49.22,
+          3.0
         ],
         [
-          21.6,
-          23.6,
+          49.22,
+          51.22,
           1.5
         ]
       ],
       "toques": [
         {
-          "t": 19.6,
+          "t": 42.63,
           "x": 364,
           "y": 516
         }
@@ -36,38 +36,38 @@
       "tramos": [
         [
           3.8,
-          5.2,
-          1.4
+          6.93,
+          3.13
         ],
         [
-          5.2,
-          6.0,
+          6.93,
+          7.73,
           1.0
         ],
         [
-          6.0,
-          12.5,
-          5.0
+          7.73,
+          19.52,
+          9.07
         ],
         [
-          12.5,
-          16.0,
+          19.52,
+          23.02,
           1.5
         ],
         [
-          16.0,
-          17.8,
-          1.2
+          23.02,
+          27.69,
+          3.11
         ]
       ],
       "toques": [
         {
-          "t": 5.1,
+          "t": 6.83,
           "x": 229.5,
           "y": 289
         },
         {
-          "t": 12.6,
+          "t": 19.62,
           "x": 111.5,
           "y": 608.5
         }
@@ -76,39 +76,39 @@
     "voz": {
       "tramos": [
         [
-          4.6,
-          5.7,
+          16.24,
+          17.34,
           1.0
         ],
         [
-          5.7,
-          6.5,
+          17.34,
+          23.58,
+          7.8
+        ],
+        [
+          23.58,
+          36.04,
+          7.79
+        ],
+        [
+          36.04,
+          36.84,
           1.0
         ],
         [
-          6.5,
-          14.5,
-          5.0
-        ],
-        [
-          14.5,
-          15.3,
-          1.0
-        ],
-        [
-          15.3,
-          18.0,
-          1.2
+          36.84,
+          42.07,
+          2.32
         ]
       ],
       "toques": [
         {
-          "t": 5.6,
+          "t": 17.24,
           "x": 178,
           "y": 289
         },
         {
-          "t": 14.6,
+          "t": 36.14,
           "x": 290,
           "y": 794
         }
@@ -118,23 +118,23 @@
       "tramos": [
         [
           2.8,
-          4.2,
-          1.0
+          4.86,
+          1.47
         ],
         [
-          4.2,
-          5.0,
-          1.0
+          4.86,
+          7.78,
+          3.65
         ],
         [
-          5.0,
-          8.2,
+          7.78,
+          10.97,
           1.0
         ]
       ],
       "toques": [
         {
-          "t": 4.2,
+          "t": 4.86,
           "x": 201,
           "y": 265
         }

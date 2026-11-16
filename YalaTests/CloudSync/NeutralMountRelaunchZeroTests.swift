@@ -190,6 +190,11 @@ struct WelcomeMirrorRelaunchLogicTests {
             // backend y su dispositivo acaba de quedar en blanco A PROPÓSITO. En `true` le pediríamos reabrir
             // para adjuntar el espejo que la puerta acaba de quitar — deshaciendo el arreglo.
             .groupsInvite: false,
+            // La entrada con Google o Apple que dejó el iCloud privado aparte (opción B, 2026-11-10): también acaba de
+            // volver al neutro a propósito. En `true` el espejo volvería a bajar el iCloud que se quiso dejar fuera, y la
+            // entrada lo encontraría otra vez: un bucle.
+            .cloudSignInAppleKeepingICloudAside: false,
+            .cloudSignInGoogleKeepingICloudAside: false,
         ]
         #expect(Set(expected.keys) == Set(Destination.allCases),
                 "toda salida del Welcome tiene que declarar si necesita el mirror")
@@ -396,9 +401,10 @@ struct NeutralMountWiringTests {
         // `leaveWelcome`, nunca invocado a pelo. `onSelectGroupsOrganizer()` (G3) es el más reciente y el
         // único que además pasa por una PUERTA antes del portal — que la puerta exista no lo exime: sin
         // esta fila, cablear la card de crear directo al callback saldría del cover sin declarar destino.
+        // Bienvenida 2.3: el organizador lleva su camino y su proveedor, y el acceso único de la vitrina es la séptima.
         for exit in ["onSelectPrivateAccount()", "onSelectCloudAccount()", "onSelectExistingOption(option)",
                      "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch(",
-                     "onSelectGroupsOrganizer()"] {
+                     "onSelectGroupsOrganizer(", "onSelectUnifiedAccess(provider)"] {
             let occurrences = code.components(separatedBy: exit).count - 1
             #expect(occurrences >= 1, "salida no encontrada: \(exit) (¿renombrada?)")
             for range in code.ranges(of: exit) {

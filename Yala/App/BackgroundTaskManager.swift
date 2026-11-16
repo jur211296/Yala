@@ -34,9 +34,26 @@ final class BackgroundTaskManager {
 
     private var modelContainer: ModelContainer?
 
+    /// Registra un launch handler en el sistema. En producción es `BGTaskScheduler.shared.register`; los tests
+    /// inyectan uno que solo anota el identifier.
+    typealias TaskRegistrar = (_ identifier: String, _ launchHandler: @escaping (BGTask) -> Void) -> Void
+
+    private let registrar: TaskRegistrar
+
+    /// `true` desde el primer `registerTasks()` del PROCESO. `BGTaskScheduler` lanza
+    /// `NSInternalInconsistencyException` («Launch handler … has already been registered») si un identifier se
+    /// registra dos veces, y el swap de persona en caliente (`AppBootstrapper.rebootstrapAfterSwap`) vuelve a
+    /// correr el arranque entero en el mismo proceso — YALA-IOS-E, iPhone 14, 2026-11-06. Los handlers ya
+    /// registrados sirven al container nuevo: leen `modelContainer`, que el re-bootstrap repone.
+    private(set) var tasksRegistered = false
+
     // MARK: - Init
 
-    private init() {}
+    init(registrar: @escaping TaskRegistrar = { identifier, launchHandler in
+        _ = BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil, launchHandler: launchHandler)
+    }) {
+        self.registrar = registrar
+    }
 
     // MARK: - Setup
 
@@ -64,12 +81,26 @@ final class BackgroundTaskManager {
 
     /// Registers all background tasks with the system
     /// Call this early in app lifecycle (e.g., in bootstrap)
+    ///
+    /// **Una vez por PROCESO, no por arranque** (card 7e60, medido en el iPhone 14 el 2026-11-05). iOS solo admite un
+    /// manejador por identificador, y registrar otra vez lanza `NSInternalInconsistencyException` desde
+    /// `BGTaskScheduler`: una excepción ObjC que no se atrapa. El cambio de almacén en caliente (cerrar sesión o borrar
+    /// la cuenta en la nube, `PersonalContainerSwap`) vuelve a correr `AppBootstrapper.bootstrap` en el mismo proceso, y
+    /// ahí Yala se cerraba sola. Los manejadores no capturan el almacén: lo leen de `modelContainer`, que el
+    /// re-arranque repone con `setModelContainer`, así que los del primer registro sirven al almacén nuevo.
     func registerTasks() {
+        // Una vez por proceso: el swap de persona re-ejecuta el bootstrap y registrar dos veces el mismo
+        // identifier es un crash (ver `tasksRegistered`).
+        guard !tasksRegistered else {
+            #if DEBUG
+            print("BackgroundTaskManager: tasks already registered in this process — skipping re-register")
+            #endif
+            return
+        }
+        tasksRegistered = true
+
         // Register widget refresh task
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.widgetRefreshTaskID,
-            using: nil
-        ) { [weak self] task in
+        registrar(Self.widgetRefreshTaskID) { [weak self] task in
             Task { @MainActor in
                 guard let self else { return }
                 guard let refreshTask = task as? BGAppRefreshTask else {
@@ -84,10 +115,7 @@ final class BackgroundTaskManager {
         }
 
         // Register report notification task
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.reportNotificationTaskID,
-            using: nil
-        ) { [weak self] task in
+        registrar(Self.reportNotificationTaskID) { [weak self] task in
             Task { @MainActor in
                 guard let self else { return }
                 guard let appRefreshTask = task as? BGAppRefreshTask else {
@@ -102,10 +130,7 @@ final class BackgroundTaskManager {
         }
 
         // Register backup report task (fallback if main task doesn't execute)
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.reportBackupTaskID,
-            using: nil
-        ) { [weak self] task in
+        registrar(Self.reportBackupTaskID) { [weak self] task in
             Task { @MainActor in
                 guard let self else { return }
                 guard let appRefreshTask = task as? BGAppRefreshTask else {

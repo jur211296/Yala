@@ -15,6 +15,8 @@ import SwiftUI
 struct AccountCardView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(CurrencyConverter.self) private var currencyConverter
 
     let account: Account
@@ -380,9 +382,9 @@ struct AccountCardView: View {
         if hasLines { return linesAccessibilitySummary }
         let kind = amountKind
         let shown = PanelAccountCardLogic.displayedValue(currentBalance, kind: kind)
-        var parts = "\(displayName). \(amountLabel): \(appPreferences.currency(shown, currencyCode: currencyCode))"
+        var parts = "\(displayName). \(amountLabel): \(AmountPrivacy.spoken(appPreferences.currency(shown, currencyCode: currencyCode), hidden: amountsHidden))"
         if let converted = convertedToDefault(shown, kind: kind) {
-            parts += " (≈ \(appPreferences.currency(converted, currencyCode: appPreferences.defaultCurrencyCode.rawValue)))"
+            parts += " (≈ \(AmountPrivacy.spoken(appPreferences.currency(converted, currencyCode: appPreferences.defaultCurrencyCode.rawValue), hidden: amountsHidden)))"
         }
         return parts
     }
@@ -392,12 +394,12 @@ struct AccountCardView: View {
         let card = cardKind
         let rows = groupRows.map { row -> String in
             guard let amount = row.amount else { return row.name }
-            return "\(row.name), \(appPreferences.currency(amount.value, currencyCode: normalizeCurrencyCode(amount.currencyCode)))"
+            return "\(row.name), \(AmountPrivacy.spoken(appPreferences.currency(amount.value, currencyCode: normalizeCurrencyCode(amount.currencyCode)), hidden: amountsHidden))"
         }
         let total = cardTotal
-        let totalText = appPreferences.currency(
+        let totalText = AmountPrivacy.spoken(appPreferences.currency(
             PanelAccountCardLogic.displayedValue(total.value, kind: card),
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue), hidden: amountsHidden)
         return "\(displayName). \(amountLabel): \(rows.joined(separator: "; ")). "
             + "\(L10n.PanelAccountCard.total): \(total.isConverted ? "≈ " : "")\(totalText)"
     }
@@ -408,17 +410,17 @@ struct AccountCardView: View {
         let amounts = lines.map { line -> String in
             let kind = lineKind(line)
             let code = normalizeCurrencyCode(line.currencyCode)
-            var text = appPreferences.currency(
-                PanelAccountCardLogic.displayedValue(line.value, kind: kind ?? card), currencyCode: code)
+            var text = AmountPrivacy.spoken(appPreferences.currency(
+                PanelAccountCardLogic.displayedValue(line.value, kind: kind ?? card), currencyCode: code), hidden: amountsHidden)
             if let kind, PanelAccountCardLogic.showsLineLabel(lineKind: kind, cardKind: card) {
                 text += " (\(label(for: kind)))"
             }
             return text
         }
         let total = cardTotal
-        let totalText = appPreferences.currency(
+        let totalText = AmountPrivacy.spoken(appPreferences.currency(
             PanelAccountCardLogic.displayedValue(total.value, kind: card),
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue), hidden: amountsHidden)
         return "\(displayName). \(amountLabel): \(amounts.joined(separator: "; ")). "
             + "\(L10n.PanelAccountCard.total): \(total.isConverted ? "≈ " : "")\(totalText)"
     }

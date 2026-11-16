@@ -235,7 +235,8 @@ enum GroupsSyncBreadcrumb {
     // MARK: - Ciclo de vida del loop (H-2026-07-18-4)
 
     /// El loop de cadencia del canal TERMINÓ (un `break loop` de `runLoop`). `reason` = slug sanitizado
-    /// (`session-check-failed` / `session-expired` / `account-unavailable` / `cancelled`). Par del
+    /// (`session-check-failed` / `session-expired` / `channel-disabled` / `account-unavailable` / `cancelled`), o
+    /// `complete-account-adopt-pending` cuando `startIfEligible` ni lo arranca. Par del
     /// `groupsLoopRestarted`: un `session-expired` sin su `loopRestarted` posterior = canal muerto que
     /// nadie re-arrancó (el bug H-2026-07-18-4). Sin PII.
     static func groupsLoopStopped(reason: String) {

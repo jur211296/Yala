@@ -859,6 +859,7 @@ struct ExportRecordsView: View {
                 isExporting = false
                 groupsExportFailed = groupsFailed
                 exportedFile = ExportedFile(urls: urls)
+                MetricsService.used(.exportar)
             } catch {
                 isExporting = false
                 exportError = error

@@ -1,0 +1,10 @@
+{
+  "titulo": "Yala · Foto (piloto Motion)",
+  "url": "https://claude.ai/artifact/SGe55k7bnXu3pzadfW327n",
+  "main": "#6164EB",
+  "assets": {
+    "toma-foto.mp4": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/footage/toma-foto.mp4",
+    "logo.png": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/plantilla/base/logo.png"
+  },
+  "comparar_con": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/reels/foto/foto-pop.mp4"
+}

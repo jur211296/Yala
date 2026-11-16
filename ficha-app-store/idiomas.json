@@ -21,6 +21,20 @@
       "lproj": "en",
       "monedaExtranjera": "EUR"
     },
+    "en-GB": {
+      "appleLanguages": "(en-GB)",
+      "appleLocale": "en_GB",
+      "moneda": "GBP",
+      "lproj": "en-GB",
+      "monedaExtranjera": "EUR"
+    },
+    "pt-PT": {
+      "appleLanguages": "(pt-PT)",
+      "appleLocale": "pt_PT",
+      "moneda": "EUR",
+      "lproj": "pt-PT",
+      "monedaExtranjera": "USD"
+    },
     "pt-BR": {
       "appleLanguages": "(pt-BR)",
       "appleLocale": "pt_BR",

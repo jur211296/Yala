@@ -374,10 +374,12 @@ struct AdoptSessionOwnershipWiringTests {
     @Test func welcome_marksTheSessionItSignedIn() throws {
         let ensure = Self.lines(try Self.body(of: "private func ensureSignedIn() async -> Bool {", in: Self.welcomePath))
         // vb1f: el inicio de sesión lleva además la credencial de Google reusable; lo que se fija aquí no cambia.
+        // Desde `other-account-sign-in-bounces-to-welcome` la llamada ocupa dos líneas (lleva «Otra cuenta de Apple»).
         let signIn = try #require(ensure.firstIndex(
-            of: "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)"))
-        #expect(ensure[signIn + 1] == "sessionOpenedHere = true")
-        #expect(ensure[signIn + 2] == "return true")
+            of: "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable,"))
+        #expect(ensure[signIn + 1] == "appleOnTheWeb: appleOnTheWeb)")
+        #expect(ensure[signIn + 2] == "sessionOpenedHere = true")
+        #expect(ensure[signIn + 3] == "return true")
         let code = try Self.source(Self.welcomePath)
         #expect(Self.occurrences(of: "sessionOpenedHere = true", in: code) == 1)
         #expect(code.contains("@State private var sessionOpenedHere = false"))
@@ -388,24 +390,28 @@ struct AdoptSessionOwnershipWiringTests {
     @Test func welcomeRetry_signsInAgainWithoutASession() throws {
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: Self.welcomePath))
         let idle = try #require(retry.firstIndex(of: "if case .idle = controller.uiState, !cancelRequested {"))
-        #expect(Array(retry[(idle + 1)...(idle + 5)]) == [
+        // Card jxbp: la llamada va dentro de `driveWhilePolling`, que conduce y refresca a la vez.
+        #expect(Array(retry[(idle + 1)...(idle + 6)]) == [
             "guard CloudAuthService.shared.hasSession else {",
             "await runFlowAfterConsent()",
             "return",
             "}",
+            "await driveWhilePolling {",
             "await controller.startAdoptWithExistingSession(sessionOpenedByThisAttempt: sessionOpenedHere)",
         ])
     }
 
     // MARK: - Sesión y registrador
 
-    /// La marca describe UNA sesión: la borran los dos sitios donde nace una (Apple, Google) y el cierre, también sin
+    /// La marca describe UNA sesión: la borran los tres sitios donde nace una (Apple, Google, Apple en la web desde el
+    /// 2026-11-06) y el cierre, también sin
     /// backend (antes del `guard let client`). Sin eso, una sesión de Grupos firmada después con la misma cuenta la
     /// heredaba (lo cazó la lente de consumidores).
     @Test func authService_clearsTheMarkOnEverySignInAndSignOut() throws {
         let path = "Yala/Services/CloudSync/CloudAuthService.swift"
         let code = Self.lines(try Self.source(path))
-        #expect(code.filter { $0 == "AdoptSessionOwnership.record(nil)" }.count == 3)
+        #expect(code.filter { $0 == "AdoptSessionOwnership.record(nil)" }.count == 4)
+        #expect(code.filter { $0 == "CloudSyncBreadcrumb.authSignedIn()" }.count == 3, "un sign-in nuevo, con su marca")
         for (i, line) in code.enumerated() where line == "CloudSyncBreadcrumb.authSignedIn()" {
             #expect(code[i + 1] == "AdoptSessionOwnership.record(nil)", "tras el sign-in de la línea \(i)")
         }

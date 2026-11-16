@@ -171,15 +171,15 @@ Desde el encargo «Tu IA registra en Yala», el conector ofrece una herramienta 
 en la Bandeja (`src/writeTool.ts`). No escribe en Supabase: llama a la clase RPC `ConnectorDrafts` del gateway por un
 service binding (`[[env.production.services]]`, `CONNECTOR_DRAFTS`). Por eso el orden es estricto:
 
-1. **El gateway de producción primero**, desde `gateway/`: la migración y luego el código que trae la clase y las rutas
-   de la app (`/connector/drafts`).
+1. **El gateway de producción primero**, desde `gateway/`: la migración y luego el código que trae la clase. Lo apuntado
+   entra en la cola común de borradores (`mail_drafts`, con `source: "ai"`), la misma que la app ya recoge por `/mail/drafts`.
    ```bash
-   npm run migrate:production        # aplica 0004_connector_drafts
+   npm run migrate:production        # aplica 0004_connector_quota (el techo diario)
    npm run deploy:production
    ```
 2. **Después este Worker** (`npm run deploy:production`). Si se despliega antes, la herramienta se ofrece y cada llamada
    falla con «No se pudo dejar el movimiento en Yala» hasta que llegue el gateway.
-3. **La app que los recoge es 2.3** (`AIConnectorDraftService`). Con una app anterior, lo apuntado espera en la cola
+3. **La app que los recoge es 2.3** (`BankEmailDraftService`, que lo distingue por `source: "ai"`). Con una app anterior, lo apuntado espera en la cola
    (30 días) y entra al actualizar.
 
 Sin el binding, la herramienta no se ofrece y el conector sigue siendo de solo lectura: es la marcha atrás de esta

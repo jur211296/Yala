@@ -72,6 +72,20 @@ describe("POST /metrics — goldens del shape writeDataPoint", () => {
     });
   });
 
+  it("use (2026-11-06): n = función, viaja como blob2; double1 = 1", async () => {
+    const ds = makeDataset();
+    const res = await postMetrics(
+      { v: 1, install: INSTALL, app: "2.3", events: [{ e: "use", n: "registrarMovimiento" }] },
+      { METRICS: ds },
+    );
+    expect(res.status).toBe(200);
+    expect(ds.writeDataPoint).toHaveBeenCalledExactlyOnceWith({
+      blobs: ["use", "registrarMovimiento", "", "2.3", INSTALL],
+      doubles: [1],
+      indexes: [INSTALL],
+    });
+  });
+
   it("batch: un datapoint POR evento, en orden", async () => {
     const ds = makeDataset();
     const res = await postMetrics(
@@ -108,6 +122,8 @@ describe("POST /metrics — rechazos 400 (yala_bad_input, y JAMÁS se escribe)",
       { v: 1, install: "abc123", events: [{ e: "ping" }] }, // install corto (<16)
       { v: 1, install: INSTALL, events: [] }, // events vacío
       { v: 1, install: INSTALL, events: [{ e: "purchase" }] }, // evento fuera de whitelist
+      { v: 1, install: INSTALL, events: [{ e: "use" }] }, // use sin función
+      { v: 1, install: INSTALL, events: [{ e: "use", n: "con espacio" }] }, // use con n fuera de regex
       { v: 1, install: INSTALL, events: [{ e: "canary", n: "bad name!" }] }, // n fuera de regex
       { v: 1, install: INSTALL, events: [{ e: "canary", n: "a".repeat(65) }] }, // n >64
       { v: 1, install: INSTALL, events: [{ e: "canary", n: "ok", d: "a".repeat(129) }] }, // d >128

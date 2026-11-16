@@ -13,21 +13,30 @@ struct BudgetRemainingFigure: View {
     let limit: Double
     let spent: Double
     let currencyCode: String
+    /// Como `BudgetSummary.daysRemaining`: con el período cerrado (-1), la cifra es lo que sobró, no lo que queda.
+    var daysRemaining: Int = 1
     var alignment: HorizontalAlignment = .trailing
     var labelFont: Font = DS.Typography.captionSmall
     var amountFont: Font = DS.Typography.headline
+    /// «Te quedan» sobre la cifra. La lista lo dice una vez en el título de la sección; «Te pasaste por» sale siempre.
+    var showsLabel = true
 
     @Environment(AppPreferences.self) private var appPreferences
 
     private var remaining: Double { BudgetRemainingLogic.remaining(limit: limit, spent: spent) }
     private var isOver: Bool { BudgetRemainingLogic.isOver(limit: limit, spent: spent) }
+    private var label: BudgetRemainingLogic.FigureLabel {
+        BudgetRemainingLogic.figureLabel(limit: limit, spent: spent, daysRemaining: daysRemaining)
+    }
 
     var body: some View {
         VStack(alignment: alignment, spacing: DS.Spacing.xxs) {
-            Text(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel)
-                .font(labelFont)
-                .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
-                .lineLimit(1)
+            if showsLabel || isOver {
+                Text(L10n.UXL9.figureLabel(label))
+                    .font(labelFont)
+                    .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
+                    .lineLimit(1)
+            }
 
             // A su tamaño si cabe; solo si no cabe (un importe en COP, texto de accesibilidad) se encoge. Con
             // `minimumScaleFactor` a secas la cifra salía encogida aunque cupiera (medido en la fila, iPhone 17 Pro).
@@ -47,6 +56,7 @@ extension BudgetRemainingFigure {
     fileprivate var amountText: some View {
         Text(appPreferences.currency(abs(remaining), currencyCode: currencyCode))
             .font(amountFont)
+            .monospacedDigit()  // las cifras de la columna cuadran fila a fila
             .foregroundStyle(isOver ? Color.overBudgetText : Color.primary)
             .lineLimit(1)
     }

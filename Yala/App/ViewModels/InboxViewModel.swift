@@ -38,6 +38,9 @@ enum InboxFilter: String, CaseIterable {
 @MainActor
 @Observable
 final class InboxViewModel {
+    /// Cuántos borradores ya resueltos (archivados y descartados) lee la lista como mucho. Los pendientes no tienen tope.
+    static let resolvedDraftsLimit = 500
+
 
     // MARK: - Dependencies
 
@@ -50,6 +53,11 @@ final class InboxViewModel {
     /// Gastos de grupo pendientes sin su grupo en este teléfono: se les ofrece «Quitar de aquí»
     /// (`InboxGroupDraftsHiddenHere`).
     private(set) var hideableHereIDs: Set<PersistentIdentifier> = []
+    /// Divisa del gasto de grupo de cada borrador que no tiene cuenta, por `splitExpenseID` (`InboxDraftDisplayCurrencyLogic`).
+    private(set) var groupExpenseCurrencies: [String: String] = [:]
+    /// Gastos de grupo a los que les sobra un borrador «Elige cuenta» o un «Préstamo a grupos» repetido
+    /// (`GroupBridgeLeftoversNotice`, bug del 2026-11-09).
+    private(set) var groupLeftoverCount = 0
     /// Borradores que la Bandeja ya quitó de la lista y que se borran o descartan después de la animación
     /// (`InboxView.removeDraftWithAnimation`). Una recarga en esa espera —la del borrado anterior, un `dataVersion`— no
     /// los devuelve: su fila volvería a montarse y leería el `InboxDraft` cuando se borre (crash de TestFlight 2.2 (2),
@@ -71,7 +79,50 @@ final class InboxViewModel {
         loadAllDrafts()
         loadPendingDrafts()
         loadHideableHere()
+        loadGroupExpenseCurrencies()
+        loadGroupLeftovers()
         LoadTimeMarks.ready(.inbox)
+    }
+
+    private func loadGroupLeftovers() {
+        guard let context = modelContext else { return }
+        do {
+            let count = try GroupBridgeRaceCleaner.leftovers(in: context, since: nil).plan.expenseIDs.count
+            if count != groupLeftoverCount { groupLeftoverCount = count }
+        } catch {
+            #if DEBUG
+            print("InboxViewModel: Error loading group leftovers: \(error)")
+            #endif
+        }
+    }
+
+    /// La divisa con la que se pinta el importe de un borrador en la Bandeja.
+    func displayCurrencyCode(for draft: InboxDraft, fallback: String) -> String {
+        InboxDraftDisplayCurrencyLogic.currency(
+            draftCurrency: draft.displayCurrencyCode,
+            groupExpenseCurrency: draft.splitExpenseID.flatMap { groupExpenseCurrencies[$0] },
+            fallback: fallback)
+    }
+
+    /// Un borrador de gasto de grupo sin cuenta no sabe su divisa: la del gasto del que viene (bug del 2026-11-09).
+    private func loadGroupExpenseCurrencies() {
+        guard let context = modelContext else { return }
+        let ids = InboxDraftDisplayCurrencyLogic.groupExpenseIDsNeedingCurrency(
+            allDrafts.map { ($0.splitExpenseID, $0.displayCurrencyCode) })
+        guard !ids.isEmpty else {
+            if !groupExpenseCurrencies.isEmpty { groupExpenseCurrencies = [:] }
+            return
+        }
+        do {
+            let expenses = try context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { ids.contains($0.id) }))
+            var map: [String: String] = [:]
+            for expense in expenses { map[expense.id.uuidString] = expense.currencyCode }
+            if map != groupExpenseCurrencies { groupExpenseCurrencies = map }
+        } catch {
+            #if DEBUG
+            print("InboxViewModel: Error loading group expense currencies: \(error)")
+            #endif
+        }
     }
 
     /// Qué borradores pendientes se pueden quitar de la Bandeja solo aquí.
@@ -88,15 +139,28 @@ final class InboxViewModel {
     private func loadAllDrafts() {
         guard let context = modelContext else { return }
 
-        var descriptor = FetchDescriptor<InboxDraft>(
+        // Los pendientes, TODOS; el tope de 500 es solo para lo ya resuelto (archivados y descartados). Con un tope
+        // común, un pendiente creado antes de los 500 más recientes no salía en la lista ni en su contador mientras la
+        // app seguía creyendo que había pendientes (lote 03 de las necesarias 2.3).
+        let pendingRaw = DraftStatus.pending.rawValue
+        let pendingDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == pendingRaw },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
-        descriptor.fetchLimit = 500
+        var resolvedDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw != pendingRaw },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        resolvedDescriptor.fetchLimit = Self.resolvedDraftsLimit
 
         do {
+            let merged = InboxDraftListMerge.newestFirst(
+                pending: try context.fetch(pendingDescriptor),
+                resolved: try context.fetch(resolvedDescriptor)
+            )
             // Sin los gastos de grupo quitados de la Bandeja en este teléfono (`InboxGroupDraftsHiddenHere`).
             let fetched = withoutPendingRemovals(
-                InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+                InboxGroupDraftsHiddenHere.visible(merged, context: context)
             )
             if fetched != allDrafts { allDrafts = fetched }
         } catch {
@@ -276,5 +340,13 @@ extension InboxDraft {
     /// volver a pintarse con su borrador ya borrado (card f8rj; mismo molde que `BudgetDetailView.isBudgetValid`).
     var isReadableInInbox: Bool {
         !isDeleted && modelContext != nil
+    }
+}
+
+/// La lista de la Bandeja junta dos lecturas: todos los pendientes y los resueltos más recientes. Mismo orden que la
+/// lectura única de antes: lo más nuevo primero.
+enum InboxDraftListMerge {
+    static func newestFirst(pending: [InboxDraft], resolved: [InboxDraft]) -> [InboxDraft] {
+        (pending + resolved).sorted { $0.createdAt > $1.createdAt }
     }
 }

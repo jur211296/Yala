@@ -79,7 +79,7 @@ enum VisionError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noAPIKey:
-            return "OpenAI API key not configured"
+            return "AI service not configured"
         case .imageEncodingFailed:
             return "Failed to encode image"
         case .networkError(let error):

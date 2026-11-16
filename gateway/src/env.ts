@@ -32,11 +32,12 @@ export interface Env {
   // gateway solo distingue 0 (apagado: `chat.explore` sale como `chat.answer`) del resto. Ausente/inválido → 0, también
   // en staging. Encenderlo exige antes el texto de consentimiento nuevo (decisión de Jürgen pendiente).
   AI_CLOUD_EXPLORE_ROLLOUT_PERCENT?: string;
+  APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT?: string;
   // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;
 
-  // --- Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Ausentes → auto / yala-app.pe.
+  // --- Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Ausentes → auto / yalainbox.com.
   MAIL_ADDRESS_LOCAL?: string;
   MAIL_ADDRESS_DOMAIN?: string;
 
@@ -75,6 +76,11 @@ export interface Env {
   // Avisos de errores en Sentry (proyecto `yala-gateway`, src/sentry.ts). `wrangler secret put SENTRY_DSN` (staging) /
   // `--env production`; `.dev.vars` en local. Ausente → el SDK no arranca. NUNCA en wrangler.toml ni en el repo.
   SENTRY_DSN?: string;
+  // Yala web, lote 3: «on» enciende la entrada interna `WebGroupsReader` (src/web/groupsReader.ts). Solo en [vars] de
+  // staging; en producción no se declara y la entrada responde «disabled».
+  WEB_GROUPS_READER?: string;
+  /** Yala web lote 3 (opción A): `"on"` abre la escritura de Grupos (`WebGroupsWriter`). Solo en [vars] de staging. */
+  WEB_GROUPS_WRITER?: string;
 }
 
 /** true solo en el entorno no-prod, donde se acepta el bypass de dev/test. */

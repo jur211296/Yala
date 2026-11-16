@@ -11,6 +11,8 @@ import SwiftUI
 struct BudgetsWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     let budgets: [BudgetSummary]
     let currencyCode: String
@@ -252,7 +254,7 @@ struct BudgetsWidget: View {
                     // Lo que queda, con su rótulo (UX 2.2 · L9-10): antes era lo gastado, sin decir que lo era.
                     let remaining = BudgetRemainingLogic.remaining(limit: summary.budget.limitAmount, spent: summary.spent)
                     let isOver = BudgetRemainingLogic.isOver(limit: summary.budget.limitAmount, spent: summary.spent)
-                    Text("\(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel) \(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode))")
+                    Text("\(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel) \(AmountPrivacy.text(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode), hidden: amountsHidden))")
                         .font(DS.Typography.caption)
                         .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
                         .lineLimit(1)

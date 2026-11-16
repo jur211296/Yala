@@ -11,6 +11,11 @@ import SwiftUI
 struct BudgetRowView: View {
     let summary: BudgetSummary
     let currencyCode: String
+    /// Los días que quedan, en la fila. La lista los quita cuando ya los dice el título de la sección (todos los
+    /// presupuestos del período comparten fin): repetidos en cada fila, no dejaban sitio y los importes perdían los decimales.
+    var showsDaysLeft = true
+    /// «Te quedan» sobre la cifra; la lista lo quita cuando ya lo dice el título de la sección.
+    var showsRemainingLabel = true
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -39,8 +44,9 @@ struct BudgetRowView: View {
                     // Budget name
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xs) {
+                            // body (peso normal): la cifra de la derecha es lo único en semibold de la fila.
                             Text(summary.budget.name)
-                                .font(DS.Typography.headline)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
                                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
@@ -69,34 +75,31 @@ struct BudgetRowView: View {
                             limit: summary.budget.limitAmount,
                             spent: summary.spent,
                             currencyCode: currencyCode,
-                            alignment: .trailingUnlessStacked(dynamicTypeSize)
+                            daysRemaining: summary.daysRemaining,
+                            alignment: .trailingUnlessStacked(dynamicTypeSize),
+                            showsLabel: showsRemainingLabel
                         )
                     }
                 }
 
                 // Progress bar
+                // Barra y palabra del mismo estado (decisión 23 de 2.3): rosa y «Te pasaste» solo por encima del límite.
                 BudgetProgressBar(
                     percentage: summary.percentage,
                     color: summary.color,
-                    isExceeded: summary.status == .exceeded
+                    isExceeded: budgetStatus == .overLimit,
+                    height: DS.Sizing.budgetRowProgressBarHeight
                 )
 
-                // «En el límite» junto al naranja (Jürgen, 2026-11-05): el color avisa y la palabra lo nombra.
-                if isAtLimit {
-                    BudgetAtLimitLabel()
-                }
+                BudgetStatusLabel(status: budgetStatus)
 
                 // Sin filtros cuenta TODO lo gastado (UX 2.2 · L9-2): «Viajes» salió al 1522% sin que nada lo dijera.
                 if summary.budget.countsAllExpenses {
                     BudgetCountsAllExpensesNote()
                 }
 
-                // Exceeded encouragement (brand voice: constructive, never scolding)
-                if summary.status == .exceeded {
-                    Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
+                // Presupuesto pasado: el monto ya sale arriba («Te pasaste por …»); la acción «Ajustar límite» vive en el
+                // detalle, porque la fila entera es un botón (Jürgen, 14-nov).
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
@@ -130,18 +133,30 @@ struct BudgetRowView: View {
             spent: summary.spent,
             limit: summary.budget.limitAmount,
             currencyCode: currencyCode,
-            suffix: L10n.UXL9.shortDays(summary.daysRemaining)
+            suffix: showsDaysLeft ? L10n.UXL9.shortDays(summary.daysRemaining) : nil
         )
     }
 
-    private var isAtLimit: Bool {
-        BudgetAtLimitLabel.isShown(spent: summary.spent, limit: summary.budget.limitAmount)
+    private var budgetStatus: BudgetCounterStatus {
+        BudgetStatusCounter.classify(spent: summary.spent, limit: summary.budget.limitAmount)
     }
 
-    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría «En el límite».
+    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría la palabra del estado. Lleva lo
+    /// que la fila enseña en grande —«Te quedan S/ 392.00»— y los días, también cuando la fila no los pinta porque van
+    /// en el título de la sección (lote 04 de mejoras necesarias 2.3: VoiceOver no decía ni lo uno ni lo otro).
     private var accessibilityLabelText: String {
         let base = L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit)
-        return isAtLimit ? "\(base), \(L10n.UXL9.atLimit)" : base
+        var parts = [base, remainingSpoken, L10n.UXL9.shortDays(summary.daysRemaining)]
+        if let word = BudgetStatusLabel.word(for: budgetStatus) { parts.append(word) }
+        return parts.joined(separator: ", ")
+    }
+
+    private var remainingSpoken: String {
+        let limit = summary.budget.limitAmount
+        let label = BudgetRemainingLogic.figureLabel(limit: limit, spent: summary.spent, daysRemaining: summary.daysRemaining)
+        let amount = appPreferences.currency(abs(BudgetRemainingLogic.remaining(limit: limit, spent: summary.spent)),
+                                             currencyCode: currencyCode)
+        return "\(L10n.UXL9.figureLabel(label)) \(amount)"
     }
 
     // MARK: - Formatters

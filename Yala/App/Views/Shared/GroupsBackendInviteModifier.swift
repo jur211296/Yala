@@ -55,6 +55,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// a la que unirse, hay un alta que terminar. Este flag es el discriminador, y va explícito en vez de
     /// derivarse de `pendingGroupsJoinZone == nil`: ese `nil` también es el estado de «nadie lo puso».
     @Binding var groupsOrganizerFlowActive: Bool
+    /// Bienvenida 2.3 (Y23-06) · el proveedor tocado en la puerta de Grupos de la vitrina. Solo en la rama del organizador:
+    /// la hoja de inicio de sesión lo lanza sola en vez de volver a preguntar con qué entrar.
+    var organizerProvider: CloudSignInProvider? = nil
     /// G3: el usuario canceló un sheet de la rama organizador (toolbar/swipe). El invitado puede quedarse
     /// donde está —su intent sobrevive en `PendingJoinStore` y el reconciler re-evalúa— pero el
     /// organizador acaba de SALIR del Welcome y debajo no hay shell que usar: sin esto, cancelar deja una
@@ -84,6 +87,13 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// diseño del educativo— haría que `GroupsGateLogic` devolviera `.presentEducational` otra vez, y otra:
     /// bucle sin salida en el primer escalón de la cadena.
     @State private var educationalCompleted = false
+
+    /// El proveedor de la vitrina solo para la rama del organizador y sin una invitación detrás (review adversarial:
+    /// un enlace que llegara con la rama encendida heredaba el proveedor que se tocó para crear).
+    private var preselectedOrganizerProvider: CloudSignInProvider? {
+        guard groupsOrganizerFlowActive, (pendingGroupsJoinZone ?? "").isEmpty else { return nil }
+        return organizerProvider
+    }
 
     func body(content: Content) -> some View {
         content
@@ -139,7 +149,8 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     routeIdentityDestination(destino)
                 }
             }) {
-                GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty) { destino, origen in
+                GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty,
+                                 preselectedProvider: preselectedOrganizerProvider) { destino, origen in
                     signInAuthenticated = true
                     signInDestination = destino
                     showGroupsSignIn = false
@@ -183,7 +194,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     }
                     // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
-                    // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
+                    // empty state. Seguro a mitad de sesión porque hay un solo store personal montado y el outbox sube solo las filas
+                    // de la sesión (el guard «D8» de mount-mismatch se retiró con la sesión de visita); no-op temprano con el
+                    // flag OFF.
                     // Salvo con una cuenta completa: su alta pasa por el guard cross-cuenta del Welcome, y los grupos que
                     // el canal bajara ahora contarían como «datos de otra cuenta» (`GroupsSignInChannelStartLogic`).
                     // Los grupos que el canal baje desde aquí son de quien acaba de entrar (card t2q8): sin esto, un relanzamiento
@@ -196,6 +209,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
                         channelStartsAtSignIn: GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)) {
                         LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
                     }
+                    // Un candado de una entrada del Welcome que no llegó a soltarse (la app se cerró a medias) no puede frenar a
+                    // quien entra por Grupos (`AccountEntryGroupsHold`). Si este sign-in acaba en un adopt, el Welcome lo vuelve
+                    // a armar al firmar.
+                    AccountEntryGroupsHold.clear()
                     if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
                         GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
                     } else if destino == .adoptAsCompleteAndOpenGroups {

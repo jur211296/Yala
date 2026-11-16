@@ -445,12 +445,44 @@ struct BornCloudSignUpServiceTests {
         #expect(claimStore.action(forUserID: "sub-born") == .seedBornCloud)
     }
 
-    @Test("el servicio NO escribe el consent: solo lo verifica (lo escribe CloudConsentView)")
+    @Test("el servicio NO escribe el consent por su cuenta: solo llama al escritor que le pasan y lo verifica")
     func consentIsOnlyRead_neverWritten() async throws {
         let (sut, _, _, _, consent) = makeSUT(consentRegistered: false)
         _ = await sut.signUp()
         #expect(consent.object(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue) == nil)
         #expect(consent.object(forKey: PrefSyncKey.cloudConsentTextVersion.rawValue) == nil)
+    }
+
+    /// Ticket `borncloud-consent-epoch-written-before-the-guard-decides`: el consentimiento del alta se escribe solo
+    /// cuando el claim confirma una cuenta NUEVA. Con `existing_stable` el alta sigue por el guard cross-cuenta, que
+    /// puede bloquear; con `claiming_in_progress` o un error, no se ha entrado a nada.
+    @Test("el escritor del consentimiento solo corre con `created`",
+          arguments: [
+            (200, #"{"state":"created"}"#, 1),
+            (200, #"{"state":"existing_stable"}"#, 0),
+            (200, #"{"state":"claiming_in_progress"}"#, 0),
+            (401, #"{"error":{"message":"nope"}}"#, 0),
+            (500, #"{"error":{"message":"nope"}}"#, 0),
+          ])
+    func consentWriter_runsOnlyForANewAccount(status: Int, body: String, expectedWrites: Int) async throws {
+        let stub = ClaimStubHTTP()
+        stub.status = status
+        stub.body = Data(body.utf8)
+        let (sut, _, _, _, _) = makeSUT(stub: stub)
+        var writes = 0
+        _ = await sut.signUp(registerConsentForNewAccount: { writes += 1 })
+        #expect(writes == expectedWrites, "status \(status) \(body)")
+    }
+
+    /// El escritor corre ANTES de la verificación: si no, el alta que escribió bien dejaría el rastro de «falta».
+    @Test("el consentimiento escrito por el alta llega a la verificación")
+    func consentWriter_runsBeforeTheCheck() async throws {
+        let (sut, _, _, _, consent) = makeSUT(consentRegistered: false)
+        #expect(await sut.signUp(registerConsentForNewAccount: {
+            consent.set(1_760_000_000, forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+            consent.set(CloudConsentText.version, forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        }) == .seeded)
+        #expect(consent.object(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue) as? Int == 1_760_000_000)
     }
 
     // MARK: - El resultado encaja con el gate de arranque del runtime
@@ -630,7 +662,7 @@ struct BornCloudSignUpWiringTests {
     /// es cosmético: un rango ancho comprobaría que los símbolos EXISTEN en el fichero, no que se llamen
     /// dentro de este método en este orden (lección de `TestProcessGuardTests`).
     private static func signUpBody(_ source: String) throws -> String {
-        let marker = "func signUp() async -> BornCloudSignUpOutcome {"
+        let marker = "func signUp(registerConsentForNewAccount: () -> Void = {}) async -> BornCloudSignUpOutcome {"
         let start = try #require(source.range(of: marker))
         let chars = Array(source[start.upperBound...])
         var depth = 1

@@ -81,6 +81,24 @@ final class NewTransactionViewModel {
     /// Nota libre
     var note: String = ""
 
+    /// Descripciones de registros anteriores (card y6du, 2.3). Se arma una vez en `loadData`.
+    private(set) var descriptionSuggestionIndex: [DescriptionSuggestionEntry] = []
+    /// La última sugerencia elegida: mientras la descripción siga siendo ese texto, no se propone nada más.
+    private var pickedDescriptionSuggestion: String?
+
+    /// Hasta 5 descripciones anteriores para lo escrito, del mismo lado (gasto o ingreso). Nada en transferencias.
+    var descriptionSuggestions: [String] {
+        guard transactionType != .transfer, note != pickedDescriptionSuggestion else { return [] }
+        return DescriptionSuggestionLogic.suggestions(
+            for: note, isIncome: transactionType == .income, in: descriptionSuggestionIndex)
+    }
+
+    /// Completa la descripción con el texto exacto de la sugerencia.
+    func applyDescriptionSuggestion(_ text: String) {
+        pickedDescriptionSuggestion = text
+        note = text
+    }
+
     /// Código de divisa para el registro
     var currencyCode: String = CurrencyDefaults.defaultCode
 
@@ -153,6 +171,23 @@ final class NewTransactionViewModel {
     /// Indica si es una transferencia
     var isTransfer: Bool {
         transactionType == .transfer
+    }
+
+    /// La fila de categorías a un toque bajo el importe (decisión 21 de 2.3, C2): las tres más usadas en los registros
+    /// que el formulario ya carga y, si no llegan a tres, las de arranque de un gasto (Restaurantes, Supermercados y
+    /// Taxis y apps). Solo categorías que se pueden elegir a mano para este tipo; vacía en una transferencia.
+    var quickPickSubcategories: [Subcategory] {
+        guard !isTransfer else { return [] }
+        let pickable = subcategories.filter { ManualSubcategoryPickerLogic.isPickable($0, for: transactionType) }
+        guard !pickable.isEmpty else { return [] }
+        let byID = Dictionary(pickable.map { ($0.persistentModelID, $0) }, uniquingKeysWith: { first, _ in first })
+        let used = transactions.compactMap { $0.subcategory?.persistentModelID }.filter { byID[$0] != nil }
+        let starters: [PersistentIdentifier] = transactionType == .expense
+            ? CategoryQuickPickLogic.expenseStarterSeeds.compactMap { seed in
+                pickable.first { CategoryEverydayWords.seed(forName: $0.name) == seed }?.persistentModelID
+            }
+            : []
+        return CategoryQuickPickLogic.pick(usedNewestFirst: used, starters: starters).compactMap { byID[$0] }
     }
 
     /// Indica si las divisas son diferentes (requiere tipo de cambio)
@@ -307,6 +342,21 @@ final class NewTransactionViewModel {
         } catch {
             #if DEBUG
             print("NewTransactionViewModel: Error loading transactions: \(error)")
+            #endif
+        }
+
+        // Descripciones anteriores para las sugerencias: las últimas 1.000 con texto (card y6du). Basta para la
+        // frecuencia de lo que la persona escribe a diario y se lee una vez por apertura.
+        var notesDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.note != nil },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        notesDescriptor.fetchLimit = 1000
+        do {
+            descriptionSuggestionIndex = DescriptionSuggestionLogic.buildIndex(from: try context.fetch(notesDescriptor))
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading description suggestions: \(error)")
             #endif
         }
     }
@@ -632,6 +682,62 @@ final class NewTransactionViewModel {
         }
     }
 
+    // MARK: - Borrador que sobrevive al cierre (card 77j1)
+
+    /// Lo escrito en el formulario, para guardarlo al pasar a segundo plano (`NewRecordDraftStore`). Las entidades van
+    /// por su identidad estable: el `PersistentIdentifier` no se puede volver a buscar con seguridad tras relanzar.
+    func makeDraft(now: Date = .now) -> SavedNewRecordDraft {
+        SavedNewRecordDraft(
+            savedAt: now,
+            type: transactionType.rawValue,
+            amountString: amountString,
+            currencyCode: currencyCode,
+            accountID: selectedAccount?.shortcutID,
+            sourceAccountID: isTransfer ? sourceAccount?.shortcutID : nil,
+            destinationAccountID: isTransfer ? destinationAccount?.shortcutID : nil,
+            subcategoryID: selectedSubcategory?.shortcutID,
+            need: selectedNeed?.rawValue,
+            date: transactionDate,
+            tagIDs: selectedTags.map(\.id),
+            note: note,
+            exchangeRate: exchangeRate,
+            isExchangeRateManual: isExchangeRateManual,
+            destinationAmount: destinationAmount
+        )
+    }
+
+    /// Vuelve a poner en el formulario un borrador guardado. Lo que ya no existe (una cuenta archivada o borrada, una
+    /// subcategoría, una etiqueta) se queda como estaba: vacío, para que la persona lo elija otra vez.
+    func apply(_ draft: SavedNewRecordDraft) {
+        if let type = TransactionType(rawValue: draft.type) {
+            transactionType = type
+        }
+        if let id = draft.accountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            selectedAccount = account
+        }
+        if let id = draft.sourceAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            sourceAccount = account
+        }
+        if let id = draft.destinationAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            destinationAccount = account
+        }
+        currencyCode = draft.currencyCode
+        if let id = draft.subcategoryID {
+            let all = categories.flatMap { $0.subcategories ?? [] }
+            selectedSubcategory = all.first { $0.shortcutID == id }
+        }
+        selectedNeed = draft.need.flatMap(SubcategoryNeed.init(rawValue:))
+        transactionDate = draft.date
+        if !draft.tagIDs.isEmpty {
+            selectedTags = tags.filter { draft.tagIDs.contains($0.id) }
+        }
+        note = draft.note
+        exchangeRate = draft.exchangeRate
+        isExchangeRateManual = draft.isExchangeRateManual
+        amountString = draft.amountString
+        destinationAmount = draft.destinationAmount
+    }
+
     // MARK: - Numeric Keypad
 
     /// Añade un dígito al monto
@@ -831,6 +937,10 @@ final class NewTransactionViewModel {
 
             // Track new transaction count for notification primer
             if isNewTransaction {
+                // Telemetría propia: «usó esta función», como mucho una vez al día (solo altas, no ediciones).
+                MetricsService.used(isTransfer ? .transferencia : .registrarMovimiento)
+                // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba.
+                if !isTransfer { NewUserMetrics.created(.firstExpense) }
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 

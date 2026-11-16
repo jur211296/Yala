@@ -222,7 +222,8 @@ struct GroupsDetachTwoCausesWiringTests {
 
     @Test("MUTACIÓN: la sección pinta un texto propio para cada causa con el drain atascado")
     func theSectionPaintsEachCombination() throws {
-        let section = try Self.code("Yala/App/Views/Settings/GroupsAssociationSection.swift")
+        // El texto del desasociar vive en la tabla compartida desde el 2026-11-06.
+        let section = try Self.code("Yala/App/Views/Shared/SignOutBlockedCopy.swift")
         for line in [
             "case .alsoCaptureUnfinished(.noSession): return L10n.Storage.Groups.detachBlockedSessionAndCaptureUnfinished",
             "case .alsoCaptureUnfinished(.attestUnavailable): return L10n.Storage.Groups.detachBlockedAttestAndCaptureUnfinished",

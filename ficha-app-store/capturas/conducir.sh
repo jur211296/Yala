@@ -20,6 +20,10 @@ relanza() { "$L" "$IDIOMA" "$APARATO" --sin-semilla "$@" >/dev/null; }
 ESTE_MES=$(python3 -c 'import re,sys
 t=open(sys.argv[1],encoding="utf-8").read()
 print(re.search(r"^\"period\.thisMonth\" = \"(.*)\";", t, re.M).group(1))' "$MOLDE/../Yala/Resources/$LPROJ.lproj/Localizable.strings")
+# «Gráficas» del modo de Distribución (`stats.distribution.modeCharts`): el set 2.2 enseña la dona y el flujo (4-nov-2026).
+MODO_GRAFICAS=$(python3 -c 'import re,sys
+t=open(sys.argv[1],encoding="utf-8").read()
+print(re.search(r"^\"stats\.distribution\.modeCharts\" = \"(.*)\";", t, re.M).group(1))' "$MOLDE/../Yala/Resources/$LPROJ.lproj/Localizable.strings")
 HECHA_FOTO=0
 # «Tus finanzas» desplegado: por argumento de arranque (`relanza -panelAccountsCollapsed NO`). Medido el 16-oct-2026:
 # tocar la cabecera por su id (el centro) no la despliega; solo el «+» de la derecha.
@@ -71,7 +75,11 @@ for p in "${PANTALLAS[@]}"; do
       id "detail_chip_categorías"; sleep 1
       # El selector de período: el primer PopUpButton de la pantalla; luego «este mes» en el idioma de la app.
       tocar "$(arbol | grep '^PopUpButton|' | head -1 | cut -d'|' -f2)"; sleep 1
-      tocar "$ESTE_MES"; cap "$([ "$APARATO" = iphone ] && echo estadisticas-grafica || echo estadisticas)" 2.5 ;;
+      tocar "$ESTE_MES"; sleep 1.5
+      tocar "$MODO_GRAFICAS"; sleep 1.5
+      # En el iPhone, la tarjeta de Categorías arriba (como el set es-PE 2.2): se sube ~440 pt, despacio.
+      [ "$APARATO" = iphone ] && { axe swipe --udid "$U" --start-x 200 --start-y 720 --end-x 200 --end-y 280 --duration 1.2 >/dev/null; sleep 1.5; }
+      cap "$([ "$APARATO" = iphone ] && echo estadisticas-grafica || echo estadisticas)" 2.5 ;;
     presupuestos)
       # En el iPad, lista y detalle a la vez: se abre el primero (Comer fuera / Eating Out), como en el set en español.
       relanza -uitest-deeplink planning; esperar "|budget_row_"
@@ -82,7 +90,10 @@ for p in "${PANTALLAS[@]}"; do
       [ "$APARATO" = ipad ] && tocar_linea "|scheduled_payment_row|"
       cap programados 2.5 ;;
     grupo)
-      relanza -uitest-deeplink-url "yala://groups/seeded-first"; cap grupo 4 ;;
+      # Desde la 2.2 la cabecera nueva (el neto grande y la barra) vive en la LISTA de Grupos: el iPhone enseña la
+      # lista; el iPad, lista y detalle del viaje a la vez (4-nov-2026).
+      if [ "$APARATO" = iphone ]; then relanza -uitest-deeplink groups; else relanza -uitest-deeplink-url "yala://groups/seeded-first"; fi
+      cap grupo 4 ;;
     ia)
       relanza -uitest-chat-draft -uitest-ai-chat-ready; id panel_action_ai; esperar "chat_draft_save"; cap ia 2 ;;
     yape|foto)

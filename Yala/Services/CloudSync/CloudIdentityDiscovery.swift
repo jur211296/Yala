@@ -66,7 +66,8 @@ final class CloudIdentityDiscovery {
     /// existe. Inyectable: sin él, los tests leerían y BORRARÍAN el iCloud-KV real del simulador.
     private let beacon: CloudBeacon
     /// El método con el que firmó la sesión viva (`"apple"`/`"google"`), leído del Keychain. Solo lo usa la
-    /// prueba de Apple de `BeaconOrphanLogic`.
+    /// prueba de Apple de `BeaconOrphanLogic`, y por eso por defecto lee `storedProviderProvingThisDevicesAppleID`: una
+    /// sesión de Apple abierta por la web puede ser otro Apple ID y no prueba nada sobre el faro de ESTE.
     private let sessionProviderName: @MainActor () -> String?
     private let now: () -> Date
 
@@ -87,7 +88,7 @@ final class CloudIdentityDiscovery {
         self.jwtProvider = jwtProvider ?? { await CloudAuthService.shared.accessToken() }
         self.userIDProvider = userIDProvider ?? { CloudAuthService.shared.currentUserID }
         self.beacon = beacon ?? CloudBeacon()
-        self.sessionProviderName = sessionProviderName ?? { CloudAuthService.shared.storedProvider() }
+        self.sessionProviderName = sessionProviderName ?? { CloudAuthService.shared.storedProviderProvingThisDevicesAppleID() }
         self.now = now
     }
 

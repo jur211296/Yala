@@ -321,4 +321,39 @@ struct GroupSplitCalculatorTests {
             #expect(abs(sum - total) < 0.02)
         }
     }
+
+    // MARK: - El céntimo (lote 02 de mejoras necesarias de 2.3, decisión de Jürgen del 2026-11-10)
+
+    /// «Monto» tiene que cuadrar al céntimo: con 399,99 de 400 se guardaba y el céntimo no era de nadie.
+    @Test func exactACentShortOrOver_returnsNil() {
+        let short = GroupSplitCalculator.calculate(
+            total: 400, splitType: .exact, participants: participants(["A", "B"], values: [200, 199.99])
+        )
+        #expect(short == nil)
+        let over = GroupSplitCalculator.calculate(
+            total: 400, splitType: .exact, participants: participants(["A", "B"], values: [200, 200.01])
+        )
+        #expect(over == nil)
+    }
+
+    /// El ruido de coma flotante no es un céntimo: 133.33 + 133.33 + 133.34 da 400.00000000000006 y cuadra.
+    @Test func exactFloatingPointNoise_stillBalances() {
+        let result = GroupSplitCalculator.calculate(
+            total: 400, splitType: .exact, participants: participants(["A", "B", "C"], values: [133.33, 133.33, 133.34])
+        )
+        #expect(result != nil)
+        #expect(abs((result ?? []).reduce(0.0) { $0 + $1.amount } - 400) < 0.0001)
+    }
+
+    /// «Porcentaje» tiene que sumar 100 %: con 99,99 % la diferencia iba entera al último (en 400, hasta 0,36).
+    @Test func percentageAHundredthShort_returnsNil_andThirdsStillBalance() {
+        let short = GroupSplitCalculator.calculate(
+            total: 400, splitType: .percentage, participants: participants(["A", "B"], values: [50, 49.99])
+        )
+        #expect(short == nil)
+        let thirds = GroupSplitCalculator.calculate(
+            total: 400, splitType: .percentage, participants: participants(["A", "B", "C"], values: [33.33, 33.33, 33.34])
+        )
+        #expect(abs((thirds ?? []).reduce(0.0) { $0 + $1.amount } - 400) < 0.0001)
+    }
 }

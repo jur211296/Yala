@@ -4,7 +4,7 @@
  * Es estrecha a propósito (ADR del conector, 2026-09-26, y decisión del 21-oct: «la IA solo deja borradores en la
  * Bandeja, por confirmar»):
  * - No escribe en los datos de la nube de la persona. Su sesión de Supabase sigue siendo de solo lectura. Lo que hace es
- *   dejar el movimiento en una cola del gateway (`ConnectorDrafts.enqueue`, service binding `CONNECTOR_DRAFTS`), y la
+ *   dejar el movimiento en la cola común de borradores del gateway, con `source: "ai"` (`ConnectorDrafts.enqueue`, service binding `CONNECTOR_DRAFTS`), y la
  *   app lo convierte en un borrador de la Bandeja que la persona confirma o descarta. Hasta entonces no cuenta en
  *   saldos, presupuestos ni estadísticas.
  * - Solo crea. No edita, no borra, no confirma.

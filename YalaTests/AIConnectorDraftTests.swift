@@ -3,11 +3,13 @@
 //  YalaTests
 //
 //  Tu IA registra en Yala (2.3): de lo que Claude, ChatGPT o Grok apuntó por el conector al borrador de la Bandeja,
-//  cuándo pregunta la app y el transporte contra `/connector/*`. Lo que fija, por gravedad si se rompiera:
+//  cuándo pregunta la app y el transporte. Llega por la cola COMÚN (`/mail/drafts`, decisión D9) con `source: "ai"`.
+//  Lo que fija, por gravedad si se rompiera:
 //   - «apunta 25 soles de almuerzo» con cuenta y subcategoría resueltas sale LISTO para guardar de un toque;
 //   - una cuenta en otra divisa o una subcategoría del otro lado (ingreso para un gasto) no se ponen: la Bandeja las pide;
-//   - las dos rutas nuevas llevan App Attest (en producción, sin cabecera, 401);
-//   - un id ya creado no se duplica si el `ack` no llegó.
+//   - en la misma vuelta que el correo y la web, cada uno sale con su origen;
+//   - sin correo ni web, la app pregunta igual a la cola, como mucho cada 2 minutos;
+//   - lo que otro aparato ya creó no se duplica.
 //
 
 import Foundation
@@ -19,18 +21,19 @@ private func connectorDTO(
     id: String = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", kind: String = "expense", amount: Double = 25,
     currency: String? = "PEN", note: String? = "Almuerzo", date: String? = "2026-11-05",
     accountID: String? = nil, accountName: String? = nil, subcategoryID: String? = nil, subcategoryName: String? = nil,
-    client: String? = "Claude", receivedAtMs: Double = 1_793_900_000_000
-) -> ConnectorDraftDTO {
+    client: String? = "Claude", receivedAtMs: Double = 1_793_900_000_000, source: String? = "ai"
+) -> BankEmailDraftDTO {
+    // La forma exacta de la fila que deja el gateway (`commonQueuePayload` de `gateway/src/connector/store.ts`).
     let json: [String: Any?] = [
-        "id": id, "received_at_ms": receivedAtMs, "kind": kind, "amount": amount, "currency": currency, "note": note,
-        "date": date, "account_id": accountID, "account_name": accountName, "subcategory_id": subcategoryID,
-        "subcategory_name": subcategoryName, "client": client,
+        "id": id, "received_at_ms": receivedAtMs, "kind": kind, "amount": amount, "currency": currency, "merchant": note,
+        "date": date, "bank": nil, "account_last4": nil, "source": source, "account_ref": accountID,
+        "account_name": accountName, "subcategory_ref": subcategoryID, "subcategory_name": subcategoryName, "client": client,
     ]
     let clean = json.compactMapValues { $0 }
     // swiftlint:disable:next force_try
     let data = try! JSONSerialization.data(withJSONObject: clean)
     // swiftlint:disable:next force_try
-    return try! JSONDecoder().decode(ConnectorDraftDTO.self, from: data)
+    return try! JSONDecoder().decode(BankEmailDraftDTO.self, from: data)
 }
 
 private var lima: Calendar {
@@ -73,23 +76,29 @@ struct AIConnectorDraftLogicTests {
         #expect(!AIConnectorDraftLogic.alreadyMaterialized(receivedAt: at, fields: fields, among: [otherInstant, otherAmount, otherNote]))
     }
 
-    @Test func soloPregunta_conLaNubeLaSesionYElImportAsentado() {
-        #expect(AIConnectorDraftService.shouldSync(storageIsCloud: true, hasSession: true, wipeArmed: false, importQuiescent: true))
-        #expect(!AIConnectorDraftService.shouldSync(storageIsCloud: false, hasSession: true, wipeArmed: false, importQuiescent: true))
-        #expect(!AIConnectorDraftService.shouldSync(storageIsCloud: true, hasSession: false, wipeArmed: false, importQuiescent: true))
-        #expect(!AIConnectorDraftService.shouldSync(storageIsCloud: true, hasSession: true, wipeArmed: true, importQuiescent: true))
-        #expect(!AIConnectorDraftService.shouldSync(storageIsCloud: true, hasSession: true, wipeArmed: false, importQuiescent: false))
+    @Test func sinCorreoNiWeb_preguntaIgual_peroComoMuchoCadaDosMinutos() {
+        #expect(AIConnectorDraftLogic.pollInterval == 120)
+        let now = Date(timeIntervalSince1970: 1_793_900_000)
+        #expect(AIConnectorDraftLogic.isPollDue(lastPoll: nil, now: now))
+        #expect(!AIConnectorDraftLogic.isPollDue(lastPoll: now.addingTimeInterval(-119), now: now))
+        #expect(AIConnectorDraftLogic.isPollDue(lastPoll: now.addingTimeInterval(-120), now: now))
+        // Un reloj que retrocede no deja la pregunta parada.
+        #expect(AIConnectorDraftLogic.isPollDue(lastPoll: now.addingTimeInterval(3600), now: now))
+
+        // La IA abre la puerta sola, sin correo ni web; el resto de condiciones se quedan.
+        #expect(BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: true, storageIsCloud: true, hasSession: true, wipeArmed: false, importQuiescent: true))
+        #expect(!BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: false, storageIsCloud: true, hasSession: true, wipeArmed: false, importQuiescent: true))
+        #expect(!BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: true, storageIsCloud: false, hasSession: true, wipeArmed: false, importQuiescent: true))
+        #expect(!BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: true, storageIsCloud: true, hasSession: false, wipeArmed: false, importQuiescent: true))
+        #expect(!BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: true, storageIsCloud: true, hasSession: true, wipeArmed: true, importQuiescent: true))
+        #expect(!BankEmailDraftService.shouldSync(isSetUp: false, webConnected: false, aiPollDue: true, storageIsCloud: true, hasSession: true, wipeArmed: false, importQuiescent: false))
     }
 
-    @Test func idsCreados_noSeDuplican_yTienenSuPropiaClave() {
-        let defaults = makeIsolatedDefaults(prefix: "aiConnectorIDs")
-        AIConnectorCreatedIDsStore.add(["a", "b"], defaults: defaults)
-        AIConnectorCreatedIDsStore.add(["b", "c"], defaults: defaults)
-        #expect(defaults.stringArray(forKey: AIConnectorCreatedIDsStore.key) == ["a", "b", "c"])
-        #expect(AIConnectorCreatedIDsStore.key != BankEmailCreatedIDsStore.key)
-        AIConnectorCreatedIDsStore.add((0..<250).map(String.init), defaults: defaults)
-        #expect(defaults.stringArray(forKey: AIConnectorCreatedIDsStore.key)?.count == AIConnectorCreatedIDsStore.limit)
-        #expect(!AIConnectorCreatedIDsStore.contains("a", defaults: defaults))
+    @Test func soloLoDeSourceAI_esDeLaIA() {
+        #expect(AIConnectorDraftLogic.source == "ai")
+        #expect(AIConnectorDraftLogic.isAI(source: "ai"))
+        #expect(!AIConnectorDraftLogic.isAI(source: "web"))
+        #expect(!AIConnectorDraftLogic.isAI(source: nil))
     }
 }
 
@@ -110,52 +119,23 @@ private final class ConnectorStubSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
-@Suite("Tu IA registra · transporte", .serialized)
+@Suite("Tu IA registra · transporte por la cola común", .serialized)
 @MainActor
 struct AIConnectorClientTests {
     private let base = URL(fileURLWithPath: "/") // nunca sale a la red: la sesión es un stub
 
-    @Test func losDosMetodos_llevanAttest_yNil_noLoLleva() async throws {
-        let session = ConnectorStubSession()
-        session.body = Data(#"{"drafts":[]}"#.utf8)
-        let con = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, attestProvider: { "tok" }, urlSession: session)
-        _ = try await con.connectorDrafts()
-        #expect(session.requests.last?.value(forHTTPHeaderField: "X-Yala-Attest-Session") == "Bearer tok")
-        #expect(session.requests.last?.url?.path.hasSuffix("connector/drafts") == true)
-        #expect(session.requests.last?.httpMethod == "GET")
-        try await con.ackConnectorDrafts(ids: ["x"])
-        #expect(session.requests.last?.value(forHTTPHeaderField: "X-Yala-Attest-Session") == "Bearer tok")
-        #expect(session.requests.last?.url?.path.hasSuffix("connector/drafts/ack") == true)
-        #expect(session.requests.last?.httpMethod == "POST")
-
-        let sin = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, attestProvider: { nil }, urlSession: session)
-        _ = try await sin.connectorDrafts()
-        #expect(session.requests.last?.value(forHTTPHeaderField: "X-Yala-Attest-Session") == nil)
-        try await sin.ackConnectorDrafts(ids: ["x"])
-        #expect(session.requests.last?.value(forHTTPHeaderField: "X-Yala-Attest-Session") == nil)
-    }
-
-    @Test func leeLosBorradores_delGateway() async throws {
+    @Test func loDeLaIA_llegaPorMailDrafts_conTodosSusCampos() async throws {
         let session = ConnectorStubSession()
         session.body = Data("""
         {"drafts":[{"id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","received_at_ms":1793900000000,"kind":"expense","amount":25,
-          "currency":"PEN","note":"Almuerzo","date":"2026-11-05","account_id":null,"account_name":null,
-          "subcategory_id":null,"subcategory_name":null,"client":"Claude"}]}
+          "currency":"PEN","merchant":"Almuerzo","date":"2026-11-05","bank":null,"account_last4":null,"source":"ai",
+          "account_ref":null,"subcategory_ref":null,"account_name":null,"subcategory_name":null,"client":"Claude"}]}
         """.utf8)
-        let client = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, urlSession: session)
-        let drafts = try await client.connectorDrafts()
+        let client = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, attestProvider: { "tok" }, urlSession: session)
+        let drafts = try await client.drafts()
         #expect(drafts == [connectorDTO()])
-    }
-
-    @Test func el401DeAttest_esPasajero_ySinIds_noHayPeticion() async throws {
-        let session = ConnectorStubSession()
-        session.status = 401
-        session.body = Data(#"{"error":{"type":"yala_attest_required","code":"yala_attest_required","message":"x"}}"#.utf8)
-        let client = BankEmailClient(baseURL: base, tokenProvider: { "jwt" }, urlSession: session)
-        await #expect(throws: BankEmailClientError.attestRequired) { _ = try await client.connectorDrafts() }
-        let before = session.requests.count
-        try await client.ackConnectorDrafts(ids: [])
-        #expect(session.requests.count == before)
+        #expect(session.requests.last?.url?.path.hasSuffix("mail/drafts") == true)
+        #expect(session.requests.last?.value(forHTTPHeaderField: "X-Yala-Attest-Session") == "Bearer tok")
     }
 }
 
@@ -192,7 +172,7 @@ struct AIConnectorMaterializeTests {
 
     @Test func elAlmuerzoResuelto_saleListoParaGuardarDeUnToque() throws {
         let w = try world()
-        let created = AIConnectorDraftService.materialize([connectorDTO(
+        let created = BankEmailDraftService.materialize([connectorDTO(
             accountID: w.soles.shortcutID.uuidString, accountName: "BCP Soles",
             subcategoryID: w.restaurantes.shortcutID.uuidString, subcategoryName: "Restaurantes"
         )], context: w.context)
@@ -213,7 +193,7 @@ struct AIConnectorMaterializeTests {
 
     @Test func sinIds_porNombre_ySinAmbiguedad() throws {
         let w = try world()
-        _ = AIConnectorDraftService.materialize([connectorDTO(accountName: "bbva", subcategoryName: "restaurantes")], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(accountName: "bbva", subcategoryName: "restaurantes")], context: w.context)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.account?.shortcutID == w.bbva.shortcutID)
         #expect(draft.subcategory?.shortcutID == w.restaurantes.shortcutID)
@@ -221,7 +201,7 @@ struct AIConnectorMaterializeTests {
 
     @Test func sinCuenta_ySinUnaUnicaEnSoles_laPide_enLaDivisaQueDijoLaIA() throws {
         let w = try world()
-        _ = AIConnectorDraftService.materialize([connectorDTO(currency: "PEN")], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(currency: "PEN")], context: w.context)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.account == nil)
         #expect(draft.needsUserInput.contains(DraftInputRequirement.account))
@@ -232,14 +212,14 @@ struct AIConnectorMaterializeTests {
 
     @Test func enDolares_sinCuenta_vaALaUnicaEnDolares() throws {
         let w = try world()
-        _ = AIConnectorDraftService.materialize([connectorDTO(amount: 12.5, currency: "USD")], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(amount: 12.5, currency: "USD")], context: w.context)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.account?.shortcutID == w.dolares.shortcutID)
     }
 
     @Test func unaCuentaEnOtraDivisa_noSePone() throws {
         let w = try world()
-        _ = AIConnectorDraftService.materialize([connectorDTO(currency: "USD", accountID: w.soles.shortcutID.uuidString)], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(currency: "USD", accountID: w.soles.shortcutID.uuidString)], context: w.context)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.account == nil)
         #expect(draft.displayCurrencyCode == "USD")
@@ -247,11 +227,11 @@ struct AIConnectorMaterializeTests {
 
     @Test func unaSubcategoriaDeIngreso_noVaAUnGasto() throws {
         let w = try world()
-        _ = AIConnectorDraftService.materialize([connectorDTO(subcategoryID: w.sueldo.shortcutID.uuidString)], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(subcategoryID: w.sueldo.shortcutID.uuidString)], context: w.context)
         let gasto = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(gasto.subcategory == nil)
         try w.context.delete(model: InboxDraft.self)
-        _ = AIConnectorDraftService.materialize([connectorDTO(kind: "income", amount: 3000, subcategoryID: w.sueldo.shortcutID.uuidString)], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(kind: "income", amount: 3000, subcategoryID: w.sueldo.shortcutID.uuidString)], context: w.context)
         let ingreso = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(ingreso.subcategory?.shortcutID == w.sueldo.shortcutID)
         #expect(ingreso.amount == 3000)
@@ -261,21 +241,34 @@ struct AIConnectorMaterializeTests {
         let w = try world()
         let dto = connectorDTO(receivedAtMs: 1_793_900_000_123)
         // El iPhone lo creó y el `ack` no llegó: el iPad recibe por el sync su borrador y la cola se lo vuelve a dar.
-        #expect(AIConnectorDraftService.materialize([dto], context: w.context) == 1)
+        #expect(BankEmailDraftService.materialize([dto], context: w.context) == 1)
         let first = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(abs(first.createdAt.timeIntervalSince1970 - 1_793_900_000.123) < 0.000_5)
-        #expect(AIConnectorDraftService.materialize([dto], context: w.context) == 0)
+        #expect(BankEmailDraftService.materialize([dto], context: w.context) == 0)
         #expect(try w.context.fetch(FetchDescriptor<InboxDraft>()).count == 1)
         // Otro movimiento distinto que llegó en otro instante sí entra.
-        #expect(AIConnectorDraftService.materialize([connectorDTO(id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", receivedAtMs: 1_793_900_060_000)], context: w.context) == 1)
+        #expect(BankEmailDraftService.materialize([connectorDTO(id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", receivedAtMs: 1_793_900_060_000)], context: w.context) == 1)
     }
 
     @Test func unaCuentaArchivada_noSeElige() throws {
         let w = try world()
         w.soles.isArchived = true
         try w.context.save()
-        _ = AIConnectorDraftService.materialize([connectorDTO(accountID: w.soles.shortcutID.uuidString)], context: w.context)
+        _ = BankEmailDraftService.materialize([connectorDTO(accountID: w.soles.shortcutID.uuidString)], context: w.context)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.account == nil)
+    }
+
+    @Test func enLaMismaVuelta_queElCorreoYLaWeb_cadaUnoSaleConSuOrigen() throws {
+        let w = try world()
+        let banco = connectorDTO(id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", client: nil, source: nil)
+        let web = connectorDTO(id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", client: nil, source: "web")
+        let ia = connectorDTO()
+        #expect(BankEmailDraftService.materialize([banco, web, ia], context: w.context) == 3)
+        let drafts = try w.context.fetch(FetchDescriptor<InboxDraft>())
+        #expect(drafts.filter { $0.sourceType == .aiConnector }.count == 1)
+        #expect(drafts.filter { $0.sourceType == .emailAlert }.count == 1)
+        #expect(drafts.filter { $0.sourceType == .automation }.count == 1)
+        #expect(drafts.first { $0.sourceType == .aiConnector }?.evidence == "Claude")
     }
 }

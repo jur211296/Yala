@@ -103,16 +103,15 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         XCTAssertEqual(waited, .timedOut,
                        "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.\(lifecycleNote)",
                        file: file, line: line)
-        // **Rojo intermitente conocido, y es de la APP, no del test** (medido el 2026-11-05, iOS 27.2, 1 de 3 en el SE): el
-        // importe llegó al campo antes de salir (lo comprueba `launchWithHalfFilledFormInStatistics`), el proceso es el
-        // mismo, y al volver la hoja de «Nuevo registro» se ha desmontado y montado sin cerrarse —la traza trae
-        // `formulario fuera abierto=true` y `freshForm` de nuevo— y pierde lo escrito. Bug en
-        // `external-entry-panel-link-loses-the-typed-amount-intermittently` (card «Nuevo registro desde Estadísticas
-        // pierde el importe al salir y volver por enlace»). Este caso es la red que lo caza: no se relaja ni se borra.
+        // **La red de un rojo intermitente de la APP, ya arreglado** (ticket
+        // `external-entry-panel-link-loses-the-typed-amount-intermittently`, 2026-11-06): la hoja de «Nuevo registro»
+        // colgaba del contenido raíz de la pila de Estadísticas y se desmontaba sin cerrarse al volver por un enlace
+        // (1 de 21 en el iPhone SE). Ahora cuelga de `StatisticsView`. Si vuelve a caer, la traza de la vuelta repite
+        // `freshForm` con `formulario fuera abierto=true`: es la app, no el tecleo. No se relaja ni se borra.
         XCTAssertTrue(survived,
                       "El importe escrito se perdió (valor: «\(typed)»).\(lifecycleNote) Si la traza de la vuelta repite "
-                        + "`freshForm`, es el bug de la app del ticket external-entry-panel-link-loses-the-typed-amount-"
-                        + "intermittently, no el test.", file: file, line: line)
+                        + "`freshForm`, la hoja de Nuevo registro volvió a desmontarse sin cerrarse (mira de dónde cuelga).",
+                      file: file, line: line)
     }
 
     private func closeForm(_ app: XCUIApplication) {
@@ -146,7 +145,7 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         closeForm(app)
         XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 15),
                       "Al cerrar el formulario, el dictado pedido desde el widget tenía que abrirse (voice_done).")
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).isSelected,
+        XCTAssertTrue(app.tabEntry(.panel).isSelected,
                       "Debajo del dictado tenía que quedar el Panel.")
     }
 
@@ -216,9 +215,50 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
 
         assertFormSurvives(app, amountField, seconds: 6, capture: "formulario-tras-enlace-al-panel")
         closeForm(app)
-        let panelTab = app.tabBars.buttons.element(boundBy: 0)
+        let panelTab = app.tabEntry(.panel)
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: panelTab)
         XCTAssertEqual(XCTWaiter().wait(for: [selected], timeout: 10), .completed,
                        "Tras cerrar la hoja, el enlace tenía que haber dejado el Panel delante.")
+    }
+
+    // MARK: - El formulario rehecho retoma lo escrito (card «Nuevo registro a medias vuelve vacío», 2026-11-04)
+
+    /// En el runner del CI, de una a tres veces por noche, SwiftUI rehacía el contenido de la hoja al volver (mismo
+    /// proceso, misma escena: `formularios=3`) y el formulario nacía con «0.00». `-uitest-rebuild-form-on-return` fuerza
+    /// ese rehecho siempre, en los tres caminos que cambian de pestaña. Con el borrador (`NewRecordDraft`) el formulario
+    /// rehecho conserva el importe y, al cerrarlo, sigue preguntando antes de descartar (retoma también la foto de partida).
+    /// Los casos de arriba siguen sin el seam: prueban el camino real, sin rehecho forzado.
+    private func assertRebuiltFormKeepsTheAmount(url: String, extraArguments: [String], capture: String) {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics(
+            extraArguments: extraArguments + ["-uitest-rebuild-form-on-return"])
+        openFromOutside(url)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+        assertFormSurvives(app, amountField, seconds: 6, capture: capture)
+        XCTAssertTrue(lifecycle(app).contains("formulario retomado"),
+                      "El seam no rehízo el formulario: el caso no probó nada. Ciclo de vida: \(lifecycle(app)).")
+        let close = app.buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
+        close.tap()
+        let discard = app.alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout: 5),
+                      "Con el importe retomado, la X tenía que preguntar antes de descartar.")
+        discard.tap()
+    }
+
+    func test_rebuiltForm_sharedPhoto_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://shared-image?uitest-stage=readable",
+                                        extraArguments: ["-uitest-image-result", "one"],
+                                        capture: "formulario-rehecho-tras-compartir-foto")
+    }
+
+    func test_rebuiltForm_voiceEntry_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://voice-entry",
+                                        extraArguments: ["-uitest-voice-result", "one"],
+                                        capture: "formulario-rehecho-tras-voz")
+    }
+
+    func test_rebuiltForm_panelLink_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://panel", extraArguments: [],
+                                        capture: "formulario-rehecho-tras-enlace-al-panel")
     }
 }

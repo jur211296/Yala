@@ -212,7 +212,7 @@ struct PrivateSignOutMigrationReasonTests {
 
 /// El coordinador es un singleton con fase observable: la suite va en serie y deja la fase y el override como los encontró.
 @MainActor
-@Suite("Cierre por archivos · el escritor se para con la migración en vuelo", .serialized)
+@Suite("Cierre por archivos · el escritor se para con la migración en vuelo", .serialized, .privateSessionCellPinned)
 struct PrivateSignOutMigrationWriterTests {
 
     private let coordinator = CloudSessionSignOut.shared
@@ -223,7 +223,8 @@ struct PrivateSignOutMigrationWriterTests {
         coordinator.migrationRestReadingOverride = nil
     }
 
-    /// La celda del host de test, que tiene que ser privada: en solo-grupos la puerta no participa y `signOut` correría el
+    /// La celda del host de test, que tiene que ser privada (la marca del eje la fija la suite con
+    /// `.privateSessionCellPinned`, card r9e8): en solo-grupos la puerta no participa y `signOut` correría el
     /// cierre de verdad. Se exige ANTES de llamar, no se supone.
     private func requirePrivateCell() throws -> CloudSignOutFlowLogic.Path {
         let path = CloudSignOutFlowLogic.path(
@@ -492,7 +493,8 @@ struct PrivateSignOutMigrationWiringTests {
         let rama = try #require(welcome.range(of: "case .blocked(_, .migrationInFlight), .blocked(_, .migrationUnreadable):"))
         let catchAll = try #require(welcome.range(of: "        case .blocked(let pending, let reason):\n"))
         #expect(rama.upperBound <= catchAll.lowerBound)
-        let cuerpo = String(welcome[rama.upperBound...].prefix(900))
+        // 2600: desde la card 285z la rama ofrece además cancelar el paso a medias, con su porqué, antes de su «Volver».
+        let cuerpo = String(welcome[rama.upperBound...].prefix(2600))
         #expect(cuerpo.contains("title: L10n.Welcome.Groups.neutralUnavailableTitle,"))
         #expect(cuerpo.contains("body: L10n.Welcome.Groups.neutralMigrationBody,"))
         #expect(cuerpo.contains("YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }"))

@@ -163,10 +163,11 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Balance Calculation
 
-    func formattedBalance(for account: Account) -> String {
+    /// El saldo de la fila con la preferencia «código / símbolo» de Personalización, como el formulario y el Panel: la
+    /// lista escribía siempre el código («PEN 2,000.00») frente a «S/ 2,000.00» en el resto (lote 09 de mejoras 2.3).
+    func formattedBalance(for account: Account, displayFormat: CurrencyDisplayFormat) -> String {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
-        let info = currencyInfo(for: currency)
 
         let currentDecimal = AccountBalanceCalculator.currentBalance(
             for: account,
@@ -178,7 +179,7 @@ final class AccountsSettingsListViewModel {
         // Un saldo que suma cero en coma flotante (`-1e-14`) salía «-0.00».
         let shown = CurrencyFormattingHelper.isShownAsZero(amountDouble, using: Self.balanceFormatter) ? 0 : amountDouble
         let formattedAmount = Self.balanceFormatter.string(from: NSNumber(value: shown)) ?? "0.00"
-        return "\(info.code) \(formattedAmount)"
+        return "\(displayFormat.label(for: currency.rawValue)) \(formattedAmount)"
     }
 
     // MARK: - Reorder Logic

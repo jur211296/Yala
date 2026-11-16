@@ -61,7 +61,13 @@ final class InsightsViewModel {
     @ObservationIgnored var hasConsentProvider: @MainActor () -> Bool = {
         UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
     }
+    /// El permiso de Estadísticas aceptado con el texto VIGENTE (`AIConsentRevision`): lo pide la IA de los gastos hormiga,
+    /// que manda nombres de compras que el texto anterior no mencionaba. El resumen de siempre sigue con `hasConsentProvider`.
+    @ObservationIgnored var hasCurrentConsentProvider: @MainActor () -> Bool = { AIConsentRevision.hasCurrentInsightsConsent() }
     @ObservationIgnored var isOnlineProvider: @MainActor () -> Bool = { NetworkMonitor.shared.isConnected }
+    /// Los datos personales viven en la nube de Yala: ahí la IA lee con más detalle (gastos hormiga Pro; decisión de
+    /// Jürgen del 2026-11-06, y el permiso lo dice).
+    @ObservationIgnored var isCloudProvider: @MainActor () -> Bool = { CloudSyncFlags.storageMode == .cloud }
     /// La llamada al servicio de IA: `(datos agregados, clave, tono, enfoque, saltar caché)`. En producción,
     /// `InsightsLLMService`.
     @ObservationIgnored var aiRequest: @MainActor ([String: Any], String, InsightTone, InsightFocus, Bool) async throws -> LLMInsightResponse = {
@@ -71,6 +77,21 @@ final class InsightsViewModel {
         return try await InsightsLLMService.shared.generateInsights(
             aggregatedData: $0, cacheKey: $1, tone: $2, focus: $3, bypassCache: $4
         )
+    }
+
+    // MARK: - Gastos hormiga con IA (Pro, ticket `insights-ant-expenses-ai-version-for-pro`)
+
+    /// Lo que la IA juntó y su consejo, ya validado (`AntExpensesAILogic`). `nil` sin respuesta para lo que se ve.
+    private(set) var antAI: AntAIInsight?
+    private(set) var isLoadingAntAI = false
+    /// La huella de la pregunta de hormigas que va de camino, si hay una.
+    @ObservationIgnored var antAIInFlightFingerprint: String?
+    /// La llamada de hormigas. En producción, `AntExpensesAIService`.
+    @ObservationIgnored var antAIRequest: @MainActor ([String: Any]) async throws -> AntAIResponse = {
+        #if DEBUG
+        if UITestHooks.statsAIReply { return AntExpensesUITestReply.reply(for: $0) }
+        #endif
+        return try await AntExpensesAIService.shared.generate(payload: $0)
     }
 
     /// Pro con la IA aceptada y sin nada a la vista todavía: la decisión automática está por llegar. Las tarjetas pintan
@@ -610,9 +631,13 @@ final class InsightsViewModel {
             result["category_tree"] = categories.visibleCategoryTreeLabels()
         }
 
-        // Highest expense: su subcategoría o categoría, nunca la nota libre (card `ve42`).
+        // Highest expense: su subcategoría o categoría. La nota libre solo con la cuenta en la nube, donde la IA lee lo que
+        // haga falta para precisar (Jürgen, 2026-11-06; `.claude/rules/ai-gateway.md`). En privado, nunca (card `ve42`).
         if let highest = data.quickStats.highestExpense {
-            result["highest_expense"] = ["amount": Int(highest.amount), "description": highest.categoryLabel] as [String: Any]
+            var row: [String: Any] = ["amount": Int(highest.amount), "description": highest.categoryLabel]
+            // Y con el permiso aceptado con el texto que lo dice (`AIConsentRevision`): con el anterior, el resumen de siempre.
+            if isCloudProvider(), hasCurrentConsentProvider() { row["note"] = highest.note }
+            result["highest_expense"] = row
         }
 
         // Highest average weekday
@@ -782,5 +807,141 @@ final class InsightsViewModel {
         filters["summary"] = descriptions.joined(separator: ". ")
 
         return filters
+    }
+}
+
+// MARK: - Gastos hormiga con IA (Pro)
+
+extension InsightsViewModel {
+
+    /// Lo que se enviaría ahora a la IA de hormigas; `nil` si la tarjeta no sale.
+    func antAIPayload() -> [String: Any]? {
+        guard let data = insightData, let ants = data.quickStats.antExpenses, let period = lastPeriod else { return nil }
+        return AntExpensesAILogic.payload(
+            summary: ants,
+            currencyCode: lastCurrencyCode,
+            currencyDisplay: YalaFormatterStatic.currencyIdentifier(for: lastCurrencyCode),
+            language: AIPromptLanguage.current,
+            periodLabel: period.displayName,
+            previousLabel: data.periodSummary.previousPeriodLabel,
+            detailed: isCloudProvider()
+        )
+    }
+
+    /// La ranura de hormigas: período, filtros, idioma y divisa (sin cifras), como la del resumen.
+    func antAISlot() -> String? {
+        guard let period = lastPeriod else { return nil }
+        var parts: [String: Any] = [
+            "period": period.rawValue,
+            "comparison": lastComparisonMode.rawValue,
+            "locale": AIPromptLanguage.current,
+            "currency": lastCurrencyCode,
+            "filters": aiFilterIdentity(),
+        ]
+        if period == .custom, let range = lastCustomRange {
+            parts["range"] = [range.start.timeIntervalSince1970, range.end.timeIntervalSince1970]
+        }
+        return StatsAIAutoRefreshStore.slotKey(page: .ants, parts: parts)
+    }
+
+    /// La huella de lo que se enviaría: mismas cifras y mismos nombres, misma respuesta.
+    func antAIFingerprint(_ payload: [String: Any]) -> String? {
+        var hashed = payload
+        hashed["_kind"] = "insights.ants"
+        hashed["_version"] = StatsAIAutoRefreshStore.version
+        return InsightsAIResultStore.stableHash(hashed)
+    }
+
+    /// Tras un recálculo. Solo se enseña una respuesta guardada para ESTAS mismas cifras: los ids de los grupos son
+    /// posicionales (`g1`, `g2`…) y, con otros datos, una respuesta vieja juntaría grupos que no son los suyos.
+    func restoreSavedAntAI() {
+        guard let summary = insightData?.quickStats.antExpenses,
+              isProProvider(), hasCurrentConsentProvider(),
+              let payload = antAIPayload(),
+              let fingerprint = antAIFingerprint(payload),
+              let slot = antAISlot(),
+              let (entry, saved) = autoRefreshStore.response(AntAIResponse.self, page: .ants, slot: slot),
+              entry.fingerprint == fingerprint
+        else {
+            antAI = nil
+            return
+        }
+        let insight = AntExpensesAILogic.insight(from: saved, summary: summary)
+        antAI = insight.isEmpty ? nil : insight
+    }
+
+    /// Pro con la IA aceptada: el bloque sale solo, con la misma decisión, antirrebote y techo diario que los demás
+    /// textos de IA de Estadísticas (`StatsAIAutoRefreshLogic`, página `.ants`).
+    func autoRefreshAntAIIfNeeded(now: Date = .now) async {
+        guard let summary = insightData?.quickStats.antExpenses,
+              let payload = antAIPayload(),
+              let fingerprint = antAIFingerprint(payload),
+              let slot = antAISlot()
+        else { return }
+        let snapshot = AntExpensesAILogic.snapshot(summary)
+        let saved = autoRefreshStore.entry(page: .ants, slot: slot).map {
+            StatsAIAutoRefreshLogic.Saved(fingerprint: $0.fingerprint, savedAt: $0.savedAt, snapshot: $0.snapshot)
+        }
+        let decision = StatsAIAutoRefreshLogic.decide(
+            isPro: isProProvider(),
+            hasConsent: hasCurrentConsentProvider(),
+            transactionCount: insightData?.periodSummary.transactionCount ?? 0,
+            saved: saved,
+            fingerprint: fingerprint,
+            snapshot: snapshot,
+            today: autoRefreshStore.today(page: .ants, slot: slot, now: now),
+            now: now
+        )
+        guard case .generate = decision, isOnlineProvider(), antAIInFlightFingerprint != fingerprint else { return }
+        autoRefreshStore.recordGeneration(page: .ants, slot: slot, automatic: true, now: now)
+        await generateAntAI(payload: payload, fingerprint: fingerprint, slot: slot, snapshot: snapshot, now: now)
+    }
+
+    /// Pedida a mano (Pro tras aceptar el consentimiento): no cuenta para el techo automático.
+    func triggerAntAI(now: Date = .now) async {
+        guard isProProvider(), hasCurrentConsentProvider(), isOnlineProvider(),
+              insightData?.quickStats.antExpenses != nil,
+              let payload = antAIPayload(),
+              let fingerprint = antAIFingerprint(payload),
+              let slot = antAISlot()
+        else { return }
+        guard antAIInFlightFingerprint != fingerprint else { return }
+        let summary = insightData?.quickStats.antExpenses
+        autoRefreshStore.recordGeneration(page: .ants, slot: slot, automatic: false, now: now)
+        await generateAntAI(
+            payload: payload, fingerprint: fingerprint, slot: slot,
+            snapshot: summary.map(AntExpensesAILogic.snapshot), now: now)
+    }
+
+    /// La llamada. Un fallo es silencioso: la tarjeta gratis sigue igual y no se enseña nada de IA.
+    private func generateAntAI(
+        payload: [String: Any],
+        fingerprint: String,
+        slot: String,
+        snapshot: StatsAIAutoRefreshLogic.Snapshot?,
+        now: Date
+    ) async {
+        antAIInFlightFingerprint = fingerprint
+        isLoadingAntAI = antAI == nil
+        defer {
+            if antAIInFlightFingerprint == fingerprint { antAIInFlightFingerprint = nil }
+            isLoadingAntAI = false
+        }
+        do {
+            let response = try await antAIRequest(payload)
+            if let snapshot {
+                autoRefreshStore.save(response, page: .ants, slot: slot, fingerprint: fingerprint, snapshot: snapshot, now: now)
+            }
+            // Solo se pinta si sigue describiendo lo que se ve: un cambio de período o de datos la deja guardada.
+            guard let current = antAIPayload(), antAIFingerprint(current) == fingerprint,
+                  let summary = insightData?.quickStats.antExpenses
+            else { return }
+            let insight = AntExpensesAILogic.insight(from: response, summary: summary)
+            antAI = insight.isEmpty ? nil : insight
+        } catch {
+            #if DEBUG
+            print("InsightsViewModel: Error: \(error)")
+            #endif
+        }
     }
 }

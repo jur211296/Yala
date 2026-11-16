@@ -12,6 +12,8 @@ import SwiftUI
 struct CategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -582,15 +584,27 @@ struct CategoriesPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.categoryPieChart)
-            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
-                L10n.Accessibility.categoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
+            // V1 de la decisión 26 de 2.3: el total y las partes con su porcentaje («Hogar 63 %…»), no «7 categorías».
+            // Las partes son los trozos que se ven, «Sin categoría» y «Otros» incluidos: suman el total.
+            .accessibilityValue(pieSpokenSummary(safeData))
+            .accessibilityChartDescriptor(pieChartDescriptor(safeData))
         }
     }
 
     // MARK: - Helpers
 
-    private func formattedCurrency(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+    private var pieAmountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    private func pieSpokenSummary(_ data: [PieChartData]) -> String {
+        ChartSpokenSummary.parts(data.map { (name: $0.name, amount: $0.amount) }, format: pieAmountFormat)
+    }
+
+    /// V2 de la decisión 26: un trozo por categoría, para el rotor «Describir gráfica».
+    private func pieChartDescriptor(_ data: [PieChartData]) -> ChartAccessibilityDescriptor {
+        .parts(title: L10n.Accessibility.categoryPieChart, xTitle: L10n.Accessibility.Chart.axisCategory,
+               items: data.map { (name: $0.name, amount: $0.amount) }, format: pieAmountFormat)
     }
 
     private static let percentFormatter: NumberFormatter = {

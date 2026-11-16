@@ -67,6 +67,13 @@ nonisolated enum WelcomeMirrorRelaunchLogic {
         /// Va la ÚLTIMA del enum a propósito: el orden de estos casos se ve fuera (`allCases` gobierna las
         /// tablas de los tests del testigo de mount) y meter uno en medio cambia lo que esas tablas dicen.
         case groupsInvite
+        /// **La entrada con Google o Apple que dejó el iCloud privado aparte** (opción B de Jürgen, 2026-11-10,
+        /// `ICloudAsideEntryLogic`). Como `groupsInvite`, **no es una salida del Welcome**: la escribe la puerta del
+        /// Welcome al quedar ARMADA la vuelta al neutro, y la consume el arranque siguiente para volver a la entrada a la
+        /// cuenta con el mismo método, ya sobre un teléfono neutro y vacío. Uno por método porque el destino no lleva
+        /// carga. Van al final por lo mismo que `groupsInvite`.
+        case cloudSignInAppleKeepingICloudAside
+        case cloudSignInGoogleKeepingICloudAside
     }
 
     /// ¿Este destino necesita que el mirror de CloudKit esté ADJUNTO al store personal?
@@ -101,6 +108,10 @@ nonisolated enum WelcomeMirrorRelaunchLogic {
         // volver a él, e `inviteRecovery` entra por el mismo enlace que el universal link. Pedirles que reabran para
         // adjuntar un espejo sería deshacer justo lo que la puerta del invitado protege.
         case .cloudAccount, .cloudSignIn, .groupsOrganizer, .groupsInvite, .inviteRecovery:
+            return false
+        // La entrada que dejó iCloud aparte cae con las de la nube y por lo mismo que `groupsInvite`: acaba de volver al
+        // neutro A PROPÓSITO, y pedir el espejo montaría otra vez el iCloud que se quiso dejar fuera.
+        case .cloudSignInAppleKeepingICloudAside, .cloudSignInGoogleKeepingICloudAside:
             return false
         }
     }

@@ -113,6 +113,10 @@
 	<false/>
 	<key>CKSharingSupported</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>BricolageGrotesque28pt-ExtraBold.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

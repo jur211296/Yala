@@ -31,6 +31,17 @@ enum WidgetAmountSplitter {
         return formatter
     }
 
+    /// Hacia dónde apunta `value` TAL COMO SE PINTA con `fractionDigits` decimales: `1` sube, `-1` baja y `0` si se
+    /// pinta como cero. Para elegir una flecha o un signo al lado de una cifra que se escribe en valor absoluto: la
+    /// variación del widget de Saldo decidía con `> 0` y un residuo pintaba «▲ S/ 0».
+    static func shownSign(of value: Double, fractionDigits: Int, locale: Locale = .current) -> Int {
+        switch split(value: value, symbol: "", fractionDigits: fractionDigits, forceSign: true, locale: locale).sign {
+        case "+": return 1
+        case "-": return -1
+        default: return 0
+        }
+    }
+
     /// Splits a numeric amount into visual runs for hierarchical rendering.
     ///
     /// - Parameters:

@@ -105,12 +105,7 @@ final class CreditCardStatementUITests: XCTestCase {
 
     /// Abre Flujo de caja (por la tarjeta de Más), salta la guía y crea el plan si hace falta.
     static func openCashFlowPlan(_ app: XCUIApplication) {
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-        let card = app.buttons["more_card_flujoDeCaja"]
-        XCTAssertTrue(card.waitForExistence(timeout: 5), "No apareció la card Flujo de Caja en Más.")
-        card.tap()
+        app.openReport("flujoDeCaja")
         XCTAssertTrue(app.descendants(matching: .any)["cashflow_setup_view"].firstMatch.waitForExistence(timeout: 15))
         if app.buttons["coach_mark_skip"].waitForExistence(timeout: 4) { app.buttons["coach_mark_skip"].tap() }
         let create = app.buttons["primary_button"]

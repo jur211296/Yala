@@ -48,8 +48,13 @@ enum TransactionDetailSheetLogic {
     ///
     /// Un ajuste de saldo (saldo inicial, corrección) no es gasto ni ingreso: va sin tipo y con el importe con su signo.
     /// Leerlo como «Gasto» decía eso de un saldo inicial de +5.000 (medido al recapturar el lote 8).
-    static func rowAccessibilityLabel(note: String?, kind: String?, amount: String, category: String?, account: String?) -> String {
-        [note, kind, amount, category, account]
+    ///
+    /// `date` va al final (decisión 60 de la revisión 2.3): la fecha vive en la cabecera del día, que VoiceOver lee una
+    /// vez, así que al saltar de fila en fila ninguna decía de qué día era.
+    static func rowAccessibilityLabel(
+        note: String?, kind: String?, amount: String, category: String?, account: String?, date: String? = nil
+    ) -> String {
+        [note, kind, amount, category, account, date]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
             .joined(separator: ", ")

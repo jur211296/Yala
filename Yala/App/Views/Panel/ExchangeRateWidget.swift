@@ -133,7 +133,10 @@ struct ExchangeRateWidget: View {
     private static let dateDayTimeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM, HH:mm"
+        // Día y mes por plantilla (orden de cada idioma); la hora, como estaba. La plantilla con hora mete «at» en
+        // inglés y no cabe.
+        f.setLocalizedDateFormatFromTemplate("dMMM")
+        f.dateFormat = (f.dateFormat ?? "d MMM") + ", HH:mm"
         return f
     }()
 
@@ -466,21 +469,21 @@ struct ExchangeRateWidget: View {
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "EEE d MMM"
+        f.setLocalizedDateFormatFromTemplate("EEEdMMM")
         return f
     }()
 
     private static let tooltipWeekFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMy")
         return f
     }()
 
@@ -490,6 +493,7 @@ struct ExchangeRateWidget: View {
         case .day: formatter = Self.tooltipDayFormatter
         case .week: formatter = Self.tooltipWeekFormatter
         case .month: formatter = Self.tooltipMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date)
     }
@@ -502,7 +506,11 @@ struct ExchangeRateWidget: View {
               let lastDate = chartPoints.last?.date else {
             return []
         }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+        // Con más de tres años el eje dice solo el año (G2 de la decisión 28): sin quitar repetidas, las marcas
+        // lineales podían decir «2023 · 2023 · 2024».
+        return SmartAxisHelper.deduplicatedAxisDates(
+            SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate),
+            firstDate: firstDate, lastDate: lastDate, forceGrouping: nil)
     }
 
     /// Calculate X-axis domain from chart points

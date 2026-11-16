@@ -117,10 +117,46 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
             """)
     }
 
-    /// El segundo iPhone del mismo iCloud, con la ida del primero en curso (ticket
-    /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen): el aviso dice que es OTRO de sus
-    /// dispositivos y nombra la salida, en vez de «Esa cuenta ya tiene finanzas personales». Sigue siendo una parada: sin
-    /// consentimiento detrás, y la tarjeta recuerda el motivo con su propia nota y apaga el botón.
+    /// G1 de la revisión 2.3 (decisión 55): el mismo aviso —la cuenta de sus grupos ya tiene datos propios— deja de ser un
+    /// callejón que manda a buscar «Desasociar». Ofrece «Cambiar de cuenta», que baja el aviso y abre la hoja de
+    /// consecuencias de siempre: **no se la salta**. Cancelarla no suelta nada y la fila sigue ofreciendo el cambio. Con el
+    /// código de antes el botón no existía y el aviso solo decía «Entendido».
+    func test_liveSession_accountWithPersonalData_changeAccountOpensTheConsequencesSheet() {
+        let (app, migrate) = openMigrateCard(fakeMigrationIdentity: "personalData")
+        migrate.tap()
+
+        let title = app.staticTexts["storage_migrate_block_title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Tocar «Activar la nube» con una cuenta que ya tiene datos no avisa.")
+        let change = app.buttons["storage_migrate_block_change_account"]
+        XCTAssertTrue(change.waitForExistence(timeout: 5), """
+            El aviso no ofrece «Cambiar de cuenta»: sigue siendo un callejón que manda a buscar la salida en otra parte.
+            """)
+        XCTAssertTrue(app.buttons["storage_migrate_block_close"].exists, "El aviso perdió la salida de no hacer nada.")
+        change.tap()
+
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5), "«Cambiar de cuenta» no cerró el aviso.")
+        let sheet = app.staticTexts["storage_groups_detach_sheet"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), """
+            «Cambiar de cuenta» cerró el aviso y no abrió la hoja de consecuencias. Si además la cuenta se soltó, se la saltó.
+            """)
+        XCTAssertTrue(app.buttons.matching(identifier: "storage_groups_detach_keep").firstMatch.exists)
+        XCTAssertTrue(app.buttons.matching(identifier: "storage_groups_detach_remove").firstMatch.exists)
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
+                       "Detrás del aviso se abrió el consentimiento de activar la nube.")
+
+        app.buttons["storage_groups_detach_cancel"].tap()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), "Cancelar no cerró la hoja.")
+        XCTAssertTrue(app.buttons["storage_groups_change_account"].waitForExistence(timeout: 5), """
+            Tras cancelar la hoja ya no se ofrece «Cambiar de cuenta»: la cuenta se soltó sin elegir ninguna salida.
+            """)
+        XCTAssertEqual(app.alerts.count, 0, "Cancelar disparó el gesto: salió un aviso.")
+    }
+
+    /// Una activación a medias de esta misma cuenta con el líder vivo (tickets
+    /// `settings-migrate-blocks-a-second-device-before-its-marker` y `reinstall-mid-migration-has-no-exit-from-the-identity-gate`,
+    /// opción 1 de Jürgen del 2026-11-06): el aviso no nombra «otro dispositivo» —puede ser este, reinstalado— y dice la
+    /// salida, volver a intentarlo en una hora. Sigue siendo una parada sin consentimiento detrás, pero la tarjeta no la
+    /// recuerda ni apaga el botón. En producción este aviso solo lo da el claim; el seam lo fuerza en la comprobación.
     ///
     /// Qué cuenta llega a este motivo lo fijan los unit de `StorageMigrationIdentityGateLogic`; aquí, que el motivo nuevo se
     /// pinta entero —hoja y tarjeta— y no con los textos de otro.
@@ -132,12 +168,15 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 10), """
             Tocar «Activar la nube» con la ida de otro dispositivo en curso no avisa: el flujo seguiría hacia el claim.
             """)
-        XCTAssertEqual(title.label, "Otro de tus dispositivos está llevando tus datos a la nube", """
-            El aviso no es el de otro dispositivo: es el texto falso que el ticket retira, o el de otro motivo.
+        XCTAssertEqual(title.label, "Hay una activación a medias con esta cuenta", """
+            El aviso no es el de la activación a medias: es el texto falso de un ticket anterior, o el de otro motivo.
             """)
         let body = app.staticTexts["storage_migrate_block_body"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
-        XCTAssertTrue(body.label.contains("reinténtala allí"), "El aviso no nombra la salida: \(body.label)")
+        // G1: esperar lo arregla, así que no se ofrece soltar la cuenta (`MigrationBlockChangeAccountLogic`).
+        XCTAssertFalse(app.buttons["storage_migrate_block_change_account"].exists,
+                       "Una activación a medias ofrece «Cambiar de cuenta», y no se arregla soltando la cuenta.")
+        XCTAssertTrue(body.label.contains("vuelve a intentarlo en una hora"), "El aviso no nombra la salida: \(body.label)")
         XCTAssertFalse(body.label.contains("finanzas personales"), "El cuerpo repite el texto falso: \(body.label)")
         XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
                        "El consentimiento se abrió detrás del aviso: la comprobación no paró el flujo.")
@@ -150,13 +189,11 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["storage_activation_sheet"].waitForExistence(timeout: 3),
                        "Cerrar el aviso abrió el consentimiento: el toque siguió aunque la comprobación dijo que no.")
 
-        let refused = app.staticTexts["storage_account_refused_note"]
-        XCTAssertTrue(refused.waitForExistence(timeout: 5), "La tarjeta no recuerda por qué ya no se puede activar la nube.")
-        XCTAssertTrue(refused.label.contains("Otro de tus dispositivos"), """
-            La nota de la tarjeta no es la de otro dispositivo: \(refused.label)
-            """)
-        XCTAssertFalse(refused.label.contains("finanzas personales"), "La nota repite el texto falso: \(refused.label)")
-        XCTAssertFalse(migrate.isEnabled, "«Activar la nube» sigue activo con la ida de otro dispositivo en curso.")
+        // 2026-11-06 (opción 1 de Jürgen): el aviso dice «vuelve a intentarlo en una hora», así que la tarjeta no recuerda
+        // el rechazo ni apaga el botón: apagado el resto de la sesión, ese reintento no existía.
+        XCTAssertFalse(app.staticTexts["storage_account_refused_note"].waitForExistence(timeout: 3),
+                       "La tarjeta recuerda un rechazo que esperar arregla.")
+        XCTAssertTrue(migrate.isEnabled, "«Activar la nube» se apagó: el reintento que promete el aviso no existe.")
     }
 
     /// El gemelo que hace discriminante al de arriba: con una cuenta que sí puede recibir la migración, el MISMO toque llega
@@ -188,9 +225,13 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
     }
 
     /// Lanza con el aviso ya publicado y abre «¿Dónde viven tus datos?»: la hoja sale sola al llegar.
-    private func openStorageWithPendingBlock(_ value: String) -> (XCUIApplication, XCUIElement) {
+    /// `appleWebSignInOff`: el interruptor de «Otra cuenta de Apple» apagado, como en producción hoy.
+    private func openStorageWithPendingBlock(
+        _ value: String, appleWebSignInOff: Bool = false
+    ) -> (XCUIApplication, XCUIElement) {
         let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingMigrationBlock: value)
+        app.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingMigrationBlock: value,
+                            extraArguments: appleWebSignInOff ? ["-uitest-apple-web-sign-in-off"] : [])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
         app.openProfile()
 
@@ -208,10 +249,11 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         return (app, title)
     }
 
-    /// Una cuenta rechazada de Apple: la hoja dice que Apple usa la cuenta del dispositivo y ofrece «Usar otra cuenta», que
-    /// abre la elección de Apple/Google solo cuando la hoja ya bajó.
+    /// Una cuenta rechazada de Apple con «Otra cuenta de Apple» APAGADO (producción hoy): la hoja dice que Apple usa la
+    /// cuenta del dispositivo y ofrece «Usar otra cuenta», que abre la elección de Apple/Google solo cuando la hoja ya
+    /// bajó, y sin la salida de otro Apple ID.
     func test_anotherAccount_opensTheSignInChoice_afterTheSheetCloses() {
-        let (app, title) = openStorageWithPendingBlock("personalDataApple")
+        let (app, title) = openStorageWithPendingBlock("personalDataApple", appleWebSignInOff: true)
 
         XCTAssertTrue(app.staticTexts["storage_migrate_block_apple_note"].waitForExistence(timeout: 5), """
             La hoja no avisa de que con Apple se entra siempre con la cuenta del dispositivo: «Usar otra cuenta» → Apple \
@@ -228,6 +270,42 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertTrue(chooser.waitForExistence(timeout: 10), """
             «Usar otra cuenta» cerró la hoja y no abrió la elección de Apple/Google: la persona se queda sin el siguiente paso.
             """)
+        XCTAssertTrue(app.buttons["storage_signin_google"].waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "antes-otra-cuenta-de-apple"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertFalse(app.buttons["storage_signin_another_apple_id"].exists, """
+            Con el interruptor apagado el selector ofrece «Otra cuenta de Apple»: en producción el Supabase no tiene el \
+            proveedor web de Apple y el botón acabaría en un error.
+            """)
+    }
+
+    /// Ticket `cloud-sign-in-cannot-choose-another-apple-id` (decisión A de Jürgen, 2026-11-06): con el interruptor
+    /// encendido —staging, Yala Dev— la nota de «Apple usa siempre la cuenta del dispositivo» se retira, porque deja de ser
+    /// verdad, y el selector de «Usar otra cuenta» ofrece «Otra cuenta de Apple».
+    func test_anotherAccount_withAppleOnTheWeb_offersAnotherAppleID_andDropsTheNote() {
+        let (app, title) = openStorageWithPendingBlock("personalDataApple")
+
+        let another = app.buttons["storage_migrate_block_use_another"]
+        XCTAssertTrue(another.waitForExistence(timeout: 5), "La hoja no ofrece «Usar otra cuenta».")
+        XCTAssertFalse(app.staticTexts["storage_migrate_block_apple_note"].exists, """
+            La hoja sigue diciendo que con Apple se entra siempre con la cuenta del dispositivo, y el selector ya ofrece otra.
+            """)
+        another.tap()
+
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5), "«Usar otra cuenta» no cerró la hoja.")
+        let anotherAppleID = app.buttons["storage_signin_another_apple_id"]
+        XCTAssertTrue(anotherAppleID.waitForExistence(timeout: 10), """
+            El selector de «Usar otra cuenta» no ofrece «Otra cuenta de Apple»: con Apple se sigue entrando solo con el \
+            Apple ID del teléfono.
+            """)
+        XCTAssertTrue(app.buttons["storage_signin_apple"].exists, "Desapareció «Iniciar sesión con Apple» de siempre.")
+        XCTAssertTrue(app.buttons["storage_signin_google"].exists, "Desapareció «Continuar con Google».")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-otra-cuenta-de-apple"
+        shot.lifetime = .keepAlways
+        add(shot)
     }
 
     /// El gemelo que hace discriminante al de arriba: «Entendido» cierra y nada más. Y sin cuenta de Apple rechazada, la

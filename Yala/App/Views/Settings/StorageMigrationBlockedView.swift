@@ -22,6 +22,11 @@ struct StorageMigrationBlockedView: View {
     var onUseAnotherAccount: () -> Void
     /// «Desasociarla y seguir» (card 9mc6). Solo se pinta con `block.offersDetachingStaleAssociation`.
     var onDetachAndContinue: () -> Void = {}
+    /// «Cambiar de cuenta» (G1 de la revisión 2.3, decisión 55): los avisos que mandaban a soltar la cuenta de los grupos
+    /// ofrecen esa salida como botón. Lo decide `MigrationBlockChangeAccountLogic` y lo pasa la pantalla, que sabe si la
+    /// sección puede soltarla ahora. El botón NO suelta nada: la pantalla abre la hoja de consecuencias al bajar esta.
+    var offersChangeAccount: Bool = false
+    var onChangeAccount: () -> Void = {}
     /// «Entendido».
     var onClose: () -> Void
 
@@ -56,14 +61,35 @@ struct StorageMigrationBlockedView: View {
                     }
 
                     VStack(spacing: DS.Spacing.md) {
-                        if block.showsAppleSameAccountNote {
+                        // La nota provisional («con Apple, Yala usa siempre la cuenta de este dispositivo») deja de ser
+                        // verdad donde «Usar otra cuenta» ofrece «Otra cuenta de Apple» (ticket
+                        // `cloud-sign-in-cannot-choose-another-apple-id`). Con el interruptor apagado sigue siéndolo.
+                        if block.showsAppleSameAccountNote, !CloudRemoteFlags.appleWebSignInEnabled {
                             Text(L10n.Storage.MigrateBlock.appleSameAccountNote)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .accessibilityIdentifier("storage_migrate_block_apple_note")
                         }
-                        if block.offersDetachingStaleAssociation {
+                        if offersChangeAccount {
+                            YalaPrimaryButton(L10n.Storage.Groups.changeAccount,
+                                              icon: "person.crop.circle.badge.questionmark") {
+                                onChangeAccount()
+                            }
+                            .accessibilityIdentifier("storage_migrate_block_change_account")
+                            // «Ya usas otra cuenta para tus grupos» nombra las dos salidas: entrar con la de los grupos
+                            // o cambiarla. Las dos, a la vista.
+                            if block.offersAnotherAccount {
+                                YalaSecondaryButton(L10n.Storage.MigrateBlock.useAnotherAccount) {
+                                    onUseAnotherAccount()
+                                }
+                                .accessibilityIdentifier("storage_migrate_block_use_another")
+                            }
+                            YalaSecondaryButton(L10n.Common.understood) {
+                                onClose()
+                            }
+                            .accessibilityIdentifier("storage_migrate_block_close")
+                        } else if block.offersDetachingStaleAssociation {
                             // La cuenta de grupos que bloquea llegó del iCloud de otra instalación: soltarla aquí es el
                             // gesto que el cuerpo manda hacer en «Grupos», y la elección de cuenta sigue sola. Ocupa el
                             // sitio de «Usar otra cuenta»: con la asociación puesta, cualquier otra cuenta se pararía igual.

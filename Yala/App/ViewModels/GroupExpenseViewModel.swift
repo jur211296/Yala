@@ -24,6 +24,12 @@ final class GroupExpenseViewModel {
     private(set) var editingExpense: SplitExpense?
     var isEditMode: Bool { editingExpense != nil }
 
+    /// «Convertir a gasto compartido» desde Editar de un registro (2.3): el registro que pasa a ser este gasto. Importe,
+    /// moneda, fecha, cuenta y pagador son los suyos y no se editan aquí (`GroupExpenseService.convertPersonalTransaction`
+    /// los toma del registro, no del formulario); el nombre en el grupo, la categoría y el reparto, sí.
+    private(set) var conversionSource: TransactionItem?
+    var isConversion: Bool { conversionSource != nil }
+
     // MARK: - Form State
 
     var amountString: String = ""
@@ -140,7 +146,8 @@ final class GroupExpenseViewModel {
         // `canSave` sigue exigiendo monto válido y al menos un participante.
         if selectedMembers.count <= 1 { return true }
         guard calculatedShares != nil else { return splitType == .equal && !selectedMemberIDs.isEmpty }
-        return abs(remainingToAllocate) < 0.02
+        // Al céntimo, como el calculador: con 0,02 la insignia decía «Balanceado» sobre 399,99 de 400.
+        return abs(remainingToAllocate) < GroupSplitCalculator.balanceTolerance
     }
 
     var isAmountValid: Bool { amount > 0 }
@@ -305,11 +312,62 @@ final class GroupExpenseViewModel {
         self.modelContext = ctx
     }
 
+    // MARK: - No tirar lo escrito (decisión 39 de 2.3)
+
+    /// Todo lo que la persona puede cambiar en el formulario. Lo compara la X con la foto de partida
+    /// (`GroupFormDiscardLogic`): si algo cambió, pregunta antes de cerrar.
+    struct FormSnapshot: Equatable {
+        let expenseDescription: String
+        let amountString: String
+        let note: String
+        let date: Date
+        let currencyCode: String
+        let paidByMemberID: String
+        let splitType: SplitType
+        let selectedMemberIDs: Set<String>
+        let exactAmounts: [String: String]
+        let percentages: [String: String]
+        let sharesCounts: [String: String]
+        let subcategoryName: String?
+        let accountID: PersistentIdentifier?
+    }
+
+    var formSnapshot: FormSnapshot {
+        FormSnapshot(
+            expenseDescription: expenseDescription, amountString: amountString, note: note, date: date,
+            currencyCode: currencyCode, paidByMemberID: paidByMemberID, splitType: splitType,
+            selectedMemberIDs: selectedMemberIDs, exactAmounts: exactAmounts, percentages: percentages,
+            sharesCounts: sharesCounts, subcategoryName: subcategoryName, accountID: selectedAccount?.persistentModelID
+        )
+    }
+
+    /// Lo que viaja a otro grupo al cambiarlo (F3). Quién pagó y el reparto se quedan: son personas de este grupo.
+    var carryOver: GroupExpenseCarryOver {
+        GroupExpenseCarryOver(
+            expenseDescription: expenseDescription, amountString: amountString, note: note, date: date,
+            currencyCode: currencyCode, subcategory: selectedSubcategory, account: selectedAccount
+        )
+    }
+
+    /// Lo escrito en otro grupo, sobre este formulario recién montado. Quién pagó y el reparto quedan como los deja el
+    /// `init` de este grupo (pagas tú, a partes iguales entre todos).
+    func applyCarryOver(_ carried: GroupExpenseCarryOver) {
+        expenseDescription = carried.expenseDescription
+        amountString = carried.amountString
+        note = carried.note
+        date = carried.date
+        currencyCode = carried.currencyCode
+        selectedSubcategory = carried.subcategory
+        selectedAccount = carried.account
+    }
+
     // MARK: - Actions
 
     func save() -> Bool {
         guard canSave else { return false }
         guard let shares = calculatedShares else { return false }
+        // El registro ya se pasó (doble toque antes de que la hoja se cierre): no se vuelve a guardar nada.
+        if isConversion, editingExpense != nil { return true }
 
         isSaving = true
         saveError = nil
@@ -319,7 +377,19 @@ final class GroupExpenseViewModel {
             // M6: pasar selectedAccount solo si Caso A (en Caso B, la cuenta del user no aplica).
             // Una venta no sale de ninguna cuenta (card 7): aunque quede elegida de antes, no se pasa.
             let accountToPass: Account? = isCaseA && !isSale ? selectedAccount : nil
-            if let existing = editingExpense {
+            if let source = conversionSource, editingExpense == nil {
+                // Un segundo toque o un reintento no crean otro: el servicio devuelve el gasto que ya es de este registro.
+                let created = try GroupExpenseService.shared.convertPersonalTransaction(
+                    source,
+                    to: group,
+                    description: expenseDescription.trimmingCharacters(in: .whitespaces),
+                    subcategoryName: subcategoryName,
+                    splitType: splitType.rawValue,
+                    shares: shares
+                )
+                lastCreatedExpenseID = created.id.uuidString
+                editingExpense = created
+            } else if let existing = editingExpense {
                 try GroupExpenseService.shared.updateExpense(
                     existing,
                     in: group,
@@ -383,16 +453,18 @@ final class GroupExpenseViewModel {
         selectedMemberIDs = Set(template.participantIDs.map { $0.uuidString }).intersection(activeIDs)
 
         exactAmounts = [:]; percentages = [:]; sharesCounts = [:]
+        var templatePercentages: [(id: String, percentage: Double)] = []
         for (uuid, value) in template.values {
             let id = uuid.uuidString
             guard activeIDs.contains(id) else { continue }
             switch template.splitType {
             case .exact: exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
-            case .percentage: percentages[id] = String(format: "%.1f", value)
+            case .percentage: templatePercentages.append((id: id, percentage: value))
             case .shares: sharesCounts[id] = String(Int(value.rounded()))
             case .equal: break
             }
         }
+        if !templatePercentages.isEmpty { loadPercentages(templatePercentages) }
 
         if let account = template.accountPrefill {
             selectedAccount = account
@@ -403,6 +475,13 @@ final class GroupExpenseViewModel {
             selectedSubcategory = subcategory
             alignSubcategoryWithBridge()
         }
+    }
+
+    /// Prellena el formulario con el registro que se pasa al grupo. El pagador queda en ti (fijado en `init`): el dinero
+    /// salió de tu cuenta.
+    func applyConversion(from transaction: TransactionItem, template: GroupExpensePrefillTemplate) {
+        conversionSource = transaction
+        applyTemplate(template)
     }
 
     func prefill(from expense: SplitExpense, shares: [SplitShare]) {
@@ -430,6 +509,7 @@ final class GroupExpenseViewModel {
             : [:]
 
         // Populate per-type fields from existing shares
+        var sharePercentages: [(id: String, percentage: Double)] = []
         for share in shares {
             let id = share.memberID
             switch splitType {
@@ -437,13 +517,14 @@ final class GroupExpenseViewModel {
                 exactAmounts[id] = AmountInputHelper.formatWithGrouping(share.amount)
             case .percentage:
                 let pct = expense.amount > 0 ? (share.amount / expense.amount) * 100 : 0
-                percentages[id] = String(format: "%.1f", pct)
+                sharePercentages.append((id: id, percentage: pct))
             case .shares:
                 sharesCounts[id] = sharesCountStrings[id] ?? "1"
             case .equal:
                 break
             }
         }
+        if !sharePercentages.isEmpty { loadPercentages(sharePercentages) }
 
         // M6: si edit Caso A `.full/.completed`, recupera la cuenta personal real bridgeada.
         // Si TX aún no llegó vía sync personal (race), `selectedAccount` queda nil y form
@@ -556,11 +637,19 @@ final class GroupExpenseViewModel {
     /// 300 entre 3 iguales da 33.4/33.3/33.3 (el pagador recibe el remanente), no 33.3×3.
     private func distributePercentage(_ amounts: [(id: String, amount: Double)]) {
         guard amount > 0 else { return }
+        loadPercentages(amounts.map { (id: $0.id, percentage: $0.amount / amount * 100) })
+    }
+
+    /// Escribe los porcentajes a un decimal haciendo que sumen 100: el remanente del redondeo va al pagador si
+    /// participa, si no al primero. Lo usan también la edición de un gasto guardado (`prefill`), las plantillas y el
+    /// editor de pagos planificados: con «Porcentaje» exigido al céntimo (lote 02 de mejoras necesarias de 2.3), un gasto
+    /// de 10,01 a 25 % cada uno se reabría con 25,0 ×3 + 25,1 = 100,1 y ya no dejaba guardar (lo cazó la review).
+    func loadPercentages(_ values: [(id: String, percentage: Double)]) {
         var byID: [String: Double] = [:]
-        for entry in amounts { byID[entry.id] = ((entry.amount / amount * 100) * 10).rounded() / 10 }
+        for entry in values { byID[entry.id] = (max(0, entry.percentage) * 10).rounded() / 10 }
         let sum = byID.values.reduce(0, +)
         let diff = ((100 - sum) * 10).rounded() / 10
-        if abs(diff) >= 0.05, let target = remainderTargetID(among: amounts.map(\.id)) {
+        if abs(diff) >= 0.05, let target = remainderTargetID(among: values.map(\.id)) {
             byID[target, default: 0] += diff
         }
         for (id, pct) in byID { percentages[id] = String(format: "%.1f", pct) }

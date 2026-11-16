@@ -97,6 +97,16 @@ final class CloudSessionSignOut {
     }
     private(set) var iCloudExportWait: ICloudExportWait?
 
+    /// Card p9q0 (13-nov-2026) · **`true` mientras el cambio de almacén en caliente está en vuelo.** El cierre pone la fase en
+    /// `.awaitingRelaunch` ANTES de intentarlo (es la red: si no sale, el arranque lo consuma), así que la fase sola no
+    /// distingue «hay que reabrir» de «todavía no se sabe». La pantalla de progreso del cierre se queda mientras esto sea
+    /// `true` y se retira cuando el cambio termina: con `.idle` aterriza en el Welcome; si la fase sigue en
+    /// `.awaitingRelaunch`, deja ver la pantalla de reabrir. Lo encienden los cuatro cierres justo antes de pedir el cambio,
+    /// sin suspensión de por medio (la misma vuelta del main actor que la fase), y lo apaga su `defer` al salir del método,
+    /// en la misma vuelta que la vuelta a `.idle`: el cambio es lo último de los cuatro métodos. Un cierre nuevo que cambie
+    /// el almacén en caliente lo enciende igual (`SignOutSwapInFlightWiringTests`).
+    private(set) var inPlaceSwapInFlight = false
+
     /// Card ypit · a dónde vuelve el Welcome cuando el borrado de este cierre queda ARMADO. Lo pasa la puerta de Grupos
     /// del Welcome (`WelcomeGroupsGateView.Purpose.destinationAfterNeutralReturn`) y se escribe pegado al arm
     /// (`persistDestinationOnArm`), antes del cambio en caliente.
@@ -137,8 +147,18 @@ final class CloudSessionSignOut {
     }
 
     /// Escribe el destino del Welcome pegado al arm del borrado (ver `destinationOnArm`) y lo retira: un cierre lo usa una vez.
+    ///
+    /// **Sin destino, retira el que hubiera** (card 7e60, medido en el iPhone 14 el 2026-11-05). El destino sobrevive al
+    /// borrado (`removeUserPreferenceKeys` no lo barre, a propósito: es lo que hace llegar el de este cierre), así que uno
+    /// viejo —un «Restaurar desde iCloud» que nadie llegó a consumir— encaminaba a quien entra después. Con el neutro
+    /// armado y `hasShownWelcomeChooser` borrado, Restaurar pedía reabrir y el arranque volvía a montar sin espejo: «Un
+    /// último paso: reabre Yala» en cada apertura, sin salida. A dónde vuelve el Welcome tras un cierre lo decide el cierre.
     private func persistDestinationOnArm() {
-        if let destinationOnArm { WelcomePendingDestinationStore.set(destinationOnArm) }
+        if let destinationOnArm {
+            WelcomePendingDestinationStore.set(destinationOnArm)
+        } else {
+            WelcomePendingDestinationStore.clear()
+        }
         destinationOnArm = nil
     }
 
@@ -868,6 +888,21 @@ final class CloudSessionSignOut {
         }
     }
 
+    /// ¿El store de grupos guarda grupos de la era CloudKit que nunca migraron al canal backend? No están en ningún otro
+    /// sitio —la Fase 3 retiró su transporte—, así que la entrada con otra cuenta no deja iCloud aparte con ellos
+    /// (`ICloudAsideEntryLogic`): la vuelta al neutro se los llevaría. Solo lee.
+    static func hasLegacyCloudKitGroupRows(context: ModelContext) -> Bool {
+        do {
+            return try context.fetchCount(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { !$0.isBackendGroup && $0.movedToBackendAt == nil })) > 0
+        } catch {
+            #if DEBUG
+            print("CloudSessionSignOut: Error contando grupos de la era CloudKit: \(error)")
+            #endif
+            return true  // ante la duda, hay: se queda el bloqueo y no se borra nada
+        }
+    }
+
     /// ¿El store de grupos guarda ALGÚN grupo, del canal que sea? Es el término que cuenta la puerta de Grupos del Welcome
     /// (`ContentView.checkHasGroupsData`), y lo que decide si su vuelta al neutro se lleva el store
     /// (`CloudSignOutFlowLogic.wipeForgetsGroups`). Solo lee.
@@ -1557,6 +1592,8 @@ final class CloudSessionSignOut {
         // espejo y se quedan con el relanzamiento (`mountAdmitsSwap` las saltaría igual: el `guard` lo dice aquí). Mismo
         // orden y misma red: el borrado ya está armado, y si el cambio no puede, el arranque siguiente hace lo de siempre.
         guard kind == .groupsOnly else { return }
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
             phase = .idle
         }
@@ -1829,6 +1866,8 @@ final class CloudSessionSignOut {
         // Welcome — la persona siguiente entra sin haber cerrado la app ni una vez. La fase se devuelve a
         // `.idle` SOLO en ese caso: mientras el cierre siga dependiendo de un relanzamiento, la fase es lo
         // que sostiene el cover y el exit-on-background.
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
             phase = .idle
         }
@@ -2541,12 +2580,84 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
 
         // Card ypit · «Borrar mi cuenta» en la nube y en solo-grupos sin sesión privada cierra sin reabrir: el mismo cambio
         // en caliente y en el mismo sitio que el cierre de sesión en la nube (R4, arriba), y con la misma red. Los dos
         // montan sin espejo; si el proceso montó con él (`mountAdmitsSwap`), se salta y queda el relanzamiento de siempre.
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
+        guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
+        phase = .idle
+        return true
+    }
+
+    // MARK: - «Empezar de cero» del Welcome con el teléfono en la nube (opción A, 13-nov-2026)
+
+    /// **Devuelve a recién instalado un teléfono que sigue en modo nube tras «Empezar de cero» del Welcome** (ticket
+    /// `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen). Lo llama el Welcome cuando el borrado de
+    /// «Empezar de cero» ya terminó —filas, grupos del relevo, sesión retirada— y el modo persistido sigue en `.cloud`
+    /// (`AdoptOverCloudGuardLogic.freshStartReturnsToFreshInstall`). Hasta ese día el Welcome abría el onboarding encima: el
+    /// teléfono quedaba en `.cloud` sin sesión ni sello, y la siguiente entrada a la cuenta arrancaba un adopt sin salida.
+    ///
+    /// **Es el cierre local de «Borrar mi cuenta» en la nube sin el borrado de la cuenta** (`closeLocalAfterAccountDeletionCloud`),
+    /// y por la misma razón no hay push-all: la persona eligió empezar de cero, y este borrado es local: no toca la cuenta de la nube. El borrado
+    /// es el del arranque (`performSignOutWipeIfArmed`): archivos fuera, par a `.icloud`, neutro armado y preferencias de
+    /// instalación nueva. Se consuma en caliente si el montaje lo admite (los dos montajes de este estado, neutro y nube sin
+    /// espejo, lo admiten) y, si no, la fase `.awaitingRelaunch` pinta «reabre Yala» y lo consuma el arranque. Al terminar, la
+    /// persona está en el Welcome de un teléfono recién instalado.
+    ///
+    /// **No marca el store de Grupos**: el relevo de «Empezar de cero» ya purgó sus filas, y con los grupos que el aviso
+    /// tardío conservó para esta misma persona (`LateNoticeKeptGroupsMark`) borrarlos sería el daño que esa decisión evitó.
+    ///
+    /// **Dos mitades, y la primera es síncrona a propósito** (review adversarial). El Welcome se cierra en el mismo toque; si
+    /// el borrado se armara después de las esperas de red (desregistro del push, `signOut()`), un cierre de la app en ese
+    /// hueco reabría con el modo en `.cloud`, sin arm y con el elector ya visto: el onboarding privado sobre la nube, que es
+    /// el bug por otra puerta. Armado antes de cualquier `await`, ese cierre lo termina el arranque. El borrado del arranque
+    /// retira la sesión por su cuenta (`retireForSignOutWipe`), así que armar primero es seguro.
+    ///
+    /// Devuelve `false` sin tocar nada con el coordinador ocupado: el llamador no cierra el Welcome.
+    func armReturnToFreshInstallAfterWelcomeFreshStart() -> Bool {
+        guard phase == .idle else { return false }
+        phase = .working
+        CloudSyncBreadcrumb.signOutStarted(path: "welcome-fresh-start-cloud")
+        // Un marker `includesGroups` huérfano de un cierre anterior no puede colarse en este borrado (ver arriba).
+        StorageModePersistence.clearSignOutWipeIncludesGroups()
+        // Recién instalado es sin destino: la persona vuelve a elegir en el Welcome. El destino se retira pegado al arm.
+        StorageModePersistence.armSignOutWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
+        clearLocalSurfacesForArmedWipe()
+        // Barrido del 14-nov (card p9q0): el cambio en caliente llega tras unas esperas en `finishReturn…`, y sin el testigo
+        // puesto ya aquí la pantalla de reabrir se armaba en el árbol que el cambio desmonta (cover huérfano). Lo apaga el
+        // `defer` de arriba de `finishReturnToFreshInstallAfterWelcomeFreshStart`, salga por donde salga.
+        inPlaceSwapInFlight = true
+        phase = .awaitingRelaunch
+        return true
+    }
+
+    /// La segunda mitad, con el borrado ya armado: parar lo que corre, soltar la sesión y consumar el borrado en caliente.
+    /// Devuelve `true` si cerró sin reabrir; con `false` la fase sigue en `.awaitingRelaunch` y el cover pide reabrir.
+    @discardableResult
+    func finishReturnToFreshInstallAfterWelcomeFreshStart() async -> Bool {
+        defer { inPlaceSwapInFlight = false }
+        guard phase == .awaitingRelaunch, StorageModePersistence.isSignOutWipeArmed() else { return false }
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        GroupsSyncClient.shared.teardownForSignOut()
+        await PushTokenSignOutSeam.clearForSignOut()
+        // El Welcome ya retiró la sesión (`CloudSessionRetirement.retireForHandover`), pero ese retiro es un `Task`: se repite
+        // aquí, y si sobrevive queda armada para el arranque, como en el cierre tras borrar la cuenta.
+        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "welcome-fresh-start-cloud")
+        inPlaceSwapInFlight = true
+        defer { inPlaceSwapInFlight = false }
         guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
         phase = .idle
         return true
@@ -2663,6 +2774,12 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
         return true
@@ -2868,11 +2985,15 @@ final class CloudSessionSignOut {
     /// `awaitPersonalQuiescenceForGroupsSignOut`, para quien ya esperó y solo tiene que volver a mirar tras una pausa
     /// (`captureGroupsForExit`).
     static func personalSaveIsSafeNow() -> Bool {
-        CloudSignOutFlowLogic.isPersonalSaveSafe(
+        let sync = iCloudSyncService.shared
+        return CloudSignOutFlowLogic.isPersonalSaveSafe(
             mountAttachesMirror: personalMountAttachesMirror,
-            accountAvailable: iCloudSyncService.shared.isAccountAvailable,
-            firstImportCompleted: iCloudSyncService.shared.hasCompletedFirstImport,
-            importQuiescent: iCloudSyncService.shared.isImportQuiescent)
+            accountPresent: sync.hasICloudAccount,
+            firstImportCompleted: sync.hasCompletedFirstImport,
+            importQuiescent: sync.isImportQuiescent,
+            observedImportActivity: sync.hasObservedImportActivity,
+            noImportGraceElapsed: sync.noImportGraceElapsed,
+            syncingAnyPhase: sync.status.isSyncing)
     }
 
     /// Filas VIVAS (no dead-letter) del outbox de GRUPOS agregadas sobre TODOS los grupos. Cero → seguro

@@ -19,7 +19,7 @@ const SPK = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36
 const SC = { l: 5.09, t: 2.21, w: 89.82, h: 95.58, rx: 13.7, ry: 6.33 };
 const b64 = (p) => readFileSync(p).toString("base64");
 const dataURI = (p, mime) => `data:${mime};base64,${b64(p)}`;
-const spk = (p) => `<svg viewBox="0 0 100 100" style="position:absolute;left:${p.x}px;top:${p.y}px;width:${p.s}px;height:${p.s}px;opacity:${p.o};transform:rotate(${p.r}deg);filter:drop-shadow(0 0 ${p.s * 0.18}px ${p.c})"><path d="${SPK}" fill="${p.c}"/></svg>`;
+const spk = (p) => `<svg viewBox="0 0 100 100" style="position:absolute;left:${p.x}px;top:${p.y}px;width:${p.s}px;height:${p.s}px;opacity:${p.o};transform:rotate(${p.r}deg)"><path d="${SPK}" fill="${p.c}"/></svg>`;
 
 const items = JSON.parse(readFileSync(join(DIR, "content.json"), "utf8"));
 const idx = ((parseInt(process.argv[2] ?? "0", 10) % items.length) + items.length) % items.length;
@@ -28,7 +28,7 @@ const accent = COLORS[t.accent] || COLORS.cyan;
 const logo = dataURI(join(PUB, "yala-spark.png"), "image/png");
 const hasShot = !!t.screenshot;
 
-// sparkles dentro del contenido (coords 1080) + relleno en las bandas del lienzo alto
+// sparkles planos (sin drop-shadow: regla sin brillos del 13-oct) dentro del contenido (coords 1080) + relleno en las bandas del lienzo alto
 const inner = [
   { x: 62, y: 300, s: 60, c: "#6164EB", r: 12, o: 1 }, { x: 958, y: 210, s: 82, c: "#FF2D78", r: -8, o: 1 },
   { x: 1002, y: 770, s: 58, c: "#3BD6F0", r: 6, o: 0.9 }, { x: 74, y: 850, s: 72, c: "#3BD6F0", r: -15, o: 0.85 },
@@ -57,11 +57,11 @@ const titleSize = hasShot ? 72 : 80;
 const subTop = hasShot ? 28 : 46;
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+/* Fondo navy-900 liso: sin degradado ni glow (regla de marca del 13-oct, marca/README.md) */
 *{margin:0;box-sizing:border-box}
 body{width:${IG_W}px;height:${IG_H}px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-.slide{width:${IG_W}px;height:${IG_H}px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0F172A 0%,#0B1122 100%)}
+.slide{width:${IG_W}px;height:${IG_H}px;position:relative;overflow:hidden;background:#0F172A}
 .stage{position:absolute;left:0;top:${VSHIFT}px;width:${IG_W}px;height:${IG_W}px}
-.glow{position:absolute;left:250px;top:280px;width:1400px;height:1400px;opacity:.3;border-radius:50%;pointer-events:none;background:radial-gradient(circle,${accent} 0%,transparent 70%)}
 .badge{position:absolute;top:${hasShot ? 70 : 160}px;left:0;right:0;text-align:center;z-index:5}
 .badge span{display:inline-block;font-size:30px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${accent};background:${accent}26;padding:13px 28px;border-radius:32px}
 .title{font-size:${titleSize}px;font-weight:850;color:#fff;line-height:1.16;letter-spacing:-1px}
@@ -74,7 +74,6 @@ body{width:${IG_W}px;height:${IG_H}px;font-family:-apple-system,BlinkMacSystemFo
 </style></head><body><div class="slide">
 ${filler}
 <div class="stage">
-<div class="glow"></div>
 ${inner}
 <div class="badge"><span>${t.emoji ? t.emoji + " " : ""}${t.tag}</span></div>
 <div style="${tbStyle}">

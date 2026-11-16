@@ -331,7 +331,7 @@ struct BornCloudSignUpOrderWiringTests {
         let body = try Self.body(of: "private func runBornCloudFlow() async {",
                                  in: try Self.source(Self.viewPath))
         let signIn = try #require(body.range(of: "ensureSignedIn()"))
-        let claim = try #require(body.range(of: "service.signUp()"))
+        let claim = try #require(body.range(of: "service.signUp("))
         let activate = try #require(body.range(of: "service.activateBornCloudStorage("))
         // R2: la vista le pasa el TESTIGO de mount de este proceso. Sin ese argumento la primitiva tendría
         // que leerlo por dentro y su tabla dejaría de ser testeable sin montar un container.
@@ -440,7 +440,8 @@ struct BornCloudSignUpOrderWiringTests {
     func readyTerminals_areNotSwapped() throws {
         // Espacios colapsados: una llamada partida en dos líneas sigue siendo la misma llamada.
         let src = try Self.codeOnly(Self.viewPath).replacing(/\s+/, with: " ")
-        #expect(src.contains(#"readyContent(id: "welcome_born_cloud_ready", title: L10n.Welcome.BornCloud.readyTitle, action: onBornCloudCompleted)"#))
+        // El alta dice «Creamos tu cuenta» y lo que sigue, no «¡Tu cuenta está lista!» (card luc1, 13-nov).
+        #expect(src.contains(#"readyContent(id: "welcome_born_cloud_ready", title: L10n.UnifiedAccess.createdTitle, body: L10n.UnifiedAccess.createdBody, action: onBornCloudCompleted)"#))
         #expect(src.contains(#"readyContent(id: "welcome_reentry_ready", title: L10n.Welcome.BornCloud.readyTitle, action: onFinishedToApp)"#))
         // El alta que entró en una cuenta ya creada sale como la re-entrada: el onboarding sembraría encima de la cuenta.
         #expect(src.contains(#"readyContent(id: "welcome_signup_existing_account_ready", title: L10n.Welcome.BornCloud.readyExistingAccountTitle, action: onFinishedToApp)"#))

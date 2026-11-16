@@ -27,7 +27,7 @@ enum DraftSourceType: String, Codable {
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
     case groupScheduledExpense // Pago planificado de grupo: al aprobar abre el form de grupo y crea el SplitExpense.
     /// La IA de la persona (Claude, ChatGPT, Grok) lo apuntó por el conector de Yala (`mcp/`, `apuntar_movimiento`) y la
-    /// app lo recogió de la cola del gateway (`AIConnectorDraftService`). La IA concreta va en `evidence`. Una app anterior
+    /// app lo recogió de la cola común del gateway (`BankEmailDraftService`, `source: "ai"`). La IA concreta va en `evidence`. Una app anterior
     /// a 2.3 no conoce el valor y lo pinta como `.voice` (el fallback de `sourceType`); el raw se conserva.
     case aiConnector
 

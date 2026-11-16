@@ -61,9 +61,11 @@ corta() {   # corta <escena>: para la grabación, la pasa a 30 fps y escribe sus
 relanza() { "$L" "$IDIOMA" iphone --sin-semilla "$@" >/dev/null; sleep 3; }
 
 # Lo que se escribe en el chat (la respuesta la finge -uitest-chat-reply pizza: «Pizza · <importe> · Restaurantes», con el
-# importe de DevSeedFicha.Cifras.pizza en la divisa de la ficha: 28 dólares, 90 reales). Sin tildes: axe no las escribe.
+# importe de DevSeedFicha.Cifras.pizza en la divisa de la ficha: 28 dólares, 24 libras, 90 reales, 26 euros). Sin tildes: axe no las escribe.
 case "$IDIOMA" in
+  en-GB) FRASE="Pizza with friends 24" ;;
   en) FRASE="Pizza with friends 28" ;;
+  pt-PT) FRASE="Pizza com os amigos 26" ;;
   pt-BR) FRASE="Pizza com os amigos 90" ;;
   *) FRASE="Pizza con amigos 280" ;;
 esac

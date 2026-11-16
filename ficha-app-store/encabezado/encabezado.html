@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Yala · encabezado en vídeo</title>
+<link rel="stylesheet" href="../capturas/lamina.css">
+<style>
+  .guia{position:absolute;z-index:50;border:8px dashed #39FF6A;pointer-events:none}
+  .guia span{position:absolute;left:0;bottom:0;background:#39FF6A;color:#000;font:800 40px/1 var(--fuente);padding:10px 16px}
+  /* La pantalla va en negro: encabezado/render.py pega encima la grabación real, con la misma esquina. */
+  .phone .pantalla{background:#000}
+  .phone .isla{display:none}
+</style>
+</head><body>
+<div id="raiz"></div>
+<script>
+// Fondo del encabezado en vídeo de la ficha 2.2 (4-nov-2026). No se abre a mano: encabezado/render.py lo pide a Chrome
+// con la geometría en la URL y pega la grabación de Yala IA dentro de la pantalla.
+//   encabezado.html?W=3840&H=1646&tel=x,y,h&logo=x,y,w&seguro=x,y,w,h[&guia=1]
+// Sin texto encima: solo el logo y un iPhone que corre la toma real. Sirve igual en todas las fichas; lo único que
+// cambia por idioma es la pantalla.
+const q = new URLSearchParams(location.search);
+const W = +q.get("W"), H = +q.get("H");
+const [tx, ty, th] = q.get("tel").split(",").map(Number);
+const [lx, ly, lw] = q.get("logo").split(",").map(Number);
+const SEGURO = q.get("seguro").split(",").map(Number);
+
+const TRAZO = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z";
+const COLOR = {rosa: "#FF2D78", azul: "#6164EB", teal: "#3BD6F0", violeta: "#8B5CF6"};
+const K = H / 1646;   // las estrellas crecen con el alto del lienzo
+const estrella = ([x, y, s, c, r]) =>
+  `<svg class="estrella" viewBox="0 0 100 100" style="left:${x * W}px;top:${y * H}px;width:${s * K}px;height:${s * K}px;transform:rotate(${r || 0}deg)"><path d="${TRAZO}" fill="${COLOR[c]}"/></svg>`;
+// Estrellas en fracción del lienzo, lejos del logo y del teléfono. Planas, sin glow (regla de la serie).
+const ESTRELLAS = [[.06, .14, 70, "rosa", 10], [.17, .72, 90, "azul", -14], [.24, .20, 56, "teal", 8], [.09, .88, 44, "violeta", -6],
+                   [.80, .14, 84, "teal", 6], [.87, .62, 64, "rosa", -10], [.94, .30, 44, "azul", 12], [.76, .86, 50, "violeta", -8]];
+
+// iPhone 17 Pro de la portada: h = alto del teléfono entero.
+function iphone(x, y, h) {
+  const w = h * 0.4773 / 1.072;
+  const botones = [["left", 15.5, 2.6], ["left", 22.5, 4.8], ["left", 29, 4.8], ["right", 24, 8.2]]
+    .map(([lado, top, hh]) => `<i class="boton" style="${lado}:-${w * 0.009}px;top:${top}%;height:${hh}%"></i>`).join("");
+  return `<div class="escena" style="left:${x}px;top:${y}px;z-index:3">
+    <div class="phone" style="--w:${w}px">
+      <div class="sombra"></div><div class="grosor"></div>${botones}<div class="cuerpo"></div>
+      <div class="pantalla"><div class="isla"></div></div></div></div>`;
+}
+
+document.body.style.width = W + "px"; document.body.style.height = H + "px";
+const guia = q.get("guia") ? `<div class="guia" style="left:${SEGURO[0]}px;top:${SEGURO[1]}px;width:${SEGURO[2]}px;height:${SEGURO[3]}px"><span>ZONA SEGURA DE APPLE</span></div>` : "";
+document.getElementById("raiz").innerHTML =
+  `<div class="lienzo" style="width:${W}px;height:${H}px">${ESTRELLAS.map(estrella).join("")}
+   <img class="logo" src="../assets/logo.png" style="left:${lx}px;top:${ly}px;width:${lw}px;height:${lw * 620 / 820}px">
+   ${iphone(tx, ty, th)}${guia}</div>`;
+</script>
+</body></html>

@@ -30,6 +30,10 @@ struct TrendsCarouselWidget: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.amountsHidden) private var amountsHidden
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Días 1 y 2 de «Este mes»: sin comparaciones, solo el monto (decisión 10 de 2.3).
+    @Environment(\.hidesPeriodVariations) private var hidesPeriodVariations
 
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
@@ -47,6 +51,26 @@ struct TrendsCarouselWidget: View {
         viewModel.processedTrendPoints.isEmpty
     }
 
+    /// «Ver proyectado» encendido (preferencia compartida con Tendencias) y con algo que enseñar.
+    private var isShowingProjection: Bool {
+        size != .small && appPreferences.showsProjectedFlow && viewModel.trendProjection != nil
+    }
+
+    /// La curva real: con la proyección, cortada en hoy (los movimientos con fecha futura van en la línea punteada).
+    private var displayedTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return viewModel.processedTrendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            viewModel.processedTrendPoints, today: .now, grouping: viewModel.trendGrouping, calendar: .current
+        )
+    }
+
+    private var displayedRawTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return viewModel.rawTrendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            viewModel.rawTrendPoints, today: .now, grouping: viewModel.trendGrouping, calendar: .current
+        )
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -55,12 +79,23 @@ struct TrendsCarouselWidget: View {
         } else {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 header
+                if !hasNoTrendData, viewModel.trendProjection != nil {
+                    ProjectedFlowToggle(isOn: isShowingProjection) {
+                        appPreferences.showsProjectedFlow.toggle()
+                    }
+                }
                 // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
                 AdaptiveChartHeight(base: 170) { chartHeight in
                     trendPage(chartHeight: chartHeight)
                         .frame(height: chartHeight)
                 }
+                startEndRow
+                if isShowingProjection, let projection = viewModel.trendProjection {
+                    ProjectedFlowCaption(projection: projection, currencyCode: currencyCode)
+                }
             }
+            // La píldora funde la línea punteada y la cifra (implícita: en el Panel un `withAnimation` no anima).
+            .dsAnimation(DS.Animation.appear, value: isShowingProjection, reduceMotion: reduceMotion)
             .panelCard()
         }
     }
@@ -116,7 +151,48 @@ struct TrendsCarouselWidget: View {
 
     // MARK: - Header
 
+    @ViewBuilder
     private var header: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            accessibilityHeader
+        } else {
+            regularHeader
+        }
+    }
+
+    /// Con el texto al máximo, el selector de métrica le quitaba el ancho a la cifra y la elipsis caía en medio
+    /// («S/54,5….64», barrido final 2.2): título, cifra y selector, uno debajo del otro.
+    private var accessibilityHeader: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(viewModel.trendType.displayName)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thPrimaryText)
+                if let headerInfoButton {
+                    headerInfoButton
+                }
+            }
+
+            if !hasNoTrendData {
+                AmountText(
+                    value: currentKPIValue,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.title
+                )
+                .padding(.top, DS.Spacing.xs)
+
+                variationChip
+            }
+
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+                    .padding(.top, DS.Spacing.xs)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var regularHeader: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack(spacing: DS.Spacing.xs) {
@@ -151,17 +227,134 @@ struct TrendsCarouselWidget: View {
         }
     }
 
-    /// Delta % chip rendered inline next to the KPI in regular layouts.
+    /// Delta % chip rendered inline next to the KPI in regular layouts. Dice contra qué fecha compara («vs 20 oct»,
+    /// decisión 11 de 2.3): solo, el «+10.3 %» no decía con qué, y con la línea bajando se leía como un error.
     @ViewBuilder
     private var variationChip: some View {
         let data = viewModel.periodComparisonWidget
         if data.supportsComparison, let delta = data.deltaPercent {
-            VariationChip(
-                variation: delta,
-                size: .small,
-                isExpenseContext: data.trendType == .expense
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                VariationChip(
+                    variation: delta,
+                    size: .small,
+                    isExpenseContext: data.trendType == .expense
+                )
+                // El chip se esconde solo (preferencia o mes recién empezado); su «vs» se va con él.
+                if appPreferences.showVariations, !hidesPeriodVariations, let date = data.previousReferenceDate {
+                    Text(L10n.Panel.trendVersusDate(
+                        PanelTrendSummaryLogic.shortDate(date, today: .now, calendar: .current, locale: AppLocale.current)
+                    ))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.thSecondaryText)
+                    .lineLimit(1)
+                    .accessibilityIdentifier("panel_trend_versus_date")
+                }
+            }
+        }
+    }
+
+    // MARK: - Inicio y fin (decisión 11 de 2.3, opción B)
+
+    /// Bajo la gráfica de saldo, de dónde partió y dónde está, con el % del cambio: el eje no arranca en cero y la línea
+    /// exageraba la caída. Con montos ocultos queda el %; los días 1 y 2 del mes, solo los montos.
+    @ViewBuilder
+    private var startEndRow: some View {
+        if viewModel.dataTrendType == .balance,
+           !hasNoTrendData,
+           let summary = PanelTrendSummaryLogic.startEnd(
+               rawPoints: viewModel.rawTrendPoints,
+               liveAnchor: viewModel.trendLiveAnchor,
+               today: .now,
+               calendar: .current
+           ) {
+            let startDate = PanelTrendSummaryLogic.shortDate(
+                summary.startDate, today: .now, calendar: .current, locale: AppLocale.current)
+            let endDate = summary.endIsToday
+                ? L10n.Panel.trendToday
+                : PanelTrendSummaryLogic.shortDate(summary.endDate, today: .now, calendar: .current, locale: AppLocale.current)
+            let variation = hidesPeriodVariations ? nil : summary.variation
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    startEndSide(date: startDate, value: summary.startValue)
+                    startEndArrow
+                    startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                    startEndVariation(variation)
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    startEndSide(date: startDate, value: summary.startValue)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        startEndArrow
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                        startEndVariation(variation)
+                    }
+                }
+                // Texto al máximo (card gphj, 14-nov): «14 nov 2024 S/ 12,406.00» solo ya no cabía en una línea, y como
+                // `ViewThatFits` se queda con la última forma aunque no quepa, sus piezas de ancho fijo ensanchaban el
+                // Panel entero por los dos lados. Cada fecha y cada monto en su línea: la más ancha es un monto solo.
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    startEndSide(date: startDate, value: summary.startValue, stacked: true)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        startEndArrow
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate, stacked: true)
+                    }
+                    startEndVariation(variation)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(startEndAccessibilityLabel(summary, startDate: startDate, endDate: endDate, variation: variation))
+            .accessibilityIdentifier("panel_trend_start_end")
+        }
+    }
+
+    /// `stacked`: la fecha encima del monto, para cuando los dos no caben en una línea (texto al máximo).
+    private func startEndSide(date: String, value: Double, isEstimate: Bool = false, stacked: Bool = false) -> some View {
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.none))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs))
+        return layout {
+            Text(date)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thSecondaryText)
+            AmountText(
+                value: value,
+                currencyCode: currencyCode,
+                font: DS.Typography.labelSmall,
+                secondaryFont: DS.Typography.captionSmall,
+                isEstimate: isEstimate
             )
         }
+        .lineLimit(1)
+        .fixedSize()
+    }
+
+    private var startEndArrow: some View {
+        Image(systemName: "arrow.right")
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.thSecondaryText)
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func startEndVariation(_ variation: Double?) -> some View {
+        if let variation {
+            Text("· \(PreviousPeriodHelper.formatVariationValue(variation))")
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.thSecondaryText)
+                .lineLimit(1)
+                .fixedSize()
+        }
+    }
+
+    private func startEndAccessibilityLabel(
+        _ summary: PanelTrendSummaryLogic.StartEnd, startDate: String, endDate: String, variation: Double?
+    ) -> String {
+        let amount: (Double) -> String = { value in
+            AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
+        }
+        let base = L10n.Panel.trendStartEndAccessibility(
+            startDate, amount(summary.startValue), endDate, amount(summary.endValue))
+        guard let variation else { return base }
+        return "\(base). \(VariationChip.accessibilityText(for: variation))"
     }
 
     // MARK: - Trend chart page
@@ -177,8 +370,8 @@ struct TrendsCarouselWidget: View {
             .frame(maxWidth: .infinity)
         } else {
             TrendChartView(
-                trendPoints: viewModel.processedTrendPoints,
-                rawPoints: viewModel.rawTrendPoints,
+                trendPoints: displayedTrendPoints,
+                rawPoints: displayedRawTrendPoints,
                 yDomain: viewModel.processedYDomain,
                 grouping: viewModel.trendGrouping,
                 interval: viewModel.currentInterval,
@@ -189,7 +382,8 @@ struct TrendsCarouselWidget: View {
                 chartHeight: chartHeight,
                 liveAnchor: viewModel.trendLiveAnchor,
                 liveAnchorBreakdown: viewModel.trendLiveAnchorBreakdown,
-                liveAnchorIsApproximate: viewModel.trendLiveAnchorIsApproximate
+                liveAnchorIsApproximate: viewModel.trendLiveAnchorIsApproximate,
+                projectedPoints: isShowingProjection ? (viewModel.trendProjection?.points ?? []) : []
             )
         }
     }

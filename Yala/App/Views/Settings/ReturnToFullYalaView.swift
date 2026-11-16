@@ -227,7 +227,7 @@ struct ReturnToFullYalaView: View {
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text("\(accountCurrency.rawValue) · \(accountCurrency.localizedName)")
+                            Text("\(accountCurrency.rawValue) · \(accountCurrency.localizedName.capitalized)")
                                 .font(DS.Typography.body)
                                 .foregroundStyle(Color(uiColor: .secondaryLabel))
                                 .lineLimit(1)

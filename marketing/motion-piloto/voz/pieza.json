@@ -1,0 +1,10 @@
+{
+  "titulo": "Yala · Voz (piloto Motion)",
+  "url": "https://claude.ai/artifact/9v15MeNhDGtGvxNzVZ3pj5",
+  "main": "#3BD6F0",
+  "assets": {
+    "cfr-voz.mp4": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/footage/cfr-voz.mp4",
+    "logo.png": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/plantilla/base/logo.png"
+  },
+  "comparar_con": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/reels/voz/voz-pop.mp4"
+}

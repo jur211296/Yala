@@ -340,7 +340,9 @@ struct WelcomeLateNoticeKeepsJoinedGroupsTests {
                 rawWriters.append(url.lastPathComponent)
             }
         }
-        #expect(recorders == ["ContentView.swift"], """
+        // `LateICloudMirrorNoticeView` es el segundo sitio, y solo REPONE el alcance que el borrado ya tenía al abrir
+        // desde Ajustes: un reintento tras desarmar lo perdía y caía en `.handover` (revisión 2.3, decisión 57).
+        #expect(recorders.sorted() == ["ContentView.swift", "LateICloudMirrorNoticeView.swift"], """
             alguien más apunta el alcance del borrado pendiente: el apunte tiene que decirlo quien borra. Sitios: \(recorders)
             """)
         #expect(rawWriters == ["CloudSyncFlags.swift"], "alguien toca la key a mano. Sitios: \(rawWriters)")
@@ -351,7 +353,7 @@ struct WelcomeLateNoticeKeepsJoinedGroupsTests {
         let src = try Self.code("Yala/App/ContentView.swift")
 
         #expect(src.contains(
-            "performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) }"), """
+            "performWipe: { await performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe) }"), """
             el aviso dejó de decir si empieza un borrado o termina uno: o el corpus se borra con el alcance del Welcome
             (los grupos se van), o el borrado a medias del Welcome se termina sin sellar
             """)
@@ -404,7 +406,9 @@ struct WelcomeLateNoticeKeepsJoinedGroupsTests {
         let settle = try Self.body(of: "private func settleAfterLateICloudWipe() {", in: src)
         #expect(Self.normalized(settle) == """
             cancelWipeGrace() hasExistingData = checkHasExistingData() hasPersonalData = checkHasPersonalData() \
-            hasCompletedOnboarding = false
+            if WelcomeMirrorRelaunchLogic.shouldRelaunch( destination: .privateOnboarding, \
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) { \
+            WelcomePendingDestinationStore.set(.privateOnboarding) } hasCompletedOnboarding = false
             """, """
             el cierre del borrado tardío cambió: con los grupos conservados, bajar `hasExistingData` a ciegas le dice a la
             app que el teléfono está vacío. Tramo leído: \(Self.normalized(settle))

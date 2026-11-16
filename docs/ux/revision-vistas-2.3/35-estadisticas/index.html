@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estadísticas · revisión por vistas</title><meta name="description" content="Siete problemas de Estadísticas con alternativas maquetadas.">
+<link rel="stylesheet" href="estilo.css"></head>
+<body><nav class="top"><div class="wrap"><a class="on home" href="index.html">Inicio</a><a class="" href="01-estado-actual.html">Hoy, vista a vista</a><a class="" href="02-revision.html">Perfiles y eficiencia</a><a class="" href="11-en-que-se-fue.html">1 · En qué se fue la plata</a><a class="" href="12-entrar-a-una-categoria.html">2 · Entrar a una categoría</a><a class="" href="13-texto-grande.html">3 · Texto grande</a><a class="" href="14-balance-y-saldo.html">4 · Balance y saldo</a><a class="" href="15-voiceover.html">5 · VoiceOver</a><a class="" href="16-pocos-datos.html">6 · Pocos datos</a><a class="" href="17-muchos-datos.html">7 · Muchos datos</a></div></nav><main class="wrap">
+<header class="ph-h"><div class="kicker">Revisión por vistas 2.3 · zona 35 · 7 de noviembre de 2026</div>
+<h1 class="t">Estadísticas: Resumen, Tendencias, Distribución, Registros y el Sankey</h1>
+<p class="lead">Cuánto cuesta hoy contestar «¿en qué se me fue la plata este mes y comparado con el anterior?», cambiar de
+período, entrar a una categoría y volver, con pocos datos, con muchos, con texto grande y con VoiceOver. <b>No cambia la app
+y no elige:</b> deja siete problemas priorizados, cuatro alternativas maquetadas para cada uno y una recomendación. Decide Jürgen.</p>
+<div class="case"><span class="ct">El caso</span><span>Ana va por el <b>7 de noviembre</b> y quiere saber <b>en qué se le fue la plata este mes y cómo va frente a octubre</b>. Luego mira el <b>mes pasado</b> completo, <b>entra a Alimentación</b> para ver qué la compone y vuelve. Lo mismo con <b>pocos datos</b> (su primera semana), con <b>diez años</b> de registros, con <b>texto grande</b> y con <b>VoiceOver</b>. <em style="color:var(--ink3)">Datos ficticios en las maquetas; en las capturas, semillas de prueba.</em></span></div>
+</header>
+<div class="kpis">
+<div class="kpi"><b>3</b><small>cifras grandes distintas para el mismo mes en las 4 pestañas: S/ 4,993 «Balance», S/ 73,356.70 «Saldo de cuentas» y «Saldo»</small></div>
+<div class="kpi"><b>2</b><small>filtros que pone tocar una categoría, y siguen en el Panel; volver es una X de 19 pt</small></div>
+<div class="kpi"><b>~2 s</b><small>congelada al entrar con 10 años de datos en «Todo el tiempo» (1.731-2.253 ms, Debug, simulador)</small></div>
+<div class="kpi"><b>0</b><small>gráficas que VoiceOver lea con valores: «7 puntos», «7 categorías»</small></div>
+</div>
+<h2 class="s">Los siete problemas, por prioridad</h2>
+<p class="sub">Prioridad = cuánto frena el caso guía × cuántos perfiles se traban. Cada página trae las capturas de hoy, las alternativas con maquetas, la comparación, la lente de perfiles, la recomendación y la decisión.</p>
+<div class="idxgrid"><a class="idx-row vcard" href="11-en-que-se-fue.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 1 · <span class="sev A">severidad alta</span> · 4 alternativas</div><h4>«¿En qué se me fue la plata este mes?» no tiene respuesta en un solo sitio</h4><p>Recomendación: <b>A1 · Distribución dice lo gastado, frente a lo mismo de octubre</b>.</p></a><a class="idx-row vcard" href="12-entrar-a-una-categoria.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 2 · <span class="sev A">severidad alta</span> · 4 alternativas</div><h4>Tocar una categoría no la abre: pone dos filtros que siguen en toda la app</h4><p>Recomendación: <b>B1 · Tocar abre el detalle de la categoría; «atrás» vuelve</b>.</p></a><a class="idx-row vcard" href="13-texto-grande.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 3 · <span class="sev A">severidad alta</span> · 4 alternativas</div><h4>Con texto grande se cortan los importes, la cuadrícula y las pestañas</h4><p>Recomendación: <b>D1 · Las filas se apilan: nombre arriba, importe entero debajo</b>.</p></a><a class="idx-row vcard" href="14-balance-y-saldo.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 4 · <span class="sev M">severidad media-alta</span> · 4 alternativas</div><h4>«Balance», «Saldo» y «Saldo de cuentas»: cifras distintas con nombres casi iguales</h4><p>Recomendación: <b>C1 · Un nombre por cifra, que diga qué suma</b>.</p></a><a class="idx-row vcard" href="15-voiceover.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 5 · <span class="sev M">severidad media-alta</span> · 4 alternativas</div><h4>VoiceOver lee las gráficas como recuentos: «7 puntos», «7 categorías», sin valores</h4><p>Recomendación: <b>V1 · La etiqueta dice la conclusión, con cifras</b>.</p></a><a class="idx-row vcard" href="16-pocos-datos.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 6 · <span class="sev M">severidad media</span> · 4 alternativas</div><h4>Con una semana de datos, Estadísticas saca conclusiones de una sola muestra</h4><p>Recomendación: <b>F2 · Textos honestos con el mes a medias</b>.</p></a><a class="idx-row vcard" href="17-muchos-datos.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 7 · <span class="sev M">severidad media</span> · 4 alternativas</div><h4>Con diez años de datos, la pantalla se congela unos 2 s y las gráficas no se leen</h4><p>Recomendación: <b>G1 · La pestaña responde al toque y las cifras llegan después</b>.</p></a></div>
+<h2 class="s">Qué decide Jürgen (lo principal de cada uno)</h2><ul><li><b>1 · En qué se fue la plata:</b> ¿La cifra grande de Distribución pasa a ser lo gastado del período con su comparación (A1)? ¿El saldo se queda solo en el Panel?</li><li><b>2 · Entrar a una categoría:</b> ¿Tocar una categoría abre su detalle (B1) en vez de filtrar? Reabre la decisión del 25-26 de octubre.</li><li><b>3 · Texto grande:</b> ¿Filas de categoría apiladas en tamaños de accesibilidad (D1) y «Tus cifras» a una columna (D2)?</li><li><b>4 · Balance y saldo:</b> ¿«Entró − salió» y «Tienes en tus cuentas» en lugar de «Balance» y «Saldo» (C1)? Decidirlo junto a PN-1 del Panel.</li><li><b>5 · VoiceOver:</b> ¿Etiquetas que dicen la conclusión con cifras (V1) en las seis gráficas?</li><li><b>6 · Pocos datos:</b> ¿Textos honestos (F2): «llevas», «Nueva», «fue 1 jueves», y arreglar «este Este mes»? (el último es un bug claro)</li><li><b>7 · Muchos datos:</b> ¿Se mide con Instruments en un iPhone real (Release) antes de decidir G1? Pide una sesión de medición.</li></ul>
+<p class="sub">Las preguntas completas están al final de cada página. Recomendación en conjunto: <b>A1 + B1 + D1 + C1 + V1 + F2 + G1</b>.
+Si hubiera que empezar por lo barato: <b>A1</b> (la cifra grande de Distribución dice lo gastado), <b>C1</b> (nombres que
+dicen qué suman), <b>D1 + D2</b> (filas y cuadrícula con texto grande), <b>V1</b> (etiquetas de VoiceOver con cifras) y
+<b>F2</b> (textos honestos con el mes a medias, que incluye el bug «este Este mes») son cambios de texto o de componentes
+que la app ya tiene, y no cierran la puerta a lo grande.</p>
+<div class="callout"><b>Lo que reabre decisiones tuyas:</b> B1 (tocar una categoría abre su detalle) cambia lo decidido el
+25-26 de octubre (tocar = ver solo eso); B3 separa los filtros de Estadísticas de los del Panel; C1 renombra «Balance»
+(conviene decidirlo con PN-1 del Panel); F4 y G2 tocan el eje de las gráficas (con PN-4 del Panel).</div>
+<h2 class="s">Vistas cubiertas</h2>
+<div class="tbl"><table class="cmp"><tr><th>Vista</th><th>Qué es</th><th>Estados con captura</th><th>Problemas</th></tr><tr><td><code>StatisticsView</code></td><td>La pestaña «Estadísticas»: título y la pila que contiene todo lo demás.</td><td>con datos, vacío, Free, iPad</td><td>1</td></tr><tr><td><code>DetailContainerView</code></td><td>El contenedor de las cuatro sub-pestañas (chips), la píldora de período, filtros y acciones. <b>No es el detalle de una categoría</b>: Estadísticas no tiene esa pantalla.</td><td>los cuatro chips, menú de período, «Mes pasado», filtros aplicados, cargando con 10 años</td><td>1, 2, 7</td></tr><tr><td><code>InsightsTabView (Resumen)</code></td><td>Cabecera «Balance del período», salud financiera, IA, «Tus cifras», suscripciones, gastos hormiga, pagos, presupuestos, necesidad.</td><td>este mes, mes pasado, pocos datos, vacío, Free, AX3, iPad, 10 años</td><td>1, 3, 4</td></tr><tr><td><code>TrendsTabView (Tendencias)</code></td><td>Cabecera, tarjeta «Tendencias» (saldo), «Entradas y salidas», día de la semana y «Tu mes en pocas palabras».</td><td>este mes, con el mes anterior, pocos datos, vacío, Free, AX3, iPad, 10 años</td><td>4, 5, 6, 7</td></tr><tr><td><code>PeriodComparisonChartView</code></td><td>La línea del período contra la del anterior («Ver el mes anterior»).</td><td>este mes con octubre</td><td>5</td></tr><tr><td><code>CategoriesTabView (Distribución)</code></td><td>Cabecera «Saldo de cuentas», Detalle (categorías) y Gráficas (tartas, Sankey, necesidades).</td><td>detalle, gráficas, categoría tocada, volver, mes pasado, pocos datos, vacío, AX3, iPad, 10 años</td><td>1, 2, 3, 4, 6</td></tr><tr><td><code>SankeyChartView</code></td><td>«Flujo de dinero»: ingresos → gastos/disponible → categorías → subcategorías.</td><td>un mes, diez años (tres posiciones), iPad</td><td>7</td></tr><tr><td><code>RecordsTabView (Registros)</code></td><td>Cabecera, lista por día y calendario; en el iPad, panel lateral.</td><td>lista, vacío, iPad</td><td>secundarios</td></tr></table></div>
+<p class="sub" style="margin-top:10px"><b>Cargando:</b> con datos normales no se ve (menos de lo que tarda una captura); con
+10 años, la pantalla anterior se queda congelada (capturas 74 y 75), sin esqueleto. <b>Error y sin conexión:</b> Estadísticas
+calcula en el teléfono y no tiene pantalla de error; lo único que usa la red es la IA, que dice «Necesitas conexión para
+generar el análisis con IA» (leído en <code>AIInsightCardComponents.swift:65-74</code>, no capturado: no se cortó la red de la
+máquina). <b>Sin permisos:</b> no aplica.</p>
+<h2 class="s">Cómo se hizo</h2>
+<ul class="evl">
+<li><span class="tag obs">Captura</span> 58 capturas del 7-nov-2026 con la app de <code>origin/2.3</code> (Yala Dev, Debug), simulador iPhone
+17 Pro con iOS 27.2 propio de la sesión, modo oscuro. Semillas: <code>realista</code> (caso guía), <code>minimal</code> (primera
+semana), sin semilla (vacío), <code>pesado</code> (10 años, 11.696 registros) y Free (sin Pro). Período «Este mes» forzado con
+<code>-defaultPeriod thisMonth</code>, que es lo que deja el alta real (sin alta salía «Todo el tiempo»). Texto grande: AX3.
+iPad: iPad Pro 13 (M5) vertical.</li>
+<li><span class="tag obs">VoiceOver</span> Lo que lee VoiceOver se midió en el árbol de accesibilidad (<code>axe describe-ui</code>), no con
+VoiceOver encendido.</li>
+<li><span class="tag obs">Medido</span> Tiempos con la marca que la app ya trae (<code>PERF estadisticas</code>, solo en DEBUG) y ráfagas de
+capturas cronometradas. Nada de Instruments.</li>
+<li><span class="tag src">Código</span> Lectura focalizada de las ocho vistas, con fichero y línea.</li>
+<li><span class="tag hip">Perfiles</span> Los siete perfiles de la revisión del usuario nuevo (PR 837), usados como lentes simuladas: no son
+entrevistas. De esa revisión se retoma F12 (gráficas con un punto) dentro del problema 6; lo demás no toca esta zona.</li>
+</ul>
+<p class="foot">Fuente: <code>docs/ux/revision-vistas-2.3/35-estadisticas/</code>. El generador está en <code>fuente/</code> (<code>python3 build.py</code>). PDF de respaldo: <code>revision-estadisticas.pdf</code>.</p>
+</main>
+<script>
+(function(){
+  // Tocar el elemento resaltado (anillo cian) desplaza la tira a la pantalla siguiente.
+  document.querySelectorAll('.strip').forEach(function(strip){
+    var figs = Array.prototype.slice.call(strip.querySelectorAll(':scope > figure'));
+    figs.forEach(function(fig, i){
+      fig.querySelectorAll('.tap').forEach(function(t){
+        t.style.cursor='pointer';
+        t.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          var next = figs[i+1]; if(!next) return;
+          strip.scrollTo({left: next.offsetLeft - strip.offsetLeft - 16, behavior:'smooth'});
+          next.classList.add('flash'); setTimeout(function(){next.classList.remove('flash')}, 900);
+        });
+      });
+    });
+  });
+})();
+</script></body></html>

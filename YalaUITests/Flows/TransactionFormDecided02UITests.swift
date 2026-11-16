@@ -48,6 +48,15 @@ final class TransactionFormDecided02UITests: XCTestCase {
         app.descendants(matching: .any)[id].firstMatch
     }
 
+    /// Fuera el teclado con un toque en la pregunta del monto, que no es un control. Con el teclado abierto lo que falta
+    /// lo dice la barra de encima del teclado y la línea no está (G1, revisión 2.3): para leer la línea, se cierra.
+    private func dismissKeyboard(_ app: XCUIApplication) {
+        let question = element(app, "new_transaction_amount_question")
+        XCTAssertTrue(question.waitForExistence(timeout: 5), "Falta la pregunta del monto.")
+        question.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "El teclado no se cerró.")
+    }
+
     private func formIsGone(_ app: XCUIApplication, timeout: TimeInterval = 8) -> Bool {
         app.textFields["new_transaction_amount"].waitForNonExistence(timeout: timeout)
     }
@@ -82,6 +91,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         let before = line.label
 
         typeAmount(app, "25")
+        dismissKeyboard(app)
         XCTAssertTrue(line.waitForExistence(timeout: 3))
         XCTAssertNotEqual(line.label, before, "Con el monto puesto, la línea debía dejar de nombrarlo.")
 
@@ -98,6 +108,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         app.buttons["new_transaction_type_transfer"].tap()
         typeAmount(app, "10")
+        dismissKeyboard(app)
         let line = element(app, "new_transaction_missing_line")
         XCTAssertTrue(line.waitForExistence(timeout: 5), "Sin origen ni destino, la línea debía nombrarlos.")
 
@@ -381,11 +392,18 @@ final class TransactionFormDecided02UITests: XCTestCase {
     func test_transferFavorite_setsBothAccounts() {
         let app = launch(seed: "formulario")
         openForm(app)
+        // Desde la decisión 69 de 2.3 la fila de favoritos solo enseña los del tipo elegido: en «Gasto», que es como abre
+        // el formulario, «Ahorro del mes» no sale (lo fija `FavoritesAlRegistrar23UITests`). Se entra por «Transferencia».
+        let transfer = app.buttons["new_transaction_type_transfer"]
+        XCTAssertTrue(transfer.waitForExistence(timeout: 5))
+        transfer.tap()
+        XCTAssertTrue(element(app, "new_transaction_missing_line").waitForExistence(timeout: 5),
+                      "Control: en «Transferencia» sin favorito faltan origen, destino o monto.")
         let saving = app.buttons["new_transaction_favorite_chip_Ahorro del mes"]
-        XCTAssertTrue(saving.waitForExistence(timeout: 5))
+        XCTAssertTrue(saving.waitForExistence(timeout: 5), "En «Transferencia» debía salir el favorito «Ahorro del mes».")
         saving.tap()
 
-        XCTAssertTrue(app.buttons["new_transaction_type_transfer"].isSelected, "Debía pasar a Transferencia.")
+        XCTAssertTrue(transfer.isSelected, "Debía quedarse en Transferencia.")
         XCTAssertTrue(element(app, "new_transaction_missing_line").waitForNonExistence(timeout: 5),
                       "Con origen, destino y monto no debía faltar nada.")
         XCTAssertTrue(app.buttons["new_transaction_save"].isEnabled)

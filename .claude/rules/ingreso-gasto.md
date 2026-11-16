@@ -82,6 +82,29 @@ saldo, con «Contar mi parte de los gastos de grupo», con la parte neta de los 
 Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; ticket
 `insights-budgets-at-risk-compute-spent-on-their-own`). Lo fija `PanelBudgetPlanningParityTests`.
 
+## Cuatro cifras que tienen que cuadrar (lote 02 de mejoras necesarias de 2.3, 2026-11-10)
+
+- **El desglose «Por categoría» de un presupuesto suma lo gastado.** `BudgetsViewModel.combinedBreakdown` usa los mismos
+  movimientos que `calculateSpending`, con «Sin categoría» y «Sin subcategoría»: un presupuesto por cuenta o etiqueta
+  cuenta en lo gastado lo que no tiene subcategoría, y el desglose también. Lo fija `BudgetBreakdownSumsSpentTests`.
+- **El día más caro de Estadísticas sale de una entrada**, `WeekdaySpendingCalculator.forStatistics`, para Resumen y
+  Tendencias (ignora el chip Ingresos/Gastos; con «Todo», cuenta hasta hoy). Lo fija `WeekdayPriciestDayParityTests`.
+- **El ritmo del flujo proyectado proyecta lo que falta de cada mes** (decisión de Jürgen): ritmo × días del mes menos
+  lo que el mes ya tiene, real o fechado, por lado y nunca negativo (`ProjectedFlowBuilder.rhythmLeftOfEachMonth`). Un
+  ritmo a secas por día volvía a contar el sueldo ya cobrado. Lo fija `ProjectedFlowCalculatorTests`.
+- **Un reparto de grupo cuadra al céntimo** (decisión de Jürgen): «Monto» y «Porcentaje» con
+  `GroupSplitCalculator.balanceTolerance` (medio céntimo, solo coma flotante), y la insignia del formulario con la misma.
+  Un porcentaje que se REABRE (edición, plantilla, pago planificado) pasa por `GroupExpenseViewModel.loadPercentages`,
+  que lo deja sumando 100: a un decimal, un gasto pequeño se reabría con 100,1 y no dejaba guardar.
+
+## «Al 30 tendrías»: una cifra, la del Panel (decisión 30 de 2.3, 2026-11-11)
+
+La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)
+dan la misma cifra porque salen de la misma cuenta: saldo vivo de las cuentas del Panel + `ProjectedFlowBuilder` hasta
+fin de mes sin filtros de sesión (`MonthEndBalanceLogic`). Si cambias cómo proyecta el Panel con Saldo, cambia esa pieza
+también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan). El horizonte del plan («a fin de mayo de 2027
+tendrías») NO sale de ahí: parte del saldo inicial del plan.
+
 ## Los tests que lo fijan
 
 `IncomeExpenseScreenParityTests` (seis superficies × tres períodos, Informe por dimensión, filtros y neto),

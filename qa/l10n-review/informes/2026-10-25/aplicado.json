@@ -1,0 +1,140 @@
+{
+ "de": {
+  "aplicadas": 218,
+  "motivos": {
+   "sin propuesta": 1,
+   "gravedad baja": 60,
+   "categoría terminologia": 67,
+   "toca la marca": 3,
+   "categoría longitud": 1,
+   "protegida": 7,
+   "registro hacia lo formal": 2
+  }
+ },
+ "en-GB": {
+  "aplicadas": 0,
+  "motivos": {
+   "categoría terminologia": 5
+  }
+ },
+ "en": {
+  "aplicadas": 6,
+  "motivos": {
+   "categoría terminologia": 59,
+   "gravedad baja": 31,
+   "significado en la referencia": 16,
+   "toca la marca": 2
+  }
+ },
+ "es-419": {
+  "aplicadas": 7,
+  "motivos": {
+   "categoría terminologia": 29,
+   "gravedad baja": 9,
+   "descartada a mano": 1,
+   "cambió desde la revisión": 1
+  }
+ },
+ "es-AR": {
+  "aplicadas": 33,
+  "motivos": {
+   "gravedad baja": 9,
+   "categoría terminologia": 2
+  }
+ },
+ "es-ES": {
+  "aplicadas": 1,
+  "motivos": {
+   "categoría terminologia": 1,
+   "registro hacia lo formal": 1,
+   "gravedad baja": 1
+  }
+ },
+ "fr": {
+  "aplicadas": 428,
+  "motivos": {
+   "sin propuesta": 1,
+   "gravedad baja": 74,
+   "categoría terminologia": 74,
+   "registro hacia lo formal": 104,
+   "protegida": 11,
+   "descartada a mano": 2,
+   "comillas sin escapar": 2,
+   "otra propuesta para la misma clave": 120,
+   "ya no está en .strings": 1
+  }
+ },
+ "it": {
+  "aplicadas": 61,
+  "motivos": {
+   "categoría terminologia": 220,
+   "gravedad baja": 21,
+   "registro hacia lo formal": 1,
+   "protegida": 7
+  }
+ },
+ "ja": {
+  "aplicadas": 26,
+  "motivos": {
+   "categoría terminologia": 109,
+   "gravedad baja": 33,
+   "protegida": 8,
+   "descartada a mano": 3
+  }
+ },
+ "nl": {
+  "aplicadas": 58,
+  "motivos": {
+   "sin propuesta": 1,
+   "gravedad baja": 28,
+   "categoría terminologia": 88,
+   "protegida": 10,
+   "toca la marca": 1,
+   "descartada a mano": 1
+  }
+ },
+ "pl": {
+  "aplicadas": 55,
+  "motivos": {
+   "categoría terminologia": 89,
+   "gravedad baja": 79,
+   "registro hacia lo formal": 9,
+   "descartada a mano": 1,
+   "protegida": 7
+  }
+ },
+ "pt-BR": {
+  "aplicadas": 41,
+  "motivos": {
+   "sin propuesta": 17,
+   "categoría terminologia": 130,
+   "gravedad baja": 23,
+   "registro hacia lo formal": 4,
+   "protegida": 2,
+   "descartada a mano": 7,
+   "Ajustes es la app de iOS": 1,
+   "igual": 1
+  }
+ },
+ "pt-PT": {
+  "aplicadas": 943,
+  "motivos": {
+   "sin propuesta": 18,
+   "gravedad baja": 104,
+   "categoría terminologia": 88,
+   "protegida": 17,
+   "descartada a mano": 14,
+   "otra propuesta para la misma clave": 34
+  }
+ },
+ "zh-Hans": {
+  "aplicadas": 79,
+  "motivos": {
+   "categoría terminologia": 70,
+   "gravedad baja": 99,
+   "categoría placeholder": 1,
+   "descartada a mano": 3,
+   "protegida": 12
+  }
+ }
+}

@@ -12,6 +12,8 @@ import SwiftUI
 struct SubcategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -571,15 +573,23 @@ struct SubcategoriesPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.subcategoryPieChart)
-            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
-                L10n.Accessibility.subcategoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
+            // V1 + V2 de la decisión 26 de 2.3: el total y las partes con su porcentaje, no un recuento.
+            .accessibilityValue(ChartSpokenSummary.parts(
+                safeData.map { (name: $0.name, amount: $0.amount) },
+                format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+            ))
+            .accessibilityChartDescriptor(ChartAccessibilityDescriptor.parts(
+                title: L10n.Accessibility.subcategoryPieChart, xTitle: L10n.Accessibility.Chart.axisCategory,
+                items: safeData.map { (name: $0.name, amount: $0.amount) },
+                format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+            ))
         }
     }
 
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
     }
 
     private static let percentFormatter: NumberFormatter = {

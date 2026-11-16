@@ -1,0 +1,353 @@
+//
+//  Revision38CapturasUITests.swift — TEMPORAL, no se publica.
+//  Conductor de capturas de la revisión por vistas 2.3, zona 38 (Bandeja, Yala IA, correo, Apple Pay y Siri).
+//  `TEST_RUNNER_REV_OUT=<carpeta>` escribe ahí los PNG. Cada caso tolera fallos: captura lo que alcance.
+//
+
+import XCTest
+
+final class Revision38CapturasUITests: XCTestCase {
+
+    private static let ax3 = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+    private var prefix: String { ProcessInfo.processInfo.environment["REV_PREFIX"] ?? "" }
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = true
+    }
+
+    // MARK: - Utilidades
+
+    private func cap(_ name: String, wait: TimeInterval = 0.8) {
+        Thread.sleep(forTimeInterval: wait)
+        guard let dir = ProcessInfo.processInfo.environment["REV_OUT"], !dir.isEmpty else { return }
+        let data = XCUIScreen.main.screenshot().pngRepresentation
+        let url = URL(fileURLWithPath: dir).appendingPathComponent(prefix + name + ".png")
+        do { try data.write(to: url) } catch { print("REV: no se pudo escribir \(url): \(error)") }
+    }
+
+    private func launch(_ extra: [String], seed: String? = "grupos", pro: Bool = false) -> XCUIApplication {
+        let app = XCUIApplication()
+        let large = ProcessInfo.processInfo.environment["REV_AX3"] == "1" ? Self.ax3 : []
+        app.launchForUITest(pro: pro, seed: seed, extraArguments: extra + large + ["-defaultCurrencyCode", "PEN"])
+        _ = app.waitForUITestReady()
+        Thread.sleep(forTimeInterval: 3)
+        return app
+    }
+
+    @discardableResult
+    private func tapIf(_ el: XCUIElement, timeout: TimeInterval = 8) -> Bool {
+        guard el.waitForExistence(timeout: timeout) else { print("REV: no apareció \(el)"); return false }
+        el.tap()
+        return true
+    }
+
+    private func openInbox(_ app: XCUIApplication) {
+        tapIf(app.buttons["panel_inbox_button"], timeout: 20)
+        _ = app.descendants(matching: .any)["inbox_explainer"].waitForExistence(timeout: 8)
+    }
+
+    private func openSettings(_ app: XCUIApplication) {
+        tapIf(app.buttons["profile_avatar"], timeout: 20)
+        _ = app.buttons["profile_accounts"].waitForExistence(timeout: 10)
+    }
+
+    private func scrollToRow(_ app: XCUIApplication, _ el: XCUIElement, max: Int = 12) {
+        var n = 0
+        while !(el.exists && el.isHittable) && n < max { app.swipeUp(); n += 1 }
+    }
+
+    // MARK: - Bandeja
+
+    func test_01_bandejaOcho() {
+        let app = launch(["-revision-bandeja-8"])
+        cap("00-panel-con-bandeja")
+        openInbox(app)
+        cap("01-bandeja")
+        app.swipeUp()
+        cap("02-bandeja-abajo")
+        if tapIf(app.buttons["Seleccionar"], timeout: 4) {
+            cap("05-seleccion")
+            tapIf(app.buttons["inbox_draft_row_Netflix"], timeout: 3)
+            tapIf(app.buttons["inbox_draft_row_Starbucks Larcomar"], timeout: 3)
+            cap("06-seleccion-dos")
+            if tapIf(app.buttons["Editar"], timeout: 3) {
+                cap("07-acciones-en-bloque", wait: 1.2)
+                app.swipeDown(velocity: .fast)
+                Thread.sleep(forTimeInterval: 1)
+            }
+            tapIf(app.buttons["Cancelar"].firstMatch, timeout: 3)
+        }
+        if tapIf(app.buttons["inbox_save_ready"], timeout: 5) {
+            cap("08-guardar-listos-confirmar", wait: 1.2)
+            tapIf(app.alerts.buttons["Guardar"].firstMatch, timeout: 4)
+            cap("09-exito-en-bloque", wait: 2.0)
+            tapIf(app.buttons["inbox_bulk_success_back"], timeout: 5)
+            cap("10-bandeja-tras-guardar", wait: 1.5)
+        }
+        let dudoso = app.buttons["inbox_draft_row_PAGO POS 4521*** LIMA"]
+        if tapIf(dudoso, timeout: 5) {
+            cap("11-editor-dudoso", wait: 1.5)
+            app.swipeUp()
+            cap("12-editor-dudoso-abajo")
+            tapIf(app.buttons["Dejar para después"].firstMatch, timeout: 4)
+            Thread.sleep(forTimeInterval: 1.5)
+        }
+        let grupo = app.buttons["inbox_draft_row_Cena de despedida"]
+        if tapIf(grupo, timeout: 5) {
+            cap("13-grupo-ya-lo-apuntaste", wait: 1.5)
+            app.swipeUp()
+            cap("14-grupo-abajo")
+        }
+    }
+
+    func test_02_bandejaUnoYArchivados() {
+        let app = launch(["-revision-bandeja-8"])
+        openInbox(app)
+        let wong = app.descendants(matching: .any)["inbox_draft_row_Wong Benavides"].firstMatch
+        if wong.waitForExistence(timeout: 5) {
+            wong.swipeLeft()
+            cap("03-deslizar-izquierda")
+            app.descendants(matching: .any)["inbox_explainer"].firstMatch.tap()
+            Thread.sleep(forTimeInterval: 0.8)
+            wong.swipeRight(velocity: .slow)
+            cap("04-deslizar-derecha", wait: 0.3)
+            if app.buttons["inbox_success_accept"].waitForExistence(timeout: 3) {
+                cap("04b-tras-deslizar-derecha", wait: 0.5)
+                app.buttons["inbox_success_accept"].tap()
+                Thread.sleep(forTimeInterval: 1)
+            }
+        }
+        let netflix = app.buttons["inbox_draft_row_Netflix"]
+        if netflix.waitForExistence(timeout: 5) {
+            netflix.swipeRight(velocity: .fast)
+            cap("20-exito-uno", wait: 1.8)
+            app.swipeUp()
+            cap("20b-exito-uno-abajo")
+            tapIf(app.buttons["inbox_success_accept"], timeout: 4)
+        }
+        let starbucks = app.buttons["inbox_draft_row_Starbucks Larcomar"]
+        if starbucks.waitForExistence(timeout: 5) {
+            starbucks.swipeLeft(velocity: .fast)
+            cap("21-descartado-aviso", wait: 0.6)
+        }
+        tapIf(app.buttons["inbox_filter_archived"], timeout: 5)
+        cap("22-archivados", wait: 1.2)
+        tapIf(app.buttons["inbox_filter_pending"], timeout: 5)
+        if tapIf(app.buttons["inbox_draft_row_Wong Benavides"], timeout: 5) {
+            cap("23-editor-listo", wait: 1.5)
+        }
+    }
+
+    func test_03_bandejaVacia() {
+        let app = launch([], seed: "sin-registros")
+        openInbox(app)
+        cap("30-bandeja-vacia", wait: 1.2)
+        tapIf(app.buttons["inbox_filter_archived"], timeout: 4)
+        cap("31-archivados-vacio")
+    }
+
+    func test_04_avisoDeBandeja() {
+        _ = launch(["-uitest-inbox-alert", "-uitest-inbox-alert-siri"])
+        cap("32-aviso-bandeja", wait: 3)
+    }
+
+    func test_06_exitoUnoYDuplicado() {
+        let app = launch(["-revision-bandeja-8", "-uitest-undo-notice-seconds", "30"])
+        openInbox(app)
+        if tapIf(app.buttons["inbox_draft_row_Wong Benavides"], timeout: 5) {
+            tapIf(app.buttons["inbox_approve_button"], timeout: 5)
+            cap("24-exito-uno", wait: 1.8)
+            app.swipeUp()
+            cap("25-exito-uno-abajo")
+            tapIf(app.buttons["inbox_success_accept"], timeout: 4)
+            Thread.sleep(forTimeInterval: 1.2)
+        }
+        let star = app.descendants(matching: .any)["inbox_draft_row_Starbucks Larcomar"].firstMatch
+        if star.waitForExistence(timeout: 5) {
+            star.swipeLeft()
+            if tapIf(app.buttons["inbox_swipe_reject"], timeout: 3) {
+                cap("26-descartado-aviso", wait: 0.8)
+            }
+        }
+        if tapIf(app.buttons["inbox_draft_row_PAGO POS 4521*** LIMA"], timeout: 5) {
+            Thread.sleep(forTimeInterval: 1.2)
+            app.chooseFirstSelectorRow(chip: "draft_editor_subcategory_chip", rowPrefix: "subcategory_selector_row_")
+            Thread.sleep(forTimeInterval: 1.0)
+            cap("27-dudoso-con-categoria")
+            tapIf(app.buttons["inbox_approve_button"], timeout: 5)
+            cap("28-posible-duplicado", wait: 1.5)
+        }
+    }
+
+    /// Medida: abre y cierra la Bandeja 15 veces con los 10 borradores; la app deja `PERF bandeja` en el log.
+    func test_05_medirBandeja() {
+        let app = launch(["-revision-bandeja-8"])
+        for _ in 0..<15 {
+            openInbox(app)
+            Thread.sleep(forTimeInterval: 0.8)
+            tapIf(app.buttons["inbox_close"], timeout: 5)
+            Thread.sleep(forTimeInterval: 1.2)
+        }
+    }
+
+    // MARK: - Yala IA
+
+    func test_10_chatSinPro() {
+        let app = launch([], pro: false)
+        cap("40-panel-sin-pro")
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("41-chat-sin-pro", wait: 2.0)
+    }
+
+    func test_11_chatVacio() {
+        let app = launch(["-uitest-ai-chat-ready", "-uitest-chat-suggestions"], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("42-chat-vacio", wait: 2.0)
+        tapIf(app.buttons["Temas"].firstMatch, timeout: 4)
+        cap("43-chat-temas", wait: 1.2)
+    }
+
+    func test_12_chatSinServidor() {
+        let app = launch(["-uitest-ai-chat-ready"], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("44-chat-no-disponible", wait: 6.0)
+    }
+
+    func test_13_chatConversacion() {
+        let app = launch(["-uitest-ai-chat-ready", "-uitest-chat-conversation", "-uitest-chat-links",
+                          "-chatQuestionsToday", "70", "-chatLastQuestionDate", Self.today], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("45-chat-conversacion", wait: 2.0)
+        app.swipeDown()
+        cap("46-chat-conversacion-arriba")
+    }
+
+    func test_14_chatBorrador() {
+        let app = launch(["-uitest-ai-chat-ready", "-uitest-chat-draft"], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("47-chat-borrador", wait: 2.0)
+        app.swipeUp()
+        cap("48-chat-borrador-abajo")
+        if tapIf(app.buttons["Detalles"].firstMatch, timeout: 4) {
+            cap("49-chat-detalles", wait: 1.5)
+        }
+    }
+
+    func test_15_chatTope() {
+        let app = launch(["-uitest-ai-chat-ready", "-uitest-chat-conversation",
+                          "-chatQuestionsToday", "75", "-chatLastQuestionDate", Self.today], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        cap("50-chat-tope", wait: 2.0)
+    }
+
+    func test_16_chatPreguntaSinServidor() {
+        let app = launch(["-uitest-ai-chat-ready", "-uitest-chat-suggestions"], pro: true)
+        tapIf(app.buttons["panel_action_ai"], timeout: 10)
+        let field = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+        if field.waitForExistence(timeout: 5) {
+            field.tap()
+            field.typeText("Cuanto gaste en comida este mes")
+            cap("51-chat-escribiendo", wait: 0.8)
+            tapIf(app.buttons["Enviar"].firstMatch, timeout: 3)
+            cap("52-chat-enviada-sin-servidor", wait: 6.0)
+        }
+    }
+
+    private static var today: String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
+        return f.string(from: Date())
+    }
+
+    // MARK: - Correo del banco
+
+    private func openBankEmail(_ app: XCUIApplication) {
+        openSettings(app)
+        let row = app.buttons["profile_bank_email"]
+        scrollToRow(app, row)
+        tapIf(row, timeout: 5)
+        Thread.sleep(forTimeInterval: 1.5)
+    }
+
+    func test_20_correo() {
+        let app = launch(["-uitest-bank-email"])
+        openSettings(app)
+        let row = app.buttons["profile_bank_email"]
+        scrollToRow(app, row)
+        cap("60-ajustes-donde-vive")
+        tapIf(row, timeout: 5)
+        cap("61-correo", wait: 1.5)
+        app.swipeUp()
+        cap("62-correo-abajo")
+        if tapIf(app.buttons["bank_email_provider_gmail"], timeout: 5) {
+            cap("63-correo-gmail", wait: 1.5)
+            app.swipeUp()
+            cap("64-correo-gmail-abajo")
+            app.swipeUp()
+            cap("65-correo-gmail-final")
+        }
+    }
+
+    func test_21_correoAgotado() {
+        let app = launch(["-uitest-bank-email", "-revision-bank-exhausted"])
+        openBankEmail(app)
+        cap("66-correo-prueba-agotada")
+    }
+
+    func test_22_correoSinConexion() {
+        let app = launch(["-uitest-bank-email", "-revision-bank-failed"])
+        openBankEmail(app)
+        cap("67-correo-sin-conexion")
+    }
+
+    func test_23_correoSinSesion() {
+        let app = launch([])
+        openSettings(app)
+        scrollToRow(app, app.buttons["profile_siri_shortcuts"])
+        cap("68-ajustes-sin-fila-correo")
+    }
+
+    // MARK: - Apple Pay y Siri
+
+    func test_30_applePay() {
+        let app = launch(["-revision-bandeja-8"])
+        openSettings(app)
+        let tut = app.buttons["profile_help_tutorials"]
+        scrollToRow(app, tut, max: 16)
+        cap("70-ajustes-ayuda")
+        tapIf(tut, timeout: 5)
+        cap("71-tutoriales", wait: 1.2)
+        let row = app.buttons["tutorial_row_applePay"]
+        scrollToRow(app, row)
+        tapIf(row, timeout: 5)
+        cap("72-applepay", wait: 1.5)
+        app.swipeUp()
+        cap("73-applepay-abajo")
+        app.swipeUp()
+        cap("74-applepay-final")
+    }
+
+    func test_31_siri() {
+        let app = launch([])
+        openSettings(app)
+        let row = app.buttons["profile_siri_shortcuts"]
+        scrollToRow(app, row)
+        tapIf(row, timeout: 5)
+        cap("80-siri", wait: 1.5)
+        app.swipeUp()
+        cap("81-siri-2")
+        app.swipeUp()
+        cap("82-siri-3")
+        app.swipeUp()
+        cap("83-siri-4")
+    }
+
+    func test_32_siriPro() {
+        let app = launch([], pro: true)
+        openSettings(app)
+        let row = app.buttons["profile_siri_shortcuts"]
+        scrollToRow(app, row)
+        tapIf(row, timeout: 5)
+        cap("84-siri-pro", wait: 1.5)
+    }
+}

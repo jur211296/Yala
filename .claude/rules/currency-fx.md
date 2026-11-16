@@ -52,6 +52,12 @@ peor (pinneado en `CurrencyConverterLatestRateQualityTests.bothRoutesAgree`).
 - **Todo escritor de tasas tiene que postear `.yalaExchangeRatesUpdated`.** `forceRefreshRates` no lo
   hacía y dejaba al converter sirviendo lo que sembró antes —y declarándolo aproximado— con la fila
   buena ya en disco.
+- **Y la caché no depende solo de ese aviso (2026-11-06, ticket
+  `latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull`).** La fila de hoy la escriben también
+  el espejo de iCloud y el pull del Modo Nube, que no lo postean. La caché se retira con los mismos tres
+  avisos que la memoria de filas (`CurrencyConverter.init`): el de tasas, cualquier `ModelContext.didSave` y
+  `.NSPersistentStoreRemoteChange`. Cuesta una lectura de la fila de hoy tras cada guardado, no por conversión.
+  Un escritor de tasas nuevo sigue posteando el aviso: es el que repinta el Panel.
 
 ## Una tasa inservible es una tasa AUSENTE
 

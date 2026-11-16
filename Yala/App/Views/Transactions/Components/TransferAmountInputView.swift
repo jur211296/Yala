@@ -11,6 +11,8 @@ import SwiftUI
 
 struct TransferAmountInputView: View {
     @Bindable var viewModel: NewTransactionViewModel
+    /// Tras tocar un favorito, el importe de origen queda seleccionado con el teclado abierto (F1, 2.3).
+    @Binding var favoriteAmountSelectionRequest: Bool
     @Environment(AppPreferences.self) private var appPreferences
 
     // Local state for destination amount text. Vacío = el «0.00» gris de ejemplo (UX 2.2 · L2-16).
@@ -22,6 +24,7 @@ struct TransferAmountInputView: View {
     // Focus states
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isDestFieldFocused: Bool
+    @State private var amountSelection: TextSelection?
 
     /// Símbolo o código según la preferencia de formato de moneda (UX 2.2 · L2-18): antes, siempre el código.
     private func currencyLabel(_ account: Account?) -> String {
@@ -29,22 +32,61 @@ struct TransferAmountInputView: View {
         return appPreferences.currencyIdentifier(for: account.currencyCode)
     }
 
+    // MARK: - T1 · Cada importe dice su cuenta (mejoras necesarias 2.3)
+
+    private enum Leg { case source, destination }
+
+    /// «Sale de Cuenta Principal» / «Llega a Ahorros USD», encima de su importe. Los chips de cuenta no se mueven.
+    @ViewBuilder
+    private func accountCaption(_ text: String?, identifier: String) -> some View {
+        if let text {
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier(identifier)
+        }
+    }
+
+    /// «Importe que sale de Cuenta Principal, en soles (PEN)»: antes, solo «Monto origen».
+    private func amountAccessibilityLabel(_ leg: Leg) -> String {
+        let account = leg == .source ? viewModel.sourceAccount : viewModel.destinationAccount
+        guard let account else {
+            return leg == .source ? L10n.Accessibility.sourceAmount : L10n.Accessibility.destinationAmount
+        }
+        let currency = L10n.FormClarity.currencyPhrase(account.currencyCode)
+        return leg == .source
+            ? L10n.FormClarity.transferSourceAmountA11y(account: account.name, currency: currency)
+            : L10n.FormClarity.transferDestinationAmountA11y(account: account.name, currency: currency)
+    }
+
     private static func isEmptyAmount(_ text: String) -> Bool {
         text.isEmpty || text == "0" || text == "0.00" || text == "0,00"
     }
 
     var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Source Amount (Large)
-            sourceAmountField
+        // Aire más justo entre importes que antes (lg): los rótulos de cuenta (T1) ocupan ese sitio y la transferencia
+        // sigue cabiendo sin desplazar en un iPhone 17 Pro, con la fila de cuentas fuera de la línea de «Guardar».
+        VStack(spacing: DS.Spacing.xs) {
+            // Source Amount (Large), con la cuenta de la que sale encima (mejoras necesarias 2.3 · T1)
+            VStack(spacing: DS.Spacing.xxs) {
+                accountCaption(viewModel.sourceAccount.map { L10n.FormClarity.transferSourceCaption($0.name) },
+                               identifier: "transfer_source_caption")
+                sourceAmountField
+            }
 
             // Arrow visual
             Image(systemName: "arrow.down")
                 .font(DS.Typography.title)
                 .foregroundStyle(.secondary.opacity(0.5))
 
-            // Destination Amount (Large)
-            destinationAmountField
+            // Destination Amount (Large), con la cuenta a la que llega encima (T1)
+            VStack(spacing: DS.Spacing.xxs) {
+                accountCaption(viewModel.destinationAccount.map { L10n.FormClarity.transferDestinationCaption($0.name) },
+                               identifier: "transfer_destination_caption")
+                destinationAmountField
+            }
 
             // Exchange Rate (Clean, Explicit, No Box)
             exchangeRateField
@@ -58,21 +100,29 @@ struct TransferAmountInputView: View {
             Text(currencyLabel(viewModel.sourceAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.hotPink.opacity(0.7))
+                .accessibilityHidden(true)
 
-            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
-                .accessibilityLabel(L10n.Accessibility.sourceAmount)
+            TextField(
+                "", text: $viewModel.amountString, selection: $amountSelection,
+                prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary)
+            )
+                .accessibilityLabel(amountAccessibilityLabel(.source))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
+                .amountKeyboard()
                 .focused($isAmountFieldFocused)
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)
+                .selectsAmountOnRequest(
+                    $favoriteAmountSelectionRequest, isActive: viewModel.needsExchangeRate,
+                    select: focusAndSelectAmount)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     if isFocused && Self.isEmptyAmount(viewModel.amountString) {
                         viewModel.amountString = ""
                     }
                     if !isFocused {
+                        amountSelection = nil
                         if Self.isEmptyAmount(viewModel.amountString) {
                             // Vacío se queda vacío: el «0.00» gris es de ejemplo, no un monto escrito (L2-16).
                             viewModel.amountString = ""
@@ -91,6 +141,20 @@ struct TransferAmountInputView: View {
         }
     }
 
+    /// Foco en el importe de origen y todo su texto seleccionado: escribir lo sustituye.
+    private func focusAndSelectAmount() {
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: FavoriteAmountSelection.focusDelay)
+            } catch {
+                return
+            }
+            isAmountFieldFocused = true
+            await Task.yield()
+            amountSelection = FavoriteAmountSelection.all(of: viewModel.amountString)
+        }
+    }
+
     // MARK: - Destination Amount Field
 
     private var destinationAmountField: some View {
@@ -98,13 +162,14 @@ struct TransferAmountInputView: View {
             Text(currencyLabel(viewModel.destinationAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
+                .accessibilityHidden(true)
 
             TextField("", text: $destinationAmountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
-                .accessibilityLabel(L10n.Accessibility.destinationAmount)
+                .accessibilityLabel(amountAccessibilityLabel(.destination))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
+                .amountKeyboard()
                 .focused($isDestFieldFocused)
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)

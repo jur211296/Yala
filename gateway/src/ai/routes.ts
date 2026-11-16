@@ -1,4 +1,4 @@
-import { CHAT_REWRITE_SCHEMA, TEXT_PARSE_SCHEMA } from "./schemas";
+import { CHAT_REWRITE_SCHEMA, RECEIPT_SPLIT_SCHEMA, TEXT_PARSE_SCHEMA } from "./schemas";
 import type { TaskId } from "./tasks";
 
 /**
@@ -266,6 +266,30 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     params: { reasoningEffort: "low", responseFormat: "json_object", jsonSchema: TEXT_PARSE_SCHEMA, strictSchema: true, maxOutputTokens: 1500 },
     retries: 0,
   },
+  // Repartir un recibo en un grupo (2.3). Sin banco propio todavía: el modelo y el esfuerzo de `photo.read` (leer un
+  // recibo es su caso «receipt», 96 % estricto) y JSON estricto como `text.parse`, porque la app decodifica el reparto
+  // entero o nada. Tope: un recibo de 30 líneas son ~1 200 tokens de salida más el razonamiento `low`; ×2 y redondeado.
+  "receipt.photo": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: {
+      reasoningEffort: "low",
+      responseFormat: "json_object",
+      jsonSchema: RECEIPT_SPLIT_SCHEMA,
+      strictSchema: true,
+      image: { detail: "high", maxEdge: 1536 },
+      maxOutputTokens: 6000,
+    },
+    retries: 0,
+  },
+  "receipt.voice": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "json_object", jsonSchema: RECEIPT_SPLIT_SCHEMA, strictSchema: true, maxOutputTokens: 4000 },
+    retries: 0,
+  },
   // Banco de voz del 2026-10-07 (docs/ai-voice-bench-2026-10.md): de 15 variantes medidas, la que menos se equivoca.
   // Error por palabra 2,7 % con los términos del usuario (whisper-1: 9,0 %), comercio bien escrito en el 96,9 % de las
   // notas (75 %), mejor que whisper-1 en las 14 variantes de idioma; p95 1,2 s en serie; 0,27 USD por hora (0,36).
@@ -273,6 +297,17 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
   // entiende. Las versiones instaladas también ganan sin mandar términos (3,7 % frente a 6,7 % en limpio), y whisper-1
   // se apaga el 2027-02-26. OpenAI: sin segundo proveedor ni cambio en los textos de permisos.
   "voice.transcribe": {
+    mode: "transcription",
+    provider: "openai",
+    model: "gpt-transcribe",
+    params: {
+      languageField: "languages",
+      maxKeywords: 100,
+      prompt: "Personal finance voice note. Write every amount with digits, for example 12.50, 56.20 or 1,250.",
+    },
+  },
+  // La nota de un recibo de grupo: la misma transcripción que `voice.transcribe` (mismo banco); solo cambia el cubo.
+  "receipt.transcribe": {
     mode: "transcription",
     provider: "openai",
     model: "gpt-transcribe",
@@ -321,6 +356,17 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     provider: "openai",
     model: "gpt-6.1-sol",
     params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 1020 },
+    retries: 0,
+  },
+  // Gastos hormiga Pro (2.3, ticket insights-ant-expenses-ai-version-for-pro): SIN banco todavía. Misma fila que
+  // insights.cards (mismo modelo y esfuerzo) porque la tarea es de la misma familia: leer agregados y escribir una frase,
+  // más juntar ids. Tope: 40 grupos como mucho en `merges` + una frase ≈ 250 tokens de salida; con el razonamiento, 800.
+  // Pasarla por el banco antes de cambiarla.
+  "insights.ants": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 800 },
     retries: 0,
   },
   // Solo las mandan versiones anteriores al 2026-10-03 o peticiones sin huella: salen byte a byte como siempre.

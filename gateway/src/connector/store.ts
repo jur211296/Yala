@@ -1,16 +1,26 @@
 import type { Env } from "../env";
 
 /**
- * D1 de los movimientos que la IA de la persona apunta por el conector (`migrations/0004_connector_drafts.sql`).
+ * Lo que la IA de la persona apunta por el conector entra en la cola COMÚN de borradores (decisión D9 del plan de Yala
+ * web): la tabla `mail_drafts` del correo del banco (`migrations/0003_mail_forwarding.sql`), con `source: "ai"`. El
+ * iPhone la recoge con `GET /mail/drafts` junto a lo del correo y lo de la web, la pasa a su Bandeja y la confirma
+ * (`ack`). La caducidad de 30 días, el `ack` y el borrado con la cuenta los pone la cola (`mail/store.ts`).
+ *
+ * Lo propio del conector: la validación de frontera y dos techos. El diario va en `connector_quota`
+ * (`migrations/0004_connector_quota.sql`) y no en la cola, porque el `ack` del iPhone la vacía.
  *
  * El conector ya validó y resolvió todo contra los datos de la persona, pero aquí se vuelve a validar: es la frontera
  * del gateway, y lo que entra en la cola acaba en la Bandeja de la app.
  */
 
+/** El `source` de lo que apunta la IA en la cola común (`AIConnectorDraftLogic.source` en la app). */
+export const CONNECTOR_SOURCE = "ai";
+
 /** Movimientos apuntados por cuenta y día (UTC). Una persona apunta unos pocos al día; esto solo frena un bucle. */
 export const CONNECTOR_DAILY_CAP = 50;
 /** Movimientos esperando a la app. Con la app sin abrir semanas, la cola no crece sin fin. */
 export const CONNECTOR_MAX_PENDING = 100;
+/** Lo que la cola común guarda un borrador (`DRAFT_TTL_MS` de `mail/store.ts`): más viejo no cuenta en la cola. */
 export const CONNECTOR_DRAFT_TTL_MS = 30 * 24 * 3600 * 1000;
 
 export const CONNECTOR_MAX_AMOUNT = 1_000_000_000;
@@ -114,10 +124,11 @@ export async function enqueueConnectorDraft(env: Env, userId: string, raw: unkno
   // Tal cual, sin normalizar: las rutas de la app leen con el `sub` del JWT, y tiene que ser el mismo texto.
   const user = userId;
 
-  await env.DB.prepare("DELETE FROM connector_drafts WHERE user_id = ? AND created_at < ?")
-    .bind(user, now - CONNECTOR_DRAFT_TTL_MS)
-    .run();
-  const pending = await env.DB.prepare("SELECT COUNT(*) AS n FROM connector_drafts WHERE user_id = ?").bind(user).first<{ n: number }>();
+  const pending = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM mail_drafts WHERE user_id = ? AND created_at > ? AND json_extract(payload, '$.source') = ?",
+  )
+    .bind(user, now - CONNECTOR_DRAFT_TTL_MS, CONNECTOR_SOURCE)
+    .first<{ n: number }>();
   if (Number(pending?.n ?? 0) >= CONNECTOR_MAX_PENDING) return { ok: false, reason: "queue_full" };
 
   const day = new Date(now).toISOString().slice(0, 10);
@@ -133,50 +144,36 @@ export async function enqueueConnectorDraft(env: Env, userId: string, raw: unkno
   if ((counted.meta?.changes ?? 0) === 0) return { ok: false, reason: "daily_cap" };
 
   const id = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO connector_drafts (id, user_id, created_at, payload) VALUES (?, ?, ?, ?)")
-    .bind(id, user, now, JSON.stringify(payload))
+  await env.DB.prepare("INSERT INTO mail_drafts (id, user_id, created_at, payload) VALUES (?, ?, ?, ?)")
+    .bind(id, user, now, JSON.stringify(commonQueuePayload(payload)))
     .run();
   return { ok: true, id };
 }
 
-export interface StoredConnectorDraft {
-  id: string;
-  created_at: number;
-  payload: ConnectorDraftPayload;
+/**
+ * La fila de la cola común: la forma del correo (`DraftPayload` de `mail/store.ts`) con `merchant` = la nota, más lo
+ * que distingue a la IA. La cuenta y la subcategoría van como en la web (`account_ref`/`subcategory_ref`, su `sync_id`)
+ * y además por su nombre, por si el id no casa en el iPhone (aún sin bajar).
+ */
+export function commonQueuePayload(p: ConnectorDraftPayload) {
+  return {
+    kind: p.kind,
+    amount: p.amount,
+    currency: p.currency,
+    merchant: p.note,
+    date: p.date,
+    bank: null,
+    account_last4: null,
+    source: CONNECTOR_SOURCE,
+    account_ref: p.account_id,
+    subcategory_ref: p.subcategory_id,
+    account_name: p.account_name,
+    subcategory_name: p.subcategory_name,
+    client: p.client,
+  };
 }
 
-/** Los movimientos de la cuenta, del más viejo al más nuevo. Los de más de 30 días se borran antes de leer. */
-export async function listConnectorDrafts(env: Env, userId: string, now = Date.now()): Promise<StoredConnectorDraft[]> {
-  await env.DB.prepare("DELETE FROM connector_drafts WHERE user_id = ? AND created_at < ?")
-    .bind(userId, now - CONNECTOR_DRAFT_TTL_MS)
-    .run();
-  const res = await env.DB.prepare("SELECT id, created_at, payload FROM connector_drafts WHERE user_id = ? ORDER BY created_at LIMIT 100")
-    .bind(userId)
-    .all<{ id: string; created_at: number; payload: string }>();
-  const out: StoredConnectorDraft[] = [];
-  for (const row of res.results ?? []) {
-    try {
-      const payload = validateConnectorPayload(JSON.parse(row.payload));
-      if (payload) out.push({ id: row.id, created_at: row.created_at, payload });
-    } catch {
-      // Una fila ilegible no tumba la lista; se va con el TTL.
-    }
-  }
-  return out;
-}
-
-/** Borra los que la app ya creó. Solo los de ESTA cuenta: un id ajeno no hace nada. */
-export async function ackConnectorDrafts(env: Env, userId: string, ids: string[]): Promise<number> {
-  if (ids.length === 0) return 0;
-  const stmts = ids.map((id) => env.DB.prepare("DELETE FROM connector_drafts WHERE id = ? AND user_id = ?").bind(id, userId));
-  const results = await env.DB.batch(stmts);
-  return results.reduce((n, r) => n + (r.meta?.changes ?? 0), 0);
-}
-
-/** Borrado de cuenta: cola y contador. Lo llama `/account/delete`. */
+/** Borrado de cuenta: el contador diario. La cola la vacía `deleteMailData`. Lo llama `/account/delete`. */
 export async function deleteConnectorData(env: Env, userId: string): Promise<void> {
-  await env.DB.batch([
-    env.DB.prepare("DELETE FROM connector_drafts WHERE user_id = ?").bind(userId),
-    env.DB.prepare("DELETE FROM connector_quota WHERE user_id = ?").bind(userId),
-  ]);
+  await env.DB.prepare("DELETE FROM connector_quota WHERE user_id = ?").bind(userId).run();
 }

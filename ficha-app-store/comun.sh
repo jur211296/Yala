@@ -12,7 +12,7 @@ MONEDA="$(_campo idiomas "$IDIOMA" moneda)"
 LPROJ="$(_campo idiomas "$IDIOMA" lproj)"
 MONEDA_EXTRANJERA="$(_campo idiomas "$IDIOMA" monedaExtranjera)"
 RELOJ="$(_campo reloj)"
-SALIDA="${YALA_FICHA_SALIDA:-$HOME/Claude/propuestas/ficha-app-store-2.1}/$IDIOMA"
+SALIDA="${YALA_FICHA_SALIDA:-$HOME/Claude/propuestas/ficha-app-store-2.2}/$IDIOMA"
 BUNDLE="${YALA_FICHA_BUNDLE:-com.jurgenschmidt.yala}"
 # udid <iphone|ipad>: el simulador de idiomas.json (o YALA_FICHA_IPHONE / YALA_FICHA_IPAD).
 udid() {

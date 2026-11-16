@@ -194,6 +194,9 @@ final class AppBootstrapper {
         //      Bajo `-uitest` start() es no-op (guard interno) — cero red en XCUITests.
         MetricsService.start()
         MetricsService.dailyActivePingIfNeeded()
+        // Lo que esperaba un «¿Era de prueba?» que no llegó a contestarse (iOS cerró Yala): se quedó (card 4b7h).
+        NewUserMetrics.releaseWaitingAtLaunch(
+            recordTutorialRunning: SetupChecklistManager.shared.isRecordTutorialRunning)
 
         // 0.55. Track session for upsell frequency capping
         ProUpsellService.shared.incrementSessionCount()
@@ -268,6 +271,21 @@ final class AppBootstrapper {
             }
         }
 
+        // 2d. El papel de las subcategorías de transferencia y de ajuste (ticket
+        //     `transfer-and-adjustment-subcategories-need-a-stable-role`). En CADA arranque —lo que llega sin papel
+        //     puede llegar por iCloud o por el canal del Modo Nube en cualquier momento— y tras la quiescencia: escribe
+        //     `Subcategory` del store personal. Mientras no corre, `Subcategory.systemRole` deduce el mismo papel.
+        //     `!uiTestActive` como sus vecinos: los seeds de UI se leen con esa deducción.
+        if !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.subcategorySystemRoles", "import not quiescent")
+                    return
+                }
+                SubcategorySystemRoleBackfill.run(context: context)
+            }
+        }
+
         // 3. Load subscription status
         await loadSubscriptionStatus()
 
@@ -332,8 +350,13 @@ final class AppBootstrapper {
         // resolver con fallback M2M.
         Task { @MainActor in
             let started = Date.now
+            // Card dtex: la cuenta la dice `hasICloudAccount` (token de Drive O CloudKit `.available`), no el token solo.
+            // Con iCloud Drive apagado y la sesión de iCloud abierta el espejo importa igual, y con el token esta
+            // migración corría sin esperar sobre un store a medio importar. La respuesta de CloudKit llega asíncrona:
+            // se espera con techo y, si no llega, decide el token como siempre.
+            await iCloudSyncService.shared.awaitCloudKitAccountStatus(timeout: Self.bootAccountStatusTimeout)
             let decision = MigrationGateLogic.shouldWaitForCloudKit(
-                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
                 hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
             )
             var waitedForSync = false
@@ -357,6 +380,8 @@ final class AppBootstrapper {
             // clobbear la config que el sync aún no había bajado. Aquí (post-hook, o sin cuenta
             // iCloud vía el gate de arriba) la decisión sobre fresh-vs-existente ya es segura.
             PanelPreferencesMigration.runIfNeeded(appPreferences: appPreferences)
+            // La nota de salud a la vista, una vez, para quien nunca tocó Configurar Panel (opción A de Jürgen).
+            PanelPreferencesMigration.showHealthOnceIfUntouched(appPreferences: appPreferences)
         }
 
         // 9. Update widget cache
@@ -458,7 +483,7 @@ final class AppBootstrapper {
                 cloudSyncFanOutObserver = NotificationCenter.default.addObserver(
                     forName: .cloudSyncAppliedRemoteChanges, object: nil, queue: .main
                 ) { _ in
-                    Task { @MainActor in SessionState.shared.markRemoteChangePending() }
+                    Task { @MainActor in RemoteChangesFanOut.receive(isApplicationActive: UIApplication.shared.applicationState == .active) }
                 }
             }
             Task { await CloudSyncRuntime.startShared(context: context) }
@@ -563,6 +588,18 @@ final class AppBootstrapper {
                 return
             }
             CashFlowOverrideLineMigration.migrateIfNeeded(in: context, scope: .all)
+        }
+
+        // 16.4.10. La categoría nueva que quedó a medias al cerrarse la app: el «+» de Categorías la inserta sin nombre y
+        //      guardar su primera subcategoría la guarda así (lote 09 de mejoras necesarias 2.3). Solo mira si este
+        //      teléfono dejó la marca; detrás de la puerta como el resto de guardados del arranque.
+        Task { @MainActor in
+            guard NewCategoryDraftMark.isArmed() else { return }
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.newCategoryDraftSweep", "import not quiescent")
+                return
+            }
+            NewCategoryDraftMark.sweepIfArmed(in: context)
         }
 
         // 16.5. Retry bridge operations that failed in a previous launch
@@ -871,8 +908,19 @@ final class AppBootstrapper {
             }
             // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
-            // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
-            UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // La barra de antes (`[.panel, .statistics, .planning]`), o la de una instalación nueva de 2.3 con
+            // `-uitest-fresh-install` (Y23-15): las pruebas eligen Estadísticas y Planificación por la barra.
+            TabBarDefaultsMigration.applyForUITest(freshInstall: UITestHooks.freshInstall)
+            // La guía de «días después» sale una vez: su marca no viaja de una corrida a otra. Y el mazo de Primeros
+            // pasos solo se ve en una instalación marcada como nueva: su test la marca (Y23-05, Y23-15).
+            UserDefaults.standard.removeObject(forKey: LaterChartsGuideLogic.shownKey)
+            // Y23-18: qué oferta se pidió y el aviso prometido tampoco viajan de una corrida a otra.
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
+            if UITestHooks.showsSetupDeck { SetupChecklistManager.shared.markAsNewInstall() }
+            if UITestHooks.showsSetupDeck, let position = UITestHooks.setupDeckPosition {
+                for step in SetupStepID.deck.prefix(max(0, position - 1)) { SetupChecklistManager.shared.markSkipped(step) }
+            }
             // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
             // el siguiente.
             StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }
@@ -949,6 +997,10 @@ final class AppBootstrapper {
             //    Medido el 2026-09-11: es lo que tumbaba el control negativo del seam. Misma familia
             //    que sus vecinas de aquí, con la diferencia de que ésta no la siembra un seam.
             GroupsDetachPendingPurge.clear()
+            //  · el espejo local de la asociación de Grupos: lo siembra `-uitest-groups-association` más abajo y es
+            //    `groups.*`, fuera de SwiftData. Pegado, la corrida siguiente vería «asociada sin sesión» donde espera
+            //    «sin cuenta». Solo el LOCAL: el iCloud-KV es del Apple ID y el seam no lo toca.
+            UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
             //  · el testigo «la puerta de Grupos no pudo preparar este teléfono»: lo siembra
             //    `-uitest-groups-gate-wipe-failed` DESPUÉS de este bloque, y si su test cae antes de tocar «Volver» se
             //    quedaba en el simulador — `cloudSync.*`, fuera del barrido — y la puerta siguiente decía «no pudimos»
@@ -1042,6 +1094,13 @@ final class AppBootstrapper {
         // vez del comportamiento.
         if UITestHooks.seedICloudIdentity {
             GroupICloudIdentitySeed.adopt(UITestHooks.uitestICloudRecordName)
+        }
+        // La asociación de Grupos, sembrada en local antes del primer render de Ajustes (ticket
+        // `uitest-seam-for-a-seeded-groups-association`). Con sesión fingida, la sección ofrece desasociar y la marca de un
+        // desasociar a medias se puede sellar; sin ella, es la celda del segundo móvil.
+        if UITestHooks.seedGroupsAssociation {
+            GroupsAccountAssociation.shared.seedLocalForUITest(
+                sub: UITestHooks.uitestGroupsAssociationSub, provider: "apple")
         }
         // El estado que deja el aviso tardío al conservar los grupos: la marca, atada a la sesión que haya —el llavero del
         // simulador puede guardar una real de otra corrida, y con «sin sesión» apuntado no valdría—. Va con el seed
@@ -1137,6 +1196,9 @@ final class AppBootstrapper {
         if UITestHooks.fakeICloudAvailable {
             iCloudSyncService.shared._uiTestSimulateAvailableAccount()
         }
+        if UITestHooks.fakeICloudDriveOff {
+            iCloudSyncService.shared._uiTestSimulateDriveOffWithAccount()
+        }
         // **«¿Espeja este arranque?» contesta la verdad del host de test: no.** El store `YalaModel-UITest` monta con
         // `cloudKitDatabase: .none`, pero sale de `personalConfiguration` ANTES de capturar la decisión del mount, así
         // que `personalStoreMountedDecision` se queda en `.iCloudMirror` y `mirrorWillSync()` decía `true` en toda
@@ -1179,6 +1241,42 @@ final class AppBootstrapper {
             }
         }
     }
+
+    #if DEBUG
+    /// `-uitest-seed-ant-spellings`: cuatro compras pequeñas de este mes con dos grafías de la misma tienda
+    /// («Starbucks» ×2 y «STARBUCKS COFFEE» ×2). La regla fija no las junta (dos grupos de 2, por debajo de 3) y la
+    /// versión Pro con IA sí (ticket `insights-ant-expenses-ai-version-for-pro`). Va encima del perfil sembrado.
+    static func seedAntSpellings(in context: ModelContext) {
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            let categories = try context.fetch(FetchDescriptor<Category>())
+            guard let account = accounts.first(where: { !$0.isSystemAccount && !$0.isArchived }),
+                  let category = categories.first(where: { !$0.isIncome })
+            else { return }
+            let calendar = Calendar.current
+            let now = Date.now
+            let dayOfMonth = calendar.component(.day, from: now)
+            let entries: [(String, Double, Int)] = [
+                ("Starbucks", 9, 0), ("Starbucks", 9, 1), ("STARBUCKS COFFEE", 11, 2), ("STARBUCKS COFFEE", 11, 3),
+            ]
+            for (note, amount, daysBack) in entries {
+                let back = min(daysBack, dayOfMonth - 1)
+                let date = calendar.date(byAdding: .day, value: -back, to: now) ?? now
+                let tx = TransactionItem(
+                    date: date, amount: -amount, currencyCode: account.currencyCode, note: note,
+                    category: category, account: account,
+                    amountInPreferredCurrency: -amount, preferredCurrencyCode: account.currencyCode
+                )
+                // Misma divisa que la cuenta: la conversión es exacta (`ManualWriteRateQualityTests`).
+                tx.isExchangeRateProvisional = false
+                context.insert(tx)
+            }
+            try context.save()
+        } catch {
+            print("AppBootstrapper: Error: \(error)")
+        }
+    }
+    #endif
 
     /// Tras `-uitest-reset`, DataWipeService borra `secondaryCurrencies`. El gráfico
     /// del Panel solo monta con al menos una secundaria. USD+EUR basta para Mini.
@@ -1230,6 +1328,9 @@ final class AppBootstrapper {
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
             Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
+            #if DEBUG
+            if UITestHooks.seedAntSpellings { Self.seedAntSpellings(in: context) }
+            #endif
         }
         // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
         // pantalla completa. Tras el reset, que borra el contador.
@@ -1278,6 +1379,14 @@ final class AppBootstrapper {
         // Un «Bus» de hace un minuto: un registro conocido en «Este mes» sea el día que sea (card 30pv).
         if UITestHooks.seedTodayRecord {
             DevSeedTodayRecord.create(in: context)
+        }
+        // Un «Almuerzo de trabajo» de 45,90: «Buscar en Registros» lo encuentra por su importe (decisión 14 de 2.3).
+        if UITestHooks.seedRecordsSearch {
+            DevSeedRecordsSearch.create(in: context)
+        }
+        // Cuatro presupuestos con lo gastado exacto: al día, en el límite, justo al límite y pasado (decisión 23 de 2.3).
+        if UITestHooks.seedBudgetStates {
+            DevSeedBudgetStates.create(in: context)
         }
         // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
         if UITestHooks.seedUncategorizedExpense {
@@ -1421,6 +1530,7 @@ final class AppBootstrapper {
         }
         if UITestHooks.insightsAIConsent {
             appPreferences.aiInsightsConsentAccepted = true
+            appPreferences.aiInsightsConsentVersion = AIConsentRevision.insights
         }
         if UITestHooks.aiChatReady {
             appPreferences.aiChatConsentAccepted = true
@@ -1496,6 +1606,11 @@ final class AppBootstrapper {
         GroupNotificationService.shared.setContext(nil)
         // Una foto de widgets pedida y aún sin hacer leería el contexto que se suelta (`WidgetDataCache.updateCache`).
         WidgetDataCache.cancelPendingUpdate()
+        // Barrido del 14-nov (card p9q0): los dos avisos de Grupos reciben el contexto en el chequeo de avisos del arranque,
+        // que solo corre con las notificaciones permitidas. Sin soltarlos, el almacén seguía vivo, el cambio en caliente
+        // abortaba y cerrar sesión en la nube pedía «Vuelve a abrir Yala».
+        GroupSettlementReminderService.shared.setContext(nil)
+        GroupBudgetAlertService.shared.setContext(nil)
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
         raceCleanerModelContext = nil
@@ -1708,7 +1823,14 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    ///
+    /// **Y la nube también** (bug del 2026-11-09): la limpieza solo escuchaba el import de iCloud, así que con la cuenta en
+    /// la nube el borrador «Elige cuenta» y el «Préstamo a grupos» repetido que deja una pasada del puente que no vio tu
+    /// registro se quedaban para siempre. Tras cada sincronización de cualquiera de los dos almacenes,
+    /// `convergeAfterSync` quita lo que sobra, solo lo nacido desde que se instaló el arreglo (lo de antes, el aviso de la
+    /// Bandeja). El sello de «desde cuándo» se pone aquí, en el arranque, y no en la primera sincronización.
     private func observeTransactionsImportedFromSync() {
+        _ = GroupBridgeRaceCleaner.leftoverAutoSince()
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
@@ -1717,6 +1839,17 @@ final class AppBootstrapper {
             MainActor.assumeIsolated {
                 guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
                 _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: .cloudSyncAppliedRemoteChanges,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
             }
         }
     }
@@ -1738,6 +1871,10 @@ final class AppBootstrapper {
         // No se pierde nada: `iCloudMismatchAlreadyDetected` sigue en `false`, así que el foreground
         // siguiente lo vuelve a ofrecer si el veredicto de identidad fue que no había cambio.
         guard !appleIDChangeOffered, !appleIDChangeCheckInFlight else { return }
+        // Card gd78: con una entrada a una cuenta a medias el montaje neutro es a propósito (`WelcomeAdoptInFlight`), y
+        // «reinicia para sincronizar con iCloud» volvería a montar neutro: un aviso que no se puede cumplir. Sin marcar el
+        // «ya detectado»: cuando el traspaso aterrice o se deshaga, el primer plano siguiente vuelve a mirar.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
 
         // R1 (relanzamiento cero): la decisión vive en `SwiftDataConfiguration.shouldOfferICloudRestart`
         // (pura, testeable) e incluye el término R9. Sus dos primeros inputs son testigos de lo que ESTE
@@ -1747,7 +1884,8 @@ final class AppBootstrapper {
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision,
             mountedWithMirroring: SwiftDataConfiguration.containerWasCreatedWithCloudKit(),
             iCloudAvailableNow: SwiftDataConfiguration.isICloudAvailable(),
-            groupsOnlySessionArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed()) {
+            groupsOnlySessionArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
+            corpusWipeCrossedTheZone: StorageModePersistence.hasICloudCorpusWipeCrossedTheZone()) {
             iCloudMismatchAlreadyDetected = true
             #if DEBUG
             print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
@@ -1809,10 +1947,11 @@ final class AppBootstrapper {
                        InboundCaptureDrain.drain(context: ctx) > 0 {
                         bootstrapper.sessionState.incrementDataVersion()
                     }
-                    // Lo apuntado por la IA de la persona que no entró al abrir porque el import seguía activo.
+                    // La cola común de borradores (correo, web y lo que apuntó la IA de la persona) que no se recogió al
+                    // abrir porque el import seguía activo.
                     if let ctx = bootstrapper.remoteChangeModelContext {
                         Task { @MainActor in
-                            if await AIConnectorDraftService.syncIfNeeded(context: ctx) > 0 {
+                            if await BankEmailDraftService.syncIfDeferredByImport(context: ctx) > 0 {
                                 bootstrapper.sessionState.incrementDataVersion()
                             }
                         }
@@ -1863,15 +2002,24 @@ final class AppBootstrapper {
     /// genuinamente colgado (`isImporting` → no-quiescente) ES el crash. Por eso el tope total del poll
     /// (120s) solo TERMINA LA ESPERA (→ DEFER), jamás fuerza el save. El `forceFetchAndWait(15s)` inicial
     /// cuenta hacia la gracia de 60s (medida desde la entrada de la función).
+    /// Techo de la espera a la respuesta de CloudKit sobre la cuenta en las esperas del arranque (card dtex).
+    /// `accountStatus()` contesta en milisegundos con el daemon local; 5 s solo cubre el caso raro que no contesta.
+    static let bootAccountStatusTimeout: TimeInterval = 5
+
     private func awaitPersonalImportForBootSave() async -> Bool {
         let start = Date()
         let noImportGrace: TimeInterval = 60
         let totalPollCap: TimeInterval = 120
         let pollInterval: TimeInterval = 2
 
+        // Card dtex: la cuenta es `hasICloudAccount`, con la respuesta de CloudKit esperada con techo (cuenta hacia la
+        // gracia, como el `forceFetchAndWait` de abajo). Con el token solo, Drive apagado abría el gate en `.runNoAccount`
+        // mientras el espejo importaba: el save del arranque sobre un import a medio asentar que este gate existe para evitar.
+        await iCloudSyncService.shared.awaitCloudKitAccountStatus(timeout: Self.bootAccountStatusTimeout)
+
         func gateDecision() -> BootSaveGateLogic.Decision {
             BootSaveGateLogic.decide(
-                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
                 hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
                 hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
                 isQuiescent: iCloudSyncService.shared.isImportQuiescent,
@@ -1887,7 +2035,7 @@ final class AppBootstrapper {
 
         // 1) Esperar el primer import (restore lento). Estos ≤15s cuentan hacia la gracia de 60s.
         if MigrationGateLogic.shouldWaitForCloudKit(
-            isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+            isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
         ) == .waitForHook {
             _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
@@ -2083,6 +2231,29 @@ final class AppBootstrapper {
     /// Silent on retry-fail (the user already saw an alert at the original failure);
     /// flag stays true for the next launch until `maxAttempts` is exhausted.
     @MainActor
+    /// **La convergencia de los gastos de grupo, con la app ya montada** (ticket
+    /// `wipe-data-group-rows-return-only-on-the-next-cold-launch`). «Vaciar datos», «Empezar de cero» al volver de «Solo
+    /// grupos» y el borrado por la señal de otro dispositivo que deja a la persona dentro la piden, y hasta este cambio solo
+    /// la consumía el arranque (`retryPendingBridges`): Registros y el Panel se quedaban sin los gastos de grupo hasta
+    /// cerrar y abrir Yala. Con los MISMOS gates que el arranque —store listo y, dentro de `convergeIfPending`, sesión
+    /// privada y dominio abierto—, así que en solo-grupos la petición sigue dormida hasta activar Yala completo. Si el
+    /// store no está listo, la petición se queda y la consume el arranque siguiente, como antes.
+    ///
+    /// Como el arranque, primero recoge el reparto de un vaciado remoto que ya llegó (`resolveIfArrived`). Lo que el origen
+    /// prometió y no repuso (`takeOverIfOverdue`, 72 h) se queda en el arranque: aquí no puede haber vencido.
+    func convergeGroupsBridgeInSession(context: ModelContext) async {
+        // Solo lee el iCloud-KV y las marcas: no escribe en el store, así que no espera al gate.
+        GroupsRemoteWipeDivision.resolveIfArrived()
+        guard GroupsBridgeRestoreConvergenceStore.isPending() else { return }
+        guard await awaitPersonalStoreReady() else {
+            logger.notice("convergeGroupsBridgeInSession deferred — personal store not ready")
+            return
+        }
+        guard GroupsBridgeRestoreConvergence.convergeIfPending(context: context) else { return }
+        // El bridge guarda sin subir `dataVersion`, y Registros recarga por él.
+        SessionState.shared.incrementDataVersion()
+    }
+
     func retryPendingBridges(context: ModelContext) async {
         // El bridge crea TransactionItems personales y guarda el mainContext — diferir hasta que el
         // import personal esté QUIESCENTE (`awaitPersonalImportForBootSave` espera el primer import + la
@@ -2420,15 +2591,11 @@ final class AppBootstrapper {
         }
         // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
+        // Lo apuntado en Yala web llega por la misma cola: antes, se pregunta a la web si hay sesiones abiertas (lote 1).
+        // Y lo que apuntó la IA de la persona por el conector también: sin correo ni web, pregunta cada 2 minutos.
         Task { @MainActor in
-            if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
-                sessionState.incrementDataVersion()
-            }
-        }
-        // Tu IA registra en Yala (2.3): lo que Claude, ChatGPT o Grok apuntó por el conector pasa a la Bandeja. Solo con los
-        // datos en la nube y sesión (`AIConnectorDraftService.shouldSync`); corre también en el primer `.active` en frío.
-        Task { @MainActor in
-            if await AIConnectorDraftService.syncIfNeeded(context: context) > 0 {
+            let webConnected = await ConnectedBrowsersPresence.refreshIfDue(client: ConnectedBrowsersClient())
+            if await BankEmailDraftService.syncIfNeeded(context: context, webConnected: webConnected) > 0 {
                 sessionState.incrementDataVersion()
             }
         }
@@ -2833,6 +3000,9 @@ final class AppBootstrapper {
         #if DEBUG
         print("AppBootstrapper: Received deep link: \(url.absoluteString)")
         #endif
+
+        // Telemetría propia: «abrió desde un widget» (uno al día). Solo los enlaces de la extensión llevan la marca.
+        if WidgetURLHelper.cameFromWidget(url) { MetricsService.used(.widget) }
 
         switch url.host {
         case "shared-image":
@@ -3274,6 +3444,10 @@ final class AppBootstrapper {
             !UserDefaults.standard.bool(forKey: ChatUnsignedExpenseRepairService.repairSweepKey)
         else { return }
 
+        // La ventana cierra AHORA, antes de la espera: lo que la persona registre mientras tanto ya
+        // lo escribió un build que firma y no debe voltearse.
+        ChatUnsignedExpenseRepairService.armWindowCloseIfNeeded()
+
         // Gate de quiescencia: el barrido escribe `TransactionItem` (store personal) y hace `save()`;
         // durante el import del restore eso dispara el `_assertionFailure` interno de SwiftData. Si el
         // import no asienta, NO se marca el flag → reintenta en el próximo arranque.
@@ -3510,6 +3684,10 @@ final class AppBootstrapper {
         // Hasta el 2026-09-12, el CAJÓN de la sesión: las notificaciones se siembran en el store de quien
         // está dentro. Con un solo dominio, ese store es `.standard`.
         guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
+        // Card gd78 (medido en el iPhone 14 el 13-nov): con una entrada a una cuenta a medias el onboarding consta hecho
+        // (`onAdoptStarted` lo marca antes de conducir), y sembrar aquí dejaba 7 avisos locales sin linaje: el traspaso
+        // retomado se paraba en «no demuestra que los datos sean de la cuenta». Los avisos de la cuenta bajan con ella.
+        guard !WelcomeAdoptInFlight.holdsNeutralMount() else { return }
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 

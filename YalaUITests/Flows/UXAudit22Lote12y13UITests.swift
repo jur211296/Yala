@@ -72,7 +72,8 @@ final class UXAudit22Lote12y13UITests: XCTestCase {
 
     // MARK: - L13-1
 
-    /// En el grupo sembrado Beto y Ana te deben, y Beto le debe a Ana: dos «Saldar», no tres.
+    /// En el grupo sembrado Beto y Ana te deben, y Beto le debe a Ana: dos «Saldar» en las tuyas. Desde la decisión 37
+    /// de 2.3 (C1) la de Beto con Ana también lleva el suyo, con su propio id (lo fija `GruposSaldar23UITests`).
     func test_balances_settleOnlyOnYourDebts() {
         let app = launch()
         openBalances(app)

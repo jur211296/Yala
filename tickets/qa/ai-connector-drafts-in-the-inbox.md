@@ -25,10 +25,12 @@ cambiar ni borrar nada.
   se ofrece. La pantalla de permiso lo dice. Vueltas OAuth de ChatGPT en la lista; las demás, por
   `EXTRA_REDIRECT_URIS`, y una vuelta rechazada queda en el log para fijarla (Grok). La herramienta solo se ofrece a
   conexiones cuyo permiso lo decía (`GrantProps.drafts`): quien conectó como solo lectura tiene que reconectar.
-- **Gateway:** cola `connector_drafts` (migración 0004), clase RPC `ConnectorDrafts` (sin ruta pública), rutas
-  `GET /connector/drafts` y `POST /connector/drafts/ack` con App Attest, 50 al día y 100 en cola por cuenta, y el
-  borrado de cuenta la vacía.
-- **App:** `AIConnectorDraftService` los recoge al volver a primer plano (con la nube y sesión) y crea el borrador
+- **Gateway:** clase RPC `ConnectorDrafts` (sin ruta pública) que deja el movimiento en la cola COMÚN de borradores
+  (`mail_drafts`, la del correo y la web; decisión D9 del plan de Yala web) con `source: "ai"`. 50 al día
+  (`connector_quota`, migración `0004_connector_quota`) y 100 de la IA esperando por cuenta; el borrado de cuenta vacía
+  los dos. Desde el 16-nov: la primera versión tenía cola y rutas propias (`/connector/drafts`) y se retiraron sin llegar
+  a desplegarse.
+- **App:** la recogida común (`BankEmailDraftService`, `/mail/drafts`) los recoge al volver a primer plano y crea el borrador
   `.aiConnector` («Tu IA», 16 idiomas). Mismo cliente que el correo del banco (`BankEmailClient`). Si otro aparato de
   la persona ya lo creó y le llegó por el sync, no lo duplica (mismo instante de llegada, importe y nota).
 - **Guía para conectar cada IA:** `mcp/CONECTAR-TU-IA.md`. La guía dentro de la app se difiere al deploy de

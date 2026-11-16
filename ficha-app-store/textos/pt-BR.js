@@ -45,6 +45,8 @@ const TEXTOS = {
     "06_grupos": {
       tarjeta: {ico: "R$", t1: "Te devem", t2: "Viagem ao Rio · 3 pessoas", monto: "R$ 380,00"},
       chips: ["Mercado · Ana pagou <b>R$ 240</b>", "Churrascaria · Beto pagou <b>R$ 360</b>"],
+      // BORRADOR para Lola (Frank, 4-nov-2026): desde a 2.2 o iPhone mostra a LISTA de Grupos; são as linhas da viagem.
+      chipsLista: ["Beto te deve <b>R$ 220</b>", "Ana te deve <b>R$ 160</b>"],
     },
     "07_presu": {
       cifra: "R$ 470<small>para Comer fora nos próximos 19 dias</small>",

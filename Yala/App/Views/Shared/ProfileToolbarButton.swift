@@ -63,8 +63,8 @@ struct ProfileToolbarButton: View {
 
     private var avatar: some View {
         Group {
-            if let imageData = profileStorage.imageData,
-               let uiImage = UIImage(data: imageData) {
+            // Ya decodificada y reducida (YALA-IOS-9/A): decodificarla aquí, en cada pestaña y cada dibujado, era 1 GB.
+            if let uiImage = profileStorage.image {
                 // User photo
                 Image(uiImage: uiImage)
                     .resizable()

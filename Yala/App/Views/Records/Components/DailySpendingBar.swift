@@ -7,12 +7,7 @@
 
 import SwiftUI
 
-/// Barra horizontal cuya longitud es proporcional a `value / maxValue`, pintada con
-/// `DS.Gradients.spendingHeat` **anclado al ancho del track completo**: la punta del
-/// día de mayor gasto llega a rosa puro y los días menores se quedan en índigo/morado.
-///
-/// El gradiente se dibuja a ancho de track y se recorta (`mask`) a `fillWidth` — así el
-/// color en cada posición refleja el valor absoluto del día, no se reescala al fill.
+/// Barra horizontal cuya longitud es proporcional a `value / maxValue`, en el color de gasto.
 struct DailySpendingBar: View {
     let value: Double
     let maxValue: Double
@@ -31,16 +26,10 @@ struct DailySpendingBar: View {
                 Capsule()
                     .fill(.thSecondaryText.opacity(0.10))
 
+                // Color de gasto sólido: la intensidad ya la dice la longitud. Sin degradado (regla de marca).
                 Capsule()
-                    .fill(LinearGradient(
-                        colors: DS.Gradients.spendingHeat,
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .frame(width: trackWidth)                       // gradiente a ancho completo
-                    .mask(alignment: .leading) {
-                        Capsule().frame(width: trackWidth * fraction)  // recortado al fill
-                    }
+                    .fill(Color.expenseGraph)
+                    .frame(width: trackWidth * fraction)
             }
         }
         .frame(height: 5)

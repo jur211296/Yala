@@ -223,6 +223,15 @@ final class AppPreferences {
         }
     }
 
+    /// «Ver proyectado» en la gráfica de Tendencias y del Panel (card «Flujo proyectado en Tendencias y Panel»,
+    /// respuesta 9A): una sola clave para las dos pantallas, recordada en este dispositivo. Apagada por defecto.
+    var showsProjectedFlow: Bool = false {
+        didSet {
+            guard oldValue != showsProjectedFlow else { return }
+            persistBool(showsProjectedFlow, forKey: Keys.showsProjectedFlow, synced: false)
+        }
+    }
+
     var averageLineMode: Int = 1 {
         didSet {
             guard oldValue != averageLineMode else { return }
@@ -270,6 +279,21 @@ final class AppPreferences {
         }
     }
 
+    /// Qué texto del permiso de Estadísticas aceptó la persona (`AIConsentRevision`). El permiso era un `Bool` y el texto
+    /// cambió el 2026-11-06 (nombres de las compras pequeñas y la regla de la nube): quien aceptó el anterior tiene 0 y se
+    /// le vuelve a pedir para lo que el texto nuevo añade (decisión A de Jürgen). Lo escribe quien acepta el permiso.
+    var aiInsightsConsentVersion: Int = 0 {
+        didSet {
+            guard oldValue != aiInsightsConsentVersion else { return }
+            persistInt(aiInsightsConsentVersion, forKey: Keys.aiInsightsConsentVersion, synced: false)
+        }
+    }
+
+    /// El permiso de Estadísticas aceptado con el texto vigente.
+    var hasCurrentAIInsightsConsent: Bool {
+        aiInsightsConsentAccepted && aiInsightsConsentVersion >= AIConsentRevision.insights
+    }
+
     // DEPRECATED v2.0.x — feature toggle se acopla al consent. Ver `acceptAIInsightsConsent()`.
     var aiInsightsEnabled: Bool = false {
         didSet {
@@ -282,6 +306,7 @@ final class AppPreferences {
     /// que aún escriben `aiInsightsEnabled = true` durante la transición.
     func acceptAIInsightsConsent() {
         aiInsightsConsentAccepted = true
+        aiInsightsConsentVersion = AIConsentRevision.insights
         aiInsightsEnabled = true
     }
 
@@ -477,12 +502,22 @@ final class AppPreferences {
 
     /// Onboarding informativo de la sección Grupos (3 steps). Per-device (no synced) —
     /// cada device muestra una vez al user. Se setea con tap consciente en CTA Step 3
-    /// ("Ir a Grupos") o "Saltar" topRight. NO se setea con "X" topLeft (interrupción
-    /// accidental → reaparece al próximo tap del tab Grupos).
+    /// ("Ir a Grupos") o "Saltar" topRight, y con la SEGUNDA "X": la primera la aplaza
+    /// (`groupsOnboardingPostponedOnce`) y vuelve en la siguiente entrada a Grupos; la segunda
+    /// la da por vista (decisión de Jürgen, 2026-11-06, opción B).
     var hasShownGroupsOnboarding: Bool = false {
         didSet {
             guard oldValue != hasShownGroupsOnboarding else { return }
             persistBool(hasShownGroupsOnboarding, forKey: Keys.hasShownGroupsOnboarding, synced: false)
+        }
+    }
+
+    /// La bienvenida de Grupos ya se cerró UNA vez con la X: vuelve una vez más y la siguiente X la da por vista
+    /// (`GroupsOnboardingLogic.closeOutcome`). Per-device, como `hasShownGroupsOnboarding`.
+    var groupsOnboardingPostponedOnce: Bool = false {
+        didSet {
+            guard oldValue != groupsOnboardingPostponedOnce else { return }
+            persistBool(groupsOnboardingPostponedOnce, forKey: Keys.groupsOnboardingPostponedOnce, synced: false)
         }
     }
 
@@ -684,6 +719,16 @@ final class AppPreferences {
         didSet {
             guard oldValue != panelAccountsCollapsed else { return }
             persistBool(panelAccountsCollapsed, forKey: Keys.panelAccountsCollapsed, synced: true)
+        }
+    }
+
+    /// El ojo junto a la cifra grande del Panel: con `true`, el Panel enseña sus montos como `•••••`
+    /// (`AmountPrivacy`). Se queda entre arranques —quien los oculta para usar la app en público espera encontrarlos
+    /// ocultos al volver— y NO se sincroniza: es la privacidad de este aparato, no de la cuenta.
+    var panelAmountsHidden: Bool = false {
+        didSet {
+            guard oldValue != panelAmountsHidden else { return }
+            persistBool(panelAmountsHidden, forKey: Keys.panelAmountsHidden, synced: false)
         }
     }
 
@@ -1001,6 +1046,10 @@ final class AppPreferences {
         // cuyo iKV aún no bajó. El seed-fresco se difiere a AppBootstrapper post-sync (ver runIfNeeded).
         PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults, deferFreshSeed: true)
 
+        // Y23-15: la barra nueva solo para instalaciones nuevas; a quien ya usaba Yala se le deja la de antes. Antes de
+        // que ninguna vista lea `tabBarConfiguration`, y solo en el almacén real (los tests pasan el suyo).
+        if publishesToSync { TabBarDefaultsMigration.runIfNeeded(defaults: defaults) }
+
         registerObservers()
     }
 
@@ -1141,6 +1190,9 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.showWidgetHints) != nil {
             showWidgetHints = defaults.bool(forKey: Keys.showWidgetHints)
         }
+        if defaults.object(forKey: Keys.showsProjectedFlow) != nil {
+            showsProjectedFlow = defaults.bool(forKey: Keys.showsProjectedFlow)
+        }
         if defaults.object(forKey: Keys.averageLineMode) != nil {
             averageLineMode = defaults.integer(forKey: Keys.averageLineMode)
         }
@@ -1153,6 +1205,7 @@ final class AppPreferences {
         imageInputEnabled = defaults.bool(forKey: Keys.imageInputEnabled)
         aiDataConsentAccepted = defaults.bool(forKey: Keys.aiDataConsentAccepted)
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
+        aiInsightsConsentVersion = defaults.integer(forKey: Keys.aiInsightsConsentVersion)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
         aiCloudExploreConsent = YalaIACloudExploreConsentStore.read(defaults)
@@ -1201,6 +1254,7 @@ final class AppPreferences {
         hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
         hasShownYalaAIOnboarding = defaults.bool(forKey: Keys.hasShownYalaAIOnboarding)
         hasShownGroupsOnboarding = defaults.bool(forKey: Keys.hasShownGroupsOnboarding)
+        groupsOnboardingPostponedOnce = defaults.bool(forKey: Keys.groupsOnboardingPostponedOnce)
         hasSeenTodayFXCoachMark = defaults.bool(forKey: Keys.hasSeenTodayFXCoachMark)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
@@ -1264,6 +1318,7 @@ final class AppPreferences {
         }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
         panelAccountsCollapsed = loadBool(Keys.panelAccountsCollapsed, defaultIfMissing: true)
+        panelAmountsHidden = defaults.bool(forKey: Keys.panelAmountsHidden)
 
         if let stored = defaults.string(forKey: Keys.sankeyLabelMode),
            let mode = SankeyLabelMode(rawValue: stored) {
@@ -1427,6 +1482,7 @@ final class AppPreferences {
         // Widget / Trend
         static let showVariations = "showVariations"
         static let showWidgetHints = "showWidgetHints"
+        static let showsProjectedFlow = "showsProjectedFlow"
         static let averageLineMode = "averageLineMode"
 
         // Voice / Image / AI
@@ -1435,6 +1491,7 @@ final class AppPreferences {
         static let imageInputEnabled = "imageInputEnabled"
         static let aiDataConsentAccepted = "aiDataConsentAccepted"
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
+        static let aiInsightsConsentVersion = "aiInsightsConsentVersion"
         static let aiInsightsEnabled = "aiInsightsEnabled"
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"
@@ -1474,6 +1531,7 @@ final class AppPreferences {
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
+        static let groupsOnboardingPostponedOnce = "groupsOnboardingPostponedOnce"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
         /// ADOPCIÓN del dominio Grupos en ESTE dispositivo. Per-device, no sincronizada, NO se
         /// resetea en el wipe normal (exclusión deliberada, ver abajo) pero SÍ en el handover.
@@ -1573,6 +1631,7 @@ final class AppPreferences {
             ]
         }
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
+        static let panelAmountsHidden = "panelAmountsHidden"
         static let sankeyLabelMode = "sankeyLabelMode"
 
         // Hero KPI Preferences (P20-04b)
@@ -1589,5 +1648,18 @@ final class AppPreferences {
         /// tocar SwiftData; la app los materializa como `InboxDraft` al abrir (ver `ApplePayPendingStore`
         /// / `ApplePayDraftService`). Acumula varios pagos hechos antes de abrir la app.
         nonisolated static let pendingApplePayExpenses = "pendingApplePayExpenses"
+    }
+}
+
+/// Las versiones del texto de cada permiso de IA. Sube la de un permiso cuando su texto prometa algo nuevo que la
+/// persona tiene que ver antes de que ocurra; quien aceptó una versión anterior vuelve a ver el permiso para lo nuevo.
+enum AIConsentRevision {
+    /// 2 = 2026-11-06: nombres de las compras pequeñas que se repiten, y en la nube todo lo que haga falta.
+    static let insights = 2
+
+    /// El permiso de Estadísticas aceptado con el texto vigente, leído del almacén (para quien no tiene `AppPreferences`).
+    static func hasCurrentInsightsConsent(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+            && defaults.integer(forKey: AppPreferences.Keys.aiInsightsConsentVersion) >= insights
     }
 }

@@ -68,6 +68,17 @@ struct DetailContainerView: View {
     @State private var isInBackground = false
     /// La pasada de cálculo de las cuatro pestañas (y la firma de la Salud Financiera, que vive con ella).
     @State private var recalculation = StatisticsRecalculation()
+    /// Ya hubo una pasada completa: hasta entonces las pestañas enseñan el esqueleto (G1 de la decisión 28).
+    @State private var hasCalculatedOnce = false
+    /// Lo que leyó la última pasada completa: entrar sin que nada cambie no recalcula (`StatisticsEntryFreshness`).
+    @State private var lastCalculationStamp: StatisticsCalculationStamp?
+    /// Hay una pasada pedida que aún no terminó (en su espera, a medias o cancelada al salir).
+    @State private var calculationInFlight = false
+    /// La persona ya entró alguna vez. La página está montada desde el arranque y sus observadores piden pasadas aunque
+    /// nunca se haya abierto (cambiar el período en el Panel): sin entrar, esas pasadas no cargan el histórico.
+    @State private var hasEnteredOnce = false
+    /// La pasada que está corriendo ahora (su espera o sus tramos); `nil` en cuanto sale, por donde salga.
+    @State private var liveCalculationID: UUID?
     /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
     @State private var recordsWidth: CGFloat = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
@@ -190,18 +201,30 @@ struct DetailContainerView: View {
 
     // MARK: - Initialization
 
-    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .insights) {
-        self.isFromSearch = context.isFromSearch
+    /// El `RecordsViewModel` de Estadísticas. Fuera de una búsqueda arranca en «Este mes» y sin filtros; desde una
+    /// búsqueda respeta su período (`.allTime`) y su texto.
+    static func makeRecordsViewModel(context: RecordsFilterContext = .empty) -> RecordsViewModel {
         var cleanContext = context
-        // Only reset period and filters when NOT coming from search
-        // When from search, respect the passed period (.allTime) and searchText
         if !context.isFromSearch {
             cleanContext.period = .thisMonth
             cleanContext.accountID = nil
             cleanContext.categoryID = nil
             cleanContext.need = nil
         }
-        _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
+        return RecordsViewModel(context: cleanContext)
+    }
+
+    /// `recordsViewModel` lo pasa quien monta la pila (`StatisticsView`, con `makeRecordsViewModel(context:)`), y es
+    /// quien presenta la hoja de «Nuevo registro» que su `showNewTransaction` pide: esta vista no la presenta
+    /// (ticket `external-entry-panel-link-loses-the-typed-amount-intermittently`). Obligatorio a propósito: un
+    /// llamador que creara aquí el suyo dejaría «Nuevo registro» sin hoja.
+    init(
+        context: RecordsFilterContext = .empty,
+        initialTab: DetailViewTab = .insights,
+        recordsViewModel: RecordsViewModel
+    ) {
+        self.isFromSearch = context.isFromSearch
+        _recordsViewModel = State(initialValue: recordsViewModel)
 
         let initialMetric: TrendMetric = SessionState.shared.isExpensesOnlyMode ? .expense : .balance
         let trendsContext = StatisticsContext(
@@ -259,10 +282,10 @@ struct DetailContainerView: View {
             .appliesPendingRemoteChanges(sessionState)
             // Menú contextual de las filas de Registros: confirmación de borrado y selector de categoría.
             .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
-            .onAppear {
-                dataViewModel.setContext(modelContext)
-                performRecalculation()
-            }
+            // G1 de la decisión 28: entrar ya no calcula aquí. Con diez años de datos el cálculo síncrono del `onAppear`
+            // dejaba el Panel congelado 7,5 s en el iPhone 14 sin señal de nada; ahora la pestaña se pinta en el acto
+            // (con el esqueleto si aún no hay cifras) y la pasada corre una vuelta después, una sola vez.
+            .onAppear { requestCalculationOnEntry() }
             .onDisappear {
                 recalculateTask?.cancel()
                 recordsViewModel.exitDuplicateMode()   // modo efímero
@@ -300,16 +323,16 @@ struct DetailContainerView: View {
                 if navigation.selectedDetailTab != newTab {
                     navigation.selectedDetailTab = newTab
                 }
-                // .categories también consume insightData.periodSummary (gate >=5 tx
-                // del Distribution Insight Card) — disparar recalculation también ahí.
+                // La pasada no mira qué chip se ve (`StatisticsRecalculation`): cambiar a Resumen o a Distribución solo
+                // calcula si algo cambió desde la última (medido: repetía 2 s sobre los mismos datos).
                 if newTab == .insights || newTab == .categories {
-                    scheduleRecalculation(reload: false)
+                    requestCalculationOnEntry()
                 }
             }
             .onChange(of: navigation.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
-                    recalculateData()
+                    requestCalculationOnEntry()
                 }
             }
             // Sin `onChange(of: dataViewModel.allTransactions)` (retirado el 2026-10-30, encargo
@@ -361,6 +384,18 @@ struct DetailContainerView: View {
             // `statistics-summary-guide-banner-stays-pinned-over-the-cards`). Como la del Panel, se va con el contenido.
             tabContent
                 .environment(\.statsQuickActions, statsQuickActions)
+                // Tapadas por el esqueleto, las páginas siguen montadas y en el árbol de accesibilidad: VoiceOver leería
+                // cifras vacías y un toque las buscaría debajo. Hasta la primera pasada, fuera del árbol.
+                .accessibilityHidden(!hasCalculatedOnce)
+                // Hasta la primera pasada, el esqueleto encima de las páginas (G1 de la decisión 28). Bajo la barra de
+                // chips, que sigue a la vista y se puede tocar.
+                .overlay {
+                    if !hasCalculatedOnce {
+                        StatisticsLoadingSkeleton()
+                            .transition(.loadingPlaceholder)
+                    }
+                }
+                .animation(reduceMotion ? nil : DS.Animation.appear, value: hasCalculatedOnce)
             // Implícita: en una pestaña el `withAnimation` de la guía no anima, ni a ella ni a lo de debajo (card oxyr).
             .animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)
             .navigationChipsInset {
@@ -489,14 +524,26 @@ struct DetailContainerView: View {
                 dataGeneration: dataViewModel.dataGeneration,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
-                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                // Detalle de una categoría (decisión 25 de 2.3): un registro abre su hoja, la del chip Registros, y
+                // «Ver en Registros» pasa a ese chip como un toque en la fila.
+                onOpenRecord: { record in openRecordInSheet(record) },
+                onShowRecordsTab: { StagedTabSelection.select(.records, in: $pages, reduceMotion: reduceMotion) }
             )
-            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25).
+            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25). Las categorías ya no: abren
+            // su detalle; subcategorías, etiquetas y necesidades siguen preguntando.
             .segmentFilterChoiceHost()
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
             recordsContent
         }
+    }
+
+    /// Un registro tocado fuera del chip Registros (el detalle de una categoría): siempre en hoja, también en ancha,
+    /// porque el panel lateral solo existe en ese chip.
+    private func openRecordInSheet(_ record: TransactionItem) {
+        recordsViewModel.editingTransaction = record
+        recordsViewModel.showTransactionDetail = true
     }
 
     // MARK: - Registros: lista y registro abierto
@@ -550,7 +597,9 @@ struct DetailContainerView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                onFilterChange: { recalculateData() }
+                onFilterChange: { recalculateData() },
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() }
             )
             .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
@@ -590,21 +639,35 @@ struct DetailContainerView: View {
     // MARK: - Navigation Chips Bar
 
     private var navigationChipsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(DetailViewTab.allCases) { tab in
-                    navigationChipButton(for: tab)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(DetailViewTab.allCases) { tab in
+                        navigationChipButton(for: tab)
+                            .id(tab)
+                    }
                 }
+                .padding(.horizontal, DS.Spacing.lg)
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .fadesTowardVerticalBar()
+            // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo
+            // recortaba en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`.
+            // Grupos ya lo lleva.
+            .scrollClipDisabled()
+            // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
+            // dentro de una pestaña.
+            .animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)
+            .onAppear { revealSelectedChip(proxy) }
+            .onChange(of: selectedTab) { _, _ in revealSelectedChip(proxy) }
         }
-        .fadesTowardVerticalBar()
-        // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo recortaba
-        // en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`. Grupos ya lo lleva.
-        .scrollClipDisabled()
-        // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
-        // dentro de una pestaña.
-        .animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)
+    }
+
+    /// Con texto de accesibilidad el chip elegido («Distribución») no cabía y salía cortado contra el borde
+    /// (lote 05 de 2.3, zona 35 P3): la fila se desplaza lo justo para enseñarlo entero. Ancla `nil` = el mínimo
+    /// desplazamiento, ninguno si ya se ve; y solo a esos tamaños, para que el tamaño normal quede como estaba.
+    private func revealSelectedChip(_ proxy: ScrollViewProxy) {
+        guard dynamicTypeSize.isAccessibilitySize else { return }
+        proxy.scrollTo(selectedTab, anchor: nil)
     }
 
     private func navigationChipButton(for tab: DetailViewTab) -> some View {
@@ -678,15 +741,7 @@ struct DetailContainerView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            let allSelected = recordsViewModel.selectedRecordIDs.count ==
-                recordsViewModel.groupedRecords.flatMap(\.records).count
-            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
-                if allSelected {
-                    recordsViewModel.deselectAll()
-                } else {
-                    recordsViewModel.selectAll()
-                }
-            }
+            RecordsSelectAllButton(viewModel: recordsViewModel)
         }
     }
 
@@ -709,49 +764,108 @@ struct DetailContainerView: View {
     /// `applicationState` check mirrors PanelView and prevents work during snapshot time.
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        // Pedida y no terminada: si el freno la descarta, la próxima entrada sabe que falta (`hasInterruptedWork`).
+        calculationInFlight = true
         guard !isInBackground, UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
+        let calculationID = UUID()
+        liveCalculationID = calculationID
         recalculateTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            defer { if liveCalculationID == calculationID { liveCalculationID = nil } }
+            do { try await Task.sleep(for: StatisticsEntryTiming.calculationDelay) } catch { return }
+            // Card 7e60: con el almacén de esta pantalla ya soltado (cerrar sesión en la nube), ni recarga ni recalcula.
             guard !Task.isCancelled else { return }
+            // Sin haber entrado nunca no se carga el histórico: la primera entrada lo pide (`calculationInFlight` sigue
+            // en `true` y obliga). Antes la carga iba en el `onAppear`, así que estas pasadas corrían con todo vacío.
+            guard hasEnteredOnce else { return }
+            // Idempotente: solo trae los datos si el contexto es nuevo (la primera entrada, o tras cambiar de almacén).
+            dataViewModel.setContext(modelContext)
+            guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }
             if pendingReload {
                 dataViewModel.loadData()
                 pendingReload = false
             }
-            performCalculation()
+            await performCalculation()
         }
     }
 
-    /// Initial onAppear calculation. `setContext` already fetched if the context was new,
-    /// so this only runs the synchronous calc pass. Subsequent reloads go through
-    /// `reloadAndRecalculate` (dataVersion / scene foreground).
-    private func performRecalculation() {
-        performCalculation()
+    /// Entrar en Estadísticas, o pasar a un chip que antes pedía una pasada: calcula solo si hace falta, y nunca en el
+    /// acto (G1 de la decisión 28). Si la app aún no está activa (arranque en frío con Estadísticas delante, el iPad),
+    /// espera a que lo esté en vez de perder la petición (`ForegroundResume`).
+    private func requestCalculationOnEntry() {
+        hasEnteredOnce = true
+        // Una pasada viva ya traerá las cifras: pedir otra la reiniciaría desde cero (cambiar de chip mientras corre).
+        if liveCalculationID != nil, recalculateTask?.isCancelled == false { return }
+        let now = currentCalculationStamp()
+        let needed = StatisticsEntryFreshness.needsCalculation(
+            last: lastCalculationStamp,
+            now: now,
+            hasInterruptedWork: calculationInFlight || pendingReload
+        )
+        guard needed else { return }
+        let reload = StatisticsEntryFreshness.needsReload(last: lastCalculationStamp, now: now)
+        ForegroundResume.whenApplicationActive("estadisticas") {
+            isInBackground = false
+            scheduleRecalculation(reload: reload)
+        }
     }
 
-    /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
-    private func performCalculation() {
-        recalculation.run(
-            StatisticsRecalculation.Inputs(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags,
-                budgets: dataViewModel.budgets,
-                scheduledPayments: dataViewModel.scheduledPayments,
-                period: sessionState.selectedPeriod,
-                customRange: sessionState.customDateRange,
-                comparisonMode: sessionState.comparisonMode,
-                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                dataVersion: sessionState.dataVersion,
-                includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
-            ),
-            records: recordsViewModel,
-            trends: trendsViewModel,
-            insights: insightsViewModel,
-            context: modelContext
+    /// Lo que lee la pasada y puede cambiar sin que un observador lo oiga.
+    private func currentCalculationStamp() -> StatisticsCalculationStamp {
+        StatisticsCalculationStamp(
+            dataVersion: sessionState.dataVersion,
+            storeSaves: StoreSaveCounter.shared.count,
+            day: Calendar.current.startOfDay(for: .now),
+            sessionFilters: PanelSessionFilterKey(sessionState),
+            comparisonMode: sessionState.comparisonMode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats,
+            includeGroupTransactionsInFeed: appPreferences.includeGroupTransactionsInFeed,
+            insightsTone: appPreferences.insightsTone,
+            insightsFocus: appPreferences.insightsFocus,
+            firstWeekday: userConfiguredCalendar().firstWeekday
         )
+    }
+
+    /// Runs all calculations from cached ViewModel data (no SwiftData fetch). La primera, con el esqueleto delante, en
+    /// tramos que ceden el hilo principal; las demás, de una vez: en tramos, con las cifras a la vista, Registros y
+    /// Resumen enseñarían un rato períodos distintos en la misma pantalla.
+    private func performCalculation() async {
+        let inputs = calculationInputs()
+        let finished: Bool
+        if hasCalculatedOnce {
+            recalculation.run(
+                inputs, records: recordsViewModel, trends: trendsViewModel, insights: insightsViewModel,
+                context: modelContext)
+            finished = true
+        } else {
+            finished = await recalculation.runInSteps(
+                inputs, records: recordsViewModel, trends: trendsViewModel, insights: insightsViewModel,
+                context: modelContext)
+        }
+        guard finished, !Task.isCancelled else { return }
+        // La firma se toma al TERMINAR: lo que la propia pasada guarde (tasas, la Salud Financiera) ya cuenta.
+        lastCalculationStamp = currentCalculationStamp()
+        calculationInFlight = false
+        if !hasCalculatedOnce { hasCalculatedOnce = true }
         LoadTimeMarks.ready(.statistics)
+    }
+
+    private func calculationInputs() -> StatisticsRecalculation.Inputs {
+        StatisticsRecalculation.Inputs(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags,
+            budgets: dataViewModel.budgets,
+            scheduledPayments: dataViewModel.scheduledPayments,
+            period: sessionState.selectedPeriod,
+            customRange: sessionState.customDateRange,
+            comparisonMode: sessionState.comparisonMode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            dataVersion: sessionState.dataVersion,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
+        )
     }
 
     private func handleEditAction() {
@@ -775,7 +889,7 @@ struct DetailContainerView: View {
 
 #Preview {
     NavigationStack {
-        DetailContainerView()
+        DetailContainerView(recordsViewModel: DetailContainerView.makeRecordsViewModel())
     }
     .environment(SceneNavigation())
     .previewAppPreferences()
@@ -804,6 +918,8 @@ private struct StatsAIAutoRefreshTrigger: ViewModifier {
     private func decide() async {
         do { try await Task.sleep(for: Self.settleDelay) } catch { return }
         Task { @MainActor in await insights.autoRefreshIfNeeded() }
+        // Los gastos hormiga Pro deciden por su cuenta (su propia página y su propio techo).
+        Task { @MainActor in await insights.autoRefreshAntAIIfNeeded() }
     }
 }
 
@@ -829,6 +945,9 @@ private struct DetailContainerSheets: ViewModifier {
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
+    private func newTransactionPresentationChanged(_ isOpen: Bool) {
+        if !isOpen { reloadAndRecalculate() }
+    }
 
     func body(content: Content) -> some View {
         content
@@ -836,14 +955,11 @@ private struct DetailContainerSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }
             }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
-                    .presentationDetents([.large])
-                    .onDisappear {
-                        UITestHooks.shared.traceLifecycle("formulario fuera abierto=\(recordsViewModel.showNewTransaction)")
-                        reloadAndRecalculate()
-                    }
-            }
+            // La hoja de «Nuevo registro» NO cuelga de aquí: esta vista es el contenido raíz de la pila, y SwiftUI la
+            // desmontaba y volvía a montar sin cerrarse al cambiar de pestaña por un enlace con la app volviendo a primer
+            // plano, con el importe escrito perdido. La presenta `StatisticsView`, por fuera de la pila; aquí solo se
+            // recarga al cerrarse (`swiftui-ds.md`, «Una hoja colgada del contenido RAÍZ de una NavigationStack»).
+            .onChange(of: recordsViewModel.showNewTransaction) { _, isOpen in newTransactionPresentationChanged(isOpen) }
             .sheet(isPresented: $showVoiceRecording) {
                 VoiceRecordingView()
             }
@@ -851,14 +967,23 @@ private struct DetailContainerSheets: ViewModifier {
                 ImageSelectionView()
             }
             // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
-            .proUpgradeSheet(isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+            // «Apuntarlo a mano» abre Nuevo registro, como el «+» (mejoras necesarias 2.3 · V3).
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.voice)
             }
-            .proUpgradeSheet(isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $showChatSheet, insideNavigationStack: true)
+            .yalaAIChat(
+                isPresented: $showChatSheet, insideNavigationStack: true,
+                onManualEntry: { recordsViewModel.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -866,9 +991,11 @@ private struct DetailContainerSheets: ViewModifier {
                 launcher: .stats,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,
@@ -927,8 +1054,8 @@ private struct DetailContainerSheets: ViewModifier {
             .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
                 viewModel: recordsViewModel
-            ) {
-                recordsViewModel.deleteSelected(context: modelContext)
+            ) { nameFor in
+                recordsViewModel.deleteSelected(context: modelContext, nameFor: nameFor)
                 reloadAndRecalculate()
             })
             .sheet(isPresented: $showBulkEditSheet) {

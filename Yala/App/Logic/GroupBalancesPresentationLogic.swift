@@ -61,6 +61,101 @@ enum GroupBalancesPresentationLogic {
         return Summary(owedToMe: owed, iOwe: owe)
     }
 
+    // MARK: - Mejoras necesarias 2.3 · lote 06
+
+    /// Lo que te deben y lo que debes SIN netear, con las sumas de las tarjetas de debajo.
+    struct CrossDebts: Equatable {
+        let owedToMe: [CurrencyAmount]
+        let iOwe: [CurrencyAmount]
+    }
+
+    /// `nil` salvo que en alguna moneda debas y te deban a la vez, que es lo que el neto esconde: con «Menos pagos»
+    /// apagado las deudas van por pareja, y «debes S/ 40 a Ana» y «Beto te debe S/ 30» dan una cifra de «debes S/ 10»
+    /// cuya frase decía «Nadie te debe nada». Con «Menos pagos» encendido no pasa nunca (cada persona solo paga o cobra).
+    static func crossDebts(debts: [Debt], currentUserMemberID: String?) -> CrossDebts? {
+        guard let me = currentUserMemberID else { return nil }
+        var owed: [String: Double] = [:]
+        var owe: [String: Double] = [:]
+        for debt in debts {
+            if debt.toMemberID == me { owed[debt.currencyCode, default: 0] += debt.amount }
+            if debt.fromMemberID == me { owe[debt.currencyCode, default: 0] += debt.amount }
+        }
+        let crosses = owed.contains { code, amount in amount > epsilon && (owe[code] ?? 0) > epsilon }
+        guard crosses else { return nil }
+        func amounts(_ byCurrency: [String: Double]) -> [CurrencyAmount] {
+            byCurrency.filter { $0.value > epsilon }.sorted { $0.key < $1.key }
+                .map { CurrencyAmount(currencyCode: $0.key, amount: $0.value) }
+        }
+        return CrossDebts(owedToMe: amounts(owed), iOwe: amounts(owe))
+    }
+
+    /// Qué frase va bajo la cifra de un grupo.
+    enum SummarySentence: Equatable {
+        /// «Te deben X y tú debes Y.»: debes y te deben en la misma moneda.
+        case both(owedToMe: [CurrencyAmount], iOwe: [CurrencyAmount])
+        /// «Y tú debes Y.»: te deben en una moneda y debes en otra.
+        case alsoOwe([CurrencyAmount])
+        /// «Tú no le debes nada a nadie.»
+        case owedToMeOnly
+        /// «Nadie te debe nada.»
+        case iOweOnly
+        /// «Nadie te debe y tú no debes nada.»
+        case settled
+    }
+
+    /// La frase tiene que ser verdad con «Menos pagos» encendido y apagado: con un cruce, dice las dos sumas.
+    static func summarySentence(summary: Summary, cross: CrossDebts?) -> SummarySentence {
+        if let cross { return .both(owedToMe: cross.owedToMe, iOwe: cross.iOwe) }
+        switch summary.kind {
+        case .owedToMe: return summary.iOwe.isEmpty ? .owedToMeOnly : .alsoOwe(summary.iOwe)
+        case .iOwe: return .iOweOnly
+        case .settled: return .settled
+        }
+    }
+
+    /// El rótulo gris sobre la cifra de un grupo.
+    enum GroupCaption: Equatable {
+        case owedToMe
+        case iOwe
+        /// «Estás a mano en este grupo»: nadie te debe y no debes nada.
+        case settled
+        /// El neto es cero, pero debes y te deben («Menos pagos» apagado): «Estás a mano» encima de «Tú pagas a Ana»
+        /// se contradecía.
+        case evenWithDebts
+    }
+
+    static func groupCaption(summary: Summary, cross: CrossDebts?) -> GroupCaption {
+        switch summary.kind {
+        case .owedToMe: return .owedToMe
+        case .iOwe: return .iOwe
+        case .settled: return cross == nil ? .settled : .evenWithDebts
+        }
+    }
+
+    /// Quién paga a quién contado desde ti: «Tú pagas a Ana», «Beto te paga» o «Beto paga a Ana».
+    enum PairRole: Equatable {
+        case youPay
+        case paysYou
+        case others
+    }
+
+    static func pairRole(fromMemberID: String, toMemberID: String, currentUserMemberID: String?) -> PairRole {
+        guard let me = currentUserMemberID else { return .others }
+        if fromMemberID == me { return .youPay }
+        if toMemberID == me { return .paysYou }
+        return .others
+    }
+
+    /// El vacío de Saldos: un grupo sin nada apuntado no está «al día», está sin gastos.
+    enum EmptyState: Equatable {
+        case noEntries
+        case settled
+    }
+
+    static func emptyState(hasExpenses: Bool, hasSettlements: Bool) -> EmptyState {
+        hasExpenses || hasSettlements ? .settled : .noEntries
+    }
+
     /// Una deuda entre dos personas, con una línea por moneda.
     struct DebtCard: Identifiable, Equatable {
         let fromMemberID: String

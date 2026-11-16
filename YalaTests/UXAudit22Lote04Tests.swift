@@ -138,7 +138,9 @@ struct UXAudit22Lote04WiringTests {
         #expect(!chooser.contains("L10n.Storage.SignIn.note"))
     }
 
-    /// L20-10 · las dos frases que mandan a «Vaciar datos» lo nombran como se llama la fila, en cada idioma.
+    /// L20-10 · la frase que manda a «Vaciar datos» lo nombra como se llama la fila, en cada idioma. Eran dos hasta el
+    /// 2026-11-11: «puedes retomarlo» de «Salir de mis grupos» ya no manda ahí, porque desde L19-12 esa salida vive en
+    /// Ajustes de Grupos (revisión 2.3, zona 41, lote 11; lo fija `NubeAlmacenamientoNecesariasTests`).
     @Test func wipeReferences_nameTheRowAsItIsCalled_inEveryLanguage() throws {
         let res = Self.repoRoot.appendingPathComponent("Yala/Resources")
         let locales = try FileManager.default.contentsOfDirectory(atPath: res.path).filter { $0.hasSuffix(".lproj") }
@@ -149,7 +151,7 @@ struct UXAudit22Lote04WiringTests {
                 Issue.record("\(lproj): no se pudo leer"); continue
             }
             let row = try #require(dict["settings.wipeData"], "\(lproj) sin settings.wipeData")
-            for key in ["settings.deleteAccountCrossReferHint", "settings.batchLeaveStoppedBody"] {
+            for key in ["settings.deleteAccountCrossReferHint"] {
                 let value = try #require(dict[key], "\(lproj) sin \(key)")
                 #expect(value.contains(row), "\(lproj) · \(key) no nombra la fila «\(row)»: \(value)")
             }

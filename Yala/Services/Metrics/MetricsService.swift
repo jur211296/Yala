@@ -45,6 +45,10 @@ enum MetricsCanary: String {
     case appEntityShortcutIDsRegenerated
     case tagCatalogRebuilt
     case bridgeVirtualLentTxFailed
+    /// La limpieza automática tras una sincronización quitó un borrador «Elige cuenta» o un «Préstamo a grupos» repetido
+    /// de un gasto de grupo cuyo registro real ya estaba (bug del 2026-11-09). `detail` = cuántos gastos. Distinto de cero
+    /// mide en la flota la pasada del puente que no vio el registro: es el disparador que la sesión no pudo aislar.
+    case groupBridgeLeftoversRemoved
     /// El barrido del arranque encontró transacciones puenteadas cuyo gasto/liquidación de grupo ya no
     /// existe y las reparó. Un pico tras un release = la cola de fantasmas que dejó el borrado remoto sin
     /// des-puentear (bug device 2026-08-02), esperada y de una sola vez por usuario. **Sostenido en >0
@@ -72,6 +76,12 @@ enum MetricsCanary: String {
     /// medias) era invisible en producción. `detail` separa cuál de los dos alerts lo emitió, sin PII.
     /// Misma familia que `attestKeyDiscardedAfterAssertFailure`.
     case freshStartWipeFailed
+    /// **La entrada a una cuenta desde el Welcome encontró el teléfono YA en modo nube y sin el sello de esa cuenta, y no
+    /// adoptó** (ticket `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen del 13-nov). Antes ese
+    /// adopt quedaba pendiente para siempre, sin «Cancelar» ni techo. El origen («Empezar de cero» dejaba el modo en la nube)
+    /// se cerró en el mismo cambio, así que **sostenido en >0 es otro camino que deja la nube puesta sin sesión**, o
+    /// teléfonos que ya venían así de antes. Sin `detail`.
+    case adoptOverCloudRefused
     /// **El aviso de «tus datos fueron eliminados de iCloud» no llegó a presentarse y se desarmó.** La
     /// red de presentación (`ContentView.armRemoteWipeNoticePresentationNet`) agotó el cap de su ciclo
     /// —unos nueve segundos togglando sin que UIKit montara nada— y soltó el blocker para no dejar el
@@ -165,6 +175,11 @@ enum MetricsCanary: String {
     /// `cloudMigrationStep upload>verify` dice si el paso de la subida se va en una tabla grande (los tipos de cambio de
     /// años, la hipótesis 2 del ticket) o en la latencia por página.
     case cloudSnapshotPageUploaded
+    /// La subida de la ida fundió las tasas duplicadas (mismo día, misma base) antes de enumerar (card i9wh: 3234 tasas
+    /// para 383 días hacían subir «3333 elementos» por 2 registros). `detail` = días con copias; `x` = filas borradas.
+    /// Distinto de cero dice cuánto ahorra a la flota; la causa (cada instalación siembra su año antes del import de
+    /// iCloud) sigue abierta en `exchange-rates-duplicate-per-day-across-installs`.
+    case cloudSnapshotDuplicateRatesFused
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -470,7 +485,15 @@ enum MetricsService {
     private static var drainTask: Task<Void, Never>?
 
     static let lastPingDayKey = "metrics.lastPingDay"
+    /// `[slug: día UTC]` del último `use` de cada función (guard «uno al día por función», MetricsUse.swift).
+    static let useDaysKey = "metrics.useDays"
     static let cloudRegisteredKeyPrefix = "metrics.cloudRegistered."
+    /// Slugs de lo que sale una vez por instalación y ya salió (`MetricsUseFeature.isOncePerInstall`, card 4b7h).
+    static let onceEmittedKey = "metrics.onceEmitted"
+    /// Esta instalación cerró el alta con una versión que manda `primeros.*` (`MetricsUseFeature.requiresNewUser`).
+    static let newUserKey = "metrics.newUserAfterSignUp"
+    /// Primeros registro, presupuesto o pago que esperan a saber si eran de prueba (`NewUserMetrics`).
+    static let waitingMilestonesKey = "metrics.milestonesWaiting"
 
     // MARK: Arranque
 
@@ -492,6 +515,10 @@ enum MetricsService {
     static func resetLocalState(_ defaults: UserDefaults = .standard) {
         MetricsSpool.clear(defaults)
         defaults.removeObject(forKey: lastPingDayKey)
+        defaults.removeObject(forKey: useDaysKey)
+        defaults.removeObject(forKey: onceEmittedKey)
+        defaults.removeObject(forKey: newUserKey)
+        defaults.removeObject(forKey: waitingMilestonesKey)
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(cloudRegisteredKeyPrefix) {
             defaults.removeObject(forKey: key)
         }
@@ -523,12 +550,80 @@ enum MetricsService {
 
     // MARK: KPI 2 — registros/día
 
-    /// Alta LOCAL: onboarding completado. `mode` = full | groupsOnly | groupInvite.
-    /// Un re-onboarding tras wipe legítimo cuenta de nuevo (semántica aceptada: nuevo alta).
+    /// Alta LOCAL: onboarding completado. `mode` = initial | fullActivation | groupInvite | groupsOrganizer (medido el
+    /// 2026-11-06 en sus cuatro llamadores). Un re-onboarding tras wipe legítimo cuenta de nuevo (semántica aceptada:
+    /// nuevo alta). También cierra el embudo del alta (`alta.termina`), salvo `fullActivation`, que no es un alta.
     static func localRegistrationCompleted(mode: String) {
         guard isStarted else { return }
         MetricsSpool.enqueue(.register(kind: "local", detail: mode), defaults: defaults)
+        if MetricsUseFeature.closesSignUp(mode: mode) {
+            used(.altaTermina)
+            // Desde aquí, lo que haga en sus primeros días cuenta como `primeros.*` (card 4b7h).
+            defaults.set(true, forKey: newUserKey)
+        }
         kickDrain()
+    }
+
+    // MARK: Uso — «usó esta función», uno al día por función (MetricsUse.swift)
+
+    /// Apunta que se usó `feature` si no se apuntó ya hoy (día UTC).
+    ///
+    /// Antes de `start()` —un App Intent que lanza Yala sin el arranque, o la bienvenida pintada antes del paso 0.5 del
+    /// bootstrap— va directo a la cola de `.standard`, la misma que lee `start()`, y sale en el siguiente vaciado
+    /// (molde `canaryFromIntent`). Bajo `-uitest` y en tests, nada.
+    static func used(_ feature: MetricsUseFeature, now: Date = .now) {
+        if feature.isOncePerInstall {
+            usedOncePerInstall(feature)
+            return
+        }
+        if isStarted {
+            guard recordUseDay(feature, now: now, defaults: defaults) else { return }
+            MetricsSpool.enqueue(.use(feature), defaults: defaults)
+            kickDrain()
+            return
+        }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return }
+        guard recordUseDay(feature, now: now, defaults: .standard) else { return }
+        MetricsSpool.enqueue(.use(feature), defaults: .standard)
+    }
+
+    /// «Vio la oferta de Pro» (hojas de Pro, de la prueba y de la suscripción) y, si la abrió el tope de un plan gratis,
+    /// «chocó con el límite». Quien ya es Pro abre la misma pantalla para gestionar su suscripción: eso no es una oferta.
+    static func usedProOffer(limitHit: ProFeature? = nil) {
+        guard !FeatureGateService.shared.isProUser else { return }
+        used(.proOfertaVista)
+        if let limitHit, let limit = MetricsUseFeature.freeLimit(limitHit) { used(limit) }
+    }
+
+    /// Lo que sale una vez por instalación (card 4b7h): el reinicio del alta y los primeros días. Mismo destino que `used`:
+    /// con el servicio, su cola; antes de `start()`, la de `.standard`; bajo `-uitest` y en tests, nada.
+    private static func usedOncePerInstall(_ feature: MetricsUseFeature) {
+        guard let target = eventDefaults() else { return }
+        var emitted = Set(target.stringArray(forKey: onceEmittedKey) ?? [])
+        guard MetricsOnceLogic.shouldEmit(feature, emitted: emitted, isNewUser: target.bool(forKey: newUserKey)) else {
+            return
+        }
+        emitted.insert(feature.rawValue)
+        target.set(emitted.sorted(), forKey: onceEmittedKey)
+        MetricsSpool.enqueue(.use(feature), defaults: target)
+        kickDrain()
+    }
+
+    /// Dónde apunta la telemetría de uso: el `UserDefaults` del servicio arrancado, `.standard` antes de `start()` (la cola
+    /// que `start()` lee), o `nil` bajo `-uitest` y en tests.
+    static func eventDefaults() -> UserDefaults? {
+        if isStarted { return defaults }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return nil }
+        return .standard
+    }
+
+    /// `true` (y apunta el día) si toca emitir hoy.
+    private static func recordUseDay(_ feature: MetricsUseFeature, now: Date, defaults: UserDefaults) -> Bool {
+        var days = defaults.dictionary(forKey: useDaysKey) as? [String: String] ?? [:]
+        guard MetricsUseLogic.shouldEmit(feature, lastDays: days, now: now) else { return false }
+        days[feature.rawValue] = MetricsPingLogic.dayString(for: now)
+        defaults.set(days, forKey: useDaysKey)
+        return true
     }
 
     /// Alta NUBE: el claim devolvió `created` (cuenta backend NUEVA). One-shot persistido
@@ -675,6 +770,11 @@ extension MetricsService {
     /// Una página de la subida de la ida confirmada (`cloudSnapshotPageUploaded`).
     static func cloudSnapshotPageUploaded(table: String, rows: Int, seconds: Double) {
         canary(.cloudSnapshotPageUploaded, detail: "\(table)|\(rows)", value: seconds)
+    }
+
+    /// La fusión de tasas duplicadas de la subida (`cloudSnapshotDuplicateRatesFused`).
+    static func cloudSnapshotDuplicateRatesFused(days: Int, removed: Int) {
+        canary(.cloudSnapshotDuplicateRatesFused, detail: "\(days)", value: Double(removed))
     }
 
     /// Una espera a iCloud que terminó (`cloudMigrationImportWaited`).

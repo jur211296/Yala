@@ -65,4 +65,38 @@ enum CashFlowSetupLogic {
     static func variableExamples(_ names: [String]) -> String {
         names.prefix(3).joined(separator: ", ")
     }
+
+    // MARK: - Sin ingresos a la vista (decisión 33 de la revisión 2.3, opción A)
+
+    /// El armado pregunta «¿Cuánto recibes al mes?» cuando tiene algo que sugerir pero ninguna línea de ingreso: la
+    /// primera semana el sueldo aún no está en el historial, y sin él el resumen anunciaba «Te faltan al mes S/ 2,573».
+    static func asksForIncome(suggestedIncomeLines: Int, suggestedLines: Int) -> Bool {
+        suggestedLines > 0 && suggestedIncomeLines == 0
+    }
+
+    /// Lo que dice la última fila del resumen.
+    enum SummaryOutcome: Equatable {
+        case surplus(Double)
+        case shortfall(Double)
+        /// No hay ingresos a la vista y la persona contestó «Aún no lo sé»: no se anuncia que falta dinero.
+        case incomeMissing
+    }
+
+    /// `typedIncome`: lo que escribió la persona al preguntarle; `nil` si no escribió nada.
+    static func summaryOutcome(
+        suggestedIncome: Double, expense: Double, asksForIncome: Bool, typedIncome: Double?
+    ) -> SummaryOutcome {
+        if asksForIncome && typedIncome == nil { return .incomeMissing }
+        let net = suggestedIncome + (typedIncome ?? 0) - expense
+        return CashFlowMonthSummaryLogic.isShortfall(net) ? .shortfall(abs(net)) : .surplus(abs(net))
+    }
+
+    /// La categoría a la que se ata el ingreso escrito: la primera de ingreso que la persona ve y no es de sistema
+    /// («Cobros de grupos» no). Atada a una categoría, el sueldo real cuenta en esa línea al llegar; sin ella, el plan lo
+    /// sumaría dos veces (la línea escrita y «otros ingresos»). `nil` si no hay ninguna.
+    static func typedIncomeCategory(in categories: [Category]) -> Category? {
+        categories
+            .filter { $0.isIncome && $0.isVisible && !$0.isSystem }
+            .min { $0.sortOrder < $1.sortOrder }
+    }
 }

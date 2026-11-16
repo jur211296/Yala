@@ -19,7 +19,7 @@ struct GroupsLoopRestartLogicTests {
             flagOn: true, hasSession: true, loopAlive: false) == true)
     }
 
-    /// Flag OFF (producción hoy) → JAMÁS arranca (byte-identidad DARK del re-arranque mid-session).
+    /// Flag OFF (el kill-switch remoto puesto) → JAMÁS arranca: el re-arranque mid-session es un no-op.
     @Test func flagOff_neverStarts() {
         #expect(GroupsLoopRestartLogic.shouldStart(
             flagOn: false, hasSession: true, loopAlive: false) == false)

@@ -105,5 +105,23 @@
    <ArchiveAction
       buildConfiguration = "Release"
       revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Subir dSYM a Sentry"
+               scriptText = "&quot;${SRCROOT}/scripts/sentry-subir-dsym.sh&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "96CFFF922EC3CF06002AC31C"
+                     BuildableName = "Yala.app"
+                     BlueprintName = "Yala"
+                     ReferencedContainer = "container:Yala.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </ArchiveAction>
 </Scheme>

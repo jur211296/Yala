@@ -10,6 +10,8 @@ import SwiftUI
 
 struct RecentRecordsWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let records: [TransactionItem]
     let currencyCode: String
@@ -35,14 +37,14 @@ struct RecentRecordsWidget: View {
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 
     private static let secondaryDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 
@@ -253,7 +255,10 @@ struct RecentRecordsWidget: View {
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode, forceFullPrecision: true)
+        AmountPrivacy.text(
+            appPreferences.currency(value, currencyCode: currencyCode, forceFullPrecision: true),
+            hidden: amountsHidden
+        )
     }
 
     // MARK: - Empty State

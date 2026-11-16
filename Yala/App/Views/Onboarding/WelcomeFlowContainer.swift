@@ -79,10 +79,18 @@ struct WelcomeFlowContainer: View {
     /// ENCAMINA a entrar con ella, y la pantalla de destino ofrece «Crear otra cuenta» (paso 6). El
     /// argumento es el método según el faro; `nil` = el faro no lo sabe.
     var onBeaconRoutesToCloudSignIn: (CloudSignInProvider?) -> Void
+    /// **Bienvenida 2.3 (Y23-02):** «Entrar con Google / Apple» de la vitrina. Un botón por proveedor que crea o entra
+    /// según exista la cuenta: la entrada a la cuenta con `Entry.unified`, que verifica siempre.
+    var onSelectUnifiedAccess: (CloudSignInProvider) -> Void = { _ in }
     /// G3: «Crear mi primer grupo» con la puerta ya CONFIRMADA abierta (canal encendido y sin datos de
     /// otro humano en el device). El container no comprueba nada aquí: eso es del step `.groupsGate`, que
     /// es el único que puede llamarlo.
-    var onSelectGroupsOrganizer: () -> Void
+    ///
+    /// Bienvenida 2.3 (Y23-06): lleva el camino elegido —crear un grupo o «Solo crear mi cuenta»— y el proveedor que la
+    /// persona tocó en la puerta de Grupos, para que la hoja de inicio de sesión de Grupos no se lo vuelva a preguntar.
+    /// Los dos van EXPLÍCITOS en cada salida: un estado aparte que heredara el del intento anterior es el defecto que
+    /// la review cazó en el propósito de la puerta.
+    var onSelectGroupsOrganizer: (_ accountOnly: Bool, _ provider: CloudSignInProvider?) -> Void
     /// R2: el destino elegido necesita el mirror y este proceso montó neutro ⇒ el container va a su step
     /// terminal y ContentView PERSISTE el destino para retomarlo tras el relanzamiento. Se separa en dos
     /// responsabilidades porque el container no debe tocar `UserDefaults` ni los flags de onboarding.
@@ -104,6 +112,10 @@ struct WelcomeFlowContainer: View {
     /// El `groupID` VIAJA en el callback y no lo lee `ContentView` de un estado suyo: así no hay un segundo
     /// sitio donde el propósito pueda quedarse desfasado respecto al step que se está pintando.
     var onGroupsGateInviteProceed: (String) -> Void
+    /// **La puerta de la entrada con otra cuenta abrió** (opción B, 2026-11-10): el teléfono ya no tiene datos que dejar
+    /// aparte, así que se vuelve a la entrada a la cuenta con el método que viaja. Como el del invitado, **no pasa por
+    /// `leaveWelcome`**: el dispositivo acaba de quedar neutro a propósito y no hay espejo que evaluar.
+    var onGroupsGateCloudAccountProceed: (_ provider: CloudSignInProvider, _ fromExistingChooser: Bool) -> Void
     /// G3: fetch VIVO del corpus local para la puerta (mismo closure que alimenta el guard cross-cuenta
     /// del sign-in de nube — un snapshot no vale, el mirror puede estar re-importando).
     var hasLocalDataNow: @MainActor @Sendable () -> Bool
@@ -132,6 +144,11 @@ struct WelcomeFlowContainer: View {
     /// De qué pantalla se abrió «¿Cómo empiezas?», cada vez que se abre (card mgaj). `ContentView` lo guarda y lo devuelve
     /// en `groupsChooserOrigin` al volver a montar el Welcome tras «Pega tu enlace» o el inicio de sesión de crear grupo.
     var onGroupsChooserOrigin: (WelcomeFlowStep) -> Void
+    /// Y23-06 · la puerta de la vitrina y el proveedor tocado en la de Grupos, cada vez que cambian: `ContentView` los
+    /// guarda y los devuelve al re-montar el cover (tras «Pega tu enlace» o una cancelación de la rama de Grupos), igual
+    /// que `groupsChooserOrigin`. Sin esto, volver dejaba «Mis finanzas» y perdía «Solo crear mi cuenta» (review).
+    var onGroupsProvider: (CloudSignInProvider?) -> Void
+    var onShowcaseDoor: (WelcomeShowcaseLogic.Door) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     /// De qué pantalla se abrió el 2.º nivel de grupos, y por tanto a dónde vuelve su «Volver»: la fila del elector o la
@@ -143,6 +160,18 @@ struct WelcomeFlowContainer: View {
     /// 2osn), y su «Volver» devuelve a la que la abrió (`WelcomeBackStepLogic.existingChooserOrigin`).
     @State private var existingChooserOrigin: WelcomeFlowStep = .chooser
 
+    /// La puerta de la vitrina en pantalla (Y23-06): volver de una entrada de Grupos deja la de Grupos.
+    @State private var showcaseDoor: WelcomeShowcaseLogic.Door = .finances
+    /// Y23-06 · el proveedor que se tocó en la puerta de Grupos. Lo escribe CADA apertura del 2.º nivel de Grupos (el
+    /// tocado, o `nil` si se llegó por otro sitio), así que nunca se hereda el de un intento anterior.
+    @State private var groupsProvider: CloudSignInProvider?
+    /// Y23-06 · el camino que abrió la puerta de crear: crear un grupo o «Solo crear mi cuenta». Lo escriben las dos
+    /// filas antes de abrir la puerta.
+    @State private var organizerAccountOnly = false
+    /// De dónde se abrió la puerta privada: el sub-elector «Elige dónde guardar tus datos» o la vitrina. Lo escribe la
+    /// única puerta de entrada (`handleNewOption(.privateAccount)`); al re-montar el cover arranca en la vitrina.
+    @State private var privateGateOpenedFromNewChooser = false
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
@@ -151,10 +180,12 @@ struct WelcomeFlowContainer: View {
         onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
         onSelectPrivateAccount: @escaping () -> Void,
         onSelectCloudAccount: @escaping () -> Void,
-        onSelectGroupsOrganizer: @escaping () -> Void,
+        onSelectGroupsOrganizer: @escaping (Bool, CloudSignInProvider?) -> Void,
         onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider?) -> Void,
+        onSelectUnifiedAccess: @escaping (CloudSignInProvider) -> Void = { _ in },
         onNeedsMirrorRelaunch: @escaping (WelcomeMirrorRelaunchLogic.Destination) -> Void,
         onGroupsGateNeutralReturnArmed: @escaping (WelcomeGroupsGateView.Purpose) -> Void,
+        onGroupsGateCloudAccountProceed: @escaping (CloudSignInProvider, Bool) -> Void,
         onGroupsGateInviteProceed: @escaping (String) -> Void,
         hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool,
         welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
@@ -163,9 +194,18 @@ struct WelcomeFlowContainer: View {
         performDeviceCorpusWipe: @escaping @MainActor () async -> String?,
         onRestoreOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in },
         groupsChooserOrigin: WelcomeFlowStep = .chooser,
-        onGroupsChooserOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in }
+        onGroupsChooserOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in },
+        groupsProvider: CloudSignInProvider? = nil,
+        onGroupsProvider: @escaping (CloudSignInProvider?) -> Void = { _ in },
+        showcaseDoor: WelcomeShowcaseLogic.Door = .finances,
+        onShowcaseDoor: @escaping (WelcomeShowcaseLogic.Door) -> Void = { _ in }
     ) {
+        self._groupsProvider = State(initialValue: groupsProvider)
+        self.onGroupsProvider = onGroupsProvider
+        self._showcaseDoor = State(initialValue: showcaseDoor)
+        self.onShowcaseDoor = onShowcaseDoor
         self.onRestoreOrigin = onRestoreOrigin
+        self.onSelectUnifiedAccess = onSelectUnifiedAccess
         self.onGroupsChooserOrigin = onGroupsChooserOrigin
         self._groupsChooserOrigin = State(initialValue: groupsChooserOrigin)
         self.initialStep = initialStep
@@ -178,12 +218,19 @@ struct WelcomeFlowContainer: View {
         self.onNeedsMirrorRelaunch = onNeedsMirrorRelaunch
         self.onGroupsGateNeutralReturnArmed = onGroupsGateNeutralReturnArmed
         self.onGroupsGateInviteProceed = onGroupsGateInviteProceed
+        self.onGroupsGateCloudAccountProceed = onGroupsGateCloudAccountProceed
         self.hasLocalDataNow = hasLocalDataNow
         self.welcomeDeviceDataNow = welcomeDeviceDataNow
         self.welcomeDeviceDataReading = welcomeDeviceDataReading
         self.performICloudCorpusWipe = performICloudCorpusWipe
         self.performDeviceCorpusWipe = performDeviceCorpusWipe
         self._step = State(initialValue: initialStep)
+    }
+
+    /// A dónde vuelve «Volver» desde la puerta, según su propósito.
+    private func groupsGateBackStep(_ purpose: WelcomeGroupsGateView.Purpose) -> WelcomeFlowStep {
+        guard case .enterCloudAccount(_, let fromExistingChooser) = purpose else { return .groupsChooser }
+        return fromExistingChooser ? WelcomeBackStepLogic.existingBranchOrigin(options: visibleExistingOptions) : .chooser
     }
 
     private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
@@ -236,26 +283,18 @@ struct WelcomeFlowContainer: View {
                     .transition(.opacity)
             } else {
             switch step {
-            case .hero:
-                WelcomeHeroView {
-                    goTo(.chooser)
-                }
-                .transition(.opacity)
-            case .chooser:
-                WelcomeChooserView(
-                    onSelect: { branch in
-                        // "Ya tengo una cuenta" y "Soy nuevo" abren su 2º nivel (o bypass con 1
-                        // opción — en producción hoy equivale exactamente al flujo actual).
-                        switch branch {
-                        case .restore: handleExistingBranch()
-                        case .new: handleNewBranch()
-                        // G2: la card ya no es «me invitaron» sino «vengo por un grupo», así que no
-                        // puede salir directa a la recuperación de invitación — abre el step de los
-                        // dos caminos y es ahí donde el invitado elige el suyo.
-                        case .invite: openGroupsChooser(from: .chooser)
-                        }
-                    },
-                    onBack: { goTo(.hero) }
+            // **Bienvenida 2.3 (Y23-01): la vitrina es el primer nivel**, y pinta los dos pasos que lo eran —el Hero de
+            // «Empezar» y el elector de tres tarjetas—. Así toda vuelta que ya existía al elector (los «Volver» de las
+            // puertas y entradas, el respaldo del cover de `ContentView`) aterriza aquí sin tocar a sus productores.
+            case .hero, .chooser:
+                WelcomeShowcaseView(
+                    initialDoor: showcaseDoor,
+                    providersAvailable: providerAccessAvailable,
+                    onAccess: { access, door in handleShowcaseAccess(access, from: door) },
+                    onDoorChange: { door in
+                        showcaseDoor = door
+                        onShowcaseDoor(door)
+                    }
                 )
                 .transition(.opacity)
             case .groupsChooser:
@@ -263,14 +302,27 @@ struct WelcomeFlowContainer: View {
                     // G3: la card de crear ya está cableada y por tanto se pinta. Su handler NO sale del
                     // cover: abre la puerta, que es el step siguiente. El portal se cruza más tarde, y
                     // solo si la puerta abre.
-                    onCreate: { goTo(.groupsGate(purpose: .createGroup)) },
+                    onCreate: {
+                        organizerAccountOnly = false
+                        chooseGroupsPath(.altaCaminoGrupoCrear) { goTo(.groupsGate(purpose: .createGroup)) }
+                    },
                     onJoin: {
-                        leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
+                        chooseGroupsPath(.altaCaminoGrupoUnirse) {
+                            leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
+                        }
+                    },
+                    // Y23-06 · «Solo crear mi cuenta»: la misma puerta que crear; la rama termina en Grupos vacío.
+                    onAccountOnly: groupsProvider == nil ? nil : {
+                        organizerAccountOnly = true
+                        chooseGroupsPath(.altaCaminoGrupoCrear) { goTo(.groupsGate(purpose: .createGroup)) }
                     },
                     onBack: { goTo(groupsChooserOrigin) },
                     // Card 2osn: «¿Ya tienes una cuenta? Entra aquí» va por la MISMA puerta que «Ya tengo una cuenta» del
-                    // elector (bypass incluido), y su «Volver» devuelve aquí.
-                    onSignIn: { handleExistingBranch() }
+                    // elector (bypass incluido), y su «Volver» devuelve aquí. Card x5tm: «Empezar» aterriza en Grupos.
+                    onSignIn: {
+                        WelcomeGroupsDoorLanding.arm()
+                        handleExistingBranch()
+                    }
                 )
                 .transition(.opacity)
             case .groupsGate(let purpose):
@@ -281,26 +333,42 @@ struct WelcomeFlowContainer: View {
                     // este contexto y no cruza ninguna frontera.
                     // El detector del WELCOME, no el entero: los grupos que conservó el aviso tardío son de quien está
                     // delante (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
-                    hasLocalDataNow: { welcomeDeviceDataNow() },
+                    //
+                    // **Salvo la entrada con otra cuenta, que mide con el detector ENTERO**: es el mismo que su guard
+                    // cross-cuenta (`WelcomeCloudSignInView.hasLocalDataNow`). Con el del Welcome, unos grupos conservados
+                    // que el guard sí cuenta harían que esta puerta dejara pasar y el guard volviera a mandar aquí: un bucle.
+                    hasLocalDataNow: {
+                        purpose.isCloudAccountEntry ? hasLocalDataNow() : welcomeDeviceDataNow()
+                    },
                     onProceed: {
                         // El destino del `.proceed` lo decide el propósito, y por eso la rama del invitado
                         // NO pasa por `leaveWelcome`: aquel evalúa si el destino elegido necesita el mirror
                         // y aquí no hay destino que elegir — quien viene por una invitación va a su join,
                         // sobre un dispositivo que acaba de quedar neutro o que nunca dejó de estarlo.
-                        if let groupID = purpose.invitedGroupID {
+                        if case .enterCloudAccount(let provider, let fromExistingChooser) = purpose {
+                            onGroupsGateCloudAccountProceed(provider, fromExistingChooser)
+                        } else if let groupID = purpose.invitedGroupID {
                             onGroupsGateInviteProceed(groupID)
                         } else {
-                            leaveWelcome(to: .groupsOrganizer) { onSelectGroupsOrganizer() }
+                            // En una línea con el portal: lo exige el escáner de R2 (`NeutralMountRelaunchZeroTests`).
+                            leaveWelcome(to: .groupsOrganizer) { onSelectGroupsOrganizer(organizerAccountOnly, groupsProvider) }
                         }
                     },
-                    onBack: { goTo(.groupsChooser) },
+                    // La entrada con otra cuenta vuelve a donde se abrió: «¡Hola de nuevo!» (o su bypass), o el chooser si
+                    // llegó por el faro o desde Grupos, como hacía el «Volver» del bloqueo.
+                    onBack: { goTo(groupsGateBackStep(purpose)) },
                     onNeutralReturnArmed: { onGroupsGateNeutralReturnArmed(purpose) }
                 )
                 .transition(.opacity)
             case .existingChooser:
                 // vb1f (opción A): el faro ordena las entradas y marca la del método con que se creó la cuenta. Se lee
                 // al pintar, con el mismo adaptador que encamina «Soy nuevo».
-                let order = WelcomeNewBranchRouter.existingOrder(beacon: CloudBeacon(), options: visibleExistingOptions)
+                // Desde la puerta de Grupos, sin iCloud ni la nota del faro (E13 del recorrido del 13-nov). La marca de la
+                // puerta y no solo el origen: al volver de la entrada a la cuenta el contenedor se monta de nuevo y el
+                // origen guardado aquí se pierde; la marca sigue puesta hasta que se elige otra entrada.
+                let order = WelcomeNewBranchRouter.existingOrder(
+                    beacon: CloudBeacon(), options: visibleExistingOptions,
+                    fromGroupsDoor: WelcomeGroupsDoorLanding.isArmed || existingChooserOrigin == .groupsChooser)
                 WelcomeExistingChooserView(
                     options: order.options,
                     usedOnThisDevice: order.usedOnThisDevice,
@@ -342,7 +410,7 @@ struct WelcomeFlowContainer: View {
                     },
                     // Cancelar → la elección privado / nube, que es de donde vino: con bypass nunca vio el
                     // sub-chooser, así que mandarlo ahí sería enseñarle una pantalla nueva al retroceder.
-                    onBack: { goTo(newBranchOriginStep) },
+                    onBack: { goTo(privateGateOrigin) },
                     performWipe: performICloudCorpusWipe,
                     // **El Welcome SÍ pregunta por el corpus del teléfono.** Es la otra mitad del aviso de
                     // datos existentes: con el mount neutro, esta rama sale por el relanzamiento y nunca
@@ -379,7 +447,7 @@ struct WelcomeFlowContainer: View {
                         StorageModePersistence.clearICloudCorpusWipeArm()
                         handleExistingOption(.restoreICloud)
                     },
-                    onBack: { goTo(newBranchOriginStep) },
+                    onBack: { goTo(privateGateOrigin) },
                     // Re-envuelto y no reenviado, como `deviceCorpus`: pasar la property directa avisa (`may introduce
                     // data races`). La entrada `.wipeDevice` no llega a usarlo: no mide iCloud.
                     performWipe: { await performICloudCorpusWipe() },
@@ -398,6 +466,14 @@ struct WelcomeFlowContainer: View {
             case .mirrorRelaunch:
                 WelcomeMirrorRelaunchView()
                     .transition(.opacity)
+                    // Telemetría (card 4b7h): se le pidió reabrir en pleno alta. El destino ya está guardado: quien lleva a
+                    // este paso lo escribe antes.
+                    .onAppear {
+                        if let asked = MetricsUseFeature.relaunchAsked(
+                            destination: WelcomePendingDestinationStore.peek()) {
+                            MetricsService.used(asked)
+                        }
+                    }
             }
             }
         }
@@ -466,12 +542,14 @@ struct WelcomeFlowContainer: View {
                               proceed: () -> Void) {
         // **L6-2 · «Restaurar» sin iCloud entra sin reabrir**: Restaurar dirá «Activa iCloud para continuar» en el acto,
         // y si la persona lo enciende y vuelve a buscar, es Restaurar quien pide reabrir (`WelcomeRestoreRelaunchLogic`).
+        // «Sin iCloud» es sin CUENTA, no sin iCloud Drive (card 6a12): con Drive apagado se reabre y se restaura. Si
+        // CloudKit aún no contestó, se entra sin reabrir y Restaurar le pregunta antes de decidir.
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
             destination: destination,
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision),
               !WelcomeRestoreRelaunchLogic.skipsRelaunch(
                 destination: destination,
-                iCloudAvailable: iCloudSyncService.shared.isAccountAvailable) else {
+                iCloudAccountPresent: iCloudSyncService.shared.hasICloudAccount) else {
             proceed()
             return
         }
@@ -483,7 +561,10 @@ struct WelcomeFlowContainer: View {
     /// bypass directo — comportamiento idéntico al flujo restore de hoy; con ambas,
     /// muestra el 2º nivel.
     private func handleExistingBranch() {
-        if let single = WelcomeAccountChoiceLogic.bypass(visibleExistingOptions) {
+        // El bypass mira las mismas opciones que se pintarían: desde la puerta de Grupos, sin «Restaurar desde iCloud».
+        let options = WelcomeAccountChoiceLogic.existingOptions(
+            visibleExistingOptions, fromGroupsDoor: step == .groupsChooser)
+        if let single = WelcomeAccountChoiceLogic.bypass(options) {
             handleExistingOption(single)
         } else {
             existingChooserOrigin = WelcomeBackStepLogic.existingChooserOrigin(openedFrom: step)
@@ -500,11 +581,18 @@ struct WelcomeFlowContainer: View {
     /// el arranque le ofrecería «Terminar de borrar» sobre lo que acaba de elegir conservar. Aquí y no en cada `onRestore`:
     /// este es el portal por el que pasan las tres entradas a Restaurar del Welcome.
     private func handleExistingOption(_ option: WelcomeAccountChoiceLogic.ExistingOption) {
+        // Embudo del alta (telemetría propia): el camino elegido, antes de puertas y relanzamientos.
+        MetricsService.used(option == .restoreICloud ? .altaCaminoRestaurar : .altaCaminoEntrar)
         let destination: WelcomeMirrorRelaunchLogic.Destination
         switch option {
         case .restoreICloud:
+            // Restaurar no termina en «Empezar»: la puerta de Grupos no tiene dónde aterrizar (card x5tm).
+            WelcomeGroupsDoorLanding.disarm()
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
+            // Desde «¡Hola de nuevo!» o la puerta de Grupos la persona aún no eligió traer nada: Restaurar le pregunta. Desde
+            // la puerta de iCloud privado la marca ya la encendió su «Traer mis datos» (`RestoreBringChoiceStore`).
+            if step != .privateICloudGate { RestoreBringChoiceStore.clear() }
             destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }
@@ -530,6 +618,7 @@ struct WelcomeFlowContainer: View {
             options: visibleNewOptions
         ) {
         case .cloudSignIn(let provider):
+            MetricsService.used(.altaCaminoEntrar)
             leaveWelcome(to: .cloudSignIn) { onBeaconRoutesToCloudSignIn(provider) }
         case .single(let option):
             handleNewOption(option)
@@ -571,13 +660,29 @@ struct WelcomeFlowContainer: View {
     /// Es el MISMO término que `handleNewBranch` usa para decidir si enseña el sub-chooser: con bypass no
     /// hubo 2º nivel y el origen es el chooser de primer nivel. Se RE-DERIVA en el «volver» en vez de
     /// capturarse al entrar: así no hay un segundo sitio donde escribir la condición.
+    /// Bienvenida 2.3 · a dónde vuelve la puerta privada: a la vitrina si se abrió desde «Entrar con mi iCloud», al
+    /// sub-elector si se abrió desde él (review adversarial: el «volver» derivado mandaba a quien venía de la vitrina a
+    /// «Elige dónde guardar tus datos», una pantalla que no vio y que ofrece el alta vieja).
+    private var privateGateOrigin: WelcomeFlowStep {
+        privateGateOpenedFromNewChooser ? .newChooser : .chooser
+    }
+
     private var newBranchOriginStep: WelcomeFlowStep {
         WelcomeAccountChoiceLogic.bypass(visibleNewOptions) == nil ? .newChooser : .chooser
     }
 
+    /// Embudo del alta: apunta el camino de Grupos y sigue.
+    private func chooseGroupsPath(_ path: MetricsUseFeature, then next: () -> Void) {
+        MetricsService.used(path)
+        next()
+    }
+
     private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {
+        // Embudo del alta (telemetría propia): el camino elegido, antes de puertas y relanzamientos.
+        MetricsService.used(option == .privateAccount ? .altaCaminoPrivada : .altaCaminoNube)
         switch option {
         case .privateAccount:
+            privateGateOpenedFromNewChooser = step == .newChooser
             // **Paso 4 · esta rama ya no sale directa por el portal: pasa por la puerta.** Hasta el
             // 2026-09-10 iba a `leaveWelcome(.privateOnboarding)`, y con el mount neutro eso persiste el
             // destino y **NO llama a `onSelectPrivateAccount`** — el único callback que consultaba «¿hay
@@ -603,8 +708,47 @@ struct WelcomeFlowContainer: View {
         }
     }
 
+    /// Los botones de proveedor de la vitrina solo se ofrecen si la entrada a la cuenta de Yala está disponible: es el
+    /// MISMO predicado que la tarjeta de «Ya tengo una cuenta» (kill-switch remoto incluido). Sin ella, la vitrina deja
+    /// solo iCloud, en vez de dos botones que no llevan a ninguna parte.
+    private var providerAccessAvailable: Bool { cloudEntryAvailable }
+
+    /// **Bienvenida 2.3 · los tres accesos de la vitrina** (Y23-01, Y23-03, Y23-06).
+    ///
+    /// · iCloud → la puerta privada de siempre (`handleNewOption(.privateAccount)`): revisa iCloud y, con datos, ofrece
+    ///   «Traer mis datos»; sin datos, reabre y sigue a la conversación.
+    /// · Google o Apple desde «Mis finanzas» → la entrada única (Y23-02), que VERIFICA SIEMPRE si ese acceso ya tiene
+    ///   cuenta (`GET /account/exists`): con cuenta, «¿Cargamos tus datos y entramos?»; sin ella, «Vamos a crear tu
+    ///   cuenta» con el consentimiento de la nube en la misma hoja.
+    /// · Google o Apple desde Grupos → los caminos de Grupos.
+    private func handleShowcaseAccess(_ access: WelcomeShowcaseLogic.Access, from door: WelcomeShowcaseLogic.Door) {
+        // Una entrada nueva desde la vitrina deja de ser la de «Entra aquí» de Grupos (card x5tm).
+        WelcomeGroupsDoorLanding.disarm()
+        switch (access, door) {
+        case (.iCloud, _):
+            handleNewOption(.privateAccount)
+        case (.google, .finances):
+            enterWithProvider(.google)
+        case (.apple, .finances):
+            enterWithProvider(.apple)
+        case (.google, .groups):
+            openGroupsChooser(from: .hero, provider: .google)
+        case (.apple, .groups):
+            openGroupsChooser(from: .hero, provider: .apple)
+        }
+    }
+
+    /// Y23-02 · el acceso único. Mismo portal y mismo `Destination` que las entradas a la cuenta de «Ya tengo una
+    /// cuenta» (no necesitan el espejo), y la misma telemetría del embudo.
+    private func enterWithProvider(_ provider: CloudSignInProvider) {
+        MetricsService.used(.altaCaminoEntrar)
+        leaveWelcome(to: .cloudSignIn) { onSelectUnifiedAccess(provider) }
+    }
+
     /// Abre el 2.º nivel de grupos apuntando de dónde se vino (`WelcomeBackStepLogic.groupsChooserOrigin`).
-    private func openGroupsChooser(from origin: WelcomeFlowStep) {
+    private func openGroupsChooser(from origin: WelcomeFlowStep, provider: CloudSignInProvider? = nil) {
+        groupsProvider = provider
+        onGroupsProvider(provider)
         groupsChooserOrigin = WelcomeBackStepLogic.groupsChooserOrigin(openedFrom: origin)
         onGroupsChooserOrigin(groupsChooserOrigin)
         goTo(.groupsChooser)

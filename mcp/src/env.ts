@@ -38,7 +38,7 @@ export interface Env {
   RL_OAUTH?: RateLimiter;
   RL_MCP?: RateLimiter;
   /**
-   * Service binding a la clase RPC `ConnectorDrafts` del gateway (`gateway/src/connector/entrypoint.ts`): la cola donde
+   * Service binding a la clase RPC `ConnectorDrafts` del gateway (`gateway/src/connector/entrypoint.ts`): la puerta a la cola común donde
    * `apuntar_movimiento` deja los borradores de la Bandeja. Sin él, la herramienta de escritura no se ofrece y el
    * conector sigue siendo de solo lectura.
    */

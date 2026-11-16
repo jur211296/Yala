@@ -224,6 +224,13 @@ struct OnboardingView: View {
         backgroundStyle == .heroFlow ? .white.opacity(0.4) : .secondary.opacity(0.6)
     }
 
+    /// Texto de ejemplo de un campo. El del sistema sigue el modo claro/oscuro, y con el tema Claro persistido salía
+    /// gris oscuro sobre el degradado fijo de `.heroFlow`, casi invisible (barrido final 2.2, 2026-11-05). En
+    /// `.themedPanel` se queda el del sistema.
+    private func fieldPrompt(_ text: String) -> Text {
+        backgroundStyle == .heroFlow ? Text(text).foregroundStyle(mutedTextStyle) : Text(text)
+    }
+
     private var cardStroke: Color {
         switch backgroundStyle {
         case .heroFlow:    return WelcomeFlowStyle.cardStroke
@@ -275,7 +282,9 @@ struct OnboardingView: View {
                     ))
                 }
             }
-            .safeAreaInset(edge: .bottom) {
+            // Barra y no inset (barrido final 2.2): con el texto al máximo, o en el Duo cerrado, el paso se desplaza por
+            // debajo de «Siguiente», y la barra difumina ese borde del scroll.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
                 floatingNavigationButtons
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -293,6 +302,7 @@ struct OnboardingView: View {
             }
         }
         .task {
+            recordStepReached(currentStep)  // embudo del alta: el primer paso no pasa por `advance()`
             let defaults = UserDefaults.standard
             if let name = OnboardingPrefillResolver.resolveUserName(
                 prefilled: prefilledData,
@@ -463,7 +473,7 @@ struct OnboardingView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(secondaryTextStyle)
 
-                    TextField(L10n.Onboarding.namePlaceholder, text: $userName)
+                    TextField(L10n.Onboarding.namePlaceholder, text: $userName, prompt: fieldPrompt(L10n.Onboarding.namePlaceholder))
                         .textContentType(.nickname)
                         .font(DS.Typography.body)
                         .foregroundStyle(primaryTextStyle)
@@ -856,7 +866,7 @@ struct OnboardingView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "pencil")
                             .foregroundStyle(secondaryTextStyle)
-                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName, prompt: fieldPrompt(L10n.Onboarding.accountNamePlaceholder))
                             .focused($accountNameFocused)
                             .accessibilityIdentifier("onboarding_account_name")
                             .foregroundStyle(primaryTextStyle)
@@ -879,7 +889,7 @@ struct OnboardingView: View {
                         HStack(spacing: DS.Spacing.md) {
                             Text(accountCurrency.flag)
                                 .font(DS.Typography.title)
-                            Text(accountCurrency.localizedName)
+                            Text(accountCurrency.localizedName.capitalized)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(primaryTextStyle)
                             Spacer()
@@ -1159,7 +1169,7 @@ struct OnboardingView: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(secondaryTextStyle)
                         // «Ej. 1500» y no un «0», que parecía un valor ya puesto (UX 2.2 · L1UI-5).
-                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText)
+                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText, prompt: fieldPrompt(L10n.Onboarding.balancePlaceholder))
                             .font(DS.Typography.largeTitle)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
@@ -1666,7 +1676,7 @@ struct OnboardingView: View {
                     Text(currency.rawValue)
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
-                    Text(currency.localizedName)
+                    Text(currency.localizedName.capitalized)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1817,12 +1827,21 @@ struct OnboardingView: View {
 
             YalaPrimaryButton(
                 currentStep == .confirmation ? L10n.Onboarding.startUsingYala : L10n.Action.next,
-                isDisabled: isNextDisabled
+                isDisabled: isNextDisabled,
+                keepsDisabledToneInBar: true
             ) {
                 advance()
             }
             .accessibilityIdentifier("onboarding_next_button")
         }
+    }
+
+    /// Embudo del alta (telemetría propia): el paso al que se llegó, como mucho una vez al día por paso. Solo el
+    /// onboarding del Welcome: activar Yala completo desde solo grupos (`fullActivation`) no es un alta.
+    private func recordStepReached(_ step: OnboardingStep) {
+        guard MetricsUseFeature.closesSignUp(mode: mode.rawValue),
+              let feature = MetricsUseFeature.onboardingStep(trackingName: step.trackingName) else { return }
+        MetricsService.used(feature)
     }
 
     /// Avanza al siguiente step (o completa el onboarding si es el último).
@@ -1848,6 +1867,7 @@ struct OnboardingView: View {
             dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                 currentStep = first
             }
+            recordStepReached(first)
             return
         }
 
@@ -1859,6 +1879,7 @@ struct OnboardingView: View {
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
         }
+        recordStepReached(next)
         if next == .categories {
             triggerCategoryAnimation()
         }
@@ -2022,43 +2043,7 @@ struct OnboardingView: View {
     }
 
     private func createDefaultNotifications() {
-        let defaults = UserDefaults.standard
-        if defaults.bool(forKey: "notificationsSeeded") { return }
-        defaults.set(true, forKey: "notificationsSeeded")
-
-        let descriptor = FetchDescriptor<NotificationItem>()
-        let existing: [NotificationItem]
-        do {
-            existing = try modelContext.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error fetching existing notifications: \(error)")
-            #endif
-            existing = []
-        }
-        let existingTypes = Set(existing.map { $0.typeRaw })
-
-        let allDefaults = NotificationItem.createDefaults()
-        var inserted = 0
-
-        for notification in allDefaults {
-            guard !existingTypes.contains(notification.typeRaw) else { continue }
-            // Recordatorios/reportes nacen apagados (opt-in), pero el item de PAGOS conserva
-            // su default ACTIVO (toggle honesto D2 2026-07-22): forzarlo a false aquí dejaba
-            // al usuario nuevo sin ningún recordatorio de pagos hasta tocar Ajustes — y el
-            // flip one-shot no lo cubre (su sentinel protege el OFF post-flip).
-            if notification.notificationType != .scheduledPayments {
-                notification.isActive = false
-            }
-            modelContext.insert(notification)
-            inserted += 1
-        }
-
-        #if DEBUG
-        if inserted > 0 {
-            print("OnboardingView: Created \(inserted) notification types (all inactive)")
-        }
-        #endif
+        OnboardingDefaultNotifications.seedIfNeeded(in: modelContext)
     }
 }
 

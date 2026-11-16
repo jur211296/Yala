@@ -16,11 +16,11 @@
 | Token | Hex | Dónde se usa |
 |---|---|---|
 | `navy-900` | `#0F172A` | Fondo liso de toda pieza de redes. Es también el fondo de la web (`--bg-primary`) |
-| `navy-950` | `#0B1122` | Solo en el degradado viejo del post diario. Las piezas nuevas no lo usan |
+| `navy-950` | `#0B1122` | Retirado: era el final del degradado viejo del post diario. Ninguna pieza lo usa |
 
 **Sin degradados, sin brillos ni glows** (regla de Jürgen del 2026-10-13: se ven hechos con IA). El fondo
-es `navy-900` liso. El render del post diario (`render-post.mjs`) todavía pinta el degradado viejo
-`#0F172A → #0B1122`: es una pieza anterior a la regla, no un modelo para las nuevas.
+es `navy-900` liso. El render del post diario (`render-post.mjs`) también, desde el 2026-11-05: sin el
+degradado `#0F172A → #0B1122`, sin el glow del acento y con las estrellas planas.
 
 ### Acentos
 

@@ -71,6 +71,9 @@ final class MigrationSnapshotUploader {
     /// `an-incomplete-inventory-reads-as-the-whole-corpus`). SOLO tests.
     var _testThrowOnInventoryFetchOf: Set<String> = []
 
+    /// Si no es `nil`, el guardado de la fusión de tasas duplicadas LANZA este error, DENTRO del `do` real. SOLO tests.
+    var _testRateFusionSaveError: (any Error)?
+
     /// ¿Sigue valiendo la confirmación del lease de la ida? Se pregunta antes de cada trozo del push de la página y del
     /// residual (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`): la puerta del runner pregunta al
     /// empezar la página, y una página son varios trozos de 50 filas. El default `{ true }` es de los tests y del e2e, que
@@ -153,6 +156,14 @@ final class MigrationSnapshotUploader {
         // Baseline UNA vez al arrancar una pasada (cursor nil o no decodificable): cierra la ventana de
         // escrituras concurrentes ANTES de enumerar.
         if decoded == nil {
+            // Card i9wh: las tasas duplicadas se funden ANTES del baseline. Así sus borrados quedan detrás de él y el
+            // drain no los manda como tombstones: el backend nunca conoció esas filas. Con el cursor `nil` aún no subió
+            // ninguna página de esta pasada.
+            do {
+                try fuseDuplicateExchangeRates()
+            } catch {
+                return .blocked(.localFailure)
+            }
             engine.fastForwardHistoryBaseline(context: context)
         }
 
@@ -230,6 +241,46 @@ final class MigrationSnapshotUploader {
         case let .blocked(blocker):
             return .blocked(blocker)
         }
+    }
+
+    // MARK: - Tasas duplicadas (card i9wh)
+
+    /// Funde las filas de `ExchangeRate` del mismo día y base en una (`ExchangeRateDuplicateLogic`). Medido el 2026-11-05:
+    /// un iPhone con 2 registros tenía 3234 tasas para 383 días, y la subida se llevó 459 s de una activación de 505.
+    ///
+    /// - **Sin `rollback`**: el contexto es compartido. Si el guardado lanza, lo escrito se queda sucio y la pasada
+    ///   siguiente lo reescribe igual (precedente del backfill de identidades). El llamador sale con `.localFailure`.
+    /// - Los borrados viajan a iCloud por el espejo, que sigue montado: son copias del mismo día, y el superviviente se
+    ///   queda con las tasas de todas. Otro dispositivo del mismo iCloud elige la misma fila.
+    /// - Avisa con `.yalaExchangeRatesUpdated`, como todo escritor de tasas (`currency-fx.md`).
+    @discardableResult
+    func fuseDuplicateExchangeRates() throws -> Int {
+        let models = try context.fetch(FetchDescriptor<ExchangeRate>())
+        var rows: [ExchangeRateDuplicateLogic.Row] = []
+        for (index, model) in models.enumerated() {
+            guard let sid = model.syncID else { continue }
+            rows.append(.init(id: index, dateKey: model.dateKey, base: model.base,
+                              syncID: sid.uuidString.lowercased(), timestamp: model.timestamp,
+                              rates: model.decodedRates()))
+        }
+        let fusions = ExchangeRateDuplicateLogic.fusions(rows)
+        guard !fusions.isEmpty else { return 0 }
+        var removed = 0
+        for fusion in fusions {
+            let survivor = models[fusion.survivorID]
+            survivor.rates = try JSONEncoder().encode(fusion.mergedRates)
+            survivor.timestamp = fusion.mergedTimestamp
+            for loser in fusion.loserIDs {
+                context.delete(models[loser])
+                removed += 1
+            }
+        }
+        if let error = _testRateFusionSaveError { throw error }
+        try context.save()
+        CloudSyncBreadcrumb.migrationSnapshotDuplicateRatesFused(days: fusions.count, removed: removed)
+        MetricsService.cloudSnapshotDuplicateRatesFused(days: fusions.count, removed: removed)
+        NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        return removed
     }
 
     /// Qué dejó un push de la página (o del residual). Tres desenlaces y no un `Bool`: «no confirmada» y «no se puede

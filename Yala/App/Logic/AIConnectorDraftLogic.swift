@@ -3,7 +3,9 @@
 //  Yala
 //
 //  Tu IA registra en Yala (2.3): de lo que Claude, ChatGPT o Grok apuntó por el conector (`apuntar_movimiento`) a lo que
-//  lleva el borrador de la Bandeja. Pura: sin `ModelContext`, para que los tests la recorran entera.
+//  lleva el borrador de la Bandeja. Llega por la cola COMÚN de borradores del gateway (decisión D9 del plan de Yala web),
+//  la del correo del banco y la web, con `source: "ai"` (`gateway/src/connector/store.ts`); la recoge
+//  `BankEmailDraftService`. Pura: sin `ModelContext`, para que los tests la recorran entera.
 //
 //  - El importe llega positivo y el signo lo pone el tipo: gasto negativo, ingreso positivo.
 //  - La fecha, como el correo del banco: el día que dijo la IA a mediodía; una fecha de más de un día en el futuro o
@@ -19,6 +21,24 @@ import Foundation
 
 enum AIConnectorDraftLogic {
 
+    /// El `source` de lo que apunta la IA en la cola común (`CONNECTOR_SOURCE` del gateway).
+    nonisolated static let source = "ai"
+
+    nonisolated static func isAI(source: String?) -> Bool {
+        source == Self.source
+    }
+
+    /// La app no sabe si la persona conectó una IA (se conecta desde Claude, ChatGPT o Grok, no desde aquí), así que sin
+    /// correo preparado ni web en uso pregunta a la cola igual, pero como mucho cada 2 minutos: la misma cadencia con la
+    /// que pregunta a la web si hay sesiones (`ConnectedBrowsersPresence.checkInterval`, decisión P5 del lote 1).
+    nonisolated static let pollInterval: TimeInterval = ConnectedBrowsersPresence.checkInterval
+
+    /// ¿Toca preguntar a la cola por si la IA dejó algo? Un reloj que retrocede no deja la pregunta parada. Pura.
+    nonisolated static func isPollDue(lastPoll: Date?, now: Date) -> Bool {
+        guard let lastPoll else { return true }
+        return now.timeIntervalSince(lastPoll) >= pollInterval || now < lastPoll
+    }
+
     struct DraftFields: Equatable {
         let note: String
         let amount: Double
@@ -33,7 +53,7 @@ enum AIConnectorDraftLogic {
         let evidence: String?
     }
 
-    static func fields(from dto: ConnectorDraftDTO, calendar: Calendar = .current) -> DraftFields {
+    static func fields(from dto: BankEmailDraftDTO, calendar: Calendar = .current) -> DraftFields {
         let magnitude = abs(dto.amount)
         let isExpense = dto.kind != "income"
         let trimmed: (String?) -> String? = { value in
@@ -41,14 +61,14 @@ enum AIConnectorDraftLogic {
             return text
         }
         return DraftFields(
-            note: trimmed(dto.note) ?? "",
+            note: trimmed(dto.merchant) ?? "",
             amount: isExpense ? -magnitude : magnitude,
             isExpense: isExpense,
             date: BankEmailDraftLogic.date(from: dto.date, receivedAtMs: dto.receivedAtMs, calendar: calendar),
             currencyCode: dto.currency.map { $0.uppercased() }.flatMap { $0.count == 3 ? $0 : nil },
-            accountID: dto.accountID.flatMap(UUID.init(uuidString:)),
+            accountID: dto.accountRef.flatMap(UUID.init(uuidString:)),
             accountName: trimmed(dto.accountName),
-            subcategoryID: dto.subcategoryID.flatMap(UUID.init(uuidString:)),
+            subcategoryID: dto.subcategoryRef.flatMap(UUID.init(uuidString:)),
             subcategoryName: trimmed(dto.subcategoryName),
             evidence: trimmed(dto.client)
         )
@@ -119,24 +139,5 @@ enum AIConnectorDraftLogic {
     private static func fold(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "es"))
-    }
-}
-
-/// Los ids de borradores del conector que esta app ya creó, para no duplicar si el `ack` no llegó al gateway. Guarda los
-/// últimos 200; uno más viejo ya lo habrá borrado el gateway (30 días) o el `ack` siguiente. Molde de
-/// `BankEmailCreatedIDsStore`, con su propia clave: las dos colas son distintas.
-enum AIConnectorCreatedIDsStore {
-    static let key = "aiConnector.createdDraftIDs"
-    static let limit = 200
-
-    static func contains(_ id: String, defaults: UserDefaults = .standard) -> Bool {
-        (defaults.stringArray(forKey: key) ?? []).contains(id)
-    }
-
-    static func add(_ ids: [String], defaults: UserDefaults = .standard) {
-        var current = defaults.stringArray(forKey: key) ?? []
-        for id in ids where !current.contains(id) { current.append(id) }
-        if current.count > limit { current.removeFirst(current.count - limit) }
-        defaults.set(current, forKey: key)
     }
 }

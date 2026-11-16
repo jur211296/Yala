@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Yala · evento de la 2.2</title>
+<link rel="stylesheet" href="../capturas/lamina.css">
+<style>.escena{position:absolute}</style>
+</head><body>
+<div id="raiz"></div>
+<script>
+// Evento dentro de la app del lanzamiento de la 2.2 (4-nov-2026). Dos piezas de App Store Connect, PNG sin alfa:
+//   evento.html?formato=tarjeta&dir=<capturas>  → tarjeta 16:9, 3840×2160 (búsqueda, Hoy y la ficha)
+//   evento.html?formato=detalle&dir=<capturas>  → página de detalle 9:16, 2160×3840
+// Sin texto encima: Apple pinta el distintivo, el nombre y la descripción corta sobre la parte de abajo, así que los
+// teléfonos viven arriba y el tercio de abajo queda en navy. Pantallas: Pagos planificados («lo que te falta pagar») y
+// el Panel (la tarjeta en dos monedas), dos de las cuatro novedades de la 2.2.
+const q = new URLSearchParams(location.search);
+const FORMATO = q.get("formato") || "tarjeta", DIR = q.get("dir") || ".";
+const [W, H] = FORMATO === "tarjeta" ? [3840, 2160] : [2160, 3840];
+
+const TRAZO = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z";
+const COLOR = {rosa: "#FF2D78", azul: "#6164EB", teal: "#3BD6F0", violeta: "#8B5CF6"};
+const estrella = ([x, y, s, c, r]) =>
+  `<svg class="estrella" viewBox="0 0 100 100" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;transform:rotate(${r || 0}deg)"><path d="${TRAZO}" fill="${COLOR[c]}"/></svg>`;
+function iphone(e) {
+  const w = e.h * 0.4773 / 1.072;
+  const botones = [["left", 15.5, 2.6], ["left", 22.5, 4.8], ["left", 29, 4.8], ["right", 24, 8.2]]
+    .map(([lado, top, h]) => `<i class="boton" style="${lado}:-${w * 0.009}px;top:${top}%;height:${h}%"></i>`).join("");
+  return `<div class="escena" style="left:${e.x}px;top:${e.y}px;z-index:${e.z}">
+    <div class="phone" style="--w:${w}px;transform:${e.t}">
+      <div class="sombra"></div><div class="grosor"></div>${botones}<div class="cuerpo"></div>
+      <div class="pantalla"><img src="${DIR}/${e.img}"><div class="isla"></div></div></div></div>`;
+}
+
+const PIEZA = {
+  // 16:9 · los dos teléfonos se cortan por abajo, a la altura donde empieza el texto de Apple.
+  tarjeta: () =>
+      iphone({img: "s-programados.png", h: 2500, x: 1040, y: 160, t: "rotateZ(-6deg)", z: 3})
+    + iphone({img: "s-panel.png",       h: 2500, x: 1940, y: 120, t: "rotateZ(5deg)",  z: 4}),
+  // 9:16 · el Panel delante y Pagos planificados detrás; la mitad de abajo, libre.
+  detalle: () =>
+      iphone({img: "s-programados.png", h: 2600, x: 120,  y: 260, t: "rotateZ(-7deg)", z: 3})
+    + iphone({img: "s-panel.png",       h: 2600, x: 900,  y: 160, t: "rotateZ(6deg)",  z: 4}),
+}[FORMATO];
+const ESTRELLAS = {
+  tarjeta: [[380, 300, 110, "teal", 8], [3440, 260, 96, "rosa", -10], [600, 1500, 70, "azul", 12], [3300, 1400, 80, "violeta", -6]],
+  detalle: [[140, 180, 90, "teal", 8], [1900, 220, 80, "rosa", -10], [120, 2500, 64, "azul", 12], [1960, 2400, 70, "violeta", -6]],
+}[FORMATO];
+
+document.body.style.width = W + "px"; document.body.style.height = H + "px";
+document.getElementById("raiz").innerHTML =
+  `<div class="lienzo" data-acento="rosa" style="width:${W}px;height:${H}px">${ESTRELLAS.map(estrella).join("")}${PIEZA()}</div>`;
+</script>
+</body></html>

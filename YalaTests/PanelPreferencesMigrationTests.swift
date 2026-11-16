@@ -152,17 +152,17 @@ struct PanelPreferencesMigrationTests {
         ])
         #expect(prefs.panelPlanificacionHidden == [])
 
-        // Tres secciones nacen ocultas.
-        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+        // Dos secciones nacen ocultas (la salud, a la vista desde la 2.3).
+        #expect(prefs.panelSectionsHidden == ["distribucion", "tools"])
         #expect(prefs.panelSectionsOrder == [])
     }
 
     // MARK: - El encargo, en una sola aserción de alto nivel
 
-    /// Pin del contrato de producto: un usuario nuevo ve CUATRO secciones y CUATRO
+    /// Pin del contrato de producto: un usuario nuevo ve CINCO secciones (la salud, desde la 2.3) y CUATRO
     /// widgets. Si alguien cambia la tabla de `PanelDefaults` sin querer, cae aquí y
     /// no en un test de bajo nivel que no dice qué se rompió.
-    @Test func freshInstall_muestraCuatroSeccionesYCuatroWidgets() {
+    @Test func freshInstall_muestraCincoSeccionesYCuatroWidgets() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
         prefs.setupDefaultsForNewUser()
@@ -173,7 +173,7 @@ struct PanelPreferencesMigrationTests {
         let visibleSections = PanelSectionKind.allCases.filter {
             !prefs.resolvedSectionsHidden.contains($0.rawValue)
         }
-        #expect(visibleSections == [.accounts, .tendencias, .planificacion, .latestRecords])
+        #expect(visibleSections == [.accounts, .health, .tendencias, .planificacion, .latestRecords])
 
         let vm = PanelViewModel()
         vm.setAppPreferences(prefs)
@@ -198,15 +198,14 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelTendenciasOrder.first == "tendencia_saldo")
         #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
         #expect(prefs.panelDistribucionHidden.contains("categorias_principales"))
-        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(prefs.panelSectionsHidden == ["distribucion", "tools"])
     }
 
-    // MARK: - Sin cuenta iCloud el seed NO se difiere
+    // MARK: - Desde el init, la siembra fresca se difiere siempre (card cmvc)
 
-    /// Antes, una instalación sin cuenta iCloud esperaba igualmente al hook post-sync
-    /// del paso 8.5 del bootstrap — hasta 15 s a por una señal que en su caso no iba a
-    /// llegar. Sin cuenta no hay iKV del que bajar nada, así que la ambigüedad que
-    /// motivaba el diferido no existe.
+    /// Con iCloud Drive apagado y la sesión de iCloud abierta falta el token de Drive, y el
+    /// `init` sembraba en el acto: si el iCloud-KV viaja igual, esa siembra pisaba el Panel de los
+    /// otros dispositivos. Desde el `init` se difiere siempre; el paso 8.5 decide con la cuenta.
     ///
     /// Se prueba la decisión PURA y no el camino completo a propósito:
     /// `hasRemotePanelPreferences()` lee el `NSUbiquitousKeyValueStore` global del
@@ -214,20 +213,23 @@ struct PanelPreferencesMigrationTests {
     /// contamina. Un test de integración aquí daría verde o rojo según el ORDEN de la
     /// suite, que es peor que no tenerlo.
     @Test func freshSeedDecision_matriz() {
-        // Sin cuenta iCloud: sembrar ya, aunque el llamador pidiera diferir.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: true, isICloudAvailable: false) == .seedNow)
-
-        // Con cuenta iCloud: diferir, que es lo que evita pisar la configuración que
-        // aún puede estar bajando.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: true, isICloudAvailable: true) == .deferToPostSyncHook)
-
+        // Desde el init: diferir, también sin token de Drive.
+        #expect(PanelPreferencesMigration.freshSeedDecision(deferRequested: true) == .deferToPostSyncHook)
         // Llamado desde el punto seguro (el hook), nunca se difiere.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: false, isICloudAvailable: true) == .seedNow)
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: false, isICloudAvailable: false) == .seedNow)
+        #expect(PanelPreferencesMigration.freshSeedDecision(deferRequested: false) == .seedNow)
+    }
+
+    /// La decisión ya no mira el token de Drive: si vuelve a hacerlo, el `init` sembrará otra vez
+    /// con Drive apagado.
+    @Test func freshSeedDecision_noLeeElTokenDeDrive() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/App/Services/PanelPreferencesMigration.swift")
+        let code = try String(contentsOf: url, encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(!code.contains("isICloudAvailable"))
     }
 
     // MARK: - upgrade path — does not trigger setupDefaults

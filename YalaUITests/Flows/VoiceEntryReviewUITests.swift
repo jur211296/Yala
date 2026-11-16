@@ -130,7 +130,13 @@ final class VoiceEntryReviewUITests: XCTestCase {
     func test_severalDrafts_showOneRowEach_andSaveTogether() {
         let app = openReview("two")
 
-        XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2, "Tiene que haber una fila por registro.")
+        let rows = app.buttons.matching(identifier: "voice_draft_row")
+        XCTAssertEqual(rows.count, 2, "Tiene que haber una fila por registro.")
+        // El taxi va a «Taxis y apps» y el café se queda en Restaurantes (antes caían los dos en Restaurantes).
+        let taxi = rows.matching(NSPredicate(format: "label CONTAINS 'Taxis y apps'"))
+        XCTAssertEqual(taxi.count, 1, "El taxi tiene que ir a «Taxis y apps»: \(rows.allElementsBoundByIndex.map(\.label))")
+        let food = rows.matching(NSPredicate(format: "label CONTAINS 'Restaurantes'"))
+        XCTAssertEqual(food.count, 1, "Solo el café va a Restaurantes: \(rows.allElementsBoundByIndex.map(\.label))")
         let save = app.buttons["voice_save"]
         XCTAssertTrue(save.isEnabled, "Dos registros completos se tienen que poder guardar juntos.")
         save.tap()
@@ -140,13 +146,17 @@ final class VoiceEntryReviewUITests: XCTestCase {
         XCTAssertEqual(saved.count, 2, "Guardar 2 tiene que guardar los dos.")
     }
 
-    /// Volver a grabar descarta lo entendido y la hoja vuelve a escuchar.
+    /// Volver a grabar descarta lo entendido y la hoja vuelve a escuchar. Desde la revisión 2.3 (decisión 81) pregunta
+    /// antes: aquí se confirma; el «Seguir revisando» lo prueba `VozFotoAvisos23UITests`.
     func test_recordAgain_returnsToListening() {
         let app = openReview("one")
 
         let again = app.buttons["voice_record_again"]
         XCTAssertTrue(again.waitForExistence(timeout: 5), "Falta Volver a grabar.")
         again.tap()
+        let discard = app.alerts.buttons["entry_discard_confirm"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout: 5), "Con lo entendido sin guardar, tenía que preguntar.")
+        discard.tap()
 
         XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 10), "Volver a grabar no volvió a escuchar.")
         XCTAssertFalse(app.staticTexts["voice_review_title"].exists, "Lo entendido tenía que desaparecer.")

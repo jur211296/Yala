@@ -46,6 +46,8 @@ enum GroupSplitLinesService {
         let transferSourceAccount: Account?
         /// Si la pantalla ofrece partir (`GroupSplitLinesEntryLogic.offersSplit`).
         let offersSplit: Bool
+        /// Quién pagó, para la línea resumen («Debes S/ 510 a Pía»). `nil` si no se encuentra su miembro.
+        var payerName: String? = nil
 
         /// Con qué líneas abre la tarjeta.
         var initialLines: [GroupSplitLinesRecipe.Line] {
@@ -97,7 +99,17 @@ enum GroupSplitLinesService {
         let sourceAccount = isCaseA ? holder?.account : nil
         let sourceName = holder?.account?.name ?? ""
         return Target(expense: expense, group: group, share: share, isCaseA: isCaseA, holder: holder,
-                      transferSourceName: sourceName, transferSourceAccount: sourceAccount, offersSplit: offers)
+                      transferSourceName: sourceName, transferSourceAccount: sourceAccount, offersSplit: offers,
+                      payerName: isCaseA ? nil : try payerName(memberID: expense.paidByMemberID, context: context))
+    }
+
+    /// El nombre del miembro que pagó. `nil` si el id no es válido, el miembro no está o no tiene nombre.
+    static func payerName(memberID: String, context: ModelContext) throws -> String? {
+        guard let uuid = UUID(uuidString: memberID) else { return nil }
+        var descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.id == uuid })
+        descriptor.fetchLimit = 1
+        let name = try context.fetch(descriptor).first?.displayName
+        return (name?.isEmpty ?? true) ? nil : name
     }
 
     /// Caso A: la pata real (cuenta que no es de sistema y que no es una pata derivada de una línea).

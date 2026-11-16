@@ -71,6 +71,7 @@ extension XCUIApplication {
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
         pendingICloudWipe: Bool = false,
+        pendingICloudWipeHalfway: Bool = false,
         // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
@@ -86,6 +87,9 @@ extension XCUIApplication {
         migrationJournalUnreadable: Bool = false,
         migrationFailed: Bool = false,
         signOutKeepsSession: Bool = false,
+        // Una asociación de la cuenta de Grupos sembrada en local (`-uitest-groups-association`, ticket
+        // `uitest-seam-for-a-seeded-groups-association`). NOMBRADO como sus vecinos: un typo en un string suelto se ignora.
+        groupsAssociation: Bool = false,
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
@@ -95,6 +99,8 @@ extension XCUIApplication {
         pendingSettlement: Bool = false,
         // Grupos B · card 10: una venta tuya a Ana, la más antigua de «Viaje a Cusco» (`-uitest-seed-group-sale`).
         groupSale: Bool = false,
+        // Cuatro presupuestos con lo gastado exacto: 30, 90, 100 y 118 % (`DevSeedBudgetStates`, decisión 23 de 2.3).
+        budgetStates: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
@@ -162,6 +168,7 @@ extension XCUIApplication {
         if groupCreatedSheet { args.append("-uitest-group-created-sheet") }
         if pendingSettlement { args.append("-uitest-seed-pending-settlement") }
         if groupSale { args.append("-uitest-seed-group-sale") }
+        if budgetStates { args.append("-uitest-seed-budget-states") }
         // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.
@@ -301,6 +308,7 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if pendingICloudWipeHalfway { args.append("-uitest-pending-icloud-wipe-halfway") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
         if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
         if syncNeedsSignIn { args.append("-uitest-sync-needs-sign-in") }
@@ -355,6 +363,7 @@ extension XCUIApplication {
         // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`GroupsDetachSessionSurvivesTests`).
         if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
+        if groupsAssociation { args.append("-uitest-groups-association") }
         if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
         if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
         if let lastSeenAppVersion {
@@ -375,6 +384,13 @@ extension XCUIApplication {
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
         args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
+        // La zona horaria de la app, la MISMA del test (2026-11-05, dispatch 41931406144). `TEST_RUNNER_TZ`
+        // de qa.yml solo llega al proceso del runner; la app del simulador hereda la del host, que en el CI
+        // es UTC. Entre las 19:00 y las 24:00 de Lima los dos «hoy» son días distintos y cayeron dos casos
+        // que construyen fechas en el runner: el chip de fecha de `InboxConvertToGroupUITests` («2 nov.»
+        // frente a «1 nov.») y el contador de `ChatMessagingLayoutUITests` (la app daba por vieja la fecha
+        // del contador y lo reiniciaba). En la Mac del owner las dos zonas ya coinciden: aquí no cambia nada.
+        launchEnvironment["TZ"] = TimeZone.current.identifier
         launchArguments = args
         launch()
         return self
@@ -493,12 +509,74 @@ extension XCUIApplication {
     func selectTab(_ tab: RootTab, timeout: TimeInterval = 10, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(waitForRootNavigation(timeout: timeout),
                       "No se montó la navegación raíz (ni barra de pestañas ni barra lateral).", file: file, line: line)
-        let entry = tabEntry(tab)
+        var entry = tabEntry(tab)
+        // iPad en vertical: las pestañas de arriba no caben todas y las últimas quedan tras «Página siguiente» (Reportes,
+        // Grupos; medido el 2026-11-06 en el iPad Pro 13, iOS 27.2). La barra lateral las enseña todas: se abre con su
+        // botón del sistema (`ToggleSideBar`, id que no depende del idioma) y se elige ahí.
+        let sidebarToggle = buttons["ToggleSideBar"]
+        if !entry.waitForExistence(timeout: 3), !compactTabBar.exists, sidebarToggle.exists {
+            sidebarToggle.tap()
+            entry = tabEntry(tab)
+        }
         XCTAssertTrue(
             entry.waitForExistence(timeout: timeout),
             "No apareció la pestaña «\(tab.rawValue)»"
                 + (tab == .more ? " (con barra lateral no hay «Más»: cada página está a la vista)." : "."),
             file: file, line: line)
+        entry.tap()
+    }
+
+    /// La barra de pestañas de ABAJO: la forma estrecha de la raíz (iPhone, o iPad con la ventana estrecha). En el iPad a
+    /// pantalla completa no existe (pestañas arriba o barra lateral), así que quien la mida comprueba esa forma a
+    /// propósito, o la usa solo si `exists` (lo que tapa abajo).
+    var compactTabBar: XCUIElement { tabBars.firstMatch }
+
+    /// Hay «Más» en la raíz. En el iPad a pantalla completa no existe (medido en vertical y en horizontal): cada página
+    /// está en las pestañas de arriba o en la barra lateral.
+    func hasMoreTab(timeout: TimeInterval = 10) -> Bool {
+        _ = waitForRootNavigation(timeout: timeout)
+        return tabEntry(.more).waitForExistence(timeout: 3)
+    }
+
+    /// Salta el caso si prueba la pantalla «Más» (sus tarjetas, su editor o la barra de abajo que se configura ahí) y
+    /// la raíz no la tiene: el iPad a pantalla completa. En iPhone no salta nunca: ahí sin «Más» es un fallo.
+    func skipUnlessMoreTab(_ what: String) throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad, !hasMoreTab() else { return }
+        throw XCTSkip("\(what) vive en «Más», y el iPad a pantalla completa no tiene «Más»: cada página está en sus pestañas.")
+    }
+
+    /// Abre un informe de Reportes (`comparativa`, `flujoDeCaja`…) por su tarjeta de «Más» (`more_card_<id>`), que lleva
+    /// a Reportes con ese chip elegido. Sin «Más» (iPad a pantalla completa), por la página Reportes y su chip
+    /// (`report_chip_<id>`): el mismo destino.
+    func openReport(_ id: String, timeout: TimeInterval = 10, file: StaticString = #filePath, line: UInt = #line) {
+        if hasMoreTab(timeout: timeout) {
+            selectTab(.more, timeout: timeout, file: file, line: line)
+            let card = buttons["more_card_\(id)"]
+            XCTAssertTrue(card.waitForExistence(timeout: timeout), "No está la tarjeta «\(id)» en Más.", file: file, line: line)
+            var tries = 0
+            while !card.isHittable, tries < 6 { swipeUp(); tries += 1 }
+            card.tap()
+        } else {
+            selectTab(.reports, timeout: timeout, file: file, line: line)
+            let chip = buttons["report_chip_\(id)"]
+            XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No está el chip «\(id)» en Reportes.", file: file, line: line)
+            chip.tap()
+        }
+    }
+
+    /// Elige una pestaña aunque la barra de abajo del iPhone esté ENCOGIDA: con una lista bajada solo enseña la pestaña
+    /// elegida, y un toque en su sitio (abajo a la izquierda) la despliega sin mover la lista. Sin barra de abajo (iPad),
+    /// como `selectTab`.
+    func selectTabExpandingCompactBar(
+        _ tab: RootTab, timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        guard compactTabBar.exists else { return selectTab(tab, timeout: timeout, file: file, line: line) }
+        let entry = tabEntry(tab)
+        if !entry.exists {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.955)).tap()
+        }
+        XCTAssertTrue(entry.waitForExistence(timeout: timeout), "No se pudo desplegar la barra de pestañas.",
+                      file: file, line: line)
         entry.tap()
     }
 
@@ -635,11 +713,16 @@ extension XCUIApplication {
         // `.xcresult`). Quieto pero tapado: `waitForHittable` se agotaba con «existe pero no es alcanzable». Con el dedo
         // se sube el formulario; aquí igual, con un arrastre por encima del teclado. En pantallas donde el chip cabe
         // sobre el teclado (iPhone 17 Pro) este bucle no hace nada.
+        //
+        // Sin teclado tapa lo mismo la barra fija de «Guardar» de «Nuevo registro» (`SaveAreaPlacement`: fuera del scroll
+        // mientras no hay teclado). Con una cuenta en dólares (fila del tipo de cambio) y una subcategoría de nombre largo
+        // los chips pasan a tres filas y «Etiquetas» queda debajo de la barra en un iPhone 17 Pro (medido el 2026-11-06,
+        // iOS 27.2, en el vídeo del `.xcresult`): el toque se perdía y el selector no abría. La primera subcategoría es la
+        // del registro más reciente del seed, así que el rojo dependía del día. La persona desliza; aquí igual.
         var lifts = 0
         while lifts < 3 {
-            let keyboard = keyboards.firstMatch
-            guard keyboard.exists, chip.frame.maxY > keyboard.frame.minY else { break }
-            let lift = min(chip.frame.maxY - keyboard.frame.minY + 24, windowFrame.height * 0.3)
+            guard let coverTop = selectorChipCoverTop(over: chip) else { break }
+            let lift = min(chip.frame.maxY - coverTop + 24, windowFrame.height * 0.3)
             let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
             start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -lift)))
             _ = waitForSettledLayout(of: chip, timeout: timeout)
@@ -656,6 +739,28 @@ extension XCUIApplication {
             file: file, line: line
         )
         return row
+    }
+
+    /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo
+    /// registro» (sin teclado, su línea de lo que falta y el botón; con teclado, la barra de encima del teclado, con
+    /// «Guardar» en la misma fila que sus pastillas). `nil` si nada lo pisa.
+    private func selectorChipCoverTop(over chip: XCUIElement) -> CGFloat? {
+        let chipFrame = chip.frame
+        let covers = [
+            keyboards.firstMatch,
+            descendants(matching: .any)["new_transaction_missing_line"].firstMatch,
+            buttons["new_transaction_save"].firstMatch,
+        ]
+        let tops = covers.compactMap { cover -> CGFloat? in
+            guard cover.exists else { return nil }
+            let frame = cover.frame
+            // Pisa si su borde de arriba queda por encima del de abajo del chip, también con el chip ENTERO por debajo:
+            // la barra y el teclado llegan hasta el borde de la pantalla. Con la fila de categorías a un toque (decisión 21
+            // de 2.3) y una cuenta en dólares, el chip de categoría quedaba bajo «Guardar», sin solaparse con el botón, y
+            // el toque caía en la barra (medido el 2026-11-11 en el vídeo del `.xcresult`).
+            return frame.minY < chipFrame.maxY ? frame.minY : nil
+        }
+        return tops.min()
     }
 
     /// Abre un selector desde su chip y elige su primera fila (sin acoplarse al nombre del seed).

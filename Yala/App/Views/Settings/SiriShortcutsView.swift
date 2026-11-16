@@ -21,6 +21,17 @@ struct SiriShortcutsView: View {
         FeatureGateService.shared.isProUser
     }
 
+    /// La insignia Pro y «Requiere Yala Pro» solo para quien de verdad no puede usar «Anota un gasto en Yala»: la misma
+    /// decisión que el intent (`SiriEntryRoute.decide`). Sin Pro y con el modelo del iPhone listo, Siri funciona gratis
+    /// en este teléfono desde el 2026-10-21 (lote 03 de las necesarias 2.3).
+    private var showsProRequirement: Bool {
+        SiriShortcutsProNoteLogic.showsProRequirement(
+            isPro: isProUser,
+            onDeviceEnabled: SiriOnDeviceEntry.isEnabled,
+            model: SiriOnDeviceEntry.modelState
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.xxl) {
@@ -103,7 +114,7 @@ struct SiriShortcutsView: View {
                                 .font(DS.Typography.bodyBold)
                                 .foregroundStyle(.thPrimaryText)
 
-                            if !isProUser {
+                            if showsProRequirement {
                                 ProBadge(size: .small)
                             }
                         }
@@ -118,7 +129,7 @@ struct SiriShortcutsView: View {
                 .padding(DS.Spacing.lg)
 
                 // Pro note
-                if !isProUser {
+                if showsProRequirement {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.caption)
@@ -394,5 +405,12 @@ enum SiriShortcutsFAQ: CaseIterable {
         case .inbox: return String(localized: "siriShortcuts.faq.inboxA")
         case .offline: return String(localized: "siriShortcuts.faq.offlineA")
         }
+    }
+}
+
+/// Si la pantalla de Siri dice que hace falta Pro. Pura: la fija `SiriShortcutsProNoteLogicTests`.
+nonisolated enum SiriShortcutsProNoteLogic {
+    static func showsProRequirement(isPro: Bool, onDeviceEnabled: Bool, model: SiriOnDeviceModelState) -> Bool {
+        SiriEntryRoute.decide(isPro: isPro, onDeviceEnabled: onDeviceEnabled, model: model) == .upgrade
     }
 }

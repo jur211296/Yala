@@ -65,6 +65,7 @@ struct ProTrialOfferSheet: View {
         // Mientras Apple procesa la compra no se sale (review del lote decidido 06).
         .interactiveDismissDisabled(store.isPurchasing)
         .task {
+            MetricsService.usedProOffer()
             await loadProductsWithTimeout()
         }
         .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {

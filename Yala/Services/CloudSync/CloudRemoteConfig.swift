@@ -51,6 +51,10 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     /// Yala IA en modo nube con herramientas (`chat.explore`). Optional con default: snapshots viejos decodifican a
     /// nil, y nil es APAGADO en todos los builds (`CloudRemoteFlags.aiCloudExploreEnabled`).
     var aiCloudExploreRolloutPercent: Int? = nil
+    /// Entrar en la nube con un Apple ID distinto del del teléfono (inicio de sesión web de Apple, ticket
+    /// `cloud-sign-in-cannot-choose-another-apple-id`). Optional con default: snapshots viejos decodifican a nil, y nil
+    /// vale el `absentDefault` de siempre (encendido en DEV, apagado en producción).
+    var appleWebSignInRolloutPercent: Int? = nil
     var fetchedAt: Date
 }
 
@@ -61,6 +65,7 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var cloudOnboardingChoiceRolloutPercent: Int?
         var groupsBackendRolloutPercent: Int?
         var aiCloudExploreRolloutPercent: Int?
+        var appleWebSignInRolloutPercent: Int?
     }
 
     struct ForceUpdate: Codable {
@@ -184,6 +189,20 @@ nonisolated enum CloudRemoteFlags {
         )
     }
 
+    /// «Otra cuenta de Apple» en «Usar otra cuenta» (inicio de sesión web de Apple, ticket
+    /// `cloud-sign-in-cannot-choose-another-apple-id`, decisión A de Jürgen del 2026-11-06). Es el interruptor de
+    /// PRODUCCIÓN: allí el proveedor web de Apple no está configurado en Supabase (medido el 2026-11-06: sin el Services
+    /// ID `pe.yala.app.web` ni secreto), así que ausente vale apagado. En DEV, staging ya lo tiene y vale encendido.
+    /// Se enciende en producción con `APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT` en el gateway, sin release.
+    static var appleWebSignInEnabled: Bool {
+        if let override = appleWebSignInEnabledTestOverride { return override }
+        #if DEBUG
+        // XCUITest: el interruptor apagado, como en producción (la nota provisional de Apple y el selector sin la salida).
+        if ProcessInfo.processInfo.arguments.contains("-uitest-apple-web-sign-in-off") { return false }
+        #endif
+        return decide(\.appleWebSignInRolloutPercent)
+    }
+
     /// **¿Hemos llegado a hablar con el servidor en esta instalación?** No es un flag más: es el término
     /// que separa «la nube está apagada» de «no lo sabemos». Los tres getters de arriba colapsan los dos
     /// casos en `absentDefault` porque un gate cerrado de más no hace daño; un MENSAJE sí, y por eso
@@ -240,17 +259,20 @@ nonisolated enum CloudRemoteFlags {
     nonisolated(unsafe) private static var cloudOnboardingChoiceEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var aiCloudExploreEnabledTestOverride: Bool?
+    nonisolated(unsafe) private static var appleWebSignInEnabledTestOverride: Bool?
 
     static func _testSetOverrides(
         cloudMode: Bool? = nil,
         onboardingChoice: Bool? = nil,
         groupsBackend: Bool? = nil,
-        aiCloudExplore: Bool? = nil
+        aiCloudExplore: Bool? = nil,
+        appleWebSignIn: Bool? = nil
     ) {
         cloudModeEnabledTestOverride = cloudMode
         cloudOnboardingChoiceEnabledTestOverride = onboardingChoice
         groupsBackendEnabledTestOverride = groupsBackend
         aiCloudExploreEnabledTestOverride = aiCloudExplore
+        appleWebSignInEnabledTestOverride = appleWebSignIn
     }
 
     static func _testResetOverrides() {
@@ -258,6 +280,7 @@ nonisolated enum CloudRemoteFlags {
         cloudOnboardingChoiceEnabledTestOverride = nil
         groupsBackendEnabledTestOverride = nil
         aiCloudExploreEnabledTestOverride = nil
+        appleWebSignInEnabledTestOverride = nil
     }
 }
 
@@ -379,6 +402,7 @@ final class RemoteConfigClient {
                 minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
                 photoMaxEdge: wire.ai?.photoMaxEdge,
                 aiCloudExploreRolloutPercent: wire.flags?.aiCloudExploreRolloutPercent,
+                appleWebSignInRolloutPercent: wire.flags?.appleWebSignInRolloutPercent,
                 fetchedAt: now
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)

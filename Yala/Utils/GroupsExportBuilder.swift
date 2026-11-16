@@ -2,7 +2,7 @@
 //  GroupsExportBuilder.swift
 //  Yala
 //
-//  G5-D2: export ampliado con grupos. Construye un CSV APARTE (`Yala_Grupos_<timestamp>.csv`)
+//  G5-D2: export ampliado con grupos. Construye un CSV APARTE (`Yala_Grupos_<fecha legible>.csv`)
 //  con, por cada grupo activo del usuario: sus gastos (fecha, descripción, total, MI parte vía
 //  shares, quién pagó, moneda), sus liquidaciones (de/para/monto/moneda/fecha) y un resumen de MI
 //  balance neto por moneda.
@@ -270,14 +270,16 @@ enum GroupsExportBuilder {
 
     // MARK: - Escritura de archivo
 
+    static func exportFileName(date: Date, locale: Locale) -> String {
+        ExportRecordsLogic.fileName(stem: L10n.Groups.title, date: date, locale: locale, fileExtension: "csv")
+    }
+
     private static func writeToTemporaryFile(data: Data) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date.now)
-
-        let fileName = "Yala_Grupos_\(timestamp).csv"
+        // `Yala_Grupos_17-oct-2026.csv`: la palabra y la fecha en el idioma de la app, como el de Registros (L20-4).
+        // Hasta el lote 12.4, `Yala_Grupos_20261017_093512`.
+        let fileName = exportFileName(date: .now, locale: AppLocale.current)
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try data.write(to: fileURL, options: [.atomic, .completeFileProtection])

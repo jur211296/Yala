@@ -128,7 +128,9 @@ final class ScheduledPaymentEditorViewModel {
         groupZoneID: String? = nil,
         splitType: String? = nil,
         splitParticipantIDs: [UUID] = [],
-        splitValues: [UUID: Double] = [:]
+        splitValues: [UUID: Double] = [:],
+        // Logo de suscripción (card 9nn7): `.none` = no tocar lo guardado; `.some(nil)` = automático por el nombre.
+        brandLogoID: String?? = .none
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -149,6 +151,7 @@ final class ScheduledPaymentEditorViewModel {
             : paymentDate
 
         let paymentID: UUID
+        var createdNew = false
 
         if let existingPayment = existing {
             // Update existing
@@ -162,6 +165,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.subcategory = subcategory
             existingPayment.setTags(from: tagsArray)
             existingPayment.needOverride = needOverride
+            if case .some(let logo) = brandLogoID { existingPayment.brandLogoID = logo }
 
             // Recurrence
             existingPayment.isRecurring = isRecurring
@@ -215,6 +219,8 @@ final class ScheduledPaymentEditorViewModel {
             )
             context.insert(newPayment)
 
+            if case .some(let logo) = brandLogoID { newPayment.brandLogoID = logo }
+
             // Group shared expense (F3)
             newPayment.groupZoneID = groupZoneID
             newPayment.splitTotalAmount = splitTotalAmount
@@ -222,6 +228,7 @@ final class ScheduledPaymentEditorViewModel {
             newPayment.setSplitConfig(participantIDs: splitParticipantIDs, values: splitValues)
 
             paymentID = newPayment.id
+            createdNew = true
         }
 
         do {
@@ -229,6 +236,8 @@ final class ScheduledPaymentEditorViewModel {
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+            // Telemetría del usuario nuevo (card 4b7h): el primer pago planificado, si se queda.
+            if createdNew { NewUserMetrics.created(.scheduledPayment) }
 
             return paymentID
         } catch {

@@ -1,0 +1,39 @@
+---
+id: regional-variants-show-the-plural-form-for-one
+status: done
+priority: low
+area: "l10n"
+created: 2026-10-17
+updated: 2026-10-25
+source: "implementación del lote 8 de la auditoría UX 2.2 (2026-10-17), hallazgo fuera de alcance"
+---
+
+# En es-ES, es-AR, en-GB y pt-PT los recuentos de uno salen en plural
+
+## El problema, en lenguaje de usuario
+
+Con el iPhone en español de España, español de Argentina, inglés británico o portugués de Portugal, los textos que
+cuentan cosas dicen el plural también para una: «1 seleccionados», «1 posibles duplicados», «Editar 1 registros».
+
+## Qué se sabe
+
+- Los plurales viven en los `.stringsdict` de los 12 idiomas base. Las cuatro variantes **no tienen `.stringsdict`**:
+  llevan la forma `other` como línea plana en su `.strings` (molde de `records.selectedCount`, PR #499), porque sin
+  ella la clave salía cruda (`.claude/rules/l10n.md`: iOS no hace fallback por clave con idioma de sistema).
+- Inferido, no medido: con la variante como idioma del sistema, iOS resuelve la variante y lee esa línea plana, que es
+  la forma plural. Con el idioma elegido dentro de Yala, `ls()` cae al padre y el plural sale bien.
+- El lote 8 añadió diez plurales más con el mismo molde (`records.l8b.*`).
+- El lote decidido 2.2 · 05 (2026-10-19) añadió tres más: `l20n.count.records/accounts/budgets`, en «Pasarán 1 registro, 1 cuenta y 1 presupuesto» de la hoja de activar la nube. Con la variante como idioma del sistema saldría «1 cuentas».
+
+## Qué hacer
+
+1. Medir en el simulador con `-AppleLanguages "(es-ES)"`: modo selección con un registro elegido.
+2. Si se confirma, dar a las cuatro variantes su `.stringsdict` (copia del padre, con las formas propias de pt-PT) y
+   que `LocalizationParityTests` exija la paridad de plurales también en ellas.
+
+## Resuelto (lote 12.4, 2026-10-25)
+
+Medido con el bundle de cada variante (lo que lee `Bundle.main` con la variante como idioma del sistema): la línea plana daba «1 seleccionados». Además las 80 planas estaban viejas («transacciones» donde el padre ya dice «registros»).
+- Cada variante tiene su `Localizable.stringsdict` ENTERO: es-ES copia de es-419; es-AR con voseo (22 formas), en-GB igual que en, pt-PT con «tu» y vocabulario de Portugal (98 formas). Se quitaron las 80 planas de cada `.strings`.
+- `variants_doNotCreateOwnStringsdict` (M4) exigía lo contrario apoyado en una herencia por clave que no existe con idioma de sistema; se sustituyó por `variants_ownStringsdict_hasEveryPluralFormOfTheParent`, más `variants_haveTheSamePluralKeysAsTheirParent`, `variantPlurals_matchParentPlaceholders` y `variant_countOfOne_isSingular` (es-ES, es-AR, pt-PT, en-GB: «1 seleccionado», «3 seleccionados»).
+- Regla nueva en `.claude/rules/l10n.md` y aviso en `qa/scripts/add-l10n-key.sh`: un plural va al `.stringsdict` de los 12 base y de las 4 variantes.

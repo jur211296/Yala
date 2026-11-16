@@ -10,9 +10,6 @@ import SwiftData
 import SwiftUI
 import TipKit
 import UIKit
-#if DEBUG && DEV_BUILD
-import AnnotateKit
-#endif
 
 @main
 struct YalaApp: App {
@@ -55,14 +52,6 @@ struct YalaApp: App {
             // (SplitSyncStartGate → .startNow) — deseable en QA. No-op en release.
             if ProcessInfo.processInfo.arguments.contains("-fake-icloud") {
                 iCloudSyncService.shared._uiTestSimulateAvailableAccount()
-            }
-            #endif
-            // AnnotateKit: anotar la pantalla y mandar la nota a la sesión de Claude en la Mac.
-            // Solo Yala Dev en Debug (DEV_BUILD + DEBUG); fuera de los tests para que su botón
-            // flotante no tape toques ni salga en capturas.
-            #if DEBUG && DEV_BUILD
-            if !SwiftDataConfiguration.isRunningTests && !UITestHooks.isActive {
-                Annotate.install()
             }
             #endif
         }
@@ -136,6 +125,10 @@ struct YalaApp: App {
                 // eje 1c midió.
                 .id(containerHost.generation)
                 .modelContainer(container)
+                // Card 7e60 · con qué almacén se montó este árbol. Lo heredan sus hojas, y una hoja que sobrevive al
+                // cambio en caliente se queda con el del árbol viejo aunque iOS rehaga su contenido
+                // (`detachesFromSwappedStore()`).
+                .environment(\.mountedStoreGeneration, containerHost.generation)
         } else {
             SignOutRelaunchView()
         }

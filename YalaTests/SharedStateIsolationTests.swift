@@ -219,6 +219,46 @@ struct SharedStateIsolationTests {
         #expect(standard.object(forKey: PrivateSessionMark.userDefaultsKey) as? Bool == false)
     }
 
+    /// La marca del eje plantada APAGADA —lo que dejaba en el host la corrida que tumbaba la celda C (card r9e8)— y el
+    /// espejo de `SessionState` con ella. Dentro del pin las dos están encendidas; al salir, como estaban. Esta suite
+    /// lleva `.ownerKeyValueGateOpen`, que restaura la marca plantada al terminar.
+    @Test func pinCeldaPrivada_laEnciendeDentroYLaDejaComoEstaba() async throws {
+        let standard = UserDefaults.standard
+        standard.set(false, forKey: PrivateSessionMark.userDefaultsKey)
+        SessionState.shared.refreshPrivateSessionMirror()
+        defer { SessionState.shared.refreshPrivateSessionMirror() }
+        #expect(!SessionState.shared.hasPrivateSession, "control: plantada así, el espejo dice «sin sesión privada»")
+
+        var marca: Bool?
+        var espejo: Bool?
+        try await withPrivateSessionCellPinned {
+            marca = PrivateSessionMark.hasPrivateSession()
+            espejo = SessionState.shared.hasPrivateSession
+        }
+
+        #expect(marca == true, "Dentro del pin la marca sigue apagada: la celda C se exige al host otra vez.")
+        #expect(espejo == true, "Dentro del pin el espejo de `SessionState` no se re-leyó: el puente vería «solo grupos».")
+        #expect(standard.object(forKey: PrivateSessionMark.userDefaultsKey) as? Bool == false, "El pin no restauró la marca.")
+        #expect(!SessionState.shared.hasPrivateSession, "El pin dejó el espejo encendido para el test siguiente.")
+    }
+
+    /// Con el cuerpo en rojo (un `#expect` que falla lanza) se restaura igual: es lo que separa un pin de una limpieza
+    /// escrita al final del test.
+    @Test func pinCeldaPrivada_restauraAunqueElCuerpoLance() async throws {
+        struct Rojo: Error {}
+        let standard = UserDefaults.standard
+        standard.set(false, forKey: PrivateSessionMark.userDefaultsKey)
+        SessionState.shared.refreshPrivateSessionMirror()
+        defer { SessionState.shared.refreshPrivateSessionMirror() }
+
+        await #expect(throws: Rojo.self) {
+            try await withPrivateSessionCellPinned { throw Rojo() }
+        }
+
+        #expect(standard.object(forKey: PrivateSessionMark.userDefaultsKey) as? Bool == false)
+        #expect(!SessionState.shared.hasPrivateSession)
+    }
+
     // MARK: - Cableado (source-scan)
 
     /// Los conteos esperados no son decoración: sin ellos, un fichero movido o un símbolo renombrado
@@ -252,6 +292,11 @@ struct SharedStateIsolationTests {
             ("DataWipePreservesGroupsTests.swift", ".wipeAppGroupMirrorIsolated"),
             ("CloudSync/WipeMassRowsCloudDrainTests.swift", ".wipeAppGroupMirrorIsolated"),
             ("CloudSync/GroupsSignOutFlowTests.swift", ".wipeAppGroupMirrorIsolated"),
+            // Las tres que exigían la celda C o un puente con sesión privada al host (card r9e8, 2026-11-06): una
+            // corrida previa con la marca apagada las tumbaba en su precondición.
+            ("CloudSync/GroupsOutboxOwnershipTests.swift", ".privateSessionCellPinned"),
+            ("CloudSync/PrivateSignOutMigrationGuardTests.swift", ".privateSessionCellPinned"),
+            ("GroupLegWithoutAccountTests.swift", ".privateSessionCellPinned"),
         ]
         for (file, trait) in cableado {
             let applied = try code(of: file).components(separatedBy: trait).count - 1

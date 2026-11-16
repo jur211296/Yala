@@ -16,6 +16,8 @@ struct PanelView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// La página que se ve: la guía de «días después» no arranca con el Panel oculto.
+    @Environment(\.isRootPageShown) private var isRootPageShown
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SessionState.self) private var sessionState
@@ -117,29 +119,111 @@ struct PanelView: View {
 
     // MARK: - Setup Checklist Navigation
 
+    /// Primeros pasos se ve en el Panel. Bajo `-uitest` se calla, salvo `-uitest-show-setup-deck` (su XCUITest).
+    private var showsSetupDeck: Bool {
+        (!UITestHooks.isActive || UITestHooks.showsSetupDeck) && SetupChecklistManager.shared.showsDeck
+    }
+
+    /// La llegada tranquila (Y23-05): el mazo es la única acción del Panel.
+    private var isQuietArrival: Bool {
+        showsSetupDeck && SetupChecklistManager.shared.isQuietArrival
+    }
+
+    @ViewBuilder
+    private var setupDeckSlot: some View {
+        if isQuietArrival && sessionState.isExpensesOnlyMode {
+            // «Solo gastos»: «Anotar el primer gasto», y la cuenta que Yala creó sola, como hoy.
+            SetupFirstExpenseAction(
+                accountName: viewModel.accounts.first(where: \.isBillableUserAccount)?.name
+            ) {
+                sheets.showNewTransaction = true
+            }
+        } else {
+            SetupChecklistCard(
+                manager: SetupChecklistManager.shared,
+                onStepTapped: { step in handleSetupStep(step) }
+            )
+            // Telemetría del usuario nuevo (card 4b7h): vio Primeros pasos.
+            .onAppear { MetricsService.used(.primerosPasosVe) }
+        }
+    }
+
+    /// Lo que cuenta para dar pasos por hechos; si cambia, se vuelve a mirar.
+    private var setupDetectionKey: [Int] {
+        [viewModel.accounts.count, viewModel.transactions.count, viewModel.budgets.count,
+         viewModel.scheduledPayments.count]
+    }
+
+    /// Da por hechos los pasos que los datos ya cumplen.
+    private func detectSetupSteps() {
+        SetupChecklistManager.shared.autoDetect(
+            accountCount: viewModel.accounts.count(where: \.isBillableUserAccount),
+            // Sin el «Saldo inicial» ni los ajustes: no los apuntó la persona (`countsAsUserRecord`).
+            transactionCount: viewModel.transactions.count(where: {
+                SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType)
+            }),
+            budgetCount: viewModel.budgets.count,
+            scheduledCount: viewModel.scheduledPayments.count,
+            groupCount: setupGroupCount()
+        )
+    }
+
+    /// Grupos en los que está la persona, para dar por hecho el paso 5.
+    private func setupGroupCount() -> Int {
+        do {
+            return try modelContext.fetchCount(FetchDescriptor<SplitGroup>(predicate: #Predicate { !$0.isHiddenForAll }))
+        } catch {
+            #if DEBUG
+            print("PanelView: Error contando grupos para Primeros pasos: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    /// Paso 5 (Y23-13): si ya vio el onboarding de Grupos, el paso se da por hecho y un aviso lo dice; si no, su
+    /// onboarding como página del tutorial.
+    private func startGroupsStep() {
+        switch GroupsTutorialLogic.entry(hasShownGroupsOnboarding: appPreferences.hasShownGroupsOnboarding) {
+        case .alreadySeen:
+            SetupChecklistManager.shared.markCompleted(.groups)
+            SavedRecordNotice.showInfo(message: L10n.PrimerosPasos23.Groups.alreadySeen)
+        case .showTutorial:
+            sheets.showGroupsTutorial = true
+        }
+    }
+
+    /// Paso 6 (Y23-14): la guía «Tus gráficas viven en Más». Terminada, el paso queda hecho; con «Omitir», omitido (el
+    /// mazo pasa al 7 en los dos casos). Irse a otra pestaña la cierra sin tocar el mazo. Sin «Más» en la barra (iPad a pantalla completa), las
+    /// gráficas están en su propia pestaña: se abren y el paso queda hecho.
+    private func startChartsStepGuide() {
+        let markDone = { SetupChecklistManager.shared.markCompleted(.whereMoneyGoes) }
+        guard sizeClass != .regular else {
+            navigation.navigateToDetail(.insights)
+            markDone()
+            return
+        }
+        PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone,
+                                      onSkip: { SetupChecklistManager.shared.markSkipped(.whereMoneyGoes) })
+    }
+
+    /// Lo que abre cada paso del mazo (Y23-05): los pasos 1 a 5 y el 7, su flujo guiado (Y23-07 a Y23-13 y Y23-16); el 6,
+    /// la guía de Más (Y23-14).
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
+        case .firstAccount:
+            sheets.showFirstAccountFlow = true
         case .firstExpense:
-            sheets.showNewTransaction = true
+            sheets.showRecordTutorial = true
         case .firstBudget:
-            RouterEntryGate.shared.submit(.navigate(.budgets))
-            RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
+            sheets.showFirstBudgetFlow = true
         case .scheduledPayment:
-            RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
-            RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
-        case .exploreSettings:
-            sheets.isPresentingSettings = true
-            SetupChecklistManager.shared.markCompleted(.exploreSettings)
-        case .discoverFeatures:
-            let checklist = SetupChecklistManager.shared
-            // Si este paso termina «Primeros pasos», lo que sale es la oferta de prueba que pide el cierre de la
-            // lista (UX 2.2 · L1-12, `TrialOfferMomentLogic`): abrir además el paywall general serían dos muros
-            // seguidos.
-            if !FeatureGateService.shared.isProUser && !checklist.wouldCompleteAll(by: .discoverFeatures) {
-                sheets.subscriptionBannerSource = "setupChecklist"
-                sheets.showSubscriptionFromBanner = true
-            }
-            checklist.markCompleted(.discoverFeatures)
+            sheets.showFirstScheduledPaymentFlow = true
+        case .groups:
+            startGroupsStep()
+        case .whereMoneyGoes:
+            startChartsStepGuide()
+        case .homeScreen:
+            sheets.showHomeScreenTutorial = true
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true
@@ -265,6 +349,8 @@ struct PanelView: View {
         }
         .accessibilityLabel(L10n.Accessibility.sectionsConfig)
         .accessibilityIdentifier("panel_sections_config")
+        // «Arma tu Panel» (Y23-15) apunta aquí: la barra es de UIKit y no lleva anclas de la página.
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { PlaceGuideFrames.shared.configureButton = $0 }
     }
 
     private var inboxToolbarButton: some View {
@@ -294,6 +380,8 @@ struct PanelView: View {
         }
         .accessibilityLabel(L10n.Accessibility.inbox)
         .accessibilityIdentifier("panel_inbox_button")
+        // «Lo que Yala anota solo» (Y23-10) apunta aquí: la barra es de UIKit y no lleva anclas de la página.
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { PlaceGuideFrames.shared.inboxButton = $0 }
     }
 
 
@@ -370,6 +458,10 @@ struct PanelView: View {
             showTodayFXCoachMark = true
         }
         .appliesPendingRemoteChanges(sessionState)
+        // Guías «dónde vive cada cosa» y «días después» (Y23-15).
+        .placeGuidePanelHost(isPageShown: isRootPageShown)
+        // Paso 5 (Y23-13): «Tus grupos, a un toque» al volver de crear o unirse a un grupo.
+        .modifier(PrimerosPasosGroupsGuideObserver(sheets: $sheets, isPageShown: isRootPageShown))
         .onAppear {
             LoadTimeMarks.begin(.panel)
             // Inject AppPreferences BEFORE setContext so the first performCalculation
@@ -532,7 +624,6 @@ struct PanelView: View {
             hasPrivateSession: SessionState.shared.hasPrivateSession,
             dismissedThisSession: cloudAdoptOfferDismissed)
         flags.panelGuide = !UITestHooks.isActive && !panelGuideDismissed
-        flags.setupChecklist = !UITestHooks.isActive && SetupChecklistManager.shared.shouldShow
         flags.updateAvailable = AppUpdateService.shared.shouldShowBanner && AppUpdateService.shared.latestVersion != nil
         // La prueba, solo sus últimos 5 días (UX 2.2 · L17-7); antes, los 30.
         flags.proOffer = ProPlanStatusLogic.showsTrialBanner(
@@ -582,11 +673,6 @@ struct PanelView: View {
                 })
         case .panelGuide:
             ContextualGuideBanner.panel()
-        case .setupChecklist:
-            SetupChecklistCard(
-                manager: SetupChecklistManager.shared,
-                onStepTapped: { step in handleSetupStep(step) }
-            )
         case .updateAvailable:
             if let updateVersion = AppUpdateService.shared.latestVersion {
                 UpdateAvailableBanner(
@@ -701,6 +787,7 @@ struct PanelView: View {
                         )
                         .headerBandColumn(.leading)
 
+                        if !isQuietArrival {
                         PanelQuickActionsRow(
                             canCreateRecords: viewModel.canUseVoiceInput,
                             hasAccounts: viewModel.accounts.contains { !$0.isArchived },
@@ -720,6 +807,16 @@ struct PanelView: View {
                         // El tour Pro señala esta fila (UX 2.2 · L5-12): si el Panel no está arriba, sube hasta ella.
                         .onChange(of: showProFabTour) { _, showing in
                             if showing { scrollToProTourRow(scrollProxy) }
+                        }
+                        }
+
+                        // Primeros pasos (Y23-05): el mazo, debajo de las acciones; en la llegada, la única acción.
+                        if showsSetupDeck {
+                            setupDeckSlot
+                                // Lo que la persona crea con el Panel delante (la cuenta del paso 1, en su hoja) avanza
+                                // el mazo sin esperar a volver a entrar.
+                                .onChange(of: setupDetectionKey) { _, _ in detectSetupSteps() }
+                                .headerBandColumn(.leading)
                         }
 
                         // Movimientos sin cuenta: el primero de los avisos tras la cabecera. No ofrece nada: dice que hay
@@ -766,7 +863,11 @@ struct PanelView: View {
                             viewModel: viewModel,
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
-                            showVariations: appPreferences.showVariations,
+                            // Días 1 y 2 de «Este mes»: como con la preferencia apagada, sin «vs S/ X» en las tarjetas
+                            // (decisión 10 de 2.3). Los chips sueltos los apaga `hidesPeriodVariations`.
+                            showVariations: appPreferences.showVariations && !PanelEarlyMonthLogic.hidesVariations(
+                                period: sessionState.selectedPeriod, now: .now, calendar: .current
+                            ),
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
@@ -791,6 +892,14 @@ struct PanelView: View {
                     .environment(\.openPanelRecord, OpenPanelRecordAction { record in
                         sheets.recordDetail = PanelRecordPresentation(record: record)
                     })
+                    // El ojo del hero oculta las cifras de todo el contenido del Panel (`AmountPrivacy`). Las hojas que se
+                    // abren desde aquí cuelgan fuera de este scroll y no lo heredan: abrir un detalle es pedir verlo.
+                    .environment(\.amountsHidden, appPreferences.panelAmountsHidden)
+                    // Los días 1 y 2 de «Este mes» no se compara con el período anterior: solo el monto (decisión 10 de
+                    // 2.3). Lo leen `VariationChip` y los «vs» de las tarjetas, así no se escapa ninguno.
+                    .environment(\.hidesPeriodVariations, PanelEarlyMonthLogic.hidesVariations(
+                        period: sessionState.selectedPeriod, now: .now, calendar: .current
+                    ))
                     // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
                     // sube por encima de los dos.
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
@@ -820,6 +929,11 @@ struct PanelView: View {
                 .refreshable {
                     await refreshData()
                 }
+                // Card 3f57: «Tu saldo se mueve solo» señala la píldora de la tendencia; si queda bajo la barra de
+                // pestañas, el Panel sube hasta ella, como con el tour Pro.
+                .onChange(of: showTodayFXCoachMark) { _, showing in
+                    if showing { scrollToTodayFXHint(scrollProxy) }
+                }
                 .onAppear {
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
 
@@ -829,17 +943,7 @@ struct PanelView: View {
                         showNudgeBanner = NudgeService.shared.currentNudge != nil
                     }
 
-                    // Setup checklist: auto-detect completed steps & manage collapse state
-                    let mgr = SetupChecklistManager.shared
-                    mgr.autoDetect(
-                        // Sin el «Saldo inicial» ni los ajustes: no los apuntó la persona (`countsAsUserRecord`).
-                        transactionCount: viewModel.transactions.count(where: {
-                            SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType)
-                        }),
-                        budgetCount: viewModel.budgets.count,
-                        scheduledCount: viewModel.scheduledPayments.count
-                    )
-                    mgr.checkReExpand()
+                    detectSetupSteps()
                     // «¿Era de prueba?» lo enciende `PanelShell` detrás del candado del Panel (`drainPanelIfActive`).
                 }
             }
@@ -849,7 +953,7 @@ struct PanelView: View {
             // `showFloatingActions`): con las dos a la vez, la acción principal
             // saldría dos veces en la misma pantalla. El tour Pro ya no los
             // fuerza: señala la fila de acciones de arriba (UX 2.2 · L5-12).
-            if showFloatingActions {
+            if showFloatingActions && !isQuietArrival {
                 VStack {
                     Spacer()
                     HStack {
@@ -891,6 +995,12 @@ struct PanelView: View {
         // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
         withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
             proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
+        }
+    }
+
+    private func scrollToTodayFXHint(_ proxy: ScrollViewProxy) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
+            proxy.scrollTo(ProTourSteps.todayFXAnchor, anchor: .center)
         }
     }
 

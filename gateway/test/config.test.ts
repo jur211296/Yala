@@ -15,6 +15,7 @@ interface ConfigBody {
     cloudOnboardingChoiceRolloutPercent: number;
     groupsBackendRolloutPercent: number;
     aiCloudExploreRolloutPercent: number;
+    appleWebSignInRolloutPercent: number;
   };
   forceUpdate: {
     minSupportedBuild: number;
@@ -39,6 +40,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
       CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT: "0",
       GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
       AI_CLOUD_EXPLORE_ROLLOUT_PERCENT: "10",
+      APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT: "40",
       MIN_SUPPORTED_BUILD: "137",
     });
     expect(res.status).toBe(200);
@@ -50,6 +52,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
         cloudOnboardingChoiceRolloutPercent: 0,
         groupsBackendRolloutPercent: 100,
         aiCloudExploreRolloutPercent: 10,
+        appleWebSignInRolloutPercent: 40,
       },
       forceUpdate: {
         minSupportedBuild: 137,
@@ -71,6 +74,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
     expect(body.flags.cloudOnboardingChoiceRolloutPercent).toBe(0);
     expect(body.flags.groupsBackendRolloutPercent).toBe(0);
     expect(body.flags.aiCloudExploreRolloutPercent).toBe(0);
+    expect(body.flags.appleWebSignInRolloutPercent).toBe(0);
     expect(body.forceUpdate.minSupportedBuild).toBe(0);
   });
 
@@ -199,12 +203,19 @@ describe("wrangler.toml · percents de rollout DESPLEGADOS en producción", () =
     expect(varIn("env.production.vars", "GROUPS_BACKEND_ROLLOUT_PERCENT")).toBe("100");
   });
 
-  // Yala IA con herramientas: APAGADO en los dos entornos hasta que Jürgen decida el texto de consentimiento
-  // (docs/ai-cloud-vs-private-2026-10.md). `toBe("0")` y no `toBeUndefined()`: la línea explícita es la que dice que
-  // está apagado a propósito, y borrarla también rompe este test.
-  it("el camino ampliado de Yala IA está apagado en staging y en producción", () => {
-    expect(varIn("vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("0");
+  // Yala IA con herramientas: staging al 100 (QA previo a 2.2); producción en 0 hasta 2.2 publicada
+  // (docs/ai-cloud-vs-private-2026-10.md §7). `toBe` explícito: borrar la línea también rompe este test.
+  it("el camino ampliado de Yala IA está al 100 en staging y apagado en producción", () => {
+    expect(varIn("vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("100");
     expect(varIn("env.production.vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("0");
+  });
+
+  // «Otra cuenta de Apple» (inicio de sesión web de Apple): pide el proveedor web de Apple en el Supabase del entorno.
+  // Staging lo tiene; producción no (2026-11-06, decisión A de Jürgen). Encenderlo en producción es cambiar esta línea
+  // DESPUÉS de configurar el Services ID y Supabase de producción, y rompe este test a propósito.
+  it("«Otra cuenta de Apple» está encendido en staging y apagado en producción", () => {
+    expect(varIn("vars", "APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT")).toBe("100");
+    expect(varIn("env.production.vars", "APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT")).toBe("0");
   });
 
   // El valor que sirve el gateway sale de ESTAS vars pasando por el parser, así que el shape publicado

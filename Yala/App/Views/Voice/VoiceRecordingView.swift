@@ -64,6 +64,8 @@ struct VoiceRecordingView: View {
     /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la voz no puede, Nuevo registro sube encima y, al cerrarse, se cierra
     /// también esta hoja.
     @State private var showManualEntry = false
+    /// «Volver a grabar» con lo entendido sin guardar pregunta antes de borrarlo (decisión 81 de la revisión 2.3).
+    @State private var showRecordAgainConfirmation = false
 
     /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
@@ -74,6 +76,13 @@ struct VoiceRecordingView: View {
 
     /// Práctica guiada: «Ahora no».
     var onSetupTrialSkipped: (() -> Void)?
+
+    /// La prueba de cortesía de «Aprender a registrar» (Y23-09): con texto, arriba va la franja «Prueba de cortesía: la
+    /// voz, una vez gratis» con «Omitir» en vez de «Ahora no». Su «Omitir» es `onSetupTrialSkipped`.
+    var courtesyTrialText: String?
+    /// La prueba de cortesía: los borradores de más que dejó una frase con varios gastos (se revisa el primero; los
+    /// demás quedan en la Bandeja). Van a «¿Borramos los de prueba?» con los demás.
+    var onCourtesyExtraDrafts: (([PersistentIdentifier]) -> Void)?
 
     private enum Phase: Equatable {
         /// Pidiendo el micro: se ve como escuchando, con Listo apagado.
@@ -104,6 +113,14 @@ struct VoiceRecordingView: View {
         )
         .selectorSheetSizing(.mediumFirst, selectedDetent: $selectedDetent)
         .interactiveDismissDisabled(isBusy)
+        // Cada fase y cada fallo se anuncia a VoiceOver (decisión 62 de la revisión 2.3).
+        .announcesEntryPhase(phaseAnnouncement)
+        .asksBeforeDiscardingEntry(
+            title: L10n.EntryDiscard.voiceTitle,
+            message: L10n.EntryDiscard.voiceMessage,
+            isPresented: $showRecordAgainConfirmation,
+            onDiscard: recordAgain
+        )
         .task { await startListening() }
         .onDisappear(perform: tearDown)
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
@@ -117,7 +134,11 @@ struct VoiceRecordingView: View {
             NewTransactionView()
         }
         // Si compra Pro ahí, al volver el micrófono ya escucha (UX 2.2 · L17-9).
-        .proUpgradeSheet(isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature) {
+        // «Apuntarlo a mano» va al mismo formulario que su botón de los fallos (mejoras necesarias 2.3 · V3).
+        .proUpgradeSheet(
+            isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature,
+            onManualEntry: { showManualEntry = true }
+        ) {
             recordAgain()
         }
     }
@@ -131,9 +152,19 @@ struct VoiceRecordingView: View {
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    @ViewBuilder
     private var header: some View {
+        if let courtesyTrialText, let skip = onSetupTrialSkipped {
+            CourtesyTrialStrip(text: courtesyTrialText) {
+                stopLivePreview()
+                recorder.cancelRecording()
+                skip()
+                dismiss()
+            }
+            .padding(.top, DS.Spacing.md)
+        }
         HStack {
-            if let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
+            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
                 Button(L10n.SetupChecklist.skipStep) {
                     stopLivePreview()
                     recorder.cancelRecording()
@@ -154,6 +185,23 @@ struct VoiceRecordingView: View {
         }
         .frame(minHeight: 44)
         .padding(.top, DS.Spacing.md)
+    }
+
+    /// Lo que VoiceOver oye al cambiar de fase: el título y, en un fallo, su porqué. Vacío mientras pide el micro.
+    private var phaseAnnouncement: String {
+        switch phase {
+        case .starting:
+            return ""
+        case .listening:
+            return EntryPhaseFeedbackLogic.announcement(title: L10n.Chat.listening)
+        case .processing:
+            return EntryPhaseFeedbackLogic.announcement(title: processingTitle)
+        case .review:
+            return EntryPhaseFeedbackLogic.announcement(
+                title: reviewTitle, detail: saveFailed ? L10n.Chat.Draft.saveFailedGeneric : nil)
+        case .failure(let failure):
+            return EntryPhaseFeedbackLogic.announcement(title: failureTitle(failure), detail: failureMessage(failure))
+        }
     }
 
     private var isFailure: Bool {
@@ -351,6 +399,10 @@ struct VoiceRecordingView: View {
                         }
                     }
 
+                    if dynamicTypeSize.isAccessibilitySize {
+                        missingHint
+                    }
+
                     if isMulti {
                         MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
                     } else {
@@ -372,12 +424,8 @@ struct VoiceRecordingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
-                Text(L10n.Voice.reviewMissingHint)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("multi_review_missing_hint")
+            if !dynamicTypeSize.isAccessibilitySize {
+                missingHint
             }
 
             if saveFailed {
@@ -387,19 +435,41 @@ struct VoiceRecordingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: DS.Spacing.md) {
+            actionsLayout {
                 if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "voice_finish") {
                         dismiss()
                     }
                 } else {
-                    secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
+                    secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgainTapped)
                     primaryButton(saveTitle, isEnabled: canSave, identifier: "voice_save", action: saveAll)
                 }
             }
         }
         .padding(.top, DS.Spacing.xs)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
+    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
+    /// scroll, bajo el título.
+    @ViewBuilder
+    private var missingHint: some View {
+        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+            Text(L10n.Voice.reviewMissingHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("multi_review_missing_hint")
+        }
+    }
+
+    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
+    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
+    private var actionsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
@@ -492,16 +562,16 @@ struct VoiceRecordingView: View {
                     switchToImage()
                 }
             }
-            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgainTapped)
         case .noVoice, .noAmount:
             secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
-            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+            primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgainTapped)
         case .generic, .saveFailed, .busy:
             if failure.retriesSameAudio, pendingAudioData != nil {
-                secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
+                secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgainTapped)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "voice_retry", action: retryProcessing)
             } else {
-                primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
+                primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgainTapped)
             }
         }
     }
@@ -658,6 +728,15 @@ struct VoiceRecordingView: View {
         dismiss()
     }
 
+    /// «Volver a grabar»: con lo entendido a la vista y algo sin guardar, pregunta antes; si no, graba otra vez.
+    private func recordAgainTapped() {
+        if EntryPhaseFeedbackLogic.asksBeforeDiscarding(isReviewing: phase == .review, unsavedCount: pendingDrafts.count) {
+            showRecordAgainConfirmation = true
+        } else {
+            recordAgain()
+        }
+    }
+
     /// Lo que se borra al grabar otra vez son los borradores pendientes de ESTA grabación: si se quedaran, la Bandeja
     /// acabaría con el mismo gasto dos veces. Los ya guardados no se tocan.
     private func recordAgain() {
@@ -702,6 +781,8 @@ struct VoiceRecordingView: View {
     }
 
     private func processAudio(_ audioData: Data) async {
+        // Telemetría propia: «usó esta función» (uno al día). Cuenta el intento, salga o no la lectura.
+        MetricsService.used(.notaDeVoz)
         do {
             let (text, parsedTransactions) = try await understand(audioData)
             guard !Task.isCancelled else { return }
@@ -742,6 +823,7 @@ struct VoiceRecordingView: View {
             pendingAudioData = nil
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja, como antes.
             drafts = isSetupTrial ? Array(created.prefix(1)) : created
+            if isSetupTrial, created.count > 1 { onCourtesyExtraDrafts?(created.dropFirst().map(\.persistentModelID)) }
             transcription = text
             phase = .review
             DS.Haptic.success()
@@ -799,6 +881,8 @@ struct VoiceRecordingView: View {
         let currency = fetchFirstActiveAccountCurrency()
         let expenseNames = fetchSubcategoryNames().expense.sorted()
         let subcategory = expenseNames.first { $0.hasPrefix("Restaurant") } ?? expenseNames.first
+        // El taxi va a su subcategoría de transporte («Taxis y apps» si está sembrada), no a la de la comida.
+        let taxiSubcategory = UITestDemoSubcategoryLogic.taxiSubcategory(among: expenseNames, fallback: subcategory)
         let confidence = ParsedTransaction.TransactionConfidence(amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 1)
         func expense(_ note: String, _ amount: Decimal, subcategory: String?) -> ParsedTransaction {
             ParsedTransaction(
@@ -815,7 +899,7 @@ struct VoiceRecordingView: View {
             return (
                 L10n.UITestDemo.Voice.twoTranscript,
                 [
-                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: subcategory),
+                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: taxiSubcategory),
                     expense(L10n.UITestDemo.Voice.coffeeNote, 8, subcategory: subcategory),
                 ]
             )

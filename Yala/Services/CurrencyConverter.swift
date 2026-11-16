@@ -138,7 +138,15 @@ final class CurrencyConverter: CurrencyConverting {
         // solo el candado (`Sendable`), no `self`.
         let clock = OSAllocatedUnfairLock<RowMemoClock>(initialState: RowMemoClock())
         rowMemoClock = clock
-        let drop: @Sendable (Notification) -> Void = { _ in clock.withLock { $0.bump() } }
+        // La caché de la tasa de hoy se retira con los MISMOS avisos (card «La tasa de hoy que llega por iCloud o por la
+        // nube no se usa hasta medianoche»): la fila de hoy también la escriben el espejo de iCloud y el pull del Modo
+        // Nube, que no postean `.yalaExchangeRatesUpdated`. Ver `latestRatesCache`.
+        let latest = OSAllocatedUnfairLock<CachedRates?>(initialState: nil)
+        latestRatesCache = latest
+        let drop: @Sendable (Notification) -> Void = { _ in
+            clock.withLock { $0.bump() }
+            latest.withLock { $0 = nil }
+        }
         let center = NotificationCenter.default
         rowMemoObservers = [
             center.addObserver(forName: .yalaExchangeRatesUpdated, object: nil, queue: nil, using: drop),
@@ -157,13 +165,25 @@ final class CurrencyConverter: CurrencyConverting {
     private let baseCurrency = "USD"
 
     /// Thread-safe cache of latest exchange rates (TC actual). Read on every
-    /// `convertWithLatestRate` to avoid hitting SwiftData per call. Invalidated
-    /// cuando `ExchangeRateService` persiste rates frescos (via
-    /// `.yalaExchangeRatesUpdated`) y al cambiar de día (sin esa invalidación
-    /// implícita, una sesión que cruza medianoche seguiría usando los rates
-    /// del día anterior aunque `Date.now` ya apunte a uno nuevo).
+    /// `convertWithLatestRate` to avoid hitting SwiftData per call. Se retira al cambiar de día (sin eso, una sesión que
+    /// cruza medianoche seguiría usando los rates del día anterior aunque `Date.now` ya apunte a uno nuevo) y con los tres
+    /// avisos que retiran la memoria de filas (`init`): `.yalaExchangeRatesUpdated`, `ModelContext.didSave` de cualquier
+    /// contexto y `.NSPersistentStoreRemoteChange`.
+    ///
+    /// **Por qué no basta el aviso de tasas** (card «La tasa de hoy que llega por iCloud o por la nube no se usa hasta
+    /// medianoche», 2026-11-06): la fila de hoy también llega por el espejo de iCloud (otro teléfono la bajó primero) y por
+    /// el pull del Modo Nube, y ninguno lo postea. Las divisas que la caché ya había resuelto —con la fila vieja, con un
+    /// escalón anterior o con la tabla estática, marcadas aproximadas— se quedaban así hasta medianoche con la fila buena ya
+    /// en disco: «una fuente peor tapa una mejor» (`currency-fx.md`).
+    ///
+    /// **El coste, y por qué se acepta**: la caché existe porque `LiveBalanceCalculator` convierte M veces por render, y eso
+    /// se conserva: dentro de una pasada de cálculo no se guarda. Lo que cuesta retirarla es UNA lectura de la fila de hoy
+    /// en la siguiente conversión tras cada guardado o cambio del store, más volver a resolver las divisas que la fila de
+    /// hoy no trae (una consulta por divisa, que también se funde). Es el mismo precio que ya paga la memoria de filas, con
+    /// la misma frecuencia; no se filtra por entidad por la razón medida allí (Core Data postea el cambio del store también
+    /// en los guardados propios, y el import del espejo no dice qué tocó).
     @ObservationIgnored
-    private let latestRatesCache = OSAllocatedUnfairLock<CachedRates?>(initialState: nil)
+    private let latestRatesCache: OSAllocatedUnfairLock<CachedRates?>
 
     private struct CachedRates {
         var rates: [String: Double]
@@ -424,7 +444,7 @@ final class CurrencyConverter: CurrencyConverting {
     }
 
     /// Converts using the most recent available rate (for "today" calculations).
-    /// Uses an in-memory cache invalidated by `.yalaExchangeRatesUpdated` to
+    /// Uses an in-memory cache (`latestRatesCache`, retirada con cualquier aviso que pueda traer una fila de tasas) to
     /// avoid SwiftData fetches on every call (LiveBalanceCalculator does
     /// M conversions per render).
     /// - Parameters:

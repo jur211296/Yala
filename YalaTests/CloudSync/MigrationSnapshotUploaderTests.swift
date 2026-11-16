@@ -785,6 +785,117 @@ struct MigrationSnapshotUploaderTests {
         #expect(stub.pushedSyncIDs.isEmpty, "control: el corte fue al encolar, antes de subir nada")
     }
 
+    // MARK: - Tasas duplicadas (card i9wh)
+
+    /// Siembra `copies` filas de tasas para `dateKey`, cada una con su identidad. Devuelve los `syncID` en minúsculas.
+    @discardableResult
+    private func seedRateCopies(_ context: ModelContext, dateKey: String, copies: [(rates: [String: Double], ts: Date?)])
+        throws -> [String] {
+        var ids: [String] = []
+        for copy in copies {
+            let rate = try ExchangeRate(dateKey: dateKey, base: "USD", ratesDictionary: copy.rates, timestamp: copy.ts)
+            rate.syncID = UUID()
+            context.insert(rate)
+            ids.append(rate.syncID!.uuidString.lowercased())
+        }
+        try context.save()
+        return ids
+    }
+
+    /// Medido el 2026-11-05: 3234 tasas para 383 días subían como «3333 elementos». Con la fusión solo sube una fila por
+    /// día, y los borrados NO viajan como tombstones (van antes del baseline). Mutante: mover la fusión detrás del
+    /// `fastForwardHistoryBaseline` hace que el drain mande los borrados y este caso cae.
+    @Test("la subida funde las tasas duplicadas del mismo día: sube una por día y ningún borrado")
+    func duplicateRates_fusedBeforeUpload_onePerDay_noTombstones() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.autosaveEnabled = false
+        let stub = ApplyingStubSession()
+        let day1 = try seedRateCopies(context, dateKey: "2026-10-01", copies: [
+            (["PEN": 3.7], Date(timeIntervalSince1970: 100)),
+            (["PEN": 3.8, "EUR": 0.9], Date(timeIntervalSince1970: 200)),
+            (["ARS": 1000], nil),
+        ])
+        let day2 = try seedRateCopies(context, dateKey: "2026-10-02", copies: [(["PEN": 3.75], nil)])
+
+        let uploader = makeUploader(context, CloudSyncEngine(), stub, pageSize: 10)
+        _ = await runToCompletion(uploader)
+
+        let survivor1 = try #require(day1.min())
+        #expect(stub.pushedSyncIDs.sorted() == [survivor1, day2[0]].sorted(),
+                "solo el superviviente de cada día sube, y ningún perdedor sale como tombstone")
+        let left = try context.fetch(FetchDescriptor<ExchangeRate>())
+        #expect(left.count == 2)
+        let fused = try #require(left.first { $0.dateKey == "2026-10-01" })
+        #expect(fused.syncID?.uuidString.lowercased() == survivor1)
+        // Fundidas de la más vieja a la más nueva: la copia sin hora va primero, la de las 200 gana PEN.
+        #expect(fused.decodedRates() == ["PEN": 3.8, "EUR": 0.9, "ARS": 1000])
+        #expect(fused.timestamp == Date(timeIntervalSince1970: 200))
+        #expect(uploader.progress?.total == 2, "la cifra de la pantalla cuenta lo que de verdad sube")
+    }
+
+    @Test("sin duplicados la fusión no escribe nada y devuelve 0")
+    func duplicateRates_noneToFuse_isANoop() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.autosaveEnabled = false
+        try seedRateCopies(context, dateKey: "2026-10-01", copies: [(["PEN": 3.7], nil)])
+        try seedRateCopies(context, dateKey: "2026-10-02", copies: [(["PEN": 3.8], nil)])
+        let uploader = makeUploader(context, CloudSyncEngine(), ApplyingStubSession(), pageSize: 10)
+        #expect(try uploader.fuseDuplicateExchangeRates() == 0)
+        #expect(!context.hasChanges)
+    }
+
+    @Test("una fila sin identidad no se funde ni se borra")
+    func duplicateRates_rowWithoutSyncID_isLeftAlone() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.autosaveEnabled = false
+        try seedRateCopies(context, dateKey: "2026-10-01", copies: [(["PEN": 3.7], nil)])
+        context.insert(try ExchangeRate(dateKey: "2026-10-01", base: "USD", ratesDictionary: ["PEN": 9.9]))
+        try context.save()
+        let uploader = makeUploader(context, CloudSyncEngine(), ApplyingStubSession(), pageSize: 10)
+        #expect(try uploader.fuseDuplicateExchangeRates() == 0)
+        #expect(try context.fetchCount(FetchDescriptor<ExchangeRate>()) == 2)
+    }
+
+    @Test("si el guardado de la fusión falla, la página sale .blocked(.localFailure) y no sube nada")
+    func duplicateRates_fusionSaveFails_blocksLocally() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.autosaveEnabled = false
+        let stub = ApplyingStubSession()
+        try seedRateCopies(context, dateKey: "2026-10-01", copies: [(["PEN": 3.7], nil), (["PEN": 3.8], nil)])
+        let uploader = makeUploader(context, CloudSyncEngine(), stub, pageSize: 10)
+        uploader._testRateFusionSaveError = FakeLocalError()
+        let outcome = await uploader.uploadPage(cursor: nil)
+        #expect(outcome == .blocked(.localFailure))
+        #expect(stub.pushedSyncIDs.isEmpty)
+        context.rollback()
+    }
+
+    @Test("la fusión deja su canario con los días y las filas borradas")
+    func duplicateRates_emitsTheCanary() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.autosaveEnabled = false
+        try seedRateCopies(context, dateKey: "2026-10-01", copies: [(["PEN": 3.7], nil), (["PEN": 3.8], nil)])
+        try seedRateCopies(context, dateKey: "2026-10-02", copies: [(["PEN": 3.7], nil), (["PEN": 3.8], nil),
+                                                                    (["PEN": 3.9], nil)])
+        let defaults = makeIsolatedDefaults(prefix: "snapshotUploader.fusionMetrics")
+        MetricsService._testReset()
+        MetricsService.start(client: MetricsClient(baseURL: URL(string: "https://gw.test")!,
+                                                   urlSession: MetricsRetryStub()), defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let uploader = makeUploader(context, CloudSyncEngine(), ApplyingStubSession(), pageSize: 10)
+        #expect(try uploader.fuseDuplicateExchangeRates() == 3)
+
+        let fused = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudSnapshotDuplicateRatesFused" }
+        #expect(fused.map(\.d) == ["2"])
+        #expect(fused.map(\.x) == [3])
+    }
+
     // MARK: - Helpers
 
     /// Extrae el nombre de tabla de un cursor JSON `{table, afterSyncID}` para las asserts de orden.

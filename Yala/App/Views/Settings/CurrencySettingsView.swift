@@ -243,14 +243,9 @@ struct CurrencySettingsView: View {
 
     private var exchangeRatesSection: some View {
         YalaSettingsSection(L10n.Settings.exchangeRate) {
-            // Show secondary currencies inline (or first 2 if none selected)
-            let displayCurrencies: [CurrencyCode] = {
-                if secondaryCurrencies.isEmpty {
-                    return Array(
-                        CurrencyCode.allCases.filter { $0 != preferredCurrency }.prefix(2))
-                }
-                return secondaryCurrencies.sorted { $0.localizedName < $1.localizedName }
-            }()
+            // Las secundarias elegidas; sin ninguna, solo «Ver todas» (antes, las dos primeras del catálogo, que nadie
+            // eligió: lote 09 de mejoras necesarias 2.3).
+            let displayCurrencies = ExchangeRatesSectionLogic.inlineCurrencies(secondary: secondaryCurrencies)
 
             ForEach(displayCurrencies, id: \.self) { currency in
                 exchangeRateRow(currency: currency)
@@ -329,6 +324,7 @@ struct CurrencySettingsView: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityIdentifier("currency_rate_row_\(currency.rawValue)")
     }
 
     // MARK: - Static Formatters

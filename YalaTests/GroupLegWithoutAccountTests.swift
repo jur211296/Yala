@@ -123,7 +123,7 @@ struct GroupLegKindLogicTests {
 // MARK: - Con el store: el aviso, el barredor y el desasociar
 
 @MainActor
-@Suite("Pata de grupo sin cuenta · con el store", .serialized)
+@Suite("Pata de grupo sin cuenta · con el store", .serialized, .privateSessionCellPinned)
 struct GroupLegWithoutAccountStoreTests {
 
     private struct Fixture {

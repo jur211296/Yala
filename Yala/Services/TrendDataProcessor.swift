@@ -248,8 +248,11 @@ struct TrendDataProcessor {
         }
 
         // 5. Apply smoothing only for balance on long periods (visual only)
+        // Solo con puntos diarios: la media de 14 puntos sobre puntos por mes (Estadísticas con datos largos, G2 de la
+        // decisión 28) promediaría más de un año y aplanaría la curva.
         let shouldSmooth =
-            smoothingPeriods.contains(period)
+            grouping == .day
+            && smoothingPeriods.contains(period)
             && metric == .balance
             && rawPoints.count > smoothingThreshold
 
@@ -286,15 +289,13 @@ struct TrendDataProcessor {
 
         let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
 
-        // 6. yDomain: extiende para incluir el liveAnchor si cae fuera del
-        //    rango histórico (sino quedaría clipped al renderizarse).
-        var yDomain = TrendProcessingHelper.calculateYDomain(
-            for: rawPoints,
+        // 6. yDomain: cuenta también el liveAnchor, que puede caer fuera del rango histórico. Entra en el cálculo y no
+        //    se suma después: así el margen de los extremos también lo deja respirar, y el saldo de hoy no queda pegado
+        //    al borde de la gráfica (decisión 11 de la revisión 2.3; el eje sigue sin arrancar en cero).
+        let yDomain = TrendProcessingHelper.calculateYDomain(
+            for: liveAnchor.map { rawPoints + [$0] } ?? rawPoints,
             isExpense: metric == .expense
         )
-        if let anchorValue = liveAnchor?.value {
-            yDomain = expand(yDomain, toInclude: anchorValue)
-        }
 
         return TrendProcessingResult(
             points: chartPoints,
@@ -310,12 +311,6 @@ struct TrendDataProcessor {
     }
 
     // MARK: - Private Helpers
-
-    private static func expand(
-        _ range: ClosedRange<Double>, toInclude value: Double
-    ) -> ClosedRange<Double> {
-        min(range.lowerBound, value)...max(range.upperBound, value)
-    }
 
     /// Fill balance buckets with running balance calculation.
     ///
@@ -334,6 +329,11 @@ struct TrendDataProcessor {
         valuationCap: Date,
         converter: CurrencyConverting
     ) {
+        // Quien llama pasa las filas de las cuentas cuyo historial se ve (ya sin las excluidas), y una cuenta archivada
+        // está ahí pero no suma en un saldo (`Account.sumsInBalance`, decisión 6 de 2.3). Sin este filtro la curva acababa
+        // lejos de la cifra, que ya la deja fuera. Solo quita las archivadas: el resto del filtrado es de quien llama.
+        let transactions = transactions.filter { $0.account?.isArchivedByThePerson != true }
+
         // Start with 0 - initial balance is now a transaction
         var native: [String: Decimal] = [:]
 

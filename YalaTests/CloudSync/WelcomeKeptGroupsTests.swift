@@ -379,7 +379,7 @@ struct WelcomeKeptGroupsTests {
 
         let container = try Self.code("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
         let groupsGate = try Self.caseBody("case .groupsGate(let purpose):", in: container)
-        #expect(groupsGate.contains("hasLocalDataNow: { welcomeDeviceDataNow() },"),
+        #expect(groupsGate.contains("purpose.isCloudAccountEntry ? hasLocalDataNow() : welcomeDeviceDataNow()"),
                 "la puerta del organizador vuelve a ver los grupos conservados como datos de otro")
         let deviceGate = try Self.body(of: "private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {",
                                        in: container)

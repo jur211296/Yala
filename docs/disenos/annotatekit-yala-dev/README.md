@@ -1,5 +1,9 @@
 # AnnotateKit en Yala Dev
 
+> **Retirado el 2026-11-05** (QA en el iPhone de pruebas): su píldora «Annotate» flotaba sobre la app y se quedaba
+> con los toques de lo que tapaba (el «Unirme al grupo» de la invitación). Jürgen: «quitémoslo por completo». Lo de
+> abajo queda como registro de cómo se montó; para volver a probarlo, revertir el PR que lo retira.
+
 Anotar una pantalla de Yala Dev (tocar, dibujar, escribir) y mandarla a la sesión de Claude en la Mac.
 Solo existe en **Yala Dev en Debug**; el Yala de TestFlight y App Store no lo lleva (medido con
 `strings`: 0 apariciones). Versión fijada: AnnotateKit 1.0.0 (MIT).

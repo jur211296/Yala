@@ -26,12 +26,12 @@ final class WelcomeInviteOpeningUITests: XCTestCase {
         // Cualquier tipo: el bloque combinado sale como elemento genérico (medido con `axe describe-ui`).
         let opening = app.descendants(matching: .any)["welcome_invite_opening"]
         XCTAssertTrue(opening.waitForExistence(timeout: 60), "No salió «Abriendo tu invitación…».")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists,
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists,
                        "La bienvenida se podía tocar (o leer) mientras se abría la invitación.")
         XCTAssertEqual(app.buttons.count, 0, "Mientras se abre la invitación no hay ningún botón en pantalla.")
 
         // No es un camino muerto: pasado el techo vuelve la bienvenida.
-        XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 45),
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 45),
                       "Vencido el techo, la bienvenida no volvió: la pantalla sin botones se quedaba para siempre.")
         XCTAssertFalse(app.descendants(matching: .any)["welcome_invite_opening"].exists)
     }
@@ -41,7 +41,7 @@ final class WelcomeInviteOpeningUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(reset: true, skipOnboarding: false, seed: nil)
 
-        XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 60))
         XCTAssertFalse(app.descendants(matching: .any)["welcome_invite_opening"].exists)
     }
 }

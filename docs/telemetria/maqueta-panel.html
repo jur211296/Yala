@@ -1,0 +1,399 @@
+<title>Panel de Yala</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: panel interno de una sola columna, nav de secciones pegajosa; cada sección abre con su frase y sigue con tarjetas de métrica. Debajo, la propuesta. */
+:root {
+  --bg: #f5f5fa;
+  --surface: #ffffff;
+  --ink: #17172a;
+  --muted: #5d5f78;
+  --line: #e2e2ee;
+  --accent: #6063f1;
+  --accent-soft: #ececfe;
+  --ok: #1f8a5b;
+  --warn: #b26a00;
+  --bad: #c2384a;
+  --example: #7c4ddb;
+  --example-soft: #f2ecfe;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Instrument Sans", -apple-system, "Segoe UI", sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11121b; --surface: #1a1b28; --ink: #ececf6; --muted: #a3a5bf; --line: #2b2c3d;
+  --accent: #8b8dff; --accent-soft: #24254a; --ok: #4cc58d; --warn: #e6a23c; --bad: #ff6b7d;
+  --example: #b79bff; --example-soft: #2a2140; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11121b; --surface: #1a1b28; --ink: #ececf6; --muted: #a3a5bf; --line: #2b2c3d;
+  --accent: #8b8dff; --accent-soft: #24254a; --ok: #4cc58d; --warn: #e6a23c; --bad: #ff6b7d;
+  --example: #b79bff; --example-soft: #2a2140; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 40px }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em }
+h1 { font-size: clamp(28px, 6vw, 40px); font-weight: 700 }
+h2 { font-size: 24px; font-weight: 700 }
+h3 { font-size: 17px; font-weight: 600 }
+p { margin: 0; max-width: 66ch }
+.eyebrow { font-family: var(--f-data); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted) }
+a { color: var(--accent) }
+
+header.top { padding-top: 28px; display: grid; gap: 10px }
+.legend { display: flex; gap: 8px; flex-wrap: wrap }
+.chip { font-family: var(--f-data); font-size: 11px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent }
+.chip.med { background: var(--accent-soft); color: var(--accent) }
+.chip.srv { background: transparent; color: var(--muted); border-color: var(--line) }
+.chip.ex { background: var(--example-soft); color: var(--example) }
+
+nav.sec { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px;
+  display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none }
+nav.sec a { text-decoration: none; color: var(--ink); font-weight: 500; font-size: 14px; padding: 6px 12px; border-radius: 999px; white-space: nowrap }
+nav.sec a:hover, nav.sec a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none }
+
+section.s { display: grid; gap: 16px; scroll-margin-top: 64px }
+.lead { font-family: var(--f-display); font-size: clamp(19px, 3.6vw, 23px); line-height: 1.3; font-weight: 500; max-width: 40ch }
+.lead b { color: var(--accent); font-weight: 700 }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0 }
+.card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.card .k { font-size: 13px; color: var(--muted); font-weight: 500 }
+.num { font-family: var(--f-data); font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1 }
+.num small { font-size: 14px; color: var(--muted); font-weight: 400 }
+.delta { font-family: var(--f-data); font-size: 12px }
+.up { color: var(--ok) } .down { color: var(--bad) } .flat { color: var(--muted) }
+.say { font-size: 14px; color: var(--ink) }
+.note { font-size: 13px; color: var(--muted) }
+.card.ex { border-style: dashed }
+.spark { width: 100%; height: 44px; display: block }
+.bars { display: grid; gap: 6px }
+.bar { display: grid; grid-template-columns: minmax(0, 9em) 1fr 3.5em; gap: 8px; align-items: center; font-size: 13px }
+.bar span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted) }
+.bar i { display: block; height: 8px; border-radius: 4px; background: var(--accent) }
+.bar.ex i { background: var(--example) }
+.bar b { font-family: var(--f-data); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600 }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none }
+.dot.ok { background: var(--ok) } .dot.warn { background: var(--warn) } .dot.bad { background: var(--bad) }
+
+.proposal { display: grid; gap: 28px; border-top: 2px solid var(--ink); padding-top: 28px }
+.proposal section { display: grid; gap: 12px }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface) }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-family: var(--f-data); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+tr:last-child td { border-bottom: 0 }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-family: var(--f-data); font-size: 12.5px }
+.flow span { background: var(--surface); border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px }
+.flow span.new { border-style: dashed; color: var(--example); border-color: var(--example) }
+.flow em { color: var(--muted); font-style: normal }
+ol.q { margin: 0; padding-left: 1.3em; display: grid; gap: 14px; max-width: 70ch }
+ol.q li::marker { font-family: var(--f-data); color: var(--accent); font-weight: 600 }
+ol.q .opts { display: grid; gap: 2px; margin-top: 4px; color: var(--muted); font-size: 14px }
+ol.q .rec { color: var(--ink); font-weight: 600 }
+ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 70ch }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Maqueta · semana del 30 de oct al 5 de nov de 2026</div>
+    <h1>Panel de Yala</h1>
+    <p>Así se vería el panel propio por secciones. Cada número va con una frase que se entiende sin saber de métricas. Las cifras marcadas «medido» salen de lo que la app ya envía hoy. Las demás son de ejemplo y dicen qué falta para tenerlas.</p>
+    <div class="legend">
+      <span class="chip med">medido · ya llega hoy</span>
+      <span class="chip srv">del servidor · sin tocar la app</span>
+      <span class="chip ex">ejemplo · pide un evento nuevo</span>
+    </div>
+  </header>
+
+  <nav class="sec" aria-label="Secciones">
+    <a href="#uso">Uso</a><a href="#registro">Registro</a><a href="#grupos">Grupos</a><a href="#nube">Nube</a><a href="#pro">Pro</a><a href="#ia">IA</a><a href="#salud">Salud</a><a href="#propuesta">Propuesta</a>
+  </nav>
+
+  <section class="s" id="uso">
+    <div class="eyebrow">Uso</div>
+    <p class="lead">Esta semana abrieron Yala <b>15 personas al día</b> de media, 2 más que la semana pasada.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Activos por día</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">15,3 <small>/ día</small></span><span class="delta up">▲ 2,3</span></div>
+        <svg class="spark" data-series="dau" viewBox="0 0 300 44" preserveAspectRatio="none" role="img" aria-label="Activos por día, últimos 30 días"></svg>
+        <p class="say">El mejor día fue el jueves 30 de octubre, con 20 personas.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Activos en la semana</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">35</span><span class="delta flat">82 en 30 días</span></div>
+        <p class="say">35 instalaciones distintas abrieron la app al menos una vez en 7 días.</p>
+        <p class="note">Cuenta instalaciones, no personas: reinstalar suma una nueva.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Versión en uso</span><span class="chip med">medido</span></div>
+        <div class="bars">
+          <div class="bar"><span>2.1</span><i style="width:89%"></i><b>31</b></div>
+          <div class="bar"><span>2.2 (TestFlight)</span><i style="width:9%"></i><b>3</b></div>
+          <div class="bar"><span>2.0.5</span><i style="width:3%"></i><b>1</b></div>
+        </div>
+        <p class="say">Casi todos ya están en la 2.1; queda 1 aparato en la 2.0.5.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Lo que más se usa</span><span class="chip ex">ejemplo</span></div>
+        <div class="bars">
+          <div class="bar ex"><span>Registrar un gasto</span><i style="width:92%"></i><b>14</b></div>
+          <div class="bar ex"><span>Ver el Panel</span><i style="width:80%"></i><b>12</b></div>
+          <div class="bar ex"><span>Presupuestos</span><i style="width:40%"></i><b>6</b></div>
+          <div class="bar ex"><span>Exportar</span><i style="width:7%"></i><b>1</b></div>
+        </div>
+        <p class="say">Pide un evento nuevo «usó esta función», como mucho uno al día por función.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Vuelven a la semana</span><span class="chip srv">del servidor</span></div>
+        <div class="row"><span class="num">—</span><span class="delta flat">retención a 7 días</span></div>
+        <p class="say">«De los que se dieron de alta hace dos semanas, 6 de cada 10 siguen abriendo la app.»</p>
+        <p class="note">Sale de cruzar el alta con el aviso diario que ya llega. No toca la app.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="registro">
+    <div class="eyebrow">Registro</div>
+    <p class="lead">Esta semana se dieron de alta <b>8 personas</b>: 5 sin cuenta y 3 con cuenta en la nube. La anterior fueron 28.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Altas por día</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">8 <small>en 7 días</small></span><span class="delta down">▼ 20</span></div>
+        <svg class="spark" data-series="reg" data-kind="bars" viewBox="0 0 300 44" preserveAspectRatio="none" role="img" aria-label="Altas por día, últimos 30 días"></svg>
+        <p class="say">La semana de la salida de la 2.1 trajo el pico; esta es más tranquila.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Cómo empiezan (14 días)</span><span class="chip med">medido</span></div>
+        <div class="bars">
+          <div class="bar"><span>Sin cuenta (local)</span><i style="width:60%"></i><b>21</b></div>
+          <div class="bar"><span>Con cuenta (nube)</span><i style="width:40%"></i><b>14</b></div>
+        </div>
+        <p class="say">4 de cada 10 altas nacen ya con cuenta en la nube.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Dónde abandonan el alta</span><span class="chip ex">ejemplo</span></div>
+        <div class="bars">
+          <div class="bar ex"><span>Empieza</span><i style="width:100%"></i><b>12</b></div>
+          <div class="bar ex"><span>Elige moneda</span><i style="width:83%"></i><b>10</b></div>
+          <div class="bar ex"><span>Crea cuenta</span><i style="width:75%"></i><b>9</b></div>
+          <div class="bar ex"><span>Termina</span><i style="width:67%"></i><b>8</b></div>
+        </div>
+        <p class="say">«Se pierde 1 de cada 3 antes de terminar; la mayoría en el paso de la moneda.» Pide eventos por paso.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="grupos">
+    <div class="eyebrow">Grupos</div>
+    <p class="lead">Esta semana se entregaron <b>26 avisos</b> de gastos compartidos sin un solo fallo.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Avisos de grupo entregados</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">26</span><span class="status"><i class="dot ok"></i>0 fallos</span></div>
+        <p class="say">Lo cuenta el propio servidor, desde el 25 de octubre.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Grupos activos</span><span class="chip srv">del servidor</span></div>
+        <div class="row"><span class="num">—</span><span class="delta flat">con un gasto en 7 días</span></div>
+        <p class="say">«Hay 9 grupos con movimiento esta semana; 3 son nuevos.» Sale de contar en la base de Grupos.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Invitaciones aceptadas</span><span class="chip srv">del servidor</span></div>
+        <div class="row"><span class="num">—</span></div>
+        <p class="say">«De 7 invitaciones, 5 terminaron con alguien dentro del grupo.»</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="nube">
+    <div class="eyebrow">Nube</div>
+    <p class="lead">En 30 días, <b>30 aparatos</b> activaron la nube, y la copia en iCloud se guardó bien el 99 % de las veces.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Activaron la nube</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">30 <small>aparatos</small></span><span class="delta flat">30 días</span></div>
+        <p class="say">Aceptaron el aviso de privacidad y encendieron la nube.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Copias en iCloud</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">99 %</span><span class="status"><i class="dot warn"></i>31 fallos en 8 aparatos</span></div>
+        <p class="say">3.050 copias bien y 31 que fallaron. Un fallo suelto se reintenta solo.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Datos que no cuadraban</span><span class="chip med">medido</span></div>
+        <div class="row"><span class="num">6</span><span class="status"><i class="dot warn"></i>2 aparatos</span></div>
+        <p class="say">6 veces la copia de un aparato no coincidía con la del servidor y se volvió a bajar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="pro">
+    <div class="eyebrow">Pro</div>
+    <p class="lead">«Esta semana empezaron <b>4 pruebas</b> de Pro y 2 se convirtieron en suscripción.»</p>
+    <div class="cards">
+      <div class="card ex">
+        <div class="row"><span class="k">Pruebas y compras</span><span class="chip srv">del servidor</span></div>
+        <div class="bars">
+          <div class="bar ex"><span>Pruebas</span><i style="width:100%"></i><b>4</b></div>
+          <div class="bar ex"><span>Compras</span><i style="width:50%"></i><b>2</b></div>
+          <div class="bar ex"><span>Bajas</span><i style="width:25%"></i><b>1</b></div>
+        </div>
+        <p class="say">Llega de los avisos que Apple ya manda al servidor de Yala en cada compra, renovación o baja.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Vieron la oferta</span><span class="chip ex">ejemplo</span></div>
+        <div class="row"><span class="num">—</span></div>
+        <p class="say">«22 personas vieron la pantalla de Pro y 4 empezaron la prueba.» Pide un evento al abrir esa pantalla.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Dónde chocan con el límite</span><span class="chip ex">ejemplo</span></div>
+        <div class="bars">
+          <div class="bar ex"><span>Cuentas</span><i style="width:70%"></i><b>7</b></div>
+          <div class="bar ex"><span>Presupuestos</span><i style="width:30%"></i><b>3</b></div>
+        </div>
+        <p class="say">Qué límite del plan gratis frena más. Pide un evento al tocar el tope.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="ia">
+    <div class="eyebrow">IA</div>
+    <p class="lead">Yala IA respondió <b>6 veces</b> hoy, en su primer día con registro de uso.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Llamadas a la IA por tarea</span><span class="chip med">medido</span></div>
+        <div class="bars">
+          <div class="bar"><span>Tarjetas de análisis</span><i style="width:100%"></i><b>2</b></div>
+          <div class="bar"><span>Leer una foto</span><i style="width:100%"></i><b>2</b></div>
+          <div class="bar"><span>Resumen de tendencias</span><i style="width:100%"></i><b>2</b></div>
+        </div>
+        <p class="say">El servidor apunta cada llamada sin guardar lo que se preguntó.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Costo de la semana</span><span class="chip srv">del servidor</span></div>
+        <div class="row"><span class="num">—</span></div>
+        <p class="say">«La IA costó US$ 1,20 esta semana, unos 3 centavos por persona activa.» Sale de los tokens que ya se registran.</p>
+      </div>
+      <div class="card ex">
+        <div class="row"><span class="k">Llegaron al límite diario</span><span class="chip ex">ejemplo</span></div>
+        <div class="row"><span class="num">—</span></div>
+        <p class="say">Cuántos agotaron sus preguntas del día. Pide un evento en la app.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="salud">
+    <div class="eyebrow">Salud</div>
+    <p class="lead"><b>24 avisos internos</b> dieron señal esta semana. Hoy ninguno tiene umbral: el panel le pondría uno a cada uno.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="row"><span class="k">Los que más sonaron</span><span class="chip med">medido</span></div>
+        <div class="bars">
+          <div class="bar"><span>Grupos esperan permiso</span><i style="width:100%"></i><b>37</b></div>
+          <div class="bar"><span>Aviso que esperó turno</span><i style="width:92%"></i><b>34</b></div>
+          <div class="bar"><span>Presupuesto sin filtros</span><i style="width:92%"></i><b>34</b></div>
+          <div class="bar"><span>Pantalla ocupada</span><i style="width:65%"></i><b>24</b></div>
+        </div>
+        <p class="say">Son avisos que la app deja cuando algo raro pasa por dentro. Sirven para cazar errores antes de que nadie escriba.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="k">Estado</span><span class="chip med">medido</span></div>
+        <div class="status"><i class="dot ok"></i>0 cambios rechazados por el servidor (30 días)</div>
+        <div class="status"><i class="dot warn"></i>2 aparatos volvieron a bajar su copia</div>
+        <p class="say">Cada aviso tendría su umbral y su color. Los cuelgues siguen en Sentry; aquí va lo que Sentry no ve.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="proposal" id="propuesta">
+    <header style="display:grid;gap:8px">
+      <div class="eyebrow">Propuesta · sesión 1 de la telemetría propia</div>
+      <h2>Lo que hay, lo que falta y lo que decides tú</h2>
+    </header>
+
+    <section>
+      <h3>Lo que ya existe</h3>
+      <p>TelemetryDeck salió del código el 17 de julio. Desde la 2.1 la app solo envía tres cosas al servidor de Yala en Cloudflare: un aviso diario de «abrí la app», el alta y los avisos internos. Desde el 4 de noviembre el servidor apunta además cada llamada a la IA. A TelemetryDeck solo le pueden llegar aparatos con la 2.0.0, 2.0.1 o 2.0.2.</p>
+      <div class="flow" aria-label="Recorrido de un dato">
+        <span>App</span><em>→</em><span>cola en el teléfono</span><em>→</em><span>servidor de Yala (Cloudflare)</span><em>→</em><span>Analytics Engine · 90 días</span><em>→</em><span class="new">resumen diario · años</span><em>→</em><span class="new">este panel</span>
+      </div>
+      <p class="note">Los recuadros punteados son lo nuevo que propongo.</p>
+    </section>
+
+    <section>
+      <h3>Qué hace falta por sección</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Sección</th><th>Ya llega</th><th>Del servidor, sin tocar la app</th><th>Pide un evento nuevo</th></tr></thead>
+        <tbody>
+          <tr><td>Uso</td><td>activos por día, semana y mes · versión</td><td>vuelven a los 7 y 30 días</td><td>qué funciones se usan</td></tr>
+          <tr><td>Registro</td><td>altas por día, local o nube</td><td>—</td><td>pasos del alta y dónde abandonan</td></tr>
+          <tr><td>Grupos</td><td>avisos entregados y fallidos</td><td>grupos activos, invitaciones aceptadas, gastos compartidos</td><td>—</td></tr>
+          <tr><td>Nube</td><td>activaciones, copias, datos que no cuadran</td><td>cuentas en la nube</td><td>—</td></tr>
+          <tr><td>Pro</td><td>—</td><td>pruebas, compras, renovaciones y bajas (avisos de Apple)</td><td>vio la oferta · chocó con el límite</td></tr>
+          <tr><td>IA</td><td>llamadas por tarea y modelo</td><td>costo por semana</td><td>llegó al límite diario</td></tr>
+          <tr><td>Salud</td><td>124 avisos internos de la app y 10 del servidor</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>Privacidad</h3>
+      <ul class="plain">
+        <li>Nada que identifique a nadie: ni correo, ni cuenta, ni montos, ni textos. Cada instalación viaja como un código anónimo que no se puede revertir.</li>
+        <li>Lo que sale del servidor son conteos. El panel no enseñaría cortes con menos de 3 aparatos.</li>
+        <li>La declaración de privacidad de la app ya incluye «interacción con el producto» y «diagnóstico» sin vincular a la persona. Medir funciones cabe ahí.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Decisiones para ti</h3>
+      <ol class="q">
+        <li>¿Volvemos a medir qué funciones se usan?
+          <div class="opts"><span class="rec">A · Un evento «usó esta función», uno al día por función, unas 15 funciones (recomendado)</span><span>B · No, solo lo que ya llega más lo del servidor</span><span>C · Volver al detalle de TelemetryDeck: pasos del alta, oferta de Pro, tutoriales</span></div></li>
+        <li>¿Dónde vive el panel?
+          <div class="opts"><span class="rec">A · Un servicio propio en Cloudflare, aparte del servidor de la app, que solo abre tu cuenta (recomendado)</span><span>B · Una página dentro del servidor de la app</span><span>C · Una página de claude.ai que una tarea programada refresca cada mañana</span></div></li>
+        <li>¿Guardamos historia de más de 90 días?
+          <div class="opts"><span class="rec">A · Sí: un resumen diario en una base pequeña de Cloudflare (recomendado)</span><span>B · No, 90 días bastan por ahora</span></div></li>
+        <li>¿Cómo se escriben las frases?
+          <div class="opts"><span class="rec">A · Plantillas fijas con los números del día: exactas y sin costo (recomendado)</span><span>B · Plantillas más un resumen semanal escrito por IA, en el panel</span><span>C · Lo mismo que B, y que el resumen te llegue al resumen diario de Slack</span></div></li>
+        <li>¿Grupos, Nube y Pro se cuentan desde el servidor?
+          <div class="opts"><span class="rec">A · Sí: conteos de la base de Grupos, de las cuentas en la nube y de los avisos de compra de Apple (recomendado)</span><span>B · No, solo lo que mande la app</span></div></li>
+        <li>¿Cerramos ya la app en TelemetryDeck?
+          <div class="opts"><span class="rec">A · Sí: solo le llegan aparatos con la 2.0.0–2.0.2 y ningún panel lo mira (recomendado)</span><span>B · Esperar a que el panel nuevo esté publicado</span></div></li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Últimos 30 días, del 7 de octubre al 5 de noviembre de 2026 (Analytics Engine, dataset yala_metrics, medido el 5-nov).
+  const series = {
+    dau: [1,1,1,3,0,2,2,10,2,0,1,1,13,3,1,6,11,12,12,14,16,14,12,20,12,9,19,14,15,18],
+    reg: [0,0,0,0,0,0,0,3,0,0,0,0,6,1,0,1,5,4,4,4,3,5,3,2,0,0,0,3,1,2]
+  };
+  document.querySelectorAll("svg.spark").forEach(svg => {
+    const data = series[svg.dataset.series]; if (!data) return;
+    const W = 300, H = 44, pad = 3, max = Math.max(...data, 1), n = data.length;
+    const x = i => pad + i * (W - 2 * pad) / (n - 1);
+    const y = v => H - pad - v * (H - 2 * pad) / max;
+    const ns = "http://www.w3.org/2000/svg";
+    const mk = (tag, attrs) => { const el = document.createElementNS(ns, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); svg.appendChild(el); return el; };
+    if (svg.dataset.kind === "bars") {
+      const bw = (W - 2 * pad) / n * 0.7;
+      data.forEach((v, i) => { if (!v) return; mk("rect", { x: x(i) - bw / 2, y: y(v), width: bw, height: H - pad - y(v), rx: 1.5, style: "fill: var(--accent)", opacity: i >= n - 7 ? 1 : 0.4 }); });
+    } else {
+      const pts = data.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+      mk("polygon", { points: `${x(0)},${H - pad} ${pts} ${x(n - 1)},${H - pad}`, style: "fill: var(--accent-soft)" });
+      mk("polyline", { points: pts, style: "fill: none; stroke: var(--accent)", "stroke-width": 1.8, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" });
+      mk("circle", { cx: x(n - 1), cy: y(data[n - 1]), r: 3, style: "fill: var(--accent)" });
+    }
+  });
+})();
+</script>

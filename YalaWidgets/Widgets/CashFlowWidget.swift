@@ -235,10 +235,19 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
 extension CashFlowEntry {
     var periodName: String { period.toWidgetPeriod.localizedDisplayName }
 
-    /// Subir el neto es bueno (índigo), bajarlo malo (rosa). Menos de medio sol es «igual».
+    /// Hacia dónde se movió el neto tal como se pinta la diferencia (sin decimales): `0` si se pinta como cero.
+    var changeDirection: Int {
+        guard let change = comparison?.result.change else { return 0 }
+        return WidgetAmountSplitter.shownSign(of: change, fractionDigits: 0)
+    }
+
+    /// Subir el neto es bueno (índigo), bajarlo malo (rosa). Lo que se pinta como cero es «igual».
     var changeTone: WidgetTone {
-        guard let change = comparison?.result.change, abs(change) >= 0.5 else { return .neutral }
-        return change > 0 ? .good : .bad
+        switch changeDirection {
+        case 1: return .good
+        case -1: return .bad
+        default: return .neutral
+        }
     }
 
     func amountText(_ value: Double, forceSign: Bool = false) -> String {
@@ -293,7 +302,7 @@ struct CashFlowComparisonLine: View {
             HStack(spacing: WidgetDS.Spacing.xs) {
                 WidgetPill(
                     text: entry.amountText(abs(change)),
-                    systemImage: entry.changeTone == .neutral ? "equal" : (change > 0 ? "arrow.up" : "arrow.down"),
+                    systemImage: entry.changeDirection == 0 ? "equal" : (entry.changeDirection > 0 ? "arrow.up" : "arrow.down"),
                     tone: entry.changeTone
                 )
                 Text(String(format: String(localized: "widget.expense.vsPrevious", bundle: .main), comparison.previousLabel))
@@ -445,10 +454,18 @@ struct CashFlowBarsChart: View {
             .chartLegend(.hidden)
             .accessibilityHidden(true)
         } else {
-            Text("widget.ui.notEnoughData", bundle: .main)
-                .font(WidgetDS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // La línea de cero de la gráfica, con el aviso encima: el bloque se lee como una gráfica sin barras y no como
+            // un hueco con un texto suelto (card dz6c).
+            VStack(spacing: WidgetDS.Spacing.sm) {
+                Text("widget.ui.notEnoughData", bundle: .main)
+                    .font(WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                Capsule()
+                    .fill(WidgetColors.track)
+                    .frame(height: WidgetDS.Chart.referenceLineWidth)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityElement(children: .combine)
         }
     }
 }

@@ -82,6 +82,10 @@ struct InboxDraftEditSheet: View {
     @State private var showSuccessView = false
     @State private var approvedTransaction: TransactionItem?
     @State private var successData: InboxApproveSuccessData?
+    /// «Aprobar y hacer recurrente» (encargo del 15-nov): el aprobado sigue en el editor de recurrentes prellenado, en
+    /// esta misma hoja, con el registro como primer pago.
+    @State private var approvesIntoRecurring = false
+    @State private var recurringRecord: TransactionItem?
 
     // Group conversion: grupos elegibles resueltos en .task (solo para gastos puntuales pendientes).
     // Vacío = no ofrecer la acción "Convertir a gasto compartido".
@@ -154,7 +158,9 @@ struct InboxDraftEditSheet: View {
 
     var body: some View {
         Group {
-            if showSuccessView, let data = successData {
+            if let recurringRecord {
+                RecurringFromRecordSheet(record: recurringRecord)
+            } else if showSuccessView, let data = successData {
                 InboxApproveSuccessView(
                     data: data,
                     hasNextDraft: nextPendingDraft != nil,
@@ -725,10 +731,35 @@ struct InboxDraftEditSheet: View {
                     L10n.Inbox.approve,
                     isDisabled: !isReadyToApprove
                 ) {
+                    approvesIntoRecurring = false
                     approveDraft()
                 }
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
                 .accessibilityIdentifier("inbox_approve_button")
+            }
+
+            // «Aprobar y hacer recurrente» (encargo del 15-nov): aprueba como siempre y sigue en el editor de recurrentes
+            // con el registro como primer pago. No en lo que ya viene de un recurrente ni desde «Pagar ahora».
+            if payNowTitle == nil, RecurringFromRecordLogic.offersApproveAndMakeRecurring(
+                sourceType: draft.sourceType,
+                sourceScheduledPaymentID: draft.sourceScheduledPaymentID,
+                isPending: initialStatus == .pending
+            ) {
+                Button {
+                    approvesIntoRecurring = true
+                    approveDraft()
+                } label: {
+                    Label(L10n.RecurringFromRecord.approveAndMakeRecurring, systemImage: "repeat")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(isReadyToApprove ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.tertiary))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isReadyToApprove)
+                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                .accessibilityIdentifier("inbox_approve_and_make_recurring_button")
             }
 
             // Acción terciaria: redirigir el gasto a un grupo (crea un SplitExpense en vez de una
@@ -999,11 +1030,15 @@ struct InboxDraftEditSheet: View {
 
         // Update scheduled payment if this draft came from one
         ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
+        let createsAnOwnRecord = DraftService.approvalCreatesAnOwnRecord(draft)
 
         do {
             try modelContext.save()
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
+            // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba. Este
+            // «Aprobar» crea el registro aquí mismo, sin pasar por `DraftService.approveDraft`.
+            if createsAnOwnRecord { NewUserMetrics.created(.firstExpense) }
 
             // Prepare success view data
             approvedTransaction = transaction
@@ -1020,6 +1055,15 @@ struct InboxDraftEditSheet: View {
                 isExpense: isExpense
             )
             DS.Haptic.success()
+
+            // «Aprobar y hacer recurrente»: sin pantalla de éxito; la hoja pasa al editor de recurrentes. La Bandeja
+            // ya sabe que se aprobó (al cerrarse, se cierra si no quedan pendientes, como tras «Listo»).
+            if approvesIntoRecurring {
+                approvesIntoRecurring = false
+                onApproved?()
+                recurringRecord = transaction
+                return
+            }
 
             // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
             if payNowTitle != nil {
@@ -1038,32 +1082,17 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    /// Checks if a similar transaction already exists (same date, amount, account)
+    /// Checks if a similar transaction already exists (same date, amount, account). El criterio es el de toda la Bandeja
+    /// (`InboxDuplicateCheck`); aquí una lectura fallida deja guardar, como siempre: la persona está mirando el borrador.
     private func findDuplicateTransaction(amount: Double, date: Date, account: Account) -> TransactionItem? {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
-
-        let descriptor = FetchDescriptor<TransactionItem>(
-            predicate: #Predicate<TransactionItem> { transaction in
-                transaction.date >= startOfDay &&
-                transaction.date < endOfDay &&
-                transaction.amount == amount
-            }
-        )
-
-        let transactions: [TransactionItem]
         do {
-            transactions = try modelContext.fetch(descriptor)
+            return try InboxDuplicateCheck.findDuplicate(amount: amount, date: date, account: account, in: modelContext)
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error checking duplicates: \(error)")
             #endif
             return nil
         }
-
-        // Check if any matches the account
-        return transactions.first { $0.account?.persistentModelID == account.persistentModelID }
     }
 
     private func rejectDraft() {

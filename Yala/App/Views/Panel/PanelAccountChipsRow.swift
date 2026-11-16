@@ -23,8 +23,18 @@ struct PanelAccountChipsRow: View {
     let onOpenAccount: (Account) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(\.yalaTheme) private var theme
+
+    /// El cuadrito del icono crece con el texto, con techo (pase de estrés 2.2, card fb1j). Con 24 pt fijos y el glifo en
+    /// `caption`, a AX5 el glifo medía más que su marco y se salía de la cápsula por la izquierda, encima del nombre. A
+    /// tamaño normal sigue midiendo `badgeSmall`.
+    @ScaledMetric(relativeTo: .caption) private var scaledBadgeSide: CGFloat = DS.Icon.badgeSmall
+    private var badgeSide: CGFloat { min(scaledBadgeSide, DS.Icon.badgeLarge) }
+    /// El glifo deja de crecer en AX1 (~23 pt), que cabe en el techo del cuadrito (40 pt).
+    private static let glyphMaxTypeSize = DynamicTypeSize.accessibility1
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -62,8 +72,9 @@ struct PanelAccountChipsRow: View {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: account.iconName)
                     .font(DS.Typography.caption)
+                    .dynamicTypeSize(...Self.glyphMaxTypeSize)
                     .foregroundStyle(Color.contrastingText(for: color))
-                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                    .frame(width: badgeSide, height: badgeSide)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                             .fill(isFilled ? Color.black.opacity(0.18) : color)
@@ -137,7 +148,7 @@ struct PanelAccountChipsRow: View {
         case .toPay: label = L10n.PanelAccountCard.toPay
         case .spent: label = L10n.PanelAccountCard.spentInPeriod(viewModel.selectedPeriod.displayName)
         }
-        let amount = appPreferences.currency(shown, currencyCode: currency)
+        let amount = AmountPrivacy.spoken(appPreferences.currency(shown, currencyCode: currency), hidden: amountsHidden)
         let name = isGroupsCard ? L10n.Category.System.groups : account.name
         var text = "\(name). \(label): \(isApproximate ? "≈ " : "")\(amount)"
         if isFiltering { text += ". \(L10n.PanelAccountCard.filtering)" }
@@ -204,7 +215,8 @@ struct PanelAccountChipsRow: View {
                 Image(systemName: "plus")
                     .font(DS.Typography.caption)
                     .fontWeight(.bold)
-                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                    .dynamicTypeSize(...Self.glyphMaxTypeSize)
+                    .frame(width: badgeSide, height: badgeSide)
                     .accessibilityHidden(true)
                 Text(L10n.PanelAccountCard.addChip)
                     .font(DS.Typography.subheadlineEmphasized)

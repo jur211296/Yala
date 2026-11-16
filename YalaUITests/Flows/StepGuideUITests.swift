@@ -39,6 +39,23 @@ final class StepGuideUITests: XCTestCase {
         XCTAssertFalse(app.buttons["primary_button"].exists, "«Listo» deja terminar sin hacer los pasos.")
     }
 
+    /// La cabecera dice lo que Yala sabe: sin ningún pago de Apple Pay todavía, lo dice. Antes ponía «Pagos de Apple Pay
+    /// en tu bandeja: 0», igual con la automatización creada y todo aprobado que sin ella (lote 03 de las necesarias 2.3).
+    func test_applePayGuide_headerSaysNoPaymentHasArrivedYet() {
+        let app = launchAndOpenProfile()
+        tapRow("profile_help_tutorials", in: app)
+        tapRow("tutorial_row_applePay", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["applepay_guide_root"].waitForExistence(timeout: 5), "No se abrió la guía.")
+
+        let noneYet = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Todavía no llegó ningún pago de Apple Pay")).firstMatch
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "applepay-cabecera"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(noneYet.waitForExistence(timeout: 5), "La cabecera no dice que aún no llegó ningún pago.")
+        XCTAssertFalse(app.staticTexts["Pagos de Apple Pay en tu bandeja: 0"].exists, "Sigue el contador a cero.")
+    }
+
     // MARK: - Face ID
 
     func test_faceIDGuide_doneAdvancesTheOnlyActiveStep() {

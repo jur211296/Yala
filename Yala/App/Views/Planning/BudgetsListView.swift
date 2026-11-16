@@ -17,6 +17,7 @@ struct BudgetsListView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // ViewModel
     @State private var viewModel = BudgetsViewModel()
@@ -251,21 +252,62 @@ struct BudgetsListView: View {
 
     // MARK: - Budgets List
 
+    /// El rótulo «Te quedan» sube al título en las secciones donde ninguna fila se pasó, y a tamaños normales (a los de
+    /// accesibilidad la cifra baja bajo el nombre y pierde la columna).
+    private func sectionShowsRemainingLabel(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> Bool {
+        section.status != .exceeded && !dynamicTypeSize.isAccessibilitySize
+    }
+
+    /// ¿El período de la sección ya cerró? `nil` si mezcla cerrados y en curso (los «Único» llevan fechas propias): ahí
+    /// el título no dice nada y cada fila lleva su rótulo.
+    private func sectionIsClosed(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> Bool? {
+        let closed = Set(section.budgets.map { $0.daysRemaining < 0 })
+        return closed.count == 1 ? closed.first : nil
+    }
+
+    /// «28 días» para el título de la sección, o nil si la sección no comparte fin: los «Único» llevan fechas propias
+    /// y los inactivos no corren.
+    private func sectionDaysLeft(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> String? {
+        guard selectedSegment != 3, section.status != .inactive, let first = section.budgets.first else { return nil }
+        return L10n.UXL9.shortDays(first.daysRemaining)
+    }
+
     private var budgetsList: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ForEach(viewModel.groupedBudgets, id: \.status) { section in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Section header
-                    Text(section.status.localizedName)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
+                    // Section header. Con período compartido, los días van aquí una vez y no en cada fila. «Te quedan», una
+                    // vez sobre la columna de cifras (no en «Excedidos»: ahí cada fila dice «Te pasaste por»).
+                    HStack(alignment: .firstTextBaseline) {
+                        if let days = sectionDaysLeft(section) {
+                            Text("\(section.status.localizedName) · \(days)")
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                        } else {
+                            Text(section.status.localizedName)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                        }
+                        if sectionShowsRemainingLabel(section), let closed = sectionIsClosed(section) {
+                            Spacer(minLength: DS.Spacing.sm)
+                            // Con el período ya cerrado, lo que no se gastó sobró (lote 04 de mejoras necesarias 2.3).
+                            Text(closed ? L10n.UXL9.leftoverLabel : L10n.UXL9.remainingLabel)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .padding(.trailing, DS.Spacing.lg)
+                                .accessibilityIdentifier(closed ? "budgets_section_leftover_label" : "budgets_section_remaining_label")
+                        }
+                    }
 
                     // Budget cards. Sin los ya borrados: la lista recarga 150 ms después de borrar y, mientras, leer uno
                     // aborta en iOS 27.x (`BudgetRowView`).
                     ForEach(section.budgets.filter { !$0.budget.isDeleted && $0.budget.modelContext != nil }) { summary in
                         BudgetRowView(
                             summary: summary,
-                            currencyCode: summary.budget.currencyCode
+                            currencyCode: summary.budget.currencyCode,
+                            showsDaysLeft: sectionDaysLeft(section) == nil,
+                            showsRemainingLabel: !sectionShowsRemainingLabel(section) || sectionIsClosed(section) == nil
                         )
                         // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
                         .contextMenu {

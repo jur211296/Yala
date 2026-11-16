@@ -222,4 +222,50 @@ struct AccountEntitlementSyncTests {
         #expect(changed == false)
         #expect(store.read() == nil, "jamás escribir el derecho de una sesión que ya no está")
     }
+
+    // MARK: - Sign-in con otro sync en vuelo (card 4afh)
+
+    /// Un sync arrancó con la sesión vieja; durante su red entra otra cuenta y `handleSignIn` llega
+    /// con el primero en vuelo: su `force` se encola y devuelve `false`. El reintento diferido es el
+    /// único que trae el Pro de la cuenta nueva, y tiene que re-derivar él mismo: antes tiraba su
+    /// `Bool` y el Pro no se veía hasta el siguiente foreground.
+    @Test func signInConSyncEnVuelo_elReintentoRederivaElPro() async throws {
+        let (store, defaults) = makeStore("signin-coalesced")
+        defer { defaults.removePersistentDomain(forName: defaults.description) }
+
+        var current: String? = Self.userA
+        var rederivations = 0
+        var signInReturned = false
+        let body = #"{"pro":true,"product":"com.yala.pro.yearly","expires_at_ms":\#(Self.futureMs)}"#
+        let session = ScriptedSession(responses: [(200, body)])
+        var service: AccountEntitlementService?
+        var firstJWT = true
+        service = AccountEntitlementService(
+            store: store,
+            client: CloudAccountClient(baseURL: URL(string: "https://gw.test")!, urlSession: session),
+            jwtProvider: {
+                if firstJWT {
+                    firstJWT = false
+                    current = Self.userB                      // entra otra cuenta durante la red
+                    await service?.handleSignIn()             // llega con el primero en vuelo
+                    signInReturned = true
+                }
+                return "jwt"
+            },
+            userIDProvider: { current },
+            storeKitJWSProvider: { nil },
+            onSnapshotChanged: { rederivations += 1 })
+
+        let first = try #require(service)
+        let changed = await first.sync()
+        #expect(changed == false, "la respuesta era de la sesión vieja: se descarta")
+        #expect(signInReturned)
+        #expect(rederivations == 0, "el sign-in se encoló: aún no hay nada que re-derivar")
+
+        for _ in 0..<100 where rederivations == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(rederivations == 1, "el reintento diferido trae el Pro de B y lo re-deriva")
+        #expect(store.read()?.userID == Self.userB)
+    }
 }

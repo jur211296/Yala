@@ -1,0 +1,83 @@
+{
+ "de": {
+  "aplicadas": 1,
+  "motivos": {
+   "sin propuesta": 1,
+   "categoría terminologia": 2
+  }
+ },
+ "en-GB": {
+  "aplicadas": 0,
+  "motivos": {}
+ },
+ "en": {
+  "aplicadas": 0,
+  "motivos": {}
+ },
+ "es-419": {
+  "aplicadas": 0,
+  "motivos": {}
+ },
+ "es-AR": {
+  "aplicadas": 7,
+  "motivos": {}
+ },
+ "es-ES": {
+  "aplicadas": 6,
+  "motivos": {
+   "gravedad baja": 1
+  }
+ },
+ "fr": {
+  "aplicadas": 4,
+  "motivos": {
+   "sin propuesta": 1,
+   "categoría terminologia": 3,
+   "gravedad baja": 2,
+   "registro hacia lo formal": 7
+  }
+ },
+ "it": {
+  "aplicadas": 0,
+  "motivos": {
+   "gravedad baja": 2,
+   "categoría terminologia": 1
+  }
+ },
+ "ja": {
+  "aplicadas": 0,
+  "motivos": {
+   "gravedad baja": 1
+  }
+ },
+ "nl": {
+  "aplicadas": 0,
+  "motivos": {
+   "sin propuesta": 1
+  }
+ },
+ "pl": {
+  "aplicadas": 0,
+  "motivos": {
+   "categoría terminologia": 1
+  }
+ },
+ "pt-BR": {
+  "aplicadas": 0,
+  "motivos": {
+   "sin propuesta": 17
+  }
+ },
+ "pt-PT": {
+  "aplicadas": 8,
+  "motivos": {
+   "sin propuesta": 12,
+   "gravedad baja": 10,
+   "categoría terminologia": 18
+  }
+ },
+ "zh-Hans": {
+  "aplicadas": 0,
+  "motivos": {}
+ }
+}

@@ -97,6 +97,8 @@ struct InboxBulkActionsSheet: View {
     @State private var bulkApprovedCount = 0
     @State private var bulkApprovedSummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
     @State private var bulkLeftoverLine: String?
+    /// Lo que «Aprobar» dejó en la Bandeja por posible duplicado (lote 03 de las necesarias 2.3).
+    @State private var bulkDuplicatesLine: String?
 
     private var approveableCount: Int {
         selectedDrafts.count(where: { $0.isReadyToApprove })
@@ -110,6 +112,7 @@ struct InboxBulkActionsSheet: View {
                         approvedCount: bulkApprovedCount,
                         summary: bulkApprovedSummary,
                         leftoverLine: bulkLeftoverLine,
+                        duplicatesLine: bulkDuplicatesLine,
                         onViewRecords: {
                             onNavigateToRecords?()
                             finishEditing()
@@ -324,14 +327,17 @@ struct InboxBulkActionsSheet: View {
         // Lo elegido que no se puede guardar se queda en pendientes; la pantalla final lo dice (UX 2.2 · L4-7).
         bulkLeftoverLine = InboxSaveReadyLogic.leftoverLine(selectedDrafts.filter { !$0.isReadyToApprove })
         do {
-            let transactions = try draftService.bulkApprove(
+            let outcome = try draftService.bulkApproveOutcome(
                 selectedDrafts,
                 currencyConverter: currencyConverter
             )
+            let transactions = outcome.transactions
             appliedChanges.insert(.approve)
+            bulkDuplicatesLine = InboxBulkDuplicatesLogic.skippedLine(outcome.skippedAsPossibleDuplicate)
 
             // Show bulk success view
-            if !transactions.isEmpty {
+            // También con nada guardado si algo se quedó por parecido: la pantalla final lo dice (antes no salía nada).
+            if InboxBulkDuplicatesLogic.showsSummary(saved: transactions.count, skipped: outcome.skippedAsPossibleDuplicate) {
                 bulkApprovedCount = transactions.count
                 bulkApprovedSummary = InboxBulkApproveSummaryLogic.summary(
                     of: transactions.map {

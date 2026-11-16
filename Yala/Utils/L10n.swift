@@ -27,7 +27,7 @@ struct LocaleResolution {
 /// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
 /// agregando case en `SupportedLocale.swift`, no aquí.
 ///
-/// **Storage:** App Group suite (compartido con widgets) + iCloud KV (sync cross-device).
+/// **Storage:** App Group suite (compartido con widgets) + el canal de preferencias (iCloud KV en `.icloud`, outbox en `.cloud`).
 /// Migración one-shot desde `UserDefaults.standard` ejecutada en `bootstrapMigrationIfNeeded`.
 enum LanguageManager {
     static let overrideKey = "appLanguageOverride"
@@ -87,19 +87,12 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            // La PUERTA, no el store crudo, por dos motivos. El GUARD: con una sesión solo-grupos en un
-            // móvil prestado este KV es el del DUEÑO, y el idioma que elegía quien lo usa le cambiaba la
-            // app en su iPad (lo decide `OwnerKeyValueGate`). Y el CONTEO: esta escritura fue la SÉPTIMA
-            // vía al iCloud-KV del Apple ID y no figuraba en ningún inventario (2026-08-12); lo que
-            // impide una novena es que haya UN solo sitio que nombrar, y eso lo cuenta
-            // `OwnerKeyValueWiringTests`.
-            let iKV = OwnerKeyValueStore.shared
-            if let value = newValue {
-                iKV.setString(value, forKey: overrideKey)
-            } else {
-                iKV.removeObject(forKey: overrideKey)
-            }
-            iKV.synchronize()
+            // **A dónde viaja lo decide el canal de preferencias, como las otras 36 keys** (card p9wf, 2026-11-05). En
+            // `.icloud`, al iCloud-KV por la PUERTA (`OwnerKeyValueStore`: el guard del móvil prestado y el conteo de
+            // `OwnerKeyValueWiringTests`); en `.cloud`, al outbox de preferencias y NO al iCloud-KV. Hasta ese día
+            // escribía aquí directo al KV en los dos modos: en una cuenta en la nube el idioma no llegaba a los otros
+            // dispositivos de la cuenta, y en un móvil prestado se lo cambiaba al dueño del Apple ID.
+            PreferenceSyncService.shared.syncLanguageOverride(newValue)
             NotificationCenter.default.post(name: .languageDidChange, object: nil)
         }
     }
@@ -184,10 +177,9 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            // Los mismos dos motivos que el setter de arriba: el remap de alias es una escritura al
-            // iCloud-KV del Apple ID, así que va por la puerta, que la guarda y la cuenta.
-            OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
-            OwnerKeyValueStore.shared.synchronize()
+            // Por el mismo canal que el setter de arriba (card p9wf): en `.icloud` al iCloud-KV por la puerta, en
+            // `.cloud` al outbox de preferencias.
+            PreferenceSyncService.shared.syncLanguageOverride(canonical.code)
 
             #if DEBUG
             print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")
@@ -312,6 +304,18 @@ enum L10n {
     }
 
     enum Panel {
+        /// VoiceOver de una cifra con «Ocultar montos» puesto (`AmountPrivacy`).
+        static var amountHidden: String {
+            ls("panel.amountHidden", comment: "VoiceOver label of an amount hidden by the eye button of the Panel")
+        }
+        /// El ojo junto al rótulo del hero, con los montos a la vista: los oculta.
+        static var hideAmounts: String {
+            ls("panel.hideAmounts", comment: "Eye button next to the Panel headline amount: hides every amount on the Panel")
+        }
+        /// El ojo con los montos ocultos: los vuelve a enseñar.
+        static var showAmounts: String {
+            ls("panel.showAmounts", comment: "Eye button next to the Panel headline amount while amounts are hidden: shows them again")
+        }
         static var accounts: String {
             ls("panel.accounts", comment: "Accounts section title")
         }
@@ -660,16 +664,6 @@ enum L10n {
                 static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
             }
 
-            enum PeriodComparison {
-                static var title: String { ls("panel.widgetInfo.periodComparison.title", comment: "Stats Trends — Title sheet pedagógico Comparativa de período") }
-                static var chip1: String { ls("panel.widgetInfo.periodComparison.chip1", comment: "Stats Trends — Chip 1 Comparativa (Comparación)") }
-                static var chip2: String { ls("panel.widgetInfo.periodComparison.chip2", comment: "Stats Trends — Chip 2 Comparativa (Por período)") }
-                static var whatQ: String { ls("panel.widgetInfo.periodComparison.whatQ", comment: "Stats Trends — Comparativa: pregunta '¿Qué estás viendo?'") }
-                static var whatA: String { ls("panel.widgetInfo.periodComparison.whatA", comment: "Stats Trends — Comparativa: respuesta") }
-                static var howQ: String { ls("panel.widgetInfo.periodComparison.howQ", comment: "Stats Trends — Comparativa: pregunta '¿Con qué comparo?'") }
-                static var howA: String { ls("panel.widgetInfo.periodComparison.howA", comment: "Stats Trends — Comparativa: respuesta") }
-            }
-
             enum Sankey {
                 static var title: String { ls("panel.widgetInfo.sankey.title", comment: "Stats Categories — Title sheet pedagógico Sankey (Flujo del dinero)") }
                 static var chip1: String { ls("panel.widgetInfo.sankey.chip1", comment: "Stats Categories — Chip 1 Sankey (Flujo)") }
@@ -763,12 +757,21 @@ enum L10n {
             static func restoreWidgets(_ name: String) -> String {
                 String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
             }
+            // Revisión por vistas 2.3, PN-8: ↻ dice lo que hace y pregunta antes.
+            static var resetOrder: String { ls("panel.sectionsConfig.resetOrder", comment: "Accessibility label of the ↻ button in Configure Panel: puts the sections back in their original order") }
+            static var resetOrderTitle: String { ls("panel.sectionsConfig.resetOrder.title", comment: "Alert title asking before putting the Panel sections back in their original order") }
+            static var resetOrderMessage: String { ls("panel.sectionsConfig.resetOrder.message", comment: "Alert message: only the order of the Panel sections changes; which ones are on or off stays") }
+            static var resetConfirm: String { ls("panel.sectionsConfig.resetOrder.confirm", comment: "Alert button that confirms resetting (Panel sections order or a section's widgets)") }
         }
 
         enum SectionPrefs {
             static var title: String {
                 ls("panel.sectionPrefs.title", comment: "Per-section preferences sheet title (P20-03)")
             }
+            static func resetTitle(_ section: String) -> String {
+                String(format: ls("panel.sectionPrefs.reset.title %@", comment: "Alert title asking before putting a Panel section's widgets back as they came; %@ is the section name"), section)
+            }
+            static var resetMessage: String { ls("panel.sectionPrefs.reset.message", comment: "Alert message: the section's widgets go back to how they came (which show, order and size)") }
         }
 
         /// Salud financiera (P20-06 — Financial Score).
@@ -855,8 +858,36 @@ enum L10n {
             static var improveActivity: String { ls("panel.health.improve.activity", comment: "Health: what would raise the score most (rhythm)") }
             static var improveBills: String { ls("panel.health.improve.bills", comment: "Health: what would raise the score most (commitments)") }
             static var improveNothing: String { ls("panel.health.improve.nothing", comment: "Health: all three parts are fine") }
-            static func floorNote(_ floor: Int) -> String {
-                String(format: ls("panel.health.floorNote", comment: "Health: the total never goes below this number. %d = floor"), floor)
+            static var scaleNote: String { ls("panel.health.scaleNote", comment: "Health sheet: the scale of the total score") }
+            // Lote 1 de la nota de salud (11-nov-2026): el mensaje breve de la tarjeta, siempre un paso concreto.
+            static var cardStepActivity: String { ls("panel.health.card.step.activity", comment: "Health card: step to raise rhythm") }
+            static var cardStepBudget: String { ls("panel.health.card.step.budget", comment: "Health card: step to raise budgets") }
+            static var cardStepBills: String { ls("panel.health.card.step.bills", comment: "Health card: step to raise planned payments") }
+            static var cardStepGood: String { ls("panel.health.card.step.good", comment: "Health card: every part is doing well") }
+            static var cardStartActivity: String { ls("panel.health.card.start.activity", comment: "Health card, no score: rhythm has no data") }
+            static var cardStartBudget: String { ls("panel.health.card.start.budget", comment: "Health card, no score: budgets have no data") }
+            static var cardStartBills: String { ls("panel.health.card.start.bills", comment: "Health card, no score: planned payments have no data") }
+            // Revisión 2.3, decisión 9 (PN-2): sin nota hasta tener dos de tres partes, y lo que la nota no ve.
+            static var missingAllParts: String {
+                ls("panel.health.missing.all", comment: "Health card without a score and no part with data: the score needs data in two of the three parts")
+            }
+            static func missingTwoParts(_ first: String, _ second: String) -> String {
+                String(format: ls("panel.health.missing.two", comment: "Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data (e.g. Budgets, Commitments)"), first, second)
+            }
+            static func unseen(_ items: String) -> String {
+                String(format: ls("panel.health.unseen", comment: "Health card: line with what is going wrong and the score does not count. %@ = list of items joined with ' · '"), items)
+            }
+            static func unseenNegativeAccount(_ name: String) -> String {
+                String(format: ls("panel.health.unseen.negativeAccount", comment: "Health card, item of the 'not counted' line: an account with a negative balance. %@ = account name"), name)
+            }
+            static func unseenOverBudget(_ name: String) -> String {
+                String(format: ls("panel.health.unseen.overBudget", comment: "Health card, item of the 'not counted' line: a budget already over its limit that does not count yet. %@ = budget name"), name)
+            }
+            static var totalHeadlineHighWithAlerts: String {
+                ls("panel.health.total.headline.highWithAlerts", comment: "Health sheet headline for a total score ≥ 90 while something is going wrong (over budget, account below zero)")
+            }
+            static var totalHeadlineNotYet: String {
+                ls("panel.health.total.headline.notYet", comment: "Health sheet headline when there is data but not enough for a score yet")
             }
 
             // MARK: Detail sheet — Activity.
@@ -944,14 +975,25 @@ enum L10n {
             /// Label inline arriba del monto disponible — desambigua qué
             /// representa el monto. Se compone con el `displayName` del
             /// período actual ("Disponible · Este mes", "Available · This year").
-            static var availableLabel: String {
-                ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
+            // Decisión 8 de la revisión 2.3 (9-nov-2026): el mismo vocabulario en toda la app. «Tienes» es lo que hay
+            // en las cuentas; «Te queda» es lo que entró menos lo que salió. Estadísticas usa estas mismas claves.
+            static var haveToday: String {
+                ls("panel.hero.haveToday", comment: "Panel hero label of the big figure: the money in the accounts today. Does not follow the period")
+            }
+            static var oweToday: String {
+                ls("panel.hero.oweToday", comment: "Panel hero label of the big figure when the accounts add up to a debt. The figure is shown without sign")
+            }
+            static var leftNow: String {
+                ls("panel.hero.leftNow", comment: "Label before the amount of income minus expenses for a period still in progress (\"what you have left\"). Never \"surplus\"")
+            }
+            static var leftPast: String {
+                ls("panel.hero.leftPast", comment: "Label before the amount of income minus expenses for a period that already ended (\"what you had left\")")
+            }
+            static func leftInMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.leftInMonth", comment: "Label before the amount of income minus expenses of last month, with its name (\"In October you had left\"). %@ = month name"), month)
             }
 
             // UX 2.2 · L3-1/L3-2/L3-3: el rótulo dice qué mide la cifra y una línea dice de dónde sale.
-            static func balanceOfMonth(_ month: String) -> String {
-                String(format: ls("panel.hero.balanceOfMonth", comment: "Panel hero label: income minus expenses of a named month. %@ = month name"), month)
-            }
             static func expensesOfMonth(_ month: String) -> String {
                 String(format: ls("panel.hero.expensesOfMonth", comment: "Panel hero label when only expenses are shown. %@ = month name"), month)
             }
@@ -968,9 +1010,6 @@ enum L10n {
             }
             static var noMovements: String {
                 ls("panel.hero.noMovements", comment: "Line under the panel hero when the period has no income or expenses yet")
-            }
-            static func totalInAccounts(_ amount: String) -> String {
-                String(format: ls("panel.hero.totalInAccounts", comment: "Second line under the panel hero with no movements: the money in the accounts. %@ = amount"), amount)
             }
             static var seeDetail: String {
                 ls("panel.hero.seeDetail", comment: "Small hint next to the panel hero label: tapping opens Statistics")
@@ -1000,6 +1039,31 @@ enum L10n {
         /// Nombre de la línea discontinua de la gráfica de saldo (UX 2.2 · L3-17). %@ = cifra corta («99K»).
         static func trendAverageLabel(_ value: String) -> String {
             String(format: ls("panel.trend.averageLabel", comment: "Balance chart: label of the dashed average line. %@ = short amount"), value)
+        }
+        /// Junto al chip de variación de la gráfica: contra qué fecha compara (decisión 11 de 2.3). %@ = «20 oct».
+        static func trendVersusDate(_ date: String) -> String {
+            String(format: ls("panel.trend.versusDate", comment: "Trend chart: next to the % chip, the date of the previous period it compares against. %@ = short date, e.g. '20 Oct'"), date)
+        }
+        /// La fila de inicio y fin bajo la gráfica de saldo: «1 nov S/ X → hoy S/ Y».
+        static var trendToday: String {
+            ls("panel.trend.today", comment: "Balance chart start-to-end row: the word for 'today' in '1 Nov S/ X → today S/ Y'. Lowercase mid-sentence")
+        }
+        /// VoiceOver de la fila de inicio y fin. %1$@ = fecha de inicio, %2$@ = saldo de inicio, %3$@ = «hoy» o fecha
+        /// final, %4$@ = saldo final.
+        static func trendStartEndAccessibility(_ startDate: String, _ startAmount: String, _ endDate: String, _ endAmount: String) -> String {
+            String(format: ls("panel.trend.startEnd.a11y", comment: "VoiceOver for the balance chart start-to-end row. %1$@ = start date, %2$@ = start balance, %3$@ = 'today' or end date, %4$@ = end balance"), startDate, startAmount, endDate, endAmount)
+        }
+        /// Los días 1 y 2 de «Este mes» (decisión 10 de 2.3): la línea del hero que dice que el mes acaba de empezar.
+        enum MonthStart {
+            static func dayOfMonth(_ day: Int, _ total: Int) -> String {
+                String(format: ls("panel.monthStart.dayOfMonth", comment: "Panel hero, first two days of the month: 'Day 1 of 31'. %1$d = day of month, %2$d = days in month"), day, total)
+            }
+            static var last30Days: String {
+                ls("panel.monthStart.last30Days", comment: "Panel hero, first two days of the month: link that switches the period selector to 'Last 30 days'")
+            }
+            static func previousMonth(_ month: String) -> String {
+                String(format: ls("panel.monthStart.previousMonth", comment: "Panel hero, first two days of the month: link that switches the period selector to last month. %@ = month name, e.g. 'October'"), month)
+            }
         }
         /// La cola de avisos del Panel (UX 2.2 · L3-8).
         enum Notices {
@@ -1358,6 +1422,13 @@ enum L10n {
         static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
         static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
         static var cellDetailEarned: String { ls("cashFlowPlan.cellDetailEarned", comment: "") }
+        /// «Gastaste S/ 120; el estimado era S/ 100.» Una frase entera: pegar «vs» a mano salía «vs» en los 16 idiomas.
+        static func cellDetailSpentVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailSpentVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount spent, %2$@ = amount estimated in the plan"), real, planned)
+        }
+        static func cellDetailEarnedVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailEarnedVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount received, %2$@ = amount estimated in the plan"), real, planned)
+        }
         static var cellDetailMore: String { ls("cashFlowPlan.cellDetailMore", comment: "") }
         static var cellDetailLess: String { ls("cashFlowPlan.cellDetailLess", comment: "") }
         static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
@@ -1418,11 +1489,19 @@ enum L10n {
             String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
         }
         static var chartAllWithinPlan: String { ls("cashFlowPlan.chartAllWithinPlan", comment: "") }
-        static func deviationCommentSingle(_ name: String, _ amount: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentSingle", comment: ""), name, amount)
+        // La frase de «Gastos por revisar» dice que la cifra es un promedio y de cuántos meses (decisión 35 de la
+        // revisión 2.3): «En Bares gastaste S/ 47 más» no casaba con los S/ 17.75 del mes.
+        static func deviationAverageSingle(_ months: Int, _ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageSingle", comment: "Cash flow charts: %1$d = months averaged, %2$@ = plan line, %3$@ = average monthly excess"), months, name, amount)
         }
-        static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        static func deviationAverageMultiple(_ months: Int, _ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageMultiple", comment: "Cash flow charts: %1$d = months averaged, %2$@ = line with the largest excess, %3$@ = its average monthly excess, %4$@ = average monthly excess of all lines"), months, name, amount, total)
+        }
+        static func deviationThisMonthSingle(_ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthSingle", comment: "Cash flow charts, only the current month: %1$@ = plan line, %2$@ = excess"), name, amount)
+        }
+        static func deviationThisMonthMultiple(_ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthMultiple", comment: "Cash flow charts, only the current month: %1$@ = line with the largest excess, %2$@ = its excess, %3$@ = excess of all lines"), name, amount, total)
         }
         static var chartSavingsSubtitle: String { ls("cashFlowPlan.chartSavingsSubtitle", comment: "") }
         static var chartPlanned: String { ls("cashFlowPlan.chartPlanned", comment: "") }
@@ -1505,6 +1584,29 @@ enum L10n {
         static var highestExpense: String { ls("insights.highestExpense", comment: "") }
         static var highestAvgWeekday: String { ls("insights.highestAvgWeekday", comment: "") }
         static var subscriptions: String { ls("insights.subscriptions", comment: "") }
+        // Gastos hormiga (card ea78, 2.3)
+        static var antExpensesTitle: String { ls("insights.antExpenses.title", comment: "") }
+        static func antExpensesSummary(total: String, count: Int) -> String {
+            String(format: ls("insights.antExpenses.summary", comment: ""), total, count)
+        }
+        static func antExpensesMonthly(_ amount: String) -> String {
+            String(format: ls("insights.antExpenses.monthly", comment: ""), amount)
+        }
+        static func antExpensesRow(count: Int, total: String) -> String {
+            String(format: ls("insights.antExpenses.row", comment: ""), count, total)
+        }
+        static func antExpensesRule(threshold: String, minCount: Int) -> String {
+            String(format: ls("insights.antExpenses.rule", comment: ""), threshold, minCount)
+        }
+        // Gastos hormiga con IA, solo Pro (ticket insights-ant-expenses-ai-version-for-pro)
+        static var antExpensesAITitle: String { ls("insights.antExpenses.ai.title", comment: "") }
+        static func antExpensesAIAlsoWritten(_ names: String) -> String {
+            String(format: ls("insights.antExpenses.ai.alsoWritten", comment: ""), names)
+        }
+        static func antExpensesAICombined(total: String, count: Int) -> String {
+            String(format: ls("insights.antExpenses.ai.combined", comment: ""), total, count)
+        }
+        static var antExpensesAICta: String { ls("insights.antExpenses.ai.cta", comment: "") }
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
@@ -1686,6 +1788,10 @@ enum L10n {
         static var ofExpense: String {
             ls("statistics.ofExpense", comment: "")
         }
+        /// Detalle de una categoría en Distribución (decisión 25 de la revisión 2.3): lleva a sus registros.
+        static var categoryDetailSeeInRecords: String {
+            ls("statistics.categoryDetail.seeInRecords", comment: "Category detail in Statistics: link that opens Records showing only this category")
+        }
         static var spendingAnalysis: String {
             ls("statistics.spendingAnalysis", comment: "")
         }
@@ -1696,7 +1802,6 @@ enum L10n {
         enum Sankey {
             static var title: String { ls("statistics.sankey.title", comment: "") }
             static var expenses: String { ls("statistics.sankey.expenses", comment: "") }
-            static var available: String { ls("statistics.sankey.available", comment: "") }
             static var others: String { ls("statistics.sankey.others", comment: "") }
             static var planned: String { ls("statistics.sankey.planned", comment: "") }
             static var plannedRecurring: String { ls("statistics.sankey.plannedRecurring", comment: "") }
@@ -1723,6 +1828,8 @@ enum L10n {
         static var netFlow: String { ls("report.netFlow", comment: "") }
         static var noData: String { ls("report.noData", comment: "") }
         static var noDataDescription: String { ls("report.noDataDescription", comment: "") }
+        /// El vacío de Flujo de caja: el flujo de caja no tiene período, así que no dice «en este período».
+        static var cashFlowNoDataDescription: String { ls("report.cashFlowNoDataDescription", comment: "Cash flow empty state: no records yet") }
         static var uncategorized: String { ls("report.uncategorized", comment: "") }
         static var noSubcategory: String { ls("report.noSubcategory", comment: "") }
         static var noTag: String { ls("report.noTag", comment: "") }
@@ -1791,16 +1898,18 @@ enum L10n {
         static var collected: String { ls("records.collected", comment: "Fila de Registros: lo cobrado de una venta en un grupo") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
+        /// C2 (decisión 19 de 2.3): pista de VoiceOver de la cabecera de la semana plegada («13–19 oct 2026 ▾»).
+        static var calendarShowMonthHint: String { ls("records.calendarShowMonthHint", comment: "A11y: pista de la cabecera de la semana plegada del calendario; al tocarla se ve el mes entero") }
         static func deleteConfirmTitle(_ count: Int) -> String {
-            String(format: ls("records.deleteConfirmTitle", comment: ""), count)
+            String(format: ls("records.deleteConfirmTitle", comment: ""), locale: AppLocale.current, count)
         }
         /// Barra del modo selección: «1 seleccionado», «3 seleccionados». Plural en el `.stringsdict`.
         static func selectedCount(_ count: Int) -> String {
-            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), count)
+            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), locale: AppLocale.current, count)
         }
         /// Borrado en lote: los elegidos que vienen de un grupo se quedan. Plural en el `.stringsdict`.
         static func groupRecordsKept(_ count: Int) -> String {
-            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), count)
+            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), locale: AppLocale.current, count)
         }
         static var groupRecordsOnlyTitle: String { ls("records.groupRecordsOnlyTitle", comment: "Borrado en lote: todo lo elegido viene de un grupo") }
         static var groupRecordsDeleteFromGroup: String { ls("records.groupRecordsDeleteFromGroup", comment: "Borrado en lote: por qué lo de un grupo se borra desde el grupo") }
@@ -2017,6 +2126,14 @@ enum L10n {
             static var splitYourShare: String { ls("groups.splitLines.splitYourShare") }
             /// Card 6: título de la hoja «Tu parte».
             static var yourShareTitle: String { ls("groups.splitLines.yourShareTitle") }
+            /// Línea resumen bajo la tarjeta: «Debes S/ 510.00 a Pía».
+            static func summaryOwe(_ amount: String, _ name: String) -> String {
+                String(format: ls("groups.splitLines.summaryOwe %@ %@"), amount, name)
+            }
+            /// Línea resumen bajo la tarjeta: «Sip sube S/ 500.00».
+            static func summaryRaises(_ account: String, _ amount: String) -> String {
+                String(format: ls("groups.splitLines.summaryRaises %@ %@"), account, amount)
+            }
         }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
@@ -2266,6 +2383,20 @@ enum L10n {
             // Errores
             static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+            /// Editar o quitar un saldo inicial con pagos confirmados de quienes están en él (lote 2.3 de Grupos). Antes
+            /// salía el aviso de BORRAR un gasto (`groups.bridge.deleteExpenseBlocked`).
+            static var errorLockedBySettlements: String {
+                ls("groups.openingBalance.errorLockedBySettlements", comment: "")
+            }
+            /// Añadir uno entre dos personas que ya tienen otro editable en esa moneda: se pregunta antes de reemplazarlo.
+            static func replaceTitle(_ first: String, _ second: String) -> String {
+                String(format: ls("groups.openingBalance.replaceTitle", comment: ""), first, second)
+            }
+            /// «Ahora dice: Beto le debe a Ana · S/ 50.00. Si sigues, …».
+            static func replaceMessage(_ current: String) -> String {
+                String(format: ls("groups.openingBalance.replaceMessage", comment: ""), current)
+            }
+            static var replaceConfirm: String { ls("groups.openingBalance.replaceConfirm", comment: "") }
             // El servidor rechazó la subida (card 6n1o, g27_01): aviso en el detalle del grupo.
             static var serverRejectedTitle: String { ls("groups.openingBalance.serverRejected.title", comment: "") }
             static var serverRejectedNotAdmin: String { ls("groups.openingBalance.serverRejected.notAdmin", comment: "") }
@@ -2444,6 +2575,22 @@ enum L10n {
             static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
             /// UX 2.2 · L13-14: enlace bajo el aviso, abre Ajustes de Grupos.
             static var openGroupsSettings: String { ls("groups.settings.openGroupsSettings", comment: "") }
+        }
+
+        /// «Convertir a gasto compartido» desde Editar de un registro (2.3).
+        enum Convert {
+            /// En la revisión: el registro se queda en su cuenta y pasa a ser el gasto del grupo. `%@` = la cuenta.
+            static func notice(_ account: String) -> String {
+                String(format: ls("groups.convert.notice", comment: ""), account)
+            }
+            /// El aviso tras convertir: el registro sigue en tus cuentas y ahora es un gasto del grupo. `%@` = el grupo.
+            static func done(_ group: String) -> String {
+                String(format: ls("groups.convert.done", comment: ""), group)
+            }
+            /// En el editor, con «Mi parte»: por qué no se ofrece.
+            static var personalSplitHint: String { ls("groups.convert.personalSplitHint", comment: "") }
+            /// En el editor, con cambios sin guardar.
+            static var saveFirstHint: String { ls("groups.convert.saveFirstHint", comment: "") }
         }
 
         enum Errors {
@@ -3171,6 +3318,8 @@ enum L10n {
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
         static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
         static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        /// Sin conexión, debajo de `errorOffline` al abrir el chat (decisión 42 de 2.3).
+        static var offlineBody: String { ls("chat.offline.body", comment: "Yala IA sin conexión: vuelve con internet; mientras, apuntar a mano") }
         static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
         static var errorNoData: String { ls("chat.errorNoData", comment: "") }
         static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
@@ -3301,6 +3450,31 @@ enum L10n {
         static func periodsCount(_ count: Int) -> String { String(format: ls("accessibility.periodsCount %d", comment: ""), count) }
         static func currenciesCount(_ count: Int) -> String { String(format: ls("accessibility.currenciesCount %d", comment: ""), count) }
         static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
+
+        /// Lo que VoiceOver dice de una gráfica: la conclusión con cifras (decisión 26 de la revisión 2.3, V1) y los
+        /// nombres de los ejes de la descripción de gráficas de iOS (V2). Las arma `ChartSpokenSummary`.
+        enum Chart {
+            static func single(_ date: String, _ amount: String) -> String { String(format: ls("accessibility.chart.single %@ %@", comment: ""), date, amount) }
+            static func trendRose(_ range: String, _ from: String, _ to: String) -> String { String(format: ls("accessibility.chart.trendRose %@ %@ %@", comment: ""), range, from, to) }
+            static func trendFell(_ range: String, _ from: String, _ to: String) -> String { String(format: ls("accessibility.chart.trendFell %@ %@ %@", comment: ""), range, from, to) }
+            static func trendFlat(_ range: String, _ amount: String) -> String { String(format: ls("accessibility.chart.trendFlat %@ %@", comment: ""), range, amount) }
+            static func highest(_ amount: String, _ date: String) -> String { String(format: ls("accessibility.chart.highest %@ %@", comment: ""), amount, date) }
+            static func lowest(_ amount: String, _ date: String) -> String { String(format: ls("accessibility.chart.lowest %@ %@", comment: ""), amount, date) }
+            static func comparisonMore(_ now: String, _ gap: String, _ before: String) -> String { String(format: ls("accessibility.chart.comparisonMore %@ %@ %@", comment: ""), now, gap, before) }
+            static func comparisonLess(_ now: String, _ gap: String, _ before: String) -> String { String(format: ls("accessibility.chart.comparisonLess %@ %@ %@", comment: ""), now, gap, before) }
+            static func comparisonSame(_ now: String) -> String { String(format: ls("accessibility.chart.comparisonSame %@", comment: ""), now) }
+            static func comparisonNoPrevious(_ now: String) -> String { String(format: ls("accessibility.chart.comparisonNoPrevious %@", comment: ""), now) }
+            static func rest(_ share: String) -> String { String(format: ls("accessibility.chart.rest %@", comment: ""), share) }
+            static func parts(_ total: String, _ list: String) -> String { String(format: ls("accessibility.chart.parts %@ %@", comment: ""), total, list) }
+            static func cashFlowNet(_ totals: String, _ label: String, _ amount: String) -> String { String(format: ls("accessibility.chart.cashFlowNet %@ %@ %@", comment: ""), totals, label, amount) }
+            static func weekdayTop(_ day: String, _ amount: String) -> String { String(format: ls("accessibility.chart.weekdayTop %@ %@", comment: ""), day, amount) }
+            static func weekdayLow(_ day: String, _ amount: String) -> String { String(format: ls("accessibility.chart.weekdayLow %@ %@", comment: ""), day, amount) }
+            static var weekdayTitle: String { ls("accessibility.chart.weekdayTitle", comment: "") }
+            static var axisDate: String { ls("accessibility.chart.axisDate", comment: "") }
+            static var axisAmount: String { ls("accessibility.chart.axisAmount", comment: "") }
+            static var axisCategory: String { ls("accessibility.chart.axisCategory", comment: "") }
+            static var axisWeekday: String { ls("accessibility.chart.axisWeekday", comment: "") }
+        }
         static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
         static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
         static var updatingExchangeRates: String { ls("accessibility.updatingExchangeRates", comment: "") }
@@ -3598,6 +3772,8 @@ enum L10n {
         static var type: String { ls("transaction.type", comment: "") }
         static var amount: String { ls("transaction.amount", comment: "") }
         static var description: String { ls("transaction.description", comment: "") }
+        /// Rótulo de VoiceOver de la fila de sugerencias de descripción (card y6du, 2.3).
+        static var descriptionSuggestions: String { ls("transaction.descriptionSuggestions", comment: "") }
         static var descriptionHint: String {
             ls("transaction.descriptionHint", comment: "")
         }
@@ -3734,7 +3910,7 @@ enum L10n {
             ls("account.excludeFromStats", comment: "")
         }
         /// Aviso bajo «Archivar cuenta» cuando archivar encendió «Excluir de las estadísticas».
-        static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
+        static var archiveKeepsHistoryNotice: String { ls("account.archiveKeepsHistoryNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
         /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).
@@ -4250,6 +4426,15 @@ enum L10n {
         static var balanceAdjustment: String { ls("subcategory.balanceAdjustment", comment: "") }
         static var accountTransferOther: String { ls("subcategory.accountTransferOther", comment: "") }
 
+        /// Palabras del día a día que llevan a una categoría sembrada en el buscador de la hoja, separadas por comas
+        /// (decisión 21 de 2.3, C3). `seed` es el sufijo de `subcategory.<seed>`; la lista vive en `CategoryEverydayWords`.
+        static func everydayWords(_ seed: String) -> String {
+            ls("subcategory.words.\(seed)", comment: "Palabras de búsqueda de la categoría, separadas por comas")
+        }
+
+        /// «Más…» al final de la fila de categorías frecuentes de Nuevo registro: abre la hoja con todas (decisión 21, C2).
+        static var quickPickMore: String { ls("subcategory.quickPick.more", comment: "Abre la hoja con todas las categorías") }
+
         // MARK: - System Subcategories (A0-Bridge)
 
         enum System {
@@ -4292,6 +4477,35 @@ enum L10n {
         }
         static func colorSelected(_ hex: String) -> String {
             String(format: ls("tag.colorSelected", comment: ""), hex)
+        }
+        /// El nombre de un color de etiqueta («Naranja»); fuera de la paleta, «Color propio» (lote 09 de mejoras 2.3).
+        static func colorName(hex: String) -> String {
+            guard let color = TagPaletteColor(hex: hex) else { return ls("tag.colorName.custom") }
+            switch color {
+            case .orange: return ls("tag.colorName.orange")
+            case .green: return ls("tag.colorName.green")
+            case .blue: return ls("tag.colorName.blue")
+            case .pink: return ls("tag.colorName.pink")
+            case .indigo: return ls("tag.colorName.indigo")
+            case .yellow: return ls("tag.colorName.yellow")
+            case .cyan: return ls("tag.colorName.cyan")
+            case .purple: return ls("tag.colorName.purple")
+            case .oceanBlue: return ls("tag.colorName.oceanBlue")
+            case .coral: return ls("tag.colorName.coral")
+            case .brown: return ls("tag.colorName.brown")
+            case .red: return ls("tag.colorName.red")
+            case .turquoise: return ls("tag.colorName.turquoise")
+            case .lavender: return ls("tag.colorName.lavender")
+            case .skyBlue: return ls("tag.colorName.skyBlue")
+            }
+        }
+        /// «17 de 20»: el nombre se acerca al límite.
+        static func nameCount(_ count: Int, of limit: Int) -> String {
+            String(format: ls("tag.nameCount %lld %lld", comment: ""), count, limit)
+        }
+        /// «20 de 20: el resto no cabe»: lo que se escriba de más se corta.
+        static func nameLimitReached(_ limit: Int) -> String {
+            String(format: ls("tag.nameLimitReached %lld %lld", comment: ""), limit, limit)
         }
     }
 
@@ -4489,6 +4703,10 @@ enum L10n {
         static var columnNote: String { ls("export.column.note", comment: "") }
         static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
         static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
+        /// Las columnas de la ida y vuelta exacta (H18 de la auditoría del import).
+        static var columnTime: String { ls("export.column.time", comment: "Export column with the time of the record") }
+        static var columnExchangeRate: String { ls("export.column.exchangeRate", comment: "Export column with the exchange rate") }
+        static var columnNeed: String { ls("export.column.need", comment: "Export column with the nature changed by hand") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -4504,6 +4722,9 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+        static var columnTimeDesc: String { ls("export.column.time.description", comment: "") }
+        static var columnExchangeRateDesc: String { ls("export.column.exchangeRate.description", comment: "") }
+        static var columnNeedDesc: String { ls("export.column.need.description", comment: "") }
 
         // G5-D2: export ampliado con grupos (archivo CSV aparte)
         static var includeGroups: String { ls("export.includeGroups", comment: "") }
@@ -4562,6 +4783,14 @@ enum L10n {
     // MARK: - Scheduled
 
     enum Scheduled {
+        // Logo de suscripción en el editor (card 9nn7, 2.3)
+        static var logoTitle: String { ls("scheduled.editor.logo.title", comment: "") }
+        static var logoNone: String { ls("scheduled.editor.logo.none", comment: "") }
+        static var logoAuto: String { ls("scheduled.editor.logo.auto", comment: "") }
+        static func logoAutoNamed(_ brand: String) -> String {
+            String(format: ls("scheduled.editor.logo.autoNamed", comment: ""), brand)
+        }
+
         static var saveDescription: String {
             ls("scheduled.saveDescription", comment: "")
         }
@@ -4618,6 +4847,8 @@ enum L10n {
             static var recurring: String { ls("scheduled.tab.recurring", comment: "") }
             static var subscriptions: String { ls("scheduled.tab.subscriptions", comment: "") }
             static var all: String { ls("scheduled.tab.all", comment: "") }
+            /// Nombre del segmentado para VoiceOver («Tipo de pago»).
+            static var pickerLabel: String { ls("scheduled.tab.pickerLabel", comment: "") }
         }
 
         enum Widget {
@@ -5972,13 +6203,13 @@ enum L10n {
             /// La sonda alcanzó su tope de registros: la cifra es un MÍNIMO y el copy no puede
             /// presentarla como un total.
             static func foundAtLeast(_ count: Int) -> String {
-                String(format: ls("welcome.privateICloud.foundAtLeast", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.privateICloud.foundAtLeast", comment: ""), count)
             }
             /// El restore no tiene clave propia para categorías (su pantalla no las enseña), así que
             /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
             /// consumidora es esta pantalla.
             static func foundCategories(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.privateICloud.foundCategories", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.privateICloud.foundCategories", comment: ""), count)
             }
             /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
             /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
@@ -6134,6 +6365,18 @@ enum L10n {
             /// copia» **con prueba**, que es lo correcto), y a ése la frase le mentía. Ahora dice qué se está
             /// haciendo; el aviso de la espera agotada dice lo que de verdad pasó.
             static var neutralWorking: String { ls("welcome.groups.neutralWorking", comment: "") }
+            /// La entrada con Google o Apple que deja el iCloud privado aparte (opción B, 2026-11-10): los cuatro textos
+            /// que esa entrada dice distinto que «Crear mi primer grupo» en la misma pantalla.
+            static var cloudAsideWorking: String { ls("welcome.groups.cloudAsideWorking", comment: "") }
+            static var cloudAsideUnavailableBody: String { ls("welcome.groups.cloudAsideUnavailableBody", comment: "") }
+            static var cloudAsideWipeFailedBody: String { ls("welcome.groups.cloudAsideWipeFailedBody", comment: "") }
+            static var cloudAsideBlockedBody: String { ls("welcome.groups.cloudAsideBlockedBody", comment: "") }
+            /// La espera del export agotada al dejar iCloud aparte. Sin «si continúas»: esta entrada no ofrece descartar
+            /// nada (quien entra puede no ser el dueño del teléfono), así que solo cabe esperar o volver.
+            static func cloudAsideStalledBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.cloudAsideStalledBody", comment: "Dejar iCloud aparte con cambios sin subir a iCloud; %d = cuántos"), count)
+            }
+            static var cloudAsideStalledBodyUnknown: String { ls("welcome.groups.cloudAsideStalledBodyUnknown", comment: "") }
             /// El ÚNICO punto de este flujo donde se pregunta, y se llega solo **con prueba** de que no hay
             /// copia (`PrivateSignOutExportGateLogic.CopyChannel.none`): informar diría «tus datos siguen a
             /// salvo en iCloud», y sin copia eso sería mentira.
@@ -6342,6 +6585,7 @@ enum L10n {
             /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
             static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
             static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
+            static var cancelling: String { ls("welcome.cloud.cancelling", comment: "Bajo la barra tras «Sí, cancelar»") }
         }
 
         enum Restore {
@@ -6365,16 +6609,16 @@ enum L10n {
             /// La copia de iCloud es anterior a la nube de Yala (card lokl del lote N3, decisión A de Jürgen).
             static var foundPreCloudNote: String { ls("welcome.restore.foundPreCloudNote", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
             static func foundTransactions(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundTransactions", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundTransactions", comment: ""), count)
             }
             static func foundBudgets(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundBudgets", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundBudgets", comment: ""), count)
             }
             static func foundGroups(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundGroups", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundGroups", comment: ""), count)
             }
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
@@ -6795,6 +7039,27 @@ enum L10n {
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
 
+        /// Aviso y hoja de los gastos de grupo repetidos (bug del 2026-11-09): borrador «Elige cuenta» o «Préstamo a
+        /// grupos» de más en un gasto que ya está en tus registros. Las cifras van fuera de la frase («Borradores de más:
+        /// 1»), para no depender de plurales en los 16 idiomas.
+        enum GroupLeftovers {
+            static var bannerTitle: String { ls("inbox.groupLeftovers.bannerTitle", comment: "") }
+            static var bannerMessage: String { ls("inbox.groupLeftovers.bannerMessage", comment: "") }
+            static var bannerAction: String { ls("inbox.groupLeftovers.bannerAction", comment: "") }
+            static var intro: String { ls("inbox.groupLeftovers.intro", comment: "") }
+            static func extraDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraDrafts", comment: ""), count)
+            }
+            static func extraLoans(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraLoans", comment: ""), count)
+            }
+            static var remove: String { ls("inbox.groupLeftovers.remove", comment: "") }
+            static var confirmTitle: String { ls("inbox.groupLeftovers.confirmTitle", comment: "") }
+            static var confirmMessage: String { ls("inbox.groupLeftovers.confirmMessage", comment: "") }
+            static var confirmAction: String { ls("inbox.groupLeftovers.confirmAction", comment: "") }
+            static var failed: String { ls("inbox.groupLeftovers.failed", comment: "") }
+        }
+
         // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
         enum GroupExpenseDraft {
             static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }
@@ -7043,6 +7308,10 @@ enum L10n {
         static var createAnyway: String {
             ls("inbox.createAnyway", comment: "")
         }
+        /// Pantalla final del lote: cuántos se quedaron en la Bandeja por parecerse a un registro que ya existe.
+        static func bulkSkippedDuplicates(_ count: Int) -> String {
+            String(format: ls("inbox.bulkDuplicates.skipped", comment: ""), count)
+        }
         static func deleteConfirmMessage(_ count: Int) -> String {
             String(format: ls("inbox.deleteConfirmMessage", comment: ""), count)
         }
@@ -7194,7 +7463,8 @@ enum L10n {
         static var title: String {
             ls("voice.title", comment: "")
         }
-        /// Card tjws: la etiqueta de VoiceOver de la frase en vivo mientras se graba (lo que entiende el iPhone).
+        /// Card tjws: la etiqueta de VoiceOver de la frase en vivo mientras se graba. Nombra «el dispositivo», no «el iPhone»:
+        /// también se oye en el iPad (`LocalizationParityTests.liveTranscriptLabel_namesNoDeviceModel`).
         static var liveTranscriptAccessibility: String {
             ls("voice.live.transcriptAccessibility", comment: "VoiceOver label for the live on-device transcript")
         }
@@ -7753,6 +8023,10 @@ enum L10n {
         static func applePayPendingDrafts(_ count: Int) -> String {
             String(format: ls("tutorials.applePay.pendingDrafts", comment: ""), count)
         }
+        static var applePayNoPaymentYet: String { ls("tutorials.applePay.status.none", comment: "") }
+        static func applePayLastPayment(_ day: String) -> String {
+            String(format: ls("tutorials.applePay.status.lastPayment", comment: ""), day)
+        }
         // Step Descriptions
         static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
         static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }
@@ -8094,6 +8368,8 @@ enum L10n {
         static var v22FasterEntryDescription: String { ls("whatsNew.v22.fasterEntry.description", comment: "") }
         static var v22LeftToPayTitle: String { ls("whatsNew.v22.leftToPay.title", comment: "") }
         static var v22LeftToPayDescription: String { ls("whatsNew.v22.leftToPay.description", comment: "") }
+        static var v23HealthScoreTitle: String { ls("whatsNew.v23.healthScore.title", comment: "") }
+        static var v23HealthScoreDescription: String { ls("whatsNew.v23.healthScore.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -8270,6 +8546,16 @@ enum L10n {
             static var detachFinishButton: String { ls("storage.groups.detachFinishButton", comment: "") }
             static var detachPendingBody: String { ls("storage.groups.detachPendingBody", comment: "") }
             static var detachBusy: String { ls("storage.groups.detachBusy", comment: "") }
+            /// G1 de la revisión 2.3 (decisión 55): la fila de la cuenta y su enlace; y la hoja de soltar (decisión 59).
+            static var usedByGroups: String { ls("storage.groups.usedByGroups", comment: "") }
+            static var changeAccount: String { ls("storage.groups.changeAccount", comment: "") }
+            static var changeAccountTitle: String { ls("storage.groups.changeAccountTitle", comment: "") }
+            static var changeAccountCommon: String { ls("storage.groups.changeAccountCommon", comment: "") }
+            static var changeAccountKeepEffect: String { ls("storage.groups.changeAccountKeepEffect", comment: "") }
+            static func changeAccountKeepEffectCount(_ count: Int, _ amounts: String) -> String {
+                String(format: ls("storage.groups.changeAccountKeepEffectCount", comment: ""), count, amounts)
+            }
+            static var changeAccountRemoveEffect: String { ls("storage.groups.changeAccountRemoveEffect", comment: "") }
         }
 
         enum Status {
@@ -8288,7 +8574,7 @@ enum L10n {
             static var previewUnreadable: String { ls("storage.migrate.previewUnreadable", comment: "") }
             /// "%1$lld movimientos · %2$lld categorías · %3$lld cuentas · %4$lld presupuestos".
             static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
-                String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
+                L10n.formatWithAppLocale(ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
             }
             /// C-7: con sesión de nube viva la migración REUSA esa cuenta y no pregunta el método.
             /// `%@` = nombre visible del proveedor (`ProviderMismatchLogic.displayName`, jamás el
@@ -8331,8 +8617,6 @@ enum L10n {
         enum Revert {
             static var title: String { ls("storage.revert.title", comment: "") }
             static var body: String { ls("storage.revert.body", comment: "") }
-            /// §3.3.5: frase de que la Reversa ES el desenlace funcional del enlace privado ↔ nube.
-            static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
             /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
@@ -8343,19 +8627,12 @@ enum L10n {
             enum Prior {
                 static var checking: String { ls("storage.revert.prior.checking", comment: "") }
                 static var title: String { ls("storage.revert.prior.title", comment: "") }
-                static func body(_ summary: String) -> String {
-                    String(format: ls("storage.revert.prior.body", comment: ""), summary)
-                }
-                static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
                 static func groupRecords(_ count: Int) -> String {
-                    String(format: ls("storage.revert.prior.groupRecords", comment: ""), count)
+                    L10n.formatWithAppLocale(ls("storage.revert.prior.groupRecords", comment: ""), count)
                 }
                 static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
                 static var merge: String { ls("storage.revert.prior.merge", comment: "") }
                 static var discard: String { ls("storage.revert.prior.discard", comment: "") }
-                static var discardConfirmTitle: String { ls("storage.revert.prior.discardConfirmTitle", comment: "") }
-                static var discardConfirmBody: String { ls("storage.revert.prior.discardConfirmBody", comment: "") }
-                static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
                 static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
                 static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
                 static var stalledTitle: String { ls("storage.revert.prior.stalledTitle", comment: "") }
@@ -8363,10 +8640,41 @@ enum L10n {
                 static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
                 static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
                 static func wiping(_ deleted: Int) -> String {
-                    String(format: ls("storage.revert.prior.wiping", comment: ""), deleted)
+                    L10n.formatWithAppLocale(ls("storage.revert.prior.wiping", comment: ""), deleted)
                 }
                 static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
                 static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
+            }
+
+            /// La hoja con fases de «Volver a tu iCloud» (revisión 2.3, decisión 53, V2): qué pasa, qué hacer con lo que
+            /// ya hay en tu iCloud y confirmar. Sustituye a los tres globos de antes.
+            enum Sheet {
+                static var title: String { ls("storage.revert.sheet.title", comment: "") }
+                static var dataTitle: String { ls("storage.revert.sheet.dataTitle", comment: "") }
+                static var dataDetail: String { ls("storage.revert.sheet.dataDetail", comment: "") }
+                static var accountTitle: String { ls("storage.revert.sheet.accountTitle", comment: "") }
+                static var accountDetail: String { ls("storage.revert.sheet.accountDetail", comment: "") }
+                static var storedTitle: String { ls("storage.revert.sheet.storedTitle", comment: "") }
+                static var storedDetail: String { ls("storage.revert.sheet.storedDetail", comment: "") }
+                static var cloudAgainTitle: String { ls("storage.revert.sheet.cloudAgainTitle", comment: "") }
+                static var cloudAgainDetail: String { ls("storage.revert.sheet.cloudAgainDetail", comment: "") }
+                static var continueButton: String { ls("storage.revert.sheet.continue", comment: "") }
+                static func priorBody(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.priorBody", comment: ""), summary)
+                }
+                static var priorBodyNoCount: String { ls("storage.revert.sheet.priorBodyNoCount", comment: "") }
+                static var mergeDetail: String { ls("storage.revert.sheet.mergeDetail", comment: "") }
+                static var discardDetail: String { ls("storage.revert.sheet.discardDetail", comment: "") }
+                static var confirmTitle: String { ls("storage.revert.sheet.confirmTitle", comment: "") }
+                static func confirmMerge(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.confirmMerge", comment: ""), summary)
+                }
+                static var confirmMergeNoCount: String { ls("storage.revert.sheet.confirmMergeNoCount", comment: "") }
+                static func confirmDiscard(_ summary: String) -> String {
+                    String(format: ls("storage.revert.sheet.confirmDiscard", comment: ""), summary)
+                }
+                static var confirmDiscardNoCount: String { ls("storage.revert.sheet.confirmDiscardNoCount", comment: "") }
+                static var confirmDiscardButton: String { ls("storage.revert.sheet.confirmDiscardButton", comment: "") }
             }
         }
 
@@ -8376,14 +8684,14 @@ enum L10n {
             /// Plural en `Localizable.stringsdict` (ticket `storage-sync-sign-in-count-has-no-plural`): con `String(format:)`
             /// salía «Inicia sesión para subir 1 cambios».
             static func needsSignIn(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.needsSignIn", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.needsSignIn", comment: ""), count)
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
             /// Quedan cambios sin subir y el motor no completó su último ciclo (sin red, en backoff o parado por el gate de
             /// dominio). Plural en el `.stringsdict`.
             static func waitingForConnection(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.waitingForConnection", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.waitingForConnection", comment: ""), count)
             }
             /// Lo mismo cuando las colas no se dejaron contar: sin cifra, pero tampoco «Todo sincronizado».
             static var waitingForConnectionUncounted: String {
@@ -8391,7 +8699,7 @@ enum L10n {
             }
             /// El motor está parado y esperar no lo arranca (card 39ww del lote N3). Plural en el `.stringsdict`.
             static func stopped(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.stopped", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.stopped", comment: ""), count)
             }
             /// Lo mismo sin cifra: la cola a cero o sin contar.
             static var stoppedUncounted: String { ls("storage.sync.stoppedUncounted", comment: "") }
@@ -8418,7 +8726,8 @@ enum L10n {
             static var reviewDetail: String { ls("storage.steps.reviewDetail", comment: "") }
             static var uploadToICloud: String { ls("storage.steps.uploadToICloud", comment: "") }
             static var keepUsing: String { ls("storage.steps.keepUsing", comment: "") }
-            /// «650 de 1.537». Las cifras llegan ya formateadas con el idioma de la app.
+            /// «650 de 1,537» o «650 de 1537», según el idioma de la app: el mismo formato que las demás cifras de la pantalla
+            /// (`L10n.formatWithAppLocale`).
             static func uploadedCount(_ done: Int, of total: Int) -> String {
                 String(format: ls("storage.steps.uploadedCount", comment: ""), number(done), number(total))
             }
@@ -8428,6 +8737,7 @@ enum L10n {
             static func wipedCount(_ count: Int) -> String {
                 String(format: ls("storage.steps.wipedCount", comment: ""), number(count))
             }
+            /// La cifra suelta con el idioma de la app; los textos de los pasos la reciben ya formateada (`%@`).
             private static func number(_ value: Int) -> String {
                 value.formatted(.number.locale(AppLocale.current))
             }
@@ -8443,7 +8753,7 @@ enum L10n {
             /// Espera de la vuelta a iCloud (`reverseUpload`), ticket `reverse-upload-has-no-ceiling-and-no-exit`.
             static var reverseUploading: String { ls("storage.progress.reverseUploading", comment: "") }
             static func reversePending(_ count: Int) -> String {
-                String(format: ls("storage.progress.reversePending", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.progress.reversePending", comment: ""), count)
             }
             static var reverseICloudFull: String { ls("storage.progress.reverseICloudFull", comment: "") }
             static var reverseICloudUnavailable: String {
@@ -8674,6 +8984,24 @@ enum L10n {
             static var body: String { ls("storage.pendingICloudWipe.body", comment: "") }
             static var proceed: String { ls("storage.pendingICloudWipe.proceed", comment: "") }
             static var wait: String { ls("storage.pendingICloudWipe.wait", comment: "") }
+            /// La hoja del borrado pendiente (revisión 2.3, decisión 57, opción 1 de Jürgen): cada estado dice su verdad.
+            static var bodyHalfway: String { ls("storage.pendingICloudWipe.bodyHalfway", comment: "") }
+            static var proceedHalfway: String { ls("storage.pendingICloudWipe.proceedHalfway", comment: "") }
+            static var proceedDetail: String { ls("storage.pendingICloudWipe.proceedDetail", comment: "") }
+            static var proceedDetailHalfway: String { ls("storage.pendingICloudWipe.proceedDetailHalfway", comment: "") }
+            static var finish: String { ls("storage.pendingICloudWipe.finish", comment: "") }
+            static var finishDetail: String { ls("storage.pendingICloudWipe.finishDetail", comment: "") }
+            static var finishDetailHalfway: String { ls("storage.pendingICloudWipe.finishDetailHalfway", comment: "") }
+            /// El «¿seguro?» de terminar desde Ajustes un borrado armado que no empezó (`LateICloudNotice.finishArmedWipe`).
+            static var finishConfirmBody: String { ls("storage.pendingICloudWipe.finishConfirmBody", comment: "") }
+            /// Las variantes con el alcance que purga los grupos de este dispositivo (`.handover`).
+            static var finishDetailWithGroups: String { ls("storage.pendingICloudWipe.finishDetailWithGroups", comment: "") }
+            static var finishDetailHalfwayWithGroups: String {
+                ls("storage.pendingICloudWipe.finishDetailHalfwayWithGroups", comment: "")
+            }
+            static var finishConfirmBodyWithGroups: String {
+                ls("storage.pendingICloudWipe.finishConfirmBodyWithGroups", comment: "")
+            }
         }
 
         enum Confirm {
@@ -8683,12 +9011,9 @@ enum L10n {
             static var migrate2Title: String { ls("storage.confirm.migrate2Title", comment: "") }
             static var migrate2Body: String { ls("storage.confirm.migrate2Body", comment: "") }
             static var migrate2Confirm: String { ls("storage.confirm.migrate2Confirm", comment: "") }
-            static var revertTitle: String { ls("storage.confirm.revertTitle", comment: "") }
-            static var revertBody: String { ls("storage.confirm.revertBody", comment: "") }
             static var revertContinue: String { ls("storage.confirm.revertContinue", comment: "") }
             static var revert2Title: String { ls("storage.confirm.revert2Title", comment: "") }
             static var revert2Body: String { ls("storage.confirm.revert2Body", comment: "") }
-            static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
             static var cancelReverseTitle: String { ls("storage.confirm.cancelReverseTitle", comment: "") }
             static var cancelReverseBody: String { ls("storage.confirm.cancelReverseBody", comment: "") }
             /// El cuerpo del mismo diálogo ANTES del montaje del espejo: ahí no hay espejo que apagar, así que no se
@@ -8770,6 +9095,9 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("storage.signin.title", comment: "") }
             static var body: String { ls("storage.signin.body", comment: "") }
+            /// «Otra cuenta de Apple»: Apple por la web, con un Apple ID distinto del del teléfono (ticket
+            /// `cloud-sign-in-cannot-choose-another-apple-id`).
+            static var anotherAppleID: String { ls("storage.signin.anotherAppleID", comment: "") }
         }
     }
 
@@ -9123,12 +9451,15 @@ enum L10n {
     // MARK: - Stats Records polish (stats-polish-panel-alignment)
 
     enum Stats {
+        // `locale: .current` pone el separador de miles con el formato de los importes de al lado
+        // (`CurrencyFormattingHelper`, `NumberFormatter` con el locale del sistema): sin él salía «11696 registros»
+        // junto a «S/ 1,359,134» (lote 07 de mejoras necesarias 2.3).
         enum Records {
             static var motivationalOne: String {
                 ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
             }
             static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), locale: .current, count)
             }
         }
         enum Insights {
@@ -9136,7 +9467,7 @@ enum L10n {
                 ls("stats.insights.motivationalOne", comment: "Insights hero motivational subtitle when transactionCount == 1")
             }
             static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), count)
+                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), locale: .current, count)
             }
             static var detailHeader: String {
                 ls("stats.insights.detailHeader", comment: "Detail mode section header — generic 'Your numbers' (period shown as subtitle)")
@@ -9192,8 +9523,10 @@ enum L10n {
                 String(format: ls("stats.trends.heroVarDown %d %@", comment: "Hero subtitle when balance variation negative ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
             }
             enum Insight {
-                static func onset(_ period: String) -> String {
-                    String(format: ls("stats.trends.insight.onset %@", comment: "Trend Insight: user has no previous period (first %@: period name)"), period)
+                /// Sin período anterior con datos. No lleva el nombre del período: «Este mes» es un rótulo y dentro de
+                /// una frase salía «tu primer Este mes» (lote 07 de mejoras necesarias 2.3).
+                static var onsetNoPrevious: String {
+                    ls("stats.trends.insight.onsetNoPrevious", comment: "Trend Insight: there is no previous period with data to compare with")
                 }
                 static func varUpExpense(_ percent: Int, _ previousPeriod: String) -> String {
                     String(format: ls("stats.trends.insight.varUpExpense %d %@", comment: "Trend Insight: expense rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
@@ -9276,6 +9609,17 @@ enum L10n {
             static func heroSubtitle3(_ cats: Int, _ subs: Int, _ tags: Int) -> String {
                 String(format: ls("stats.distribution.heroSubtitle3 %d %d %d", comment: "Hero subtitle 3 dimensions (categories + subcategories + tags)"), cats, subs, tags)
             }
+            // Vacíos de las tarjetas de Distribución cuando el período no trae movimientos de esa dimensión. Antes decían
+            // «Aún no tienes categorías / subcategorías / etiquetas» aunque existieran (lote 07 de mejoras necesarias 2.3).
+            static var emptyNoMovementsTitle: String {
+                ls("stats.distribution.empty.noMovementsTitle", comment: "Distribution list empty state: no movements in the period")
+            }
+            static var emptyNoSubcategoryMovementsTitle: String {
+                ls("stats.distribution.empty.noSubcategoryMovementsTitle", comment: "Distribution subcategory list empty state: no movements with a subcategory in the period")
+            }
+            static var emptyNoTagMovementsTitle: String {
+                ls("stats.distribution.empty.noTagMovementsTitle", comment: "Distribution tag chart empty state: no tagged movements in the period")
+            }
             static func insightTitleFree(_ period: String) -> String {
                 String(format: ls("stats.distribution.insightTitleFree %@", comment: "Distribution Insight Card title for Free users (param: period name)"), period)
             }
@@ -9289,11 +9633,13 @@ enum L10n {
                 ls("stats.distribution.modeCharts", comment: "Content mode pill label: charts view (pies + sankey + need bars)")
             }
             enum Insight {
-                static func onset(_ period: String) -> String {
-                    String(format: ls("stats.distribution.insight.onset %@", comment: "Distribution Insight: empty or no comparable data"), period)
+                // Sin el nombre del período: «Este mes» es un rótulo, y en «este %@» salía «este Este mes» (lote 07 de
+                // mejoras necesarias 2.3). La tarjeta ya está dentro del período elegido.
+                static var onsetNoMovements: String {
+                    ls("stats.distribution.insight.onsetNoMovements", comment: "Distribution Insight: no movements in the selected period")
                 }
-                static func newCategory(_ name: String, _ period: String) -> String {
-                    String(format: ls("stats.distribution.insight.newCategory %@ %@", comment: "Distribution Insight: user tried a new category this period"), name, period)
+                static func newCategoryInPeriod(_ name: String) -> String {
+                    String(format: ls("stats.distribution.insight.newCategoryInPeriod %@", comment: "Distribution Insight: user tried a new category in the selected period (param: category name)"), name)
                 }
                 static func concentrated(_ percent: Int, _ topCategory: String) -> String {
                     String(format: ls("stats.distribution.insight.concentrated %d %@", comment: "Distribution Insight: spending concentrated in top category (>=40%)"), percent, topCategory)
@@ -9321,11 +9667,10 @@ enum L10n {
         /// El caso lo deriva `StatsHeroCaptionLogic` del mismo estado que elige el número
         /// — no es fijo por pestaña (ver la cabecera de ese fichero).
         enum Hero {
-            static var captionAccountsBalance: String {
-                ls("stats.hero.captionAccountsBalance", comment: "Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI")
-            }
-            static var captionNetPeriod: String {
-                ls("stats.hero.captionNetPeriod", comment: "Stats hero caption: the figure is income minus expenses for the period (flow)")
+            /// El saldo de las cuentas al cierre de un período que ya terminó. En curso, «Tienes hoy»
+            /// (`L10n.Panel.Hero.haveToday`), y el neto, «Te queda» / «Te quedó»: las palabras del Panel.
+            static var captionAccountsBalanceClosed: String {
+                ls("stats.hero.captionAccountsBalanceClosed", comment: "Stats hero caption: the figure is what the accounts had at the end of a period that already ended (\"You had at the close\")")
             }
             static var captionIncomePeriod: String {
                 ls("stats.hero.captionIncomePeriod", comment: "Stats hero caption: the figure is only the income side for the period")
@@ -9339,6 +9684,19 @@ enum L10n {
         }
     }
 
+}
+
+// MARK: - Cifras con el idioma de la app
+
+extension L10n {
+    /// Una frase con cifras, con el formato de número del idioma de la APP (`AppLocale`): «1,537» en un teléfono es-PE,
+    /// «1537» en es-ES, «1.537» en alemán. Revisión 2.3, zona 41 (lote de mejoras necesarias 11): «Dónde viven tus datos»
+    /// sacaba tres formatos en la misma subida —«650 de 1537» (idioma), «5,006 cambios» (`localizedStringWithFormat`,
+    /// que usa la REGIÓN de formato) y cifras sin agrupar (`String(format:)` sin locale)—. Sirve también para claves con
+    /// plural del `.stringsdict`, como `localizedStringWithFormat`.
+    static func formatWithAppLocale(_ format: String, _ arguments: CVarArg...) -> String {
+        String(format: format, locale: AppLocale.current, arguments: arguments)
+    }
 }
 
 // MARK: - App Locale

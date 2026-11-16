@@ -31,6 +31,7 @@ struct CashFlowMonthDetailView: View {
     @State private var showDeleteLineConfirmation = false
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AppPreferences.self) private var appPreferences
     /// Para el pago de las tarjetas del mes (card nmtk): todas, porque qué es línea lo decide `AccountLineLogic` con todas.
     @Query private var accounts: [Account]
@@ -92,57 +93,112 @@ struct CashFlowMonthDetailView: View {
 
     // MARK: - El mes (L18-11)
 
+    /// Con texto de accesibilidad el mes, su estado y «Llevas el…» van uno debajo del otro: en una fila el mes se partía
+    /// por sílabas («No-viem-bre») y la frase de la derecha quedaba en una columna estrecha (lote 05 de 2.3, zona 36 P5).
+    @ViewBuilder
     private var monthTitleRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-            // Título de la pantalla: con mayúscula («Octubre de 2026»); el formato del mes la da en minúscula.
-            Text(ComparativeLabelsLogic.capitalizedFirst(
-                month.date.formatted(.dateTime.month(.wide).year()), locale: AppLocale.current
-            ))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .accessibilityIdentifier("cashflow_month_title")
-
-            if month.isCurrent {
-                Text(L10n.CashFlowPlan.thisMonth)
-                    .font(DS.Typography.captionSmall)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.thOnAccent)
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(Capsule().fill(theme.accent))
-            } else {
-                Text(month.isPast ? L10n.CashFlowPlan.pastMonth : L10n.CashFlowPlan.futureMonth)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                monthTitle
+                monthStatus
+                spentShare
+                    .multilineTextAlignment(.leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                monthTitle
 
-            Spacer(minLength: DS.Spacing.sm)
+                monthStatus
 
-            if let share = CashFlowMonthSummaryLogic.spentShare(of: month) {
-                Text(L10n.UXL18.spentShare(share))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.sm)
+
+                spentShare
                     .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("cashflow_month_spent_share")
             }
         }
     }
 
-    /// La cifra grande del mes con las frases de C2 debajo.
+    private var monthTitle: some View {
+        // Título de la pantalla: con mayúscula («Octubre de 2026»); el formato del mes la da en minúscula.
+        Text(ComparativeLabelsLogic.capitalizedFirst(
+            month.date.formatted(.dateTime.month(.wide).year()), locale: AppLocale.current
+        ))
+            .font(DS.Typography.headline)
+            .foregroundStyle(.primary)
+            .accessibilityIdentifier("cashflow_month_title")
+    }
+
+    @ViewBuilder
+    private var monthStatus: some View {
+        if month.isCurrent {
+            Text(L10n.CashFlowPlan.thisMonth)
+                .font(DS.Typography.captionSmall)
+                .fontWeight(.semibold)
+                .foregroundStyle(.thOnAccent)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(Capsule().fill(theme.accent))
+        } else {
+            Text(month.isPast ? L10n.CashFlowPlan.pastMonth : L10n.CashFlowPlan.futureMonth)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    /// «Llevas el 68 % de lo que planeaste gastar»; sin plan de gasto, nada. La alineación la pone quien la coloca.
+    @ViewBuilder
+    private var spentShare: some View {
+        if let share = CashFlowMonthSummaryLogic.spentShare(of: month) {
+            Text(L10n.UXL18.spentShare(share))
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("cashflow_month_spent_share")
+        }
+    }
+
+    /// «Al 30 de noviembre tendrías» del mes en curso (decisión 30 de 2.3): la misma cifra que el Panel. Otro mes, o sin
+    /// cuentas que sumen, no la tiene.
+    private var currentMonthEnd: MonthEndBalanceLogic.Result? {
+        month.isCurrent ? viewModel.monthEnd : nil
+    }
+
+    /// La cifra grande del mes con las frases de C2 debajo. En el mes en curso, la cifra es «Al 30 de noviembre
+    /// tendrías» con su cuenta, y lo que entra menos lo que sale pasa a una línea.
     private var monthSummary: some View {
         HeroHeader {
-            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month))
+            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month, monthEndDate: currentMonthEnd?.endDate))
         } period: {
             EmptyView()
         } content: {
-            AmountText(
-                value: abs(month.netFlow),
-                currencyCode: currencyCode,
-                font: DS.Typography.panelHeroAmount,
-                secondaryFont: DS.Typography.panelHeroAmountSecondary
-            )
-            .accessibilityIdentifier("cashflow_month_net")
+            if let end = currentMonthEnd {
+                AmountText(
+                    value: end.closing,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    isEstimate: end.isApproximate
+                )
+                .accessibilityIdentifier("cashflow_month_end_closing")
+
+                monthEndBreakdown(end)
+
+                Text(L10n.ProjectedFlow.source(end.source))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                netLine
+            } else {
+                AmountText(
+                    value: abs(month.netFlow),
+                    currencyCode: currencyCode,
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary
+                )
+                .accessibilityIdentifier("cashflow_month_net")
+            }
 
             if viewModel.plan?.showAccumulatedBalance ?? true {
                 if let end = CashFlowMonthSummaryLogic.projectedEnd(of: viewModel.projection?.months ?? []),
@@ -161,6 +217,56 @@ struct CashFlowMonthDetailView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow_month_summary")
+    }
+
+    /// La cuenta de «Al 30 tendrías»: «Tienes hoy» (o «Debes hoy», sin signo, como el Panel), «Falta entrar» y «Falta
+    /// salir». Con texto de accesibilidad, el importe baja bajo su nombre.
+    private func monthEndBreakdown(_ end: MonthEndBalanceLogic.Result) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            monthEndRow(
+                label: end.today < 0 && !CurrencyFormattingHelper.isShownAsZero(end.today)
+                    ? L10n.Panel.Hero.oweToday : L10n.Panel.Hero.haveToday,
+                value: abs(end.today),
+                identifier: "cashflow_month_end_today"
+            )
+            monthEndRow(label: L10n.ProjectedFlow.leftToComeIn, value: end.incomeLeft, identifier: "cashflow_month_end_in")
+            monthEndRow(label: L10n.ProjectedFlow.leftToGoOut, value: end.expenseLeft, identifier: "cashflow_month_end_out")
+        }
+        .padding(.top, DS.Spacing.xxs)
+    }
+
+    private func monthEndRow(label: String, value: Double, identifier: String) -> some View {
+        AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xxs) {
+            Text(label)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+        } trailing: {
+            AmountText(
+                value: value,
+                currencyCode: currencyCode,
+                font: DS.Typography.subheadline.monospacedDigit()
+            )
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// «Este mes te quedaría S/ 396.18» / «Este mes te faltaría S/ 120»: lo que entra menos lo que sale en el mes entero,
+    /// que antes era la cifra grande. El importe va en `AmountText` para que «Ocultar montos» lo tape.
+    private var netLine: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            Text(CashFlowMonthSummaryLogic.netLabel(for: month))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            AmountText(
+                value: abs(month.netFlow),
+                currencyCode: currencyCode,
+                font: DS.Typography.subheadlineEmphasized.monospacedDigit()
+            )
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_month_net_line")
     }
 
     /// «Empezaste con S/ X · Cambiar» (L18-10): sustituye al lápiz tachado del pie.
@@ -201,6 +307,7 @@ struct CashFlowMonthDetailView: View {
                 uncategorizedRow(
                     result: month.otherIncome,
                     label: L10n.CashFlowPlan.otherIncomeLabel,
+                    identifier: "cashflow_others_income_row",
                     action: { viewModel.showOthersIncomeBreakdown = true }
                 )
                 addLineButton(isIncome: true)
@@ -222,6 +329,7 @@ struct CashFlowMonthDetailView: View {
                 uncategorizedRow(
                     result: month.otherExpenses,
                     label: L10n.CashFlowPlan.otherExpensesLabel,
+                    identifier: "cashflow_others_expense_row",
                     action: { viewModel.showOthersBreakdown = true }
                 )
                 addLineButton(isIncome: false)
@@ -273,7 +381,9 @@ struct CashFlowMonthDetailView: View {
     // MARK: - Uncategorized Row
 
     @ViewBuilder
-    private func uncategorizedRow(result: CashFlowOtherResult?, label: String, action: @escaping () -> Void) -> some View {
+    private func uncategorizedRow(
+        result: CashFlowOtherResult?, label: String, identifier: String, action: @escaping () -> Void
+    ) -> some View {
         if let result, result.plannedAmount > 0 {
             Button(action: action) {
                 HStack(spacing: DS.Spacing.md) {
@@ -302,6 +412,7 @@ struct CashFlowMonthDetailView: View {
                 .solidCard(radius: DS.Radius.md)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
         }
     }
 

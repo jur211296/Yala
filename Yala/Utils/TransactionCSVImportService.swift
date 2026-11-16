@@ -58,6 +58,14 @@ enum ImportError: LocalizedError, Equatable {
     case namedAccountCurrencyMismatch(row: Int, name: String, fileCurrency: String, accountCurrency: String)
     /// La cuenta nueva no se crea: no se eligió (límite de cuentas del plan gratuito).
     case newAccountNotChosen(row: Int, name: String)
+    /// Una línea con texto que no es una fila del archivo: no tiene ningún separador (H13).
+    case unreadableRow(row: Int)
+    /// La columna `time` trae algo que no es una hora (H18).
+    case invalidTime(row: Int, value: String)
+    /// La columna `exchange_rate` trae algo que no es una tasa mayor que cero (H18).
+    case invalidExchangeRate(row: Int, value: String)
+    /// La columna `need` trae algo que no es ninguna naturaleza (H18).
+    case invalidNeed(row: Int, value: String)
 
     /// La fila del archivo a la que se refiere el error, o `nil` si es del archivo entero. Solo los errores
     /// con fila se pueden saltar al importar el resto (L7-17).
@@ -70,7 +78,9 @@ enum ImportError: LocalizedError, Equatable {
             .emptySubcategory(let row), .unknownCategory(let row, _), .unknownSubcategory(let row, _, _),
             .missingAccountForCurrency(let row, _), .groupRow(let row), .emptyAccount(let row),
             .accountUnavailable(let row, _), .ambiguousAccount(let row, _),
-            .namedAccountCurrencyMismatch(let row, _, _, _), .newAccountNotChosen(let row, _):
+            .namedAccountCurrencyMismatch(let row, _, _, _), .newAccountNotChosen(let row, _),
+            .unreadableRow(let row), .invalidTime(let row, _), .invalidExchangeRate(let row, _),
+            .invalidNeed(let row, _):
             return row
         }
     }
@@ -124,6 +134,14 @@ enum ImportError: LocalizedError, Equatable {
             return T.namedAccountCurrencyMismatch(row, fileCurrency, name, accountCurrency)
         case .newAccountNotChosen(let row, let name):
             return T.newAccountNotChosen(row, name)
+        case .unreadableRow(let row):
+            return T.unreadableRow(row)
+        case .invalidTime(let row, let value):
+            return T.invalidTime(row, value)
+        case .invalidExchangeRate(let row, let value):
+            return T.invalidExchangeRate(row, value)
+        case .invalidNeed(let row, let value):
+            return T.invalidNeed(row, value)
         }
     }
 }
@@ -142,6 +160,10 @@ struct ParsedTransactionDraft {
     var rowNumber: Int = 0
     /// Con columna `account`: la cuenta nueva a la que va (su clave), o `nil` si va a una que ya existe.
     var newAccountKey: String? = nil
+    /// La tasa a la moneda preferida que trae el archivo (`exchange_rate`), o `nil` para convertir como siempre (H18).
+    var fixedRate: Double? = nil
+    /// La naturaleza cambiada a mano (`need`), como se guarda en `TransactionItem.needOverride`.
+    var needOverride: String? = nil
 }
 
 /// Representa una fila cruda leída de un archivo CSV o XLSX antes de validación.
@@ -158,6 +180,13 @@ struct RawImportRow {
     var account: String? = nil
     /// Excel guardó el importe como NÚMERO: viene en forma canónica y no pasa por el separador del archivo.
     var amountIsNumber: Bool = false
+    /// Las columnas opcionales de la ida y vuelta (H18): `nil` si el archivo no las trae.
+    var time: String? = nil
+    var exchangeRate: String? = nil
+    var rateCurrency: String? = nil
+    var need: String? = nil
+    /// Excel guardó la tasa como NÚMERO: forma canónica, como `amountIsNumber`.
+    var exchangeRateIsNumber: Bool = false
     /// La fila no se pudo leer entera (más columnas que la cabecera): se informa con su número al validar.
     var readFailure: ImportError? = nil
 
@@ -165,6 +194,13 @@ struct RawImportRow {
         RawImportRow(
             rowNumber: rowNumber, date: "", amount: "", currency: "", category: "", subcategory: "", tags: nil,
             note: nil, readFailure: .invalidColumnCount(row: rowNumber, expected: expected, found: found))
+    }
+
+    /// Una línea con texto y sin separador: se cuenta entre las que no entraron, no se salta en silencio (H13).
+    static func unreadable(rowNumber: Int) -> RawImportRow {
+        RawImportRow(
+            rowNumber: rowNumber, date: "", amount: "", currency: "", category: "", subcategory: "", tags: nil,
+            note: nil, readFailure: .unreadableRow(row: rowNumber))
     }
 }
 
@@ -516,11 +552,31 @@ enum TransactionCSVImportService {
             throw ImportError.groupRow(row: rowNumber)
         }
 
-        // 2. Fecha; una futura se deja fuera aquí.
-        guard let date = parseDate(row.date) else {
+        // 2. Fecha y hora; una futura se deja fuera aquí. Sin hora, el mediodía UTC de siempre; con hora (columna `time`
+        // o dentro de la celda de la fecha), esa hora en la zona del teléfono, la misma en la que la escribe el export
+        // (H18). Una fila con hora es futura por DÍA, como en el formulario: hoy a las 23:00 no es futuro.
+        guard let day = parseDate(row.date) else {
             throw ImportError.invalidDate(row: rowNumber, value: row.date)
         }
-        if date > today { return nil }
+        var date = day
+        var hasTime = false
+        let timeText = (row.time ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !timeText.isEmpty {
+            guard let time = ImportRecordFieldsLogic.parseTime(timeText),
+                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time) else {
+                throw ImportError.invalidTime(row: rowNumber, value: timeText)
+            }
+            date = combined
+            hasTime = true
+        } else if let time = ImportRecordFieldsLogic.timeInDateCell(row.date),
+                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time) {
+            date = combined
+            hasTime = true
+        }
+        let isFuture = hasTime
+            ? Calendar.current.compare(date, to: today, toGranularity: .day) == .orderedDescending
+            : date > today
+        if isFuture { return nil }
 
         // 3. Moneda (antes que el importe: sus decimales deciden la lectura propuesta de «1,500»).
         let currency = normalizeCurrencyInput(row.currency)
@@ -538,6 +594,28 @@ enum TransactionCSVImportService {
             reading = parsed
         } else {
             throw ImportError.invalidAmount(row: rowNumber, value: row.amount)
+        }
+
+        // 4b. La tasa fija y la naturaleza (H18), opcionales. Un valor que no se entiende deja la fila fuera con su
+        // motivo: entrar con la tasa del mercado o con otra naturaleza sería perder el dato en silencio.
+        var fixedRate: Double?
+        let rateText = (row.exchangeRate ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rateText.isEmpty {
+            guard let rate = ImportRecordFieldsLogic.parseRate(
+                rateText, convention: convention, isNumber: row.exchangeRateIsNumber) else {
+                throw ImportError.invalidExchangeRate(row: rowNumber, value: rateText)
+            }
+            fixedRate = ImportRecordFieldsLogic.fixedRate(
+                rate: rate, rateCurrency: row.rateCurrency.map(normalizeCurrencyInput), rowCurrency: currency,
+                preferredCurrency: CurrencyDefaults.currentPreferred)
+        }
+        var needOverride: String?
+        switch ImportRecordFieldsLogic.parseNeed(row.need ?? "") {
+        case .none: needOverride = nil
+        case .need(let need): needOverride = need.rawValue
+        case .invalid:
+            throw ImportError.invalidNeed(
+                row: rowNumber, value: (row.need ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
         // 5. La cuenta. El resolvedor se prueba en una copia y solo se queda con la fila si la fila entra: una cuenta
@@ -597,20 +675,34 @@ enum TransactionCSVImportService {
         guard !trimmedSubcategory.isEmpty else { throw ImportError.emptySubcategory(row: rowNumber) }
         let category: Category
         let subcategory: Subcategory
-        switch try CategoryImportHelper.resolveForImport(
-            categoryName: trimmedCategory,
-            subcategoryName: trimmedSubcategory,
-            isIncome: reading.value >= 0,
-            allowCreating: allowCreatingNewCategories,
-            in: context
-        ) {
-        case .resolved(let resolvedCategory, let resolvedSubcategory):
-            category = resolvedCategory
-            subcategory = resolvedSubcategory
-        case .unknownCategory:
-            throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
-        case .unknownSubcategory:
-            throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+        if let role = systemRole(forImportedSubcategoryName: trimmedSubcategory) {
+            // Una transferencia o un ajuste va a la subcategoría de sistema con ese PAPEL, no a una con ese nombre:
+            // si no, en un teléfono sin la sembrada el import creaba una del usuario y sus filas dejaban de ser
+            // transferencias en cuanto la subcategoría perdía el nombre como señal (2026-11-13).
+            guard let systemSubcategory = try systemSubcategory(
+                for: role, categoryName: trimmedCategory, isIncome: reading.value >= 0, in: context),
+                  let systemCategory = systemSubcategory.category
+            else {
+                throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+            }
+            category = systemCategory
+            subcategory = systemSubcategory
+        } else {
+            switch try CategoryImportHelper.resolveForImport(
+                categoryName: trimmedCategory,
+                subcategoryName: trimmedSubcategory,
+                isIncome: reading.value >= 0,
+                allowCreating: allowCreatingNewCategories,
+                in: context
+            ) {
+            case .resolved(let resolvedCategory, let resolvedSubcategory):
+                category = resolvedCategory
+                subcategory = resolvedSubcategory
+            case .unknownCategory:
+                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+            case .unknownSubcategory:
+                throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
+            }
         }
         // Lo resuelto también: una entidad de sistema del puente con un nombre que la lista no conoce.
         if category.isSystem || subcategory.isSystem {
@@ -626,7 +718,8 @@ enum TransactionCSVImportService {
         let note = row.note?.isEmpty == true ? nil : row.note
         let draft = ParsedTransactionDraft(
             date: date, amount: reading.value, normalizedCurrencyCode: currency, category: category,
-            subcategory: subcategory, note: note, tags: tags, rowNumber: rowNumber, newAccountKey: newAccountKey)
+            subcategory: subcategory, note: note, tags: tags, rowNumber: rowNumber, newAccountKey: newAccountKey,
+            fixedRate: fixedRate, needOverride: needOverride)
         return (draft, target, reading)
     }
 
@@ -643,14 +736,25 @@ enum TransactionCSVImportService {
         // EXISTIERA, no por que trajera la divisa del archivo, así que una fila parcial hacía nacer la transacción a
         // 1:1 y con `isExchangeRateProvisional = false` — número malo sellado como oficial, y el reparador nunca
         // vuelve a mirarlo (`fx-partial-rate-rows-silent-1to1`).
-        let rateOutcome = CurrencyConverter.shared.convertChecked(
-            draft.amount,
-            from: draft.normalizedCurrencyCode,
-            to: preferredCode,
-            on: draft.date,
-            context: context
-        )
-        let amountInPreferred = rateOutcome.amount
+        //
+        // Con la tasa del archivo (`exchange_rate`, H18) manda esa, como la tasa escrita a mano en el formulario: es
+        // exacta por definición y la reparación de tasas provisionales no la vuelve a tocar.
+        let amountInPreferred: Decimal
+        let isExactConversion: Bool
+        if let fixedRate = draft.fixedRate {
+            amountInPreferred = ForeignManualRateLogic.converted(amountDouble, rate: fixedRate)
+            isExactConversion = true
+        } else {
+            let rateOutcome = CurrencyConverter.shared.convertChecked(
+                draft.amount,
+                from: draft.normalizedCurrencyCode,
+                to: preferredCode,
+                on: draft.date,
+                context: context
+            )
+            amountInPreferred = rateOutcome.amount
+            isExactConversion = rateOutcome.quality.isExact
+        }
         let effectiveRate: Double
         if abs(amountDouble) > 0.0001 {
             effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amountDouble
@@ -670,8 +774,9 @@ enum TransactionCSVImportService {
             exchangeRate: abs(effectiveRate),
             amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
             preferredCurrencyCode: preferredCode,
-            isExchangeRateProvisional: !rateOutcome.quality.isExact
+            isExchangeRateProvisional: !isExactConversion
         )
+        transaction.needOverride = draft.needOverride
 
         // Transferencias y ajustes no suman a ingresos ni a gastos (el punto de decisión de S27l).
         if let systemType = systemAdjustmentType(for: draft.subcategory) {
@@ -833,10 +938,13 @@ enum TransactionCSVImportService {
 
     // MARK: - Helpers de CSV
 
-    /// Detecta el delimitador principal de la primera línea ("," o ";").
+    /// Detecta el delimitador principal de la cabecera: `,`, `;` o el tabulador (el «texto separado por tabuladores»
+    /// de Excel y Numbers, H13), el que más aparezca. Con empate, la coma.
     static func detectDelimiter(from headerLine: String) -> Character {
         let commaCount = headerLine.filter { $0 == "," }.count
         let semicolonCount = headerLine.filter { $0 == ";" }.count
+        let tabCount = headerLine.filter { $0 == "\t" }.count
+        if tabCount > max(commaCount, semicolonCount) { return "\t" }
         return semicolonCount > commaCount ? ";" : ","
     }
 
@@ -927,38 +1035,103 @@ enum TransactionCSVImportService {
         return fields
     }
 
-    /// Splits CSV content into logical rows, correctly handling quoted fields with embedded newlines.
-    /// RFC 4180: Fields containing line breaks must be enclosed in double-quotes.
-    static func splitCSVIntoRows(_ content: String) -> [String] {
-        var rows: [String] = []
-        var currentRow = ""
-        var insideQuotes = false
+    /// Una fila lógica del CSV y la línea física del archivo en la que empieza (la primera es la 1).
+    struct CSVRow: Equatable {
+        let line: Int
+        let text: String
+    }
 
-        for char in content {
-            if char == "\"" {
-                insideQuotes.toggle()
-                currentRow.append(char)
-            } else if char.isNewline {
+    /// Parte el CSV en filas lógicas: un salto de línea dentro de un campo entre comillas no corta la fila (RFC 4180).
+    ///
+    /// Una comilla solo ABRE un campo entrecomillado si es lo primero del campo (tras el separador o al principio de la
+    /// línea, con espacios de relleno delante), con el mismo criterio que `splitCSVFields`. Hasta el 2026-11-12 abría y
+    /// cerraba con cualquier `"`: una nota como `Tele de 50" nueva` dejaba el resto del archivo «dentro de comillas» y
+    /// las filas siguientes desaparecían pegadas a esa nota, sin error (H13, card 6gh7).
+    ///
+    /// Una comilla de apertura que no se cierra tampoco se traga lo que viene detrás: si llega al final del archivo, o si
+    /// el campo cruza un salto de línea y la comilla que lo «cierra» no va seguida de separador, salto de línea o final
+    /// (la comilla de apertura de un campo de otra fila, `"Pan, leche"`), la apertura era falsa. La fila se queda con su
+    /// primera línea física y se sigue partiendo desde la línea siguiente: cada fila entra o sale entre las no leídas.
+    static func splitCSVRows(_ content: String, delimiter: Character) -> [CSVRow] {
+        let chars = Array(content)
+        var rows: [CSVRow] = []
+        var start = 0
+        var startLine = 1
+
+        parsing: while start < chars.count {
+            var current = ""
+            var rowLine = startLine
+            var line = startLine
+            var rowStart = start
+            var insideQuotes = false
+            var fieldIsBlank = true  // el campo, hasta aquí, es solo espacio de relleno
+            var fieldWasQuoted = false
+            var quoteOpenLine = startLine
+            var falseOpening = false
+            var index = start
+
+            while index < chars.count {
+                let char = chars[index]
                 if insideQuotes {
-                    // Newline inside quoted field - keep it in current row
-                    currentRow.append(char)
-                } else {
-                    // End of logical row
-                    if !currentRow.isEmpty {
-                        rows.append(currentRow)
+                    if char == "\"" {
+                        if index + 1 < chars.count, chars[index + 1] == "\"" {
+                            current.append("\"\"")
+                            index += 2
+                            continue
+                        }
+                        insideQuotes = false
+                        if line > quoteOpenLine {
+                            var next = index + 1
+                            while next < chars.count, chars[next] == " " { next += 1 }
+                            if next < chars.count, chars[next] != delimiter, !chars[next].isNewline {
+                                falseOpening = true
+                                break
+                            }
+                        }
+                    } else if char.isNewline {
+                        line += 1
                     }
-                    currentRow = ""
+                    current.append(char)
+                } else if char.isNewline {
+                    if !current.isEmpty { rows.append(CSVRow(line: rowLine, text: current)) }
+                    current = ""
+                    line += 1
+                    rowLine = line
+                    rowStart = index + 1
+                    fieldIsBlank = true
+                    fieldWasQuoted = false
+                } else {
+                    if char == delimiter {
+                        fieldIsBlank = true
+                        fieldWasQuoted = false
+                    } else if char == "\"", fieldIsBlank, !fieldWasQuoted {
+                        insideQuotes = true
+                        fieldWasQuoted = true
+                        fieldIsBlank = false
+                        quoteOpenLine = line
+                    } else if char != " " && char != "\t" {
+                        fieldIsBlank = false
+                    }
+                    current.append(char)
                 }
-            } else {
-                currentRow.append(char)
+                index += 1
             }
-        }
 
-        // Don't forget the last row if file doesn't end with newline
-        if !currentRow.trimmingCharacters(in: .whitespaces).isEmpty {
-            rows.append(currentRow)
+            if insideQuotes || falseOpening {
+                // Comilla sin cierre: la fila es su primera línea física, y se sigue tras ella.
+                var end = rowStart
+                while end < chars.count, !chars[end].isNewline { end += 1 }
+                let firstLine = String(chars[rowStart..<end])
+                if !firstLine.isEmpty { rows.append(CSVRow(line: rowLine, text: firstLine)) }
+                start = end + 1
+                startLine = rowLine + 1
+                continue parsing
+            }
+            if !current.trimmingCharacters(in: .whitespaces).isEmpty {
+                rows.append(CSVRow(line: rowLine, text: current))
+            }
+            break
         }
-
         return rows
     }
 
@@ -1004,15 +1177,54 @@ extension TransactionCSVImportService {
     /// El ÚNICO sitio donde el import decide si una fila es ajuste de saldo, transferencia o un
     /// movimiento normal (`nil`). Lo llaman las cuatro rutas (CSV y Excel, una cuenta y varias divisas).
     ///
-    /// El ajuste se reconoce con los nombres de TODOS los idiomas (`balanceAdjustmentNames`), no con el
-    /// texto del idioma actual: «Ajustes de saldo» sembrado en español e importado con el teléfono en
-    /// inglés sigue siendo ajuste. Cualquier otra subcategoría de sistema es transferencia, como antes.
+    /// Decide el PAPEL de la subcategoría (`Subcategory.systemRole`), no su nombre: una subcategoría del usuario que se
+    /// llame como la de transferencias es un movimiento normal (decisión de Jürgen, 2026-11-13).
     static func systemAdjustmentType(for subcategory: Subcategory) -> String? {
-        guard subcategory.isAnySystem else { return nil }
-        if Subcategory.balanceAdjustmentNames.contains(subcategory.name) {
-            return InitialBalanceService.typeAdjustment
+        switch subcategory.systemRole {
+        case .balanceAdjustment: return InitialBalanceService.typeAdjustment
+        case .transfer: return TransactionItem.adjustmentTypeTransfer
+        case nil: return nil
         }
-        return TransactionItem.adjustmentTypeTransfer
+    }
+
+    /// El papel que trae una fila del archivo por el texto de su subcategoría, o `nil` para un movimiento normal.
+    ///
+    /// Un archivo solo trae texto, así que aquí el nombre es la única señal: los de ajuste y transferencia de TODOS los
+    /// idiomas (`balanceAdjustmentNames`, `transferNames`) y los de la subcategoría de transferencia que siembra Yala
+    /// (`seededTransferNames`), que desde el 2026-11-13 es de sistema en todos los idiomas. «Ajustes de saldo»
+    /// sembrado en español e importado con el teléfono en inglés sigue siendo ajuste.
+    static func systemRole(forImportedSubcategoryName name: String) -> SubcategorySystemRole? {
+        if Subcategory.balanceAdjustmentNames.contains(name) { return .balanceAdjustment }
+        if Subcategory.transferNames.contains(name) || Subcategory.seededTransferNames.contains(name) { return .transfer }
+        return nil
+    }
+
+    /// La subcategoría de sistema donde va una fila con papel.
+    ///
+    /// Primero una con ese papel en la categoría que nombra el archivo: la de la naturaleza del signo y, si no la hay,
+    /// la que tenga (un reembolso o una transferencia se quedan en la categoría que ya tiene su subcategoría, lote 12.6,
+    /// y no se crea una categoría nueva para la pata de entrada). Si el archivo nombra una categoría sin ninguna, la de
+    /// las transferencias según el signo o la de ajustes, que se crean si no existen, con el interruptor de categorías
+    /// como esté: son de Yala, no del usuario, y el formulario de Nuevo registro también las crea.
+    @MainActor
+    static func systemSubcategory(
+        for role: SubcategorySystemRole, categoryName: String, isIncome: Bool, in context: ModelContext
+    ) throws -> Subcategory? {
+        let named = try context.fetch(FetchDescriptor<Subcategory>())
+            .filter { $0.systemRole == role && $0.category?.name == categoryName }
+        let sameNature = named.filter { $0.category?.isIncome == isIncome }
+        let currentName = role == .transfer ? L10n.Transfer.categoryName : L10n.Subcategory.balanceAdjustment
+        if let match = TransferCategoryResolver.preferred(sameNature.isEmpty ? named : sameNature, currentName: currentName) {
+            return match
+        }
+        switch role {
+        case .transfer:
+            return isIncome
+                ? try TransferCategoryResolver.inflow(context: context)
+                : try TransferCategoryResolver.outflow(context: context)
+        case .balanceAdjustment:
+            return InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: context)
+        }
     }
 
     /// Importa y guarda en `context`; si la importación o el guardado fallan, deshace lo insertado
@@ -1038,6 +1250,8 @@ extension TransactionCSVImportService {
         do {
             let result = try await work()
             try save(context)
+            // Telemetría propia: «usó esta función» (uno al día), con lo importado ya guardado.
+            MetricsService.used(.importar)
             return result
         } catch {
             context.rollback()

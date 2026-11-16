@@ -37,6 +37,19 @@ final class AccountSelectorViewModel {
         return AccountCardLogic.cards(shown, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode)
     }
 
+    /// Las principales con alguna línea viva: su fila lleva su divisa en el nombre («Sapphire · PEN»), también cuando sus
+    /// líneas no salen en la hoja (una divisa fija, o la línea es el origen de la transferencia).
+    var headsWithLines: Set<UUID> {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return AccountCardLogic.headsWithLiveLines(activeAccounts.map { AccountLineNode($0) }, roles: roles)
+    }
+
+    /// El nombre de la fila de `account` en la hoja: una principal con líneas, con su divisa.
+    func rowName(for account: Account, headsWithLines: Set<UUID>) -> String {
+        guard headsWithLines.contains(account.shortcutID) else { return account.name }
+        return AccountCardLogic.headName(account.name, currencyCode: account.currencyCode)
+    }
+
     /// Lo que guarda el llamador al tocar `account` (decisión D3 del encargo): con `routingCurrency`, la cuenta de su tarjeta en
     /// esa divisa (`AccountCardLogic.route`); sin ella, o si no se encuentra, la cuenta tocada.
     func resolvedSelection(for account: Account, routingCurrency: String?) -> Account {

@@ -255,6 +255,25 @@ final class DraftService {
         currencyConverter: CurrencyConverter,
         splitLines: [GroupSplitLinesRecipe.Line]? = nil
     ) throws -> TransactionItem {
+        // Antes de aprobar: el borrador se borra al aprobarlo, y leer un `@Model` borrado aborta.
+        let createsAnOwnRecord = Self.approvalCreatesAnOwnRecord(draft)
+        let transaction = try approveDraftCore(draft, currencyConverter: currencyConverter, splitLines: splitLines)
+        // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba.
+        if createsAnOwnRecord { NewUserMetrics.created(.firstExpense) }
+        return transaction
+    }
+
+    /// Si aprobar este borrador APUNTA un gasto o ingreso de la persona (voz, foto, Apple Pay, Siri, correo, un pago
+    /// planificado). Lo que viene de un grupo no: lo apuntó quien añadió el gasto o la liquidación, y aquí solo se clasifica.
+    static func approvalCreatesAnOwnRecord(_ draft: InboxDraft) -> Bool {
+        !draft.sourceType.isFromGroup && !draft.isSettlementAmountChangeNotice
+    }
+
+    private func approveDraftCore(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]?
+    ) throws -> TransactionItem {
         let context = try requireContext()
 
         // Gasto planificado de grupo: se aprueba SOLO vía GroupExpenseFormView (crea el
@@ -533,9 +552,30 @@ final class DraftService {
         _ drafts: [InboxDraft],
         currencyConverter: CurrencyConverter
     ) throws -> [TransactionItem] {
+        try bulkApproveOutcome(drafts, currencyConverter: currencyConverter).transactions
+    }
+
+    /// Lo que guardó un lote y lo que dejó en la Bandeja por parecerse a un registro que ya existe.
+    struct BulkApproveOutcome {
+        let transactions: [TransactionItem]
+        /// Borradores personales que se quedaron pendientes por posible duplicado (o porque la comprobación no se pudo
+        /// leer: entonces tampoco se guardan, para no contar dos veces el mismo dinero).
+        let skippedPossibleDuplicates: [InboxDraft]
+
+        var skippedAsPossibleDuplicate: Int { skippedPossibleDuplicates.count }
+    }
+
+    /// Guardar de un toque varios borradores. Los personales pasan por la misma comprobación de duplicado que el
+    /// borrador abierto (`InboxDuplicateCheck`), contra lo ya guardado y contra lo que este mismo lote acaba de crear;
+    /// los que se parecen se quedan pendientes y el llamador lo dice. Lote 03 de las necesarias 2.3.
+    func bulkApproveOutcome(
+        _ drafts: [InboxDraft],
+        currencyConverter: CurrencyConverter
+    ) throws -> BulkApproveOutcome {
         let context = try requireContext()
         var transactions: [TransactionItem] = []
         var genericApprovedCount = 0
+        var skippedPossibleDuplicates: [InboxDraft] = []
         let preferredCode = CurrencyDefaults.currentPreferred
 
         // `.groupScheduledExpense` se excluye: solo se aprueba vía GroupExpenseFormView (crea el
@@ -570,6 +610,26 @@ final class DraftService {
                   !account.isArchived,
                   let amount = draft.amount,
                   let subcategory = draft.subcategory else { continue }
+
+            // Posible duplicado: se queda en la Bandeja. La lectura incluye lo que este lote ya insertó, así que dos
+            // borradores del mismo pago en el mismo lote guardan uno solo.
+            do {
+                if try InboxDuplicateCheck.findDuplicate(
+                    amount: amount,
+                    date: draft.effectiveDate,
+                    account: account,
+                    in: context
+                ) != nil {
+                    skippedPossibleDuplicates.append(draft)
+                    continue
+                }
+            } catch {
+                #if DEBUG
+                print("DraftService.bulkApprove: Error checking duplicates: \(error)")
+                #endif
+                skippedPossibleDuplicates.append(draft)
+                continue
+            }
 
             // Calculate amount in preferred currency
             let outcome = currencyConverter.convertChecked(
@@ -653,6 +713,9 @@ final class DraftService {
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
                 RouterEntryGate.shared.submit(.requestAppStoreReview)
             }
+            // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio. Los de grupo que este lote
+            // delega a `approveDraft` no cuentan, igual que allí.
+            NewUserMetrics.created(.firstExpense)
         }
 
         // Update widgets
@@ -664,7 +727,7 @@ final class DraftService {
             await BudgetAlertService.shared.checkBudgetsAndNotify()
         }
 
-        return transactions
+        return BulkApproveOutcome(transactions: transactions, skippedPossibleDuplicates: skippedPossibleDuplicates)
     }
 
     // MARK: - Reject Operations

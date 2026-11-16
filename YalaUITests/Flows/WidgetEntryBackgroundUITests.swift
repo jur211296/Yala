@@ -77,7 +77,7 @@ final class WidgetEntryBackgroundUITests: XCTestCase {
     }
 
     private func assertPanelSelected(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).isSelected,
+        XCTAssertTrue(app.tabEntry(.panel).isSelected,
                       "La entrada del widget tenía que haber dejado el Panel delante.", file: file, line: line)
     }
 

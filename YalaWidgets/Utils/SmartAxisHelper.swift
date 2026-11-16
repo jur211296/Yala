@@ -144,13 +144,13 @@ enum SmartAxisHelper {
             case .month:
                 // Always show month format for monthly grouping
                 if multipleYears {
-                    formatter.dateFormat = "MMM yy"  // "ene 25"
+                    formatter.setLocalizedDateFormatFromTemplate("MMMyy")  // "ene 25"
                 } else {
-                    formatter.dateFormat = "MMM"  // "ene"
+                    formatter.setLocalizedDateFormatFromTemplate("MMM")  // "ene"
                 }
                 return formatter.string(from: date).lowercased().replacing(".", with: "")
             case .weekOfYear:
-                formatter.dateFormat = "d MMM"  // "15 dic"
+                formatter.setLocalizedDateFormatFromTemplate("dMMM")  // "15 dic"
                 return formatter.string(from: date).lowercased().replacing(".", with: "")
             default:
                 break  // Fall through to span-based logic for day
@@ -160,23 +160,23 @@ enum SmartAxisHelper {
         // Single data point: show full date
         if startDate == endDate || days == 0 {
             if multipleYears || days > 60 {
-                formatter.dateFormat = "d MMM yy"  // "15 ene 25"
+                formatter.setLocalizedDateFormatFromTemplate("dMMMyy")  // "15 ene 25"
             } else {
-                formatter.dateFormat = "d MMM"  // "15 ene"
+                formatter.setLocalizedDateFormatFromTemplate("dMMM")  // "15 ene"
             }
         } else if days > 60 {
             // Long period (> 2 months): Show month abbreviation
             if multipleYears {
-                formatter.dateFormat = "MMM yy"  // "ene 25"
+                formatter.setLocalizedDateFormatFromTemplate("MMMyy")  // "ene 25"
             } else {
-                formatter.dateFormat = "MMM"  // "ene"
+                formatter.setLocalizedDateFormatFromTemplate("MMM")  // "ene"
             }
         } else if days > 14 {
             // Medium period (2 weeks - 2 months): Show day + month
-            formatter.dateFormat = "d MMM"  // "15 dic"
+            formatter.setLocalizedDateFormatFromTemplate("dMMM")  // "15 dic"
         } else {
             // Short period (< 2 weeks): Just day number
-            formatter.dateFormat = "d"  // "15"
+            formatter.setLocalizedDateFormatFromTemplate("d")  // "15"
         }
 
         // Remove trailing periods from abbreviations (e.g., "ene." -> "ene")

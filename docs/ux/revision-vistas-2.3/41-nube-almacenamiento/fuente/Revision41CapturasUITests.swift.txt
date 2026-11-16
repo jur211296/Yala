@@ -1,0 +1,434 @@
+//
+//  ZZRevision41CapturasUITests.swift — TEMPORAL, no se publica.
+//  Conductor de capturas de la revisión por vistas 2.3, zona 41 (dónde viven tus datos: nube, iCloud y cierre de sesión).
+//  `TEST_RUNNER_REV_OUT=<carpeta>` escribe ahí los PNG; `TEST_RUNNER_REV_AX3=1` lanza con texto grande (AX3);
+//  `TEST_RUNNER_REV_PREFIX` antepone un prefijo. Cada caso tolera fallos: captura lo que alcance.
+//  Solo semillas de prueba y ganchos `-uitest-*` que ya existen: nada toca datos reales.
+//
+
+import XCTest
+
+final class ZZRevision41CapturasUITests: XCTestCase {
+
+    private static let ax3 = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+    private var prefix: String { ProcessInfo.processInfo.environment["REV_PREFIX"] ?? "" }
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = true
+    }
+
+    // MARK: - Utilidades
+
+    private func cap(_ name: String, wait: TimeInterval = 1.0) {
+        Thread.sleep(forTimeInterval: wait)
+        guard let dir = ProcessInfo.processInfo.environment["REV_OUT"], !dir.isEmpty else { return }
+        let data = XCUIScreen.main.screenshot().pngRepresentation
+        let url = URL(fileURLWithPath: dir).appendingPathComponent(prefix + name + ".png")
+        do { try data.write(to: url) } catch { print("REV: no se pudo escribir \(url): \(error)") }
+    }
+
+    private func launch(seed: String? = "minimal", pro: Bool = false, configure: (XCUIApplication) -> Void) -> XCUIApplication {
+        let app = XCUIApplication()
+        configure(app)
+        _ = app.waitForUITestReady()
+        Thread.sleep(forTimeInterval: 2.5)
+        return app
+    }
+
+    private var large: [String] { ProcessInfo.processInfo.environment["REV_AX3"] == "1" ? Self.ax3 : [] }
+
+    private func any(_ app: XCUIApplication, _ id: String) -> XCUIElement { app.descendants(matching: .any)[id].firstMatch }
+
+    @discardableResult
+    private func tapIf(_ el: XCUIElement, timeout: TimeInterval = 8) -> Bool {
+        guard el.waitForExistence(timeout: timeout) else { print("REV: no apareció \(el)"); return false }
+        el.tap()
+        return true
+    }
+
+    @discardableResult
+    private func scrollTo(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        let el = app.descendants(matching: .any)[id].firstMatch
+        var n = 0
+        while !(el.exists && el.isHittable) && n < 12 { app.swipeUp(); n += 1; Thread.sleep(forTimeInterval: 0.3) }
+        return el
+    }
+
+    private func openStorage(_ app: XCUIApplication, capRow: String? = nil) {
+        app.openProfile()
+        let row = scrollTo(app, "storage_settings_row")
+        if let capRow { cap(capRow, wait: 0.8) }
+        tapIf(row, timeout: 10)
+        Thread.sleep(forTimeInterval: 1.5)
+    }
+
+    private func scrollCaps(_ app: XCUIApplication, _ base: String, count: Int) {
+        for i in 1...count {
+            app.swipeUp()
+            cap("\(base)-\(i)", wait: 0.7)
+        }
+    }
+
+    // MARK: - Dónde viven tus datos · iCloud, sin sesión
+
+    func test_01_icloudSinSesion_yHojaDeActivar() {
+        let app = launch { $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, extraArguments: large) }
+        app.openProfile()
+        cap("a01-ajustes-arriba", wait: 1.2)
+        let row = scrollTo(app, "storage_settings_row")
+        cap("a02-ajustes-filas-datos", wait: 0.8)
+        tapIf(row)
+        cap("s01-icloud-sin-sesion", wait: 1.8)
+        scrollCaps(app, "s01-icloud-sin-sesion-abajo", count: 2)
+        if tapIf(any(app, "storage_migrate_button")) {
+            cap("h01-hoja-activar", wait: 2.0)
+            if tapIf(any(app, "storage_activation_details"), timeout: 4) {
+                cap("h02-hoja-detalles", wait: 1.0)
+                app.swipeUp()
+                cap("h03-hoja-detalles-abajo", wait: 0.8)
+            }
+        }
+    }
+
+    // MARK: - Con sesión de Yala ya abierta (la de Grupos)
+
+    func test_02_icloudConSesion() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", cloudSession: true, fakeAttestSupport: true,
+                               fakeMigrationIdentity: "proceed", extraArguments: large)
+        }
+        openStorage(app)
+        cap("s02-icloud-con-sesion", wait: 1.8)
+        scrollCaps(app, "s02-icloud-con-sesion-abajo", count: 1)
+        if tapIf(any(app, "storage_migrate_button")) {
+            cap("h04-hoja-cuenta-actual", wait: 2.5)
+        }
+    }
+
+    // MARK: - Bloqueos de identidad y el selector de cuenta
+
+    func test_03_bloqueoDatosPropios() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", cloudSession: true, fakeAttestSupport: true,
+                               fakeMigrationIdentity: "personalData", extraArguments: large)
+        }
+        openStorage(app)
+        if tapIf(any(app, "storage_migrate_button")) {
+            cap("b01-bloqueo-datos-propios", wait: 2.5)
+            if tapIf(any(app, "storage_migrate_block_close"), timeout: 5) {
+                cap("b02-tras-bloqueo-nota", wait: 1.5)
+            }
+        }
+    }
+
+    func test_04_bloqueoOtroDispositivo() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", cloudSession: true, fakeAttestSupport: true,
+                               fakeMigrationIdentity: "otherDeviceMigrating", extraArguments: large)
+        }
+        openStorage(app)
+        if tapIf(any(app, "storage_migrate_button")) {
+            cap("b03-bloqueo-otro-dispositivo", wait: 2.5)
+        }
+    }
+
+    func test_05_bloqueoConOtraCuentaYSelector() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingMigrationBlock: "personalDataApple",
+                               extraArguments: large)
+        }
+        openStorage(app)
+        cap("b04-bloqueo-usar-otra", wait: 2.0)
+        if tapIf(any(app, "storage_migrate_block_use_another"), timeout: 5) {
+            cap("b05-selector-cuenta", wait: 2.5)
+        }
+    }
+
+    func test_06_bloqueoGruposOtraCuenta() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingMigrationBlock: "otherGroupsStale",
+                               extraArguments: large)
+        }
+        openStorage(app)
+        cap("b06-bloqueo-grupos-otra-cuenta", wait: 2.0)
+    }
+
+    func test_07_borradoPendiente() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, pendingICloudWipe: true, extraArguments: large)
+        }
+        openStorage(app)
+        if tapIf(any(app, "storage_migrate_button")) {
+            cap("s03-borrado-pendiente", wait: 1.5)
+        }
+    }
+
+    // MARK: - Progreso, fallo y diario ilegible
+
+    func test_08_progreso() {
+        for scenario in ["upload", "waitingICloud", "reverseReview", "reverseUpload", "reverseStarting"] {
+            let app = launch {
+                $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: scenario.hasPrefix("reverse"),
+                                   cloudProgress: scenario, extraArguments: large)
+            }
+            openStorage(app)
+            cap("p-\(scenario)", wait: 2.0)
+            app.swipeUp()
+            cap("p-\(scenario)-abajo", wait: 0.8)
+            if scenario == "upload" {
+                if tapIf(any(app, "storage_cancel_migration_button"), timeout: 4) { cap("p-upload-cancelar", wait: 1.2) }
+            }
+            if scenario == "reverseUpload" {
+                if tapIf(any(app, "storage_cancel_reverse_button"), timeout: 4) { cap("p-reverseUpload-cancelar", wait: 1.2) }
+            }
+            app.terminate()
+        }
+    }
+
+    func test_09_falloYDiario() {
+        var app = launch { $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, migrationFailed: true, extraArguments: large) }
+        openStorage(app)
+        cap("p-fallo", wait: 2.0)
+        app.terminate()
+        app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, migrationJournalUnreadable: true, extraArguments: large)
+        }
+        openStorage(app)
+        cap("p-diario-ilegible", wait: 2.0)
+    }
+
+    // MARK: - En la nube: estado, sincronización y volver a iCloud
+
+    func test_10_nubeActivaYVolver() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: true, reversePriorICloud: "none",
+                               extraArguments: large)
+        }
+        app.openProfile()
+        cap("a03-ajustes-en-nube-arriba", wait: 1.0)
+        let row = scrollTo(app, "storage_settings_row")
+        cap("a04-ajustes-en-nube-filas", wait: 0.8)
+        tapIf(row)
+        cap("n01-nube-activa", wait: 2.0)
+        scrollCaps(app, "n01-nube-activa-abajo", count: 2)
+        let revert = scrollTo(app, "storage_revert_button")
+        if tapIf(revert) { cap("n02-volver-confirmar", wait: 2.0) }
+    }
+
+    func test_11_volverConDatosPrevios() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: true,
+                               reversePriorICloud: "foundGroups", extraArguments: large)
+        }
+        openStorage(app)
+        if tapIf(scrollTo(app, "storage_revert_button")) {
+            cap("n03-icloud-ya-tiene-datos", wait: 2.0)
+            let discard = app.buttons["storage_revert_prior_discard"].firstMatch
+            if tapIf(discard, timeout: 4) { cap("n04-borrar-y-volver", wait: 1.5) }
+        }
+    }
+
+    func test_12_volverSinICloud() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: true,
+                               reversePriorICloud: "noAccount", extraArguments: large)
+        }
+        openStorage(app)
+        if tapIf(scrollTo(app, "storage_revert_button")) { cap("n05-volver-sin-icloud", wait: 2.0) }
+    }
+
+    func test_13_nubePideIniciarSesion() {
+        let app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: true, syncNeedsSignIn: true,
+                               extraArguments: large)
+        }
+        cap("n06-panel-aviso-iniciar", wait: 1.5)
+        openStorage(app)
+        cap("n07-nube-iniciar-sesion", wait: 2.0)
+    }
+
+    // MARK: - Sincronización iCloud
+
+    func test_14_icloud() {
+        var app = launch { $0.launchForUITest(seed: "minimal", extraArguments: large) }
+        app.openProfile()
+        let row = scrollTo(app, "profile_row_iCloudSync")
+        if !row.exists {
+            let alt = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Sincronización iCloud")).firstMatch
+            tapIf(alt)
+        } else {
+            tapIf(row)
+        }
+        cap("i01-icloud-sin-cuenta", wait: 2.0)
+        app.terminate()
+        app = launch { $0.launchForUITest(seed: "minimal", fakeICloud: true, extraArguments: large) }
+        app.openProfile()
+        let alt = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Sincronización iCloud")).firstMatch
+        var n = 0
+        while !(alt.exists && alt.isHittable) && n < 8 { app.swipeUp(); n += 1 }
+        tapIf(alt)
+        cap("i02-icloud-con-cuenta", wait: 2.0)
+    }
+
+    // MARK: - Volver a Yala completo
+
+    func test_15_volverAYalaCompleto() {
+        let app = launch { $0.launchForUITest(seed: "minimal", extraArguments: ["-uitest-seed-today-record"] + large) }
+        app.openProfile()
+        tapIf(scrollTo(app, "profile_usage_mode"))
+        cap("r00-como-usas-yala", wait: 1.0)
+        tapIf(app.buttons["usage_mode_groups_only"])
+        cap("r01-ida-solo-grupos", wait: 1.2)
+        tapIf(app.buttons["usage_mode_leave_confirm"])
+        Thread.sleep(forTimeInterval: 3)
+        app.openProfile()
+        cap("r02-solo-grupos-ajustes", wait: 1.2)
+        if tapIf(app.buttons["profile_activate_full_yala"]) {
+            cap("r03-volver-elegir", wait: 2.0)
+            tapIf(app.buttons["usage_mode_return_fresh"])
+            cap("r04-volver-de-cero", wait: 0.8)
+            tapIf(app.buttons["usage_mode_return_continue"])
+            cap("r05-volver-confirmar", wait: 1.5)
+            let erase = app.alerts.buttons["Borrar y empezar de cero"].firstMatch
+            if tapIf(erase, timeout: 4) { cap("r06-volver-cuenta", wait: 1.5) }
+        }
+    }
+
+    // MARK: - Consentimiento de la nube (desde «Activar Yala completo» en solo grupos)
+
+    func test_16_consentimiento() {
+        let app = launch {
+            $0.launchForUITest(groupInvite: true, fakeAttestSupport: true, extraArguments: ["-uitest-cloud-chooser"] + large)
+        }
+        app.openProfile()
+        if tapIf(app.buttons["profile_activate_full_yala"]) {
+            cap("c01-activar-elegir", wait: 2.0)
+            if tapIf(app.buttons["welcome_new_cloud"]) {
+                cap("c02-consentimiento", wait: 2.0)
+                app.swipeUp()
+                cap("c03-consentimiento-abajo", wait: 0.8)
+            }
+        }
+    }
+
+    // MARK: - Salir de mis grupos
+
+    func test_17_salirDeGrupos() {
+        for (hook, name) in [("-uitest-groups-batch-running", "g01-saliendo"), ("-uitest-groups-batch-demo", "g02-resultado")] {
+            let app = launch {
+                $0.launchForUITest(pro: true, seed: "grupos-saldado", deeplink: "groups", extraArguments: [hook] + large)
+            }
+            tapIf(app.buttons["groups_global_settings_button"], timeout: 12)
+            let button = app.buttons["groups_settings_leave_all"]
+            var n = 0
+            while !(button.exists && button.isHittable) && n < 8 { app.swipeUp(); n += 1 }
+            cap("\(name)-boton", wait: 0.8)
+            if tapIf(button) {
+                cap("\(name)-pregunta", wait: 1.2)
+                let alert = app.alerts.firstMatch
+                tapIf(alert.buttons["Salir de todos"].firstMatch, timeout: 4)
+                cap(name, wait: 2.0)
+                app.swipeUp()
+                cap("\(name)-abajo", wait: 0.8)
+            }
+            app.terminate()
+        }
+    }
+
+    // MARK: - Cerrar sesión hasta «reabre Yala»
+
+    func test_18_cerrarSesion() {
+        let app = launch { $0.launchForUITest(seed: "minimal", extraArguments: large) }
+        app.openProfile()
+        let signOut = scrollTo(app, "profile_security_signout")
+        cap("o01-ajustes-cerrar-sesion", wait: 0.8)
+        tapIf(signOut)
+        cap("o02-hoja-cerrar-sesion", wait: 1.5)
+        app.swipeUp()
+        cap("o02-hoja-cerrar-sesion-abajo", wait: 0.8)
+        if tapIf(app.buttons["destructive_scope_confirm"]) {
+            let exportPending = app.alerts.buttons.matching(NSPredicate(
+                format: "label IN %@", ["Cerrar sesión igualmente", "Quitar mis datos igualmente"])).firstMatch
+            let relaunch = any(app, "signout_relaunch_screen")
+            let deadline = Date().addingTimeInterval(60)
+            var shotAlert = false
+            while !relaunch.exists && Date() < deadline {
+                if exportPending.exists {
+                    if !shotAlert { cap("o03-aviso-exportar", wait: 0.5); shotAlert = true }
+                    exportPending.tap()
+                }
+                _ = relaunch.waitForExistence(timeout: 2)
+            }
+            cap("o04-reabre-yala", wait: 1.5)
+        }
+    }
+
+    // MARK: - En la nube, con el modo guardado también en «nube» (dominio de argumentos: no persiste)
+
+    func test_21_nubeFiel() {
+        let cloudMode = ["-cloudSync.storageMode", "cloud"]
+        var app = launch {
+            $0.launchForUITest(seed: "minimal", cloudSession: true, fakeAttestSupport: true, bornCloudStorage: true,
+                               reversePriorICloud: "none", extraArguments: cloudMode + large)
+        }
+        app.openProfile()
+        let row = scrollTo(app, "storage_settings_row")
+        cap("f01-ajustes-en-nube", wait: 0.8)
+        tapIf(row)
+        cap("f02-nube-activa", wait: 2.0)
+        scrollCaps(app, "f02-nube-activa-abajo", count: 2)
+        app.terminate()
+        for scenario in ["reverseStarting", "reverseUpload"] {
+            app = launch {
+                $0.launchForUITest(seed: "minimal", cloudSession: true, fakeAttestSupport: true, bornCloudStorage: true,
+                                   cloudProgress: scenario, extraArguments: cloudMode + large)
+            }
+            openStorage(app)
+            cap("f-\(scenario)", wait: 2.0)
+            app.terminate()
+        }
+    }
+
+    // MARK: - Reposo, para medir CPU desde fuera (ps sobre el proceso de la app)
+
+    /// Marca en un fichero cuándo empieza y acaba cada tramo de 60 s; el host muestrea el tiempo de CPU del proceso.
+    private func mark(_ text: String) {
+        guard let dir = ProcessInfo.processInfo.environment["REV_OUT"], !dir.isEmpty else { return }
+        let url = URL(fileURLWithPath: dir).appendingPathComponent("perf-marcas.txt")
+        let line = "\(Date().timeIntervalSince1970) \(text)\n"
+        if let h = try? FileHandle(forWritingTo: url) { h.seekToEndOfFile(); h.write(line.data(using: .utf8)!); h.closeFile() }
+        else { try? line.write(to: url, atomically: true, encoding: .utf8) }
+    }
+
+    func test_20_reposo() {
+        for (cloud, name) in [(false, "icloud"), (true, "nube")] {
+            let app = launch {
+                $0.launchForUITest(seed: "realista", fakeAttestSupport: true, bornCloudStorage: cloud, extraArguments: large)
+            }
+            app.openProfile()
+            Thread.sleep(forTimeInterval: 5)
+            mark("inicio ajustes-\(name)"); Thread.sleep(forTimeInterval: 60); mark("fin ajustes-\(name)")
+            tapIf(scrollTo(app, "storage_settings_row"))
+            Thread.sleep(forTimeInterval: 5)
+            mark("inicio almacenamiento-\(name)"); Thread.sleep(forTimeInterval: 60); mark("fin almacenamiento-\(name)")
+            app.terminate()
+        }
+    }
+
+    // MARK: - iPad
+
+    func test_19_ipad() {
+        var app = launch { $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, extraArguments: large) }
+        openStorage(app)
+        cap("ipad-s01-icloud", wait: 2.0)
+        if tapIf(any(app, "storage_migrate_button")) { cap("ipad-h01-hoja", wait: 2.5) }
+        app.terminate()
+        app = launch {
+            $0.launchForUITest(seed: "minimal", fakeAttestSupport: true, bornCloudStorage: true, cloudProgress: "reverseUpload",
+                               extraArguments: large)
+        }
+        openStorage(app)
+        cap("ipad-p-reverseUpload", wait: 2.0)
+    }
+}

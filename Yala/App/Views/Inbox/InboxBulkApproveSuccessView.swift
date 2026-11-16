@@ -16,6 +16,8 @@ struct InboxBulkApproveSuccessView: View {
     var summary: InboxBulkApproveSummaryLogic.Summary = .init(total: nil, currencyCode: nil, accountName: nil)
     /// Lo que no se guardó y qué le falta (UX 2.2 · L4-7): antes «2 transacciones creadas» no decía que uno se quedó.
     var leftoverLine: String? = nil
+    /// Lo que se quedó en la Bandeja por parecerse a un registro que ya existe (lote 03 de las necesarias 2.3).
+    var duplicatesLine: String? = nil
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
 
@@ -64,6 +66,15 @@ struct InboxBulkApproveSuccessView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .accessibilityIdentifier("inbox_bulk_success_leftover")
                 }
+
+                if let duplicatesLine {
+                    Label(duplicatesLine, systemImage: "doc.on.doc")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("inbox_bulk_success_duplicates")
+                }
             }
 
             Spacer()
@@ -88,7 +99,8 @@ struct InboxBulkApproveSuccessView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.thBackground)
         // Momento de éxito: aquí se pide la oferta de prueba armada (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
-        .onAppear { TrialOfferMoments.noteRecordSaved() }
+        // Con nada guardado (todo se quedó por posible duplicado) no hay momento de éxito.
+        .onAppear { if approvedCount > 0 { TrialOfferMoments.noteRecordSaved() } }
     }
 }
 

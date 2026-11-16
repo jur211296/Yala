@@ -223,11 +223,21 @@ struct LatestRecordsWidgetView: View {
                 .frame(maxWidth: .infinity)
                 Spacer(minLength: 0)
             } else {
-                let rows = Array(entry.transactions.prefix(LatestRecordsProvider.recordLimit(for: family)))
+                let limit = LatestRecordsProvider.recordLimit(for: family)
+                let rows = Array(entry.transactions.prefix(limit))
+                // Siempre `limit` puestos: los que no tienen registro llevan una copia invisible del primero. Así uno o dos
+                // registros quedan arriba con el ritmo de la lista llena; repartidos, el segundo se iba al fondo (card dz6c).
                 VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
-                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, transaction in
+                    ForEach(0..<limit, id: \.self) { index in
                         if index > 0 { Spacer(minLength: WidgetDS.Spacing.xs) }
-                        TransactionRowView(transaction: transaction, displayFormat: entry.currencyDisplayFormat, now: entry.date)
+                        if index < rows.count {
+                            TransactionRowView(transaction: rows[index], displayFormat: entry.currencyDisplayFormat,
+                                               now: entry.date)
+                        } else if let first = rows.first {
+                            TransactionRowView(transaction: first, displayFormat: entry.currencyDisplayFormat, now: entry.date)
+                                .hidden()
+                                .accessibilityHidden(true)
+                        }
                     }
                     if isLarge {
                         Spacer(minLength: WidgetDS.Spacing.sm)

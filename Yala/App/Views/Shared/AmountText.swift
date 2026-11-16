@@ -41,6 +41,8 @@ struct AmountText: View {
     var animatesValue: Bool = false
 
     @Environment(AppPreferences.self) private var prefs
+    /// «Ocultar montos» del Panel: símbolo + `•••••`, sin cifra ni decimales (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     /// Color hierarchy del monto. El símbolo y los decimales viven
     /// "un tono menos" que el integer principal.
@@ -79,21 +81,28 @@ struct AmountText: View {
                     .foregroundStyle(secondaryForegroundStyle)
             }
 
-            Text(runs.sign + runs.integer)
-                .font(font)
-                .foregroundStyle(integerForegroundStyle)
+            if amountsHidden {
+                // Sin signo, cifra ni decimales: el ancho es siempre el mismo y no delata cuánto hay.
+                Text(verbatim: AmountPrivacy.mask)
+                    .font(font)
+                    .foregroundStyle(integerForegroundStyle)
+            } else {
+                Text(runs.sign + runs.integer)
+                    .font(font)
+                    .foregroundStyle(integerForegroundStyle)
 
-            if let decimal = runs.decimal {
-                Text("\(decimalSep)\(decimal)")
-                    .font(secondaryFont)
-                    .foregroundStyle(secondaryForegroundStyle)
+                if let decimal = runs.decimal {
+                    Text("\(decimalSep)\(decimal)")
+                        .font(secondaryFont)
+                        .foregroundStyle(secondaryForegroundStyle)
+                }
             }
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .modifier(AmountRollModifier(isEnabled: animatesValue, value: value))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(formatted)
+        .accessibilityLabel(amountsHidden ? L10n.Panel.amountHidden : formatted)
     }
 
     // MARK: - Rodar la cifra

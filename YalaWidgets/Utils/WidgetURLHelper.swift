@@ -26,7 +26,24 @@ enum WidgetURLHelper {
     /// - Parameter path: El path del deeplink (ej: "panel", "statistics/categories")
     /// - Returns: URL formada o nil si el path es inválido
     nonisolated static func url(for path: String) -> URL? {
-        URL(string: "\(urlScheme)://\(path)")
+        URL(string: "\(urlScheme)://\(path)\(isWidgetExtension ? "?\(sourceQueryItem)=\(widgetSource)" : "")")
+    }
+
+    /// Telemetría propia (2026-11-06): los enlaces que nacen en la extensión de widgets llevan `?src=widget`, para que
+    /// la app cuente «abrió desde un widget» (`AppBootstrapper.handleIncomingURL`). Las rutas leen host y path, nunca
+    /// la query, así que no cambia adónde lleva el toque. Este helper lo compilan también la app y la extensión de
+    /// compartir: ahí no se marca nada.
+    nonisolated static let sourceQueryItem = "src"
+    nonisolated static let widgetSource = "widget"
+
+    nonisolated static var isWidgetExtension: Bool {
+        Bundle.main.bundleIdentifier?.hasSuffix(".YalaWidgets") ?? false
+    }
+
+    /// `true` si la URL salió de un widget.
+    nonisolated static func cameFromWidget(_ url: URL) -> Bool {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.contains { $0.name == sourceQueryItem && $0.value == widgetSource } ?? false
     }
 }
 

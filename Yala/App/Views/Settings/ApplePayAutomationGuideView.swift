@@ -22,18 +22,19 @@ struct ApplePayAutomationGuideView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
-    /// Borradores de Apple Pay sin aprobar: el dato vivo de la cabecera.
-    @Query(filter: ApplePayAutomationGuideView.pendingApplePayDrafts)
-    private var pendingDrafts: [InboxDraft]
+    /// Los borradores de Apple Pay, el más reciente primero: el dato vivo de la cabecera. Todos, no solo los pendientes:
+    /// iOS no le dice a Yala si la automatización existe, y lo único que lo prueba es que haya llegado algún pago. Con
+    /// solo los pendientes, «en tu bandeja: 0» se leía igual tras aprobarlos todos que sin automatización.
+    @Query(filter: ApplePayAutomationGuideView.applePayDraftsFilter, sort: \InboxDraft.createdAt, order: .reverse)
+    private var applePayDrafts: [InboxDraft]
 
     @State private var showSupport = false
 
     private let tutorial = Tutorial.applePay
 
-    static let pendingApplePayDrafts: Predicate<InboxDraft> = {
+    static let applePayDraftsFilter: Predicate<InboxDraft> = {
         let source = DraftSourceType.applePay.rawValue
-        let pending = DraftStatus.pending.rawValue
-        return #Predicate<InboxDraft> { $0.sourceTypeRaw == source && $0.statusRaw == pending }
+        return #Predicate<InboxDraft> { $0.sourceTypeRaw == source }
     }()
 
     var body: some View {
@@ -45,7 +46,9 @@ struct ApplePayAutomationGuideView: View {
                 systemImage: tutorial.icon,
                 tint: tutorial.color,
                 title: tutorial.title,
-                lines: [tutorial.introDescription, L10n.Tutorials.applePayPendingDrafts(pendingDrafts.count)]),
+                lines: [tutorial.introDescription] + ApplePayGuideStatusLogic.lines(
+                    lastArrival: applePayDrafts.first?.createdAt,
+                    pendingCount: applePayDrafts.count(where: { $0.status == .pending }))),
             steps: steps,
             guarantee: L10n.Tutorials.applePayGuarantee,
             successTitle: L10n.Action.done,
@@ -105,5 +108,17 @@ struct ApplePayAutomationGuideView: View {
                 .accessibilityLabel(step.title)
                 .accessibilityIdentifier("step_guide_preview")
         }
+    }
+}
+
+/// Lo que la cabecera de la guía de Apple Pay sabe de verdad (lote 03 de las necesarias 2.3): si ya llegó algún pago y
+/// cuándo el último. El contador de pendientes solo sale con alguno.
+enum ApplePayGuideStatusLogic {
+    static func lines(lastArrival: Date?, pendingCount: Int, locale: Locale = AppLocale.current) -> [String] {
+        guard let lastArrival else { return [L10n.Tutorials.applePayNoPaymentYet] }
+        let day = lastArrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(locale))
+        var lines = [L10n.Tutorials.applePayLastPayment(day)]
+        if pendingCount > 0 { lines.append(L10n.Tutorials.applePayPendingDrafts(pendingCount)) }
+        return lines
     }
 }

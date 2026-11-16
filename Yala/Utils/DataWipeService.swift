@@ -139,6 +139,12 @@ final class DataWipeService {
             // datos» conserva los recordatorios). Quien llama reprograma lo que se queda
             // (`rescheduleSurvivingReminders`); la vuelta de «Solo grupos» lo hace en `resumePersonalReminders`.
             NotificationService.shared.cancelAllNotifications()
+            // Y si el aviso al parque dice que el parque sigue, los conservados nacen de nuevo DESPUÉS de la señal: un
+            // dispositivo con una versión anterior la procesa con el corte viejo, que se lleva lo creado antes de la señal
+            // sin mirar la marca (ticket `old-receivers-of-a-keeping-wipe-delete-the-origin-reminders`).
+            if broadcastSignal && signalKeepsSetup {
+                try recreateKeptRemindersAfterSignal(in: context, signaledAt: signalTimestamp ?? .now)
+            }
         } else if let notifications = rows.notifications {
             NotificationService.shared.deleteNotifications(notifications, context: context)
         } else {
@@ -332,9 +338,11 @@ final class DataWipeService {
     /// esas filas. Por eso aquí se pide la misma convergencia que los dos borrados de iCloud que conservan grupos: los
     /// gastos y las liquidaciones confirmadas vuelven una vez, y el Inbox pregunta la cuenta donde toca.
     ///
-    /// **Cuándo vuelven.** La convergencia la consume `AppBootstrapper.retryPendingBridges` en el ARRANQUE siguiente,
-    /// detrás de sus gates de store listo, dominio abierto y sesión privada. Con sesión privada, el próximo arranque en
-    /// frío. En solo-grupos espera a que la persona active Yala completo: sin eso no hay vida personal que reponer.
+    /// **Cuándo vuelven.** Con sesión privada, en la misma sesión: quien llama y deja a la persona dentro corre
+    /// `AppBootstrapper.convergeGroupsBridgeInSession`, con los gates del arranque (ticket
+    /// `wipe-data-group-rows-return-only-on-the-next-cold-launch`). Si el store no está listo, la consume
+    /// `AppBootstrapper.retryPendingBridges` en el arranque siguiente. En solo-grupos espera a que la persona active Yala
+    /// completo: sin eso no hay vida personal que reponer.
     ///
     /// **Se piden ANTES de borrar, no después** (review adversarial). `wipeAllUserData` guarda por pasos: uno que lanza,
     /// o un proceso que muere, después de borrar las transacciones dejaría los gastos de grupo fuera de lo personal y
@@ -447,6 +455,41 @@ final class DataWipeService {
                             resetsPreferences: !fleetStartedOver, remoteWipeCut: cut,
                             keepsReminders: fleetStartedOver)
         if cut != nil || fleetStartedOver { rescheduleReminders(context) }
+    }
+
+    /// **Los recordatorios que «Vaciar datos» conserva, re-creados con fecha posterior a la señal** (ticket
+    /// `old-receivers-of-a-keeping-wipe-delete-the-origin-reminders`).
+    ///
+    /// Un dispositivo del mismo iCloud con la 2.1 recibe la señal con la marca de que el parque sigue y entra por
+    /// `skipOnboarding`, pero su borrado no sabe conservar recordatorios: se lleva todo `NotificationItem` creado hasta la
+    /// señal (`RemoteWipeCutLogic.takesDated`), y ese borrado viaja por el espejo al origen. Aquí el origen borra cada
+    /// conservado y lo vuelve a crear igual —mismo nombre, texto, hora, días, tipo, orden y configuración— con un id nuevo
+    /// y `createdAt` estrictamente posterior a la señal. El corte viejo no toca las copias, lleguen antes o después que la
+    /// señal: si llegan antes, son posteriores; si llegan después, no estaban para borrarlas. Las originales ya las borra
+    /// el origen, así que lo que haga con ellas el receptor no cambia nada. Re-fechar la misma fila no basta: si la
+    /// edición llega al receptor después que la señal, la fila vieja se va igual.
+    ///
+    /// Solo en el origen que avisa conservando la cuenta: ni el receptor (sus escrituras viajarían) ni «Empezar de cero»
+    /// sin aviso. Lo programado en el sistema ya se canceló y quien llama reprograma lo que queda
+    /// (`rescheduleSurvivingReminders`), así que el id nuevo no deja avisos huérfanos.
+    static func recreateKeptRemindersAfterSignal(in context: ModelContext, signaledAt: Date, now: Date = .now) throws {
+        let kept = try context.fetch(FetchDescriptor<NotificationItem>())
+        guard !kept.isEmpty else { return }
+        let bornAt = max(now, signaledAt.addingTimeInterval(0.001))
+        for original in kept {
+            let copy = NotificationItem(
+                name: original.name, text: original.text, hour: original.hour, minute: original.minute,
+                type: original.notificationType, isActive: original.isActive, iconName: original.iconName,
+                colorHex: original.colorHex, sortOrder: original.sortOrder)
+            copy.typeRaw = original.typeRaw
+            copy.configurationData = original.configurationData
+            copy.weekdaysRaw = original.weekdaysRaw
+            copy.lastNotifiedDate = original.lastNotifiedDate
+            copy.createdAt = bornAt
+            context.insert(copy)
+            context.delete(original)
+        }
+        try context.save()
     }
 
     /// Lo que hace el arranque (`AppBootstrapper.ensureNotificationsScheduled`) con los avisos, sobre lo que quedó.
@@ -1000,6 +1043,7 @@ final class DataWipeService {
         // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —
         // repetirlos es idempotente y deja la purga completa por sí sola.
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.groupsOnboardingPostponedOnce)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
         // C2 · el latch «este device tuvo sesión de Grupos alguna vez», que gobierna si el empty state
@@ -1201,6 +1245,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "lastSplitPercentage")
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.openingsKey) // Pista de los atajos del formulario (L2-8)
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.usedKey)
+        defaults.removeObject(forKey: NewRecordDraftStore.key)    // Lo que se escribía en Nuevo registro (card 77j1)
 
         // El estado del servicio de tipos de cambio. Sin esto, `preloadHistoricalIfNeeded` se salta el
         // histórico hasta 30 días después —la key la acaba de escribir el arranque que importó el corpus—
@@ -1272,6 +1317,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "colorfulIcons")          // Default: true
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
+        defaults.removeObject(forKey: "showsProjectedFlow")     // Default: false («Ver proyectado»)
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: la de la región (CurrencyDefaults.preferred)
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
@@ -1280,6 +1326,8 @@ final class DataWipeService {
         // vaciado de la shell sin sesión privada) devuelven a Yala completo. «Vaciar datos» con vida personal conserva los
         // ajustes, y con ellos esta marca: la persona sigue en la vista que eligió (encargo S27i).
         GroupsOnlyViewMark.clear(defaults)
+        // El grupo en el que abre «Nuevo gasto» (decisión 39 de 2.3): de esta persona, no de la siguiente.
+        LastExpenseGroupMark.clear(defaults)
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
@@ -1301,6 +1349,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiInsightsConsentVersion") // Default: 0 (qué texto del permiso se aceptó)
         // El último «Resumen con IA» guardado (UX 2.2 · L11-7): describe los datos que se borran.
         defaults.removeObject(forKey: "insightsAI.savedResults")
         // Y lo que sale solo en Estadísticas (encargo `estadisticas-ia-automatica`): la última respuesta de cada ranura y
@@ -1347,6 +1396,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.moreSectionOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelAccountsCollapsed)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelAmountsHidden)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsHidden)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsCustomized)
@@ -1370,6 +1420,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.includeGroupTransactionsInStats)  // Default: true
         defaults.removeObject(forKey: AppPreferences.Keys.bridgeGroupExpensesToPersonalAccounts)  // Default: true
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.groupsOnboardingPostponedOnce)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
         // --- Sync (toggle de usuario en iCloudSyncSettingsView) ---
@@ -1387,6 +1438,8 @@ final class DataWipeService {
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
+        defaults.removeObject(forKey: WelcomeUnfinishedAccountEntry.key) // Card 7e60: va con el chooser
+        for key in WelcomeAdoptInFlight.allKeys { defaults.removeObject(forKey: key) } // Card gd78: va con el onboarding
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)

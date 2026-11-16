@@ -41,10 +41,17 @@ struct TrendChartView: View {
     /// inteligente para no saturar). Default vacío. Usa el formatter puro (sin
     /// `@Environment` → seguro dentro de `.annotation`).
     var dataLabelDates: Set<Date> = []
+    /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación estimada desde hoy hasta el
+    /// final del período, punteada en el color de la métrica. El primer punto es el de hoy. Vacío = sin proyección; con
+    /// ella, quien llama pasa la curva real cortada en hoy (los movimientos con fecha futura van en la proyección).
+    var projectedPoints: [PanelViewModel.BarPoint] = []
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): ejes, promedio y etiquetas de la gráfica sin cifras; la línea y las
+    /// barras se quedan.
+    @Environment(\.amountsHidden) private var amountsHidden
     @State private var draggingDate: Date?  // For transient drag state
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
@@ -59,6 +66,38 @@ struct TrendChartView: View {
     private var explainsCurrencyDifference: Bool {
         LiveAnchorEducationLogic.explainsCurrencyDifference(
             liveAnchorBreakdown, preferredCurrencyCode: currencyCode
+        )
+    }
+
+    /// Los puntos que se dicen: los reales (sin suavizar) y, con saldo vivo, el de hoy, que es la cifra de la tarjeta.
+    private var spokenPoints: [(date: Date, value: Double)] {
+        var points = (rawPoints.isEmpty ? trendPoints : rawPoints).map { (date: $0.date, value: $0.value) }
+        if let liveAnchor, liveAnchor.date > (points.map(\.date).max() ?? .distantPast) {
+            points.append((date: liveAnchor.date, value: liveAnchor.value))
+        }
+        return points
+    }
+
+    private var amountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    /// V1 de la decisión 26 de 2.3: de dónde a dónde fue y el punto más alto o más bajo, con cifras («7 puntos» antes).
+    private var spokenSummary: String {
+        ChartSpokenSummary.trend(points: spokenPoints, grouping: grouping, format: amountFormat)
+    }
+
+    /// V2: la línea para el rotor «Describir gráfica» y el sonido.
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.trendChart(trendType.displayName),
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: trendType.displayName,
+            series: [.init(name: trendType.displayName, isContinuous: true,
+                           points: spokenPoints.map { .at($0.date, $0.value) })],
+            format: amountFormat
         )
     }
 
@@ -101,7 +140,7 @@ struct TrendChartView: View {
                 calendar.compare($0.date, to: today, toGranularity: .day) != .orderedAscending
             }
 
-            let yBase = min(max(yDomain.lowerBound, 0), yDomain.upperBound)
+            let yBase = min(max(displayYDomain.lowerBound, 0), displayYDomain.upperBound)
 
             // Interpolation Logic:
             // Use .monotone to prevent overshoots at extreme points
@@ -183,6 +222,27 @@ struct TrendChartView: View {
                 .foregroundStyle(.thSecondaryText)  // Explicit Gray for distinction
             }
 
+            // Proyección: punteada en el color de la métrica, más tenue que la real, y en su propia serie para que no
+            // se una a la curva gris de los movimientos futuros (que con la proyección no se pasan).
+            ForEach(projectedPoints, id: \.date) { point in
+                LineMark(
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value),
+                    series: .value("Serie", "projected")
+                )
+                .interpolationMethod(interpolation)
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth, lineCap: .round, dash: [2, 4]))
+                .foregroundStyle(primaryLineColor.opacity(0.75 * dimOpacity))
+            }
+            if let lastProjected = projectedPoints.last, projectedPoints.count > 1, !compact {
+                PointMark(
+                    x: .value(dateLabel, lastProjected.date),
+                    y: .value(amountLabel, lastProjected.value)
+                )
+                .symbolSize(30)
+                .foregroundStyle(primaryLineColor.opacity(0.75 * dimOpacity))
+            }
+
             // Single point: LineMark is invisible with 1 point, show a dot instead
             if trendPoints.count == 1, let singlePoint = trendPoints.first {
                 PointMark(
@@ -233,8 +293,8 @@ struct TrendChartView: View {
                 // Invisible anchor point for tooltip — placed ~35% below the chart top
                 // so the bubble doesn't choque con el KPI del header del card (Statistics
                 // tab + Panel widget) ni se salga off-canvas.
-                let tooltipAnchorY = yDomain.upperBound
-                    - (yDomain.upperBound - yDomain.lowerBound) * 0.35
+                let tooltipAnchorY = displayYDomain.upperBound
+                    - (displayYDomain.upperBound - displayYDomain.lowerBound) * 0.35
                 PointMark(
                     x: .value(L10n.Common.selectedDate, activeDate),
                     y: .value("TooltipAnchor", tooltipAnchorY)
@@ -248,22 +308,17 @@ struct TrendChartView: View {
                         Text(periodLabel(for: activeDate))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
-                        Text("\(formattedAmount(rawValue)) \(currencyCode)")
+                        // «S/ 65,879» como el resto del Panel, no «65,879 PEN» (decisión 11 de 2.3).
+                        Text(tooltipAmount(rawValue))
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.thPrimaryText)
 
-                        // Average in tooltip
+                        // Average in tooltip: «Promedio S/ 66,287», no «x̄» (decisión 11 de 2.3).
                         if let avg = totalAverageValue {
                             Divider()
-                            HStack {
-                                Text("x̄")
-                                    .font(DS.Typography.labelTiny)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .frame(width: 10)
-                                Text("\(formattedAmount(avg)) \(currencyCode)")
-                                    .font(DS.Typography.labelTiny)
-                                    .foregroundStyle(.primary)
-                            }
+                            Text(L10n.Panel.trendAverageLabel(tooltipAmount(avg)))
+                                .font(DS.Typography.labelTiny)
+                                .foregroundStyle(.thSecondaryText)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.sm)
@@ -285,7 +340,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(YalaFormatter.axisK(doubleValue, domain: yDomain))
+                        Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: displayYDomain), hidden: amountsHidden))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                             .opacity(labelOpacity)
@@ -294,7 +349,7 @@ struct TrendChartView: View {
             }
         }
         // Y-Axis Scale from ViewModel
-        .chartYScale(domain: yDomain)
+        .chartYScale(domain: displayYDomain)
         // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
@@ -329,8 +384,9 @@ struct TrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
-        .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
-            L10n.Accessibility.dataPoints(trendPoints.count))
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
+        .accessibilityIdentifier("trend_chart")
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chartWidth = $0 }
@@ -456,10 +512,24 @@ struct TrendChartView: View {
         // Extender hasta liveAnchor.date si cae fuera del rango de datos (caso
         // típico: última tx hace varios días pero el período cubre hoy). Esto
         // beneficia también al `todayMarker` que verifica `paddedXDomain.contains(today)`.
-        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate)
+        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate, projectedPoints.last?.date ?? lastDate)
         let span = effectiveLastDate.timeIntervalSince(firstDate)
         let padding = max(span * 0.05, 86400)  // At least 1 day padding
         return firstDate.addingTimeInterval(-padding)...effectiveLastDate.addingTimeInterval(padding)
+    }
+
+    /// El dominio Y que se pinta: el del ViewModel, ensanchado para que quepa la proyección (un saldo que baja de cero a
+    /// fin de mes no puede salirse de la gráfica).
+    private var displayYDomain: ClosedRange<Double> {
+        guard let low = projectedPoints.map(\.value).min(),
+              let high = projectedPoints.map(\.value).max() else { return yDomain }
+        guard low < yDomain.lowerBound || high > yDomain.upperBound else { return yDomain }
+        let lower: Double = min(yDomain.lowerBound, low)
+        let upper: Double = max(yDomain.upperBound, high)
+        let padding: Double = (upper - lower) * 0.05
+        let paddedLower: Double = low < yDomain.lowerBound ? lower - padding : lower
+        let paddedUpper: Double = high > yDomain.upperBound ? upper + padding : upper
+        return paddedLower...paddedUpper
     }
 
     // MARK: - Smart Axis Labels
@@ -479,10 +549,18 @@ struct TrendChartView: View {
         }
     }
 
+    /// Las fechas que reparten el eje X: las de la curva y, con «Ver proyectado», las de la proyección (sin la de hoy,
+    /// que ya está en la curva).
+    private var axisDataDates: [Date] {
+        guard projectedPoints.count > 1 else { return trendPoints.map(\.date) }
+        let last = trendPoints.last?.date ?? .distantPast
+        return trendPoints.map(\.date) + projectedPoints.map(\.date).filter { $0 > last }
+    }
+
     /// Axis dates for compact mode: first + last data point only (empty if <2 points).
     private var compactAxisDates: [Date] {
-        guard let firstDate = trendPoints.first?.date,
-              let lastDate = trendPoints.last?.date,
+        guard let firstDate = axisDataDates.first,
+              let lastDate = axisDataDates.last,
               firstDate != lastDate
         else { return trendPoints.first.map { [$0.date] } ?? [] }
         return [firstDate, lastDate]
@@ -495,16 +573,17 @@ struct TrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
         let rawDates = SmartAxisHelper.calculateSmartAxisDates(
-            forDataDates: trendPoints.map(\.date),
+            forDataDates: axisDataDates,
             grouping: calendarUnit
         )
 
-        guard let firstDate = trendPoints.first?.date,
-              let lastDate = trendPoints.last?.date else { return rawDates }
+        guard let firstDate = axisDataDates.first,
+              let lastDate = axisDataDates.last else { return rawDates }
         let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
@@ -520,8 +599,8 @@ struct TrendChartView: View {
 
     /// Format axis label based on data span (include year if multiple years)
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = trendPoints.first?.date,
-            let lastDate = trendPoints.last?.date
+        guard let firstDate = axisDataDates.first,
+            let lastDate = axisDataDates.last
         else {
             return formatDayNumber(date)
         }
@@ -531,6 +610,7 @@ struct TrendChartView: View {
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let formattedNumber = absValue.formatted(.number.precision(.fractionLength(0)))
         // Lo que se pinta como cero no lleva signo («-0» o «+0» de un saldo que suma cero en coma flotante).
@@ -546,6 +626,7 @@ struct TrendChartView: View {
     }
 
     private func formatK(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 && absValue >= 0.5 ? "-" : ""  // «-0» de un residuo de coma flotante: sin signo
 
@@ -601,17 +682,11 @@ struct TrendChartView: View {
         return f
     }()
 
-    private static let periodDayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
-        return f
-    }()
-
     private static let periodMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        // El año con cuatro cifras: «nov 26» se leía como el día 26 (decisión 11 de la revisión 2.3).
+        f.setLocalizedDateFormatFromTemplate("MMMyyyy")
         return f
     }()
 
@@ -620,18 +695,35 @@ struct TrendChartView: View {
         Self.dayNumberFormatter.string(from: date)
     }
 
+    /// La fecha del globo: «7 nov», con el año (cuatro cifras) solo si no es el de hoy, como el chip de la gráfica.
     private func periodLabel(for date: Date) -> String {
-        let formatter: DateFormatter
         switch grouping {
-        case .day, .week: formatter = Self.periodDayFormatter
-        case .month: formatter = Self.periodMonthFormatter
+        case .day, .week:
+            return PanelTrendSummaryLogic.shortDate(date, today: .now, calendar: .current, locale: AppLocale.current)
+        case .month:
+            return Self.periodMonthFormatter.string(from: date).lowercased().replacing(".", with: "")
+        case .year:
+            return TrendGrouping.yearLabel(for: date)
         }
-        return formatter.string(from: date).lowercased().replacing(".", with: "")
+    }
+
+    /// La cifra del globo: con el símbolo de la moneda (o su código, si la persona lo eligió así en Ajustes) y sin
+    /// decimales. Texto ya resuelto: dentro de un `.annotation` no llega el entorno (`swiftui-ds.md`).
+    private func tooltipAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
+        return CurrencyFormattingHelper.currency(
+            abs(value) < 0.5 ? 0 : value,
+            decimals: 0,
+            identifier: appPreferences.currencyIdentifier(for: currencyCode),
+            forceSign: false,
+            isEstimate: false
+        )
     }
 
     private func formattedAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         // Sin signo para lo que se pinta como cero («-0» de un saldo que suma cero en coma flotante).
-        (abs(value) < 0.5 ? 0 : value).formatted(
+        return (abs(value) < 0.5 ? 0 : value).formatted(
             .number
                 .precision(.fractionLength(0))
         )

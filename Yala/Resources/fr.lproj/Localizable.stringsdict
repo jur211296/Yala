@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Ce compte a %d enregistrement. Il n'est pas supprimé : il reste dans Enregistrements, sans compte. Si vous voulez seulement ne plus voir le compte, archivez-le. Cette action est irréversible.</string>
+			<string>Ce compte a %d enregistrement. Il n'est pas supprimé : il reste dans Enregistrements, sans compte. Si tu veux seulement ne plus le voir, archive-le. Cette action est irréversible.</string>
 			<key>other</key>
-			<string>Ce compte a %d enregistrements. Ils ne sont pas supprimés : ils restent dans Enregistrements, sans compte. Si vous voulez seulement ne plus voir le compte, archivez-le. Cette action est irréversible.</string>
+			<string>Ce compte a %d enregistrements. Ils ne sont pas supprimés : ils restent dans Enregistrements, sans compte. Si tu veux seulement ne plus le voir, archive-le. Cette action est irréversible.</string>
 		</dict>
 	</dict>
 	<key>category.cannotDeleteMessage</key>
@@ -1191,9 +1191,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Vous allez modifier dans %d enregistrement :</string>
+			<string>Tu vas modifier dans %d enregistrement :</string>
 			<key>other</key>
-			<string>Vous allez modifier dans %d enregistrements :</string>
+			<string>Tu vas modifier dans %d enregistrements :</string>
 		</dict>
 	</dict>
 	<key>records.l8b.bulk.apply</key>
@@ -1402,6 +1402,118 @@
 			<string>%d enregistrement</string>
 			<key>other</key>
 			<string>%d enregistrements</string>
+		</dict>
+	</dict>
+	<key>records.bulk23.selectAll</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sélectionner %d</string>
+			<key>other</key>
+			<string>Sélectionner les %d</string>
+		</dict>
+	</dict>
+	<key>records.bulk23.editedInto</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d enregistrement est maintenant %2$@</string>
+			<key>other</key>
+			<string>%d enregistrements sont maintenant %2$@</string>
+		</dict>
+	</dict>
+	<key>records.bulk23.edited</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d enregistrement modifié</string>
+			<key>other</key>
+			<string>%d enregistrements modifiés</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Déjà %d enregistrement !</string>
+			<key>other</key>
+			<string>Déjà %d enregistrements !</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tu as fait cet enregistrement pour apprendre. Coche ceux que tu veux supprimer ; les autres restent dans ton compte.</string>
+			<key>other</key>
+			<string>Tu as fait ces %d enregistrements pour apprendre. Coche ceux que tu veux supprimer ; les autres restent dans ton compte.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Supprimer %d enregistrement</string>
+			<key>other</key>
+			<string>Supprimer %d enregistrements</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d enregistrement d'essai supprimé</string>
+			<key>other</key>
+			<string>%d enregistrements d'essai supprimés</string>
 		</dict>
 	</dict>
 </dict>

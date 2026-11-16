@@ -93,9 +93,18 @@ struct CloudHydrationBanner: View {
 
     @State private var visible = false
 
+    /// Card luc1 (Jürgen, 13-nov-2026: «¿por qué Descargando datos si es cuenta nueva?»). Una cuenta CREADA en este
+    /// teléfono (su claim sembró aquí, `.seedBornCloud`) no tiene nada que bajar que no esté ya en él, así que el aviso no
+    /// sale, aunque el motor aún no haya terminado su primera bajada. Solo esconde: el sondeo sigue siendo el único que
+    /// decide `visible`, y termina como siempre.
+    static func accountWasCreatedOnThisDevice() -> Bool {
+        guard let userID = CloudAuthService.shared.currentUserID else { return false }
+        return CloudClaimActionStore.shared.action(forUserID: userID) == .seedBornCloud
+    }
+
     var body: some View {
         Group {
-            if visible {
+            if visible, !Self.accountWasCreatedOnThisDevice() {
                 HStack(spacing: DS.Spacing.sm) {
                     ProgressView()
                         .controlSize(.small)

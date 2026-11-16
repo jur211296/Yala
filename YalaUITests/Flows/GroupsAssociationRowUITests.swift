@@ -14,9 +14,10 @@
 //   - **sin cuenta**: el arranque por defecto (sesión privada, sin sesión en la nube).
 //   - **asociada**: `-uitest-fake-cloud-session`, que finge el predicado GLOBAL de sesión.
 //   - **solo grupos (F)**: el mismo seam + `-uitest-group-invite` — ahí la sección NO aplica.
-//  Las otras dos —nube completa, y asociada SIN sesión viva (el segundo móvil)— no tienen seam: la
-//  primera necesita `storageMode == .cloud` y la segunda una asociación sembrada en el iCloud-KV. Las
-//  cubre la tabla unitaria, y el recorrido real, el device-QA.
+//   - **asociada SIN sesión viva (el segundo móvil)**: `-uitest-groups-association`, que siembra la asociación
+//     en el espejo local sin fingir la sesión (2026-11-06, ticket `uitest-seam-for-a-seeded-groups-association`).
+//     Con la sesión fingida además, ese mismo seam deja sellar la marca de un desasociar a medias.
+//  La nube completa sigue sin seam: necesita `storageMode == .cloud`. La cubre la tabla unitaria.
 //
 //  **Uno de los casos SÍ confirma el desasociar, y el «no se puede» de esta cabecera estaba mal.** Decía
 //  que confirmarlo dejaría al coordinador «intentando subir un outbox contra un backend que no existe»;
@@ -85,53 +86,67 @@ final class GroupsAssociationRowUITests: XCTestCase {
                       "La sección «Grupos» no se monta en la pantalla de almacenamiento.")
         XCTAssertTrue(scrollTo(app, "storage_groups_associate_button").waitForExistence(timeout: 5),
                       "Sin cuenta asociada, la sección tiene que ofrecer asociar una.")
-        XCTAssertFalse(app.buttons["storage_groups_detach_button"].exists, """
+        XCTAssertFalse(app.buttons["storage_groups_change_account"].exists, """
             Se ofrece «Desasociar» sin ninguna cuenta asociada.
             """)
     }
 
     // MARK: - Sesión privada CON cuenta de grupos (el «equipo»)
 
-    func test_privateWithGroupsSession_offersDetach_withBothOutcomes() {
+    /// G1 de la revisión 2.3 (decisión 55): la cuenta es una fila de datos —«Tu cuenta de Yala», la cuenta, «La usan tus
+    /// grupos»— con un enlace «Cambiar de cuenta», y no un «Desasociar» naranja encima de «Activar la nube». El enlace abre la
+    /// hoja de consecuencias (decisión 59): lo común arriba y cada salida con su consecuencia debajo. Cancelar no suelta
+    /// nada: la fila sigue ahí.
+    func test_privateWithGroupsSession_offersChangeAccount_andTheSheetShowsEachConsequence() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", cloudSession: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
         app.openProfile()
         openStorageScreen(app)
 
-        XCTAssertTrue(section(app).waitForExistence(timeout: 5), "La sección «Grupos» no se monta.")
-        // Decisión de Jürgen (2026-09-09): mientras haya una asociada, la fila SOLO ofrece desasociar. No
-        // existe un «Cambiar cuenta» que haga las dos cosas de un gesto.
+        XCTAssertTrue(section(app).waitForExistence(timeout: 5), "La fila de la cuenta no se monta.")
+        XCTAssertTrue(app.staticTexts["storage_groups_used_by"].exists, """
+            La fila no dice quién usa la cuenta: sin «La usan tus grupos», no se entiende que es la de Grupos.
+            """)
+        XCTAssertFalse(app.buttons["storage_groups_detach_button"].exists, """
+            Vuelve el botón «Desasociar» encima de la acción: G1 lo cambió por el enlace «Cambiar de cuenta».
+            """)
+        // Decisión de Jürgen (2026-09-09): mientras haya una asociada, no se ofrece asociar otra. Cambiar de cuenta pasa por
+        // soltar la que hay, en la hoja.
         XCTAssertFalse(app.buttons["storage_groups_associate_button"].exists, """
-            Con una cuenta ya asociada se sigue ofreciendo asociar otra: para cambiar de cuenta hay que
-            desasociar primero.
+            Con una cuenta ya asociada se sigue ofreciendo asociar otra.
             """)
 
-        let detach = scrollTo(app, "storage_groups_detach_button")
-        XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
-        detach.tap()
+        let change = scrollTo(app, "storage_groups_change_account")
+        XCTAssertTrue(change.waitForExistence(timeout: 5), "Falta «Cambiar de cuenta».")
+        change.tap()
 
-        // **Las DOS salidas, en la misma hoja.** Es la decisión de Jürgen que deroga el «se quedan
-        // siempre» del ticket: conservar los gastos que pagó, o quitarlo todo. Se afirma que existen las
-        // dos: una hoja con una sola salida sería la decisión anterior del ticket, en silencio.
-        // `.firstMatch` porque el `confirmationDialog` de SwiftUI publica sus botones DOS veces en el
-        // árbol de accesibilidad (medido): una consulta sin acotar falla con «Multiple matching elements»
-        // en cuanto se le pide una propiedad, no al buscarlos.
+        // La hoja, nunca saltada: las dos salidas, cada una con su consecuencia, y lo común arriba.
+        XCTAssertTrue(app.staticTexts["storage_groups_detach_sheet"].waitForExistence(timeout: 5),
+                      "«Cambiar de cuenta» no abrió la hoja de consecuencias.")
         let keep = app.buttons.matching(identifier: "storage_groups_detach_keep").firstMatch
         let remove = app.buttons.matching(identifier: "storage_groups_detach_remove").firstMatch
-        XCTAssertTrue(keep.waitForExistence(timeout: 5), "La confirmación no ofrece conservar.")
-        XCTAssertTrue(remove.exists, "La confirmación no ofrece quitar.")
-        XCTAssertNotEqual(keep.label, remove.label, """
-            Las dos salidas comparten texto: quien las lea no puede distinguir qué elige.
+        XCTAssertTrue(keep.exists, "La hoja no ofrece conservar.")
+        XCTAssertTrue(remove.exists, "La hoja no ofrece quitar.")
+        XCTAssertNotEqual(keep.label, remove.label, "Las dos salidas comparten texto.")
+        let keepEffect = app.staticTexts["storage_groups_detach_keep_effect"]
+        let removeEffect = app.staticTexts["storage_groups_detach_remove_effect"]
+        XCTAssertTrue(keepEffect.exists, "Conservar no dice su consecuencia bajo el botón.")
+        XCTAssertTrue(removeEffect.exists, "Quitar no dice su consecuencia bajo el botón.")
+        XCTAssertNotEqual(keepEffect.label, removeEffect.label, "Las dos consecuencias dicen lo mismo.")
+        XCTAssertTrue(app.staticTexts["storage_groups_detach_common"].exists, "Falta lo que pasa igual en los dos casos.")
+
+        // Cancelar, a la vista y con su id: cierra sin soltar nada.
+        let cancel = app.buttons["storage_groups_detach_cancel"]
+        XCTAssertTrue(cancel.exists, "La hoja no tiene una salida visible para no hacer nada.")
+        cancel.tap()
+        XCTAssertTrue(app.staticTexts["storage_groups_detach_sheet"].waitForNonExistence(timeout: 5),
+                      "Cancelar no cerró la hoja.")
+        XCTAssertTrue(change.waitForHittable(timeout: 5), """
+            Tras cancelar, «Cambiar de cuenta» ya no está: la cuenta se soltó sin que se eligiera ninguna salida.
             """)
-
-        // **El botón de cancelar no se toca, y no es un descuido.** Medido en el árbol de accesibilidad:
-        // SwiftUI NO propaga el `accessibilityIdentifier` al botón `role: .cancel` de un
-        // `confirmationDialog` —los otros dos sí salen con el suyo—, así que la única forma de tocarlo
-        // sería por su texto localizado, que es justo lo que este repo prohíbe. El diálogo se queda
-        // abierto al terminar el caso, que es inocuo: nada se confirma y la app muere con el test.
+        XCTAssertEqual(app.alerts.count, 0, "Cancelar disparó el gesto: salió un aviso.")
     }
-
 
     // MARK: - El borrado local falla: la app lo dice y no finge que soltó la cuenta
 
@@ -163,7 +178,7 @@ final class GroupsAssociationRowUITests: XCTestCase {
         app.openProfile()
         openStorageScreen(app)
 
-        let detach = scrollTo(app, "storage_groups_detach_button")
+        let detach = scrollTo(app, "storage_groups_change_account")
         XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
         detach.tap()
 
@@ -194,16 +209,9 @@ final class GroupsAssociationRowUITests: XCTestCase {
         XCTAssertTrue(section(app).waitForExistence(timeout: 5),
                       "Tras cerrar el aviso no queda nada debajo: la sección se desmontó.")
 
-        // **Lo que NO se puede comprobar aquí, y su motivo está medido (2026-09-11).** El botón
-        // «Terminar de soltar la cuenta» cuelga de `GroupsDetachPendingPurge`, que va SELLADA con el
-        // `sub` de la cuenta — y el seam de sesión fingida **no siembra ninguna asociación ni propaga el
-        // `sub`** (`CloudAuthService.currentUserID` sigue `nil`, y su docblock dice por qué: fingirlo
-        // volvería alcanzables los resolvedores de identidad del canal con una identidad que no existe).
-        // Sin `sub` la marca no se arma, por diseño: una marca sin sello no sabría a qué cuenta pertenece
-        // lo pendiente. Ese estado necesita un seam que siembre la asociación —el mismo que le falta a la
-        // celda «asociada sin sesión viva» de la cabecera— y tiene ticket:
-        // `uitest-seam-for-a-seeded-groups-association`. Lo cubren mientras tanto los 14 casos de
-        // `YalaTests/CloudSync/GroupsDetachPurgeFailureTests` y el device-QA.
+        // «Terminar de soltar la cuenta» NO sale aquí y no se afirma: su marca (`GroupsDetachPendingPurge`) va
+        // SELLADA con el `sub` de la asociación, y este caso no siembra ninguna. Lo mide
+        // `test_detachWithFailingWipe_andASeededAssociation_offersToFinish`, con `-uitest-groups-association`.
     }
 
     /// **Control del seam, y sin él el caso de arriba no discrimina.** Si el aviso saliera SIEMPRE —por
@@ -217,7 +225,7 @@ final class GroupsAssociationRowUITests: XCTestCase {
         app.openProfile()
         openStorageScreen(app)
 
-        let detach = scrollTo(app, "storage_groups_detach_button")
+        let detach = scrollTo(app, "storage_groups_change_account")
         XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
         detach.tap()
 
@@ -256,7 +264,7 @@ final class GroupsAssociationRowUITests: XCTestCase {
         app.openProfile()
         openStorageScreen(app)
 
-        let detach = scrollTo(app, "storage_groups_detach_button")
+        let detach = scrollTo(app, "storage_groups_change_account")
         XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
         detach.tap()
 
@@ -284,8 +292,76 @@ final class GroupsAssociationRowUITests: XCTestCase {
         ok.tap()
         XCTAssertTrue(section(app).waitForExistence(timeout: 5),
                       "Tras cerrar el aviso no queda nada debajo: la sección se desmontó.")
-        // No se afirma la ausencia de «Terminar de soltar la cuenta»: con la sesión fingida la marca no se arma nunca (no
-        // hay `sub`), así que sería una aserción que no puede fallar. Ver el caso del borrado fallido.
+        // No se afirma la ausencia de «Terminar de soltar la cuenta»: sin asociación sembrada la marca no se arma nunca
+        // (no hay `sub`), así que sería una aserción que no puede fallar.
+    }
+
+    // MARK: - Asociación sembrada (`-uitest-groups-association`)
+
+    /// **El segundo móvil**: la asociación existe y la sesión no viajó. La celda `.associatedNeedsSignIn` ofrece entrar
+    /// con esa cuenta y desasociarla, y no ofrece asociar otra. Su control es
+    /// `test_privateWithoutAccount_offersAssociate_andNoDetach`: el mismo arranque sin el seam ofrece asociar y no
+    /// desasociar, así que lo que cambia el veredicto es la asociación sembrada.
+    func test_associationWithoutALiveSession_offersSignInAndDetach() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", groupsAssociation: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+        openStorageScreen(app)
+
+        XCTAssertTrue(section(app).waitForExistence(timeout: 5), "La sección «Grupos» no se monta.")
+        XCTAssertTrue(scrollTo(app, "storage_groups_signin_button").waitForExistence(timeout: 5), """
+            Con la cuenta de grupos asociada y sin sesión viva, la sección no ofrece volver a entrar: el segundo móvil se \
+            queda sin forma de usar sus grupos.
+            """)
+        XCTAssertTrue(scrollTo(app, "storage_groups_change_account").exists, """
+            Con la cuenta asociada y sin sesión, la sección no ofrece desasociarla.
+            """)
+        XCTAssertFalse(app.buttons["storage_groups_associate_button"].exists, """
+            Con una cuenta ya asociada se ofrece asociar otra: para cambiar de cuenta hay que desasociar primero.
+            """)
+        XCTAssertFalse(app.buttons["storage_groups_detach_finish_button"].exists, """
+            Sin ningún desasociar a medias se ofrece terminarlo.
+            """)
+    }
+
+    /// **«Quedó un desasociar a medias»**, el estado del ticket `detach-failure-looks-like-success` que hasta hoy solo
+    /// cubrían los unit. Con la asociación sembrada, el borrado que falla arma la marca sellada con su `sub`, y al cerrar
+    /// el aviso la sección ofrece «Terminar de soltar la cuenta» en lugar de «Desasociar».
+    ///
+    /// Su control es `test_detachWithFailingWipe_showsFailureAlert`: el mismo gesto SIN asociación no arma la marca (no
+    /// hay `sub`), y por eso allí no se afirma este botón. Se confirma por «conservar», como en ese caso.
+    func test_detachWithFailingWipe_andASeededAssociation_offersToFinish() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", cloudSession: true, groupsAssociation: true,
+                            extraArguments: ["-uitest-fail-wipe"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        app.openProfile()
+        openStorageScreen(app)
+
+        let detach = scrollTo(app, "storage_groups_change_account")
+        XCTAssertTrue(detach.waitForExistence(timeout: 5), "Falta «Desasociar».")
+        XCTAssertFalse(app.buttons["storage_groups_detach_finish_button"].exists, """
+            Antes de desasociar ya se ofrece terminar un desasociar: la marca venía de otra corrida.
+            """)
+        detach.tap()
+
+        let keep = app.buttons.matching(identifier: "storage_groups_detach_keep").firstMatch
+        XCTAssertTrue(keep.waitForExistence(timeout: 5), "La confirmación no ofrece conservar.")
+        keep.tap()
+
+        let later = alertButton(app, 1)
+        XCTAssertTrue(later.waitForExistence(timeout: 45), "El borrado local falló y la app no dijo nada.")
+        later.tap()
+
+        let finish = scrollTo(app, "storage_groups_detach_finish_button")
+        XCTAssertTrue(finish.waitForExistence(timeout: 5), """
+            El borrado local falló con una cuenta asociada y la sección no ofrece terminar de soltarla: quien pulsó «Más \
+            tarde» no tiene forma de acabar el gesto.
+            """)
+        XCTAssertFalse(app.buttons["storage_groups_change_account"].exists, """
+            Con un desasociar a medias se vuelve a ofrecer el gesto entero, con dos salidas que ya no pueden aplicarse.
+            """)
     }
 
     // MARK: - Solo grupos (F): ni la sección ni la fila

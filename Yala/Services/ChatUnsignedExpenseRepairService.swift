@@ -39,14 +39,44 @@ enum ChatUnsignedExpenseRepairService {
     /// Clave del flag idempotente. Se corre UNA vez por dispositivo.
     static let repairSweepKey = "chatUnsignedExpenseRepairSweep.v1"
 
+    /// Clave del **cierre de la ventana**: el primer arranque de esta instalación con un build que ya
+    /// firma (ticket `chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install`).
+    static let windowCloseKey = "chatUnsignedExpenseRepairSweep.windowClose.v1"
+
+    /// Fija el cierre de la ventana la primera vez que se llama en esta instalación y lo devuelve; las
+    /// siguientes devuelven el guardado.
+    ///
+    /// **Por qué hace falta.** Con el store vacío el barrido no se sella y se reintenta en cada
+    /// arranque (lo explica el guard de presencia de abajo). En una instalación nueva eso lo deja armado
+    /// hasta el primer registro, y entonces corría sobre lo creado AQUÍ: un CSV de una sola fila con un
+    /// reembolso («Comida › Restaurantes» con +20) no tiene vecino de lote y se volteaba. Lo creado
+    /// después de este instante lo escribió un build que ya firma, así que no puede ser del corpus.
+    ///
+    /// **Y el restore sigue curándose:** las filas que baja un restore de iCloud conservan su
+    /// `createdAt` viejo, anterior a este cierre, y siguen dentro de la ventana.
+    ///
+    /// Lo llama `AppBootstrapper` al arrancar, antes de esperar al store: el barrido corre hasta dos
+    /// minutos después, y en ese rato la persona ya puede registrar algo. El barrido lo llama también,
+    /// por si el arranque no llegó a hacerlo.
+    @discardableResult
+    static func armWindowCloseIfNeeded(
+        defaults: UserDefaults = .standard,
+        now: Date = Date.now
+    ) -> Date {
+        if let stored = defaults.object(forKey: windowCloseKey) as? Date { return stored }
+        defaults.set(now, forKey: windowCloseKey)
+        return now
+    }
+
     /// Voltea las filas de la ventana que tienen la forma del bug. Devuelve cuántas reparó.
     ///
     /// El flag se marca **solo si el barrido llegó al final**: si el fetch falla, no ha corrido y debe
     /// reintentarse en el próximo arranque. La espera a que el store esté quieto es del llamador
     /// (`AppBootstrapper`), que es quien tiene el gate; aquí se asume que ya se resolvió.
     ///
-    /// - Parameter now: cierre de la ventana. Inyectable para los tests; en producción es el instante
-    ///   real de ejecución — ver `ChatUnsignedExpenseRepairLogic.isWithinWindow`.
+    /// - Parameter now: instante de ejecución. Inyectable para los tests. La ventana cierra en el menor
+    ///   entre éste y el cierre guardado de la instalación — ver `armWindowCloseIfNeeded` y
+    ///   `ChatUnsignedExpenseRepairLogic.isWithinWindow`.
     @discardableResult
     static func repairUnsignedChatExpensesIfNeeded(
         context: ModelContext,
@@ -54,6 +84,10 @@ enum ChatUnsignedExpenseRepairService {
         now: Date = Date.now
     ) -> Int {
         guard !defaults.bool(forKey: repairSweepKey) else { return 0 }
+
+        // La ventana cierra en el PRIMER arranque de esta instalación con un build que firma, no en
+        // el arranque en que el barrido llega a correr: ver `armWindowCloseIfNeeded`.
+        let sweepRunAt = min(now, armWindowCloseIfNeeded(defaults: defaults, now: now))
 
         // Sin ventana no hay barrido posible, y sobre todo no hay que QUEMAR el one-shot: el
         // `?? .distantFuture` de `windowStart` es inalcanzable con sus componentes, pero si alguna vez
@@ -97,7 +131,8 @@ enum ChatUnsignedExpenseRepairService {
             //
             // Un store sin NINGUNA transacción no puede contener el corpus, así que el barrido no ha
             // podido hacer su trabajo y se reintenta. El coste en un usuario nuevo de verdad es un
-            // fetch sobre un store vacío por arranque, hasta que registre su primera transacción.
+            // fetch sobre un store vacío por arranque, hasta que registre su primera transacción. Lo
+            // que registre entonces queda fuera: la ventana ya cerró en su primer arranque.
             //
             // Copiar el re-chequeo de quiescencia que hace `migrateToLiveBalanceIfNeeded` NO cerraría
             // esto: en las dos ramas de escape el store SÍ está quiescente. Lo que falta no es
@@ -133,7 +168,7 @@ enum ChatUnsignedExpenseRepairService {
                         splitSettlementID: transaction.splitSettlementID,
                         scheduledPaymentID: transaction.scheduledPaymentID
                     ),
-                    sweepRunAt: now
+                    sweepRunAt: sweepRunAt
                 )
             }.map { $0.0 }
 

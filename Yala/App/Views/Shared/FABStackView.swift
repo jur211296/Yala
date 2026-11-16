@@ -53,6 +53,9 @@ struct FABStackView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El hueco del icono de cada opción crece con el texto: fijo en 24, a tamaños grandes el icono se montaba encima.
+    @ScaledMetric(relativeTo: .headline) private var fabMenuIconWidth: CGFloat = DS.Button.fabMenuIconSize
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
 
@@ -266,6 +269,8 @@ struct FABStackView: View {
             }
             .accessibilityIdentifier("fab_manual")
         }
+        // Con el texto de accesibilidad las opciones llegan casi al ancho de la pantalla: el mismo margen que a la derecha.
+        .padding(.leading, dynamicTypeSize.isAccessibilitySize ? DS.Spacing.xl : 0)
         .transition(Self.fabScaleTransition)
     }
 
@@ -360,11 +365,15 @@ struct FABStackView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
+                    .frame(width: fabMenuIconWidth)
                     .accessibilityHidden(true)
 
                 Text(text)
                     .font(DS.Typography.headline)
+                    // Con el texto al máximo, una sola línea que se reduce si no cabe: partida salía «Gru-po» e
+                    // «Ima-gen», y cortada «Ma…» (QA físico 2.2, iPhone 14).
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 1 : nil)
+                    .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 0.6 : 1)
 
                 Spacer(minLength: 0)
 
@@ -373,7 +382,11 @@ struct FABStackView: View {
                 }
             }
             .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
+            // Ancho fijo a tamaño normal; con el texto de accesibilidad, el que haga falta hasta el de un iPhone.
+            .frame(
+                minWidth: DS.Button.fabMenuWidth,
+                maxWidth: dynamicTypeSize.isAccessibilitySize ? DS.Adaptive.listColumnMinWidth : DS.Button.fabMenuWidth
+            )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? DS.Semantic.disabledForeground : color)

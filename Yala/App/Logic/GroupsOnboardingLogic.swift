@@ -53,13 +53,38 @@ enum GroupsOnboardingLogic {
     ///   - hasPendingGroupDeeplink: `navigation.pendingGroupID != nil`. Si hay
     ///     deeplink hacia un grupo específico, abrir el detail tiene prioridad UX
     ///     sobre el onboarding informativo.
+    /// Qué hace la X de la bienvenida de Grupos (decisión de Jürgen, 2026-11-06, opción B): la primera vez la
+    /// APLAZA —vuelve en la siguiente entrada a Grupos—; la segunda la da por vista y ya no vuelve sola. Antes la X
+    /// no marcaba nada y la hoja volvía en cada entrada (QA del iPhone de pruebas, 2026-11-05).
+    enum CloseOutcome: Equatable {
+        case postponeOnce
+        case markSeen
+    }
+
+    static func closeOutcome(alreadyPostponed: Bool) -> CloseOutcome {
+        alreadyPostponed ? .markSeen : .postponeOnce
+    }
+
+    ///   - hasGroups: hay algún grupo en el teléfono, activo o archivado. Quien ya tiene grupos no es nuevo en Grupos:
+    ///     sin intro y sin volver a pedir el consentimiento, que es su último paso (card zkyg, Jürgen 13-nov: «Si ya tiene
+    ///     grupos, no debe aparecer el onboarding»). La marca del educativo es POR DISPOSITIVO y la borra reinstalar, así
+    ///     que sola no lo sabía.
     static func shouldShow(
         hasSeenEducational: Bool,
-        hasPendingGroupDeeplink: Bool
+        hasPendingGroupDeeplink: Bool,
+        hasGroups: Bool = false
     ) -> Bool {
         if hasSeenEducational { return false }
         if hasPendingGroupDeeplink { return false }
+        if hasGroups { return false }
         return true
+    }
+
+    /// ¿Se decide la intro después del primer tirón de Grupos de esta entrada a la pestaña? Con la sesión de la nube y el
+    /// canal encendido, y sin grupos todavía en el teléfono, los grupos de la cuenta pueden estar bajando: decidir antes
+    /// enseñaba la intro a quien acaba de entrar en una cuenta con grupos (card zkyg). Sin canal o sin sesión no baja nada.
+    static func decidesAfterFirstPull(hasGroups: Bool, channelCanBringGroups: Bool) -> Bool {
+        !hasGroups && channelCanBringGroups
     }
 
     /// ¿El último step del educativo ofrece el CTA de iniciar sesión? (A1 de D-A7, decisión
@@ -124,6 +149,7 @@ enum GroupsOnboardingResult: Equatable {
     /// sheet YA desmontado (`onDismiss`): emitirlo con el sheet puesto lo dejaría RETENIDO por
     /// peek-first, igual que documenta `GroupsContainerView.requestCreateGroup`.
     case completeAndSignIn
-    /// "X" topLeft (cualquier step): NO persistir flag (volverá a aparecer).
+    /// "X" topLeft (cualquier step): la primera vez aplaza (vuelve una vez más); la segunda persiste la flag
+    /// (`GroupsOnboardingLogic.closeOutcome`).
     case close
 }

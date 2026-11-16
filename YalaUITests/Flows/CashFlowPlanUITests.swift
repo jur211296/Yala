@@ -24,16 +24,10 @@ final class CashFlowPlanUITests: XCTestCase {
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        // Reports está oculto en "Más" (config default [panel, statistics, planning]).
-        // El dashboard de "Más" tiene una card directa a Flujo de Caja que navega
-        // a Reportes con ese sub-tab ya seleccionado (sin pasar por el chip).
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-
-        let cashflowCard = app.buttons["more_card_flujoDeCaja"]
-        XCTAssertTrue(cashflowCard.waitForExistence(timeout: 5), "No apareció la card Flujo de Caja en Más.")
-        cashflowCard.tap()
+        // Reports está oculto en "Más" (config default [panel, statistics, planning]). El dashboard de "Más" tiene una
+        // card directa a Flujo de Caja que navega a Reportes con ese sub-tab ya seleccionado; en el iPad con barra
+        // lateral o pestañas arriba, Reportes y su chip.
+        app.openReport("flujoDeCaja")
 
         // CashFlowSetupView monta (header presente con o sin sugerencias).
         XCTAssertTrue(
@@ -49,12 +43,7 @@ final class CashFlowPlanUITests: XCTestCase {
     private func openFreshPlan(_ app: XCUIApplication) {
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-        let cashflowCard = app.buttons["more_card_flujoDeCaja"]
-        XCTAssertTrue(cashflowCard.waitForExistence(timeout: 5), "No apareció la card Flujo de Caja en Más.")
-        cashflowCard.tap()
+        app.openReport("flujoDeCaja")
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "cashflow_setup_view").firstMatch.waitForExistence(timeout: 15),
             "La vista de Flujo de Caja no montó (cashflow_setup_view)."
@@ -315,12 +304,7 @@ final class CashFlowPlanUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10))
-        moreTab.tap()
-        let card = app.buttons["more_card_flujoDeCaja"]
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        card.tap()
+        app.openReport("flujoDeCaja")
 
         let amount = app.descendants(matching: .any).matching(identifier: "cashflow_setup_starting_amount").firstMatch
         XCTAssertTrue(amount.waitForExistence(timeout: 15), "No está «¿Con cuánto empiezas?» con el saldo.")
@@ -367,14 +351,7 @@ final class CashFlowPlanUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10))
-        moreTab.tap()
-        let card = app.buttons["more_card_comparativa"]
-        var tries = 0
-        while !card.exists || !card.isHittable, tries < 6 { app.swipeUp(); tries += 1 }
-        XCTAssertTrue(card.exists, "No está la tarjeta de la Comparativa en Más.")
-        card.tap()
+        app.openReport("comparativa")
 
         let allTime = app.descendants(matching: .any).matching(identifier: "report_all_time_card").firstMatch
         XCTAssertTrue(allTime.waitForExistence(timeout: 10), "«Todo el tiempo» no explica que no hay con qué comparar.")

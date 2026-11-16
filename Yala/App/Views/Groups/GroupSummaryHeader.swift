@@ -29,6 +29,22 @@ struct GroupSummaryHeader: View {
 
     private var mainCurrency: String { appPreferences.defaultCurrencyCode.rawValue }
 
+    /// La cifra del neto crece con el texto de accesibilidad, con techo (pase de estrés 2.2, card ysol). Con los 36 pt
+    /// fijos de `panelHeroAmount`, a AX5 las líneas de «Debes / Te deben» (`headline`) salían mayores que el neto y la
+    /// jerarquía se invertía. A tamaño normal y hasta xxxLarge sigue siendo el token de siempre.
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledNetSize: CGFloat = 36
+    /// Techo del neto: el `largeTitle` de AX5. Con `minimumScaleFactor(0.6)` nunca baja de 36 pt, por encima de las
+    /// líneas de cada lado, topadas en `sidesMaxTypeSize` (33 pt).
+    private static let netMaxSize: CGFloat = 60
+    /// Rótulo del neto y líneas de cada lado dejan de crecer en AX2: son detalle de la cifra, no compiten con ella.
+    private static let sidesMaxTypeSize = DynamicTypeSize.accessibility2
+
+    private var netFont: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmount }
+        // A11Y-DT: tamaño escalado a mano con techo; el token es fijo a propósito y aquí tiene que crecer.
+        return .system(size: min(scaledNetSize, Self.netMaxSize), weight: .semibold)
+    }
+
     var body: some View {
         let iOwe = summary.totalIOwe.filter { $0.value > 0.01 }
         let owedToMe = summary.totalOwedToMe.filter { $0.value > 0.01 }
@@ -55,8 +71,9 @@ struct GroupSummaryHeader: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
             HeroHeaderLabel(text: GroupsListBalanceLogic.netCaption(
                 net.direction, currencySymbol: appPreferences.currencyIdentifier(for: net.currencyCode)))
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
             Text(formatted(net.amount, net.currencyCode, isEstimate: net.isEstimate))
-                .font(DS.Typography.panelHeroAmount)
+                .font(netFont)
                 .foregroundStyle(Self.netColor(net.direction))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -101,8 +118,10 @@ struct GroupSummaryHeader: View {
                         color: .groupOwedAmount, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing,
                         identifier: "groups_hero_owed")
         if dynamicTypeSize.isAccessibilitySize {
-            // A tamaños de accesibilidad los dos lados no caben a lo ancho: uno debajo del otro.
+            // A tamaños de accesibilidad los dos lados no caben a lo ancho: uno debajo del otro, y topados para que el
+            // neto siga siendo lo mayor de la cabecera.
             VStack(alignment: .leading, spacing: DS.Spacing.md) { owe; owed }
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
         } else {
             HStack(alignment: .top) {
                 owe
@@ -136,7 +155,8 @@ struct GroupSummaryHeader: View {
             if lines.shown.isEmpty {
                 Text(formatted(0, mainCurrency))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.tertiary)
+                    // Gris secundario, no terciario: en terciario el lado vacío medía 1,7:1 en claro y casi se borraba.
+                    .foregroundStyle(.secondary)
             }
             ForEach(lines.shown, id: \.currencyCode) { item in
                 Text(formatted(item.amount, item.currencyCode))

@@ -106,6 +106,19 @@ struct WidgetTrendPoint: Codable {
     let balance: Double
 }
 
+/// «Mostrar proyectado» de los widgets Gasto y Saldo (card «Flujo proyectado en Tendencias y Panel», 2026-11-06): lo
+/// esperado por día desde mañana, sin filtros de sesión. Cada widget lo acumula sobre su propia curva.
+struct WidgetProjectedDay: Codable {
+    let date: Date
+    let income: Double
+    let expense: Double
+}
+
+struct WidgetProjectedFlow: Codable {
+    let days: [WidgetProjectedDay]
+    let isApproximate: Bool
+}
+
 /// Multi-granularity trend data for different periods
 struct WidgetTrendData: Codable {
     /// Daily points for short periods (last 90 days)
@@ -299,6 +312,10 @@ struct WidgetDataSnapshot: Codable {
     /// Los grupos (widget «Grupos», 2.2). **Opcional y con default**, como `paymentsMonth`: una foto anterior no lo trae
     /// y el widget dice «Abre Yala para ver tus grupos».
     var groups: WidgetGroupsSummary? = nil
+
+    /// Lo esperado por día para «Mostrar proyectado» (Gasto y Saldo). **Opcional y con default**: una foto anterior
+    /// no lo trae y el widget dibuja solo la curva real.
+    var projectedFlow: WidgetProjectedFlow? = nil
 
 }
 
@@ -594,9 +611,11 @@ enum WidgetDataCache {
             #endif
         }
 
-        // Pre-filter: exclude transactions from accounts excluded from statistics
+        // Pre-filter: fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una
+        // cuenta archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera
+        // (`LiveBalanceCalculator.entersBalance`, decisión 6 de 2.3).
         let excludedAccountIDs = Set(
-            accounts.filter { $0.excludeFromStatistics }.map { $0.persistentModelID }
+            accounts.filter { !$0.keepsHistory }.map { $0.persistentModelID }
         )
         let isEligible: (TransactionItem) -> Bool = { tx in
             countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
@@ -783,7 +802,17 @@ enum WidgetDataCache {
             allTimeSummary: allTimeSummary,
             periodSummaries: periodSummaries,
             paymentsMonth: paymentsMonth,
-            groups: WidgetGroupsSnapshotBuilder.build(context: context)
+            groups: WidgetGroupsSnapshotBuilder.build(context: context),
+            projectedFlow: buildProjectedFlow(
+                allTransactions: allTransactions,
+                eligibleTransactions: eligibleTransactions,
+                scheduledPayments: scheduledPayments,
+                currencyCode: preferredCurrency,
+                adjustment: adjustment,
+                converter: converter,
+                context: context,
+                now: periodsNow
+            )
         )
 
         // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
@@ -841,7 +870,53 @@ enum WidgetDataCache {
         )
     }
 
-    /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta que cuenta para estadísticas. Es el
+    /// «Mostrar proyectado» de Gasto y Saldo: lo esperado cada día desde mañana hasta fin de año (o una semana, si el
+    /// año acaba antes), sin filtros de sesión y con las cuentas de los widgets. Cada widget toma los días de su
+    /// período y los acumula sobre su propia curva (`WidgetInsightsLogic.projectedCumulative`).
+    static func buildProjectedFlow(
+        allTransactions: [TransactionItem],
+        eligibleTransactions: [TransactionItem],
+        scheduledPayments: [ScheduledPayment],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: any CurrencyConverting,
+        context: ModelContext,
+        now: Date
+    ) -> WidgetProjectedFlow? {
+        let calendar = Calendar.current
+        guard let month = calendar.dateInterval(of: .month, for: now),
+              let year = calendar.dateInterval(of: .year, for: now),
+              let weekAhead = calendar.date(byAdding: .day, value: 8, to: calendar.startOfDay(for: now)) else { return nil }
+        let horizon = DateInterval(start: month.start, end: max(year.end, weekAhead).addingTimeInterval(-1))
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+        let inputs = ProjectedFlowBuilder.Inputs(
+            today: now,
+            calendar: calendar,
+            overdueWindowStart: month.start,
+            days: days,
+            allTransactions: allTransactions,
+            // Sin las cuentas archivadas por la persona: no se van a mover, y el widget de Saldo acumula este ritmo sobre
+            // su cifra, que ya las deja fuera (decisión 6 de 2.3). Es lo que hace la proyección del saldo del Panel.
+            countedTransactions: eligibleTransactions.filter { $0.account?.isArchivedByThePerson != true },
+            hasSessionFilters: false,
+            scheduledPayments: scheduledPayments,
+            paymentFilter: .none,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+        let built = ProjectedFlowBuilder.build(inputs, context: context)
+        return WidgetProjectedFlow(
+            days: days.map { day in
+                let flow = built.flows[day] ?? ProjectedFlowCalculator.DayFlow()
+                return WidgetProjectedDay(date: day, income: flow.income, expense: flow.expense)
+            },
+            isApproximate: built.isApproximate
+        )
+    }
+
+    /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta cuyo historial se ve. Es el
     /// filtro de cuentas elegibles de la app (Panel, Registros, Estadísticas), que deja fuera los movimientos sin cuenta.
     /// Hasta el 2026-10-23 los widgets sí los contaban y su «Este mes» no coincidía con el de la app.
     static func countsForWidgets(_ tx: TransactionItem, excludedAccountIDs: Set<PersistentIdentifier>) -> Bool {

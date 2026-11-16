@@ -3,14 +3,12 @@
 //  Yala
 //
 //  Cliente HTTP del correo del banco por reenvío (2.3) contra el gateway (`gateway/src/mail/routes.ts`):
-//    - `POST /mail/address`     → la dirección `auto+<código>@yala-app.pe`, el cupo de prueba y el código de Gmail.
+//    - `POST /mail/address`     → la dirección `auto+<código>@yalainbox.com`, el cupo de prueba y el código de Gmail.
 //    - `GET  /mail/drafts`      → los movimientos que el gateway leyó de los avisos reenviados.
 //    - `POST /mail/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
 //
-//  Y la cola de lo que apuntó la IA de la persona por el conector (`gateway/src/connector/routes.ts`, 2.3), con el mismo
-//  molde y la misma guard:
-//    - `GET  /connector/drafts`      → los movimientos que dejó Claude, ChatGPT o Grok (`apuntar_movimiento`).
-//    - `POST /connector/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
+//  La cola es COMÚN (decisión D9 del plan de Yala web): por `/mail/drafts` llega también lo apuntado en Yala web
+//  (`source: "web"`) y lo que apuntó la IA de la persona por el conector (`source: "ai"`, `apuntar_movimiento`).
 //
 //  Las tres rutas pasan por `requireUserAndAttest` (`gateway/src/mail/routes.ts`, que reusa la guard de
 //  `groups/routes.ts`): producción pasa `AttestSessionProvider.live`; el default `{ nil }` es solo para tests
@@ -61,7 +59,7 @@ struct BankEmailAddressInfo: Decodable, Equatable, Sendable {
 }
 
 /// Un movimiento leído de un aviso reenviado (`GET /mail/drafts`).
-struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
+nonisolated struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     let id: String
     let receivedAtMs: Double
     let kind: String?
@@ -71,36 +69,24 @@ struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     let date: String?
     let bank: String?
     let accountLast4: String?
+    /// Yala web (lote 1): `"web"` en lo apuntado desde el navegador, que entra por esta misma cola (`WebDraftLogic`).
+    /// Con la cuenta y la subcategoría elegidas, por su id de la nube (`shortcutID`). El correo no los manda.
+    var source: String? = nil
+    var accountRef: String? = nil
+    var subcategoryRef: String? = nil
+    /// Tu IA registra en Yala (2.3): `source: "ai"` en lo que apuntó la IA por el conector (`AIConnectorDraftLogic`). Trae
+    /// además el nombre de la cuenta y de la subcategoría (por si el id aún no casa aquí) y qué IA lo apuntó («Claude»).
+    var accountName: String? = nil
+    var subcategoryName: String? = nil
+    var client: String? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, amount, currency, merchant, date, bank
+        case id, kind, amount, currency, merchant, date, bank, source, client
         case receivedAtMs = "received_at_ms"
         case accountLast4 = "account_last4"
-    }
-}
-
-/// Un movimiento que apuntó la IA de la persona por el conector (`GET /connector/drafts`). La cuenta y la subcategoría
-/// vienen ya resueltas por el conector contra las de la persona: su `sync_id` (= `shortcutID`) y su nombre.
-nonisolated struct ConnectorDraftDTO: Decodable, Equatable, Sendable {
-    let id: String
-    let receivedAtMs: Double
-    let kind: String
-    let amount: Double
-    let currency: String?
-    let note: String?
-    let date: String?
-    let accountID: String?
-    let accountName: String?
-    let subcategoryID: String?
-    let subcategoryName: String?
-    let client: String?
-
-    enum CodingKeys: String, CodingKey {
-        case id, kind, amount, currency, note, date, client
-        case receivedAtMs = "received_at_ms"
-        case accountID = "account_id"
+        case accountRef = "account_ref"
+        case subcategoryRef = "subcategory_ref"
         case accountName = "account_name"
-        case subcategoryID = "subcategory_id"
         case subcategoryName = "subcategory_name"
     }
 }
@@ -142,16 +128,6 @@ final class BankEmailClient {
         _ = try await send(method: "POST", path: "mail/drafts/ack", body: ["ids": ids])
     }
 
-    func connectorDrafts() async throws -> [ConnectorDraftDTO] {
-        struct Envelope: Decodable { let drafts: [ConnectorDraftDTO] }
-        let data = try await send(method: "GET", path: "connector/drafts", body: nil)
-        return try decode(Envelope.self, from: data).drafts
-    }
-
-    func ackConnectorDrafts(ids: [String]) async throws {
-        guard !ids.isEmpty else { return }
-        _ = try await send(method: "POST", path: "connector/drafts/ack", body: ["ids": ids])
-    }
 
     // MARK: - Red
 

@@ -18,10 +18,11 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     /// Panel · Grupos · Registros · Más · Buscar, como la barra de Jürgen.
-    func test_customizedBar_groupsAndRecords_openTheirScreens() {
+    func test_customizedBar_groupsAndRecords_openTheirScreens() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
 
         customizeBar(app, remove: ["statistics", "planning"], add: ["groups", "records"])
 
@@ -47,10 +48,11 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     /// Variante: una sola pestaña cambiada y en otro orden (Registros delante de Planificación).
-    func test_customizedBar_singleSwap_opensItsScreen() {
+    func test_customizedBar_singleSwap_opensItsScreen() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
 
         customizeBar(app, remove: ["statistics"], add: ["records"])
 
@@ -62,10 +64,11 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     /// Variante: las dos personalizadas en el orden contrario (Registros antes que Grupos).
-    func test_customizedBar_recordsThenGroups_openTheirScreens() {
+    func test_customizedBar_recordsThenGroups_openTheirScreens() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
 
         customizeBar(app, remove: ["statistics", "planning"], add: ["records", "groups"])
 
@@ -80,10 +83,11 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     /// Variante: Registros ya se abrió desde Más (pestaña temporal) antes de personalizar la barra.
-    func test_recordsOpenedFromMoreFirst_thenCustomized_opensTheirScreens() {
+    func test_recordsOpenedFromMoreFirst_thenCustomized_opensTheirScreens() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
 
         app.selectTab(.more)
         let recordsCard = app.buttons["more_card_records"]
@@ -107,10 +111,11 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     /// Variante: dos personalizaciones seguidas en la misma sesión (la segunda reordena la primera).
-    func test_customizedTwice_opensTheirScreens() {
+    func test_customizedTwice_opensTheirScreens() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
 
         customizeBar(app, remove: ["statistics", "planning"], add: ["records", "groups"])
         tapTab(app, label: "Registros")
@@ -131,10 +136,11 @@ final class CustomTabBarUITests: XCTestCase {
 
     /// El camino de Jürgen: Yala completo → «Solo grupos» → vuelta a Yala completo (la barra pasa de una pestaña a seis
     /// con la app abierta) → personalizar la barra con Grupos y Registros → tocarlas.
-    func test_backFromGroupsOnly_thenCustomized_opensTheirScreens() {
+    func test_backFromGroupsOnly_thenCustomized_opensTheirScreens() throws {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("Personalizar la barra de abajo")
         let panelMarker = app.buttons["panel_inbox_button"]
         XCTAssertTrue(panelMarker.waitForExistence(timeout: 15), "Control: el Panel no estaba montado al empezar.")
 

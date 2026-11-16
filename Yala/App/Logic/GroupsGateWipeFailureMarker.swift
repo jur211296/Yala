@@ -14,7 +14,7 @@
 //  se desarmó y los datos siguen, que es exactamente el estado de partida.
 //
 //  **Quién la escribe:** `SwiftDataConfiguration.performSignOutWipeIfArmed`, en el abort S3 que desarma, y solo si hay un
-//  destino pendiente de la puerta (`.groupsOrganizer` o `.groupsInvite`). Un cierre de Ajustes que aborta no la pone:
+//  destino pendiente de la puerta (`.groupsOrganizer`, `.groupsInvite` o los dos de la entrada que deja iCloud aparte). Un cierre de Ajustes que aborta no la pone:
 //  la persona sigue en la app, y una marca sin lector acabaría leyéndola una puerta que no la armó.
 //  **Quién la lee:** la puerta, antes de medir la celda de cierre — con ella puesta enseña «No pudimos preparar este
 //  teléfono» y no arma nada.
@@ -49,6 +49,11 @@ nonisolated enum GroupsGateWipeFailureMarker {
         // Exhaustivo y sin `default`: un destino nuevo tiene que decidir aquí si lo escribe la puerta.
         switch pendingDestination {
         case .groupsOrganizer, .groupsInvite:
+            return true
+        // La entrada con Google o Apple que deja iCloud aparte (opción B, 2026-11-10) arma la MISMA vuelta al neutro desde
+        // la misma pantalla. Sin la marca, el arranque abortado volvía a la entrada, la entrada volvía a encontrar los datos
+        // y la pantalla volvía a armar el mismo borrado: el bucle de este fichero por otra puerta.
+        case .cloudSignInAppleKeepingICloudAside, .cloudSignInGoogleKeepingICloudAside:
             return true
         case .privateOnboarding, .restoreICloud, .inviteRecovery, .cloudAccount, .cloudSignIn,
              .fullActivationPrivate, .fullActivationRestore, nil:

@@ -309,6 +309,13 @@ struct UserDataResetView: View {
             await exchangeRateService.updateTodayIfNeeded(context: modelContext)
             await exchangeRateService.preloadHistoricalIfNeeded(context: modelContext)
             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+
+            // 8. Quien se queda en el Panel recupera ya los gastos y liquidaciones de sus grupos, sin esperar al
+            //    arranque siguiente (ticket `wipe-data-group-rows-return-only-on-the-next-cold-launch`). En la shell de
+            //    solo grupos la petición sigue dormida hasta activar Yala completo.
+            if case .panel = landing {
+                await AppBootstrapper.shared.convergeGroupsBridgeInSession(context: modelContext)
+            }
         } catch {
             // También tras un fallo: el borrado guarda por lotes, y uno que lanza a media lista baja la señal igual.
             sessionState.requestDeliberateWipeSettle()

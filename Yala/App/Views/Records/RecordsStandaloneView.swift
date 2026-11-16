@@ -5,7 +5,8 @@
 //  Standalone Records view accessible from "More" tab.
 //  Provides full Records functionality with selection mode and filter sync. Desde la card 97gc (decisión de Jürgen del
 //  2-nov) es idéntica a Estadísticas › Registros: la acción principal va en la fila bajo la cabecera
-//  (`StatsQuickActionsSlot`) y no hay flotante nunca, tampoco al bajar.
+//  (`StatsQuickActionsSlot`) y el flotante solo sale cuando el scroll se lleva esa fila (card rtyu, 4-nov: quitarlo
+//  también al bajar fue leer de más el «sin FAB»; el patrón de toda la app es el de kzhe, del 24-oct).
 //
 
 import SwiftData
@@ -26,7 +27,19 @@ struct RecordsStandaloneView: View {
     /// Decide si tocar un registro lo abre en la columna de detalle o en la hoja de siempre.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    /// El size class con el que se monta la página. En una ventana ancha con la vista calendario, compacto (decisión 66
+    /// de 2.3): el calendario no se aprieta en la columna de la lista; la página va en una columna, como en el iPhone, y el
+    /// calendario a ancho legible. Lo abierto, en la hoja de siempre.
+    private var pageSizeClass: UserInterfaceSizeClass? {
+        RecordsCalendarPageLogic.pageSizeClass(window: horizontalSizeClass, viewMode: recordsViewModel.recordsViewMode)
+    }
+
     // MARK: - ViewModels
+
+    /// La fila de acciones salió de la vista al bajar: entran Yala IA y «+» flotantes (card rtyu).
+    @State private var showFloatingActions = false
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
 
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel = RecordsViewModel()
@@ -122,13 +135,13 @@ struct RecordsStandaloneView: View {
             .modifier(RecordsDetailColumnObservers(
                 recordsViewModel: recordsViewModel,
                 compactColumn: $compactColumn,
-                horizontalSizeClass: horizontalSizeClass,
+                horizontalSizeClass: pageSizeClass,
                 allTransactions: dataViewModel.allTransactions
             ))
             // Una ventana abierta con «Abrir en una ventana nueva» desde un registro aterriza con él abierto.
             .modifier(RecordsPendingRecordObserver(
                 recordsViewModel: recordsViewModel,
-                horizontalSizeClass: horizontalSizeClass,
+                horizontalSizeClass: pageSizeClass,
                 allTransactions: dataViewModel.allTransactions
             ))
             .onAppear {
@@ -188,7 +201,7 @@ struct RecordsStandaloneView: View {
     /// registro se abre en la columna de detalle; en compacta es una hoja y no hay «registro abierto» al que apuntar.
     private var recordCommands: RecordCommandActions? {
         guard navigation.selectedMainTab == .records,
-              horizontalSizeClass == .regular,
+              pageSizeClass == .regular,
               !recordsViewModel.isSelectionMode
         else { return nil }
         let record = openRecord
@@ -223,6 +236,16 @@ struct RecordsStandaloneView: View {
         } detail: {
             detailColumn
         }
+        .environment(\.horizontalSizeClass, pageSizeClass)
+        // Al pasar a la vista calendario en una ventana ancha, lo abierto en la columna de detalle se cierra: la página
+        // pasa a una columna y no tiene dónde enseñarlo al lado.
+        .onChange(of: recordsViewModel.recordsViewMode) { _, mode in closeOpenRecordForCalendarPage(mode) }
+    }
+
+    private func closeOpenRecordForCalendarPage(_ mode: RecordsViewMode) {
+        guard RecordsCalendarPageLogic.pageSizeClass(window: horizontalSizeClass, viewMode: mode) != horizontalSizeClass
+        else { return }
+        recordsViewModel.openRecordID = nil
     }
 
     @ViewBuilder
@@ -257,12 +280,54 @@ struct RecordsStandaloneView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                onFilterChange: { recalculateData() }
+                onFilterChange: { recalculateData() },
+                showsQuickFilters: true,
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() },
+                keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
             )
-            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros; sin flotante (card 97gc).
+            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
+            // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
             .environment(\.statsQuickActions, recordsQuickActions)
+            // «Buscar en Registros» (decisión 14 de 2.3): el campo que asoma al tirar de la lista es de esta pantalla.
+            .environment(\.offersRecordsListSearch, true)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
+                    // Un contenedor propio para los flotantes: su animación no alcanza a la barra de selección.
+                    ZStack {
+                        if showFloatingActions && !recordsViewModel.isSelectionMode {
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    FABStackView(
+                                        canUseVoiceInput: canUseVoiceInput,
+                                        isVoiceLocked: isVoiceLocked,
+                                        isImageLocked: isImageLocked,
+                                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                        chatFABVisible: appPreferences.chatFABVisible,
+                                        isShortContainer: fabShortContainer,
+                                        missingStep: dataViewModel.visibleMissingStep,
+                                        onResolveMissingStep: { resolveMissingStep() },
+                                        onVoiceTap: { showVoiceRecording = true },
+                                        onImageTap: { showImageSelection = true },
+                                        onManualTap: { recordsViewModel.showNewTransaction = true },
+                                        onUpgradeVoice: { showUpgradeForVoice = true },
+                                        onUpgradeImage: { showUpgradeForImage = true },
+                                        onChatTap: { startChat() },
+                                        onUpgradeChat: { showUpgradeForChat = true }
+                                    )
+                                }
+                            }
+                            // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                            .measuresShortContainer($fabShortContainer)
+                            .transition(.opacity)
+                        }
+                    }
+                    // Entran y salen fundiéndose al desplazar, como en Estadísticas. Implícita: quien enciende
+                    // `showFloatingActions` lo hace desde el scroll, donde un `withAnimation` no anima.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)
+
                     // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
                     if recordsViewModel.isSelectionMode {
                         RecordsSelectionBar(
@@ -293,7 +358,7 @@ struct RecordsStandaloneView: View {
     }
 
     /// Lo que la fila de acciones necesita: las mismas puertas que Estadísticas (`DetailContainerView.statsQuickActions`).
-    /// Sin flotante, así que nadie lee `showsFloating`.
+    /// La fila escribe en `showsFloating` cuando el scroll se la lleva (`revealsFloatingActionWhenScrolledAway`).
     private var recordsQuickActions: StatsQuickActions {
         StatsQuickActions(
             canCreateRecords: canUseVoiceInput,
@@ -308,7 +373,7 @@ struct RecordsStandaloneView: View {
             onVoiceTap: { startAIEntry(.voice) },
             onImageTap: { startAIEntry(.image) },
             onChatTap: { startChat() },
-            showsFloating: .constant(false)
+            showsFloating: $showFloatingActions
         )
     }
 
@@ -372,7 +437,9 @@ struct RecordsStandaloneView: View {
     private var normalModeToolbar: some ToolbarContent {
         // «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
         ToolbarItem(placement: .topBarTrailing) {
-            RecordsSelectToolbarButton(viewModel: recordsViewModel)
+            // En la columna de la lista del iPad, con icono: con el texto, el título no cabía (decisión 67 de 2.3). La
+            // columna de lista no tiene título grande (medido: `.large` no cambia nada ahí).
+            RecordsSelectToolbarButton(viewModel: recordsViewModel, iconOnly: pageSizeClass == .regular)
         }
 
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -400,15 +467,7 @@ struct RecordsStandaloneView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            let allSelected = recordsViewModel.selectedRecordIDs.count ==
-                recordsViewModel.groupedRecords.flatMap(\.records).count
-            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
-                if allSelected {
-                    recordsViewModel.deselectAll()
-                } else {
-                    recordsViewModel.selectAll()
-                }
-            }
+            RecordsSelectAllButton(viewModel: recordsViewModel)
         }
     }
 
@@ -430,7 +489,8 @@ struct RecordsStandaloneView: View {
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            // Card 7e60: con el almacén de esta pantalla ya soltado (cerrar sesión en la nube), ni recarga ni recalcula.
+            guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }
             if pendingReload {
                 dataViewModel.loadData()
                 pendingReload = false
@@ -498,6 +558,9 @@ private struct RecordsStandaloneSheets: ViewModifier {
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
 
     func body(content: Content) -> some View {
         content
@@ -505,8 +568,9 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }
             }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
+            .sheet(isPresented: $recordsViewModel.showNewTransaction, onDismiss: { newRecordDraft.discard() }) {
+                NewTransactionView(draft: newRecordDraft)
+                    .newRecordSheetIdentity()
                     .presentationDetents([.large])
                     .onDisappear { reloadAndRecalculate() }
             }
@@ -517,14 +581,21 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 ImageSelectionView()
             }
             // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
-            .proUpgradeSheet(isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+            // «Apuntarlo a mano» abre Nuevo registro, como el «+» (mejoras necesarias 2.3 · V3).
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.voice)
             }
-            .proUpgradeSheet(isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $showChatSheet)
+            .yalaAIChat(isPresented: $showChatSheet, onManualEntry: { recordsViewModel.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -532,9 +603,11 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 launcher: .records,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,
@@ -589,8 +662,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
                 viewModel: recordsViewModel
-            ) {
-                recordsViewModel.deleteSelected(context: modelContext)
+            ) { nameFor in
+                recordsViewModel.deleteSelected(context: modelContext, nameFor: nameFor)
                 reloadAndRecalculate()
             })
             .sheet(isPresented: $showBulkEditSheet) {

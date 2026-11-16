@@ -54,6 +54,7 @@ struct PanelQuickActionsRow: View {
     var marksTourAnchors: Bool = true
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// 44 pt es el mínimo táctil de las HIG. No bajar aunque la fila apriete:
     /// antes se recorta texto o se deja que el scroll horizontal haga su trabajo.
@@ -142,66 +143,108 @@ struct PanelQuickActionsRow: View {
     // MARK: - Fila de acciones
 
     private var actionsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                pill(
-                    text: L10n.Accessibility.newRecord,
-                    icon: "plus",
-                    isPrimary: true,
-                    isLocked: false,
-                    identifier: "\(identifierPrefix)_action_new",
-                    action: onManualTap
-                )
-                // Voz y foto llevan su palabra DEBAJO del icono, dentro del mismo
-                // botón (UX 2.2 · L4-1, variante elegida por Jürgen el 2026-10-14).
-                // No al lado: medido en el simulador el 2026-09-02, con texto al
-                // lado en todas, «Nuevo registro» + «Voz» + «Imagen» ya dejaban la
-                // cuarta píldora cortada contra el borde en un iPhone 17 Pro EN
-                // ESPAÑOL —y el alemán es más largo—. Debajo, la palabra no ensancha
-                // el botón más que el icono con su margen.
-                // Voz y Foto van juntas en un ancla: el tour Pro las señala a la vez (UX 2.2 · L5-12).
-                HStack(spacing: DS.Spacing.sm) {
-                    pill(
-                        text: nil,
-                        caption: L10n.Panel.voiceShort,
-                        icon: "waveform",
-                        isLocked: isVoiceLocked,
-                        identifier: "\(identifierPrefix)_action_voice",
-                        action: onVoiceTap
-                    )
-                    pill(
-                        text: nil,
-                        caption: L10n.Panel.photoShort,
-                        icon: "photo",
-                        isLocked: isImageLocked,
-                        identifier: "\(identifierPrefix)_action_image",
-                        action: onImageTap
-                    )
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                accessibilityActions
+                    // Un id en una pila sin elemento propio pisaría el de cada píldora (`testing.md`): contenedor explícito.
+                    .accessibilityElement(children: .contain)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DS.Spacing.sm) {
+                        newRecordPill
+                        voiceAndImagePills
+                        chatPill
+                    }
                 }
-                .tourAnchor(ProTourSteps.panelVoiceImageAnchor, isEnabled: marksTourAnchors)
-                if isChatVisible {
-                    // UX 2.2 · L14-5 (variante 3, Jürgen 2026-10-15): la píldora de cristal de siempre, ahora con el
-                    // nombre de la función, «Yala IA» (antes decía solo «IA»), y el dorado SÓLIDO en borde, icono y
-                    // texto (antes, el degradado amarillo-naranja `proBadge`). «Nuevo registro» sigue siendo lo único
-                    // relleno de la fila. VoiceOver lee lo que se ve.
-                    pill(
-                        text: L10n.Chat.assistantName,
-                        icon: "sparkles",
-                        isLocked: isChatLocked,
-                        isGold: true,
-                        compactPadding: true,
-                        identifier: "\(identifierPrefix)_action_ai",
-                        action: onChatTap
-                    )
-                    .tourAnchor(ProTourSteps.panelAssistantAnchor, isEnabled: marksTourAnchors)
+                .scrollDisabled(!canCreateRecords)
+                .accessibilityLabel(L10n.Accessibility.newRecord)
+            }
+        }
+        .opacity(canCreateRecords ? 1 : DS.Opacity.disabled)
+        .disabled(!canCreateRecords)
+        .accessibilityIdentifier("\(identifierPrefix)_quick_actions")
+    }
+
+    /// Con texto de accesibilidad la fila no cabe ni desplazándose: «Nuevo registro» solo ya medía más que el iPhone,
+    /// «Foto» quedaba cortado y «Yala IA» fuera de la pantalla (revisión por vistas 2.3, PN-6). Aquí «Nuevo registro»
+    /// va en su línea (su texto puede partirse en dos) y las otras debajo; si tampoco caben juntas, cada una baja a la
+    /// suya. Mismas píldoras y mismo orden: solo cambia el reparto. A tamaño normal no se usa.
+    private var accessibilityActions: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            newRecordPill
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.sm) {
+                    voiceAndImagePills
+                    chatPill
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    voiceAndImagePills
+                    chatPill
                 }
             }
         }
-        .scrollDisabled(!canCreateRecords)
-        .opacity(canCreateRecords ? 1 : DS.Opacity.disabled)
-        .disabled(!canCreateRecords)
-        .accessibilityLabel(L10n.Accessibility.newRecord)
-        .accessibilityIdentifier("\(identifierPrefix)_quick_actions")
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var newRecordPill: some View {
+        pill(
+            text: L10n.Accessibility.newRecord,
+            icon: "plus",
+            isPrimary: true,
+            isLocked: false,
+            identifier: "\(identifierPrefix)_action_new",
+            action: onManualTap
+        )
+    }
+
+    // Voz y foto llevan su palabra DEBAJO del icono, dentro del mismo
+    // botón (UX 2.2 · L4-1, variante elegida por Jürgen el 2026-10-14).
+    // No al lado: medido en el simulador el 2026-09-02, con texto al
+    // lado en todas, «Nuevo registro» + «Voz» + «Imagen» ya dejaban la
+    // cuarta píldora cortada contra el borde en un iPhone 17 Pro EN
+    // ESPAÑOL —y el alemán es más largo—. Debajo, la palabra no ensancha
+    // el botón más que el icono con su margen.
+    // Voz y Foto van juntas en un ancla: el tour Pro las señala a la vez (UX 2.2 · L5-12).
+    private var voiceAndImagePills: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            pill(
+                text: nil,
+                caption: L10n.Panel.voiceShort,
+                icon: "waveform",
+                isLocked: isVoiceLocked,
+                identifier: "\(identifierPrefix)_action_voice",
+                action: onVoiceTap
+            )
+            pill(
+                text: nil,
+                caption: L10n.Panel.photoShort,
+                icon: "photo",
+                isLocked: isImageLocked,
+                identifier: "\(identifierPrefix)_action_image",
+                action: onImageTap
+            )
+        }
+        .tourAnchor(ProTourSteps.panelVoiceImageAnchor, isEnabled: marksTourAnchors)
+    }
+
+    @ViewBuilder
+    private var chatPill: some View {
+        if isChatVisible {
+            // UX 2.2 · L14-5 (variante 3, Jürgen 2026-10-15): la píldora de cristal de siempre, ahora con el
+            // nombre de la función, «Yala IA» (antes decía solo «IA»), y el dorado SÓLIDO en borde, icono y
+            // texto (antes, el degradado amarillo-naranja `proBadge`). «Nuevo registro» sigue siendo lo único
+            // relleno de la fila. VoiceOver lee lo que se ve.
+            pill(
+                text: L10n.Chat.assistantName,
+                icon: "sparkles",
+                isLocked: isChatLocked,
+                isGold: true,
+                compactPadding: true,
+                identifier: "\(identifierPrefix)_action_ai",
+                action: onChatTap
+            )
+            .tourAnchor(ProTourSteps.panelAssistantAnchor, isEnabled: marksTourAnchors)
+        }
     }
 
     // MARK: - Píldora
@@ -250,7 +293,9 @@ struct PanelQuickActionsRow: View {
                             Text(text)
                                 .font(DS.Typography.label)
                                 .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
-                                .lineLimit(1)
+                                // Con texto de accesibilidad la píldora va sola en su línea y su texto puede
+                                // partirse en dos antes que cortarse (`accessibilityActions`).
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                         }
                     }
                     // «Yala IA» va con el margen corto: con el largo, la fila no cabía en un iPhone 17 Pro en español

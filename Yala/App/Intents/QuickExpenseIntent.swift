@@ -137,6 +137,8 @@ struct ApplePayTransactionIntent: AppIntent {
 
         let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
+        // Telemetría propia: «usó Siri y Atajos» (la automatización de Apple Pay corre en Atajos). Uno al día.
+        MetricsService.used(.siriAtajos)
         // Encolar el gasto para que la app lo materialice como borrador al abrir.
         ApplePayPendingStore.append(
             ApplePayPendingExpense(
@@ -304,6 +306,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         // conteo del dialog usa `validParsed.count`: la app crea un borrador por transacción válida
         // (sin dedup, igual que ApplePay), así que el conteo hablado coincide con lo que llega a la
         // Bandeja (salvo un reproceso raro tras crash, que duplicaría — recuperable).
+        MetricsService.used(.siriAtajos)
         SiriPendingStore.append(SiriPendingEntry(
             rawText: finalText,
             transactions: validParsed,
@@ -343,7 +346,8 @@ struct SiriNaturalEntryIntent: AppIntent {
         let snippet = TransactionSnippetView(
             amount: snippetAmount,
             currencyCode: firstParsed?.currencyHint ?? cachedContext?.defaultCurrency ?? "USD",
-            accountName: "—",
+            // La cuenta la elige la app al revisar el borrador: aquí no se sabe y la fila no se pinta (decisión 76).
+            accountName: nil,
             subcategoryName: firstParsed?.subcategoryHint ?? firstNote,
             subcategoryIcon: "text.bubble",
             date: firstParsed?.date ?? Date.now,

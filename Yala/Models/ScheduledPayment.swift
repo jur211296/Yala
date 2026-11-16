@@ -99,6 +99,12 @@ final class ScheduledPayment {
     /// Category: "recurring" or "subscription"
     var paymentCategory: String = "recurring"
 
+    // MARK: - Logo de suscripción (card 9nn7, 2.3; CloudKit: opcional)
+
+    /// El distintivo del servicio (`SubscriptionBrandCatalog`): `nil` = automático por el nombre, `"none"` = quitado,
+    /// o el id del servicio elegido a mano. Opcional: los pagos de antes quedan en automático sin migrar nada.
+    var brandLogoID: String?
+
     // MARK: - Notifications (CloudKit: defaults required)
 
     /// Whether to notify on due date

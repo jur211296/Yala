@@ -21,10 +21,13 @@ struct PanelSmallWidgetHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            // Dos líneas: en un iPhone de 390 pt, «Pagos planificados» salía «Pagos plani…» a tamaño normal (QA físico
+            // 2.2, iPhone 14). El título que cabe en una línea no cambia.
             Text(title)
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             if let headerInfoButton {
                 headerInfoButton

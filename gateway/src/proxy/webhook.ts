@@ -2,8 +2,18 @@ import type { Context } from "hono";
 import { type Env, acceptedBundleIDs } from "../env";
 import { updateAccountEntitlementByOriginalTxn, updateEntitlementByOriginalTxn } from "../db";
 import { verifyAppleJWS } from "../storekit/verifyAppleJWS";
+import { appstoreNotificationDetail, serverEvent } from "../serverEvent";
 
 type Ctx = Context<{ Bindings: Env }>;
+
+interface SignedTransaction {
+  originalTransactionId?: string;
+  productId?: string;
+  expiresDate?: number;
+  revocationDate?: number;
+  bundleId?: string;
+  offerDiscountType?: string;
+}
 
 /**
  * App Store Server Notifications V2. Defensa-en-profundidad: acelera la revocación
@@ -24,15 +34,10 @@ export async function handleAppStoreWebhook(c: Ctx): Promise<Response> {
   const payload = await verifyAppleJWS(body.signedPayload);
   if (!payload) return new Response("invalid signature", { status: 401 });
 
-  const data = payload.data as { signedTransactionInfo?: unknown } | undefined;
+  const data = payload.data as { signedTransactionInfo?: unknown; bundleId?: unknown; environment?: unknown } | undefined;
+  let tx: SignedTransaction | null = null;
   if (typeof data?.signedTransactionInfo === "string") {
-    const tx = (await verifyAppleJWS(data.signedTransactionInfo)) as {
-      originalTransactionId?: string;
-      productId?: string;
-      expiresDate?: number;
-      revocationDate?: number;
-      bundleId?: string;
-    } | null;
+    tx = (await verifyAppleJWS(data.signedTransactionInfo)) as SignedTransaction | null;
     // El G3 firma transacciones de TODAS las apps de la App Store → exigir nuestro bundleId,
     // o un atacante con su propia app podría enviar transacciones ajenas.
     if (tx?.originalTransactionId && tx.bundleId && acceptedBundleIDs(c.env).includes(tx.bundleId)) {
@@ -50,6 +55,21 @@ export async function handleAppStoreWebhook(c: Ctx): Promise<Response> {
       }
       // Sin expiresDate ni revocación (notificación no-relevante) → no tocar, para no revocar a un pagador.
     }
+  }
+  // Telemetría propia (decisión 5, 2026-11-06): el panel cuenta pruebas, compras, renovaciones y bajas desde aquí.
+  // Solo avisos de NUESTRO bundle (el G3 firma los de todas las apps) y solo tipos: ni ids ni importes.
+  const bundleId = typeof data?.bundleId === "string" ? data.bundleId : tx?.bundleId;
+  if (bundleId && acceptedBundleIDs(c.env).includes(bundleId)) {
+    serverEvent(
+      c.env,
+      "appstoreNotification",
+      appstoreNotificationDetail({
+        notificationType: payload.notificationType,
+        subtype: payload.subtype,
+        offerDiscountType: tx ? (tx.offerDiscountType ?? null) : undefined,
+        environment: data?.environment,
+      }),
+    );
   }
   // 200 siempre que la firma sea válida (evita reintentos de Apple por notificaciones no accionables).
   return new Response("ok", { status: 200 });

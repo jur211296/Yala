@@ -3,10 +3,15 @@
 //  Yala
 //
 //  Pure-logic gate for (re)starting the OWN cadence loop of the Groups→backend sync channel
-//  (`GroupsSyncClient.startIfEligible`). Extracted so the restart decision — INCLUDING the D8
-//  mount-mismatch guard that makes MID-SESSION calls safe (foreground resume / post-sign-in, the
-//  H-2026-07-18-4 fix) — is a single testable table instead of scattered guards. Molde: `SplitSyncStartGate`
-//  (pure, nonisolated, exhaustive table).
+//  (`GroupsSyncClient.startIfEligible`). Extracted so the restart decision is a single testable table instead of
+//  scattered guards (molde: `SplitSyncStartGate`, pure, nonisolated, exhaustive table).
+//
+//  **Las llamadas a MITAD de sesión (primer plano, tras un sign-in: H-2026-07-18-4) son seguras por otro motivo
+//  que el que esta cabecera daba hasta el 2026-11-06.** El guard «D8» de mount-mismatch (`secondaryActive &&
+//  !secondaryMounted`) salió de esta tabla el 2026-09-13 con la sesión de visita (783a4ec9b): sin ella hay UN solo
+//  store personal montado por proceso, así que la ventana que cerraba ya no existe. Lo que impide subir cambios de
+//  otra persona desde este teléfono es el dueño por fila del outbox (`GroupSyncOutbox.ownerUserID`, la subida solo
+//  manda las filas de la sesión). Medido leyendo el código el 2026-11-06, no en un aparato.
 //
 //  Scope: this decides ONLY whether the channel's OWN loop should (re)start now — y, desde el 2026-09-16, si
 //  el loop que YA vive hay que DESPERTARLO (`shouldWake`), porque estar vivo no es estar trabajando: puede
@@ -47,8 +52,9 @@ nonisolated enum GroupsLoopRestartLogic {
 
     /// ¿Debe `startIfEligible` (re)arrancar el loop propio del canal AHORA?
     ///
-    /// - `flagOn` — `CloudSyncFlags.groupsBackendEnabled`. Con el flag OFF (producción hoy) SIEMPRE
-    ///   `false` → byte-identidad DARK: el re-arranque en foreground / post-sign-in es un no-op.
+    /// - `flagOn` — `CloudSyncFlags.groupsBackendEnabled`. Con el flag OFF SIEMPRE `false`: el re-arranque en
+    ///   foreground / post-sign-in es un no-op. OFF hoy solo con el kill-switch remoto puesto: el default compilado es
+    ///   ON desde D-R1 paso 2 (2026-07-30) y el flag remoto solo puede apagarlo.
     /// - `hasSession` — hay sesión viva (`sessionCheck()`). Sin sesión no hay a quién sincronizar.
     /// - `loopAlive` — el loop ya vive (`loopTask != nil`): single-instance, no duplicar.
     ///

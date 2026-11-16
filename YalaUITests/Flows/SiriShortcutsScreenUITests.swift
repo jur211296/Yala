@@ -47,6 +47,8 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         button.tap()
 
         let shortcuts = XCUIApplication(bundleIdentifier: "com.apple.shortcuts")
+        // Si el caso cae, Atajos se queda abierto encima del caso siguiente: se cierra pase lo que pase.
+        addTeardownBlock { shortcuts.terminate() }
         XCTAssertTrue(shortcuts.wait(for: .runningForeground, timeout: 15), "El botón no abrió Atajos.")
         // La página de Yala, con sus acciones; no «Todos los atajos». Atajos rotula las acciones de Yala en el idioma del
         // SISTEMA, no en el que `launchForUITest` le pone a Yala: en el simulador del CI (inglés) es «Note with Siri», y
@@ -54,7 +56,11 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         let yalaAction = shortcuts.staticTexts.matching(
             NSPredicate(format: "label IN %@", ["Anotar con Siri", "Note with Siri"])
         ).firstMatch
-        XCTAssertTrue(yalaAction.waitForExistence(timeout: 15), "Atajos no se abrió en la página de Yala.")
+        // 60 s y no 15 (2026-11-05). En el runner, la PRIMERA vez que se abre Atajos tarda más de 15 s en pintar la página
+        // de Yala: cayó así al primer intento en la nocturna y en el dispatch del 4-nov, y en el reintento el MISMO
+        // proceso de Atajos (mismo pid) ya la enseñaba al segundo. La página era la buena; faltaba tiempo. Solo cuesta
+        // cuando tarda.
+        XCTAssertTrue(yalaAction.waitForExistence(timeout: 60), "Atajos no se abrió en la página de Yala.")
         shortcuts.terminate()
     }
 
@@ -74,6 +80,40 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         let message = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Borradores de Siri: 2")).firstMatch
         XCTAssertTrue(message.exists, "Falta la línea de Siri.")
         XCTAssertTrue(message.label.contains("2 pagos"), "Se perdió el mensaje de siempre: «\(message.label)».")
+    }
+
+    // MARK: - «Requiere Yala Pro» solo a quien de verdad le hace falta (lote 03 de las necesarias 2.3)
+
+    /// Sin Pro y con el modelo del iPhone listo, «Anota un gasto en Yala» funciona gratis: la pantalla no pide Pro.
+    func test_freeUserWithTheIPhoneModelReady_isNotToldSiriNeedsPro() {
+        let app = openSiriScreen(model: "available")
+        let phrase = app.staticTexts["«Anota un gasto en Yala»"]
+        XCTAssertTrue(phrase.waitForExistence(timeout: 5), "No apareció la frase de Siri.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "siri-modelo-listo"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertFalse(app.staticTexts["Requiere Yala Pro"].exists, "La pantalla dice «Requiere Yala Pro» a quien puede usar Siri gratis.")
+    }
+
+    /// Control: sin el modelo, Siri abre la hoja de Pro, y la pantalla lo sigue diciendo.
+    func test_freeUserWithoutTheIPhoneModel_isStillToldSiriNeedsPro() {
+        let app = openSiriScreen(model: "deviceNotEligible")
+        XCTAssertTrue(app.staticTexts["«Anota un gasto en Yala»"].waitForExistence(timeout: 5), "No apareció la frase de Siri.")
+        XCTAssertTrue(app.staticTexts["Requiere Yala Pro"].exists, "Sin el modelo del iPhone, la pantalla dejó de decir que hace falta Pro.")
+    }
+
+    private func openSiriScreen(model: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(extraArguments: ["-uitest-siri-model", model])
+        XCTAssertTrue(app.waitForUITestReady(), "La app no señaló uitest_ready.")
+        let profile = app.buttons["profile_avatar"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 20), "No apareció profile_avatar.")
+        profile.tap()
+        XCTAssertTrue(app.buttons["profile_accounts"].waitForExistence(timeout: 10), "No se abrió Ajustes.")
+        scrollTo(app.buttons["Siri y Atajos"], in: app)
+        app.buttons["Siri y Atajos"].tap()
+        return app
     }
 
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {

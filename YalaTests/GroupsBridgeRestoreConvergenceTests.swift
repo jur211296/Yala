@@ -301,7 +301,8 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             let restoredID = try insertRestoredRealTransaction(context, f, for: expense)
 
             GroupsBridgeRestoreConvergenceStore.markPending(defaults)
-            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(!GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults),
+                    "en solo-grupos no convergió: decir que sí repintaría por nada")
             #expect(try txs(context, expenseID: expense.id).contains { $0.persistentModelID == restoredID })
             #expect(GroupsBridgeRestoreConvergenceStore.isPending(defaults), "sin completar la activación, se espera")
 
@@ -325,7 +326,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             let before = Set(try txs(context, expenseID: expense.id).map(\.persistentModelID))
 
             SessionState.shared.hasPrivateSession = true
-            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(!GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults))
 
             #expect(Set(try txs(context, expenseID: expense.id).map(\.persistentModelID)) == before)
         }
@@ -643,7 +644,8 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             #expect(GroupsBridgeRestoreConvergenceStore.isSettlementLegsPending(defaults),
                     "«Vaciar datos» no pidió las liquidaciones: la cuenta de grupos contaría lo ya cobrado o pagado")
 
-            GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
+            #expect(GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults),
+                    "convergió y no lo dice: con la app montada nadie avisaría a Registros (ticket `wipe-data-group-rows-return-only-on-the-next-cold-launch`)")
 
             let expenseRows = try txs(context, expenseID: expense.id)
             #expect(!expenseRows.isEmpty, "el gasto de grupo no volvió a lo personal")

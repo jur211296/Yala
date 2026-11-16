@@ -94,10 +94,12 @@ struct DeletedModelFormGuardWiringTests {
     /// «Es una transferencia» se copia al crear la vista, mirando antes de leer; el `body` no lee el favorito.
     @Test func favoriteEditor_readsTheFavoriteOnlyGuardedOrOnAppear() throws {
         let source = try Self.readSource(of: "Yala/App/Views/Favorites/FavoriteEditorView.swift")
-        #expect(source.contains("@State private var isTransfer: Bool"))
-        #expect(source.contains("_isTransfer = State(initialValue: Self.isTransferFavorite(favorite))"))
+        #expect(source.contains("@State private var opensAsTransfer: Bool"))
+        #expect(source.contains("_opensAsTransfer = State(initialValue: Self.isTransferFavorite(favorite))"))
         #expect(source.contains("guard let favorite, !favorite.isDeleted, favorite.modelContext != nil else { return false }"))
-        #expect(!source.contains("private var isTransfer: Bool { favorite"))
+        #expect(!source.contains("private var opensAsTransfer: Bool { favorite"))
+        // Elegir «Transferencia» en el selector (decisión 70 de 2.3) se lee del estado, no del favorito.
+        #expect(source.contains("opensAsTransfer || transactionType == .transfer"))
 
         // Fuera del init, del helper guardado, de la acción de borrar y de la carga del `onAppear`, nada lee el favorito.
         let allowedOwners: Set<String> = ["init", "isTransferFavorite", "loadFavoriteData"]

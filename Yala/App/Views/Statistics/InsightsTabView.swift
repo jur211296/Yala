@@ -16,6 +16,7 @@ struct InsightsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openURL) private var openURL
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -40,6 +41,8 @@ struct InsightsTabView: View {
     @State private var showUpgradeSheet = false
     @State private var showCustomPeriodPicker = false
     @State private var showInsightsConsentAlert = false
+    /// El consentimiento pedido desde el bloque Pro de los gastos hormiga: al aceptar, pide ESE análisis.
+    @State private var showAntAIConsentAlert = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
@@ -169,6 +172,9 @@ struct InsightsTabView: View {
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
             Task { await viewModel.triggerAIGeneration() }
         }
+        .insightsConsentAlert(isPresented: $showAntAIConsentAlert) {
+            Task { await viewModel.triggerAntAI() }
+        }
         .coachMarkOverlay(
             steps: ProTourSteps.insightsSteps,
             isPresented: $showProInsightsTour,
@@ -242,7 +248,7 @@ struct InsightsTabView: View {
         } caption: {
             // Qué es la cifra: el neto, o el gasto en «Solo gastos».
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text)
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {
@@ -576,10 +582,14 @@ struct InsightsTabView: View {
     private func detailModeBody(stats: QuickStats, summary: PeriodSummary) -> some View {
         dailyAverageCard(stats: stats, summary: summary)
 
-        let columns = [
-            GridItem(.flexible(), spacing: DS.Spacing.md),
-            GridItem(.flexible(), spacing: DS.Spacing.md)
-        ]
+        // Con el texto al máximo, una ficha por fila: en media pantalla «Subcategoría principal» se partía en sílabas y el
+        // importe salía cortado («S/ 67,3…», barrido final 2.2). A tamaño normal, las dos columnas de siempre.
+        let columns = dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible(), spacing: DS.Spacing.md)]
+            : [
+                GridItem(.flexible(), spacing: DS.Spacing.md),
+                GridItem(.flexible(), spacing: DS.Spacing.md)
+            ]
 
         LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
             if let top = stats.topCategory {
@@ -618,6 +628,10 @@ struct InsightsTabView: View {
 
         if stats.subscriptionsTotal > 0 {
             subscriptionsCard(stats)
+        }
+
+        if let ants = stats.antExpenses {
+            antExpensesCard(ants)
         }
     }
 
@@ -700,6 +714,180 @@ struct InsightsTabView: View {
             Spacer()
         }
         .panelCard()
+    }
+
+    // MARK: - Gastos hormiga (card ea78, 2.3)
+
+    /// Compras pequeñas que se repiten, con lo que suman. La regla vive en `AntExpensesCalculator` y se enseña al pie
+    /// para que la cifra se entienda sin abrir nada.
+    private func antExpensesCard(_ ants: AntExpensesSummary) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: "ant.circle.fill")
+                    .font(.system(size: 24)) // A11Y-DT: mismo tamaño que el icono de Suscripciones, al lado.
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Insights.antExpensesTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                    Text(L10n.Insights.antExpensesSummary(
+                        total: appPreferences.currency(ants.total, currencyCode: defaultCurrencyCode),
+                        count: ants.count))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_summary")
+                    if let monthly = ants.monthlyEstimate {
+                        Text(L10n.Insights.antExpensesMonthly(
+                            appPreferences.currency(monthly, currencyCode: defaultCurrencyCode)))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                ForEach(ants.groups.prefix(3), id: \.key) { group in
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(group.label)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Spacer(minLength: DS.Spacing.sm)
+                        Text(L10n.Insights.antExpensesRow(
+                            count: group.count,
+                            total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("insights_ant_expenses_row")
+                }
+            }
+
+            Text(L10n.Insights.antExpensesRule(
+                threshold: appPreferences.currency(ants.threshold, currencyCode: defaultCurrencyCode),
+                minCount: AntExpensesCalculator.minOccurrences))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Pro: lo de la IA se SUMA debajo; lo de arriba es la tarjeta gratis tal cual (ticket
+            // `insights-ant-expenses-ai-version-for-pro`). Free no ve nada nuevo.
+            if isProUser {
+                antExpensesAIBlock
+            }
+        }
+        .panelCard()
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.antAI)
+        // `.contain`: la tarjeta tiene su id sin pisar los de su resumen y sus filas.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("insights_ant_expenses_card")
+    }
+
+    /// El bloque Pro de los gastos hormiga: las compras que la IA juntó (la misma tienda escrita de otra forma), el total
+    /// con ellas juntas y un consejo. Sin consentimiento, un toque lo pide; con él, sale solo
+    /// (`InsightsViewModel.autoRefreshAntAIIfNeeded`). Un fallo no enseña nada: la tarjeta gratis sigue igual.
+    @ViewBuilder
+    private var antExpensesAIBlock: some View {
+        if let insight = viewModel.antAI {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Divider()
+                Label(L10n.Insights.antExpensesAITitle, systemImage: "sparkles")
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(theme.accentText)
+                    .padding(.top, DS.Spacing.xxs)
+
+                ForEach(Array(insight.mergedGroups.prefix(3).enumerated()), id: \.offset) { _, group in
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                            Text(group.label)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: DS.Spacing.sm)
+                            Text(L10n.Insights.antExpensesRow(
+                                count: group.count,
+                                total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Text(L10n.Insights.antExpensesAIAlsoWritten(group.otherLabels.map { "«\($0)»" }
+                            .formatted(.list(type: .and))))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("insights_ant_expenses_ai_merge")
+                }
+
+                if let total = insight.combinedTotal, let count = insight.combinedCount {
+                    Text(L10n.Insights.antExpensesAICombined(
+                        total: appPreferences.currency(total, currencyCode: defaultCurrencyCode), count: count))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_ai_combined")
+                }
+
+                if let tip = insight.tip {
+                    Text(AIInsightCardComponents.markdownAttributed(tip))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, DS.Spacing.xxs)
+                        .accessibilityIdentifier("insights_ant_expenses_ai_tip")
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("insights_ant_expenses_ai")
+        } else if viewModel.isLoadingAntAI {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Divider()
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(theme.accentText)
+                        .symbolEffect(.pulse)
+                        .accessibilityHidden(true)
+                    Text(L10n.Insights.analyzingData)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .transition(.loadingPlaceholder)
+        } else if !appPreferences.hasCurrentAIInsightsConsent {
+            // Sin el permiso con el texto vigente hace falta un toque: es el que autoriza enviar los nombres de las compras
+            // pequeñas. También a quien aceptó el texto anterior (decisión A de Jürgen, 2026-11-06); su resumen de
+            // siempre sigue saliendo solo.
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Divider()
+                Button {
+                    showAntAIConsentAlert = true
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(theme.accentText)
+                            .accessibilityHidden(true)
+                        Text(L10n.Insights.antExpensesAICta)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: DS.Spacing.sm)
+                    }
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("insights_ant_expenses_ai_cta")
+            }
+        }
     }
 
     // MARK: - Section 4: Lo que te falta pagar · Tus presupuestos (UX 2.2 · L11-5)
@@ -848,7 +1036,8 @@ struct InsightsTabView: View {
             BudgetProgressBar(
                 percentage: budget.usagePercent,
                 color: budget.colorHex ?? "4A90D9",
-                isExceeded: budget.usagePercent >= 100,
+                // Rosa solo si te pasaste, como en Planificación: justo el límite no es pasarse (decisión 23 de 2.3).
+                isExceeded: BudgetRemainingLogic.isOver(limit: budget.limit, spent: budget.spent),
                 simplified: true
             )
             .frame(height: 6)

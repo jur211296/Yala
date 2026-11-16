@@ -29,6 +29,9 @@ struct PanelTrendData: Equatable {
     /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Lo pinta la hoja
     /// «¿Cuánto tienes hoy?», que existe precisamente porque el saldo es multimoneda.
     var trendLiveAnchorIsApproximate: Bool = false
+    /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación hasta el final del período.
+    /// `nil` sin días por delante; la píldora del widget solo decide si se pinta.
+    var trendProjection: ProjectedFlowCalculator.Projection? = nil
 }
 
 struct PanelCategoriesData: Equatable {
@@ -132,6 +135,8 @@ struct PanelPeriodComparisonData: Equatable {
     var period: DetailPeriod = .thisMonth
     var currentTotal: Double = 0
     var previousTotal: Double? = nil
+    /// La fecha real del período anterior contra la que se mide `deltaPercent`: el chip la dice («vs 20 oct»).
+    var previousReferenceDate: Date? = nil
     var supportsComparison: Bool = true
 
     var deltaPercent: Double? {
@@ -205,21 +210,25 @@ final class PanelViewModel {
         return f
     }()
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
+    /// «Octubre de 2026»: el mes del widget de pagos, en el idioma de Yala y con mayúscula solo en la primera letra.
+    /// Con un formato fijo de mes y año + `.capitalized` salía en el idioma del iPhone y, con la plantilla, «Octubre De
+    /// 2026» (ticket `month-year-titles-capitalize-every-word`). Es el mismo texto que pinta la pantalla de Pagos.
+    static func scheduledPaymentsPeriodLabel(for month: Date, locale: Locale) -> String {
+        ScheduledPaymentDateText.monthYear(month, locale: locale)
+    }
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: el contexto va atado al almacén con el que se dio (`BoundStoreContext`). Tras cerrar sesión en la
+    /// nube, el `onDismiss` de Ajustes del Panel viejo recargaba con el almacén soltado y cerraba Yala.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
 
     /// Exchange rate service - injected or falls back to shared singleton
     private var exchangeRateService: ExchangeRateService = .shared
@@ -268,6 +277,13 @@ final class PanelViewModel {
     /// Un recálculo pedido que se canceló sin correr (salir del Panel en su espera): la próxima vuelta lo hace.
     @ObservationIgnored
     private var hasInterruptedWork = false
+
+    /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
+    /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
+    /// volvía a pedir la carga, así que el Panel se quedaba en el esqueleto hasta mandar Yala a segundo plano y volver
+    /// (barrido final 2.2, 2026-11-05, medido en el iPad Pro 13). Lo repite `applicationDidBecomeActive()`.
+    @ObservationIgnored
+    private(set) var missedWhileInactive = false
 
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
@@ -416,7 +432,7 @@ final class PanelViewModel {
         defaultCurrencyCode: String,
         sessionState: SessionState
     ) {
-        self.modelContext = context
+        boundStore.bind(context)
         if let service = exchangeRateService {
             self.exchangeRateService = service
         }
@@ -491,9 +507,15 @@ final class PanelViewModel {
     }
 
     func loadData() {
+        loadData(stamp: currentDataStamp(), preloadedTransactions: nil)
+    }
+
+    /// `preloadedTransactions`: los movimientos ya leídos por tramos (`fetchTransactionsInSlices`, YALA-IOS-K); `nil`
+    /// los lee aquí de una vez. `stamp` se toma ANTES de leer nada, también antes de los tramos: un guardado que llegue
+    /// durante la lectura cuenta como cambio en la vuelta.
+    private func loadData(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?) {
         guard let context = modelContext else { return }
-        // La firma se toma ANTES de leer: un guardado que llegue durante la lectura cuenta como cambio en la vuelta.
-        lastLoadStamp = currentDataStamp()
+        lastLoadStamp = stamp
 
         // Equality checks prevent unnecessary @Observable notifications, which break the
         // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
@@ -545,15 +567,10 @@ final class PanelViewModel {
         // Fetch ALL transactions — no fetchLimit. The previous 2000-row cap dropped the
         // oldest records, which corrupted the running balance in the Trend widget
         // (visible as a constant vertical offset vs. Statistics → Tendencias).
-        let transactionsDesc = FetchDescriptor<TransactionItem>(
-            sortBy: [
-                SortDescriptor(\.date, order: .reverse),
-                SortDescriptor(\.createdAt, order: .reverse)
-            ]
-        )
         do {
             // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
-            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDesc))
+            let all = try preloadedTransactions ?? context.fetch(Self.allTransactionsDescriptor)
+            let fetched = RecordPendingDeletion.shared.visible(all)
             if fetched != transactions { transactions = fetched }
         } catch {
             #if DEBUG
@@ -625,7 +642,63 @@ final class PanelViewModel {
         // Pre-compute account balances (not period-dependent — only changes when transactions change)
         calculateAccountBalances()
 
-        if !isReady { isReady = true }
+        // Card c8i9: mientras la cuenta llega de la nube, el esqueleto y no un Panel en S/ 0.
+        updateAccountDataWait()
+        let ready = !accountDataWait.isWaiting
+        if isReady != ready { isReady = ready }
+    }
+
+    // MARK: - Espera de la cuenta (card c8i9)
+
+    /// En qué punto está la espera a los datos de la cuenta (`PanelAccountDataWait`). Mientras espera, `isReady` es
+    /// `false` y el Panel enseña su esqueleto.
+    @ObservationIgnored private(set) var accountDataWait: PanelAccountDataWait = .idle
+    @ObservationIgnored private var accountDataWaitTask: Task<Void, Never>?
+    /// Lo que la espera lee del motor. Sustituible en los tests.
+    @ObservationIgnored var accountDataWaitInputs: @MainActor () -> (cloudEngineActive: Bool, firstPullCompleted: Bool,
+                                                                     attestVerdictIsTerminal: Bool) = {
+        (CloudSyncFlags.storageMode == .cloud,
+         SyncQuiescenceCoordinator.shared.hasCompletedFirstPull,
+         GroupsAttestStreakStore.isTerminal())
+    }
+
+    private func nextAccountDataWait(now: Date = .now) -> PanelAccountDataWait {
+        let inputs = accountDataWaitInputs()
+        return accountDataWait.next(
+            hasAccounts: !loadedAccounts.isEmpty,
+            cloudEngineActive: inputs.cloudEngineActive,
+            firstPullCompleted: inputs.firstPullCompleted,
+            attestVerdictIsTerminal: inputs.attestVerdictIsTerminal,
+            now: now)
+    }
+
+    private func updateAccountDataWait() {
+        accountDataWait = nextAccountDataWait()
+        if accountDataWait.isWaiting {
+            watchAccountDataWait()
+        } else {
+            accountDataWaitTask?.cancel()
+            accountDataWaitTask = nil
+        }
+    }
+
+    /// El primer tirón del motor no avisa a nadie si no trae nada (una cuenta vacía), y el techo vence sin ningún aviso:
+    /// se mira cada segundo y, al acabar la espera, se recarga.
+    private func watchAccountDataWait() {
+        guard accountDataWaitTask == nil else { return }
+        accountDataWaitTask = Task { @MainActor [weak self] in
+            while true {
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+                guard let self else { return }
+                let next = self.nextAccountDataWait()
+                self.accountDataWait = next
+                guard next.isWaiting else {
+                    self.accountDataWaitTask = nil
+                    self.reloadAndRecalculate()
+                    return
+                }
+            }
+        }
     }
 
     // MARK: - Widget Data (struct-backed — reduces observation surface)
@@ -699,6 +772,7 @@ final class PanelViewModel {
     var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
     var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var trendLiveAnchorIsApproximate: Bool { trendChart.trendLiveAnchorIsApproximate }
+    var trendProjection: ProjectedFlowCalculator.Projection? { trendChart.trendProjection }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -1460,6 +1534,7 @@ final class PanelViewModel {
         var newTrendLiveAnchor: BarPoint? = nil
         var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
         var newTrendLiveAnchorIsApproximate = false
+        var newTrendProjection: ProjectedFlowCalculator.Projection? = nil
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
@@ -1494,6 +1569,12 @@ final class PanelViewModel {
             newTrendLiveAnchor = result.liveAnchor
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
             newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
+            newTrendProjection = calculateTrendProjection(
+                context: calcContext,
+                realPoints: result.rawPoints,
+                liveAnchorValue: result.liveAnchor?.value,
+                modelContext: context
+            )
         }
 
         // Categories — Distribución
@@ -1590,7 +1671,8 @@ final class PanelViewModel {
                 currentBalance: newBalance,
                 trendLiveAnchor: newTrendLiveAnchor,
                 trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown,
-                trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate
+                trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate,
+                trendProjection: newTrendProjection
             )
             if newTrend != trendChart { trendChart = newTrend }
         }
@@ -1654,14 +1736,15 @@ final class PanelViewModel {
         return (trend, cashFlow, need)
     }
 
-    /// Compute eligible accounts and their IDs (archived accounts still count)
+    /// Las cuentas cuyos movimientos cuentan en el Panel y sus IDs: las archivadas también (su historial se ve,
+    /// `Account.keepsHistory`); el saldo deja fuera las archivadas después (`PanelBalanceScopeLogic`, `LiveBalanceCalculator`).
     private func computeEligibleAccounts(from accounts: [Account]) -> (accounts: [Account], ids: Set<PersistentIdentifier>) {
         // Espeja `StatisticsViewModel.computeEligibleAccounts`: el filtro es un
         // conjunto y las dos pantallas tienen que resolverlo igual, o sus
         // números vuelven a divergir.
         let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
         let eligible = accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
+            guard account.keepsHistory else { return false }
             return accountFilter.matches(account.persistentModelID)
         }
         return (eligible, Set(eligible.map { $0.persistentModelID }))
@@ -1782,7 +1865,7 @@ final class PanelViewModel {
     // MARK: - Filter Criteria Builder
 
     /// Builds FilterCriteria from SessionState for use with FilterService.
-    /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles excludeFromStatistics).
+    /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles `Account.keepsHistory`).
     func buildFilterCriteria(
         dateInterval: DateInterval? = nil,
         includeCategories: Bool = true
@@ -1815,6 +1898,75 @@ final class PanelViewModel {
     }
 
     // MARK: - Calculation Context Builder
+
+    /// «Ver proyectado» del widget de tendencia. Lee lo mismo que la curva: el saldo, las cuentas del número de arriba
+    /// sin los chips (decisión del 2026-10-22); ingresos y gastos, los filtros de sesión sin recorte de fecha.
+    private func calculateTrendProjection(
+        context calcContext: PanelCalculationContext,
+        realPoints: [BarPoint],
+        liveAnchorValue: Double?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> ProjectedFlowCalculator.Projection? {
+        let calendar = Calendar.current
+        let interval = calcContext.effectiveInterval
+        let horizon = ProjectedFlowCalculator.horizon(for: calcContext.period, interval: interval, calendar: calendar)
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+
+        let counted: [TransactionItem]
+        let narrows: Bool
+        let paymentFilter: ProjectedFlowBuilder.PaymentFilter
+        if trendType == .balance {
+            counted = calcContext.balanceTransactions
+            narrows = !selectedAccountIDs.isEmpty
+            paymentFilter = ProjectedFlowBuilder.PaymentFilter(
+                accounts: EntityFilter(included: Set(calcContext.balanceAccounts.map(\.persistentModelID)))
+            )
+        } else {
+            let criteria = buildFilterCriteria()
+            let includeGroupTxs = (UserDefaults.standard.object(
+                forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+            counted = calcContext.transactions.filter { transaction in
+                guard let account = transaction.account,
+                      calcContext.eligibleAccountIDs.contains(account.persistentModelID) else { return false }
+                guard BridgedTransactionFilter.shouldInclude(
+                    splitExpenseID: transaction.splitExpenseID,
+                    splitSettlementID: transaction.splitSettlementID,
+                    includeGroupsToggle: includeGroupTxs
+                ) else { return false }
+                return FilterService.matchesCriteria(transaction, criteria: criteria)
+            }
+            narrows = ProjectedFlowBuilder.filtersNarrowData(criteria)
+            paymentFilter = ProjectedFlowBuilder.paymentFilter(from: criteria)
+        }
+
+        let inputs = ProjectedFlowBuilder.Inputs(
+            today: now,
+            calendar: calendar,
+            overdueWindowStart: ProjectedFlowBuilder.overdueWindowStart(today: now, calendar: calendar),
+            days: days,
+            allTransactions: calcContext.transactions,
+            countedTransactions: counted,
+            hasSessionFilters: narrows,
+            scheduledPayments: scheduledPayments,
+            paymentFilter: paymentFilter,
+            currencyCode: calcContext.defaultCurrencyCode,
+            adjustment: statsAdjustment,
+            converter: calcContext.converter
+        )
+        let built = ProjectedFlowBuilder.build(inputs, context: modelContext)
+        return ProjectedFlowBuilder.chartProjection(
+            metric: trendType,
+            grouping: calcContext.trendGrouping,
+            realPoints: realPoints,
+            liveAnchorValue: liveAnchorValue,
+            result: built,
+            days: days,
+            today: now,
+            calendar: calendar
+        )
+    }
 
     /// Builds the shared context for all widget calculations
     private func buildCalculationContext(
@@ -2697,7 +2849,8 @@ final class PanelViewModel {
     /// Determine budget status
     private func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus {
         guard budget.isActive else { return .inactive }
-        return spending >= budget.limitAmount ? .exceeded : .active
+        // La misma regla que Planificación: pasado solo por encima del límite (decisión 23 de 2.3).
+        return BudgetRemainingLogic.isOver(limit: budget.limitAmount, spent: spending) ? .exceeded : .active
     }
 
     /// Get display properties for budget
@@ -2716,7 +2869,17 @@ final class PanelViewModel {
             recalculateTask?.cancel()
             recalculateTask = nil
             pendingReload = false
+            missedWhileInactive = false
         }
+    }
+
+    /// La app pasó a activa (`UIApplication.didBecomeActiveNotification`, `PanelActivationObserver`): repite el
+    /// recálculo que el freno descartó mientras no lo estaba, con la recarga si alguno la pedía. Sin nada pendiente,
+    /// no hace nada: la vuelta a primer plano normal ya recarga por su cuenta.
+    func applicationDidBecomeActive() {
+        guard missedWhileInactive, !isInBackground else { return }
+        missedWhileInactive = false
+        scheduleRecalculation(reload: pendingReload)
     }
 
     /// Cancel any pending recalculation
@@ -2795,7 +2958,14 @@ final class PanelViewModel {
     /// Una ráfaga dentro de la ventana sigue siendo UN cálculo, que corre con todo lo pedido (`pendingReload`).
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard isApplicationInForeground() else { return }
+        // Card 7e60: un Panel de un almacén ya soltado no recalcula — sus filas en memoria son de ese almacén.
+        guard !boundStore.isDetached else { return }
+        // Merge 2.2 → 2.3: el freno es «primer plano» (2.3) y lo que descarta se repite al activarse (2.2).
+        guard isApplicationInForeground() else {
+            if reload { pendingReload = true }
+            missedWhileInactive = true
+            return
+        }
         if reload { pendingReload = true }
         hasInterruptedWork = false
         guard recalculateTask == nil else { return }
@@ -2804,20 +2974,138 @@ final class PanelViewModel {
         #endif
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
-            // Entre aquí y el final no hay ningún `await`: nadie puede sumarse a este cálculo a medias.
-            recalculateTask = nil
+            guard !Task.isCancelled, !boundStore.isDetached else { return }
             let shouldReload = pendingReload
             pendingReload = false
             if shouldReload {
-                loadData()
+                // YALA-IOS-K: los movimientos se leen por tramos y la app atiende toques entre tramo y tramo. Mientras
+                // tanto `recalculateTask` sigue puesto: lo que se pida se suma a este cálculo (un recálculo lo cubre el
+                // cálculo de abajo, que lee los filtros de ese momento; una recarga, la vuelta que se pide al final).
+                let stamp = currentDataStamp()
+                let loaded = await fetchTransactionsInSlices()
+                // Cancelado (fondo, salir del Panel): quien canceló ya soltó la tarea; no se toca nada.
+                guard !Task.isCancelled else { return }
+                guard !boundStore.isDetached else {
+                    recalculateTask = nil
+                    return
+                }
+                guard let loaded else {
+                    // La lectura por tramos no pudo ir (lectura fallida): la de siempre, de una vez, con su `catch`.
+                    loadData(stamp: stamp, preloadedTransactions: nil)
+                    finishRecalculation()
+                    return
+                }
+                loadData(stamp: stamp, preloadedTransactions: loaded)
             }
-            performCalculation()
-            if isReady {
-                LoadTimeMarks.ready(.coldLaunch)
-                LoadTimeMarks.ready(.panel)
+            finishRecalculation()
+        }
+    }
+
+    /// El final de una vuelta del recálculo, sin ningún `await`: nadie puede sumarse a este cálculo a medias. Una recarga
+    /// pedida mientras se leían los tramos abre la vuelta siguiente.
+    private func finishRecalculation() {
+        recalculateTask = nil
+        performCalculation()
+        if isReady {
+            LoadTimeMarks.ready(.coldLaunch)
+            LoadTimeMarks.ready(.panel)
+        }
+        if pendingReload { scheduleRecalculation(reload: true) }
+    }
+
+    // MARK: - Lectura de los movimientos por tramos (YALA-IOS-K, 2026-11-13)
+
+    /// Todos los movimientos, del más nuevo al más viejo: lo que necesitan la tendencia y los saldos.
+    private static var allTransactionsDescriptor: FetchDescriptor<TransactionItem> {
+        FetchDescriptor<TransactionItem>(sortBy: [
+            SortDescriptor(\.date, order: .reverse),
+            SortDescriptor(\.createdAt, order: .reverse)
+        ])
+    }
+
+    /// Movimientos por tramo. Un tramo cuesta del orden de 0,1 s en un iPhone 14; todos de una vez pasaban de los 2 s
+    /// con un historial grande, con la app sin responder (Sentry YALA-IOS-K, `loadData` → `performAndWait`).
+    nonisolated static let transactionSliceSize = 1_500
+
+    /// Tramos que leyó la última carga. Testigo de `SentryHangs2026Nov`; sin uso en la app.
+    @ObservationIgnored private(set) var lastLoadSlices = 0
+
+    /// Lee TODOS los movimientos en el orden de `allTransactionsDescriptor`, por tramos de `transactionSliceSize`, y cede
+    /// el hilo principal entre uno y otro. `nil` si una lectura falla (el llamador lee de una vez y su `catch` decide).
+    ///
+    /// Cada tramo sigue al anterior por su CLAVE de orden, no por posición: lo que se guarde entre dos tramos no desplaza
+    /// a los siguientes. La clave se repite (importaciones, recurrentes con el mismo instante), así que cada tramo vuelve
+    /// a pedir la del último y lo ya leído se descarta por su identidad: ni salta filas ni las cuenta dos veces. Si un
+    /// tramo entero es de la misma clave y no trae nada nuevo, no hay forma de avanzar por clave y se lee el resto de una
+    /// vez. Una fila cuya fecha se edita entre dos tramos puede quedarse fuera de esta carga: esa edición guarda y la firma
+    /// (`lastLoadStamp`, tomada antes de leer) pide la recarga siguiente, como con un guardado justo después de leer.
+    ///
+    /// La lectura termina cuando un tramo no trae nada nuevo, no cuando trae menos de `transactionSliceSize`: con cambios
+    /// sin guardar en el contexto un tramo puede traer una fila de más o de menos, y cortar por la cuenta dejaría fuera el
+    /// resto del historial. Lo que se borró mientras se leía (otra tarea del hilo principal entre dos tramos: un borrado
+    /// con «Deshacer» que vence, una página de la nube) se descarta al final: leer un `@Model` borrado aborta en el iPhone.
+    func fetchTransactionsInSlices() async -> [TransactionItem]? {
+        guard let context = modelContext else { return nil }
+        let size = Self.transactionSliceSize
+        var result: [TransactionItem] = []
+        var seen = Set<PersistentIdentifier>()
+        var boundary: (date: Date, createdAt: Date)?
+        var slices = 0
+        defer { lastLoadSlices = slices }
+        while true {
+            var descriptor = Self.allTransactionsDescriptor
+            if let boundary {
+                let date = boundary.date
+                let createdAt = boundary.createdAt
+                descriptor.predicate = #Predicate<TransactionItem> {
+                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
+                }
+            }
+            descriptor.fetchLimit = size
+            let slice: [TransactionItem]
+            do {
+                slice = try context.fetch(descriptor)
+            } catch {
+                #if DEBUG
+                print("PanelViewModel: Error loading transactions (tramo \(slices + 1)): \(error)")
+                #endif
+                return nil
+            }
+            slices += 1
+            var added = 0
+            for tx in slice where seen.insert(tx.persistentModelID).inserted {
+                result.append(tx)
+                added += 1
+            }
+            guard let last = slice.last, added > 0 || slice.count >= size else { return Self.alive(result) }
+            guard added > 0 else {
+                // Un tramo entero con la misma clave: no se puede avanzar por clave. El resto, de una vez.
+                let date = last.date
+                let createdAt = last.createdAt
+                var rest = Self.allTransactionsDescriptor
+                rest.predicate = #Predicate<TransactionItem> {
+                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
+                }
+                do {
+                    for tx in try context.fetch(rest) where seen.insert(tx.persistentModelID).inserted { result.append(tx) }
+                } catch {
+                    return nil
+                }
+                return Self.alive(result)
+            }
+            boundary = (last.date, last.createdAt)
+            // Un milisegundo y no `Task.yield()`: el `yield` solo deja pasar a otras tareas del hilo principal, y lo que
+            // hace falta es que el run loop atienda los toques entre tramo y tramo.
+            do { try await Task.sleep(for: .milliseconds(1)) } catch { return nil }
+            guard !Task.isCancelled, !boundStore.isDetached, let current = modelContext, current === context else {
+                return nil
             }
         }
+    }
+
+    /// Lo leído sin lo que se borró mientras se leía.
+    private static func alive(_ transactions: [TransactionItem]) -> [TransactionItem] {
+        transactions.filter { !$0.isDeleted && $0.modelContext != nil }
     }
 
     /// Runs all widget calculations from cached data (no SwiftData fetch).
@@ -3064,7 +3352,8 @@ final class PanelViewModel {
         // Total del período anterior ALINEADO al día equivalente del último día
         // con datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la
         // curva anterior, no el fin del período anterior COMPLETO.
-        let previousTotal: Double? = DateAlignmentHelper.alignedPreviousTotal(
+        // El total y su fecha salen del mismo recorte: la fecha es la que dice el chip («vs 20 oct», decisión 11 de 2.3).
+        let previousReference = DateAlignmentHelper.alignedPreviousReference(
             previousPoints: previousResult.points,
             currentPoints: currentResult.points,
             currentInterval: context.effectiveInterval,
@@ -3072,6 +3361,7 @@ final class PanelViewModel {
             period: context.period,
             comparisonMode: mode
         )
+        let previousTotal: Double? = previousReference?.value
 
         let newData = PanelPeriodComparisonData(
             currentPoints: currentResult.points,
@@ -3085,6 +3375,7 @@ final class PanelViewModel {
             period: context.period,
             currentTotal: currentTotal,
             previousTotal: previousTotal,
+            previousReferenceDate: previousReference?.date,
             supportsComparison: true
         )
         if newData != periodComparisonWidget { periodComparisonWidget = newData }
@@ -3149,7 +3440,7 @@ final class PanelViewModel {
 
         // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
         // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,
-        // que engloba cuenta seleccionada + `excludeFromStatistics`. Filtros
+        // que engloba cuenta seleccionada + `Account.keepsHistory`. Filtros
         // finos (categoría, subcategoría, need, focused date) NO aplican al
         // Hero por decisión de producto. El estado del calculator y la IA
         // reaccionan naturalmente a estos inputs — su lógica no se modifica.
@@ -3476,7 +3767,7 @@ final class PanelViewModel {
             activeCount: filtered.count,
             pendingCount: pendingCount,
             displayMonth: displayMonth,
-            periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
+            periodLabel: Self.scheduledPaymentsPeriodLabel(for: displayMonth, locale: AppLocale.current),
             upcomingPayments: upcomingPayments,
             paymentsByDay: paymentsByDay
         )

@@ -114,16 +114,28 @@ struct WidgetRankingRow: View {
 
 /// El ranking entero: las filas reparten el alto que deja la cabecera. Los huecos mínimos son pequeños para que las tres
 /// quepan en el mediano de un iPhone SE (321 × 148); en uno más alto los reparten los `Spacer`.
+///
+/// Siempre reparte `slots` puestos: los que no tienen fila llevan una copia invisible de la primera. Con una o dos
+/// categorías las filas quedan arriba con el ritmo de la lista llena; repartidas entre ellas, la segunda se iba al fondo
+/// del widget y el centro quedaba vacío (matriz de estados, card dz6c).
 struct WidgetRankingList: View {
+    static let slots = 3
+
     let items: [WidgetBreakdownItem]
     let currencyCode: String
     let displayFormat: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+            ForEach(0..<max(Self.slots, items.count), id: \.self) { index in
                 if index > 0 { Spacer(minLength: WidgetDS.Spacing.xxs) }
-                WidgetRankingRow(item: item, currencyCode: currencyCode, displayFormat: displayFormat)
+                if index < items.count {
+                    WidgetRankingRow(item: items[index], currencyCode: currencyCode, displayFormat: displayFormat)
+                } else if let first = items.first {
+                    WidgetRankingRow(item: first, currencyCode: currencyCode, displayFormat: displayFormat)
+                        .hidden()
+                        .accessibilityHidden(true)
+                }
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
@@ -138,7 +150,8 @@ struct WidgetRankingList: View {
 /// solapaban y se salían del widget. Lo teñido es el total.
 ///
 /// La leyenda pide su alto y el aro se queda con lo que sobra, hasta `donutSizeLarge`: en el grande de un iPhone SE
-/// (321 × 324) o con el texto más grande, encoge el aro y no se corta la leyenda.
+/// (321 × 324) o con el texto más grande, encoge el aro y no se corta la leyenda. Con pocas filas el aro crece hasta
+/// `donutSizeLargeMax` (`maxDiameter`): con dos categorías el de 156 dejaba un tercio del widget vacío debajo.
 struct WidgetPieBreakdown: View {
     static let maxLegendRows = 5
 
@@ -163,7 +176,7 @@ struct WidgetPieBreakdown: View {
                 }
             }
             .aspectRatio(1, contentMode: .fit)
-            .frame(maxWidth: WidgetDS.Chart.donutSizeLarge, maxHeight: WidgetDS.Chart.donutSizeLarge)
+            .frame(maxWidth: Self.maxDiameter(rows: rows.count), maxHeight: Self.maxDiameter(rows: rows.count))
             .frame(maxWidth: .infinity)
 
             VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
@@ -173,6 +186,13 @@ struct WidgetPieBreakdown: View {
             }
             .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// El tope del aro: `donutSizeLarge` con la leyenda llena, y por cada fila que falta, lo que esa fila deja libre,
+    /// hasta `donutSizeLargeMax`.
+    static func maxDiameter(rows: Int) -> CGFloat {
+        let missing = CGFloat(max(maxLegendRows - rows, 0))
+        return min(WidgetDS.Chart.donutSizeLarge + missing * WidgetDS.Chart.legendRowPitch, WidgetDS.Chart.donutSizeLargeMax)
     }
 
     /// «Total» y la cifra, dentro del hueco del aro (que mide `diameter × donutInnerRatio`).
@@ -253,6 +273,33 @@ struct WidgetLegendRow: View {
 }
 
 // MARK: - Sin gastos
+
+/// El aro vacío, gris, con «Sin gastos» dentro: lo que ocupa una tarta cuando no hay gastos en el período. Antes era un
+/// texto suelto en medio del widget, y el bloque se leía como un hueco (matriz de estados, card dz6c). Mide lo que le
+/// den, hasta `maxDiameter`.
+struct WidgetEmptyRing: View {
+    var maxDiameter: CGFloat = WidgetDS.Chart.donutSizeLarge
+
+    var body: some View {
+        GeometryReader { geo in
+            let diameter = min(geo.size.width, geo.size.height, maxDiameter)
+            ZStack {
+                Circle()
+                    .strokeBorder(WidgetColors.track, lineWidth: diameter / 2 * (1 - WidgetDS.Chart.donutInnerRatio))
+                Text("widget.ui.noExpenses", bundle: .main)
+                    .font(diameter < WidgetDS.Chart.donutSizeLarge ? WidgetDS.Typography.captionSmall : WidgetDS.Typography.label)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .frame(width: max(diameter * WidgetDS.Chart.donutInnerRatio - WidgetDS.Spacing.sm, 0))
+            }
+            .frame(width: diameter, height: diameter)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
 
 /// «Sin gastos en este período», legible y centrado (antes, gris terciario con un icono de bandeja).
 struct WidgetBreakdownEmpty: View {

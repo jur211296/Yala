@@ -35,6 +35,12 @@
 //  una cuenta extranjera— el que exige que el número cambie. Cada uno cubre el punto ciego del otro, y
 //  el valor stale de cada uno es exactamente el valor correcto del contrario.
 //
+//  **Desde el 2026-11-06 el importe también se convierte** (ticket
+//  `bulk-move-to-another-currency-account-relabels-the-amount`): hasta ese día estos dos casos fijaban
+//  el reetiquetado como contrato —el importe se quedaba y solo cambiaba la etiqueta—. Ahora cada fila
+//  pasa a la divisa de la cuenta destino con la tasa de su fecha (`AccountCurrencyMigrationService
+//  .convertHistory`), así que lo que vale lo mismo antes y después es el monto en la divisa PREFERIDA.
+//
 //  Fichero aparte: `makeTestContext()` reusa el container por `#fileID`, así que el store es propio.
 //  `.serialized` porque la suite hace más de una llamada (regla de `.claude/rules/testing.md`).
 //
@@ -160,7 +166,7 @@ struct RecordsViewModelBulkAccountCurrencyTests {
 
     // MARK: - El caso del ticket
 
-    @Test("Mover a una cuenta en otra divisa reconvierte el monto (no deja el de la divisa vieja)")
+    @Test("Mover a una cuenta en otra divisa convierte el importe con la tasa de su fecha")
     func movingToForeignAccountRecomputesTheConvertedAmount() throws {
         let context = try makeTestContext()
         let date = pastDate
@@ -211,20 +217,26 @@ struct RecordsViewModelBulkAccountCurrencyTests {
         )
         #expect(tx.account?.persistentModelID == foreign.persistentModelID, "no cambió de cuenta")
 
-        // Las cuatro columnas DERIVADAS del grupo `money` (que tiene cinco: la quinta es `amount`,
-        // que esta operación no toca), más el input que las manda.
+        // El importe: −250 en la preferida son −25.000 en la extranjera (tasa 100). Con el bug del
+        // ticket se quedaba en −250 con la etiqueta nueva, y el gasto valía 100 veces menos.
+        #expect(
+            abs(tx.amount - amount * 100) < 0.000_001,
+            """
+            El importe quedó en \(tx.amount) y debía ser \(amount * 100). Si vale \(amount), se cambió la \
+            etiqueta de divisa sin convertir: es el bug de `bulk-move-to-another-currency-account-relabels-the-amount`.
+            """
+        )
+        // Las cuatro columnas DERIVADAS del grupo `money`, más el input que las manda.
         #expect(
             normalizeCurrencyCode(tx.currencyCode) == normalizeCurrencyCode(foreignCode),
             "la transacción no adoptó la divisa de su nueva cuenta"
         )
         #expect(
-            abs(tx.amountInPreferredCurrency - convertedAmount) < 0.000_001,
+            abs(tx.amountInPreferredCurrency - amount) < 0.000_001,
             """
-            El monto convertido quedó en \(tx.amountInPreferredCurrency) y debía ser \
-            \(convertedAmount). Si vale \(amount) es EXACTAMENTE el bug del ticket: la fila cambió de \
-            divisa y se quedó con la conversión de la anterior, así que los 14 calculadores que leen \
-            `amountInPreferredCurrency` —Panel, Estadísticas, presupuestos, informes— suman ese \
-            número como si fuera bueno y el usuario ve un total inflado 100 veces.
+            El monto en la divisa preferida quedó en \(tx.amountInPreferredCurrency) y debía seguir en \
+            \(amount): mover de cuenta no cambia cuánto se gastó. Si vale \(convertedAmount), el importe \
+            se reetiquetó sin convertir; un −999999 es el centinela del fixture sin recomputar.
             """
         )
         // La tolerancia va deliberadamente MÁS FLOJA que la del monto: la tasa se deriva de él
@@ -257,7 +269,7 @@ struct RecordsViewModelBulkAccountCurrencyTests {
 
     // MARK: - El espejo
 
-    @Test("Y en el sentido inverso, la conversión vuelve a ser la identidad")
+    @Test("Y en el sentido inverso, el importe se convierte de vuelta a la divisa preferida")
     func movingBackToPreferredAccountRestoresIdentity() throws {
         let context = try makeTestContext()
         let date = pastDate
@@ -291,12 +303,18 @@ struct RecordsViewModelBulkAccountCurrencyTests {
             "la transacción no adoptó la divisa de su nueva cuenta"
         )
         #expect(
-            abs(tx.amountInPreferredCurrency - amount) < 0.000_001,
+            abs(tx.amount - convertedAmount) < 0.000_001,
             """
-            El monto convertido quedó en \(tx.amountInPreferredCurrency) y debía ser \(amount): la \
-            transacción ya está en la divisa preferida, así que la conversión es la identidad. Si \
-            vale \(convertedAmount) se quedó con la conversión de la divisa extranjera anterior, y el \
-            gasto aparecería 100 veces más pequeño de lo que fue.
+            El importe quedó en \(tx.amount) y debía ser \(convertedAmount): −250 en la extranjera son \
+            −2,50 en la preferida. Si vale \(amount), se reetiquetó sin convertir y el gasto vale 100 \
+            veces más de lo que fue.
+            """
+        )
+        #expect(
+            abs(tx.amountInPreferredCurrency - convertedAmount) < 0.000_001,
+            """
+            El monto en la divisa preferida quedó en \(tx.amountInPreferredCurrency) y debía seguir en \
+            \(convertedAmount): mover de cuenta no cambia cuánto se gastó.
             """
         )
         #expect(

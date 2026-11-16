@@ -122,8 +122,12 @@ enum ReportGroupingDimension: String, CaseIterable, Identifiable {
 
 /// Manages the active grouping dimensions and their order
 struct ReportGroupingState {
-    /// Active dimensions in hierarchy order
-    var activeDimensions: [ReportGroupingDimension] = [.tipo]
+    /// Active dimensions in hierarchy order. La Comparativa abre ya desglosada por categoría (decisión 32 de 2.3, opción
+    /// B): con solo «Ingresos y gastos» abría con dos filas y para ver algo más había que descubrir «Desglosar».
+    var activeDimensions: [ReportGroupingDimension] = ReportGroupingState.defaultDimensions
+
+    /// Con qué abre la Comparativa. No se guarda entre sesiones, como el resto de la agrupación.
+    static let defaultDimensions: [ReportGroupingDimension] = [.tipo, .categoria]
 
     /// Toggle a dimension on/off (tipo cannot be deselected)
     mutating func toggle(_ dimension: ReportGroupingDimension) {
