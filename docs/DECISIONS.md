@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (111 entradas)
+## Índice (112 entradas)
 
 > **No hace falta leer este fichero entero** — son 303 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
@@ -138,6 +139,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] Yala web debe parecerse a Yala móvil
+**Contexto:** Con Yala web ya en producción (16-nov), Jürgen la vio y dijo que hoy no se parece en nada a la app del iPhone.
+**Decisión:** Jürgen (chat, 16-nov 15:59): Yala web debe parecerse lo más posible a Yala móvil en diseño, colores, componentes y navegación.
+**Razones:** Quien usa las dos tiene que reconocer el mismo producto; la web es la misma cuenta y los mismos datos.
+**Consecuencias:** El trabajo de la web parte del sistema de diseño de la app, no de uno propio. Falta el encargo que lo ejecute; esta entrada solo deja la decisión.
+**Estado:** Activa
 
 ### [2026-11-16] Yala web en producción: Grupos se enciende quitando la condición del gateway
 **Contexto:** Al subir Yala web a producción (16-nov) se midió que el código del gateway apagaba la lectura y la escritura de Grupos para la web cuando el entorno es producción, aunque `WEB_GROUPS_READER`/`WRITER` estuvieran en `"on"`. El encargo prohibía tocar código del gateway y lo dejaba anotado.
