@@ -1,5 +1,5 @@
 /**
- * `[env.production]` de wrangler.toml (escrito el 2026-11-15, sin desplegar). Se lee el fichero tal cual: así un cambio
+ * `[env.production]` de wrangler.toml (escrito el 2026-11-15; KV y cliente OAuth reales desde el 2026-11-16). Se lee el fichero tal cual: así un cambio
  * que apunte producción a staging, o que reuse los límites de staging, se pone rojo aquí y no en un despliegue.
  */
 import { readFileSync } from "node:fs";
@@ -51,7 +51,7 @@ describe("producción en wrangler.toml", () => {
     for (const id of prod) expect(namespaceIds(TOP)).not.toContain(id);
   });
 
-  it("tal como está escrito, el Worker NO atiende: 503 por lo que sigue PENDIENTE", () => {
+  it("tal como está escrito, el Worker NO atiende: 503 mientras falte el widget de Turnstile", () => {
     const env = makeEnv({
       ...prodVars,
       SUPABASE_OAUTH_CLIENT_SECRET: "secreto",
@@ -60,17 +60,21 @@ describe("producción en wrangler.toml", () => {
       RL_API: new FakeLimiter(),
       RL_QR: new FakeLimiter(),
     });
-    expect(configProblems(env)).toEqual([
-      "SUPABASE_OAUTH_CLIENT_ID no es un uuid (¿sigue PENDIENTE?)",
-      "SUPABASE_OAUTH_CLIENT_ID sigue PENDIENTE",
-      "TURNSTILE_SITE_KEY sigue PENDIENTE",
-    ]);
+    expect(configProblems(env)).toEqual(["TURNSTILE_SITE_KEY sigue PENDIENTE"]);
   });
 
-  it("con el cliente y el widget reales, la misma configuración atiende", () => {
+  it("el cliente OAuth es el registrado en Supabase producción y el KV es el suyo, no el de staging", () => {
+    expect(prodVars.SUPABASE_OAUTH_CLIENT_ID).toBe("79c7e38e-409e-470f-9151-81784a02760c");
+    expect(prodVars.SUPABASE_OAUTH_CLIENT_ID).not.toBe(table(TOP, "vars").SUPABASE_OAUTH_CLIENT_ID);
+    const kv = (src: string) => /binding = "WEB_KV"\nid = "([0-9a-f]{32})"|binding = "WEB_KV"\n#[^\n]*\nid = "([0-9a-f]{32})"/.exec(src);
+    const prodKv = kv(PROD);
+    expect(prodKv).not.toBeNull();
+    expect(prodKv?.[1] ?? prodKv?.[2]).not.toBe("aaee191d09924a7bbbdaa912cd1bcf05");
+  });
+
+  it("con el widget real, la misma configuración atiende", () => {
     const env = makeEnv({
       ...prodVars,
-      SUPABASE_OAUTH_CLIENT_ID: "6a1f0c5e-1b2c-4d3e-8f90-0a1b2c3d4e5f",
       SUPABASE_OAUTH_CLIENT_SECRET: "secreto",
       TURNSTILE_SITE_KEY: "0x4AAAAAAA-real",
       TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secreto-real",

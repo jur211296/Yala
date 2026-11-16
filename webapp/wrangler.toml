@@ -137,8 +137,8 @@ run_worker_first = true
 
 [[env.production.kv_namespaces]]
 binding = "WEB_KV"
-# `npx wrangler kv namespace create yala-web-production` → su id aquí.
-id = "PENDIENTE-crear-kv-yala-web-production"
+# «yala-web-production-sessions», creado el 2026-11-16.
+id = "e017abc5565b414d98e59e54ff43c327"
 
 # La cola COMÚN de borradores en producción: el D1 del gateway de producción (mismo esquema de `mail_drafts` que staging,
 # medido el 2026-11-15).
@@ -162,9 +162,10 @@ PUBLIC_URL = "https://app.yala-app.pe"
 # Supabase PRODUCCIÓN (kefvaiymtgytemwbltlz): las mismas URL y anon key públicas que el gateway de producción.
 SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
-# El cliente OAuth CONFIDENCIAL de la web en Supabase producción, con vuelta https://app.yala-app.pe/auth/supabase/callback.
-# El mismo id va en los SQL de producción (`python3 webapp/supabase/sql_produccion.py <conector> <este-id> <carpeta>`).
-SUPABASE_OAUTH_CLIENT_ID = "PENDIENTE-registrar-cliente-oauth-web-en-supabase-produccion"
+# El cliente OAuth CONFIDENCIAL «Yala web» de Supabase producción (registrado el 2026-11-16), con vuelta
+# https://app.yala-app.pe/auth/supabase/callback. El mismo id está en el hook de producción (los SQL se generaron con
+# `python3 webapp/supabase/sql_produccion.py 00000000-0000-0000-0000-000000000000 <este-id> <carpeta>`).
+SUPABASE_OAUTH_CLIENT_ID = "79c7e38e-409e-470f-9151-81784a02760c"
 # La clave PÚBLICA del widget real de Turnstile (hostname app.yala-app.pe). El secreto va con `wrangler secret put`.
 TURNSTILE_SITE_KEY = "PENDIENTE-crear-widget-turnstile"
 
