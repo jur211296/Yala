@@ -7472,6 +7472,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "卡片币种";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "最大的几笔支出";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "%@ 子账户";
 

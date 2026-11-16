@@ -7460,6 +7460,9 @@
 /* Accessibility label of the picker that chooses which currency line of a card to show */
 "accountDetail.linePicker" = "Moeda do cartão";
 
+/* Account sheet: heading of the list with the biggest expenses of the account in the period */
+"analisisCuenta.largestTitle" = "Seus maiores gastos";
+
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "Linha em %@";
 
