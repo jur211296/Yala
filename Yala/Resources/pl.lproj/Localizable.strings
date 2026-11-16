@@ -3285,7 +3285,7 @@
 
 "contextualGuide.dismiss" = "Rozumiem";
 "guide.panel.title" = "To twój przegląd";
-"guide.panel.message" = "Zobacz na pierwszy rzut oka, ile wydałeś i ile zostało. Stuknij Nowy wpis, aby dodać wydatek.";
+"guide.panel.message" = "Zobacz na pierwszy rzut oka swoje saldo i swoje pieniądze na dziś. Stuknij Nowy wpis, aby dodać wydatek.";
 "guide.trends.title" = "Jak idą twoje finanse?";
 "guide.trends.message" = "Wykres pokazuje saldo, dochody lub wydatki w czasie. Gdy linia rośnie, ta wartość wzrosła.";
 "guide.categories.title" = "Gdzie idą twoje pieniądze?";
@@ -8905,12 +8905,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld z %2$lld: więcej się nie zmieści";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Masz dziś";
+"panel.hero.haveToday" = "Twoje saldo dziś";
 "panel.hero.oweToday" = "Dziś na minusie";
 "panel.hero.leftNow" = "Zostaje ci";
 "panel.hero.leftPast" = "Zostało ci";
 "panel.hero.leftInMonth" = "W miesiącu %@ zostało ci";
-"stats.hero.captionAccountsBalanceClosed" = "Saldo na koniec";
+"stats.hero.captionAccountsBalanceClosed" = "Twoje saldo na koniec";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Jeszcze bez oceny: pojawi się, gdy dwie z trzech części będą miały dane.";
@@ -9830,3 +9830,33 @@
 "rfr.choice.nextDue" = "Następne obciążenie: %@";
 "rfr.notice.linked" = "Połączono z „%@”";
 "rfr.notice.created" = "Utworzono płatność cykliczną · ta transakcja to jej pierwsza płatność";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Twoje pieniądze dziś";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "Co znaczą saldo i pieniądze";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Twoje saldo i pieniądze";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Sumuje wszystkie twoje konta, także karty. To, co wydałeś kartą i jeszcze nie spłaciłeś, jest odejmowane.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "Pieniądze, których możesz używać. To samo, ale bez kart kredytowych.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Przykład";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "Na twoim koncie oszczędnościowym";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Wydane kartą";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Gdy spłacisz kartę, obie kwoty będą równe.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Wybierz, które konta się liczą";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Karty kredytowe są na początku wyłączone. Możesz to zmienić w każdej chwili.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Konta, które się liczą";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Licz w „Twoje pieniądze dziś”";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Wyłącz, jeśli to nie są pieniądze do wydania, jak karta kredytowa.";

@@ -3274,7 +3274,7 @@
 
 "contextualGuide.dismiss" = "Verstanden";
 "guide.panel.title" = "Das ist deine Übersicht";
-"guide.panel.message" = "Sieh auf einen Blick, wie viel du ausgegeben hast und wie viel übrig ist. Tippe auf „Neuer Eintrag“, um eine Ausgabe hinzuzufügen.";
+"guide.panel.message" = "Sieh auf einen Blick deinen Saldo und dein Geld von heute. Tippe auf „Neuer Eintrag“, um eine Ausgabe hinzuzufügen.";
 "guide.trends.title" = "Wie steht es um dein Geld?";
 "guide.trends.message" = "Dieses Diagramm zeigt deinen Saldo, deine Einnahmen oder deine Ausgaben im Zeitverlauf. Steigt die Linie, ist dieser Wert gewachsen.";
 "guide.categories.title" = "Wofür gibst du Geld aus?";
@@ -8893,12 +8893,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld von %2$lld: mehr passt nicht";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Du hast heute";
+"panel.hero.haveToday" = "Dein Saldo heute";
 "panel.hero.oweToday" = "Du schuldest heute";
 "panel.hero.leftNow" = "Übrig";
 "panel.hero.leftPast" = "Übrig geblieben";
 "panel.hero.leftInMonth" = "Im %@ übrig geblieben";
-"stats.hero.captionAccountsBalanceClosed" = "Kontostand am Ende";
+"stats.hero.captionAccountsBalanceClosed" = "Dein Saldo am Ende";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Noch keine Note: Sie erscheint, sobald zwei der drei Teile Daten haben.";
@@ -9818,3 +9818,33 @@
 "rfr.choice.nextDue" = "Nächste Abbuchung: %@";
 "rfr.notice.linked" = "Mit „%@“ verknüpft";
 "rfr.notice.created" = "Wiederkehrende Zahlung angelegt · dieser Eintrag ist die erste Zahlung";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Dein Geld heute";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "Was Saldo und Geld bedeuten";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Dein Saldo und dein Geld";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Zählt alle deine Konten zusammen, auch die Karten. Was du mit Karte ausgegeben und noch nicht bezahlt hast, wird abgezogen.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "Das Geld, das du nutzen kannst. Dasselbe, nur ohne Kreditkarten.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Ein Beispiel";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "Auf deinem Sparkonto";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Mit deiner Karte ausgegeben";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Sobald du die Karte bezahlst, sind beide Beträge gleich.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Konten auswählen, die zählen";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Kreditkarten sind anfangs ausgeschaltet. Du kannst das jederzeit ändern.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Konten, die zählen";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "In „Dein Geld heute“ zählen";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Schalte es aus, wenn es kein Geld zum Nutzen ist, wie bei einer Kreditkarte.";

@@ -4,42 +4,26 @@
 //
 //  Qué cifras enseña el hero del Panel y cómo se llaman.
 //
-//  Desde la decisión 8 de la revisión 2.3 (9-nov-2026, opción C) el hero tiene dos cifras con un nombre cada una, el
-//  mismo en toda la app:
-//  - La GRANDE es lo que hay en las cuentas: «Tienes hoy» (o «Debes hoy» en rojo). No sigue al período: antes era el
-//    «Balance de noviembre» (lo que entró menos lo que salió) y se leía como «lo que tengo».
-//  - La LÍNEA del mes, debajo, es lo que entró menos lo que salió: «Te queda» en un período en curso, «Te quedó» en uno
-//    cerrado. Período y píldoras mueven solo esta línea: con una píldora puesta dice lo que filtra («Gastos de
-//    noviembre»), con las palabras de Estadísticas.
-//  - En «Solo gastos» el hero no cambia de forma: la cifra grande es el gasto del período («Gastos de noviembre»).
+//  Desde el 2026-11-16 (encargo «el saldo en grande, tu dinero en chico») el hero tiene dos cifras, las dos de HOY y sin
+//  seguir al período:
+//  - La GRANDE es «Tu saldo hoy»: todas las cuentas que suman en un saldo, tarjetas incluidas, con su signo. Si las
+//    tarjetas pesan más que el resto sale con menos delante: nunca «Debes hoy» (BRAND-VOICE §8).
+//  - La CHICA, debajo, es «Tu dinero hoy»: lo mismo sin las cuentas que no cuentan como dinero para usar (por defecto, las
+//    tarjetas de crédito). La calcula `PanelMoneyScopeLogic`, y solo se enseña si alguna cuenta queda fuera.
+//  La línea del mes («Te queda» y las flechas de ingresos y gastos) salió del hero: lo cuenta Flujo de caja.
+//  En «Solo gastos» el hero no cambia de forma: la cifra grande es el gasto del período («Gastos de noviembre»).
 //
 
 import Foundation
 
+/// Qué cuenta la cifra grande en «Solo gastos» (el gasto del período) y de qué lado habla un rótulo.
 enum PanelHeroFigure: Equatable {
     case balance
     case expense
     case income
-
-    /// La cifra que cuenta cada caso. El balance puede ser negativo: la línea «Entró − salió» de debajo tiene que
-    /// cuadrar con él, y «Disponible» se quedaba en 0 cuando salía más de lo que entraba.
-    func value(income: Double, expense: Double) -> Double {
-        switch self {
-        case .balance: return income - expense
-        case .expense: return expense
-        case .income: return income
-        }
-    }
 }
 
 enum PanelHeroFigureLogic {
-
-    /// La píldora puesta decide la cifra. `natures` es el filtro global de naturaleza; con las dos o ninguna, balance.
-    static func figure(natures: Set<TransactionNature>) -> PanelHeroFigure {
-        if natures == [.expense] { return .expense }
-        if natures == [.income] { return .income }
-        return .balance
-    }
 
     /// Mes al que pone nombre el rótulo, o `nil` si el período no es un mes de calendario.
     static func namedMonth(
@@ -57,41 +41,13 @@ enum PanelHeroFigureLogic {
         }
     }
 
-    /// Cómo se llama la cifra grande: lo que hay en las cuentas, o lo que se debe si el saldo está en rojo.
-    /// «Debes» empieza donde la cifra redondeada a céntimos ya no es cero, para no decir «Debes hoy S/ 0.00».
-    static func bigFigureCaption(totalBalance: Double) -> PanelHeroBigCaption {
-        totalBalance <= -0.005 ? .oweToday : .haveToday
-    }
-
-    /// La cifra grande va sin signo: el rótulo ya dice si es deuda.
+    /// La cifra grande: el saldo tal cual, con su signo. «Tu saldo hoy −S/ 500» dice la verdad sin un rótulo de deuda.
     static func bigFigureValue(totalBalance: Double) -> Double {
-        abs(totalBalance)
+        totalBalance
     }
 
-    /// Qué dice la línea del mes. El neto va en presente en un período en curso y en pasado en uno cerrado; el mes
-    /// pasado lleva su nombre. Con una píldora puesta, el lado que filtra con el nombre de su mes.
-    static func monthLine(
-        figure: PanelHeroFigure,
-        period: DetailPeriod,
-        customRange: DateInterval?,
-        now: Date = .now,
-        calendar: Calendar = userConfiguredCalendar()
-    ) -> PanelHeroMonthLine {
-        let month = namedMonth(for: period, now: now, calendar: calendar)
-        switch figure {
-        case .expense: return .expense(month: month)
-        case .income: return .income(month: month)
-        case .balance:
-            guard PeriodTenseLogic.isClosed(period: period, customRange: customRange, now: now, calendar: calendar) else {
-                return .leftNow
-            }
-            if period == .lastMonth, let month { return .leftInMonth(month) }
-            return .leftPast
-        }
-    }
-
-    /// El rótulo del lado que filtra una píldora, o de la cifra en «Solo gastos». Sin el período cuando no es un mes
-    /// (la píldora de al lado ya lo dice).
+    /// El rótulo de la cifra en «Solo gastos» («Gastos de noviembre»). Sin el período cuando no es un mes (la píldora de
+    /// al lado ya lo dice).
     static func label(
         figure: PanelHeroFigure,
         period: DetailPeriod,
@@ -101,7 +57,7 @@ enum PanelHeroFigureLogic {
         let month = namedMonth(for: period, now: now, calendar: calendar)
         switch figure {
         case .balance:
-            return PanelHeroMonthLine.leftNow.text
+            return L10n.Panel.Hero.haveToday
         case .expense:
             return PanelHeroMonthLine.expense(month: month).text
         case .income:
@@ -133,37 +89,16 @@ enum PanelHeroFigureLogic {
     }
 }
 
-/// El nombre de la cifra grande del Panel (decisión 8 de 2.3).
-enum PanelHeroBigCaption: Equatable {
-    case haveToday
-    case oweToday
-
-    var text: String {
-        switch self {
-        case .haveToday: return L10n.Panel.Hero.haveToday
-        case .oweToday: return L10n.Panel.Hero.oweToday
-        }
-    }
-}
-
-/// El rótulo de la línea del mes del Panel. El texto se resuelve aparte para que los tests comparen casos.
+/// El rótulo de un lado del período («Gastos de noviembre», «Ingresos de noviembre»). El texto se resuelve aparte para
+/// que los tests comparen casos.
 enum PanelHeroMonthLine: Equatable {
-    /// Lo que entró menos lo que salió, en un período en curso: «Te queda».
-    case leftNow
-    /// Lo mismo en un período cerrado: «Te quedó».
-    case leftPast
-    /// El mes pasado, con su nombre: «En octubre te quedó».
-    case leftInMonth(Date)
-    /// Con la píldora de gastos: «Gastos de noviembre» (o «del período» si no es un mes).
+    /// Gastos: «Gastos de noviembre» (o «del período» si no es un mes).
     case expense(month: Date?)
-    /// Con la píldora de ingresos: «Ingresos de noviembre».
+    /// Ingresos: «Ingresos de noviembre».
     case income(month: Date?)
 
     var text: String {
         switch self {
-        case .leftNow: return L10n.Panel.Hero.leftNow
-        case .leftPast: return L10n.Panel.Hero.leftPast
-        case .leftInMonth(let month): return L10n.Panel.Hero.leftInMonth(PanelHeroFigureLogic.monthName(month))
         case .expense(let month):
             guard let month else { return StatsHeroCaption.expensePeriod.text(isClosed: false) }
             return L10n.Panel.Hero.expensesOfMonth(PanelHeroFigureLogic.monthName(month))

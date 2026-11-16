@@ -199,3 +199,26 @@ enum SecondaryCurrencySuggestionLogic {
             .filter { !$0.isEmpty }
     }
 }
+
+// MARK: - «Sumar en Tu dinero hoy» (2026-11-16)
+
+/// El interruptor del formulario que decide si la cuenta suma en «Tu dinero hoy», la cifra chica del hero del Panel.
+enum AccountMoneyToggleLogic {
+
+    /// Se ve si la cuenta suma en un saldo y tiene su propio ajuste. Archivada o excluida de las estadísticas no suma en
+    /// ningún saldo, así que el interruptor no haría nada; una línea en otra divisa sigue a su tarjeta.
+    static func showsToggle(isArchived: Bool, excludeFromStatistics: Bool, ownsCardSettings: Bool) -> Bool {
+        !isArchived && !excludeFromStatistics && ownsCardSettings
+    }
+
+    /// El valor con que abre: lo guardado para esa cuenta o, si nadie lo cambió (o la cuenta es nueva), el de su tipo.
+    static func initialValue(shortcutID: UUID?, type: AccountType, overrides: [UUID: Bool]) -> Bool {
+        if let shortcutID, let chosen = overrides[shortcutID] { return chosen }
+        return PanelMoneyScopeLogic.countsByDefault(type: type)
+    }
+
+    /// Al cambiar el tipo, el interruptor sigue al tipo nuevo mientras la persona no lo haya tocado.
+    static func valueAfterTypeChange(current: Bool, wasChosen: Bool, newType: AccountType) -> Bool {
+        wasChosen ? current : PanelMoneyScopeLogic.countsByDefault(type: newType)
+    }
+}
