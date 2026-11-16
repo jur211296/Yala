@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
 <style>
-/* Layout: una columna de informe (≈ 760 px) con bandas por pregunta: ¿qué hay?, ¿qué falta y en qué orden?, ¿qué dominio?, ¿qué hace Dan? */
+/* Layout: una columna de informe (≈ 760 px) con bandas por pregunta: ¿qué quedó arriba?, ¿cómo se probó?, ¿qué falta y quién lo hace? */
 :root {
   --bg: #f5f6fa;
   --surface: #ffffff;
@@ -96,132 +96,91 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
 
 <main>
   <header>
-    <span class="eyebrow">Yala web · salida a producción · 15 nov 2026</span>
+    <span class="eyebrow">Yala web · producción · 16 nov 2026</span>
     <h1>Yala web a producción</h1>
-    <p class="lead">La escritura en Grupos sale a producción junto con toda la web. Esta noche quedó todo preparado y probado contra staging; en producción todavía no hay nada aplicado ni desplegado. Lo que falta es una decisión tuya, cuatro comprobaciones de panel de Dan y una sesión de encendido.</p>
+    <p class="lead">La nube de producción ya reconoce a Yala web, Grupos está encendido para la web y la dirección <code>app.yala-app.pe</code> está viva, sin enlace desde la web pública. Falta el widget anti-bots para que deje entrar a alguien y dos comprobaciones de Apple y Google.</p>
   </header>
 
   <section aria-labelledby="estado">
     <h2 id="estado">En una mirada</h2>
     <div class="verdict">
-      <div class="line"><span class="pill stop">Producción</span><span>Nada aplicado ni desplegado. Medido el 15-nov en Supabase y en Cloudflare.</span></div>
-      <div class="line"><span class="pill ok">Preparado</span><span>Worker de producción escrito y validado, SQL de producción generados y probados, política de privacidad en seis idiomas.</span></div>
-      <div class="line"><span class="pill warn">Te espera</span><span>Tu OK para encender el hook de token en el login de producción, y el dominio.</span></div>
-      <div class="line"><span class="pill acc">Dominio</span><span>El DNS de yala-app.pe ya está en Cloudflare desde el 5-nov: no hay que mover nada.</span></div>
+      <div class="line"><span class="pill ok">Arriba</span><span>Supabase de producción con todo lo de la web, el hook de token encendido y Apple y Google configurados para la web.</span></div>
+      <div class="line"><span class="pill ok">Probado</span><span>Login y renovación reales en producción tras encender el hook: el token de la app sale igual que antes.</span></div>
+      <div class="line"><span class="pill warn">Cerrada</span><span><code>app.yala-app.pe</code> responde, pero rechaza todo (503) hasta que tenga su widget de Turnstile.</span></div>
+      <div class="line"><span class="pill ok">Grupos</span><span>Lectura y escritura de la web encendidas en el gateway de producción (opción A que elegiste hoy).</span></div>
     </div>
   </section>
 
-  <section aria-labelledby="hay">
-    <h2 id="hay">Qué hay hoy, pieza por pieza</h2>
+  <section aria-labelledby="piezas">
+    <h2 id="piezas">Qué hay en producción, pieza por pieza</h2>
     <div class="rows">
-      <div class="row"><div class="k">Supabase producción</div><div class="v"><span class="pill stop">vacío</span><span>No tiene el rol de solo lectura, ni el hook de token, ni el servidor OAuth (0 clientes), ni el programador de tareas (<code>pg_cron</code>). Apple y Google solo conocen la app, no la web. Las tablas y funciones de Grupos son idénticas a staging (comparado firma por firma).</span></div></div>
-      <div class="row"><div class="k">SQL de la web</div><div class="v"><span class="pill ok">listos y probados</span><span>Un generador cambia los ids de staging por los de producción y recalcula las guardas. Probado en staging, simulando un proyecto sin conector como el de producción: aplica, vuelve atrás limpio y se reaplica idéntico.</span></div></div>
-      <div class="row"><div class="k">Worker de la web</div><div class="v"><span class="pill ok">escrito, sin desplegar</span><span>Entorno de producción en <code>wrangler.toml</code>: Supabase y gateway de producción, sus propios límites y el dominio. Mientras falte el KV, el cliente OAuth o el widget de Turnstile, responde 503 a todo.</span></div></div>
-      <div class="row"><div class="k">Dominio</div><div class="v"><span class="pill acc">libre</span><span><code>app.yala-app.pe</code> no existe todavía. La zona está en la misma cuenta de Cloudflare de los Workers, que ya sirve <code>mcp.yala-app.pe</code> y <code>panel.yala-app.pe</code>.</span></div></div>
-      <div class="row"><div class="k">Gateway</div><div class="v"><span class="pill warn">falta encender</span><span>El de producción no tiene encendidas la lectura ni la escritura de Grupos para la web, y su último despliegue aún no lleva el lote 3.</span></div></div>
-      <div class="row"><div class="k">App del iPhone</div><div class="v"><span class="pill warn">no conoce la web</span><span>«Navegadores conectados», vincular por QR y recoger lo apuntado en la web existen solo en Yala Dev. La app publicada no tiene la dirección de la web de producción.</span></div></div>
-      <div class="row"><div class="k">Privacidad</div><div class="v"><span class="pill ok">redactada</span><span>Nuevo punto «Yala en el navegador» en la sección 4: la sesión, el navegador y el sistema, la ciudad aproximada (nunca la IP), cuánto dura y dónde se cierra. Se publica cuando pase a la rama <code>1.0</code>.</span></div></div>
+      <div class="row"><div class="k">Base de la nube</div><div class="v"><span class="pill ok">aplicada</span><span>El rol de solo lectura, el hook de token, lo que la web lee de la Bandeja y de Grupos, cerrar sesiones web desde el iPhone, su barrido diario y la escritura en Grupos con permiso propio. Siete pasos, uno a uno, comprobando el hook tras cada uno.</span></div></div>
+      <div class="row"><div class="k">Login de la nube</div><div class="v"><span class="pill ok">encendido</span><span>Hook de token y servidor OAuth (sin registro abierto). Cliente «Yala web» registrado. Apple aprende el identificador web <code>pe.yala.app.web</code> y Google su cliente web, delante de los de la app. Vuelta permitida: <code>https://app.yala-app.pe/auth/callback</code>.</span></div></div>
+      <div class="row"><div class="k">Yala web</div><div class="v"><span class="pill warn">desplegada, cerrada</span><span>En <code>https://app.yala-app.pe</code>, con su certificado, sus sesiones propias y el secreto del cliente subido. Hasta tener Turnstile responde 503: falla cerrada a propósito.</span></div></div>
+      <div class="row"><div class="k">Grupos en la web</div><div class="v"><span class="pill ok">encendido</span><span>El código del gateway negaba Grupos a la web en producción aunque el interruptor estuviera encendido. Quité esa condición (opción A) y desplegué el gateway desde 2.3. Con ese despliegue llegó también el cupo de recibos de Grupos. La app del iPhone 14 sincroniza Grupos igual después.</span></div></div>
+      <div class="row"><div class="k">App del iPhone</div><div class="v"><span class="pill acc">sin cambios</span><span>La app publicada no conoce la web: lo apuntado en la web no llega a su Bandeja (solo a quien tenga el correo del banco preparado). Eso llega con la 2.3 del iPhone.</span></div></div>
+      <div class="row"><div class="k">Web pública</div><div class="v"><span class="pill acc">intacta</span><span><code>yala-app.pe</code> sigue en Vercel y no enlaza a la web de la app.</span></div></div>
     </div>
   </section>
 
-  <section aria-labelledby="decision">
-    <h2 id="decision">La decisión que te toca</h2>
-    <div class="callout">
-      <h3>Encender el hook de token en el login de producción</h3>
-      <p>Para que la web entre, Supabase tiene que marcar sus tokens como «solo la web». Lo hace una función que corre en <b>cada inicio de sesión y cada renovación de toda la app</b>, no solo de la web. Si esa función fallara, nadie podría entrar a su cuenta en la nube. Por eso no la encendí.</p>
-      <p><b>Lo que la hace segura:</b> con el login normal de la app devuelve el token tal cual (medido en staging desde el 13-nov), y apagarla es un solo cambio de configuración con efecto inmediato. <b>Mi recomendación:</b> encenderla en una ventana tranquila, comprobar en el iPhone que el login sigue igual, y seguir con los pasos 4 a 9.</p>
-    </div>
+  <section aria-labelledby="prueba">
+    <h2 id="prueba">Cómo se probó antes de tocar nada</h2>
+    <div class="tests"><ul>
+      <li><span class="pill ok">staging</span><span>Las marchas atrás y los cuatro SQL de la web, en una transacción que se deshace. La primera corrida cazó un fallo: la marcha atrás de Grupos dejaba una función que añadió el arreglo del 15-nov. Arreglado.</span></li>
+      <li><span class="pill ok">simulación</span><span>La cadena de producción entera sobre staging sin conector: aplica, vuelve atrás limpia y se reaplica idéntica.</span></li>
+      <li><span class="pill ok">ensayo</span><span>La misma cadena <strong>dentro de producción</strong>: aplicar, volver atrás, reaplicar y volver atrás, en una transacción que el final deshace. Las huellas coincidieron con la simulación.</span></li>
+      <li><span class="pill ok">hook</span><span>Llamado con las 21 sesiones de la app que había en producción: las 21 salen intactas. La web sale con su rol; un cliente desconocido, rechazado.</span></li>
+      <li><span class="pill ok">login real</span><span>Con el hook encendido: una cuenta de prueba desechable entra y renueva su sesión en producción, con el mismo token de siempre. Se borró al acabar.</span></li>
+      <li><span class="pill ok">teléfono</span><span>La app de producción del iPhone 14 (cuenta de prueba) renovó su sesión con el hook encendido y sigue «Todo sincronizado»; tras desplegar el gateway, Grupos carga igual.</span></li>
+    </ul></div>
   </section>
 
-  <section aria-labelledby="orden">
-    <h2 id="orden">Qué falta, en este orden</h2>
+  <section aria-labelledby="falta">
+    <h2 id="falta">Qué falta, en este orden</h2>
     <ol class="steps">
-      <li><div><h3>Decidir el hook y el dominio</h3><span class="who">Jürgen · en la card «Espera decisión»</span><p class="muted">Recomendado: encender el hook y usar <code>app.yala-app.pe</code>.</p></div></li>
-      <li><div><h3>Crear el widget de Turnstile</h3><span class="who">Dan · panel de Cloudflare</span><p class="muted">Checklist abajo. La clave pública va a <code>wrangler.toml</code>; la secreta, a 1Password.</p></div></li>
-      <li><div><h3>Darle a Supabase las vueltas de la web</h3><span class="who">Dan · Apple Developer y Google Cloud</span><p class="muted">Sin esto, Apple y Google rechazan el login de la web en producción.</p></div></li>
-      <li><div><h3>La base en Supabase</h3><span class="who">sesión de encendido · Management API</span><p class="muted">Cliente OAuth de la web (vuelta <code>https://app.yala-app.pe/auth/supabase/callback</code>), los tres SQL del conector y los cuatro de la web, generados con ese id. Después, en Auth: hook encendido, servidor OAuth encendido sin registro abierto, Apple con <code>pe.yala.app.web</code> primero, Google con el cliente web primero, y <code>https://app.yala-app.pe/auth/callback</code> en la lista de vueltas. El conector no se despliega: su id va como uuid nulo.</p></div></li>
-      <li><div><h3>Desplegar el Worker</h3><span class="who">sesión de encendido · wrangler</span><p class="muted">Crear el KV, subir los dos secretos y <code>wrangler deploy --env production</code>. El dominio y su certificado salen solos.</p></div></li>
-      <li><div><h3>Encender Grupos en el gateway</h3><span class="who">sesión de encendido</span><p class="muted">Desplegar el gateway de producción desde 2.3 con la lectura y la escritura de la web en «on». Es el último interruptor y el que corta Grupos si algo va mal.</p></div></li>
-      <li><div><h3>La app que habla con la web</h3><span class="who">versión 2.3 del iPhone</span><p class="muted">Poner la dirección de producción en la configuración de «Navegadores conectados». Sin ella, lo apuntado en la web solo llega a quien tenga el correo del banco preparado.</p></div></li>
-      <li><div><h3>Publicar la política</h3><span class="who">cherry-pick a <code>1.0</code></span><p class="muted">Vercel publica desde <code>1.0</code>. Antes de abrir la web a nadie.</p></div></li>
-      <li><div><h3>Probar de punta a punta</h3><span class="who">iPhone 14 + navegador</span><p class="muted">Entrar con Apple y con Google, ver Panel y Grupos, apuntar un gasto y verlo en la Bandeja, saldar en un grupo de prueba, cerrar la sesión desde el iPhone.</p></div></li>
+      <li><div><h3>Widget de Turnstile</h3><span class="who">Dan · panel de Cloudflare</span><p>Sin él la web no deja entrar a nadie. Detalle abajo.</p></div></li>
+      <li><div><h3>Apple y Google conocen la vuelta de producción</h3><span class="who">Dan · Apple Developer y Google Cloud</span><p>Sin esto, Apple y Google rechazan el login de la web.</p></div></li>
+      <li><div><h3>Probar de punta a punta</h3><span class="who">Frank · navegador + iPhone 14</span><p>Entrar con Apple y con Google en una cuenta de prueba, ver el mismo saldo que en el iPhone y apuntar un borrador.</p></div></li>
+      <li><div><h3>La app que recoge lo apuntado en la web</h3><span class="who">versión 2.3 del iPhone</span><p>Poner la dirección de producción en la configuración de «Navegadores conectados». Fuera de este encargo.</p></div></li>
     </ol>
-  </section>
-
-  <section aria-labelledby="dominio">
-    <h2 id="dominio">Dónde vive la web</h2>
-    <p class="muted">El encargo partía de que había que mover el DNS desde RCP. Ya no: la zona está en Cloudflare desde el 5-nov y la web pública sigue sirviéndose desde Vercel a través de su proxy.</p>
-    <div class="options">
-      <article class="opt rec">
-        <span class="pill acc" style="justify-self:start">Recomendada</span>
-        <h3>A · app.yala-app.pe</h3>
-        <p>Dominio propio del Worker. Cloudflare crea el registro y el certificado al desplegar.</p>
-        <dl><dt>Caída</dt><dd>ninguna: no toca el dominio principal ni Vercel</dd><dt>Tiempo</dt><dd>minutos, dentro del despliegue</dd><dt>Riesgo</dt><dd>bajo; mismo mecanismo que mcp y panel</dd></dl>
-      </article>
-      <article class="opt">
-        <h3>B · workers.dev temporal</h3>
-        <p><code>yala-web-production.misty-surf-6866.workers.dev</code> mientras tanto.</p>
-        <dl><dt>Caída</dt><dd>ninguna</dd><dt>Tiempo</dt><dd>inmediato</dd><dt>Riesgo</dt><dd>dirección poco confiable para el usuario; al pasar al dominio, todos vuelven a entrar y hay que rehacer widget y vueltas</dd></dl>
-      </article>
-      <article class="opt">
-        <h3>C · otro subdominio</h3>
-        <p><code>web.yala-app.pe</code> o <code>cuenta.yala-app.pe</code>, igual que A.</p>
-        <dl><dt>Caída</dt><dd>ninguna</dd><dt>Tiempo</dt><dd>minutos</dd><dt>Riesgo</dt><dd>el mismo que A; solo cambia el nombre (cuatro sitios)</dd></dl>
-      </article>
-      <article class="opt">
-        <h3>D · mover la zona</h3>
-        <p>La opción del encargo: llevar yala-app.pe a Cloudflare replicando lo de Vercel.</p>
-        <dl><dt>Estado</dt><dd>ya está hecho desde el 5-nov</dd><dt>Riesgo</dt><dd>no aplica</dd></dl>
-      </article>
-    </div>
   </section>
 
   <section aria-labelledby="dan">
     <h2 id="dan">Checklist para Dan</h2>
-    <p class="muted">Solo después del OK de Jürgen en la card. Ningún secreto va al chat: a 1Password o directo a Jürgen.</p>
     <div class="check">
       <h3>1 · Widget de Turnstile</h3>
       <ul>
         <li>Cuenta: Cloudflare «Admin@yala-app.pe's Account».</li>
         <li>URL: <span class="url">https://dash.cloudflare.com/86c270a7776be98639700bd5959b303b/turnstile</span></li>
-        <li>Add widget → nombre «Yala web (producción)», hostname <code>app.yala-app.pe</code> (el que elija Jürgen), modo Managed, sin pre-clearance.</li>
-        <li>Objetivo: la clave pública (empieza por <code>0x4</code>) y la secreta, guardada en 1Password como «Yala web · Turnstile producción».</li>
+        <li>Add widget → «Yala web (producción)», hostname <code>app.yala-app.pe</code>, modo Managed, sin pre-clearance.</li>
+        <li>Entrega: la clave pública (empieza por <code>0x4</code>) puede ir por el chat; la secreta, a la Mini en <code>~/Secrets/yala-web-production/turnstile-secret.txt</code>, nunca por el chat.</li>
       </ul>
     </div>
     <div class="check">
-      <h3>2 · DNS: comprobar, no cambiar</h3>
-      <ul>
-        <li>URL: <span class="url">https://dash.cloudflare.com/86c270a7776be98639700bd5959b303b/yala-app.pe/dns/records</span></li>
-        <li>Objetivo: confirmar que no existe ningún registro <code>app</code>. Si existe, no tocarlo y avisar: el despliegue fallaría.</li>
-        <li>No mover nameservers ni tocar los registros de Vercel ni los MX de Google.</li>
-      </ul>
-    </div>
-    <div class="check">
-      <h3>3 · Apple: vuelta de Supabase producción</h3>
+      <h3>2 · Apple: vuelta de Supabase producción</h3>
       <ul>
         <li>URL: <span class="url">https://developer.apple.com/account/resources/identifiers/list/serviceId</span> (equipo 3WKFFVD66J).</li>
-        <li>Services ID <code>pe.yala.app.web</code> → Sign In with Apple → Configure → Return URLs: añadir <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. No quitar las que hay.</li>
+        <li>Services ID <code>pe.yala.app.web</code> → Sign In with Apple → Configure. Domains: <code>kefvaiymtgytemwbltlz.supabase.co</code>. Return URLs: <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. Sin quitar lo que hay.</li>
       </ul>
     </div>
     <div class="check">
-      <h3>4 · Google: vuelta de Supabase producción</h3>
+      <h3>3 · Google: comprobar la vuelta</h3>
       <ul>
-        <li>URL: <span class="url">https://console.cloud.google.com/apis/credentials?authuser=1</span></li>
-        <li>Cliente OAuth web «Yala Web (MCP)» → Authorized redirect URIs: si falta, añadir <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. No quitar las que hay.</li>
+        <li>URL: <span class="url">https://console.cloud.google.com/apis/credentials?authuser=1</span> (proyecto yala-502622).</li>
+        <li>Cliente web «Yala Web (MCP)»: que esté <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. La copia local del cliente dice que ya está.</li>
       </ul>
     </div>
   </section>
 
-  <section aria-labelledby="pruebas">
-    <h2 id="pruebas">Qué se probó</h2>
-    <div class="tests"><ul>
-      <li><span class="pill ok">ok</span><span>Los cuatro SQL y sus marchas atrás, de punta a punta en staging, dentro de una transacción que se deshace: staging no cambió.</span></li>
-      <li><span class="pill warn">arreglado</span><span>La primera corrida cazó un fallo: la marcha atrás de la escritura en Grupos dejaba el hook con otro cuerpo y la siguiente marcha atrás se negaba. Ahora restaura el cuerpo exacto.</span></li>
-      <li><span class="pill ok">ok</span><span>La cadena de producción entera (conector y web, con ids de producción) sobre staging sin conector: aplica, vuelve atrás y se reaplica idéntica.</span></li>
-      <li><span class="pill ok">ok</span><span>El entorno de producción del Worker: validación de wrangler sin errores, 167 tests (6 nuevos que leen <code>wrangler.toml</code>) y dos mutantes que los tests cazan.</span></li>
-      <li><span class="pill ok">ok</span><span>La política compila en los seis idiomas y el párrafo nuevo sale en cada página.</span></li>
-    </ul></div>
+  <section aria-labelledby="atras">
+    <h2 id="atras">Si algo va mal</h2>
+    <div class="callout">
+      <p><strong>Login de la app:</strong> apagar el hook de token en Supabase es un solo cambio de configuración, con efecto inmediato.</p>
+      <p><strong>La base:</strong> las siete marchas atrás, ya probadas dentro de producción, dejan la huella de partida. Hay copia física diaria de Supabase y una foto de la configuración de login de antes.</p>
+      <p><strong>Grupos en la web:</strong> quitar los dos interruptores del gateway y desplegarlo, o volver a la versión anterior del gateway (la del 14-nov) con un comando. El resto de la app no depende de ellos.</p>
+      <p><strong>La web:</strong> sin enlace público; borrar el dominio propio del Worker la quita de internet.</p>
+    </div>
   </section>
 
-  <footer>Fuente: <code>docs/web-app/produccion/index.html</code> · medido el 15-nov-2026 · detalle técnico en <code>webapp/README.md</code>, sección «Producción».</footer>
+  <footer>Fuente: <code>docs/web-app/produccion/index.html</code> · medido el 16-nov-2026 · detalle técnico en <code>webapp/README.md</code>, sección «Producción».</footer>
 </main>
