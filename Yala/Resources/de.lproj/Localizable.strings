@@ -9851,3 +9851,77 @@
 "panel.saldo.countsToggle" = "In „Dein Geld heute“ zählen";
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Schalte es aus, wenn es kein Geld zum Nutzen ist, wie bei einer Kreditkarte.";
+
+/* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
+/* Card design editor: sheet title */
+"cardDesign.title" = "Kartendesign";
+/* Context menu action on an account card in the Panel */
+"cardDesign.open" = "Karte gestalten";
+/* VoiceOver label of the palette button on an account card. %@ = account name */
+"cardDesign.openFor" = "Karte %@ gestalten";
+/* Card design editor: save */
+"cardDesign.save" = "Speichern";
+/* Card design editor: cancel */
+"cardDesign.cancel" = "Abbrechen";
+/* Card design editor: restore the default design */
+"cardDesign.reset" = "Zurück zum ursprünglichen Design";
+/* VoiceOver, appended to an account card: last 4 digits. %@ = 4 digits */
+"cardDesign.endingIn" = "endet auf %@";
+"cardDesign.section.templates" = "Vorlagen";
+"cardDesign.section.color" = "Farbe";
+"cardDesign.section.pattern" = "Muster";
+"cardDesign.section.icon" = "Symbol";
+"cardDesign.section.details" = "Details";
+"cardDesign.color.template" = "Farbe der Vorlage";
+"cardDesign.color.account" = "Farbe deines Kontos";
+"cardDesign.color.custom" = "Andere Farbe";
+/* VoiceOver label of a color swatch. %d = its number */
+"cardDesign.color.swatch" = "Farbe %d";
+"cardDesign.icon.account" = "Symbol deines Kontos";
+/* VoiceOver label of an icon choice. %d = its number */
+"cardDesign.icon.choice" = "Symbol %d";
+"cardDesign.chip" = "Chip anzeigen";
+"cardDesign.lastFour.title" = "Letzte 4 Ziffern";
+"cardDesign.lastFour.prompt" = "Optional, z. B. 1256";
+/* Card design editor: help under the last-4-digits field. Only 4 digits are ever stored */
+"cardDesign.lastFour.footer" = "Nur die letzten 4 Ziffern, damit du die Karte auf einen Blick erkennst. Yala fragt nie nach der vollständigen Nummer.";
+"cardDesign.category.gradients" = "Verläufe";
+"cardDesign.category.metallic" = "Metallisch";
+"cardDesign.category.minimal" = "Minimalistisch";
+"cardDesign.category.dark" = "Dunkel";
+"cardDesign.category.pastel" = "Pastell";
+"cardDesign.category.patterned" = "Mit Muster";
+"cardDesign.template.account" = "Deine Farbe";
+"cardDesign.template.aurora" = "Aurora";
+"cardDesign.template.forest" = "Wald";
+"cardDesign.template.ocean" = "Ozean";
+"cardDesign.template.sunset" = "Sonnenuntergang";
+"cardDesign.template.raspberry" = "Himbeere";
+"cardDesign.template.gold" = "Gold";
+"cardDesign.template.silver" = "Silber";
+"cardDesign.template.graphite" = "Graphit";
+"cardDesign.template.roseGold" = "Roségold";
+"cardDesign.template.bronze" = "Bronze";
+"cardDesign.template.snow" = "Schnee";
+"cardDesign.template.sand" = "Sand";
+"cardDesign.template.mist" = "Nebel";
+"cardDesign.template.ink" = "Tinte";
+"cardDesign.template.midnight" = "Mitternacht";
+"cardDesign.template.obsidian" = "Obsidian";
+"cardDesign.template.charcoal" = "Kohle";
+"cardDesign.template.borealis" = "Polarlicht";
+"cardDesign.template.lavender" = "Lavendel";
+"cardDesign.template.mint" = "Minze";
+"cardDesign.template.peach" = "Pfirsich";
+"cardDesign.template.sky" = "Himmel";
+"cardDesign.template.neon" = "Neon";
+"cardDesign.template.terrain" = "Relief";
+"cardDesign.template.mosaic" = "Mosaik";
+"cardDesign.template.polkadot" = "Tupfen";
+"cardDesign.pattern.none" = "Keins";
+"cardDesign.pattern.grid" = "Raster";
+"cardDesign.pattern.waves" = "Wellen";
+"cardDesign.pattern.lines" = "Linien";
+"cardDesign.pattern.dots" = "Punkte";
+"cardDesign.pattern.topographic" = "Topografisch";
+"cardDesign.pattern.diamonds" = "Rauten";

@@ -102,3 +102,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Cuenta nueva y web en el iPhone 14](reference_cuenta_nueva_y_web_en_el_iphone_14.md) — eliminar test@ libera «Vamos a crear tu cuenta»; web staging en Safari por devicectl.
 - [Safari del iPhone 14 sin open_url](reference_safari_del_iphone_14_sin_open_url.md) — open_url pide aprobación; teclado español rompe URLs; recargar y pellizcar.
 - [Cancelar la entrada en el iPhone 14](reference_reproducir_cancelar_la_entrada_en_el_iphone_14.md) — 8 toques en ráfaga; el daño sale al reabrir; -uitest-reset deja la sesión.
+- [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.

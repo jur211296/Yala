@@ -17,6 +17,7 @@ struct PanelPanoramaSection: View {
     let healthVisible: Bool
     @Binding var accountFormSheet: AccountFormSheet?
     @Binding var accountDetail: AccountDetailPresentation?
+    @Binding var cardDesignEditor: CardDesignEditorPresentation?
     @Binding var showUpgradeForAccounts: Bool
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -112,6 +113,7 @@ struct PanelPanoramaSection: View {
                     accountsSortOrderNames: accountsSortOrderNames,
                     accountFormSheet: $accountFormSheet,
                     accountDetail: $accountDetail,
+                    cardDesignEditor: $cardDesignEditor,
                     showUpgradeForAccounts: $showUpgradeForAccounts
                 )
             }
