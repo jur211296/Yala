@@ -114,7 +114,7 @@ final class GroupsNecesarias23Lote06UITests: XCTestCase {
 
     func test_expenseAmount_hasAName() {
         let app = openGroup(crossGroup, tab: "records")
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let amount = app.textFields["group_expense_amount"]

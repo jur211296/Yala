@@ -9111,3 +9111,21 @@
 "panel.saldo.countsToggle" = "Sumar en «Tu dinero hoy»";
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Apágalo si no es dinero para usar, como una tarjeta de crédito.";
+
+/* Grupos: voz, foto y Yala IA como en personal (2026-11-16) */
+/* Group photo sheet title, like 'Add with a photo or file' in personal */
+"gruposCaptura.photo.title" = "Repartir con foto o archivo";
+/* Group photo sheet subtitle */
+"gruposCaptura.photo.subtitle" = "Un recibo o un PDF. Leo cada línea para repartirla entre el grupo.";
+/* Step shown while reading a receipt photo in a group */
+"gruposCaptura.photo.readingStep" = "Buscando cada línea";
+/* Confirmation message before recording again or choosing another photo with a split on screen */
+"gruposCaptura.discard.message" = "Se pierde el reparto que hemos hecho.";
+/* Yala AI greeting inside a group */
+"gruposCaptura.chat.greeting" = "Hola, soy Yala IA. Cuéntame el gasto y quién consumió qué, y lo reparto entre el grupo.";
+/* Yala AI input placeholder inside a group */
+"gruposCaptura.chat.placeholder" = "Escribe el gasto…";
+/* Yala AI reply before showing the split */
+"gruposCaptura.chat.reply" = "Así lo repartiría:";
+/* Button to open the full split review from the chat */
+"gruposCaptura.chat.adjust" = "Ajustar";

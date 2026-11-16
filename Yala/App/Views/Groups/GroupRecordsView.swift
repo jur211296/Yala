@@ -52,6 +52,9 @@ struct GroupRecordsView: View {
     var budgetProgress: GroupBudgetProgress?
     /// Color del grupo, para la barra. Va como hex suelto porque esta vista no recibe el `SplitGroup`.
     var budgetColorHex: String = "#8B5CF6"
+    /// El «+» flotante del detalle: `true` cuando el scroll se lleva la fila de «Nuevo gasto» (la pieza de Panel,
+    /// Registros, Presupuestos y Pagos). Sin gastos no hay scroll y se queda apagado. nil → nadie lo enseña.
+    var showsFloatingNew: Binding<Bool>?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -77,6 +80,8 @@ struct GroupRecordsView: View {
                     )
                 }
                 .transition(.stateSwap)
+                // Sin gastos la fila está siempre a la vista: si el último se borró con el flotante fuera, se apaga.
+                .onAppear { showsFloatingNew?.wrappedValue = false }
             } else {
                 recordsScroll
                     .transition(.identity)
@@ -118,6 +123,7 @@ struct GroupRecordsView: View {
                 quickActions
                     .padding(.bottom, DS.Spacing.sm)
                     .transaction { $0.animation = nil }
+                    .modifier(FloatingNewReveal(showsFloating: showsFloatingNew))
                 // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
                 // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
                 if let budgetProgress {
@@ -463,5 +469,18 @@ struct GroupRecordsView: View {
         return grouped
             .map { (key: $0.key, value: $0.value.sorted { $0.sortTimestamp > $1.sortTimestamp }) }
             .sorted { $0.key > $1.key }
+    }
+}
+
+/// Engancha la fila de «Nuevo gasto» al «+» flotante del detalle, si alguien lo enseña.
+private struct FloatingNewReveal: ViewModifier {
+    let showsFloating: Binding<Bool>?
+
+    func body(content: Content) -> some View {
+        if let showsFloating {
+            content.revealsFloatingActionWhenScrolledAway(showsFloating)
+        } else {
+            content
+        }
     }
 }

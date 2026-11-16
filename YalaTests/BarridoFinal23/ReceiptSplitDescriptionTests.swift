@@ -48,7 +48,7 @@ struct ReceiptSplitDescriptionTests {
 
     @Test("La hoja usa esta descripción al pasar el reparto al formulario")
     func wiring() throws {
-        let view = try BarridoFinal23Source.code("Yala/App/Views/Groups/GroupReceiptSplitView.swift")
+        let view = try BarridoFinal23Source.code("Yala/App/Views/Groups/Captura/GroupCaptureModel.swift")
         #expect(view.contains("let description = ReceiptSplitLogic.expenseDescription(merchant: merchant, lines: lines)"))
     }
 }

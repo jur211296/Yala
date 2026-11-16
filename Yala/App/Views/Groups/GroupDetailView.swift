@@ -100,6 +100,9 @@ struct GroupDetailView: View {
     @State private var showShareSheet = false
     /// Voz y Foto bajo el saldo (2026-11-14).
     @State private var receiptRequest: GroupReceiptRequest?
+    /// El «+» flotante sale cuando el scroll se lleva la fila de «Nuevo gasto» de arriba, como en Panel, Registros,
+    /// Presupuestos y Pagos (`revealsFloatingActionWhenScrolledAway`, encargo del 2026-11-16).
+    @State private var showFloatingNew = false
     @State private var wasArchivedOnAppear = false
 
     // MARK: - Init
@@ -189,7 +192,8 @@ struct GroupDetailView: View {
             request: $receiptRequest,
             activeMembers: { _ in viewModel.activeMembers },
             memberCount: { _ in viewModel.activeMembers.count },
-            onReady: { _, template in viewModel.activeSheet = .addExpenseFromReceipt(template) }
+            onReady: { _, template in viewModel.activeSheet = .addExpenseFromReceipt(template) },
+            onManualEntry: { _ in viewModel.activeSheet = .addExpense }
         )
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
@@ -371,11 +375,16 @@ struct GroupDetailView: View {
         // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
         // de una pestaña (card 8atf).
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
+        // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no anima
+        // dentro de una pestaña (card 8atf), como la lista de Grupos.
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)
 
         // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras), y en los
-        // archivados (ticket archived-group-still-allows-expenses-and-payments-from-inside).
-        if selectedTab == .records && viewModel.canRecordNewEntries && !group.isMigratedFrozen {
+        // archivados (ticket archived-group-still-allows-expenses-and-payments-from-inside). Y solo cuando el scroll se
+        // lleva la fila de arriba: con las dos a la vista, «Nuevo gasto» saldría dos veces (encargo del 2026-11-16).
+        if selectedTab == .records && viewModel.canRecordNewEntries && !group.isMigratedFrozen && showFloatingNew {
             newExpenseFAB
+                .transition(.opacity)
         }
     }
 
@@ -674,6 +683,9 @@ struct GroupDetailView: View {
 
     /// Cambia de pestaña desde la fila o desde fuera de ella (tocar el saldo, «Ver los saldos»).
     private func selectPage(_ tab: GroupDetailTab) {
+        // La página de gastos vuelve montada de nuevo y arriba: con el flotante encendido de antes se vería un instante
+        // junto a la fila de «Nuevo gasto».
+        if tab != selectedTab { showFloatingNew = false }
         StagedTabSelection.select(tab, in: $pages, reduceMotion: reduceMotion)
     }
 
@@ -721,7 +733,8 @@ struct GroupDetailView: View {
                 onTapBalance: { selectPage(.balances) },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) },
                 budgetProgress: viewModel.budgetProgress,
-                budgetColorHex: group.colorHex
+                budgetColorHex: group.colorHex,
+                showsFloatingNew: $showFloatingNew
             )
 
         case .balances:
@@ -811,9 +824,11 @@ struct GroupDetailView: View {
         }
     }
 
-    /// Quien puede apuntar gastos aquí y el grupo no está congelado: la misma condición que el + flotante.
+    /// Quien puede apuntar gastos aquí, en un grupo ni congelado ni archivado: la misma condición que el + flotante. Desde
+    /// el 2026-11-16 la fila de arriba es la que se ve primero (el + solo sale al desplazar), y con
+    /// `canCurrentUserParticipate` a secas ofrecía «Nuevo gasto», Voz, Foto y Yala IA en un grupo archivado.
     private var canAddHere: Bool {
-        viewModel.canCurrentUserParticipate && !group.isMigratedFrozen
+        viewModel.canRecordNewEntries && !group.isMigratedFrozen
     }
 
     // MARK: - FAB

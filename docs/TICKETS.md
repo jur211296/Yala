@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (1330)
 
 | id | status | path |
+| 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
 | 2026-11-16-bugs-barrido-final-2-3-app | qa | tickets/qa/2026-11-16-bugs-barrido-final-2-3-app.md |
 | 2026-11-16-competencia-prestamos-ia | done | tickets/done/2026-11-16-competencia-prestamos-ia.md |
 |---|---|---|

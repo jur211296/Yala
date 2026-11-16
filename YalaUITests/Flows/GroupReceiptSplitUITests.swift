@@ -43,13 +43,13 @@ final class GroupReceiptSplitUITests: XCTestCase {
         let photo = app.buttons["group_detail_receipt_photo"]
         XCTAssertTrue(photo.waitForExistence(timeout: 10), "No está Foto bajo el saldo del grupo.")
         photo.tap()
-        XCTAssertTrue(app.buttons["receipt_split_library"].waitForExistence(timeout: 5), "No se abrió la hoja del recibo.")
+        XCTAssertTrue(app.buttons["group_photo_source_photos"].waitForExistence(timeout: 5), "No se abrió la hoja de Foto.")
         return app
     }
 
     private func openNewGroupExpense(profile: String = "cusco") -> XCUIApplication {
         let app = openGroupDetail(profile: profile)
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el + de nuevo gasto.")
         fab.tap()
         XCTAssertTrue(app.textFields["group_expense_description"].waitForExistence(timeout: 5), "El formulario no montó.")
@@ -101,13 +101,13 @@ final class GroupReceiptSplitUITests: XCTestCase {
         XCTAssertTrue(photo.exists, "No está Foto en el inicio de Grupos.")
         attach(app, "inicio-grupos")
         photo.tap()
-        let library = app.buttons["receipt_split_library"]
+        let library = app.buttons["group_photo_source_photos"]
         let pickerRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "group_picker_row_")).firstMatch
         if !library.waitForExistence(timeout: 3), pickerRow.waitForExistence(timeout: 3) {
             attach(app, "elegir-grupo")
             pickerRow.tap()
         }
-        XCTAssertTrue(library.waitForExistence(timeout: 5), "Foto del inicio no abrió la hoja del recibo.")
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Foto del inicio no abrió la hoja de Foto.")
     }
 
     func test_receiptOfFiveLines_isSplitAtFirstTry_andFillsTheForm() {
@@ -117,16 +117,16 @@ final class GroupReceiptSplitUITests: XCTestCase {
         attach(app, "detalle-grupo")
         photo.tap()
 
-        let library = app.buttons["receipt_split_library"]
-        XCTAssertTrue(library.waitForExistence(timeout: 5), "No se abrió la hoja del recibo.")
-        library.tap()
-        XCTAssertTrue(app.images["receipt_split_photo_preview"].waitForExistence(timeout: 5), "No quedó la foto.")
-
+        // Como la foto de personal: Cámara, Fotos y Archivo, y la foto se lee nada más elegirla. La frase va antes.
+        let library = app.buttons["group_photo_source_photos"]
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "No se abrió la hoja de Foto.")
+        XCTAssertTrue(app.buttons["group_photo_source_file"].exists, "Falta Archivo, como en personal.")
         let phrase = app.textFields["receipt_split_phrase"]
         phrase.tap()
         phrase.typeText("Ana el lomo, Beto el ají, Ana y yo la pizza")
         attach(app, "captura")
-        app.buttons["receipt_split_split"].tap()
+        XCTAssertTrue(app.waitForSettledLayout(of: library), "«Fotos» no se quedó quieto tras escribir.")
+        library.tap()
 
         XCTAssertTrue(app.buttons["receipt_split_use"].waitForExistence(timeout: 10), "No llegó la revisión.")
         attach(app, "revision")
@@ -186,25 +186,27 @@ final class GroupReceiptSplitUITests: XCTestCase {
         let ai = app.buttons["group_detail_receipt_ai"]
         XCTAssertTrue(ai.exists, "No está Yala IA bajo el saldo.")
         ai.tap()
-        let text = app.textFields["receipt_split_text"]
-        XCTAssertTrue(text.waitForExistence(timeout: 5), "Yala IA no abrió la hoja para escribir.")
+        // Como el chat de personal: el saludo de Yala IA, la caja de mensajería y la respuesta en el hilo.
+        let text = app.textFields["group_chat_input"]
+        XCTAssertTrue(text.waitForExistence(timeout: 5), "Yala IA no abrió el chat.")
+        XCTAssertTrue(app.descendants(matching: .any)["group_chat_greeting"].exists, "Falta el saludo de Yala IA.")
+        text.tap()
         text.typeText("lomo 38 Ana, ají 32 Beto, pizza 48 Ana y yo, chicha 18 entre todos")
         attach(app, "ia-escribir")
         // Tras teclear, el teclado sigue entrando y la hoja se mueve: el toque espera a que el botón se quede quieto.
-        let split = app.buttons["receipt_split_split"]
-        XCTAssertTrue(app.waitForSettledLayout(of: split), "«Repartir» no se quedó quieto.")
-        split.tap()
+        let send = app.buttons["group_chat_send"]
+        XCTAssertTrue(app.waitForSettledLayout(of: send), "Enviar no se quedó quieto.")
+        send.tap()
         let use = app.buttons["receipt_split_use"]
-        XCTAssertTrue(use.waitForExistence(timeout: 10), "No llegó la revisión.")
+        XCTAssertTrue(use.waitForExistence(timeout: 10), "No llegó el reparto al hilo.")
+        attach(app, "ia-respuesta")
         use.tap()
         XCTAssertTrue(app.textFields["group_expense_amount"].waitForExistence(timeout: 8), "No se abrió Nuevo gasto relleno.")
         XCTAssertEqual(app.textFields["group_expense_description"].value as? String, "Cusco Grill")
     }
 
     private func readTheExampleReceipt(_ app: XCUIApplication) {
-        app.buttons["receipt_split_library"].tap()
-        XCTAssertTrue(app.buttons["receipt_split_split"].waitForExistence(timeout: 5))
-        app.buttons["receipt_split_split"].tap()
+        app.buttons["group_photo_source_photos"].tap()
     }
 
     /// Gateway anterior al cupo de recibos: contesta prueba agotada y se sigue ofreciendo Pro.
@@ -226,7 +228,7 @@ final class GroupReceiptSplitUITests: XCTestCase {
     func test_pro_dailyLimit_saysTomorrow() {
         let app = openReceiptFromGroup(profile: "daily", pro: true)
         readTheExampleReceipt(app)
-        XCTAssertTrue(app.buttons["receipt_split_retry"].waitForExistence(timeout: 10), "El cupo del día de Pro no salió.")
+        XCTAssertTrue(app.buttons["receipt_split_enter_manually"].waitForExistence(timeout: 10), "El cupo del día de Pro no salió.")
         XCTAssertFalse(app.buttons["receipt_split_see_pro"].exists, "A Pro no se le ofrece Pro.")
         attach(app, "pro-cupo-del-dia")
     }

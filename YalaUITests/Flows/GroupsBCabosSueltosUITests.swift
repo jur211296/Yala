@@ -189,7 +189,7 @@ final class GroupsBCabosSueltosUITests: XCTestCase {
             .matching(NSPredicate(format: "label BEGINSWITH 'Viaje a Cusco'")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 15), "No apareció la tarjeta de «Viaje a Cusco».")
         card.tap()
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let description = app.textFields["group_expense_description"]
@@ -256,7 +256,7 @@ final class GroupsBCabosSueltosUITests: XCTestCase {
             .matching(NSPredicate(format: "label BEGINSWITH 'Pía y yo'")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 15), "No apareció la tarjeta de «Pía y yo».")
         card.tap()
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let description = app.textFields["group_expense_description"]

@@ -51,6 +51,9 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)"),
         ("Yala/App/Views/Groups/GroupDetailView.swift",
          ".animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)"),
+        // El «+» del detalle sale al desplazar (encargo «Grupos: voz, foto y Yala IA idénticos a personal», 2026-11-16).
+        ("Yala/App/Views/Groups/GroupDetailView.swift",
+         ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)"),
         ("Yala/App/Views/Planning/BudgetsListView.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)"),
         ("Yala/App/Views/Planning/ScheduledPaymentsView.swift",

@@ -112,7 +112,7 @@ final class UXAudit22Lote12y13UITests: XCTestCase {
     func test_expenseSuccess_saysWhoOwesAndWhatWasNoted() {
         let app = launch()
         openFirstGroup(app)
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de nuevo gasto.")
         fab.tap()
 
