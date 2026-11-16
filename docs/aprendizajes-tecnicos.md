@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (38 entradas)
+## Índice (43 entradas)
 
-> **No hace falta leer este fichero entero** — son 212 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 222 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,9 +40,14 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
-- `2026-11-12` [Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11-12)](#un-watchdogtermination-de-sentry-no-prueba-que-la-ram-se-agotara-ni-que-fuera-un-usuario-2026-11-12)
-- `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
+- `2026-11-16` [Vídeo: una grabación de `simctl io recordVideo` pierde las pantallas quietas al decodificarla de cor](#vdeo-una-grabacin-de-simctl-io-recordvideo-pierde-las-pantallas-quietas-al-decodificarla-de-corrido-2026-11-16)
+- `2026-11-14` [Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierr](#web-el-list-de-workers-kv-no-ve-en-el-acto-lo-que-se-acaba-de-escribir-una-lista-que-manda-cierres-va-en-un-durable-object-2026-11-14)
+- `2026-11-14` [Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)](#supabase-un-rol-nuevo-no-puede-llamar-a-authuid-en-una-funcin-security-invoker-2026-11-14)
+- `2026-11-13` [Web: una cookie `__Host-` con `Path` distinto de `/` se descarta, y `no-referrer` manda `Origin: nul](#web-una-cookie-host--con-path-distinto-de--se-descarta-y-no-referrer-manda-origin-null-en-los-formularios-2026-11-13)
+- `2026-11-13` [Desinstalar Yala Dev no vacía su App Group: un «teléfono nuevo» de QA hay que vaciarlo a mano (2026-](#desinstalar-yala-dev-no-vaca-su-app-group-un-telfono-nuevo-de-qa-hay-que-vaciarlo-a-mano-2026-11-13)
+- `2026-11-12` [Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11](#un-watchdogtermination-de-sentry-no-prueba-que-la-ram-se-agotara-ni-que-fuera-un-usuario-2026-11-12)
 - `2026-11-09` [Un `shouldSave: false` del puente de Grupos no impide que se guarde a mitad (2026-11-09)](#un-shouldsave-false-del-puente-de-grupos-no-impide-que-se-guarde-a-mitad-2026-11-09)
+- `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
 - `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
 - `2026-10-22` [El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)](#el-idioma-por-app-de-ios-solo-sale-si-el-iphone-tiene-ms-de-un-idioma-2026-10-22)
 - `2026-10-21` [Abrir la página de la app en Atajos desde un botón propio: no hay URL, y `ShortcutsUIButton` no se d](#abrir-la-pgina-de-la-app-en-atajos-desde-un-botn-propio-no-hay-url-y-shortcutsuibutton-no-se-dispara-por-cdigo-2026-10-21)
@@ -768,3 +773,17 @@ nada (`has_schema_privilege` sigue en `false`). `authenticated` lo tiene porque 
 Dentro la RLS no actúa, así que la función comprueba antes todo lo que la RLS decidía (miembro, grupo vivo, solo filas
 nuevas, id nuevo en todos los grupos): `webapp/supabase/web3_02_grupos_escritura.sql`, `web_add_group_expense`. Se verifica con `set local role <rol>` y
 `set_config('request.jwt.claims', …)` dentro de un bloque `do` que acaba en `raise exception` (no deja nada escrito).
+
+### Vídeo: una grabación de `simctl io recordVideo` pierde las pantallas quietas al decodificarla de corrido (2026-11-16)
+
+**Qué pasó.** Al montar el video v4 de la verificación de Gmail, los tramos cortados con `trim` salían unos 9 s
+adelantados y sin dos pantallas que habían estado quietas varios segundos: el selector de cuenta de Google y «5 borradores
+nuevos». Pasar la grabación a 30 fps constantes con ffmpeg, o convertirla con `avconvert` (AVFoundation), daba lo mismo.
+
+**Por qué.** `recordVideo` graba h264 con fotogramas B y ritmo variable: no escribe fotogramas mientras la pantalla no
+cambia. Decodificando desde el principio, el fotograma que abre una pantalla quieta se descoloca y la siguiente pantalla
+ocupa su hueco. Saltando a ese instante con `-ss` **antes** de `-i` (un salto por fotograma) sí sale bien.
+
+**Qué hacer.** Antes de montar, reconstruir la toma con un salto por fotograma a 15 fps y montar sobre esa copia. La receta
+está en `docs/verificacion-google/video-v4-2026-11-16.md` («Cómo se rehace»). Y revisar el montaje con fotogramas del
+resultado, no solo con la tira de la grabación cruda: la tira hecha con `-ss` engaña, porque ella sí ve lo que el montaje pierde.

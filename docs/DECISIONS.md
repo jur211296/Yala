@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (110 entradas)
+## Índice (111 entradas)
 
-> **No hace falta leer este fichero entero** — son 301 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 303 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
 - `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
@@ -136,6 +137,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2.4 y lo que entra en la cola
+**Contexto:** Cuatro decisiones que Jürgen tomó en el chat el 16-nov (07:18, 09:04, 11:40 y 11:58, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del video v4 de la verificación de Gmail, que las recibió pendientes y solo ejecuta la última en lo que le toca.
+**Decisión:** (1) **Plan de publicaciones del 16 al 22-nov aprobado** (07:18): semana de lanzamiento de la 2.2, todo contenido nuevo, el capítulo 5 (Grupos 2.2) el domingo 22; en X, Jürgen programa los capítulos 3 y 4 antes. Frank encola primero el pedido de material, solo en la Max. (2) **La planificación de publicaciones de la semana siguiente se hace los viernes, no los lunes** (09:04), porque las prioridades cambian de lunes a viernes. (3) **Préstamos y conectores de IA para 2.4** (11:40, informe de competencia del 16-nov), las tres recomendadas: «Seguimiento de deudas personales» pasa a «Préstamos con personas» y «Pagos en cuotas» se amplía a «Cuotas: préstamos de banco (con TEA) y compras a plazos»; la pantalla «Tu IA» completa en Ajustes; y pedir primero el directorio de ChatGPT y después el de Claude. (4) **Entran en la cola** (11:58): importar grupos desde Splitwise y Tricount, los cinco bugs de nube de prioridad media de 2.3, el lote 3 de Yala web y la regrabación del video de verificación de Gmail. Yala web puede subirse a producción para que Jürgen la pruebe con su cuenta personal, sin enlazarla todavía desde la web principal.
+**Razones:** Son decisiones de producto y de calendario que Jürgen tomó en el chat. Escritas aquí, la sesión que ejecute cada una no vuelve a preguntarlas.
+**Consecuencias:** (1) y (2) son de marketing (Lola): el material lo pide Frank. (3) fija el alcance de préstamos y de «Tu IA» en 2.4. (4) ordena la cola; el video de Gmail quedó hecho en su propio PR.
+**Estado:** Activa
 
 ### [2026-11-15] Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta previa y tarjetas de cuentas personalizables
 **Contexto:** Cuatro decisiones que Jürgen tomó en el chat el 15-nov (17:27, 20:02, 20:04 y 20:12, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que desbloqueó el PR «Nuevo registro: categorías a un toque y un buscador que entiende «café»», que las recibió pendientes y no ejecuta ninguna.

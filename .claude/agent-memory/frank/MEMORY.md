@@ -11,8 +11,8 @@
 - [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
-- [Verificación Gmail: video v3 enviado](project_verificacion_gmail_video_v2.md) — 12-nov aprobado y enviado a Google; no se vuelve a pedir; receta de toma.
-- [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe hace pulsación larga en la web; Device MCP con `device=` sí toca.
+- [Verificación Gmail: v4 hecho](project_verificacion_gmail_video_v2.md) — 16-nov: Gmail de origen + punta a punta; espera aprobación y Dan; dos logins.
+- [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe no toca la web; Device MCP sí, con el espejo en ese simulador (pídelo con el login).
 - [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.
 - [Google Sign-In sigue el idioma del sistema](reference_idioma_de_google_en_el_simulador.md) — -AppleLanguages no basta: defaults -g + reboot.
 - [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
