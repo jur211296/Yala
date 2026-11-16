@@ -10032,3 +10032,9 @@
 "groups.import.match.discardTitle" = "Ontbrekende saldi weggooien?";
 "groups.import.match.discardBody" = "Al gezette saldi blijven. De ontbrekende moet je met de hand toevoegen.";
 "groups.import.match.pickerLabel" = "Wie %@ is";
+
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "Kies ‘%@’ als je Yala weer opent om ze terug te halen.";
+"nube23media.signOutICloud.conservationWithGroups" = "Om terug te komen, kies je ‘%@’ en log je met je account weer in bij Groepen.";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "Wanneer je wilt: wat in je iCloud staat, vervangt wat bewaard is.";

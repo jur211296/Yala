@@ -10032,3 +10032,9 @@
 "groups.import.match.discardTitle" = "放弃未设置的余额？";
 "groups.import.match.discardBody" = "已设置的余额会保留。其余的需要手动添加。";
 "groups.import.match.pickerLabel" = "%@ 是谁";
+
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "如需找回，请在重新打开 Yala 时选择“%@”。";
+"nube23media.signOutICloud.conservationWithGroups" = "如需回来，请选择“%@”，然后用你的账户重新登录群组。";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "随时可以：你 iCloud 中的数据会替换已保存的内容。";

@@ -10032,3 +10032,9 @@
 "groups.import.match.discardTitle" = "未設定の残高を破棄しますか？";
 "groups.import.match.discardBody" = "設定済みの残高はそのまま残ります。残りは手動で追加する必要があります。";
 "groups.import.match.pickerLabel" = "%@にあたる人";
+
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "データを戻すには、Yalaをもう一度開いたときに「%@」を選んでください。";
+"nube23media.signOutICloud.conservationWithGroups" = "戻るときは「%@」を選び、アカウントでグループに再度サインインしてください。";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "いつでも可能です。iCloudにあるデータが、保存されている内容に置き換わります。";

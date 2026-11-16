@@ -1,10 +1,10 @@
 ---
 id: adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-25
-updated: 2026-10-10
+updated: 2026-11-16
 qa-status: needs-testing
 source: "residual y review adversarial (lente de bypass) de `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`, 2026-09-25"
 ---
@@ -153,3 +153,26 @@ nube de PRUEBAS y un iPhone de pruebas, nunca tus datos reales.**
 ## Barrido de QA (2026-10-10)
 
 Vuelto a backlog en el barrido de QA 2026-10: el canario (decisión A) está en 2.1 y no cambia lo que sube, así que no necesita device-QA; el montaje (dos Apple ID y un iPhone sin iCloud) es muy difícil y el número lo dará la flota tras el lanzamiento. Queda abierta la política (no subir, pedir prueba o avisar), que Jürgen decide con esos números.
+
+## Números y política (2026-11-16, encargo «Nube 2.3: los cinco bugs media»)
+
+**Medido en la flota** (Analytics Engine, 90 días, producción y staging):
+
+| Canario | Producción | Staging |
+|---|---|---|
+| `cloudAdoptICloudCorpusChecked` (cuántos adopts preguntaron a iCloud) | 0 | `none` 3 (2 teléfonos) · `noAccount` 1 |
+| `cloudAdoptLateImportUnproven` `mirror\|*` (lo que bajó de iCloud y subió) | **0** | **0** |
+| `cloudAdoptLateImportUnproven` `local\|*` | `local\|noMirror\|other` 7 (1 teléfono) | `local\|none\|other` 21 en 3 adopts · `local\|noAccount\|other` 7 · `local\|noMirror\|other` 7 |
+
+Lectura con la regla de este ticket: ninguna alta `mirror` en ningún adopt real, también en los 4 de la población del
+ticket (`none`/`noAccount`). Lo que sube son siempre 7 altas `local|…|other` por adopt: derivadas del arranque, no de iCloud
+(inferido por el valor fijo; el tipo exacto está en el rastro del teléfono). La ventana no trae nada en la práctica.
+
+**El caso 2 en un iPhone no se corrió**: pide cerrar la sesión de iCloud del iPhone de pruebas y entrar con un segundo
+Apple ID con su contraseña, que no está autorizado para la sesión. La flota contesta la pregunta que el device-QA iba a
+medir.
+
+**Política tomada (menor y reversible, encargo del 16-nov)**: sin política de bloqueo. El canario sigue en el build y es la
+alarma: se reabre si aparece `mirror|none|TransactionItem` o `mirror|noAccount|TransactionItem` con valores grandes
+(decenas o cientos). Se entrega a Jürgen con las opciones en el artifact del encargo.
+

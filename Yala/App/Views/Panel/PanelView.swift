@@ -602,7 +602,9 @@ struct PanelView: View {
 
     /// Card vbf9: relee si el marcador de migración de otro dispositivo está en el iCloud de este.
     private func refreshCloudAdoptMarker() {
-        let present = CloudMigrationController.shared?.markerDecision() == .secondaryDeviceCloudLogin
+        // Desde el 2026-11-16, el marcador tiene que ser de la cuenta del faro: uno viejo de otra cuenta afirmaba datos que
+        // esa cuenta no tenía (`CloudMigrationController.adoptOfferMarkerPresent`).
+        let present = CloudMigrationController.shared?.adoptOfferMarkerPresent() ?? false
         if present != cloudAdoptMarkerPresent { cloudAdoptMarkerPresent = present }
     }
 

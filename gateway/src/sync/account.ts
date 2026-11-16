@@ -116,11 +116,17 @@ export async function handleAccountClaim(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", "kind debe ser 'complete' o 'groups_only'", 400);
   }
 
+  // `recutover` (g31_01, 2026-11-16): «Pasar a tu cuenta de Yala» con la cuenta que volvió a iCloud. Solo viaja cuando
+  // es `true`: un `claim_account` sin el parámetro (base sin g31_01, o tras su rollback) sigue resolviendo los cuatro
+  // argumentos con nombre de siempre, y un claim normal no puede romperse por él. Con la base nueva, la rama del
+  // re-cutover reemplaza la copia congelada (ver `qa/cloud/g31_01_claim_recutover_after_return_to_icloud.sql`).
+  const recutover = body.recutover === true;
   const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "claim_account", {
     p_device_id: deviceId,
     p_provider: provider,
     p_migration: migration,
     p_kind: kind,
+    ...(recutover ? { p_recutover: true } : {}),
   });
   if (!ok) {
     console.log(`[account-claim] claim_account upstream ${status}`);

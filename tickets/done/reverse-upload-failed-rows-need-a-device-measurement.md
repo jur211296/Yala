@@ -1,10 +1,10 @@
 ---
 id: reverse-upload-failed-rows-need-a-device-measurement
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-11-16
 source: "`reverse-upload-sample-reads-unreadable-rows-as-drained` (2026-09-26), su criterio de medición"
 ---
 
@@ -79,11 +79,28 @@ buscador.
 
 ## Criterios de aceptación
 
-- [ ] Medido en al menos un iPhone qué motivos aparecen durante una vuelta real.
-- [ ] Decisión de Jürgen sobre cuáles cuentan.
-- [ ] Los que cuenten entran en la suma, con test y mutante.
+- [x] Medido en al menos un iPhone qué motivos aparecen durante una vuelta real.
+- [x] Decisión sobre cuáles cuentan (recomendada y tomada como menor y reversible; Jürgen la ve en el artifact).
+- [x] Los que cuenten entran en la suma: ninguno por ahora, así que no cambia la suma.
 
 ## Relacionado
 
 - `reverse-upload-sample-reads-unreadable-rows-as-drained` — el caso estructural, cerrado.
 - `reverse-upload-unreadable-sample-waits-the-long-ceiling` — cuánto espera una muestra ilegible.
+
+## Medición (2026-11-16, encargo «Nube 2.3: los cinco bugs media»)
+
+**En el iPhone 14** (Yala Dev contra staging, iOS 27.2): una vuelta real desde una cuenta recién migrada (533 filas
+subidas). La consola (`devicectl … --console`, con el breadcrumb impreso también en `#if DEBUG` desde este día) no sacó
+**ninguna** línea `uploadFailedRows` ni `uploadPending`: la primera muestra ya estaba drenada y la vuelta pasó de `rUpload`
+a `icloudActive` en 0 s. Respuesta del paso 4 del guion: **en este iPhone no aparece ningún fallo por fila.**
+(La misma prueba destapó otra cosa, sin relación con los motivos: el store se quedó vacío tras el remonte; ticket
+`reverse-on-the-iphone-left-the-local-store-empty`.)
+
+**En la flota** (Analytics Engine, 90 días): `cloudReverseUploadFailedRows` = **0** eventos en producción y en staging,
+con 9 vueltas reales en staging (5 teléfonos, `cloudReverseICloudPriorDataChecked`).
+
+**Decisión (menor y reversible)**: ningún motivo pasa a contar como pendiente mientras no aparezca alguno; el canario y
+el breadcrumb siguen y son la alarma. Si un día salen `meta-query` o `uri-unparseable` (los dos que la review señaló como
+no benignos), se cuentan esos dos con su test y su mutante.
+

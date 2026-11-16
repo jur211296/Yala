@@ -9280,3 +9280,9 @@
 "groups.import.match.discardTitle" = "¿Descartar los saldos que faltan?";
 "groups.import.match.discardBody" = "Los saldos ya puestos se quedan. Los que faltan tendrás que añadirlos a mano.";
 "groups.import.match.pickerLabel" = "Quién es %@";
+
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "Para recuperarlos, elige «%@» cuando vuelvas a abrir Yala.";
+"nube23media.signOutICloud.conservationWithGroups" = "Para volver, elige «%@» y vuelve a entrar en Grupos con tu cuenta.";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "Cuando quieras: lo que tengas en tu iCloud sustituye a lo guardado.";
