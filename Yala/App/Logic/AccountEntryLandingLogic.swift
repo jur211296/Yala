@@ -51,23 +51,46 @@ nonisolated enum PanelAccountDataWait: Equatable {
         return false
     }
 
+    /// - Parameter justEnteredAccount: la persona acaba de tocar «Empezar» al entrar en su cuenta
+    ///   (`AccountEntryPanelWait`). Medido en el iPhone 14 el 16-nov (card c8i9, barrido final de 2.3): al tocarlo ya habían
+    ///   llegado 2 de sus 6 cuentas y ningún movimiento, así que «sin cuentas» no encendía la espera y el Panel pintaba S/ 0
+    ///   y «Crear categorías» 8 s. Con la entrada recién hecha se espera aunque haya cuentas.
     func next(
         hasAccounts: Bool,
         cloudEngineActive: Bool,
         firstPullCompleted: Bool,
         attestVerdictIsTerminal: Bool,
+        justEnteredAccount: Bool = false,
         now: Date
     ) -> PanelAccountDataWait {
         let engineStillBringing = cloudEngineActive && !firstPullCompleted && !attestVerdictIsTerminal
         guard engineStillBringing else { return .idle }
         switch self {
         case .idle:
-            return hasAccounts ? .idle : .waiting(since: now)
+            return hasAccounts && !justEnteredAccount ? .idle : .waiting(since: now)
         case .waiting(let since):
             return now.timeIntervalSince(since) >= Self.ceiling ? .gaveUp : self
         case .gaveUp:
             return .gaveUp
         }
+    }
+}
+
+/// La entrada a la cuenta que acaba de terminar con «Empezar» (card c8i9, barrido final de 2.3). La arma
+/// `onFinishedToApp` y la consume la espera del Panel en cuanto empieza a esperar. Vive en memoria y caduca con el techo
+/// de la espera: si el Panel no llega a cargar en ese rato, una carga posterior no enseña el esqueleto por una entrada vieja.
+@MainActor
+enum AccountEntryPanelWait {
+    private(set) static var armedAt: Date?
+
+    static func arm(now: Date = .now) { armedAt = now }
+
+    static func disarm() { armedAt = nil }
+
+    /// `true` mientras la entrada sea reciente: menos de `PanelAccountDataWait.ceiling` desde que se armó.
+    static func isArmed(now: Date = .now) -> Bool {
+        guard let armedAt else { return false }
+        return now.timeIntervalSince(armedAt) < PanelAccountDataWait.ceiling
     }
 }
 

@@ -843,7 +843,7 @@ struct GroupReceiptSplitView: View {
     }
 
     private func use() {
-        let description = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let description = ReceiptSplitLogic.expenseDescription(merchant: merchant, lines: lines)
         guard let template = ReceiptSplitLogic.template(
             lines: lines,
             memberIDs: memberIDs,

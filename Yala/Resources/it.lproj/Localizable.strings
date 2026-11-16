@@ -2846,7 +2846,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala lo registra per te";
-"aiConsent.processingMessage" = "Detta o scegli una foto dello scontrino e Yala registra la spesa. Per farlo invia l’audio o la foto a un servizio di IA, solo in quel momento. Con i tuoi dati nel tuo account Yala, l’IA può leggere anche tutti i tuoi dati necessari per essere precisa e dettagliata. Non viene usato per addestrare l’IA.";
+"aiConsent.processingMessage" = "Scrivi, detta o scegli una foto dello scontrino e Yala registra la spesa. Per farlo invia il testo, l’audio o la foto a un servizio di IA, solo in quel momento. Con i tuoi dati nel tuo account Yala, l’IA può leggere anche tutti i tuoi dati necessari per essere precisa e dettagliata. Non viene usato per addestrare l’IA.";
 "aiConsent.insightsTitle" = "Riepilogo con IA";
 "aiConsent.insightsMessage" = "Yala analizza le tue finanze e ti spiega come stai andando. Per farlo invia a un servizio di IA un riepilogo — totali e tendenze per categoria, budget, pagamenti ricorrenti e i nomi dei piccoli acquisti che ripeti, con quante volte e quanto sommano —, non la cronologia completa delle tue registrazioni. Con i tuoi dati nel tuo account Yala, può leggere anche tutto ciò che serve per essere preciso, come ogni acquisto con data e importo. Non viene usato per addestrare l’IA.";
 "aiConsent.accept" = "Accetta e attiva";

@@ -694,7 +694,7 @@
 "aiConsent.insightsMessage" = "O Yala analisa as tuas finanças e mostra-te como estás. Para isso, envia a um serviço de IA um resumo — totais e tendências por categoria, orçamentos, pagamentos recorrentes e os nomes das compras pequenas que repetes, com quantas vezes e quanto somam —, não o teu histórico completo de registos. Com os teus dados na tua conta Yala, pode ler também tudo o que for preciso para ser exato, como cada compra com a data e o valor. Não é usado para treinar a IA.";
 "aiConsent.insightsTitle" = "Resumo com IA";
 "aiConsent.privacyPolicy" = "Política de privacidade";
-"aiConsent.processingMessage" = "Ditas ou escolhes uma foto do recibo e o Yala regista o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só nesse momento. Com os teus dados na tua conta Yala, a IA pode também ler todos os teus dados necessários para ser precisa e detalhada. Não são usados para treinar a IA.";
+"aiConsent.processingMessage" = "Escreves, ditas ou escolhes uma foto do recibo e o Yala regista o gasto. Para isso, envia o que escreveste, o áudio ou a foto a um serviço de IA, só nesse momento. Com os teus dados na tua conta Yala, a IA pode também ler todos os teus dados necessários para ser precisa e detalhada. Não são usados para treinar a IA.";
 "aiConsent.processingTitle" = "O Yala regista por ti";
 "aiPrivacy.chatRow" = "Yala IA";
 "aiPrivacy.footerHint" = "Os teus dados só são enviados quando usas uma destas funções, e chegam a um serviço de IA através do nosso servidor. Com os teus dados na tua conta Yala, a IA pode também ler todos os teus dados necessários para ser precisa e detalhada. Não os vendemos nem os usamos para publicidade.";

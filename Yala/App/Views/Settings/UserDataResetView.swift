@@ -107,6 +107,10 @@ struct UserDataResetView: View {
                     YalaSecondaryButton(L10n.Settings.deleteAllData, isDisabled: isProcessing, destructive: true) {
                         openWipeScope()
                     }
+                    // Card lplc (barrido final de 2.3): en una fila de `List`, un botón con el estilo automático convierte la
+                    // fila entera en su zona de toque y el centro de «Vaciar mis datos» abría Exportar (3 de 3 en el iPhone
+                    // 14). Con estilo propio cada botón recibe solo su toque; «Exportar una copia antes» ya lleva `.plain`.
+                    .buttonStyle(.borderless)
                     .accessibilityIdentifier("wipe_data_start")
                     .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
                 }

@@ -86,6 +86,24 @@ nonisolated enum ReceiptSplitLogic {
 
     static func cents(_ amount: Double) -> Int { Int((abs(amount) * 100).rounded()) }
 
+    /// Hasta dónde llega la descripción que se arma con las líneas.
+    static let descriptionLimit = 60
+
+    /// La descripción del gasto que se lleva el formulario (card 120i, barrido final de 2.3). El comercio si la IA lo leyó;
+    /// si no —un gasto ESCRITO no trae comercio—, las líneas de consumo, sin repetir y cortadas con «…». Antes quedaba
+    /// vacía y guardar fallaba con «Falta la descripción». Sin líneas de consumo, la primera línea que haya.
+    static func expenseDescription(merchant: String?, lines: [ReceiptSplitLine]) -> String {
+        let trimmedMerchant = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmedMerchant.isEmpty else { return trimmedMerchant }
+        var seen = Set<String>()
+        let names = lines.map { ($0.kind, $0.description.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            .filter { !$0.1.isEmpty }
+        let items = names.filter { $0.0 == .item }.map(\.1).filter { seen.insert($0.lowercased()).inserted }
+        let text = items.isEmpty ? (names.first?.1 ?? "") : items.joined(separator: ", ")
+        guard text.count > descriptionLimit else { return text }
+        return String(text.prefix(descriptionLimit - 1)).trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)) + "…"
+    }
+
     /// Lo que suma una línea con su signo, en céntimos: un descuento resta.
     static func signedCents(_ line: ReceiptSplitLine) -> Int {
         line.kind == .discount ? -cents(line.amount) : cents(line.amount)

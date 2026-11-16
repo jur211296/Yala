@@ -4035,6 +4035,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // cuenta, en iCloud y vacías, y cerrar el cover no las vuelve a cargar. Sin esto el Panel se quedaba en S/ 0 y
                 // «Crea tu primera cuenta» hasta que llegaba el primer tirón; con esto recalcula ya en la nube y, si la cuenta
                 // aún no bajó, enseña su esqueleto (`PanelAccountDataWait`).
+                // Barrido final de 2.3 (16-nov): al tocar «Empezar» pueden haber llegado ya algunas cuentas y ningún movimiento.
+                // La espera del Panel arranca también así (`AccountEntryPanelWait`), no solo con el teléfono sin cuentas.
+                AccountEntryPanelWait.arm()
                 SessionState.shared.incrementDataVersion()
                 showWelcomeCloudSignIn = false
             },
