@@ -28,9 +28,10 @@ final class PanelAmountsVisibilityUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         let eye = app.buttons["panel_hero_amounts_visibility"]
-        let expensePill = app.buttons["panel_hero_expense_pill"]
+        // Desde el 2026-11-16 el hero ya no tiene píldoras: se mira la propia cifra grande.
+        let expensePill = app.descendants(matching: .any)["panel_hero_figure"].firstMatch
         XCTAssertTrue(eye.waitForExistence(timeout: 10), "No apareció el ojo junto a la cifra del Panel.")
-        XCTAssertTrue(expensePill.waitForExistence(timeout: 10), "No apareció la píldora de gastos del hero.")
+        XCTAssertTrue(expensePill.waitForExistence(timeout: 10), "No apareció la cifra del hero.")
 
         // Control: con el estado limpio los montos se ven. Sin esto, el caso pasaría también con el Panel siempre oculto.
         XCTAssertEqual(eye.label, "Ocultar montos", "El ojo no ofrece ocultar con los montos a la vista.")
@@ -39,7 +40,7 @@ final class PanelAmountsVisibilityUITests: XCTestCase {
         eye.tap()
         XCTAssertTrue(
             expensePill.label.contains(hiddenLabel) || waitForLabel(of: expensePill, containing: hiddenLabel),
-            "Tras tocar el ojo la píldora sigue diciendo su monto: «\(expensePill.label)»."
+            "Tras tocar el ojo la cifra sigue diciendo su monto: «\(expensePill.label)»."
         )
         XCTAssertEqual(eye.label, "Mostrar montos", "El ojo no ofrece volver a mostrar los montos.")
 
@@ -48,8 +49,8 @@ final class PanelAmountsVisibilityUITests: XCTestCase {
         app.launchForUITest(reset: false)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente en el segundo arranque.")
         let eyeAfter = app.buttons["panel_hero_amounts_visibility"]
-        let pillAfter = app.buttons["panel_hero_expense_pill"]
-        XCTAssertTrue(pillAfter.waitForExistence(timeout: 10), "No apareció la píldora tras relanzar.")
+        let pillAfter = app.descendants(matching: .any)["panel_hero_figure"].firstMatch
+        XCTAssertTrue(pillAfter.waitForExistence(timeout: 10), "No apareció la cifra tras relanzar.")
         XCTAssertTrue(
             pillAfter.label.contains(hiddenLabel),
             "Al volver a abrir la app los montos salieron a la vista: «\(pillAfter.label)»."

@@ -3,9 +3,9 @@
 //  Yala
 //
 //  Hero del Panel (PP2-01). Sin card y edge-to-edge — aprovecha todo el
-//  ancho del Panel. Fila superior con el rótulo + `TrendsPeriodMenu`; debajo, la
-//  cifra grande («Tienes hoy», lo que hay en las cuentas) y la línea del mes
-//  («Te queda», lo que entró menos lo que salió). Decisión 8 de la revisión 2.3.
+//  ancho del Panel. Fila superior con el rótulo, el «?» y `TrendsPeriodMenu`; debajo, la cifra grande («Tu saldo hoy»,
+//  todas las cuentas con su signo) y, en chico, «Tu dinero hoy» (sin las cuentas que no cuentan como dinero para usar).
+//  Encargo del 2026-11-16; la línea del mes («Te queda» y sus flechas) salió: la cuenta Flujo de caja.
 //
 //  Amounts use `appPreferences.currency(...)`, which is reactive: any change
 //  to decimalPlaces or currencyDisplayFormat invalidates the view immediately.
@@ -26,10 +26,16 @@ struct HeroMonthView: View {
     /// siempre son del mes calendario para anclar la frase motivacional).
     var periodSummary: PanelHeroPeriodData = .init()
 
-    /// Saldo de las cuentas que suma el Panel: la cifra grande, «Tienes hoy» (decisión 8 de 2.3). No sigue al período;
-    /// con una cuenta elegida es la suya. `nil` sin cuentas: se enseña 0.
+    /// Saldo de las cuentas que suma el Panel: la cifra grande, «Tu saldo hoy», con su signo. No sigue al período; con una
+    /// cuenta elegida es la suya. `nil` sin cuentas: se enseña 0.
     var totalBalance: Double? = nil
     var totalBalanceIsApproximate: Bool = false
+    /// «Tu dinero hoy», la línea chica: el saldo sin las cuentas que no cuentan como dinero (`PanelMoneyScopeLogic`).
+    /// `nil` cuando ninguna cuenta queda fuera: las dos cifras serían la misma y no se pinta.
+    var moneyBalance: Double? = nil
+    var moneyBalanceIsApproximate: Bool = false
+    /// Las cuentas del Panel, para la lista de la hoja del «?» (qué cuentas suman en «Tu dinero hoy»).
+    var accounts: [Account] = []
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
@@ -37,6 +43,8 @@ struct HeroMonthView: View {
     /// «Ocultar montos» del Panel (`AmountPrivacy`): lo pone el ojo de este mismo hero.
     @Environment(\.amountsHidden) private var amountsHidden
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// La hoja del «?»: qué son las dos cifras y qué cuentas suman.
+    @State private var isShowingSaldoInfo = false
 
     /// La cifra crece con el texto de accesibilidad, con techo (pase de estrés 2.2, card eb9i): con los 36 pt fijos de
     /// `panelHeroAmount`, a AX5 los chips de entradas y salidas medían casi el doble y la jerarquía se invertía. El molde
@@ -64,7 +72,7 @@ struct HeroMonthView: View {
     // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
     // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
     var body: some View {
-        HeroHeader {
+        HeroHeader(labelToContentSpacing: DS.Spacing.xs) {
             labelWithDetailHint
                 .dynamicTypeSize(...Self.sidesMaxTypeSize)
         } period: {
@@ -87,6 +95,9 @@ struct HeroMonthView: View {
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel(heroAccessibilityLabel)
+        .sheet(isPresented: $isShowingSaldoInfo) {
+            PanelSaldoInfoSheet(accounts: accounts, currencyCode: currencyCode)
+        }
     }
 
     // MARK: - Rótulo del KPI
@@ -103,23 +114,12 @@ struct HeroMonthView: View {
     /// Label del KPI SIN el período: la píldora de `TrendsPeriodMenu` va al lado
     /// y ya lo dice. Compuesto con el período seguiría en el label accesible,
     /// donde no hay «al lado» que valga.
-    /// «Tienes hoy» (o «Debes hoy»); en «Solo gastos», «Gastos de <mes>», que es lo que cuenta su cifra.
+    /// «Tu saldo hoy»; en «Solo gastos», «Gastos de <mes>», que es lo que cuenta su cifra.
     private var summaryLabel: String {
         if sessionState.isExpensesOnlyMode {
             return PanelHeroFigureLogic.label(figure: .expense, period: selectedPeriod)
         }
-        return PanelHeroFigureLogic.bigFigureCaption(totalBalance: totalBalance ?? 0).text
-    }
-
-    /// Qué cuenta la línea del mes: el neto, o lo mismo que filtra la píldora puesta (UX 2.2 · L3-3). La cifra grande
-    /// no cambia con la píldora: es lo que hay en las cuentas.
-    private var figure: PanelHeroFigure {
-        PanelHeroFigureLogic.figure(natures: sessionState.selectedTransactionNatures)
-    }
-
-    /// El rótulo de la línea del mes: «Te queda», «Te quedó», «En octubre te quedó» o el lado que filtra.
-    private var monthLine: PanelHeroMonthLine {
-        PanelHeroFigureLogic.monthLine(figure: figure, period: selectedPeriod, customRange: customDateRange)
+        return L10n.Panel.Hero.haveToday
     }
 
     /// Todo el hero lleva a Estadísticas; «Ver detalle ›» junto al rótulo lo dice (UX 2.2 · L3-2). Si el rótulo
@@ -128,12 +128,31 @@ struct HeroMonthView: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: DS.Spacing.xs) {
                 HeroHeaderLabel(text: summaryLabel)
+                saldoInfoButton
                 detailHint(showsText: true)
             }
             HStack(spacing: DS.Spacing.xs) {
                 HeroHeaderLabel(text: summaryLabel)
+                saldoInfoButton
                 detailHint(showsText: false)
             }
+        }
+    }
+
+    /// El «?» junto a «Tu saldo hoy»: el mismo círculo de vidrio que la ayuda de los widgets (`WidgetHelpCircleLabel`), y
+    /// como ellos sale solo con «Mostrar ayudas» encendido. En «Solo gastos» no: la cifra es el gasto, no el saldo.
+    @ViewBuilder
+    private var saldoInfoButton: some View {
+        if appPreferences.showWidgetHints && !sessionState.isExpensesOnlyMode {
+            Button {
+                DS.Haptic.light()
+                isShowingSaldoInfo = true
+            } label: {
+                WidgetHelpCircleLabel()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.SaldoPanel.infoButton)
+            .accessibilityIdentifier("panel_hero_saldo_info")
         }
     }
 
@@ -188,20 +207,10 @@ struct HeroMonthView: View {
         .accessibilityHidden(true)
     }
 
-    // MARK: - Summary row ("Disponible · Período" + monto + chips)
-    //
-    // Los chips income/expense escriben a `sessionState.selectedTransactionNatures`
-    // — el filtro propaga al resto del Panel via SSOT. Opacity 0.3 cuando el
-    // otro filtro está activo.
+    // MARK: - Las cifras
 
     private var summaryRow: some View {
-        @Bindable var sessionState = sessionState
-
-        let isIncomeFiltered = sessionState.selectedTransactionNatures == [.income]
-        let isExpenseFiltered = sessionState.selectedTransactionNatures == [.expense]
-        let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
-
-        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             if sessionState.isExpensesOnlyMode {
                 // Solo Gastos: el "Disponible" (income - expense) siempre es 0
                 // sin ingresos → se muestra el GASTO del período como KPI, con un
@@ -229,7 +238,7 @@ struct HeroMonthView: View {
                     }
                 }
             } else {
-                // Lo que hay en las cuentas, sin signo: el rótulo ya dice si es deuda («Debes hoy»).
+                // «Tu saldo hoy»: todas las cuentas, tarjetas incluidas, con su signo.
                 figureWithVisibilityButton(AmountText(
                     value: PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),
                     currencyCode: currencyCode,
@@ -239,183 +248,40 @@ struct HeroMonthView: View {
                     animatesValue: true
                 ))
 
-                monthLineRow(hasNatureFilter: hasNatureFilter)
-
-                // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
-                // cabían y se cortaban por el medio («S/1,7…10»). Son botones de filtro: van en cápsula, y la elegida
-                // rellena de su color (UX 2.2 · L3-3; criterio de foco: lo elegido va relleno, no solo atenuando lo otro).
-                AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xs) {
-                    naturePill(
-                        nature: .income,
-                        isSelected: isIncomeFiltered,
-                        isDimmed: hasNatureFilter && !isIncomeFiltered,
-                        value: periodSummary.income,
-                        isEstimate: periodSummary.incomeApproximate
-                    )
-                    naturePill(
-                        nature: .expense,
-                        isSelected: isExpenseFiltered,
-                        isDimmed: hasNatureFilter && !isExpenseFiltered,
-                        value: periodSummary.expense,
-                        // El MISMO número que el hero pinta con «≈» en Solo Gastos: sin esto
-                        // el usuario ve el gasto marcado en un modo y exacto en el otro.
-                        isEstimate: periodSummary.expenseApproximate
-                    )
-                }
-                // Topados en AX2 para que la cifra siga siendo lo mayor del hero (card eb9i, molde de Grupos).
-                .dynamicTypeSize(...Self.sidesMaxTypeSize)
-
-                heroCaption(isIncomeFiltered: isIncomeFiltered, isExpenseFiltered: isExpenseFiltered)
+                moneyLine
             }
         }
-        // La píldora elegida se rellena, la otra se atenúa y el chip «solo gastos» entra fundido (card C2). Implícita: el
-        // `withAnimation` del toque no anima dentro de una pestaña.
-        .animation(reduceMotion ? nil : DS.Animation.selection, value: sessionState.selectedTransactionNatures)
         .contentShape(Rectangle())
     }
 
-    /// El «≈» de la línea del mes: el de su lado cuando la píldora filtra, el del neto si no.
-    private var figureIsApproximate: Bool {
-        switch figure {
-        case .balance: return periodSummary.amountsAreApproximate
-        case .expense: return periodSummary.expenseApproximate
-        case .income: return periodSummary.incomeApproximate
-        }
-    }
-
-    // MARK: - Línea del mes (decisión 8 de 2.3)
-
-    /// «Te queda S/ X»: lo que entró menos lo que salió en el período, o el lado que filtra la píldora. Sin movimientos
-    /// en el período y sin filtro, lo dice en vez de enseñar un 0.
+    /// «Tu dinero hoy S/ X», en chico bajo la cifra grande. Solo si alguna cuenta queda fuera: si no, repetiría la cifra.
     @ViewBuilder
-    private func monthLineRow(hasNatureFilter: Bool) -> some View {
-        if periodSummary.hasNoMovements && !hasNatureFilter {
-            Text(L10n.Panel.Hero.noMovements)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("panel_hero_caption")
-        } else {
+    private var moneyLine: some View {
+        if let moneyBalance {
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                Text(monthLine.text)
+                Text(L10n.SaldoPanel.moneyToday)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                    // El texto cambia con el período: un valor, una vista, o el de antes se funde con el nuevo.
-                    .transaction { $0.animation = nil }
                 AmountText(
-                    value: figure.value(income: periodSummary.income, expense: periodSummary.expense),
+                    value: moneyBalance,
                     currencyCode: currencyCode,
                     font: DS.Typography.subheadlineEmphasized, secondaryFont: DS.Typography.captionSmall,
-                    isEstimate: figureIsApproximate
+                    isEstimate: moneyBalanceIsApproximate,
+                    animatesValue: true
                 )
             }
+            // Detalle de la cifra, como el ojo: deja de crecer en AX2 para que la cifra siga siendo lo mayor del hero.
             .dynamicTypeSize(...Self.sidesMaxTypeSize)
             .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("panel_hero_month_line")
+            .accessibilityIdentifier("panel_hero_money_line")
         }
-    }
-
-    // MARK: - Píldoras de naturaleza (UX 2.2 · L3-3)
-
-    private func naturePill(
-        nature: TransactionNature,
-        isSelected: Bool,
-        isDimmed: Bool,
-        value: Double,
-        isEstimate: Bool
-    ) -> some View {
-        let isIncome = nature == .income
-        // Relleno sólido con texto blanco: los tonos oscurecidos de la paleta pasan AA con blanco (#0F7A80 y
-        // #D6006B); `incomeGraph`/`expenseGraph` no.
-        let fill = isIncome ? Color.incomeFill : Color.emphasisPinkFill
-        return Button {
-            DS.Haptic.selection()
-            toggleNature(nature)
-        } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(isSelected ? Color.white : (isIncome ? Color.incomeGraph : Color.expenseGraph))
-                    .accessibilityHidden(true)
-                AmountText(
-                    value: value,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                    tint: isSelected ? .color(.white) : .secondary,
-                    isEstimate: isEstimate
-                )
-            }
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.xs)
-            .background {
-                if isSelected {
-                    Capsule().fill(fill)
-                }
-            }
-            .glassEffect(isSelected ? .identity : .regular.interactive(), in: Capsule())
-            .contentShape(Capsule())
-            .opacity(isDimmed ? 0.45 : 1.0)
-        }
-        .buttonStyle(.plain)
-        // VoiceOver lee qué es y cuánto («Entró S/ 3.101»): sin la línea de debajo, el importe suelto no decía de qué era.
-        .accessibilityLabel(isIncome
-            ? L10n.Panel.Hero.incomePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))
-            : L10n.Panel.Hero.expensePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden)))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityIdentifier(isIncome ? "panel_hero_income_pill" : "panel_hero_expense_pill")
-    }
-
-    private func toggleNature(_ nature: TransactionNature) {
-        if sessionState.selectedTransactionNatures == [nature] {
-            sessionState.selectedTransactionNatures.removeAll()
-        } else {
-            sessionState.selectedTransactionNatures = [nature]
-        }
-    }
-
-    // MARK: - Línea bajo la cifra (UX 2.2 · L3-1 y L3-3)
-
-    /// Con un filtro puesto, un chip que lo dice y lo quita. Sin filtro no hay nada más: la línea del mes ya dice «Te queda»
-    /// o que el período no tiene movimientos, y lo que hay en las cuentas es la cifra grande.
-    @ViewBuilder
-    private func heroCaption(isIncomeFiltered: Bool, isExpenseFiltered: Bool) -> some View {
-        if isIncomeFiltered || isExpenseFiltered {
-            Button {
-                DS.Haptic.selection()
-                sessionState.selectedTransactionNatures.removeAll()
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(isExpenseFiltered ? L10n.Panel.Hero.onlyExpensesChip : L10n.Panel.Hero.onlyIncomeChip)
-                    Image(systemName: "xmark")
-                        .font(DS.Typography.captionSmall)
-                        .fontWeight(.bold)
-                        .accessibilityHidden(true)
-                }
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.xs)
-                .background(Capsule().fill(Color.selectedIndigoFill))
-                .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            // Entra fundido y se va en el acto: lo de debajo del hero (la fila de acciones) sube sin animar, y un chip
-            // que se fundiera al irse quedaría encima de ella (medido en vídeo, card C2).
-            // Un chip por filtro: de «solo ingresos» a «solo gastos» es uno que se va y otro que entra, no un texto que
-            // se funde con el anterior.
-            .id(isExpenseFiltered)
-            .transition(.asymmetric(insertion: .opacity, removal: .identity))
-            .accessibilityHint(L10n.Panel.Hero.clearNatureFilter)
-            .accessibilityIdentifier("panel_hero_nature_chip")
-        }
-        // Sin rótulos «Entró / Salió» en pantalla (decisión de Jürgen del 18-oct, confirmada en la decisión 8 de 2.3): las
-        // flechas de las pastillas bastan, y VoiceOver los lee en cada pastilla (`naturePill`).
     }
 
     // MARK: - Copy
 
     /// Lo que oye VoiceOver al llegar al hero. Antes era el saludo, que además
-    /// de no ser un dato ya no existe. Aquí SÍ se compone con el período: el
-    /// lector no ve la píldora de al lado como parte de la misma frase.
+    /// de no ser un dato ya no existe. En «Solo gastos» SÍ se compone con el período: el
+    /// lector no ve la píldora de al lado como parte de la misma frase. Las cifras de hoy no dependen de él.
     private var heroAccessibilityLabel: String {
         if sessionState.isExpensesOnlyMode {
             // El `isEstimate` va aquí también, o VoiceOver leería como exacto el mismo número que en pantalla lleva el
@@ -425,19 +291,15 @@ struct HeroMonthView: View {
             )
             return "\(summaryLabel) · \(selectedPeriod.displayName), \(AmountPrivacy.spoken(gasto, hidden: amountsHidden))"
         }
-        // «Tienes hoy, S/ 64.690. Te queda S/ 6.882 · Este mes»: las dos cifras, cada una con su marca.
-        let tienes = appPreferences.currency(
+        // «Tu saldo hoy, S/ 1.390. Tu dinero hoy, S/ 2.656»: las dos cifras de hoy, cada una con su marca.
+        let saldo = appPreferences.currency(
             PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),
             currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate
         )
-        let queda = appPreferences.currency(
-            figure.value(income: periodSummary.income, expense: periodSummary.expense),
-            currencyCode: currencyCode, isEstimate: figureIsApproximate
-        )
-        let linea = periodSummary.hasNoMovements && figure == .balance
-            ? L10n.Panel.Hero.noMovements
-            : "\(monthLine.text) \(AmountPrivacy.spoken(queda, hidden: amountsHidden))"
-        return "\(summaryLabel), \(AmountPrivacy.spoken(tienes, hidden: amountsHidden)). \(linea) · \(selectedPeriod.displayName)"
+        let first = "\(summaryLabel), \(AmountPrivacy.spoken(saldo, hidden: amountsHidden))"
+        guard let moneyBalance else { return first }
+        let dinero = appPreferences.currency(moneyBalance, currencyCode: currencyCode, isEstimate: moneyBalanceIsApproximate)
+        return "\(first). \(L10n.SaldoPanel.moneyToday), \(AmountPrivacy.spoken(dinero, hidden: amountsHidden))"
     }
 
 }

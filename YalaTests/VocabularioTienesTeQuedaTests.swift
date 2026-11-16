@@ -5,7 +5,8 @@
 //  Decisión 8 de la revisión 2.3 (9-nov-2026, opción C): un solo vocabulario para el dinero en toda la app.
 //  «Tienes» / «Saldo» es lo que hay en las cuentas; «Te queda» es lo que entró menos lo que salió; «Balance» y
 //  «Disponible» desaparecen. Un caso por punto del encargo:
-//  1. El hero del Panel: la cifra grande es «Tienes hoy» y no sigue al período; la línea del mes es «Te queda».
+//  1. El hero del Panel (desde el 2026-11-16): la cifra grande es «Tu saldo hoy», con su signo y sin «Debes hoy»
+//     (BRAND-VOICE §8); debajo, «Tu dinero hoy». La línea del mes («Te queda») salió del hero.
 //  2. Estadísticas: sus tres nombres casi iguales pasan a las mismas palabras, en pasado con un período cerrado.
 //  3. Los widgets dejan de decir «Disponible».
 //
@@ -59,65 +60,54 @@ struct VocabularioTienesTeQuedaTests {
 
     // MARK: - 1. Panel
 
-    @Test("La cifra grande es lo que hay en las cuentas: «Tienes hoy», o «Debes hoy» sin signo")
+    @Test("La cifra grande es «Tu saldo hoy» con su signo: nunca un rótulo de deuda")
     func panelBigFigure_isTheAccountsBalance() {
-        #expect(PanelHeroFigureLogic.bigFigureCaption(totalBalance: 64_690.04) == .haveToday)
-        #expect(PanelHeroFigureLogic.bigFigureCaption(totalBalance: 0) == .haveToday)
-        #expect(PanelHeroFigureLogic.bigFigureCaption(totalBalance: -1_284.30) == .oweToday)
-        // Un saldo que se pinta «0.00» no es una deuda.
-        #expect(PanelHeroFigureLogic.bigFigureCaption(totalBalance: -0.004) == .haveToday)
-        #expect(PanelHeroFigureLogic.bigFigureValue(totalBalance: -1_284.30) == 1_284.30)
         #expect(PanelHeroFigureLogic.bigFigureValue(totalBalance: 64_690.04) == 64_690.04)
+        #expect(PanelHeroFigureLogic.bigFigureValue(totalBalance: -1_284.30) == -1_284.30)
+        #expect(PanelHeroFigureLogic.label(figure: .balance, period: .thisMonth) == L10n.Panel.Hero.haveToday)
     }
 
-    @Test("La línea del mes: «Te queda» en curso, «Te quedó» cerrado, el mes pasado con su nombre")
-    func panelMonthLine_followsThePeriodTense() {
+    @Test("En «Solo gastos» el rótulo dice el lado y el mes; sin mes, el período")
+    func panelExpensesOnlyLabel() {
         let now = Self.now, calendar = Self.calendar
-        func line(_ figure: PanelHeroFigure, _ period: DetailPeriod, _ range: DateInterval? = nil) -> PanelHeroMonthLine {
-            PanelHeroFigureLogic.monthLine(figure: figure, period: period, customRange: range, now: now, calendar: calendar)
-        }
-
-        #expect(line(.balance, .thisMonth) == .leftNow)
-        #expect(line(.balance, .thisWeek) == .leftNow)
-        #expect(line(.balance, .thisYear) == .leftNow)
-        #expect(line(.balance, .allTime) == .leftNow)
-        #expect(line(.balance, .lastYear) == .leftPast)
-        let october = calendar.date(byAdding: .month, value: -1, to: now) ?? now
-        #expect(line(.balance, .lastMonth) == .leftInMonth(october))
-
-        // Un rango que acabó antes de hoy (lo que dejan las flechas hacia atrás) va en pasado; uno que llega a hoy, no.
-        let september = DateInterval(start: Self.day(2026, 9, 1), end: Self.day(2026, 9, 30))
-        #expect(line(.balance, .custom, september) == .leftPast)
-        let untilToday = DateInterval(start: Self.day(2026, 11, 1), end: Self.day(2026, 11, 20))
-        #expect(line(.balance, .custom, untilToday) == .leftNow)
-
-        // Las píldoras mueven solo la línea: dice el lado que filtran.
-        #expect(line(.expense, .thisMonth) == .expense(month: now))
-        #expect(line(.income, .thisMonth) == .income(month: now))
-        #expect(line(.expense, .thisYear) == .expense(month: nil))
+        #expect(PanelHeroFigureLogic.label(figure: .expense, period: .thisMonth, now: now, calendar: calendar)
+                == PanelHeroMonthLine.expense(month: now).text)
+        #expect(PanelHeroFigureLogic.label(figure: .expense, period: .thisYear, now: now, calendar: calendar)
+                == PanelHeroMonthLine.expense(month: nil).text)
     }
 
-    @Test("El hero del Panel pinta el saldo en la cifra grande y el neto en la línea, no «Balance de <mes>»")
+    @Test("El hero del Panel pinta el saldo con su signo y «Tu dinero hoy» debajo; ya no la línea del mes")
     func panelHero_wiresBothFigures() throws {
         let hero = try Self.repoFile("Yala/App/Views/Panel/HeroMonthView.swift")
         #expect(hero.contains("value: PanelHeroFigureLogic.bigFigureValue(totalBalance: totalBalance ?? 0),"),
                 "La cifra grande del Panel ya no es el saldo de las cuentas.")
-        #expect(hero.contains("PanelHeroFigureLogic.bigFigureCaption(totalBalance: totalBalance ?? 0).text"),
-                "El rótulo de la cifra grande no es «Tienes hoy» / «Debes hoy».")
-        #expect(hero.contains("PanelHeroFigureLogic.monthLine(figure: figure, period: selectedPeriod, customRange: customDateRange)"),
-                "La línea del mes no sigue a la píldora y al período.")
-        #expect(hero.contains("\"panel_hero_month_line\""))
+        #expect(hero.contains("return L10n.Panel.Hero.haveToday"), "El rótulo de la cifra grande no es «Tu saldo hoy».")
+        #expect(!hero.contains("oweToday"), "El hero vuelve a decir «Debes hoy» (BRAND-VOICE §8).")
+        #expect(hero.contains("Text(L10n.SaldoPanel.moneyToday)"), "Falta «Tu dinero hoy» bajo la cifra grande.")
+        #expect(hero.contains("\"panel_hero_money_line\""))
+        #expect(!hero.contains("panel_hero_month_line"), "La línea del mes volvió al hero: ya la cuenta Flujo de caja.")
+        #expect(!hero.contains("leftNow"), "El hero vuelve a decir «Te queda».")
         #expect(!hero.contains("balanceOfMonth"), "El hero vuelve a decir «Balance de <mes>».")
         // «Solo gastos» conserva «Gastos de <mes>»: antes decía «Gastado».
         #expect(hero.contains("PanelHeroFigureLogic.label(figure: .expense, period: selectedPeriod)"))
         #expect(!hero.contains("L10n.Panel.spent"))
     }
 
-    @Test("Los textos del Panel en español dicen «Tienes hoy» y «Te queda», nunca «te sobra»")
+    @Test("Los textos del Panel en español: «Tu saldo hoy» y «Tu dinero hoy», sin «Debes», «Disponible» ni «liquidez»")
     func panelCopy_spanish() throws {
+        for language in ["es", "es-419", "es-AR", "es-ES"] {
+            let entries = try Self.catalog("Yala/Resources/\(language).lproj/Localizable.strings")
+            #expect(entries["panel.hero.haveToday"] == "Tu saldo hoy", "\(language)")
+            #expect(entries["panel.saldo.moneyToday"] == "Tu dinero hoy", "\(language)")
+            #expect(entries["stats.hero.captionAccountsBalanceClosed"] == "Tu saldo al cierre", "\(language)")
+            for (key, value) in entries where key.hasPrefix("panel.saldo.") || key == "panel.hero.haveToday" {
+                #expect(!value.contains("Debes") && !value.contains("debes"), "\(key) dice «debes» (§8).")
+                #expect(!value.lowercased().contains("disponible"), "\(key) dice «disponible».")
+                #expect(!value.lowercased().contains("liquidez"), "\(key) usa jerga (§2.2).")
+                #expect(!value.contains("Balance"), "\(key) dice «Balance» (§2.2).")
+            }
+        }
         let es = try Self.catalog("Yala/Resources/es.lproj/Localizable.strings")
-        #expect(es["panel.hero.haveToday"] == "Tienes hoy")
-        #expect(es["panel.hero.oweToday"] == "Debes hoy")
         #expect(es["panel.hero.leftNow"] == "Te queda")
         #expect(es["panel.hero.leftPast"] == "Te quedó")
         #expect(es["panel.hero.leftInMonth"] == "En %@ te quedó")
@@ -133,6 +123,10 @@ struct VocabularioTienesTeQuedaTests {
         let keys = [
             "panel.hero.haveToday", "panel.hero.oweToday", "panel.hero.leftNow", "panel.hero.leftPast",
             "panel.hero.leftInMonth", "stats.hero.captionAccountsBalanceClosed",
+            "panel.saldo.moneyToday", "panel.saldo.infoButton", "panel.saldo.info.title", "panel.saldo.info.balanceBody",
+            "panel.saldo.info.moneyBody", "panel.saldo.info.exampleTitle", "panel.saldo.info.exampleSavings",
+            "panel.saldo.info.exampleCard", "panel.saldo.info.exampleNote", "panel.saldo.info.chooseAccounts",
+            "panel.saldo.info.chooseHint", "panel.saldo.accounts.title", "panel.saldo.countsToggle", "panel.saldo.countsHint",
         ]
         for language in Self.languages {
             let entries = try Self.catalog("Yala/Resources/\(language).lproj/Localizable.strings")

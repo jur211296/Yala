@@ -74,11 +74,10 @@ final class ArchivedAccountKeepsHistoryUITests: XCTestCase {
         }
         XCTAssertTrue(avatar.waitForHittable(timeout: 10), "El Panel no quedó a la vista.")
 
-        // El Panel sigue contando lo que salió de la cuenta archivada: Taxi 25 + Teléfono 33. Sin el arreglo, «Salió S/ 0.00».
-        let expense = app.buttons["panel_hero_expense_pill"]
-        XCTAssertTrue(expense.waitForHittable(timeout: 10), "No quedó a la vista el gasto del hero del Panel.")
-        let counted = NSPredicate(format: "label CONTAINS %@", "58.00")
-        wait(for: [expectation(for: counted, evaluatedWith: expense)], timeout: 10)
+        // Que el Panel siga contando lo que salió de la cuenta archivada (Taxi 25 + Teléfono 33) lo fija
+        // `ArchivedAccountKeepsHistoryTests`: desde el 2026-11-16 el hero ya no tiene la píldora de gastos que se miraba aquí.
+        XCTAssertTrue(app.descendants(matching: .any)["panel_hero_figure"].firstMatch.waitForExistence(timeout: 10),
+                      "No quedó a la vista el hero del Panel.")
         snapshot(app, "3-panel-tras-archivar")
 
         // Sus gastos siguen en Registros.

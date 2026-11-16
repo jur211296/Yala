@@ -677,6 +677,15 @@ final class AppPreferences {
         }
     }
 
+    /// Qué cuentas suman en «Tu dinero hoy», la cifra chica del hero del Panel (2026-11-16). Solo guarda las que la persona
+    /// cambió respecto al valor de su tipo; se lee y se escribe con `PanelMoneyScopeLogic`. "" = nada cambiado.
+    var panelMoneyAccountOverrides: String = "" {
+        didSet {
+            guard oldValue != panelMoneyAccountOverrides else { return }
+            persistString(panelMoneyAccountOverrides, forKey: Keys.panelMoneyAccountOverrides, synced: true)
+        }
+    }
+
     var panelSectionsHidden: [String] = [] {
         didSet {
             guard oldValue != panelSectionsHidden else { return }
@@ -1104,7 +1113,7 @@ final class AppPreferences {
     ///     copiaba al PERSISTENTE y se volvía permanente: es el bug de «tras un XCUITest, abrir Yala
     ///     Dev a mano se salta onboarding». Para un valor que ya estaba en disco el mismo `set` es
     ///     un no-op invisible, y por eso nadie lo vio en once meses.
-    ///  2. **TRÁFICO DE SYNC.** Las 37 `synced: true` llaman además a `PreferenceSyncService`. Medido
+    ///  2. **TRÁFICO DE SYNC.** Las 38 `synced: true` llaman además a `PreferenceSyncService`. Medido
     ///     contra el plist real del simulador: 6 keys re-empujaban a iKV en CADA lanzamiento (suelo,
     ///     no caso típico), con un `iKV.synchronize()` por key. Y como el `init` de este objeto corre
     ///     estructuralmente ANTES de `PreferenceSyncService.bootstrap()` (`AppBootstrapper:38` es
@@ -1310,6 +1319,11 @@ final class AppPreferences {
         if let value = parseList(defaults.string(forKey: Keys.panelSectionsHidden)) {
             panelSectionsHidden = value
         }
+        // Sin la clave, nada cambiado: un borrado o un pull que la retira vuelve a los valores de cada tipo.
+        let moneyOverrides = defaults.string(forKey: Keys.panelMoneyAccountOverrides) ?? ""
+        if moneyOverrides != panelMoneyAccountOverrides {
+            panelMoneyAccountOverrides = moneyOverrides
+        }
         if let value = parseList(defaults.string(forKey: Keys.panelSectionsOrder)) {
             panelSectionsOrder = value
         }
@@ -1400,6 +1414,7 @@ final class AppPreferences {
         panelPlanificacionHidden = []
         panelSectionsHidden = []
         panelSectionsOrder = []
+        panelMoneyAccountOverrides = ""
         panelPrefsMigratedV2 = false
         panelAccountsCollapsed = true
     }
@@ -1590,6 +1605,7 @@ final class AppPreferences {
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelSectionsOrder = "panelSectionsOrder"
+        static let panelMoneyAccountOverrides = "panelMoneyAccountOverrides"
         static let moreSectionOrder = "moreSectionOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
 

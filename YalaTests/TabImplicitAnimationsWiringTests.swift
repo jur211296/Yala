@@ -91,8 +91,6 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: isPreparing)"),
         // Card C2 (los `withAnimation` / `dsWithAnimation` que no animaban dentro de las pestañas, 2026-11-02).
         ("Yala/App/Views/Panel/HeroMonthView.swift",
-         ".animation(reduceMotion ? nil : DS.Animation.selection, value: sessionState.selectedTransactionNatures)"),
-        ("Yala/App/Views/Panel/HeroMonthView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.selection, value: selectedPeriod)"),
         ("Yala/App/Views/Panel/HeroMonthView.swift",
          "titleMotion: reduceMotion ? nil : .fade"),

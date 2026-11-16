@@ -1568,7 +1568,7 @@
 "guide.inbox.title" = "Para rever e guardar";
 "guide.insights.message" = "Com base nos teus gastos, o Yala diz-te coisas úteis: o teu dia mais caro, se estás a gastar mais do que o normal, etc.";
 "guide.insights.title" = "O Yala analisa por ti";
-"guide.panel.message" = "Vê de relance quanto gastaste e quanto te resta. Toca em Novo registo para adicionar uma despesa.";
+"guide.panel.message" = "Vê de relance o teu saldo e o teu dinheiro de hoje. Toca em Novo registo para adicionar uma despesa.";
 "guide.panel.title" = "Este é o teu resumo";
 "guide.records.message" = "Aqui estão as tuas receitas e despesas do período, ordenadas por data. Toca num para ver os detalhes.";
 "guide.records.title" = "Todos os teus registos";
@@ -8142,12 +8142,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld de %2$lld: o resto não cabe";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Tens hoje";
+"panel.hero.haveToday" = "O teu saldo hoje";
 "panel.hero.oweToday" = "Deves hoje";
 "panel.hero.leftNow" = "Resta";
 "panel.hero.leftPast" = "Restou";
 "panel.hero.leftInMonth" = "Em %@ restou";
-"stats.hero.captionAccountsBalanceClosed" = "Saldo no fecho";
+"stats.hero.captionAccountsBalanceClosed" = "O teu saldo no fecho";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Ainda sem nota: aparece quando duas das três partes tiverem dados.";
@@ -9067,3 +9067,33 @@
 "rfr.choice.nextDue" = "Próxima cobrança: %@";
 "rfr.notice.linked" = "Associado a “%@”";
 "rfr.notice.created" = "Recorrente criado · este registo é o primeiro pagamento";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "O teu dinheiro hoje";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "O que significam o teu saldo e o teu dinheiro";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "O teu saldo e o teu dinheiro";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Soma todas as tuas contas, cartões incluídos. O que gastaste no cartão e ainda não pagaste é descontado.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "O dinheiro que tens para usar. É o mesmo, mas sem os cartões de crédito.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Um exemplo";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "Na tua conta poupança";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Gastaste no cartão";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Quando pagares o cartão, os dois valores ficam iguais.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Escolher que contas somam";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Os cartões de crédito vêm desligados. Podes mudar quando quiseres.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Contas que somam";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Somar em “O teu dinheiro hoje”";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Desliga se não for dinheiro para usar, como um cartão de crédito.";

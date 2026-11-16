@@ -19,12 +19,15 @@
 import SwiftUI
 
 struct HeroHeader<Label: View, Period: View, Content: View>: View {
+    /// El aire entre la fila del rótulo y la cifra. El Panel lo achica (2026-11-16: el rótulo quedaba lejos de su
+    /// cifra); Estadísticas y Registros siguen con el de siempre.
+    var labelToContentSpacing: CGFloat = DS.Spacing.md
     @ViewBuilder var label: Label
     @ViewBuilder var period: Period
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+        VStack(alignment: .leading, spacing: labelToContentSpacing) {
             AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.sm) {
                 label
             } trailing: {

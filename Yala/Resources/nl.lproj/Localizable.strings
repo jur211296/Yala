@@ -3285,7 +3285,7 @@
 
 "contextualGuide.dismiss" = "Begrepen";
 "guide.panel.title" = "Dit is je overzicht";
-"guide.panel.message" = "Zie in één oogopslag hoeveel je hebt uitgegeven en hoeveel je nog hebt. Tik op Nieuwe boeking om een uitgave toe te voegen.";
+"guide.panel.message" = "Zie in één oogopslag je saldo en je geld van vandaag. Tik op Nieuwe boeking om een uitgave toe te voegen.";
 "guide.trends.title" = "Hoe staat het met je geld?";
 "guide.trends.message" = "Deze grafiek volgt je saldo, inkomsten of uitgaven door de tijd. Stijgt de lijn, dan is dat bedrag gegroeid.";
 "guide.categories.title" = "Waar gaat je geld naartoe?";
@@ -8905,12 +8905,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld van %2$lld: meer past er niet in";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "Je hebt vandaag";
+"panel.hero.haveToday" = "Je saldo vandaag";
 "panel.hero.oweToday" = "Je staat vandaag rood";
 "panel.hero.leftNow" = "Je houdt over";
 "panel.hero.leftPast" = "Je hield over";
 "panel.hero.leftInMonth" = "In %@ hield je over";
-"stats.hero.captionAccountsBalanceClosed" = "Saldo aan het einde";
+"stats.hero.captionAccountsBalanceClosed" = "Je saldo aan het einde";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Nog geen score: die verschijnt zodra twee van de drie delen gegevens hebben.";
@@ -9830,3 +9830,33 @@
 "rfr.choice.nextDue" = "Volgende afschrijving: %@";
 "rfr.notice.linked" = "Gekoppeld aan ‘%@’";
 "rfr.notice.created" = "Terugkerende betaling gemaakt · deze transactie is de eerste betaling";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Je geld vandaag";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "Wat je saldo en je geld betekenen";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Je saldo en je geld";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Telt al je rekeningen op, ook je kaarten. Wat je met een kaart uitgaf en nog niet betaalde, gaat eraf.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "Het geld dat je kunt gebruiken. Hetzelfde, maar zonder creditcards.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "Een voorbeeld";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "Op je spaarrekening";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "Uitgegeven met je kaart";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Zodra je de kaart betaalt, zijn beide bedragen gelijk.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Kies welke rekeningen meetellen";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Creditcards staan eerst uit. Je kunt dat altijd veranderen.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Rekeningen die meetellen";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Meetellen in ‘Je geld vandaag’";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Zet het uit als het geen geld is om te gebruiken, zoals een creditcard.";

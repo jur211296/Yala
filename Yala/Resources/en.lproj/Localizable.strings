@@ -3325,7 +3325,7 @@
 
 "contextualGuide.dismiss" = "Got it";
 "guide.panel.title" = "This is your overview";
-"guide.panel.message" = "See at a glance how much you've spent and how much you have left. Tap New record to add an expense.";
+"guide.panel.message" = "See your balance and your money today at a glance. Tap New record to add an expense.";
 "guide.trends.title" = "How's your money doing?";
 "guide.trends.message" = "This chart follows your balance, income or expenses over time. If the line goes up, that number grew.";
 "guide.categories.title" = "Where does your money go?";
@@ -8899,12 +8899,12 @@
 "tag.nameLimitReached %lld %lld" = "%1$lld of %2$lld: there’s no room for more";
 
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
-"panel.hero.haveToday" = "You have today";
+"panel.hero.haveToday" = "Your balance today";
 "panel.hero.oweToday" = "You owe today";
 "panel.hero.leftNow" = "Remaining";
 "panel.hero.leftPast" = "Was left";
 "panel.hero.leftInMonth" = "Left in %@";
-"stats.hero.captionAccountsBalanceClosed" = "Balance at close";
+"stats.hero.captionAccountsBalanceClosed" = "Your balance at close";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "No score yet: it shows once two of the three parts have data.";
@@ -9824,3 +9824,33 @@
 "rfr.choice.nextDue" = "Next charge: %@";
 "rfr.notice.linked" = "Linked to “%@”";
 "rfr.notice.created" = "Recurring payment created · this record is its first payment";
+
+/* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
+/* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
+"panel.saldo.moneyToday" = "Your money today";
+/* VoiceOver label of the question-mark button next to the Panel balance: it opens the sheet that explains the two amounts */
+"panel.saldo.infoButton" = "What your balance and your money mean";
+/* Title of the sheet that explains the two Panel amounts */
+"panel.saldo.info.title" = "Your balance and your money";
+/* Sheet: what 'Your balance today' is, for someone who knows nothing about money. Plain words, no jargon */
+"panel.saldo.info.balanceBody" = "Adds up all your accounts, cards included. What you spent on a card and haven't paid yet is taken off.";
+/* Sheet: what 'Your money today' is. Plain words, no jargon */
+"panel.saldo.info.moneyBody" = "The money you have to use. It's the same, but without credit cards.";
+/* Sheet: header of the worked example */
+"panel.saldo.info.exampleTitle" = "An example";
+/* Sheet example, first row: money in a savings account (followed by an amount) */
+"panel.saldo.info.exampleSavings" = "In your savings account";
+/* Sheet example, second row: spent with a credit card and not paid yet (followed by a negative amount) */
+"panel.saldo.info.exampleCard" = "You spent on your card";
+/* Sheet example, closing line: once the card is paid, both amounts match */
+"panel.saldo.info.exampleNote" = "Once you pay the card, both amounts match.";
+/* Sheet button: opens the list to choose which accounts add up in 'Your money today' */
+"panel.saldo.info.chooseAccounts" = "Choose which accounts count";
+/* Sheet: line under the button. Credit cards start switched off */
+"panel.saldo.info.chooseHint" = "Credit cards start switched off. You can change it any time.";
+/* Title of the screen with one switch per account */
+"panel.saldo.accounts.title" = "Accounts that count";
+/* Switch, per account: whether it adds up in 'Your money today'. Same words in the account form and in the list */
+"panel.saldo.countsToggle" = "Count in “Your money today”";
+/* Help line under the per-account switch */
+"panel.saldo.countsHint" = "Turn it off if it isn't money you can use, like a credit card.";
