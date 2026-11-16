@@ -664,12 +664,19 @@ final class PanelViewModel {
 
     private func nextAccountDataWait(now: Date = .now) -> PanelAccountDataWait {
         let inputs = accountDataWaitInputs()
-        return accountDataWait.next(
+        let justEntered = AccountEntryPanelWait.isArmed(now: now)
+        let next = accountDataWait.next(
             hasAccounts: !loadedAccounts.isEmpty,
             cloudEngineActive: inputs.cloudEngineActive,
             firstPullCompleted: inputs.firstPullCompleted,
             attestVerdictIsTerminal: inputs.attestVerdictIsTerminal,
+            justEnteredAccount: justEntered,
             now: now)
+        // La entrada se consume al empezar a esperar (la espera ya se sostiene sola) o cuando el motor ya no trae nada.
+        if justEntered, next.isWaiting || inputs.firstPullCompleted || inputs.attestVerdictIsTerminal {
+            AccountEntryPanelWait.disarm()
+        }
+        return next
     }
 
     private func updateAccountDataWait() {

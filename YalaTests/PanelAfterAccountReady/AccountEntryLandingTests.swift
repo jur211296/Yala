@@ -82,8 +82,9 @@ struct AccountEntryLandingTests {
     func groupsDoor_wiring() throws {
         let content = try Self.code("Yala/App/ContentView.swift")
         // Barrido del 14-nov (c8i9): entre elegir Grupos y cerrar el cover, «Empezar» sube `dataVersion`.
+        // Barrido final de 2.3 (16-nov): antes de la recarga, «Empezar» arma la espera del Panel (`AccountEntryPanelWait`).
         #expect(content.contains("if WelcomeGroupsDoorLanding.consume() { navigation.selectMainTab(.groups) } "
-                                 + "SessionState.shared.incrementDataVersion() showWelcomeCloudSignIn = false"))
+                                 + "AccountEntryPanelWait.arm() SessionState.shared.incrementDataVersion() showWelcomeCloudSignIn = false"))
         let flow = try Self.code("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
         #expect(flow.contains("onSignIn: { WelcomeGroupsDoorLanding.arm() handleExistingBranch() }"))
         #expect(flow.contains("from door: WelcomeShowcaseLogic.Door) { WelcomeGroupsDoorLanding.disarm() switch (access, door)"))

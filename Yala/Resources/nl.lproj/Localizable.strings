@@ -2848,7 +2848,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala legt het voor je vast";
-"aiConsent.processingMessage" = "Spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat de opname of foto alleen op dat moment naar een AI-dienst. Met je gegevens in je Yala-account kan de AI daarnaast al je gegevens lezen die nodig zijn om precies en gedetailleerd te zijn. Het wordt niet gebruikt om de AI te trainen.";
+"aiConsent.processingMessage" = "Typ het, spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat je tekst, de opname of de foto alleen op dat moment naar een AI-dienst. Met je gegevens in je Yala-account kan de AI daarnaast al je gegevens lezen die nodig zijn om precies en gedetailleerd te zijn. Het wordt niet gebruikt om de AI te trainen.";
 "aiConsent.insightsTitle" = "AI-samenvatting";
 "aiConsent.insightsMessage" = "Yala analyseert je financiën en laat zien hoe je ervoor staat. Daarvoor gaat er een samenvatting naar een AI-dienst — totalen en trends per categorie, budgetten, terugkerende betalingen en de namen van de kleine aankopen die je herhaalt, met hoe vaak en hoeveel ze samen kosten —, niet je volledige boekingsgeschiedenis. Met je gegevens in je Yala-account kan de AI daarnaast alles lezen wat nodig is om precies te zijn, zoals elke aankoop met datum en bedrag. Die wordt niet gebruikt om de AI te trainen.";
 "aiConsent.accept" = "Accepteren en inschakelen";

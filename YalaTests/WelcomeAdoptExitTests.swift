@@ -364,7 +364,8 @@ struct WelcomeAdoptExitTests {
     /// flag se repone al empezar cada adopt.
     @Test func cancelLanded_isWatchedByThePoll() throws {
         let poll = try Self.flat(Self.body(of: "private func pollAdoptProgress()"))
-        let check = try #require(poll.range(of: "controller.refresh() if cancelLanded(controller) { onBack() return }"))
+        // Card xhbn (16-nov): desde la vitrina, la sesión se suelta antes de volver.
+        let check = try #require(poll.range(of: "controller.refresh() if cancelLanded(controller) { if WelcomeAdoptCancel.releasesSessionAfterCancel( isUnifiedAccess: isUnifiedAccess, hasSession: CloudAuthService.shared.hasSession) { await CloudAuthService.shared.signOut() } onBack() return }"))
         let mapping = try #require(poll.range(of: "guard let next = CloudWelcomeSignInFlow.phase("))
         #expect(check.lowerBound < mapping.lowerBound)
         let landed = try Self.flat(Self.body(of: "private func cancelLanded(_ controller: CloudMigrationController) -> Bool"))
