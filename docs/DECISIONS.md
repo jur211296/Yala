@@ -7,6 +7,7 @@
 > **No hace falta leer este fichero entero** — son 303 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
 - `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
@@ -137,6 +138,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] Yala web en producción: Grupos se enciende quitando la condición del gateway
+**Contexto:** Al subir Yala web a producción (16-nov) se midió que el código del gateway apagaba la lectura y la escritura de Grupos para la web cuando el entorno es producción, aunque `WEB_GROUPS_READER`/`WRITER` estuvieran en `"on"`. El encargo prohibía tocar código del gateway y lo dejaba anotado.
+**Decisión:** Jürgen eligió la opción A en el chat (16-nov, tarde): quitar esa condición y desplegar el gateway de producción desde 2.3 con los dos interruptores encendidos. El mismo despliegue sube a todos el cupo de recibos de Grupos (decidido el 14-nov).
+**Razones:** La escritura en Grupos sube junto con toda la web (lote del 15-nov); sin esto, Grupos daba error en la web de producción.
+**Consecuencias:** Desde el 16-nov, Grupos de la web lo apagan solo los dos interruptores de `[env.production.vars]` o el kill-switch de Grupos. Detalle en `webapp/README.md`, «Producción».
+**Estado:** Activa
 
 ### [2026-11-16] Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2.4 y lo que entra en la cola
 **Contexto:** Cuatro decisiones que Jürgen tomó en el chat el 16-nov (07:18, 09:04, 11:40 y 11:58, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del video v4 de la verificación de Gmail, que las recibió pendientes y solo ejecuta la última en lo que le toca.

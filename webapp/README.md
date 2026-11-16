@@ -269,8 +269,8 @@ Jürgen la quiere arriba para probarla con su cuenta personal, **sin enlazarla d
 |---|---|
 | Supabase producción (`kefvaiymtgytemwbltlz`) | Aplicados el 16-nov, uno a uno: `mcp0_01`–`mcp0_03` (con el id del conector como uuid nulo: el conector **no** está en producción) y `web0_01`, `web1_01` (instala `pg_cron`), `web3_01`, `web3_02`. Hook tras cada paso: `920d79e0…` → `d9a58193…` → `7a703d85…`. Huella final `63aa288a…`, la misma del ensayo |
 | Auth de producción | Servidor OAuth encendido sin registro abierto; cliente confidencial «Yala web» `79c7e38e-409e-470f-9151-81784a02760c` (secreto en `~/Secrets/yala-web-production/` de la Mini); hook de token encendido; Apple con `pe.yala.app.web` delante de los ids de la app y Google con el cliente web delante; `uri_allow_list` = `https://app.yala-app.pe/auth/callback`. Site URL sin cambios. Foto de la config de antes: `~/Secrets/yala-web-production/auth-config-antes-20261116.json` (Mini) |
-| Worker `yala-web-production` | Desplegado en `https://app.yala-app.pe` (dominio propio y certificado). KV `yala-web-production-sessions`, secreto del cliente OAuth subido. **Responde 503 a todo hasta que tenga el widget de Turnstile** (`config.ts` falla cerrado) |
-| Turnstile | Pendiente: el widget lo crea Dan en el panel (el OAuth de wrangler de la cuenta de Yala no trae el permiso de Turnstile) |
+| Worker `yala-web-production` | **Atiende** en `https://app.yala-app.pe` desde el 16-nov (versión `696f2e82…`), con dominio propio, certificado, KV `yala-web-production-sessions` y los dos secretos subidos. Sin enlace desde la web pública |
+| Turnstile | Widget «Yala web (producción)» (Managed, sin pre-clearance), de Dan. Clave pública en `wrangler.toml`; la secreta en `~/Secrets/yala-web-production/` de la Mini y como secreto del Worker. El OAuth de wrangler de la cuenta de Yala no trae el permiso de Turnstile |
 | Gateway de producción | Desplegado el 16-nov desde 2.3 (versión `5d52cb6a…`; la anterior, `307ce4f4…`, sirve para `wrangler rollback`) con `WEB_GROUPS_READER` y `WEB_GROUPS_WRITER` en `"on"`. Hasta ese día el código apagaba las dos entradas en producción aunque el interruptor estuviera encendido; Jürgen eligió quitar esa condición (opción A). El despliegue subió también el cupo de recibos de Grupos (decidido el 14-nov). Humo: `/config` 200, rutas sin token 401, y la app del iPhone 14 sincroniza Grupos |
 | App del iPhone | La publicada no conoce la web: «Navegadores conectados», vincular por QR y recoger lo apuntado en la web existen solo en Yala Dev (`ConnectedBrowsersConfig.baseURL` es `nil` fuera de `DEV_BUILD`). Lo apuntado en la web llega hoy solo a quien tenga el correo del banco preparado |
 
@@ -286,6 +286,17 @@ Jürgen la quiere arriba para probarla con su cuenta personal, **sin enlazarla d
 **El login de la app tras encender el hook:** llamado directo con las 21 sesiones de la app que había (todas salen
 intactas; la web sale `yala_web`; un cliente ajeno, 403), y un login real con una cuenta desechable (enlace de admin →
 `/verify` → renovación): `role = authenticated` y sin `client_id`, como antes. La cuenta se borró al acabar.
+
+**La prueba de punta a punta (16-nov, Safari del iPhone 14, cuenta de prueba test@yala-app.pe):** Turnstile pasa
+solo; «Continuar con Google» entra y el Panel enseña el mismo saldo que la app (Efectivo −12,50 S/ y el mismo registro);
+«Apuntar» deja el borrador en la cola de producción (`mail_drafts`, `source = web`, 3,50 «Prueba web produccion»);
+Grupos se lee igual que en la app; «Salir de Yala web» cierra. «Continuar con Apple» (Face ID de Jürgen) entra en la
+misma cuenta, que tiene las identidades de Apple y de Google, con el mismo saldo y el borrador en la Bandeja.
+
+**Para que la app publicada recoja lo apuntado en la web** falta lo de la 2.3 del iPhone: `ConnectedBrowsersConfig.baseURL`
+con `https://app.yala-app.pe` fuera de `DEV_BUILD` (hoy `nil`), que es lo que hace que la app pida `GET /mail/drafts`
+también con sesiones web. Hasta entonces, el borrador espera en la cola (caduca como los del correo) y solo lo recoge
+una app con el correo del banco preparado.
 
 **Marcha atrás**, por orden: apagar el hook en Auth (un cambio de config, efecto inmediato); `web3_02_rollback` →
 `web3_01_rollback` → `web1_01_rollback` → `web0_01_rollback` → `mcp0_03_rollback` → `mcp0_02_rollback` →

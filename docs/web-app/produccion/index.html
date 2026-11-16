@@ -98,7 +98,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
   <header>
     <span class="eyebrow">Yala web · producción · 16 nov 2026</span>
     <h1>Yala web a producción</h1>
-    <p class="lead">La nube de producción ya reconoce a Yala web, Grupos está encendido para la web y la dirección <code>app.yala-app.pe</code> está viva, sin enlace desde la web pública. Falta el widget anti-bots para que deje entrar a alguien y dos comprobaciones de Apple y Google.</p>
+    <p class="lead">Yala web funciona en producción en <code>app.yala-app.pe</code>, sin enlace desde la web pública. Con Google y con Apple entra en la cuenta de prueba, enseña el mismo saldo que el iPhone, apunta un borrador y lee Grupos.</p>
   </header>
 
   <section aria-labelledby="estado">
@@ -106,7 +106,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     <div class="verdict">
       <div class="line"><span class="pill ok">Arriba</span><span>Supabase de producción con todo lo de la web, el hook de token encendido y Apple y Google configurados para la web.</span></div>
       <div class="line"><span class="pill ok">Probado</span><span>Login y renovación reales en producción tras encender el hook: el token de la app sale igual que antes.</span></div>
-      <div class="line"><span class="pill warn">Cerrada</span><span><code>app.yala-app.pe</code> responde, pero rechaza todo (503) hasta que tenga su widget de Turnstile.</span></div>
+      <div class="line"><span class="pill ok">Abierta</span><span><code>app.yala-app.pe</code> atiende con su widget anti-bots real.</span></div>
       <div class="line"><span class="pill ok">Grupos</span><span>Lectura y escritura de la web encendidas en el gateway de producción (opción A que elegiste hoy).</span></div>
     </div>
   </section>
@@ -116,7 +116,7 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     <div class="rows">
       <div class="row"><div class="k">Base de la nube</div><div class="v"><span class="pill ok">aplicada</span><span>El rol de solo lectura, el hook de token, lo que la web lee de la Bandeja y de Grupos, cerrar sesiones web desde el iPhone, su barrido diario y la escritura en Grupos con permiso propio. Siete pasos, uno a uno, comprobando el hook tras cada uno.</span></div></div>
       <div class="row"><div class="k">Login de la nube</div><div class="v"><span class="pill ok">encendido</span><span>Hook de token y servidor OAuth (sin registro abierto). Cliente «Yala web» registrado. Apple aprende el identificador web <code>pe.yala.app.web</code> y Google su cliente web, delante de los de la app. Vuelta permitida: <code>https://app.yala-app.pe/auth/callback</code>.</span></div></div>
-      <div class="row"><div class="k">Yala web</div><div class="v"><span class="pill warn">desplegada, cerrada</span><span>En <code>https://app.yala-app.pe</code>, con su certificado, sus sesiones propias y el secreto del cliente subido. Hasta tener Turnstile responde 503: falla cerrada a propósito.</span></div></div>
+      <div class="row"><div class="k">Yala web</div><div class="v"><span class="pill ok">atiende</span><span>En <code>https://app.yala-app.pe</code>, con su certificado, sus sesiones propias, el secreto del cliente y el widget de Turnstile que creó Dan.</span></div></div>
       <div class="row"><div class="k">Grupos en la web</div><div class="v"><span class="pill ok">encendido</span><span>El código del gateway negaba Grupos a la web en producción aunque el interruptor estuviera encendido. Quité esa condición (opción A) y desplegué el gateway desde 2.3. Con ese despliegue llegó también el cupo de recibos de Grupos. La app del iPhone 14 sincroniza Grupos igual después.</span></div></div>
       <div class="row"><div class="k">App del iPhone</div><div class="v"><span class="pill acc">sin cambios</span><span>La app publicada no conoce la web: lo apuntado en la web no llega a su Bandeja (solo a quien tenga el correo del banco preparado). Eso llega con la 2.3 del iPhone.</span></div></div>
       <div class="row"><div class="k">Web pública</div><div class="v"><span class="pill acc">intacta</span><span><code>yala-app.pe</code> sigue en Vercel y no enlaza a la web de la app.</span></div></div>
@@ -135,41 +135,22 @@ footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line)
     </ul></div>
   </section>
 
-  <section aria-labelledby="falta">
-    <h2 id="falta">Qué falta, en este orden</h2>
-    <ol class="steps">
-      <li><div><h3>Widget de Turnstile</h3><span class="who">Dan · panel de Cloudflare</span><p>Sin él la web no deja entrar a nadie. Detalle abajo.</p></div></li>
-      <li><div><h3>Apple y Google conocen la vuelta de producción</h3><span class="who">Dan · Apple Developer y Google Cloud</span><p>Sin esto, Apple y Google rechazan el login de la web.</p></div></li>
-      <li><div><h3>Probar de punta a punta</h3><span class="who">Frank · navegador + iPhone 14</span><p>Entrar con Apple y con Google en una cuenta de prueba, ver el mismo saldo que en el iPhone y apuntar un borrador.</p></div></li>
-      <li><div><h3>La app que recoge lo apuntado en la web</h3><span class="who">versión 2.3 del iPhone</span><p>Poner la dirección de producción en la configuración de «Navegadores conectados». Fuera de este encargo.</p></div></li>
-    </ol>
+  <section aria-labelledby="e2e">
+    <h2 id="e2e">La prueba de punta a punta</h2>
+    <div class="tests"><ul>
+      <li><span class="pill ok">entrar</span><span>Safari del iPhone 14, cuenta de prueba: Turnstile pasa solo y «Continuar con Google» entra.</span></li>
+      <li><span class="pill ok">saldo</span><span>El Panel de la web enseña lo mismo que la app: Efectivo −12,50 S/ y el mismo registro.</span></li>
+      <li><span class="pill ok">apuntar</span><span>Un gasto de 3,50 S/ queda en la cola de producción, camino de la Bandeja del iPhone.</span></li>
+      <li><span class="pill ok">grupos</span><span>Grupos se lee igual que en la app.</span></li>
+      <li><span class="pill ok">apple</span><span>«Continuar con Apple», con tu Face ID, entra en la misma cuenta: mismo saldo y el borrador esperando en la Bandeja.</span></li>
+    </ul></div>
   </section>
 
-  <section aria-labelledby="dan">
-    <h2 id="dan">Checklist para Dan</h2>
-    <div class="check">
-      <h3>1 · Widget de Turnstile</h3>
-      <ul>
-        <li>Cuenta: Cloudflare «Admin@yala-app.pe's Account».</li>
-        <li>URL: <span class="url">https://dash.cloudflare.com/86c270a7776be98639700bd5959b303b/turnstile</span></li>
-        <li>Add widget → «Yala web (producción)», hostname <code>app.yala-app.pe</code>, modo Managed, sin pre-clearance.</li>
-        <li>Entrega: la clave pública (empieza por <code>0x4</code>) puede ir por el chat; la secreta, a la Mini en <code>~/Secrets/yala-web-production/turnstile-secret.txt</code>, nunca por el chat.</li>
-      </ul>
-    </div>
-    <div class="check">
-      <h3>2 · Apple: vuelta de Supabase producción</h3>
-      <ul>
-        <li>URL: <span class="url">https://developer.apple.com/account/resources/identifiers/list/serviceId</span> (equipo 3WKFFVD66J).</li>
-        <li>Services ID <code>pe.yala.app.web</code> → Sign In with Apple → Configure. Domains: <code>kefvaiymtgytemwbltlz.supabase.co</code>. Return URLs: <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. Sin quitar lo que hay.</li>
-      </ul>
-    </div>
-    <div class="check">
-      <h3>3 · Google: comprobar la vuelta</h3>
-      <ul>
-        <li>URL: <span class="url">https://console.cloud.google.com/apis/credentials?authuser=1</span> (proyecto yala-502622).</li>
-        <li>Cliente web «Yala Web (MCP)»: que esté <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. La copia local del cliente dice que ya está.</li>
-      </ul>
-    </div>
+  <section aria-labelledby="falta">
+    <h2 id="falta">Qué falta</h2>
+    <ol class="steps">
+      <li><div><h3>Que la app recoja lo apuntado en la web</h3><span class="who">versión 2.3 del iPhone</span><p>Poner <code>https://app.yala-app.pe</code> en la configuración de «Navegadores conectados» fuera de Yala Dev (hoy está vacía). Hasta entonces el borrador espera en la cola y solo lo recoge una app con el correo del banco preparado.</p></div></li>
+    </ol>
   </section>
 
   <section aria-labelledby="atras">
