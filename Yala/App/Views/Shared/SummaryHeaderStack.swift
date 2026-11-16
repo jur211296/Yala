@@ -32,6 +32,8 @@ struct SummaryHeaderStack<Period: View, Caption: View, Figure: View, Detail: Vie
     let isShort: Bool
     /// Margen vertical con alto suficiente: el de siempre de cada cabecera.
     let verticalPadding: CGFloat
+    /// El aire entre el rótulo y la cifra con alto suficiente (`HeroHeader.labelToContentSpacing`). Registros lo achica.
+    var labelToContentSpacing: CGFloat = DS.Spacing.md
     @ViewBuilder var period: Period
     @ViewBuilder var caption: Caption
     @ViewBuilder var figure: Figure
@@ -68,7 +70,7 @@ struct SummaryHeaderStack<Period: View, Caption: View, Figure: View, Detail: Vie
                 }
                 .padding(.vertical, DS.Spacing.xs)
             } else {
-                HeroHeader {
+                HeroHeader(labelToContentSpacing: labelToContentSpacing) {
                     caption
                 } period: {
                     period

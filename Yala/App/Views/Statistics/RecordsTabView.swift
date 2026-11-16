@@ -40,6 +40,9 @@ struct RecordsTabView: View {
     var loadFailed: Bool = false
     /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
     var onRetryLoad: () -> Void = {}
+    /// Registros (la pestaña) junta más el rótulo del hero y su cifra (Jürgen, 16-nov: se leían separados). Estadísticas ›
+    /// Registros sigue con el aire de sus pestañas hermanas.
+    var compactsHeroLabel = false
     /// Registros en una ventana ancha (decisión 66 de 2.3): con la vista calendario la página va a una sola columna y su
     /// contenido, al ancho legible. Estadísticas › Registros no lo pide.
     var keepsCalendarAtReadableWidth = false
@@ -76,15 +79,19 @@ struct RecordsTabView: View {
                         StatsQuickActionsSlot()
                     }
 
-                    if showsQuickFilters && !viewModel.duplicateModeActive {
+                    if quickFiltersHostViewMode {
+                        // 16-nov: Cuenta · Categoría · Más filtros y, en la misma línea, Lista/Calendario.
                         RecordsQuickFilterBar(
                             viewModel: viewModel,
                             accounts: accounts,
                             categories: categories,
                             subcategories: subcategories,
-                            onCustomPeriod: { showCustomPeriodPicker = true },
                             onFilterChange: onFilterChange
-                        )
+                        ) {
+                            if viewModel.hasAppliedFilters && listState != .failed {
+                                viewModeSelector
+                            }
+                        }
                     }
 
                     filterBarPanel
@@ -323,7 +330,11 @@ struct RecordsTabView: View {
 
         // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
-        return SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
+        return SummaryHeaderStack(
+            isShort: isShortContainer,
+            verticalPadding: summaryVerticalPadding,
+            labelToContentSpacing: compactsHeroLabel ? DS.Spacing.xs : DS.Spacing.md
+        ) {
             periodSelector
         } caption: {
             // Qué es la cifra. Con un chip de naturaleza activo el otro lado es
@@ -738,7 +749,10 @@ struct RecordsTabView: View {
     /// El selector Lista/Calendario y, en modo calendario, el calendario con el resumen del día elegido.
     @ViewBuilder
     private var viewModeArea: some View {
-        viewModeHeader
+        // Con los chips rápidos a la vista, los botones van en su fila (16-nov); si no, en la suya, como siempre.
+        if !quickFiltersHostViewMode {
+            viewModeHeader
+        }
 
         if viewModel.recordsViewMode == .calendar {
             RecordsCalendarView(
@@ -756,6 +770,11 @@ struct RecordsTabView: View {
 
             calendarDaySummary
         }
+    }
+
+    /// Los chips rápidos se ven (pestaña Registros, fuera del modo duplicados) y llevan Lista/Calendario en su fila.
+    private var quickFiltersHostViewMode: Bool {
+        showsQuickFilters && !viewModel.duplicateModeActive
     }
 
     private var viewModeHeader: some View {

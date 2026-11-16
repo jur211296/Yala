@@ -68,7 +68,7 @@ enum RecordsQuickChipLabel: Equatable {
     case placeholder
     /// Un valor: su nombre («Cuenta Principal ▾»).
     case one(String)
-    /// Varios (elegidos en «Más filtros»): «2 cuentas ▾».
+    /// Varios: «2 cuentas ▾».
     case many(Int)
 
     /// Cuentas: lo que se ve marcado, una por tarjeta (las líneas de una tarjeta elegida no son otra cuenta).
@@ -87,6 +87,76 @@ enum RecordsQuickChipLabel: Equatable {
     }
 
     var isActive: Bool { self != .placeholder }
+}
+
+// MARK: - Varias a la vez en los chips rápidos (16-nov)
+
+/// «Cuenta ▾» elige varias, como «Más filtros»: tocar una la añade o la quita. Trabaja sobre lo que se VE marcado (una
+/// tarjeta, sin sus líneas); la sesión vuelve a meter las líneas de cada tarjeta al escribirlo.
+enum RecordsQuickAccountSelectionLogic {
+    static func toggled<ID: Hashable>(_ id: ID, in shown: Set<ID>) -> Set<ID> {
+        var result = shown
+        if result.contains(id) { result.remove(id) } else { result.insert(id) }
+        return result
+    }
+}
+
+/// «Categoría ▾» elige como el primer presupuesto del onboarding: categorías enteras y, de cada una, las subcategorías
+/// que no se quieran se quitan. Dentro de la hoja todo es un conjunto de subcategorías («expandido»); al escribirlo en
+/// la sesión vuelve a la forma que filtra igual que la hoja de «Más filtros»:
+/// - solo categorías enteras → `selectedCategories`, sin subcategorías;
+/// - alguna a medias → `selectedSubcategories` con todas las elegidas, sin categorías.
+/// Nunca las dos a la vez: el filtro de categoría y el de subcategoría se cumplen los DOS (`FilterService`), y «Comida
+/// entera + Taxi» en dos listas no dejaría pasar nada.
+enum RecordsQuickCategorySelectionLogic {
+    /// Una categoría con sus subcategorías VISIBLES, en el orden de la hoja.
+    struct Entry<C: Hashable, S: Hashable> {
+        let id: C
+        let subcategories: [S]
+    }
+
+    /// Lo elegido en la sesión, como conjunto de subcategorías.
+    static func expanded<C: Hashable, S: Hashable>(
+        selectedCategories: Set<C>, selectedSubcategories: Set<S>, entries: [Entry<C, S>]
+    ) -> Set<S> {
+        var result = selectedSubcategories
+        for entry in entries where selectedCategories.contains(entry.id) {
+            result.formUnion(entry.subcategories)
+        }
+        return result
+    }
+
+    /// La categoría está elegida (entera o a medias): su tarjeta sale marcada y sus subcategorías, debajo.
+    static func isChosen<C: Hashable, S: Hashable>(_ entry: Entry<C, S>, in expanded: Set<S>) -> Bool {
+        entry.subcategories.contains { expanded.contains($0) }
+    }
+
+    /// Tocar una tarjeta: elegida (entera o a medias) la quita entera; sin elegir, la añade entera. Como en el onboarding.
+    static func togglingCategory<C: Hashable, S: Hashable>(_ entry: Entry<C, S>, in expanded: Set<S>) -> Set<S> {
+        if isChosen(entry, in: expanded) {
+            return expanded.subtracting(entry.subcategories)
+        }
+        return expanded.union(entry.subcategories)
+    }
+
+    /// Tocar una subcategoría la quita o la vuelve a poner.
+    static func togglingSubcategory<S: Hashable>(_ id: S, in expanded: Set<S>) -> Set<S> {
+        RecordsQuickAccountSelectionLogic.toggled(id, in: expanded)
+    }
+
+    /// Lo que se escribe en la sesión (ver arriba).
+    static func committed<C: Hashable, S: Hashable>(
+        _ expanded: Set<S>, entries: [Entry<C, S>]
+    ) -> (categories: Set<C>, subcategories: Set<S>) {
+        guard !expanded.isEmpty else { return ([], []) }
+        let touched = entries.filter { isChosen($0, in: expanded) }
+        let wholes = touched.allSatisfy { entry in entry.subcategories.allSatisfy { expanded.contains($0) } }
+        let coveredByTouched = Set(touched.flatMap(\.subcategories))
+        if wholes && expanded.isSubset(of: coveredByTouched) {
+            return (Set(touched.map(\.id)), [])
+        }
+        return ([], expanded)
+    }
 }
 
 // MARK: - La banda (L1)

@@ -3,46 +3,87 @@
 //  Yala
 //
 //  Revisión 2.3, decisión 15 (F2, 9-nov). Filtrar Registros por cuenta y categoría pedía 7 toques dentro de «···» y
-//  «Aplicar». Encima de la lista, una fila fija: Cuenta ▾ · Categoría ▾ · Fecha ▾ · Más filtros. Cada chip se aplica al
-//  tocar y dice lo elegido; la hoja completa queda en «Más filtros» para lo demás. Los filtros siguen siendo de la sesión:
-//  escriben en `SessionState` como la hoja, y por eso los ven también el Panel y Estadísticas.
+//  «Aplicar». Encima de la lista, una fila fija con los chips y la hoja completa en «Más filtros» para lo demás. Los
+//  filtros siguen siendo de la sesión: escriben en `SessionState` como la hoja, y por eso los ven también el Panel y
+//  Estadísticas.
+//
+//  16-nov (Jürgen, con captura): sin el chip de período (el de arriba del hero ya lo hace), chips con icono y más aire,
+//  varias cuentas y categorías a la vez con las piezas de Nuevo registro y del primer presupuesto
+//  (`Records/QuickFilters/`), y en la MISMA línea que los botones Lista/Calendario (`trailing`), sin el hueco de antes.
+//  Si no cabe: primero «Más filtros» queda solo con su icono, y si aun así no cabe, los chips se parten en dos líneas y
+//  los botones de vista se quedan arriba a la derecha.
 //
 
 import SwiftData
 import SwiftUI
 
-struct RecordsQuickFilterBar: View {
+struct RecordsQuickFilterBar<Trailing: View>: View {
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
     let subcategories: [Subcategory]
-    let onCustomPeriod: () -> Void
     let onFilterChange: () -> Void
+    /// Lo que va al final de la fila: los botones Lista/Calendario.
+    @ViewBuilder var trailing: Trailing
 
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @State private var showsAccountPicker = false
     @State private var showsCategoryPicker = false
+    /// Lo marcado en cada hoja mientras está abierta. Vive aquí y no en la hoja: si iOS rehace su contenido, no se
+    /// pierde. Se aplica al cerrarla.
+    @State private var accountDraft: Set<PersistentIdentifier> = []
+    @State private var categoryDraft: Set<PersistentIdentifier> = []
 
     var body: some View {
-        // Los cuatro caben en una fila de iPhone a tamaño normal; con texto grande (o un SE) pasan a dos, sin cortarse.
-        FilterBandLayout(spacing: DS.Spacing.xs) {
-            accountChip
-            categoryChip
-            dateChip
-            moreChip
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Spacing.sm) {
+                accountChip
+                categoryChip
+                moreChip(showsTitle: true)
+                Spacer(minLength: DS.Spacing.sm)
+                trailingButtons
+            }
+            HStack(spacing: DS.Spacing.sm) {
+                accountChip
+                categoryChip
+                moreChip(showsTitle: false)
+                Spacer(minLength: DS.Spacing.sm)
+                trailingButtons
+            }
+            // iPhone SE: el mismo dibujo con menos relleno dentro de cada chip.
+            HStack(spacing: DS.Spacing.xs) {
+                accountChip(padding: DS.Spacing.sm)
+                categoryChip(padding: DS.Spacing.sm)
+                moreChip(showsTitle: false)
+                Spacer(minLength: DS.Spacing.xs)
+                trailingButtons
+            }
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                FilterBandLayout(spacing: DS.Spacing.sm) {
+                    accountChip
+                    categoryChip
+                    moreChip(showsTitle: true)
+                }
+                trailingButtons
+            }
         }
-        .sheet(isPresented: $showsCategoryPicker) {
-            RecordsQuickCategorySheet(
-                categories: categories,
-                subcategories: subcategories,
-                selectedCategories: viewModel.selectedCategories,
-                selectedSubcategories: viewModel.selectedSubcategories,
-                onChoose: chooseCategory
-            )
+        .sheet(isPresented: $showsAccountPicker, onDismiss: applyAccounts) {
+            RecordsQuickAccountSheet(accounts: offeredAccounts, selection: $accountDraft)
+        }
+        .sheet(isPresented: $showsCategoryPicker, onDismiss: applyCategories) {
+            RecordsQuickCategorySheet(categories: categories, subcategories: subcategories, expanded: $categoryDraft)
         }
     }
 
-    // MARK: - Cuenta ▾
+    /// Los botones de vista, centrados en el alto de un chip aunque los chips bajen a una segunda línea.
+    private var trailingButtons: some View {
+        trailing
+            .frame(minHeight: FilterChipView.closeHitSize)
+            .fixedSize()
+    }
+
+    // MARK: - Cuenta
 
     /// Las cuentas que se ofrecen: las de la hoja (sin archivadas, cada tarjeta una vez, sin sus líneas).
     private var offeredAccounts: [Account] {
@@ -59,44 +100,56 @@ struct RecordsQuickFilterBar: View {
         return .accounts(selectedNames: accounts.filter { shown.contains($0.persistentModelID) }.map(\.name))
     }
 
-    private var accountChip: some View {
-        Menu {
-            Button {
-                chooseAccount(nil)
-            } label: {
-                selectableLabel(L10n.Filters.allAccounts, isSelected: viewModel.selectedAccounts.isEmpty)
-            }
-            Divider()
-            ForEach(offeredAccounts, id: \.persistentModelID) { account in
-                Button {
-                    chooseAccount(account.persistentModelID)
-                } label: {
-                    selectableLabel(
-                        account.name,
-                        isSelected: shownAccountSelection == [account.persistentModelID]
-                    )
-                }
-            }
+    private var accountChip: some View { accountChip(padding: DS.Spacing.md) }
+
+    private func accountChip(padding: CGFloat) -> some View {
+        Button {
+            accountDraft = shownAccountSelection
+            showsAccountPicker = true
         } label: {
             chipLabel(
+                icon: "creditcard",
+                padding: padding,
                 placeholder: L10n.RecordsQuickFilters23.account,
                 label: accountLabel,
-                many: L10n.RecordsQuickFilters23.accountsCount
+                many: { L10n.RecordsQuickFilters23.accountsCount($0) }
             )
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(L10n.RecordsQuickFilters23.account)
-        .accessibilityValue(accessibilityValue(accountLabel, many: L10n.RecordsQuickFilters23.accountsCount))
+        .accessibilityValue(accessibilityValue(accountLabel, many: { L10n.RecordsQuickFilters23.accountsCount($0) }))
         .accessibilityIdentifier("records_quick_account")
     }
 
-    /// Un toque, una cuenta: reemplaza lo que hubiera. Lo múltiple sigue en «Más filtros».
-    private func chooseAccount(_ id: PersistentIdentifier?) {
-        DS.Haptic.selection()
-        viewModel.selectedAccounts = id.map { [$0] } ?? []
+    /// Al cerrar la hoja: lo marcado pasa a la sesión, si cambió.
+    private func applyAccounts() {
+        guard accountDraft != shownAccountSelection else { return }
+        viewModel.selectedAccounts = accountDraft
         onFilterChange()
     }
 
-    // MARK: - Categoría ▾
+    // MARK: - Categoría
+
+    /// Las categorías de la hoja con sus subcategorías visibles.
+    private var categoryEntries: [RecordsQuickCategorySelectionLogic.Entry<PersistentIdentifier, PersistentIdentifier>] {
+        categories.compactMap { category in
+            let subs = subcategories.filter { $0.category == category && $0.isVisible }.map(\.persistentModelID)
+            return subs.isEmpty ? nil : .init(id: category.persistentModelID, subcategories: subs)
+        }
+    }
+
+    /// Al cerrar la hoja: lo marcado pasa a la sesión de una vez, en la forma que filtra igual que «Más filtros», si
+    /// cambió.
+    private func applyCategories() {
+        let result = RecordsQuickCategorySelectionLogic.committed(categoryDraft, entries: categoryEntries)
+        guard result.categories != viewModel.selectedCategories
+            || result.subcategories != viewModel.selectedSubcategories else { return }
+        SessionState.shared.performBatchFilterUpdate {
+            viewModel.selectedCategories = result.categories
+            viewModel.selectedSubcategories = result.subcategories
+        }
+        onFilterChange()
+    }
 
     private var categoryLabel: RecordsQuickChipLabel {
         let wholeCategories = categories
@@ -116,11 +169,18 @@ struct RecordsQuickFilterBar: View {
         return .categories(names: wholeCategories + fromSubcategories)
     }
 
-    private var categoryChip: some View {
+    private var categoryChip: some View { categoryChip(padding: DS.Spacing.md) }
+
+    private func categoryChip(padding: CGFloat) -> some View {
         Button {
+            categoryDraft = RecordsQuickCategorySelectionLogic.expanded(
+                selectedCategories: viewModel.selectedCategories,
+                selectedSubcategories: viewModel.selectedSubcategories,
+                entries: categoryEntries
+            )
             showsCategoryPicker = true
         } label: {
-            chipLabel(placeholder: L10n.RecordsQuickFilters23.category, label: categoryLabel, many: { _ in "" })
+            chipLabel(icon: "tag", padding: padding, placeholder: L10n.RecordsQuickFilters23.category, label: categoryLabel, many: { _ in "" })
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.RecordsQuickFilters23.category)
@@ -128,86 +188,43 @@ struct RecordsQuickFilterBar: View {
         .accessibilityIdentifier("records_quick_category")
     }
 
-    /// Elegir en la hoja reemplaza la categoría: una categoría entera, una subcategoría o «Todas».
-    private func chooseCategory(_ choice: RecordsQuickCategorySheet.Choice) {
-        DS.Haptic.selection()
-        switch choice {
-        case .all:
-            viewModel.selectedCategories = []
-            viewModel.selectedSubcategories = []
-        case .category(let id):
-            viewModel.selectedSubcategories = []
-            viewModel.selectedCategories = [id]
-        case .subcategory(let id):
-            viewModel.selectedCategories = []
-            viewModel.selectedSubcategories = [id]
-        }
-        onFilterChange()
-    }
-
-    // MARK: - Fecha ▾
-
-    /// «Todo el tiempo» es lo de siempre en Registros: el chip dice «Fecha». Con otro período, su nombre.
-    private var dateLabel: RecordsQuickChipLabel {
-        let period = sessionState.selectedPeriod
-        if period == .allTime { return .placeholder }
-        if period == .custom, let range = sessionState.customDateRange {
-            return .one(PeriodStepLogic.customTitle(range))
-        }
-        return .one(period.displayName)
-    }
-
-    private var dateChip: some View {
-        Menu {
-            ForEach(DetailPeriod.allCases.filter { $0 != .custom }) { period in
-                Button {
-                    DS.Haptic.selection()
-                    sessionState.choosePeriod(period)
-                    onFilterChange()
-                } label: {
-                    selectableLabel(period.displayName, isSelected: sessionState.selectedPeriod == period)
-                }
-            }
-            Divider()
-            Button {
-                onCustomPeriod()
-            } label: {
-                selectableLabel(L10n.Period.custom, isSelected: sessionState.selectedPeriod == .custom)
-            }
-        } label: {
-            chipLabel(placeholder: L10n.RecordsQuickFilters23.date, label: dateLabel, many: { _ in "" })
-        }
-        .accessibilityLabel(L10n.RecordsQuickFilters23.date)
-        .accessibilityValue(accessibilityValue(dateLabel, many: { _ in "" }))
-        .accessibilityIdentifier("records_quick_date")
-    }
-
     // MARK: - Más filtros
 
-    private var moreChip: some View {
+    private func moreChip(showsTitle: Bool) -> some View {
         Button {
             viewModel.showFiltersSheet = true
         } label: {
-            Text(L10n.RecordsQuickFilters23.more)
-                .font(DS.Typography.subheadline)
-                .lineLimit(1)
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(DS.Typography.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.accentText)
+                    .accessibilityHidden(true)
+                if showsTitle {
+                    Text(L10n.RecordsQuickFilters23.more)
+                        .font(DS.Typography.subheadline)
+                        .lineLimit(1)
+                }
+            }
             .foregroundStyle(.primary)
-            .padding(.horizontal, DS.Spacing.sm)
-            .frame(minHeight: FilterChipView.closeHitSize)
+            .padding(.horizontal, showsTitle ? DS.Spacing.md : DS.Spacing.none)
+            .frame(minWidth: FilterChipView.closeHitSize, minHeight: FilterChipView.closeHitSize)
             .glassEffect(.regular.interactive(), in: .capsule)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(L10n.RecordsQuickFilters23.more)
         .accessibilityIdentifier("records_quick_more")
     }
 
     // MARK: - Piezas
 
-    /// El chip: su nombre sin nada elegido y lo elegido, relleno con el acento, cuando lo hay. 44 pt de alto.
+    /// El chip: su icono y su nombre sin nada elegido; lo elegido, relleno con el acento, cuando lo hay. 44 pt de alto.
     private func chipLabel(
+        icon: String,
+        padding: CGFloat,
         placeholder: String,
         label: RecordsQuickChipLabel,
-        many: (Int) -> String
+        many: @MainActor (Int) -> String
     ) -> some View {
         let text: String
         switch label {
@@ -216,15 +233,16 @@ struct RecordsQuickFilterBar: View {
         case .many(let count): text = many(count)
         }
         return HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: label.isActive ? "\(icon).fill" : icon)
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(label.isActive ? theme.onAccent : theme.accentText)
+                .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.subheadline)
                 .lineLimit(1)
-            Image(systemName: "chevron.down")
-                .font(DS.Typography.captionSmall.weight(.semibold))
-                .accessibilityHidden(true)
         }
         .foregroundStyle(label.isActive ? theme.onAccent : Color.primary)
-        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.horizontal, padding)
         .frame(minHeight: FilterChipView.closeHitSize)
         .background {
             if label.isActive {
@@ -235,153 +253,11 @@ struct RecordsQuickFilterBar: View {
         .contentShape(Capsule())
     }
 
-    private func accessibilityValue(_ label: RecordsQuickChipLabel, many: (Int) -> String) -> String {
+    private func accessibilityValue(_ label: RecordsQuickChipLabel, many: @MainActor (Int) -> String) -> String {
         switch label {
         case .placeholder: return ""
         case .one(let name): return name
         case .many(let count): return many(count)
         }
-    }
-
-    @ViewBuilder
-    private func selectableLabel(_ title: String, isSelected: Bool) -> some View {
-        if isSelected {
-            Label(title, systemImage: "checkmark")
-        } else {
-            Text(title)
-        }
-    }
-}
-
-// MARK: - Hoja de «Categoría ▾»
-
-/// La lista de categorías con su buscador: tocar una fila aplica y cierra. Una categoría entera, una subcategoría o
-/// «Todas las categorías».
-struct RecordsQuickCategorySheet: View {
-    enum Choice: Equatable {
-        case all
-        case category(PersistentIdentifier)
-        case subcategory(PersistentIdentifier)
-    }
-
-    let categories: [Category]
-    let subcategories: [Subcategory]
-    let selectedCategories: Set<PersistentIdentifier>
-    let selectedSubcategories: Set<PersistentIdentifier>
-    let onChoose: (Choice) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.yalaTheme) private var theme
-    @State private var query = ""
-
-    private func visibleSubcategories(of category: Category) -> [Subcategory] {
-        subcategories.filter { $0.category == category && $0.isVisible }
-    }
-
-    private var isSearching: Bool { !CategorySearchLogic.normalized(query).isEmpty }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if !isSearching {
-                    row(
-                        title: L10n.Filters.allCategories, caption: nil,
-                        isSelected: selectedCategories.isEmpty && selectedSubcategories.isEmpty,
-                        choice: .all
-                    )
-                }
-                ForEach(categories, id: \.persistentModelID) { category in
-                    let subs = visibleSubcategories(of: category)
-                    let categoryMatches = CategorySearchLogic.matches(category.name, query: query)
-                    let matchingSubs = subs.filter { CategorySearchLogic.matches($0.name, query: query) }
-                    if !subs.isEmpty && (categoryMatches || !matchingSubs.isEmpty) {
-                        Section {
-                            if categoryMatches {
-                                row(
-                                    title: category.name, caption: L10n.RecordsQuickFilters23.wholeCategory,
-                                    isSelected: selectedCategories == [category.persistentModelID]
-                                        || (!subs.isEmpty && Set(subs.map(\.persistentModelID)) == selectedSubcategories),
-                                    choice: .category(category.persistentModelID)
-                                )
-                            }
-                            ForEach(isSearching ? matchingSubs : subs, id: \.persistentModelID) { sub in
-                                row(
-                                    title: sub.name, caption: isSearching ? category.name : nil,
-                                    isSelected: selectedSubcategories == [sub.persistentModelID],
-                                    choice: .subcategory(sub.persistentModelID),
-                                    indented: !isSearching
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .overlay {
-                if isSearching && noResults {
-                    ContentUnavailableView.search(text: query)
-                }
-            }
-            .searchable(
-                text: $query,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: L10n.RecordsQuickFilters23.searchPrompt
-            )
-            .autocorrectionDisabled()
-            .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.RecordsQuickFilters23.category)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    private var noResults: Bool {
-        !categories.contains { category in
-            let subs = visibleSubcategories(of: category)
-            return !subs.isEmpty && (CategorySearchLogic.matches(category.name, query: query)
-                || subs.contains { CategorySearchLogic.matches($0.name, query: query) })
-        }
-    }
-
-    private func row(
-        title: String, caption: String?, isSelected: Bool, choice: Choice, indented: Bool = false
-    ) -> some View {
-        Button {
-            onChoose(choice)
-            dismiss()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                    if let caption {
-                        Text(caption)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.leading, indented ? DS.Spacing.lg : DS.Spacing.none)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(theme.accentText)
-                        .accessibilityHidden(true)
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
-        .accessibilityValue(caption ?? "")
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityIdentifier("records_quick_category_row")
     }
 }
