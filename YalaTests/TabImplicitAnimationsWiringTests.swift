@@ -109,7 +109,7 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
          ".dsAnimation(DS.Animation.selection, value: viewModel.selectedTransactionNatures, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
-         ".dsAnimation(DS.Animation.selection, value: recordsViewMode, reduceMotion: reduceMotion)"),
+         ".dsAnimation(DS.Animation.selection, value: viewModel.recordsViewMode, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Records/Components/RecordsCalendarView.swift",
          ".dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Records/Components/RecordsCalendarView.swift",

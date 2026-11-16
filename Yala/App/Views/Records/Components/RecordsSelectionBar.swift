@@ -133,10 +133,20 @@ struct RecordsSelectionBar: View {
 /// también en el menú, que es lo que cuenta la ayuda.
 struct RecordsSelectToolbarButton: View {
     let viewModel: RecordsViewModel
+    /// Decisión 67 de 2.3: en la columna de la lista del iPad el título salía «Registr…» junto a «Seleccionar», «···», el
+    /// avatar y el botón de la barra lateral. Ahí el botón va con su icono (el de «···»); el nombre lo dice VoiceOver.
+    var iconOnly = false
 
     var body: some View {
-        Button(L10n.Action.select) {
+        Button {
             viewModel.enterSelectionMode()
+        } label: {
+            if iconOnly {
+                Label(L10n.Action.select, systemImage: "checklist")
+                    .labelStyle(.iconOnly)
+            } else {
+                Text(L10n.Action.select)
+            }
         }
         .fontWeight(.semibold)
         .accessibilityIdentifier("records_select_visible")

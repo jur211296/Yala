@@ -40,91 +40,100 @@ struct RecordsTabView: View {
     var loadFailed: Bool = false
     /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
     var onRetryLoad: () -> Void = {}
+    /// Registros en una ventana ancha (decisión 66 de 2.3): con la vista calendario la página va a una sola columna y su
+    /// contenido, al ancho legible. Estadísticas › Registros no lo pide.
+    var keepsCalendarAtReadableWidth = false
 
     @State private var showCustomPeriodPicker: Bool = false
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
     @State private var isShortContainer = false
-    @State private var recordsViewMode: RecordsViewMode = .list
-    @State private var selectedCalendarDay: Date?
-    @State private var calendarMonth: Date = .now
     @Namespace private var viewModeNamespace
 
     var body: some View {
         ScrollView {
-            VStack(spacing: DS.Spacing.md) {
-                // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
-                RecordsListSearchSlot(viewModel: viewModel)
-                StatsGuideSlot()
-                // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
-                // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
-                if viewModel.duplicateModeActive {
-                    DuplicateModeHeader(
-                        tally: viewModel.duplicateTally,
-                        // Con un día elegido en el calendario, solo los grupos que se ven (revisión del lote 8).
-                        onRemove: { viewModel.requestDuplicateRemoval(limitedToDay: keyboardDay) },
-                        onDeactivate: { viewModel.exitDuplicateMode() }
-                    ) {
-                        periodSelector
+            ScrollViewReader { scrollProxy in
+                VStack(spacing: DS.Spacing.md) {
+                    // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
+                    RecordsListSearchSlot(viewModel: viewModel)
+                    StatsGuideSlot()
+                    // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
+                    // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
+                    if viewModel.duplicateModeActive {
+                        DuplicateModeHeader(
+                            tally: viewModel.duplicateTally,
+                            // Con un día elegido en el calendario, solo los grupos que se ven (revisión del lote 8).
+                            onRemove: { viewModel.requestDuplicateRemoval(limitedToDay: keyboardDay) },
+                            onDeactivate: { viewModel.exitDuplicateMode() }
+                        ) {
+                            periodSelector
+                        }
+                        // Card 0mzg: el recuento y «Quitar repetidos» se van con la misma curva que la lista de abajo.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.duplicateRemovalCount)
+                    } else {
+                        heroSummary
+                        // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). En modo
+                        // duplicados no: ahí lo que se hace es revisar, no apuntar.
+                        StatsQuickActionsSlot()
                     }
-                    // Card 0mzg: el recuento y «Quitar repetidos» se van con la misma curva que la lista de abajo.
-                    .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.duplicateRemovalCount)
-                } else {
-                    heroSummary
-                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). En modo
-                    // duplicados no: ahí lo que se hace es revisar, no apuntar.
-                    StatsQuickActionsSlot()
-                }
 
-                if showsQuickFilters && !viewModel.duplicateModeActive {
-                    RecordsQuickFilterBar(
-                        viewModel: viewModel,
-                        accounts: accounts,
-                        categories: categories,
-                        subcategories: subcategories,
-                        onCustomPeriod: { showCustomPeriodPicker = true },
-                        onFilterChange: onFilterChange
+                    if showsQuickFilters && !viewModel.duplicateModeActive {
+                        RecordsQuickFilterBar(
+                            viewModel: viewModel,
+                            accounts: accounts,
+                            categories: categories,
+                            subcategories: subcategories,
+                            onCustomPeriod: { showCustomPeriodPicker = true },
+                            onFilterChange: onFilterChange
+                        )
+                    }
+
+                    filterBarPanel
+
+                    // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;
+                    // no se enseña nada y la lista (o el vacío) entra fundiéndose. La pila de dentro lleva el mismo
+                    // espaciado que la de fuera: no cambia nada de sitio.
+                    // Card 1jvv: borrar el último registro o apuntar el primero releva la lista y «Sin registros»
+                    // fundiéndose, en el sitio (`ZStack`); un filtro que vacía la lista sigue en seco.
+                    // Decisión 78 de 2.3: mientras carga, un indicador que asoma si tarda; si la lectura falló, el error
+                    // con «Reintentar» (`RecordsListStateLogic`).
+                    ZStack(alignment: .top) {
+                        if !viewModel.hasAppliedFilters {
+                            RecordsLoadingIndicator()
+                        } else if viewModel.groupedRecords.isEmpty {
+                            // Decisión 77 de 2.3: con la lista vacía el selector Lista/Calendario se queda (y el
+                            // calendario, si es el elegido). Con el error no: no hay nada que ver de ninguna forma.
+                            VStack(spacing: DS.Spacing.md) {
+                                if listState != .failed {
+                                    viewModeArea
+                                }
+                                emptyStateContent
+                            }
+                            .transition(.stateSwap)
+                        } else {
+                            VStack(spacing: DS.Spacing.md) {
+                                viewModeArea
+
+                                recordsListContent
+                            }
+                            .transition(.stateSwap)
+                        }
+                    }
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)
+                    .animatesEmptyStateSwap(
+                        ids: Array(viewModel.groupedRecords.lazy.flatMap { $0.records }.prefix(4).map(\.persistentModelID)),
+                        settled: viewModel.hasAppliedFilters
                     )
                 }
-
-                filterBarPanel
-
-                // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;
-                // no se enseña nada y la lista (o el vacío) entra fundiéndose. La pila de dentro lleva el mismo
-                // espaciado que la de fuera: no cambia nada de sitio.
-                // Card 1jvv: borrar el último registro o apuntar el primero releva la lista y «Sin registros»
-                // fundiéndose, en el sitio (`ZStack`); un filtro que vacía la lista sigue en seco.
-                // Decisión 78 de 2.3: mientras carga, un indicador que asoma si tarda; si la lectura falló, el error
-                // con «Reintentar» (`RecordsListStateLogic`).
-                ZStack(alignment: .top) {
-                    if !viewModel.hasAppliedFilters {
-                        RecordsLoadingIndicator()
-                    } else if viewModel.groupedRecords.isEmpty {
-                        // Decisión 77 de 2.3: con la lista vacía el selector Lista/Calendario se queda (y el
-                        // calendario, si es el elegido). Con el error no: no hay nada que ver de ninguna forma.
-                        VStack(spacing: DS.Spacing.md) {
-                            if listState != .failed {
-                                viewModeArea
-                            }
-                            emptyStateContent
-                        }
-                        .transition(.stateSwap)
-                    } else {
-                        VStack(spacing: DS.Spacing.md) {
-                            viewModeArea
-
-                            recordsListContent
-                        }
-                        .transition(.stateSwap)
-                    }
+                .padding(.top, DS.Spacing.sm)
+                .modifier(RecordsCalendarReadableWidth(
+                    isActive: keepsCalendarAtReadableWidth && viewModel.recordsViewMode == .calendar))
+                .recordsListSearchContainer(viewModel, onQueryChange: onFilterChange)
+                // C2: con el mes plegado a la semana, la semana sube arriba y la lista del día queda a la vista
+                // debajo, también con texto grande.
+                .onChange(of: viewModel.selectedCalendarDay) { _, day in
+                    scrollToFoldedWeek(day, proxy: scrollProxy)
                 }
-                .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)
-                .animatesEmptyStateSwap(
-                    ids: Array(viewModel.groupedRecords.lazy.flatMap { $0.records }.prefix(4).map(\.persistentModelID)),
-                    settled: viewModel.hasAppliedFilters
-                )
             }
-            .padding(.top, DS.Spacing.sm)
-            .recordsListSearchContainer(viewModel, onQueryChange: onFilterChange)
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
@@ -205,7 +214,7 @@ struct RecordsTabView: View {
     /// hero (`DailySpendingCalculator.dayTotals`), así que los días suman lo que dice el resumen del período.
     @ViewBuilder
     private var calendarDaySummary: some View {
-        if let day = selectedCalendarDay,
+        if let day = viewModel.selectedCalendarDay,
            let group = viewModel.groupedRecords.first(where: { Calendar.current.isDate($0.date, inSameDayAs: day) }) {
             let totals = DailySpendingCalculator.dayTotals(
                 records: group.records, adjustment: viewModel.statsAdjustment, currencyCode: defaultCurrencyCode)
@@ -253,9 +262,18 @@ struct RecordsTabView: View {
         }
     }
 
+    static let calendarScrollID = "records_calendar_scroll_anchor"
+
+    /// Al elegir un día (C2, decisión 19 de 2.3) la semana plegada sube arriba de la pantalla; al soltarlo, nada se mueve.
+    /// En seco: dentro de una pestaña un `withAnimation` no anima (`TabImplicitAnimationsWiringTests`).
+    private func scrollToFoldedWeek(_ day: Date?, proxy: ScrollViewProxy) {
+        guard day != nil else { return }
+        proxy.scrollTo(Self.calendarScrollID, anchor: .top)
+    }
+
     /// El día al que ↑↓ se limitan: el elegido en la vista calendario (`displayedGroups`), o ninguno.
     private var keyboardDay: Date? {
-        recordsViewMode == .calendar ? selectedCalendarDay : nil
+        viewModel.recordsViewMode == .calendar ? viewModel.selectedCalendarDay : nil
     }
 
     // MARK: - Filter Bar (panel style)
@@ -445,7 +463,7 @@ struct RecordsTabView: View {
 
     /// Grupos a mostrar: todos, o solo el día seleccionado en modo calendario.
     private var displayedGroups: [(date: Date, records: [TransactionItem])] {
-        guard recordsViewMode == .calendar, let day = selectedCalendarDay else {
+        guard viewModel.recordsViewMode == .calendar, let day = viewModel.selectedCalendarDay else {
             return viewModel.groupedRecords
         }
         return viewModel.groupedRecords.filter {
@@ -602,7 +620,7 @@ struct RecordsTabView: View {
     /// Los grupos que se enseñan: todos, o en la vista calendario con un día elegido, los que tienen algún registro de
     /// ese día (el grupo entero, para que se vea con qué casa).
     private var displayedDuplicateGroups: [[TransactionItem]] {
-        guard recordsViewMode == .calendar, let day = selectedCalendarDay else { return viewModel.duplicateGroups }
+        guard viewModel.recordsViewMode == .calendar, let day = viewModel.selectedCalendarDay else { return viewModel.duplicateGroups }
         return viewModel.duplicateGroups.filter { group in
             group.contains { Calendar.current.isDate($0.date, inSameDayAs: day) }
         }
@@ -722,17 +740,19 @@ struct RecordsTabView: View {
     private var viewModeArea: some View {
         viewModeHeader
 
-        if recordsViewMode == .calendar {
+        if viewModel.recordsViewMode == .calendar {
             RecordsCalendarView(
                 groups: viewModel.groupedRecords,
                 period: viewModel.period,
                 customDateRange: sessionState.customDateRange,
                 currencyCode: defaultCurrencyCode,
                 adjustment: viewModel.statsAdjustment,
-                selectedDay: $selectedCalendarDay,
-                calendarMonth: $calendarMonth
+                selectedDay: $viewModel.selectedCalendarDay,
+                calendarMonth: $viewModel.calendarMonth
             )
             .padding(.horizontal, DS.Spacing.lg)
+            // Ancla del scroll al elegir un día (C2): la semana plegada sube arriba (`scrollToFoldedWeek`).
+            .id(Self.calendarScrollID)
 
             calendarDaySummary
         }
@@ -757,15 +777,15 @@ struct RecordsTabView: View {
         }
         // El círculo se desliza de Lista a Calendario (card C2); la página cambia en seco, como con los chips: fundirla
         // dejaría las dos copias en el árbol de accesibilidad mientras dura.
-        .dsAnimation(DS.Animation.selection, value: recordsViewMode, reduceMotion: reduceMotion)
+        .dsAnimation(DS.Animation.selection, value: viewModel.recordsViewMode, reduceMotion: reduceMotion)
     }
 
     private func viewModeButton(for mode: RecordsViewMode) -> some View {
-        let isSelected = recordsViewMode == mode
+        let isSelected = viewModel.recordsViewMode == mode
         return Button {
-            recordsViewMode = mode
+            viewModel.recordsViewMode = mode
             if mode == .list {
-                selectedCalendarDay = nil
+                viewModel.selectedCalendarDay = nil
             } else {
                 clampCalendarMonthIfNeeded()
             }
@@ -797,7 +817,7 @@ struct RecordsTabView: View {
     /// Pone el mes visible (modo paginado) en el mes más reciente con datos.
     private func syncCalendarMonth() {
         guard let maxDate = viewModel.groupedRecords.map(\.date).max() else { return }
-        calendarMonth = Calendar.current.startOfDay(for: maxDate)
+        viewModel.calendarMonth = Calendar.current.startOfDay(for: maxDate)
     }
 
     /// Si tras cambiar filtros el mes visible quedó fuera del rango de datos, lo reencuadra.
@@ -805,14 +825,14 @@ struct RecordsTabView: View {
         let dates = viewModel.groupedRecords.map(\.date)
         guard let minDate = dates.min(), let maxDate = dates.max() else { return }
         let cal = Calendar.current
-        if calendarMonth < cal.startOfDay(for: minDate) || calendarMonth > maxDate {
-            calendarMonth = cal.startOfDay(for: maxDate)
+        if viewModel.calendarMonth < cal.startOfDay(for: minDate) || viewModel.calendarMonth > maxDate {
+            viewModel.calendarMonth = cal.startOfDay(for: maxDate)
         }
     }
 
     /// Al cambiar de periodo: limpia el día seleccionado y reencuadra el mes.
     private func resetCalendarState() {
-        selectedCalendarDay = nil
+        viewModel.selectedCalendarDay = nil
         syncCalendarMonth()
     }
 
@@ -940,5 +960,19 @@ private struct DuplicateGroupHeader: View {
         guard let first = records.first?.date else { return nil }
         let calendar = Calendar.current
         return records.allSatisfy { calendar.isDate($0.date, inSameDayAs: first) } ? first : nil
+    }
+}
+
+/// Decisión 66 de 2.3: en la página de una columna del iPad, el calendario y su lista van al ancho legible. Fuera de esa
+/// página (iPhone, Estadísticas) no cambia nada.
+private struct RecordsCalendarReadableWidth: ViewModifier {
+    let isActive: Bool
+
+    /// Sin `if`: cambiar de lista a calendario no puede volver a montar la página. Inactivo, los dos marcos no limitan
+    /// nada (`nil`) y la página queda como estaba.
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: isActive ? DS.Adaptive.readableWidth : nil)
+            .frame(maxWidth: isActive ? .infinity : nil)
     }
 }

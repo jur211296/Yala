@@ -188,6 +188,7 @@
 "records.noRecords" = "本时间段无记录";
 "records.viewModeListA11y" = "列表视图";
 "records.viewModeCalendarA11y" = "日历视图";
+"records.calendarShowMonthHint" = "显示整个月";
 "records.noRecordsThisDay" = "当天无记录";
 
 // MARK: - Filters

@@ -193,6 +193,15 @@ final class RecordsViewModel: Filterable {
     /// `DetailContainerView` (panel de Estadísticas › Registros). En compacta, la hoja de siempre.
     var opensDetailInColumn = false
 
+    // MARK: - Vista calendario
+
+    /// Lista o calendario, el día elegido y el mes a la vista. Viven aquí y no en `RecordsTabView`: en el iPad la vista
+    /// calendario pasa la página de Registros a una sola columna (decisión 66 de 2.3), el split se pliega y vuelve a
+    /// montar la lista; como estado de la vista, el calendario volvía a «Lista» en el acto.
+    var recordsViewMode: RecordsViewMode = .list
+    var selectedCalendarDay: Date?
+    var calendarMonth: Date = .now
+
     /// Menú contextual y teclado (iPad, fase 3): el editor se abre ya en modo «duplicar». Lo limpian los hosts al
     /// cerrarse el editor, junto con `editingTransaction`.
     var editorStartsAsDuplicate = false

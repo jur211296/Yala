@@ -188,6 +188,7 @@
 "records.noRecords" = "No records in this period";
 "records.viewModeListA11y" = "List view";
 "records.viewModeCalendarA11y" = "Calendar view";
+"records.calendarShowMonthHint" = "Shows the whole month";
 "records.noRecordsThisDay" = "No records on this day";
 
 // MARK: - Filters
