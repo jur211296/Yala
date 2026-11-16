@@ -103,3 +103,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Revisión independiente antes del gate](feedback_revision_independiente_antes_del_gate.md) — lote de fechas/dinero: revisor con el código, no con mi veredicto; 9 fallos reales en S1.
 - [El touch del gate tras un merge resucita borrados](feedback_el_touch_del_gate_tras_un_merge_resucita_borrados.md) — alcance con `grep -v "^D "`; un vacío tumba un source-scan.
 - [Desbloquear un PR viejo: mide el recorrido nuevo](feedback_desbloquear_un_pr_viejo_mide_el_recorrido_nuevo.md) — la bienvenida 2.3 apagaba la nota que el PR encendía; el bump de versión cambia Novedades.
+- [Cuenta desechable para la nube en el iPhone 14](reference_cuenta_desechable_para_la_nube_en_el_iphone_14.md) — Google test@yala-app.pe sin contraseña; SQL de staging desde la Mini; ida de 2.361 filas ≈ 9 min.
