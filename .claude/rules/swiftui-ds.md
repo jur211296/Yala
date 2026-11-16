@@ -88,6 +88,24 @@ paths:
   plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
   `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
 
+- **Las tres pestañas de Estadísticas comparan con el período anterior HASTA HOY (decisión 29 de la revisión 2.3,
+  2026-11-12).** La regla es la de Resumen, `DateAlignmentHelper.alignedPreviousInterval(asOf:)`: en un período en curso
+  el anterior llega al día equivalente a hoy; en uno cerrado, entero. Distribución y Tendencias cortaban en el último día
+  con movimientos, y la misma pantalla comparaba contra dos tramos. Una suma nueva del anterior en Estadísticas pasa por
+  `previousItemsUntilToday`, y una curva por `untilToday:`; el Panel sigue en el último día con datos (los parámetros son
+  opcionales a propósito). Las tres llevan `ComparisonModeSelector` sin `dataEnd`. En Tendencias va con
+  `.id(sessionState.comparisonMode)`: sin él, 2 de 3 corridas el toque cambiaba la tarjeta y los chips seguían en «el mes
+  anterior» (medido en el vídeo del XCUITest; causa sin aislar, Resumen y Distribución no se midieron igual). Pin:
+  `Estadisticas23ComparacionHastaHoyTests`, `Estadisticas23ComparacionVoiceOverUITests`.
+
+- **Una gráfica nueva dice su conclusión con cifras y publica su descripción de iOS (decisión 26 de la revisión 2.3,
+  2026-11-12).** `.accessibilityElement(children: .ignore)`, la etiqueta con el nombre, el valor con la frase de
+  `ChartSpokenSummary` (de dónde a dónde, el punto alto o bajo, las partes; nunca «7 puntos») y
+  `.accessibilityChartDescriptor(ChartAccessibilityDescriptor(...))`, que da a VoiceOver «Describir gráfica» y el sonido.
+  El descriptor tiene que importar **SwiftUI**: el protocolo que pide el modificador es el de SwiftUI, no el de
+  `Accessibility`, y con solo `Accessibility` el compilador dice que no conforma. Los montos van por
+  `appPreferences.chartAmountFormat` («Ocultar montos» incluido). Pin: `Estadisticas23GraficasVoiceOverTests` (las ocho
+  gráficas de Estadísticas y el Panel) y el árbol en `Estadisticas23ComparacionVoiceOverUITests`.
 - **Lo que baja la nube con la app delante recarga en el acto (2026-11-13, card c8i9).** El aviso del motor
   (`.cloudSyncAppliedRemoteChanges`) pasa por `RemoteChangesFanOut`: con la app activa sube `dataVersion`; sin ella,
   queda pendiente para volver a primer plano. Antes solo marcaba pendiente, y tras «¡Tu cuenta está lista!» el Panel y
