@@ -851,6 +851,7 @@ struct PanelView: View {
                                 healthVisible: panorama.health,
                                 accountFormSheet: $sheets.accountFormSheet,
                                 accountDetail: $sheets.accountDetail,
+                                cardDesignEditor: $sheets.cardDesignEditor,
                                 showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                             )
                             .headerBandColumn(.trailing)

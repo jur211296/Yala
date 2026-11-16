@@ -9863,3 +9863,77 @@
 "panel.saldo.countsToggle" = "「今日使えるお金」に含める";
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "クレジットカードのように、使えるお金でなければオフにしてください。";
+
+/* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
+/* Card design editor: sheet title */
+"cardDesign.title" = "カードのデザイン";
+/* Context menu action on an account card in the Panel */
+"cardDesign.open" = "カードをデザイン";
+/* VoiceOver label of the palette button on an account card. %@ = account name */
+"cardDesign.openFor" = "%@のカードをデザイン";
+/* Card design editor: save */
+"cardDesign.save" = "保存";
+/* Card design editor: cancel */
+"cardDesign.cancel" = "キャンセル";
+/* Card design editor: restore the default design */
+"cardDesign.reset" = "元のデザインに戻す";
+/* VoiceOver, appended to an account card: last 4 digits. %@ = 4 digits */
+"cardDesign.endingIn" = "末尾 %@";
+"cardDesign.section.templates" = "テンプレート";
+"cardDesign.section.color" = "カラー";
+"cardDesign.section.pattern" = "パターン";
+"cardDesign.section.icon" = "アイコン";
+"cardDesign.section.details" = "詳細";
+"cardDesign.color.template" = "テンプレートの色";
+"cardDesign.color.account" = "口座の色";
+"cardDesign.color.custom" = "その他の色";
+/* VoiceOver label of a color swatch. %d = its number */
+"cardDesign.color.swatch" = "カラー %d";
+"cardDesign.icon.account" = "口座のアイコン";
+/* VoiceOver label of an icon choice. %d = its number */
+"cardDesign.icon.choice" = "アイコン %d";
+"cardDesign.chip" = "チップを表示";
+"cardDesign.lastFour.title" = "下4桁";
+"cardDesign.lastFour.prompt" = "任意（例：1256）";
+/* Card design editor: help under the last-4-digits field. Only 4 digits are ever stored */
+"cardDesign.lastFour.footer" = "カードをひと目で見分けるための下4桁だけです。Yalaがカード番号全体を求めることはありません。";
+"cardDesign.category.gradients" = "グラデーション";
+"cardDesign.category.metallic" = "メタリック";
+"cardDesign.category.minimal" = "ミニマル";
+"cardDesign.category.dark" = "ダーク";
+"cardDesign.category.pastel" = "パステル";
+"cardDesign.category.patterned" = "パターン";
+"cardDesign.template.account" = "あなたの色";
+"cardDesign.template.aurora" = "オーロラ";
+"cardDesign.template.forest" = "フォレスト";
+"cardDesign.template.ocean" = "オーシャン";
+"cardDesign.template.sunset" = "サンセット";
+"cardDesign.template.raspberry" = "ラズベリー";
+"cardDesign.template.gold" = "ゴールド";
+"cardDesign.template.silver" = "シルバー";
+"cardDesign.template.graphite" = "グラファイト";
+"cardDesign.template.roseGold" = "ローズゴールド";
+"cardDesign.template.bronze" = "ブロンズ";
+"cardDesign.template.snow" = "スノー";
+"cardDesign.template.sand" = "サンド";
+"cardDesign.template.mist" = "ミスト";
+"cardDesign.template.ink" = "インク";
+"cardDesign.template.midnight" = "ミッドナイト";
+"cardDesign.template.obsidian" = "オブシディアン";
+"cardDesign.template.charcoal" = "チャコール";
+"cardDesign.template.borealis" = "ボレアリス";
+"cardDesign.template.lavender" = "ラベンダー";
+"cardDesign.template.mint" = "ミント";
+"cardDesign.template.peach" = "ピーチ";
+"cardDesign.template.sky" = "スカイ";
+"cardDesign.template.neon" = "ネオン";
+"cardDesign.template.terrain" = "地形";
+"cardDesign.template.mosaic" = "モザイク";
+"cardDesign.template.polkadot" = "水玉";
+"cardDesign.pattern.none" = "なし";
+"cardDesign.pattern.grid" = "グリッド";
+"cardDesign.pattern.waves" = "波";
+"cardDesign.pattern.lines" = "ライン";
+"cardDesign.pattern.dots" = "ドット";
+"cardDesign.pattern.topographic" = "等高線";
+"cardDesign.pattern.diamonds" = "ダイヤ";

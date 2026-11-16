@@ -38,6 +38,8 @@ struct PanelSheetState {
     var settingsInitialDestination: ProfileDestination? = nil
     var accountFormSheet: AccountFormSheet? = nil
     var accountDetail: AccountDetailPresentation? = nil
+    /// El editor de diseño de la tarjeta de una cuenta, desde el carrusel «Tus finanzas» (2026-11-16).
+    var cardDesignEditor: CardDesignEditorPresentation? = nil
     /// El detalle de un registro de «Últimos registros» y, si se toca Editar, el editor que lo sustituye al cerrarse
     /// (el mismo reemplazo de hoja que Registros).
     var recordDetail: PanelRecordPresentation? = nil
@@ -143,6 +145,7 @@ struct PanelSheetState {
         isPresentingSettings
             || accountFormSheet != nil
             || accountDetail != nil
+            || cardDesignEditor != nil
             || recordDetail != nil
             || recordToEdit != nil
             || showFilters

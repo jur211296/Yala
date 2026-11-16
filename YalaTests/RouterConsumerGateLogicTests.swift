@@ -162,13 +162,18 @@ struct PanelSheetStateActivePresentationTests {
     }
 
     // Cada flag de PRESENTACIÓN en solitario ⇒ true.
-    @Test func eachPresentationFlag_activates() {
+    @MainActor @Test func eachPresentationFlag_activates() {
         var s = PanelSheetState(); s.isPresentingSettings = true
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.accountFormSheet = AccountFormSheet(account: nil)
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.accountDetail = AccountDetailPresentation(account: Account(
             name: "Sueldo", currencyCode: "PEN", colorHex: "#4F46E5", iconName: "banknote", type: "Efectivo"))
+        #expect(s.hasActivePresentation)
+        let designed = Account(name: "Viajes", currencyCode: "PEN", colorHex: "#4F46E5", iconName: "airplane", type: "Efectivo")
+        s = PanelSheetState(); s.cardDesignEditor = CardDesignEditorPresentation(
+            account: designed, balance: 850, lines: [], isExpensesOnlyMode: false, periodName: "",
+            draft: CardDesignDraft(design: CardDesignLogic.defaultDesign(type: .cash), accountType: .cash))
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.recordDetail = PanelRecordPresentation(record: TransactionItem(date: Date(timeIntervalSince1970: 0), amount: -10, currencyCode: "PEN"))
         #expect(s.hasActivePresentation)

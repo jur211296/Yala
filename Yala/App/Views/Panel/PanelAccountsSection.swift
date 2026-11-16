@@ -12,6 +12,7 @@ struct PanelAccountsSection: View {
     let accountsSortOrderNames: [String]
     @Binding var accountFormSheet: AccountFormSheet?
     @Binding var accountDetail: AccountDetailPresentation?
+    @Binding var cardDesignEditor: CardDesignEditorPresentation?
     @Binding var showUpgradeForAccounts: Bool
 
     private var isAccountsLimitReached: Bool {
@@ -50,6 +51,9 @@ struct PanelAccountsSection: View {
                 },
                 onOpenAccount: { account in
                     accountDetail = AccountDetailPresentation(account: account)
+                },
+                onDesignCard: { presentation in
+                    cardDesignEditor = presentation
                 }
             )
             // Los nombres de los grupos para las filas de la tarjeta «Grupos».
