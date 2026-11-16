@@ -42,8 +42,8 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
   iCloud, cambiar de cuenta), archivar cuentas, Grupos (lote 01), VoiceOver, Tendencias, calendario, categorías,
   nota de salud, hacer recurrente, «Tu saldo hoy», ficha de cuenta, tarjetas personalizables, bugs del barrido y la parte
   de la app de «Tu IA registra en Yala».
-- **Todavía no en TestFlight (cola de auto-merge):** importar de Splitwise o Tricount, voz/foto/Yala IA de Grupos como en
-  personal y los filtros rápidos de Registros.
+- **Todavía no en TestFlight:** importar de Splitwise o Tricount (mergeado a las 16:51, después del corte), y en cola de
+  auto-merge voz/foto/Yala IA de Grupos como en personal y los filtros rápidos de Registros.
 - **Medido en producción el 16-nov:** `/config` del gateway igual que el 15-nov (`appleWebSignInRolloutPercent` 0);
   conector de IA de producción sin desplegar (Cloudflare 1042 en `yala-mcp-production`); Yala web 200 en
   `app.yala-app.pe`. El cupo de recibos de Grupos se da por activo porque el gateway de producción se desplegó desde 2.3

@@ -283,6 +283,8 @@ for pr, n, area, tit, ruta, qc in [
 ]:
     add(pr, n, area=area, seccion="fuera", estado="fuera", build="no", titulo=tit, ruta=ruta, que_cambio=qc,
         activar=COLA, cambio_guia="Nuevo en la guía: todavía no en TestFlight.")
+by["1003-1"]["activar"] = "Mergeado en 2.3 el 16-nov a las 16:51, después de cortar la 2.3 (2): llega en la próxima build de TestFlight."
+by["1003-1"]["cambio_guia"] = "Nuevo en la guía: mergeado, pero todavía no en TestFlight."
 
 json.dump(items, open(RUTA, "w"), ensure_ascii=False, indent=1)
 from collections import Counter
