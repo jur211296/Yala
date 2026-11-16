@@ -1,10 +1,10 @@
 ---
 id: groups-import-splitwise-tricount
-status: backlog
+status: done
 priority: low
 area: "groups, import"
 created: 2026-07-02
-updated: 2026-10-08
+updated: 2026-11-16
 source: YalaWiki/Backlog/groups-import-splitwise-tricount.md
 ---
 
@@ -80,3 +80,48 @@ migrated from YalaWiki Backlog/groups-import-splitwise-tricount.md @ 1934e8ad
 - **Obsoleto del análisis de julio:** el transporte CloudKit de Grupos ya no existe (`CKRecordTranslator`, schema `.ckdb` de grupos). Un miembro «fantasma» (pregunta #1) sería hoy un cambio del manifest de Grupos y del backend (`group_capability_manifest.json`), no de CloudKit.
 
 Triage 2026-10-08: abierto · medium → low · No existe ningún import de Splitwise/Tricount en el código; es una feature deseable con preguntas de diseño abiertas, y parte de su análisis técnico quedó obsoleto con Grupos en backend.
+
+## Paso 0 — medido contra el código del 2026-11-16 (encargo «grupos-importar-splitwise-tricount»)
+
+**Lo que cambió desde el análisis de julio (medido, no inferido):**
+- `SplitMember` es **solo de bajada** (`GroupEntityEmissionMap`: «`SplitMember` es PULL-ONLY»): el teléfono no puede crear
+  un miembro; los crea el servidor al crear el grupo (el dueño) o al unirse alguien por invitación. ⇒ un «miembro
+  fantasma» (Ana, que no usa Yala) sería un cambio del manifest de Grupos y del backend: fuera sin el GO de Jürgen.
+- Un saldo inicial es una **arista** deudor → acreedor por moneda (`GroupExpenseService.setOpeningBalance`), uno por
+  pareja y moneda (el nuevo reemplaza al anterior), solo entre miembros **activos** (`validateMembersAreSelectable`) y
+  solo lo gestiona el dueño o un admin (`OpeningBalancePermissionLogic`). Ya está excluido de estadísticas y avisos.
+- Crear grupo va por el backend (`GroupBackendMembershipService.createGroup`, server-first), desde `GroupFormView`.
+
+**Decidido sin consultar (dentro de la autoridad del encargo):**
+1. **Solo saldos netos, no cada gasto.** Traer cada gasto exige mapear pagador y participantes a miembros que todavía no
+   existen y multiplica lo que sube; el criterio de salida pide «los mismos saldos por persona», y eso lo da el saldo
+   inicial que ya existe de punta a punta. Sin cambios de esquema.
+2. **Los saldos se aplican por pareja cuando las dos personas están en el grupo.** Al importar se calculan los netos
+   por persona y moneda y se convierten en pagos mínimos (deudor → acreedor, determinista). Cada arista se crea como
+   saldo inicial en cuanto sus dos personas están emparejadas con un miembro activo; las demás quedan pendientes en
+   este teléfono (fichero local por grupo) y el grupo enseña «Faltan por emparejar» con un botón. Cuando todos están,
+   cada persona tiene en Yala el mismo saldo que en Splitwise/Tricount, moneda por moneda.
+3. **Sin convertir monedas**: un saldo por moneda, como lo enseña Splitwise. La moneda del grupo se propone con la del
+   export que más se usa. Una moneda que Yala no conoce para el import con un error claro.
+4. **Entrada: «Crear grupo» › «Traer de Splitwise o Tricount»** (Archivos). Vista previa: origen, personas, gastos y
+   pagos, rango de fechas y saldo de cada persona; «¿Quién eres tú?» (o «No estoy en este grupo»). Rellena nombre y
+   moneda del formulario y, al crear, deja el import pendiente con la persona elegida emparejada con el dueño.
+5. **Formato de Tricount**: la app nueva de Tricount ya no exporta (lo da soporte de bunq) y no hay un export oficial
+   público. El lector acepta las variantes conocidas (columna «Paid by», importe y moneda, y reparto en columnas por
+   persona «Paid for X» / «Impacted to X» / «Share X» o en una sola columna con los nombres) y lo deja anotado: hay que
+   validarlo con un export real.
+
+**Fuera, anotado:** abrir el archivo desde «Compartir» de otra app (pide tipos de documento en el `Info.plist`); importar
+sobre un grupo que ya existe; XLSX de Tricount; que el import pendiente viaje a otro teléfono del dueño.
+
+## Escenarios de QA (2026-11-16)
+
+- **IMPORT-GRP-01 · crear desde un export.** Grupos › nuevo grupo › «Traer un grupo de Splitwise o Tricount» › «Elegir
+  archivo» (un CSV de Splitwise). Esperado: vista previa con las personas, gastos, pagos, fechas y el saldo de cada una;
+  al elegir «quién eres» y «Usar estos saldos», el formulario queda con el nombre y la moneda del export y la tarjeta
+  «Saldos de Splitwise listos». Crear: el grupo aparece con el aviso «Faltan saldos de Splitwise · Por emparejar: …».
+- **IMPORT-GRP-02 · archivo que no sirve.** Un CSV cualquiera (un extracto del banco): «No pudimos leer el archivo» con
+  el motivo y «Elegir otro archivo». Una moneda que Yala no tiene: la nombra.
+- **IMPORT-GRP-03 · emparejar quien se une (device-QA, dos teléfonos).** Invitar a una persona del export; al unirse,
+  «Emparejar» en el aviso › elegirla › «Poner saldos». Esperado: los saldos de esa pareja aparecen como saldos
+  iniciales y el saldo de cada uno en Saldos coincide con el de Splitwise; cuando todos están, el aviso desaparece.
