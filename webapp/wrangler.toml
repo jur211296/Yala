@@ -1,8 +1,8 @@
 # Yala web — la app en el navegador como un aparato más de la cuenta en la nube. Worker PROPIO, aparte del gateway y del
 # conector: un despliegue suyo no alcanza al sync de la app. Plan y decisiones: docs/web-app/index.html.
 #
-# Lote 0 (2026-11-13): SOLO staging. No hay `[env.production]` a propósito: producción pide antes su cliente OAuth, su
-# hook, el widget real de Turnstile y el dominio app.yala-app.pe (DNS hoy en RCP). Ver webapp/README.md.
+# Dos entornos: staging (el de arriba, `npm run deploy:staging`) y producción (`[env.production]`, abajo, escrito el
+# 2026-11-15 y NO desplegado). Lo que falta para desplegar producción y en qué orden: docs/web-app/produccion/.
 #
 # Si la configuración está mal (id de cliente PENDIENTE, sin secretos, Turnstile de prueba en producción…) el Worker no
 # atiende: 503 a todo (src/worker/config.ts).
@@ -102,4 +102,97 @@ entrypoint = "WebGroupsReader"
 [[services]]
 binding = "GATEWAY_GROUPS_WRITER"
 service = "yala-gateway-staging"
+entrypoint = "WebGroupsWriter"
+
+# ---------- PRODUCCIÓN — escrito el 2026-11-15, NO desplegado. Orden y lo que falta: docs/web-app/produccion/ ----------
+# En wrangler, `vars`, `kv_namespaces`, `d1_databases`, `durable_objects`, `services` y `ratelimits` NO se heredan del
+# nivel de arriba: se repiten aquí enteros. Lo que dice PENDIENTE hace que `config.ts` responda 503 a todo (falla
+# cerrado), así que un despliegue a medias no atiende a nadie.
+#
+# Secretos (no van aquí), con `wrangler secret put … --env production`:
+#   SUPABASE_OAUTH_CLIENT_SECRET  el del cliente OAuth «Yala web» de Supabase PRODUCCIÓN (se guarda también en
+#                                 ~/Secrets/yala-web-production/supabase-oauth-client.json, en el mismo gesto)
+#   TURNSTILE_SECRET_KEY          el del widget REAL de Turnstile (config.ts rechaza las claves de prueba)
+#
+# Desplegar: `npx vite build && npx wrangler deploy --env production`. No hay `deploy:production` todavía a propósito:
+# el paso lo da Jürgen cuando la base de Supabase, el widget y el dominio estén.
+[env.production]
+name = "yala-web-production"
+# Dominio propio: la zona yala-app.pe YA está en esta cuenta de Cloudflare (activa desde el 2026-11-05, medido el
+# 2026-11-15), así que `custom_domain` crea el registro y el certificado al desplegar sin tocar la web pública (Vercel,
+# en el apex). Mismo mecanismo que mcp.yala-app.pe y panel.yala-app.pe. Si se elige otro nombre, cambian esta línea,
+# PUBLIC_URL, el widget de Turnstile y la vuelta del cliente OAuth de Supabase.
+routes = [{ pattern = "app.yala-app.pe", custom_domain = true }]
+# Solo el dominio: el widget de Turnstile y la cookie `__Host-` van atados a un host, y un segundo host lo rompería.
+workers_dev = false
+
+[env.production.observability]
+enabled = true
+
+[env.production.assets]
+directory = "./dist/client"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[[env.production.kv_namespaces]]
+binding = "WEB_KV"
+# `npx wrangler kv namespace create yala-web-production` → su id aquí.
+id = "PENDIENTE-crear-kv-yala-web-production"
+
+# La cola COMÚN de borradores en producción: el D1 del gateway de producción (mismo esquema de `mail_drafts` que staging,
+# medido el 2026-11-15).
+[[env.production.d1_databases]]
+binding = "DRAFTS_DB"
+database_name = "yala-gateway-production"
+database_id = "60cdd68d-cc37-4a11-8d1a-bcc5f4354118"
+
+[[env.production.durable_objects.bindings]]
+name = "SESSION_INDEX"
+class_name = "SessionIndex"
+
+[[env.production.durable_objects.bindings]]
+name = "QR_PAIRING"
+class_name = "QrPairing"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+DEFAULT_TIMEZONE = "America/Lima"
+PUBLIC_URL = "https://app.yala-app.pe"
+# Supabase PRODUCCIÓN (kefvaiymtgytemwbltlz): las mismas URL y anon key públicas que el gateway de producción.
+SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
+# El cliente OAuth CONFIDENCIAL de la web en Supabase producción, con vuelta https://app.yala-app.pe/auth/supabase/callback.
+# El mismo id va en los SQL de producción (`python3 webapp/supabase/sql_produccion.py <conector> <este-id> <carpeta>`).
+SUPABASE_OAUTH_CLIENT_ID = "PENDIENTE-registrar-cliente-oauth-web-en-supabase-produccion"
+# La clave PÚBLICA del widget real de Turnstile (hostname app.yala-app.pe). El secreto va con `wrangler secret put`.
+TURNSTILE_SITE_KEY = "PENDIENTE-crear-widget-turnstile"
+
+# Mismos límites que staging, con su propio espacio (staging usa 7401-7403; el conector, 7301-7313).
+[[env.production.ratelimits]]
+name = "RL_AUTH"
+namespace_id = "7411"
+simple = { limit = 30, period = 60 }
+
+[[env.production.ratelimits]]
+name = "RL_API"
+namespace_id = "7412"
+simple = { limit = 120, period = 60 }
+
+[[env.production.ratelimits]]
+name = "RL_QR"
+namespace_id = "7413"
+simple = { limit = 60, period = 60 }
+
+# Grupos: las dos entradas internas del gateway de PRODUCCIÓN. Hoy el gateway de producción no declara
+# WEB_GROUPS_READER ni WEB_GROUPS_WRITER, así que ambas responden «disabled» y las rutas de Grupos de la web dan 503.
+# Encenderlas es un despliegue del gateway (`gateway/wrangler.toml`, `[env.production.vars]`), el último paso del orden.
+[[env.production.services]]
+binding = "GATEWAY_GROUPS"
+service = "yala-gateway-production"
+entrypoint = "WebGroupsReader"
+
+[[env.production.services]]
+binding = "GATEWAY_GROUPS_WRITER"
+service = "yala-gateway-production"
 entrypoint = "WebGroupsWriter"

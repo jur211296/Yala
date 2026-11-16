@@ -1,0 +1,227 @@
+<title>Yala web a producción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: una columna de informe (≈ 760 px) con bandas por pregunta: ¿qué hay?, ¿qué falta y en qué orden?, ¿qué dominio?, ¿qué hace Dan? */
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --ink: #161a2e;
+  --muted: #5b6178;
+  --line: #dfe2ec;
+  --accent: #4b47d6;
+  --accent-soft: #ecebff;
+  --ok: #1d7a4f;
+  --ok-soft: #e3f4ea;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --stop: #b3261e;
+  --stop-soft: #fbe6e4;
+  --code-bg: #eef0f6;
+  --f-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1220; --surface: #171b2e; --ink: #e8eaf4; --muted: #a0a6bf; --line: #2a3050;
+    --accent: #9d9aff; --accent-soft: #24264a; --ok: #6fd3a0; --ok-soft: #14301f; --warn: #f0b25a; --warn-soft: #33260f;
+    --stop: #ff8a80; --stop-soft: #3a1714; --code-bg: #20253d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1220; --surface: #171b2e; --ink: #e8eaf4; --muted: #a0a6bf; --line: #2a3050;
+  --accent: #9d9aff; --accent-soft: #24264a; --ok: #6fd3a0; --ok-soft: #14301f; --warn: #f0b25a; --warn-soft: #33260f;
+  --stop: #ff8a80; --stop-soft: #3a1714; --code-bg: #20253d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+main { max-width: 780px; margin: 0 auto; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(30px, 6vw, 42px); line-height: 1.1; }
+h2 { font-size: 24px; }
+h3 { font-size: 17px; }
+p { margin: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.lead { font-size: 18px; color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 16px; }
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
+.verdict .line { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.pill { font-family: var(--f-mono); font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.stop { color: var(--stop); background: var(--stop-soft); }
+.pill.acc { color: var(--accent); background: var(--accent-soft); }
+.rows { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 170px 1fr; gap: 6px 18px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.row > * { min-width: 0; }
+.row .k { font-weight: 600; }
+.row .v { display: grid; gap: 6px; }
+.row .v .pill { justify-self: start; }
+.muted { color: var(--muted); }
+code { font-family: var(--f-mono); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: paso; }
+ol.steps > li { counter-increment: paso; display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+ol.steps > li::before { content: counter(paso); font-family: var(--f-display); font-weight: 700; font-size: 15px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+ol.steps > li > div { min-width: 0; display: grid; gap: 4px; }
+.who { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.opt { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; align-content: start; }
+.opt.rec { border: 2px solid var(--accent); }
+.opt dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
+.opt dt { color: var(--muted); }
+.opt dd { margin: 0; min-width: 0; }
+.check { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; }
+.check ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.url { font-family: var(--f-mono); font-size: 13px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.callout { border-left: 3px solid var(--stop); background: var(--stop-soft); padding: 14px 16px; border-radius: 0 10px 10px 0; display: grid; gap: 8px; }
+.tests { display: grid; gap: 10px; }
+.tests li { list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; }
+.tests ul { margin: 0; padding: 0; display: grid; gap: 10px; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 620px) {
+  .row { grid-template-columns: 1fr; }
+  .options { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Yala web · salida a producción · 15 nov 2026</span>
+    <h1>Yala web a producción</h1>
+    <p class="lead">La escritura en Grupos sale a producción junto con toda la web. Esta noche quedó todo preparado y probado contra staging; en producción todavía no hay nada aplicado ni desplegado. Lo que falta es una decisión tuya, cuatro comprobaciones de panel de Dan y una sesión de encendido.</p>
+  </header>
+
+  <section aria-labelledby="estado">
+    <h2 id="estado">En una mirada</h2>
+    <div class="verdict">
+      <div class="line"><span class="pill stop">Producción</span><span>Nada aplicado ni desplegado. Medido el 15-nov en Supabase y en Cloudflare.</span></div>
+      <div class="line"><span class="pill ok">Preparado</span><span>Worker de producción escrito y validado, SQL de producción generados y probados, política de privacidad en seis idiomas.</span></div>
+      <div class="line"><span class="pill warn">Te espera</span><span>Tu OK para encender el hook de token en el login de producción, y el dominio.</span></div>
+      <div class="line"><span class="pill acc">Dominio</span><span>El DNS de yala-app.pe ya está en Cloudflare desde el 5-nov: no hay que mover nada.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hay">
+    <h2 id="hay">Qué hay hoy, pieza por pieza</h2>
+    <div class="rows">
+      <div class="row"><div class="k">Supabase producción</div><div class="v"><span class="pill stop">vacío</span><span>No tiene el rol de solo lectura, ni el hook de token, ni el servidor OAuth (0 clientes), ni el programador de tareas (<code>pg_cron</code>). Apple y Google solo conocen la app, no la web. Las tablas y funciones de Grupos son idénticas a staging (comparado firma por firma).</span></div></div>
+      <div class="row"><div class="k">SQL de la web</div><div class="v"><span class="pill ok">listos y probados</span><span>Un generador cambia los ids de staging por los de producción y recalcula las guardas. Probado en staging, simulando un proyecto sin conector como el de producción: aplica, vuelve atrás limpio y se reaplica idéntico.</span></div></div>
+      <div class="row"><div class="k">Worker de la web</div><div class="v"><span class="pill ok">escrito, sin desplegar</span><span>Entorno de producción en <code>wrangler.toml</code>: Supabase y gateway de producción, sus propios límites y el dominio. Mientras falte el KV, el cliente OAuth o el widget de Turnstile, responde 503 a todo.</span></div></div>
+      <div class="row"><div class="k">Dominio</div><div class="v"><span class="pill acc">libre</span><span><code>app.yala-app.pe</code> no existe todavía. La zona está en la misma cuenta de Cloudflare de los Workers, que ya sirve <code>mcp.yala-app.pe</code> y <code>panel.yala-app.pe</code>.</span></div></div>
+      <div class="row"><div class="k">Gateway</div><div class="v"><span class="pill warn">falta encender</span><span>El de producción no tiene encendidas la lectura ni la escritura de Grupos para la web, y su último despliegue aún no lleva el lote 3.</span></div></div>
+      <div class="row"><div class="k">App del iPhone</div><div class="v"><span class="pill warn">no conoce la web</span><span>«Navegadores conectados», vincular por QR y recoger lo apuntado en la web existen solo en Yala Dev. La app publicada no tiene la dirección de la web de producción.</span></div></div>
+      <div class="row"><div class="k">Privacidad</div><div class="v"><span class="pill ok">redactada</span><span>Nuevo punto «Yala en el navegador» en la sección 4: la sesión, el navegador y el sistema, la ciudad aproximada (nunca la IP), cuánto dura y dónde se cierra. Se publica cuando pase a la rama <code>1.0</code>.</span></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="decision">
+    <h2 id="decision">La decisión que te toca</h2>
+    <div class="callout">
+      <h3>Encender el hook de token en el login de producción</h3>
+      <p>Para que la web entre, Supabase tiene que marcar sus tokens como «solo la web». Lo hace una función que corre en <b>cada inicio de sesión y cada renovación de toda la app</b>, no solo de la web. Si esa función fallara, nadie podría entrar a su cuenta en la nube. Por eso no la encendí.</p>
+      <p><b>Lo que la hace segura:</b> con el login normal de la app devuelve el token tal cual (medido en staging desde el 13-nov), y apagarla es un solo cambio de configuración con efecto inmediato. <b>Mi recomendación:</b> encenderla en una ventana tranquila, comprobar en el iPhone que el login sigue igual, y seguir con los pasos 4 a 9.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="orden">
+    <h2 id="orden">Qué falta, en este orden</h2>
+    <ol class="steps">
+      <li><div><h3>Decidir el hook y el dominio</h3><span class="who">Jürgen · en la card «Espera decisión»</span><p class="muted">Recomendado: encender el hook y usar <code>app.yala-app.pe</code>.</p></div></li>
+      <li><div><h3>Crear el widget de Turnstile</h3><span class="who">Dan · panel de Cloudflare</span><p class="muted">Checklist abajo. La clave pública va a <code>wrangler.toml</code>; la secreta, a 1Password.</p></div></li>
+      <li><div><h3>Darle a Supabase las vueltas de la web</h3><span class="who">Dan · Apple Developer y Google Cloud</span><p class="muted">Sin esto, Apple y Google rechazan el login de la web en producción.</p></div></li>
+      <li><div><h3>La base en Supabase</h3><span class="who">sesión de encendido · Management API</span><p class="muted">Cliente OAuth de la web (vuelta <code>https://app.yala-app.pe/auth/supabase/callback</code>), los tres SQL del conector y los cuatro de la web, generados con ese id. Después, en Auth: hook encendido, servidor OAuth encendido sin registro abierto, Apple con <code>pe.yala.app.web</code> primero, Google con el cliente web primero, y <code>https://app.yala-app.pe/auth/callback</code> en la lista de vueltas. El conector no se despliega: su id va como uuid nulo.</p></div></li>
+      <li><div><h3>Desplegar el Worker</h3><span class="who">sesión de encendido · wrangler</span><p class="muted">Crear el KV, subir los dos secretos y <code>wrangler deploy --env production</code>. El dominio y su certificado salen solos.</p></div></li>
+      <li><div><h3>Encender Grupos en el gateway</h3><span class="who">sesión de encendido</span><p class="muted">Desplegar el gateway de producción desde 2.3 con la lectura y la escritura de la web en «on». Es el último interruptor y el que corta Grupos si algo va mal.</p></div></li>
+      <li><div><h3>La app que habla con la web</h3><span class="who">versión 2.3 del iPhone</span><p class="muted">Poner la dirección de producción en la configuración de «Navegadores conectados». Sin ella, lo apuntado en la web solo llega a quien tenga el correo del banco preparado.</p></div></li>
+      <li><div><h3>Publicar la política</h3><span class="who">cherry-pick a <code>1.0</code></span><p class="muted">Vercel publica desde <code>1.0</code>. Antes de abrir la web a nadie.</p></div></li>
+      <li><div><h3>Probar de punta a punta</h3><span class="who">iPhone 14 + navegador</span><p class="muted">Entrar con Apple y con Google, ver Panel y Grupos, apuntar un gasto y verlo en la Bandeja, saldar en un grupo de prueba, cerrar la sesión desde el iPhone.</p></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="dominio">
+    <h2 id="dominio">Dónde vive la web</h2>
+    <p class="muted">El encargo partía de que había que mover el DNS desde RCP. Ya no: la zona está en Cloudflare desde el 5-nov y la web pública sigue sirviéndose desde Vercel a través de su proxy.</p>
+    <div class="options">
+      <article class="opt rec">
+        <span class="pill acc" style="justify-self:start">Recomendada</span>
+        <h3>A · app.yala-app.pe</h3>
+        <p>Dominio propio del Worker. Cloudflare crea el registro y el certificado al desplegar.</p>
+        <dl><dt>Caída</dt><dd>ninguna: no toca el dominio principal ni Vercel</dd><dt>Tiempo</dt><dd>minutos, dentro del despliegue</dd><dt>Riesgo</dt><dd>bajo; mismo mecanismo que mcp y panel</dd></dl>
+      </article>
+      <article class="opt">
+        <h3>B · workers.dev temporal</h3>
+        <p><code>yala-web-production.misty-surf-6866.workers.dev</code> mientras tanto.</p>
+        <dl><dt>Caída</dt><dd>ninguna</dd><dt>Tiempo</dt><dd>inmediato</dd><dt>Riesgo</dt><dd>dirección poco confiable para el usuario; al pasar al dominio, todos vuelven a entrar y hay que rehacer widget y vueltas</dd></dl>
+      </article>
+      <article class="opt">
+        <h3>C · otro subdominio</h3>
+        <p><code>web.yala-app.pe</code> o <code>cuenta.yala-app.pe</code>, igual que A.</p>
+        <dl><dt>Caída</dt><dd>ninguna</dd><dt>Tiempo</dt><dd>minutos</dd><dt>Riesgo</dt><dd>el mismo que A; solo cambia el nombre (cuatro sitios)</dd></dl>
+      </article>
+      <article class="opt">
+        <h3>D · mover la zona</h3>
+        <p>La opción del encargo: llevar yala-app.pe a Cloudflare replicando lo de Vercel.</p>
+        <dl><dt>Estado</dt><dd>ya está hecho desde el 5-nov</dd><dt>Riesgo</dt><dd>no aplica</dd></dl>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="dan">
+    <h2 id="dan">Checklist para Dan</h2>
+    <p class="muted">Solo después del OK de Jürgen en la card. Ningún secreto va al chat: a 1Password o directo a Jürgen.</p>
+    <div class="check">
+      <h3>1 · Widget de Turnstile</h3>
+      <ul>
+        <li>Cuenta: Cloudflare «Admin@yala-app.pe's Account».</li>
+        <li>URL: <span class="url">https://dash.cloudflare.com/86c270a7776be98639700bd5959b303b/turnstile</span></li>
+        <li>Add widget → nombre «Yala web (producción)», hostname <code>app.yala-app.pe</code> (el que elija Jürgen), modo Managed, sin pre-clearance.</li>
+        <li>Objetivo: la clave pública (empieza por <code>0x4</code>) y la secreta, guardada en 1Password como «Yala web · Turnstile producción».</li>
+      </ul>
+    </div>
+    <div class="check">
+      <h3>2 · DNS: comprobar, no cambiar</h3>
+      <ul>
+        <li>URL: <span class="url">https://dash.cloudflare.com/86c270a7776be98639700bd5959b303b/yala-app.pe/dns/records</span></li>
+        <li>Objetivo: confirmar que no existe ningún registro <code>app</code>. Si existe, no tocarlo y avisar: el despliegue fallaría.</li>
+        <li>No mover nameservers ni tocar los registros de Vercel ni los MX de Google.</li>
+      </ul>
+    </div>
+    <div class="check">
+      <h3>3 · Apple: vuelta de Supabase producción</h3>
+      <ul>
+        <li>URL: <span class="url">https://developer.apple.com/account/resources/identifiers/list/serviceId</span> (equipo 3WKFFVD66J).</li>
+        <li>Services ID <code>pe.yala.app.web</code> → Sign In with Apple → Configure → Return URLs: añadir <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. No quitar las que hay.</li>
+      </ul>
+    </div>
+    <div class="check">
+      <h3>4 · Google: vuelta de Supabase producción</h3>
+      <ul>
+        <li>URL: <span class="url">https://console.cloud.google.com/apis/credentials?authuser=1</span></li>
+        <li>Cliente OAuth web «Yala Web (MCP)» → Authorized redirect URIs: si falta, añadir <code>https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/callback</code>. No quitar las que hay.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="pruebas">
+    <h2 id="pruebas">Qué se probó</h2>
+    <div class="tests"><ul>
+      <li><span class="pill ok">ok</span><span>Los cuatro SQL y sus marchas atrás, de punta a punta en staging, dentro de una transacción que se deshace: staging no cambió.</span></li>
+      <li><span class="pill warn">arreglado</span><span>La primera corrida cazó un fallo: la marcha atrás de la escritura en Grupos dejaba el hook con otro cuerpo y la siguiente marcha atrás se negaba. Ahora restaura el cuerpo exacto.</span></li>
+      <li><span class="pill ok">ok</span><span>La cadena de producción entera (conector y web, con ids de producción) sobre staging sin conector: aplica, vuelve atrás y se reaplica idéntica.</span></li>
+      <li><span class="pill ok">ok</span><span>El entorno de producción del Worker: validación de wrangler sin errores, 167 tests (6 nuevos que leen <code>wrangler.toml</code>) y dos mutantes que los tests cazan.</span></li>
+      <li><span class="pill ok">ok</span><span>La política compila en los seis idiomas y el párrafo nuevo sale en cada página.</span></li>
+    </ul></div>
+  </section>
+
+  <footer>Fuente: <code>docs/web-app/produccion/index.html</code> · medido el 15-nov-2026 · detalle técnico en <code>webapp/README.md</code>, sección «Producción».</footer>
+</main>

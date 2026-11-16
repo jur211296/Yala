@@ -5,6 +5,9 @@
 -- Para no esperar, quitar `yala_web` de `WEB_ROLES` (`webapp/src/worker/verify.ts`) y desplegar: la web cierra esas
 -- sesiones y se vuelve a entrar.
 
+-- El hook vuelve al cuerpo EXACTO de web0_01 (md5 120f45468bc1db690a4c5655e7a7d48c), comentarios incluidos: la guarda
+-- de web0_01_rollback compara el md5 de `prosrc`, y un cuerpo equivalente sin comentarios (md5 5ddeffcb…, el de antes
+-- del 2026-11-15) la hacía abortar. Lo cazó `ciclo_staging.py`.
 create or replace function public.yala_mcp_access_token_hook(event jsonb)
 returns jsonb
 language plpgsql
@@ -18,18 +21,29 @@ declare
   sid text := nullif(claims->>'session_id', '');
   session_cid uuid;
 begin
+  -- El cliente OAuth persiste en la sesión. Un token reemitido para ella (p. ej. tras verificar MFA) no trae el
+  -- claim client_id, pero la sesión sigue siendo del mismo cliente: por eso se mira la sesión. Solo se lee si el
+  -- session_id tiene forma de uuid, para no romper un login por un cast. Un fallo de la lectura propaga y GoTrue no
+  -- emite el token (falla cerrado).
   if sid ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
     select s.oauth_client_id into session_cid from auth.sessions s where s.id = sid::uuid;
   end if;
+
+  -- Ni el claim ni la sesión traen cliente: login normal de la app. Intacto.
   if claim_cid is null and session_cid is null then
     return jsonb_build_object('claims', claims);
   end if;
+
+  -- Es un token de un cliente OAuth. Solo el conector y Yala web reciben token, y de solo lectura.
   if claim_cid in (worker_client::text, web_client::text) or session_cid in (worker_client, web_client) then
     return jsonb_build_object('claims', jsonb_set(claims, '{role}', to_jsonb('yala_mcp_reader'::text)));
   end if;
+
+  -- Cualquier otro cliente OAuth: sin token. GoTrue devuelve este error antes de firmar nada.
   return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'Este cliente no puede conectarse a Yala.'));
 end;
 $$;
+
 grant execute on function public.yala_mcp_access_token_hook(jsonb) to supabase_auth_admin;
 revoke execute on function public.yala_mcp_access_token_hook(jsonb) from authenticated, anon, public;
 
