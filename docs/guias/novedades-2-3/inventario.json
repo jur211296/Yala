@@ -13,7 +13,10 @@
   "pro": false,
   "como_probar": "Abre un presupuesto del mes en curso, registra un gasto y mira cómo baja el cupo de hoy.",
   "id": "769-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 770,
@@ -29,7 +32,10 @@
   "pro": false,
   "como_probar": "Con una cuenta llamada Yape, escribe en el chat «25 almuerzo yape» y revisa que el borrador ya traiga esa cuenta. (Con el servicio de IA de producción aún sin la última actualización, funciona con un solo movimiento y una sola mención por frase.)",
   "id": "770-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 784,
@@ -45,7 +51,10 @@
   "pro": false,
   "como_probar": "En una instalación nueva toca «Ya tengo una cuenta», vuelve atrás, cierra Yala y reábrela: debe aparecer de nuevo la bienvenida.",
   "id": "784-1",
-  "orden": 17
+  "orden": 17,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 784,
@@ -61,7 +70,10 @@
   "pro": false,
   "como_probar": "Difícil de provocar a mano: requiere cambiar de Apple ID o un vaciado remoto desde otro dispositivo.",
   "id": "784-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 791,
@@ -77,7 +89,10 @@
   "pro": false,
   "como_probar": "Inicia «Activar la nube» y toca «Cancelar la activación» en el paso de comprobar datos.",
   "id": "791-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 791,
@@ -93,7 +108,10 @@
   "pro": false,
   "como_probar": "Con una cuenta creada en la nube, entra desde otro iPhone y mira Ajustes › Almacenamiento.",
   "id": "791-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 794,
@@ -109,7 +127,10 @@
   "pro": false,
   "como_probar": "Cambia a Registros y vuelve al Panel; abre Yala en frío y fíjate en lo rápido que salen los números.",
   "id": "794-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 794,
@@ -125,7 +146,10 @@
   "pro": false,
   "como_probar": "En Registros filtra por dos necesidades y abre el Panel.",
   "id": "794-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 795,
@@ -141,7 +165,10 @@
   "pro": false,
   "como_probar": "Crea una cuenta con un ingreso y un gasto iguales y mira su saldo en Cuentas.",
   "id": "795-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 795,
@@ -157,7 +184,10 @@
   "pro": false,
   "como_probar": "Requiere dos dispositivos con iCloud: cambia la divisa de una cuenta en uno y mira la tarjeta en el otro.",
   "id": "795-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 796,
@@ -173,7 +203,10 @@
   "pro": false,
   "como_probar": "Abre Estadísticas por primera vez (o en instalación nueva) y desplaza hacia abajo.",
   "id": "796-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 796,
@@ -189,7 +222,10 @@
   "pro": false,
   "como_probar": "Filtra el Panel por una cuenta, ve a otra app, vuelve y quita el chip.",
   "id": "796-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 797,
@@ -205,7 +241,10 @@
   "pro": false,
   "como_probar": "En Desglosar toca el espacio vacío a la derecha de una dimensión.",
   "id": "797-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 797,
@@ -221,7 +260,10 @@
   "pro": false,
   "como_probar": "Abre Exportar, elige una cuenta y cambia el tamaño de texto desde Ajustes del iPhone.",
   "id": "797-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 797,
@@ -237,7 +279,10 @@
   "pro": false,
   "como_probar": "Difícil de provocar a mano: es un fallo de guardado.",
   "id": "797-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 798,
@@ -253,7 +298,10 @@
   "pro": false,
   "como_probar": "Crea un pago anual con fecha 29-feb-2028 y mira su siguiente fecha en el calendario.",
   "id": "798-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 798,
@@ -269,7 +317,10 @@
   "pro": false,
   "como_probar": "En iPad abre un presupuesto y cambia al chip de Pagos planificados.",
   "id": "798-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 800,
@@ -285,7 +336,10 @@
   "pro": false,
   "como_probar": "En una reinstalación elige Restaurar desde iCloud y lee los mensajes; en Almacenamiento mira la tarjeta «Dónde viven tus datos».",
   "id": "800-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 802,
@@ -301,7 +355,10 @@
   "pro": false,
   "como_probar": "Cierra sesión y reabre Yala como si fueras otra persona: el nombre no debe aparecer.",
   "id": "802-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 802,
@@ -317,7 +374,10 @@
   "pro": false,
   "como_probar": "Apaga iCloud Drive (con la sesión de iCloud abierta) y reabre Yala.",
   "id": "802-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 812,
@@ -333,7 +393,10 @@
   "pro": false,
   "como_probar": "Crea un presupuesto pequeño y gasta ~90 % de él.",
   "id": "812-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 817,
@@ -349,7 +412,10 @@
   "pro": true,
   "como_probar": "En un grupo toca «+» › «Desde un recibo», saca una foto de un recibo y escribe «Ana el lomo, yo la pizza». Usa 1 de las 5 fotos/notas de la prueba gratuita; agotadas, ofrece Yala Pro.",
   "id": "817-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 820,
@@ -365,7 +431,10 @@
   "pro": false,
   "como_probar": "Activa la nube en un iPhone con pocos datos y cronometra la barra de subida.",
   "id": "820-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 821,
@@ -381,7 +450,10 @@
   "pro": false,
   "como_probar": "Apaga iCloud Drive, reinstala y elige Restaurar desde iCloud.",
   "id": "821-1",
-  "orden": 8
+  "orden": 8,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 822,
@@ -397,7 +469,10 @@
   "pro": false,
   "como_probar": "Abre el Panel y mira el encabezado del widget de pagos.",
   "id": "822-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 822,
@@ -413,7 +488,10 @@
   "pro": false,
   "como_probar": "Mueve un gasto en soles a una cuenta en dólares y mira el monto.",
   "id": "822-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 822,
@@ -429,7 +507,10 @@
   "pro": false,
   "como_probar": "Escribe un importe en Nuevo registro desde Estadísticas, sal de Yala y vuelve.",
   "id": "822-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 823,
@@ -445,7 +526,10 @@
   "pro": false,
   "como_probar": "Con un grupo con gastos, usa Vaciar datos y abre Registros.",
   "id": "823-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 826,
@@ -461,7 +545,10 @@
   "pro": false,
   "como_probar": "Toca el ojo del Panel, cierra y reabre la app.",
   "id": "826-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 788,
@@ -477,7 +564,10 @@
   "pro": false,
   "como_probar": "Con la nube activa, abre Ajustes › Correo del banco, copia la dirección y sigue la guía de tu correo; reenvía una alerta de consumo y abre Yala.",
   "id": "788-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 801,
@@ -489,11 +579,14 @@
   "que_cambio": "El conector entra con Apple o Google (la misma cuenta de la app), avisa que solo funciona con la nube de Yala, y el saldo de hoy que ve Claude cuadra con la app (sin movimientos futuros y convertido a la divisa de cada cuenta); «Este mes» usa la zona horaria del teléfono. Desconectar desde Claude cierra la sesión en la nube.",
   "por_que": "Preguntarle a Claude por tus finanzas con los mismos números de la app.",
   "estado": "todavia_no",
-  "activar": "El conector solo está en staging; en producción falta desplegarlo: crear el KV y el id de cliente (valores PENDIENTE), npm run deploy:production con el preflight, y aplicar en Supabase producción el barrido de sesiones (mcp0_04) y el hook de token. Aún sin publicar en los directorios de Claude.",
+  "activar": "Medido el 16-nov: el conector de producción no existe todavía (Cloudflare responde «worker no encontrado»); solo staging. Falta desplegarlo, aplicar sus migraciones en Supabase producción y publicarlo en los directorios de Claude.",
   "pro": false,
   "como_probar": "No se puede probar con producción hoy; en staging, conecta Yala desde Claude con Google.",
   "id": "801-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Medido otra vez el 16-nov: el conector sigue sin producción."
  },
  {
   "pr": 827,
@@ -509,7 +602,10 @@
   "pro": false,
   "como_probar": "Pon una foto grande de tu galería como foto de perfil y cambia entre pestañas.",
   "id": "827-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 827,
@@ -525,7 +621,10 @@
   "pro": false,
   "como_probar": "Cierra sesión de tu cuenta y comprueba que Yala sigue abierta.",
   "id": "827-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 831,
@@ -541,7 +640,10 @@
   "pro": false,
   "como_probar": "Solo se ve en un caso raro (activación cortada a mitad); basta comprobar que Activar la nube funciona normal.",
   "id": "831-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 831,
@@ -557,7 +659,10 @@
   "pro": false,
   "como_probar": "Difícil de provocar a mano; caso de recuperación tras cierre forzado en pleno borrado.",
   "id": "831-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 831,
@@ -573,7 +678,10 @@
   "pro": false,
   "como_probar": "Crea una cuenta nueva en la nube y acepta el consentimiento.",
   "id": "831-3",
-  "orden": 18
+  "orden": 18,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 832,
@@ -589,7 +697,10 @@
   "pro": false,
   "como_probar": "Activa VoiceOver, abre Voz y dicta.",
   "id": "832-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 833,
@@ -605,7 +716,10 @@
   "pro": true,
   "como_probar": "Con Pro, abre Estadísticas › Resumen › Detalle › Gastos hormiga con compras pequeñas repetidas de la misma tienda.",
   "id": "833-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 833,
@@ -621,7 +735,10 @@
   "pro": true,
   "como_probar": "Abre Ajustes › Privacidad y datos IA y lee los textos de permiso.",
   "id": "833-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 834,
@@ -637,7 +754,10 @@
   "pro": false,
   "como_probar": "Cambia el idioma de Yala, crea una transferencia y mira Ajustes › Categorías.",
   "id": "834-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 834,
@@ -653,7 +773,10 @@
   "pro": false,
   "como_probar": "Abre «Pega tu enlace de invitación», pega un enlace largo con el teclado abierto.",
   "id": "834-2",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 834,
@@ -669,7 +792,10 @@
   "pro": false,
   "como_probar": "Toca la X de la bienvenida, sal y vuelve a entrar a Grupos.",
   "id": "834-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 835,
@@ -685,7 +811,10 @@
   "pro": false,
   "como_probar": "Estadísticas › Tendencias › «Este mes» › enciende «Ver proyectado».",
   "id": "835-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 835,
@@ -701,7 +830,10 @@
   "pro": false,
   "como_probar": "Edita un widget de Gasto o Saldo con período «Este mes» y enciende «Mostrar proyectado».",
   "id": "835-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 836,
@@ -717,7 +849,10 @@
   "pro": false,
   "como_probar": "En la bienvenida empieza a entrar con tu cuenta, vuelve atrás, cierra Yala y ábrela.",
   "id": "836-1",
-  "orden": 16
+  "orden": 16,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 836,
@@ -733,7 +868,10 @@
   "pro": true,
   "como_probar": "Entra con una cuenta con Pro y mira que el Pro aparezca al instante.",
   "id": "836-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 836,
@@ -749,7 +887,10 @@
   "pro": false,
   "como_probar": "Instalación en un dispositivo limpio con iCloud Drive apagado (difícil de probar en tu teléfono actual).",
   "id": "836-3",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 839,
@@ -765,7 +906,10 @@
   "pro": false,
   "como_probar": "Mira un mes de Flujo de caja que cuadre exacto.",
   "id": "839-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 839,
@@ -781,7 +925,10 @@
   "pro": false,
   "como_probar": "Mira un widget de Saldo cuya variación se redondee a 0.",
   "id": "839-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 840,
@@ -797,7 +944,10 @@
   "pro": false,
   "como_probar": "Con dos dispositivos, baja las tasas en uno y mira el saldo multimoneda en el otro.",
   "id": "840-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 840,
@@ -809,11 +959,14 @@
   "que_cambio": "Tercer botón que abre la página de Apple sin cookies de Safari y deja escribir otro Apple ID. Desaparece la nota «Con Apple, Yala usa siempre la cuenta de este dispositivo» donde el botón existe.",
   "por_que": "Puedes usar la nube con un Apple ID distinto al del teléfono.",
   "estado": "todavia_no",
-  "activar": "Está detrás de un interruptor remoto (CloudRemoteFlags.appleWebSignInEnabled, APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT): staging 100, producción 0. Falta configurar Apple Developer y el Supabase de producción y subir el porcentaje en el gateway.",
+  "activar": "Medido el 16-nov en la configuración remota de producción: «Otra cuenta de Apple» al 0 % (staging 100 %). Falta configurar Apple Developer y el Supabase de producción y subir el porcentaje.",
   "pro": false,
   "como_probar": "Solo en Yala Dev (staging): fuerza la pantalla «Usar otra cuenta» y busca el tercer botón.",
   "id": "840-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Medido otra vez el 16-nov: sigue apagado en producción."
  },
  {
   "pr": 841,
@@ -829,7 +982,10 @@
   "pro": false,
   "como_probar": "Parte un gasto con un grupo y mira la línea bajo «Tu parte».",
   "id": "841-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 843,
@@ -845,7 +1001,10 @@
   "pro": false,
   "como_probar": "Con «Ver proyectado» encendido, toca el enlace bajo «Proyectado al cierre».",
   "id": "843-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 845,
@@ -861,7 +1020,10 @@
   "pro": false,
   "como_probar": "Con dos dispositivos con la nube, vacía datos en uno y observa el otro.",
   "id": "845-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 845,
@@ -877,7 +1039,10 @@
   "pro": false,
   "como_probar": "Crea un presupuesto y abre Elegir categorías.",
   "id": "845-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 854,
@@ -893,7 +1058,10 @@
   "pro": false,
   "como_probar": "Sube el texto a tamaño de accesibilidad y abre el Panel.",
   "id": "854-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 854,
@@ -909,7 +1077,10 @@
   "pro": false,
   "como_probar": "Oculta montos con el ojo y toca el «?» de una gráfica.",
   "id": "854-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 854,
@@ -925,7 +1096,10 @@
   "pro": false,
   "como_probar": "Panel › Configurar Panel › toca ↻.",
   "id": "854-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 855,
@@ -941,7 +1115,10 @@
   "pro": false,
   "como_probar": "Escribe un importe y luego elige una cuenta en USD.",
   "id": "855-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 855,
@@ -957,7 +1134,10 @@
   "pro": false,
   "como_probar": "Crea una transferencia entre una cuenta en soles y otra en dólares.",
   "id": "855-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 855,
@@ -973,7 +1153,10 @@
   "pro": false,
   "como_probar": "Sin Pro, toca Voz o Foto y luego «Apuntarlo a mano».",
   "id": "855-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 869,
@@ -989,7 +1172,10 @@
   "pro": false,
   "como_probar": "Edita un gasto personal con al menos un grupo y toca «Convertir a gasto compartido».",
   "id": "869-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 887,
@@ -1005,7 +1191,10 @@
   "pro": false,
   "como_probar": "Compara «Proyectado al cierre» antes y después de crear el plan sugerido.",
   "id": "887-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 887,
@@ -1021,7 +1210,10 @@
   "pro": false,
   "como_probar": "Abre un presupuesto por cuenta o etiqueta y revisa el desglose.",
   "id": "887-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 887,
@@ -1037,7 +1229,10 @@
   "pro": false,
   "como_probar": "Compara ambas pantallas con «Todo el tiempo».",
   "id": "887-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 887,
@@ -1053,7 +1248,10 @@
   "pro": false,
   "como_probar": "Divide 400 por Monto con 399,99 y mira el aviso.",
   "id": "887-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 888,
@@ -1069,7 +1267,10 @@
   "pro": false,
   "como_probar": "Crea un borrador igual a un registro existente y desliza para guardar.",
   "id": "888-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 888,
@@ -1085,7 +1286,10 @@
   "pro": false,
   "como_probar": "Solo se nota con más de 500 archivados.",
   "id": "888-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 888,
@@ -1101,7 +1305,10 @@
   "pro": false,
   "como_probar": "Abre Siri y Atajos en un teléfono con el modelo de Apple.",
   "id": "888-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 888,
@@ -1117,7 +1324,10 @@
   "pro": false,
   "como_probar": "Abre la guía de Apple Pay y lee el paso 4.",
   "id": "888-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 889,
@@ -1133,7 +1343,10 @@
   "pro": false,
   "como_probar": "En un iPad, abre Estadísticas › Distribución.",
   "id": "889-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 892,
@@ -1149,7 +1362,10 @@
   "pro": false,
   "como_probar": "Salta un mes de un pago y abre su detalle.",
   "id": "892-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 892,
@@ -1165,7 +1381,10 @@
   "pro": false,
   "como_probar": "Mira un presupuesto de un mes ya cerrado.",
   "id": "892-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 892,
@@ -1181,7 +1400,10 @@
   "pro": false,
   "como_probar": "Crea un presupuesto Único con inicio y fin el mismo día.",
   "id": "892-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 892,
@@ -1197,7 +1419,10 @@
   "pro": false,
   "como_probar": "Sin Pro, con tres activos, reactiva un cuarto.",
   "id": "892-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 892,
@@ -1213,7 +1438,10 @@
   "pro": false,
   "como_probar": "Activa VoiceOver y recorre Pagos planificados.",
   "id": "892-5",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 893,
@@ -1229,7 +1457,10 @@
   "pro": false,
   "como_probar": "Sube el texto a tamaño de accesibilidad y recorre estas pantallas.",
   "id": "893-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 895,
@@ -1245,7 +1476,10 @@
   "pro": false,
   "como_probar": "Revisa los hallazgos con «Esta semana».",
   "id": "895-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 895,
@@ -1261,7 +1495,10 @@
   "pro": false,
   "como_probar": "Abre Estadísticas en un período sin movimientos.",
   "id": "895-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 895,
@@ -1277,7 +1514,10 @@
   "pro": false,
   "como_probar": "Abre el Sankey y desplázalo a lo ancho.",
   "id": "895-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 895,
@@ -1293,7 +1533,10 @@
   "pro": false,
   "como_probar": "Compara cabecera y tarta de Distribución con VoiceOver.",
   "id": "895-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 896,
@@ -1309,7 +1552,10 @@
   "pro": false,
   "como_probar": "Abre Moneda › Tipo de cambio sin monedas secundarias.",
   "id": "896-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 896,
@@ -1325,7 +1571,10 @@
   "pro": false,
   "como_probar": "Abre Ajustes › Cuentas.",
   "id": "896-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 896,
@@ -1341,7 +1590,10 @@
   "pro": false,
   "como_probar": "Difícil de provocar: requiere cerrar la app a medias.",
   "id": "896-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 896,
@@ -1357,7 +1609,10 @@
   "pro": false,
   "como_probar": "Crea una etiqueta con un nombre largo y toca la X.",
   "id": "896-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 897,
@@ -1373,7 +1628,10 @@
   "pro": true,
   "como_probar": "Abre la hoja de Pro y «Así funciona la prueba».",
   "id": "897-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 897,
@@ -1389,7 +1647,10 @@
   "pro": false,
   "como_probar": "Sin Pro, enciende «Resumen con IA».",
   "id": "897-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 897,
@@ -1405,7 +1666,10 @@
   "pro": false,
   "como_probar": "Con una cuenta vacía, abre Exportar registros.",
   "id": "897-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 898,
@@ -1421,7 +1685,10 @@
   "pro": false,
   "como_probar": "Texto grande y abre «Dónde viven tus datos».",
   "id": "898-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 898,
@@ -1437,7 +1704,10 @@
   "pro": false,
   "como_probar": "Lee el consentimiento y la pantalla Salir de mis grupos.",
   "id": "898-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 898,
@@ -1453,23 +1723,29 @@
   "pro": false,
   "como_probar": "Mira la pantalla durante una subida o con una cuenta rechazada.",
   "id": "898-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 900,
-  "titulo": "Panel: cifra grande «Tienes hoy» y línea «Te queda»",
+  "titulo": "Panel: la cifra grande no cambia con el período (en la 2.3 (2), «Tu saldo hoy»)",
   "area": "Panel",
   "seccion": "ambos",
   "tipo": "mejora",
   "ruta": "Panel (hero)",
-  "que_cambio": "La cifra grande es lo que tienes en tus cuentas, «Tienes hoy» (o «Debes hoy» en rojo), y no cambia con el período ni las píldoras. Debajo, «Te queda S/ X» en el mes en curso, «En octubre te quedó S/ X» o «Te quedó» en períodos cerrados; con una píldora la línea dice qué filtra («Gastos de noviembre S/ X»). VoiceOver dice «Entró» y «Salió». En «Solo gastos» el hero queda como estaba. El ojo oculta ambas cifras.",
+  "que_cambio": "La cifra grande es lo que tienes en tus cuentas, «Tienes hoy» (o «Debes hoy» en rojo), y no cambia con el período ni las píldoras. Debajo, «Te queda S/ X» en el mes en curso, «En octubre te quedó S/ X» o «Te quedó» en períodos cerrados; con una píldora la línea dice qué filtra («Gastos de noviembre S/ X»). VoiceOver dice «Entró» y «Salió». En «Solo gastos» el hero queda como estaba. El ojo oculta ambas cifras. En la 2.3 (2): el rótulo pasa a «Tu saldo hoy» (sin «Debes hoy»: un saldo negativo sale con su signo) y la línea «Te queda» de debajo sale del Panel; la cuenta Flujo de caja. Mira el ítem de «Tu dinero hoy».",
   "por_que": "Un solo vocabulario para tu dinero.",
   "estado": "listo",
   "activar": "",
   "pro": false,
   "como_probar": "Abre el Panel y cambia de período.",
   "id": "900-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Cambió en la 2.3 (2): la cifra ahora es «Tu saldo hoy» y la línea «Te queda» salió del Panel."
  },
  {
   "pr": 900,
@@ -1478,14 +1754,17 @@
   "seccion": "existente",
   "tipo": "texto",
   "ruta": "Estadísticas › Resumen, Distribución, Tendencias, flujo; widget de Saldo",
-  "que_cambio": "«Balance del período» pasa a «Te queda»/«Te quedó»; «Saldo de cuentas» a «Tienes hoy»/«Tenías al cierre»; «Disponible» a «Te queda»; «Tu balance se mantiene estable» a «Lo que te queda se mantiene estable». En widgets «Disponible» pasa a «Saldo» (inicio y pantalla bloqueada), también en la galería y al configurarlo. En español, «balance» pasa a «saldo» en las ayudas y «Balance inicial» a «Saldo inicial».",
+  "que_cambio": "«Balance del período» pasa a «Te queda»/«Te quedó»; «Saldo de cuentas» a «Tienes hoy»/«Tenías al cierre»; «Disponible» a «Te queda»; «Tu balance se mantiene estable» a «Lo que te queda se mantiene estable». En widgets «Disponible» pasa a «Saldo» (inicio y pantalla bloqueada), también en la galería y al configurarlo. En español, «balance» pasa a «saldo» en las ayudas y «Balance inicial» a «Saldo inicial». En la 2.3 (2), «Tienes hoy»/«Tenías al cierre» pasan a «Tu saldo hoy»/«Tu saldo al cierre».",
   "por_que": "Menos palabras para lo mismo.",
   "estado": "listo",
   "activar": "",
   "pro": false,
   "como_probar": "Abre Estadísticas y el widget de Saldo.",
   "id": "900-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Cambió en la 2.3 (2): «Tienes hoy» y «Tenías al cierre» pasan a «Tu saldo hoy» y «Tu saldo al cierre»."
  },
  {
   "pr": 901,
@@ -1501,7 +1780,10 @@
   "pro": false,
   "como_probar": "Apaga «Menos pagos» en un grupo con deudas cruzadas y mira la frase de Saldos.",
   "id": "901-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 901,
@@ -1517,7 +1799,10 @@
   "pro": false,
   "como_probar": "Activa VoiceOver o texto grande y recorre ¿Quién puso más? y Pagos.",
   "id": "901-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 902,
@@ -1533,7 +1818,10 @@
   "pro": false,
   "como_probar": "Solo se ve los días 1 y 2 del mes; espera al 1 de diciembre (o cambia la fecha del iPhone y vuelve a la automática).",
   "id": "902-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 902,
@@ -1549,7 +1837,10 @@
   "pro": false,
   "como_probar": "Mantén el dedo sobre la gráfica de Saldo y mira el chip y la línea de debajo.",
   "id": "902-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 902,
@@ -1565,7 +1856,10 @@
   "pro": false,
   "como_probar": "Abre el Panel en iPad apaisado con Tus finanzas desplegada.",
   "id": "902-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 903,
@@ -1581,7 +1875,10 @@
   "pro": false,
   "como_probar": "Abre Comparativa con «Este mes» y lee la cabecera de columnas.",
   "id": "903-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 903,
@@ -1597,7 +1894,10 @@
   "pro": false,
   "como_probar": "Con una cuenta sin ingresos, abre Flujo de caja y toca Crear mi plan.",
   "id": "903-2",
-  "orden": 28
+  "orden": 28,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 904,
@@ -1613,7 +1913,10 @@
   "pro": false,
   "como_probar": "Mira la tarjeta de salud en una cuenta con pocos datos o con una cuenta en negativo.",
   "id": "904-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 905,
@@ -1629,7 +1932,10 @@
   "pro": false,
   "como_probar": "Entra y sal de Estadísticas con «Todo el tiempo» y cambia de chip.",
   "id": "905-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 905,
@@ -1645,7 +1951,10 @@
   "pro": false,
   "como_probar": "Elige «Todo el tiempo» en Tendencias y abre el Sankey.",
   "id": "905-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 906,
@@ -1661,7 +1970,10 @@
   "pro": false,
   "como_probar": "Abre Flujo de caja en el mes actual y compara con Panel › Saldo › Ver proyectado.",
   "id": "906-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 906,
@@ -1677,7 +1989,10 @@
   "pro": false,
   "como_probar": "Abre el mes en curso y mira las barras.",
   "id": "906-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 906,
@@ -1693,7 +2008,10 @@
   "pro": false,
   "como_probar": "Edita el widget, activa «Mostrar proyectado» y míralo en la pantalla de inicio.",
   "id": "906-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 907,
@@ -1709,7 +2027,10 @@
   "pro": false,
   "como_probar": "Mira presupuestos al 85 %, 100 % y por encima.",
   "id": "907-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 907,
@@ -1725,7 +2046,10 @@
   "pro": false,
   "como_probar": "Abre un presupuesto con días restantes.",
   "id": "907-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 908,
@@ -1741,7 +2065,10 @@
   "pro": false,
   "como_probar": "Selecciona dos registros, elimínalos y toca Deshacer.",
   "id": "908-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 908,
@@ -1757,7 +2084,10 @@
   "pro": false,
   "como_probar": "Entra a Seleccionar y toca Eliminar para ver el resumen.",
   "id": "908-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 913,
@@ -1773,7 +2103,10 @@
   "pro": false,
   "como_probar": "Escribe un importe en Nuevo gasto y cierra con la X.",
   "id": "913-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 913,
@@ -1789,7 +2122,10 @@
   "pro": false,
   "como_probar": "Abre Saldar y Ajustes de Grupos.",
   "id": "913-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 915,
@@ -1805,7 +2141,10 @@
   "pro": false,
   "como_probar": "Toca una categoría en Distribución.",
   "id": "915-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 917,
@@ -1821,7 +2160,10 @@
   "pro": false,
   "como_probar": "Tira hacia abajo en Registros y escribe un importe.",
   "id": "917-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 918,
@@ -1837,7 +2179,10 @@
   "pro": false,
   "como_probar": "Abre Nuevo registro y escribe un importe.",
   "id": "918-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 919,
@@ -1853,7 +2198,10 @@
   "pro": false,
   "como_probar": "Toca el chip Categoría en Registros.",
   "id": "919-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 919,
@@ -1869,7 +2217,10 @@
   "pro": false,
   "como_probar": "Con VoiceOver, recorre Categorías.",
   "id": "919-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 921,
@@ -1885,7 +2236,10 @@
   "pro": false,
   "como_probar": "Toca «Café» en Nuevo registro.",
   "id": "921-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 921,
@@ -1901,7 +2255,10 @@
   "pro": false,
   "como_probar": "Desliza un favorito en Ajustes › Favoritos.",
   "id": "921-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 923,
@@ -1917,7 +2274,10 @@
   "pro": false,
   "como_probar": "Elige un período con varios meses y toca la banda.",
   "id": "923-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 925,
@@ -1933,7 +2293,10 @@
   "pro": false,
   "como_probar": "Activa texto muy grande y abre Favoritos y Nuevo registro.",
   "id": "925-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 926,
@@ -1949,7 +2312,10 @@
   "pro": false,
   "como_probar": "Con VoiceOver, pasa por las filas.",
   "id": "926-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 926,
@@ -1965,7 +2331,10 @@
   "pro": false,
   "como_probar": "Registra con Siri y mira la tarjeta.",
   "id": "926-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 927,
@@ -1981,7 +2350,10 @@
   "pro": true,
   "como_probar": "Lee una foto con varios movimientos.",
   "id": "927-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 927,
@@ -1997,7 +2369,10 @@
   "pro": true,
   "como_probar": "Graba por voz y toca «Volver a grabar».",
   "id": "927-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 928,
@@ -2013,7 +2388,10 @@
   "pro": false,
   "como_probar": "Abre Ajustes › Nube.",
   "id": "928-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 929,
@@ -2029,7 +2407,10 @@
   "pro": false,
   "como_probar": "Activa modo avión y abre Yala IA.",
   "id": "929-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 929,
@@ -2045,7 +2426,10 @@
   "pro": false,
   "como_probar": "Sin Pro y en modo avión, abre Yala IA.",
   "id": "929-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 931,
@@ -2061,7 +2445,10 @@
   "pro": true,
   "como_probar": "Elige diez fotos y léelas.",
   "id": "931-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 932,
@@ -2077,7 +2464,10 @@
   "pro": false,
   "como_probar": "Abre «Gastos no considerados» desde octubre.",
   "id": "932-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 932,
@@ -2093,7 +2483,10 @@
   "pro": false,
   "como_probar": "Mira la tarjeta en claro y oscuro.",
   "id": "932-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 932,
@@ -2109,7 +2502,10 @@
   "pro": false,
   "como_probar": "Con cuenta Free, configura una línea.",
   "id": "932-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 933,
@@ -2125,7 +2521,10 @@
   "pro": false,
   "como_probar": "Instala desde cero.",
   "id": "933-1",
-  "orden": 20
+  "orden": 20,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 933,
@@ -2141,7 +2540,10 @@
   "pro": false,
   "como_probar": "Abre el Panel tras instalar.",
   "id": "933-2",
-  "orden": 21
+  "orden": 21,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 933,
@@ -2157,7 +2559,10 @@
   "pro": false,
   "como_probar": "Registra en dos días distintos.",
   "id": "933-3",
-  "orden": 33
+  "orden": 33,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 937,
@@ -2173,7 +2578,10 @@
   "pro": false,
   "como_probar": "Instala desde cero.",
   "id": "937-1",
-  "orden": 1
+  "orden": 1,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 937,
@@ -2189,7 +2597,10 @@
   "pro": false,
   "como_probar": "Completa el alta.",
   "id": "937-2",
-  "orden": 3
+  "orden": 3,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 937,
@@ -2205,7 +2616,10 @@
   "pro": false,
   "como_probar": "Toca «Dividir gastos con amigos».",
   "id": "937-3",
-  "orden": 11
+  "orden": 11,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 938,
@@ -2221,7 +2635,10 @@
   "pro": false,
   "como_probar": "Toca el paso 1.",
   "id": "938-1",
-  "orden": 23
+  "orden": 23,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 938,
@@ -2237,7 +2654,10 @@
   "pro": false,
   "como_probar": "Toca el paso 2.",
   "id": "938-2",
-  "orden": 24
+  "orden": 24,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 939,
@@ -2253,7 +2673,10 @@
   "pro": false,
   "como_probar": "Toca el paso 3.",
   "id": "939-1",
-  "orden": 25
+  "orden": 25,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 939,
@@ -2269,7 +2692,10 @@
   "pro": false,
   "como_probar": "Toca el paso 4.",
   "id": "939-2",
-  "orden": 26
+  "orden": 26,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 939,
@@ -2285,7 +2711,10 @@
   "pro": false,
   "como_probar": "Toca el paso 5.",
   "id": "939-3",
-  "orden": 27
+  "orden": 27,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 942,
@@ -2301,7 +2730,10 @@
   "pro": false,
   "como_probar": "Llega al paso 7.",
   "id": "942-1",
-  "orden": 30
+  "orden": 30,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 942,
@@ -2317,7 +2749,10 @@
   "pro": false,
   "como_probar": "Termina el paso 7.",
   "id": "942-2",
-  "orden": 31
+  "orden": 31,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 944,
@@ -2333,7 +2768,10 @@
   "pro": false,
   "como_probar": "Importa un CSV con una nota que lleve una comilla (50\") y revisa que entren todas las filas.",
   "id": "944-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 944,
@@ -2349,7 +2787,10 @@
   "pro": false,
   "como_probar": "Exporta tus registros a CSV, bórralos en una cuenta de prueba e impórtalos; compara hora y monto de un gasto en otra divisa.",
   "id": "944-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 945,
@@ -2365,7 +2806,10 @@
   "pro": false,
   "como_probar": "Ajustes › Correo del banco y mira la dirección que muestra.",
   "id": "945-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 947,
@@ -2381,7 +2825,10 @@
   "pro": false,
   "como_probar": "En un grupo con deudas, toca Saldar en una deuda entre otros dos, elige «Una parte» y guarda; luego toca Deshacer.",
   "id": "947-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 947,
@@ -2397,7 +2844,10 @@
   "pro": false,
   "como_probar": "Apaga ese interruptor en un grupo y crea un gasto: debe seguir en la moneda del grupo.",
   "id": "947-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 948,
@@ -2413,7 +2863,10 @@
   "pro": false,
   "como_probar": "Con varios borradores en la Bandeja, desliza uno tras otro para guardarlos.",
   "id": "948-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 948,
@@ -2429,7 +2882,10 @@
   "pro": false,
   "como_probar": "Con una cuenta de prueba en la nube, usa «Empezar de cero» y comprueba que aparece el Welcome.",
   "id": "948-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 950,
@@ -2445,7 +2901,10 @@
   "pro": false,
   "como_probar": "Crea un grupo con 3 personas, mete gastos cruzados y abre Saldos.",
   "id": "950-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 950,
@@ -2461,7 +2920,10 @@
   "pro": false,
   "como_probar": "Compara la cabecera de Grupos con la suma de las tarjetas.",
   "id": "950-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 950,
@@ -2477,7 +2939,10 @@
   "pro": false,
   "como_probar": "Abre Ajustes › Organización y lee el pie.",
   "id": "950-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 950,
@@ -2493,7 +2958,10 @@
   "pro": false,
   "como_probar": "Enciende «Solo gastos» y observa la fila en Ajustes.",
   "id": "950-4",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 951,
@@ -2509,7 +2977,10 @@
   "pro": false,
   "como_probar": "Entra con cuenta de Yala y abre el paso 7 de Primeros pasos.",
   "id": "951-1",
-  "orden": 29
+  "orden": 29,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 952,
@@ -2525,7 +2996,10 @@
   "pro": false,
   "como_probar": "En un teléfono sin datos entra con una cuenta que tenga grupos.",
   "id": "952-1",
-  "orden": 13
+  "orden": 13,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 953,
@@ -2541,7 +3015,10 @@
   "pro": false,
   "como_probar": "Tras elegir una cuenta de Google, toca «Usar otra cuenta».",
   "id": "953-1",
-  "orden": 4
+  "orden": 4,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 953,
@@ -2557,7 +3034,10 @@
   "pro": false,
   "como_probar": "Con un teléfono que tenga datos de iCloud privado, entra con Google.",
   "id": "953-2",
-  "orden": 6
+  "orden": 6,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 953,
@@ -2573,7 +3053,10 @@
   "pro": false,
   "como_probar": "Elige Apple y luego «Usar otra cuenta»; debe salir la nota.",
   "id": "953-3",
-  "orden": 5
+  "orden": 5,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 955,
@@ -2589,7 +3072,10 @@
   "pro": false,
   "como_probar": "Apunta un pago parcial como otra persona y mira la tarjeta de la deuda.",
   "id": "955-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 955,
@@ -2605,7 +3091,10 @@
   "pro": false,
   "como_probar": "Con dos pagos sobre la misma deuda, confirma el segundo.",
   "id": "955-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 956,
@@ -2621,7 +3110,10 @@
   "pro": false,
   "como_probar": "Instala desde cero o cierra sesión y mira la bienvenida (también en horizontal).",
   "id": "956-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 956,
@@ -2637,7 +3129,10 @@
   "pro": false,
   "como_probar": "Míralo en la bienvenida sin tocar nada.",
   "id": "956-2",
-  "orden": 2
+  "orden": 2,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 957,
@@ -2653,7 +3148,10 @@
   "pro": false,
   "como_probar": "Durante «Conectando…» cierra Yala desde el selector y reábrela.",
   "id": "957-1",
-  "orden": 14
+  "orden": 14,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 957,
@@ -2669,7 +3167,10 @@
   "pro": false,
   "como_probar": "Entra a una cuenta con datos y abre Ajustes de inmediato.",
   "id": "957-2",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 960,
@@ -2685,7 +3186,10 @@
   "pro": false,
   "como_probar": "Entra a una cuenta grande y toca la pantalla mientras baja.",
   "id": "960-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 960,
@@ -2701,7 +3205,10 @@
   "pro": false,
   "como_probar": "Con una cuenta grande, cambia de pestaña y vuelve al Panel.",
   "id": "960-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 961,
@@ -2717,7 +3224,10 @@
   "pro": false,
   "como_probar": "Entra a una cuenta con datos desde un teléfono limpio.",
   "id": "961-1",
-  "orden": 19
+  "orden": 19,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "En la 2.3 (1) todavía podía salir S/ 0: el arreglo completo está en la 2.3 (2)."
  },
  {
   "pr": 961,
@@ -2733,7 +3243,10 @@
   "pro": false,
   "como_probar": "Abre la guía en un iPhone pequeño.",
   "id": "961-2",
-  "orden": 32
+  "orden": 32,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 961,
@@ -2749,7 +3262,10 @@
   "pro": false,
   "como_probar": "Toca ese acceso en la bienvenida.",
   "id": "961-3",
-  "orden": 12
+  "orden": 12,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 963,
@@ -2765,7 +3281,10 @@
   "pro": false,
   "como_probar": "Con la app en inglés, revisa que «Account transfer» no se pueda borrar.",
   "id": "963-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 963,
@@ -2781,7 +3300,10 @@
   "pro": false,
   "como_probar": "Importa un CSV de una fila con un reembolso.",
   "id": "963-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 964,
@@ -2797,7 +3319,10 @@
   "pro": false,
   "como_probar": "Cierra sesión en una cuenta de prueba.",
   "id": "964-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 964,
@@ -2813,7 +3338,10 @@
   "pro": false,
   "como_probar": "Haz el alta con Apple y con Google y lee los textos.",
   "id": "964-2",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 965,
@@ -2829,7 +3357,10 @@
   "pro": false,
   "como_probar": "Entra por esa puerta en un teléfono limpio.",
   "id": "965-1",
-  "orden": 10
+  "orden": 10,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 965,
@@ -2845,7 +3376,10 @@
   "pro": false,
   "como_probar": "Recupera datos y pasa por el chat de bienvenida.",
   "id": "965-2",
-  "orden": 9
+  "orden": 9,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 965,
@@ -2861,7 +3395,10 @@
   "pro": false,
   "como_probar": "Abre «Ver los 7 pasos» y toca el paso 5 sin hacer el 4.",
   "id": "965-3",
-  "orden": 22
+  "orden": 22,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 969,
@@ -2877,7 +3414,10 @@
   "pro": false,
   "como_probar": "En Grupos toca Yala IA y escribe un gasto con dos líneas.",
   "id": "969-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 969,
@@ -2886,14 +3426,17 @@
   "seccion": "existente",
   "tipo": "funcion",
   "ruta": "Grupos › Voz / Foto / Yala IA",
-  "que_cambio": "Free reparte 5 recibos al día y Pro 50; foto, voz y escrito cuentan en el mismo contador y no gastan la prueba de personal. Con el cupo gastado, Free ve Yala Pro y Pro vuelve mañana.",
+  "que_cambio": "Free reparte 5 recibos al día y Pro 50; foto, voz y escrito cuentan en el mismo contador y no gastan la prueba de personal. Con el cupo gastado, Free ve Yala Pro y Pro vuelve mañana. El gateway de producción se desplegó el 16-nov desde 2.3, que ya trae este cupo (deducido del despliegue; no lo probé con 6 recibos).",
   "por_que": "Grupos es el gancho sin candado.",
-  "estado": "todavia_no",
-  "activar": "El límite lo aplica el gateway de producción: hay que desplegarlo (npm run deploy:production) antes de publicar. Mientras tanto un recibo gasta la prueba de personal. En Yala Dev (staging) el límite no se ve, solo cuenta.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "Reparte un recibo por foto o voz en un grupo.",
+  "como_probar": "Reparte 6 recibos en un día con una cuenta Free: el sexto pide Yala Pro. Con Pro llegan a 50.",
   "id": "969-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Ya funciona en producción: el gateway se desplegó desde 2.3 el 16-nov."
  },
  {
   "pr": 970,
@@ -2905,11 +3448,14 @@
   "que_cambio": "Lista cada sesión web (navegador, sistema, ciudad aproximada, último uso, equipo compartido), con «Cerrar» y «Cerrar todas». La pestaña cerrada se vacía en menos de un minuto.",
   "por_que": "Controlas desde dónde se ve tu cuenta.",
   "estado": "todavia_no",
-  "activar": "La fila solo existe en Yala Dev (DEV_BUILD) y apunta a la web de staging; en producción baseURL es nil y la fila no sale. Los PR posteriores del 15-nov dicen que Yala web sale a producción (app.yala-app.pe), pero esta app todavía no la apunta. Falta apuntar la app a la web de producción.",
+  "activar": "Medido en el código de la 2.3 (2): la fila solo existe en Yala Dev y apunta a la web de staging; en la app de TestFlight no sale. Yala web ya está en producción, pero falta apuntar la app a ella.",
   "pro": false,
   "como_probar": "Solo en Yala Dev con datos en la cuenta de Yala.",
   "id": "970-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": true,
+  "cambio_guia": "Medido otra vez el 16-nov: la app de TestFlight sigue sin apuntar a Yala web."
  },
  {
   "pr": 970,
@@ -2917,15 +3463,18 @@
   "area": "Integraciones",
   "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Navegador (staging) › entrar con tu cuenta",
+  "ruta": "Navegador › app.yala-app.pe",
   "que_cambio": "En el navegador ves saldo, entradas/salidas, cuentas y últimos registros, Registros por días con filtros y búsqueda, la Bandeja, y puedes apuntar un gasto o ingreso que llega a la Bandeja del iPhone. Configurar muestra sesiones, ocultar montos e idioma. Español e inglés.",
   "por_que": "Consultas y apuntas desde la computadora.",
-  "estado": "todavia_no",
-  "activar": "Es staging; producción no tiene nada de este PR (el 15-nov se decidió subirla entera a producción, dominio app.yala-app.pe, pendiente de arreglos).",
+  "estado": "activable",
+  "activar": "1. En Safari (en el iPhone o el ordenador) abre app.yala-app.pe; no hay enlace desde la web pública. 2. Entra con Apple o Google, la misma cuenta de la app. 3. Necesitas tus datos en tu cuenta de Yala (Ajustes › Dónde viven tus datos). 4. Lo que apuntes llega a la Bandeja del iPhone con la 2.3 (2); la 2.2 de la App Store no lo recoge.",
   "pro": false,
   "como_probar": "Abre la web de staging con un navegador (requiere Yala Dev).",
   "id": "970-2",
-  "orden": 0
+  "orden": 0,
+  "build": "web",
+  "nuevo_guia": true,
+  "cambio_guia": "Ya en producción, no solo en staging."
  },
  {
   "pr": 971,
@@ -2941,7 +3490,10 @@
   "pro": false,
   "como_probar": "Entra a una cuenta nueva y toca Empezar.",
   "id": "971-1",
-  "orden": 15
+  "orden": 15,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 972,
@@ -2949,15 +3501,18 @@
   "area": "Integraciones",
   "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Navegador (staging) › Estadísticas / Pagos; iPhone › Navegadores conectados › Vincular un navegador",
+  "ruta": "Navegador › app.yala-app.pe › Estadísticas / Pagos",
   "que_cambio": "La web suma Estadísticas, Pagos planificados (30 días y suscripciones) y entrada con QR. En Yala Dev, «Vincular un navegador» lee el QR, muestra navegador y ciudad, pide Face ID y la web entra sola.",
   "por_que": "Entras a la web sin escribir contraseña.",
-  "estado": "todavia_no",
-  "activar": "Todo en staging y la fila solo en Yala Dev (también NSFaceIDUsageDescription solo en Dev). En producción no existe todavía.",
+  "estado": "activable",
+  "activar": "1. En Safari (en el iPhone o el ordenador) abre app.yala-app.pe; no hay enlace desde la web pública. 2. Entra con Apple o Google, la misma cuenta de la app. 3. Necesitas tus datos en tu cuenta de Yala (Ajustes › Dónde viven tus datos). 4. Lo que apuntes llega a la Bandeja del iPhone con la 2.3 (2); la 2.2 de la App Store no lo recoge. 5. La entrada con QR («Vincular un navegador» en el iPhone) todavía no: esa fila solo existe en Yala Dev.",
   "pro": false,
   "como_probar": "Solo Yala Dev: Ajustes › Tu cuenta de Yala › Navegadores conectados › Vincular un navegador.",
   "id": "972-1",
-  "orden": 0
+  "orden": 0,
+  "build": "web",
+  "nuevo_guia": true,
+  "cambio_guia": "Ya en producción en la web; entrar con QR desde el iPhone sigue solo en Yala Dev."
  },
  {
   "pr": 973,
@@ -2973,7 +3528,10 @@
   "pro": false,
   "como_probar": "Cierra sesión en una cuenta en la nube.",
   "id": "973-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 973,
@@ -2989,7 +3547,10 @@
   "pro": false,
   "como_probar": "Con una cuenta en la nube, elige volver a tu iCloud.",
   "id": "973-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 977,
@@ -3005,7 +3566,10 @@
   "pro": false,
   "como_probar": "Abre un presupuesto de un período pasado que excediste.",
   "id": "977-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 980,
@@ -3021,7 +3585,10 @@
   "pro": false,
   "como_probar": "Pon el texto al máximo y abre el Panel.",
   "id": "980-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 980,
@@ -3037,7 +3604,10 @@
   "pro": false,
   "como_probar": "Abre Registros y mira bajo los chips.",
   "id": "980-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 980,
@@ -3053,7 +3623,10 @@
   "pro": false,
   "como_probar": "Flujo de caja, mes pasado.",
   "id": "980-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 981,
@@ -3069,7 +3642,10 @@
   "pro": false,
   "como_probar": "Entra con una cuenta grande y cronometra.",
   "id": "981-1",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 981,
@@ -3085,7 +3661,10 @@
   "pro": false,
   "como_probar": "Elige «Traer mis datos» y reabre Yala.",
   "id": "981-2",
-  "orden": 7
+  "orden": 7,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 981,
@@ -3101,7 +3680,10 @@
   "pro": false,
   "como_probar": "Pega un enlace inválido.",
   "id": "981-3",
-  "orden": 0
+  "orden": 50,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 982,
@@ -3117,7 +3699,10 @@
   "pro": false,
   "como_probar": "Haz la automatización y abre Yala tras una notificación del banco.",
   "id": "982-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 983,
@@ -3133,7 +3718,10 @@
   "pro": false,
   "como_probar": "Con 3 cobros mensuales del mismo comercio, abre Pagos planificados.",
   "id": "983-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -3149,7 +3737,10 @@
   "pro": false,
   "como_probar": "Abre Estadísticas › Resumen y baja hasta Suscripciones; prueba «Este mes» y «Todo el tiempo».",
   "id": "824-1",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -3165,7 +3756,10 @@
   "pro": false,
   "como_probar": "Mira tus pagos planificados de siempre: los conocidos ya traen su logo. Crea uno «Spotify» y cambia el logo.",
   "id": "824-2",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -3181,199 +3775,238 @@
   "pro": false,
   "como_probar": "Escribe dos letras de algo habitual («de», «ca») y toca una sugerencia.",
   "id": "824-3",
-  "orden": 0
+  "orden": 0,
+  "build": "1",
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 930,
   "titulo": "Al pasar tus datos a la nube, el cifrado y las fotos se ven de entrada",
   "area": "Nube e iCloud",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Ajustes › Dónde viven tus datos › pasar a tu cuenta de Yala",
-  "que_cambio": "La hoja de antes de activar muestra a la vista que Yala puede ver tus datos (sin cifrado de extremo a extremo), que las fotos de recibos no viajan y la opción de exportar antes. Desaparece «Ver los detalles».",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "Mergeado el 15-nov después de cortar el build: llega en la próxima build de TestFlight.",
+  "ruta": "Ajustes › Dónde viven tus datos › pasar a tu cuenta de Yala (hoja de antes de activar)",
+  "que_cambio": "La hoja de antes de activar dice a la vista, una línea cada uno: «Yala puede ver tus datos» (para soporte y funciones inteligentes; no hay cifrado de extremo a extremo), «Las fotos de tus recibos no viajan» (fila nueva) y «Exportar una copia antes». Desaparece «Ver los detalles».",
+  "por_que": "Sabes qué aceptas antes de tocar «Continuar», sin buscarlo en un pliegue.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Con tus datos en iCloud, abre la hoja de pasar a tu cuenta de Yala y lee las tres líneas; sal con «Cancelar» si no quieres pasarte.",
   "id": "930-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 910,
-  "titulo": "«Volver a tu iCloud» y «Activar sin borrar» en una hoja que dice la verdad",
+  "titulo": "«Volver a tu iCloud» en una hoja de tres pasos que dice la verdad",
   "area": "Nube e iCloud",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Ajustes › Dónde viven tus datos",
-  "que_cambio": "Volver a tu iCloud abre una hoja en tres fases (qué pasa con cada cosa, qué hacer con lo que ya hay en tu iCloud con su cifra, y confirmar). Activar la nube con un borrado pendiente explica cada caso.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "Mergeado el 15-nov después de cortar el build: llega en la próxima build.",
+  "ruta": "Ajustes › Dónde viven tus datos (con tus datos en tu cuenta de Yala) › Volver a tu iCloud",
+  "que_cambio": "El botón (ya no naranja) abre una hoja en tres fases: qué pasa con cada cosa (tus datos bajan al teléfono y suben a tu iCloud, tu cuenta de Yala sigue abierta para tus grupos, tus finanzas se quedan guardadas en ella sin usarse); qué hacer con lo que ya hay en tu iCloud, con su cifra («Sumarlos a mis datos», «Empezar sin ellos» en rojo, «Ahora no»), y confirmar repitiendo lo elegido. Antes prometía «sin perder nada» en globos de letra pequeña.",
+  "por_que": "La decisión que mueve tus datos se toma leyendo lo que va a pasar.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Ábrela y recorre las fases sin confirmar: «Ahora no» no mueve nada. Confirmar, solo en el iPhone 14 de pruebas.",
   "id": "910-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 988,
   "titulo": "Yala web: Grupos reconoce a los mismos miembros que la app",
   "area": "Integraciones",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Yala web (staging)",
-  "que_cambio": "La web ya no dice «Todo saldado» con deudas ni «Sin nombre», y en el móvil la página ya no se amplía sola al tocar un campo.",
+  "ruta": "Navegador › app.yala-app.pe › Grupos",
+  "que_cambio": "En la web, Grupos ya no dice «Todo saldado» con deudas ni «Sin nombre»; un gasto añadido desde la web llega a la app con quién pagó y quién participa. En el móvil la web ya no se amplía sola al tocar un campo.",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "Es de Yala web, que sigue en staging; no está en la app.",
+  "estado": "activable",
+  "activar": "1. En Safari (en el iPhone o el ordenador) abre app.yala-app.pe; no hay enlace desde la web pública. 2. Entra con Apple o Google, la misma cuenta de la app. 3. Necesitas tus datos en tu cuenta de Yala (Ajustes › Dónde viven tus datos). 4. Lo que apuntes llega a la Bandeja del iPhone con la 2.3 (2); la 2.2 de la App Store no lo recoge.",
   "pro": false,
   "como_probar": "",
   "id": "988-1",
-  "orden": 0
+  "orden": 0,
+  "build": "web",
+  "nuevo_guia": true,
+  "cambio_guia": "Ya en producción."
  },
  {
   "pr": 943,
-  "titulo": "VoiceOver nombra los cinco selectores que no tenían nombre",
+  "titulo": "VoiceOver nombra los selectores que se leían sin nombre",
   "area": "Ajustes y Pro",
-  "seccion": "fuera",
-  "tipo": "funcion",
-  "ruta": "Filtros de Registros, reparto, saldar, flujo de caja y color",
-  "que_cambio": "Los selectores se leen con su nombre.",
+  "seccion": "existente",
+  "tipo": "accesibilidad",
+  "ruta": "Filtros de Registros, formulario de grupo, saldar en otra moneda, saldo inicial de Flujo de caja, color de icono",
+  "que_cambio": "Con VoiceOver: «Modo del filtro, Mostrar solo», «Cómo se reparte un gasto nuevo», «Moneda del pago», «Fecha del saldo» y «Color personalizado». También la hora de una notificación y el interruptor de cada widget en Configurar Panel. Nada cambia a la vista.",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo: no está en 2.3 todavía.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
   "como_probar": "",
   "id": "943-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 924,
-  "titulo": "Tendencias dice contra qué compara y VoiceOver lee las gráficas con cifras",
+  "titulo": "Tendencias dice contra qué compara, y las tres pestañas comparan hasta hoy",
   "area": "Estadísticas",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Estadísticas › Tendencias",
-  "que_cambio": "Comparación explícita y lectura de gráficas con números.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "Estadísticas › Tendencias (bajo el título)",
+  "que_cambio": "Tendencias tiene el mismo «Comparado con…» y sus dos chips («Con el mes anterior» / «Con <mes> del año pasado») que Resumen y Distribución. Antes no tenía selector y su comparación cambiaba sin avisar. En un período en curso, las tres pestañas comparan hasta el día equivalente a hoy (antes Distribución y Tendencias cortaban en el último día con movimientos).",
+  "por_que": "La comparación ya no cambia por debajo según la pestaña.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Abre Tendencias, cambia el chip y compara la cifra con Resumen.",
   "id": "924-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 922,
-  "titulo": "El calendario de Registros se pliega a la semana del día",
+  "titulo": "Registros: al tocar un día, el calendario se pliega a su semana",
   "area": "Registros",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Registros › calendario",
-  "que_cambio": "Calendario plegado a la semana y sin apretarse en iPad.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "Registros › Calendario › toca un día",
+  "que_cambio": "El mes se pliega a la semana del día («9–15 nov 2026 ▾» en lugar del mes) y la página sube para que el resumen («Gastaste S/ 113.00») y los registros del día queden debajo, también con texto grande. Tocar la semana (o el día otra vez) despliega el mes; dentro de la semana pasas de día en día.",
+  "por_que": "Ves los registros del día sin desplazarte.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "En Registros › Calendario toca un día con gastos y luego la semana.",
   "id": "922-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 920,
-  "titulo": "Categorías a un toque y un buscador que entiende «café»",
+  "titulo": "Nuevo registro: tus 3 categorías más usadas a un toque",
   "area": "Nuevo registro",
-  "seccion": "fuera",
+  "seccion": "ambos",
   "tipo": "funcion",
-  "ruta": "+ › Nuevo registro › categoría",
-  "que_cambio": "Categorías recientes y búsqueda por palabras parecidas.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "+ › Nuevo registro › fila bajo el importe",
+  "que_cambio": "Bajo el importe sale una fila con las 3 categorías que más usas y «Más…». Un toque deja la categoría puesta sin abrir la hoja. Quien empieza, sin registros, ve Restaurantes, Supermercados y Taxis y apps.",
+  "por_que": "La categoría más habitual queda a un toque.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Abre Nuevo registro y toca una de las tres; en una instalación nueva mira las tres de partida.",
   "id": "920-1",
-  "orden": 0
+  "orden": 24.5,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 916,
-  "titulo": "«Cambiar de cuenta» en una fila, con cada consecuencia",
+  "titulo": "«Cambiar de cuenta» en una fila, y soltar la cuenta con cada consecuencia",
   "area": "Nube e iCloud",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Ajustes › Dónde viven tus datos",
-  "que_cambio": "Cambiar de cuenta en una sola fila y la hoja de soltar que explica cada consecuencia.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "Ajustes › Dónde viven tus datos › fila «Tu cuenta de Yala · La usan tus grupos» › Cambiar de cuenta",
+  "que_cambio": "La tarjeta «Grupos» con el botón naranja «Desasociar» pasa a una fila de datos (Tu cuenta de Yala · Apple o Google · correo · La usan tus grupos) con un enlace discreto «Cambiar de cuenta ›». La hoja de soltar dice qué pasa siempre (los grupos salen del teléfono y siguen en la cuenta) y cada botón su consecuencia: «Dejar en mis cuentas lo que pagué» (con cuántos y cuánto) o «Quitar también eso de mis cuentas». «Cancelar» siempre a la vista.",
+  "por_que": "Lo más llamativo de la pantalla ya no es la acción que más rompe.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Abre la hoja y lee las dos consecuencias; sal con «Cancelar».",
   "id": "916-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 912,
-  "titulo": "Nota de salud honesta sin desanimar (lote 1)",
+  "titulo": "Nota de salud honesta: sin suelo de 50 y sin castigos de golpe",
   "area": "Panel",
-  "seccion": "fuera",
+  "seccion": "ambos",
   "tipo": "funcion",
-  "ruta": "Panel › nota de salud",
-  "que_cambio": "Ajustes al texto y la lógica de la nota de salud.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "Panel › Tus finanzas › tarjeta de la nota; Estadísticas › Resumen",
+  "que_cambio": "El ritmo cuenta los días desde tu último registro con 3 días de gracia (desde el cuarto baja 8 puntos por día). Pasarse de un presupuesto resta según cuánto (un 10 % resta 1 punto; el doble lo deja en 30). La nota va de 0 a 100. En «Tus finanzas» del Panel hay una tarjeta chata con el anillo y un paso concreto («Registra esta semana para subir tu ritmo»), visible aunque la sección esté plegada; nunca dice «vas mal». Quien actualiza la ve encendida una vez, salvo que la hubiera apagado a mano.",
+  "por_que": "La nota refleja cómo vas sin desanimar ni premiar de más.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Mira la tarjeta en el Panel y tócala para ver el desglose.",
   "id": "912-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 899,
   "titulo": "Archivar una cuenta la saca del saldo y conserva su historial",
   "area": "Ajustes y Pro",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Ajustes › Cuentas",
-  "que_cambio": "Archivar cuentas sin perder historial.",
-  "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "ruta": "Panel › una cuenta › Editar › Archivar (o Ajustes › Cuentas)",
+  "que_cambio": "La cuenta archivada deja de sumar en el saldo (cifra del Panel, su curva, «en N cuentas», widgets, Yala IA) y deja de salir entre las cuentas del Panel y al registrar. Sus gastos e ingresos siguen en Registros, el Panel y Estadísticas. Antes, archivar encendía «Excluir de las estadísticas» y los gastos de esa tarjeta desaparecían de todos los meses. Las que archivaste antes (también en la 2.1 y la 2.2) vuelven a enseñar su historial, sin migrar nada.",
+  "por_que": "Una tarjeta cancelada deja de pesar en tu saldo sin borrar lo que gastaste con ella.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Archiva una cuenta con gastos: el saldo cambia y sus gastos siguen en Registros. Desarchívala después.",
   "id": "899-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 894,
-  "titulo": "Pagos de grupo que no se duplican y reparto que no pierde dígitos",
+  "titulo": "Grupos: apuntar un pago ya no se duplica",
   "area": "Grupos",
-  "seccion": "fuera",
-  "tipo": "funcion",
-  "ruta": "Grupos",
-  "que_cambio": "Arreglos de duplicados, dígitos del reparto y cambios que preguntan antes.",
+  "seccion": "existente",
+  "tipo": "arreglo",
+  "ruta": "Grupos › un grupo › Saldar / Apuntar pago",
+  "que_cambio": "Si al guardar un pago algo fallaba a medias, reintentar dejaba dos pagos. Ahora se guarda confirmado de una vez y, si falla, no queda nada a medias: reintentar deja uno.",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto, en cola de desbloqueo.",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
-  "como_probar": "",
+  "como_probar": "Apunta un pago en un grupo de prueba y comprueba que sale una sola vez.",
   "id": "894-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «no está en este build»: ya está en la 2.3 (2)."
  },
  {
   "pr": 818,
   "titulo": "Tu IA registra en Yala: Claude, ChatGPT y Grok dejan borradores en la Bandeja",
   "area": "Integraciones",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Bandeja",
-  "que_cambio": "Tus asistentes de IA crean borradores en tu Bandeja.",
+  "ruta": "Claude o ChatGPT con el conector de Yala › «apunta 25 soles de almuerzo» › Bandeja",
+  "que_cambio": "Con Yala conectado a tu IA, le dices «apunta 25 soles de almuerzo» y el movimiento llega a la Bandeja con la etiqueta «Tu IA» y la IA que lo apuntó. Si nombró cuenta y categoría, sale listo para guardar; si no, la Bandeja las pide. Nada cuenta hasta que lo confirmas y la IA no puede cambiar ni borrar nada.",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "PR abierto y bloqueado: no está en 2.3.",
+  "estado": "todavia_no",
+  "activar": "La parte de la app ya está en la 2.3 (2), pero el conector no está desplegado en producción (medido el 16-nov: su dirección de producción responde «worker no encontrado»; la de staging sí responde). Sin conector nadie deja borradores. Hoy solo se prueba en Yala Dev con el conector de staging.",
   "pro": false,
   "como_probar": "",
   "id": "818-1",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Ya está en la 2.3 (2); el conector todavía no está en producción."
  },
  {
   "pr": 613,
@@ -3385,42 +4018,564 @@
   "que_cambio": "Conexión mínima con Gmail, pendiente de la verificación de Google.",
   "por_que": "",
   "estado": "fuera",
-  "activar": "Borrador, no se mergea hasta que Google apruebe.",
+  "activar": "Sigue en borrador y no se mergea hasta que Google apruebe. El 16-nov quedó hecho el video v4 de la verificación (la cuenta de origen, de punta a punta); falta que Google la apruebe.",
   "pro": false,
   "como_probar": "",
   "id": "613-1",
-  "orden": 0
+  "orden": 0,
+  "build": "no",
+  "nuevo_guia": true,
+  "cambio_guia": "16-nov: quedó hecho el video v4 de la verificación de Google."
  },
  {
   "pr": 984,
-  "titulo": "Yala web a producción (app.yala-app.pe)",
+  "titulo": "Yala web en producción: app.yala-app.pe",
   "area": "Integraciones",
-  "seccion": "fuera",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Navegador",
-  "que_cambio": "Toda la web en producción con su dominio.",
+  "ruta": "Navegador › app.yala-app.pe",
+  "que_cambio": "Yala web funciona en producción: entras con Apple o Google, ves el mismo saldo que en el iPhone, apuntas borradores que llegan a la Bandeja y Grupos se lee y se escribe. Probado de punta a punta el 16-nov en el iPhone 14.",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "Borrador: espera el arreglo de Grupos en la web y los pasos de Dan.",
+  "estado": "activable",
+  "activar": "1. En Safari (en el iPhone o el ordenador) abre app.yala-app.pe; no hay enlace desde la web pública. 2. Entra con Apple o Google, la misma cuenta de la app. 3. Necesitas tus datos en tu cuenta de Yala (Ajustes › Dónde viven tus datos). 4. Lo que apuntes llega a la Bandeja del iPhone con la 2.3 (2); la 2.2 de la App Store no lo recoge.",
   "pro": false,
   "como_probar": "",
   "id": "984-1",
-  "orden": 0
+  "orden": 0,
+  "build": "web",
+  "nuevo_guia": true,
+  "cambio_guia": "Yala web ya está en producción (16-nov)."
  },
  {
   "pr": 983,
-  "titulo": "«Crear un recurrente a partir de un registro»",
-  "area": "Planificación",
-  "seccion": "fuera",
+  "titulo": "«Hacer recurrente» desde un registro",
+  "area": "Registros",
+  "seccion": "existente",
   "tipo": "funcion",
-  "ruta": "Menú y detalle de un registro, Bandeja y Recurrentes",
-  "que_cambio": "Decidido el 15-nov: crear un pago recurrente desde un registro que ya existe.",
+  "ruta": "Registros › mantén pulsado un registro › Hacer recurrente; o su detalle › Recurrente",
+  "que_cambio": "Abre el editor de recurrentes ya relleno (monto, moneda, categoría, cuenta, nota y el día del registro como día de cobro, cada mes). Al guardar, ese registro queda como el primer pago, ya pagado: no se crea otro gasto ni sale un borrador repetido en la Bandeja.",
+  "por_que": "Un gasto que ya se repite (Netflix, el hosting) pasa a recurrente sin volver a escribirlo.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Mantén pulsado un gasto mensual › Hacer recurrente › Guardar, y míralo en Planificación › Pagos.",
+  "id": "983-2",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Antes decía «solo decidido»: ya está en la 2.3 (2)."
+ },
+ {
+  "pr": 910,
+  "id": "910-2",
+  "tipo": "mejora",
+  "por_que": "Antes un globo con «Activar sin borrar» no decía qué no se borraba.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Solo aparece con un borrado pendiente: pruébalo en el iPhone 14 (Empezar de cero, cancelar a mitad y volver a activar).",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Nube e iCloud",
+  "seccion": "existente",
+  "titulo": "Activar la nube con un borrado pendiente: una hoja explica cada caso",
+  "ruta": "Ajustes › Dónde viven tus datos › Activar (con un «Empezar de cero» sin terminar)",
+  "que_cambio": "Si quedó pendiente un borrado de iCloud, activar la nube abre una hoja: sin empezar, «ese borrado no se hace y tus datos de iCloud se quedan»; a medias, «lo que había en tu iCloud ya se borró». Opciones: activar conservando, «Terminar de borrar y empezar de cero» (abre la hoja de borrado con su «¿seguro?») y «Ahora no». Si terminar quita también los grupos y la cuenta de Yala del teléfono, lo dice."
+ },
+ {
+  "pr": 916,
+  "id": "916-2",
+  "tipo": "mejora",
   "por_que": "",
-  "estado": "fuera",
-  "activar": "Solo decidido; lo construye un lote aparte.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Solo sale si la cuenta con la que entras no sirve; en el iPhone 14, entra con una cuenta que ya tenga datos.",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Nube e iCloud",
+  "seccion": "existente",
+  "titulo": "Si «Activar la nube» se para por la cuenta, ofrece «Cambiar de cuenta»",
+  "ruta": "Ajustes › Dónde viven tus datos › Activar › aviso «Esta cuenta ya tiene sus propios datos» (o «Ya usas otra cuenta para tus grupos»)",
+  "que_cambio": "El aviso ya no termina en «Entendido»: «Cambiar de cuenta» cierra el aviso y abre la misma hoja de consecuencias. Los siete textos que decían «desasocia en Grupos» ahora dicen «toca Cambiar de cuenta», en los 16 idiomas."
+ },
+ {
+  "pr": 899,
+  "id": "899-2",
+  "tipo": "texto",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
   "pro": false,
   "como_probar": "",
-  "id": "983-2",
-  "orden": 0
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Ajustes y Pro",
+  "seccion": "existente",
+  "titulo": "Cuenta archivada: sin «Excluir» y con un aviso que dice qué pasa",
+  "ruta": "Cuenta archivada › Editar",
+  "que_cambio": "Con la cuenta archivada no se enseña «Excluir de las estadísticas» (no haría nada) y un aviso explica que no suma en el saldo pero conserva su historial. En los 16 idiomas."
+ },
+ {
+  "pr": 894,
+  "id": "894-2",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En un reparto por monto, toca un importe, bórralo y escribe otro.",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Grupos",
+  "seccion": "existente",
+  "titulo": "Grupos: corregir un monto del reparto deja lo que escribes",
+  "ruta": "Grupos › Nuevo gasto › reparto por monto, porcentaje o partes",
+  "que_cambio": "Tocar el campo dejaba el cursor delante: borrar no hacía nada y «150» sobre «200.00» acababa en «1,200.00». Ahora el cursor va al final y sigue al final al reformatear la cifra."
+ },
+ {
+  "pr": 894,
+  "id": "894-3",
+  "tipo": "mejora",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Grupos",
+  "seccion": "existente",
+  "titulo": "Grupo archivado: no deja apuntar gastos ni saldar desde dentro",
+  "ruta": "Grupos › un grupo archivado",
+  "que_cambio": "Ya no salen el «+» de Gastos ni «Saldar», igual que la lista no lo ofrecía. Se puede seguir confirmando o rechazando pagos, editando y «Saldar primero» para salir del grupo."
+ },
+ {
+  "pr": 894,
+  "id": "894-4",
+  "tipo": "mejora",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Grupos",
+  "seccion": "existente",
+  "titulo": "Grupos: el saldo inicial pregunta antes de reemplazar otro",
+  "ruta": "Grupos › un grupo › Ajustes › Saldo inicial (dueño o admin)",
+  "que_cambio": "Añadir uno entre dos personas que ya tienen otro en esa moneda lo cambiaba sin avisar. Ahora sale «Ya hay un saldo inicial entre Ana y Beto · Ahora dice: Beto le debe a Ana · S/ 75.00» con «Cancelar» o «Reemplazar». Con pagos confirmados, el texto ya no habla de «borrar el gasto»."
+ },
+ {
+  "pr": 894,
+  "id": "894-5",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Grupos",
+  "seccion": "existente",
+  "titulo": "«Importar todo el historial» sale la primera vez que llevas los gastos de grupo a tus cuentas",
+  "ruta": "Grupos › Ajustes (o los de un grupo) › Registrar gastos de grupos en mis cuentas personales",
+  "que_cambio": "Al encender el interruptor, la oferta de importar el historial solo salía si ya había algo reflejado. Ahora sale si hay gastos de grupo que importar."
+ },
+ {
+  "pr": 924,
+  "id": "924-2",
+  "tipo": "accesibilidad",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "titulo": "VoiceOver lee cada gráfica con su conclusión y sus cifras",
+  "ruta": "Estadísticas y Panel: tendencia, entradas y salidas, tartas, día de la semana, necesidades",
+  "que_cambio": "La tendencia dice «bajó de S/ 76,100 a S/ 73,357. El punto más bajo…» (antes «12 puntos»); las tartas, el total y las tres partes mayores con su porcentaje; el día de la semana, el de más y el de menos gasto. En el rotor salen «Describir gráfica» y el sonido de la gráfica. Con «Ocultar montos» no se dice ninguna cifra."
+ },
+ {
+  "pr": 922,
+  "id": "922-2",
+  "tipo": "visual",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "iPad",
+  "seccion": "existente",
+  "titulo": "iPad: el calendario de Registros a una columna y el título entero",
+  "ruta": "iPad › Registros › Calendario",
+  "que_cambio": "Con la vista calendario, Registros pasa a una sola columna al ancho legible, como en el iPhone; con la lista vuelve el split. El título de la columna se lee entero («Registros») y «Seleccionar» va con su icono."
+ },
+ {
+  "pr": 920,
+  "id": "920-2",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En la hoja de categorías escribe «cafe» o «uber».",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Nuevo registro",
+  "seccion": "existente",
+  "titulo": "El buscador de categorías entiende «café», «uber» o «wong»",
+  "ruta": "Cualquier hoja de categorías (Nuevo registro, Bandeja, favoritos, pagos planificados, Grupos) › buscar",
+  "que_cambio": "«café», «menú» o «almuerzo» llevan a Restaurantes; «uber» o «cabify» a Taxis y apps; «bodega» o «wong» a Supermercados: 24 categorías de uso diario con marcas y modismos de cada idioma (el chino y el subte en Argentina, Mercadona en España)."
+ },
+ {
+  "pr": 912,
+  "id": "912-2",
+  "tipo": "texto",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Sale en las novedades de la versión si vienes de la 2.2.",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Panel",
+  "seccion": "existente",
+  "titulo": "Novedades 2.3: tarjeta «Tu nota de salud, más precisa»",
+  "ruta": "Novedades de la versión (al abrir tras actualizar)",
+  "que_cambio": "Una tarjeta nueva en las novedades dice qué cambió en la nota y cómo subirla."
+ },
+ {
+  "pr": 990,
+  "id": "990-1",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Bandeja y Yala IA",
+  "seccion": "existente",
+  "titulo": "Bandeja: «Guardar y hacer recurrente»",
+  "ruta": "Bandeja › un borrador › bajo «Guardar»",
+  "que_cambio": "Aprueba el borrador como siempre y pasa al editor de recurrentes ya relleno. No sale en lo que ya viene de un recurrente, una suscripción o un grupo."
+ },
+ {
+  "pr": 990,
+  "id": "990-2",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Planificación",
+  "seccion": "existente",
+  "titulo": "Pagos planificados: «Desde un registro»",
+  "ruta": "Planificación › Pagos › Desde un registro (junto a «Nuevo pago planificado»)",
+  "que_cambio": "Abre tus registros de los últimos 6 meses con buscador; el que elijas abre el editor de recurrentes relleno."
+ },
+ {
+  "pr": 990,
+  "id": "990-3",
+  "tipo": "mejora",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Planificación",
+  "seccion": "existente",
+  "titulo": "Hacer recurrente sin duplicados: ofrece vincular al que ya existe",
+  "ruta": "Cualquiera de las tres entradas de «Hacer recurrente»",
+  "que_cambio": "Si ya hay un recurrente parecido (misma moneda y tipo, monto ±15 %, mismo comercio), pregunta «Vincular a «Cloudflare»» o «Crear otro recurrente». Vincular marca ese vencimiento como pagado y retira el borrador pendiente del mismo vencimiento."
+ },
+ {
+  "pr": 994,
+  "id": "994-1",
+  "tipo": "funcion",
+  "por_que": "Ves lo que tienes y lo que de verdad puedes usar, sin que la tarjeta lo esconda.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con una tarjeta de crédito con gasto, mira las dos cifras y toca el «?».",
+  "orden": 32.5,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Panel",
+  "seccion": "ambos",
+  "titulo": "Panel: «Tu saldo hoy» en grande, «Tu dinero hoy» en chico y un «?» que explica los dos",
+  "ruta": "Panel (arriba)",
+  "que_cambio": "En grande, «Tu saldo hoy»: todas las cuentas, tarjetas incluidas, con su signo (con más deuda de tarjeta sale «S/ -609.50»; ya no dice «Debes hoy»). Debajo, en chico, «Tu dinero hoy»: lo mismo sin las tarjetas de crédito; solo sale si alguna cuenta queda fuera. El «?» abre una hoja con las dos cifras, un ejemplo con números y «Elegir qué cuentas suman». La línea del mes («Te queda» con sus flechas) sale del Panel: la cuenta Flujo de caja."
+ },
+ {
+  "pr": 994,
+  "id": "994-2",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Apaga una cuenta de ahorro y mira cómo cambia «Tu dinero hoy».",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Ajustes y Pro",
+  "seccion": "existente",
+  "titulo": "Cada cuenta elige si suma en «Tu dinero hoy»",
+  "ruta": "Panel › una cuenta › Editar › «Sumar en «Tu dinero hoy»»; o el «?» del Panel › Elegir qué cuentas suman",
+  "que_cambio": "Interruptor por cuenta, encendido en todo menos en la tarjeta de crédito. No sale en una cuenta archivada o excluida. El ajuste viaja a tus otros dispositivos."
+ },
+ {
+  "pr": 994,
+  "id": "994-3",
+  "tipo": "texto",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "titulo": "Estadísticas: «Tu saldo hoy» y «Tu saldo al cierre»",
+  "ruta": "Estadísticas › Resumen y Tendencias",
+  "que_cambio": "«Tienes hoy» pasa a «Tu saldo hoy» y «Tenías al cierre» a «Tu saldo al cierre», igual que en el Panel. En los 16 idiomas."
+ },
+ {
+  "pr": 1002,
+  "id": "1002-1",
+  "tipo": "funcion",
+  "por_que": "Reconoces cada cuenta de un vistazo.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Abre el Panel y mira tus cuentas: deberían verse con su color de siempre.",
+  "orden": 23.5,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Panel",
+  "seccion": "ambos",
+  "titulo": "Tus cuentas del Panel, como tarjetas bancarias",
+  "ruta": "Panel › Tus finanzas › cuentas",
+  "que_cambio": "Cada cuenta se ve como una tarjeta: degradado de su color, un patrón sutil, el ícono en un cuadrito, chip y, si quieres, «•••• 1256». Dice lo mismo de antes (tipo, monedas, «Por pagar» o «Saldo», el equivalente en tu moneda). Una cuenta que nunca diseñaste sale con un diseño de su mismo color. Si un color no da contraste, el fondo se ajusta solo. La tarjeta de Grupos va en grafito y no se diseña. Con «Ocultar montos» los dígitos también se ocultan."
+ },
+ {
+  "pr": 1002,
+  "id": "1002-2",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Diseña una cuenta, ponle 4 dígitos y vuelve al diseño original.",
+  "orden": 23.6,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Panel",
+  "seccion": "ambos",
+  "titulo": "Diseña tu tarjeta: 27 plantillas, colores, patrones, íconos y últimos 4 dígitos",
+  "ruta": "Panel › botón de paleta en la esquina de una cuenta (o mantén pulsado › Diseñar tarjeta)",
+  "que_cambio": "Editor con vista previa en vivo: 27 plantillas en 6 grupos (degradados, metálicas, minimalistas, oscuras, pastel, con patrón), 16 colores más «Otro color», 7 patrones, 25 íconos, chip sí o no y los últimos 4 dígitos (nunca el número completo). «Volver al diseño original» lo deja como al principio. El diseño viaja a tus otros dispositivos."
+ },
+ {
+  "pr": 996,
+  "id": "996-1",
+  "tipo": "funcion",
+  "por_que": "Entiendes una cuenta sin salir de su ficha.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Toca una cuenta con movimientos y luego una tarjeta de crédito.",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Panel",
+  "seccion": "existente",
+  "titulo": "La ficha de una cuenta, con las gráficas del Panel",
+  "ruta": "Panel › toca una cuenta",
+  "que_cambio": "La ficha suma: la curva del saldo con el día de hoy marcado y su escala; entradas y salidas del período con su cambio frente al anterior; el donut de categorías (suma lo mismo que lo gastado), y «Tus gastos más grandes» (los tres que más pesaron) antes de «Últimos registros». Se queda «Así se forma tu saldo», el estado de cuenta de la tarjeta, el selector de moneda, «Filtrar por esta cuenta» y Editar. Las gráficas no filtran al tocarlas."
+ },
+ {
+  "pr": 992,
+  "id": "992-1",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "Solo se ve en una instalación nueva. Míralo en el iPhone 14 de pruebas (o en otro teléfono con TestFlight): no borres Yala en tu teléfono personal. Además pide una cuenta de Yala con datos.",
+  "pro": false,
+  "como_probar": "",
+  "orden": 19.5,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Bienvenida y cuenta",
+  "seccion": "nuevo",
+  "titulo": "Tras «¡Tu cuenta está lista!» › «Empezar», el Panel espera tus datos en vez de mostrar S/ 0",
+  "ruta": "Bienvenida › entrar con una cuenta que ya tiene datos › Empezar",
+  "que_cambio": "El Panel enseña el esqueleto de carga hasta que llega la cuenta y luego el saldo; nunca S/ 0 con «Crear categorías». En la 2.3 (1) aún podía pasar: con 2 de 6 cuentas llegadas, el Panel pintaba S/ 0 durante unos 8 segundos."
+ },
+ {
+  "pr": 992,
+  "id": "992-2",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "Solo se ve en una instalación nueva. Míralo en el iPhone 14 de pruebas (o en otro teléfono con TestFlight): no borres Yala en tu teléfono personal.",
+  "pro": false,
+  "como_probar": "",
+  "orden": 16.5,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Bienvenida y cuenta",
+  "seccion": "nuevo",
+  "titulo": "Cancelar la entrada a una cuenta no deja nada de ella en el teléfono",
+  "ruta": "Bienvenida › entrar con tu cuenta › Cancelar mientras conecta",
+  "que_cambio": "Antes quedaban en el teléfono grupos, categorías y un gasto de la cuenta cancelada, y la entrada siguiente acababa en «este dispositivo tiene que quedar en blanco». Ahora todo queda a cero y la siguiente entrada vuelve a pedir la cuenta."
+ },
+ {
+  "pr": 992,
+  "id": "992-3",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Toca el centro del botón y sal con «Cancelar»: no vacíes tus datos reales.",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Ajustes y Pro",
+  "seccion": "existente",
+  "titulo": "«Vaciar mis datos» responde en cualquier punto del botón",
+  "ruta": "Ajustes › Vaciar mis datos",
+  "que_cambio": "Tocar el centro del botón abría Exportar. Ahora cualquier punto abre «¿Vaciar tus datos?»; «Exportar una copia antes» sigue abriendo Exportar."
+ },
+ {
+  "pr": 992,
+  "id": "992-4",
+  "tipo": "arreglo",
+  "por_que": "",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "2",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la 2.3 (2).",
+  "area": "Grupos",
+  "seccion": "existente",
+  "titulo": "Yala IA en Grupos ya no deja la descripción vacía, y el aviso nombra escribir",
+  "ruta": "Grupos › un grupo › Yala IA",
+  "que_cambio": "Con un gasto escrito, la descripción ya no queda vacía. El aviso de Yala IA dice «Escribes, dictas o eliges una foto del recibo», en los 16 idiomas."
+ },
+ {
+  "pr": 1003,
+  "id": "1003-1",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "fuera",
+  "activar": "Todavía en cola de merge: no está en la 2.3 (2). Llega en la próxima build de TestFlight.",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "no",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: todavía no en TestFlight.",
+  "area": "Grupos",
+  "seccion": "fuera",
+  "titulo": "Traer un grupo de Splitwise o Tricount con los mismos saldos",
+  "ruta": "Grupos › Nuevo grupo › Traer un grupo de Splitwise o Tricount",
+  "que_cambio": "Eliges el CSV que exportó la otra app, ves una vista previa (personas, gastos, pagos, fechas y el saldo de cada persona) y dices quién eres. El grupo toma nombre y moneda del archivo y cada persona termina con el mismo saldo que tenía allá: el tuyo al crear el grupo, el de los demás cuando se unen y el dueño los empareja. Trae saldos, no cada gasto. Tricount no tiene formato oficial y falta validarlo con un export real."
+ },
+ {
+  "pr": 999,
+  "id": "999-1",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "fuera",
+  "activar": "Todavía en cola de merge: no está en la 2.3 (2). Llega en la próxima build de TestFlight.",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "no",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: todavía no en TestFlight.",
+  "area": "Grupos",
+  "seccion": "fuera",
+  "titulo": "Grupos: voz, foto y Yala IA como en personal, y el «+» solo al desplazar",
+  "ruta": "Grupos › un grupo › Voz / Foto / Yala IA",
+  "que_cambio": "Voz con la hoja que escucha y la onda; Foto con Cámara, Fotos y Archivo (también PDF); Yala IA como el chat de personal, que responde con el reparto por persona. El «+» flotante del grupo solo sale al desplazar, como en el Panel. En un grupo archivado, la fila de arriba ya no ofrece apuntar."
+ },
+ {
+  "pr": 997,
+  "id": "997-1",
+  "tipo": "funcion",
+  "por_que": "",
+  "estado": "fuera",
+  "activar": "Todavía en cola de merge: no está en la 2.3 (2). Llega en la próxima build de TestFlight.",
+  "pro": false,
+  "como_probar": "",
+  "orden": 0,
+  "build": "no",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: todavía no en TestFlight.",
+  "area": "Registros",
+  "seccion": "fuera",
+  "titulo": "Registros: filtros rápidos con icono, en la línea de Lista/Calendario y con selección múltiple",
+  "ruta": "Registros › filtros rápidos",
+  "que_cambio": "Sin el chip «Este mes»; Cuenta, Categoría y Más filtros con icono, en la misma línea que Lista/Calendario; varias cuentas a la vez; Categoría como el primer presupuesto del onboarding, y se aplica al cerrar la hoja."
  }
 ]
