@@ -166,8 +166,9 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # https://app.yala-app.pe/auth/supabase/callback. El mismo id está en el hook de producción (los SQL se generaron con
 # `python3 webapp/supabase/sql_produccion.py 00000000-0000-0000-0000-000000000000 <este-id> <carpeta>`).
 SUPABASE_OAUTH_CLIENT_ID = "79c7e38e-409e-470f-9151-81784a02760c"
-# La clave PÚBLICA del widget real de Turnstile (hostname app.yala-app.pe). El secreto va con `wrangler secret put`.
-TURNSTILE_SITE_KEY = "PENDIENTE-crear-widget-turnstile"
+# La clave PÚBLICA del widget real de Turnstile «Yala web (producción)» (hostname app.yala-app.pe, Managed, sin
+# pre-clearance; lo creó Dan el 16-nov). El secreto va con `wrangler secret put`.
+TURNSTILE_SITE_KEY = "0x4AAAAAAGCT9I0RK2QrEk1F"
 
 # Mismos límites que staging, con su propio espacio (staging usa 7401-7403; el conector, 7301-7313).
 [[env.production.ratelimits]]

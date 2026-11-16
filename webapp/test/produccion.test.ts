@@ -1,5 +1,5 @@
 /**
- * `[env.production]` de wrangler.toml (escrito el 2026-11-15; KV y cliente OAuth reales desde el 2026-11-16). Se lee el fichero tal cual: así un cambio
+ * `[env.production]` de wrangler.toml (escrito el 2026-11-15; KV, cliente OAuth y widget de Turnstile reales desde el 2026-11-16). Se lee el fichero tal cual: así un cambio
  * que apunte producción a staging, o que reuse los límites de staging, se pone rojo aquí y no en un despliegue.
  */
 import { readFileSync } from "node:fs";
@@ -51,7 +51,9 @@ describe("producción en wrangler.toml", () => {
     for (const id of prod) expect(namespaceIds(TOP)).not.toContain(id);
   });
 
-  it("tal como está escrito, el Worker NO atiende: 503 mientras falte el widget de Turnstile", () => {
+  it("tal como está escrito, con sus dos secretos, el Worker atiende: no queda nada PENDIENTE", () => {
+    expect(PROD).not.toContain("PENDIENTE");
+    expect(prodVars.TURNSTILE_SITE_KEY).toMatch(/^0x4/);
     const env = makeEnv({
       ...prodVars,
       SUPABASE_OAUTH_CLIENT_SECRET: "secreto",
@@ -60,7 +62,19 @@ describe("producción en wrangler.toml", () => {
       RL_API: new FakeLimiter(),
       RL_QR: new FakeLimiter(),
     });
-    expect(configProblems(env)).toEqual(["TURNSTILE_SITE_KEY sigue PENDIENTE"]);
+    expect(configProblems(env)).toEqual([]);
+  });
+
+  it("sin el secreto de Turnstile, la misma configuración no atiende (falla cerrado)", () => {
+    const env = makeEnv({
+      ...prodVars,
+      SUPABASE_OAUTH_CLIENT_SECRET: "secreto",
+      TURNSTILE_SECRET_KEY: "",
+      RL_AUTH: new FakeLimiter(),
+      RL_API: new FakeLimiter(),
+      RL_QR: new FakeLimiter(),
+    });
+    expect(configProblems(env)).not.toEqual([]);
   });
 
   it("el cliente OAuth es el registrado en Supabase producción y el KV es el suyo, no el de staging", () => {
@@ -70,18 +84,5 @@ describe("producción en wrangler.toml", () => {
     const prodKv = kv(PROD);
     expect(prodKv).not.toBeNull();
     expect(prodKv?.[1] ?? prodKv?.[2]).not.toBe("aaee191d09924a7bbbdaa912cd1bcf05");
-  });
-
-  it("con el widget real, la misma configuración atiende", () => {
-    const env = makeEnv({
-      ...prodVars,
-      SUPABASE_OAUTH_CLIENT_SECRET: "secreto",
-      TURNSTILE_SITE_KEY: "0x4AAAAAAA-real",
-      TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secreto-real",
-      RL_AUTH: new FakeLimiter(),
-      RL_API: new FakeLimiter(),
-      RL_QR: new FakeLimiter(),
-    });
-    expect(configProblems(env)).toEqual([]);
   });
 });
