@@ -265,15 +265,19 @@ struct UXAudit22Lote20NubeWiringTests {
         #expect(liveBranch.filter { $0.hasPrefix("providerButton(") } == ["providerButton(provider)"])
     }
 
-    @Test("L20-17: una sola confirmación para volver a iCloud, con su «Cancelar» visible")
+    /// L20-17 dejó UNA confirmación; la revisión 2.3 (decisión 53) la pasó a la última fase de la hoja de volver. Sigue
+    /// siendo una sola y con su «Cancelar» a la vista.
+    @Test("L20-17 · decisión 53: una sola confirmación para volver, dentro de la hoja y con su «Cancelar» visible")
     func storage_revertHasOneConfirmation() throws {
         let src = try Self.code(Self.storage)
         #expect(!src.contains("L10n.Storage.Confirm.revert2Title"))
-        #expect(src.components(separatedBy: ".confirmationDialog(L10n.Storage.Confirm.revertTitle,").count - 1 == 1)
-        let modifier = try Self.body(of: "private struct StorageConfirmations: ViewModifier {", in: src)
-        #expect(modifier.contains("Button(L10n.Storage.Confirm.revert2Confirm, role: .destructive) { onRevert() }"))
-        #expect(modifier.contains("Button(L10n.Common.cancel) {}"), "el «Cancelar» de no hacer nada, sin rol (B6)")
-        #expect(!modifier.contains(where: { $0.contains("role: .cancel") }))
+        #expect(!src.contains(".confirmationDialog(L10n.Storage.Confirm.revertTitle,"), "volvió el globo")
+        let sheet = try Self.code("Yala/App/Views/Settings/ReturnToICloudSheet.swift")
+        let footer = try Self.body(of: "private var footerButtons: some View {", in: sheet)
+        #expect(footer.filter { $0.contains("confirmChoice(choice)") }.count == 2,
+                "la confirmación (y su variante que borra) es el único gesto que empieza la vuelta")
+        #expect(footer.contains("exitButton(L10n.Common.cancel, identifier: \"storage_revert_cancel\")"))
+        #expect(!footer.contains(where: { $0.contains("role: .cancel") }))
     }
 
     /// L20-15 (opción B de Jürgen, 2026-10-23): «Datos no disponibles» es una hoja, con «Seguir esperando» ARRIBA y relleno

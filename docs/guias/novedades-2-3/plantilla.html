@@ -1,0 +1,409 @@
+<title>Yala 2.3 en tu iPhone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Guía de bolsillo: una columna para el teléfono; resumen arriba, recorrido, filtros pegados y tarjetas plegables. */
+:root{
+  --bg:#f5f5fa; --card:#ffffff; --fg:#151729; --muted:#5d6079; --line:#e2e2ee;
+  --accent:#4f46e5; --accent-soft:#ecebfd;
+  --ok:#17804a; --ok-bg:#e3f4ea; --act:#9a5b00; --act-bg:#fcf0d9; --no:#a8324a; --no-bg:#fbe6ea; --out:#56607a; --out-bg:#eceef3;
+  --like:#17804a; --improve:#9a5b00; --bug:#c0283f;
+  --display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1020; --card:#191a2e; --fg:#ececf6; --muted:#a3a5bf; --line:#2c2d47;
+  --accent:#9b95ff; --accent-soft:#25244a;
+  --ok:#5fd394; --ok-bg:#163126; --act:#f2b552; --act-bg:#3a2c12; --no:#ff8ba0; --no-bg:#3d1822; --out:#b4b9cc; --out-bg:#262839;
+  --like:#5fd394; --improve:#f2b552; --bug:#ff8ba0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1020; --card:#191a2e; --fg:#ececf6; --muted:#a3a5bf; --line:#2c2d47;
+  --accent:#9b95ff; --accent-soft:#25244a;
+  --ok:#5fd394; --ok-bg:#163126; --act:#f2b552; --act-bg:#3a2c12; --no:#ff8ba0; --no-bg:#3d1822; --out:#b4b9cc; --out-bg:#262839;
+  --like:#5fd394; --improve:#f2b552; --bug:#ff8ba0; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 96px}
+main{max-width:720px;margin:0 auto;display:grid;gap:22px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.9rem;line-height:1.15}
+h2{font-size:1.15rem}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 6px;font-weight:600}
+.lede{color:var(--muted);margin:8px 0 0;max-width:62ch}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:640px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.tile:focus-visible,.chip:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile b{display:block;font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums}
+.tile span{font-size:.82rem;color:var(--muted)}
+.tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.progress{display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--muted)}
+.bar{flex:1;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+.route{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.route ol{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:2px;counter-reset:r}
+.route li{counter-increment:r;display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:start;padding:7px 0;border-top:1px solid var(--line)}
+.route li:first-child{border-top:0}
+.route li::before{content:counter(r);font-family:var(--display);font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.route a{color:var(--fg);text-decoration:none;font-weight:500}
+.route a:hover{color:var(--accent)}
+.route small{display:block;color:var(--muted);font-size:.8rem;font-weight:400}
+.route .min{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.route li.done a{text-decoration:line-through;color:var(--muted)}
+.note{border-radius:12px;padding:12px 14px;background:var(--accent-soft);font-size:.9rem}
+.note p{margin:0}
+.note p+p{margin-top:6px}
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;display:grid;gap:8px;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.row::-webkit-scrollbar{display:none}
+.chip{flex:none;font:inherit;font-size:.82rem;padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.row2{display:flex;gap:8px}
+.row2 input,.row2 select{font:inherit;font-size:.9rem;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);min-width:0}
+.row2 input{flex:1}
+.row2 select{flex:none;max-width:44%}
+.count{font-size:.8rem;color:var(--muted)}
+.group h3{font-size:.95rem;margin:14px 0 8px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between}
+.list{display:grid;gap:8px}
+details.item{background:var(--card);border:1px solid var(--line);border-radius:12px}
+details.item[open]{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+details.item.flash{box-shadow:0 0 0 3px var(--accent)}
+summary{list-style:none;cursor:pointer;padding:11px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:start}
+summary::-webkit-details-marker{display:none}
+.t{font-weight:600;line-height:1.35;min-width:0}
+.meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.pill{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.listo{background:var(--ok-bg);color:var(--ok)}
+.activable{background:var(--act-bg);color:var(--act)}
+.todavia_no{background:var(--no-bg);color:var(--no)}
+.fuera{background:var(--out-bg);color:var(--out)}
+.tag{font-size:.72rem;color:var(--muted)}
+.vdot{width:10px;height:10px;border-radius:50%;margin-top:6px;border:1.5px solid var(--line)}
+.vdot.gusta{background:var(--like);border-color:var(--like)}
+.vdot.mejorar{background:var(--improve);border-color:var(--improve)}
+.vdot.bug{background:var(--bug);border-color:var(--bug)}
+.vdot.nota{border-color:var(--accent);background:var(--accent-soft)}
+.body{padding:0 12px 14px;display:grid;gap:10px}
+.body dl{margin:0;display:grid;gap:8px}
+.body dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.body dd{margin:2px 0 0;min-width:0;overflow-wrap:anywhere}
+.howto{background:var(--act-bg);border-radius:10px;padding:10px 12px}
+.howto.no{background:var(--no-bg)}
+.howto.out{background:var(--out-bg)}
+.howto ol{margin:4px 0 0;padding-left:1.2em}
+.shot{max-width:200px;border-radius:14px;border:1px solid var(--line);display:block}
+.verdict{display:flex;gap:6px;flex-wrap:wrap}
+.verdict button{font:inherit;font-size:.85rem;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.verdict button[aria-pressed="true"][data-v="gusta"]{background:var(--like);border-color:var(--like);color:var(--card)}
+.verdict button[aria-pressed="true"][data-v="mejorar"]{background:var(--improve);border-color:var(--improve);color:var(--card)}
+.verdict button[aria-pressed="true"][data-v="bug"]{background:var(--bug);border-color:var(--bug);color:var(--card)}
+textarea{font:inherit;font-size:.9rem;width:100%;min-height:64px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.saved{font-size:.75rem;color:var(--muted);min-height:1em}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:6;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dock .in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.dock .sum{flex:1;font-size:.82rem;color:var(--muted);min-width:0}
+.dock button{font:inherit;font-weight:600;font-size:.9rem;padding:9px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+.export{display:grid;gap:8px}
+.export textarea{min-height:180px;font-size:.82rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.empty{color:var(--muted);text-align:center;padding:24px 0}
+footer{color:var(--muted);font-size:.8rem}
+@media (prefers-reduced-motion:no-preference){details.item{transition:border-color .15s}}
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">Yala · TestFlight 2.3 (1) · 15 nov 2026</p>
+    <h1>Lo nuevo de la 2.3, para recorrerlo como usuario</h1>
+    <p class="lede">Todo lo que cambió desde la 2.2 de la App Store. Toca un ítem para ver dónde está, cómo probarlo y dejar tu nota. Tus notas se guardan solas y al final las copias en un bloque para Frank.</p>
+  </header>
+
+  <section aria-labelledby="h-res" style="display:grid;gap:10px">
+    <h2 id="h-res">Resumen</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="progress"><span id="prog-txt">0 revisados</span><div class="bar"><i id="prog-bar"></i></div></div>
+  </section>
+
+  <section class="route" aria-labelledby="h-route">
+    <p class="eyebrow">En tu teléfono, unos 20 minutos</p>
+    <h2 id="h-route">Recorrido sugerido</h2>
+    <ol id="route"></ol>
+  </section>
+
+  <section class="note" aria-label="Antes de empezar">
+    <p><b>Usuario nuevo:</b> la bienvenida y los Primeros pasos solo salen en una instalación nueva. Míralos en el iPhone 14 de pruebas o en otro teléfono con TestFlight. No borres Yala en tu teléfono personal.</p>
+    <p><b>Medido hoy en producción:</b> el servicio de Yala ya lee recibos, entiende «yape» o «efectivo» y tiene los gastos hormiga con IA. El conector de Claude, Yala web, «Otra cuenta de Apple» y el cupo de 5 recibos al día en Grupos siguen solo en pruebas.</p>
+  </section>
+
+  <section aria-label="Lista completa" style="display:grid;gap:6px">
+    <div class="filters">
+      <div class="row" id="sec-row" role="group" aria-label="Sección"></div>
+      <div class="row" id="st-row" role="group" aria-label="Estado"></div>
+      <div class="row2">
+        <input id="q" type="search" placeholder="Buscar: ojo, Splitwise, widget…" aria-label="Buscar">
+        <select id="area" aria-label="Área"><option value="">Todas las áreas</option></select>
+      </div>
+      <div class="count" id="count"></div>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <section class="export" aria-labelledby="h-exp" id="export">
+    <h2 id="h-exp">Tus notas para Frank</h2>
+    <p class="lede" style="margin:0">Se arma solo con lo que marcaste. Cópialo y pégalo en el chat.</p>
+    <textarea id="exp-text" readonly aria-label="Notas para copiar"></textarea>
+  </section>
+
+  <footer>
+    <p>Fuentes: los PR mergeados en la rama 2.3 desde la 2.2 hasta el corte del build, cruzados con el tablero, las notas de TestFlight y el barrido final. Las capturas son del iPhone 14 de pruebas (barridos del 14 y 15-nov). <span id="store-state"></span></p>
+  </footer>
+</main>
+
+<div class="dock"><div class="in">
+  <div class="sum" id="dock-sum">Sin notas todavía</div>
+  <button type="button" id="copy">Copiar notas</button>
+</div></div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function(){
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const byId = Object.fromEntries(DATA.map(x=>[x.id,x]));
+const AREAS = ["Bienvenida y cuenta","Panel","Registros","Nuevo registro","Estadísticas","Flujo de caja","Planificación","Grupos","Bandeja y Yala IA","Nube e iCloud","Ajustes y Pro","Widgets","Importar y exportar","iPad","Integraciones"];
+const SECS = [
+  {k:"existente",label:"Usuario existente",test:x=>x.seccion==="existente"||x.seccion==="ambos"},
+  {k:"nuevo",label:"Usuario nuevo",test:x=>x.seccion==="nuevo"||x.seccion==="ambos"},
+  {k:"activar",label:"Funciones para activar",test:x=>x.estado==="activable"||x.estado==="todavia_no"},
+  {k:"fuera",label:"No está en este build",test:x=>x.seccion==="fuera"},
+  {k:"todo",label:"Todo",test:x=>true},
+];
+const ST = {listo:"Listo para probar",activable:"Se puede activar",todavia_no:"Todavía no",fuera:"Fuera del build"};
+const TIPO = {funcion:"Función nueva",mejora:"Mejora",visual:"Visual",texto:"Textos",accesibilidad:"Accesibilidad",rendimiento:"Rendimiento",arreglo:"Arreglo"};
+const VLAB = {gusta:"Me gusta",mejorar:"Mejorar",bug:"Bug"};
+const ROUTE = [
+  ["900-1","Abre el Panel: la cifra grande y «Te queda»",1],
+  ["826-1","Toca el ojo y oculta tus montos",1],
+  ["904-1","Lee la nota de salud",1],
+  ["835-1","«Ver proyectado» en el Panel y en Tendencias",2],
+  ["824-3","Registra un gasto: sugerencias al escribir",1],
+  ["918-1","La barra sobre el teclado con «Guardar»",1],
+  ["921-1","Repite un favorito con el monto listo",1],
+  ["917-1","Registros: busca por importe",1],
+  ["919-1","Registros: chips rápidos de filtro",1],
+  ["908-1","Borra dos registros y deshazlo",1],
+  ["824-1","Estadísticas: tus gastos hormiga",1],
+  ["915-1","Toca una categoría y entra a su detalle",1],
+  ["769-1","Planificación: «Hoy puedes gastar»",1],
+  ["824-2","Pagos planificados con logos",1],
+  ["983-1","«Pagos que se repiten» que Yala te propone",1],
+  ["969-1","Grupos: Nuevo gasto, Voz, Foto y Yala IA",1],
+  ["947-1","Salda una deuda como en Splitwise",1],
+  ["788-1","Activa el correo del banco (si tus datos están en la nube)",2],
+];
+// ---- estado de notas
+let notes = {};
+let db = null;
+const LS = "yala23-notas";
+try{ notes = JSON.parse(localStorage.getItem(LS)||"{}")||{}; }catch(e){ notes = {}; }
+function saveLocal(){ try{ localStorage.setItem(LS, JSON.stringify(notes)); }catch(e){} }
+const timers = {};
+function persist(id){
+  saveLocal();
+  clearTimeout(timers[id]);
+  timers[id] = setTimeout(async ()=>{
+    const el = document.querySelector(`[data-saved="${id}"]`);
+    if(!db){ if(el) el.textContent = "Guardado en este navegador"; return; }
+    const n = notes[id]||{};
+    try{
+      await db.doc("notas/"+id).set({veredicto:n.v||"", comentario:n.c||"", titulo:byId[id].titulo, area:byId[id].area, actualizado:new Date().toISOString()});
+      if(el) el.textContent = "Guardado";
+    }catch(e){ if(el) el.textContent = "Guardado solo en este navegador"; }
+  }, 700);
+  refreshCounts();
+}
+// ---- filtros
+const state = {sec:"existente", st:"", area:"", q:""};
+function visible(x){
+  const sec = SECS.find(s=>s.k===state.sec);
+  if(!sec.test(x)) return false;
+  if(state.st && x.estado!==state.st) return false;
+  if(state.area && x.area!==state.area) return false;
+  if(state.q){
+    const hay = (x.titulo+" "+x.ruta+" "+x.que_cambio+" "+x.area).toLowerCase();
+    if(!state.q.toLowerCase().split(/\s+/).every(w=>hay.includes(w))) return false;
+  }
+  return true;
+}
+function esc(s){ return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function steps(txt){
+  const parts = String(txt).split(/\s(?=\d\.\s)|^(?=1\.\s)/).map(s=>s.trim()).filter(Boolean);
+  if(parts.length>1 && /^\d\.\s/.test(parts[0])) return "<ol>"+parts.map(p=>"<li>"+esc(p.replace(/^\d\.\s*/,""))+"</li>").join("")+"</ol>";
+  return "<div>"+esc(txt)+"</div>";
+}
+function vclass(id){ const n=notes[id]; if(!n) return ""; return n.v || (n.c?"nota":""); }
+function card(x){
+  const n = notes[x.id]||{};
+  const howLab = {activable:"Cómo activarlo",todavia_no:"Por qué todavía no",fuera:"Por qué no está"}[x.estado] || (x.activar?"Para verlo":"");
+  const howCls = {todavia_no:"howto no",fuera:"howto out"}[x.estado] || "howto";
+  return `<details class="item" id="i-${x.id}" data-id="${x.id}">
+  <summary><span class="t">${esc(x.titulo)}</span><span class="vdot ${vclass(x.id)}" aria-hidden="true"></span>
+   <span class="meta"><span class="pill ${x.estado}">${ST[x.estado]}</span><span class="tag">${esc(x.area)} · ${TIPO[x.tipo]||""}${x.pro?" · Pro":""}${x.seccion==="ambos"?" · también usuario nuevo":""}</span></span></summary>
+  <div class="body">
+   <dl>
+    <div><dt>Dónde</dt><dd>${esc(x.ruta)}</dd></div>
+    <div><dt>Qué cambió</dt><dd>${esc(x.que_cambio)}</dd></div>
+    ${x.por_que?`<div><dt>Por qué importa</dt><dd>${esc(x.por_que)}</dd></div>`:""}
+    ${x.como_probar?`<div><dt>Cómo probarlo</dt><dd>${esc(x.como_probar)}</dd></div>`:""}
+   </dl>
+   ${howLab?`<div class="${howCls}"><dt>${howLab}</dt>${steps(x.activar)}</div>`:""}
+   ${x.img?`<img class="shot" loading="lazy" alt="Captura en el iPhone 14: ${esc(x.titulo)}" src="${x.img}">`:""}
+   <div class="verdict" role="group" aria-label="Tu veredicto">
+    ${["gusta","mejorar","bug"].map(v=>`<button type="button" data-v="${v}" data-for="${x.id}" aria-pressed="${n.v===v}">${VLAB[v]}</button>`).join("")}
+   </div>
+   <textarea id="c-${x.id}" data-c="${x.id}" placeholder="Tu comentario (opcional)">${esc(n.c||"")}</textarea>
+   <div class="saved" data-saved="${x.id}"></div>
+  </div></details>`;
+}
+function render(){
+  const vis = DATA.filter(visible);
+  const g = document.getElementById("groups");
+  if(!vis.length){ g.innerHTML = `<p class="empty">Nada con estos filtros.</p>`; }
+  else if(state.sec==="nuevo"){
+    vis.sort((a,b)=>a.orden-b.orden);
+    g.innerHTML = `<div class="group"><h3><span>En el orden en que aparece</span><span>${vis.length}</span></h3><div class="list">${vis.map(card).join("")}</div></div>`;
+  } else {
+    g.innerHTML = AREAS.map(a=>{
+      const xs = vis.filter(x=>x.area===a);
+      if(!xs.length) return "";
+      const rank={funcion:0,mejora:1,visual:2,texto:3,rendimiento:4,accesibilidad:5,arreglo:6};
+      xs.sort((p,q)=>(rank[p.tipo]??9)-(rank[q.tipo]??9));
+      return `<div class="group"><h3><span>${esc(a)}</span><span>${xs.length}</span></h3><div class="list">${xs.map(card).join("")}</div></div>`;
+    }).join("");
+  }
+  document.getElementById("count").textContent = `${vis.length} de ${DATA.length} ítems`;
+  renderChips();
+}
+function renderChips(){
+  const secRow = document.getElementById("sec-row");
+  secRow.innerHTML = SECS.map(s=>`<button type="button" class="chip" data-sec="${s.k}" aria-pressed="${state.sec===s.k}">${s.label} · ${DATA.filter(s.test).length}</button>`).join("");
+  const base = DATA.filter(SECS.find(s=>s.k===state.sec).test);
+  const stRow = document.getElementById("st-row");
+  stRow.innerHTML = [["","Todos los estados"]].concat(Object.entries(ST)).map(([k,l])=>{
+    const c = k?base.filter(x=>x.estado===k).length:base.length;
+    if(k && !c) return "";
+    return `<button type="button" class="chip" data-st="${k}" aria-pressed="${state.st===k}">${l} · ${c}</button>`;
+  }).join("");
+  document.querySelectorAll("#tiles .tile").forEach(t=>t.setAttribute("aria-pressed", String(t.dataset.sec===state.sec)));
+}
+function renderTiles(){
+  const t = [
+    ["existente","Usuario existente", DATA.filter(SECS[0].test).length],
+    ["nuevo","Usuario nuevo", DATA.filter(SECS[1].test).length],
+    ["activar","Para activar o todavía no", DATA.filter(SECS[2].test).length],
+    ["fuera","No está en este build", DATA.filter(SECS[3].test).length],
+  ];
+  document.getElementById("tiles").innerHTML = t.map(([k,l,c])=>`<button type="button" class="tile" data-sec="${k}" aria-pressed="false"><b>${c}</b><span>${l}</span></button>`).join("");
+}
+function renderRoute(){
+  document.getElementById("route").innerHTML = ROUTE.map(([id,txt,min])=>{
+    const x = byId[id]; if(!x) return "";
+    return `<li class="${notes[id]&&(notes[id].v||notes[id].c)?"done":""}"><a href="#i-${id}" data-go="${id}">${esc(txt)}<small>${esc(x.ruta)}</small></a><span class="min">${min} min</span></li>`;
+  }).join("");
+}
+function exportText(){
+  const ids = DATA.map(x=>x.id).filter(id=>notes[id]&&(notes[id].v||notes[id].c));
+  if(!ids.length) return "";
+  const lines = ["Notas de Jürgen sobre Yala 2.3 (1) — "+ids.length+" ítems",""];
+  AREAS.forEach(a=>{
+    const xs = ids.map(i=>byId[i]).filter(x=>x.area===a);
+    if(!xs.length) return;
+    lines.push("## "+a);
+    xs.forEach(x=>{ const n=notes[x.id]; lines.push(`- [${n.v?VLAB[n.v].toUpperCase():"NOTA"}] ${x.titulo} (${x.id})${n.c?": "+n.c.trim():""}`); });
+    lines.push("");
+  });
+  return lines.join("\n").trim();
+}
+function refreshCounts(){
+  const ids = Object.keys(notes).filter(id=>byId[id]&&(notes[id].v||notes[id].c));
+  const c = {gusta:0,mejorar:0,bug:0};
+  ids.forEach(id=>{ if(notes[id].v) c[notes[id].v]++; });
+  const total = DATA.filter(x=>x.estado!=="fuera").length;
+  document.getElementById("prog-txt").textContent = `${ids.length} de ${total} revisados`;
+  document.getElementById("prog-bar").style.width = Math.min(100, ids.length/total*100)+"%";
+  document.getElementById("dock-sum").textContent = ids.length ? `${ids.length} notas · ${c.gusta} me gusta · ${c.mejorar} mejorar · ${c.bug} bug` : "Sin notas todavía";
+  document.getElementById("exp-text").value = exportText() || "Todavía no marcaste nada.";
+  renderRoute();
+}
+// ---- eventos
+document.addEventListener("click", e=>{
+  const s = e.target.closest("[data-sec]");
+  if(s){ state.sec = s.dataset.sec; state.st=""; render(); if(s.classList.contains("tile")) document.querySelector(".filters").scrollIntoView({behavior:"smooth"}); return; }
+  const st = e.target.closest("[data-st]");
+  if(st){ state.st = st.dataset.st; render(); return; }
+  const v = e.target.closest("[data-v]");
+  if(v){ const id=v.dataset.for; notes[id]=notes[id]||{}; notes[id].v = notes[id].v===v.dataset.v ? "" : v.dataset.v;
+    v.parentElement.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v===notes[id].v)));
+    const d=document.querySelector(`#i-${CSS.escape(id)} .vdot`); if(d) d.className="vdot "+vclass(id);
+    persist(id); return; }
+  const go = e.target.closest("[data-go]");
+  if(go){ e.preventDefault(); const id=go.dataset.go; const x=byId[id];
+    state.sec = SECS.find(s=>s.k!=="todo"&&s.test(x)).k; state.st=""; state.area=""; state.q="";
+    document.getElementById("q").value=""; document.getElementById("area").value=""; render();
+    const el=document.getElementById("i-"+id); if(el){ el.open=true; el.scrollIntoView({behavior:"smooth",block:"center"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),1600); }
+    return; }
+});
+document.addEventListener("input", e=>{
+  const t = e.target;
+  if(t.dataset && t.dataset.c){ const id=t.dataset.c; notes[id]=notes[id]||{}; notes[id].c=t.value;
+    const d=document.querySelector(`#i-${CSS.escape(id)} .vdot`); if(d) d.className="vdot "+vclass(id);
+    const el=document.querySelector(`[data-saved="${id}"]`); if(el) el.textContent="Guardando…";
+    persist(id); }
+  if(t.id==="q"){ state.q=t.value.trim(); render(); }
+});
+document.getElementById("area").addEventListener("change", e=>{ state.area=e.target.value; render(); });
+document.getElementById("copy").addEventListener("click", async ()=>{
+  const txt = exportText();
+  const btn = document.getElementById("copy");
+  if(!txt){ btn.textContent="Nada que copiar"; setTimeout(()=>btn.textContent="Copiar notas",1500); return; }
+  try{ await navigator.clipboard.writeText(txt); btn.textContent="Copiado"; }
+  catch(err){ const ta=document.getElementById("exp-text"); ta.scrollIntoView({behavior:"smooth"}); ta.focus(); ta.select(); btn.textContent="Selecciona y copia"; }
+  setTimeout(()=>btn.textContent="Copiar notas",1800);
+});
+// ---- arranque
+const sel = document.getElementById("area");
+AREAS.forEach(a=>{ const o=document.createElement("option"); o.value=a; o.textContent=a; sel.appendChild(o); });
+renderTiles(); render(); refreshCounts();
+const ss = document.getElementById("store-state");
+ss.textContent = "Tus notas se guardan en este navegador.";
+(async ()=>{
+  try{
+    if(!window.claude || !window.claude.use) return;
+    const d = await window.claude.use("db");
+    if(!d) return;
+    db = d;
+    ss.textContent = "Tus notas se guardan en la guía y Frank puede leerlas.";
+    let first = true;
+    const timer = setTimeout(()=>{ if(first) ss.textContent = "No pude cargar tus notas guardadas; las nuevas se guardan en este navegador."; }, 10000);
+    db.collection("notas").onSnapshot(snap=>{
+      clearTimeout(timer);
+      let changed=false;
+      snap.docs.forEach(doc=>{
+        const b = doc.data(); if(!b || !byId[doc.id]) return;
+        const local = notes[doc.id]||{};
+        // el servidor manda salvo que haya una edición local pendiente
+        if(timers[doc.id] && first===false) return;
+        if(local.v!==(b.veredicto||"") || local.c!==(b.comentario||"")){ notes[doc.id]={v:b.veredicto||"",c:b.comentario||""}; changed=true; }
+      });
+      if(first){
+        // subir lo que solo estaba en este navegador
+        Object.keys(notes).forEach(id=>{ if(byId[id] && !snap.docs.some(dd=>dd.id===id) && (notes[id].v||notes[id].c)) persist(id); });
+      }
+      first=false;
+      if(changed){ saveLocal(); const open=[...document.querySelectorAll("details.item[open]")].map(d=>d.dataset.id); render(); open.forEach(id=>{const el=document.getElementById("i-"+id); if(el) el.open=true;}); refreshCounts(); }
+    }, ()=>{ ss.textContent = "No pude conectar con la guía; tus notas se guardan en este navegador."; });
+  }catch(e){}
+})();
+})();
+</script>

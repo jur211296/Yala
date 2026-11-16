@@ -68,7 +68,7 @@ final class ColdStartICloudUnavailableUITests: XCTestCase {
         alert.buttons.element(boundBy: 0).tap()   // «Entendido»
 
         XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Entendido».")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "«Entendido» mandó a la persona al Welcome.")
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists, "«Entendido» mandó a la persona al Welcome.")
         XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
                       "El Panel no quedó accesible tras cerrar el aviso.")
         // Y no vuelve en esta sesión: la petición del arranque es UNA.
@@ -102,9 +102,9 @@ final class ColdStartICloudUnavailableUITests: XCTestCase {
     func test_coldStart_withoutOnboarding_showsNoNotice() {
         let app = XCUIApplication()
         app.launchForUITest(skipOnboarding: false, seed: nil, coldStartICloudCheck: true)
-        // `uitest_ready` vive en la raíz de ContentView, que el cover del Welcome tapa: se espera el Hero directamente
+        // `uitest_ready` vive en la raíz de ContentView, que el cover del Welcome tapa: se espera la vitrina directamente
         // (patrón de `WelcomeChooserUITests`).
-        XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 60),
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 60),
                       "Sin onboarding la app no arrancó en el Welcome: el control no mide lo que dice.")
         assertNoNotice(in: app, "Sin onboarding el arranque enseñó el aviso de iCloud encima del Welcome.")
     }

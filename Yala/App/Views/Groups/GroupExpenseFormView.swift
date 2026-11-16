@@ -93,6 +93,9 @@ struct GroupExpenseFormView: View {
     let conversionSource: TransactionItem?
     /// Lo que se escribió en otro grupo antes de cambiar a este (decisión 39 de 2.3, F3). Solo lo pasa «Nuevo gasto».
     let carriedOver: GroupExpenseCarryOver?
+    /// El reparto de un recibo leído con Voz o Foto de Grupos (2026-11-14): se aplica al abrir, como lo escrito, y la
+    /// persona sigue aquí (quién pagó, cuenta) y guarda como siempre.
+    let receiptSplit: GroupExpensePrefillTemplate?
 
     // MARK: - State
 
@@ -152,9 +155,6 @@ struct GroupExpenseFormView: View {
     /// Parte abierta bajo la frase «Pagado por · dividido»; `nil` = las dos plegadas.
     @State private var expandedSection: ExpandedSection?
 
-    /// «Desde un recibo» (card «Grupos: repartir un recibo con IA», 2.3): la hoja que lee el recibo y devuelve el reparto.
-    @State private var showReceiptSplit = false
-
     /// Decisión 39 de 2.3 (F1): lo que había al abrir, precargado incluido. La X y el gesto de bajar comparan con esto.
     @State private var formBaseline: GroupExpenseViewModel.FormSnapshot?
     @State private var showDiscardAlert = false
@@ -175,6 +175,7 @@ struct GroupExpenseFormView: View {
         presentsSuccessScreen: Bool = true,
         conversionSource: TransactionItem? = nil,
         carriedOver: GroupExpenseCarryOver? = nil,
+        receiptSplit: GroupExpensePrefillTemplate? = nil,
         onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
@@ -190,6 +191,7 @@ struct GroupExpenseFormView: View {
         self.presentsSuccessScreen = presentsSuccessScreen
         self.conversionSource = conversionSource
         self.carriedOver = carriedOver
+        self.receiptSplit = receiptSplit
         self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
@@ -425,6 +427,10 @@ struct GroupExpenseFormView: View {
                     if let carriedOver, carriedOver.hasContent {
                         viewModel.applyCarryOver(carriedOver)
                     }
+                    // Después de la foto de partida: el reparto cuenta como escrito y la X pregunta antes de perderlo.
+                    if let receiptSplit {
+                        applyReceiptSplit(receiptSplit)
+                    }
                 }
                 // Nunca autoenfocamos el monto: el form abre sin teclado (decisión de UX).
                 // M6: defensa profundidad — si VM no resolvió current user (members no cargados),
@@ -437,15 +443,6 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
-            }
-            .sheet(isPresented: $showReceiptSplit) {
-                GroupReceiptSplitView(
-                    members: viewModel.activeSheetMembers,
-                    currentMemberID: viewModel.currentUserMemberID,
-                    currencyCode: viewModel.currencyCode,
-                    onUse: applyReceiptSplit
-                )
-                .yalaSheetDetents([.large])
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
@@ -538,10 +535,7 @@ struct GroupExpenseFormView: View {
     /// Fecha, descripción y monto en el orden, el tamaño y el aire de Nuevo registro; debajo, quién paga y cómo se reparte.
     private var centralContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            HStack(spacing: DS.Spacing.sm) {
-                dateChip
-                if offersReceiptSplit { receiptSplitChip }
-            }
+            dateChip
             descriptionField
             amountDisplay
             whoPaysCard
@@ -565,21 +559,7 @@ struct GroupExpenseFormView: View {
         .accessibilityLabel(dateChipText)
     }
 
-    /// «Desde un recibo» solo en un gasto NUEVO y vacío de plantilla: editar o convertir un borrador ya traen su reparto.
-    private var offersReceiptSplit: Bool {
-        !viewModel.isEditMode && initialTemplate == nil
-    }
-
-    private var receiptSplitChip: some View {
-        RecordPillButton(icon: "doc.text.viewfinder", text: L10n.ReceiptSplit.entryButton) {
-            dismissKeyboard()
-            showReceiptSplit = true
-        }
-        .accessibilityIdentifier("group_expense_from_receipt")
-        .accessibilityHint(L10n.ReceiptSplit.entryHint)
-    }
-
-    /// Lo que devuelve «Desde un recibo»: el formulario se rellena con el total, la descripción y el reparto exacto, y
+    /// Lo que devuelve la hoja del recibo (Voz o Foto de Grupos): el formulario se rellena con el total, la descripción y el reparto exacto, y
     /// la persona sigue aquí (cuenta, categoría, quién pagó) y guarda como siempre.
     ///
     /// La fecha y una descripción ya escritas se quedan: el recibo no trae fecha, y sin nombre de local no borra la que

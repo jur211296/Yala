@@ -119,20 +119,6 @@ struct ReverseICloudPriorDataLogicTests {
                 == [L10n.Welcome.PrivateICloud.foundUnknownAmount])
     }
 
-    /// Los registros de grupos se nombran aparte: llegan sin su grupo.
-    @Test func message_namesTheGroupRecordsOnlyWhenThereAreAny() {
-        let withGroups = ReverseICloudPriorDataLogic.message(corpus(transactions: 3, groups: 9))
-        #expect(withGroups.hasSuffix(L10n.Storage.Revert.Prior.groupsNote))
-        let withoutGroups = ReverseICloudPriorDataLogic.message(corpus(transactions: 3))
-        #expect(!withoutGroups.contains(L10n.Storage.Revert.Prior.groupsNote))
-        #expect(withoutGroups == L10n.Storage.Revert.Prior.body(L10n.Welcome.Restore.foundTransactions(3)))
-    }
-
-    /// Sin cifras que decir, el texto no promete números.
-    @Test func message_withoutFigures_usesTheBodyWithoutCount() {
-        #expect(ReverseICloudPriorDataLogic.message(corpus(other: 2)) == L10n.Storage.Revert.Prior.bodyNoCount)
-    }
-
     @Test func canaryDetail() {
         #expect(ICloudForeignCorpusCheck.measured(corpus(other: 1)).canaryDetail == "found")
         #expect(ICloudForeignCorpusCheck.measured(.empty).canaryDetail == "none")
@@ -419,33 +405,28 @@ struct ReverseICloudPriorDataWiringTests {
     private static let viewPath = "Yala/App/Views/Settings/StorageSettingsView.swift"
     private static let controllerPath = "Yala/Services/CloudSync/CloudMigrationController.swift"
 
-    /// El botón «Volver a iCloud» pasa por la pregunta. Las confirmaciones de siempre solo se abren cuando iCloud contestó
-    /// que no hay nada ajeno: con un `confirmRevert = true` en otro sitio, la vuelta podría empezar sin preguntar. Desde
-    /// UX 2.2 · L20-17 la confirmación es una sola, y la abren dos sitios: esta pregunta (nada ajeno) y «Sumarlos a mis
-    /// datos» (`chooseMergingPriorData`, fijado abajo).
-    @Test func theRevertButton_asksICloudBeforeTheConfirmations() throws {
+    /// El botón «Volver a tu iCloud» pasa por la pregunta, y solo su respuesta abre la hoja (revisión 2.3, decisión 53):
+    /// con un `returnRequest =` en otro sitio, la hoja podría abrirse sin preguntar y sin la fase de elegir.
+    @Test func theRevertButton_asksICloudBeforeTheSheet() throws {
         let view = try Self.source(Self.viewPath)
         let card = try Self.body(of: "private func revertCard(_ controller: CloudMigrationController) -> some View {",
                                  in: view)
         #expect(card.contains("Task { await beginRevert() }"))
-        #expect(Self.codeOnly(view).components(separatedBy: "confirmRevert = true").count - 1 == 2,
-                "la confirmación de volver se abre solo desde la pregunta y desde «Sumarlos a mis datos»")
+        #expect(Self.codeOnly(view).components(separatedBy: "returnRequest = ReturnToICloudRequest(").count - 1 == 2,
+                "la hoja de volver se abre solo desde la pregunta")
         let begin = try Self.body(of: "private func beginRevert() async {", in: view)
         #expect(begin == [
             "guard let controller else { return }",
-            "revertMergesPriorData = false",
-            "confirmRevert = false",
-            "showRevertPriorData = false",
+            "returnChoice = nil",
             "showRevertCheckFailed = false",
             "let gate = await controller.checkICloudBeforeReverse()",
             "switch gate {",
             "case nil:",
             "return",
             "case .proceed:",
-            "confirmRevert = true",
+            "returnRequest = ReturnToICloudRequest(priorData: nil)",
             "case .ask(let corpus):",
-            "revertPriorData = corpus",
-            "showRevertPriorData = true",
+            "returnRequest = ReturnToICloudRequest(priorData: corpus)",
             "case .cannotCheck, .needsICloud:",
             "revertCheckFailedNotice = gate.flatMap(ReverseICloudPriorDataLogic.checkFailedNotice) ?? .cannotCheck",
             "showRevertCheckFailed = true",
@@ -453,18 +434,36 @@ struct ReverseICloudPriorDataWiringTests {
         ])
     }
 
-    /// Cada salida del aviso va a su acción: un swap entre «Sumarlos» y «Empezar sin ellos» compila y borra lo que la
-    /// persona quería sumar.
-    @Test func theDialogs_routeEachChoiceToItsAction() throws {
-        let view = Self.codeOnly(try Self.source(Self.viewPath))
-        #expect(view.contains("onMerge: chooseMergingPriorData,"))
-        #expect(view.contains("onDiscard: { Task { await controller?.startReverseDiscardingICloudPriorData() } },"))
+    /// Cada elección de la hoja va a su vuelta, y solo con la hoja ya abajo: un swap entre «Sumarlos» y «Empezar sin
+    /// ellos» compila y borra lo que la persona quería sumar.
+    @Test func theSheet_routesEachChoiceToItsReverse() throws {
+        let raw = try Self.source(Self.viewPath)
+        let view = Self.codeOnly(raw)
+        #expect(!view.contains(".confirmationDialog(L10n.Storage.Revert.Prior.title"), "volvió el globo de elegir")
+        #expect(!view.contains("StorageConfirmations"), "volvió el globo de confirmar")
+        #expect(view.contains(".sheet(item: $request, onDismiss: onDismissed) { request in"))
+        #expect(view.contains("ReturnToICloudSheet(request: request, onConfirm: onConfirm)"))
+        #expect(view.contains("onConfirm: chooseReturn,"))
+        #expect(view.contains("onDismissed: onReturnSheetDismissed,"))
         #expect(view.contains("onRetryCheck: retryRevertCheck))"))
-        #expect(view.contains("Button(L10n.Storage.Revert.Prior.merge) { onMerge() }"))
-        #expect(view.contains("Button(L10n.Storage.Revert.Prior.discard, role: .destructive) { confirmDiscard = true }"))
-        #expect(view.contains("Button(L10n.Storage.Revert.Prior.discardConfirm, role: .destructive) { onDiscard() }"))
-        let merge = try Self.body(of: "private func chooseMergingPriorData() {", in: try Self.source(Self.viewPath))
-        #expect(merge == ["revertMergesPriorData = true", "confirmRevert = true"])
+        let choose = try Self.body(of: "private func chooseReturn(_ choice: ReturnToICloudChoice) {", in: raw)
+        #expect(choose == ["returnChoice = choice", "returnRequest = nil"],
+                "confirmar quema el one-shot y baja la hoja; no empieza nada")
+        let dismissed = try Self.body(of: "private func onReturnSheetDismissed() {", in: raw)
+        #expect(Array(dismissed.prefix(2)) == ["guard let choice = returnChoice else { return }", "returnChoice = nil"])
+        // La vuelta solo empieza si la tarjeta que la ofrecía sigue ofreciéndola (review adversarial de la decisión 53).
+        #expect(dismissed.contains("controller.reverseEligibility() == .eligible else { return }"))
+        #expect(dismissed.contains("case .plain: await controller.startReverse()"))
+        #expect(dismissed.contains("case .mergePrior: await controller.startReverseMergingICloudPriorData()"))
+        #expect(dismissed.contains("case .discardPrior: await controller.startReverseDiscardingICloudPriorData()"))
+        // En la hoja, cada tarjeta lleva a la confirmación de SU elección.
+        let sheet = Self.codeOnly(try Self.source("Yala/App/Views/Settings/ReturnToICloudSheet.swift"))
+        let merge = try #require(sheet.range(of: "identifier: \"storage_revert_prior_merge\") {"))
+        let mergeNext = String(sheet[merge.upperBound...].prefix(80))
+        #expect(mergeNext.contains("go(to: .confirm(.mergePrior))"))
+        let discard = try #require(sheet.range(of: "identifier: \"storage_revert_prior_discard\") {"))
+        let discardNext = String(sheet[discard.upperBound...].prefix(80))
+        #expect(discardNext.contains("go(to: .confirm(.discardPrior))"))
     }
 
     /// Solo pregunta un teléfono nacido en la nube, y la sonda que produce el veredicto es la de lo ajeno.

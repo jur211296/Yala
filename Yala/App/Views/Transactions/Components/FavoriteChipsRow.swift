@@ -4,7 +4,8 @@
 //
 //  La fila de favoritos del formulario de registro (UX 2.2 · L2-13, decidido por Jürgen el 14-oct y cerrado el 21-oct):
 //  bajo el selector de tipo, un chip por favorito con el icono de su categoría, el nombre y el monto. Un toque rellena
-//  el formulario; la persona toca «Guardar». Al final, «Ver todos» abre la lista.
+//  el formulario; la persona toca «Guardar». Al final, «Ver todos» abre la lista. Solo salen los del tipo elegido
+//  (decisión 69 de la revisión 2.3).
 //
 
 import SwiftData
@@ -17,15 +18,17 @@ struct FavoriteChipsRow: View {
     /// El orden es el de Ajustes › Favoritos (`displayOrder`, reordenable), no por uso: así no saltan de sitio.
     @Query(sort: \FavoritePayment.displayOrder) private var favorites: [FavoritePayment]
 
+    /// El tipo elegido en el formulario: en «Ingreso» solo salen los ingresos.
+    let transactionType: TransactionType
     let onSelect: (FavoritePayment) -> Void
     let onSeeAll: () -> Void
 
     private var shown: [FavoritePayment] {
-        FavoritesVisibility.shown(favorites, isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
+        FavoritesVisibility.shown(favorites, isExpensesOnlyMode: sessionState.isExpensesOnlyMode, type: transactionType)
     }
 
     var body: some View {
-        // Sin favoritos, la fila no sale.
+        // Sin favoritos de este tipo, la fila no sale.
         if !shown.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Spacing.sm) {

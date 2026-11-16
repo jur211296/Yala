@@ -22,6 +22,9 @@ struct ScheduledPaymentsListView: View {
     let onRefresh: () -> Void
     /// `true` cuando el scroll se lleva «Nuevo pago planificado» de arriba: entonces sale el «+» flotante (card kzhe).
     @Binding var showsFloatingNew: Bool
+    /// «Desde un registro» (encargo del 15-nov): el selector de registros recientes para crear el recurrente a partir de
+    /// uno. `nil`: no se ofrece.
+    var onCreateFromRecord: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
@@ -32,19 +35,49 @@ struct ScheduledPaymentsListView: View {
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
 
+    private var newPaymentPill: some View {
+        TopPrimaryActionPill(
+            title: L10n.Accessibility.newPayment,
+            systemImage: "plus",
+            accessibilityIdentifier: "scheduled_payments_create_button"
+        ) {
+            viewModel.createNewPayment()
+        }
+    }
+
+    @ViewBuilder
+    private var createActions: some View {
+        if let onCreateFromRecord {
+            let fromRecord = TopPrimaryActionPill(
+                title: L10n.RecurringFromRecord.fromRecord,
+                systemImage: "doc.text.magnifyingglass",
+                isPrimary: false,
+                accessibilityIdentifier: "scheduled_payments_create_from_record_button",
+                action: onCreateFromRecord
+            )
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.sm) {
+                    newPaymentPill
+                    fromRecord
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    newPaymentPill
+                    fromRecord
+                }
+            }
+        } else {
+            newPaymentPill
+        }
+    }
+
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
             heroSection
                 .padding(.bottom, DS.Spacing.xs)
 
-            // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe).
-            TopPrimaryActionPill(
-                title: L10n.Accessibility.newPayment,
-                systemImage: "plus",
-                accessibilityIdentifier: "scheduled_payments_create_button"
-            ) {
-                viewModel.createNewPayment()
-            }
+            // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe). A su lado,
+            // «Desde un registro» (encargo del 15-nov); si no caben los dos en una fila, va debajo.
+            createActions
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xs)

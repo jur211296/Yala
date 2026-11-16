@@ -392,11 +392,18 @@ final class TransactionFormDecided02UITests: XCTestCase {
     func test_transferFavorite_setsBothAccounts() {
         let app = launch(seed: "formulario")
         openForm(app)
+        // Desde la decisión 69 de 2.3 la fila de favoritos solo enseña los del tipo elegido: en «Gasto», que es como abre
+        // el formulario, «Ahorro del mes» no sale (lo fija `FavoritesAlRegistrar23UITests`). Se entra por «Transferencia».
+        let transfer = app.buttons["new_transaction_type_transfer"]
+        XCTAssertTrue(transfer.waitForExistence(timeout: 5))
+        transfer.tap()
+        XCTAssertTrue(element(app, "new_transaction_missing_line").waitForExistence(timeout: 5),
+                      "Control: en «Transferencia» sin favorito faltan origen, destino o monto.")
         let saving = app.buttons["new_transaction_favorite_chip_Ahorro del mes"]
-        XCTAssertTrue(saving.waitForExistence(timeout: 5))
+        XCTAssertTrue(saving.waitForExistence(timeout: 5), "En «Transferencia» debía salir el favorito «Ahorro del mes».")
         saving.tap()
 
-        XCTAssertTrue(app.buttons["new_transaction_type_transfer"].isSelected, "Debía pasar a Transferencia.")
+        XCTAssertTrue(transfer.isSelected, "Debía quedarse en Transferencia.")
         XCTAssertTrue(element(app, "new_transaction_missing_line").waitForNonExistence(timeout: 5),
                       "Con origen, destino y monto no debía faltar nada.")
         XCTAssertTrue(app.buttons["new_transaction_save"].isEnabled)

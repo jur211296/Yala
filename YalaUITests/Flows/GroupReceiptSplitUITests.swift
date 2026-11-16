@@ -2,7 +2,9 @@
 //  GroupReceiptSplitUITests.swift
 //  YalaUITests
 //
-//  «Desde un recibo» en Nuevo gasto de un grupo (card «Grupos: repartir un recibo con IA», 2.3).
+//  Repartir un recibo con IA en un grupo (card «Grupos: repartir un recibo con IA», 2.3). Desde el 2026-11-14 se entra
+//  por Voz y Foto del inicio de Grupos y de debajo del saldo del grupo, no por Nuevo gasto (ticket
+//  `group-receipt-split-home-buttons`). Cupo propio: 5 recibos al día en Free y 50 en Pro, sin candado.
 //  `-uitest-receipt-split cusco` hace que Fotos «elija» el recibo de ejemplo y que la lectura conteste sin red una cena
 //  de cinco platos en «Viaje a Cusco» (Tú, Ana y Beto) con un servicio que llega sin incluir.
 //
@@ -19,14 +21,34 @@ final class GroupReceiptSplitUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func openNewGroupExpense(profile: String = "cusco") -> XCUIApplication {
+    private func launchGroups(profile: String = "cusco", pro: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups", aiConsent: true,
+        app.launchForUITest(pro: pro, seed: "grupos", deeplink: "groups", aiConsent: true,
                             extraArguments: ["-uitest-receipt-split", profile])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
+    private func openGroupDetail(profile: String = "cusco", pro: Bool = true) -> XCUIApplication {
+        let app = launchGroups(profile: profile, pro: pro)
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
         card.tap()
+        return app
+    }
+
+    /// Foto bajo el saldo del grupo: abre la hoja del recibo lista para la foto.
+    private func openReceiptFromGroup(profile: String = "cusco", pro: Bool = true) -> XCUIApplication {
+        let app = openGroupDetail(profile: profile, pro: pro)
+        let photo = app.buttons["group_detail_receipt_photo"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "No está Foto bajo el saldo del grupo.")
+        photo.tap()
+        XCTAssertTrue(app.buttons["receipt_split_library"].waitForExistence(timeout: 5), "No se abrió la hoja del recibo.")
+        return app
+    }
+
+    private func openNewGroupExpense(profile: String = "cusco") -> XCUIApplication {
+        let app = openGroupDetail(profile: profile)
         let fab = app.buttons["group_detail_fab_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el + de nuevo gasto.")
         fab.tap()
@@ -60,16 +82,43 @@ final class GroupReceiptSplitUITests: XCTestCase {
         attach(app, "formulario")
     }
 
-    func test_receiptOfFiveLines_isSplitAtFirstTry_andFillsTheForm() {
+    /// Nuevo gasto ya no lleva la entrada al recibo: un solo camino, Voz y Foto fuera, como en personal.
+    func test_newGroupExpense_hasNoReceiptEntry() {
         let app = openNewGroupExpense()
+        XCTAssertTrue(app.buttons["group_expense_date_chip"].exists, "Control: el formulario está montado.")
+        XCTAssertFalse(app.buttons["group_expense_from_receipt"].exists, "«Desde un recibo» sigue en Nuevo gasto.")
+    }
 
-        let entry = app.buttons["group_expense_from_receipt"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 5), "No está «Desde un recibo» en Nuevo gasto.")
-        attach(app, "formulario")
-        entry.tap()
+    /// Voz y Foto en el inicio de Grupos, junto a «Nuevo gasto»; Foto abre la hoja (con varios grupos, tras elegirlo).
+    func test_groupsHome_photo_opensTheReceipt() {
+        let app = launchGroups()
+        XCTAssertTrue(app.buttons["groups_action_new_expense"].waitForExistence(timeout: 10), "No está «Nuevo gasto».")
+        XCTAssertTrue(app.buttons["groups_receipt_voice"].exists, "No está Voz en el inicio de Grupos.")
+        XCTAssertTrue(app.buttons["groups_receipt_ai"].exists, "No está Yala IA en el inicio de Grupos.")
+        XCTAssertTrue(app.buttons["groups_toolbar_new_group"].exists, "«Nuevo grupo» no está en la barra.")
+        XCTAssertFalse(app.buttons["groups_action_new_group"].exists, "«Nuevo grupo» sigue en la fila con grupos.")
+        let photo = app.buttons["groups_receipt_photo"]
+        XCTAssertTrue(photo.exists, "No está Foto en el inicio de Grupos.")
+        attach(app, "inicio-grupos")
+        photo.tap()
+        let library = app.buttons["receipt_split_library"]
+        let pickerRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "group_picker_row_")).firstMatch
+        if !library.waitForExistence(timeout: 3), pickerRow.waitForExistence(timeout: 3) {
+            attach(app, "elegir-grupo")
+            pickerRow.tap()
+        }
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Foto del inicio no abrió la hoja del recibo.")
+    }
+
+    func test_receiptOfFiveLines_isSplitAtFirstTry_andFillsTheForm() {
+        let app = openGroupDetail()
+        let photo = app.buttons["group_detail_receipt_photo"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "No está Foto bajo el saldo del grupo.")
+        attach(app, "detalle-grupo")
+        photo.tap()
 
         let library = app.buttons["receipt_split_library"]
-        XCTAssertTrue(library.waitForExistence(timeout: 5), "No se abrió «Desde un recibo».")
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "No se abrió la hoja del recibo.")
         library.tap()
         XCTAssertTrue(app.images["receipt_split_photo_preview"].waitForExistence(timeout: 5), "No quedó la foto.")
 
@@ -106,7 +155,7 @@ final class GroupReceiptSplitUITests: XCTestCase {
         app.buttons["receipt_split_use"].tap()
 
         let amount = app.textFields["group_expense_amount"]
-        XCTAssertTrue(amount.waitForExistence(timeout: 5), "No volvió al formulario.")
+        XCTAssertTrue(amount.waitForExistence(timeout: 8), "No se abrió Nuevo gasto relleno.")
         XCTAssertTrue((amount.value as? String ?? "").contains("180.30"), "El formulario no quedó con el total: \(amount.value ?? "")")
         let description = app.textFields["group_expense_description"]
         XCTAssertEqual(description.value as? String, "Cusco Grill")
@@ -129,14 +178,56 @@ final class GroupReceiptSplitUITests: XCTestCase {
         attach(app, "guardado")
     }
 
-    func test_trialUsedUp_offersPro() {
-        let app = openNewGroupExpense(profile: "trial")
-        app.buttons["group_expense_from_receipt"].tap()
-        let library = app.buttons["receipt_split_library"]
-        XCTAssertTrue(library.waitForExistence(timeout: 5))
-        library.tap()
+    /// Yala IA bajo el saldo: escribir el gasto lo reparte con la misma revisión y abre Nuevo gasto relleno.
+    func test_groupDetail_yalaIA_typedExpense_isSplit() {
+        let app = openGroupDetail()
+        XCTAssertTrue(app.buttons["group_detail_action_new_expense"].waitForExistence(timeout: 10),
+                      "No está «Nuevo gasto» bajo el saldo.")
+        let ai = app.buttons["group_detail_receipt_ai"]
+        XCTAssertTrue(ai.exists, "No está Yala IA bajo el saldo.")
+        ai.tap()
+        let text = app.textFields["receipt_split_text"]
+        XCTAssertTrue(text.waitForExistence(timeout: 5), "Yala IA no abrió la hoja para escribir.")
+        text.typeText("lomo 38 Ana, ají 32 Beto, pizza 48 Ana y yo, chicha 18 entre todos")
+        attach(app, "ia-escribir")
+        // Tras teclear, el teclado sigue entrando y la hoja se mueve: el toque espera a que el botón se quede quieto.
+        let split = app.buttons["receipt_split_split"]
+        XCTAssertTrue(app.waitForSettledLayout(of: split), "«Repartir» no se quedó quieto.")
+        split.tap()
+        let use = app.buttons["receipt_split_use"]
+        XCTAssertTrue(use.waitForExistence(timeout: 10), "No llegó la revisión.")
+        use.tap()
+        XCTAssertTrue(app.textFields["group_expense_amount"].waitForExistence(timeout: 8), "No se abrió Nuevo gasto relleno.")
+        XCTAssertEqual(app.textFields["group_expense_description"].value as? String, "Cusco Grill")
+    }
+
+    private func readTheExampleReceipt(_ app: XCUIApplication) {
+        app.buttons["receipt_split_library"].tap()
         XCTAssertTrue(app.buttons["receipt_split_split"].waitForExistence(timeout: 5))
         app.buttons["receipt_split_split"].tap()
+    }
+
+    /// Gateway anterior al cupo de recibos: contesta prueba agotada y se sigue ofreciendo Pro.
+    func test_trialUsedUp_offersPro() {
+        let app = openReceiptFromGroup(profile: "trial")
+        readTheExampleReceipt(app)
         XCTAssertTrue(app.buttons["receipt_split_see_pro"].waitForExistence(timeout: 10), "La prueba agotada no ofrece Yala Pro.")
+    }
+
+    /// Free, sin candado: entra y lee; con los recibos del día gastados, se le ofrece Yala Pro.
+    func test_free_withoutLock_dailyLimit_offersPro() {
+        let app = openReceiptFromGroup(profile: "daily", pro: false)
+        readTheExampleReceipt(app)
+        XCTAssertTrue(app.buttons["receipt_split_see_pro"].waitForExistence(timeout: 10), "El cupo del día de Free no ofrece Yala Pro.")
+        attach(app, "free-cupo-del-dia")
+    }
+
+    /// Pro con el cupo del día gastado: vuelve mañana, sin ofrecerle Pro.
+    func test_pro_dailyLimit_saysTomorrow() {
+        let app = openReceiptFromGroup(profile: "daily", pro: true)
+        readTheExampleReceipt(app)
+        XCTAssertTrue(app.buttons["receipt_split_retry"].waitForExistence(timeout: 10), "El cupo del día de Pro no salió.")
+        XCTAssertFalse(app.buttons["receipt_split_see_pro"].exists, "A Pro no se le ofrece Pro.")
+        attach(app, "pro-cupo-del-dia")
     }
 }

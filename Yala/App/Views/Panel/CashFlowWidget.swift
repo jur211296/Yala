@@ -159,6 +159,51 @@ struct CashFlowWidget: View {
         return totalExpense == 0 && totalIncome > 0
     }
 
+    // MARK: - VoiceOver (decisión 26 de la revisión 2.3)
+
+    private var cashFlowAmountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: summary.currencyCode, hidden: amountsHidden)
+    }
+
+    /// V1: lo que entró, lo que salió y lo que queda (o quedó, si el período ya cerró). Con un solo lado a la vista no
+    /// se resta: sería el mismo número con otro nombre.
+    private var cashFlowSpokenSummary: String {
+        guard !activeChartData.isEmpty else { return L10n.Accessibility.noData }
+        // El `isEstimate` va también aquí: son los mismos dos totales que las barras pintan con «≈», y dejar la marca
+        // solo en el glifo la esconde de quien no puede verlo.
+        let income = AmountPrivacy.spoken(appPreferences.currency(
+            summary.totalIncome, currencyCode: summary.currencyCode, isEstimate: summary.incomeAmountsAreApproximate
+        ), hidden: amountsHidden)
+        let expense = AmountPrivacy.spoken(appPreferences.currency(
+            summary.totalExpense, currencyCode: summary.currencyCode, isEstimate: summary.expenseAmountsAreApproximate
+        ), hidden: amountsHidden)
+        let showsBothSides = !hasOnlyExpenses && !hasOnlyIncome && !isExpensesOnlyMode
+        return ChartSpokenSummary.cashFlow(
+            income: income, expense: expense,
+            net: showsBothSides ? summary.totalIncome - summary.totalExpense : nil,
+            isClosed: interval.end < Calendar.current.startOfDay(for: .now),
+            format: cashFlowAmountFormat
+        )
+    }
+
+    /// V2: entradas y salidas por fecha, para el rotor «Describir gráfica».
+    private var cashFlowChartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.cashFlowChart,
+            summary: cashFlowSpokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: L10n.Accessibility.Chart.axisAmount,
+            series: [
+                .init(name: L10n.CashFlow.income, isContinuous: false,
+                      points: nonEmptyChartData.map { .at($0.date, $0.income) }),
+                .init(name: L10n.CashFlow.expense, isContinuous: false,
+                      points: nonEmptyChartData.map { .at($0.date, $0.expense) }),
+            ],
+            format: cashFlowAmountFormat
+        )
+    }
+
     /// Waterfall mode: daily grouping + bidirectional data (not expenses-only or income-only)
     private var isWaterfallMode: Bool {
         grouping == .day && !hasOnlyExpenses && !hasOnlyIncome
@@ -708,19 +753,9 @@ struct CashFlowWidget: View {
                 }  // Close Chart
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
-                // El `isEstimate` va también aquí: son los mismos dos totales que las barras pintan
-                // con «≈», y dejar la marca solo en el glifo la esconde de quien no puede verlo.
-                .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
-                    L10n.Accessibility.cashFlowSummary(
-                        income: AmountPrivacy.spoken(appPreferences.currency(
-                            summary.totalIncome, currencyCode: summary.currencyCode,
-                            isEstimate: summary.incomeAmountsAreApproximate
-                        ), hidden: amountsHidden),
-                        expense: AmountPrivacy.spoken(appPreferences.currency(
-                            summary.totalExpense, currencyCode: summary.currencyCode,
-                            isEstimate: summary.expenseAmountsAreApproximate
-                        ), hidden: amountsHidden)
-                    ))
+                .accessibilityValue(cashFlowSpokenSummary)
+                .accessibilityChartDescriptor(cashFlowChartDescriptor)
+                .accessibilityIdentifier("cash_flow_chart")
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {

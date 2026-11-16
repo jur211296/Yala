@@ -79,7 +79,7 @@ struct SystemFlagsModelTests {
     @MainActor @Test
     func subcategory_legacyIsSystemSubcategory_makesIsAnySystemTrue_evenWhenIsSystemFalse() {
         let cat = YalaCategory(name: "Sistema", colorHex: "#000000", isIncome: false)
-        // Nombre legacy (matches transferNames) → computed isSystemSubcategory == true
+        // Creada por Yala (init con `isDefaultSeed: true`) y sin papel guardado: el papel se deduce del nombre.
         let sub = Subcategory(
             name: "Transferencia entre cuentas",
             category: cat
@@ -87,6 +87,23 @@ struct SystemFlagsModelTests {
         #expect(sub.isSystem == false)
         #expect(sub.isSystemSubcategory == true)
         #expect(sub.isAnySystem == true)
+    }
+
+    /// Ticket `transfer-and-adjustment-subcategories-need-a-stable-role`: decide el papel, no el nombre.
+    @MainActor @Test
+    func subcategory_userCreatedWithTheTransferName_isNotSystem() {
+        let cat = YalaCategory(name: "Otros", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Transferencia entre cuentas", isDefaultSeed: false, category: cat)
+        #expect(sub.systemRole == nil)
+        #expect(sub.isAnySystem == false)
+    }
+
+    @MainActor @Test
+    func subcategory_withAStoredRole_isSystemWhateverItsName() {
+        let cat = YalaCategory(name: "Otros", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Mis movimientos", isDefaultSeed: false, systemRole: .transfer, category: cat)
+        #expect(sub.isAnySystem == true)
+        #expect(sub.systemRoleRaw == "transfer")
     }
 
     @MainActor @Test

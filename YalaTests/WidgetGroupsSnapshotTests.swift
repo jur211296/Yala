@@ -142,10 +142,11 @@ struct WidgetGroupsSnapshotParityTests {
 
             // Control del escenario: el resumen cuenta el oculto (me deben 40 PEN) y no el archivado (debo 20 PEN), y
             // trae las dos divisas. Sin esto, la paridad pasaría también con un fixture que no separa nada.
-            // El resumen simplifica las deudas de todos los grupos juntos (`globalSummary`): en «Cena», Juan le paga a
-            // Maria y a mí, y yo no debo nada. Debo 50 (Depa) + 10 (Viaje); me deben 40 (Oculto) + 10 (Cena) y 60 USD.
-            #expect(amounts(widget.iOwe) == ["PEN": 60])
-            #expect(amounts(widget.owedToMe) == ["PEN": 50, "USD": 60])
+            // El resumen suma cada grupo con SUS opciones, como su tarjeta (lote chico de 2.3; antes juntaba todos los
+            // grupos y simplificaba siempre). «Cena» no tiene «Menos pagos»: le debo 20 a Maria y Juan me debe 30.
+            // Debo 50 (Depa) + 10 (Viaje) + 20 (Cena); me deben 40 (Oculto) + 30 (Cena) y 60 USD.
+            #expect(amounts(widget.iOwe) == ["PEN": 80])
+            #expect(amounts(widget.owedToMe) == ["PEN": 70, "USD": 60])
 
             let archived = try #require(vm.archivedSummary)
             #expect((widget.archivedIOwe ?? []).map(\.amount) == GroupSummaryHeader.amounts(archived.totalIOwe).map(\.amount))
@@ -204,7 +205,8 @@ struct WidgetGroupsSnapshotParityTests {
         GroupExpenseService.shared._testResetContext()
         let widget = try #require(WidgetGroupsSnapshotBuilder.build(context: context))
         #expect(widget.activeGroupCount == 5)
-        #expect(amounts(widget.iOwe) == ["PEN": 60])
+        // Cada grupo con sus opciones (lote chico de 2.3): ver `elResumenEsElDeArribaDeLaLista`.
+        #expect(amounts(widget.iOwe) == ["PEN": 80])
     }
 
     @Test func sinGruposDaElResumenVacioYNoNil() throws {

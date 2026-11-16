@@ -140,6 +140,8 @@ struct ChatTwoUsesGreeting: View {
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
+        // La guía de foco de la prueba de Yala IA de Primeros pasos (Y23-09) señala esta ficha.
+        .coachMarkAnchor(ChatCourtesyTrial.logExpenseAnchor)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(L10n.UXL14.logHint)

@@ -17,8 +17,9 @@ import SwiftData
 
 enum PanelBalanceScopeLogic {
 
-    /// Las cuentas que suma un saldo del Panel. `eligible` ya trae aplicado «Excluir de las estadísticas» y el filtro
-    /// de cuentas (`PanelViewModel.computeEligibleAccounts`); aquí se añade el interruptor de Grupos, con la misma
+    /// Las cuentas que suma un saldo del Panel. `eligible` ya trae aplicado el filtro de cuentas y deja fuera las que
+    /// ocultan su historial (`PanelViewModel.computeEligibleAccounts`); aquí salen además las archivadas, que se ven
+    /// pero no suman (`Account.sumsInBalance`, decisión 6 de 2.3), y se añade el interruptor de Grupos, con la misma
     /// regla que el número de arriba (`PanelTotalAccountsLogic.accountsForTotal`): solo sobre el total agregado.
     static func accounts(
         eligible: [Account],
@@ -26,7 +27,7 @@ enum PanelBalanceScopeLogic {
         selectedAccountIDs: Set<PersistentIdentifier>
     ) -> [Account] {
         PanelTotalAccountsLogic.accountsForTotal(
-            eligible,
+            eligible.filter(\.sumsInBalance),
             includeGroups: includeGroups,
             hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: selectedAccountIDs)
         )

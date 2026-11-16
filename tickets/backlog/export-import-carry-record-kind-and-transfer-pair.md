@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "import, export, transfers"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-12
 source: "auditoría del import 2.2 (sesión S27j), H8 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -30,3 +30,7 @@ Columnas nuevas `kind` (`expense`, `income`, `transfer`, `adjustment`, `initial_
 
 - [ ] Ida y vuelta con una transferencia PEN → USD: vuelve emparejada.
 - [ ] Ida y vuelta con saldo inicial: la cuenta queda con el mismo saldo inicial, sin un movimiento de más.
+
+## Fuera del lote del 12-nov (2026-11-12)
+
+El lote «importar y exportar sin perder datos» la miró y la dejó para otro: no comparte el cambio de formato de la hora, la tasa y la necesidad. Pide reglas propias (el saldo inicial fija la cuenta en vez de crear un movimiento; emparejar patas entre monedas por `transfer_id`). El formato ya admite columnas opcionales al final sin romper archivos viejos, así que `kind` y `transfer_id` pueden ir detrás de `need`.

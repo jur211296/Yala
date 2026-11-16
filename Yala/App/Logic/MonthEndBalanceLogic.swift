@@ -50,8 +50,9 @@ enum MonthEndBalanceLogic {
     ) -> Result? {
         guard let month = calendar.dateInterval(of: .month, for: now) else { return nil }
         // Las cuentas de la cifra grande del Panel sin filtro de cuentas (`PanelViewModel.computeEligibleAccounts` +
-        // `PanelBalanceScopeLogic.accounts`).
-        let eligible = accounts.filter { !$0.excludeFromStatistics }
+        // `PanelBalanceScopeLogic.accounts`). Es un saldo: suman las de `Account.sumsInBalance`, y una cuenta archivada
+        // por la persona sale aunque su historial se vea (decisión 6 de 2.3).
+        let eligible = accounts.filter(\.sumsInBalance)
         let balanceAccounts = PanelBalanceScopeLogic.accounts(
             eligible: eligible, includeGroups: includeGroups, selectedAccountIDs: []
         )

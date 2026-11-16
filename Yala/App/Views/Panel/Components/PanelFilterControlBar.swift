@@ -69,9 +69,12 @@ struct PanelFilterControlBar: View {
 
         if activeFilterCount > 0 {
             PanelSection(title: L10n.Panel.FilterBar.sectionTitle) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    GlassEffectContainer(spacing: DS.Spacing.sm) {
-                    HStack(spacing: DS.Spacing.sm) {
+                // La banda que se parte en líneas, con «Quitar todo» (revisión 2.3, decisión 16, L1): antes un carrusel
+                // escondía a la derecha los filtros que no cabían.
+                FilterBand(
+                    showsRemoveAll: FilterBandLogic.showsRemoveAll(bandFilterCount: activeFilterCount),
+                    onRemoveAll: { clearAllPanelFilters() }
+                ) {
                         // Account Chip — «BCP +1» cuando hay varias. Vía
                         // `buildAccountChips`, el mismo helper que Registros y que
                         // los chips de categoría y tag de más abajo: nombrar solo
@@ -269,28 +272,10 @@ struct PanelFilterControlBar: View {
                             .opensFilters(onOpenFilters)
                             .glassEffectID("chip.note", in: chipNamespace)
                         }
-
-                        // Clear All Button
-                        if activeFilterCount > 1 {
-                            Button {
-                                clearAllPanelFilters()
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .accessibilityLabel(L10n.Accessibility.clearFilters)
-                            .buttonStyle(.plain)
-                            .glassEffectID("chip.clearAll", in: chipNamespace)
-                        }
-                    }
-                    } // GlassEffectContainer
-                    // Al quitar un chip, los demás se recolocan animados (card C2). Implícita: el `withAnimation` del
-                    // toque no anima dentro de una pestaña. Solo la fila: los widgets de debajo se recalculan en seco.
-                    .animation(reduceMotion ? nil : DS.Animation.selection, value: chipLayout)
+                        // «Quitar todo» lo pone la banda.
                 }
-                .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
-                .scrollClipDisabled()
-                .fadesTowardVerticalBar()
+                .padding(.horizontal, DS.Spacing.md)
+                .animation(reduceMotion ? nil : DS.Animation.selection, value: chipLayout)
             } // PanelSection
         }
     }

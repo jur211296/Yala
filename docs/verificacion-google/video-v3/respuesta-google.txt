@@ -1,0 +1,35 @@
+Subject: Re: [Action Needed] OAuth Verification Request Acknowledgement — Yala (project yala-502622)
+
+Hello Third-Party Data Safety Team,
+
+Thank you for the review. We have recorded a new demo video that addresses your feedback:
+
+New demo video (unlisted): <YOUTUBE_LINK>
+
+What the video shows:
+
+1. Requested scopes. The app requests exactly the scopes configured in Google Cloud Console for project yala-502622: openid, https://www.googleapis.com/auth/userinfo.email, https://www.googleapis.com/auth/userinfo.profile and https://www.googleapis.com/auth/gmail.readonly.
+
+2. The full OAuth flow in English: Google's account chooser ("Choose an account to continue to Yala", where the user picks the Google account; the device was already signed in to Google, so no password is typed on camera), the unverified-app screen, and the consent screen with every requested scope expanded and readable. That includes gmail.readonly ("See access details": view, search and settings) and each of the three sign-in scopes under "See the 3 services that Yala has some access to": userinfo.profile, userinfo.email and openid, each opened to show its description.
+
+3. Every use of gmail.readonly, end to end. After consent, Yala calls users.messages.list with a query restricted to the user's bank alert senders (for example from:notificaciones@notificacionesbcp.com.pe, newer_than:180d, maxResults=5). For each matching message it calls users.messages.get (format=full) and parses the message body on the device to extract the amount, currency, merchant and date. Each alert becomes a draft expense in the app's Inbox, which the user reviews before saving. All five drafts in the video come from BCP credit-card alerts. The video opens one of them and expands the original alert text it was read from: "Realizaste un consumo de $ 20.78 con tu Tarjeta de Crédito BCP en Disney Plus" ("You made a $20.78 purchase with your BCP Credit Card at Disney Plus"). The draft is titled with the merchant where the card was used; the email itself was sent by the bank (notificaciones@notificacionesbcp.com.pe), not by the merchant. The video ends with the user revoking Gmail access from inside the app.
+
+4. Why a narrower scope is not sufficient (also shown on screen in the video):
+   - gmail.metadata returns headers and labels only. The amount, merchant and date of a bank transaction are only in the message body, so metadata cannot support the feature.
+   - gmail.labels, gmail.send, gmail.compose and gmail.insert do not allow reading message content.
+   - gmail.addons.current.message.readonly only works inside a Gmail add-on, for the message the user currently has open in Gmail. Yala is a native iOS app that imports bank alerts without the user opening each email in Gmail.
+   - Gmail has no scope limited to a single sender. gmail.readonly is therefore the narrowest scope that can read a message body. Yala limits its own access through the search query, which only matches bank alert senders, and it never reads other messages.
+
+Data handling: Gmail data is read and processed on the user's device only. It is not sent to our servers or to any AI service, it is not sold or shared, and it is not used for advertising or to train AI models. Yala never sends, modifies or deletes email. Our privacy policy (https://yala-app.pe/privacy) includes the Google API Services User Data Policy and Limited Use disclosure.
+
+The video was recorded with our development build ("Yala Dev") on the iOS Simulator, so the unverified scope was never enabled for our production users. The OAuth app publishing status remains "In production".
+
+OAuth clients in the project:
+- "Yala iOS (dev)" and "Yala iOS (prod)" are the same iOS app (development and App Store builds) and show the same consent screen and flow shown in the video.
+- "Yala Web (MCP)" is a web sign-in client for Yala's AI-assistant connector. It requests only the "email profile" scopes and never requests any Gmail scope.
+
+Please let us know if you need anything else.
+
+Best regards,
+Jürgen Schmidt
+Yala

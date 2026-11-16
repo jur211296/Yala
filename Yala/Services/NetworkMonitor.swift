@@ -19,6 +19,13 @@ final class NetworkMonitor {
     private(set) var isConnected = true
 
     private init() {
+        #if DEBUG
+        // `-uitest-network-offline`: sin conexión fija, sin escuchar a la red del simulador.
+        if UITestHooks.networkOffline {
+            isConnected = false
+            return
+        }
+        #endif
         monitor.pathUpdateHandler = { [weak self] path in
             let connected = path.status == .satisfied
             Task { @MainActor [weak self] in
