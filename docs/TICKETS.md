@@ -590,7 +590,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-has-no-cadence-when-the-personal-runtime-is-stopped | backlog | tickets/backlog/groups-has-no-cadence-when-the-personal-runtime-is-stopped.md |
 | groups-header-net-smaller-than-sides-at-the-largest-text-size | done | tickets/done/groups-header-net-smaller-than-sides-at-the-largest-text-size.md |
 | groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
-| groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
+| groups-import-splitwise-tricount | done | tickets/done/2026-11-16-grupos-importar-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
 | groups-intro-sheet-comes-back-after-closing-it | qa | tickets/qa/groups-intro-sheet-comes-back-after-closing-it.md |
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
