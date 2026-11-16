@@ -2,20 +2,21 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (112 entradas)
+## Índice (114 entradas)
 
-> **No hace falta leer este fichero entero** — son 303 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 306 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
-- `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
+- `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
 - `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
+- `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
 - `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
 - `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
-- `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
@@ -36,8 +37,8 @@
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
-- `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
 - `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
+- `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
 - `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
 - `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
@@ -87,8 +88,8 @@
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
-- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
+- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
@@ -139,6 +140,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] Yala web se parece lo más posible a Yala en el iPhone
+**Contexto:** Jürgen miró Yala web en producción (16-nov, 15:59) y escribió que «no se parece NADA a yala movil». Pidió una maqueta primero y después implementar.
+**Decisión:** Yala web copia el diseño, los colores, los componentes y la navegación de la app de iPhone. Se adapta a pantalla grande solo donde haga falta, con la app en iPad como referencia (barra lateral en vez de pestañas). La maqueta comentable con el inventario lado a lado, el sistema visual extraído de Swift, el rediseño y el plan por lotes vive en `docs/web-app/parecida-a-la-app/` y en su artifact; los lotes se encolan tras su visto bueno.
+**Razones:** Es la misma cuenta y los mismos datos; quien pasa del teléfono a la web tiene que reconocer su Yala.
+**Consecuencias:** Cualquier pantalla nueva de la web parte de las piezas de la app (Monto, fila con ícono de categoría, tarjeta de cristal, cápsulas). Las siete decisiones abiertas de la maqueta (tema oscuro, navegación, pestañas, Voz/Foto/IA, íconos, letra de cifras, widgets del Panel) se toman en la maqueta; sin respuesta vale la recomendada.
+**Estado:** Activa
 
 ### [2026-11-16] Yala web debe parecerse a Yala móvil
 **Contexto:** Con Yala web ya en producción (16-nov), Jürgen la vio y dijo que hoy no se parece en nada a la app del iPhone.
