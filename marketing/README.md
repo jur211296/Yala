@@ -3,6 +3,9 @@
 Único árbol vivo de marketing de este repo. **Nada de lo que hay aquí se publica solo**: son
 borradores, plantillas y herramientas. Publicar en App Store Connect o en redes es un paso a mano.
 
+> **Si una publicación de Yala falla en alguna red, se reintenta siempre, sin esperar la confirmación de
+> Jürgen** (decisión de Jürgen, 15-nov-2026). Después del reintento se comprueba en el perfil que salió una sola vez.
+
 ## Por dónde empezar
 
 | Quiero… | Ve a |
