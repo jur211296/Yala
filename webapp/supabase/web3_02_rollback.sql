@@ -51,6 +51,9 @@ drop function if exists public.web_add_group_row(text, text, uuid, jsonb, jsonb,
 drop function if exists public.web_add_group_expense(text, uuid, jsonb, jsonb, jsonb, text, text);
 drop function if exists public.web_add_group_settlement(text, uuid, jsonb, jsonb, text, text);
 drop function if exists public.web_group_active_member(text, text);
+-- Después de web_group_active_member, que la usa. La añadió el arreglo de Grupos del 15-nov y la marcha atrás la
+-- dejaba atrás (lo cazó ciclo_staging.py el 16-nov).
+drop function if exists public.web_member_ref(text, text);
 drop function if exists public.web_group_write_guard(text);
 drop policy if exists web_writer_insert on public.split_expenses;
 drop policy if exists web_writer_insert on public.split_shares;

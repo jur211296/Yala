@@ -20,7 +20,12 @@ Segundo modo, `--produccion-simulada <sql-conector> <sql-web>`: con las carpetas
 `mcp/scripts/sql-produccion.py` y `webapp/supabase/sql_produccion.py`, simula en staging un proyecto SIN conector (como
 producción el 2026-11-15): quita la web y el conector (mcp0_04 → mcp0_01), comprueba que no queda ni rol ni hook, aplica
 la cadena de producción entera (mcp0_01–03 y los cuatro web), sus cuatro marchas atrás y otra vez los cuatro, y compara.
-Todo en la misma transacción, que el RAISE final deshace. Lo que NO simula: `pg_cron` sin instalar (en staging está).
+Todo en la misma transacción, que el RAISE final deshace. Lo que NO simula: `pg_cron` sin instalar (en staging está;
+lo cubre el tercer modo).
+
+Tercer modo, `--ensayo-produccion <sql-conector> <sql-web>` (16-nov): lo mismo contra PRODUCCIÓN, sin quitar nada
+antes. Aplica la cadena, la vuelve atrás (web y conector), la reaplica y la vuelve atrás otra vez, y comprueba que las
+dos marchas atrás dejan la huella de partida. Valida contra la base real (sin `pg_cron`, sin conector) y acaba en RAISE.
 
 Uso:  python3 webapp/supabase/ciclo_staging.py            # contra staging (fostjbbwstyuunmmefuk)
       python3 webapp/supabase/ciclo_staging.py --produccion-simulada <carpeta-mcp> <carpeta-web>
@@ -34,6 +39,7 @@ import urllib.error
 import urllib.request
 
 STAGING = "fostjbbwstyuunmmefuk"
+PRODUCCION = "kefvaiymtgytemwbltlz"
 DIR = pathlib.Path(__file__).resolve().parent
 ADELANTE = ["web0_01_hook_web_client.sql", "web1_01_bandeja_y_sesiones.sql", "web3_01_grupos_lectura.sql",
             "web3_02_grupos_escritura.sql"]
@@ -44,6 +50,21 @@ HOOK_WEB3_02 = "54a4444f713eea227049396021d27ebd"
 # La huella: todo lo que tocan los cuatro SQL, en texto estable. Roles y pertenencias, cuerpo y permisos de cada
 # función implicada, permisos y políticas de las tablas implicadas, y los trabajos de cron de la web.
 HUELLA = r"""
+-- Los trabajos de cron de la web, leídos con EXECUTE: producción no tiene `pg_cron` hasta que web1_01 lo instala, y una
+-- función SQL que nombrara `cron.job` no llegaría a crearse allí.
+create or replace function pg_temp.cron_web(detalle boolean) returns text language plpgsql as $f$
+declare r text;
+begin
+  if to_regclass('cron.job') is null then return null; end if;
+  if detalle then
+    execute $q$select string_agg(jobname || ':' || schedule || ':' || command, ',' order by jobname) from cron.job
+               where jobname like 'yala-web%'$q$ into r;
+  else
+    execute $q$select string_agg(jobname, '+') from cron.job where jobname like 'yala-web%'$q$ into r;
+  end if;
+  return r;
+end
+$f$;
 create or replace function pg_temp.huella() returns text language sql as $f$
   select md5(concat_ws('|',
     (select string_agg(r.rolname || ':' || r.rolcanlogin, ',' order by r.rolname) from pg_roles r
@@ -65,7 +86,7 @@ create or replace function pg_temp.huella() returns text language sql as $f$
                        ',' order by tablename, policyname)
        from pg_policies where schemaname = 'public' and tablename in
        ('split_groups', 'group_members', 'split_expenses', 'split_shares', 'split_settlements', 'inbox_drafts')),
-    (select string_agg(jobname || ':' || schedule || ':' || command, ',' order by jobname) from cron.job where jobname like 'yala-web%')
+    pg_temp.cron_web(true)
   ))
 $f$;
 create or replace function pg_temp.hook() returns text language sql as $f$
@@ -79,7 +100,7 @@ create or replace function pg_temp.restos_web() returns text language sql as $f$
       where n.nspname = 'public' and (p.proname like 'web\_%' or p.proname like 'yala\_web%' or p.proname like 'yala\_is\_web%')),
     (select string_agg(tablename || '.' || policyname, '+') from pg_policies where schemaname = 'public'
       and (policyname like 'web\_%' or (tablename = 'inbox_drafts' and policyname = 'mcp_reader_select_own'))),
-    (select string_agg(jobname, '+') from cron.job where jobname like 'yala-web%'))
+    pg_temp.cron_web(false))
 $f$;
 create temp table _ciclo (n int, paso text, huella text, hook text, restos text);
 """
@@ -127,16 +148,44 @@ def consulta_produccion(mcp: pathlib.Path, web: pathlib.Path) -> str:
     return "".join(partes)
 
 
+CONECTOR_PROD_ATRAS = ["mcp0_03_rollback.sql", "mcp0_02_rollback.sql", "mcp0_01_rollback.sql"]
+
+
+def consulta_ensayo_produccion(mcp: pathlib.Path, web: pathlib.Path) -> str:
+    """Ensayo en PRODUCCIÓN: aplica, vuelve atrás, reaplica y vuelve atrás otra vez, y termina en RAISE.
+
+    Acaba en el estado de partida a propósito: si el RAISE no llegara a deshacer la transacción, producción quedaría
+    como estaba (más `pg_cron`, que web1_01 instala y ninguna marcha atrás quita).
+    """
+    leer = lambda d, fs: [f"-- {d.name}/{f}\n{(d / f).read_text()}\n" for f in fs]
+    adelante = leer(mcp, CONECTOR_PROD) + leer(web, ADELANTE)
+    atras = leer(web, ATRAS) + leer(mcp, CONECTOR_PROD_ATRAS)
+    partes = [HUELLA, paso(1, "inicio")]
+    partes += adelante
+    partes.append(paso(2, "cadena_aplicada"))
+    partes += atras
+    partes.append(paso(3, "marchas_atras"))
+    partes += adelante
+    partes.append(paso(4, "reaplicada"))
+    partes += atras
+    partes.append(paso(5, "otra_vez_atras"))
+    partes.append(consulta().split("insert into _ciclo select 3")[1].split(";\n", 1)[1])
+    return "".join(partes)
+
+
 def main() -> int:
     if sys.argv[1:2] == ["--produccion-simulada"]:
         return correr(consulta_produccion(pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])), simulada=True)
+    if sys.argv[1:2] == ["--ensayo-produccion"]:
+        sql = consulta_ensayo_produccion(pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]))
+        return correr(sql, simulada=False, proyecto=PRODUCCION, ensayo=True)
     return correr(consulta(), simulada=False)
 
 
-def correr(sql: str, simulada: bool) -> int:
+def correr(sql: str, simulada: bool, proyecto: str = STAGING, ensayo: bool = False) -> int:
     pat = pathlib.Path("~/Secrets/yala-supabase-mgmt/pat").expanduser().read_text().strip()
     req = urllib.request.Request(
-        f"https://api.supabase.com/v1/projects/{STAGING}/database/query", method="POST",
+        f"https://api.supabase.com/v1/projects/{proyecto}/database/query", method="POST",
         data=json.dumps({"query": sql}).encode(),
         headers={"Authorization": f"Bearer {pat}", "Content-Type": "application/json", "User-Agent": "yala-web-ciclo"})
     try:
@@ -157,6 +206,23 @@ def correr(sql: str, simulada: bool) -> int:
         filas[int(n)] = (nombre, huella, hook, restos)
         print(f"{n}. {nombre}: huella {huella} · hook {hook} · restos de la web: {restos}")
     ok = True
+    if ensayo:
+        if filas[1][2] is None or filas[1][2] != "sin_hook" or filas[1][3] != "sin_restos":
+            print("MAL: producción no partía sin hook ni restos de la web")
+            ok = False
+        if filas[2][3] == "sin_restos" or filas[2][2] == "sin_hook":
+            print("MAL: la cadena no dejó el hook ni la web")
+            ok = False
+        for n in (3, 5):
+            if filas[n][1] != filas[1][1] or filas[n][2] != "sin_hook" or filas[n][3] != "sin_restos":
+                print(f"MAL: tras las marchas atrás ({n}) la huella no es la de partida")
+                ok = False
+        if filas[4][1] != filas[2][1] or filas[4][2] != filas[2][2]:
+            print("MAL: tras reaplicar, la huella no es la de la cadena")
+            ok = False
+        print("ENSAYO OK: en producción la cadena aplica, vuelve atrás a la huella de partida y se reaplica idéntica; "
+              "nada confirmado (transacción deshecha)" if ok else "ENSAYO CON FALLOS")
+        return 0 if ok else 1
     if simulada:
         if filas[2][2] != "sin_hook" or filas[2][3] != "sin_restos":
             print("MAL: sin web ni conector quedó hook o restos de la web")
