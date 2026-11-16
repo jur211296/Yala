@@ -130,11 +130,16 @@ describe("readGroupsForWeb", () => {
     expect(await readGroupsForWeb(env, jwt("yala_mcp_reader") + "x")).toEqual({ ok: false, error: "token" });
   });
 
-  it("está apagada sin el interruptor y en producción", async () => {
+  it("está apagada sin el interruptor, también en producción", async () => {
     const calls = stub();
     expect(await readGroupsForWeb({ ...env, WEB_GROUPS_READER: undefined } as Env, WEB)).toEqual({ ok: false, error: "disabled" });
-    expect(await readGroupsForWeb({ ...env, ENVIRONMENT: "production" } as Env, WEB)).toEqual({ ok: false, error: "disabled" });
+    expect(await readGroupsForWeb({ ...env, ENVIRONMENT: "production", WEB_GROUPS_READER: undefined } as Env, WEB)).toEqual({ ok: false, error: "disabled" });
     expect(calls).toHaveLength(0);
+  });
+
+  it("en producción la abre el mismo interruptor (desde el 16-nov)", async () => {
+    stub();
+    expect(await readGroupsForWeb({ ...env, ENVIRONMENT: "production" } as Env, WEB)).not.toEqual({ ok: false, error: "disabled" });
   });
 
   it("respeta el kill-switch de Grupos y la falta de llave", async () => {
