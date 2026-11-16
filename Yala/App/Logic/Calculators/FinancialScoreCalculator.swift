@@ -8,7 +8,8 @@
 //  - Sub-scores `Int?`. `nil` no diluye el total; el resto re-pondera. Con menos
 //    de dos partes con datos → total `nil` (decisión 9 de la revisión 2.3, PN-2:
 //    una sola parte daba 100 con pocos datos).
-//  - Composite con piso suave de 50 (brand-voice). Sub-scores sin piso.
+//  - Sin suelo: la nota va de 0 a 100, como dice Configurar Panel (lote 1 de la nota de salud, 11-nov-2026). La
+//    amabilidad está en las curvas: 3 días de gracia en Ritmo y una bajada suave al pasarse de un presupuesto.
 //  - Compromisos opera sobre el ciclo natural completo del período (no truncado
 //    a hoy) para incluir pendientes del resto del mes/año.
 //
@@ -65,31 +66,27 @@ enum FinancialScoreCalculator {
 
     // MARK: - Tuning
 
-    /// Soft floor del total para no mostrar números desalentadores en escenarios extremos.
-    private static let totalSoftFloor = 50
-
     /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`). Visibles: la hoja de la nota los enseña
     /// (UX 2.2 · L3-14), y así no pueden divergir de lo que se calcula.
     static let weightBudget       = 0.40
     static let weightRhythm       = 0.25
     static let weightCommitments  = 0.35
 
-    /// La nota total no baja de este suelo; la hoja lo dice.
-    static var totalFloor: Int { totalSoftFloor }
-
     /// Partes con datos que hacen falta para dar una nota (decisión 9 de la revisión 2.3, PN-2 · A: «dos de tres»).
     /// Con una sola, la nota era esa parte re-ponderada al 100 % y daba 100 con dos registros.
     static let minimumPartsForTotal = 2
 
-    // Budget penalties por bucket (réplica de la lógica monthly anterior aplicada localmente).
-    private static let budgetPenaltyExceeded     = 8
+    // Presupuestos: rozar el límite al final del ciclo resta 3. Pasarse resta según cuánto (lote 1 de la nota de
+    // salud): 100 − 70 × exceso², con el exceso sobre el límite topado en el doble. Pasarse un 10 % resta 1; un 50 %, 18;
+    // el doble, 70 → 30, que es el suelo de UN presupuesto: ninguno solo hunde la nota total.
     private static let budgetPenaltyNearAndLate  = 3
-    private static let budgetBonusUnder75        = 2
-    private static let budgetBonusCap            = 10
+    static let budgetOverspendCurve              = 70.0
+    static let budgetOverspendFloor              = 30
 
-    // Ritmo: curva lineal con tolerancia. score = 100 − max(0, gap − 2) × 12.
-    private static let rhythmTolerance = 2
-    private static let rhythmSlope     = 12
+    // Ritmo: 3 días de gracia y luego 8 puntos por día, en línea recta. score = 100 − max(0, hueco − 3) × 8.
+    // El hueco incluye los días desde el último registro hasta hoy en un período en curso (lote 1 de la nota de salud).
+    static let rhythmGraceDays = 3
+    static let rhythmSlope     = 8
 
     // Cobertura: ratio del saldo proyectado vs pendientes que produce score 100.
     private static let coverageFullMargin = 1.0  // 0..1× ⇒ 70..100; ≥1× ⇒ 100.
@@ -144,8 +141,15 @@ enum FinancialScoreCalculator {
         )
         let rhythm = calculateRhythm(
             transactions: intervalTransactions,
+            lastRecordDate: lastRecordDate(
+                transactions: transactions,
+                interval: interval,
+                now: now,
+                includeBridgedGroupTx: includeBridgedGroupTx
+            ),
             interval: interval,
             period: period,
+            now: now,
             calendar: calendar
         )
         let commitments = calculateCommitments(
@@ -199,8 +203,7 @@ enum FinancialScoreCalculator {
         guard totalWeight > 0 else { return nil }
 
         let raw = weightedSum / totalWeight
-        let floored = max(Double(totalSoftFloor), raw)
-        return clamp(Int(floored.rounded()))
+        return clamp(Int(raw.rounded()))
     }
 
     // MARK: - Budget sub-score (period-aware con buckets ponderados)
@@ -297,48 +300,82 @@ enum FinancialScoreCalculator {
         return result
     }
 
-    /// Lógica de score per-bucket — aplicada localmente (réplica del cálculo monthly anterior).
-    /// - exceeded (≥100%): penalty 8 → 92.
-    /// - 90-100% en bucket en curso con `remainingRatio < 0.3`: penalty 3 → 97.
-    /// - <75% en bucket cerrado o segunda mitad: bonus 2 (cap 10).
+    /// La nota de un ciclo de un presupuesto.
+    /// - Hasta el límite: 100; entre el 90 % y el 100 % con menos del 30 % del ciclo por delante, 97.
+    /// - Pasado el límite: `overspendScore` (curva suave, suelo 30).
     private static func scoreForBucket(
         spending: Double, limit: Double, bucket: DateInterval, now: Date, calendar: Calendar
     ) -> Int {
-        var score = 100
-        var bonusAccumulated = 0
         let ratio = spending / limit
+        if ratio > 1.0 { return overspendScore(ratio: ratio) }
 
         let totalDays = max(1, calendar.dateComponents([.day], from: bucket.start, to: bucket.end).day ?? 30)
         let isClosed = bucket.end <= now
         let daysElapsed = max(0, calendar.dateComponents([.day], from: bucket.start, to: now).day ?? 0)
         let daysRemaining = max(0, totalDays - daysElapsed)
         let remainingRatio = isClosed ? 0 : Double(daysRemaining) / Double(totalDays)
-        let isSecondHalf = isClosed || daysElapsed >= totalDays / 2
 
-        if ratio >= 1.0 {
-            score -= budgetPenaltyExceeded
-        } else if ratio >= 0.9, remainingRatio < 0.3 {
-            score -= budgetPenaltyNearAndLate
-        } else if ratio < 0.75, isSecondHalf, bonusAccumulated < budgetBonusCap {
-            let add = min(budgetBonusUnder75, budgetBonusCap - bonusAccumulated)
-            score += add
-            bonusAccumulated += add
+        if ratio >= 0.9, remainingRatio < 0.3 {
+            return 100 - budgetPenaltyNearAndLate
         }
-        return clamp(score)
+        return 100
+    }
+
+    /// Pasarse de un presupuesto pesa según cuánto: `100 − 70 × exceso²`, con el exceso (lo gastado sobre el límite,
+    /// en veces el límite) topado en 1 y la nota en 30. Pasarse un poco casi no resta; el castigo fuerte llega cerca
+    /// del doble. Interno para los tests.
+    static func overspendScore(ratio: Double) -> Int {
+        let excess = min(max(ratio - 1.0, 0), 1.0)
+        let raw = 100.0 - budgetOverspendCurve * excess * excess
+        return max(budgetOverspendFloor, clamp(Int(raw.rounded())))
     }
 
     // MARK: - Rhythm sub-score (antes Activity)
 
-    private static func calculateRhythm(
+    /// El último día con un registro real (sin ajustes de saldo ni transferencias) hasta el fin del período y hasta
+    /// hoy, mirando TODO el historial: quien dejó de registrar antes de que empezara el período sigue teniendo un
+    /// hueco que cuenta. `nil` si nunca registró nada.
+    private static func lastRecordDate(
         transactions: [TransactionItem],
         interval: DateInterval,
+        now: Date,
+        includeBridgedGroupTx: Bool
+    ) -> Date? {
+        let limit = min(interval.end, now)
+        return transactions
+            .filter {
+                $0.balanceAdjustmentType == nil && $0.date <= limit && BridgedTransactionFilter.shouldInclude(
+                    splitExpenseID: $0.splitExpenseID,
+                    splitSettlementID: $0.splitSettlementID,
+                    includeGroupsToggle: includeBridgedGroupTx
+                )
+            }
+            .map(\.date)
+            .max()
+    }
+
+    private static func calculateRhythm(
+        transactions: [TransactionItem],
+        lastRecordDate: Date?,
+        interval: DateInterval,
         period: DetailPeriod,
+        now: Date,
         calendar: Calendar
     ) -> Int? {
         let nonAdjustment = transactions
             .filter { $0.balanceAdjustmentType == nil }
             .sorted { $0.date < $1.date }
-        guard !nonAdjustment.isEmpty else { return nil }
+
+        // Período en curso: el hueco desde el último registro hasta hoy también cuenta (lote 1 de la nota de salud).
+        // Hoy no cuenta como día sin registrar: aún no ha terminado.
+        let trailingGap: Int? = {
+            guard interval.start <= now, now <= interval.end, let lastRecordDate else { return nil }
+            let days = calendar.dateComponents(
+                [.day], from: calendar.startOfDay(for: lastRecordDate), to: calendar.startOfDay(for: now)
+            ).day ?? 0
+            return max(0, days - 1)
+        }()
+        guard !nonAdjustment.isEmpty || trailingGap != nil else { return nil }
 
         let useMonthlyAvg = shouldUseMonthlyAverage(
             period: period, interval: interval, calendar: calendar
@@ -346,16 +383,26 @@ enum FinancialScoreCalculator {
 
         let gap: Double
         if useMonthlyAvg {
-            let monthlyGaps = computeMonthlyMaxGaps(
+            var monthlyGaps = computeMonthlyMaxGaps(
                 transactions: nonAdjustment, calendar: calendar
             )
+            // El hueco hasta hoy entra en el mes en curso, entero.
+            if let trailingGap {
+                let currentMonth = calendar.dateComponents([.year, .month], from: now)
+                monthlyGaps[currentMonth] = max(monthlyGaps[currentMonth] ?? 0, trailingGap)
+            }
             guard !monthlyGaps.isEmpty else { return nil }
-            gap = Double(monthlyGaps.reduce(0, +)) / Double(monthlyGaps.count)
+            gap = Double(monthlyGaps.values.reduce(0, +)) / Double(monthlyGaps.count)
         } else {
-            gap = Double(computeMaxGap(transactions: nonAdjustment, calendar: calendar))
+            gap = Double(max(computeMaxGap(transactions: nonAdjustment, calendar: calendar), trailingGap ?? 0))
         }
 
-        let raw = 100.0 - max(0.0, gap - Double(rhythmTolerance)) * Double(rhythmSlope)
+        return rhythmScore(gap: gap)
+    }
+
+    /// 3 días de gracia y luego 8 puntos por día, sin saltos. Interno para los tests.
+    static func rhythmScore(gap: Double) -> Int {
+        let raw = 100.0 - max(0.0, gap - Double(rhythmGraceDays)) * Double(rhythmSlope)
         return clamp(Int(raw.rounded()))
     }
 
@@ -389,15 +436,15 @@ enum FinancialScoreCalculator {
         return maxGap
     }
 
-    /// Agrupa tx por `(year, month)` y devuelve el array de maxGap por mes.
+    /// Agrupa tx por `(year, month)` y devuelve el maxGap de cada mes.
     /// Meses sin transacciones no contribuyen.
     private static func computeMonthlyMaxGaps(
         transactions: [TransactionItem], calendar: Calendar
-    ) -> [Int] {
+    ) -> [DateComponents: Int] {
         let grouped = Dictionary(grouping: transactions) { tx -> DateComponents in
             calendar.dateComponents([.year, .month], from: tx.date)
         }
-        return grouped.values.map { computeMaxGap(transactions: $0, calendar: calendar) }
+        return grouped.mapValues { computeMaxGap(transactions: $0, calendar: calendar) }
     }
 
     // MARK: - Commitments sub-score (antes Bills)

@@ -5,9 +5,9 @@
 //  Contract covered:
 //   • Sub-scores are `Int?`. `nil` does not dilute the total — remaining
 //     sub-scores are re-weighted. All-nil → total nil.
-//   • Total soft floor: 50. Sub-scores unfloored.
-//   • Penalties: budget exceeded −8, near+late −3, under-75 bonus +2 (cap +10).
-//                bills overdue −5, upcoming −3.
+//   • Sin suelo: el total va de 0 a 100 (lote 1 de la nota de salud, 11-nov-2026).
+//   • Presupuestos: pasarse resta 70 × exceso² (suelo 30 por presupuesto); rozar el límite al final −3.
+//   • Ritmo: 3 días de gracia y 8 puntos por día; en un período en curso cuenta el hueco hasta hoy.
 //
 
 import Foundation
@@ -159,7 +159,7 @@ struct FinancialScoreCalculatorTests {
         #expect(score.budget == nil)
     }
 
-    @Test func budget_oneExceeded_softPenalty8_returns92() {
+    @Test func budget_oneExceededByTenPercent_barelyCounts_returns99() {
         let budget = makeBudget(limit: 1000)
         let txs = [makeTx(amount: 1100, date: date(2026, 3, 10))]
         let score = calculate(
@@ -170,12 +170,13 @@ struct FinancialScoreCalculatorTests {
             now: now,
             calendar: calendar
         )
-        #expect(score.budget == 92)
+        // 110 %: 100 − 70 × 0,1² = 99,3 → 99.
+        #expect(score.budget == 99)
     }
 
-    @Test func budget_twoExceeded_perBucketAverage_returns92() {
-        // Nueva semántica: cada bucket se evalúa independiente (penalty 8 → 92).
-        // Promedio de [92, 92] = 92 (antes era acumulado global = 84).
+    @Test func budget_twoExceeded_perBucketAverage_returns48() {
+        // Sin categoría, los dos presupuestos ven los 1.700 gastados: 170 % del de 1.000 → 66 y 340 % del de 500 → 30
+        // (su suelo). Promedio entero de [66, 30] = 48.
         let b1 = makeBudget(limit: 1000, name: "B1")
         let b2 = makeBudget(limit: 500, name: "B2")
         let txs = [
@@ -187,19 +188,19 @@ struct FinancialScoreCalculatorTests {
             budgets: [b1, b2],
             now: now
         )
-        #expect(score.budget == 92)
+        #expect(score.budget == 48)
     }
 
-    @Test func budget_threeExceeded_perBucketAverage_returns92() {
-        // Idem 3 budgets cada uno exceeded → cada bucket 92 → promedio 92.
-        let budgets = (1...3).map { makeBudget(limit: 100, name: "B\($0)") }
+    @Test func budget_threeExceededByHalf_returns83() {
+        // Tres presupuestos de 300 que ven los 450 gastados (150 %): 100 − 70 × 0,5² = 82,5 → 83 cada uno.
+        let budgets = (1...3).map { makeBudget(limit: 300, name: "B\($0)") }
         let txs = (1...3).map { _ in makeTx(amount: 150, date: date(2026, 3, 10)) }
         let score = calculate(
             transactions: txs,
             budgets: budgets,
             now: now
         )
-        #expect(score.budget == 92)
+        #expect(score.budget == 83)
     }
 
     @Test func budget_over90pct_lateMonth_softPenalty3_returns97() {
@@ -253,9 +254,9 @@ struct FinancialScoreCalculatorTests {
     }
 
     // MARK: - Rhythm sub-score (antes "Activity")
-    // Curva: score = max(0, 100 − max(0, gap − 2) × 12).
-    // Gap = mayor racha de días consecutivos sin registrar.
-    // 0-2 días → 100, 3 → 88, 4 → 76, 5 → 64, 6 → 52, 7 → 40, 10+ → 0.
+    // Curva: score = max(0, 100 − max(0, gap − 3) × 8).
+    // Gap = mayor racha de días consecutivos sin registrar, incluido el hueco hasta hoy en un período en curso.
+    // 0-3 días → 100, 4 → 92, 7 → 68, 10 → 44, 15 → 4, 16+ → 0.
 
     @Test func rhythm_noTransactions_returnsNil() {
         let score = calculate(
@@ -295,43 +296,44 @@ struct FinancialScoreCalculatorTests {
         #expect(score.activity == 100)
     }
 
-    @Test func rhythm_threeDaysGap_returns88() {
-        // Tx 13 y 17 → gap = 3. Score = 100 - (3-2)*12 = 88.
+    @Test func rhythm_threeDaysGap_isGrace_returns100() {
+        // Tx 13 y 17 → gap = 3, dentro de la gracia.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 13)),
             makeTx(amount: 10, date: date(2026, 3, 17))
         ]
         let score = calculate(transactions: txs, now: now)
-        #expect(score.activity == 88)
+        #expect(score.activity == 100)
     }
 
-    @Test func rhythm_sevenDaysGap_returns40() {
-        // Tx 9 y 17 → gap = 7. Score = 100 - (7-2)*12 = 40.
+    @Test func rhythm_sevenDaysGap_returns68() {
+        // Tx 9 y 17 → gap = 7. Score = 100 - (7-3)*8 = 68.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 9)),
             makeTx(amount: 10, date: date(2026, 3, 17))
         ]
         let score = calculate(transactions: txs, now: now)
-        #expect(score.activity == 40)
+        #expect(score.activity == 68)
     }
 
-    @Test func rhythm_tenPlusDaysGap_returns0() {
-        // Tx 1 y 12 → gap = 10. Score = 100 - 8*12 = 4. Pero gap 11 → 0.
+    @Test func rhythm_elevenDaysGap_returns36() {
+        // Tx 1 y 13 → gap = 11; hasta hoy (17) quedan 3, en la gracia. Score = 100 - 8*8 = 36.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 1)),
             makeTx(amount: 10, date: date(2026, 3, 13))
         ]
         let score = calculate(transactions: txs, now: now)
-        #expect(score.activity == 0)
+        #expect(score.activity == 36)
     }
 
     @Test func rhythm_thisYear_usesMonthlyAverage() {
-        // Multi-mes ⇒ promedio de gaps mensuales. Mes 1: tx solo el día 5 (gap 0).
-        // Mes 2: tx 5 y 6 (gap 0). Promedio = 0 → score 100.
+        // Multi-mes ⇒ promedio de gaps mensuales. Enero: solo el 5 (0). Febrero: 5 y 6 (0). Marzo: el 16, y hoy es 17
+        // (hueco hasta hoy 0). Promedio = 0 → 100.
         let txs = [
             makeTx(amount: 10, date: date(2026, 1, 5)),
             makeTx(amount: 10, date: date(2026, 2, 5)),
-            makeTx(amount: 10, date: date(2026, 2, 6))
+            makeTx(amount: 10, date: date(2026, 2, 6)),
+            makeTx(amount: 10, date: date(2026, 3, 16))
         ]
         let score = calculate(
             transactions: txs, period: .thisYear, now: now
@@ -340,19 +342,119 @@ struct FinancialScoreCalculatorTests {
     }
 
     @Test func rhythm_thisYear_oneOldGap_doesNotDestroyAverage() {
-        // Mes 1 gap=10 (1 y 12), Mes 2 gap=0 (5,6,7). Promedio = 5 → score = 64.
+        // Enero gap=10 (1 y 12), febrero 0 (5,6,7), marzo 0 (16, hoy 17). Promedio = 3,33 → 100 − 0,33 × 8 = 97.
         let txs = [
             makeTx(amount: 10, date: date(2026, 1, 1)),
             makeTx(amount: 10, date: date(2026, 1, 12)),
             makeTx(amount: 10, date: date(2026, 2, 5)),
             makeTx(amount: 10, date: date(2026, 2, 6)),
-            makeTx(amount: 10, date: date(2026, 2, 7))
+            makeTx(amount: 10, date: date(2026, 2, 7)),
+            makeTx(amount: 10, date: date(2026, 3, 16))
         ]
         let score = calculate(
             transactions: txs, period: .thisYear, now: now
         )
-        // Avg gap = 5 → 100 - (5-2)*12 = 64.
-        #expect(score.activity == 64)
+        #expect(score.activity == 97)
+    }
+
+    // MARK: - Ritmo: el hueco hasta hoy (lote 1 de la nota de salud, 11-nov-2026)
+
+    @Test func rhythm_fourDaysGap_firstDayPastGrace_returns92() {
+        // Tx 12 y 17 → gap = 4: el primer día que resta.
+        let txs = [makeTx(amount: 10, date: date(2026, 3, 12)), makeTx(amount: 10, date: date(2026, 3, 17))]
+        #expect(calculate(transactions: txs, now: now).activity == 92)
+    }
+
+    @Test func rhythm_trailingGap_tenDaysWithoutRecording_returns44() {
+        // Registró del 1 al 6 cada día y nada más; hoy es 17 → del 7 al 16 son 10 días sin registrar.
+        // Antes daba 100 (no miraba el hueco hasta hoy).
+        let txs = (1...6).map { makeTx(amount: 10, date: date(2026, 3, $0)) }
+        #expect(calculate(transactions: txs, now: now).activity == 44)
+    }
+
+    @Test func rhythm_trailingGap_threeDays_isGrace_fourDaysCounts() {
+        // Último registro el 13: 14, 15 y 16 sin registrar (hoy no cuenta) → gracia → 100.
+        let threeDays = [makeTx(amount: 10, date: date(2026, 3, 1)), makeTx(amount: 10, date: date(2026, 3, 2)),
+                         makeTx(amount: 10, date: date(2026, 3, 3)), makeTx(amount: 10, date: date(2026, 3, 4)),
+                         makeTx(amount: 10, date: date(2026, 3, 5)), makeTx(amount: 10, date: date(2026, 3, 6)),
+                         makeTx(amount: 10, date: date(2026, 3, 7)), makeTx(amount: 10, date: date(2026, 3, 8)),
+                         makeTx(amount: 10, date: date(2026, 3, 9)), makeTx(amount: 10, date: date(2026, 3, 10)),
+                         makeTx(amount: 10, date: date(2026, 3, 11)), makeTx(amount: 10, date: date(2026, 3, 12)),
+                         makeTx(amount: 10, date: date(2026, 3, 13))]
+        #expect(calculate(transactions: threeDays, now: now).activity == 100)
+        // Último registro el 12: cuatro días sin registrar → 92.
+        #expect(calculate(transactions: Array(threeDays.dropLast()), now: now).activity == 92)
+    }
+
+    @Test func rhythm_trailingGap_lastRecordBeforeThePeriod_stillCounts() {
+        // Nada en marzo; el último registro fue el 20 de febrero. Del 21-feb al 16-mar son 24 días sin registrar:
+        // Ritmo tiene nota (0), no «sin datos».
+        let txs = [makeTx(amount: 10, date: date(2026, 2, 20))]
+        #expect(calculate(transactions: txs, now: now).activity == 0)
+    }
+
+    @Test func rhythm_closedPeriod_hasNoTrailingGap() {
+        // Febrero ya cerró: el hueco hasta hoy no es de ese período.
+        let txs = [makeTx(amount: 10, date: date(2026, 2, 1)), makeTx(amount: 10, date: date(2026, 2, 2))]
+        #expect(calculate(transactions: txs, period: .lastMonth, now: now).activity == 100)
+    }
+
+    @Test func rhythm_thisYear_trailingGapEntersTheCurrentMonth() {
+        // Enero 0, febrero 0; marzo sin registros y último el 6-feb: del 7-feb al 16-mar, 38 días.
+        // Promedio (0 + 0 + 38) / 3 = 12,67 → 100 − 9,67 × 8 = 22,7 → 23.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 1, 5)),
+            makeTx(amount: 10, date: date(2026, 2, 5)),
+            makeTx(amount: 10, date: date(2026, 2, 6))
+        ]
+        #expect(calculate(transactions: txs, period: .thisYear, now: now).activity == 23)
+    }
+
+    @Test func rhythm_balanceAdjustmentDoesNotResetTheGap() {
+        // Un ajuste de saldo hoy no es un registro: el hueco desde el 6 sigue contando.
+        var txs = (1...6).map { makeTx(amount: 10, date: date(2026, 3, $0)) }
+        txs.append(makeTx(amount: 10, date: date(2026, 3, 17), balanceAdjustmentType: "adjustment"))
+        #expect(calculate(transactions: txs, now: now).activity == 44)
+    }
+
+    @Test func rhythmScore_hasNoJumps() {
+        // Gradual: cada día de más resta lo mismo, sin saltos.
+        let scores = (0...20).map { FinancialScoreCalculator.rhythmScore(gap: Double($0)) }
+        #expect(Array(scores[0...3]) == [100, 100, 100, 100])
+        for i in 4...12 { #expect(scores[i - 1] - scores[i] == 8) }
+        #expect(scores[16] == 0)
+    }
+
+    // MARK: - Presupuestos: la curva (lote 1 de la nota de salud)
+
+    @Test func overspendScore_curve() {
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.0) == 100)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.05) == 100)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.1) == 99)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.25) == 96)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.5) == 83)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 1.8) == 55)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 2.0) == 30)
+        #expect(FinancialScoreCalculator.overspendScore(ratio: 5.0) == 30, "suelo de un presupuesto")
+        // Decrece de forma monótona.
+        let curve = stride(from: 1.0, through: 2.0, by: 0.05).map { FinancialScoreCalculator.overspendScore(ratio: $0) }
+        #expect(zip(curve, curve.dropFirst()).allSatisfy { $0 >= $1 })
+    }
+
+    @Test func budget_atTheLimit_isNotOver_returns100() {
+        let budget = makeBudget(limit: 1000)
+        let txs = [makeTx(amount: 1000, date: date(2026, 3, 10))]
+        #expect(calculate(transactions: txs, budgets: [budget], now: now).budget == 100)
+    }
+
+    @Test func budget_doubled_returnsItsFloor30_andOthersSoften() {
+        // Sin categoría, los dos presupuestos ven el mismo gasto (1.000): uno de 500 va al doble (30) y otro de 1.300
+        // va holgado (100). Ninguno solo hunde la parte: (30 + 100) / 2 = 65.
+        let doubled = makeBudget(limit: 500, name: "Comida")
+        let roomy = makeBudget(limit: 1300, name: "Mes")
+        let txs = [makeTx(amount: 1000, date: date(2026, 3, 10))]
+        #expect(calculate(transactions: txs, budgets: [doubled], now: now).budget == 30)
+        #expect(calculate(transactions: txs, budgets: [doubled, roomy], now: now).budget == 65)
     }
 
     // MARK: - Commitments sub-score (antes "Bills")
@@ -475,12 +577,12 @@ struct FinancialScoreCalculatorTests {
         #expect(score.total == 91)
     }
 
-    @Test func total_softFloor50_appliesInExtremeScenarios() {
-        // Forzar piso 50: budget bajo + commitments bajo + rhythm bajo.
-        // - Budget: 1 budget exceeded → 92.
-        // - Rhythm: tx separadas por gap grande (>10 días) → 0.
+    @Test func total_noFloor_canGoBelow50_whenThingsReallyGoWrong() {
+        // Sin suelo (lote 1 de la nota de salud): la nota dice lo que pasa.
+        // - Budget: 155 de 100 (155 %) → 100 − 70 × 0,55² = 78,8 → 79.
+        // - Rhythm: tx el 1 y el 17 → gap 15 → 100 − 12 × 8 = 4.
         // - Commitments: pendiente sin saldo → cov=0, load=50 → 25.
-        // Total = 92*0.4 + 0*0.25 + 25*0.35 = 36.8 + 0 + 8.75 = 45.55 → floor 50.
+        // Total = 79*0.4 + 4*0.25 + 25*0.35 = 31.6 + 1 + 8.75 = 41.35 → 41 (antes, 50 por el suelo).
         let budget = makeBudget(limit: 100, name: "B")
         let txs = [
             makeTx(amount: 150, date: date(2026, 3, 1)),  // exceed budget
@@ -493,10 +595,10 @@ struct FinancialScoreCalculatorTests {
             scheduledPayments: [payment],
             now: now
         )
-        #expect(score.budget == 92)
-        #expect(score.activity == 0)
+        #expect(score.budget == 79)
+        #expect(score.activity == 4)
         #expect(score.bills == 25)
-        #expect(score.total == 50)  // soft floor — raw 45.55 < 50.
+        #expect(score.total == 41)
     }
 
     @Test func total_budgetMissing_reweightsRhythmAndCommitments() {

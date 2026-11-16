@@ -233,7 +233,7 @@ struct FinancialScoreDetailSheet: View {
                     .accessibilityIdentifier("health_improvement_tip")
             }
 
-            Text(L10n.Panel.Health.floorNote(FinancialScoreCalculator.totalFloor))
+            Text(L10n.Panel.Health.scaleNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

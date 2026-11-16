@@ -85,6 +85,7 @@
 - [Reparar sus datos: lo nuevo solo, lo suyo con botón](feedback_reparacion_de_datos_se_ensena_y_se_ubica.md) — enseña y confirma; él elige dónde va el botón (Bandeja).
 - [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
+- [«Encendida por defecto» con la pantalla de fábrica](feedback_encendido_por_defecto_se_mira_con_la_pantalla_de_fabrica.md) — «Tus finanzas» llega plegada; quitar el flag no la enseñaba.
 - [Propuestas: artifact visual, no Markdown](feedback_propuestas_como_artifact_visual.md) — tarjetas, antes/después y selector sí/no/después en la db.
 - [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
 - [Si no avanza, cierra y prioriza el bug](feedback_si_no_avanza_cierra_y_prioriza_el_bug.md) — prueba parada por un bug grave ajeno: PR abierto, device-QA y card primero.

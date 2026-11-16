@@ -2,7 +2,13 @@
 
 Decisión 9 de la revisión 2.3 (9-nov-2026) pidió dos cosas. La primera ya está hecha en el lote del 11-nov: la nota
 sale con dos de las tres partes, la tarjeta dice qué falta y lo que la nota no ve, y la hoja deja de felicitar si hay
-alertas. La segunda es este documento: propuestas para que la nota sirva de verdad. **Nada de esto está implementado.**
+alertas. La segunda es este documento: propuestas para que la nota sirva de verdad.
+
+> **Decidido por Jürgen el 11-nov-2026.** Lote 1 (hecho): 1 (Ritmo hasta hoy, con 3 días de gracia), 3 (bajada suave
+> al pasarse), 5a (sin suelo de 50, con una curva amable que no desanime), mensaje breve positivo o neutro y 6 en parte
+> (tarjeta chata en «Tus finanzas», encendida por defecto; encendida una vez a quien tenía la lista de fábrica). Lote 2:
+> la 2 (lo que te queda del mes). La 4 (cuentas en rojo) espera datos. La 5b (niveles) no va. Perfiles de antes y
+> después: https://claude.ai/artifact/KR2vKHNAoJxNUFQXcjNcJN
 
 Cada propuesta dice qué ve hoy la persona, qué cambia y lo que cuesta. Las cifras de «hoy» salen del código de
 `origin/2.3` (`FinancialScoreCalculator`), salvo donde dice «inferido».

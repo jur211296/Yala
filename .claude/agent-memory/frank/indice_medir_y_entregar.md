@@ -102,3 +102,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Gateway medido va a producción](feedback_gateway_medido_va_a_produccion.md) — 14-nov: eligió staging y producción por la sesión; pregunta igual.
 - [Revisión independiente antes del gate](feedback_revision_independiente_antes_del_gate.md) — lote de fechas/dinero: revisor con el código, no con mi veredicto; 9 fallos reales en S1.
 - [El touch del gate tras un merge resucita borrados](feedback_el_touch_del_gate_tras_un_merge_resucita_borrados.md) — alcance con `grep -v "^D "`; un vacío tumba un source-scan.
+- [Desbloquear un PR viejo: mide el recorrido nuevo](feedback_desbloquear_un_pr_viejo_mide_el_recorrido_nuevo.md) — la bienvenida 2.3 apagaba la nota que el PR encendía; el bump de versión cambia Novedades.

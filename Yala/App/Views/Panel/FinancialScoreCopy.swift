@@ -49,6 +49,28 @@ enum FinancialScoreCopy {
         return L10n.Panel.Health.totalHeadlineLow
     }
 
+    /// El mensaje breve de la tarjeta del Panel (lote 1 de la nota de salud, 11-nov-2026): siempre positivo o neutro y
+    /// con un paso concreto, nunca «vas mal». Sin nota, qué hacer para tenerla (la parte más fácil de completar
+    /// primero); con nota, la parte que más la sube (`weakestPart`); si todas van bien, «vas bien», salvo que haya algo
+    /// que la nota no ve (decisión 9: con alertas no felicita).
+    static func cardMessage(for score: FinancialScore, isExpensesOnlyMode: Bool = false) -> String {
+        guard score.total != nil else {
+            let missing = Set(score.partsWithoutData)
+            if missing.contains(.activity) { return L10n.Panel.Health.cardStartActivity }
+            if missing.contains(.budget) { return L10n.Panel.Health.cardStartBudget }
+            return L10n.Panel.Health.cardStartBills
+        }
+        switch FinancialScoreCalculator.weakestPart(of: score) {
+        case .activity: return L10n.Panel.Health.cardStepActivity
+        case .budget: return L10n.Panel.Health.cardStepBudget
+        case .bills: return L10n.Panel.Health.cardStepBills
+        case .total, nil:
+            return score.alerts.hasAlerts(isExpensesOnlyMode: isExpensesOnlyMode)
+                ? L10n.Panel.Health.totalHeadlineHighWithAlerts
+                : L10n.Panel.Health.cardStepGood
+        }
+    }
+
     static func partName(_ kind: FinancialScoreDetailKind) -> String {
         switch kind {
         case .budget: return L10n.Panel.Health.subScoreBudget
