@@ -102,7 +102,9 @@ struct TranslationLot124GuardTests {
 
     @Test func neutralSpanish_categoryNamesHaveNoPeruvianWords() throws {
         for code in ["es-419", "es", "es-ES", "es-AR"] {
-            let found = try offenders(code, #"\bbodegas?\b"#)
+            // Fuera, las palabras del buscador de categorías (decisión 21 de 2.3): no se muestran nunca, y su gracia es
+            // entender cómo se dice en cada país («bodega» en Perú lleva a Supermercados).
+            let found = try offenders(code, #"\bbodegas?\b"#, keys: { !$0.hasPrefix("subcategory.words.") })
             #expect(found.isEmpty, "\(code): \(found)")
         }
         #expect(StringsFileParser.parseStrings(forLocale: "es-419")["subcategory.supermarkets"] == "Supermercados y tiendas")

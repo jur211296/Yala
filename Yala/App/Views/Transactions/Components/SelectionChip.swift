@@ -23,6 +23,9 @@ struct SelectionChip: View {
     /// el editor de favoritos y las hojas que completan un borrador de grupo pintaban lo elegido solo teñido, y una línea
     /// de moneda elegida apenas se distinguía de la otra. `false` deja el tinte, y hoy nadie lo pide.
     var fillsWhenSelected: Bool = true
+    /// Relleno a los lados del texto. La fila de categorías a un toque (decisión 21 de 2.3) usa uno menor para que sus
+    /// cuatro pastillas quepan en dos líneas en un iPhone de 402 pt; el resto, el de siempre.
+    var horizontalPadding: CGFloat = DS.FormRow.paddingV
     let action: () -> Void
 
     private var baseColor: Color { color ?? theme.accent }
@@ -57,7 +60,7 @@ struct SelectionChip: View {
                     .lineLimit(1)
             }
             .foregroundStyle(foreground)
-            .padding(.horizontal, DS.FormRow.paddingV)
+            .padding(.horizontal, horizontalPadding)
             .padding(.vertical, DS.Spacing.sm)
             .background(Capsule().fill(background))
             .overlay(
