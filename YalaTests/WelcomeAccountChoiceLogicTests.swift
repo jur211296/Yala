@@ -287,11 +287,14 @@ struct WelcomeNewChooserWiringTests {
             .joined(separator: "\n")
     }
 
-    @Test("la rama `.new` del chooser pasa por `handleNewBranch`, no por `onSelectBranch`")
+    /// Bienvenida 2.3: el elector de tres tarjetas dejó el primer nivel (la vitrina pinta `.hero` y `.chooser`). «Es mi
+    /// primera vez» se alcanza por la pregunta de pie de «¡Hola de nuevo!», y sigue pasando por `handleNewBranch`.
+    @Test("«¿Es tu primera vez?» pasa por `handleNewBranch`, no por `onSelectBranch`")
     func newBranch_isRoutedToItsSecondLevel() throws {
         let src = try Self.source(Self.containerPath)
-        #expect(src.contains("case .new: handleNewBranch()"),
-                "si `.new` vuelve a salir por `onSelectBranch`, la consulta del faro deja de correr")
+        #expect(src.contains("onStartNew: { handleNewBranch() }"),
+                "si «Es mi primera vez» vuelve a salir por `onSelectBranch`, la consulta del faro deja de correr")
+        #expect(!src.contains("WelcomeChooserView("), "el elector de tres tarjetas volvió al primer nivel")
     }
 
     @Test("`handleNewBranch` PREGUNTA AL FARO antes de decidir (mutación: quitarlo tiene que caer aquí)")
@@ -527,7 +530,8 @@ struct WelcomeNewChooserWiringTests {
             let lineStart = code[..<hit.lowerBound].lastIndex(of: "\n").map { code.index(after: $0) } ?? code.startIndex
             return !code[lineStart..<hit.lowerBound].contains("func ")
         }
-        #expect(calls.count == 3, "se esperaban 3 salidas al alta y hay \(calls.count)")
+        // Cuatro desde la bienvenida 2.3: «Crear mi cuenta» de «Vamos a crear tu cuenta» (Y23-02).
+        #expect(calls.count == 4, "se esperaban 4 salidas al alta y hay \(calls.count)")
         for call in calls {
             let lineStart = code[..<call.lowerBound].lastIndex(of: "\n").map { code.index(after: $0) } ?? code.startIndex
             let lineEnd = code[call.upperBound...].firstIndex(of: "\n") ?? code.endIndex
@@ -553,7 +557,8 @@ struct WelcomeNewChooserWiringTests {
     @Test("las dos pantallas, enteras: la puerta es la única condición de los botones de crear y «Volver» ocupa su sitio")
     func signUpScreens_areFixedWhole() throws {
         let code = Self.codeOnly(try Self.source(Self.signInViewPath))
-        #expect(Self.blocks(openedBy: Self.signUpGate, in: code).count == 2, "se esperaban 2 bloques con la puerta del alta")
+        // Tres desde la bienvenida 2.3: «Vamos a crear tu cuenta» (Y23-02) lleva la suya alrededor de «Crear mi cuenta».
+        #expect(Self.blocks(openedBy: Self.signUpGate, in: code).count == 3, "se esperaban 3 bloques con la puerta del alta")
 
         let notFound = try Self.body(of: "private var notFoundContent: some View {", in: code)
         #expect(Self.normalized(notFound) == """

@@ -23,6 +23,11 @@ enum ImportField: String, CaseIterable {
     case subcategory
     case tags
     case note
+    /// Opcionales desde el 2026-11-12 (H18): la hora, la tasa fija y a qué moneda es, y la naturaleza cambiada a mano.
+    case time
+    case exchangeRate = "exchange_rate"
+    case rateCurrency = "rate_currency"
+    case need
 
     /// Las que tiene que traer todo archivo.
     static let required: [ImportField] = [.date, .amount, .currency, .category, .subcategory]
@@ -66,7 +71,7 @@ struct ImportHeader: Equatable {
     }
 
     /// La fila cruda a partir de sus celdas, por posición.
-    func row(number: Int, cells: [String], amountIsNumber: Bool = false) -> RawImportRow {
+    func row(number: Int, cells: [String], amountIsNumber: Bool = false, exchangeRateIsNumber: Bool = false) -> RawImportRow {
         func value(_ field: ImportField) -> String? {
             guard let index = indexByField[field] else { return nil }
             return index < cells.count ? cells[index].trimmingCharacters(in: .whitespacesAndNewlines) : ""
@@ -81,7 +86,12 @@ struct ImportHeader: Equatable {
             tags: value(.tags),
             note: value(.note),
             account: value(.account),
-            amountIsNumber: amountIsNumber
+            amountIsNumber: amountIsNumber,
+            time: value(.time),
+            exchangeRate: value(.exchangeRate),
+            rateCurrency: value(.rateCurrency),
+            need: value(.need),
+            exchangeRateIsNumber: exchangeRateIsNumber
         )
     }
 }
@@ -142,26 +152,70 @@ enum ImportFileReader {
             if didStartAccessing { url.stopAccessingSecurityScopedResource() }
         }
 
-        let contents: String
+        let data: Data
         do {
-            contents = try String(contentsOf: url, encoding: .utf8)
+            data = try Data(contentsOf: url)
         } catch {
             throw ImportError.unreadableFile
         }
+        guard let contents = decodeText(data) else { throw ImportError.unreadableFile }
         return try parseCSV(contents)
     }
 
-    static func parseCSV(_ contents: String) throws -> ImportTable {
-        // El BOM de UTF-8 fuera antes de partir: delante de una cabecera entre comillas impedía abrir la comilla.
-        let contents = contents.hasPrefix("\u{FEFF}") ? String(contents.dropFirst()) : contents
-        var lines = TransactionCSVImportService.splitCSVIntoRows(contents)
-        while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty {
-            lines.removeLast()
+    /// El texto del archivo en la codificación en la que venga (H13). Hasta el 2026-11-12 solo se leía UTF-8, y el «CSV»
+    /// que guarda Excel en Windows (Windows-1252) o el «texto Unicode» (UTF-16) no se abrían. Orden: UTF-8 (con o sin
+    /// BOM), UTF-16 si trae su BOM, Windows-1252 y, como último recurso, ISO Latin-1, que lee cualquier byte.
+    static func decodeText(_ data: Data) -> String? {
+        if data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF]) {
+            return String(data: data, encoding: .utf16)
         }
+        if let text = String(data: data, encoding: .utf8) { return text }
+        // Casi todo UTF-8 con algún byte roto (un archivo pegado de dos sitios): leerlo entero como Windows-1252 rompería
+        // todas sus tildes («AlimentaciÃ³n») y las categorías dejarían de casar. Si trae secuencias UTF-8 de varios
+        // bytes, es UTF-8: solo el byte roto se pierde.
+        if containsMultibyteUTF8(data) { return String(decoding: data, as: UTF8.self) }
+        if let text = String(data: data, encoding: .windowsCP1252) { return text }
+        return String(data: data, encoding: .isoLatin1)
+    }
+
+    /// ¿Hay al menos una secuencia UTF-8 válida de 2 a 4 bytes? En un texto Windows-1252 o Latin-1 una letra con tilde es
+    /// un solo byte alto seguido casi siempre de una letra ASCII, que no forma esa secuencia.
+    static func containsMultibyteUTF8(_ data: Data) -> Bool {
+        let bytes = [UInt8](data)
+        var index = 0
+        while index < bytes.count {
+            let lead = bytes[index]
+            let length: Int
+            switch lead {
+            case 0xC2...0xDF: length = 2
+            case 0xE0...0xEF: length = 3
+            case 0xF0...0xF4: length = 4
+            default: index += 1; continue
+            }
+            if index + length <= bytes.count, bytes[(index + 1)..<(index + length)].allSatisfy({ $0 & 0xC0 == 0x80 }) {
+                return true
+            }
+            index += 1
+        }
+        return false
+    }
+
+    static func parseCSV(_ contents: String) throws -> ImportTable {
+        // El BOM fuera antes de partir: delante de una cabecera entre comillas impedía abrir la comilla.
+        let contents = contents.hasPrefix("\u{FEFF}") ? String(contents.dropFirst()) : contents
+        // El separador sale de la cabecera, la primera línea con texto; hace falta ANTES de partir las filas, porque
+        // una comilla solo abre al principio de un campo y el campo empieza tras el separador (H13).
+        let firstLine = contents.split(whereSeparator: \.isNewline)
+            .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.map(String.init) ?? ""
+        let delimiter = TransactionCSVImportService.detectDelimiter(from: firstLine)
+        // Con tabulador como separador, un tabulador al principio o al final es una celda vacía, no relleno.
+        let padding: CharacterSet = delimiter == "\t" ? CharacterSet.newlines.union(CharacterSet(charactersIn: " ")) : .whitespacesAndNewlines
+
+        var lines = TransactionCSVImportService.splitCSVRows(contents, delimiter: delimiter)
+            .filter { !$0.text.trimmingCharacters(in: padding).isEmpty }
         guard !lines.isEmpty else { throw ImportError.emptyFile }
 
-        let headerLine = lines.removeFirst()
-        let delimiter = TransactionCSVImportService.detectDelimiter(from: headerLine)
+        let headerLine = lines.removeFirst().text
         let headerCells = TransactionCSVImportService.splitCSVFields(headerLine, delimiter: delimiter)
         let header = try ImportHeader.map(headerCells)
         // La nota recoge los delimitadores de más solo si es la última columna con nombre.
@@ -171,11 +225,17 @@ enum ImportFileReader {
 
         var rows: [RawImportRow] = []
         rows.reserveCapacity(lines.count)
-        for (index, line) in lines.enumerated() {
-            let rowNumber = index + 2  // la cabecera es la fila 1
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            // Una línea sin delimitador es ruido (la segunda línea de una nota partida, un resumen al final).
-            if trimmed.isEmpty || !trimmed.contains(delimiter) { continue }
+        for line in lines {
+            // La línea física del archivo donde empieza la fila (la cabecera es la 1): las líneas en blanco no la
+            // desplazan, así que el número que sale en «filas que no entraron» es el que la persona ve en su editor.
+            let rowNumber = line.line
+            let trimmed = line.text.trimmingCharacters(in: padding)
+            // Una línea con texto y sin separador (la segunda línea de una nota partida, un total al final) no se
+            // salta en silencio: sale entre las que no entraron, con su número (H13).
+            if !trimmed.contains(delimiter) {
+                rows.append(RawImportRow.unreadable(rowNumber: rowNumber))
+                continue
+            }
             if trimmed.replacing(String(delimiter), with: "").trimmingCharacters(in: .whitespaces).isEmpty { continue }
 
             let rawCells = TransactionCSVImportService.splitCSVFields(trimmed, delimiter: delimiter)

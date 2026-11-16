@@ -170,7 +170,9 @@ export function resolveTranscriptionTask(header: string | null | undefined, decl
       message: model ? `El modelo ${model.slice(0, 64)} no está permitido en este gateway.` : "Falta el modelo.",
     };
   }
-  return { ok: true, task: "voice.transcribe", how: h.kind === "known" ? "header" : "category", headerUnknown: h.kind === "unknown", category: "voice" };
+  // Con cabecera conocida, la tarea y su cubo (`receipt.transcribe` cuenta en `receipt`); sin ella, la nota de siempre.
+  if (h.kind === "known") return { ok: true, task: h.task, how: "header", headerUnknown: false, category: h.category };
+  return { ok: true, task: "voice.transcribe", how: "category", headerUnknown: h.kind === "unknown", category: "voice" };
 }
 
 /** Lee el campo `model` de un multipart/form-data sin tocar el resto de bytes. */

@@ -21,6 +21,20 @@ struct SignOutRelaunchView: View {
     /// (`groupsOnlyWipeArmed`) — solo se enciende ahí; `.cloud`/secundaria conservan el copy actual.
     private var isGroupsOnly: Bool { StorageModePersistence.isGroupsOnlyWipeArmed() }
 
+    /// Card p9q0 (13-nov-2026) · tras eliminar la cuenta, lo hecho es eso, no «Sesión cerrada» (E05 del recorrido).
+    private var doneLine: String {
+        AccountDeletionService.shared.phase == .awaitingRelaunch
+            ? L10n.UXCS.relaunchAccountDeleted : L10n.UXL20N.relaunchDoneSignedOut
+    }
+
+    /// Card p9q0 · reabrir solo es imprescindible con iCloud montado (un almacén con espejo no se cambia en caliente), y
+    /// entonces se dice por qué. Los demás casos conservan su frase.
+    private var afterNote: String {
+        if isGroupsOnly { return L10n.UXL20N.relaunchAfterGroupsOnly }
+        return CloudSessionSignOut.personalMountAttachesMirror
+            ? L10n.UXCS.relaunchAfterSignOutICloud : L10n.UXL20N.relaunchAfterSignOut
+    }
+
     /// UX 2.2 · L20-18 (variante 3): lo hecho con check y el gesto en tres pasos (`RelaunchChecklist`). El único check
     /// que es verdad en TODOS los caminos que llegan aquí —cierre de sesión en cada celda, borrado de la cuenta, swap del
     /// contenedor— es que la sesión está cerrada; lo demás pasa al reabrir, y por eso va como frase bajo el pendiente.
@@ -28,8 +42,8 @@ struct SignOutRelaunchView: View {
         ScrollView {
             RelaunchChecklist(
                 title: L10n.UXL20N.relaunchAlmostTitle,
-                done: [L10n.UXL20N.relaunchDoneSignedOut],
-                afterNote: isGroupsOnly ? L10n.UXL20N.relaunchAfterGroupsOnly : L10n.UXL20N.relaunchAfterSignOut)
+                done: [doneLine],
+                afterNote: afterNote)
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
                 .frame(maxWidth: DS.Adaptive.readableWidth)

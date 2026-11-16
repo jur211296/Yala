@@ -611,9 +611,11 @@ enum WidgetDataCache {
             #endif
         }
 
-        // Pre-filter: exclude transactions from accounts excluded from statistics
+        // Pre-filter: fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una
+        // cuenta archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera
+        // (`LiveBalanceCalculator.entersBalance`, decisión 6 de 2.3).
         let excludedAccountIDs = Set(
-            accounts.filter { $0.excludeFromStatistics }.map { $0.persistentModelID }
+            accounts.filter { !$0.keepsHistory }.map { $0.persistentModelID }
         )
         let isEligible: (TransactionItem) -> Bool = { tx in
             countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
@@ -894,7 +896,9 @@ enum WidgetDataCache {
             overdueWindowStart: month.start,
             days: days,
             allTransactions: allTransactions,
-            countedTransactions: eligibleTransactions,
+            // Sin las cuentas archivadas por la persona: no se van a mover, y el widget de Saldo acumula este ritmo sobre
+            // su cifra, que ya las deja fuera (decisión 6 de 2.3). Es lo que hace la proyección del saldo del Panel.
+            countedTransactions: eligibleTransactions.filter { $0.account?.isArchivedByThePerson != true },
             hasSessionFilters: false,
             scheduledPayments: scheduledPayments,
             paymentFilter: .none,
@@ -912,7 +916,7 @@ enum WidgetDataCache {
         )
     }
 
-    /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta que cuenta para estadísticas. Es el
+    /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta cuyo historial se ve. Es el
     /// filtro de cuentas elegibles de la app (Panel, Registros, Estadísticas), que deja fuera los movimientos sin cuenta.
     /// Hasta el 2026-10-23 los widgets sí los contaban y su «Este mes» no coincidía con el de la app.
     static func countsForWidgets(_ tx: TransactionItem, excludedAccountIDs: Set<PersistentIdentifier>) -> Bool {

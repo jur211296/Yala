@@ -492,9 +492,10 @@ struct GroupBalanceServiceTests {
         )
 
         let summary = GroupBalanceService.globalSummary(
-            allExpenses: [e1, e2],
-            allShares: shares1 + shares2,
-            allSettlements: [pending],
+            groups: [
+                .init(expenses: [e1], shares: shares1, settlements: [pending], simplifyDebts: true, singleCurrency: nil),
+                .init(expenses: [e2], shares: shares2, settlements: [], simplifyDebts: true, singleCurrency: nil),
+            ],
             currentUserMemberIDs: [myMemberID]
         )
 
@@ -510,9 +511,7 @@ struct GroupBalanceServiceTests {
 
     @Test func globalSummary_empty_returnsZeros() {
         let summary = GroupBalanceService.globalSummary(
-            allExpenses: [],
-            allShares: [],
-            allSettlements: [],
+            groups: [],
             currentUserMemberIDs: ["me"]
         )
 
@@ -706,9 +705,8 @@ struct GroupBalanceServiceTests {
         ]
 
         let summary = GroupBalanceService.globalSummary(
-            allExpenses: [expense1, expense2],
-            allShares: shares,
-            allSettlements: [],
+            groups: [.init(expenses: [expense1, expense2], shares: shares, settlements: [],
+                           simplifyDebts: true, singleCurrency: nil)],
             currentUserMemberIDs: [aID.uuidString]
         )
 

@@ -17,4 +17,11 @@ Para probar el import con un archivo real (barrido 2026-10-30, Excel de Jürgen)
    `seed: "sin-registros"` y enciende «Crear categorías nuevas» para medir lectura, cuentas y saldos.
 4. Datos personales: al terminar, `simctl erase` del simulador y borra la copia de `/private/tmp`.
 
+5. **Antes y después en la misma tanda (2026-11-12, 15 min de UI en total):** el «antes» se compila de `git archive HEAD`
+   con `Secrets.xcconfig` copiado y su propio `-derivedDataPath`; el mismo conductor se copia a su `YalaUITests` y se
+   corre desde esa carpeta. El conductor guarda capturas con `XCUIScreen.main.screenshot()` en el scratchpad (el
+   runner escribe en `/private/tmp`). Para abrir lo importado: relanzar con `reset: false`, mismo seed, `deeplink:
+   "records"` y `-defaultPeriod allTime` (si no, Registros abre en el mes en curso y lo de octubre no sale).
+   `-defaultCurrencyCode PEN` fija la preferida para probar tasas.
+
 Relacionado: [[reference-el-simulador-no-lee-downloads]], [[feedback-axe-no-ve-las-hojas]].

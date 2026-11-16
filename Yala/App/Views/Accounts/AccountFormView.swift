@@ -849,15 +849,18 @@ struct AccountFormView: View {
     private var actionsSection: some View {
         SectionBox(title: L10n.Common.actions) {
             VStack(spacing: DS.Spacing.none) {
-                Toggle(isOn: $viewModel.excludeFromStatistics) {
-                    Text(L10n.Account.excludeFromStats)
+                // Con la cuenta archivada «Excluir» no haría nada: no suma en el saldo y su historial se ve igual
+                // (`AccountScopeLogic`, decisión 6 de 2.3). El valor guardado se conserva y vuelve a mandar al desarchivar.
+                if !viewModel.isArchived {
+                    Toggle(isOn: $viewModel.excludeFromStatistics) {
+                        Text(L10n.Account.excludeFromStats)
+                    }
+                    .accessibilityIdentifier("account_exclude_stats_toggle")
+
+                    .padding()
+
+                    SubsectionDivider()
                 }
-                .onChange(of: viewModel.excludeFromStatistics) { _, excluded in viewModel.excludeChanged(to: excluded) }
-                .accessibilityIdentifier("account_exclude_stats_toggle")
-
-                .padding()
-
-                SubsectionDivider()
 
                 Toggle(isOn: $viewModel.isArchived) {
                     Text(L10n.Account.archive)
@@ -867,17 +870,17 @@ struct AccountFormView: View {
 
                 .padding()
 
-                // Avisar sin confirmar: archivar no borra nada, cambia qué suma y qué se ve en
-                // Registros. El texto dice dónde se deshace: el toggle de arriba, en esta tarjeta.
-                if viewModel.showsArchiveExclusionNotice {
-                    Text(L10n.Account.archiveExcludedNotice)
+                // Avisar sin confirmar: archivar no borra nada; saca la cuenta del saldo, de las cuentas del Panel y del
+                // registro, y sus gastos e ingresos siguen contando.
+                if viewModel.showsArchiveKeepsHistoryNotice {
+                    Text(L10n.Account.archiveKeepsHistoryNotice)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                         .padding(.bottom)
-                        .accessibilityIdentifier("account_archive_excluded_notice")
+                        .accessibilityIdentifier("account_archive_keeps_history_notice")
                 }
 
                 if viewModel.isEditing {
@@ -1046,9 +1049,6 @@ struct AccountFormView: View {
                     SubsectionDivider()
                     Toggle(isOn: $viewModel.excludeFromStatistics) {
                         Text(L10n.Account.excludeFromStats)
-                    }
-                    .onChange(of: viewModel.excludeFromStatistics) { _, excluded in
-                        viewModel.excludeChanged(to: excluded)
                     }
                     .accessibilityIdentifier("account_exclude_stats_toggle")
                     .padding()

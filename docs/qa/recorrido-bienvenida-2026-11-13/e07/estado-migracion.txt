@@ -1,0 +1,14 @@
+== ZMIGRATIONSTATE
+started|updated|ZREVERSEORIGINRAW|phase|effects
+2026-11-13 15:06:02|2026-11-13 15:06:02|notStarted|{"reverseDrainAll":{}}|[]
+== ZSYNCOUTBOX
+ZENTITYTYPE|ZOPRAW|n
+TransactionItem|upsert|2327
+ExchangeRate|upsert|731
+ScheduledPayment|upsert|8
+Subcategory|upsert|7
+Budget|upsert|6
+Tag|upsert|5
+Account|upsert|2
+Category|upsert|2
+InboxDraft|upsert|2

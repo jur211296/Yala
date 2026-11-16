@@ -16,25 +16,8 @@ import UserNotifications
 @Suite("UX 2.2 · lote 5")
 struct UXAudit22Lote5LogicTests {
 
-    // MARK: - L5-3 · el último paso se llama por lo que abre
-
-    @Test(arguments: [
-        (pro: false, eligible: true, title: SetupStepID.DiscoverTitle.freeTrial),
-        (pro: false, eligible: false, title: .knowPro),
-        (pro: true, eligible: true, title: .alreadyPro),
-        (pro: true, eligible: false, title: .alreadyPro),
-    ])
-    func discoverStepTitle(_ c: (pro: Bool, eligible: Bool, title: SetupStepID.DiscoverTitle)) {
-        #expect(SetupStepID.discoverTitle(isProUser: c.pro, trialEligible: c.eligible) == c.title)
-    }
-
-    /// Quien ya usó la prueba no lee «gratis 30 días» (no la vuelve a tener).
-    @Test func discoverStepTitle_withoutTrial_doesNotPromiseFree() {
-        let key = "setup.step5.title.knowPro"
-        let value = NSLocalizedString(key, comment: "")
-        #expect(value != key)
-        #expect(!value.contains("30"))
-    }
+    // L5-3 («el último paso se llama por lo que abre») se retiró con Y23-05: «Conoce Yala Pro» ya no es un paso del
+    // mazo de Primeros pasos.
 
     // MARK: - L5-13 · el anillo del hito
 
@@ -151,7 +134,8 @@ struct UXAudit22Lote5LogicTests {
     @Test func proTour_doesNotForceTheFloatingButtons() throws {
         let code = try Self.source("Yala/App/Views/Panel/PanelView.swift")
         #expect(!code.contains("showFloatingActions || showProFabTour"))
-        #expect(code.contains("if showFloatingActions {"))
+        // Y23-05: en la llegada tranquila tampoco salen (el mazo es la única acción).
+        #expect(code.contains("if showFloatingActions && !isQuietArrival {"))
     }
 
     /// L5-9: tocar la zona oscura cierra la guía (como «Omitir guía»), ya no avanza.

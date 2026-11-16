@@ -71,9 +71,16 @@ private struct WelcomeBackButton: ViewModifier {
                             DS.Haptic.selection()
                             action()
                         } label: {
-                            Label(L10n.Welcome.Invite.back, systemImage: "chevron.backward")
-                                .foregroundStyle(tint)
+                            // En la barra de iOS 26 el color puesto a la `Label` entera no llega: el glifo salía con el
+                            // índigo del tinte de la app (Jürgen, 13-nov). Se pinta el ícono y se tiñe el botón.
+                            Label {
+                                Text(L10n.Welcome.Invite.back)
+                            } icon: {
+                                Image(systemName: "chevron.backward")
+                                    .foregroundStyle(tint)
+                            }
                         }
+                        .tint(tint)
                         .accessibilityIdentifier("welcome_back_button")
                     }
                 }

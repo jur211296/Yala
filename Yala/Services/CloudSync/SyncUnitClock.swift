@@ -88,6 +88,8 @@ enum SyncUnitClockStore {
         if EntityApplyMap._testThrowOnFetchOf.contains("SyncUnitClock") {
             throw EntityApplyFetchError.unreadable("SyncUnitClock")
         }
+        // YALA-IOS-J: dentro de una página del apply, lo que ya se leyó por lote.
+        if let hit = EntityApplyMap.pageLookups(for: context)?.lookup(SyncUnitClock.self, syncID) { return hit }
         var d = FetchDescriptor<SyncUnitClock>(predicate: #Predicate { $0.syncID == syncID })
         d.fetchLimit = 1
         return try context.fetch(d).first

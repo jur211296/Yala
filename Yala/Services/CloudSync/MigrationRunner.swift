@@ -32,7 +32,11 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
+
+/// Rastro del runner en Console.app (`com.yala` / `MigrationRunner`). Solo fases y cifras: sin datos de la persona.
+nonisolated let migrationRunnerLogger = Logger(subsystem: "com.yala", category: "MigrationRunner")
 
 // MARK: - Seam de trabajo por fase
 
@@ -848,6 +852,9 @@ protocol MigrationWorkExecuting: AnyObject {
     /// paso 5 y el borrado del pendiente— no puede salir a `failedRollback`, que dejaría `.cloud` persistido en un terminal
     /// de fallo. Default `false` en la extension de abajo.
     func hasPersistedCloudMode() -> Bool
+    /// Le da al ejecutor la pregunta «¿hay un «Cancelar la activación» apuntado?» para los puntos seguros del efecto del
+    /// adopt (card l4m0 del barrido del 14-nov). La instala el runner al crearse. Default no-op en la extension de abajo.
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool)
     /// `has_personal_writes` del último `performClaim` que contestó `created` (g16_03, ticket
     /// `migration-takeover-uploads-without-a-lineage-check`): la cuenta ya recibió datos personales. `nil` = no lo dijo (un
     /// servidor sin g16_03, u otro desenlace). Lo lee `handle` al ENTRAR en `assigningIdentity`, para journalearlo en el
@@ -884,6 +891,8 @@ protocol MigrationWorkExecuting: AnyObject {
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (la cifra de «Subir tus datos»). Solo
     /// informa. Default `nil` en la extensión: los fakes no la modelan.
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { get }
+    /// En qué paso real va el efecto del adopt (card jxbp). Solo informa. Default `nil` en la extensión.
+    var adoptEffectProgress: AdoptEffectProgress? { get }
 
     // MARK: Reversa (§h, I11-2). El server-side (claim/freeze) queda notWired hasta I11-3.
 
@@ -891,6 +900,15 @@ protocol MigrationWorkExecuting: AnyObject {
     func performReverseClaim() async -> ReverseClaimOutcome
     /// `reverseDrainAll` (§h): pull final + drain del outbox propio + push del residual (reusa piezas de `verify()`).
     func reverseDrainOnce() async -> ReverseStepOutcome
+    /// La misma pasada, por TANDAS (card `volver-a-tu-icloud-se-queda-en-traer-tus`, 13-nov): cada tanda confirmada se
+    /// purga del outbox en el acto, así que lo subido sobrevive a cerrar Yala y a cancelar; `continueWhile` se pregunta
+    /// antes de cada tanda y con `false` la pasada corta (lo ya confirmado queda guardado); `onProgress` informa cuántos
+    /// cambios lleva confirmados de cuántos había al empezar. Default en la extensión: llama a `reverseDrainOnce()`, así
+    /// los fakes que no lo modelan se comportan como antes.
+    func reverseDrainOnce(
+        continueWhile: @escaping @MainActor () -> Bool,
+        onProgress: @escaping @MainActor (CloudProgressStepsLogic.UploadProgress) -> Void
+    ) async -> ReverseStepOutcome
     /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". `completed` avanza; `transient` corta
     /// retomable; `sessionExpired` corta dejando rastro para la pantalla. Devolvía `Bool` hasta el ticket
     /// `reverse-before-mount-stays-stuck-with-an-expired-session`, y ese `false` único metía en el mismo saco la red y
@@ -945,6 +963,14 @@ protocol MigrationWorkExecuting: AnyObject {
 extension MigrationWorkExecuting {
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { nil }
 
+    func reverseDrainOnce(
+        continueWhile: @escaping @MainActor () -> Bool,
+        onProgress: @escaping @MainActor (CloudProgressStepsLogic.UploadProgress) -> Void
+    ) async -> ReverseStepOutcome {
+        await reverseDrainOnce()
+    }
+    var adoptEffectProgress: AdoptEffectProgress? { nil }
+
     /// Defaults del linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`): un conformador que no lo
     /// modela —los fakes de las suites de antes— recorre la identidad como antes del ticket. El ejecutor real los override.
     func lastClaimReportedPersonalWrites() -> Bool? { nil }
@@ -971,6 +997,9 @@ extension MigrationWorkExecuting {
 
     /// Default: el modo sigue en iCloud, que es lo que un fake que no lo guiona describe.
     func hasPersistedCloudMode() -> Bool { false }
+
+    /// Default: un fake sin efecto del adopt no tiene puntos seguros que mirar.
+    func installAdoptCancelProbe(_ probe: @escaping @MainActor () -> Bool) {}
 }
 
 // MARK: - Runner
@@ -1036,6 +1065,20 @@ final class MigrationRunner {
 
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay. Del uploader, a través del executor.
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { executor.snapshotUploadProgress }
+
+    /// En qué paso real va el efecto del adopt (card jxbp). Del executor.
+    var adoptEffectProgress: AdoptEffectProgress? { executor.adoptEffectProgress }
+
+    /// Cuántos cambios pendientes confirmó ya el servidor en «Traer tus datos de tu cuenta de Yala» (`reverseDrainAll`), de
+    /// cuántos había al empezar la pasada (card `volver-a-tu-icloud-se-queda-en-traer-tus`, 13-nov). Solo informa. `nil`
+    /// fuera de esa fase o antes de la primera tanda: tras relanzar, la cifra vuelve con la primera tanda.
+    private(set) var reverseDrainProgress: CloudProgressStepsLogic.UploadProgress?
+
+    /// El «sí» de «Cancelar y seguir en tu cuenta de Yala», apuntado por el controller ANTES de esperar a que suelte la pasada
+    /// en vuelo (misma razón que `migrationCancelRequested`). El drenaje de la vuelta lo mira antes de cada tanda: hasta el
+    /// 13-nov subía el outbox ENTERO de un tirón —3090 cambios eran ~15 min— y el botón esperaba apagado a que terminara.
+    /// Lo retiran `cancelReverse()` y `withdrawReverseCancel()`. En memoria a propósito: tras relanzar, el diálogo ya no existe.
+    private var reverseCancelRequested = false
 
     /// Cuándo cambió de paso la última vez, para el canario `cloudMigrationStep`. En memoria: tras relanzar, el primer
     /// cambio sale sin duración.
@@ -1123,6 +1166,8 @@ final class MigrationRunner {
         self.markerExportInPassWaitSeconds = max(0, markerExportInPassWaitSeconds)
         self.onQuiescenceTimeout = onQuiescenceTimeout
         self.onQuiescenceWaited = onQuiescenceWaited
+        // Card l4m0: el efecto del adopt mira el «sí» en sus puntos seguros, no solo antes de cada intento.
+        executor.installAdoptCancelProbe { [weak self] in self?.migrationCancelRequested == true }
     }
 
     /// Termina una espera a iCloud que sí esperó (no el atajo de iCloud ya quieto): segundos y si se asentó. Producción emite
@@ -1281,6 +1326,8 @@ final class MigrationRunner {
             return
         }
         await runGuarded {
+            // Se consume aquí pase lo que pase, como el de la ida: la salida ocurre ahora o no hay de dónde salir.
+            defer { self.reverseCancelRequested = false }
             let phase = try self.loadState().readPhase().phase
             let origin = try self.originFromJournal()
             if phase == .reverseUpload {
@@ -1329,6 +1376,17 @@ final class MigrationRunner {
     /// a propósito: lo llama el controller antes de su primer `await`, y la pasada lo ve en su próxima vuelta.
     func requestMigrationCancel() {
         migrationCancelRequested = true
+    }
+
+    /// Apunta el «sí» de «Cancelar y seguir en tu cuenta de Yala» para el drenaje en vuelo (`reverseCancelRequested`).
+    /// Síncrono: el controller lo llama antes de esperar, y el drenaje corta antes de su próxima tanda.
+    func requestReverseCancel() {
+        reverseCancelRequested = true
+    }
+
+    /// Retira un «sí» apuntado que ya no vale: la persona firmó para CONTINUAR la vuelta (`signInToResumeReverse`).
+    func withdrawReverseCancel() {
+        reverseCancelRequested = false
     }
 
     /// Journalea la cancelación con el evento de la fase en la que está, y devuelve si canceló. Retira el «sí» apuntado en
@@ -1616,8 +1674,8 @@ final class MigrationRunner {
             }
             // Un «Cancelar» apuntado con el efecto del adopt pendiente se honra ANTES de intentarlo otra vez (hallazgo de la
             // review de `adopt-effect-retries-forever-with-no-ceiling`): mirándolo solo al fallar, un intento que saliera
-            // bien adoptaba a quien acababa de confirmar que cancelaba. Un intento que ya está dentro del efecto no se para:
-            // eso lo recoge el `catch` de abajo si falla.
+            // bien adoptaba a quien acababa de confirmar que cancelaba. Un intento que ya está dentro del efecto se para en sus
+            // puntos seguros (`MigrationExecutorError.adoptCancelRequested`, card l4m0) y lo recoge el `catch` de abajo.
             if effect == .adoptBackendAccount, migrationCancelRequested, try await journalMigrationCancel() { return }
             do {
                 try await executor.execute(effect)
@@ -1785,8 +1843,20 @@ final class MigrationRunner {
             case .reverseClaimLeader:
                 if !(try await driveReverseClaim()) { return }
             case .reverseDrainAll:
-                switch await executor.reverseDrainOnce() {
+                // Por tandas, con el «sí» de cancelar mirado antes de cada una y la cifra en la pantalla (card
+                // `volver-a-tu-icloud-se-queda-en-traer-tus`). Un corte por el «sí» no es un atasco: no pasa por el techo de la
+                // etapa, sale y el controller cancela en cuanto la pasada suelta.
+                migrationRunnerLogger.notice("reverseDrain begin")
+                let drainStartedAt = Date()
+                let drainOutcome = await executor.reverseDrainOnce(
+                    continueWhile: { [weak self] in !(self?.reverseCancelRequested ?? true) },
+                    onProgress: { [weak self] progress in self?.reverseDrainProgress = progress })
+                migrationRunnerLogger.notice(
+                    "reverseDrain end outcome=\(String(describing: drainOutcome), privacy: .public) seconds=\(Int(Date().timeIntervalSince(drainStartedAt)), privacy: .public) progress=\(self.reverseDrainProgress.map { "\($0.done)/\($0.total)" } ?? "-", privacy: .public)")
+                if reverseCancelRequested, drainOutcome != .completed { return }
+                switch drainOutcome {
                 case .completed:
+                            reverseDrainProgress = nil
                             try await handle(.reverseDrainCompleted)
                     // Heartbeat (I14-pre): el drain de una época nube grande puede tardar minutos — late al
                     // cerrar el paso para no dejar la lease de 60 min usurpable a mitad de la reversa.
@@ -3301,8 +3371,14 @@ final class MigrationRunner {
     /// alcanzó. NO escribe nada del journal (ni un `save()`) mientras espera.
     private func awaitQuiescence() async -> Bool {
         if quiescenceSignal() { return true }
+        // Rastro de entrada y salida (card `volver-a-tu-icloud-se-queda-en-traer-tus`): el atasco del 13-nov se atribuyó a esta
+        // espera sin poder verlo, porque solo dejaba rastro al vencer.
+        migrationRunnerLogger.notice("awaitQuiescence begin")
         isAwaitingImportQuiescence = true
-        defer { isAwaitingImportQuiescence = false }
+        defer {
+            isAwaitingImportQuiescence = false
+            migrationRunnerLogger.notice("awaitQuiescence end")
+        }
         let maxTicks = max(1, Int((quiescenceTimeoutSeconds / quiescenceTickSeconds).rounded(.up)))
         var waited: Double = 0
         for _ in 0..<maxTicks {

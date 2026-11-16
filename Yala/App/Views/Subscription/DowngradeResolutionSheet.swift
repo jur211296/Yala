@@ -425,11 +425,11 @@ struct DowngradeResolutionSheet: View {
 
     private func archiveExcessItems() {
         // Archive accounts not selected. Una tarjeta se archiva con sus líneas: si no, la línea pasa a leerse suelta,
-        // cuenta para el límite y esta hoja vuelve a salir en el arranque siguiente (review de la entrega 1). Sin
-        // excluir de estadísticas, como el resto de este archivado (`session-filters.md`).
+        // cuenta para el límite y esta hoja vuelve a salir en el arranque siguiente (review de la entrega 1). Archivar
+        // saca la cuenta del saldo y conserva su historial (`AccountScopeLogic`, decisión 6 de 2.3).
         for account in activeAccounts {
             if !selectedAccountIDs.contains(account.persistentModelID) {
-                AccountLineService.archiveLines(of: account, among: accounts, excludeFromStatistics: false)
+                AccountLineService.archiveLines(of: account, among: accounts)
                 account.isArchived = true
             }
         }

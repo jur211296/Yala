@@ -179,7 +179,11 @@ struct FreshStartAfterAdoptExitWiringTests {
     /// una de ellas saliera por otro sitio, este test lo dice antes de que la celda deje de ser la suya.
     @Test func everyAdoptExit_returnsToTheWelcomeThroughOnBack() throws {
         let view = Self.code(try Self.source(Self.cloudSignIn))
-        #expect(view.contains(".welcomeBackButton(tint: .white, action: canGoBack ? onBack : nil)"))
+        // Bienvenida 2.3: la flecha pasa por `backAction`, que sigue exigiendo `canGoBack`; fuera del acceso único
+        // `goBack()` es `onBack()` tal cual (el acceso único además suelta su sesión).
+        #expect(view.contains(".welcomeBackButton(tint: .white, action: backAction)"))
+        #expect(Self.flat(view).contains("guard canGoBack else { return nil } return { goBack() }"))
+        #expect(Self.flat(view).contains("guard isUnifiedAccess else { return onBack() }"))
         // Las tres fases de salida están en el `case` que deja la flecha; sin fijar el resto de la lista.
         let canGoBack = try Self.slice(from: "private var canGoBack: Bool {", to: "\n    }\n", in: view)
         let arrowCase = try #require(canGoBack.split(separator: "\n").first { $0.hasSuffix(": true") })

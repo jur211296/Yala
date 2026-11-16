@@ -9,8 +9,9 @@
 //  Orden: crear → guardar → apuntar los ids → `ack`. Si el `ack` no llega, la próxima vuelta los vuelve a traer y los ids
 //  apuntados impiden duplicarlos (y se vuelven a confirmar).
 //
-//  Corre al volver a primer plano, solo si: la persona preparó su dirección (`BankEmailSetupStore`), los datos viven en
-//  la nube con sesión, no hay un borrado de cierre armado y el import está asentado (el gate de `ApplePayDraftService`).
+//  Corre al volver a primer plano, solo si: la persona preparó su dirección (`BankEmailSetupStore`) o tiene sesiones de
+//  Yala web abiertas (la web apunta por esta misma cola, lote 1), los datos viven en la nube con sesión, no hay un
+//  borrado de cierre armado y el import está asentado (el gate de `ApplePayDraftService`).
 //
 
 import Foundation
@@ -23,18 +24,19 @@ enum BankEmailDraftService {
         BankEmailClient(attestProvider: AttestSessionProvider.live)
     }
 
-    /// ¿Toca preguntar al gateway? Pura, para los tests.
-    nonisolated static func shouldSync(isSetUp: Bool, storageIsCloud: Bool, hasSession: Bool, wipeArmed: Bool, importQuiescent: Bool) -> Bool {
-        isSetUp && storageIsCloud && hasSession && !wipeArmed && importQuiescent
+    /// ¿Toca preguntar al gateway? Pura, para los tests. `webConnected`: hay sesiones de Yala web (`ConnectedBrowsersPresence`).
+    nonisolated static func shouldSync(isSetUp: Bool, webConnected: Bool = false, storageIsCloud: Bool, hasSession: Bool, wipeArmed: Bool, importQuiescent: Bool) -> Bool {
+        (isSetUp || webConnected) && storageIsCloud && hasSession && !wipeArmed && importQuiescent
     }
 
     private static var inFlight = false
 
     /// Trae, crea y confirma. Devuelve cuántos borradores creó (0 si no tocaba o falló: se reintenta en la próxima vuelta).
     @discardableResult
-    static func syncIfNeeded(context: ModelContext) async -> Int {
+    static func syncIfNeeded(context: ModelContext, webConnected: Bool = ConnectedBrowsersPresence.cachedHasSessions()) async -> Int {
         guard shouldSync(
             isSetUp: BankEmailSetupStore.isSetUp(),
+            webConnected: webConnected,
             storageIsCloud: CloudSyncFlags.storageMode == .cloud,
             hasSession: CloudAuthService.shared.hasSession,
             wipeArmed: StorageModePersistence.isSignOutWipeArmed(),
@@ -78,12 +80,30 @@ enum BankEmailDraftService {
 
         for dto in dtos {
             let fields = BankEmailDraftLogic.fields(from: dto)
-            let account = DraftBuilder.findAccount(paymentMention: fields.accountMention, dictatedCurrency: fields.currencyCode, in: accounts)
+            // Lo apuntado en Yala web trae la cuenta y la subcategoría elegidas (lote 1, `WebDraftLogic`).
+            let fromWeb = WebDraftLogic.isWeb(source: dto.source)
+            let chosenAccount = fromWeb ? WebDraftLogic.account(ref: dto.accountRef, in: accounts, id: \.shortcutID) : nil
+            let account = chosenAccount
+                ?? DraftBuilder.findAccount(paymentMention: fields.accountMention, dictatedCurrency: fields.currencyCode, in: accounts)
                 ?? fields.currencyCode.flatMap { DraftBuilder.findAccount(byCurrency: $0, in: accounts) }
 
             var subcategory: Subcategory?
             var subcategoryConfidence: Double?
-            if !fields.note.isEmpty {
+            if fromWeb, let wanted = WebDraftLogic.uuid(dto.subcategoryRef) {
+                do {
+                    subcategory = try EntityApplyMap.findSubcategory(byShortcutID: wanted, context: context)
+                } catch {
+                    #if DEBUG
+                    print("BankEmailDraftService: Error: \(error)")
+                    #endif
+                }
+                if let chosen = subcategory,
+                   !WebDraftLogic.acceptsSubcategory(isVisible: chosen.isVisible, isIncomeCategory: chosen.category?.isIncome, amount: fields.amount) {
+                    subcategory = nil
+                }
+                if subcategory != nil { subcategoryConfidence = 1.0 }
+            }
+            if subcategory == nil, !fields.note.isEmpty {
                 switch MerchantMemoryService(modelContext: context).suggest(for: fields.note, isExpense: fields.amount < 0) {
                 case .autoAssign(let sub):
                     subcategory = sub
@@ -102,12 +122,12 @@ enum BankEmailDraftService {
                 date: fields.date,
                 account: account,
                 subcategory: subcategory,
-                sourceType: .emailAlert,
-                rawText: fields.evidence,
-                evidence: fields.evidence,
+                sourceType: fromWeb ? .automation : .emailAlert,
+                rawText: fromWeb ? WebDraftLogic.evidence : fields.evidence,
+                evidence: fromWeb ? WebDraftLogic.evidence : fields.evidence,
                 confidenceAmount: 0.9,
                 confidenceDate: 0.9,
-                confidenceMerchant: fields.note.isEmpty ? nil : 0.9,
+                confidenceMerchant: fields.note.isEmpty ? nil : (fromWeb ? 1.0 : 0.9),
                 confidenceSubcategory: subcategoryConfidence,
                 needsUserInput: DraftBuilder.computeNeedsUserInput(
                     hasAmount: true, hasAccount: account != nil, hasSubcategory: subcategory != nil)
