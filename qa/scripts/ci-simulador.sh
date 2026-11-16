@@ -235,11 +235,14 @@ while [ -n "$UDID" ] && [ "$validar" = si ]; do
     echo "::warning title=Simulador::xcodebuild -showdestinations no contestó; se sigue con $UDID sin validar (el build lo dirá)"
     break
   fi
-  if printf '%s\n' "$DESTINOS" | grep -qF "id:$UDID,"; then
-    echo "xcodebuild ve $SIM_NAME $UDID como destino de «$SIM_SCHEME»."
-    break
-  fi
-  echo "::warning title=Simulador::xcodebuild no ve $SIM_NAME $UDID (runtime $RT, iOS ${RT_VERSION:-?}) como destino de «$SIM_SCHEME»; se excluye ese runtime y se busca otro"
+  # `case` y no `printf | grep -q`: con `pipefail`, el `grep -q` que cierra pronto deja al `printf`
+  # en SIGPIPE y la tubería sale 141 justo cuando SÍ lo encontró.
+  case "$DESTINOS" in
+    *"id:$UDID,"*)
+      echo "xcodebuild ve $SIM_NAME $UDID como destino de «${SIM_SCHEME}»."
+      break ;;
+  esac
+  echo "::warning title=Simulador::xcodebuild no ve $SIM_NAME $UDID (runtime $RT, iOS ${RT_VERSION:-?}) como destino de «${SIM_SCHEME}»; se excluye ese runtime y se busca otro"
   no_ve="$no_ve $RT"
   EXCLUIDOS="$EXCLUIDOS $RT"
   # CoreSimulator ya contestó: lo que falla es la visibilidad en Xcode, y descargar la plataforma
@@ -249,7 +252,7 @@ while [ -n "$UDID" ] && [ "$validar" = si ]; do
 done
 
 if [ -z "$UDID" ] && [ -n "$no_ve" ]; then
-  echo "::error title=Simulador::ningún runtime iOS deja un $SIM_NAME que xcodebuild vea como destino de «$SIM_SCHEME». Excluidos por no verse:$no_ve. Hace falta otro Xcode (qa/scripts/ci-xcode.sh) o una imagen cuyo Xcode vea un runtime con el modelo. Destinos iOS que xcodebuild SÍ ve:"
+  echo "::error title=Simulador::ningún runtime iOS deja un $SIM_NAME que xcodebuild vea como destino de «${SIM_SCHEME}». Excluidos por no verse:$no_ve. Hace falta otro Xcode (qa/scripts/ci-xcode.sh) o una imagen cuyo Xcode vea un runtime con el modelo. Destinos iOS que xcodebuild SÍ ve:"
   printf '%s\n' "${DESTINOS:-(ninguno)}"
   "$XCRUN" simctl list runtimes 2>&1 || true
   exit 1

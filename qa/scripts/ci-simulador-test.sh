@@ -4,6 +4,10 @@
 #
 #   bash qa/scripts/ci-simulador-test.sh
 #
+# El script corre con el bash 3.2 del sistema y `LC_ALL=en_US.UTF-8`, como en el runner. Ahí `"$VAR»"`
+# lee los bytes de «»» como parte del nombre y `set -u` revienta (run 43856642912); con el locale C
+# de una sesión local no se ve.
+#
 # El `xcodebuild` falso también contesta `-showdestinations` (casos 18-22): por defecto ve todos los
 # devices del escenario, y `NO_VE` le quita los UDID que la imagen de turno no ofrece como destino.
 set -uo pipefail
@@ -99,7 +103,7 @@ caso() {
   printf '%s\n' ${NO_VE:-} > "$d/no-ve"; [ -z "${DESTINOS_FALLA:-}" ] || : > "$d/destinos-falla"
   ESCENARIO="$d" XCRUN="$T/xcrun" KILLALL="$T/killall" XCODEBUILD="$T/xcodebuild" GITHUB_OUTPUT="$d/out" \
     SIM_INTENTOS=4 SIM_DESCARGA_TRAS=2 SIM_ESPERA=0 SIM_HASTA_SDK="${HASTA_SDK:-no}" \
-    SIM_PROJECT="$T" SIM_DERIVED="$d/ddp" bash "$SCRIPT" > "$d/log" 2>&1
+    SIM_PROJECT="$T" SIM_DERIVED="$d/ddp" LC_ALL=en_US.UTF-8 /bin/bash "$SCRIPT" > "$d/log" 2>&1
   local ex=$? udid; udid="$(sed -n 's/^udid=//p' "$d/out")"; [ -n "$udid" ] || udid="-"
   local rein crea; rein=$(wc -l < "$d/reinicios" 2>/dev/null || echo 0); rein=$((rein+0))
   crea=$(wc -l < "$d/creados" 2>/dev/null || echo 0); crea=$((crea+0)); local desc; desc=$(wc -l < "$d/descargas"); desc=$((desc+0))
