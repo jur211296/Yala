@@ -48,6 +48,7 @@ export const ZH_HANS: Texts = {
     pronto: "即将推出",
     beta: "测试版",
     apuntar: "记账",
+    nuevoRegistro: "新记录",
     ocultarMontos: "隐藏金额",
     mostrarMontos: "显示金额",
     saldoTotal: "总余额",

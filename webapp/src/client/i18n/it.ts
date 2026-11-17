@@ -48,6 +48,7 @@ export const IT: Texts = {
     pronto: "Presto",
     beta: "Beta",
     apuntar: "Aggiungi",
+    nuevoRegistro: "Nuova registrazione",
     ocultarMontos: "Nascondi importi",
     mostrarMontos: "Mostra importi",
     saldoTotal: "Saldo totale",

@@ -48,6 +48,7 @@ export const FR: Texts = {
     pronto: "Bientôt",
     beta: "Beta",
     apuntar: "Ajouter",
+    nuevoRegistro: "Nouvel enregistrement",
     ocultarMontos: "Masquer les montants",
     mostrarMontos: "Afficher les montants",
     saldoTotal: "Solde total",

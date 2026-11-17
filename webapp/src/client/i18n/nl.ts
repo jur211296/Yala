@@ -48,6 +48,7 @@ export const NL: Texts = {
     pronto: "Binnenkort",
     beta: "Beta",
     apuntar: "Toevoegen",
+    nuevoRegistro: "Nieuwe boeking",
     ocultarMontos: "Bedragen verbergen",
     mostrarMontos: "Bedragen tonen",
     saldoTotal: "Totaalsaldo",

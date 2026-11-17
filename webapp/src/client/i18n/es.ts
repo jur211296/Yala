@@ -49,6 +49,7 @@ export const ES = {
     pronto: "Pronto",
     beta: "Beta",
     apuntar: "Apuntar",
+    nuevoRegistro: "Nuevo registro",
     ocultarMontos: "Ocultar montos",
     mostrarMontos: "Mostrar montos",
     saldoTotal: "Saldo total",

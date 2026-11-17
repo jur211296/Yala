@@ -47,6 +47,7 @@ export const EN: Texts = {
     pronto: "Soon",
     beta: "Beta",
     apuntar: "Add",
+    nuevoRegistro: "New Record",
     ocultarMontos: "Hide amounts",
     mostrarMontos: "Show amounts",
     saldoTotal: "Total balance",

@@ -1,60 +1,112 @@
-/* La app con sesión: barra lateral en escritorio, barra de pestañas en móvil. Medidas de la maqueta aprobada
-   (docs/web-app/index.html, sección «Maqueta navegable»). Los colores, el cristal y las cifras de cada tema viven en
-   styles.css (lote 1 de «Yala web como la app»): aquí no se define ningún color por tema. */
+/* La app con sesión. Navegación del lote 3 de «Yala web como la app» (maqueta aprobada en
+   docs/web-app/parecida-a-la-app/): en escritorio, barra lateral de cristal flotante como la app en iPad; en el
+   celular, la barra flotante de la app con la lupa aparte. Los colores, el cristal y las cifras de cada tema viven en
+   styles.css (lote 1): aquí no se define ningún color por tema. */
 
 .app {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 268px minmax(0, 1fr);
   min-height: 100dvh;
   font-size: 14px;
   line-height: 1.4;
 }
 .side {
   position: sticky;
-  top: 0;
-  height: 100dvh;
+  top: 12px;
+  height: calc(100dvh - 24px);
+  margin: 12px 0 12px 12px;
   background: var(--side);
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  border-right: 1px solid var(--cristal-borde);
-  padding: 16px 10px;
+  border: 1px solid var(--cristal-borde);
+  border-radius: 26px;
+  box-shadow: var(--sombra);
+  padding: 16px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+}
+.side nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: auto;
 }
 .side .brand {
-  padding: 4px 8px 14px;
+  justify-content: flex-start;
+  padding: 2px 10px 12px;
   font-size: 20px;
+}
+.side .brand .lk {
+  margin-left: 2px;
+  font-family: inherit;
+}
+.sfield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  border-radius: 19px;
+  padding: 0 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--cristal-borde);
+  background: color-mix(in srgb, var(--ink2) 12%, transparent);
+  color: var(--ink2);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.sfield span {
+  flex: 1;
+}
+.sfield kbd {
+  font: 600 12px/1 inherit;
+  font-family: inherit;
+  color: var(--ink2);
 }
 .nv {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border: 0;
   background: transparent;
   color: var(--ink);
   text-align: left;
-  padding: 8px 10px;
-  border-radius: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 21px;
   cursor: pointer;
-  font: 500 14px/1.2 inherit;
+  font-size: 15px;
+  font-weight: 500;
   font-family: inherit;
+  line-height: 1.2;
   width: 100%;
   text-decoration: none;
 }
+.nv svg {
+  color: var(--acc);
+}
 .nv:hover {
-  background: color-mix(in srgb, var(--fill) 8%, transparent);
+  background: color-mix(in srgb, var(--fill) 10%, transparent);
 }
 .nv[aria-current="page"] {
-  background: color-mix(in srgb, var(--fill) 14%, transparent);
-  color: var(--acc);
+  background: var(--fill);
+  color: #fff;
   font-weight: 650;
+}
+.nv[aria-current="page"] svg {
+  color: #fff;
 }
 .nv:focus-visible,
 .mt:focus-visible,
 .ib:focus-visible,
 .add:focus-visible,
+.sfield:focus-visible,
+.sfoot:focus-visible,
+.pseg:focus-visible,
+.tile:focus-visible,
+.msearch:focus-visible,
 .chip:focus-visible,
 .row-btn:focus-visible {
   outline: 2px solid var(--acc);
@@ -62,9 +114,15 @@
 }
 .nv svg,
 .mt svg,
-.ib svg {
-  width: 18px;
-  height: 18px;
+.ib svg,
+.sfield svg,
+.add svg,
+.pseg svg,
+.tile svg,
+.msearch svg,
+.sfoot svg {
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
   stroke: currentColor;
   fill: none;
@@ -72,12 +130,20 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.ib svg,
+.sfield svg {
+  width: 18px;
+  height: 18px;
+}
 .nv .sp {
   flex: 1;
 }
 .nv.later {
   color: var(--ink2);
   cursor: default;
+}
+.nv.later svg {
+  color: var(--ink2);
 }
 .nv.later:hover {
   background: transparent;
@@ -87,8 +153,8 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 14px 10px 4px;
+  letter-spacing: 0.06em;
+  padding: 14px 12px 4px;
 }
 .badge {
   background: #ff0080;
@@ -106,12 +172,45 @@
   background: color-mix(in srgb, var(--ink2) 16%, transparent);
   color: var(--ink2);
 }
-.sidefoot {
+/* El avatar del pie de la barra lateral: tu nombre, y abre Configurar. */
+.sfoot {
   margin-top: auto;
-  padding: 10px 8px 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 21px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.sfoot:hover,
+.sfoot[aria-current="page"] {
+  background: color-mix(in srgb, var(--fill) 10%, transparent);
+}
+.av {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--ink2) 18%, transparent);
+  border: 1px solid var(--cristal-borde);
+  color: var(--ink);
+}
+.sfoot .who {
+  display: grid;
+  min-width: 0;
+}
+.sfoot b {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sfoot .who span {
   font-size: 12px;
   color: var(--ink2);
-  border-top: 1px solid var(--line);
 }
 .main {
   min-width: 0;
@@ -124,18 +223,19 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 28px 10px;
+  padding: 18px 28px 10px;
   background: var(--barra);
   backdrop-filter: blur(18px) saturate(1.6);
   -webkit-backdrop-filter: blur(18px) saturate(1.6);
 }
 .topbar h1 {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1.1;
   margin: 0;
   text-align: left;
   letter-spacing: -0.01em;
   flex: 1;
+  min-width: 0;
 }
 .ib {
   border: 1px solid var(--cristal-borde);
@@ -143,29 +243,123 @@
   backdrop-filter: blur(18px) saturate(1.6);
   -webkit-backdrop-filter: blur(18px) saturate(1.6);
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   cursor: pointer;
   color: var(--ink);
   flex: 0 0 auto;
+  position: relative;
+  text-decoration: none;
 }
 .ib[aria-pressed="true"] {
   background: var(--fill);
   color: #fff;
   border-color: var(--fill);
 }
+.ib .badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+}
+/* «+ Nuevo registro»: la cápsula índigo de la app. En escritorio en la cabecera; en el celular, en el contenido. */
 .add {
   border: 0;
   background: var(--fill);
   color: #fff;
-  font: 650 14px inherit;
+  font-size: 15px;
+  font-weight: 650;
   font-family: inherit;
   border-radius: 99px;
-  padding: 9px 16px;
+  height: 40px;
+  padding: 0 18px 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
   white-space: nowrap;
+}
+.mob {
+  display: none !important;
+}
+/* Planificación: Presupuestos y Pagos planificados como segmentos, igual que la pestaña de la app. */
+.psegs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pseg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: 1px solid var(--cristal-borde);
+  background: var(--cristal);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pseg[aria-current="page"] {
+  background: var(--fill);
+  border-color: var(--fill);
+  color: #fff;
+}
+/* «Más» (celular): tarjetas con ícono de color, como la pestaña Más de la app. */
+.tiles {
+  display: grid;
+  gap: 10px;
+}
+.tiles .navh {
+  padding: 10px 4px 0;
+}
+.tgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radio-tarjeta);
+  background: var(--card);
+  border: 1px solid var(--card-borde);
+  box-shadow: var(--sombra);
+  color: var(--ink);
+  text-decoration: none;
+  min-width: 0;
+}
+.tile.wide {
+  flex-direction: row;
+  align-items: center;
+}
+.tile b {
+  font-size: 16px;
+  font-weight: 650;
+  flex: 1;
+  min-width: 0;
+}
+.tile.later {
+  color: var(--ink2);
+}
+.tic {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--ink2) 40%, transparent);
 }
 .content {
   padding: 4px 28px 32px;
@@ -698,29 +892,68 @@
   margin: 8px 0;
 }
 
-/* Móvil: barra de pestañas abajo y «Más». */
-.mtabs {
+/* Celular: la barra flotante de la app (pestañas en una cápsula de cristal y la lupa aparte), la Bandeja arriba a la
+   izquierda y el avatar arriba a la derecha. */
+.mbar {
   display: none;
 }
 @media (max-width: 760px) {
   .app {
     display: block;
-    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
-  .side {
-    display: none;
+  .side,
+  .desk {
+    display: none !important;
+  }
+  .mob {
+    display: grid !important;
   }
   .topbar {
-    padding: max(14px, env(safe-area-inset-top)) 16px 8px;
+    flex-wrap: wrap;
+    row-gap: 12px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 8px;
   }
   .topbar h1 {
-    font-size: 26px;
+    order: 9;
+    flex-basis: 100%;
+    font-size: 32px;
   }
-  .topbar .add {
-    display: none;
+  .topbar .ib {
+    width: 44px;
+    height: 44px;
+  }
+  .topbar .eye {
+    margin-left: auto;
+  }
+  .topbar .av {
+    background: var(--cristal);
+  }
+  .acts {
+    display: flex !important;
+  }
+  .add {
+    height: 48px;
+    font-size: 17px;
+    padding: 0 22px 0 18px;
   }
   .content {
     padding: 4px 16px 24px;
+  }
+  .psegs {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .pseg {
+    min-width: 0;
+    height: 38px;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .pseg svg {
+    width: 18px;
+    height: 18px;
   }
   .grid2 {
     grid-template-columns: 1fr;
@@ -729,34 +962,44 @@
     flex-basis: 78%;
     max-width: 300px;
   }
-  .mtabs {
-    display: grid;
+  .mbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 14px;
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
     z-index: 10;
-    grid-template-columns: repeat(5, 1fr);
+  }
+  .mtabs {
+    flex: 1;
+    min-width: 0;
+    height: 62px;
+    border-radius: 31px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 6px;
     background: var(--barra);
     backdrop-filter: blur(18px) saturate(1.6);
     -webkit-backdrop-filter: blur(18px) saturate(1.6);
-    border-top: 1px solid var(--cristal-borde);
-    padding: 6px 4px max(10px, env(safe-area-inset-bottom));
+    border: 1px solid var(--cristal-borde);
+    box-shadow: var(--sombra);
   }
   .mt {
-    border: 0;
-    background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    font: 600 11px inherit;
+    font-size: 10px;
+    font-weight: 600;
     font-family: inherit;
-    color: var(--ink2);
-    cursor: pointer;
-    position: relative;
+    color: var(--ink);
     text-decoration: none;
-    padding: 2px 0;
+    padding: 6px 8px;
+    border-radius: 24px;
+    min-width: 58px;
   }
   .mt svg {
     width: 22px;
@@ -764,23 +1007,29 @@
   }
   .mt[aria-current="page"] {
     color: var(--acc);
+    background: color-mix(in srgb, var(--ink2) 16%, transparent);
   }
-  .mt.plus .c {
-    width: 42px;
-    height: 42px;
+  .msearch {
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
-    background: var(--fill);
+    flex: 0 0 auto;
     display: grid;
     place-items: center;
-    margin-top: -4px;
+    border: 1px solid var(--cristal-borde);
+    background: var(--barra);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    box-shadow: var(--sombra);
+    color: var(--ink);
+    cursor: pointer;
   }
-  .mt.plus svg {
-    stroke: #fff;
+  .msearch svg {
+    width: 23px;
+    height: 23px;
   }
-  .mt .badge {
-    position: absolute;
-    top: -3px;
-    left: 56%;
+  .toast {
+    bottom: calc(92px + env(safe-area-inset-bottom));
   }
   .sheet {
     align-self: end;
@@ -1081,9 +1330,6 @@
 .confirm-q {
   font-size: 12px;
   color: var(--ink2);
-}
-.mtabs.two {
-  grid-template-columns: repeat(2, 1fr);
 }
 @media (max-width: 720px) {
   .ggrid {

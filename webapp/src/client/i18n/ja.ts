@@ -48,6 +48,7 @@ export const JA: Texts = {
     pronto: "近日公開",
     beta: "ベータ",
     apuntar: "記録する",
+    nuevoRegistro: "新規記録",
     ocultarMontos: "金額を隠す",
     mostrarMontos: "金額を表示",
     saldoTotal: "合計残高",

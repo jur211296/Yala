@@ -48,6 +48,7 @@ export const PT_PT: Texts = {
     pronto: "Em breve",
     beta: "Beta",
     apuntar: "Registar",
+    nuevoRegistro: "Novo registo",
     ocultarMontos: "Ocultar montantes",
     mostrarMontos: "Mostrar montantes",
     saldoTotal: "Saldo global",

@@ -5,7 +5,7 @@
  *
  * Los de categoría, subcategoría y cuenta no van aquí: salen de lo que guardó la persona, con `simbolos.ts`.
  */
-import { CalendarClock, ChartColumn, ChartPie, Ellipsis, Eye, Inbox, LayoutGrid, List, Plus, Search, Settings, Sparkles, Users } from "lucide-react";
+import { Calendar, CalendarClock, ChartColumn, ChartPie, Ellipsis, Eye, Inbox, LayoutGrid, List, Plus, Search, Settings, Sparkles, UserRound, Users } from "lucide-react";
 
 const P = { "aria-hidden": true, focusable: false } as const;
 
@@ -16,6 +16,8 @@ export const Icons = {
   bandeja: <Inbox {...P} />,
   /** list.bullet.rectangle */
   registros: <List {...P} />,
+  /** calendar: la pestaña Planificación, que reúne Presupuestos y Pagos planificados */
+  planificacion: <Calendar {...P} />,
   /** chart.pie.fill */
   presupuestos: <ChartPie {...P} />,
   /** calendar.badge.clock */
@@ -34,4 +36,6 @@ export const Icons = {
   /** magnifyingglass */
   search: <Search {...P} />,
   eye: <Eye {...P} />,
+  /** person.crop.circle: el avatar que abre los ajustes */
+  avatar: <UserRound {...P} />,
 };

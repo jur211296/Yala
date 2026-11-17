@@ -1,8 +1,9 @@
 /**
- * Buscar en todo (⌘K, lote 2b): una paleta que abre ⌘K o Ctrl+K desde cualquier sección, o la lupa de la barra de
- * arriba (en el móvil no hay teclado de atajos). Busca en:
+ * Buscar en todo (⌘K, lote 2b): una paleta que abre ⌘K o Ctrl+K desde cualquier sección, el campo «Buscar» de la barra
+ * lateral en escritorio o la lupa redonda junto a las pestañas en el celular, como en la app (lote 3 de «Yala web como
+ * la app»). Al cerrarla, el foco vuelve a donde estaba. Busca en:
  *
- * - las secciones (ir a);
+ * - las secciones (ir a), Planificación y sus dos segmentos incluidos;
  * - las cuentas y las categorías (abren Registros con ese filtro, en el mes);
  * - los presupuestos (abren Presupuestos);
  * - las notas de los registros, en el servidor (`/api/registros?texto=`, la misma búsqueda que Registros); uno abre su
