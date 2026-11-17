@@ -95,6 +95,7 @@ export function Registros({
   const [open, setOpen] = useState<Movimiento | null>(null);
   const [divisaDia, setDivisaDia] = useState<string | null>(null);
   const [resumen, setResumen] = useState<Estadisticas["resumen"] | null>(null);
+  const [resumenFallo, setResumenFallo] = useState(false);
   const ancho = useAncho(ANCHO_DETALLE);
   const seq = useRef(0);
 
@@ -138,11 +139,12 @@ export function Registros({
   const conResumen = periodo !== "todo" && !cuenta && !categoria && !buscar;
   useEffect(() => {
     setResumen(null);
+    setResumenFallo(false);
     if (!conResumen) return;
     let vivo = true;
     getJson<Estadisticas>(`/api/estadisticas?periodo=${periodo === "mes" ? "mes_actual" : "mes_pasado"}`).then(
       (e) => vivo && setResumen(e.resumen),
-      () => undefined,
+      () => vivo && setResumenFallo(true),
     );
     return () => {
       vivo = false;
@@ -260,6 +262,13 @@ export function Registros({
             <span>{t.est.movimientos(resumen.movimientos)}</span>
           </span>
         </section>
+      ) : conResumen && !resumenFallo ? (
+        // Mientras llega la cifra, su hueco: si no, la lista salta hacia abajo al llegar (medido en el iPhone: 1,4 s).
+        <div className="resumen" aria-busy="true">
+          <div className="skel" style={{ width: 90 }} />
+          <div className="skel" style={{ width: 200, height: 44 }} />
+          <div className="skel" style={{ width: "60%" }} />
+        </div>
       ) : null}
       {accion}
 
