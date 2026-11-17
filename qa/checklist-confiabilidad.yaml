@@ -1,0 +1,571 @@
+# Checklist de confiabilidad de Yala (P4 de la propuesta de verificación del 17-nov-2026).
+#
+# Qué es: las lecciones de lógica cara (nube, migraciones, dinero, fechas, formulario de registro, el
+# puente de Grupos y las pruebas que un PR rompe sin que su gate las corra) destiladas de las reglas de
+# prosa, cada una con lo que tiene que aparecer en un diff para que importe. Un script (segunda parte de
+# P4) elegirá los ítems que toca un PR y se los dará a un revisor con el diff. Las reglas de
+# `.claude/rules/` siguen siendo la fuente larga: aquí va solo el disparador, la comprobación y por qué.
+#
+# Cómo se dispara un ítem (contrato para el selector):
+#   - `rutas`: globs tipo fnmatch sobre las rutas del diff; `*` cruza carpetas. Acotan DÓNDE.
+#   - `simbolos`: identificadores, como palabra entera; `patrones`: regex de Python. Acotan QUÉ, y se
+#     buscan en el texto de las líneas añadidas o quitadas (sin el `+`/`-`) de los ficheros que pasaron
+#     el filtro de `rutas`.
+#   - Se dispara si (no hay `rutas` o alguna casa) Y (no hay `simbolos` ni `patrones` o alguno casa).
+#
+# Reglas para entrar (y para quedarse):
+#   - el disparador se ve en un diff;
+#   - `origen` trae al menos DOS incidentes o PRs distintos. Dos PRs cuentan como dos si arreglan el
+#     patrón en sitios distintos del código, aunque uno lo encontrara el barrido del otro. NO cuentan: el
+#     mismo fallo parcheado y luego arreglado de raíz, el PR que introdujo la función, ni un origen cuyo
+#     diff no trata el patrón del título;
+#   - no lo vigila ya una prueba automática (eso no necesita revisor);
+#   - `pruebas` nombra tipos o ficheros de prueba que existen; `regla` apunta a las líneas de la prosa;
+#   - `ultimo_disparo` lo rellena el selector; lo que no se dispare en 90 días se revisa (P5).
+# Banco: `bash qa/scripts/checklist-confiabilidad-test.sh` (forma + que todo lo nombrado exista).
+# Documento: `docs/verificacion/checklist-confiabilidad.md`.
+version: 1
+items:
+
+  # ─────────────────────────── Nube: sync personal y de Grupos ───────────────────────────
+
+  - id: lectura-fallida-no-es-vacio
+    area: nube
+    titulo: "Una lectura que falla o se corta no se lee como «no hay nada»."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*.swift", "Yala/Services/Groups/GroupService.swift", "Yala/App/Logic/WelcomeAccountChoiceLogic.swift", "Yala/Services/iCloudSyncService.swift"]
+      patrones: ['try\?', '\bcatch\b', '\?\?\s*(\[\]|0|nil)\b', '\b(fetch|find)\w*\(', '\.isEmpty\b']
+    comprobacion: >-
+      Si la lectura falla, el código lanza, deshace y deja el cursor quieto; no inserta, no borra, no hashea ni
+      decide «no hay datos» como si la tabla estuviera vacía. Un `find*`/`fetch*` nuevo del sync trae su caso con
+      el seam `_testThrowOnFetchOf`.
+    pruebas: [SyncApplyEngineTests, DrainUnitClockUnreadableTests, SyncMerkleTests, PrefsOutboxTests, ApplyPageBatchLookupTests]
+    origen:
+      - {fecha: "2026-08-03", ref: "commit b1a9333da", que: "salir de todos los grupos daba por salido lo que no pudo leer"}
+      - {fecha: "2026-09-20", ref: "commit 1db8d53dd", que: "el tope de la búsqueda de iCloud se leía como «no hay datos»"}
+      - {fecha: "2026-09-22", ref: "PR #211", que: "el verify leyó un fetch fallido como outbox vacío"}
+      - {fecha: "2026-09-26", ref: "PR #271", que: "el outbox de preferencias ilegible se pisaba"}
+      - {fecha: "2026-10-06", ref: "PR #378", que: "una muestra ilegible de la vuelta esperaba 72 h"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:394-430", ".claude/rules/swiftdata-cloudkit.md:602-658", ".claude/rules/swiftdata-cloudkit.md:1128-1136", ".claude/rules/swiftdata-cloudkit.md:2080-2097"]
+    ultimo_disparo: null
+
+  - id: cierre-sin-perder-lo-pendiente
+    area: nube
+    titulo: "Un cierre o «Empezar de cero» no borra lo local sin haber subido o materializado lo pendiente."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*.swift", "Yala/Utils/DataWipeService.swift", "Yala/App/Logic/CloudSignOutFlowLogic.swift", "Yala/App/Logic/PrivateSignOutExportGateLogic.swift"]
+      simbolos: [captureLocalWritesForExit, captureGroupsForExit, hasUncapturedPersonalChanges, purgeHistoryOnce, pushAllForSignOut, drainOnce, armSignOutWipe, performSignOutWipeIfArmed, deleteLocalGroupsRows, InboundCaptureDrain, outboxSaveAuthor]
+      patrones: ['\bwipe\w*\(', '\bpurge\w*\(', 'context\.delete\(']
+    comprobacion: >-
+      Un gesto nuevo que borre el outbox, el espejo o filas pasa por `captureLocalWritesForExit` /
+      `captureGroupsForExit`; con el motor abierto el outbox a 0 no prueba nada; no se borran filas con el espejo
+      montado; los recuentos de un cierre pasan por `pendingCountMaterializingInbound`.
+    pruebas: [CloudSyncRuntimeTests, GroupsDrainFailureReadsAsPendingTests, PrivateExitInboundCaptureTests, SignOutWipeHookTests, CloudSignOutFlowLogicTests]
+    origen:
+      - {fecha: "2026-09-25", ref: "PR #250", que: "el push-all del cierre corría un ciclo saltándose el candado del motor"}
+      - {fecha: "2026-09-26", ref: "PR #256", que: "«Empezar de cero» mataba escrituras de grupo sin subir"}
+      - {fecha: "2026-09-26", ref: "PR #257", que: "un drain de Grupos a medias se leía «nada pendiente» al borrar"}
+      - {fecha: "2026-09-26", ref: "PR #269", que: "el cierre privado perdía capturas de Apple Pay y Siri sin materializar"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:334-393", ".claude/rules/swiftdata-cloudkit.md:484-532", ".claude/rules/swiftdata-cloudkit.md:1802-1804"]
+    ultimo_disparo: null
+
+  - id: hlc-sendlocal-y-orden-de-subida
+    area: nube
+    titulo: "El drain estampa con `sendLocal(eventTime:)` y sube en orden de HLC, no con `send(now:)`."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*.swift"]
+      simbolos: [HLCClock, sendLocal, observePulled, uploadOrder]
+      patrones: ['\.send\(now:', 'max\([^)]*timestamp[^)]*,\s*now']
+    comprobacion: >-
+      Ningún camino del drain llama a `clock.send(now:)` (los tres usos de snapshot y remap son a propósito); la
+      subida usa `HLC.uploadOrder` y los pulls integran con `observePulled`. Todo HLC guardado queda acotado a
+      `now() + 60 s`.
+    pruebas: [PersonalClockRollbackDrainTests, GroupsClockRollbackDrainTests, ClockAheadServerCapTests]
+    origen:
+      - {fecha: "2026-09-26", ref: "PR #259", que: "el reloj por delante encallaba el drain de Grupos para siempre"}
+      - {fecha: "2026-10-07", ref: "commit a1b7297c5", que: "un teléfono con la hora adelantada ganaba todos los conflictos"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:533-592"]
+    ultimo_disparo: null
+
+  - id: columna-de-sync-declara-since
+    area: nube
+    titulo: "Una columna nueva de sync lleva `since` en el manifest de su canal, o diverge el Merkle de los teléfonos viejos."
+    disparador:
+      rutas: ["capability_manifest.json", "group_capability_manifest.json", "Yala/Services/CloudSync/*Capability*.swift", "Yala/Services/CloudSync/*EmissionMap.swift", "Yala/Services/CloudSync/DeltaEmitter.swift", "Yala/Services/CloudSync/EntityApplyMap.swift"]
+    comprobacion: >-
+      La columna declara `since` en el manifest de su canal (no en el emisor de Grupos), sube la versión, y el
+      drain de Grupos pasa `capabilityLevel: GroupsSyncCapability.declaredLevel`. Si una columna no opcional
+      emite el default como NULL, mirar su applier.
+    pruebas: [GroupsCapabilityManifestParityTests, CloudCapabilityManifestParityTests, GroupsNextColumnPiecesTests, CreditCardCycleSyncTests]
+    origen:
+      - {fecha: "2026-10-18", ref: "commit 968335ddb", que: "una columna a secas divergía el Merkle en teléfonos viejos"}
+      - {fecha: "2026-10-24", ref: "PR #623", que: "Grupos sin cabecera de capability apagaba el Merkle del parque viejo"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:184-193"]
+    ultimo_disparo: null
+
+  - id: campo-de-modelo-es-campo-de-cloudkit
+    area: nube
+    titulo: "Una propiedad nueva en un `@Model` sincronizado por CloudKit es un campo que Production no crea solo."
+    disparador:
+      rutas: ["Yala/Models/*.swift", "Cloudkit Schemas/yala*.ckdb"]
+      patrones: ['^\s*(@\w+\s+)*(public\s+)?var\s+\w+', '^\s*CD_\w+\s+[A-Z]']
+    comprobacion: >-
+      La paridad de los `.ckdb` ya la exige `PersonalCloudKitSchemaParityTests`. Lo que queda a mano: el despliegue
+      del esquema a Production va ANTES de publicar el build que escribe el campo
+      (`docs/cloudkit-schema-diff-2.1.md`). Un modelo del store de Grupos (`cloudKitDatabase: .none`) no aplica.
+    pruebas: [PersonalCloudKitSchemaParityTests]
+    origen:
+      - {fecha: "2026-06-27", ref: "commit 9f64e02c1", que: "«isOpeningBalance» entró sin desplegar el esquema: el sync de Grupos quedó muerto cuatro días"}
+      - {fecha: "2026-10-10", ref: "PR #442", que: "faltaban 14 campos en el esquema de producción y 31 en el de desarrollo"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:180-183"]
+    ultimo_disparo: null
+
+  - id: drain-y-apply-sin-tablas-enteras
+    area: nube
+    titulo: "El drain y el apply corren en el hilo principal y no leen tablas enteras ni buscan fila a fila."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/CloudSyncEngine.swift", "Yala/Services/CloudSync/Groups/GroupsSyncClient.swift", "Yala/Services/CloudSync/EntityApplyMap.swift", "Yala/Services/CloudSync/SyncApplyEngine.swift"]
+      simbolos: [performDrain, assignMissingSyncIDs, entitiesToTranslate, existingOutboxKeys, prepareLookups, applyPage]
+      patrones: ['FetchDescriptor<\w+>\(\)']
+    comprobacion: >-
+      Ninguna lectura nueva de tabla entera en el drain ni en el ciclo; el apply de una página busca por lote
+      (`prepareLookups`). Una escritura nueva dentro de la página se apunta (`noteInserted`) o hace `forget`.
+    pruebas: [DrainIndexesOnlyWhatItTranslatesTests, ApplyPageBatchLookupTests]
+    origen:
+      - {fecha: "2026-10-31", ref: "PR #723", que: "la app se congelaba segundos en el drain (YALA-IOS-2)"}
+      - {fecha: "2026-11-13", ref: "commit b3e31c700", que: "el apply buscaba fila a fila, 4 s por página (YALA-IOS-J)"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:2004-2022", ".claude/rules/swiftdata-cloudkit.md:2080-2097"]
+    ultimo_disparo: null
+
+  - id: token-nil-no-es-sesion-caducada
+    area: nube
+    titulo: "Un token que no llega no es sesión caducada; se pregunta `canRenewSession` en todos los clientes."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*Client.swift", "Yala/Services/CloudSync/BornCloudSignUpService.swift"]
+      simbolos: [canRenewSession, sdkRemovedTheSession, accessToken, sessionExpired]
+    comprobacion: >-
+      `canRenewSession` se lee DESPUÉS de pedir el token y en los cinco clientes, más `sdkRemovedTheSession` y
+      `GroupsMembershipClient.call`. Los tests inyectan `canRenewSession: { false }`, no `hasSession`.
+    pruebas: [SupabaseSessionRenewalContractTests]
+    origen:
+      - {fecha: "2026-09-15", ref: "commit 6428e1462", que: "el canal de Grupos llamaba caducada a una sesión viva sin red"}
+      - {fecha: "2026-09-16", ref: "PR #188", que: "el canal personal leía el refresh sin red como sesión caducada"}
+      - {fecha: "2026-09-22", ref: "PR #209", que: "el Merkle, el último cliente en copiar el criterio"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1812-1814"]
+    ultimo_disparo: null
+
+  - id: signout-se-verifica
+    area: nube
+    titulo: "Que `signOut()` vuelva no prueba que la sesión se fue; la sesión que abrió un intento se cierra al salir de él."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*.swift", "Yala/App/Logic/CloudSignOutFlowLogic.swift"]
+      simbolos: [closeSessionIfOpened, sessionIsGone]
+      patrones: ['\.signOut\(']
+    comprobacion: >-
+      `closeSessionIfOpened` es el único `signOut` del controller. Un cierre nuevo que arme el borrado comprueba
+      el valor de retorno antes del arm y se añade a los `arguments:` de su test.
+    pruebas: [SignOutChecksTheSessionBeforeArmingTests, SupabaseSignOutContractTests, AdoptSessionOwnershipTests]
+    origen:
+      - {fecha: "2026-09-23", ref: "PR #230", que: "la sesión del adopt sobrevivía a su salida"}
+      - {fecha: "2026-09-26", ref: "PR #255", que: "el desasociar no verificaba que la sesión se cerrara"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1404-1441", ".claude/rules/swiftdata-cloudkit.md:1837-1863"]
+    ultimo_disparo: null
+
+  - id: frontera-de-persona-no-hereda
+    area: nube
+    titulo: "Al cambiar de persona en el teléfono no sobrevive nada de la anterior: sesión, sello, consent, preferencias ni grupos."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/CloudSessionRetirement.swift", "Yala/Services/CloudSync/CloudClaimActionStore.swift", "Yala/Utils/DataWipeService.swift", "Yala/App/Logic/CloudSignOutFlowLogic.swift", "Yala/Services/Groups/GroupsOnlySignUpPreferenceReset.swift", "Yala/Utils/SwiftDataConfiguration.swift", "Yala/App/Logic/CrossAccountEntryGuardLogic.swift"]
+      simbolos: [CloudSessionRetirement, retireForSignOutWipe, forgetAllClaims, recordOwner, removeUserPreferenceKeys, PrefSyncKey]
+      patrones: ['PreferenceSyncService\S*\.(remove|set)\(']
+    comprobacion: >-
+      Toda frontera nueva (cierre, empezar de cero, reinstalar, entrar por un grupo) retira la sesión y olvida el
+      sello en `CloudSessionRetirement.arm`, antes del arm; limpia preferencias y consent donde el modo ya es
+      `.icloud` o solo en local con `PrefSyncKey.allCases`, nunca con `remove` y la nube viva.
+    pruebas: [CloudSessionRetirementTests, SignOutWipeHookTests, SignOutNotificationWiringTests]
+    origen:
+      - {fecha: "2026-07-21", ref: "commit bdbc46d1e", que: "el consent de grupos sobrevivía al borrado del cierre en Modo Nube"}
+      - {fecha: "2026-07-27", ref: "commit 31dded30d", que: "el usuario nuevo heredaba los grupos y los gastos del anterior"}
+      - {fecha: "2026-09-17", ref: "PR #192", que: "la sesión de la persona anterior sobrevivía a empezar de cero y reinstalar"}
+      - {fecha: "2026-09-29", ref: "PR #298", que: "otra cuenta entraba sobre el corpus y el outbox de la primera"}
+      - {fecha: "2026-10-01", ref: "PR #317", que: "quien entraba por un grupo heredaba las preferencias del dueño"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1746-1746", ".claude/rules/swiftdata-cloudkit.md:1766-1768", ".claude/rules/swiftdata-cloudkit.md:1963-1984"]
+    ultimo_disparo: null
+
+  # ───────────────────────────────── Puente de Grupos ─────────────────────────────────
+
+  - id: borrados-que-conservan-grupos
+    area: dinero
+    titulo: "Un borrado de datos personales que conserva los grupos pide la convergencia del puente ANTES de borrar."
+    disparador:
+      rutas: ["Yala/*.swift"]
+      simbolos: [wipeAllUserData, wipePersonalDataKeepingGroups, wipeLocallyForRemoteWipeSignal, markSettlementLegsPending, GroupsBridgeRestoreConvergenceStore]
+    comprobacion: >-
+      `markSettlementLegsPending()` y `markPending()` salen antes del borrado en los dos aterrizajes; el receptor de
+      la señal solo pide si su borrado se lleva lo repuesto (corte por `createdAt` contra `lastWipeTimestamp`).
+    pruebas: [GroupsBridgeRestoreConvergenceTests, RemoteWipeCutTests, RemoteWipeSignalWiringTests, UsageModeFreshStartWipeTests]
+    origen:
+      - {fecha: "2026-09-27", ref: "PR #282", que: "«Empezar desde cero» perdía las patas de liquidación de grupo"}
+      - {fecha: "2026-09-27", ref: "PR #283", que: "tras «Vaciar datos» los gastos de grupo desaparecían de lo personal"}
+      - {fecha: "2026-09-27", ref: "PR #287", que: "el receptor tardío de la señal borraba lo repuesto y nadie lo pedía"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1865-1875"]
+    ultimo_disparo: null
+
+  - id: puente-materializa-lo-que-llega
+    area: dinero
+    titulo: "Un gasto de grupo que llega, se borra o se une por el canal crea o quita su registro personal sin relanzar."
+    disparador:
+      rutas: ["Yala/Services/Groups/GroupTransactionBridge*.swift", "Yala/Services/Groups/GroupExpenseService.swift", "Yala/Services/Groups/GroupService.swift", "Yala/Services/CloudSync/Groups/*.swift", "Yala/App/Logic/BridgedEditPolicy.swift"]
+    comprobacion: >-
+      Cada camino por el que entra, cambia o se va un gasto de grupo (sync, canal nuevo, unirse, borrado remoto)
+      deja el registro personal enlazado en el mismo ciclo, y lo pendiente sobrevive a un cierre de la app.
+    pruebas: [GroupsPendingBridgeDurabilityTests, GroupRemoteDeletionUnbridgeTests, GroupJoinerIdentityConsumerTests]
+    origen:
+      - {fecha: "2026-07-30", ref: "commit ad9371481", que: "el gasto de grupo que llegaba por sync se quedaba sin registro personal"}
+      - {fecha: "2026-08-02", ref: "commit 830516882", que: "quien recibía el borrado de un gasto se quedaba la transacción"}
+      - {fecha: "2026-09-05", ref: "commit ac8880de8", que: "el gasto de quien acababa de unirse no llegaba a su cuenta sin relanzar"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1754-1754", ".claude/rules/swiftdata-cloudkit.md:1772-1772"]
+    ultimo_disparo: null
+
+  - id: gasto-de-grupo-cuenta-mi-parte-una-vez
+    area: dinero
+    titulo: "Un gasto de grupo cuenta mi parte, y una sola vez, en toda cifra que sume registros."
+    disparador:
+      rutas: ["Yala/App/Logic/*.swift", "Yala/App/ViewModels/*.swift", "Yala/Services/*.swift", "YalaWidgets/*.swift"]
+      simbolos: [GroupBridgeStatsAdjustment, BridgedTransactionFilter]
+      patrones: ['\bgroupLeg\w*', 'isBridged\w*']
+    comprobacion: >-
+      Una suma nueva de registros pasa por `GroupBridgeStatsAdjustment` (mi parte, neta) y por
+      `BridgedTransactionFilter`; ni la pata de grupo ni su borrador cuentan dos veces, tampoco con el puente
+      apagado o una fila sin su grupo.
+    pruebas: [GroupBridgeStatsAdjustmentTests, GroupBridgeStatsIntegrationTests, BridgedTransactionFilterTests]
+    origen:
+      - {fecha: "2026-06-09", ref: "commit 369f563c5", que: "con el puente apagado, aceptar el opt-in contaba el gasto dos veces"}
+      - {fecha: "2026-07-23", ref: "commit 35fdde8d6", que: "los gastos de grupo que pagué contaban entero y no mi parte"}
+      - {fecha: "2026-10-16", ref: "commit 6765a1722", que: "filas de grupo sin su grupo o su cuenta contaban doble"}
+    regla: [".claude/rules/ingreso-gasto.md:77-81", ".claude/rules/session-filters.md:198-202"]
+    ultimo_disparo: null
+
+  # ───────────────────────────── Migración a la nube y vuelta ─────────────────────────────
+
+  - id: guard-de-migracion-no-falla-abierto
+    area: migracion
+    titulo: "Un guard de algo destructivo no concede cuando no hay controller o el journal no se lee o no se entiende."
+    disparador:
+      rutas: ["Yala/*.swift"]
+      simbolos: [migrationAtRest, currentPhaseRead, blockIfMigrationNotAtRest, isJournalUnreadable, isJournalUndecodable]
+      patrones: ['\?\?\s*\.idle\b']
+    comprobacion: >-
+      Un guard nuevo no usa `(shared?.uiState ?? .idle)`: pasa por `AppleIDChangeCloseLogic.migrationAtRest` o lee
+      el journal igual, y trata «ilegible» como no concedido. Un campo, blob o case nuevo del journal entra en
+      `MigrationState.isJournalUndecodable`.
+    pruebas: [MigrationJournalUnreadableTests, MigrationJournalUndecodableTests, PrivateSignOutMigrationGuardTests, AppleIDChangeCloseLogicTests, StorageJournalUnreadableUITests]
+    origen:
+      - {fecha: "2026-09-22", ref: "PR #215", que: "un journal ilegible se leía como «notStarted» y concedía"}
+      - {fecha: "2026-09-27", ref: "PR #273", que: "el cambio de Apple ID se comprobaba antes de existir el controller"}
+      - {fecha: "2026-09-27", ref: "PR #274", que: "el cierre privado borraba lo local con una migración en vuelo"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:230-333"]
+    ultimo_disparo: null
+
+  - id: esperas-de-migracion-con-techo
+    area: migracion
+    titulo: "Toda espera o reintento de la ida, el adopt o la vuelta lleva techo journaleado y una salida visible."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/Migration*.swift", "Yala/Services/CloudSync/AdoptEffectProgress.swift", "Yala/Services/CloudSync/CloudMigrationController.swift"]
+      simbolos: [CauseStallClock, observeAnyDefinitive, clearReversePreMountCeiling, clearReverseUploadCeiling]
+      patrones: ['while\s+true', 'Task\.sleep', '\.transient\b']
+    comprobacion: >-
+      El paso nuevo declara qué reloj usa, qué evento lo reinicia, a qué motivo falla y qué pantalla muestra. Un
+      campo de reloj nuevo se limpia en todos los sitios de su `clear…Ceiling` y es aditivo; el techo corto se mide
+      con el reloj de lo definitivo, no con el de la causa.
+    pruebas: [SnapshotUploadCeilingLogicTests, ForwardStepCeilingLogicTests, AdoptEffectCeilingLogicTests, ReverseUploadCeilingLogicTests, MigrationRunnerTests]
+    origen:
+      - {fecha: "2026-09-21", ref: "PR #199", que: "las fases previas al montaje de la vuelta no tenían salida"}
+      - {fecha: "2026-09-22", ref: "PR #212", que: "la subida del snapshot se quedaba al 55 % sin techo"}
+      - {fecha: "2026-09-23", ref: "PR #223", que: "causas definitivas alternando nunca llegaban al techo corto"}
+      - {fecha: "2026-09-23", ref: "PR #226", que: "el efecto del adopt reintentaba para siempre"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:692-855", ".claude/rules/swiftdata-cloudkit.md:1445-1445", ".claude/rules/swiftdata-cloudkit.md:1472-1609"]
+    ultimo_disparo: null
+
+  - id: salir-de-fase-repone-pendientes
+    area: migracion
+    titulo: "Volver al origen desde una fase transitoria repone los efectos pendientes que la fase reemplazó."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/MigrationStateMachine.swift", "Yala/Services/CloudSync/MigrationState.swift", "Yala/Services/CloudSync/MigrationRunner.swift"]
+      simbolos: [ReverseOriginPendingEffects, ForwardOriginPendingEffects, reverseOriginPendingEffectsData]
+      patrones: ['pendingEffects\s*=', '\.rearmMirrorOff', '\.reverseRollback', '\.completeReverseServer']
+    comprobacion: >-
+      Toda salida a una fase de origen repone el pendiente; el brazo que lo descarta exige salir de la fase
+      (`next != .reverseClaimLeader`). Una ventana nueva que use `reverseOriginPendingEffectsData` prueba que no se solapa.
+    pruebas: [ForwardOriginPendingEffectsTests, MigrationRunnerTests]
+    origen:
+      - {fecha: "2026-09-16", ref: "PR #186", que: "«migration_in_progress» se quedaba puesto en el backend para siempre"}
+      - {fecha: "2026-09-27", ref: "PR #275", que: "Activar la nube perdía el «completeReverseServer»"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1447-1447", ".claude/rules/swiftdata-cloudkit.md:1668-1681"]
+    ultimo_disparo: null
+
+  - id: syncid-cambiado-escribe-testigo
+    area: migracion
+    titulo: "Todo camino que cambie un `syncID` ya puesto escribe su testigo, o la restauración del relevo lo deshace."
+    disparador:
+      rutas: ["Yala/Services/CloudSync/*.swift"]
+      simbolos: [RelayIdentityLedger, restoreRelayIdentities, relayTombstoneIdentity, assignIdentity]
+      patrones: ['\.syncID\s*=[^=]']
+    comprobacion: >-
+      La identidad la acuña `assignIdentity` y escribe testigo con coordenadas; no hay `await` entre restaurar y
+      leer identidades; el ledger se fusiona y nunca se recorta durante la migración.
+    pruebas: [MigrationWorkExecutorTests]
+    origen:
+      - {fecha: "2026-09-24", ref: "PR #243", que: "el líder desplazado re-identificaba filas y duplicaba"}
+      - {fecha: "2026-09-25", ref: "PR #244", que: "borrar una fila re-identificada emitía la identidad del líder"}
+      - {fecha: "2026-09-25", ref: "PR #246", que: "el adopt con marcador no casaba filas re-identificadas"}
+    regla: [".claude/rules/swiftdata-cloudkit.md:1091-1222"]
+    ultimo_disparo: null
+
+  # ──────────────────────────────── Dinero: divisas y saldos ────────────────────────────────
+
+  - id: dos-rutas-de-tasa-coinciden
+    area: dinero
+    titulo: "Las dos rutas de conversión dan lo mismo con los mismos datos, y una tasa inservible cuenta como ausente."
+    disparador:
+      rutas: ["Yala/Services/CurrencyConverter.swift", "Yala/Services/ExchangeRateService.swift", "Yala/Utils/CurrencyUtils.swift", "Yala/Services/CurrencyChangeService.swift"]
+    comprobacion: >-
+      Mutar el cambio y exigir rojo en `bothRoutesAgree`. El fixture construye fila parcial, fila de ayer y tasa
+      cero; todo camino nuevo que lea tasas pasa por `CurrencyConverter.isUsableRate`.
+    pruebas: [CurrencyConverterLatestRateQualityTests, CurrencyConverterPartialRateTests, CurrencyConverterDailyFactorsTests, CurrencyConverterTests]
+    origen:
+      - {fecha: "2026-09-03", ref: "commit 85ba00774", que: "una tasa que faltaba contaba como 1:1 y se sellaba como oficial"}
+      - {fecha: "2026-09-06", ref: "PR #84", que: "el saldo en pantalla contaba 1000 yenes como 1000 soles"}
+      - {fecha: "2026-11-06", ref: "PR #840", que: "la tasa de hoy que llegaba por iCloud no se usaba al momento"}
+    regla: [".claude/rules/currency-fx.md:18-71"]
+    ultimo_disparo: null
+
+  - id: importe-convertido-cero
+    area: dinero
+    titulo: "Un `amountInPreferredCurrency == 0` con `amount != 0` es una conversión sin escribir, no un importe real."
+    disparador:
+      rutas: ["Yala/App/Logic/*.swift", "Yala/App/ViewModels/*.swift", "Yala/Services/*.swift", "YalaWidgets/*.swift"]
+      simbolos: [amountInPreferredCurrency]
+    comprobacion: >-
+      Un calculador nuevo que lea `amountInPreferredCurrency` pasa por `resolvedAmount` o `readsStoredAmount` y suma
+      un caso a `StatisticsCalculatorsZeroConvertedTests`; una pata ajustada se pregunta con `isAdjusted`, nunca
+      comparando importes.
+    pruebas: [StatisticsCalculatorsZeroConvertedTests]
+    origen:
+      - {fecha: "2026-10-11", ref: "PR #460", que: "un gasto de grupo con una pata sin convertir salía entero"}
+      - {fecha: "2026-10-11", ref: "PR #461", que: "un movimiento sin convertir contaba 0 en Yala IA"}
+      - {fecha: "2026-10-12", ref: "PR #465", que: "tartas y rankings contaban 0 un movimiento sin conversión"}
+      - {fecha: "2026-10-14", ref: "commit 3ac321f8f", que: "el detalle pintaba «≈ 0,00»"}
+    regla: [".claude/rules/currency-fx.md:72-95"]
+    ultimo_disparo: null
+
+  - id: saldo-en-el-tiempo-por-divisa
+    area: dinero
+    titulo: "Un saldo pasado vale lo nativo de cada divisa por la tasa de ese día; el de una cuenta convierte sus filas ajenas."
+    disparador:
+      rutas: ["Yala/App/Logic/Calculators/BalanceValuation.swift", "Yala/App/Logic/Calculators/LiveBalanceCalculator.swift", "Yala/Services/TrendDataProcessor.swift", "Yala/Utils/AccountBalanceCalculator.swift", "Yala/Services/WidgetDataCache.swift"]
+    comprobacion: >-
+      Todo saldo pasado pasa por `BalanceValuation`; el punto de hoy sale de `convertAtLatestRate`. Si cambia
+      `rateFactors`, cambia `resolveRates`. Caso con cuenta en USD, curva que acaba en su cifra y una fila en otra divisa.
+    pruebas: [AccountBalanceCalculatorTests, CurrencyConverterDailyFactorsTests]
+    origen:
+      - {fecha: "2026-10-16", ref: "PR #523", que: "la curva del Panel acababa en 201K con la cifra en 179K"}
+      - {fecha: "2026-11-05", ref: "PR #795", que: "una cuenta contaba 900 soles como 900 dólares"}
+    regla: [".claude/rules/currency-fx.md:97-148"]
+    ultimo_disparo: null
+
+  - id: widget-cuenta-con-las-funciones-de-la-app
+    area: dinero
+    titulo: "La cifra de un widget sale de las mismas funciones que la app, nunca de una cuenta propia."
+    disparador:
+      rutas: ["YalaWidgets/*.swift", "Yala/Services/WidgetDataCache.swift", "Yala/App/Logic/Helpers/WidgetInsightsLogic.swift", "Yala/Services/WidgetGroupsSnapshotBuilder.swift"]
+    comprobacion: >-
+      Una cuenta nueva del widget vive en `WidgetInsightsLogic` o llama a la función de la app (período, divisa,
+      total, saldo, grupos), y trae su test de paridad con la pantalla que dice lo mismo: misma divisa principal
+      antes de sumar, mismo total como denominador, mismo período.
+    pruebas: [WidgetBalanceAccountlessParityTests, WidgetBreakdownTotalWiringTests, WidgetInsightsLogicTests, WidgetGroupsSnapshotTests, WidgetPreferredCurrencyTests, WidgetDataServiceIntervalTests]
+    origen:
+      - {fecha: "2026-02-04", ref: "commit 5427940d3", que: "el período del widget no casaba con el de la app y daba otros datos"}
+      - {fecha: "2026-10-11", ref: "commit 0c344fe07", que: "los totales del widget sumaban divisas distintas sin convertir"}
+      - {fecha: "2026-11-03", ref: "commit 78565d1b4", que: "los widgets de categorías no sumaban 100 % con una devolución"}
+    regla: [".claude/rules/widgets.md:41-44", ".claude/rules/widgets.md:85-88"]
+    ultimo_disparo: null
+
+  - id: ingreso-o-gasto-en-un-sitio
+    area: dinero
+    titulo: "Ingreso o gasto se decide en un solo sitio (manda la categoría; sin categoría, el signo) y se suma con signo."
+    disparador:
+      rutas: ["Yala/*.swift", "YalaWidgets/*.swift"]
+      patrones: ['category\?\.isIncome\s*(==|\?\?)', 'guard let category[^\n]*else\s*\{\s*(continue|return)', 'amountInPreferredCurrency\s*[<>]=?\s*0\b']
+    comprobacion: >-
+      Se usa `TransactionClassificationLogic.isIncome`. El fixture de paridad trae las dos filas que separan las
+      reglas: sin categoría de cada signo, y de signo contrario a su categoría. Mutar y exigir rojo.
+    pruebas: [IncomeExpenseScreenParityTests, CategoryBreakdownUncategorizedTests, PanelBudgetPlanningParityTests, DailySpendingCalculatorTests]
+    origen:
+      - {fecha: "2026-09-02", ref: "commit 0b85f075e", que: "el calendario de Registros clasificaba por signo y no por categoría"}
+      - {fecha: "2026-10-23", ref: "PR #612", que: "el mismo mes salía con cuatro pares de cifras"}
+      - {fecha: "2026-10-24", ref: "PR #615", que: "tartas y rankings sin el trozo «Sin categoría»"}
+      - {fecha: "2026-10-29", ref: "PR #683", que: "Yala IA y el conector daban el movimiento sin categoría como gasto"}
+    regla: [".claude/rules/ingreso-gasto.md:25-65"]
+    ultimo_disparo: null
+
+  - id: marca-aproximado-sobre-lo-mostrado
+    area: dinero
+    titulo: "La marca «≈» es del número que se pinta, y su proporción usa el denominador mostrado."
+    disparador:
+      rutas: ["Yala/*.swift", "YalaWidgets/*.swift"]
+      simbolos: [ApproximateMarkThreshold, approximateMagnitude, periodBalanceIsApproximate, convertedIsApproximate, hasApproximateRow]
+      patrones: ['isEstimate:', '"≈']
+    comprobacion: >-
+      El numerador suma |dudoso|; el denominador es el valor mostrado (en una resta, su valor absoluto). La señal
+      va por lado; la etiqueta de accesibilidad lleva `isEstimate`. El test discrimina: dos importes iguales no dan
+      el mismo veredicto con las dos reglas.
+    pruebas: [ApproximateMarkPanelCoherenceTests, ApproximateAmountMarkTests, GroupBridgeApproximateMarkTests]
+    origen:
+      - {fecha: "2026-09-09", ref: "PR #111", que: "la marca no llegaba a las superficies secundarias"}
+      - {fecha: "2026-09-09", ref: "PR #113", que: "el gasto de grupo perdía la marca de sus patas"}
+      - {fecha: "2026-10-12", ref: "commit f6c68cc18", que: "dos criterios de aproximado en la misma pantalla"}
+    regla: [".claude/rules/currency-fx.md:190-248"]
+    ultimo_disparo: null
+
+  # ─────────────────────────────────── Fechas y períodos ───────────────────────────────────
+
+  - id: periodo-que-cierra-en-medianoche
+    area: fechas
+    titulo: "Un período que termina donde empieza el siguiente cuenta la medianoche del día 1 en los dos lados."
+    disparador:
+      rutas: ["Yala/*.swift", "YalaWidgets/*.swift"]
+      patrones: ['DateInterval\(start:', 'byAdding:\s*\.second,\s*value:\s*-1', 'dateComponents\(\[\.day\]']
+    comprobacion: >-
+      Si el `end` coincide con el `start` de otro período, se resta 1 s (condicional: `startOfDay(for: end) == end`),
+      en TODAS las ramas del switch; antes de contar días se normaliza `end + 1 s`. El caso trae una transacción a
+      las 00:00:00 del día 1.
+    pruebas: [PreviousPeriodHelperTests, AlignedPreviousIntervalMidnightTests, BudgetPeriodIntervalTests, PeriodEndsBeforeTomorrowMidnightTests, DetailPeriodDateIntervalTests, DateIntervalDayCountTests]
+    origen:
+      - {fecha: "2026-07-02", ref: "commit cd30951e8", que: "Mes y Año pasado incluían la medianoche del día 1 actual"}
+      - {fecha: "2026-09-02", ref: "commit 80f2cad51", que: "la transacción del día 1 contaba dos veces en la rama de este mes"}
+      - {fecha: "2026-10-09", ref: "PR #416", que: "en presupuestos el gasto del día 1 contaba en el período anterior"}
+      - {fecha: "2026-10-25", ref: "PR #631", que: "los períodos en curso contaban lo fechado mañana a las 00:00"}
+    regla: ["CLAUDE.md:46-50"]
+    ultimo_disparo: null
+
+  - id: saldo-filas-que-entran
+    area: fechas
+    titulo: "Un saldo nuevo decide qué filas entran con `entersBalance` (con cuenta) y `TodayCutoff` (hasta hoy)."
+    disparador:
+      rutas: ["Yala/*.swift", "YalaWidgets/*.swift"]
+      simbolos: [TodayCutoff, entersBalance, countsForWidgets]
+      patrones: ['\bdate\s*<=?\s*(now|Date\(\))']
+    comprobacion: >-
+      Todo saldo nuevo pasa por `TodayCutoff` y `entersBalance`, no por `<= now` ni por `interval.contains`; la
+      salud financiera es la excepción (`asOf: .distantFuture`). La cifra y su curva cuentan las mismas filas.
+    pruebas: [BalanceFutureDatedCutoffTests, WidgetBalanceAccountlessParityTests]
+    origen:
+      - {fecha: "2026-10-19", ref: "PR #556", que: "la cifra contaba filas futuras que la curva no dibuja"}
+      - {fecha: "2026-10-23", ref: "PR #612 (widget)", que: "la cifra del widget contaba filas sin cuenta y no casaba con su curva"}
+    regla: [".claude/rules/currency-fx.md:117-133", ".claude/rules/ingreso-gasto.md:67-75"]
+    ultimo_disparo: null
+
+  # ─────────────────────────────── Formulario de Nuevo registro ───────────────────────────────
+
+  - id: nuevo-registro-cambia-de-alto
+    area: formulario
+    titulo: "Si Nuevo registro cambia de alto o de filas, los toques de las pruebas caen en «Guardar» o en el teclado."
+    disparador:
+      rutas: ["Yala/App/Views/Transactions/NewTransactionView.swift", "Yala/App/Views/Transactions/Components/*.swift", "Yala/App/Views/Transactions/TransactionFormRow.swift", "Yala/App/Views/Transactions/NewRecordTutorialGuide.swift", "Yala/App/Models/TransactionFormModels.swift"]
+    comprobacion: >-
+      Correr, en iPhone 17 Pro y en SE, la calculadora, el selector de tarjeta, el formulario decidido, favoritos y
+      los casos límite como mínimo; mirar que cada toque abra lo que pide y no caiga en «Guardar» ni en el teclado.
+      En rojo, el vídeo del `.xcresult`.
+    pruebas: [SplitCalculatorUITests, AccountCardPickersUITests, TransactionFormDecided02UITests, EdgeCasesUITests, FavoritesAlRegistrar23UITests, FormClarity23UITests, KeyboardSaveBar23UITests, TransactionsCrudUITests]
+    origen:
+      - {fecha: "2026-11-15", ref: "PR #920", que: "las categorías a un toque bajaron las acciones y rompieron tres pruebas"}
+      - {fecha: "2026-11-16", ref: "PR #1009", que: "en SE la guía señalaba Categoría bajo Guardar"}
+    regla: ["tickets/done/2026-11-16-ui-tests-rojos-tandas.md:64-69", ".claude/rules/swiftui-ds.md:425-431"]
+    ultimo_disparo: null
+
+  - id: borrador-sobrevive-a-la-hoja
+    area: formulario
+    titulo: "Quien presenta Nuevo registro guarda lo escrito fuera de la hoja, o el formulario vuelve a 0.00."
+    disparador:
+      rutas: ["Yala/*.swift"]
+      simbolos: [NewRecordDraft, newRecordSheetIdentity]
+      patrones: ['NewTransactionView\(']
+    comprobacion: >-
+      Con el formulario a medias y una entrada externa (enlace, foto, voz) o la hoja rehecha, el importe se
+      conserva. Una pantalla nueva que presente `NewTransactionView` le pasa `draft:`.
+    pruebas: [ExternalEntryForeignSheetUITests, NewRecordDraftSurvivesCloseUITests, NewRecordDraftTests, NewRecordDraftStoreTests]
+    origen:
+      - {fecha: "2026-11-04", ref: "PR #776", que: "un Nuevo registro a medias volvía vacío al rehacerse la hoja"}
+      - {fecha: "2026-11-06", ref: "PR #822", que: "lo mismo desde Estadísticas, con la hoja colgando de la pila"}
+    regla: [".claude/rules/swiftui-ds.md:23-30"]
+    ultimo_disparo: null
+
+  # ──────────────── Pruebas: las que un PR rompe sin que su gate las corra, o que no prueban ────────────────
+
+  - id: tocar-tras-escribir-en-xcuitest
+    area: pruebas
+    titulo: "Una prueba que escribe el importe y luego toca algo debajo pierde el toque en el teclado o en la barra."
+    disparador:
+      rutas: ["YalaUITests/*.swift"]
+      simbolos: [openSelectorFirstRow, dismissKeyboard, waitForSettledLayout]
+      patrones: ['\.typeText\(']
+    comprobacion: >-
+      Tras `typeText` hay cierre de teclado (`dismissKeyboard`) o `openSelectorFirstRow`, y el caso afirma que el
+      toque hizo lo esperado. Correr la clase tocada y, si es del formulario, la calculadora y el selector de tarjeta.
+    pruebas: [SplitCalculatorUITests, AccountCardPickersUITests, EdgeCasesUITests]
+    origen:
+      - {fecha: "2026-10-09", ref: "PR #414", que: "el chip de cuenta estaba en y=716 al tocar y en y=513 al llegar"}
+      - {fecha: "2026-11-09", ref: "PR #876", que: "«Calcúlalo conmigo» quedó bajo la barra y caía cada noche"}
+      - {fecha: "2026-11-17", ref: "PR #1020", que: "«Mi parte» quedó bajo el teclado"}
+    regla: [".claude/rules/testing.md:176-176", ".claude/rules/testing.md:215-227"]
+    ultimo_disparo: null
+
+  - id: aviso-deshacer-no-cabe-en-5s
+    area: pruebas
+    titulo: "Un XCUITest que toca el aviso con «Deshacer» tras otra espera no cabe en sus 5 s en el runner del CI."
+    disparador:
+      rutas: ["YalaUITests/*.swift"]
+      patrones: ['Deshacer', '[Uu]ndo']
+    comprobacion: >-
+      Todo caso que lea o toque el aviso después de otra espera lanza con `-uitest-undo-notice-seconds 30`; antes de
+      tocar algo bajo la cápsula, `waitForNonExistence` del aviso.
+    pruebas: [UndoNoticePlacementUITests]
+    origen:
+      - {fecha: "2026-10-25", ref: "PR #631 (deshacer)", que: "el segundo borrado tardó más de 5,4 s"}
+      - {fecha: "2026-10-29", ref: "PR #690", que: "seis pruebas caían cada noche en el CI y pasaban en local"}
+    regla: [".claude/rules/testing.md:178-194"]
+    ultimo_disparo: null
+
+  - id: ahora-fijo-en-pruebas
+    area: pruebas
+    titulo: "Un test que construye «ahora» con el reloj o la zona del runner se rompe a ciertas horas o días."
+    disparador:
+      rutas: ["YalaTests/*.swift", "YalaUITests/*.swift"]
+      patrones: ['(Date\(\)|Date\.now)\.addingTimeInterval\(', 'Calendar\.current\.(date|startOfDay|dateInterval)\(', 'TimeZone\.current', 'XCUIApplication\(\)\.launch\(']
+    comprobacion: >-
+      Si el SUT lee el reloj, `aMomentAgoToday()`; si acepta `now:`, un `now` fijo a mitad de mes. Correr con
+      `TEST_RUNNER_TZ` a una zona donde sea 00:MM y con `Etc/GMT-12`. Los XCUITest lanzan con `launchForUITest`.
+    pruebas: [FullFinancialContextBuilderTests]
+    origen:
+      - {fecha: "2026-10-08", ref: "commit 3d7f0e3c7", que: "los tests de períodos del widget dependían de la zona del runner"}
+      - {fecha: "2026-11-01", ref: "commit 87a44f204", que: "doce casos caían a las 00:30 del día 1"}
+      - {fecha: "2026-11-05", ref: "commit 788ae8061", que: "la app del simulador heredaba UTC y caían dos XCUITest"}
+    regla: [".claude/rules/testing.md:132-150"]
+    ultimo_disparo: null
+
+  - id: defaults-aislados-en-pruebas
+    area: pruebas
+    titulo: "Un test no escribe en `UserDefaults.standard` ni crea dominios sueltos, o contamina a otras suites."
+    disparador:
+      rutas: ["YalaTests/*.swift"]
+      patrones: ['UserDefaults\.standard\.(set|removeObject|register)\(', 'UserDefaults\(suiteName:', 'SessionState\.shared\.\w+\s*=']
+    comprobacion: >-
+      Lo añadido escribe con `makeIsolatedDefaults()` o `testDefaults(suiteName:)`, y lo que fija en
+      `SessionState.shared` (p. ej. `isExpensesOnlyMode`) lo restaura en `defer`. Leer de `standard` no es el riesgo.
+    pruebas: [AppPreferencesTests, TestSimulatorJanitorTests]
+    origen:
+      - {fecha: "2026-10-26", ref: "commit 8691e5844", que: "«solo gastos» se colaba entre suites y Registros perdía los ingresos"}
+      - {fecha: "2026-11-04", ref: "PR #786", que: "1.262 ficheros de preferencias por corrida en el simulador"}
+    regla: [".claude/rules/testing.md:76-76", ".claude/rules/testing.md:97-109"]
+    ultimo_disparo: null
