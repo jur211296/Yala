@@ -59,6 +59,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-app-lote-2-iconos-categoria | done | tickets/done/2026-11-16-web-app-lote-2-iconos-categoria.md |
 | 2026-11-16-web-app-lote-3-navegacion | done | tickets/done/2026-11-16-web-app-lote-3-navegacion.md |
 | 2026-11-16-web-app-lote-4-panel-registros | done | tickets/done/2026-11-16-web-app-lote-4-panel-registros.md |
+| 2026-11-16-web-app-lote-5-resto-pantallas | done | tickets/done/2026-11-16-web-app-lote-5-resto-pantallas.md |
+| 2026-11-16-web-grupos-por-persona-corta-cifras-en-celular | backlog | tickets/backlog/2026-11-16-web-grupos-por-persona-corta-cifras-en-celular.md |
+| 2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone | backlog | tickets/backlog/2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone.md |
 | 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |

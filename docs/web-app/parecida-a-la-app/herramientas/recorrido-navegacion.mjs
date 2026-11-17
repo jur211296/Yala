@@ -90,7 +90,8 @@ const focusedText = (p) => p.evaluate(() => (document.activeElement?.textContent
   check(path(p) === "/pagos", "el segmento Pagos cambia la dirección a /pagos", path(p));
   await p.goBack();
   check(path(p) === "/planificacion" && (await current(p, ".pseg")).join() === "Presupuestos", "Atrás vuelve al segmento anterior", path(p));
-  for (const [url, title] of [["/registros", "Registros"], ["/bandeja", "Bandeja"], ["/estadisticas", "Estadísticas"], ["/grupos", "Grupos"], ["/configurar", "Configurar"], ["/no-existe", "Panel"]]) {
+  // Lote 5: la Bandeja se abre encima de la sección (abierta de entrada, encima del Panel) y Configurar se llama «Ajustes».
+  for (const [url, title] of [["/registros", "Registros"], ["/bandeja", "Panel"], ["/estadisticas", "Estadísticas"], ["/grupos", "Grupos"], ["/configurar", "Ajustes"], ["/no-existe", "Panel"]]) {
     await p.goto(`${BASE}${url}`);
     await p.locator("header.topbar h1").waitFor();
     check((await h1(p)) === title, `${url} abre ${title}`);
@@ -100,6 +101,7 @@ const focusedText = (p) => p.evaluate(() => (document.activeElement?.textContent
   check(path(p) === "/configurar", "el avatar de la barra lateral abre Configurar", path(p));
   await p.locator(".side .nv", { hasText: "Bandeja" }).click();
   check(path(p) === "/bandeja", "Bandeja tiene su entrada en la barra lateral", path(p));
+  await p.keyboard.press("Escape");
   await p.locator("button.add.desk").click();
   check(await p.locator('[role="dialog"]').filter({ hasText: "Monto" }).or(p.locator(".sheet[role=dialog]")).first().isVisible(), "«+ Nuevo registro» de la cabecera abre la hoja");
   await p.context().close();
@@ -122,7 +124,8 @@ const focusedText = (p) => p.evaluate(() => (document.activeElement?.textContent
   check(await p.locator(".acts .add").isVisible(), "celular: «+ Nuevo registro» en el contenido del Panel");
   check(!(await p.locator(".side").isVisible()) && !(await p.locator("button.add.desk").isVisible()), "celular: sin barra lateral ni botón de la cabecera");
   await p.locator(".topbar .inbox").click();
-  check(path(p) === "/bandeja" && (await h1(p)) === "Bandeja", "celular: el botón de arriba a la izquierda abre la Bandeja", path(p));
+  check(path(p) === "/bandeja" && (await p.locator(".sheet.band").isVisible()), "celular: el botón de arriba a la izquierda abre la Bandeja", path(p));
+  await p.locator(".sheet.band button.cerrar").click();
   await p.locator(".topbar a.av").click();
   check(path(p) === "/configurar", "celular: el avatar abre Configurar", path(p));
   await p.goto(`${BASE}/pagos`);
