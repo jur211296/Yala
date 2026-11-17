@@ -28,4 +28,16 @@ describe("Yala web en el móvil", () => {
       expect(inner, sel).toContain(sel);
     }
   });
+
+  it("en el celular la barra lateral se oculta y la barra flotante respeta la zona segura", () => {
+    const inner = [...css.matchAll(/@media \(max-width: 760px\)\s*\{([\s\S]*?)\n\}/g)].map((m) => m[1]!).find((b) => /\.mbar\s*\{/.test(b));
+    expect(inner, "falta el bloque del celular con la barra flotante").toBeTruthy();
+    expect(inner).toMatch(/\.side,\s*\.desk\s*\{\s*display:\s*none/);
+    const bar = inner!.match(/\.mbar\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(bar).toMatch(/position:\s*fixed/);
+    expect(bar).toMatch(/env\(safe-area-inset-bottom\)/);
+    // El contenido deja sitio a la barra (62 px + 14 px de margen) para que el último registro no quede debajo.
+    const pad = inner!.match(/\.app\s*\{[^}]*padding-bottom:\s*calc\((\d+)px/)?.[1];
+    expect(Number(pad)).toBeGreaterThanOrEqual(62 + 14);
+  });
 });

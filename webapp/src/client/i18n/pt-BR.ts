@@ -48,6 +48,7 @@ export const PT_BR: Texts = {
     pronto: "Em breve",
     beta: "Beta",
     apuntar: "Registrar",
+    nuevoRegistro: "Novo registro",
     ocultarMontos: "Ocultar valores",
     mostrarMontos: "Mostrar valores",
     saldoTotal: "Saldo geral",

@@ -48,6 +48,7 @@ export const DE: Texts = {
     pronto: "Demnächst",
     beta: "Beta",
     apuntar: "Erfassen",
+    nuevoRegistro: "Neuer Eintrag",
     ocultarMontos: "Beträge ausblenden",
     mostrarMontos: "Beträge anzeigen",
     saldoTotal: "Gesamtsaldo",

@@ -60,6 +60,7 @@ export const PL: Texts = {
     pronto: "Wkrótce",
     beta: "Beta",
     apuntar: "Dodaj",
+    nuevoRegistro: "Nowy wpis",
     ocultarMontos: "Ukryj kwoty",
     mostrarMontos: "Pokaż kwoty",
     saldoTotal: "Saldo łączne",
