@@ -21,6 +21,7 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
 | Unit pure-logic y context-based | **Sí**, desde el 2026-10-10 | job `tests` |
 | UI (XCUITest) | No: advisory y solo en la nocturna | job `ui` |
 | UI de lo tocado | No corre en el CI: solo en el paso 3 de `/gate`, en local | `qa/scripts/interfaz-de-lo-tocado.py` |
+| Revisor con checklist | No corre en el CI: paso 4 bis de `/gate`, en local y en observar | `qa/scripts/checklist-elegir.py` (de 2.3) |
 | El aviso a Grok | No, salvo que no quede ningún canal | job `aviso` |
 
 ## La interfaz de lo tocado corre en el gate local, no en el CI del PR
