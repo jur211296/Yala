@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1340)
+## Index (1341)
 
 | id | status | path |
 | 2026-11-14-bugs-entrada-lote-1 | done | tickets/done/2026-11-14-bugs-entrada-lote-1.md |
@@ -56,6 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-competencia-prestamos-ia | done | tickets/done/2026-11-16-competencia-prestamos-ia.md |
 |---|---|---|
 | 2026-11-16-web-app-lote-1-base-visual | done | tickets/done/2026-11-16-web-app-lote-1-base-visual.md |
+| 2026-11-16-web-app-lote-2-iconos-categoria | done | tickets/done/2026-11-16-web-app-lote-2-iconos-categoria.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
