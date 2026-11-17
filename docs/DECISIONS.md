@@ -10,6 +10,7 @@
 - `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
+- `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
@@ -162,6 +163,13 @@ Cada decisión sigue esta estructura:
 **Decisión:** Yala web copia el diseño, los colores, los componentes y la navegación de la app de iPhone. Se adapta a pantalla grande solo donde haga falta, con la app en iPad como referencia (barra lateral en vez de pestañas). La maqueta comentable con el inventario lado a lado, el sistema visual extraído de Swift, el rediseño y el plan por lotes vive en `docs/web-app/parecida-a-la-app/` y en su artifact; los lotes se encolan tras su visto bueno.
 **Razones:** Es la misma cuenta y los mismos datos; quien pasa del teléfono a la web tiene que reconocer su Yala.
 **Consecuencias:** Cualquier pantalla nueva de la web parte de las piezas de la app (Monto, fila con ícono de categoría, tarjeta de cristal, cápsulas). Las siete decisiones abiertas de la maqueta (tema oscuro, navegación, pestañas, Voz/Foto/IA, íconos, letra de cifras, widgets del Panel) se toman en la maqueta; sin respuesta vale la recomendada.
+**Estado:** Activa
+
+### [2026-11-16] Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcategorías con opciones avanzadas al final
+**Contexto:** Cuatro decisiones que Jürgen tomó en el chat el 16-nov (17:21 y 17:40, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de los cinco bugs de nube de prioridad media, que las recibió pendientes y no las ejecuta: no son de su encargo.
+**Decisión:** (1) **El hero del Panel es el estándar** (17:21): saldo en grande con textos claros, ayuda con «?» y sin hueco antes del valor; Estadísticas, Registros y Flujo de caja tienen que quedar igual de claros, intuitivos y sin huecos. (2) **Los guiados de Yala IA trabajan siempre con subcategorías** (17:40), como Primeros pasos: se elige la categoría y se pueden quitar subcategorías; el presupuesto, el pago planificado y los que vengan. Jürgen: «es lo más importante». (3) **Si el formulario tiene opciones que el guiado no pregunta**, el guiado termina con una pregunta opcional del tipo «¿Quieres revisar las opciones avanzadas? Puedes seguir sin eso» (¿es una suscripción?, ¿es un gasto compartido?). (4) **A la cola**: las mejoras de los guiados, guiados nuevos y el bug de Nuevo registro que no queda en reposo para XCUITest.
+**Razones:** Una cifra grande se lee igual en todas las pantallas; y el guiado no puede dejar fuera lo que el formulario sí permite.
+**Consecuencias:** Faltan los encargos que lo ejecuten; esta entrada solo deja las decisiones.
 **Estado:** Activa
 
 ### [2026-11-16] Yala web debe parecerse a Yala móvil

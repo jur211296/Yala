@@ -10326,3 +10326,8 @@
 "iaGuided.account.kind.subtitle" = "いちばん近いものを選んでください。";
 "iaGuided.account.balance.each" = "今日、各通貨でいくらありますか?";
 "iaGuided.account.balance.eachCard" = "今日、各通貨でいくら支払う必要がありますか?";
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "データを戻すには、Yalaをもう一度開いたときに「%@」を選んでください。";
+"nube23media.signOutICloud.conservationWithGroups" = "戻るときは「%@」を選び、アカウントでグループに再度サインインしてください。";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "いつでも可能です。iCloudにあるデータが、保存されている内容に置き換わります。";

@@ -2341,6 +2341,31 @@ final class CloudMigrationController {
             markerFound: markerFound, journaledPhase: journaledPhase)
     }
 
+    /// ¿Propone el Panel activar la nube aquí? (card vbf9; desde el 2026-11-16, solo con el marcador de la cuenta del faro).
+    /// La decisión pura vive en `CloudAdoptOfferLogic.markerNamesLinkedAccount`. Un marcador que no se deja leer no propone
+    /// nada: el aviso afirma que los datos ya están, y sin leerlo no se sabe de quién es. «Dónde viven tus datos» sigue con
+    /// `markerDecision()`: allí el marcador elige el camino (adopt o «Migrar»), no una frase.
+    func adoptOfferMarkerPresent() -> Bool {
+        guard markerDecision() == .secondaryDeviceCloudLogin else { return false }
+        #if DEBUG
+        // Seam `-uitest-cloud-adopt-offer`: finge la ENTRADA (un marcador de la cuenta del faro), como `markerDecision()`.
+        if UITestHooks.fakeCloudAdoptOffer { return true }
+        #endif
+        let markerHashes: [String]
+        do {
+            markerHashes = try context.fetch(FetchDescriptor<CloudMigrationMarker>()).map(\.accountHash)
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.adoptOfferMarkerPresent: fetch(CloudMigrationMarker) falló: \(error)")
+            #endif
+            return false
+        }
+        let beacon = CloudBeacon()
+        return CloudAdoptOfferLogic.markerNamesLinkedAccount(
+            markerAccountHashes: markerHashes, beaconLinked: beacon.isCloudAccountLinked,
+            beaconAccountHash: beacon.accountHash)
+    }
+
     /// Dry-run §g.5: conteos EN MEMORIA de lo que migraría (read-only, para "Ver qué migraría"). Si uno solo de los cuatro
     /// lanza, no se enseña ninguno: el `try? … ?? 0` de antes decía «0 movimientos» de una tabla que no se leyó.
     func dryRunCounts() -> MigrationDryRunPreview {

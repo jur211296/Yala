@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (1346)
 
 | id | status | path |
+| 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | split-calculator-uitests-sheet-does-not-mount | backlog | tickets/backlog/split-calculator-uitests-sheet-does-not-mount.md |
 | 2026-11-16-hero-claro-estadisticas-registros-flujo | done | tickets/done/2026-11-16-hero-claro-estadisticas-registros-flujo.md |
 | stats-ai-summary-shows-figures-from-before-the-latest-records | backlog | tickets/backlog/stats-ai-summary-shows-figures-from-before-the-latest-records.md |
@@ -135,7 +136,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | done | tickets/done/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adopt-window-late-imports-overwrite-newer-cloud-edits | done | tickets/done/adopt-window-late-imports-overwrite-newer-cloud-edits.md |
 | adopt-window-late-leader-identity-export-can-duplicate-after-the-remount | done | tickets/done/adopt-window-late-leader-identity-export-can-duplicate-after-the-remount.md |
-| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | backlog | tickets/backlog/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
+| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | done | tickets/done/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
 | adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it | backlog | tickets/backlog/adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it.md |
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
@@ -1116,6 +1117,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
 | reverse-of-a-migrated-account-sums-records-written-after-the-migration | backlog | tickets/backlog/reverse-of-a-migrated-account-sums-records-written-after-the-migration.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
+| reverse-on-the-iphone-left-the-local-store-empty | backlog | tickets/backlog/reverse-on-the-iphone-left-the-local-store-empty.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | done | tickets/done/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
 | reverse-prior-icloud-scan-has-a-fixed-deadline | done | tickets/done/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
@@ -1124,7 +1126,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-to-icloud-merges-prior-icloud-data-without-asking | done | tickets/done/reverse-to-icloud-merges-prior-icloud-data-without-asking.md |
 | reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last | done | tickets/done/reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
-| reverse-upload-failed-rows-need-a-device-measurement | backlog | tickets/backlog/reverse-upload-failed-rows-need-a-device-measurement.md |
+| reverse-upload-failed-rows-need-a-device-measurement | done | tickets/done/reverse-upload-failed-rows-need-a-device-measurement.md |
 | reverse-upload-has-no-ceiling-and-no-exit | done | tickets/done/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | done | tickets/done/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
 | reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |

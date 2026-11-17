@@ -10320,3 +10320,8 @@
 "iaGuided.account.kind.subtitle" = "Pick the closest one.";
 "iaGuided.account.balance.each" = "How much do you have today in each currency?";
 "iaGuided.account.balance.eachCard" = "How much do you owe today in each currency?";
+/* Nube 2.3 · bugs media (encargo 2026-11-16): la hoja de «Cerrar sesión» en modo iCloud nombra el botón de la bienvenida (%@ = ese botón) */
+"nube23media.signOutICloud.conservation" = "To get them back, choose “%@” when you open Yala again.";
+"nube23media.signOutICloud.conservationWithGroups" = "To come back, choose “%@” and sign in to Groups with your account again.";
+/* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
+"nube23media.revert.cloudAgainDetail" = "Whenever you like: what’s in your iCloud replaces what’s stored.";
