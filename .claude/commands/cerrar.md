@@ -110,6 +110,11 @@ El cuerpo del PR lleva estas secciones, **en este orden**, para que `/abrir` las
 4. `## Qué probé`
 5. `## Qué quedó fuera` — con el ticket de cada residual.
 
+**Si el PR arregla un bug** (algún commit `fix…`), al final del cuerpo va una línea `Origen:` por bug: el PR
+que lo trajo (`Origen: #123`, sale de `git blame` de lo que arreglas), `Origen: desconocido — <por qué>`, o
+`Origen: este PR` si lo cazó su propia revisión. La plantilla es `.github/pull_request_template.md`; la cuenta
+la revisión mensual de escapes (`docs/verificacion/revision-de-escapes.md`).
+
 El número de build de TestFlight no se escribe en ningún sitio: Jürgen lo mira al subir.
 
 En el informe: `✓ parte en PR #N` (o `en el commit <sha>`) y `✓ N tarjeta(s) para Jürgen`, o «ninguna».

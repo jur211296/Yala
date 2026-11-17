@@ -13,3 +13,4 @@ description: Ciclo disciplinado para corregir un bug de Yala — causa raíz, fi
 6. **Test de regresión**: un `fix:` sin test que reproduzca el bug vuelve. Convenciones en `.claude/rules/testing.md`.
 7. **Resumir en lenguaje de usuario** y preguntar si quiere QA visual (`/qa`).
 8. **Commitear** con `/commit-one` cuando dé el visto bueno.
+9. **Origen.** Antes de cerrar, `git blame` de las líneas que cambiaste (en el padre del arreglo) dice qué PR trajo el bug: va como `Origen: #N` en el cuerpo del PR (`Origen: desconocido — <por qué>` si no se puede saber). Lo cuenta la revisión mensual de escapes, `docs/verificacion/revision-de-escapes.md`.
