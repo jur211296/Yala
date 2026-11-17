@@ -586,6 +586,28 @@ struct MigrationWorkExecutorTests {
         #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-adopt-mark"))
     }
 
+    /// Volver a pasar a la nube con la misma cuenta (g31_01, opción A de Jürgen del 2026-11-16): el claim de «Migrar» pide el
+    /// re-cutover; el del adopt o el seguidor no, porque la entrada de un teléfono nuevo también reclama con `migration` y no
+    /// puede vaciar la copia congelada de la cuenta.
+    @Test("performClaim: «Migrar» manda recutover y el adopt no")
+    func performClaim_onlyMigrateAsksForTheRecutover() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-recutover")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.recutover"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        _ = await executor.performClaim(marksMigrationAttempt: true)
+        #expect(stub.lastClaimBody?["recutover"] as? Bool == true)
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true, "control: el re-cutover va siempre con migración")
+
+        _ = await executor.performClaim(marksMigrationAttempt: false)
+        #expect(stub.lastClaimBody?["recutover"] == nil, "el adopt no lo manda: ni `false`, ni la clave")
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true, "control: el claim del adopt sí lleva migración")
+    }
+
     /// Sin JWT el claim ni sale: no hay POST, así que tampoco marca.
     @Test("performClaim: sin JWT no marca nada")
     func performClaim_noJWT_leavesNoAttemptMark() async throws {

@@ -126,7 +126,9 @@ struct UXAudit22Lote04WiringTests {
         // D23 (2026-10-23): «Cerrar sesión» vive en su bloque «Tu cuenta»; el divisor solo va si hay fila de cuenta encima.
         #expect(src.contains("if !signOutRowRemovesDeviceData {\n                    if showsYalaAccountRow { SubsectionDivider() }\n                    signOutRow"))
         #expect(src.contains("if signOutRowRemovesDeviceData {\n                                removeDeviceDataSection"))
-        #expect(src.contains("removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)"))
+        // Desde el 2026-11-16 (card «Modo iCloud: la salida se llama Cerrar sesión») la hoja ya no cambia de verbo en la
+        // celda C: usa el título y el botón del cierre de siempre (`Nube23MediaSignOutICloudTests`).
+        #expect(!src.contains("removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)"))
     }
 
     /// L20-9 · las dos pantallas dicen la MISMA frase del método porque leen la misma key.

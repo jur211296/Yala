@@ -689,7 +689,7 @@ extension XCUIApplication {
         XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció \(chipID).", file: file, line: line)
         XCTAssertTrue(
             waitForSettledLayout(of: chip, timeout: timeout),
-            "\(chipID) no dejó de moverse (¿el teclado sigue entrando o saliendo?).",
+            settleFailureMessage(chipID),
             file: file, line: line
         )
         // En la fila horizontal de chips de «Nuevo registro», con cuenta y subcategoría elegidas, el de
@@ -739,6 +739,20 @@ extension XCUIApplication {
             file: file, line: line
         )
         return row
+    }
+
+    /// Por qué no se asentó. Un teclado que existe ENTERO por debajo de la ventana y no se mueve es el del modo «teclado
+    /// físico» del simulador (`HardwareKeyboardLastSeen`, `testing.md`), no uno que entra: medido el 2026-11-16 (iOS 27.2),
+    /// el caso del monto 0.01 caía 3 de 3 con el teclado quieto en y=891 y el aviso culpaba a la animación. No se da por
+    /// quieto: el que ENTRA arranca en ese mismo sitio, y tocar antes de tiempo pierde el toque (medido el 2026-10-09).
+    private func settleFailureMessage(_ chipID: String) -> String {
+        let keyboard = keyboards.firstMatch
+        let windowMaxY = windows.firstMatch.frame.maxY
+        if keyboard.exists, keyboard.frame.minY >= windowMaxY {
+            return "\(chipID): el teclado existe pero está fuera de la pantalla (y=\(Int(keyboard.frame.minY))). "
+                + "El simulador está en modo «teclado físico»: bórralo (`xcrun simctl erase <udid>`) y repite. No es la app."
+        }
+        return "\(chipID) no dejó de moverse (¿el teclado sigue entrando o saliendo?)."
     }
 
     /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo

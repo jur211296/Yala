@@ -79,7 +79,7 @@ export interface Env {
   // Yala web, lote 3: «on» enciende la entrada interna `WebGroupsReader` (src/web/groupsReader.ts). Solo en [vars] de
   // staging; en producción no se declara y la entrada responde «disabled».
   WEB_GROUPS_READER?: string;
-  /** Yala web lote 3 (opción A): `"on"` abre la escritura de Grupos (`WebGroupsWriter`). Solo en [vars] de staging. */
+  /** Yala web lote 3 (opción A): `"on"` abre la escritura de Grupos (`WebGroupsWriter`). En staging y en producción. */
   WEB_GROUPS_WRITER?: string;
 }
 

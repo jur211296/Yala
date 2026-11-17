@@ -21,8 +21,8 @@ Staging: <https://yala-web-staging.misty-surf-6866.workers.dev>
 **Lote 3 (2.3, solo staging):** Grupos en lectura (lo que te deben y lo que debes, quién le debe a quién, saldos por
 persona, gastos y pagos) con las cifras del iPhone; las cuentas «solo Grupos» entran y ven Grupos y Configurar; y los
 borradores de la web que el iPhone aún no recogió se editan o se descartan desde la Bandeja. Y, con la opción A que eligió
-Jürgen el 14-nov, la web **escribe** en Grupos: nuevo gasto con reparto igual, saldar e invitar por enlace (solo staging
-hasta una revisión).
+Jürgen el 14-nov, la web **escribe** en Grupos: nuevo gasto con reparto igual, saldar e invitar por enlace. Sube a
+producción junto con toda la web (16-nov, ver «Producción»).
 
 ## Cómo funciona
 
@@ -115,7 +115,7 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
   staging, `gateway/src/web/groupsReader.ts`): no sale a internet ni tiene ruta pública, y la llave no viaja. La entrada
   solo acepta tokens de la web (`yala_web`, o `yala_mcp_reader` de antes de web3_02; el del iPhone por ahí se saltaría
   App Attest), lee con los cinco RPC lectores `groups_pull_rows_*` y solo está encendida con `WEB_GROUPS_READER = "on"`
-  (staging).
+  (staging y, desde el 16-nov, producción).
 - **Quién puede leer qué** lo decide la RLS de `supabase/web3_01_grupos_lectura.sql`: SELECT de las cinco tablas de
   Grupos para `yala_mcp_reader` solo si el token es del cliente de la web (`yala_is_web_reader()`) y la persona es
   miembro. El conector de Claude, que comparte el rol, no gana nada. Ninguna escritura.
@@ -155,7 +155,7 @@ un permiso propio de la web, por el gateway, solo en staging hasta una revisión
   la misma función que el iPhone. Van como funciones del dueño porque `auth` es de `supabase_admin` y no deja dar USAGE
   a un rol nuevo (medido: «permission denied for schema auth»).
 - **Lista cerrada en el gateway:** la entrada interna `WebGroupsWriter` (`gateway/src/web/groupsWriter.ts`, binding
-  `GATEWAY_GROUPS_WRITER`, `WEB_GROUPS_WRITER = "on"` solo en staging) tiene tres operaciones y arma ella los deltas:
+  `GATEWAY_GROUPS_WRITER`, `WEB_GROUPS_WRITER = "on"` en staging y producción) tiene tres operaciones y arma ella los deltas:
   nuevo gasto con reparto igual (`shared-core/src/logic/groupSplit.ts`, paridad con `GroupSplitCalculator`), apuntar un
   pago (confirmado si lo apunta quien paga o quien recibe; si no, pendiente, como `SettlementSaldar23Logic`) y crear un
   enlace con el formato de la app (7 días, 20 usos). Valida miembros activos, divisas que el grupo ya usa, céntimos y
@@ -218,7 +218,7 @@ Sonda tras aplicar: `yala_web` sin INSERT, UPDATE ni DELETE en ninguna tabla, si
 las demás RPC de Grupos; `yala_mcp_reader` igual que antes. Con un token real de la web, PostgREST da 42501 a insertar,
 cambiar y borrar en tablas y a `apply_group_delta` (`test/e2e/web.e2e.test.ts`).
 
-**Producción: nada.**
+**Producción: aplicado el 2026-11-16** (ver «Producción», abajo).
 
 ## Supabase staging (cambios del lote 3, 2026-11-14)
 
@@ -233,7 +233,7 @@ cambiar y borrar en tablas y a `apply_group_delta` (`test/e2e/web.e2e.test.ts`).
 Sonda tras aplicar: `yala_mcp_reader` sigue sin EXECUTE en `apply_group_delta`, `create_group`, `join_group`,
 `groups_forget_user` ni `record_groups_consent`, y sin INSERT ni UPDATE en ninguna tabla de Grupos.
 
-**Producción: nada.**
+**Producción: aplicado el 2026-11-16** (ver «Producción», abajo).
 
 ## Supabase staging (cambios del lote 1, 2026-11-14)
 
@@ -245,7 +245,7 @@ Sonda tras aplicar: `yala_mcp_reader` sigue sin EXECUTE en `apply_group_delta`, 
 | `yala_web_close_session(uuid)` | — | `security definer`; solo sesiones del cliente web y de `auth.uid()`; EXECUTE para `authenticated` y `yala_mcp_reader` |
 | Barrido diario | — | `yala_web_sweep_sessions()` + cron `yala-web-sweep-sessions` (04:27 UTC): sesiones web sin uso en 31 días o con más de 91 |
 
-**Producción: nada.**
+**Producción: aplicado el 2026-11-16** (ver «Producción», abajo).
 
 ## Supabase staging (cambios del lote 0, 2026-11-13)
 
@@ -258,15 +258,55 @@ Sonda tras aplicar: `yala_mcp_reader` sigue sin EXECUTE en `apply_group_delta`, 
 
 Comprobado después de aplicar: el login normal de la app sigue saliendo `authenticated` y sin `client_id`.
 
-**Producción: nada.** Ni Worker, ni cliente OAuth, ni hook, ni `uri_allow_list`.
+**Producción: aplicado el 2026-11-16** con sus propios valores (ver «Producción», abajo).
+
+## Producción (16-nov-2026)
+
+Jürgen la quiere arriba para probarla con su cuenta personal, **sin enlazarla desde la web pública**. Informe:
+`docs/web-app/produccion/index.html`.
+
+| Pieza | Estado |
+|---|---|
+| Supabase producción (`kefvaiymtgytemwbltlz`) | Aplicados el 16-nov, uno a uno: `mcp0_01`–`mcp0_03` (con el id del conector como uuid nulo: el conector **no** está en producción) y `web0_01`, `web1_01` (instala `pg_cron`), `web3_01`, `web3_02`. Hook tras cada paso: `920d79e0…` → `d9a58193…` → `7a703d85…`. Huella final `63aa288a…`, la misma del ensayo |
+| Auth de producción | Servidor OAuth encendido sin registro abierto; cliente confidencial «Yala web» `79c7e38e-409e-470f-9151-81784a02760c` (secreto en `~/Secrets/yala-web-production/` de la Mini); hook de token encendido; Apple con `pe.yala.app.web` delante de los ids de la app y Google con el cliente web delante; `uri_allow_list` = `https://app.yala-app.pe/auth/callback`. Site URL sin cambios. Foto de la config de antes: `~/Secrets/yala-web-production/auth-config-antes-20261116.json` (Mini) |
+| Worker `yala-web-production` | **Atiende** en `https://app.yala-app.pe` desde el 16-nov (versión `696f2e82…`), con dominio propio, certificado, KV `yala-web-production-sessions` y los dos secretos subidos. Sin enlace desde la web pública |
+| Turnstile | Widget «Yala web (producción)» (Managed, sin pre-clearance), de Dan. Clave pública en `wrangler.toml`; la secreta en `~/Secrets/yala-web-production/` de la Mini y como secreto del Worker. El OAuth de wrangler de la cuenta de Yala no trae el permiso de Turnstile |
+| Gateway de producción | Desplegado el 16-nov desde 2.3 (versión `5d52cb6a…`; la anterior, `307ce4f4…`, sirve para `wrangler rollback`) con `WEB_GROUPS_READER` y `WEB_GROUPS_WRITER` en `"on"`. Hasta ese día el código apagaba las dos entradas en producción aunque el interruptor estuviera encendido; Jürgen eligió quitar esa condición (opción A). El despliegue subió también el cupo de recibos de Grupos (decidido el 14-nov). Humo: `/config` 200, rutas sin token 401, y la app del iPhone 14 sincroniza Grupos |
+| App del iPhone | La publicada no conoce la web: «Navegadores conectados», vincular por QR y recoger lo apuntado en la web existen solo en Yala Dev (`ConnectedBrowsersConfig.baseURL` es `nil` fuera de `DEV_BUILD`). Lo apuntado en la web llega hoy solo a quien tenga el correo del banco preparado |
+
+**Cómo se probó antes de tocar nada** (`supabase/ciclo_staging.py`, en la Mini con el token de la Management API):
+
+- modo normal, sobre staging: las cuatro marchas atrás y los cuatro SQL, y la huella vuelve a la de partida. El 16-nov
+  cazó que `web3_02_rollback.sql` dejaba atrás `web_member_ref` (la añadió el arreglo de Grupos del 15-nov): arreglado;
+- `--produccion-simulada`: staging sin conector + la cadena generada para producción, sus marchas atrás y otra vez;
+- `--ensayo-produccion` (16-nov): la cadena entera **dentro de producción**, aplicar → atrás → reaplicar → atrás, en una
+  transacción que el RAISE final deshace. Valida contra la base real (sin `pg_cron`, sin conector). La huella de partida
+  y la de la cadena coincidieron con la simulación.
+
+**El login de la app tras encender el hook:** llamado directo con las 21 sesiones de la app que había (todas salen
+intactas; la web sale `yala_web`; un cliente ajeno, 403), y un login real con una cuenta desechable (enlace de admin →
+`/verify` → renovación): `role = authenticated` y sin `client_id`, como antes. La cuenta se borró al acabar.
+
+**La prueba de punta a punta (16-nov, Safari del iPhone 14, cuenta de prueba test@yala-app.pe):** Turnstile pasa
+solo; «Continuar con Google» entra y el Panel enseña el mismo saldo que la app (Efectivo −12,50 S/ y el mismo registro);
+«Apuntar» deja el borrador en la cola de producción (`mail_drafts`, `source = web`, 3,50 «Prueba web produccion»);
+Grupos se lee igual que en la app; «Salir de Yala web» cierra. «Continuar con Apple» (Face ID de Jürgen) entra en la
+misma cuenta, que tiene las identidades de Apple y de Google, con el mismo saldo y el borrador en la Bandeja.
+
+**Para que la app publicada recoja lo apuntado en la web** falta lo de la 2.3 del iPhone: `ConnectedBrowsersConfig.baseURL`
+con `https://app.yala-app.pe` fuera de `DEV_BUILD` (hoy `nil`), que es lo que hace que la app pida `GET /mail/drafts`
+también con sesiones web. Hasta entonces, el borrador espera en la cola (caduca como los del correo) y solo lo recoge
+una app con el correo del banco preparado.
+
+**Marcha atrás**, por orden: apagar el hook en Auth (un cambio de config, efecto inmediato); `web3_02_rollback` →
+`web3_01_rollback` → `web1_01_rollback` → `web0_01_rollback` → `mcp0_03_rollback` → `mcp0_02_rollback` →
+`mcp0_01_rollback` generados con los mismos ids; y la config de Auth de la foto. Copia física diaria de Supabase.
 
 ## Pendiente
 
-- **Turnstile real.** Staging usa las claves de prueba de Cloudflare (siempre pasan). Hace falta crear el widget
-  (dashboard de Cloudflare → Turnstile, dominio `yala-web-staging.misty-surf-6866.workers.dev`) y cambiar
-  `TURNSTILE_SITE_KEY` y el secreto. `config.ts` rechaza las de prueba en producción.
+- **Turnstile real.** Staging usa las claves de prueba de Cloudflare (siempre pasan). Producción necesita su widget
+  (hostname `app.yala-app.pe`), que se crea en el panel de Cloudflare: `config.ts` rechaza las de prueba en producción.
 - **Origen «Yala web» en la Bandeja del iPhone.** Hoy entra como «Automatización» con la evidencia «Yala web»: un origen
   propio pide un caso nuevo en `DraftSourceType`.
 - **Cerrar sesión en el iPhone** no cierra las sesiones web (borrar la cuenta sí).
-- **La política de privacidad** tiene que nombrar lo que guarda la web: la sesión, el navegador y la ciudad aproximada.
-- **Producción y `app.yala-app.pe`**: el dominio pide mover el DNS de `yala-app.pe` a Cloudflare (hoy en RCP).
+- **Producción**: ver la sección de arriba.

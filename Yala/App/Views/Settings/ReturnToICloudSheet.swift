@@ -110,7 +110,7 @@ struct ReturnToICloudSheet: View {
                  title: L10n.Storage.Revert.Sheet.storedTitle, detail: L10n.Storage.Revert.Sheet.storedDetail,
                  identifier: "storage_revert_fact_stored")
             fact(icon: "nosign", tint: DS.Semantic.warningForeground,
-                 title: L10n.Storage.Revert.Sheet.cloudAgainTitle, detail: L10n.Storage.Revert.Sheet.cloudAgainDetail,
+                 title: L10n.Storage.Revert.Sheet.cloudAgainTitle, detail: L10n.Nube23Media.revertCloudAgainDetail,
                  identifier: "storage_revert_fact_cloud_again")
         }
     }

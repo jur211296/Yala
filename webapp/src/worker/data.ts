@@ -40,9 +40,13 @@ function core(name: string): ToolCore {
   return c;
 }
 
+/**
+ * `apariencia`: la web pide además el ícono y el color de cuentas, categorías y subcategorías, y la necesidad de cada
+ * registro (lote 2 de «Yala web como la app»). Es la única diferencia con el contexto del conector y del gateway.
+ */
 export function toolContext(env: Env, fetcher: Fetcher, access: string, now: Date): ToolContext {
   const reader = new YalaReader(env, access, fetcher, WEB_MAX_ROWS);
-  return { reader, env, now };
+  return { reader, env, now, apariencia: true };
 }
 
 /** El Panel: saldos de hoy, entradas y salidas del mes y los últimos cinco registros. */

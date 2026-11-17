@@ -45,6 +45,10 @@ struct AccountDetailSheet: View {
     @State private var analysis: AccountAnalysis?
     /// El estado de cuenta de la tarjeta (card nmtk). `nil` = no es una tarjeta con día de corte.
     @State private var statement: CreditCardStatementSummary.Card?
+    /// Los registros de «Tus gastos más grandes» y «Últimos registros», en el orden del cálculo: van en la tarjeta de
+    /// «Últimos registros» del Panel (`RecentRecordsWidget`, decisión de Jürgen del 2026-11-16), que pinta registros.
+    @State private var largestRecords: [TransactionItem] = []
+    @State private var latestRecords: [TransactionItem] = []
     @Environment(CurrencyConverter.self) private var currencyConverter
     /// Tarjeta con varias divisas: la línea que enseñan la cuenta del período, la curva y los movimientos. `nil` = la
     /// principal. Cada línea es una cuenta de una divisa: sus cálculos no cambian de premisa.
@@ -422,65 +426,45 @@ struct AccountDetailSheet: View {
 
     // MARK: - Lo de abajo (al subir la hoja)
 
+    /// «Tus gastos más grandes» y «Últimos registros» en la tarjeta de «Últimos registros» del Panel (Jürgen, 16-nov):
+    /// el título de la sección fuera, como en el Panel, y dentro sus filas con el ícono de la subcategoría, la fecha y la
+    /// necesidad. Las filas no se tocan, como antes.
     @ViewBuilder
     private func detailSections(_ summary: AccountDetailCalculator.Summary) -> some View {
-        if let largest = analysis?.largestExpenses, !largest.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+        let largest = Self.readable(largestRecords)
+        if !largest.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 Text(L10n.AnalisisCuenta.largestTitle)
                     .font(DS.Typography.headline)
                     .foregroundStyle(theme.primaryText)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("account_analysis_largest_title")
-                ForEach(largest, id: \.id) { entry in
-                    latestRow(entry)
-                }
+                RecentRecordsWidget(records: largest, currencyCode: currencyCode, showsTitle: false)
+                    .accessibilityIdentifier("account_analysis_largest_card")
             }
         }
 
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.AccountDetail.latest)
                 .font(DS.Typography.headline)
                 .foregroundStyle(theme.primaryText)
                 .accessibilityAddTraits(.isHeader)
-            if summary.latest.isEmpty {
-                Text(L10n.AccountDetail.empty)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.secondaryText)
-                    .padding(.vertical, DS.Spacing.sm)
-            } else {
-                ForEach(summary.latest, id: \.id) { entry in
-                    latestRow(entry)
-                }
-            }
+            // Vacío, el mismo estado de la tarjeta del Panel; antes, una línea suelta.
+            RecentRecordsWidget(records: Self.readable(latestRecords), currencyCode: currencyCode, showsTitle: false)
+                .accessibilityIdentifier("account_detail_latest_card")
         }
     }
 
-    private func latestRow(_ entry: AccountDetailCalculator.Entry) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(entry.title)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(1)
-                Text(entryCaption(entry))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(theme.secondaryText)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: DS.Spacing.sm)
-            AmountText(
-                value: entry.amount,
-                currencyCode: currencyCode,
-                font: DS.Typography.subheadlineEmphasized,
-                secondaryFont: DS.Typography.caption,
-                // Lo por cobrar de una venta de grupo, en gris: no es dinero que haya entrado (card 00xj).
-                tint: .color(GroupSaleBridgeLogic.isReceivable(entry.adjustmentType)
-                    ? theme.secondaryText
-                    : entry.amount > 0 ? Color.incomeAmount : theme.primaryText)
-            )
-        }
-        .padding(.vertical, DS.Spacing.xs)
-        .accessibilityElement(children: .combine)
+    /// Lo que ya se borró no se lee (`swiftui-ds.md`: una fila con su modelo borrado aborta en el iPhone).
+    private static func readable(_ records: [TransactionItem]) -> [TransactionItem] {
+        records.filter { !$0.isDeleted && $0.modelContext != nil }
+    }
+
+    /// Los registros de unas entradas del cálculo, en su orden. La identidad es la misma con la que `recompute` las crea.
+    private static func records(
+        for entries: [AccountDetailCalculator.Entry], in byID: [String: TransactionItem]
+    ) -> [TransactionItem] {
+        entries.compactMap { byID[$0.id] }
     }
 
     private static let rowDateFormatter: DateFormatter = {
@@ -489,13 +473,6 @@ struct AccountDetailSheet: View {
         f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
-
-    private func entryCaption(_ entry: AccountDetailCalculator.Entry) -> String {
-        let date = Self.rowDateFormatter.string(from: entry.date)
-        guard let category = entry.categoryName, !category.isEmpty else { return date }
-        // «Ventas • Por cobrar», como la fila de Registros (card 00xj).
-        return "\(date) · \(RecordRowPresentationLogic.categoryCaption(category, adjustmentType: entry.adjustmentType))"
-    }
 
     // MARK: - Datos
 
@@ -575,6 +552,11 @@ struct AccountDetailSheet: View {
         )
         reconciliation = AccountDetailCalculator.reconciliation(entries: entries, interval: interval, calendar: calendar)
         statement = CreditCardStatementSummary.card(head: account, members: cardMembers, now: now, calendar: calendar)
+        let byID = Dictionary(
+            transactions.map { (String(describing: $0.persistentModelID), $0) }, uniquingKeysWith: { first, _ in first }
+        )
+        largestRecords = Self.records(for: analysis?.largestExpenses ?? [], in: byID)
+        latestRecords = Self.records(for: result.latest, in: byID)
     }
 
     private static func title(for tx: TransactionItem) -> String {

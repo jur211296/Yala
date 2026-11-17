@@ -93,6 +93,11 @@ export function configProblems(env: Partial<Env>): string[] {
       problems.push("Turnstile usa las claves de prueba de Cloudflare");
     }
     if (!env.RL_AUTH || !env.RL_API || !env.RL_QR) problems.push("faltan los límites de peticiones (RL_AUTH, RL_API, RL_QR)");
+    // `[env.production]` de wrangler.toml marca con PENDIENTE lo que aún no existe. Un valor así que se colara (la clave
+    // pública de Turnstile, por ejemplo, no tiene otra comprobación) deja el Worker en 503 en vez de a medias.
+    for (const [key, value] of Object.entries(env)) {
+      if (typeof value === "string" && /PENDIENTE/.test(value)) problems.push(`${key} sigue PENDIENTE`);
+    }
   }
   return problems;
 }

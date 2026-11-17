@@ -117,6 +117,8 @@ struct TrendsTabView: View {
     @State private var trendsAIContextVersion = 0
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+    @State private var heroInfo: HeroInfoRequest?
 
     // MARK: - Cash Flow View Type
 
@@ -251,16 +253,26 @@ struct TrendsTabView: View {
         let txCount = summary?.transactionCount ?? 0
         let hasRecords = txCount > 0
 
-        HeroHeader {
+        // El hero claro (2026-11-16): la cifra pegada al rótulo, con su «?», y la píldora del período a su lado.
+        HeroClaroHeader {
             // Qué es la cifra. Sigue a la métrica: `heroKPIValue` devuelve uno
             // de tres números, así que el rótulo no puede ser fijo.
             if hasRecords, summary != nil {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
+                let caption = StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric)
+                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
+                HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
+                HeroInfoButton(identifier: "stats_hero_info") {
+                    heroInfo = HeroInfoRequest(
+                        topic: HeroClaroLogic.topic(for: caption),
+                        figureLabel: caption.text(isClosed: isClosed),
+                        isClosedPeriod: isClosed
+                    )
+                }
             }
         } period: {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
-        } content: {
+        } figure: {
             if hasRecords, let summary {
                 // KPI period-specific (matches Insights hero). Card interno + chart
                 // preservan running balance — el hero refleja el agregado del período.
@@ -271,7 +283,9 @@ struct TrendsTabView: View {
                     isEstimate: heroKPIIsApproximate(for: summary),
                     animatesValue: true
                 )
-
+            }
+        } detail: {
+            if hasRecords, let summary {
                 // En «Solo gastos» la fila de entradas y salidas repetía la cifra grande: queda su variación, con la
                 // lectura del Panel (decisión A de Jürgen del 2026-10-26).
                 if sessionState.isExpensesOnlyMode {
@@ -293,6 +307,7 @@ struct TrendsTabView: View {
         .heroVerticalPadding(summaryVerticalPadding)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
+        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
     }
 
     /// Subtitle motivacional específico de Trends — describe la variación del
@@ -336,42 +351,47 @@ struct TrendsTabView: View {
         // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
         // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
         // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
-        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
+        // «Ingresos» y «Gastos» en chico encima de cada monto (hero claro, 2026-11-16): antes las flechas iban solas.
+        AdaptiveRowStack(spacing: DS.Spacing.lg, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
-                AmountWithChipStack {
-                    Image(systemName: "arrow.up.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.incomeGraph)
-                        .accessibilityHidden(true)
-                    AmountText(
-                        value: summary.totalIncome,
-                        currencyCode: defaultCurrencyCode,
-                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary,
-                        isEstimate: summary.incomeAmountsAreApproximate
-                    )
-                } chip: {
-                    if appPreferences.showVariations {
-                        VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                HeroFlowAmountCaption(text: L10n.CashFlow.income) {
+                    AmountWithChipStack {
+                        Image(systemName: "arrow.up.right")
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(Color.incomeGraph)
+                            .accessibilityHidden(true)
+                        AmountText(
+                            value: summary.totalIncome,
+                            currencyCode: defaultCurrencyCode,
+                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                            tint: .secondary,
+                            isEstimate: summary.incomeAmountsAreApproximate
+                        )
+                    } chip: {
+                        if appPreferences.showVariations {
+                            VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                        }
                     }
                 }
             }
 
-            AmountWithChipStack {
-                Image(systemName: "arrow.down.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(Color.expenseGraph)
-                    .accessibilityHidden(true)
-                AmountText(
-                    value: summary.totalExpense,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                    tint: .secondary,
-                    isEstimate: summary.expenseAmountsAreApproximate
-                )
-            } chip: {
-                if appPreferences.showVariations {
-                    VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+            HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
+                AmountWithChipStack {
+                    Image(systemName: "arrow.down.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.expenseGraph)
+                        .accessibilityHidden(true)
+                    AmountText(
+                        value: summary.totalExpense,
+                        currencyCode: defaultCurrencyCode,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary,
+                        isEstimate: summary.expenseAmountsAreApproximate
+                    )
+                } chip: {
+                    if appPreferences.showVariations {
+                        VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+                    }
                 }
             }
         }

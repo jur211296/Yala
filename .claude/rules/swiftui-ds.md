@@ -254,6 +254,12 @@ paths:
   **Y las dos pantallas llevan `.zIndex(1)` (medido el 2026-10-28, iOS 27.0, card feer)**: sin él, la que SALE se pinta
   por debajo del degradado opaco del `ZStack` y desaparece en un fotograma; solo se veía fundirse la que entraba. Vale
   para cualquier `ZStack` con un fondo opaco y un `switch` con `.transition` encima.
+- **`.allowsHitTesting(false)` en un fondo dentro de la etiqueta de un `Button` deja esa zona sin toque, aunque el contenedor
+  lleve `.contentShape` (medido el 2026-11-16, iOS 27.2, tarjetas personalizables).** Las miniaturas del editor de diseño
+  de tarjeta solo respondían sobre su texto: el toque sobre el dibujo (`CardBackgroundView`) no llegaba al botón. Un fondo
+  decorativo no se marca «no tocable»: basta `accessibilityHidden(true)` para que VoiceOver no lo lea. Y una vista que se
+  estira (`maxHeight: .infinity`, la tarjeta del carrusel) fija encima de un `ScrollView` se come media pantalla: ahí va
+  con `.fixedSize(horizontal: false, vertical: true)`.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).
@@ -959,6 +965,15 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   cuatro pestañas de Estadísticas, Registros y Pagos planificados. No montes otra pila centrada: había cinco heros
   distintos y ninguno compartido (`distribution-subviews-miss-the-new-panel-hero`). El rótulo lleva
   `stats_hero_caption` en Estadísticas y solo sale si sale la cifra.
+- **Una cifra de cabecera fuera del Panel lleva el hero CLARO: `HeroClaroHeader(label:period:figure:detail:)`, con
+  `HeroInfoButton` junto al rótulo y su hoja (`.heroInfoSheet`, `HeroInfoSheet` + `HeroClaroLogic.Topic`)** (decisión
+  de Jürgen del 2026-11-16: «el hero del Panel es el estándar»). Lo usan las cuatro pestañas de Estadísticas, Registros
+  (por `SummaryHeaderStack`) y el mes del Flujo de caja. Con `HeroHeader`, la fila de arriba medía lo que la columna del
+  período (flechas, píldora y días: ~55 pt) y la cifra quedaba ~40 pt por debajo del rótulo; `HeroClaroRows` alinea el
+  rótulo con el texto de la píldora y pone la cifra pegada al rótulo, al lado del período si cabe. Ingresos y gastos
+  bajo la cifra van rotulados (`HeroFlowAmountCaption`). El «?» sale solo con «Mostrar ayudas», como el del Panel, y su
+  hoja explica la MISMA magnitud que el rótulo (`HeroClaroLogic.topic(for:)`). Pin: `HeroClaroLogicTests` (lógica,
+  cableado y los 16 idiomas). El Panel sigue con `HeroMonthView`, sin tocar.
 - **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:caption:figure:detail:)`**
   (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
   Estadísticas › Resumen. Con alto suficiente pinta el `HeroHeader` (desde el 2026-10-04; antes, una pila centrada);

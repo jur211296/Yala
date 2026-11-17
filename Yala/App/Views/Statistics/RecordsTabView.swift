@@ -23,6 +23,8 @@ struct RecordsTabView: View {
     @Environment(\.modelContext) private var modelContext
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+    @State private var heroInfo: HeroInfoRequest?
 
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
@@ -40,9 +42,6 @@ struct RecordsTabView: View {
     var loadFailed: Bool = false
     /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
     var onRetryLoad: () -> Void = {}
-    /// Registros (la pestaña) junta más el rótulo del hero y su cifra (Jürgen, 16-nov: se leían separados). Estadísticas ›
-    /// Registros sigue con el aire de sus pestañas hermanas.
-    var compactsHeroLabel = false
     /// Registros en una ventana ancha (decisión 66 de 2.3): con la vista calendario la página va a una sola columna y su
     /// contenido, al ancho legible. Estadísticas › Registros no lo pide.
     var keepsCalendarAtReadableWidth = false
@@ -332,8 +331,7 @@ struct RecordsTabView: View {
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
         return SummaryHeaderStack(
             isShort: isShortContainer,
-            verticalPadding: summaryVerticalPadding,
-            labelToContentSpacing: compactsHeroLabel ? DS.Spacing.xs : DS.Spacing.md
+            verticalPadding: summaryVerticalPadding
         ) {
             periodSelector
         } caption: {
@@ -341,11 +339,23 @@ struct RecordsTabView: View {
             // 0 y `recordsSummary.balance` deja de ser un neto, así que el
             // rótulo sigue al filtro; en «Solo gastos», siempre el gasto.
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.records(
+                let caption = StatsHeroCaptionLogic.records(
                     natures: viewModel.selectedTransactionNatures,
                     expensesOnly: expensesOnly
-                ).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                    .accessibilityIdentifier("stats_hero_caption")
+                )
+                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
+                HStack(spacing: DS.Spacing.xs) {
+                    HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
+                        .accessibilityIdentifier("stats_hero_caption")
+                    // El «?» del Panel: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+                    HeroInfoButton(identifier: "stats_hero_info") {
+                        heroInfo = HeroInfoRequest(
+                            topic: HeroClaroLogic.topic(for: caption),
+                            figureLabel: caption.text(isClosed: isClosed),
+                            isClosedPeriod: isClosed
+                        )
+                    }
+                }
             }
         } figure: {
             if showsFigure {
@@ -372,6 +382,7 @@ struct RecordsTabView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
+        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
     }
 
     private func localizedMotivational(_ subtitle: RecordsHeroSubtitle) -> String {
@@ -400,21 +411,25 @@ struct RecordsTabView: View {
                     }
                     onFilterChange()
                 } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.up.right")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.incomeGraph)
-                            .accessibilityHidden(true)
-                        AmountText(
-                            value: recordsSummary.income,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary,
-                            isEstimate: recordsSummary.incomeIsApproximate,
-                            animatesValue: true
-                        )
-                        .accessibilityIdentifier("records_summary_income")
+                    // «Ingresos» en chico encima del monto (hero claro, 2026-11-16): antes la flecha iba sola.
+                    HeroFlowAmountCaption(text: L10n.CashFlow.income) {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "arrow.up.right")
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(Color.incomeGraph)
+                                .accessibilityHidden(true)
+                            AmountText(
+                                value: recordsSummary.income,
+                                currencyCode: defaultCurrencyCode,
+                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                                tint: .secondary,
+                                isEstimate: recordsSummary.incomeIsApproximate,
+                                animatesValue: true
+                            )
+                            .accessibilityIdentifier("records_summary_income")
+                        }
                     }
+                    .contentShape(Rectangle())
                     .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
                 .buttonStyle(.plain)
@@ -438,21 +453,25 @@ struct RecordsTabView: View {
                 }
                 onFilterChange()
             } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "arrow.down.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.expenseGraph)
-                        .accessibilityHidden(true)
-                    AmountText(
-                        value: recordsSummary.expense,
-                        currencyCode: defaultCurrencyCode,
-                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary,
-                        isEstimate: recordsSummary.expenseIsApproximate,
-                        animatesValue: true
-                    )
-                    .accessibilityIdentifier("records_summary_expense")
+                // «Gastos» en chico encima del monto (hero claro, 2026-11-16).
+                HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.down.right")
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(Color.expenseGraph)
+                            .accessibilityHidden(true)
+                        AmountText(
+                            value: recordsSummary.expense,
+                            currencyCode: defaultCurrencyCode,
+                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                            tint: .secondary,
+                            isEstimate: recordsSummary.expenseIsApproximate,
+                            animatesValue: true
+                        )
+                        .accessibilityIdentifier("records_summary_expense")
+                    }
                 }
+                .contentShape(Rectangle())
                 .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
             }
             .buttonStyle(.plain)

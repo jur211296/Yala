@@ -1,43 +1,183 @@
-/* Tokens del tema claro y oscuro de la app (los mismos de la maqueta aprobada, docs/web-app/index.html). */
+/* Base visual (lote 1 de «Yala web como la app», docs/web-app/parecida-a-la-app/): los colores de la app medidos en
+   su código Swift (YalaTheme.swift). Una sola fuente para la entrada y la app con sesión; app.css no define colores.
+
+   Cuatro temas, como el selector de Ajustes (src/client/tema.ts):
+   - «Como el sistema» (sin `data-tema`): claro, o Liquid Glass si el sistema está en oscuro. Es el de por defecto.
+   - `data-tema="claro"`, `"oscuro"` (el negro plano de la app) y `"liquid"` lo fuerzan.
+   Cada bloque define TODAS las variables: lo comprueba test/base-visual.test.ts. */
+
+/* La letra redondeada de las cifras: SF Rounded en los aparatos de Apple (`ui-rounded`) y Nunito en el resto. Nunito
+   se sirve desde aquí (la CSP solo deja `font-src 'self'`) y el navegador solo la baja si no tiene la redondeada. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("./fonts/nunito-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("./fonts/nunito-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --letra: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  --round: ui-rounded, "SF Pro Rounded", Nunito, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --radio-tarjeta: 22px;
+  --radio-fila: 16px;
+  --rosa: #ff0080;
+}
+
+/* Claro: blanco azulado con un velo índigo, tarjetas blancas con sombra suave. */
 :root {
   --bg: #fafbff;
+  --bg-velo: linear-gradient(180deg, #fcfcff 0%, #efeffd 100%);
   --card: #ffffff;
+  --card-borde: rgba(20, 20, 60, 0.06);
+  --sombra: 0 5px 10px rgba(0, 0, 0, 0.05);
+  --sheet: #ffffff;
   --ink: #111114;
   --ink2: #6c6c78;
-  --line: #ececf2;
+  --line: rgba(60, 60, 67, 0.12);
   --acc: #6063f1;
+  --fill: #6063f1;
+  --cristal: rgba(255, 255, 255, 0.72);
+  --cristal-borde: rgba(0, 0, 0, 0.07);
+  --barra: rgba(250, 251, 255, 0.78);
+  --side: rgba(255, 255, 255, 0.66);
+  --btn-fuerte: #000000;
+  --btn-fuerte-texto: #ffffff;
   --pink: #ff0080;
   --bad: #b0263f;
   --badb: #fbe6ea;
   --ok: #13804f;
   --okb: #e2f4ea;
+  --in: #0f7a80;
+  --owe: #c8006a;
+  --owed: #13804f;
+  --risk: #b45309;
+  --risk-fill: #ff9500;
   color-scheme: light;
 }
+
+/* Liquid Glass: azul noche con un degradado índigo arriba y tarjetas de cristal. Por defecto con el sistema en oscuro. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --card: #1c1c1e;
+  :root:not([data-tema]) {
+    --bg: #060612;
+    --bg-velo: linear-gradient(180deg, #26275f 0%, #11112b 34%, #060612 70%);
+    --card: rgba(255, 255, 255, 0.055);
+    --card-borde: rgba(255, 255, 255, 0.09);
+    --sombra: none;
+    --sheet: #0e0e1a;
     --ink: #f2f2f7;
-    --ink2: #9a9aa6;
-    --line: #2a2a2e;
+    --ink2: rgba(235, 235, 245, 0.62);
+    --line: rgba(255, 255, 255, 0.09);
     --acc: #818cf8;
+    --fill: #6063f1;
+    --cristal: rgba(58, 58, 110, 0.5);
+    --cristal-borde: rgba(255, 255, 255, 0.12);
+    --barra: rgba(17, 17, 43, 0.55);
+    --side: rgba(30, 30, 62, 0.55);
+    --btn-fuerte: #ffffff;
+    --btn-fuerte-texto: #000000;
+    --pink: #ff0080;
     --bad: #ff7d93;
-    --badb: #3c1620;
-    --ok: #4fd393;
-    --okb: #143325;
+    --badb: rgba(255, 77, 128, 0.16);
+    --ok: #4ade80;
+    --okb: rgba(74, 222, 128, 0.14);
+    --in: #00c2cb;
+    --owe: #ff4da6;
+    --owed: #4ade80;
+    --risk: #fbbf24;
+    --risk-fill: #ff9f0a;
     color-scheme: dark;
   }
+}
+:root[data-tema="liquid"] {
+  --bg: #060612;
+  --bg-velo: linear-gradient(180deg, #26275f 0%, #11112b 34%, #060612 70%);
+  --card: rgba(255, 255, 255, 0.055);
+  --card-borde: rgba(255, 255, 255, 0.09);
+  --sombra: none;
+  --sheet: #0e0e1a;
+  --ink: #f2f2f7;
+  --ink2: rgba(235, 235, 245, 0.62);
+  --line: rgba(255, 255, 255, 0.09);
+  --acc: #818cf8;
+  --fill: #6063f1;
+  --cristal: rgba(58, 58, 110, 0.5);
+  --cristal-borde: rgba(255, 255, 255, 0.12);
+  --barra: rgba(17, 17, 43, 0.55);
+  --side: rgba(30, 30, 62, 0.55);
+  --btn-fuerte: #ffffff;
+  --btn-fuerte-texto: #000000;
+  --pink: #ff0080;
+  --bad: #ff7d93;
+  --badb: rgba(255, 77, 128, 0.16);
+  --ok: #4ade80;
+  --okb: rgba(74, 222, 128, 0.14);
+  --in: #00c2cb;
+  --owe: #ff4da6;
+  --owed: #4ade80;
+  --risk: #fbbf24;
+  --risk-fill: #ff9f0a;
+  color-scheme: dark;
+}
+
+/* Oscuro: el negro plano de la app (fondo negro OLED y tarjetas #1C1C1E), sin degradado ni cristal de color. */
+:root[data-tema="oscuro"] {
+  --bg: #000000;
+  --bg-velo: none;
+  --card: #1c1c1e;
+  --card-borde: rgba(255, 255, 255, 0.08);
+  --sombra: none;
+  --sheet: #1c1c1e;
+  --ink: #f2f2f7;
+  --ink2: #9a9aa6;
+  --line: rgba(255, 255, 255, 0.1);
+  --acc: #818cf8;
+  --fill: #6063f1;
+  --cristal: rgba(44, 44, 46, 0.72);
+  --cristal-borde: rgba(255, 255, 255, 0.1);
+  --barra: rgba(0, 0, 0, 0.78);
+  --side: rgba(14, 14, 16, 0.86);
+  --btn-fuerte: #ffffff;
+  --btn-fuerte-texto: #000000;
+  --pink: #ff0080;
+  --bad: #ff7d93;
+  --badb: #3c1620;
+  --ok: #4fd393;
+  --okb: #143325;
+  --in: #00c2cb;
+  --owe: #ff4da6;
+  --owed: #4fd393;
+  --risk: #fbbf24;
+  --risk-fill: #ff9f0a;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
+html {
+  background: var(--bg);
+}
 html,
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--ink);
-  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  font: 15px/1.5 var(--letra);
+  -webkit-font-smoothing: antialiased;
+}
+/* El velo de la app: arriba de la página, del alto de la pantalla, sobre el fondo. */
+body {
+  min-height: 100dvh;
+  background: var(--bg-velo) top / 100% 100lvh no-repeat, var(--bg);
 }
 .shell {
   min-height: 100dvh;
@@ -48,13 +188,13 @@ body {
 .card {
   width: min(400px, 100%);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 22px;
+  border: 1px solid var(--card-borde);
+  border-radius: var(--radio-tarjeta);
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 14px 40px rgba(20, 20, 50, 0.08);
+  box-shadow: var(--sombra);
 }
 .brand {
   display: flex;
@@ -135,16 +275,9 @@ h1 {
   cursor: pointer;
 }
 .btn.dark {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-@media (prefers-color-scheme: dark) {
-  .btn.dark {
-    background: #fff;
-    color: #000;
-    border-color: #fff;
-  }
+  background: var(--btn-fuerte);
+  color: var(--btn-fuerte-texto);
+  border-color: var(--btn-fuerte);
 }
 .btn:disabled {
   opacity: 0.45;

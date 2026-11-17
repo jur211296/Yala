@@ -1,0 +1,70 @@
+---
+id: new-transaction-form-sometimes-never-goes-idle-for-xcuitest
+status: done
+priority: medium
+area: "testing, transactions"
+created: 2026-11-05
+updated: 2026-11-16
+source: "lote T3 de XCUITest intermitentes en iPhone (encargo 2026-11-05-lote-t3-xcuitest-intermitentes-iphone)"
+---
+
+# A veces, tras escribir el importe en «Nuevo registro», la app no queda en reposo para XCUITest
+
+## Lo medido (2026-11-05, iOS 27.2)
+
+- **iPhone SE**, `EdgeCasesUITests.test_extremeMinimumAmountSaves`, 1 de 3 iteraciones: desde `Type '0.01'` cada gesto
+  esperó 60 s a «Wait for com.jurgenschmidt.yala.dev to idle» y acabó en «App animations complete notification not
+  received, will attempt to continue». 16 esperas así; el caso pasó en **999,8 s** (los otros dos, ~43 s).
+- **iPhone 17 Pro**, `ExternalEntryForeignSheetUITests.test_halfFilledFormInAnotherTab_trialExpired_waitsForTheForm`,
+  1 de 3: lo mismo desde `Type '1234'`, 7 esperas de 60 s; pasó en **454 s** (los otros, ~35 s).
+- En los dos casos empieza al escribir en el campo del importe de «Nuevo registro», y no vuelve a reposo hasta salir.
+  No hay `repeatForever`, `TimelineView` ni `phaseAnimator` en `Yala/App/Views/Transactions`.
+
+- **iPhone 17 Pro, en el gate del mismo día**, `TransactionFormDecided02UITests.test_afterThreeRecords_openingAnotherFormRetiresTheNotice`:
+  desde `Type '25'`, 8 esperas de 60 s; el aviso «guardado» (`saved_record_notice`, 3 s de plazo) ya se había ido cuando
+  llegó la consulta, el caso falló y XCUITest **se colgó casi 2 h** en «Requesting snapshot of accessibility hierarchy»
+  hasta que se mató la corrida. En ese tiempo el simulador acumuló 16 GB de adjuntos en el `tmp/Attachments` de su daemon
+  de tests.
+
+- **iPhone 17 Pro, iOS 27.2, 2026-11-16 (gate de los guiados de Yala IA)**: `EdgeCasesUITests.test_extremeMinimumAmountSaves`
+  y `Bienvenida23PasosUITests.test_step2_manualWithGuide_thenCleanupAndInboxGuide` cayeron 3 de 3 con «…_chip no dejó de
+  moverse (¿el teclado sigue entrando o saliendo?)», también **con el código de la base sin los guiados** (worktree
+  limpio desde `git archive`) y con `HardwareKeyboardLastSeen = 0`, tras reiniciar el simulador. Ninguno de los dos toca
+  el chat. El resto de la tanda (28 casos) pasó en la misma corrida, con el centinela en 0.
+
+## Por qué importa
+
+Ya no es solo tiempo: tumba casos con plazos cortos y puede colgar una corrida entera (el gate, la nocturna). Además, una corrida que debía durar 40 s dura 8-16 min. En el CI eso se come el
+tope de las tandas de UI, y un caso con un plazo propio corto puede caer por el tiempo perdido delante.
+
+## Qué mirar
+
+Qué sigue animando con el campo del importe enfocado en esa corrida (el instrumento: `log stream` del simulador con
+`CA` / `UIKit` y el vídeo de la corrida con `simctl io recordVideo`, porque un caso en verde no deja vídeo). Candidatos sin
+medir: la animación del importe al escribir, el cursor, o algo del Panel de debajo.
+
+## Cierre (2026-11-16) — lo medido
+
+**El bloqueo de 60 s no se reproduce hoy**: 0 esperas de «to idle» que llegaran a «App animations complete notification
+not received» en 12 corridas con el simulador limpio (iOS 27.2): `EdgeCasesUITests.test_extremeMinimumAmountSaves` 3/3
+en iPhone 17 Pro (47–53 s) y 3/3 en iPhone SE (47–48 s); `Bienvenida23PasosUITests.test_step2_…` 3/3 en 17 Pro (~71 s)
+y 3/3 en SE tras el arreglo (65–71 s). No se tocó ninguna animación de la app: no había nada medido que tocar.
+
+Los «3 de 3» con que se encargó tenían **dos causas distintas, ninguna de reposo**:
+
+1. **iPhone 17 Pro, caso del monto 0.01 — el simulador en modo «teclado físico».** El teclado existía quieto en y=891,
+   por debajo de la ventana (874), y `waitForSettledLayout` lo leía como «aún entrando»: «new_transaction_account_chip no
+   dejó de moverse», 3/3 en ~26 s. `HardwareKeyboardLastSeen` ya estaba en 0 y reiniciar no lo arregló; `simctl erase`
+   sí (3/3 verde). Es la regla de `testing.md` (teclear con `type_text`/`axe type`). **Endurecido aparte:** el aviso de
+   `openSelectorFirstRow` ahora dice la causa («el teclado existe pero está fuera de la pantalla… bórralo»). No se da
+   por quieto un teclado aparcado: el que entra arranca en el mismo y=891.
+2. **iPhone SE, paso 2 de la bienvenida — un fallo real de la app.** La guía «¿En qué fue?» señalaba «Categoría», que
+   en el SE queda bajo la barra de «Guardar»: el aro caía sobre «Guardar», la capa de la guía no deja desplazar y la
+   persona no podía tocar lo que se le pedía (0/3). Ahora el formulario se desplaza hasta lo que señala el paso que se ve
+   (`NewRecordTutorialGuide.scrollTarget` + `TutorialGuideScrollFollower` en `NewTransactionView`): 3/3. Sin guía, el
+   formulario no cambia.
+
+**Queda fuera, sin medir:** un tope por caso (`-test-timeouts-enabled`) contra la corrida colgada 2 h en «Requesting
+snapshot of accessibility hierarchy». No se añadió sin poder reproducir el cuelgue para comprobar que lo corta. Si
+vuelve a pasar, el instrumento es el de arriba: vídeo de la corrida + la lista de capas animadas con lldb
+(`animationKeys` de cada `CALayer` de la ventana) en el momento de la espera.

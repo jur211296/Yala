@@ -289,3 +289,33 @@ describe("POST /account/claim · kind", () => {
     expect(cap.rpcBodies.length).toBe(0);
   });
 });
+
+describe("POST /account/claim · recutover (g31_01, 2026-11-16)", () => {
+  const OK = { status: 200, body: { state: "created", kind: "complete", recutover: true } };
+
+  it("recutover: true viaja al RPC como p_recutover", async () => {
+    const cap = stubFetch(OK);
+    await claim(makeEnv(), { device_id: "d1", provider: "google", migration: true, recutover: true });
+    expect(cap.rpcBodies[0]).toMatchObject({ p_migration: true, p_recutover: true });
+  });
+
+  it("sin recutover NO se manda la clave (una base sin g31_01 sigue resolviendo la firma de cuatro argumentos)", async () => {
+    const cap = stubFetch(OK);
+    await claim(makeEnv(), { device_id: "d1", provider: "google", migration: true });
+    expect(cap.rpcBodies[0]).not.toHaveProperty("p_recutover");
+  });
+
+  it("recutover que no es el booleano true → no se manda (\"true\", 1)", async () => {
+    const cap = stubFetch(OK);
+    await claim(makeEnv(), { device_id: "d1", provider: "google", migration: true, recutover: "true" });
+    await claim(makeEnv(), { device_id: "d1", provider: "google", migration: true, recutover: 1 });
+    expect(cap.rpcBodies[0]).not.toHaveProperty("p_recutover");
+    expect(cap.rpcBodies[1]).not.toHaveProperty("p_recutover");
+  });
+
+  it("la respuesta del re-cutover pasa al cliente tal cual", async () => {
+    stubFetch({ status: 200, body: { state: "created", kind: "complete", recutover: true, retired_rows: 42, has_personal_writes: true } });
+    const cuerpo = (await (await claim(makeEnv(), { device_id: "d1", provider: "google", migration: true, recutover: true })).json()) as Record<string, unknown>;
+    expect(cuerpo).toMatchObject({ state: "created", recutover: true, retired_rows: 42 });
+  });
+});

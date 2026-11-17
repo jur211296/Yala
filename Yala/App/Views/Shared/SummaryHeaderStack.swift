@@ -7,8 +7,8 @@
 //  dispositivo»). Cuatro piezas: `period` (el selector de período), `caption` (qué es la cifra), `figure` (la cifra)
 //  y `detail` (entradas y salidas, recuento).
 //
-//  Con alto suficiente es el hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, todo a
-//  la izquierda (ticket `distribution-subviews-miss-the-new-panel-hero`, 2026-10-03; antes era una pila centrada).
+//  Con alto suficiente es el hero claro (`HeroClaroHeader`, 2026-11-16; antes `HeroHeader`): rótulo y período arriba,
+//  la cifra pegada al rótulo y el detalle debajo, todo a la izquierda (ticket `distribution-subviews-miss-the-new-panel-hero`, 2026-10-03; antes era una pila centrada).
 //  Con poco alto (un iPhone girado: 375 pt en un SE) el hero se comía casi toda la pantalla y la primera fila quedaba
 //  bajo la barra de pestañas. Entonces, de la primera que quepa a lo ancho, con el rótulo bajo la cifra:
 //
@@ -32,8 +32,6 @@ struct SummaryHeaderStack<Period: View, Caption: View, Figure: View, Detail: Vie
     let isShort: Bool
     /// Margen vertical con alto suficiente: el de siempre de cada cabecera.
     let verticalPadding: CGFloat
-    /// El aire entre el rótulo y la cifra con alto suficiente (`HeroHeader.labelToContentSpacing`). Registros lo achica.
-    var labelToContentSpacing: CGFloat = DS.Spacing.md
     @ViewBuilder var period: Period
     @ViewBuilder var caption: Caption
     @ViewBuilder var figure: Figure
@@ -70,12 +68,14 @@ struct SummaryHeaderStack<Period: View, Caption: View, Figure: View, Detail: Vie
                 }
                 .padding(.vertical, DS.Spacing.xs)
             } else {
-                HeroHeader(labelToContentSpacing: labelToContentSpacing) {
+                // El hero claro (2026-11-16): la cifra pegada al rótulo, con la píldora del período a su lado.
+                HeroClaroHeader {
                     caption
                 } period: {
                     period
-                } content: {
+                } figure: {
                     figure
+                } detail: {
                     detail
                 }
                 .heroVerticalPadding(verticalPadding)

@@ -1,12 +1,22 @@
 /**
  * Presupuestos (lote 2b), en lectura. Las cifras son las de la pantalla de Presupuestos del iPhone: las calcula
  * `estado_presupuestos` del núcleo compartido (`shared-core/src/logic/budgets.ts`, paridad en `mcp/test/golden.test.ts`).
- * Como en el iPhone, en tres bloques: Excedidos, Activos e Inactivos. Crear y cambiar sigue en el iPhone.
+ * Crear y cambiar sigue en el iPhone.
+ *
+ * Lote 5 de «Yala web como la app»: la tarjeta es la de la app (`BudgetRowView`): círculo con el ícono y el color de la
+ * categoría, el nombre, «S/ 1,461.00 de S/ 1,800.00 · 15 días», a la derecha «Te quedan» y la cifra (o «Te pasaste por»
+ * en rosa), y la barra del color de la categoría, ámbar en riesgo y rosa al pasarse, con «En el límite» o «Te pasaste»
+ * debajo. Las secciones (Excedidos, Activos, Inactivos) son títulos sueltos, y en escritorio las tarjetas van de dos en
+ * dos. El ícono y el color se buscan por el nombre del presupuesto (`categorias.ts`, decisión D1).
  */
 import { useCallback, useEffect, useState } from "react";
+import { TriangleAlert } from "lucide-react";
 import { locale, texts } from "../i18n";
 import { getJson, type Presupuesto, type Presupuestos as Data } from "./api";
 import { money, named, todayKey } from "./format";
+import { Monto } from "./Monto";
+import { simboloPorNombre, useCategorias } from "./categorias";
+import { colorBarra } from "./pantallas";
 
 const t = texts();
 
@@ -14,30 +24,45 @@ function pct(v: number): string {
   return `${new Intl.NumberFormat(locale(), { maximumFractionDigits: 0 }).format(v)} %`;
 }
 
-/** «Cerrado», «Último día» o «3 días restantes». */
+/** «Cerrado», «Último día» o «15 días», como la línea gris de la app. */
 function daysLabel(p: Presupuesto): string {
   const today = todayKey();
   if (p.periodo.hasta < today) return t.pre.cerrado;
   if (p.periodo.hasta === today) return t.pre.ultimoDia;
-  return t.pre.diasRestantes(p.dias_restantes);
+  return t.pre.dias(p.dias_restantes);
 }
 
-export function BudgetCard({ p }: { p: Presupuesto }) {
+export function BudgetCard({ p, cats }: { p: Presupuesto; cats: ReturnType<typeof useCategorias> }) {
   const width = p.porcentaje === null ? 0 : Math.min(100, Math.max(0, p.porcentaje));
   const over = p.restante < 0;
-  const meta = [t.pre.periodos[p.periodo.tipo] ?? p.periodo.tipo, p.activo ? daysLabel(p) : null].filter(Boolean).join(" · ");
+  const sim = simboloPorNombre(cats, p.nombre, { sf: "chart.pie.fill", color: "var(--fill)" });
+  const linea = [
+    p.limite > 0 ? t.pre.deLimite(money(p.gastado, p.divisa), money(p.limite, p.divisa)) : money(p.gastado, p.divisa),
+    p.activo ? daysLabel(p) : t.pre.estados.inactivo,
+  ].join(" · ");
+  const estado = p.estado === "excedido" ? t.pre.tePasasteEstado : p.estado === "en_riesgo" ? t.pre.enElLimite : null;
   return (
     <div className="bud" data-estado={p.estado}>
       <div className="bud-h">
-        <b>{named(p.nombre)}</b>
-        <span className={`bud-st st-${p.estado}`}>{t.pre.estados[p.estado] ?? p.estado}</span>
-      </div>
-      <div className="bud-amt">
-        <span className="amt">
-          {p.aproximado ? "≈ " : ""}
-          {money(p.gastado, p.divisa)}
+        <span className="circ" style={{ background: sim.color }} aria-hidden="true">
+          <sim.Icono size={20} strokeWidth={2.2} aria-hidden={true} focusable={false} />
         </span>
-        {p.limite > 0 ? <span className="fade"> {t.pre.de(money(p.limite, p.divisa))}</span> : null}
+        <span className="bud-t">
+          <b>{named(p.nombre)}</b>
+          <span className="bud-l">
+            {p.aproximado ? "≈ " : ""}
+            {linea}
+          </span>
+        </span>
+        {p.limite > 0 ? (
+          <span className={`bud-r${over ? " over" : ""}`}>
+            <span className="bud-rl">{over ? t.pre.tePasastePor : t.pre.teQuedan}</span>
+            <span className="bud-ra">
+              {over ? <TriangleAlert aria-hidden={true} focusable={false} /> : null}
+              <Monto importe={Math.abs(p.restante)} divisa={p.divisa} className="amt" />
+            </span>
+          </span>
+        ) : null}
       </div>
       {p.limite > 0 ? (
         <div
@@ -49,13 +74,10 @@ export function BudgetCard({ p }: { p: Presupuesto }) {
           aria-valuenow={Math.round(p.porcentaje ?? 0)}
           aria-valuetext={t.pre.gastado(pct(p.porcentaje ?? 0))}
         >
-          <i style={{ width: `${width}%` }} />
+          <i style={{ width: `${width}%`, background: colorBarra(p, sim.color) }} />
         </div>
       ) : null}
-      <div className="bud-f">
-        <span>{meta}</span>
-        {p.limite > 0 ? <span className="amt-s">{over ? t.pre.tePasaste(money(-p.restante, p.divisa)) : t.pre.quedan(money(p.restante, p.divisa))}</span> : null}
-      </div>
+      {estado ? <span className={`bud-st st-${p.estado}`}>{estado}</span> : null}
     </div>
   );
 }
@@ -63,6 +85,7 @@ export function BudgetCard({ p }: { p: Presupuesto }) {
 export function Presupuestos() {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState(false);
+  const cats = useCategorias();
 
   const load = useCallback(() => {
     setError(false);
@@ -108,11 +131,11 @@ export function Presupuestos() {
   return (
     <>
       {sections.map((s) => (
-        <section className="cd" key={s.title} aria-label={s.title}>
-          <h2>{s.title}</h2>
+        <section className="bud-sec" key={s.title} aria-label={s.title}>
+          <h2 className="bud-sh">{s.title}</h2>
           <div className="buds">
             {s.items.map((p) => (
-              <BudgetCard key={p.id} p={p} />
+              <BudgetCard key={p.id} p={p} cats={cats} />
             ))}
           </div>
         </section>

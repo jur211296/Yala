@@ -356,6 +356,14 @@ struct GroupDetailView: View {
                 .padding(.top, DS.Spacing.sm)
             }
 
+            // 2.3 · saldos traídos de Splitwise o Tricount que esperan a que su gente se una (dueño o admin).
+            ImportarGrupoPendienteBanner(
+                group: group,
+                activeMembers: viewModel.activeMembers,
+                canManage: viewModel.canManageOpeningBalances,
+                onApplied: { viewModel.loadData() }
+            )
+
             tabContent
                 .yalaSkeleton(!viewModel.isReady)
                 // Solo en XCUITest: el esqueleto es una copia redactada de las filas y está en el árbol de accesibilidad,

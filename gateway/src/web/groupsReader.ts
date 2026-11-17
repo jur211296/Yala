@@ -1,5 +1,5 @@
 /**
- * Lectura de Grupos para Yala web (lote 3, solo staging): la entrada interna `WebGroupsReader` (src/worker.ts) llama a
+ * Lectura de Grupos para Yala web (lote 3; staging desde el 14-nov y producción desde el 16-nov): la entrada interna `WebGroupsReader` (src/worker.ts) llama a
  * esto con el token de la web.
  *
  * Por qué aquí y no en la web: ocho columnas de Grupos están cifradas (G7) y la llave (`GROUPS_ENC_KEY`) solo vive en
@@ -12,7 +12,8 @@
  *   `authenticated` (el del iPhone) por esta puerta se saltaría App Attest, que es lo que exigen las rutas de Grupos
  *   para ese rol.
  * - Solo LEE: los cinco RPC lectores `groups_pull_rows_*`. Ninguna escritura.
- * - Apagado salvo `WEB_GROUPS_READER = "on"` (solo en [vars] de staging) y con el kill-switch de Grupos.
+ * - Apagado salvo `WEB_GROUPS_READER = "on"` (en [vars] de staging y de producción) y con el kill-switch de Grupos.
+ *   Hasta el 16-nov, además, apagado siempre en producción; lo retiró la salida de la web a producción (Jürgen, opción A).
  */
 import type { Env } from "../env";
 import { callRpc, getRows, verifyUserToken } from "../sync/userauth";
@@ -63,7 +64,7 @@ function decodeClaims(token: string): Record<string, unknown> | null {
  * recientes primero y como mucho `WEB_MAX_GROUPS`.
  */
 export async function readGroupsForWeb(env: Env, token: string, only?: string): Promise<WebGroupsResult> {
-  if (env.WEB_GROUPS_READER !== "on" || env.ENVIRONMENT === "production") return { ok: false, error: "disabled" };
+  if (env.WEB_GROUPS_READER !== "on") return { ok: false, error: "disabled" };
   if (parseRolloutPercent(env.GROUPS_BACKEND_ROLLOUT_PERCENT) <= 0) return { ok: false, error: "groups_off" };
   const key = env.GROUPS_ENC_KEY;
   if (!key) return { ok: false, error: "no_key" };

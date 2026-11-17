@@ -8,6 +8,8 @@ struct AccountsCarouselView: View {
     /// En ventana ancha las cuentas van en cuadrícula, no en carrusel (decisión 12 de 2.3, opción D).
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El diseño guardado de cada tarjeta (`accountCardDesigns`), para abrir el editor con él.
+    @Environment(AppPreferences.self) private var appPreferences
     let viewModel: PanelViewModel
     /// Una tarjeta por cuenta principal o suelta; las líneas en otra divisa van dentro de la suya.
     let orderedCards: [AccountCard<Account>]
@@ -19,6 +21,8 @@ struct AccountsCarouselView: View {
     /// El toque abre la ficha de la cuenta. Antes filtraba el Panel; filtrar vive ahora en la ficha, en el botón de
     /// filtros de la toolbar y en el menú contextual de abajo.
     let onOpenAccount: (Account) -> Void
+    /// Abre el editor de diseño de la tarjeta (botón de paleta o menú contextual, 2026-11-16).
+    let onDesignCard: (CardDesignEditorPresentation) -> Void
 
     /// Local UI state — previously lived en `PanelViewModel.leadingColumnIndex`, pero mantenerlo
     /// en el VM compartido causaba re-render cross-cutting del Panel en cada snap horizontal.
@@ -175,6 +179,46 @@ struct AccountsCarouselView: View {
         }
     }
 
+    // MARK: - Diseño de la tarjeta
+
+    /// El botón de paleta de la esquina: un círculo de vidrio de 32 pt con 44 pt de toque, centrado con la fila del ícono
+    /// y el nombre (relleno de la tarjeta 16 + medio ícono 20 − medio toque 22 = 14).
+    private func designButton(account: Account, index: Int, action: @escaping () -> Void) -> some View {
+        let look = AccountCardView.look(for: account, storedDesigns: appPreferences.accountCardDesigns)
+        return Button(action: action) {
+            Image(systemName: "paintpalette.fill")
+                .font(DS.Typography.subheadline)
+                // El círculo mide 32 pt fijos: con texto de accesibilidad el glifo lo desbordaba y tapaba el nombre.
+                .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+                .foregroundStyle(Color(card: look.foreground))
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .glassEffect(
+                    .regular.tint(look.hasLightText ? Color.black.opacity(0.25) : Color.white.opacity(0.5)).interactive(),
+                    in: Circle()
+                )
+                .frame(width: AccountCardView.designButtonSize, height: AccountCardView.designButtonSize)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, DS.Spacing.lg + DS.Icon.badgeLarge / 2 - AccountCardView.designButtonSize / 2)
+        .padding(.trailing, DS.Spacing.lg - (AccountCardView.designButtonSize - DS.Icon.badgeMedium) / 2)
+        .accessibilityLabel(L10n.DisenoTarjeta.openFor(account.name))
+        .accessibilityIdentifier("panel_account_card_design_\(index)")
+    }
+
+    private func openDesigner(account: Account, balance: Double, lines: [AccountCardLogic.LineAmount]) {
+        let type = PanelMoneyScopeLogic.accountType(account)
+        let saved = CardDesignLogic.design(for: account.shortcutID, type: type, in: appPreferences.accountCardDesigns)
+        onDesignCard(CardDesignEditorPresentation(
+            account: account,
+            balance: balance,
+            lines: lines,
+            isExpensesOnlyMode: isExpensesOnlyMode,
+            periodName: viewModel.selectedPeriod.displayName,
+            draft: CardDesignDraft(design: saved, accountType: type)
+        ))
+    }
+
     // MARK: - Card View
 
     @ViewBuilder
@@ -187,24 +231,38 @@ struct AccountsCarouselView: View {
             // desde la tarjeta pone la principal y el filtro de sesión le añade sus líneas (entrega 3), así que el saldo
             // filtrado es el de la tarjeta entera. Marcarla por una línea elegida sola la enseñaría con un saldo parcial.
             let membership = viewModel.accountMembership(account.persistentModelID)
+            let balance = isExpensesOnlyMode
+                ? accountPeriodExpenses[account.persistentModelID] ?? 0
+                : accountBalances[account.persistentModelID] ?? 0
+            let lines = card.hasLines || viewModel.isGroupsCard(card)
+                ? viewModel.lineAmounts(for: card, isExpensesOnlyMode: isExpensesOnlyMode) : []
+            // La tarjeta «Grupos» (cuentas de sistema) no se diseña: va en grafito neutro.
+            let designable = !account.isSystemAccount
 
             openControl(for: card) {
                 AccountCardView(
                     account: account,
-                    currentBalance: isExpensesOnlyMode
-                        ? accountPeriodExpenses[account.persistentModelID] ?? 0
-                        : accountBalances[account.persistentModelID] ?? 0,
+                    currentBalance: balance,
                     filterMembership: membership,
                     isExpensesOnlyMode: isExpensesOnlyMode,
                     periodName: viewModel.selectedPeriod.displayName,
-                    lines: card.hasLines || viewModel.isGroupsCard(card)
-                        ? viewModel.lineAmounts(for: card, isExpensesOnlyMode: isExpensesOnlyMode) : [],
+                    lines: lines,
                     groupRows: groupRows(for: card),
-                    title: viewModel.isGroupsCard(card) ? L10n.Category.System.groups : nil
+                    title: viewModel.isGroupsCard(card) ? L10n.Category.System.groups : nil,
+                    reservesDesignButton: designable
                 )
             }
             .accessibilityIdentifier("panel_account_card_\(index)")
             .pointerHighlight(cornerRadius: DS.Radius.xl)
+            // El botón de paleta va ENCIMA de la tarjeta, como hermano y no dentro de su botón: así tiene su propio toque
+            // y VoiceOver lo lee aparte («Diseñar la tarjeta de Viajes»).
+            .overlay(alignment: .topTrailing) {
+                if designable {
+                    designButton(account: account, index: index) {
+                        openDesigner(account: account, balance: balance, lines: lines)
+                    }
+                }
+            }
             // Clic secundario en el iPad, pulsación larga en el iPhone: filtrar y editar sin pasar por la ficha.
             .contextMenu {
                 // Solo si la cuenta no está ya en el filtro (incluida u oculta): quitarla se hace desde su cápsula.
@@ -219,6 +277,9 @@ struct AccountsCarouselView: View {
                 if !account.isSystemAccount {
                     Button(L10n.Account.edit, systemImage: "slider.horizontal.3") {
                         onEditAccount(account)
+                    }
+                    Button(L10n.DisenoTarjeta.open, systemImage: "paintpalette") {
+                        openDesigner(account: account, balance: balance, lines: lines)
                     }
                 }
             }

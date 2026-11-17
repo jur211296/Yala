@@ -265,17 +265,22 @@ final class CloudAccountClient {
     /// de otro dispositivo —el relevo de un líder callado— y hay que comprobar el linaje antes de subir (ticket
     /// `migration-takeover-uploads-without-a-lineage-check`). Va aparte para no cambiar la forma de `ClaimOutcome`, que
     /// comparten born-cloud y la migración. `/account/claim` es `requireUser`: sin attest, como `claim`.
+    ///
+    /// `recutover` (g31_01, card «2.3 · Poder volver a la nube con la misma cuenta», opción A de Jürgen del 2026-11-16): el
+    /// claim de «Pasar a tu cuenta de Yala» pide que, si la cuenta volvió a iCloud, el servidor REEMPLACE su copia congelada
+    /// y deje migrar a ella. Solo viaja con `true`: la entrada de un teléfono nuevo por la bienvenida también reclama con
+    /// `migration`, y no puede vaciar esa copia. Un servidor sin g31_01 lo ignora y contesta como siempre.
     func claimReportingPersonalWrites(
-        jwt: String, deviceID: String, provider: String, migration: Bool = false
+        jwt: String, deviceID: String, provider: String, migration: Bool = false, recutover: Bool = false
     ) async -> (outcome: ClaimOutcome, personalWrites: Bool?) {
         var request = URLRequest(url: baseURL.appendingPathComponent("account/claim"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         do {
-            request.httpBody = try JSONSerialization.data(
-                withJSONObject: ["device_id": deviceID, "provider": provider, "migration": migration]
-            )
+            var payload: [String: Any] = ["device_id": deviceID, "provider": provider, "migration": migration]
+            if recutover { payload["recutover"] = true }
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         } catch {
             return (.transient(detail: "encode failed"), nil)
         }

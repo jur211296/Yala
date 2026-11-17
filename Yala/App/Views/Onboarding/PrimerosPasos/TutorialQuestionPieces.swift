@@ -305,3 +305,136 @@ extension TutorialQuestionScreen where Card == EmptyView {
             detail: detail, identity: identity, backID: backID, onBack: onBack, card: { EmptyView() }, dock: dock)
     }
 }
+
+// MARK: - Una subcategoría que se quita o se vuelve a poner
+
+/// «¿Algo que no quieras contar?»: el círculo de una subcategoría, relleno y con ✓ si cuenta. Lo usan el paso 3 de
+/// Primeros pasos y el guiado de presupuesto de Yala IA.
+struct TutorialSubcategoryCircle: View {
+    let name: String
+    let icon: String
+    let color: Color
+    let isOn: Bool
+    let id: String
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button {
+            DS.Haptic.selection()
+            onToggle()
+        } label: {
+            VStack(spacing: DS.Spacing.xxs) {
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(isOn ? Color.white : color)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(isOn ? color : color.opacity(0.15)))
+                    .overlay(alignment: .topTrailing) {
+                        if isOn {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.white, color)
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                    .accessibilityHidden(true)
+                Text(name)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(isOn ? .primary : .secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier(id)
+    }
+}
+
+// MARK: - Las cuentas que comparten Primeros pasos y los guiados de Yala IA
+
+/// Lo gastado con un presupuesto de prueba y la frase del pago planificado: los pasos 3 y 4 de Primeros pasos y los
+/// guiados de Yala IA (`Views/Chat/Guiados/`) enseñan las mismas cifras con las mismas reglas.
+enum TutorialPlanningMath {
+
+    /// Lo gastado en el período en curso con estas subcategorías (vacío = todos los gastos): la misma regla que
+    /// Planificación (`BudgetsViewModel.calculateSpending`), sobre un presupuesto de prueba que no se guarda.
+    static func budgetSpent(
+        subcategoryIDs: [UUID],
+        period: BudgetPeriodType,
+        currencyCode: String,
+        transactions: [TransactionItem],
+        startDate: Date? = nil,
+        endDate: Date? = nil,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Double {
+        // Sin nombre a propósito: un presupuesto sin filtros CON nombre dispara el canario `budgetFiltersAppearEmpty`.
+        let probe = Budget(
+            currencyCode: currencyCode,
+            limitAmount: 1,
+            periodType: period.rawValue,
+            startDate: period == .unique ? startDate : nil,
+            endDate: period == .unique ? endDate : nil,
+            subcategoryIDs: CSVMirrorCodec.encode(subcategoryIDs)
+        )
+        let interval = BudgetPeriodInterval.current(for: probe, now: now, calendar: calendar)
+        return BudgetsViewModel.calculateSpending(budget: probe, transactions: transactions, interval: interval)
+    }
+
+    /// La fecha del primer pago (la misma cuenta que el editor).
+    static func paymentFirstDue(
+        frequency: FirstScheduledPaymentFlowLogic.Frequency,
+        dayOfMonth: Int,
+        weekday: Int,
+        date: Date,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Date? {
+        guard frequency.isRecurring else { return calendar.startOfDay(for: date) }
+        return ScheduledPaymentEditorViewModel.firstDueDate(
+            start: calendar.startOfDay(for: now),
+            recurrenceType: frequency.recurrenceType,
+            recurrenceInterval: 1,
+            dayOfMonth: frequency == .monthly ? dayOfMonth : nil,
+            weekdays: frequency == .weekly ? String(weekday) : "",
+            yearlyMonth: frequency == .yearly ? calendar.component(.month, from: date) : nil,
+            yearlyDay: frequency == .yearly ? calendar.component(.day, from: date) : nil,
+            endDate: nil
+        )
+    }
+
+    /// «≈ S/ 80.00 cada mes, el día 1. Primer pago: 1 de diciembre.» (el resumen del editor). `amountText` ya formateado.
+    static func paymentSummary(
+        amountText: String,
+        frequency: FirstScheduledPaymentFlowLogic.Frequency,
+        dayOfMonth: Int,
+        date: Date,
+        due: Date
+    ) -> String {
+        let dueDay = Calendar.current.isDateInToday(due) ? L10n.UXL10.today : ScheduledPaymentDateText.dayMonthLong(due)
+        switch frequency {
+        case .once: return L10n.UXL10.summaryOnce(amountText, dueDay)
+        case .monthly:
+            return L10n.UXL10.summaryRecurring(amountText, L10n.UXL10.cadenceMonthly(interval: 1, day: dayOfMonth), dueDay)
+        case .weekly:
+            return L10n.UXL10.summaryRecurring(amountText, L10n.UXL10.cadenceWeekly(interval: 1), dueDay)
+        case .yearly:
+            let cadence = L10n.UXL10.cadenceYearly(interval: 1, date: ScheduledPaymentDateText.dayMonthLong(date))
+            return L10n.UXL10.summaryRecurring(amountText, cadence, dueDay)
+        }
+    }
+
+    /// «Hoy», «Mañana» o «En N días» hasta el pago.
+    static func dueInText(_ due: Date, now: Date = .now, calendar: Calendar = .current) -> String {
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: due)).day ?? 0
+        switch days {
+        case ..<1: return L10n.UXL10.stateToday
+        case 1: return L10n.UXL10.stateTomorrow
+        default: return L10n.UXL10.stateInDays(days)
+        }
+    }
+}

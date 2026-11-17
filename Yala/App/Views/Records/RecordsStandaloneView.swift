@@ -284,7 +284,6 @@ struct RecordsStandaloneView: View {
                 showsQuickFilters: true,
                 loadFailed: dataViewModel.transactionsLoadFailed,
                 onRetryLoad: { reloadAndRecalculate() },
-                compactsHeroLabel: true,
                 keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
             )
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla

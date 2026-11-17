@@ -27,7 +27,7 @@ export interface Limits {
  * - `receipt` (repartir un recibo en un grupo, 2.3): cupo DIARIO propio para los dos planes, aparte de las fotos y notas
  *   de personal. Decisión de Jürgen del 2026-11-14: Grupos es el gancho, así que todo Free tiene 5 recibos al día (foto
  *   o voz, un contador), use o no personal; Pro, 50. Ninguno gasta la prueba de «Configura tu Yala».
- * - `web_groups_write` (Yala web, lote 3, solo staging): lo que una CUENTA escribe en Grupos desde la web (gasto, pago,
+ * - `web_groups_write` (Yala web, lote 3): lo que una CUENTA escribe en Grupos desde la web (gasto, pago,
  *   invitación), con su propio cubo `webw:<sub>`, aparte del de la app. Se aplica también en `observe`
  *   (`src/web/groupsWriter.ts`): la web no tiene App Attest y el límite es parte de lo que lo sustituye.
  */

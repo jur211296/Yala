@@ -43,17 +43,43 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1329)
+## Index (1357)
 
 | id | status | path |
+| 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
+| split-calculator-uitests-sheet-does-not-mount | backlog | tickets/backlog/split-calculator-uitests-sheet-does-not-mount.md |
+| 2026-11-16-hero-claro-estadisticas-registros-flujo | done | tickets/done/2026-11-16-hero-claro-estadisticas-registros-flujo.md |
+| stats-ai-summary-shows-figures-from-before-the-latest-records | backlog | tickets/backlog/stats-ai-summary-shows-figures-from-before-the-latest-records.md |
+| 2026-11-14-bugs-entrada-lote-1 | done | tickets/done/2026-11-14-bugs-entrada-lote-1.md |
+| 2026-11-14-bugs-ui-lote-1 | done | tickets/done/2026-11-14-bugs-ui-lote-1.md |
+| 2026-11-14-texto-presupuesto-pasado | done | tickets/done/2026-11-14-texto-presupuesto-pasado.md |
+| 2026-11-15-analisis-por-cuenta | done | tickets/done/2026-11-15-analisis-por-cuenta.md |
+| 2026-11-15-ia-guiados | qa | tickets/qa/2026-11-15-ia-guiados.md |
+| 2026-11-16-guiados-mejoras | done | tickets/done/2026-11-16-guiados-mejoras.md |
+| ia-guided-payment-as-a-group-expense | backlog | tickets/backlog/ia-guided-payment-as-a-group-expense.md |
+| 2026-11-16-video-verificacion-gmail-v4 | done | tickets/done/2026-11-16-video-verificacion-gmail-v4.md |
 | 2026-11-16-bugs-barrido-final-2-3-app | qa | tickets/qa/2026-11-16-bugs-barrido-final-2-3-app.md |
+| 2026-11-16-competencia-prestamos-ia | done | tickets/done/2026-11-16-competencia-prestamos-ia.md |
 |---|---|---|
 | 2026-11-15-registros-filtros-rapidos | done | tickets/done/2026-11-15-registros-filtros-rapidos.md |
+| 2026-11-16-web-app-lote-1-base-visual | done | tickets/done/2026-11-16-web-app-lote-1-base-visual.md |
+| 2026-11-16-web-app-lote-2-iconos-categoria | done | tickets/done/2026-11-16-web-app-lote-2-iconos-categoria.md |
+| 2026-11-16-web-app-lote-3-navegacion | done | tickets/done/2026-11-16-web-app-lote-3-navegacion.md |
+| 2026-11-16-web-app-lote-4-panel-registros | done | tickets/done/2026-11-16-web-app-lote-4-panel-registros.md |
+| 2026-11-16-web-app-lote-5-resto-pantallas | done | tickets/done/2026-11-16-web-app-lote-5-resto-pantallas.md |
+| 2026-11-16-web-grupos-por-persona-corta-cifras-en-celular | backlog | tickets/backlog/2026-11-16-web-grupos-por-persona-corta-cifras-en-celular.md |
+| 2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone | backlog | tickets/backlog/2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone.md |
+| 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
+| 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
+| ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
+| 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
+| 2026-11-15-tarjetas-personalizables | done | tickets/done/2026-11-15-tarjetas-personalizables.md |
 | 2026-11-15-exploracion-formularios-guiados | done | tickets/done/2026-11-15-exploracion-formularios-guiados.md |
 | 2026-11-14-atajo-banco-b0-b1 | done | tickets/done/2026-11-14-atajo-banco-b0-b1.md |
 | 2026-11-14-pagos-recurrentes-s1 | done | tickets/done/2026-11-14-pagos-recurrentes-s1.md |
 | 2026-11-14-qa-ui-tandas-rojas | done | tickets/done/2026-11-14-qa-ui-tandas-rojas.md |
+| 2026-11-16-yala-web-produccion-subir | done | tickets/done/2026-11-16-yala-web-produccion-subir.md |
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
@@ -109,7 +135,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | done | tickets/done/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adopt-window-late-imports-overwrite-newer-cloud-edits | done | tickets/done/adopt-window-late-imports-overwrite-newer-cloud-edits.md |
 | adopt-window-late-leader-identity-export-can-duplicate-after-the-remount | done | tickets/done/adopt-window-late-leader-identity-export-can-duplicate-after-the-remount.md |
-| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | backlog | tickets/backlog/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
+| adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check | done | tickets/done/adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check.md |
 | adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it | backlog | tickets/backlog/adopt-window-user-edit-uploads-the-value-the-mirror-wrote-over-it.md |
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
@@ -586,7 +612,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-has-no-cadence-when-the-personal-runtime-is-stopped | backlog | tickets/backlog/groups-has-no-cadence-when-the-personal-runtime-is-stopped.md |
 | groups-header-net-smaller-than-sides-at-the-largest-text-size | done | tickets/done/groups-header-net-smaller-than-sides-at-the-largest-text-size.md |
 | groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
-| groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
+| groups-import-splitwise-tricount | done | tickets/done/2026-11-16-grupos-importar-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
 | groups-intro-sheet-comes-back-after-closing-it | qa | tickets/qa/groups-intro-sheet-comes-back-after-closing-it.md |
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
@@ -844,7 +870,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | new-record-suggests-previous-descriptions | qa | tickets/qa/new-record-suggests-previous-descriptions.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
-| new-transaction-form-sometimes-never-goes-idle-for-xcuitest | backlog | tickets/backlog/new-transaction-form-sometimes-never-goes-idle-for-xcuitest.md |
+| new-transaction-form-sometimes-never-goes-idle-for-xcuitest | done | tickets/done/2026-11-16-nuevo-registro-reposo-xcuitest.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | done | tickets/done/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | done | tickets/done/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
@@ -858,7 +884,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | done | tickets/done/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-2-3-arrival-and-getting-started-deck | done | tickets/done/onboarding-2-3-arrival-and-getting-started-deck.md |
-| onboarding-2-3-bank-email-step | blocked | tickets/blocked/onboarding-2-3-bank-email-step.md |
+| onboarding-2-3-bank-email-step | qa | tickets/qa/onboarding-2-3-bank-email-step.md |
 | onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
 | onboarding-2-3-first-account-questions | done | tickets/done/onboarding-2-3-first-account-questions.md |
 | onboarding-2-3-first-budget-questions | done | tickets/done/onboarding-2-3-first-budget-questions.md |
@@ -1090,6 +1116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
 | reverse-of-a-migrated-account-sums-records-written-after-the-migration | backlog | tickets/backlog/reverse-of-a-migrated-account-sums-records-written-after-the-migration.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
+| reverse-on-the-iphone-left-the-local-store-empty | backlog | tickets/backlog/reverse-on-the-iphone-left-the-local-store-empty.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | done | tickets/done/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
 | reverse-prior-icloud-scan-has-a-fixed-deadline | done | tickets/done/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
@@ -1098,7 +1125,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-to-icloud-merges-prior-icloud-data-without-asking | done | tickets/done/reverse-to-icloud-merges-prior-icloud-data-without-asking.md |
 | reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last | done | tickets/done/reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
-| reverse-upload-failed-rows-need-a-device-measurement | backlog | tickets/backlog/reverse-upload-failed-rows-need-a-device-measurement.md |
+| reverse-upload-failed-rows-need-a-device-measurement | done | tickets/done/reverse-upload-failed-rows-need-a-device-measurement.md |
 | reverse-upload-has-no-ceiling-and-no-exit | done | tickets/done/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | done | tickets/done/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
 | reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |
