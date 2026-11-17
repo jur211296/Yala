@@ -71,3 +71,20 @@ con la misma experiencia visual de Primeros pasos (tarjetas, chips, varias a la 
      preguntar nombre, monto ni día.
 5. Elige cuenta y categoría, revisa y toca «Crear pago». Toca «Ver pago»: se abre en Pagos planificados.
 6. Repite el paso 2 con la app en inglés («I want a budget of 300 a month for food»): mismo resultado.
+
+## Guion de QA de las mejoras (encargo guiados-mejoras, 16-nov)
+
+Lo nuevo desde el ticket `tickets/done/2026-11-16-guiados-mejoras.md`. Mismo montaje: Yala Dev con Pro en el iPhone de
+pruebas, Registros › «Yala IA».
+
+1. Mira el saludo: dice «Puedo ayudarte con esto:» y trae una tercera ficha, «Crea conversando», con «Un presupuesto» y
+   «Un pago planificado». Toca «Un presupuesto»: sale tu pedido en el hilo y la tarjeta «Nuevo presupuesto».
+2. Toca el micrófono y di: «Quiero un presupuesto de trescientos al mes para comida». La tarjeta llega a «¿Algo que no
+   quieras contar?» con las subcategorías de Alimentación marcadas. Quita una y toca «Continuar».
+3. «¿Quieres revisar las opciones avanzadas?»: toca «Sí, revisarlas una a una». Sale el nombre (toca «Saltar»), los
+   avisos (elige «Sí, solo al llegar al tope»; si iOS pide permiso de notificaciones, acéptalo), las cuentas, las
+   etiquetas si tienes, los gastos de grupo si tienes grupos y el Panel. En «Revisa antes de crear» salen esas filas;
+   crea y abre el presupuesto: tiene el aviso al 100 % y no cuenta la subcategoría que quitaste.
+4. Di: «Recuérdame pagar el gimnasio cada dos semanas, son ochenta». La tarjeta no pregunta el nombre ni el monto y
+   pregunta el día de la semana. En la revisión, «Cuándo» dice «cada 2 semanas». Crea y abre el pago.
+5. Di: «Quiero un presupuesto de una sola vez de dos mil para el viaje». Pregunta las fechas («Desde» y «Hasta»).
