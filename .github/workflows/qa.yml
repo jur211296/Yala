@@ -175,6 +175,12 @@ jobs:
       # equivoca, una suite no corre y el conteo cuadra igual.
       - name: Suites de un fichero de test (suites-de-fichero.py)
         run: bash qa/scripts/suites-de-fichero-test.sh
+      # El selector de pruebas de interfaz del paso 3 de `/gate` (solo local: el CI del PR no corre
+      # interfaz, decisión de Jürgen del 17-nov por el coste del runner macOS). El banco trae por su
+      # cuenta (`git fetch --depth=2`) el merge del PR de categorías a un toque, su caso real; si no
+      # puede, falla en vez de saltarlo.
+      - name: Interfaz de lo tocado (interfaz-de-lo-tocado.py)
+        run: bash qa/scripts/interfaz-de-lo-tocado-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
