@@ -95,6 +95,11 @@ struct ChatGuidedData {
     /// Las subcategorías que se ofrecen en un favorito, las más usadas primero, por tipo (gasto o ingreso).
     var favoriteSubcategories: [ChatGuidedFavoriteType: [SubcategoryOption]] = [:]
 
+    // MARK: Grupos (`ChatGuidedGroupData`)
+
+    /// Los grupos donde se puede anotar lo que se pide, con sus personas.
+    var groups: [ChatGuidedGroupOption] = []
+
     /// Una categoría donde se pueden añadir subcategorías.
     struct CategoryParentOption: Identifiable {
         let id: PersistentIdentifier
@@ -172,6 +177,7 @@ enum ChatGuidedDataSource {
                 .filter { !$0.isArchived && !$0.isSystemAccount }
             var seen: Set<String> = []
             catalog.accountCurrencies = accounts.map { $0.currencyCode.uppercased() }.filter { seen.insert($0).inserted }
+            catalog.groups = groupOptions(context)
         } catch {
             #if DEBUG
             print("ChatGuidedDataSource: Error: building the catalog: \(error)")
@@ -197,7 +203,7 @@ enum ChatGuidedDataSource {
         case .scheduledPayment:
             if !hasTags { notApplicable.append(.paymentTags) }
             prepared.answers.notApplicable = notApplicable
-        case .account, .category:
+        case .account, .category, .group, .groupOpeningBalance, .groupExpense:
             return prepared
         case .favorite:
             if !hasTags { notApplicable.append(.favoriteTags) }
@@ -309,6 +315,8 @@ enum ChatGuidedDataSource {
             }
         case .account, .category, .favorite:
             loadCreate(kind, into: &data, context: context, now: now, calendar: calendar)
+        case .group, .groupOpeningBalance, .groupExpense:
+            loadGroups(kind, into: &data, context: context)
         case .scheduledPayment:
             data.paymentSubcategories = paymentSubcategories(context)
             do {

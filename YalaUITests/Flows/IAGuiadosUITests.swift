@@ -415,12 +415,168 @@ final class IAGuiadosUITests: XCTestCase {
                        "«Agrega 20 soles a la cuenta…» es un registro.")
     }
 
+    // MARK: - Grupos (encargo del 17-nov)
+
+    /// «Pagué 90 de la cena con Ana y Beto»: Ana y Beto son del viaje, así que es un gasto de ese grupo, pagado por ti y
+    /// en partes iguales entre los tres. Va directo a lo que falta.
+    func test_groupExpense_namedPeople_goesStraightToWhatIsMissing() {
+        let app = openChat(seed: "grupos")
+        send("Pagué 90 de la cena con Ana y Beto", in: app)
+        XCTAssertTrue(app.staticTexts["chat_guided_header"].waitForExistence(timeout: 10),
+                      "Una cifra y gente de tus grupos abre el gasto de grupo.")
+        shot(app, "guiado-gasto-grupo-frase-1")
+        chooseAccountIfAsked(app)
+        skipAdvanced(app)
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5), "Con todo dicho, sale la confirmación.")
+        XCTAssertTrue(app.buttons["chat_guided_change_expensePayer"].exists, "Quién pagó se puede cambiar.")
+        XCTAssertTrue(app.buttons["chat_guided_change_expenseSplit"].exists, "El reparto se puede cambiar.")
+        shot(app, "guiado-gasto-grupo-frase-2-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["chat_guided_open"].exists, "El éxito lleva al grupo.")
+        shot(app, "guiado-gasto-grupo-frase-3-listo")
+    }
+
+    /// Pregunta a pregunta: grupo → qué fue → ¿Quién pagó? → ¿Cómo lo dividen? (solo entre algunos) → revisar.
+    func test_groupExpense_stepByStep_whoPaidAndHowToSplit() {
+        let app = openChat(seed: "grupos")
+        send("Anota un gasto de grupo de 60", in: app)
+        let group = app.buttons.matching(identifier: "chat_guided_group").firstMatch
+        XCTAssertTrue(group.waitForExistence(timeout: 10), "Con dos grupos, primero: ¿en qué grupo?")
+        shot(app, "guiado-gasto-grupo-1-grupo")
+        group.tap()
+
+        let description = app.textFields["chat_guided_description"]
+        XCTAssertTrue(description.waitForExistence(timeout: 5), "Luego: ¿qué fue?")
+        description.tap()
+        description.typeText("Taxi")
+        tap("chat_guided_description_send", in: app)
+
+        let payer = app.buttons.matching(identifier: "chat_guided_payer")
+        XCTAssertTrue(payer.firstMatch.waitForExistence(timeout: 5), "Luego: ¿Quién pagó?")
+        shot(app, "guiado-gasto-grupo-2-quien-pago")
+        payer.element(boundBy: 1).tap()
+
+        let some = app.buttons["chat_guided_split_some"]
+        XCTAssertTrue(some.waitForExistence(timeout: 5), "Luego: ¿Cómo lo dividen?")
+        shot(app, "guiado-gasto-grupo-3-como-dividen")
+        some.tap()
+        let person = app.buttons.matching(identifier: "chat_guided_person")
+        XCTAssertTrue(person.firstMatch.waitForExistence(timeout: 5), "«Solo entre algunos» enseña a la gente.")
+        person.element(boundBy: 2).tap()
+        shot(app, "guiado-gasto-grupo-4-solo-algunos")
+        tap("chat_guided_split_some_continue", in: app)
+
+        chooseAccountIfAsked(app)
+        skipAdvanced(app)
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        shot(app, "guiado-gasto-grupo-5-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        shot(app, "guiado-gasto-grupo-6-listo")
+    }
+
+    /// Deuda de antes: grupo → quién debía → a quién → cuánto → revisar con la frase.
+    func test_openingBalance_stepByStep() {
+        let app = openChat(seed: "grupos")
+        send("Anota una deuda de antes", in: app)
+        let group = app.buttons.matching(identifier: "chat_guided_group").firstMatch
+        XCTAssertTrue(group.waitForExistence(timeout: 10), "Primero: ¿en qué grupo?")
+        shot(app, "guiado-deuda-1-grupo")
+        group.tap()
+
+        let debtor = app.buttons.matching(identifier: "chat_guided_debtor")
+        XCTAssertTrue(debtor.firstMatch.waitForExistence(timeout: 5), "Luego: ¿quién debía?")
+        shot(app, "guiado-deuda-2-quien-debia")
+        debtor.element(boundBy: 1).tap()
+
+        let creditor = app.buttons.matching(identifier: "chat_guided_creditor")
+        XCTAssertTrue(creditor.firstMatch.waitForExistence(timeout: 5), "Luego: ¿a quién?")
+        shot(app, "guiado-deuda-3-a-quien")
+        creditor.firstMatch.tap()
+
+        let amount = app.textFields["chat_guided_amount"]
+        XCTAssertTrue(amount.waitForExistence(timeout: 5), "Luego: ¿cuánto?")
+        amount.tap()
+        amount.typeText("120")
+        shot(app, "guiado-deuda-4-cuanto")
+        tap("chat_guided_amount_send", in: app)
+
+        skipAdvanced(app)
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["chat_guided_debt_sentence"].exists, "La revisión dice quién le debe a quién.")
+        shot(app, "guiado-deuda-5-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        shot(app, "guiado-deuda-6-listo")
+    }
+
+    /// Crear un grupo hasta «Revisa antes de crear» (crearlo va al servidor, que el XCUITest no toca).
+    func test_createGroup_stepByStep_untilTheConfirmation() {
+        let app = openChat(seed: "grupos", cloudSession: true, groupsConsent: true)
+        send("Crea un grupo", in: app)
+        let trip = app.buttons["chat_guided_purpose_trip"]
+        XCTAssertTrue(trip.waitForExistence(timeout: 10), "Primero: ¿para qué es el grupo?")
+        shot(app, "guiado-grupo-1-para-que")
+        trip.tap()
+
+        let name = app.textFields["chat_guided_name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Luego: ¿cómo se llama?")
+        name.tap()
+        name.typeText("Viaje a Arequipa")
+        shot(app, "guiado-grupo-2-nombre")
+        tap("chat_guided_name_send", in: app)
+
+        let yourName = app.textFields["chat_guided_your_name"]
+        if yourName.waitForExistence(timeout: 3) {
+            yourName.tap()
+            yourName.typeText("Jur")
+            shot(app, "guiado-grupo-3-tu-nombre")
+            tap("chat_guided_your_name_send", in: app)
+        }
+        let each = app.buttons["chat_guided_currency_each"]
+        if each.waitForExistence(timeout: 3) {
+            shot(app, "guiado-grupo-4-monedas")
+            each.tap()
+        }
+        let equal = app.buttons["chat_guided_split_type_equal"]
+        XCTAssertTrue(equal.waitForExistence(timeout: 5), "Luego: ¿cómo suelen dividir?")
+        shot(app, "guiado-grupo-5-como-dividen")
+        equal.tap()
+        skipAdvanced(app)
+        XCTAssertTrue(app.buttons["chat_guided_create"].waitForExistence(timeout: 5), "Sale «Revisa antes de crear».")
+        XCTAssertTrue(app.buttons["chat_guided_change_groupName"].exists)
+        shot(app, "guiado-grupo-6-revisar")
+    }
+
+    /// Sin la cuenta de Yala, Yala IA lo dice y no abre la tarjeta.
+    func test_createGroup_withoutAccount_doesNotOpenTheCard() {
+        let app = openChat(seed: "grupos")
+        send("Crea un grupo", in: app)
+        XCTAssertFalse(app.staticTexts["chat_guided_header"].waitForExistence(timeout: 4),
+                       "Sin cuenta de Yala no se puede crear un grupo: no se abre la tarjeta.")
+        shot(app, "guiado-grupo-sin-cuenta")
+    }
+
+    /// Si pagaste tú y el gasto se refleja en tus cuentas, se pregunta con cuál: se toma la primera.
+    private func chooseAccountIfAsked(_ app: XCUIApplication) {
+        let account = app.buttons.matching(identifier: "chat_guided_account").firstMatch
+        if account.waitForExistence(timeout: 3) {
+            shot(app, "guiado-gasto-grupo-cuenta")
+            account.tap()
+        }
+    }
+
     // MARK: - Ayudantes
 
-    private func openChat(extra: [String] = []) -> XCUIApplication {
+    private func openChat(seed: String = "realista", cloudSession: Bool = false, groupsConsent: Bool = false,
+                          extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "realista", deeplink: "records", aiChatReady: true,
-                            extraArguments: ["-uitest-chat-suggestions"] + extra)
+        app.launchForUITest(pro: true, seed: seed, deeplink: "records", aiChatReady: true, cloudSession: cloudSession,
+                            groupsConsent: groupsConsent, extraArguments: ["-uitest-chat-suggestions"] + extra)
         XCTAssertTrue(app.waitForUITestReady(timeout: 180), "uitest_ready ausente — bootstrap/seed no completó.")
         let entry = app.buttons["stats_action_ai"]
         XCTAssertTrue(entry.waitForExistence(timeout: 20), "No aparece la entrada de Yala IA en Registros.")

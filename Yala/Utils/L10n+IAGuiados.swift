@@ -437,5 +437,206 @@ extension L10n {
         static var doneSeeFavorites: String { iaGuidedString("iaGuided.done.seeFavorites") }
         /// «Listo»
         static var closeSheet: String { iaGuidedString("iaGuided.close") }
+
+        // MARK: Grupos: crear un grupo, deuda de antes y gasto de grupo
+
+        /// «Armemos tu grupo. Solo te pregunto lo que falta.»
+        static var groupIntro: String { iaGuidedString("iaGuided.group.intro") }
+        /// «Anotemos esa deuda de antes. Solo te pregunto lo que falta.»
+        static var debtIntro: String { iaGuidedString("iaGuided.debt.intro") }
+        /// «Repartamos este gasto. Solo te pregunto lo que falta.»
+        static var expenseIntro: String { iaGuidedString("iaGuided.expense.intro") }
+        /// «Nuevo grupo»
+        static var groupHeader: String { iaGuidedString("iaGuided.group.header") }
+        /// «Deuda de antes»
+        static var debtHeader: String { iaGuidedString("iaGuided.debt.header") }
+        /// «Gasto de grupo»
+        static var expenseHeader: String { iaGuidedString("iaGuided.expense.header") }
+        /// «Para crear un grupo, primero conecta tu cuenta de Yala en la pestaña Grupos.»
+        static var groupNeedsAccount: String { iaGuidedString("iaGuided.group.needsAccount") }
+        /// «Para anotar una deuda de antes necesitas un grupo de dos personas o más donde seas administrador.»
+        static var debtNoGroup: String { iaGuidedString("iaGuided.debt.noGroup") }
+        /// «Todavía no tienes un grupo donde anotar este gasto. Crea uno o únete con una invitación.»
+        static var expenseNoGroup: String { iaGuidedString("iaGuided.expense.noGroup") }
+        /// «¿Para qué es el grupo?»
+        static var groupPurposeQuestion: String { iaGuidedString("iaGuided.group.purpose.question") }
+        /// «Así le ponemos ícono y color. Se cambian cuando quieras.»
+        static var groupPurposeSubtitle: String { iaGuidedString("iaGuided.group.purpose.subtitle") }
+        /// «Un viaje»
+        static var groupPurposeTrip: String { iaGuidedString("iaGuided.group.purpose.trip") }
+        /// «La casa o el depa»
+        static var groupPurposeHome: String { iaGuidedString("iaGuided.group.purpose.home") }
+        /// «En pareja»
+        static var groupPurposeCouple: String { iaGuidedString("iaGuided.group.purpose.couple") }
+        /// «Con amigos»
+        static var groupPurposeFriends: String { iaGuidedString("iaGuided.group.purpose.friends") }
+        /// «Otra cosa»
+        static var groupPurposeOther: String { iaGuidedString("iaGuided.group.purpose.other") }
+        /// «¿Cómo se llama?»
+        static var groupNameQuestion: String { iaGuidedString("iaGuided.group.name.question") }
+        /// «Ej.: Viaje a Cusco»
+        static var groupNameExampleTrip: String { iaGuidedString("iaGuided.group.name.exampleTrip") }
+        /// «Ej.: Depa Miraflores»
+        static var groupNameExampleHome: String { iaGuidedString("iaGuided.group.name.exampleHome") }
+        /// «Ej.: Nosotros»
+        static var groupNameExampleCouple: String { iaGuidedString("iaGuided.group.name.exampleCouple") }
+        /// «Ej.: Los del cole»
+        static var groupNameExampleFriends: String { iaGuidedString("iaGuided.group.name.exampleFriends") }
+        /// «Ej.: Mi grupo»
+        static var groupNameExampleOther: String { iaGuidedString("iaGuided.group.name.exampleOther") }
+        /// «¿Cómo te llamas?»
+        static var groupYourNameQuestion: String { iaGuidedString("iaGuided.group.yourName.question") }
+        /// «Así te verán en el grupo.»
+        static var groupYourNameSubtitle: String { iaGuidedString("iaGuided.group.yourName.subtitle") }
+        /// «Tu nombre»
+        static var groupYourNamePlaceholder: String { iaGuidedString("iaGuided.group.yourName.placeholder") }
+        /// «¿Cómo llevamos las monedas?»
+        static var groupCurrencyModeQuestion: String { iaGuidedString("iaGuided.group.currencyMode.question") }
+        /// «Cada gasto en su moneda»
+        static var groupCurrencyEach: String { iaGuidedString("iaGuided.group.currencyMode.each") }
+        /// «Si pagan en soles y en dólares, las deudas quedan en cada moneda.»
+        static var groupCurrencyEachHint: String { iaGuidedString("iaGuided.group.currencyMode.eachHint") }
+        /// «Todo en una moneda»
+        static var groupCurrencyOne: String { iaGuidedString("iaGuided.group.currencyMode.one") }
+        /// «Las deudas se ven juntas, convertidas a una sola moneda.»
+        static var groupCurrencyOneHint: String { iaGuidedString("iaGuided.group.currencyMode.oneHint") }
+        /// «¿En qué moneda?»
+        static var groupCurrencyQuestion: String { iaGuidedString("iaGuided.group.currency.question") }
+        /// «¿Cómo suelen dividir los gastos?»
+        static var groupSplitQuestion: String { iaGuidedString("iaGuided.group.split.question") }
+        /// «Viene marcado en cada gasto nuevo. Siempre se puede cambiar.»
+        static var groupSplitSubtitle: String { iaGuidedString("iaGuided.group.split.subtitle") }
+        /// «Una cena de 90 entre 3: 30 cada uno.»
+        static var groupSplitEqualHint: String { iaGuidedString("iaGuided.group.split.equalHint") }
+        /// «Uno pone el 60 % y otro el 40 %.»
+        static var groupSplitPercentageHint: String { iaGuidedString("iaGuided.group.split.percentageHint") }
+        /// «Cada uno dice cuánto le toca.»
+        static var groupSplitExactHint: String { iaGuidedString("iaGuided.group.split.exactHint") }
+        /// «Alguien cuenta doble, por ejemplo.»
+        static var groupSplitSharesHint: String { iaGuidedString("iaGuided.group.split.sharesHint") }
+        /// «¿Juntamos las deudas para que haya menos pagos?»
+        static var groupSimplifyQuestion: String { iaGuidedString("iaGuided.group.simplify.question") }
+        /// «Si Ana le debe a Luis y Luis te debe a ti, Ana te paga directo.»
+        static var groupSimplifySubtitle: String { iaGuidedString("iaGuided.group.simplify.subtitle") }
+        /// «Sí, menos pagos»
+        static var groupSimplifyYes: String { iaGuidedString("iaGuided.group.simplify.yes") }
+        /// «No, cada deuda por separado»
+        static var groupSimplifyNo: String { iaGuidedString("iaGuided.group.simplify.no") }
+        /// «¿En qué grupo?»
+        static var groupPickQuestion: String { iaGuidedString("iaGuided.group.pick.question") }
+        /// «Tú»
+        static var youMember: String { iaGuidedString("iaGuided.group.you") }
+        /// «¿Quién debía dinero antes de usar Yala?»
+        static var debtDebtorQuestion: String { iaGuidedString("iaGuided.debt.debtor.question") }
+        /// «Lo que ya se debían antes de empezar a anotar aquí.»
+        static var debtDebtorSubtitle: String { iaGuidedString("iaGuided.debt.debtor.subtitle") }
+        /// «¿A quién le debe %@?»
+        static func debtCreditorQuestion(_ a0: String) -> String { iaGuidedString("iaGuided.debt.creditor.question", a0) }
+        /// «¿Cuánto le debe?»
+        static var debtAmountQuestion: String { iaGuidedString("iaGuided.debt.amount.question") }
+        /// «¿Desde cuándo?»
+        static var debtDateQuestion: String { iaGuidedString("iaGuided.debt.date.question") }
+        /// «%1$@ le debe %2$@ a %3$@»
+        static func debtSentence(_ a0: String, _ a1: String, _ a2: String) -> String { iaGuidedString("iaGuided.debt.sentence", a0, a1, a2) }
+        /// «Le debes %1$@ a %2$@»
+        static func debtSentenceYouOwe(_ a0: String, _ a1: String) -> String { iaGuidedString("iaGuided.debt.sentenceYouOwe", a0, a1) }
+        /// «%1$@ te debe %2$@»
+        static func debtSentenceOwesYou(_ a0: String, _ a1: String) -> String { iaGuidedString("iaGuided.debt.sentenceOwesYou", a0, a1) }
+        /// «Ya tenían una deuda de antes en esta moneda (%@): esta la reemplaza.»
+        static func debtReplaces(_ a0: String) -> String { iaGuidedString("iaGuided.debt.replaces", a0) }
+        /// «¿Qué fue?»
+        static var expenseDescriptionQuestion: String { iaGuidedString("iaGuided.expense.description.question") }
+        /// «Cena, taxi, súper…»
+        static var expenseDescriptionPlaceholder: String { iaGuidedString("iaGuided.expense.description.placeholder") }
+        /// «¿Cuánto fue en total?»
+        static var expenseAmountQuestion: String { iaGuidedString("iaGuided.expense.amount.question") }
+        /// «¿Quién pagó?»
+        static var expensePayerQuestion: String { iaGuidedString("iaGuided.expense.payer.question") }
+        /// «¿Cómo lo dividen?»
+        static var expenseSplitQuestion: String { iaGuidedString("iaGuided.expense.split.question") }
+        /// «En partes iguales entre todos»
+        static var splitAll: String { iaGuidedString("iaGuided.expense.split.all") }
+        /// «En partes iguales, solo entre algunos»
+        static var splitSome: String { iaGuidedString("iaGuided.expense.split.some") }
+        /// «Un monto para cada uno»
+        static var splitExact: String { iaGuidedString("iaGuided.expense.split.exact") }
+        /// «%1$d personas · %2$@ cada uno»
+        static func splitEachPeople(_ a0: Int, _ a1: String) -> String { iaGuidedString("iaGuided.expense.split.eachPeople", a0, a1) }
+        /// «%@ cada uno»
+        static func splitEach(_ a0: String) -> String { iaGuidedString("iaGuided.expense.split.each", a0) }
+        /// «Partes iguales: %@»
+        static func splitSomeValue(_ a0: String) -> String { iaGuidedString("iaGuided.expense.split.someValue", a0) }
+        /// «Faltan %@»
+        static func splitMissing(_ a0: String) -> String { iaGuidedString("iaGuided.expense.split.missing", a0) }
+        /// «Te pasaste por %@»
+        static func splitOver(_ a0: String) -> String { iaGuidedString("iaGuided.expense.split.over", a0) }
+        /// «Cuadra con el total»
+        static var splitBalanced: String { iaGuidedString("iaGuided.expense.split.balanced") }
+        /// «¿Con qué cuenta pagaste?»
+        static var expenseAccountQuestion: String { iaGuidedString("iaGuided.expense.account.question") }
+        /// «Lo que pagaste sale de tu cuenta, como en el formulario.»
+        static var expenseAccountSubtitle: String { iaGuidedString("iaGuided.expense.account.subtitle") }
+        /// «No tienes una cuenta en %@. Usa otra moneda o crea una cuenta.»
+        static func expenseNoAccount(_ a0: String) -> String { iaGuidedString("iaGuided.expense.account.none", a0) }
+        /// «Usar otra moneda»
+        static var expenseOtherCurrency: String { iaGuidedString("iaGuided.expense.account.otherCurrency") }
+        /// «¿De qué categoría?»
+        static var expenseCategoryQuestion: String { iaGuidedString("iaGuided.expense.category.question") }
+        /// «Elegir categoría»
+        static var expenseCategoryPick: String { iaGuidedString("iaGuided.expense.category.pick") }
+        /// «¿Cuándo fue?»
+        static var expenseDateQuestion: String { iaGuidedString("iaGuided.expense.date.question") }
+        /// «Pagó %@»
+        static func paidBy(_ a0: String) -> String { iaGuidedString("iaGuided.expense.paidBy", a0) }
+        /// «Crear grupo»
+        static var confirmCreateGroup: String { iaGuidedString("iaGuided.confirm.createGroup") }
+        /// «Anotar deuda»
+        static var confirmSaveDebt: String { iaGuidedString("iaGuided.confirm.saveDebt") }
+        /// «Guardar gasto»
+        static var confirmSaveExpense: String { iaGuidedString("iaGuided.confirm.saveExpense") }
+        /// «Grupo»
+        static var rowGroup: String { iaGuidedString("iaGuided.row.group") }
+        /// «Para»
+        static var rowPurpose: String { iaGuidedString("iaGuided.row.purpose") }
+        /// «Tú en el grupo»
+        static var rowYourName: String { iaGuidedString("iaGuided.row.yourName") }
+        /// «Reparto»
+        static var rowSplitDefault: String { iaGuidedString("iaGuided.row.splitDefault") }
+        /// «Menos pagos»
+        static var rowSimplify: String { iaGuidedString("iaGuided.row.simplify") }
+        /// «Debe»
+        static var rowDebtor: String { iaGuidedString("iaGuided.row.debtor") }
+        /// «A»
+        static var rowCreditor: String { iaGuidedString("iaGuided.row.creditor") }
+        /// «Fecha»
+        static var rowDate: String { iaGuidedString("iaGuided.row.date") }
+        /// «Qué fue»
+        static var rowDescription: String { iaGuidedString("iaGuided.row.description") }
+        /// «Pagó»
+        static var rowPayer: String { iaGuidedString("iaGuided.row.payer") }
+        /// «Se divide»
+        static var rowSplit: String { iaGuidedString("iaGuided.row.split") }
+        /// «Hoy»
+        static var valueToday: String { iaGuidedString("iaGuided.value.today") }
+        /// «Sin categoría»
+        static var valueNoCategory: String { iaGuidedString("iaGuided.value.noCategory") }
+        /// «Todo en %@»
+        static func valueOneCurrency(_ a0: String) -> String { iaGuidedString("iaGuided.value.oneCurrency", a0) }
+        /// «Tu grupo está listo»
+        static var doneGroup: String { iaGuidedString("iaGuided.done.group") }
+        /// «Invita a tu gente con el enlace: así entran al grupo.»
+        static var doneGroupMessage: String { iaGuidedString("iaGuided.done.groupMessage") }
+        /// «Invitar a tu gente»
+        static var doneInvite: String { iaGuidedString("iaGuided.done.invite") }
+        /// «Ver el grupo»
+        static var doneSeeGroup: String { iaGuidedString("iaGuided.done.seeGroup") }
+        /// «Deuda anotada»
+        static var doneDebt: String { iaGuidedString("iaGuided.done.debt") }
+        /// «Ya se ve en los saldos de «%@».»
+        static func doneDebtMessage(_ a0: String) -> String { iaGuidedString("iaGuided.done.debtMessage", a0) }
+        /// «Gasto guardado»
+        static var doneExpense: String { iaGuidedString("iaGuided.done.expense") }
+        /// «%1$@ · %2$@, repartido en el grupo.»
+        static func doneExpenseMessage(_ a0: String, _ a1: String) -> String { iaGuidedString("iaGuided.done.expenseMessage", a0, a1) }
     }
 }

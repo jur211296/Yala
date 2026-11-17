@@ -21,6 +21,10 @@ nonisolated enum ChatGuidedKind: String, Codable, CaseIterable, Sendable {
     case account
     case category
     case favorite
+    /// Grupos: crear un grupo, anotar una deuda de antes (saldo inicial) y repartir un gasto.
+    case group
+    case groupOpeningBalance
+    case groupExpense
 }
 
 /// Una pregunta del guiado. Los dos flujos comparten las que se parecen (monto, moneda) y cada uno usa las suyas.
@@ -91,6 +95,33 @@ nonisolated enum ChatGuidedStep: String, Codable, Sendable {
     case favoriteNeed
     case favoriteTags
     case favoriteNote
+    // Grupos
+    /// «¿En qué grupo?» (deuda de antes y gasto).
+    case groupPick
+    // Crear un grupo
+    case groupPurpose
+    case groupName
+    case groupYourName
+    case groupCurrencyMode
+    case groupCurrency
+    case groupSplit
+    // Opciones avanzadas del grupo
+    case groupSimplify
+    // Deuda de antes
+    case debtDebtor
+    case debtCreditor
+    case debtAmount
+    // Opciones avanzadas de la deuda
+    case debtDate
+    // Gasto de grupo
+    case expenseDescription
+    case expenseAmount
+    case expensePayer
+    case expenseSplit
+    case expenseAccount
+    // Opciones avanzadas del gasto
+    case expenseCategory
+    case expenseDate
     case confirm
     case done
 
@@ -99,6 +130,7 @@ nonisolated enum ChatGuidedStep: String, Codable, Sendable {
         .budgetName, .budgetAlerts, .budgetAccounts, .budgetTags, .budgetShared, .budgetPanel,
         .paymentSubscription, .paymentReminder, .paymentEnd, .paymentNote, .paymentTags, .paymentPanel,
         .accountNumber, .accountStats, .categoryNeeds, .favoriteNeed, .favoriteTags, .favoriteNote,
+        .groupSimplify, .debtDate, .expenseCategory, .expenseDate,
     ]
 
     var isAdvancedOption: Bool { Self.advancedOptions.contains(self) }
@@ -154,6 +186,45 @@ nonisolated enum ChatGuidedFavoriteType: String, Codable, CaseIterable, Sendable
     case expense
     case income
     case transfer
+}
+
+/// «¿Para qué es el grupo?»: pone el ícono y el color, y el ejemplo del nombre.
+nonisolated enum ChatGuidedGroupPurpose: String, Codable, CaseIterable, Sendable {
+    case trip
+    case home
+    case couple
+    case friends
+    case other
+
+    var iconName: String {
+        switch self {
+        case .trip: "airplane"
+        case .home: "house.fill"
+        case .couple: "heart.fill"
+        case .friends: "person.3.fill"
+        case .other: "person.2.fill"
+        }
+    }
+
+    var colorHex: String {
+        switch self {
+        case .trip: "#0EA5E9"
+        case .home: "#F59E0B"
+        case .couple: "#EC4899"
+        case .friends: "#22C55E"
+        case .other: "#8B5CF6"
+        }
+    }
+}
+
+/// «¿Cómo lo dividen?» en el gasto de grupo. Porcentajes y partes quedan en el formulario.
+nonisolated enum ChatGuidedSplitMode: String, Codable, CaseIterable, Sendable {
+    /// En partes iguales entre todos los del grupo.
+    case equalAll
+    /// En partes iguales, solo entre los elegidos.
+    case equalSome
+    /// Un monto para cada uno (tiene que cuadrar con el total).
+    case exact
 }
 
 /// «¿Te avisamos cuando vayas llegando al tope?» (los tres de Primeros pasos, `FirstBudgetFlowLogic.Alert`).
@@ -298,6 +369,44 @@ nonisolated struct ChatGuidedAnswers: Codable, Equatable, Sendable {
     /// `SubcategoryNeed.rawValue`. `nil`: la de la subcategoría.
     var favoriteNeed: String?
 
+    // MARK: Grupos
+
+    /// El grupo de la deuda o del gasto: `SplitGroup.cloudKitZoneID`.
+    var groupZoneID: String?
+    /// La fecha de la deuda o del gasto (opción avanzada). `nil`: hoy.
+    var groupDate: Date?
+
+    // Crear un grupo
+    var groupPurpose: ChatGuidedGroupPurpose?
+    var groupName: String?
+    /// Cómo te llaman en el grupo. Solo se pregunta si Yala no sabe tu nombre.
+    var groupDisplayName: String?
+    /// «Todo en una moneda» (`true`) o «cada gasto en su moneda» (`false`).
+    var groupSingleCurrency: Bool?
+    /// `SplitType.rawValue`.
+    var groupSplitType: String?
+    /// «Menos pagos entre ustedes». `nil`: sí (el valor del formulario para un grupo nuevo).
+    var groupSimplifyDebts: Bool?
+
+    // Deuda de antes
+    /// `SplitMember.id.uuidString` de quien debe y de a quién.
+    var debtorMemberID: String?
+    var creditorMemberID: String?
+
+    // Gasto de grupo
+    var expenseDescription: String?
+    var payerMemberID: String?
+    var splitMode: ChatGuidedSplitMode?
+    /// Entre quiénes se reparte (`SplitMember.id.uuidString`), en «solo entre algunos» y en «un monto a cada uno».
+    var participantIDs: [String]?
+    /// El monto de cada uno en «un monto a cada uno».
+    var exactShares: [String: Double]?
+    /// El nombre de la subcategoría del gasto (lo que guarda `SplitExpense`). `nil`: sin categoría.
+    var expenseSubcategoryName: String?
+    /// ¿El gasto pide la cuenta con la que pagaste? Lo decide el formulario (`GroupExpenseViewModel.isAccountRequired`)
+    /// y lo apunta la tarjeta al contestar quién pagó.
+    var expenseAccountRequired: Bool?
+
     init() {}
 
     var effectiveInterval: Int { max(1, interval ?? 1) }
@@ -323,6 +432,9 @@ nonisolated struct ChatGuidedAnswers: Codable, Equatable, Sendable {
         accountCountsInReports = nil
         subcategoryNeeds = nil
         favoriteNeed = nil
+        groupSimplifyDebts = nil
+        groupDate = nil
+        expenseSubcategoryName = nil
     }
 }
 
@@ -341,6 +453,12 @@ nonisolated enum ChatGuidedField: String, Codable, Sendable {
     case categoryMode
     case parentCategory
     case favoriteType
+    case group
+    case payer
+    case participants
+    case description
+    case debtor
+    case creditor
 }
 
 /// El estado entero de un guiado dentro del chat.
@@ -361,6 +479,8 @@ nonisolated struct ChatGuidedFlowState: Codable, Equatable, Identifiable, Sendab
     var createdName: String?
     /// La primera fecha de pago del pago creado.
     var createdDueDate: Date?
+    /// El grupo creado o donde se anotó (`SplitGroup.cloudKitZoneID`): «Ver el grupo» e «Invitar».
+    var createdZoneID: String?
 
     init(id: UUID = UUID(), kind: ChatGuidedKind, step: ChatGuidedStep, answers: ChatGuidedAnswers,
          prefilled: Set<ChatGuidedField> = []) {

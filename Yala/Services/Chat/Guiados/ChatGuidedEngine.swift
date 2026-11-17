@@ -34,6 +34,9 @@ nonisolated enum ChatGuidedEngine {
         case .account: accountSpec
         case .category: categorySpec
         case .favorite: favoriteSpec
+        case .group: groupSpec
+        case .groupOpeningBalance: groupOpeningBalanceSpec
+        case .groupExpense: groupExpenseSpec
         }
     }
 
@@ -160,6 +163,95 @@ nonisolated enum ChatGuidedEngine {
         }
     )
 
+    /// Grupo: ¿para qué es? → nombre → tu nombre (si Yala no lo sabe) → ¿cómo llevamos las monedas? → moneda (con
+    /// «todo en una») → ¿cómo suelen dividir? → ¿opciones avanzadas? (menos pagos). Los miembros se invitan al terminar.
+    static let groupSpec = ChatGuidedFlowSpec(
+        kind: .group,
+        steps: [.groupPurpose, .groupName, .groupYourName, .groupCurrencyMode, .groupCurrency, .groupSplit, .advanced,
+                .groupSimplify],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .groupPurpose: return answers.groupPurpose != nil
+            case .groupName: return !trimmed(answers.groupName).isEmpty
+            case .groupYourName: return !trimmed(answers.groupDisplayName).isEmpty
+            case .groupCurrencyMode: return answers.groupSingleCurrency != nil
+            case .groupCurrency: return answers.currencyCode != nil
+            case .groupSplit: return answers.groupSplitType.map(groupSplitTypes.contains) ?? false
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Deuda de antes: grupo → ¿quién debía? → ¿a quién? → ¿cuánto? → moneda (la del grupo; se cambia en la
+    /// confirmación) → ¿opciones avanzadas? (desde cuándo).
+    static let groupOpeningBalanceSpec = ChatGuidedFlowSpec(
+        kind: .groupOpeningBalance,
+        steps: [.groupPick, .debtDebtor, .debtCreditor, .debtAmount, .currency, .advanced, .debtDate],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .groupPick: return !trimmed(answers.groupZoneID).isEmpty
+            case .debtDebtor: return !trimmed(answers.debtorMemberID).isEmpty
+            case .debtCreditor:
+                guard let creditor = answers.creditorMemberID, !creditor.isEmpty else { return false }
+                return creditor != answers.debtorMemberID
+            case .debtAmount: return isValidAmount(answers.amount)
+            case .currency: return answers.currencyCode != nil
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Gasto de grupo: grupo → ¿qué fue? → ¿cuánto? → ¿Quién pagó? → ¿Cómo lo dividen? → moneda (la del grupo; se cambia
+    /// en la confirmación) → cuenta (si pagaste tú y se refleja en tus cuentas) → ¿opciones avanzadas? (categoría,
+    /// fecha). La moneda va antes que la cuenta: sin cuenta en esa moneda, «Usar otra moneda» vuelve a preguntarla.
+    static let groupExpenseSpec = ChatGuidedFlowSpec(
+        kind: .groupExpense,
+        steps: [.groupPick, .expenseDescription, .expenseAmount, .expensePayer, .expenseSplit, .currency,
+                .expenseAccount, .advanced, .expenseCategory, .expenseDate],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .groupPick: return !trimmed(answers.groupZoneID).isEmpty
+            case .expenseDescription: return !trimmed(answers.expenseDescription).isEmpty
+            case .expenseAmount: return isValidAmount(answers.amount)
+            case .expensePayer: return !trimmed(answers.payerMemberID).isEmpty
+            case .expenseSplit: return isSplitValid(answers)
+            case .expenseAccount: return answers.accountID != nil
+            case .currency: return answers.currencyCode != nil
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Un monto redondeado al céntimo.
+    static func cents(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+
+    /// Los `SplitType.rawValue` de un grupo (el enum vive con la UI).
+    static let groupSplitTypes: Set<String> = ["equal", "percentage", "exact", "shares"]
+
+    /// ¿El reparto está completo? En «solo entre algunos», alguien elegido; en «un monto a cada uno», que las partes
+    /// cuadren con el total al céntimo (la misma tolerancia del formulario).
+    static func isSplitValid(_ answers: ChatGuidedAnswers) -> Bool {
+        switch answers.splitMode {
+        case .equalAll: return true
+        case .equalSome: return !(answers.participantIDs ?? []).isEmpty
+        case .exact:
+            guard let total = answers.amount, isValidAmount(total) else { return false }
+            let participants = answers.participantIDs ?? []
+            let parts = participants.compactMap { answers.exactShares?[$0] }
+            guard !participants.isEmpty, parts.count == participants.count,
+                  parts.allSatisfy({ $0.isFinite && $0 >= 0 && $0 == cents($0) }) else { return false }
+            // Al céntimo, como el formulario: lo que se guarda son partes con dos decimales.
+            return abs(parts.reduce(0, +) - cents(total)) < 0.005
+        case nil: return false
+        }
+    }
+
     /// Lo que no toca con estas respuestas: no se pregunta y cuenta como contestado. Las opciones avanzadas que no
     /// tocan se saltan igual aunque se quisieran revisar.
     static func isSkipped(_ step: ChatGuidedStep, _ answers: ChatGuidedAnswers) -> Bool {
@@ -178,6 +270,12 @@ nonisolated enum ChatGuidedEngine {
         case .favoriteSubcategory, .favoriteTags: return favoriteType(answers) == .transfer
         case .favoriteDestination: return favoriteType(answers) != .transfer
         case .favoriteNeed: return favoriteType(answers) != .expense
+        // Grupos: el grupo no se pregunta con uno solo, ni tu nombre si Yala ya lo sabe, ni la moneda con «cada gasto
+        // en su moneda». La cuenta del gasto solo si la pide el formulario (`expenseAccountRequired`, que pone la
+        // tarjeta al contestar quién pagó).
+        case .groupPick, .groupYourName, .groupCurrencyMode: return answers.isNotApplicable(step)
+        case .groupCurrency: return answers.groupSingleCurrency != true
+        case .expenseAccount: return answers.expenseAccountRequired != true
         default: return false
         }
     }
@@ -313,10 +411,12 @@ nonisolated enum ChatGuidedEngine {
         _ state: ChatGuidedFlowState,
         id: UUID,
         name: String,
-        dueDate: Date? = nil
+        dueDate: Date? = nil,
+        zoneID: String? = nil
     ) -> ChatGuidedFlowState {
         guard canCreate(state) else { return state }
         var next = state
+        next.createdZoneID = zoneID
         next.status = .created
         next.step = .done
         next.history = []

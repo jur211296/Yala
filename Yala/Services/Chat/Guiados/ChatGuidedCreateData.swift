@@ -31,7 +31,7 @@ extension ChatGuidedDataSource {
             data.categoryParents = categoryParents(context)
         case .favorite:
             data.favoriteSubcategories = favoriteSubcategories(context, now: now, calendar: calendar)
-        case .budget, .scheduledPayment:
+        case .budget, .scheduledPayment, .group, .groupOpeningBalance, .groupExpense:
             break
         }
     }

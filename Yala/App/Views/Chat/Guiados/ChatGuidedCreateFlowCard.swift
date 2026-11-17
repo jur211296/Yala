@@ -166,6 +166,7 @@ struct ChatGuidedCreateFlowCard: View {
         case .favorite: "star.fill"
         case .budget: "chart.pie.fill"
         case .scheduledPayment: "calendar.badge.clock"
+        case .group, .groupOpeningBalance, .groupExpense: ChatGuidedGroupFlowCard.headerIcon(kind)
         }
     }
 
@@ -176,6 +177,7 @@ struct ChatGuidedCreateFlowCard: View {
         case .favorite: G.favoriteHeader
         case .budget: G.budgetHeader
         case .scheduledPayment: G.paymentHeader
+        case .group, .groupOpeningBalance, .groupExpense: ChatGuidedGroupFlowCard.headerTitle(state.kind)
         }
     }
 
@@ -194,7 +196,7 @@ struct ChatGuidedCreateFlowCard: View {
             }
         case .favorite:
             if favoriteType != nil { favoritePreview }
-        case .budget, .scheduledPayment:
+        case .budget, .scheduledPayment, .group, .groupOpeningBalance, .groupExpense:
             EmptyView()
         }
     }
@@ -919,6 +921,7 @@ struct ChatGuidedCreateFlowCard: View {
         case .favorite: G.confirmSaveFavorite
         case .budget: G.confirmCreateBudget
         case .scheduledPayment: G.confirmCreatePayment
+        case .group, .groupOpeningBalance, .groupExpense: G.confirmCreateGroup
         }
     }
 
@@ -956,7 +959,7 @@ struct ChatGuidedCreateFlowCard: View {
             add(.favoriteDestination, G.rowDestination, data?.account(answers.destinationAccountID)?.name ?? "—")
             add(.favoriteAmount, G.rowAmount, favoriteAmountText, .amount)
             add(.favoriteName, G.rowName, answers.favoriteName ?? "—", .name)
-        case .budget, .scheduledPayment:
+        case .budget, .scheduledPayment, .group, .groupOpeningBalance, .groupExpense:
             break
         }
         rows.append(.init(step: .advanced, label: G.rowAdvanced,
@@ -1118,7 +1121,7 @@ struct ChatGuidedCreateFlowCard: View {
         case .account: nameText = answers.accountName ?? ""
         case .category: nameText = answers.categoryName ?? ""
         case .favorite: nameText = answers.favoriteName ?? ""
-        case .budget, .scheduledPayment: break
+        case .budget, .scheduledPayment, .group, .groupOpeningBalance, .groupExpense: break
         }
         editsName = false
         pickedCurrencies = answers.accountCurrencies ?? [mainCurrency.uppercased()]

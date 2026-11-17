@@ -19,12 +19,16 @@ enum ChatGuidedCreationError: Error, Equatable {
     case notSaved
     /// Ya hay una cuenta, una categoría o (todas) las subcategorías con ese nombre.
     case duplicateName
+    /// Grupos: lo que dijo el servicio, con el mismo texto que el formulario.
+    case message(String)
 }
 
 struct ChatGuidedCreation: Equatable {
     let id: UUID
     let name: String
     let dueDate: Date?
+    /// El grupo (`SplitGroup.cloudKitZoneID`) en los guiados de Grupos.
+    var zoneID: String? = nil
 }
 
 @MainActor
@@ -50,6 +54,13 @@ enum ChatGuidedCreator {
             return try createCategory(state.answers, context: context)
         case .favorite:
             return try createFavorite(state.answers, context: context)
+        case .groupOpeningBalance:
+            return try createOpeningBalance(state.answers, context: context)
+        case .groupExpense:
+            return try createGroupExpense(state.answers, context: context)
+        case .group:
+            // Crear un grupo pasa por la red: `createGroup(...)`, que es asíncrono.
+            throw ChatGuidedCreationError.notSaved
         }
     }
 

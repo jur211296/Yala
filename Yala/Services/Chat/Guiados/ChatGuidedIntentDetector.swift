@@ -47,6 +47,8 @@ struct ChatGuidedCatalog {
     var mainCurrency: String
     /// Las monedas de las cuentas activas, sin repetir. Con una sola, la moneda del presupuesto no se pregunta.
     var accountCurrencies: [String] = []
+    /// Tus grupos con sus personas: el gasto de grupo se reconoce por sus nombres.
+    var groups: [ChatGuidedGroupOption] = []
 }
 
 /// Lo detectado: qué guiado y qué ya se sabe.
@@ -68,21 +70,29 @@ enum ChatGuidedIntentDetector {
         if matchesAny(folded, budgetNounPatterns) { return asksForIt ? .budget : nil }
         // Crear una cuenta, una categoría o un favorito: el verbo y la cosa juntos (`ChatGuidedCreateDetector`).
         if let create = createKind(folded) { return create }
+        // Grupos: crear uno, una deuda de antes o un gasto de grupo dicho con todas las letras (`ChatGuidedGroupDetector`).
+        if let group = groupKind(folded) { return group }
         if matchesAny(folded, paymentRequestPatterns) { return .scheduledPayment }
         if matchesAny(folded, scheduledPaymentPatterns), asksForIt { return .scheduledPayment }
         if matchesAny(folded, budgetSavingPatterns) { return .budget }
         return nil
     }
 
-    /// El guiado con lo que la frase ya dice, o `nil` si no pide ninguno.
+    /// El guiado con lo que la frase ya dice, o `nil` si no pide ninguno. Un gasto de grupo que solo se reconoce por
+    /// las personas nombradas («pagué 120 de la cena con Ana y Luis») necesita el catálogo: entra aquí y no en `kind(of:)`.
     static func detect(_ text: String, catalog: ChatGuidedCatalog) -> ChatGuidedDetection? {
-        guard let kind = kind(of: text) else { return nil }
+        guard let kind = kind(of: text) ?? (groupExpenseByPeople(text, catalog: catalog) ? .groupExpense : nil) else {
+            return nil
+        }
         switch kind {
         case .budget: return budget(text, catalog: catalog)
         case .scheduledPayment: return scheduledPayment(text, catalog: catalog)
         case .account: return account(text, catalog: catalog)
         case .category: return category(text, catalog: catalog)
         case .favorite: return favorite(text, catalog: catalog)
+        case .group: return group(text, catalog: catalog)
+        case .groupOpeningBalance: return openingBalance(text, catalog: catalog)
+        case .groupExpense: return groupExpense(text, catalog: catalog)
         }
     }
 
