@@ -2,20 +2,21 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (116 entradas)
+## Índice (118 entradas)
 
-> **No hace falta leer este fichero entero** — son 308 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 311 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
+- `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
+- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
-- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
+- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
 - `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
@@ -23,9 +24,9 @@
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
-- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
@@ -98,8 +99,8 @@
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -143,6 +144,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-17] Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora, cachés y el video de Gmail
+**Contexto:** Seis decisiones que Jürgen tomó en el chat el 17-nov (06:17, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que compara nuestra verificación con el artículo del equipo de Claude Code; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Chips rápidos de Registros con el iPhone girado: opción B**, se deja así (en horizontal se bajan con el dedo), igual que el 3 y el 5-nov; el test de horizontal tiene que decirlo con su aserto, no con `XCTExpectFailure`. (2) **Nota de salud al terminar el tutorial de la bienvenida 2.3: opción B**, se deja como está, sin sumarla. (3) **Teléfonos que ya purgaron el historial en la nube**: primero se mide cuántos lo tienen con el canario `cloudReverseMirrorHistoryExpired`, y con ese número se decide entre construir la recuperación o dejarla cerrada. (4) **Texto de IA de Resumen con cifras viejas**: aprobado marcarlo con la hora en que se generó y un botón Actualizar (el ticket del PR 1013); el arreglo se encola. (5) **OK para borrar las cachés** `Yala-vuelta-sim` y `/Volumes/ExtDev/DerivedData/_aparcado-vuelta-icloud` de la sesión de la vuelta a iCloud. (6) **Video v4 de la verificación de Gmail**: Jürgen delega la revisión en Frank; si Frank lo aprueba, Dan lo sube a YouTube sin listar y envía la respuesta a Google.
+**Razones:** (1) y (2) confirman lo que ya estaba decidido o publicado; (3) evita construir una recuperación sin saber a cuántos alcanza; (4) quien lee el Resumen tiene que saber de cuándo son las cifras.
+**Consecuencias:** Faltan los encargos que ejecuten (1), (3), (4), (5) y (6); esta entrada solo deja las decisiones.
+**Estado:** Activa
 
 ### [2026-11-16] La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde
 **Contexto:** Jürgen, 16-nov (21:09), sobre la sesión que se encarga de los rojos del CI de `2.3`.

@@ -1,0 +1,289 @@
+<title>Verificación en Yala</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura; arriba lo que pasó, en medio la tabla práctica-contra-hoy, abajo las propuestas con su voto. */
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --ink:#15201c; --muted:#5b6b65; --line:#dbe3df;
+  --accent:#0f7a5c; --accent-soft:#e2f2ec;
+  --ok:#1f7a3f; --ok-bg:#e3f3e8; --mid:#946200; --mid-bg:#fbf0d6; --no:#b4322a; --no-bg:#fbe4e1;
+  --code-bg:#eef2f0;
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1513; --surface:#17201d; --ink:#e4ece8; --muted:#97a8a1; --line:#2a3632;
+  --accent:#45c79c; --accent-soft:#163a2f;
+  --ok:#6fd393; --ok-bg:#16301f; --mid:#e7b54a; --mid-bg:#33290f; --no:#f08a80; --no-bg:#3a1a17;
+  --code-bg:#1d2925; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1513; --surface:#17201d; --ink:#e4ece8; --muted:#97a8a1; --line:#2a3632;
+  --accent:#45c79c; --accent-soft:#163a2f;
+  --ok:#6fd393; --ok-bg:#16301f; --mid:#e7b54a; --mid-bg:#33290f; --no:#f08a80; --no-bg:#3a1a17;
+  --code-bg:#1d2925; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(26px,4.4vw,38px);font-weight:700}
+h2{font-size:22px;font-weight:600}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:17px;max-width:68ch;color:var(--ink)}
+.muted{color:var(--muted)}
+code,.mono{font-family:var(--f-mono);font-size:12.5px;background:var(--code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+header{display:flex;flex-direction:column;gap:14px}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.key{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.key b{font-family:var(--f-display);font-size:16px}
+section{display:flex;flex-direction:column;gap:16px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.stat .n{font-family:var(--f-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.pr{font-weight:600;min-width:170px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-mid{background:var(--mid-bg);color:var(--mid)} .p-no{background:var(--no-bg);color:var(--no)}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.cards{display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.card-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+.card-head h3{flex:1 1 380px;min-width:0}
+.rank{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.box{border-radius:8px;padding:12px 14px;background:var(--bg);display:flex;flex-direction:column;gap:6px;min-width:0}
+.box .t{font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.box.now{border-left:3px solid var(--no)} .box.next{border-left:3px solid var(--ok)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px}
+.meta span b{font-weight:600}
+.rec{background:var(--accent-soft);border-radius:8px;padding:12px 14px;font-size:14px}
+ul.ev{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.vote{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:14px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:inherit;font-weight:600;font-size:14px;padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.seg button:hover{border-color:var(--accent)}
+.seg button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg button[aria-pressed="true"][data-v="si"]{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.seg button[aria-pressed="true"][data-v="no"]{background:var(--no-bg);color:var(--no);border-color:var(--no)}
+.seg button[aria-pressed="true"][data-v="despues"]{background:var(--mid-bg);color:var(--mid);border-color:var(--mid)}
+.seg button:disabled{opacity:.55;cursor:not-allowed}
+textarea{font:inherit;font-size:14px;width:100%;min-height:52px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--ink);resize:vertical}
+.status{font-size:12.5px;color:var(--muted);min-height:1em}
+.tally{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:13.5px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--muted)}
+.esc td:nth-child(4){min-width:200px}
+footer{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Yala · propuesta para decidir · 17-nov-2026</span>
+  <h1>Cómo verificamos hoy, y qué copiar del equipo de Claude Code</h1>
+  <p class="lead">Comparé el artículo <a href="https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/">«How the Claude Code team thinks about verification»</a> con lo que de verdad corre en el repo y en el CI de 2.3. Abajo: qué pasó en dos semanas, la tabla práctica por práctica y seis propuestas para aprobar una por una.</p>
+  <div class="keys">
+    <div class="key"><b>La UI no se prueba en ningún PR</b><span class="muted">Las pruebas de interfaz solo corren de noche y solo avisan. Un PR entra en 2.3 con lo que su sesión eligió correr en el gate.</span></div>
+    <div class="key"><b>Un rojo que pasa al repetirlo cuenta como verde</b><span class="muted">El CI repite los rojos hasta 3 veces. El artículo prohíbe justo eso: enseña a reintentar en vez de arreglar.</span></div>
+    <div class="key"><b>Las lecciones se suman y nunca se podan</b><span class="muted">Una sola regla de nube tiene 2.097 líneas y 263 entradas fechadas. Nadie la lee entera al revisar un cambio.</span></div>
+  </div>
+</header>
+
+<section id="cifras">
+  <div>
+    <span class="eyebrow">Medido en 2.3, del 3 al 17-nov</span>
+    <h2>Lo que pasó en dos semanas</h2>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="n">206</span><span class="l">PRs mergeados a 2.3; 180 por la cola de auto-merge</span></div>
+    <div class="stat"><span class="n">0</span><span class="l">PRs en los que el CI corrió pruebas de interfaz</span></div>
+    <div class="stat"><span class="n">65</span><span class="l">rojos de unit «rescatados» al repetirlos, en 60 de 503 corridas (12 %)</span></div>
+    <div class="stat"><span class="n">11</span><span class="l">pruebas de interfaz rotas que llegaron a 2.3, en dos tandas</span></div>
+    <div class="stat"><span class="n">13 / 572</span><span class="l">commits que dicen cómo se verificaron</span></div>
+    <div class="stat"><span class="n">0</span><span class="l">reverts; solo 1 de 11 arreglos nombra el PR que causó el bug</span></div>
+  </div>
+  <ul class="ev">
+    <li><b>Nueve días sin una corrida completa de interfaz sobre 2.3.</b> Hasta el 12-nov la nocturna corría sobre 2.2. Cuando llegó la primera ya habían entrado 117 de los 206 PRs.</li>
+    <li><b>De los 65 rescates, 60 son de una sola familia</b>, las pruebas de la caché de <code>CurrencyConverter</code> (8 de los 12 casos distintos). Todas esas corridas mergearon en verde.</li>
+    <li><b>En la interfaz, 35 casos pasaron solo al reintentar</b> (28 distintos) en las 7 corridas completas. El más repetido, el cambio de subcategoría en Registros, en 5 de 7.</li>
+    <li><b>El ruleset de 2.3 exige <code>tests</code>, <code>coverage-index</code> y <code>gateway</code>.</b> Ninguna prueba de interfaz, y el admin se lo salta siempre.</li>
+  </ul>
+
+  <h3>Lo que se escapó, y qué lo habría parado</h3>
+  <div class="tbl esc"><table>
+    <thead><tr><th>Qué se rompió</th><th>Quién lo trajo</th><th>Cuánto duró</th><th>Qué lo habría parado</th></tr></thead>
+    <tbody>
+      <tr><td>Calculadora de «Mi parte», selector de tarjeta en dólares y «pasar el Bus a un grupo»: 4 casos de interfaz, 3 clases.</td><td>El PR de categorías a un toque en «Nuevo registro». Su gate corrió 6 clases de interfaz y 16 casos; ninguna de las tres rotas. En su CI la interfaz quedó <i>skipped</i>. <span class="tag">medido</span></td><td>1 nocturna (16-nov), arreglado el 17-nov cambiando solo las pruebas.</td><td>Correr en el PR las clases que abren «Nuevo registro»: unos 33 ficheros de prueba lo hacen. <span class="tag">P2 · inferido</span></td></tr>
+      <tr><td>Panel que se sale de la pantalla con texto grande, hueco en Registros y 5 pruebas desactualizadas: 7 casos.</td><td>Chips rápidos, favoritos por tipo y renombre de Ajustes (decisiones 15, 69 y 48). <span class="tag">inferido por fechas</span></td><td>3 nocturnas (12 al 14-nov).</td><td>Interfaz de lo tocado en el PR, con texto grande. <span class="tag">P2 · inferido</span></td></tr>
+      <tr><td>Prueba de deshacer en bloque con 10 s fijos, inestable.</td><td>El PR que la escribió.</td><td>Días.</td><td>Repetir N veces toda prueba nueva antes de mergear; no rescatarla. <span class="tag">P1 · inferido</span></td></tr>
+      <tr><td>Ocho bugs de los barridos de QA en el iPhone.</td><td>No se sabe: los arreglos no nombran su origen.</td><td>—</td><td>No se puede decir. Es justo el hueco de P5. <span class="tag">medido</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="tabla">
+  <div>
+    <span class="eyebrow">Práctica por práctica</span>
+    <h2>Lo que hace el equipo de Claude Code, contra lo que tenemos</h2>
+  </div>
+  <div class="legend"><span><span class="pill p-ok">Lo tenemos</span> igual o mejor</span><span><span class="pill p-mid">A medias</span> existe con un hueco medido</span><span><span class="pill p-no">No lo tenemos</span></span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Práctica del artículo</th><th>Hoy en Yala</th><th>Evidencia</th><th>Impacto</th><th>Propuesta</th></tr></thead>
+    <tbody>
+      <tr><td class="pr">Verificar es usar la app de punta a punta</td><td><span class="pill p-mid">A medias</span><br>262 clases de prueba de interfaz y QA en simulador e iPhone 14, pero en el CI solo de noche y sin bloquear.</td><td><code>qa.yml</code> job <code>ui</code>: <code>if: schedule || workflow_dispatch</code>, pasos con <code>continue-on-error: true</code> (l. 904 y 911).</td><td>Alto</td><td><a href="#p2">P2</a></td></tr>
+      <tr><td class="pr">Gate según el diff</td><td><span class="pill p-mid">A medias</span><br>Unit: lo calcula un script. Interfaz: la sesión cruza a mano el diff con <code>codeGlobs</code>, y con globs anchos corre un subconjunto.</td><td><code>gate.md</code> paso 3 (l. 86); <code>suites-de-fichero.py</code> solo para unit. Un cambio en <code>ContentView</code> pedía 92 suites (28-oct).</td><td>Alto</td><td><a href="#p2">P2</a></td></tr>
+      <tr><td class="pr">No reintentar pruebas inestables hasta que pasen</td><td><span class="pill p-no">No lo tenemos</span><br>Unit: se repiten los rojos hasta 3 vueltas y, si pasan, el PR mergea. Interfaz: <code>-retry-tests-on-failure</code>.</td><td><code>ci-reintentar-rojos.sh --vueltas 3</code> (<code>qa.yml</code> l. 654 y 684); l. 933.</td><td>Alto</td><td><a href="#p1">P1</a></td></tr>
+      <tr><td class="pr">Checklist de confiabilidad con disparadores leídos del diff</td><td><span class="pill p-mid">A medias</span><br>Las reglas se cargan por ruta de fichero, enteras, en prosa. No hay lista de ítems con disparador, comprobación y origen.</td><td><code>swiftdata-cloudkit.md</code>: 2.097 líneas, 263 entradas fechadas. <code>testing.md</code>: 296 líneas, 73.</td><td>Alto</td><td><a href="#p4">P4</a></td></tr>
+      <tr><td class="pr">Un solo revisor con varias rondas, guiado por un REVIEW.md</td><td><span class="pill p-mid">A medias</span><br>«Review adversarial con varias lentes», recomendada, nunca exigida. No hay REVIEW.md.</td><td><code>CLAUDE.md</code> l. 73. El 14-nov un solo revisor encontró 9 bugs reales de 11 en pagos recurrentes, con 29 tests en verde.</td><td>Medio</td><td><a href="#p4">P4</a></td></tr>
+      <tr><td class="pr">El cambio no puede modificar sus propias reglas</td><td><span class="pill p-no">No lo tenemos</span><br>El gate, su sello, el índice de cobertura y el workflow se leen del mismo árbol que se verifica.</td><td>Sin <code>git show</code> a la rama base en el gate; sin CODEOWNERS. El índice permite «bajar el baseline» en el mismo commit.</td><td>Medio</td><td><a href="#p1">P1</a> · <a href="#p4">P4</a></td></tr>
+      <tr><td class="pr">Sello de verificación en cada commit, incluido «ninguno»</td><td><span class="pill p-no">No lo tenemos</span><br>El sello es un fichero ignorado por git; solo exige gate si hay <code>.swift</code>. No queda rastro de cómo se verificó.</td><td><code>precommit-gate.sh</code> l. 26; <code>.claude/sessions/tests-passed</code> en <code>.gitignore</code>.</td><td>Medio</td><td><a href="#p3">P3</a></td></tr>
+      <tr><td class="pr">Modos apagado, observar y obligatorio para cada gate nuevo</td><td><span class="pill p-mid">A medias</span><br>Lo hicimos una vez bien: los unit pasaron de avisar a bloquear el 10-oct tras medir 300 corridas. La interfaz lleva meses en «observar» sin fecha de salida.</td><td><code>qa.yml</code> l. 386-404.</td><td>Medio</td><td><a href="#p2">P2</a> · <a href="#p3">P3</a></td></tr>
+      <tr><td class="pr">Revisión atada al commit</td><td><span class="pill p-ok">Lo tenemos</span><br>El sello es la huella del árbol; editar después del gate bloquea el commit.</td><td><code>precommit-gate.sh</code> l. 34-46.</td><td>—</td><td>—</td></tr>
+      <tr><td class="pr">Lo barato primero (build, lint, tests) antes del PR</td><td><span class="pill p-ok">Lo tenemos</span><br>Build de las dos schemes, unit del alcance y el job <code>coverage-index</code> replicado en local.</td><td><code>gate.md</code> pasos 1, 2 y 5.</td><td>—</td><td>—</td></tr>
+      <tr><td class="pr">Property tests</td><td><span class="pill p-mid">A medias</span><br>Escribimos propiedades (61 ficheros de paridad, 66 de ida y vuelta) pero con ejemplos a mano. Ningún test genera entradas al azar.</td><td>0 usos de <code>RandomNumberGenerator</code> en <code>YalaTests</code>. El bug de fechas a medianoche se repitió en 6 sitios.</td><td>Medio</td><td><a href="#p6">P6</a></td></tr>
+      <tr><td class="pr">Differential tests (viejo contra nuevo)</td><td><span class="pill p-mid">A medias</span><br>Goldens del backend en <code>qa/cloud/</code> y pruebas de paridad. Sin comparación sistemática viejo-nuevo en las migraciones de la app.</td><td><code>qa/cloud/README.md</code>; 0 ficheros con «golden» o «differential» en <code>YalaTests</code>.</td><td>Medio</td><td><a href="#p6">P6</a></td></tr>
+      <tr><td class="pr">Una persona tras tres rondas fallidas</td><td><span class="pill p-ok">Lo tenemos</span><br>Presupuesto de pruebas de interfaz (dos timeouts y se marca inestable) y <code>preguntar-bot</code> ante lo que para.</td><td>Reglas de sesión lanzada (ADR-107 de casa).</td><td>—</td><td>—</td></tr>
+      <tr><td class="pr">Revisar a los revisores con reverts y bugs escapados</td><td><span class="pill p-no">No lo tenemos</span><br>Nadie mide qué se escapó ni qué gate lo habría parado.</td><td>Esta sesión es la primera medición (arriba).</td><td>Medio</td><td><a href="#p5">P5</a></td></tr>
+      <tr><td class="pr">Convertir lo escapado en reglas, y podarlas</td><td><span class="pill p-mid">A medias</span><br>Convertimos mucho, sin criterio de entrada (dos PRs, visible en un diff, refutada) y sin poda.</td><td>Reglas: 5.445 líneas. <code>MEMORY.md</code> de Frank: 60 KB, se corta en la línea 169. <code>testing.md</code> apunta a una «Lista Negra» en un fichero que no existe.</td><td>Medio</td><td><a href="#p5">P5</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="propuestas">
+  <div>
+    <span class="eyebrow">Seis cambios, por impacto y costo</span>
+    <h2>Qué propongo, para aprobar uno por uno</h2>
+    <p class="muted">Tu voto se guarda aquí y lo lee la sesión que lo implemente. Sin voto, ninguna se encola.</p>
+  </div>
+  <div class="tally" id="tally" aria-live="polite">Cargando votos…</div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section id="fuera">
+  <div><span class="eyebrow">Lo que no propongo</span><h2>Del artículo, y por qué no</h2></div>
+  <ul class="ev">
+    <li><b>Más revisores en paralelo.</b> El artículo dice que empeora, y nuestro dato del 14-nov lo confirma: un revisor bien informado rinde más que tres lentes.</li>
+    <li><b>Una librería de property tests (SwiftCheck).</b> Swift Testing con argumentos generados y una semilla fija alcanza sin dependencia nueva.</li>
+    <li><b>Evals formales con «answer key» por bug.</b> Tiene sentido con cientos de PRs y varios revisores; con nuestro volumen basta la revisión mensual de P6.</li>
+    <li><b>Bloquear el commit si la sesión no corrió <code>/verify</code>.</b> El sello de huella ya lo hace mejor: exige el gate sobre el árbol exacto.</li>
+  </ul>
+</section>
+
+<footer>
+  <span>Fuente: <code>docs/verificacion/</code> del repo de Yala (esta página y <code>README.md</code> con cada comando de medición). Lo marcado «inferido» no se midió.</span>
+  <span>Preparado por Frank el 17-nov-2026. Esta sesión no tocó código ni CI.</span>
+</footer>
+</div>
+
+<script>
+const PROPUESTAS = [
+{id:"p1",titulo:"Un rojo rescatado no es verde: arreglar la caché de divisas y llevar una cuarentena con dueño",impacto:"alto",costo:"bajo",
+ hoy:"Si una prueba falla y pasa al repetirla, el PR mergea en verde y nadie se entera. Pasó 65 veces en dos semanas, y 60 son de la misma familia de pruebas de la caché de divisas.",
+ despues:"Primero se arregla esa familia: desaparecen 9 de cada 10 rescates. Después, un rescate solo vale si la prueba está en una lista de cuarentena con dueño, ticket y fecha, leída de 2.3 y no del PR. Rescatar una prueba que no está en la lista pone el CI en rojo. A los 14 días en cuarentena sin arreglo, la prueba se borra con su porqué, como hace el equipo de Claude Code.",
+ evidencia:["Anotación «Rescatado al repetirlo» en 503 corridas del job <code>tests</code>: 65 rescates, 12 casos distintos.","<code>CurrencyConverterLatestRateArrivalTests</code>: 39 rescates en tres casos; <code>CurrencyConverterRowMemoTests</code>: 16.","Los arranques fallidos del simulador se siguen repitiendo: eso es infraestructura, no una prueba."],
+ sesion:"Frank, dos encargos: «arreglar las pruebas inestables de la caché de divisas» (bugfix) y «cuarentena de pruebas inestables» (script del CI). Dos semanas en observar antes de bloquear.",
+ riesgo:"bajo; si la cuarentena estorba, se vuelve a observar con una línea",
+ recomendacion:"<b>Sí.</b> Es lo más barato y ataca la práctica que el artículo prohíbe con más claridad."},
+{id:"p2",titulo:"Las pruebas de interfaz de lo tocado corren en cada PR, elegidas por un script",impacto:"alto",costo:"medio",
+ hoy:"La sesión elige a mano qué clases de interfaz correr en su gate, y el CI del PR no corre ninguna. El PR de categorías a un toque corrió 6 clases y rompió otras 3 que también abren «Nuevo registro».",
+ despues:"Un script lee el diff y devuelve las clases de interfaz que pasan por las pantallas tocadas (por las áreas del índice de cobertura y por los identificadores de esas vistas que usan las pruebas). El gate lo usa en vez de la mano, y un job nuevo del PR corre esas clases en el runner del CI. Dos semanas en observar, con el resultado en el PR; después entra al ruleset como los unit el 10-oct.",
+ evidencia:["Job <code>ui</code> de <code>qa.yml</code>: solo <code>schedule</code> o a mano, y <code>continue-on-error</code>.","11 casos rotos llegaron a 2.3 en dos tandas y vivieron 1 y 3 nocturnas.","Unos 33 ficheros de prueba de interfaz abren el formulario de registro (grep de sus identificadores)."],
+ sesion:"Frank, encargo «interfaz de lo tocado en cada PR»: el script, su banco de pruebas, el job en observar y el paso 3 del gate. Una sesión corta más para promoverlo a obligatorio.",
+ riesgo:"medio: minutos de runner macOS y cola; un cambio en ContentView pide decenas de clases, así que el script tiene que tener techo y decir qué dejó fuera",
+ recomendacion:"<b>Sí.</b> Es el hueco que dejó pasar las dos tandas de rojos. Empezar en observar."},
+{id:"p3",titulo:"Cada commit dice cómo se verificó, también cuando no se verificó",impacto:"medio",costo:"bajo",
+ hoy:"El sello del gate es un fichero que git ignora. De 572 commits en 2.3, 13 dicen algo de cómo se probaron, en texto libre. No se puede preguntar «qué entró sin probar».",
+ despues:"El gate guarda su resumen en el sello y un hook lo añade al commit como una línea: <code>Verificado: build 2/2 · unit 14 suites · interfaz 6 clases · índice ✓</code>, o <code>Verificado: ninguno (solo docs)</code>. Con eso, P5 cuenta qué entró sin interfaz o sin unit.",
+ evidencia:["<code>git log</code> de 2.3 desde el 3-nov: 13 de 572 commits con alguna marca.","177 de 206 PRs mencionan el gate en su cuerpo, pero nada lo comprueba.","<code>precommit-gate.sh</code> solo exige el sello si hay ficheros <code>.swift</code>."],
+ sesion:"Frank, encargo corto «sello de verificación en el commit»: el resumen en el sello, el hook y su banco en <code>coverage-index</code>.",
+ riesgo:"bajo; el hook añade, no bloquea",
+ recomendacion:"<b>Sí.</b> Cuesta poco y es lo que permite medir todo lo demás."},
+{id:"p4",titulo:"Checklist de confiabilidad con disparadores y un solo revisor, leídos de 2.3",impacto:"alto",costo:"alto",
+ hoy:"Las lecciones viven en reglas de prosa que se cargan enteras por ruta: la de nube tiene 2.097 líneas. La revisión adversarial es opcional y usa varias lentes. El gate y sus reglas se leen del mismo árbol que se verifica.",
+ despues:"Un fichero con 30 a 40 ítems. Cada uno trae su disparador (qué tiene que aparecer en el diff), su comprobación y el incidente que lo creó. Un script elige los 3 a 10 que tocan; un solo revisor los recibe con el diff y hace hasta tres rondas antes de pedirte ayuda. El fichero y el script se leen de 2.3, así que un PR no puede cambiar las reglas que lo juzgan. Ejemplo de ítem: «cambia la altura de Nuevo registro → correr la calculadora, el selector de tarjeta, favoritos y casos límite».",
+ evidencia:["<code>swiftdata-cloudkit.md</code>: 2.097 líneas, 263 entradas fechadas; <code>testing.md</code>: 296 y 73.","14-nov, pagos recurrentes: un revisor encontró 9 bugs reales de 11 con 29 pruebas en verde.","El ticket de los rojos del 16-nov propone a mano la lista de clases a correr: es un ítem de checklist sin casa."],
+ sesion:"Frank, en dos partes: «curar la checklist» (extraer los ítems de las reglas de nube, pruebas y formulario) y «revisor con checklist en el gate» (script + paso nuevo, primero en observar).",
+ riesgo:"medio: curar mal da ruido; por eso empieza en observar y solo para lógica cara (nube, dinero, migraciones)",
+ recomendacion:"<b>Sí, después de P1 a P3.</b> Es el cambio más grande; vale más con el sello de P3 midiendo."},
+{id:"p5",titulo:"Una revisión al mes de lo que se escapó, y poda de reglas",impacto:"medio",costo:"bajo",
+ hoy:"Nadie mide qué bugs llegaron a 2.3 ni qué gate los habría parado. Solo 1 de 11 arreglos nombra su origen. Las reglas solo crecen: 5.445 líneas, y <code>testing.md</code> apunta a una «Lista Negra» en un fichero que ya no existe.",
+ despues:"Los PRs de arreglo llevan una línea <code>Origen:</code> con el PR que trajo el bug. Una vez al mes, una sesión cuenta los escapes, dice qué gate los habría parado y propone ítems nuevos para P4 solo si el patrón salió en dos PRs y se ve en un diff, refutados por un revisor y aprobados por ti en el PR. Lo que no se disparó en 90 días se archiva.",
+ evidencia:["0 reverts y 1 de 11 arreglos con origen, en dos semanas.","<code>MEMORY.md</code> de Frank: 60 KB, se corta en la línea 169 de 429.","<code>docs/TESTING-STRATEGY.md</code> no existe y <code>testing.md</code> lo cita."],
+ sesion:"Frank, una sesión mensual de revisión de escapes (puede ir con la planificación de los viernes). La primera, además, poda las reglas de nube y pruebas.",
+ riesgo:"bajo",
+ recomendacion:"<b>Sí.</b> Sin esto, P1 a P4 envejecen como envejecieron las reglas."},
+{id:"p6",titulo:"Pruebas de propiedades y diferenciales donde hay dinero y fechas",impacto:"medio",costo:"medio",
+ hoy:"Escribimos propiedades con ejemplos a mano: 61 ficheros de paridad y 66 de ida y vuelta. Ninguna prueba genera entradas al azar. El bug de la medianoche en los períodos se repitió en al menos 6 sitios y se cazó con un barrido de 730 días hecho a mano.",
+ despues:"Swift Testing con miles de entradas generadas y una semilla fija, sin dependencias nuevas. Primeras propiedades: todo instante cae en exactamente un período de cada serie adyacente; convertir de una divisa a otra y volver da lo mismo; las partes de un gasto dividido suman el total; migrar a la nube y exportar da los mismos registros que antes (diferencial viejo contra nuevo).",
+ evidencia:["0 usos de <code>RandomNumberGenerator</code> en <code>YalaTests</code>; 113 ficheros con <code>@Test(arguments:)</code> de lista fija.","<code>CLAUDE.md</code>, «Cálculos con fechas»: el mismo bug en <code>DetailPeriod</code>, el widget, <code>PreviousPeriodHelper</code>, el contexto de IA, las notificaciones y el detector de anomalías."],
+ sesion:"Frank, un encargo por dominio, empezando por fechas y períodos; después divisas y gastos divididos; la migración a la nube, con la revisión adversarial que ya pide CLAUDE.md.",
+ riesgo:"bajo en código; pueden aparecer bugs viejos que habrá que priorizar",
+ recomendacion:"<b>Después.</b> Útil, pero los escapes medidos de estas dos semanas fueron de interfaz y de pruebas inestables, no de cálculo."}
+];
+const OPCIONES=[["si","Sí"],["no","No"],["despues","Después"]];
+const votos={};let db=null,puedeEscribir=false;
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function render(){
+  const c=document.getElementById("cards");c.innerHTML="";
+  PROPUESTAS.forEach((p,i)=>{
+    const v=votos[p.id]||{};
+    const el=document.createElement("article");el.className="card";el.id=p.id;
+    el.innerHTML=`<div class="card-head"><h3>${esc(p.titulo)}</h3><span class="rank">${p.id.toUpperCase()} · impacto ${esc(p.impacto)} · costo ${esc(p.costo)}</span></div>
+    <div class="grid2"><div class="box now"><span class="t">Hoy</span><p>${p.hoy}</p></div><div class="box next"><span class="t">Con el cambio</span><p>${p.despues}</p></div></div>
+    <ul class="ev">${p.evidencia.map(e=>`<li>${e}</li>`).join("")}</ul>
+    <div class="meta"><span><b>Quién:</b> ${esc(p.sesion)}</span><span><b>Riesgo:</b> ${esc(p.riesgo)}</span></div>
+    <div class="rec"><b>Recomiendo:</b> ${p.recomendacion}</div>
+    <div class="vote"><div class="seg" role="group" aria-label="Voto para ${esc(p.id)}">${OPCIONES.map(([k,l])=>`<button type="button" id="v-${p.id}-${k}" data-v="${k}" aria-pressed="${v.voto===k}" ${puedeEscribir?"":"disabled"}>${l}</button>`).join("")}</div>
+    <textarea id="n-${p.id}" placeholder="Nota opcional: condiciones, orden, dudas" ${puedeEscribir?"":"disabled"}>${esc(v.nota||"")}</textarea>
+    <span class="status" id="s-${p.id}"></span></div>`;
+    el.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>guardar(p.id,{voto:b.dataset.v})));
+    const ta=el.querySelector("textarea");let t;ta.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>guardar(p.id,{nota:ta.value}),700)});
+    c.appendChild(el);
+  });
+  tally();
+}
+function tally(){
+  const n={si:0,no:0,despues:0};PROPUESTAS.forEach(p=>{const v=votos[p.id]?.voto;if(v)n[v]++});
+  const sin=PROPUESTAS.length-n.si-n.no-n.despues;
+  document.getElementById("tally").innerHTML=`<b>Tus votos</b><span class="pill p-ok">Sí ${n.si}</span><span class="pill p-no">No ${n.no}</span><span class="pill p-mid">Después ${n.despues}</span><span class="muted">${sin} sin votar</span>${db?(puedeEscribir?"":'<span class="muted">Solo lectura: vota el dueño.</span>'):'<span class="muted">Los votos se guardan al abrir la página con sesión de claude.ai.</span>'}`;
+}
+function aplicar(){
+  PROPUESTAS.forEach(p=>{const v=votos[p.id]||{};
+    document.querySelectorAll(`#${p.id} .seg button`).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v.voto)));
+    const ta=document.getElementById("n-"+p.id);if(ta&&document.activeElement!==ta)ta.value=v.nota||"";});
+  tally();
+}
+async function guardar(id,campos){
+  if(!db||!puedeEscribir)return;
+  const s=document.getElementById("s-"+id);
+  const nuevo={...(votos[id]||{}),...campos,ts:new Date().toISOString()};
+  votos[id]=nuevo;
+  if(campos.voto){document.querySelectorAll(`#${id} .seg button`).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===campos.voto)));tally()}
+  s.textContent="Guardando…";
+  try{await db.doc("votos/"+id).set(nuevo);s.textContent="Guardado"}catch(e){s.textContent="No se pudo guardar: "+(e&&e.message?e.message:"error")}
+}
+render();
+(async()=>{
+  try{
+    const c=window.claude;if(!c||!c.use)return;
+    db=await c.use("db");const user=await c.use("user");
+    if(!db){tally();return}
+    puedeEscribir=!!(user&&user.canEdit&&user.canEdit());
+    const timer=setTimeout(()=>{document.getElementById("tally").insertAdjacentHTML("beforeend",'<span class="muted">Los votos tardan en cargar.</span>')},10000);
+    db.collection("votos").onSnapshot(snap=>{clearTimeout(timer);snap.docs.forEach(d=>{votos[d.id]=d.data()});aplicar()},()=>{clearTimeout(timer);tally()});
+    render();
+  }catch(e){tally()}
+})();
+</script>
