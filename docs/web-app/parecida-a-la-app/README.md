@@ -14,6 +14,11 @@ La versión publicada, con comentarios y decisiones, es el artifact https://clau
   abiertos, y el recorrido del lote 4 (Panel, Registros y Nuevo registro); cómo correrlos, en su cabecera.
 - `herramientas/capturar-lote-5.mjs` y `recorrido-lote-5.mjs` — capturas y recorrido del lote 5 (Planificación,
   Estadísticas, Grupos, Bandeja y Ajustes), con el grupo abierto y la Bandeja encima; cómo correrlos, en su cabecera.
+- `herramientas/capturar-lote-6.mjs` y `recorrido-lote-6.mjs` — capturas de la entrada (con Turnstile pidiendo
+  interacción, el QR y los avisos) y el recorrido del lote 6 contra un despliegue de verdad (Apple, Google, el QR y las
+  direcciones de siempre); cómo correrlos, en su cabecera.
+- `capturas/lote-6/` — antes y después del lote 6 (entrar, QR, QR caducado, página de la cámara, «sin nube» y aviso de
+  salida) y `app-bienvenida-oscuro.jpg`, la bienvenida de la app 2.3 como referencia.
 - `capturas/lote-5/` — antes y después del lote 5: `antes-|despues-<pantalla>-<claro|oscuro>-<escritorio|movil>.jpg`.
 - `capturas/lote-4/` — antes y después del lote 4: `antes-|despues-<pantalla>-<claro|oscuro>-<escritorio|movil>.jpg`.
 - `capturas/lote-1/` — antes y después del lote 1 (base visual): `antes-|despues-<pantalla>-<claro|oscuro>-<escritorio|movil>.jpg`,

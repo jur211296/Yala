@@ -5,6 +5,9 @@
  *
  * La página no ve ningún secreto: el código va en claro a propósito y lo que liga este navegador a él es una cookie
  * `HttpOnly` (ver `src/worker/pairing.ts`).
+ *
+ * Se pinta dentro de la entrada (`Entrada` en `App.tsx`, lote 6): fondo de la bienvenida de la app, siempre oscuro. El
+ * código va sobre su propio cuadro blanco para que la cámara lo lea igual con cualquier fondo.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import qrcode from "qrcode-generator";
@@ -44,7 +47,7 @@ function QrSvg({ text }: { text: string }) {
     return { size: n + 4, d: path };
   }, [text]);
   return (
-    <svg className="qr" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t.qr.titulo} shapeRendering="crispEdges">
+    <svg className="e-qr" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t.qr.titulo} shapeRendering="crispEdges">
       <rect width={size} height={size} fill="#fff" />
       <path d={d} fill="#111" />
     </svg>
@@ -115,12 +118,12 @@ export function QrLogin({ turnstile, compartido, onBack }: { turnstile: string; 
 
   if (phase === "error" || phase === "caducado") {
     return (
-      <div className="login qr-login">
-        <h1>{t.qr.titulo}</h1>
-        <p className="aviso" role="status">
+      <div className="e-login">
+        <h1 className="e-titulo">{t.qr.titulo}</h1>
+        <p className="e-aviso" role="status">
           {phase === "error" ? t.qr.error : t.qr.caducado}
         </p>
-        <button className="btn dark" type="button" onClick={onBack}>
+        <button className="e-btn fuerte" type="button" onClick={onBack}>
           {t.qr.otro}
         </button>
       </div>
@@ -128,25 +131,25 @@ export function QrLogin({ turnstile, compartido, onBack }: { turnstile: string; 
   }
 
   return (
-    <div className="login qr-login">
-      <h1>{t.qr.titulo}</h1>
-      <p className="muted">{t.qr.pasos}</p>
-      {code ? <QrSvg text={code.url} /> : <div className="qr qr-wait" aria-busy="true" />}
+    <div className="e-login">
+      <h1 className="e-titulo">{t.qr.titulo}</h1>
+      <p className="e-sub">{t.qr.pasos}</p>
+      {code ? <QrSvg text={code.url} /> : <div className="e-qr e-qr-espera" aria-busy="true" />}
       {phase === "visto" || phase === "entrando" ? (
-        <p className="aviso ok" role="status">
+        <p className="e-aviso ok" role="status">
           {phase === "entrando" ? t.qr.entrando : t.qr.visto}
         </p>
       ) : (
         <>
-          <p className="muted small-c">{t.qr.escribir}</p>
-          <p className="qr-code" aria-live="polite">
+          <p className="e-fade">{t.qr.escribir}</p>
+          <p className="e-codigo" aria-live="polite">
             {code?.codigo ?? "····-····"}
           </p>
-          {code ? <p className="fade">{t.qr.cambia(Math.max(0, code.expira - now))}</p> : null}
+          {code ? <p className="e-fade">{t.qr.cambia(Math.max(0, code.expira - now))}</p> : null}
         </>
       )}
-      <p className="fade">{t.qr.seguridad}</p>
-      <button className="btn" type="button" onClick={onBack}>
+      <p className="e-fade">{t.qr.seguridad}</p>
+      <button className="e-btn" type="button" onClick={onBack}>
         {t.qr.volver}
       </button>
     </div>
