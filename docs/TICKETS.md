@@ -56,6 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-15-ia-guiados | qa | tickets/qa/2026-11-15-ia-guiados.md |
 | 2026-11-16-guiados-mejoras | done | tickets/done/2026-11-16-guiados-mejoras.md |
 | 2026-11-16-guiados-cuenta-categoria-favorito | done | tickets/done/2026-11-16-guiados-cuenta-categoria-favorito.md |
+| 2026-11-16-guiados-grupos | done | tickets/done/2026-11-16-guiados-grupos.md |
 | ia-guided-payment-as-a-group-expense | backlog | tickets/backlog/ia-guided-payment-as-a-group-expense.md |
 | 2026-11-16-video-verificacion-gmail-v4 | done | tickets/done/2026-11-16-video-verificacion-gmail-v4.md |
 | 2026-11-16-bugs-barrido-final-2-3-app | qa | tickets/qa/2026-11-16-bugs-barrido-final-2-3-app.md |
