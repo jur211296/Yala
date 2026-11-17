@@ -50,7 +50,9 @@ describe("entrar con Apple o Google", () => {
       expect(key).not.toContain(cookieValue);
       expect(value).not.toContain(cookieValue);
       expect(value).not.toContain(web.refresh);
-      expect(value).not.toContain("eyJ"); // ningún JWT
+      // Ningún JWT: su forma entera (cabecera y carga en base64url separadas por puntos). Buscar solo «eyJ» fallaba por
+      // azar: el cifrado en base64 lo contiene de vez en cuando (rojo del 17-nov en el PR de filtros rápidos).
+      expect(value).not.toMatch(/eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\./);
     }
   });
 
