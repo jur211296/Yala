@@ -885,5 +885,15 @@ nonisolated enum CloudSyncFlags {
     /// MODO-NUBE-SPIKES-I0 §S2 (matiz: verificado single-device + análisis de código). El corte de
     /// `purgeHistoryOnce` sigue siendo conservador (`deleteHistorySafeCut`: nunca por delante de la
     /// fila outbox sin-2xx más vieja). `var` solo para tests (`defer { restore }`).
-    static var historyPurgeEnabled = true
+    ///
+    /// **`false` desde el 2026-11-17 (ticket `reverse-on-the-iphone-left-the-local-store-empty`), y el S2 de arriba no
+    /// lo contradice: midió otra cosa.** El spike purgó con el espejo de iCloud ENCENDIDO, justo después de que leyera
+    /// todo. En modo nube el espejo está APAGADO durante días, y la purga se lleva lo que nunca leyó. Medido en el iPhone
+    /// 14: el espejo guardaba la transacción 825 y el store solo conservaba la 834; al remontarlo en la vuelta a iCloud
+    /// su exportación falló con 134301 (historial caducado) y su «reset» borró las 8.842 filas del store. La vuelta se
+    /// apoya en que el espejo repita al remontar lo que pasó en la nube (I11-2), y eso exige el historial entero desde su
+    /// posición. Precio: el historial crece en modo nube como ya crece en modo iCloud. Los teléfonos que ya purgaron no
+    /// ven la vuelta (`ReverseEligibility.mirrorHistoryExpired`). **No lo vuelvas a encender sin una purga que respete la
+    /// posición del espejo** (`MirrorHistoryProbe` sabe leerla).
+    static var historyPurgeEnabled = false
 }

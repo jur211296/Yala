@@ -1411,6 +1411,20 @@ final class CloudMigrationController {
             refresh()
             return
         }
+        // El espejo caducado vaciaría el store al remontar: la vuelta no empieza aunque alguien la pida sin pasar por la
+        // elegibilidad de la vista (ticket `reverse-on-the-iphone-left-the-local-store-empty`).
+        switch ReverseEligibility.applyingMirrorHistory(.eligible, MirrorHistoryCheck.personalStore()) {
+        case .mirrorHistoryExpired:
+            lastError = L10n.Storage.Revert.ineligibleMirrorHistory
+            refresh()
+            return
+        case .mirrorHistoryUnreadable:
+            lastError = L10n.Storage.Revert.ineligible
+            refresh()
+            return
+        default:
+            break
+        }
         isStartingReverse = true
         defer { isStartingReverse = false }
         cancelReverseRequested = false
@@ -2295,7 +2309,7 @@ final class CloudMigrationController {
             #endif
             hasCKMap = nil
         }
-        let decision = ReverseEligibility.decide(
+        let base = ReverseEligibility.decide(
             // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
             // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
             storageMode: Self.readPersistedStorageMode(),
@@ -2305,6 +2319,11 @@ final class CloudMigrationController {
             // un 2.º device adoptado y lo borra un botón DEBUG). Ver `StorageModePersistence.bornCloudKey`.
             isBornCloud: Self.readIsBornCloud(),
             journaledPhase: journaledPhase)
+        // El espejo que la vuelta remonta no puede encontrarse su posición del historial caducada: la borraría entera
+        // (ticket `reverse-on-the-iphone-left-the-local-store-empty`). Solo se lee si lo demás ya dejaba volver.
+        let decision = base == .eligible
+            ? ReverseEligibility.applyingMirrorHistory(base, MirrorHistoryCheck.personalStore())
+            : base
         // Cuántos teléfonos quedan sin vuelta por no tener mapa (card `yf9t`). Una vez por proceso: esto corre en
         // cada refresco de la pantalla.
         if decision == .degradedNoMap {

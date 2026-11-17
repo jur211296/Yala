@@ -183,6 +183,25 @@ nonisolated enum ReverseEligibility {
         /// (ticket `an-unreadable-migration-journal-reads-as-never-started`) → NO elegible AHORA: no se concede la vuelta
         /// con un dato que no se leyó. No es `degradedNoMap`: el mapa puede existir, y la pantalla lo vuelve a mirar.
         case mapUnreadable
+        /// El espejo de iCloud de este store se quedó en una posición del historial que ya no existe: la purga de la
+        /// época en la nube se la llevó. Remontarlo en la vuelta haría que su exportación caducara y borrara el store
+        /// entero (ticket `reverse-on-the-iphone-left-the-local-store-empty`, medido en el iPhone 14). No se cura
+        /// esperando: el historial purgado no vuelve.
+        case mirrorHistoryExpired
+        /// La posición del espejo en el historial no se dejó leer (`MirrorHistoryState.unreadable`). No se monta un
+        /// espejo sobre un dato que no se leyó; la pantalla lo vuelve a mirar en el arranque siguiente.
+        case mirrorHistoryUnreadable
+    }
+
+    /// Lo que añade el historial del espejo a una decisión ya tomada: solo puede CERRAR una vuelta elegible, nunca abrir
+    /// una que no lo era (y no tapa los otros motivos, que dicen algo más útil).
+    static func applyingMirrorHistory(_ decision: Decision, _ mirror: MirrorHistoryState) -> Decision {
+        guard decision == .eligible else { return decision }
+        switch mirror {
+        case .noMirrorPosition, .intact: return .eligible
+        case .expired: return .mirrorHistoryExpired
+        case .unreadable: return .mirrorHistoryUnreadable
+        }
     }
 
     /// ¿Cuenta como nacida en la nube? La marca LOCAL del alta, o el `migrated: false` que el servidor dijo para la cuenta
@@ -1852,6 +1871,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     /// Techo de `reverseUpload`: por qué no drena la subida, con las tres señales del canal iCloud. Decisión en
     /// `ReverseUploadBlockerLogic` (pura y testeada aparte); aquí solo se recogen. Read-only y sin red.
+    func mirrorHistoryBlocksRemount() -> Bool {
+        MirrorHistoryCheck.blocksRemount()
+    }
+
     func reverseUploadBlocker() -> ReverseUploadBlocker {
         ReverseUploadBlockerLogic.decide(
             icloudAvailable: icloudAccountPresent(),

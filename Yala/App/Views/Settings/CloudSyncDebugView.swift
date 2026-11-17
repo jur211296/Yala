@@ -431,6 +431,15 @@ final class CloudSyncMigrationPanelModel {
             reverseEligibilityLabel = "reverseAlreadyTerminal · ya en icloudActive/reverseFailedRollback (nada que revertir)"
         case .mapUnreadable:
             reverseEligibilityLabel = "mapUnreadable · los testigos con ckRecordName no se dejaron contar (no elegible ahora)"
+        case .mirrorHistoryExpired, .mirrorHistoryUnreadable:
+            // `decide` no los devuelve: los añade `applyingMirrorHistory`, abajo.
+            reverseEligibilityLabel = "\(decision)"
+        }
+        // La posición del espejo en el historial (ticket `reverse-on-the-iphone-left-the-local-store-empty`).
+        let mirror = MirrorHistoryProbe.read(storeURL: SwiftDataConfiguration.personalConfiguration.url)
+        if decision == .eligible, ReverseEligibility.applyingMirrorHistory(decision, mirror) != .eligible {
+            reverseEligible = false
+            reverseEligibilityLabel = "mirrorHistory \(mirror) ⚠️ · remontar el espejo vaciaría el store (134301 → reset)"
         }
     }
 
