@@ -642,7 +642,9 @@ struct ProfileView: View {
             } label: {
                 settingsRowContent(
                     icon: "rectangle.portrait.and.arrow.right",
-                    title: signOutRowRemovesDeviceData ? L10n.UXCS.removeDeviceDataRow : L10n.Settings.signOut,
+                    // Card «Modo iCloud: la salida se llama Cerrar sesión» (Jürgen, 13-nov): también sin cuenta de Yala, aunque
+                    // no haya una sesión de verdad. «Quitar mis datos» sonaba a borrar. La fila sigue en su tarjeta del final.
+                    title: L10n.Settings.signOut,
                     subtitle: signOutRowRemovesDeviceData ? removeDeviceDataSubtitle : nil,
                     iconColor: .red,
                     showSpinner: signOutCoordinator.phase == .working)
@@ -1054,9 +1056,7 @@ struct ProfileView: View {
                 cloudLabel: scope.cloudLabel,
                 onConfirm: { pendingSignOutScope = scope },
                 // L20-8: solo las celdas sin copia lo ofrecen (lo decide `DestructiveScopeLogic.secondaryActions`).
-                onExport: { pendingLossExport = .signOut },
-                // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo.
-                removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)))
+                onExport: { pendingLossExport = .signOut }))
         }
         // L20-8: el archivo de todo, antes de cerrar sesión sin copia o de eliminar la cuenta de la nube.
         .sheet(item: $lossExportFile, onDismiss: { returnFromLossExport() }) { file in

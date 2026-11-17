@@ -1201,6 +1201,10 @@ enum CloudSyncBreadcrumb {
     /// (exportPending + noMetadata) → la reversa espera retomable. Diagnóstico para el panel si se atasca.
     static func reverseUploadPending(count: Int) {
         logger.notice("CloudSyncReverse uploadPending count=\(count, privacy: .public) — filas sin exportar aún, retomable")
+        #if DEBUG
+        // `devicectl … --console` solo trae `print`: así se lee en el iPhone de pruebas (encargo nube bugs media, 16-nov).
+        print("CloudSyncReverse uploadPending count=\(count)")
+        #endif
     }
 
     /// El muestreo de la vuelta no pudo leer la metadata de CloudKit de NINGUNA fila (ticket
@@ -1217,6 +1221,9 @@ enum CloudSyncBreadcrumb {
     static func reverseUploadFailedRows(reasons: [String: Int]) {
         let detail = reasons.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         logger.notice("CloudSyncReverse uploadFailedRows \(detail, privacy: .public) — fuera de la suma de pendientes")
+        #if DEBUG
+        print("CloudSyncReverse uploadFailedRows \(detail)")
+        #endif
     }
 
     /// Techo de `reverseUpload`: cada observación de la espera, con el reloj del último avance. `advanced` = la
