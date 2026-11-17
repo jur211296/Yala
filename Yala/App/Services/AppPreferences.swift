@@ -686,6 +686,15 @@ final class AppPreferences {
         }
     }
 
+    /// El diseño de la tarjeta de cada cuenta del carrusel «Tus finanzas» (2026-11-16). Solo guarda las cuentas que la
+    /// persona cambió; se lee y se escribe con `CardDesignLogic`. "" = todas con su diseño por defecto.
+    var accountCardDesigns: String = "" {
+        didSet {
+            guard oldValue != accountCardDesigns else { return }
+            persistString(accountCardDesigns, forKey: Keys.accountCardDesigns, synced: true)
+        }
+    }
+
     var panelSectionsHidden: [String] = [] {
         didSet {
             guard oldValue != panelSectionsHidden else { return }
@@ -1324,6 +1333,11 @@ final class AppPreferences {
         if moneyOverrides != panelMoneyAccountOverrides {
             panelMoneyAccountOverrides = moneyOverrides
         }
+        // Igual que la de arriba: sin la clave, todas las tarjetas vuelven a su diseño por defecto.
+        let cardDesigns = defaults.string(forKey: Keys.accountCardDesigns) ?? ""
+        if cardDesigns != accountCardDesigns {
+            accountCardDesigns = cardDesigns
+        }
         if let value = parseList(defaults.string(forKey: Keys.panelSectionsOrder)) {
             panelSectionsOrder = value
         }
@@ -1415,6 +1429,7 @@ final class AppPreferences {
         panelSectionsHidden = []
         panelSectionsOrder = []
         panelMoneyAccountOverrides = ""
+        accountCardDesigns = ""
         panelPrefsMigratedV2 = false
         panelAccountsCollapsed = true
     }
@@ -1606,6 +1621,7 @@ final class AppPreferences {
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelSectionsOrder = "panelSectionsOrder"
         static let panelMoneyAccountOverrides = "panelMoneyAccountOverrides"
+        static let accountCardDesigns = "accountCardDesigns"
         static let moreSectionOrder = "moreSectionOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
 

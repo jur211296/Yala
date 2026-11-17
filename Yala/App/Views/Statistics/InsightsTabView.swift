@@ -45,6 +45,8 @@ struct InsightsTabView: View {
     @State private var showAntAIConsentAlert = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+    @State private var heroInfo: HeroInfoRequest?
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
     @State private var isShortContainer = false
 
@@ -248,8 +250,20 @@ struct InsightsTabView: View {
         } caption: {
             // Qué es la cifra: el neto, o el gasto en «Solo gastos».
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                    .accessibilityIdentifier("stats_hero_caption")
+                let caption = StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly)
+                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
+                HStack(spacing: DS.Spacing.xs) {
+                    HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
+                        .accessibilityIdentifier("stats_hero_caption")
+                    // El «?» del Panel: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+                    HeroInfoButton(identifier: "stats_hero_info") {
+                        heroInfo = HeroInfoRequest(
+                            topic: HeroClaroLogic.topic(for: caption),
+                            figureLabel: caption.text(isClosed: isClosed),
+                            isClosedPeriod: isClosed
+                        )
+                    }
+                }
             }
         } figure: {
             if showsFigure {
@@ -280,6 +294,7 @@ struct InsightsTabView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
+        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
     }
 
     private func localizedMotivational(_ sub: RecordsHeroSubtitle) -> String {
@@ -296,44 +311,49 @@ struct InsightsTabView: View {
         // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
         // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
         // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
-        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
+        // «Ingresos» y «Gastos» en chico encima de cada monto (hero claro, 2026-11-16): antes las flechas iban solas.
+        AdaptiveRowStack(spacing: DS.Spacing.lg, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
-                AmountWithChipStack {
-                    Image(systemName: "arrow.up.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.incomeGraph)
-                        .accessibilityHidden(true)
-                    AmountText(
-                        value: summary.totalIncome,
-                        currencyCode: defaultCurrencyCode,
-                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary,
-                        isEstimate: summary.incomeAmountsAreApproximate
-                    )
-                    .accessibilityIdentifier("stats_kpi_income")
-                } chip: {
-                    if appPreferences.showVariations {
-                        VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                HeroFlowAmountCaption(text: L10n.CashFlow.income) {
+                    AmountWithChipStack {
+                        Image(systemName: "arrow.up.right")
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(Color.incomeGraph)
+                            .accessibilityHidden(true)
+                        AmountText(
+                            value: summary.totalIncome,
+                            currencyCode: defaultCurrencyCode,
+                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                            tint: .secondary,
+                            isEstimate: summary.incomeAmountsAreApproximate
+                        )
+                        .accessibilityIdentifier("stats_kpi_income")
+                    } chip: {
+                        if appPreferences.showVariations {
+                            VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                        }
                     }
                 }
             }
 
-            AmountWithChipStack {
-                Image(systemName: "arrow.down.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(Color.expenseGraph)
-                    .accessibilityHidden(true)
-                AmountText(
-                    value: summary.totalExpense,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                    tint: .secondary,
-                    isEstimate: summary.expenseAmountsAreApproximate
-                )
-                .accessibilityIdentifier("stats_kpi_expense")
-            } chip: {
-                if appPreferences.showVariations {
-                    VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+            HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
+                AmountWithChipStack {
+                    Image(systemName: "arrow.down.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.expenseGraph)
+                        .accessibilityHidden(true)
+                    AmountText(
+                        value: summary.totalExpense,
+                        currencyCode: defaultCurrencyCode,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary,
+                        isEstimate: summary.expenseAmountsAreApproximate
+                    )
+                    .accessibilityIdentifier("stats_kpi_expense")
+                } chip: {
+                    if appPreferences.showVariations {
+                        VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+                    }
                 }
             }
         }

@@ -25,11 +25,12 @@ final class UXAudit22Lote04UITests: XCTestCase {
         return element
     }
 
-    // MARK: - L20-6 · sin cuenta de Yala, «Quitar mis datos de este dispositivo», sola y al final
+    // MARK: - L20-6 · sin cuenta de Yala, la fila de salida va sola y al final
 
-    /// Celda privada sin cuenta (seed `minimal`, sin sesión): la fila de salida se llama por lo que hace, va DEBAJO de
-    /// «Legal» (su propia tarjeta, separada de «Calificar») y su hoja lleva el mismo verbo.
-    func test_privateCellWithoutAccount_rowSaysRemoveMyData_aloneAtTheEnd_andItsSheetToo() {
+    /// Celda privada sin cuenta (seed `minimal`, sin sesión): la fila de salida va DEBAJO de «Legal» (su propia tarjeta,
+    /// separada de «Calificar»). Desde el 2026-11-16 (card «Modo iCloud: la salida se llama Cerrar sesión», decisión de
+    /// Jürgen del 13-nov) se llama «Cerrar sesión», y su hoja usa el título y el botón del cierre de siempre.
+    func test_privateCellWithoutAccount_rowSaysSignOut_aloneAtTheEnd_andItsSheetToo() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
@@ -37,8 +38,8 @@ final class UXAudit22Lote04UITests: XCTestCase {
 
         let row = scrollTo(app, "profile_security_signout")
         XCTAssertTrue(row.waitForExistence(timeout: 5), "No está la fila de salida en Ajustes.")
-        XCTAssertTrue(row.label.contains("Quitar mis datos de este dispositivo"), "La fila no dice qué hace: \(row.label)")
-        XCTAssertFalse(row.label.contains("Cerrar sesión"), "Sin cuenta de Yala la fila sigue diciendo «Cerrar sesión».")
+        XCTAssertTrue(row.label.hasPrefix("Cerrar sesión"), "La fila no se llama «Cerrar sesión»: \(row.label)")
+        XCTAssertFalse(row.label.contains("Quitar mis datos"), "Sin cuenta de Yala la fila sigue diciendo «Quitar mis datos».")
 
         let terms = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Términos de uso")).firstMatch
         XCTAssertTrue(terms.exists, "Control: no se encontró «Términos de uso», la última fila de «Legal».")
@@ -47,11 +48,13 @@ final class UXAudit22Lote04UITests: XCTestCase {
             """)
 
         row.tap()
-        XCTAssertTrue(app.staticTexts["¿Quitar tus datos de este dispositivo?"].waitForExistence(timeout: 5),
-                      "La hoja de la fila no lleva su verbo.")
+        XCTAssertTrue(app.staticTexts["¿Cerrar tu sesión en este dispositivo?"].waitForExistence(timeout: 5),
+                      "La hoja no es la del cierre de sesión.")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "«Entrar con iCloud privado»"))
+            .firstMatch.exists, "La nota no nombra el botón de la bienvenida de hoy.")
         let confirm = app.buttons["destructive_scope_confirm"]
         XCTAssertTrue(confirm.exists)
-        XCTAssertEqual(confirm.label, "Quitar mis datos")
+        XCTAssertEqual(confirm.label, "Cerrar sesión")
         app.buttons["destructive_scope_cancel"].tap()
     }
 

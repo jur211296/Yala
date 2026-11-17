@@ -1,0 +1,53 @@
+Subject: Re: [Action Needed] OAuth Verification Request — Yala (project yala-502622)
+
+Hello Third-Party Data Safety Team,
+
+Thank you for the feedback. We have recorded a new demo video that shows the user's Gmail account side by side with Yala, from start to finish:
+
+New demo video (unlisted): <YOUTUBE_LINK>
+
+1. Source Account Impact
+
+The video opens the source Gmail account first, before Yala is connected, and shows the exact email that Yala then reads:
+
+- 0:12 — Gmail on the web, signed in to jur211296@gmail.com, searching from:notificaciones@notificacionesbcp.com.pe (the bank's card-alert sender, the only sender Yala searches). All results are in the Inbox.
+- 0:19 — The email is opened with its details: From notificaciones@notificacionesbcp.com.pe, To jur211296@gmail.com, November 16, 2026, 4:37 AM.
+- 0:29 — Its body: "Realizaste un consumo de $ 6.83 con tu Tarjeta de Crédito BCP en Ouraring" ("You made a $6.83 purchase with your BCP Credit Card at Ouraring"): amount $ 6.83, merchant Ouraring, date 16 Nov 2026 04:37 AM.
+- 1:08 — In the OAuth flow the user picks the same account, jur211296@gmail.com.
+- 2:05 — In Yala, the draft created from that email shows the same data: Ouraring, $ 6.83, Nov 16, in a US-dollar account. Expanding "Email" shows the alert text it was read from.
+- 2:35 to 3:05 — Back in the same Gmail account: the email is still in the Inbox conversation, unchanged (2:35); the same search lists the same messages, all still in the Inbox (2:43); "in:sent newer_than:1d" returns no results (2:52); "in:trash from:notificaciones@notificacionesbcp.com.pe" returns no results (2:59). Yala only read the email: nothing was sent, deleted, moved or labeled.
+
+2. End-to-End
+
+The whole feature is shown in one take, alternating between Yala and the user's Google account:
+
+- 0:40 — Yala: Home > Inbox, empty. The envelope button is "Connect Gmail".
+- 0:48 — In-app disclosure before any Google screen (translated on screen): Yala only searches the bank's alert emails, reads them on the device, never sends them to a server or to AI, never writes or deletes email, and the permission can be removed in the app or in the Google Account.
+- 1:01 to 1:48 — Google OAuth: account chooser (1:08), unverified-app screen (1:17), sign-in scopes userinfo.profile, userinfo.email and openid (1:24), and the Gmail scope "View your email messages and settings" = https://www.googleapis.com/auth/gmail.readonly, which the user ticks (1:31).
+- 1:48 — Yala calls users.messages.list with q = "(from:notificaciones@notificacionesbcp.com.pe) newer_than:180d", maxResults = 5. Result: 5 new drafts, account jur211296@gmail.com.
+- 1:57 — For each match, users.messages.get (format=full); the body is parsed on the device. The 5 drafts are the 5 latest BCP credit-card alerts of that Gmail conversation.
+- 2:05 to 2:35 — The user opens the Ouraring draft, checks it against the email, picks a category and saves it. Nothing is saved without the user's review.
+- 2:35 to 3:05 — The corresponding state of the Gmail account (see point 1): unchanged.
+- 3:25 — Google Account > Linked apps, filtered by "Yala": Yala is listed with "View your email messages and settings".
+- 3:40 — In Yala, "Quitar el permiso de Gmail" (Remove Gmail permission) revokes the token with Google (GIDSignIn.disconnect); "Connected as jur211296@gmail.com" disappears.
+- 4:00 — Google Account > Linked apps, same filter: "No results found". The counter of apps with account access goes from 15 to 14. Yala no longer has any access to the account.
+
+Why a narrower scope is not sufficient (card at 3:05):
+- gmail.metadata returns headers and labels only. The amount, merchant and date of the transaction are only in the message body (shown at 0:29).
+- gmail.labels, gmail.send, gmail.compose and gmail.insert do not allow reading message content.
+- gmail.addons.current.message.readonly only works inside a Gmail add-on, for the message the user currently has open in Gmail. Yala is a native iOS app that imports bank alerts without the user opening each email.
+- Gmail has no scope limited to a single sender. Yala limits its own access through the search query, which only matches bank alert senders (at most 5 recent messages), and never reads other messages.
+
+Data handling (card at 4:12): Gmail data is read and processed on the user's device only. It is not sent to our servers or to any AI service, it is not sold or shared, and it is not used for advertising or to train AI models. Yala never sends, modifies or deletes email. Our privacy policy (https://yala-app.pe/privacy) includes the Google API Services User Data Policy and Limited Use disclosure.
+
+The video was recorded with our development build ("Yala Dev") on the iOS Simulator, so the unverified scope was never enabled for our production users. The OAuth app publishing status remains "In production".
+
+OAuth clients in the project:
+- "Yala iOS (dev)" and "Yala iOS (prod)" are the same iOS app (development and App Store builds) and show the same consent screen and flow shown in the video.
+- "Yala Web (MCP)" is a web sign-in client for Yala's AI-assistant connector. It requests only the "email profile" scopes and never requests any Gmail scope.
+
+Please let us know if you need anything else.
+
+Best regards,
+Jürgen Schmidt
+Yala

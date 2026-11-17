@@ -1,5 +1,5 @@
 /**
- * Escritura de Grupos para Yala web (lote 3, opción A de Jürgen del 14-nov; solo staging): la entrada interna
+ * Escritura de Grupos para Yala web (lote 3, opción A de Jürgen del 14-nov; en producción desde el 16-nov): la entrada interna
  * `WebGroupsWriter` (src/worker.ts) llama a esto con el token de la web.
  *
  * Lo que sustituye a App Attest, que un navegador no puede dar (la opción A lo enumeró así):
@@ -160,7 +160,7 @@ function groupCurrencies(g: WebGroupRows): Set<string> {
 }
 
 async function open(env: Env, token: string, groupId: string): Promise<Ctx | { ok: false; error: WebWriteError; detail?: string }> {
-  if (env.WEB_GROUPS_WRITER !== "on" || env.ENVIRONMENT === "production") return { ok: false, error: "disabled" };
+  if (env.WEB_GROUPS_WRITER !== "on") return { ok: false, error: "disabled" };
   if (parseRolloutPercent(env.GROUPS_BACKEND_ROLLOUT_PERCENT) <= 0) return { ok: false, error: "groups_off" };
   const key = env.GROUPS_ENC_KEY;
   if (!key) return { ok: false, error: "no_key" };

@@ -73,6 +73,15 @@ final class ChatIntentClassifierService {
         }
     }
 
+    // MARK: - Guiados (encargo de los guiados de Yala IA, 2026-11-16)
+
+    /// ¿La frase pide crear algo que Yala IA guía con tarjetas (un presupuesto, un pago planificado)? Se decide en el
+    /// teléfono y antes que todo lo demás: no llama al clasificador ni a ningún modelo. Las reglas viven en
+    /// `ChatGuidedIntentDetector`.
+    static func guidedFlow(for text: String) -> ChatGuidedKind? {
+        ChatGuidedIntentDetector.kind(of: text)
+    }
+
     // MARK: - Ruta sin modelo (revisión del 2026-10-20)
 
     /// Las preguntas que se reconocen sin preguntarle a nadie: la ruta `ask` sale del teléfono y se ahorra

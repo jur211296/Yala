@@ -80,6 +80,7 @@ const SAME_AS_SPANISH = new Set([
   "app.origen.web",
   "app.descripcionPh",
   "app.panel",
+  "app.temaLiquid",
 ]);
 
 const ALL: Lang[] = LANGS.map((l) => l.code);

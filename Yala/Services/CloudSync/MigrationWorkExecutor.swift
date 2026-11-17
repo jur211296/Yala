@@ -466,8 +466,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
         // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
         // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
+        // `recutover` solo en el claim de «Migrar» (el mismo que deja la marca): con una cuenta que volvió a iCloud, el
+        // servidor reemplaza su copia congelada y deja migrar a ella (g31_01). El adopt y el seguidor no lo mandan nunca.
         let (outcome, personalWrites) = await accountClient.claimReportingPersonalWrites(
-            jwt: jwt, deviceID: deviceID, provider: provider(), migration: true)
+            jwt: jwt, deviceID: deviceID, provider: provider(), migration: true, recutover: marksMigrationAttempt)
         // Se reasigna en CADA claim que llega al POST, también a `nil`. El que no llega (sin token) no puede entrar en la
         // identidad, que es lo único que lee la pista: un reseteo al empezar sobraba (lo dijo su mutante, que sobrevivía).
         lastClaimPersonalWrites = personalWrites

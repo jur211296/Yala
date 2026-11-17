@@ -250,8 +250,7 @@ extension DestructiveScopeSheet.Config {
         hasLegacyCloudKitFootprint: Bool = false,
         onConfirm: @escaping () -> Void,
         onSecondary: (() -> Void)? = nil,
-        onExport: (() -> Void)? = nil,
-        removesDeviceData: Bool = false
+        onExport: (() -> Void)? = nil
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
@@ -292,15 +291,15 @@ extension DestructiveScopeSheet.Config {
             }
         }
 
-        // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo
-        // (`DestructiveScopeLogic.signOutRemovesDeviceData`). Las filas de la hoja no cambian: ya decían lo que pasa.
+        // Desde la card «Modo iCloud: la salida se llama Cerrar sesión» (13-nov) la hoja sin cuenta de Yala usa el título y el
+        // botón del cierre de siempre: la fila ya no se llama «Quitar mis datos». Las filas de la hoja dicen lo que pasa.
         return Self(
-            title: removesDeviceData ? L10n.UXCS.removeDeviceDataSheetTitle : Self.title(for: operation),
+            title: Self.title(for: operation),
             rows: rows,
             conservationNote: model.hasConservationNote ? Self.conservation(for: operation) : nil,
             extraLines: model.extraLines.map { Self.extraLine(for: $0) },
             secondaries: secondaries,
-            confirmLabel: removesDeviceData ? L10n.UXCS.removeDeviceDataConfirm : Self.confirmLabel(for: operation),
+            confirmLabel: Self.confirmLabel(for: operation),
             confirmIdentifier: Self.confirmIdentifier(for: operation),
             scenarioIdentifier: Self.scenarioIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,
@@ -500,8 +499,9 @@ extension DestructiveScopeSheet.Config {
     private static func conservation(for operation: DestructiveScopeLogic.Operation) -> String {
         switch operation {
         case .wipeDataFull:             return L10n.Settings.wipeScopeConservation
-        case .signOutPrivate:           return L10n.Settings.signOutScopeConservationPrivate
-        case .signOutPrivateWithGroups: return L10n.Settings.signOutScopeConservationPrivateWithGroups
+        // Nombran el botón de la bienvenida de hoy, leído del botón (card «Modo iCloud: la salida se llama Cerrar sesión»).
+        case .signOutPrivate:           return L10n.Nube23Media.signOutICloudConservation
+        case .signOutPrivateWithGroups: return L10n.Nube23Media.signOutICloudConservationWithGroups
         case .signOutCloud:             return L10n.Settings.signOutScopeConservationCloud
         case .signOutGroupsOnly:        return L10n.Settings.signOutScopeConservationGroups
         // Operaciones sin nota de conservación (`hasConservationNote == false`): nunca se llama. Los cierres

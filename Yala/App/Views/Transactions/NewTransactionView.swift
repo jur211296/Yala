@@ -508,6 +508,7 @@ struct NewTransactionView: View {
             // 2026-09-28). Ahora va en un scroll que solo se mueve si hace falta (`.basedOnSize`), con el
             // alto mínimo de la pantalla para que los `Spacer`s sigan repartiendo igual cuando cabe.
             GeometryReader { proxy in
+              ScrollViewReader { scroller in
                 ScrollView {
                     VStack(spacing: DS.Spacing.none) {
                         // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
@@ -564,6 +565,9 @@ struct NewTransactionView: View {
                     .frame(minHeight: proxy.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                .modifier(TutorialGuideScrollFollower(scroller: scroller, target: tutorialGuideScrollTarget,
+                                                      reduceMotion: reduceMotion))
+              }
             }
             // «Guardar» y lo que falta para guardar (UX 2.2 · L2-2) van FUERA del scroll mientras no hay teclado, como los
             // botones de salida de las pantallas de éxito (`swiftui-ds.md`): con la equivalencia, la tasa, la pregunta del
@@ -2151,6 +2155,15 @@ struct NewTransactionView: View {
     }
 
     /// Alguna hoja de selector está abierta encima del formulario: la guía se esconde mientras tanto.
+    /// Lo que señala la guía de foco mientras se ve. En un iPhone SE el formulario no cabe y la barra de «Guardar» tapaba el
+    /// chip de «Categoría» justo cuando la guía lo señalaba: el aro caía sobre «Guardar» y la capa de la guía no deja
+    /// desplazar a mano (medido el 2026-11-16, iOS 27.2). Con esto el formulario se desplaza hasta lo que se señala.
+    private var tutorialGuideScrollTarget: String? {
+        let showing = NewRecordTutorialGuide.isShowing(
+            isActive: tutorialGuideActive, keyboardVisible: isKeyboardVisible, sheetOpen: isAnySelectorOpen)
+        return NewRecordTutorialGuide.scrollTarget(isShowing: showing, index: tutorialGuideIndex)
+    }
+
     private var isAnySelectorOpen: Bool {
         viewModel.showAccountSelector || viewModel.showSubcategorySelector || viewModel.showTagSelector
             || viewModel.showDatePicker || viewModel.showNeedSelector || viewModel.showFavoritesSheet
@@ -3000,6 +3013,28 @@ private struct SaveAreaPlacement<SaveArea: View, KeyboardBar: View>: ViewModifie
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                 isCompactHeight = NewTransactionFormLayout.isCompact(height: height)
             }
+    }
+}
+
+/// Lleva el scroll del formulario hasta lo que señala la guía de foco cuando cambia de paso o vuelve a verse. Sin guía,
+/// `target` es `nil` y no hace nada. En su propio modificador: el `body` del formulario va al límite de lo que tipa el
+/// compilador del CI.
+private struct TutorialGuideScrollFollower: ViewModifier {
+    let scroller: ScrollViewProxy
+    let target: String?
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content.onChange(of: target, initial: true) { _, newTarget in follow(newTarget) }
+    }
+
+    private func follow(_ target: String?) {
+        guard let target else { return }
+        // Una vuelta después: al cerrarse el teclado, el formulario aún está recolocándose cuando la guía vuelve.
+        Task { @MainActor in
+            await Task.yield()
+            dsWithAnimation(reduceMotion) { scroller.scrollTo(target, anchor: .center) }
+        }
     }
 }
 

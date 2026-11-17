@@ -1843,6 +1843,43 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
 
+## g31_01 — volver a pasar a la nube con la cuenta que volvió a iCloud (2026-11-16)
+
+**APLICADA EN STAGING Y EN PRODUCCIÓN el 2026-11-16**, en ese orden; Producción con el visto bueno de Jürgen (19:08, Lima)
+(encargo `2026-11-16-nube-bugs-media-2-3`, opción A: reemplazar la copia congelada). En Producción: `probe` antes (8/8, md5
+intacto), `apply` (el §3 corrió dentro), llegada `122f05d7…` igual que staging, grants a anon/authenticated/service_role y
+ninguna función de trabajo; PostgREST sigue resolviendo los claims de 4 y de 2 argumentos (medido por el wire en staging,
+mismo PostgREST). Gateway de Producción desplegado después desde la rama del encargo: versión `37d6972b-9636-4b4a-b40b-beb31b2ad776`
+(la anterior, para volver atrás: `wrangler rollback 5d52cb6a-458c-4841-a008-3f080aa6d153 --env production`). Tras el
+despliegue: `/config` 200 con los manifests 6 y 3, `/account/claim` y `/account/exists` sin sesión 401, sin errores en el tail. Ficheros: `g31_01_claim_recutover_after_return_to_icloud.sql`,
+marcha atrás `g31_01_rollback.sql` (vuelve al cuerpo de g16_04 desde `fixtures/claim_account.g16_04.functiondef.sql`),
+conductor `g31_01-remote.sh <staging|production> <state|probe|apply|rollback>` (corre en la Mini: usa el PAT de gestión).
+
+Qué cambia: `claim_account` gana `p_recutover boolean default false` (la firma pasa de 4 a 5 argumentos). Con él y
+`p_migration` sobre una cuenta `groups_only` con `reverted_at` y sin ida ni vuelta en curso: el perfil vuelve a `complete`,
+sin congelar, sin `migrated_at` ni `personal_adopted_at`, con este dispositivo de líder y la migración en curso; las filas
+vivas de las 16 tablas personales quedan BORRADAS con `deleted_hlc` = HLC de la fila con el nodo al máximo; contesta
+`created` con `recutover: true` y `retired_rows`. Sin `p_recutover`, nada cambia.
+
+**md5** (`md5(prosrc)`): partida `354237247d7c366596f1c2f43f78e802` (g16_04, igual en los dos entornos) · llegada
+`122f05d743968e7b29c4eda06b7ec21c` **en los dos entornos**.
+
+**Banco** (§3, corre en cada aplicación y en `probe`, que lo deshace todo con un RAISE final): 8 escenarios —el re-cutover
+con `postgres` y con `authenticated` (RLS de las 16 tablas), sin `recutover`, sin migración, pidiendo `groups_only`, con
+otra vuelta en curso, sobre una cuenta completa y sobre una de grupos—, más la subida que reinstala la fila retirada.
+Mutantes: sin el borrado (cae T), sin exigir `p_recutover` (cae L: la bienvenida de un teléfono nuevo vaciaría la copia),
+con otro HLC de borrado (cae H), sin poner `migrated_at` a null (cae K). Sobrevive quitar `not v_reverse` de la rama: la
+comprobación del UPDATE lo repite (cinturón).
+
+**De punta a punta en staging (iPhone 14, Yala Dev, 2026-11-16)**: iCloud → «Pasar a tu cuenta de Yala» (cuenta nueva) →
+«Volver a tu iCloud» → 2.361 registros nuevos en iCloud → «Pasar a tu cuenta de Yala» con la MISMA cuenta: el claim
+contestó `created`, la cuenta quedó `complete` y descongelada, los 9 movimientos de la copia congelada quedaron borrados
+(con el HLC de nodo al máximo) y no volvieron, y la ida subió y verificó los 2.361.
+
+**El orden: g31_01 → Worker (`p_recutover` solo con `recutover: true`) → app.** Los Worker de staging y de Producción ya lo llevan. Un Worker
+sin el cambio nunca manda `p_recutover`, así que la base nueva no rompe nada; la base vieja con un Worker nuevo tampoco, porque
+el Worker solo añade la clave cuando la pide la app.
+
 ## g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)
 
 **PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`; ticket

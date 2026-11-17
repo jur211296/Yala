@@ -1,0 +1,14 @@
+Novedades desde la build 2.3 (1):
+• Panel: el saldo en grande, «Tu dinero hoy» más chico y un «?» que explica los dos.
+• Tarjetas de cuentas personalizables: 27 plantillas y un editor de diseño.
+• La ficha de cada cuenta trae las gráficas de los widgets del Panel.
+• Archivar una cuenta la saca del saldo y conserva su historial.
+• Haz recurrente un registro desde el menú, el detalle, la Bandeja o Pagos.
+• Nuevo registro: categorías a un toque y un buscador que entiende «café».
+• Registros: el calendario se pliega a la semana del día.
+• Tendencias dice contra qué período compara.
+• Nube: cambiar de cuenta, volver a tu iCloud y lo que pasa al soltarla, explicado antes de confirmar.
+• Grupos: apuntar un pago ya no lo duplica y corregir un monto del reparto deja lo que escribes.
+• Arreglos: el Panel tras entrar a una cuenta, cancelar la entrada y «Vaciar mis datos».
+
+Qué probar: el Panel y las tarjetas de cuentas, registrar un gasto, la nube y Grupos. Si algo falla, envía una captura desde TestFlight.

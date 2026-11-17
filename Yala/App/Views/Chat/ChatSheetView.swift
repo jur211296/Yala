@@ -154,6 +154,12 @@ struct ChatSheetView: View {
         .modifier(ChatFeedbackModifier(
             errorMessage: viewModel.errorMessage, isRecording: viewModel.isRecording, reduceMotion: reduceMotion))
         .environment(\.chatDraftFullFormHidden, courtesyTrial != nil)
+        // Un guiado en curso se contesta tocando la tarjeta: el teclado de la caja de escribir (el de la frase que lo
+        // abrió) se cierra para no taparla. Va aquí y no en el hilo: el hilo aparece con el primer mensaje, y un
+        // `onChange` no se dispara al aparecer.
+        .onChange(of: lastGuidedProgress) { _, progress in
+            if progress.hasSuffix("-\(ChatGuidedStatus.inProgress.rawValue)") { isInputFocused = false }
+        }
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
         .sheet(isPresented: $showAISettingsSheet) {
@@ -281,7 +287,9 @@ struct ChatSheetView: View {
                         onLogExpense: {
                             showsCourtesyGuide = false
                             isInputFocused = true
-                        }
+                        },
+                        // La prueba de cortesía de Primeros pasos solo apunta: sin atajos de guiados.
+                        onCreate: courtesyTrial == nil ? { viewModel.startGuidedFlow($0) } : nil
                     )
                 }
             }
@@ -511,6 +519,16 @@ struct ChatSheetView: View {
                     proxy.scrollTo(target, anchor: .bottom)
                 }
             }
+            .onChange(of: lastGuidedProgress) { _, _ in
+                // El guiado del último mensaje cambia de pregunta: su respuesta queda a la vista, abajo.
+                withAnimation(reduceMotion ? nil : .default) {
+                    if viewModel.turnCount > 0 {
+                        proxy.scrollTo("resetContext", anchor: .bottom)
+                    } else if let lastID = viewModel.messages.last?.id {
+                        proxy.scrollTo(lastID, anchor: .bottom)
+                    }
+                }
+            }
             .onChange(of: viewModel.isLoading) { _, isLoading in
                 // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
                 if isLoading {
@@ -520,6 +538,15 @@ struct ChatSheetView: View {
                 }
             }
         }
+    }
+
+    /// La pregunta y el estado del guiado del último mensaje (vacío si no tiene): al cambiar, el hilo baja hasta él.
+    private var lastGuidedProgress: String {
+        guard let last = viewModel.messages.last else { return "" }
+        for attachment in last.attachments ?? [] {
+            if case .guided(let state) = attachment { return "\(state.step.rawValue)-\(state.status.rawValue)" }
+        }
+        return ""
     }
 
     /// El estado de cada borrador del hilo, en orden: cambia cuando uno se guarda, se descarta o falla.

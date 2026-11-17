@@ -67,6 +67,8 @@ struct GroupFormView: View {
     @State private var closeNameDraft = ""
     /// Y23-06 · la pregunta del nombre de «Solo crear mi cuenta» se abre una sola vez por presentación.
     @State private var didOpenNamePrompt = false
+    /// 2.3 · el export de Splitwise o Tricount aceptado en «Traer un grupo…» (solo al crear).
+    @State private var importSelection: ImportarGrupoSeleccion?
 
     // MARK: - Sheet State
 
@@ -93,6 +95,16 @@ struct GroupFormView: View {
 
                     // Name
                     nameSection
+
+                    // 2.3 · traer los saldos de Splitwise o Tricount (rellena nombre y moneda; se aplica al crear).
+                    if group == nil {
+                        ImportarGrupoEntrada(selection: $importSelection) { chosen in
+                            if name.trimmingCharacters(in: .whitespaces).isEmpty, let suggested = chosen.snapshot.suggestedName {
+                                name = suggested
+                            }
+                            if let currency = chosen.suggestedCurrency { selectedCurrency = currency }
+                        }
+                    }
 
                     // Options (L12-9: plegadas)
                     moreOptionsSection
@@ -469,6 +481,8 @@ struct GroupFormView: View {
                     // GroupService.createGroup) — replicarlos aquí para no regresionar la UX.
                     SessionState.shared.incrementDataVersion()
                     NudgeService.shared.recordGroupJoinIfNeeded()
+                    // 2.3 · lo importado de Splitwise o Tricount queda esperando a su gente, con «yo» ya emparejado.
+                    importSelection?.start(in: created)
                     // Antes de cerrar la hoja: su `onDismiss` tiene que encontrar el grupo ya apuntado.
                     onCreated?(created)
                 case .needsConsent:

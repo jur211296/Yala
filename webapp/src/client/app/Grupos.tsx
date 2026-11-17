@@ -7,12 +7,23 @@
  * gateway con el rol propio de la web (`webapp/src/worker/groupsWrite.ts`); el reparto que se enseña es el mismo
  * `equalSplit` que guarda, con paridad contra `GroupSplitCalculator`. Editar o borrar gastos, otros repartos y confirmar
  * pagos siguen en el iPhone.
+ *
+ * Lote 5 de «Yala web como la app»: arriba, con una sola divisa, «Te deben en total · en S/» con el neto en grande, la
+ * barra rosa y verde y «Debes» / «Te deben» a los lados (`groups.hero.net*` de la app); con varias, las líneas de antes.
+ * Las tarjetas llevan el ícono y el color del grupo. Desde 1100 px de ventana, la lista a la izquierda y el grupo abierto
+ * a la derecha, con «Nuevo gasto», «Saldar» e «Invitar» como cápsulas en su cabecera; por debajo, se entra al grupo.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeftRight, ChevronLeft, Pencil, UserPlus } from "lucide-react";
 import { texts } from "../i18n";
-import { ApiError, getJson, postJson, type Banda, type Dinero, type GrupoDetalle, type GrupoTarjeta, type GruposLista } from "./api";
-import { badge, money, shortDate, todayKey } from "./format";
+import { ApiError, getJson, postJson, type Dinero, type GrupoDetalle, type GrupoTarjeta, type GruposLista } from "./api";
+import { money, moneyParts, shortDate, todayKey } from "./format";
 import { parseAmount } from "./Apuntar";
+import { Monto } from "./Monto";
+import { CifraPrincipal } from "./Cifra";
+import { simboloPorNombre, useCategorias } from "./categorias";
+import { resumenNeto } from "./pantallas";
+import { COLOR_POR_DEFECTO, colorSeguro, iconoLucide } from "./simbolos";
 import { equalSplit } from "../../../../shared-core/src/logic/groupSplit";
 
 const t = texts();
@@ -25,16 +36,6 @@ export function who(n: string): string {
 
 function joinMoney(list: Dinero[]): string {
   return list.map((d) => money(d.importe, d.divisa)).join(" · ");
-}
-
-function BandLine({ banda }: { banda: Banda }) {
-  if (banda.estado === "settled") return <span className="amt">{t.grp.todoSaldado}</span>;
-  return (
-    <span className="band-l">
-      {banda.teDeben.length > 0 ? <span className="amt owed">{t.grp.teDeben(joinMoney(banda.teDeben))}</span> : null}
-      {banda.debes.length > 0 ? <span className="amt owe">{t.grp.debes(joinMoney(banda.debes))}</span> : null}
-    </span>
-  );
 }
 
 function Skeleton() {
@@ -60,31 +61,43 @@ function Failed({ message, retry }: { message: string; retry?: () => void }) {
   );
 }
 
-function GroupCard({ g, onOpen }: { g: GrupoTarjeta; onOpen: () => void }) {
-  const b = badge(g.nombre);
+/** El símbolo de una divisa como lo escribe la cifra («S/», «$», «€»), para «Te deben en total · en S/». */
+function simboloDivisa(divisa: string): string {
+  const p = moneyParts(0, divisa);
+  return ((p?.antes ?? "") + (p?.despues ?? "")).trim() || divisa;
+}
+
+function GrupoIcono({ icono, color, grande }: { icono: string | null; color: string | null; grande?: boolean }) {
+  const Icono = iconoLucide(icono, "person.2.fill");
+  return (
+    <span className={`circ${grande ? " medio" : ""}`} style={{ background: colorSeguro(color, COLOR_POR_DEFECTO) }} aria-hidden="true">
+      <Icono size={grande ? 24 : 20} strokeWidth={2.2} aria-hidden={true} focusable={false} />
+    </span>
+  );
+}
+
+function GroupCard({ g, onOpen, abierto }: { g: GrupoTarjeta; onOpen: () => void; abierto: boolean }) {
   const shown = g.personas.slice(0, 3);
   const rest = g.personas.length - shown.length;
   return (
-    <button className="cd gcard" type="button" onClick={onOpen} aria-label={g.nombre || t.grp.sinNombre}>
-      <span className="row" style={{ borderTop: 0, padding: 0 }}>
-        <span className="ic" style={{ background: g.color && /^#[0-9a-f]{6}$/i.test(g.color) ? g.color : b.color }} aria-hidden="true">
-          {b.letter}
-        </span>
-        <span className="t">
+    <button className="cd gcard" type="button" onClick={onOpen} aria-label={g.nombre || t.grp.sinNombre} aria-current={abierto ? "true" : undefined}>
+      <span className="gcard-h">
+        <GrupoIcono icono={g.icono} color={g.color} />
+        <span className="fila-t">
           <b>
             {g.nombre || t.grp.sinNombre}
             {g.archivado ? <span className="lk arch">{t.grp.archivado}</span> : null}
           </b>
           <span>{[t.grp.personas(g.miembros), t.grp.nGastos(g.gastos)].join(" · ")}</span>
         </span>
-        <BandLine banda={g.banda} />
+        {g.banda.estado === "settled" ? <span className="gsaldado">{t.grp.todoSaldado}</span> : null}
       </span>
       {shown.length > 0 ? (
         <span className="gpeople">
           {shown.map((p, i) => (
             <span className="gp" key={i}>
               <span>{p.sentido === "debes" ? t.grp.leDebes(who(p.nombre)) : t.grp.teDebe(who(p.nombre))}</span>
-              <span className={`amt ${p.sentido === "debes" ? "owe" : "owed"}`}>{money(p.importe, p.divisa)}</span>
+              <Monto importe={p.importe} divisa={p.divisa} className={`amt ${p.sentido === "debes" ? "owe" : "owed"}`} />
             </span>
           ))}
           {rest > 0 ? <span className="gp more">{t.grp.yMas(rest)}</span> : null}
@@ -94,28 +107,66 @@ function GroupCard({ g, onOpen }: { g: GrupoTarjeta; onOpen: () => void }) {
   );
 }
 
-function List({ onOpen }: { onOpen: (id: string) => void }) {
-  const [data, setData] = useState<GruposLista | null>(null);
-  const [error, setError] = useState(false);
-  const load = useCallback(() => {
-    setError(false);
-    getJson<GruposLista>("/api/grupos").then(setData, () => setError(true));
-  }, []);
-  useEffect(load, [load]);
-
-  if (error) return <Failed message={t.grp.noDisponible} retry={load} />;
-  if (!data) return <Skeleton />;
-  const { resumen, grupos } = data;
-  const settled = resumen.teDeben.length === 0 && resumen.debes.length === 0;
+function Cabecera({ resumen }: { resumen: GruposLista["resumen"] }) {
+  const n = resumenNeto(resumen);
+  const confirmar = resumen.pagosPorConfirmar > 0 ? <span className="inout">{t.grp.pagosPorConfirmar(resumen.pagosPorConfirmar)}</span> : null;
+  if (!n) {
+    return (
+      <CifraPrincipal rotulo={t.grp.enTusGrupos} explica={[t.grp.totalExplica]} debajo={confirmar}>
+        <span className="g-lineas">
+          {resumen.teDeben.length > 0 ? <span className="amt owed">{t.grp.teDeben(joinMoney(resumen.teDeben))}</span> : null}
+          {resumen.debes.length > 0 ? <span className="amt owe">{t.grp.debes(joinMoney(resumen.debes))}</span> : null}
+        </span>
+      </CifraPrincipal>
+    );
+  }
+  if (n.divisa === null) {
+    return (
+      <CifraPrincipal rotulo={t.grp.enTusGrupos} debajo={confirmar}>
+        {t.grp.todoSaldado}
+      </CifraPrincipal>
+    );
+  }
+  const sim = simboloDivisa(n.divisa);
+  const rotulo = n.neto > 0.005 ? t.grp.netoTeDeben(sim) : n.neto < -0.005 ? t.grp.netoDebes(sim) : t.grp.netoAMano(sim);
+  const total = n.teDeben + n.debes;
   return (
-    <>
-      <section className="cd hero">
-        <span className="cap">{t.grp.enTusGrupos}</span>
-        {settled ? <span className="big">{t.grp.todoSaldado}</span> : null}
-        {resumen.teDeben.length > 0 ? <span className="big amt owed">{t.grp.teDeben(joinMoney(resumen.teDeben))}</span> : null}
-        {resumen.debes.length > 0 ? <span className={`${resumen.teDeben.length > 0 ? "mid" : "big"} amt owe`}>{t.grp.debes(joinMoney(resumen.debes))}</span> : null}
-        {resumen.pagosPorConfirmar > 0 ? <span className="inout">{t.grp.pagosPorConfirmar(resumen.pagosPorConfirmar)}</span> : null}
-      </section>
+    <CifraPrincipal
+      rotulo={rotulo}
+      explica={[t.grp.totalExplica]}
+      className="g-head"
+      debajo={
+        <>
+          {total > 0 ? (
+            <div className="gbar" aria-hidden="true">
+              <i className="owe" style={{ flexGrow: n.debes }} />
+              <i className="owed" style={{ flexGrow: n.teDeben }} />
+            </div>
+          ) : null}
+          <div className="g-lados">
+            <span>
+              <span className="owe-t">↗ {t.grp.rotDebes}</span>
+              <Monto importe={n.debes} divisa={n.divisa} className="amt" />
+            </span>
+            <span className="der">
+              <span className="owed-t">{t.grp.rotTeDeben} ↙</span>
+              <Monto importe={n.teDeben} divisa={n.divisa} className="amt" />
+            </span>
+          </div>
+          {confirmar}
+        </>
+      }
+    >
+      <Monto importe={Math.abs(n.neto)} divisa={n.divisa} tam="hero" className={n.neto > 0.005 ? "owed" : n.neto < -0.005 ? "owe" : ""} />
+    </CifraPrincipal>
+  );
+}
+
+function List({ data, open, onOpen }: { data: GruposLista; open: string | null; onOpen: (id: string) => void }) {
+  const { resumen, grupos } = data;
+  return (
+    <div className="glista">
+      <Cabecera resumen={resumen} />
       {grupos.length === 0 ? (
         <section className="cd">
           <h2>{t.grp.sinGrupos}</h2>
@@ -124,13 +175,13 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
       ) : (
         <div className="ggrid">
           {grupos.map((g) => (
-            <GroupCard key={g.id} g={g} onOpen={() => onOpen(g.id)} />
+            <GroupCard key={g.id} g={g} abierto={open === g.id} onOpen={() => onOpen(g.id)} />
           ))}
         </div>
       )}
       {data.incompleto ? <p className="note-y">{t.grp.incompleto}</p> : null}
       <p className="note-y">{t.grp.nota}</p>
-    </>
+    </div>
   );
 }
 
@@ -441,12 +492,13 @@ type Abierto = { tipo: "gasto" } | { tipo: "pago"; inicial: PagoInicial | null }
 
 type Tab = "saldos" | "gastos" | "pagos";
 
-function Detail({ id, onBack }: { id: string; onBack: () => void }) {
+function Detail({ id, tarjeta, onBack }: { id: string; tarjeta: GrupoTarjeta | undefined; onBack?: () => void }) {
   const [data, setData] = useState<GrupoDetalle | null>(null);
   const [error, setError] = useState<"no_existe" | "otro" | null>(null);
   const [tab, setTab] = useState<Tab>("saldos");
   const [abierto, setAbierto] = useState<Abierto>(null);
   const [hecho, setHecho] = useState<string | null>(null);
+  const cats = useCategorias();
   const load = useCallback(() => {
     setError(null);
     getJson<GrupoDetalle>(`/api/grupos/detalle?id=${encodeURIComponent(id)}`).then(setData, (err) =>
@@ -455,22 +507,24 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
   }, [id]);
   useEffect(load, [load]);
 
-  const back = (
-    <button className="btn-s back" type="button" onClick={onBack}>
-      ‹ {t.grp.volver}
+  // En el celular, «‹ Grupos» vuelve a la lista; en escritorio ancho la lista está al lado y no hace falta.
+  const back = onBack ? (
+    <button className="cap-btn back" type="button" onClick={onBack}>
+      <ChevronLeft aria-hidden={true} focusable={false} />
+      {t.grp.volver}
     </button>
-  );
+  ) : null;
   if (error) return (
-    <>
+    <div className="gdet">
       {back}
       <Failed message={error === "no_existe" ? t.grp.noExiste : t.grp.noDisponible} retry={error === "otro" ? load : undefined} />
-    </>
+    </div>
   );
   if (!data) return (
-    <>
+    <div className="gdet" aria-busy="true">
       {back}
       <Skeleton />
-    </>
+    </div>
   );
   const name = (n: string, esTu: boolean) => (esTu ? t.grp.tu : who(n));
   const done = (msg: string) => {
@@ -480,45 +534,52 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
   };
   const opts = [data.menosPagos ? t.grp.menosPagos : null, data.unaSolaMoneda ? t.grp.todoEn(data.unaSolaMoneda) : null].filter(Boolean).join(" · ");
   return (
-    <>
+    <div className="gdet">
       {back}
-      <section className="cd hero">
-        <span className="cap">
-          {data.nombre || t.grp.sinNombre}
-          {data.archivado ? <span className="lk arch">{t.grp.archivado}</span> : null}
-        </span>
-        {data.banda.estado === "settled" ? <span className="big">{t.grp.todoSaldado}</span> : null}
-        {data.banda.teDeben.length > 0 ? <span className="big amt owed">{t.grp.teDeben(joinMoney(data.banda.teDeben))}</span> : null}
-        {data.banda.debes.length > 0 ? (
-          <span className={`${data.banda.teDeben.length > 0 ? "mid" : "big"} amt owe`}>{t.grp.debes(joinMoney(data.banda.debes))}</span>
-        ) : null}
-        <span className="inout">{[t.grp.personas(data.miembros.length), opts].filter(Boolean).join(" · ")}</span>
-      </section>
-
-      {data.puedeEscribir ? (
-        <div className="gacts">
-          <button className="btn-p" type="button" onClick={() => setAbierto({ tipo: "gasto" })}>
-            {t.grp.nuevoGasto}
-          </button>
-          <button className="btn-s" type="button" onClick={() => setAbierto({ tipo: "pago", inicial: null })}>
-            {t.grp.saldar}
-          </button>
-          {data.puedeInvitar ? (
-            <button className="btn-s" type="button" onClick={() => setAbierto({ tipo: "invitar" })}>
-              {t.grp.invitar}
-            </button>
-          ) : null}
+      <section className="gdet-h" aria-label={data.nombre || t.grp.sinNombre}>
+        <div className="gdet-t">
+          <GrupoIcono icono={tarjeta?.icono ?? null} color={tarjeta?.color ?? null} grande />
+          <span className="fila-t">
+            <b>
+              {data.nombre || t.grp.sinNombre}
+              {data.archivado ? <span className="lk arch">{t.grp.archivado}</span> : null}
+            </b>
+            <span>{[t.grp.personas(data.miembros.length), tarjeta ? t.grp.nGastos(tarjeta.gastos) : null, opts].filter(Boolean).join(" · ")}</span>
+          </span>
         </div>
-      ) : null}
+        <div className="g-lineas">
+          {data.banda.estado === "settled" ? <span className="amt">{t.grp.todoSaldado}</span> : null}
+          {data.banda.teDeben.length > 0 ? <span className="amt owed">{t.grp.teDeben(joinMoney(data.banda.teDeben))}</span> : null}
+          {data.banda.debes.length > 0 ? <span className="amt owe">{t.grp.debes(joinMoney(data.banda.debes))}</span> : null}
+        </div>
+        {data.puedeEscribir ? (
+          <div className="psegs gacts">
+            <button className="pseg prim" type="button" onClick={() => setAbierto({ tipo: "gasto" })}>
+              <Pencil aria-hidden={true} focusable={false} />
+              {t.grp.nuevoGasto}
+            </button>
+            <button className="pseg" type="button" onClick={() => setAbierto({ tipo: "pago", inicial: null })}>
+              <ArrowLeftRight aria-hidden={true} focusable={false} />
+              {t.grp.saldar}
+            </button>
+            {data.puedeInvitar ? (
+              <button className="pseg" type="button" onClick={() => setAbierto({ tipo: "invitar" })}>
+                <UserPlus aria-hidden={true} focusable={false} />
+                {t.grp.invitar}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
       {hecho ? (
         <p className="ok-line" role="status">
           {hecho}
         </p>
       ) : null}
 
-      <div className="seg seg3" role="group" aria-label={data.nombre}>
+      <div className="psegs gtabs" role="tablist" aria-label={data.nombre}>
         {(["saldos", "gastos", "pagos"] as const).map((x) => (
-          <button key={x} type="button" aria-pressed={tab === x} onClick={() => setTab(x)}>
+          <button key={x} type="button" role="tab" className="pseg" aria-selected={tab === x} onClick={() => setTab(x)}>
             {t.grp[x]}
           </button>
         ))}
@@ -587,12 +648,12 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
         <section className="cd">
           {data.gastos.length === 0 ? <p className="empty">{t.grp.sinGastos}</p> : null}
           {data.gastos.map((g) => {
-            const b = badge(g.categoria ?? g.descripcion);
+            const sim = simboloPorNombre(cats, g.categoria, { primero: "subcategoria" });
             const extra = [g.saldoInicial ? t.grp.saldoInicial : null, g.saldado ? t.grp.saldado : null].filter(Boolean);
             return (
               <div className="row" key={g.id}>
-                <span className="ic" style={{ background: b.color }} aria-hidden="true">
-                  {b.letter}
+                <span className="circ chico" style={{ background: sim.color }} aria-hidden="true">
+                  <sim.Icono size={16} strokeWidth={2.4} aria-hidden={true} focusable={false} />
                 </span>
                 <span className="t">
                   <b>{g.descripcion || g.categoria || t.app.gasto}</b>
@@ -631,20 +692,56 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       {abierto?.tipo === "gasto" ? <ExpenseSheet data={data} onClose={() => setAbierto(null)} onDone={done} /> : null}
       {abierto?.tipo === "pago" ? <SettleSheet data={data} inicial={abierto.inicial} onClose={() => setAbierto(null)} onDone={done} /> : null}
       {abierto?.tipo === "invitar" ? <InviteSheet data={data} onClose={() => setAbierto(null)} /> : null}
-    </>
+    </div>
   );
 }
 
+/** ¿La ventana es ancha (desde 1100 px, como el detalle de Registros)? Se recalcula al redimensionar. */
+function useAncho(): boolean {
+  const query = "(min-width: 1100px)";
+  const [ancho, setAncho] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setAncho(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return ancho;
+}
+
 export function Grupos() {
+  const [data, setData] = useState<GruposLista | null>(null);
+  const [error, setError] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
-  if (open) return <Detail id={open} onBack={() => setOpen(null)} />;
-  return (
+  const ancho = useAncho();
+  const load = useCallback(() => {
+    setError(false);
+    getJson<GruposLista>("/api/grupos").then(setData, () => setError(true));
+  }, []);
+  useEffect(load, [load]);
+
+  if (error) return <Failed message={t.grp.noDisponible} retry={load} />;
+  if (!data) return <Skeleton />;
+  // En escritorio ancho se abre el primero, como el detalle de Registros: la columna de la derecha nunca queda vacía.
+  const abierto = open ?? (ancho ? data.grupos[0]?.id ?? null : null);
+  const tarjeta = data.grupos.find((g) => g.id === abierto);
+  if (!ancho && abierto) return <Detail key={abierto} id={abierto} tarjeta={tarjeta} onBack={() => setOpen(null)} />;
+  const lista = (
     <List
+      data={data}
+      open={ancho ? abierto : null}
       onOpen={(id) => {
         setOpen(id);
-        window.scrollTo(0, 0);
+        if (!ancho) window.scrollTo(0, 0);
       }}
     />
+  );
+  if (!ancho || !abierto) return lista;
+  return (
+    <div className="gsplit">
+      {lista}
+      <Detail key={abierto} id={abierto} tarjeta={tarjeta} />
+    </div>
   );
 }
 

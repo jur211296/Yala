@@ -576,7 +576,10 @@ jobs:
       # crea en el runtime iOS 27.0. Desde la imagen 20261022 hay tambien un runtime iOS 27.1,
       # pero solo admite el iPhone Duo; el script lo descarta (2026-10-23, ver su cabecera). Desde
       # la 20261104.0337.1 hay un iOS 27.2 completo, MAS NUEVO que el SDK 27.1: el script ya no lo
-      # elige mientras haya otro (2026-11-07), porque ahi el paquete de UI no carga.
+      # elige mientras haya otro (2026-11-07), porque ahi el paquete de UI no carga. Desde la
+      # 20261112.0361.1 el Xcode 27.1 ya no ofrece el iOS 27.0 como destino aunque `simctl` cree ahi
+      # el device: el script lo valida con `xcodebuild -showdestinations` y, si no lo ve, pasa al
+      # runtime siguiente (2026-11-16, ver su cabecera).
       # La rama 2.1 seguia en `macos-26` con 26.6.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh

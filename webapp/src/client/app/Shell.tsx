@@ -1,15 +1,21 @@
 /**
- * La app con sesión (lotes 1 a 3 y 2b): Panel, Bandeja, Registros, Presupuestos, Pagos planificados, Estadísticas, Grupos
- * y Configurar, con la búsqueda ⌘K (lote 2b),
- * con «Apuntar» y el ojo que oculta los montos. Una cuenta «solo Grupos» (lote 3, decisión D3) abre en Grupos, no ve
- * «Apuntar», y las secciones de la nube completa le explican por qué no tienen nada.
- * Escritorio: barra lateral. Móvil: barra de pestañas con «+» en medio y «Más». Las secciones de los lotes siguientes
- * salen en la barra como «Pronto», sin abrir nada.
+ * La app con sesión (lotes 1 a 3 y 2b): Panel, Bandeja, Registros, Planificación (Presupuestos y Pagos planificados),
+ * Estadísticas, Grupos y Configurar, con la búsqueda ⌘K (lote 2b), «+ Nuevo registro» y el ojo que oculta los montos.
+ * Una cuenta «solo Grupos» (lote 3, decisión D3) abre en Grupos, no ve «Nuevo registro», y las secciones de la nube
+ * completa le explican por qué no tienen nada.
+ *
+ * Navegación como la app (lote 3 de «Yala web como la app»): en escritorio, barra lateral de cristal como la app en iPad,
+ * con el campo Buscar arriba y el avatar abajo, que abre Configurar. En el celular, la barra flotante de la app (Panel,
+ * Registros, Grupos y Más) con la lupa aparte, la Bandeja en su botón arriba a la izquierda y «+ Nuevo registro» en el
+ * contenido. Qué dirección abre qué, en `navegacion.ts`. Yala IA sale como «Pronto», sin abrir nada.
+ *
+ * Lote 5: la Bandeja de Entrada se abre ENCIMA de la sección en la que estabas (panel lateral en escritorio, hoja en el
+ * celular), como la hoja de la app. `/bandeja` sigue siendo su dirección; abierta de entrada, debajo va la de inicio.
  *
  * La página pregunta `/api/me` cada 30 s y al volver a primer plano: si la sesión se cerró desde el iPhone o desde otra
  * pestaña, vuelve a la pantalla de entrar en menos de un minuto (lo que promete la maqueta).
  */
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { texts } from "../i18n";
 import { getJson, type Bandeja as BandejaData, type Categoria, type Enviado, type Panel as PanelData } from "./api";
 import { Icons } from "./icons";
@@ -24,6 +30,7 @@ import { Grupos, SoloGrupos } from "./Grupos";
 import { Presupuestos } from "./Presupuestos";
 import { Busqueda, type Destino } from "./Busqueda";
 import type { FiltroInicial } from "./Registros";
+import { FULL_CLOUD, isPlan, pathOf, secFromPath, segmentOf, shortcutLabel, sideOf, tabOf, type Sec } from "./navegacion";
 
 const t = texts();
 
@@ -34,28 +41,30 @@ export interface Me {
   soloGrupos?: boolean;
 }
 
-type Sec = "panel" | "bandeja" | "registros" | "presupuestos" | "pagos" | "estadisticas" | "grupos" | "configurar" | "mas";
-const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "presupuestos", "pagos", "estadisticas", "grupos", "configurar", "mas"];
-/** Lo que vive en la nube completa: una cuenta «solo Grupos» no tiene nada que ver ahí. */
-const FULL_CLOUD: Sec[] = ["panel", "bandeja", "registros", "presupuestos", "pagos", "estadisticas"];
-/** Las que salen en «Más» del móvil (y marcan su pestaña). */
-const MORE: Sec[] = ["presupuestos", "pagos", "estadisticas", "grupos", "configurar"];
-const ICON: Record<Exclude<Sec, "mas">, ReactNode> = {
+/** Las secciones con entrada propia (todas menos «Más»), con su ícono. */
+type Nav = Exclude<Sec, "mas">;
+const ICON: Record<Nav, ReactNode> = {
   panel: Icons.panel,
   bandeja: Icons.bandeja,
   registros: Icons.registros,
+  estadisticas: Icons.estadisticas,
+  planificacion: Icons.planificacion,
   presupuestos: Icons.presupuestos,
   pagos: Icons.pagos,
-  estadisticas: Icons.estadisticas,
   grupos: Icons.grupos,
   configurar: Icons.configurar,
 };
+/** La barra lateral de escritorio, en el orden de la app en iPad. */
+const SIDE: Nav[] = ["panel", "registros", "estadisticas", "planificacion", "grupos"];
+/** Los colores de las tarjetas de «Más», los de la app. */
+const TILE: Partial<Record<Nav, string>> = {
+  bandeja: "#ff0080",
+  estadisticas: "#0a84ff",
+  presupuestos: "#d946ef",
+  pagos: "#14b8a6",
+  configurar: "#8e8e93",
+};
 const HIDE_KEY = "yala-web-ocultar";
-
-function secFromPath(home: Sec = "panel"): Sec {
-  const p = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  return (SECTIONS as string[]).includes(p) ? (p as Sec) : home;
-}
 
 export function readHidePref(): boolean {
   try {
@@ -74,12 +83,15 @@ export function writeHidePref(v: boolean): void {
   }
 }
 
-const SOON: { key: keyof typeof t.app; icon: ReactNode; group?: boolean }[] = [{ key: "ia", icon: Icons.ia }];
-
 export function Shell({ me }: { me: Me }) {
   const solo = me.soloGrupos === true;
   const home: Sec = solo ? "grupos" : "panel";
-  const [sec, setSec] = useState<Sec>(() => secFromPath(home));
+  const [sec, setSec] = useState<Sec>(() => secFromPath(window.location.pathname, home));
+  /** La sección que queda debajo de la Bandeja (lote 5): la última que no era la Bandeja. */
+  const [debajo, setDebajo] = useState<Sec>(() => {
+    const s = secFromPath(window.location.pathname, home);
+    return s === "bandeja" ? home : s;
+  });
   const [editando, setEditando] = useState<Enviado | null>(null);
   const [hide, setHide] = useState(readHidePref);
   const [apuntar, setApuntar] = useState(false);
@@ -89,14 +101,18 @@ export function Shell({ me }: { me: Me }) {
   const [cats, setCats] = useState<Categoria[] | null>(null);
   const [bandeja, setBandeja] = useState<BandejaData | null>(null);
   const [buscar, setBuscar] = useState(false);
+  /** Lo que tenía el foco al abrir la búsqueda: vuelve ahí al cerrarla, para seguir con el teclado donde estabas. */
+  const prevFocus = useRef<HTMLElement | null>(null);
   /** El filtro con el que la búsqueda abrió Registros; `n` lo vuelve a montar aunque el filtro se repita. */
   const [regFiltro, setRegFiltro] = useState<{ f: FiltroInicial; n: number } | null>(null);
 
-  const go = useCallback((s: Sec) => {
+  /** `arriba`: subir al principio. Abrir la Bandeja (y cerrarla) no mueve la pantalla de debajo. */
+  const go = useCallback((s: Sec, arriba = s !== "bandeja") => {
     setSec(s);
-    const path = s === home ? "/" : `/${s}`;
+    if (s !== "bandeja") setDebajo(s);
+    const path = pathOf(s, home);
     if (window.location.pathname !== path) window.history.pushState(null, "", path);
-    window.scrollTo(0, 0);
+    if (arriba) window.scrollTo(0, 0);
   }, [home]);
 
   const loadPanel = useCallback(() => {
@@ -112,7 +128,11 @@ export function Shell({ me }: { me: Me }) {
       loadPanel();
       loadBandeja();
     }
-    const onPop = () => setSec(secFromPath(home));
+    const onPop = () => {
+      const s = secFromPath(window.location.pathname, home);
+      setSec(s);
+      if (s !== "bandeja") setDebajo(s);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [loadPanel, loadBandeja, solo, home]);
@@ -131,17 +151,29 @@ export function Shell({ me }: { me: Me }) {
     };
   }, []);
 
-  // ⌘K / Ctrl+K abre la búsqueda desde cualquier sección (también con el foco en un campo).
+  const openSearch = useCallback(() => {
+    if (document.activeElement instanceof HTMLElement) prevFocus.current = document.activeElement;
+    setBuscar(true);
+  }, []);
+  const closeSearch = useCallback(() => {
+    setBuscar(false);
+    const el = prevFocus.current;
+    prevFocus.current = null;
+    if (el?.isConnected) window.setTimeout(() => el.focus(), 0);
+  }, []);
+
+  // ⌘K / Ctrl+K abre y cierra la búsqueda desde cualquier sección (también con el foco en un campo).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setBuscar((b) => !b);
+        if (buscar) closeSearch();
+        else openSearch();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [buscar, openSearch, closeSearch]);
 
   useEffect(() => {
     if (!toast) return;
@@ -161,68 +193,137 @@ export function Shell({ me }: { me: Me }) {
     loadCats();
   };
 
-  // Las secciones a las que lleva la búsqueda: las de la barra que esta cuenta puede abrir.
-  const destinos: Destino[] = (Object.keys(ICON) as Exclude<Sec, "mas">[])
+  // Las secciones a las que lleva la búsqueda: las que esta cuenta puede abrir.
+  const destinos: Destino[] = (Object.keys(ICON) as Nav[])
     .filter((k) => !solo || !FULL_CLOUD.includes(k))
     .map((k) => ({ key: k, label: t.app[k], icon: ICON[k] }));
 
+  const full = !solo;
+  /** La Bandeja abierta encima (solo en la nube completa; una cuenta «solo Grupos» ve su aviso, como antes). */
+  const bandejaEncima = full && sec === "bandeja";
+  /** Lo que se pinta en el contenido: la sección, o la de debajo con la Bandeja abierta. */
+  const vista: Sec = bandejaEncima ? debajo : sec;
   const pendingCount = bandeja ? bandeja.pendientes.length + bandeja.enviados.length : 0;
   const badge = pendingCount > 0 ? <span className="badge">{pendingCount}</span> : null;
-  const title = sec === "mas" ? t.app.mas : t.app[sec];
+  const title = vista === "mas" ? t.app.mas : isPlan(vista) ? t.app.planificacion : t.app[vista];
+  const side = sideOf(sec);
+  const tab = tabOf(vista, solo);
+  const kbd = shortcutLabel(navigator.platform || navigator.userAgent);
 
-  const navButton = (s: Exclude<Sec, "mas">, icon: ReactNode) => (
+  /** Un enlace de verdad (abre en otra pestaña con ⌘-clic), que navega dentro de la página con el clic normal. */
+  const link = (s: Sec, className: string, current: boolean, children: ReactNode, label?: string) => (
     <a
-      className="nv"
-      href={s === home ? "/" : `/${s}`}
-      aria-current={sec === s ? "page" : undefined}
+      key={s}
+      className={className}
+      href={pathOf(s, home)}
+      aria-current={current ? "page" : undefined}
+      aria-label={label}
       onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         e.preventDefault();
         go(s);
       }}
     >
-      {icon}
-      <span className="sp">{t.app[s]}</span>
-      {s === "bandeja" ? badge : null}
+      {children}
     </a>
   );
 
-  const soonItem = (x: (typeof SOON)[number]) => (
-    <div className="nv later" key={x.key} aria-disabled="true">
-      {x.icon}
-      <span className="sp">{t.app[x.key] as string}</span>
+  const sideItem = (s: Nav) =>
+    link(
+      s,
+      "nv",
+      side === s,
+      <>
+        {ICON[s]}
+        <span className="sp">{t.app[s]}</span>
+        {s === "bandeja" ? badge : null}
+      </>,
+    );
+
+  const soon = (
+    <div className="nv later" aria-disabled="true">
+      {Icons.ia}
+      <span className="sp">{t.app.ia}</span>
       <span className="lk">{t.app.pronto}</span>
     </div>
   );
 
+  const newRecord = (className: string) => (
+    <button className={className} type="button" onClick={openApuntar}>
+      {Icons.plus}
+      {t.app.nuevoRegistro}
+    </button>
+  );
+
+  // En el celular «+ Nuevo registro» va dentro del contenido, debajo de la cifra principal, como en la app (lote 4).
+  const actsMob = <div className="acts mob">{newRecord("add")}</div>;
+
+  const tile = (s: Nav, wide = false) =>
+    link(
+      s,
+      `tile${wide ? " wide" : ""}`,
+      false,
+      <>
+        <span className="tic" style={{ background: TILE[s] }}>
+          {ICON[s]}
+        </span>
+        <b>{t.app[s]}</b>
+        {s === "bandeja" ? badge : null}
+      </>,
+    );
+
+  const segment = segmentOf(vista);
+
   return (
     <div className={`app${hide ? " hideamt" : ""}`}>
       <aside className="side" aria-label="Yala">
-        <div className="brand" aria-hidden="true">
-          <i />
+        <div className="brand">
+          <i aria-hidden="true" />
           Yala
+          <span className="lk">{t.app.beta}</span>
         </div>
-        <nav aria-label={t.app.panel}>
-          {navButton("panel", Icons.panel)}
-          {navButton("bandeja", Icons.bandeja)}
-          {navButton("registros", Icons.registros)}
-          {navButton("presupuestos", Icons.presupuestos)}
-          {navButton("pagos", Icons.pagos)}
-          {navButton("estadisticas", Icons.estadisticas)}
-          {navButton("grupos", Icons.grupos)}
-          {SOON.map(soonItem)}
-          {navButton("configurar", Icons.configurar)}
+        <button className="sfield" type="button" aria-keyshortcuts="Meta+K Control+K" onClick={openSearch}>
+          {Icons.search}
+          <span>{t.bus.abrir}</span>
+          <kbd aria-hidden="true">{kbd}</kbd>
+        </button>
+        <nav aria-label="Yala">
+          {SIDE.map(sideItem)}
+          <div className="navh">{t.app.mas}</div>
+          {sideItem("bandeja")}
+          {soon}
         </nav>
-        <div className="sidefoot">{t.app.beta}</div>
+        {link(
+          "configurar",
+          "sfoot",
+          sec === "configurar",
+          <>
+            <span className="av">{Icons.avatar}</span>
+            <span className="who">
+              <b>{me.nombre}</b>
+              <span>{t.app.configurar}</span>
+            </span>
+          </>,
+        )}
       </aside>
 
       <div className="main">
         <header className="topbar">
+          {full
+            ? link(
+                "bandeja",
+                "ib mob inbox",
+                sec === "bandeja",
+                <>
+                  {Icons.bandeja}
+                  {badge}
+                </>,
+                pendingCount > 0 ? `${t.app.bandeja} (${pendingCount})` : t.app.bandeja,
+              )
+            : null}
           <h1>{title}</h1>
-          <button className="ib" type="button" aria-label={t.bus.abrir} aria-keyshortcuts="Meta+K Control+K" title={`${t.bus.abrir} (⌘K)`} onClick={() => setBuscar(true)}>
-            {Icons.search}
-          </button>
           <button
-            className="ib"
+            className="ib eye"
             type="button"
             aria-pressed={hide}
             aria-label={hide ? t.app.mostrarMontos : t.app.ocultarMontos}
@@ -231,75 +332,76 @@ export function Shell({ me }: { me: Me }) {
           >
             {Icons.eye}
           </button>
-          {solo ? null : (
-            <button className="add" type="button" onClick={openApuntar}>
-              + {t.app.apuntar}
-            </button>
-          )}
+          {full ? newRecord("add desk") : null}
+          {link("configurar", "ib mob av", sec === "configurar", Icons.avatar, `${me.nombre} · ${t.app.configurar}`)}
         </header>
 
         <main className="content">
-          {solo && FULL_CLOUD.includes(sec) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
-          {sec === "grupos" ? <Grupos /> : null}
-          {!solo && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
-          {!solo && sec === "registros" ? (
-            <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} />
+          {solo && FULL_CLOUD.includes(vista) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
+          {vista === "grupos" ? <Grupos /> : null}
+          {full && vista === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onGo={go} accion={actsMob} /> : null}
+          {full && vista === "registros" ? (
+            <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} accion={actsMob} />
           ) : null}
-          {!solo && sec === "presupuestos" ? <Presupuestos /> : null}
-          {!solo && sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} /> : null}
-          {!solo && sec === "pagos" ? <Pagos /> : null}
-          {!solo && sec === "estadisticas" ? <Estadisticas /> : null}
-          {sec === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
-          {sec === "mas" ? (
-            <div className="cd" style={{ padding: "6px 10px" }}>
-              {navButton("presupuestos", Icons.presupuestos)}
-              {navButton("pagos", Icons.pagos)}
-              {navButton("estadisticas", Icons.estadisticas)}
-              {navButton("grupos", Icons.grupos)}
-              {navButton("configurar", Icons.configurar)}
-              {SOON.map(soonItem)}
+          {full && isPlan(vista) ? (
+            <>
+              <div className="psegs" role="group" aria-label={t.app.planificacion}>
+                {link("presupuestos", "pseg", segment === "presupuestos", <>{Icons.presupuestos}{t.app.presupuestos}</>)}
+                {link("pagos", "pseg", segment === "pagos", <>{Icons.pagos}{t.app.pagos}</>)}
+              </div>
+              {segment === "pagos" ? <Pagos /> : <Presupuestos />}
+            </>
+          ) : null}
+          {full && vista === "estadisticas" ? <Estadisticas /> : null}
+          {vista === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
+          {vista === "mas" ? (
+            <div className="tiles">
+              {full ? tile("bandeja", true) : null}
+              {tile("estadisticas", true)}
+              <div className="navh">{t.app.planificacion}</div>
+              <div className="tgrid">
+                {tile("presupuestos")}
+                {tile("pagos")}
+              </div>
+              {tile("configurar", true)}
+              <div className="tile wide later" aria-disabled="true">
+                <span className="tic">{Icons.ia}</span>
+                <b>{t.app.ia}</b>
+                <span className="lk">{t.app.pronto}</span>
+              </div>
             </div>
           ) : null}
         </main>
       </div>
 
-      {solo ? (
-        <nav className="mtabs two" aria-label={t.app.grupos}>
-          {(["grupos", "configurar"] as const).map((s) => (
-            <button key={s} type="button" className="mt" aria-current={sec === s ? "page" : undefined} onClick={() => go(s)}>
-              {s === "grupos" ? Icons.grupos : Icons.configurar}
-              {t.app[s]}
-            </button>
-          ))}
+      <div className="mbar">
+        <nav className="mtabs" aria-label="Yala">
+          {(solo ? (["grupos", "configurar"] as const) : (["panel", "registros", "grupos", "mas"] as const)).map((s) =>
+            link(
+              s,
+              "mt",
+              tab === s,
+              <>
+                {s === "mas" ? Icons.mas : ICON[s]}
+                {s === "mas" ? t.app.mas : t.app[s]}
+              </>,
+            ),
+          )}
         </nav>
-      ) : (
-      <nav className="mtabs" aria-label={t.app.panel}>
-        {(["panel", "registros"] as const).map((s) => (
-          <button key={s} type="button" className="mt" aria-current={sec === s ? "page" : undefined} onClick={() => go(s)}>
-            {s === "panel" ? Icons.panel : Icons.registros}
-            {t.app[s]}
-          </button>
-        ))}
-        <button type="button" className="mt plus" aria-label={t.app.apuntar} onClick={openApuntar}>
-          <span className="c">{Icons.plus}</span>
+        <button className="msearch" type="button" aria-label={t.bus.abrir} onClick={openSearch}>
+          {Icons.search}
         </button>
-        <button type="button" className="mt" aria-current={sec === "bandeja" ? "page" : undefined} onClick={() => go("bandeja")}>
-          {Icons.bandeja}
-          {t.app.bandeja}
-          {badge}
-        </button>
-        <button type="button" className="mt" aria-current={sec === "mas" || MORE.includes(sec) ? "page" : undefined} onClick={() => go("mas")}>
-          {Icons.mas}
-          {t.app.mas}
-        </button>
-      </nav>
-      )}
+      </div>
 
+      {bandejaEncima ? (
+        <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} onClose={() => go(debajo, false)} tapada={editando !== null} />
+      ) : null}
       {apuntar ? (
         <Apuntar
           cuentas={panel?.cuentas.cuentas ?? []}
           divisaPreferida={panel?.cuentas.total.divisa ?? "PEN"}
           categorias={cats}
+          recientes={panel?.ultimos.movimientos}
           onClose={() => setApuntar(false)}
           onSent={() => {
             setApuntar(false);
@@ -327,13 +429,15 @@ export function Shell({ me }: { me: Me }) {
           solo={solo}
           destinos={destinos}
           cuentas={panel?.cuentas.cuentas ?? []}
-          onClose={() => setBuscar(false)}
+          onClose={closeSearch}
           onGo={(k) => {
             setBuscar(false);
+            prevFocus.current = null;
             go(k as Sec);
           }}
           onRegistros={(f) => {
             setBuscar(false);
+            prevFocus.current = null;
             setRegFiltro((r) => ({ f, n: (r?.n ?? 0) + 1 }));
             go("registros");
           }}

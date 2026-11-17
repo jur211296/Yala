@@ -124,6 +124,15 @@ struct NewRecordTutorialGuideTests {
         #expect(!Guide.isShowing(isActive: false, keyboardVisible: false, sheetOpen: false))
     }
 
+    /// El formulario se desplaza hasta lo que señala el paso que se ve (en un iPhone SE «Guardar» tapaba «Categoría»), y
+    /// solo mientras la guía se ve: con el teclado o una hoja encima no se mueve nada.
+    @MainActor @Test func scrollTarget_isTheAnchorOfTheShownStep() {
+        #expect(Guide.steps.indices.map { Guide.scrollTarget(isShowing: true, index: $0) } == Guide.steps.map(\.id))
+        #expect(Guide.scrollTarget(isShowing: false, index: Guide.Step.category.rawValue) == nil)
+        #expect(Guide.scrollTarget(isShowing: true, index: Guide.steps.count) == nil)
+        #expect(Guide.scrollTarget(isShowing: true, index: -1) == nil)
+    }
+
     /// Cinco pasos, en el orden de la ficha, con «Entendido» en la cuenta y «Escribir / Saltar» en el nombre.
     @MainActor @Test func fiveSteps_withTheirButtons() {
         let steps = Guide.steps
