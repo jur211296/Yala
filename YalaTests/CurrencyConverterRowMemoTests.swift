@@ -14,7 +14,6 @@ import CoreData
 import Foundation
 import SwiftData
 import Testing
-import os.lock
 
 @testable import Yala
 
@@ -58,56 +57,19 @@ struct CurrencyConverterRowMemoTests {
 
     // MARK: - Los avisos ajenos
 
-    /// Apunta los avisos que retiran la memoria (`CurrencyConverter.init`) y que llegan mientras el test mide.
+    /// Un conversor que solo oye lo que el test postea en `center`.
     ///
-    /// La memoria se retira con CUALQUIER guardado de CUALQUIER contexto del proceso, a propósito, y el proceso de los
-    /// tests es la app anfitriona: un guardado suyo en otro hilo cae dentro de la ventana y obliga a releer. Eso es el
-    /// diseño, no un fallo, pero rompía las aserciones de «no vuelve a leer» y «sigue lo leído» (rojo 3/3 en el CI del
-    /// 2026-11-06, verde en local). Con esto, la ventana que se ensucia se repite, y si no sale ninguna limpia el rojo
-    /// dice qué aviso la ensució.
-    private final class ForeignDropRecorder: @unchecked Sendable {
-        private let seen = OSAllocatedUnfairLock<[String]>(initialState: [])
-        private var observers: [NSObjectProtocol] = []
-
-        init() {
-            let seen = self.seen
-            let center = NotificationCenter.default
-            for name in [Notification.Name.yalaExchangeRatesUpdated, .NSPersistentStoreRemoteChange, ModelContext.didSave] {
-                observers.append(center.addObserver(forName: name, object: nil, queue: nil) { note in
-                    let source = note.object.map { String(describing: type(of: $0)) } ?? "nil"
-                    let thread = Thread.isMainThread ? "principal" : "otro hilo"
-                    seen.withLock { $0.append("\(note.name.rawValue) · \(source) · \(thread)") }
-                })
-            }
-        }
-
-        /// Deja de escuchar y devuelve lo que llegó.
-        func stop() -> [String] {
-            for observer in observers { NotificationCenter.default.removeObserver(observer) }
-            observers = []
-            return seen.withLock { $0 }
-        }
-
-        deinit { for observer in observers { NotificationCenter.default.removeObserver(observer) } }
-    }
-
-    private static let cleanWindowAttempts = 5
-
-    /// Corre `measure` hasta que una pasada no oiga ningún aviso ajeno, y devuelve lo que midió esa pasada. Si las
-    /// `cleanWindowAttempts` se ensucian, registra el rojo con lo que oyó y devuelve `nil`. `prepare` corre antes de
-    /// escuchar en cada intento: el `save()` del propio fixture también avisa, y no es ajeno.
-    private func inACleanWindow<P, T>(prepare: () throws -> P, measure: (P) throws -> T) throws -> T? {
-        var heard: [[String]] = []
-        for _ in 0..<Self.cleanWindowAttempts {
-            let prepared = try prepare()
-            let recorder = ForeignDropRecorder()
-            let measured = try measure(prepared)
-            let foreign = recorder.stop()
-            if foreign.isEmpty { return measured }
-            heard.append(foreign)
-        }
-        Issue.record("Ninguna de \(Self.cleanWindowAttempts) pasadas salió sin avisos ajenos que retiran la memoria: \(heard)")
-        return nil
+    /// La memoria se retira con CUALQUIER guardado de CUALQUIER contexto del proceso, a propósito, y Core Data postea
+    /// `.NSPersistentStoreRemoteChange` en otro hilo y con retraso tras cada `save()`, también el del propio fixture. Con
+    /// el centro real, ese eco caía dentro de lo que el test mide y rompía «no vuelve a leer» y «sigue lo leído» (rojo
+    /// 3/3 en el CI del 2026-11-06; 16 rescates en las dos semanas al 17-nov, ticket
+    /// `verificacion-p1-divisas-inestables`). Hasta ese día el test repetía la ventana hasta 5 veces esperando una
+    /// limpia, y en el CI salían las 5 sucias, cada una con un solo eco «desde otro hilo»: el de su propio `save()`.
+    /// Con un centro propio no hay ventana que limpiar. Lo que necesita un guardado de verdad usa el conversor por
+    /// defecto y solo afirma cosas que un aviso de más no cambia (vuelve a leer y da lo mismo).
+    private func isolatedConverter() -> (converter: CurrencyConverter, center: NotificationCenter) {
+        let center = NotificationCenter()
+        return (CurrencyConverter(notificationCenter: center), center)
     }
 
     // MARK: - El ahorro
@@ -119,21 +81,17 @@ struct CurrencyConverterRowMemoTests {
         try insertRow(["USD": 1, "EUR": 0.9, "PEN": 3.7], on: day.addingTimeInterval(-86_400), into: context)
         try context.save()
 
-        let window = try inACleanWindow(prepare: {}) {
-            let converter = CurrencyConverter()
-            let first = converter.convertChecked(100, from: "EUR", to: "PEN", on: day, context: context)
-            let afterFirst = converter._testRateRowFetches
-            for _ in 0..<50 {
-                let again = converter.convertChecked(100, from: "EUR", to: "PEN", on: day, context: context)
-                #expect(again.amount == first.amount)
-                #expect(again.quality == first.quality)
-            }
-            return (first: first, afterFirst: afterFirst, afterAll: converter._testRateRowFetches)
+        let converter = isolatedConverter().converter
+        let first = converter.convertChecked(100, from: "EUR", to: "PEN", on: day, context: context)
+        let afterFirst = converter._testRateRowFetches
+        for _ in 0..<50 {
+            let again = converter.convertChecked(100, from: "EUR", to: "PEN", on: day, context: context)
+            #expect(again.amount == first.amount)
+            #expect(again.quality == first.quality)
         }
-        guard let window else { return }
-        #expect(window.afterFirst == 2, "La primera conversión lee la fila del día y las anteriores.")
-        #expect(window.afterAll == window.afterFirst, "Las 50 siguientes no vuelven a leer.")
-        #expect(window.first.quality == .carriedForward(fromDateKey: Self.dateFormatter.string(from: day.addingTimeInterval(-86_400))))
+        #expect(afterFirst == 2, "La primera conversión lee la fila del día y las anteriores.")
+        #expect(converter._testRateRowFetches == afterFirst, "Las 50 siguientes no vuelven a leer.")
+        #expect(first.quality == .carriedForward(fromDateKey: Self.dateFormatter.string(from: day.addingTimeInterval(-86_400))))
     }
 
     @Test func memoAgreesWithAFreshConverter_onEveryRung() throws {
@@ -177,28 +135,25 @@ struct CurrencyConverterRowMemoTests {
     }
 
     /// Lee la fila a 3, la cambia a 4 SIN guardar y vuelve a convertir: el control de que, dentro de la pasada y sin
-    /// guardado ni aviso, sigue lo leído. Cada intento con su store, para que el siguiente parta otra vez de 3.
-    private func readThenChangeWithoutSaving() throws -> (converter: CurrencyConverter, context: ModelContext, control: Decimal)? {
-        try inACleanWindow(prepare: {
-            let context = try makeContext()
-            let row = try insertRow(["USD": 1, "PEN": 3], on: day, into: context)
-            try context.save()
-            return (context, row)
-        }) { context, row in
-            let converter = CurrencyConverter()
-            #expect(converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount == 300)
-            row.rates = try JSONEncoder().encode(["USD": 1.0, "PEN": 4.0])
-            let control = converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount
-            return (converter, context, control)
-        }
+    /// guardado ni aviso, sigue lo leído.
+    private func readThenChangeWithoutSaving() throws
+        -> (converter: CurrencyConverter, center: NotificationCenter, context: ModelContext, control: Decimal) {
+        let context = try makeContext()
+        let row = try insertRow(["USD": 1, "PEN": 3], on: day, into: context)
+        try context.save()
+        let (converter, center) = isolatedConverter()
+        #expect(converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount == 300)
+        row.rates = try JSONEncoder().encode(["USD": 1.0, "PEN": 4.0])
+        let control = converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount
+        return (converter, center, context, control)
     }
 
     @Test func theRatesNotification_dropsWhatWasRead() throws {
         // Cambio SIN guardar: solo la notificación puede retirar lo leído.
-        guard let (converter, context, control) = try readThenChangeWithoutSaving() else { return }
+        let (converter, center, context, control) = try readThenChangeWithoutSaving()
         #expect(control == 300, "Control: dentro de la pasada, sin guardado ni aviso, sigue lo leído.")
 
-        NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        center.post(name: .yalaExchangeRatesUpdated, object: nil)
         #expect(converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount == 400)
     }
 
@@ -236,11 +191,11 @@ struct CurrencyConverterRowMemoTests {
     }
 
     @Test func aRemoteStoreChange_dropsWhatWasRead() throws {
-        guard let (converter, context, control) = try readThenChangeWithoutSaving() else { return }
+        let (converter, center, context, control) = try readThenChangeWithoutSaving()
         #expect(control == 300, "Control: dentro de la pasada, sin guardado ni aviso, sigue lo leído.")
 
         // Lo que postea Core Data cuando el espejo de iCloud importa (sin pasar por `ModelContext.didSave` aquí).
-        NotificationCenter.default.post(name: .NSPersistentStoreRemoteChange, object: nil)
+        center.post(name: .NSPersistentStoreRemoteChange, object: nil)
         #expect(converter.convertChecked(100, from: "USD", to: "PEN", on: day, context: context).amount == 400)
     }
 }

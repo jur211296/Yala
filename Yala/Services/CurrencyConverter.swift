@@ -133,7 +133,14 @@ final class CurrencyConverter: CurrencyConverting {
     /// `nonisolated` initializer so the `nonisolated` `shared` singleton can be constructed off
     /// any actor. Every stored property has a default (or is optional → nil) and none require the
     /// main actor, so an empty nonisolated init is sound.
-    nonisolated init() {
+    ///
+    /// `notificationCenter` existe para los tests y en producción es siempre `.default`. Un test que mire si la caché o
+    /// la memoria SIGUEN llenas le da un centro propio: en el proceso de los tests Core Data postea
+    /// `.NSPersistentStoreRemoteChange` en otro hilo, con retraso, tras cada `save()` —también el del propio fixture—, y
+    /// ese eco caía entre el llenado y la comprobación (65 rescates del CI en dos semanas; ticket
+    /// `verificacion-p1-divisas-inestables`). Lo que prueba el cableado con el centro real va en
+    /// `CurrencyConverterLatestRateArrivalTests` (sección «Cableado»).
+    nonisolated init(notificationCenter: NotificationCenter = .default) {
         // Ver `rowMemoClock`: todo lo que pueda haber escrito una fila de tasas retira lo leído. Los observadores capturan
         // solo el candado (`Sendable`), no `self`.
         let clock = OSAllocatedUnfairLock<RowMemoClock>(initialState: RowMemoClock())
@@ -147,7 +154,8 @@ final class CurrencyConverter: CurrencyConverting {
             clock.withLock { $0.bump() }
             latest.withLock { $0 = nil }
         }
-        let center = NotificationCenter.default
+        let center = notificationCenter
+        rowMemoNotificationCenter = notificationCenter
         rowMemoObservers = [
             center.addObserver(forName: .yalaExchangeRatesUpdated, object: nil, queue: nil, using: drop),
             center.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: nil, using: drop),
@@ -156,7 +164,7 @@ final class CurrencyConverter: CurrencyConverting {
     }
 
     deinit {
-        for observer in rowMemoObservers { NotificationCenter.default.removeObserver(observer) }
+        for observer in rowMemoObservers { rowMemoNotificationCenter.removeObserver(observer) }
     }
 
     // MARK: - Properties
@@ -221,8 +229,10 @@ final class CurrencyConverter: CurrencyConverting {
     /// también en los guardados PROPIOS, no solo en los imports del espejo, así que cualquier guardado retira la memoria
     /// aunque no toque tasas. Un filtro por `ExchangeRate` en `ModelContext.didSave` no ahorraba nada, y se quitó. No
     /// cuesta: dentro de una pasada de cálculo no se guarda. El aviso de guardado se queda porque es el que llega
-    /// SÍNCRONO dentro de `save()`; el de cambio del store llega también síncrono en un store en memoria (los tests no
-    /// separan los dos), sin medir en el SQLite del teléfono, y es el único que oye un import del espejo de iCloud.
+    /// SÍNCRONO dentro de `save()`. El de cambio del store llega en OTRO hilo, en carrera con la vuelta de `save()`
+    /// (medido el 2026-11-17 en un store en memoria: 40 de 40 guardados lo postean, de 2 ms antes a 0,2 ms después de
+    /// volver; en el runner del CI, más tarde), y es el único que oye un import del espejo de iCloud. Por eso un test que
+    /// mire si la memoria SIGUE llena no usa el centro real (`init(notificationCenter:)`).
     ///
     /// **Lo que no ve, a sabiendas** (lo fija `CurrencyConverterRowMemoTests.theRatesNotification_dropsWhatWasRead`): un
     /// cambio SIN guardar en el mismo contexto, dentro de la misma pasada. El fetch de antes sí lo veía; hoy no hay
@@ -239,6 +249,9 @@ final class CurrencyConverter: CurrencyConverting {
     private let rowMemoClock: OSAllocatedUnfairLock<RowMemoClock>
     @ObservationIgnored
     private nonisolated(unsafe) let rowMemoObservers: [NSObjectProtocol]
+    /// Donde se registraron `rowMemoObservers` (`.default` salvo en los tests, ver `init`).
+    @ObservationIgnored
+    private nonisolated let rowMemoNotificationCenter: NotificationCenter
 
     /// El contexto con el que se leyó lo que hay en la memoria: otro contexto puede ver otro store. Débil y comparado por
     /// identidad, no por `ObjectIdentifier`: la dirección de un contexto liberado la puede reusar otro (en los tests,
@@ -528,6 +541,13 @@ final class CurrencyConverter: CurrencyConverting {
     /// integration tests by allowing direct inspection.
     var _testCacheState: [String: Double]? {
         latestRatesCache.withLock { $0?.rates }
+    }
+
+    /// `true` si los avisos que retiran la caché y la memoria se oyen en `NotificationCenter.default`, que es donde los
+    /// postean Core Data, SwiftData y `ExchangeRateService`. Fija que el centro propio de `init` no se cuele fuera de los
+    /// tests.
+    var _testObservesDefaultCenter: Bool {
+        rowMemoNotificationCenter === NotificationCenter.default
     }
     #endif
 

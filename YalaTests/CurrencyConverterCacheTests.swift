@@ -6,6 +6,11 @@
 //  Evita NotificationCenter (flaky) usando el accesor _testCacheState
 //  expuesto solo en builds DEBUG.
 //
+//  Y con un centro de avisos propio (`CurrencyConverter(notificationCenter:)`): el eco asíncrono de
+//  `.NSPersistentStoreRemoteChange` que Core Data postea tras el `save()` del fixture vaciaba la caché
+//  entre dos lecturas (`reusesCacheAcrossCalls`, rescatado en el CI; ticket
+//  `verificacion-p1-divisas-inestables`). Aquí se prueba la caché, no lo que la retira.
+//
 
 import Foundation
 import SwiftData
@@ -49,7 +54,7 @@ struct CurrencyConverterCacheTests {
     // MARK: - Tests
 
     @Test func convertWithLatestRate_populatesCache() throws {
-        let converter = CurrencyConverter()
+        let converter = CurrencyConverter(notificationCenter: NotificationCenter())
         let context = try makeContextWithTodayRate()
 
         // Estado inicial: cache vacío.
@@ -65,7 +70,7 @@ struct CurrencyConverterCacheTests {
     }
 
     @Test func invalidateLatestRatesCache_clearsCache() throws {
-        let converter = CurrencyConverter()
+        let converter = CurrencyConverter(notificationCenter: NotificationCenter())
         let context = try makeContextWithTodayRate()
 
         // Poblamos el cache.
@@ -81,7 +86,7 @@ struct CurrencyConverterCacheTests {
     }
 
     @Test func convertWithLatestRate_reusesCacheAcrossCalls() throws {
-        let converter = CurrencyConverter()
+        let converter = CurrencyConverter(notificationCenter: NotificationCenter())
         let context = try makeContextWithTodayRate()
 
         let first = converter.convertWithLatestRate(
