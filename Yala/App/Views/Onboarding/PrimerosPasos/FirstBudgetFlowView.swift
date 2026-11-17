@@ -250,39 +250,19 @@ struct FirstBudgetFlowView: View {
     }
 
     private func subcategoryCircle(_ sub: Subcategory, color: Color) -> some View {
-        let isOn = !removedSubcategories.contains(sub.shortcutID)
-        return Button {
-            DS.Haptic.selection()
-            if isOn { removedSubcategories.insert(sub.shortcutID) } else { removedSubcategories.remove(sub.shortcutID) }
-        } label: {
-            VStack(spacing: DS.Spacing.xxs) {
-                Image(systemName: sub.iconName ?? "circle.fill")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(isOn ? Color.white : color)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(isOn ? color : color.opacity(0.15)))
-                    .overlay(alignment: .topTrailing) {
-                        if isOn {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.white, color)
-                                .offset(x: 4, y: -4)
-                        }
-                    }
-                    .accessibilityHidden(true)
-                Text(sub.name)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(isOn ? .primary : .secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+        TutorialSubcategoryCircle(
+            name: sub.name,
+            icon: sub.iconName ?? "circle.fill",
+            color: color,
+            isOn: !removedSubcategories.contains(sub.shortcutID),
+            id: "first_budget_subcategory"
+        ) {
+            if removedSubcategories.contains(sub.shortcutID) {
+                removedSubcategories.remove(sub.shortcutID)
+            } else {
+                removedSubcategories.insert(sub.shortcutID)
             }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
-        .accessibilityIdentifier("first_budget_subcategory")
     }
 
     // MARK: Período, fechas, tope y nombre

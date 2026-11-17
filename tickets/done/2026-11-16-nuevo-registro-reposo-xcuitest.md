@@ -1,6 +1,6 @@
 ---
 id: new-transaction-form-sometimes-never-goes-idle-for-xcuitest
-status: backlog
+status: done
 priority: medium
 area: "testing, transactions"
 created: 2026-11-05
@@ -42,3 +42,29 @@ tope de las tandas de UI, y un caso con un plazo propio corto puede caer por el 
 Qué sigue animando con el campo del importe enfocado en esa corrida (el instrumento: `log stream` del simulador con
 `CA` / `UIKit` y el vídeo de la corrida con `simctl io recordVideo`, porque un caso en verde no deja vídeo). Candidatos sin
 medir: la animación del importe al escribir, el cursor, o algo del Panel de debajo.
+
+## Cierre (2026-11-16) — lo medido
+
+**El bloqueo de 60 s no se reproduce hoy**: 0 esperas de «to idle» que llegaran a «App animations complete notification
+not received» en 12 corridas con el simulador limpio (iOS 27.2): `EdgeCasesUITests.test_extremeMinimumAmountSaves` 3/3
+en iPhone 17 Pro (47–53 s) y 3/3 en iPhone SE (47–48 s); `Bienvenida23PasosUITests.test_step2_…` 3/3 en 17 Pro (~71 s)
+y 3/3 en SE tras el arreglo (65–71 s). No se tocó ninguna animación de la app: no había nada medido que tocar.
+
+Los «3 de 3» con que se encargó tenían **dos causas distintas, ninguna de reposo**:
+
+1. **iPhone 17 Pro, caso del monto 0.01 — el simulador en modo «teclado físico».** El teclado existía quieto en y=891,
+   por debajo de la ventana (874), y `waitForSettledLayout` lo leía como «aún entrando»: «new_transaction_account_chip no
+   dejó de moverse», 3/3 en ~26 s. `HardwareKeyboardLastSeen` ya estaba en 0 y reiniciar no lo arregló; `simctl erase`
+   sí (3/3 verde). Es la regla de `testing.md` (teclear con `type_text`/`axe type`). **Endurecido aparte:** el aviso de
+   `openSelectorFirstRow` ahora dice la causa («el teclado existe pero está fuera de la pantalla… bórralo»). No se da
+   por quieto un teclado aparcado: el que entra arranca en el mismo y=891.
+2. **iPhone SE, paso 2 de la bienvenida — un fallo real de la app.** La guía «¿En qué fue?» señalaba «Categoría», que
+   en el SE queda bajo la barra de «Guardar»: el aro caía sobre «Guardar», la capa de la guía no deja desplazar y la
+   persona no podía tocar lo que se le pedía (0/3). Ahora el formulario se desplaza hasta lo que señala el paso que se ve
+   (`NewRecordTutorialGuide.scrollTarget` + `TutorialGuideScrollFollower` en `NewTransactionView`): 3/3. Sin guía, el
+   formulario no cambia.
+
+**Queda fuera, sin medir:** un tope por caso (`-test-timeouts-enabled`) contra la corrida colgada 2 h en «Requesting
+snapshot of accessibility hierarchy». No se añadió sin poder reproducir el cuelgue para comprobar que lo corta. Si
+vuelve a pasar, el instrumento es el de arriba: vídeo de la corrida + la lista de capas animadas con lldb
+(`animationKeys` de cada `CALayer` de la ventana) en el momento de la espera.

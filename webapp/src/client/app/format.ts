@@ -3,27 +3,55 @@ import { lang, locale, texts } from "../i18n";
 
 const t = texts();
 
-export function money(amount: number | null | undefined, currency: string | null | undefined, opts: { sign?: boolean } = {}): string {
-  if (amount == null || !Number.isFinite(amount)) return "—";
+/**
+ * Un importe en trozos, para que `Monto` dibuje como la app el símbolo y los decimales más pequeños que el entero.
+ * Unidos, son exactamente el texto de `money()`: `signo + antes + entero + decimales + despues`.
+ */
+export interface MoneyParts {
+  signo: string;
+  /** Símbolo de la divisa y su espacio, si va delante («S/ », «$»). */
+  antes: string;
+  /** El entero con sus separadores de miles («55,997»). */
+  entero: string;
+  /** El separador decimal y los decimales («.65»). */
+  decimales: string;
+  /** Símbolo de la divisa y su espacio, si va detrás (« €» en alemán). */
+  despues: string;
+}
+
+export function moneyParts(amount: number | null | undefined, currency: string | null | undefined, opts: { sign?: boolean } = {}): MoneyParts | null {
+  if (amount == null || !Number.isFinite(amount)) return null;
   const code = currency && /^[A-Z]{3}$/.test(currency) ? currency : null;
   const abs = Math.abs(amount);
-  let s: string;
+  const signo = amount < 0 ? "−" : opts.sign && amount > 0 ? "+" : "";
+  const out: MoneyParts = { signo, antes: "", entero: "", decimales: "", despues: "" };
   try {
-    if (code) {
-      // Como en la app: los soles con «S/» en los dos idiomas (en inglés `Intl` escribe «PEN»).
-      const parts = new Intl.NumberFormat(locale(), { style: "currency", currency: code, currencyDisplay: "narrowSymbol", minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(abs);
-      s = parts
-        .map((p) => (p.type === "currency" && code === "PEN" ? "S/" : p.value))
-        .join("")
-        .replace(/^S\/(?=\d)/, "S/ ");
-    } else {
-      s = new Intl.NumberFormat(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(abs);
+    const parts = code
+      ? new Intl.NumberFormat(locale(), { style: "currency", currency: code, currencyDisplay: "narrowSymbol", minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(abs)
+      : new Intl.NumberFormat(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(abs);
+    for (const p of parts) {
+      // Como en la app: los soles con «S/» en todos los idiomas (en inglés `Intl` escribe «PEN»).
+      const value = p.type === "currency" && code === "PEN" ? "S/" : p.value;
+      if (p.type === "integer" || p.type === "group") out.entero += value;
+      else if (p.type === "decimal" || p.type === "fraction") out.decimales += value;
+      else if (out.entero === "") out.antes += value;
+      else out.despues += value;
     }
+    // «S/» pegado a la cifra lleva un espacio, como en la app.
+    if (out.antes === "S/") out.antes = "S/ ";
   } catch {
-    s = `${abs.toFixed(2)} ${code ?? ""}`.trim();
+    const [entero, decimales] = abs.toFixed(2).split(".");
+    out.entero = entero ?? "";
+    out.decimales = decimales ? `.${decimales}` : "";
+    out.despues = code ? ` ${code}` : "";
   }
-  if (amount < 0) return `−${s}`;
-  return opts.sign && amount > 0 ? `+${s}` : s;
+  return out;
+}
+
+export function money(amount: number | null | undefined, currency: string | null | undefined, opts: { sign?: boolean } = {}): string {
+  const p = moneyParts(amount, currency, opts);
+  if (!p) return "—";
+  return p.signo + p.antes + p.entero + p.decimales + p.despues;
 }
 
 function localDay(d: Date): string {

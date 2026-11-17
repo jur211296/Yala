@@ -94,6 +94,7 @@
 - [Recorrido con artifact y veredicto](feedback_recorrido_con_artifact_y_veredicto.md) — tira de capturas por escenario + sí/no y nota en la db; publicar tras cada escenario.
 - [QA en vivo: mira y sigue](feedback_qa_en_vivo_con_jurgen_mira_y_sigue.md) — si él prueba, sin popups ni toques; lo que destapa va a su card.
 - [Sin teléfono: guion para otra sesión](feedback_sin_telefono_guion_para_otra_sesion.md) — no se espera el iPhone; pasos y resultado esperado en el cierre y la card.
+- [Gate tras el tope de pruebas UI](feedback_gate_tras_el_tope_de_pruebas_ui.md) — el gate completo se corre sin preguntar; va a «Decidido sin consultar».
 ## Cómo mido y cómo entrego
 - [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
 - [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.

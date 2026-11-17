@@ -22,6 +22,7 @@ export const ES_AR: TextsPatch = {
   } as Record<string, string>,
   noDisponible: "Yala web no responde ahora mismo. Volvé a intentarlo en un momento.",
   app: {
+    saldoExplica: "Suma todas tus cuentas, también las tarjetas. Lo que gastaste con tarjeta y todavía no pagaste se resta.",
     sinCuentas: "Todavía no tenés cuentas. Crealas en tu iPhone.",
     registrosNota: "En la beta los registros se miran. Para cambiar uno, abrilo en tu iPhone.",
     bandejaNota: "En la beta la Bandeja se ve acá y se aprueba en tu iPhone. Lo que anotás en la web llega con la etiqueta «Yala web».",
@@ -69,6 +70,8 @@ export const ES_AR: TextsPatch = {
   grp: {
     debes: (s: string) => `Debés ${s}`,
     leDebes: (nombre: string) => `Le debés a ${nombre}`,
+    netoDebes: (d: string) => `Debés en total · en ${d}`,
+    totalExplica: "Lo que te deben menos lo que debés, sumando todos tus grupos en esa divisa. Los grupos archivados no cuentan.",
     sinGruposNota: "Creá un grupo o unite con una invitación desde tu iPhone, y lo vas a ver acá.",
     incompleto: "Tenés más grupos de los que la web muestra de una vez: acá salen los primeros 50.",
     nota: "Los mismos saldos que Grupos en tu iPhone. Por ahora, para agregar un gasto, saldar o invitar, usá tu iPhone.",

@@ -3,11 +3,18 @@
  * Las fechas y los totales los calcula el núcleo compartido (`shared-core/src/logic/schedule.ts`). Lote 2b: lo que ya
  * está pagado lleva la marca «Pagado» (la palabra de la app) y no suma en «Por pagar» (`webapp/src/worker/paid.ts`).
  * En lectura: crear, editar o marcar como pagado sigue en el iPhone.
+ *
+ * Lote 5 de «Yala web como la app»: «Por pagar» es la cifra principal sobre el fondo, con el «?» que dice de dónde sale;
+ * cada cobro es la fila de Registros con el ícono y el color de su categoría (`categorias.ts`), agrupados por día; en
+ * escritorio, Próximos cobros a la izquierda y Suscripciones a la derecha.
  */
 import { useCallback, useEffect, useState } from "react";
 import { texts } from "../i18n";
 import { getJson, type Cobro, type Pagos as Data, type Suscripcion } from "./api";
-import { badge, money, named, shortDate } from "./format";
+import { money, named, shortDate } from "./format";
+import { Monto } from "./Monto";
+import { CifraPrincipal } from "./Cifra";
+import { simboloPorNombre, useCategorias, type Simbolo } from "./categorias";
 
 const t = texts();
 
@@ -26,42 +33,46 @@ function dayIso(day: string): string {
   return `${day}T12:00:00`;
 }
 
-function CobroRow({ c }: { c: Cobro }) {
-  const b = badge(c.nombre);
+function Circulo({ sim }: { sim: Simbolo }) {
+  return (
+    <span className="circ" style={{ background: sim.color }} aria-hidden="true">
+      <sim.Icono size={20} strokeWidth={2.2} aria-hidden={true} focusable={false} />
+    </span>
+  );
+}
+
+function CobroRow({ c, cats }: { c: Cobro; cats: ReturnType<typeof useCategorias> }) {
   const income = c.movimiento === "ingreso";
   return (
-    <div className={`row${c.pagado ? " paid" : ""}`}>
-      <span className="ic" style={{ background: b.color }} aria-hidden="true">
-        {b.letter}
-      </span>
-      <span className="t">
+    <div className={`fila${c.pagado ? " paid" : ""}`}>
+      <Circulo sim={simboloPorNombre(cats, c.categoria, { primero: "subcategoria" })} />
+      <span className="fila-t">
         <b>{named(c.nombre)}</b>
         <span>{[freq(c.frecuencia, c.cada), c.categoria, income ? t.pag.ingreso : null].filter(Boolean).join(" · ")}</span>
       </span>
-      <span className="amt-col">
-        <span className={`amt${income ? " in" : ""}`}>{money(c.importe, c.divisa, { sign: income })}</span>
+      <span className="fila-a">
+        <Monto importe={income ? c.importe : -c.importe} divisa={c.divisa} signo={income} className={`amt${income ? " in" : ""}`} />
         {c.pagado ? <span className="paid-tag">{t.pag.pagado}</span> : null}
       </span>
     </div>
   );
 }
 
-function SubRow({ s, divisa }: { s: Suscripcion; divisa: string }) {
-  const b = badge(s.nombre);
+function SubRow({ s, divisa, cats }: { s: Suscripcion; divisa: string; cats: ReturnType<typeof useCategorias> }) {
   return (
-    <div className="row">
-      <span className="ic" style={{ background: b.color }} aria-hidden="true">
-        {b.letter}
-      </span>
-      <span className="t">
+    <div className="fila">
+      <Circulo sim={simboloPorNombre(cats, s.categoria, { primero: "subcategoria" })} />
+      <span className="fila-t">
         <b>{named(s.nombre)}</b>
         <span>
           {[freq(s.frecuencia, s.cada), s.proximo_cobro ? t.pag.proximo(shortDate(dayIso(s.proximo_cobro))) : null].filter(Boolean).join(" · ")}
         </span>
       </span>
-      <span className="amt">
-        {money(s.importe, s.divisa)}
-        {s.divisa !== divisa && s.equivalente_mensual_en_divisa_preferida !== null ? <small className="sub"> ≈ {money(s.equivalente_mensual_en_divisa_preferida, divisa)}</small> : null}
+      <span className="fila-a">
+        <Monto importe={-s.importe} divisa={s.divisa} className="amt" />
+        {s.divisa !== divisa && s.equivalente_mensual_en_divisa_preferida !== null ? (
+          <small className="sub">≈ {money(s.equivalente_mensual_en_divisa_preferida, divisa)}</small>
+        ) : null}
       </span>
     </div>
   );
@@ -70,6 +81,7 @@ function SubRow({ s, divisa }: { s: Suscripcion; divisa: string }) {
 export function Pagos() {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState(false);
+  const cats = useCategorias();
 
   const load = useCallback(() => {
     setError(false);
@@ -106,38 +118,42 @@ export function Pagos() {
 
   return (
     <>
-      <section className="cd hero" aria-label={t.pag.porPagar}>
-        <span className="cap">{t.pag.porPagar}</span>
-        <span className="big">
-          {data.aproximado ? "≈ " : ""}
-          {money(data.total_gastos, data.divisa)}
-        </span>
-        {data.pagados > 0 ? <span className="sub">{t.pag.pagados(data.pagados)}</span> : null}
-      </section>
-      <div className="grid2">
-        <section className="cd">
-          <h2>{t.pag.proximos}</h2>
+      <CifraPrincipal
+        rotulo={t.pag.porPagar}
+        explica={[t.pag.porPagarExplica, ...(data.aproximado ? [t.pag.aproximado] : [])]}
+        debajo={data.pagados > 0 ? <span className="inout">{t.pag.pagados(data.pagados)}</span> : null}
+      >
+        {data.aproximado ? "≈ " : ""}
+        <Monto importe={data.total_gastos} divisa={data.divisa} tam="hero" />
+      </CifraPrincipal>
+      <div className="pag-cols">
+        <section aria-label={t.pag.proximos}>
+          <h2 className="sec">{t.pag.proximos}</h2>
           {groups.length === 0 ? <p className="empty">{t.pag.sinProximos}</p> : null}
           {groups.map((g) => (
-            <div key={g.day}>
-              <div className="day">
-                {when(g.en)} · {shortDate(dayIso(g.day))}
+            <div className="reg-dia" key={g.day}>
+              <div className="dia">
+                <span>
+                  {when(g.en)} · {shortDate(dayIso(g.day))}
+                </span>
               </div>
-              {g.items.map((c) => (
-                <CobroRow key={`${c.id}-${c.dia}`} c={c} />
-              ))}
+              <div className="filas">
+                {g.items.map((c) => (
+                  <CobroRow key={`${c.id}-${c.dia}`} c={c} cats={cats} />
+                ))}
+              </div>
             </div>
           ))}
         </section>
-        <section className="cd">
-          <h2>
-            {t.pag.suscripciones}
-            {data.suscripciones.length > 0 ? <small>{t.pag.alMes(money(data.suscripciones_mensual, data.divisa))}</small> : null}
-          </h2>
+        <section aria-label={t.pag.suscripciones}>
+          <h2 className="sec">{t.pag.suscripciones}</h2>
+          {data.suscripciones.length > 0 ? <p className="pag-sub">{t.pag.alMes(money(data.suscripciones_mensual, data.divisa))}</p> : null}
           {data.suscripciones.length === 0 ? <p className="empty">{t.pag.sinSuscripciones}</p> : null}
-          {data.suscripciones.map((s) => (
-            <SubRow key={s.id} s={s} divisa={data.divisa} />
-          ))}
+          <div className="filas">
+            {data.suscripciones.map((s) => (
+              <SubRow key={s.id} s={s} divisa={data.divisa} cats={cats} />
+            ))}
+          </div>
         </section>
       </div>
       {data.aproximado ? <p className="note-y">{t.pag.aproximado}</p> : null}

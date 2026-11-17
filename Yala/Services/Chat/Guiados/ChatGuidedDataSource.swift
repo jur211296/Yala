@@ -20,6 +20,22 @@ struct ChatGuidedData {
         /// Las subcategorías que cuenta (`Subcategory.shortcutID`), las visibles: las del presupuesto.
         let subcategoryIDs: [UUID]
         let spentThisMonth: Double
+        /// Las mismas, para «¿Algo que no quieras contar?».
+        var subcategories: [SubcategoryChip] = []
+    }
+
+    /// Una subcategoría que se puede quitar de un presupuesto.
+    struct SubcategoryChip: Identifiable {
+        /// `Subcategory.shortcutID`.
+        let id: UUID
+        let name: String
+        let icon: String
+    }
+
+    struct TagOption: Identifiable {
+        let id: PersistentIdentifier
+        let name: String
+        let colorHex: String
     }
 
     struct AccountOption: Identifiable {
@@ -56,6 +72,9 @@ struct ChatGuidedData {
     var mainCurrency: String
     var categories: [CategoryOption] = []
     var accounts: [AccountOption] = []
+    /// Las cuentas que ofrece «Solo estas cuentas» del presupuesto: las del editor (una tarjeta con varias divisas va
+    /// una sola vez y ya cuenta sus líneas).
+    var budgetAccounts: [AccountOption] = []
     /// La cuenta que se propone: la del último registro, como el editor de pagos.
     var defaultAccountID: PersistentIdentifier?
     var paymentSubcategories: [SubcategoryOption] = []
@@ -64,18 +83,28 @@ struct ChatGuidedData {
     var currencies: [String] = []
     /// Movimientos desde el inicio del cuarto mes hacia atrás: lo gastado de este mes y de los tres anteriores.
     var transactions: [TransactionItem] = []
+    /// Las etiquetas activas, para las opciones avanzadas.
+    var tags: [TagOption] = []
 
     func category(_ id: PersistentIdentifier) -> CategoryOption? { categories.first { $0.id == id } }
-    func account(_ id: PersistentIdentifier?) -> AccountOption? { id.flatMap { id in accounts.first { $0.id == id } } }
+    func account(_ id: PersistentIdentifier?) -> AccountOption? {
+        id.flatMap { id in accounts.first { $0.id == id } ?? budgetAccounts.first { $0.id == id } }
+    }
     func subcategory(_ id: PersistentIdentifier?) -> SubcategoryOption? {
         id.flatMap { id in paymentSubcategories.first { $0.id == id } }
     }
 
-    /// Las subcategorías que cuenta el presupuesto con estas respuestas. Vacío = todos los gastos.
+    func tag(_ id: PersistentIdentifier) -> TagOption? { tags.first { $0.id == id } }
+
+    /// Las subcategorías que cuenta el presupuesto con estas respuestas: las de las categorías elegidas menos las que
+    /// la persona quitó (la regla de Primeros pasos). Vacío = todos los gastos.
     func budgetSubcategoryIDs(_ answers: ChatGuidedAnswers) -> [UUID] {
         guard answers.allExpenses == false else { return [] }
-        var seen: Set<UUID> = []
-        return answers.categoryIDs.flatMap { category($0)?.subcategoryIDs ?? [] }.filter { seen.insert($0).inserted }
+        return FirstBudgetFlowLogic.subcategoryIDs(
+            scope: .categories,
+            chosen: answers.categoryIDs.map { category($0)?.subcategoryIDs ?? [] },
+            removed: Set(answers.removedSubcategoryIDs ?? [])
+        )
     }
 }
 
@@ -91,7 +120,21 @@ enum ChatGuidedDataSource {
                 var words = [category.name] + subcategories.map(\.name)
                 words += subcategories.flatMap { CategoryEverydayWords.words(forName: $0.name) }
                 let folded = words.map(ChatGuidedIntentDetector.fold).filter { !$0.isEmpty }
-                catalog.categories.append(.init(id: category.persistentModelID, words: Array(Set(folded))))
+                let entries = subcategories.map { subcategory in
+                    ChatGuidedCatalog.SubcategoryEntry(
+                        id: subcategory.persistentModelID,
+                        shortcutID: subcategory.shortcutID,
+                        words: Array(Set(([subcategory.name] + CategoryEverydayWords.words(forName: subcategory.name))
+                            .map(ChatGuidedIntentDetector.fold).filter { !$0.isEmpty })),
+                        name: ChatGuidedIntentDetector.fold(subcategory.name)
+                    )
+                }
+                catalog.categories.append(.init(
+                    id: category.persistentModelID,
+                    words: Array(Set(folded)),
+                    nameWords: [ChatGuidedIntentDetector.fold(category.name)],
+                    subcategories: entries
+                ))
             }
             let accounts = try context.fetch(FetchDescriptor<Account>())
                 .filter { !$0.isArchived && !$0.isSystemAccount }
@@ -106,11 +149,23 @@ enum ChatGuidedDataSource {
     }
 
     /// Lo que ya se sabe antes de la primera pregunta, además de la frase: sin cobros que se repitan (o con el nombre
-    /// ya dicho) no se pregunta por ellos, y con una sola cuenta tampoco por la cuenta.
+    /// ya dicho) no se pregunta por ellos, con una sola cuenta tampoco por la cuenta, y las opciones avanzadas que no
+    /// tocan (sin etiquetas, sin grupos) no se preguntan.
     static func prepareStart(_ detection: ChatGuidedDetection, context: ModelContext,
                              now: Date = .now) -> ChatGuidedDetection {
-        guard detection.kind == .scheduledPayment else { return detection }
         var prepared = detection
+        var notApplicable: [ChatGuidedStep] = []
+        let hasTags = countTags(context) > 0
+        switch detection.kind {
+        case .budget:
+            if !hasTags { notApplicable.append(.budgetTags) }
+            if countVisibleGroups(context) == 0 { notApplicable.append(.budgetShared) }
+            prepared.answers.notApplicable = notApplicable
+            return prepared
+        case .scheduledPayment:
+            if !hasTags { notApplicable.append(.paymentTags) }
+            prepared.answers.notApplicable = notApplicable
+        }
         if prepared.answers.suggestionKey == nil {
             var hasSuggestions = false
             if prepared.answers.paymentName == nil {
@@ -133,6 +188,30 @@ enum ChatGuidedDataSource {
         return prepared
     }
 
+    /// Las etiquetas activas. Sin poder contarlas, se dan por existentes: esconder una opción que existe es peor.
+    static func countTags(_ context: ModelContext) -> Int {
+        do {
+            return try context.fetchCount(FetchDescriptor<Tag>(predicate: #Predicate { $0.isActive }))
+        } catch {
+            #if DEBUG
+            print("ChatGuidedDataSource: Error: counting tags: \(error)")
+            #endif
+            return 1
+        }
+    }
+
+    /// Los grupos visibles, como `BudgetEditorView`: sin grupos no se pregunta por los gastos de grupo.
+    static func countVisibleGroups(_ context: ModelContext) -> Int {
+        do {
+            return try context.fetchCount(FetchDescriptor<SplitGroup>(predicate: #Predicate { !$0.isHiddenForAll }))
+        } catch {
+            #if DEBUG
+            print("ChatGuidedDataSource: Error: counting groups: \(error)")
+            #endif
+            return 1
+        }
+    }
+
     /// Todo lo que pinta la tarjeta del guiado.
     static func load(_ kind: ChatGuidedKind, context: ModelContext, mainCurrency: String, now: Date = .now,
                      calendar: Calendar = .current) -> ChatGuidedData {
@@ -146,16 +225,31 @@ enum ChatGuidedDataSource {
         var seen: Set<String> = []
         data.currencies = ([mainCurrency] + data.accounts.map(\.currencyCode)).map { $0.uppercased() }
             .filter { seen.insert($0).inserted }
+        do {
+            data.tags = try context.fetch(FetchDescriptor<Tag>(
+                predicate: #Predicate { $0.isActive }, sortBy: [SortDescriptor(\.name)]
+            )).map { .init(id: $0.persistentModelID, name: $0.name, colorHex: $0.colorHex) }
+        } catch {
+            #if DEBUG
+            print("ChatGuidedDataSource: Error: loading the tags: \(error)")
+            #endif
+        }
 
         switch kind {
         case .budget:
+            let budgetEditor = BudgetEditorViewModel()
+            budgetEditor.setContext(context, deletionService: EntityDeletionService.shared)
+            data.budgetAccounts = budgetEditor.budgetAccounts(selected: []).map {
+                .init(id: $0.persistentModelID, name: $0.name, currencyCode: $0.currencyCode)
+            }
             let start = calendar.date(byAdding: .month, value: -3, to: calendar.startOfMonth(for: now)) ?? now
             do {
                 data.transactions = try context.fetch(FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.date >= start }
                 ))
                 data.categories = try budgetCategories(context).map { category in
-                    let ids = visibleSubcategories(of: category).map(\.shortcutID)
+                    let subcategories = visibleSubcategories(of: category)
+                    let ids = subcategories.map(\.shortcutID)
                     return .init(
                         id: category.persistentModelID,
                         name: category.name,
@@ -164,7 +258,10 @@ enum ChatGuidedDataSource {
                         subcategoryIDs: ids,
                         spentThisMonth: ChatGuidedSpending.spent(
                             subcategoryIDs: ids, monthOf: now, currencyCode: mainCurrency,
-                            transactions: data.transactions, calendar: calendar)
+                            transactions: data.transactions, calendar: calendar),
+                        subcategories: subcategories.map {
+                            .init(id: $0.shortcutID, name: $0.name, icon: $0.iconName ?? "circle.fill")
+                        }
                     )
                 }
             } catch {
@@ -301,6 +398,8 @@ enum ChatGuidedSpending {
         case .monthly: inPeriod = monthlyAverage
         case .weekly: inPeriod = monthlyAverage * 12 / 52
         case .yearly: inPeriod = monthlyAverage * 12
+        // Una sola vez: sin fechas no hay con qué proponer.
+        case .once: return nil
         }
         let usual = rounded(inPeriod)
         let saving = rounded(inPeriod * 0.9)

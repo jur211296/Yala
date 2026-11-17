@@ -7,6 +7,7 @@
 > **No hace falta leer este fichero entero** — son 308 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
@@ -141,6 +142,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] Yala web como la app: todo lo recomendado de la maqueta, en seis lotes
+**Contexto:** Jürgen revisó la maqueta comentable de `docs/web-app/parecida-a-la-app/` (16-nov, 17:46) y a las 17:21 había puesto el hero del Panel de la app como estándar de claridad.
+**Decisión:** Se aprueba todo lo recomendado: Liquid Glass en oscuro con selector de tema, barra lateral de cristal en escritorio, pestañas de la app en celular, sin Voz, Foto ni Yala IA hasta que existan en la web (Yala IA en la barra lateral con «Pronto»), íconos Lucide traducidos de los SF Symbols, cifras en la redondeada del sistema con Nunito de respaldo, y Planificación y Distribución en el Panel. Se ejecuta en los seis lotes del plan. Toda cifra principal de la web sigue el hero del Panel de la app: rótulo claro, «?» que la explica y sin hueco antes del valor.
+**Razones:** Quien pasa del teléfono a la web tiene que reconocer su Yala; la maqueta ya comparaba cada opción con capturas de las dos.
+**Consecuencias:** Los íconos y colores de cada cuenta, categoría y subcategoría los manda el servidor con las reglas de la app (`ToolContext.apariencia`, lote 2), y la web solo traduce el símbolo a Lucide. El conector de Claude y Yala IA no ven esos campos.
+**Estado:** Activa
 
 ### [2026-11-16] Yala web se parece lo más posible a Yala en el iPhone
 **Contexto:** Jürgen miró Yala web en producción (16-nov, 15:59) y escribió que «no se parece NADA a yala movil». Pidió una maqueta primero y después implementar.

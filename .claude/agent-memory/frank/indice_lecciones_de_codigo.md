@@ -136,3 +136,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de diseñar un arreglo con
 - [Mira los PR abiertos antes de arreglar UI](feedback_mira_los_pr_abiertos_antes_de_arreglar_ui.md) — «ya en done» del barrido era un PR sin mergear; su diseño manda.
 - [Test de traducción: solo frases](feedback_test_de_traduccion_solo_frases.md) — palabras sueltas iguales al español empujaron a sinónimos peores.
 - [El golden a mano hereda tu modelo del dato](feedback_el_golden_a_mano_hereda_tu_modelo_del_dato.md) — paridad web↔app verde con claves crudas; la app escribe otra forma: mide filas reales en staging.
+- [Un onChange en una vista que aparece no dispara](feedback_un_onchange_en_una_vista_que_aparece_no_dispara.md) — el hilo nace con el primer mensaje; va en la raíz.
