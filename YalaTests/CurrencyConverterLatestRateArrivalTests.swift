@@ -11,6 +11,13 @@
 //  Cada caso lleva su control: ANTES de la llegada, la conversión sale de la fila de ayer (aproximada). Con el arreglo
 //  quitado, el primer caso sigue dando la tasa de ayer después de la llegada.
 //
+//  **Los casos de «cada aviso, por separado» usan un centro de avisos PROPIO** (`CurrencyConverter(notificationCenter:)`).
+//  Con el real, su control «la caché está llena» caía unas tres veces por semana en el CI (39 rescates en dos semanas,
+//  ticket `verificacion-p1-divisas-inestables`): Core Data postea `.NSPersistentStoreRemoteChange` en otro hilo y con
+//  retraso tras cada `save()`, también el del propio fixture, y ese eco vaciaba la caché entre el llenado y el control.
+//  El cableado con el centro real lo fijan el primer caso (un guardado de verdad) y la sección «Cableado», cuyas
+//  aserciones no dependen de que no llegue nada más.
+//
 
 import CoreData
 import Foundation
@@ -47,6 +54,12 @@ struct CurrencyConverterLatestRateArrivalTests {
         context.insert(row)
     }
 
+    /// Un conversor que solo oye lo que el test postea en `center`.
+    private func isolatedConverter() -> (converter: CurrencyConverter, center: NotificationCenter) {
+        let center = NotificationCenter()
+        return (CurrencyConverter(notificationCenter: center), center)
+    }
+
     /// El estado de antes de la llegada: ayer con PEN, hoy sin fila. La caché resuelve PEN con la fila de ayer
     /// (`carriedForward`) y la funde.
     private func seedYesterdayAndWarmTheCache(converter: CurrencyConverter, reader: ModelContext) throws {
@@ -73,7 +86,9 @@ struct CurrencyConverterLatestRateArrivalTests {
         let after = converter.convertCheckedWithLatestRate(100, from: "USD", to: "PEN", context: reader)
         #expect(after.amount == 380)
         #expect(after.quality == .exact)
-        #expect(converter._testCacheState?["PEN"] == 3.8)
+        // La caché no se queda con la tasa de ayer. No se pide `== 3.8`: el eco asíncrono de `writer.save()`
+        // (`.NSPersistentStoreRemoteChange`) puede vaciarla otra vez después de la conversión, y eso también es el diseño.
+        #expect(converter._testCacheState?["PEN"] != 3.0)
 
         // Las dos rutas de acuerdo tras la llegada (`currency-fx.md`).
         let byDate = converter.convertChecked(100, from: "USD", to: "PEN", on: Date.now, context: reader)
@@ -87,11 +102,11 @@ struct CurrencyConverterLatestRateArrivalTests {
     @Test func storeRemoteChange_dropsTheCache() throws {
         let container = try makeContainer()
         let reader = makeContext(container)
-        let converter = CurrencyConverter()
+        let (converter, center) = isolatedConverter()
         try seedYesterdayAndWarmTheCache(converter: converter, reader: reader)
         #expect(converter._testCacheState != nil, "control: la caché está llena")
 
-        NotificationCenter.default.post(name: .NSPersistentStoreRemoteChange, object: nil)
+        center.post(name: .NSPersistentStoreRemoteChange, object: nil)
 
         #expect(converter._testCacheState == nil)
     }
@@ -99,11 +114,11 @@ struct CurrencyConverterLatestRateArrivalTests {
     @Test func anySave_dropsTheCache() throws {
         let container = try makeContainer()
         let reader = makeContext(container)
-        let converter = CurrencyConverter()
+        let (converter, center) = isolatedConverter()
         try seedYesterdayAndWarmTheCache(converter: converter, reader: reader)
         #expect(converter._testCacheState != nil, "control: la caché está llena")
 
-        NotificationCenter.default.post(name: ModelContext.didSave, object: nil)
+        center.post(name: ModelContext.didSave, object: nil)
 
         #expect(converter._testCacheState == nil)
     }
@@ -111,11 +126,35 @@ struct CurrencyConverterLatestRateArrivalTests {
     @Test func theRatesNotification_stillDropsTheCache() throws {
         let container = try makeContainer()
         let reader = makeContext(container)
-        let converter = CurrencyConverter()
+        let (converter, center) = isolatedConverter()
         try seedYesterdayAndWarmTheCache(converter: converter, reader: reader)
         #expect(converter._testCacheState != nil, "control: la caché está llena")
 
-        NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        center.post(name: .yalaExchangeRatesUpdated, object: nil)
+
+        #expect(converter._testCacheState == nil)
+    }
+
+    // MARK: - Cableado: el conversor de la app oye el centro real
+
+    /// El centro propio es solo para los tests: el conversor por defecto, y el compartido, oyen `.default`.
+    @Test func theAppsConverters_listenOnTheDefaultCenter() {
+        #expect(CurrencyConverter()._testObservesDefaultCenter)
+        #expect(CurrencyConverter.shared._testObservesDefaultCenter)
+        #expect(!isolatedConverter().converter._testObservesDefaultCenter, "control: el seam sí cambia el centro")
+    }
+
+    /// Los tres avisos, posteados en el centro real, vacían la caché del conversor por defecto. Sin control de «llena»
+    /// a propósito: un eco ajeno también la vaciaría, así que el control es el que pueden romper otros. El control vive
+    /// en los casos de arriba, con el centro propio.
+    @Test(arguments: [Notification.Name.NSPersistentStoreRemoteChange, ModelContext.didSave, .yalaExchangeRatesUpdated])
+    func eachNotificationOnTheDefaultCenter_dropsTheCache(_ name: Notification.Name) throws {
+        let container = try makeContainer()
+        let reader = makeContext(container)
+        let converter = CurrencyConverter()
+        try seedYesterdayAndWarmTheCache(converter: converter, reader: reader)
+
+        NotificationCenter.default.post(name: name, object: nil)
 
         #expect(converter._testCacheState == nil)
     }

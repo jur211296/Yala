@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (118 entradas)
+## Índice (119 entradas)
 
-> **No hace falta leer este fichero entero** — son 311 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 313 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
@@ -144,6 +145,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-17] Verificación: se aplica todo lo recomendado de la propuesta del 17-nov
+**Contexto:** Jürgen leyó la propuesta que compara cómo verificamos con el artículo del equipo de Claude Code (`docs/verificacion/propuesta-2026-11-17.html`) y contestó en el chat el 17-nov a las 08:37 (Lima): «Apliquemos todo lo recomendado». La capturó el bot dueño (ADR-082 de casa) y la registra la sesión de la P1, primera parte.
+**Decisión:** (P1) arreglar las pruebas inestables de la caché de divisas y llevar una cuarentena de pruebas inestables con dueño, ticket y fecha, leída de `2.3` y no del PR, dos semanas en observar antes de bloquear. (P2) el gate y un job del PR corren las clases de interfaz de lo tocado, elegidas por un script; primero en observar y después obligatorio. (P3) cada commit lleva una línea `Verificado:` con lo que corrió el gate, también cuando no corrió nada. (P4) después de P1 a P3, la checklist de confiabilidad con disparadores y un solo revisor, leída de `2.3`. El texto capturado se corta ahí («… + un revis»); el resto de lo recomendado está en la propuesta.
+**Razones:** Un rojo rescatado al repetirlo no es un verde (60 de 65 rescates en dos semanas eran de una sola familia), y el CI del PR no corría ninguna prueba de interfaz.
+**Consecuencias:** Cada propuesta es un encargo de Frank. La P1, primera parte, se cierra con el ticket `2026-11-17-verificacion-p1-divisas-inestables`.
+**Estado:** Activa
 
 ### [2026-11-17] Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora, cachés y el video de Gmail
 **Contexto:** Seis decisiones que Jürgen tomó en el chat el 17-nov (06:17, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que compara nuestra verificación con el artículo del equipo de Claude Code; no las ejecuta, porque no son de su encargo.
