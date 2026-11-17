@@ -3,7 +3,8 @@
 //  Yala
 //
 //  Los dos saludos del chat vacío:
-//  - `ChatTwoUsesGreeting`, el de siempre desde UX 2.2 · L14-4: las dos cosas que hace Yala IA, cada una en su ficha.
+//  - `ChatTwoUsesGreeting`, el de siempre desde UX 2.2 · L14-4: lo que hace Yala IA, cada cosa en su ficha (apuntar,
+//    preguntar y, desde los guiados del 16-nov, crear un presupuesto o un pago conversando).
 //  - `ChatGreetingBubble`, la burbuja sola, cuando el servicio no responde y el chat enseña su aviso debajo. Fue el
 //    saludo con las sugerencias dentro (ticket ai-chat-reads-heavier-than-a-messaging-app) hasta el lote 14.
 //
@@ -93,6 +94,8 @@ struct ChatTwoUsesGreeting: View {
     let onSelect: (ChatSuggestion) -> Void
     /// Tocar «Apunta un gasto» abre el teclado de la caja de escribir: el gasto se escribe o se dicta ahí.
     let onLogExpense: () -> Void
+    /// Los atajos de «Crea conversando» (guiados de Yala IA). `nil`: la ficha no sale (prueba de cortesía).
+    var onCreate: ((ChatGuidedKind) -> Void)? = nil
 
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -100,7 +103,8 @@ struct ChatTwoUsesGreeting: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text(L10n.UXL14.greetingTwoUses)
+                // Guiados (16-nov): el saludo ya no cuenta «dos cosas»; con la ficha de crear son tres.
+                Text(onCreate == nil ? L10n.UXL14.greetingTwoUses : L10n.IAGuiados.greeting)
                     .font(DS.Typography.body)
                     .foregroundStyle(.thPrimaryText)
                     .padding(.horizontal, DS.Spacing.lg)
@@ -112,7 +116,71 @@ struct ChatTwoUsesGreeting: View {
 
             logExpenseCard
             askCard
+            if let onCreate { createCard(onCreate) }
         }
+    }
+
+    // MARK: - Crea conversando
+
+    /// Los guiados: un presupuesto o un pago planificado, pregunta a pregunta. Relleno sólido como las otras dos.
+    private func createCard(_ onCreate: @escaping (ChatGuidedKind) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                SolidIconTile(systemName: "sparkles", fill: .white.opacity(0.22))
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.IAGuiados.greetingCreateTitle)
+                        .font(DS.Typography.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.IAGuiados.greetingCreateSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .opacity(0.9)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            // A11Y-DM: blanco fijo sobre el relleno turquesa sólido (`incomeFill`, 5,1:1, AA en claro y en oscuro).
+            .foregroundStyle(Color.white)
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.incomeFill)
+
+            createRow(L10n.IAGuiados.greetingCreateBudget, icon: "chart.pie.fill", id: "chat_create_budget") {
+                onCreate(.budget)
+            }
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
+            createRow(L10n.IAGuiados.greetingCreatePayment, icon: "calendar.badge.clock", id: "chat_create_payment") {
+                onCreate(.scheduledPayment)
+            }
+        }
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+
+    private func createRow(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(theme.accentText)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(.thPrimaryText)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(theme.accentText)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
     }
 
     // MARK: - Apunta un gasto

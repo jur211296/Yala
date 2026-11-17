@@ -87,7 +87,8 @@ struct ChatGuidedIntentAndEngineTests {
         #expect(detection.answers.amount == 1200.5)
         #expect(detection.answers.currencyCode == "PEN")
         #expect(!detection.prefilled.contains(.currency))
-        #expect(ChatGuidedEngine.start(.budget, answers: detection.answers).step == .confirm)
+        // Lo dijo todo: solo queda si quiere revisar las opciones avanzadas.
+        #expect(ChatGuidedEngine.start(.budget, answers: detection.answers).step == .advanced)
     }
 
     @Test func budgetSentence_withSeveralCurrencies_asksTheCurrency() throws {
@@ -145,6 +146,9 @@ struct ChatGuidedIntentAndEngineTests {
 
         answers.amount = 500
         state = ChatGuidedEngine.answer(state, with: answers)
+        #expect(state.step == .advanced, "Antes de revisar, la pregunta de las opciones avanzadas.")
+        #expect(!ChatGuidedEngine.canCreate(state))
+        state = ChatGuidedEngine.answerAdvanced(state, wants: false)
         #expect(state.step == .confirm)
         #expect(ChatGuidedEngine.canCreate(state))
     }
@@ -167,6 +171,7 @@ struct ChatGuidedIntentAndEngineTests {
         answers.period = .monthly
         answers.amount = 300
         answers.currencyCode = "PEN"
+        answers.wantsAdvanced = false
         var state = ChatGuidedEngine.start(.budget, answers: answers, prefilled: [.amount])
         #expect(state.step == .confirm)
 

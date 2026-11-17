@@ -36,9 +36,23 @@ struct ChatGuidedFlowCard: View {
     @State private var variableAmount = false
     @State private var showsOtherSubcategory = false
     @State private var otherSubcategory: Subcategory?
+    @State private var removedSubcategories: Set<UUID> = []
+    @State private var budgetStart = Date.now
+    @State private var budgetEnd = Date.now
+    /// «Cada N días / semanas / meses».
+    @State private var everyCount = 2
+    @State private var everyUnit: ChatGuidedFrequency = .weekly
+    @State private var pickedAccounts: [PersistentIdentifier] = []
+    @State private var pickedTags: [PersistentIdentifier] = []
+    @State private var noteText = ""
+    @State private var budgetNameText = ""
+    @State private var endDateValue = Date.now
+    /// Mientras iOS contesta el permiso de avisos, el segundo toque no contesta dos veces.
+    @State private var isAskingPermission = false
     @FocusState private var amountFocused: Bool
     @FocusState private var nameFocused: Bool
     @FocusState private var dayFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     private typealias G = L10n.IAGuiados
     private typealias B = L10n.PrimerosPasos23.Budget
@@ -96,6 +110,14 @@ struct ChatGuidedFlowCard: View {
             .id(state.step)
             .transition(.opacity)
             dock
+            if state.step.isAdvancedOption {
+                Button(G.skip) { answer { _ in } }
+                    .font(DS.Typography.body.weight(.semibold))
+                    .foregroundStyle(.thAccentText)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .disabled(isAskingPermission)
+                    .accessibilityIdentifier("chat_guided_skip")
+            }
             if let errorText {
                 Text(errorText)
                     .font(DS.Typography.caption)
@@ -188,12 +210,15 @@ struct ChatGuidedFlowCard: View {
     private var questionTitle: String {
         switch state.step {
         case .categories: G.budgetCategoriesQuestion
+        case .subcategories: B.subcategoriesQuestion
         case .period: B.periodQuestion
+        case .dates: B.datesQuestion
         case .amount:
             if state.kind == .scheduledPayment { G.paymentAmountQuestion } else {
                 switch answers.period {
                 case .weekly: B.limitQuestionWeekly
                 case .yearly: B.limitQuestionYearly
+                case .once: B.limitQuestionOnce
                 case .monthly, nil: B.limitQuestionMonthly
                 }
             }
@@ -205,10 +230,23 @@ struct ChatGuidedFlowCard: View {
             switch answers.frequency {
             case .weekly: G.paymentWhenWeekly
             case .yearly, .once: G.paymentWhenDate
+            case .daily: G.paymentWhenStart
             case .monthly, nil: G.paymentWhenMonthly
             }
         case .account: G.paymentAccountQuestion
         case .subcategory: G.paymentSubcategoryQuestion
+        case .advanced: G.advancedQuestion
+        case .budgetName: G.budgetNameQuestion
+        case .budgetAlerts: B.alertQuestion
+        case .budgetAccounts: G.budgetAccountsQuestion
+        case .budgetTags: G.budgetTagsQuestion
+        case .budgetShared: G.budgetSharedQuestion
+        case .budgetPanel, .paymentPanel: Plan.panelQuestion
+        case .paymentSubscription: G.paymentSubscriptionQuestion
+        case .paymentReminder: Pay.reminderQuestion
+        case .paymentEnd: G.paymentEndQuestion
+        case .paymentNote: G.paymentNoteQuestion
+        case .paymentTags: G.paymentTagsQuestion
         case .confirm, .done: G.confirmQuestion
         }
     }
@@ -216,13 +254,24 @@ struct ChatGuidedFlowCard: View {
     private var questionDetail: String? {
         switch state.step {
         case .categories: G.budgetCategoriesSubtitle
+        case .subcategories: B.subcategoriesSubtitle
         case .period: B.periodSubtitle
+        case .dates: B.datesSubtitle
         case .amount:
             if state.kind == .budget {
                 budgetAverage > 0 ? G.budgetAmountAverage(money(budgetAverage)) : B.limitRoundNumber
             } else { nil }
         case .suggestion: G.paymentSuggestionSubtitle
         case .name: G.paymentNameSubtitle
+        case .advanced: G.advancedSubtitle
+        case .budgetName: data.map { G.budgetNameSubtitle(ChatGuidedCreator.suggestedBudgetName(suggestedNameAnswers, data: $0)) }
+        case .budgetAlerts: B.alertSubtitle
+        case .budgetAccounts: G.budgetAccountsSubtitle
+        case .budgetTags: G.budgetTagsSubtitle
+        case .budgetPanel: B.panelSubtitle
+        case .paymentPanel: Pay.panelSubtitle
+        case .paymentSubscription: Pay.isSubscriptionHint
+        case .paymentReminder: Pay.reminderSubtitle
         case .confirm: G.confirmSubtitle
         default: nil
         }
@@ -234,7 +283,9 @@ struct ChatGuidedFlowCard: View {
     private var dock: some View {
         switch state.step {
         case .categories: categoriesDock
+        case .subcategories: subcategoriesDock
         case .period: periodDock
+        case .dates: budgetDatesDock
         case .amount: amountDock
         case .currency: currencyDock
         case .suggestion: suggestionDock
@@ -243,6 +294,23 @@ struct ChatGuidedFlowCard: View {
         case .when: whenDock
         case .account: accountDock
         case .subcategory: subcategoryDock
+        case .advanced: advancedDock
+        case .budgetName: budgetNameDock
+        case .budgetAlerts: budgetAlertsDock
+        case .budgetAccounts: accountsPickerDock
+        case .budgetTags, .paymentTags: tagsPickerDock
+        case .budgetShared:
+            yesNoDock(yes: G.budgetSharedYes, no: G.budgetSharedNo, current: answers.includeSharedExpenses ?? true,
+                      id: "chat_guided_shared") { value in answer { $0.includeSharedExpenses = value } }
+        case .budgetPanel, .paymentPanel:
+            yesNoDock(yes: Plan.panelYes, no: Plan.panelNo, current: answers.showsInPanel ?? false,
+                      id: "chat_guided_panel") { value in answer { $0.showsInPanel = value } }
+        case .paymentSubscription:
+            yesNoDock(yes: G.paymentSubscriptionYes, no: G.paymentSubscriptionNo, current: answers.isSubscription,
+                      id: "chat_guided_subscription") { value in answer { $0.isSubscription = value } }
+        case .paymentReminder: reminderDock
+        case .paymentEnd: endDateDock
+        case .paymentNote: noteDock
         case .confirm: confirmDock
         case .done: EmptyView()
         }
@@ -252,9 +320,10 @@ struct ChatGuidedFlowCard: View {
         VStack(spacing: DS.Spacing.md) {
             TutorialOptionButton(title: B.scopeAll, subtitle: B.scopeAllHint, icon: "chart.pie.fill",
                                  id: "chat_guided_all_expenses") {
-                answer(clearing: [.categories]) {
+                answer(clearing: [.categories, .subcategories]) {
                     $0.allExpenses = true
                     $0.categoryIDs = []
+                    $0.removedSubcategoryIDs = nil
                 }
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm),
@@ -273,9 +342,12 @@ struct ChatGuidedFlowCard: View {
             }
             YalaPrimaryButton(L10n.Action.continueAction) {
                 let picked = pickedCategories
-                answer(clearing: [.categories]) {
+                let unchanged = picked == answers.categoryIDs && answers.allExpenses == false
+                answer(clearing: unchanged ? [.categories] : [.categories, .subcategories]) {
                     $0.allExpenses = false
                     $0.categoryIDs = picked
+                    // Otras categorías: «¿Algo que no quieras contar?» se vuelve a preguntar.
+                    if !unchanged { $0.removedSubcategoryIDs = nil }
                 }
             }
             .disabled(pickedCategories.isEmpty)
@@ -288,14 +360,85 @@ struct ChatGuidedFlowCard: View {
             (.monthly, BudgetPeriodType.monthly.localizedName, B.periodMonthlyHint),
             (.weekly, BudgetPeriodType.weekly.localizedName, B.periodWeeklyHint),
             (.yearly, BudgetPeriodType.yearly.localizedName, B.periodYearlyHint),
+            (.once, B.periodOnce, B.periodOnceHint),
         ]
         return VStack(spacing: DS.Spacing.sm) {
             ForEach(options, id: \.0) { period, title, hint in
                 TutorialOptionButton(title: title, subtitle: hint, highlighted: period == .monthly,
                                      id: "chat_guided_period_\(period.rawValue)") {
-                    answer(clearing: [.period]) { $0.period = period }
+                    answer(clearing: [.period]) {
+                        $0.period = period
+                        // Las fechas solo valen para «Una sola vez»: elegirla (también desde «Cambiar») las pregunta.
+                        $0.budgetStart = nil
+                        $0.budgetEnd = nil
+                    }
                 }
             }
+        }
+    }
+
+    // MARK: ¿Algo que no quieras contar? y fechas
+
+    private var subcategoriesDock: some View {
+        let chosen = answers.categoryIDs.compactMap { data?.category($0) }
+        return VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            ForEach(chosen) { category in
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Label {
+                        Text(category.name).font(DS.Typography.subheadline.weight(.semibold))
+                    } icon: {
+                        Circle().fill(Color(hex: category.colorHex)).frame(width: 10, height: 10)
+                    }
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xs),
+                                             count: TutorialGridColumns.count(4, dynamicTypeSize: dynamicTypeSize)),
+                              spacing: DS.Spacing.sm) {
+                        ForEach(category.subcategories) { sub in
+                            TutorialSubcategoryCircle(
+                                name: sub.name, icon: sub.icon, color: Color(hex: category.colorHex),
+                                isOn: !removedSubcategories.contains(sub.id), id: "chat_guided_subcategory_chip"
+                            ) {
+                                if removedSubcategories.contains(sub.id) {
+                                    removedSubcategories.remove(sub.id)
+                                } else {
+                                    removedSubcategories.insert(sub.id)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            YalaPrimaryButton(L10n.Action.continueAction) {
+                let removed = Array(removedSubcategories)
+                answer(clearing: [.subcategories]) { $0.removedSubcategoryIDs = removed }
+            }
+            .disabled(!FirstBudgetFlowLogic.canContinueSubcategories(
+                scope: .categories, chosen: chosen.map(\.subcategoryIDs), removed: removedSubcategories))
+            .accessibilityIdentifier("chat_guided_subcategories_continue")
+        }
+    }
+
+    private var budgetDatesDock: some View {
+        VStack(spacing: DS.Spacing.md) {
+            VStack(spacing: 0) {
+                DatePicker(B.datesFrom, selection: $budgetStart, displayedComponents: .date)
+                    .padding(DS.Spacing.md)
+                    .accessibilityIdentifier("chat_guided_dates_from")
+                Divider()
+                DatePicker(B.datesTo, selection: $budgetEnd, in: budgetStart..., displayedComponents: .date)
+                    .padding(DS.Spacing.md)
+                    .accessibilityIdentifier("chat_guided_dates_to")
+            }
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+            YalaPrimaryButton(L10n.Action.continueAction) {
+                let calendar = Calendar.current
+                let start = calendar.startOfDay(for: budgetStart)
+                let end = calendar.startOfDay(for: max(budgetEnd, budgetStart))
+                answer { 
+                    $0.budgetStart = start
+                    $0.budgetEnd = end
+                }
+            }
+            .accessibilityIdentifier("chat_guided_dates_continue")
         }
     }
 
@@ -381,18 +524,66 @@ struct ChatGuidedFlowCard: View {
 
     private var frequencyDock: some View {
         VStack(spacing: DS.Spacing.sm) {
-            ForEach(ChatGuidedFrequency.allCases, id: \.self) { frequency in
+            ForEach([ChatGuidedFrequency.monthly, .weekly, .daily, .yearly, .once], id: \.self) { frequency in
                 TutorialOptionButton(title: frequencyTitle(frequency), highlighted: frequency == .monthly,
                                      id: "chat_guided_frequency_\(frequency.rawValue)") {
-                    // Elegir la frecuencia (también la misma, desde «Cambiar») vuelve a preguntar el día.
-                    answer(clearing: [.frequency, .day]) {
-                        $0.frequency = frequency
-                        $0.dayOfMonth = nil
-                        $0.weekday = nil
-                        $0.date = nil
+                    chooseFrequency(frequency, interval: 1)
+                }
+            }
+            everyRow
+        }
+    }
+
+    /// «Cada cierto tiempo»: cada N días, semanas o meses, en la misma pregunta.
+    private var everyRow: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(G.paymentEveryTitle).font(DS.Typography.body.weight(.semibold))
+                Text(G.paymentEverySubtitle).font(DS.Typography.caption).foregroundStyle(.secondary)
+            }
+            FlowLayout(spacing: DS.Spacing.sm) {
+                ForEach([(ChatGuidedFrequency.daily, G.paymentEveryDays), (.weekly, G.paymentEveryWeeks),
+                         (.monthly, G.paymentEveryMonths)], id: \.0) { unit, title in
+                    TutorialChip(title: title, isOn: everyUnit == unit, id: "chat_guided_every_\(unit.rawValue)") {
+                        everyUnit = unit
                     }
                 }
             }
+            HStack(spacing: DS.Spacing.sm) {
+                Stepper(value: $everyCount, in: 2...99) {
+                    Text(everyText)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityLabel(G.paymentEveryCount)
+                .accessibilityValue(everyText)
+                .accessibilityIdentifier("chat_guided_every_count")
+                TutorialSendButton(enabled: true, id: "chat_guided_every_send") {
+                    chooseFrequency(everyUnit, interval: everyCount)
+                }
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+    }
+
+    private var everyText: String {
+        switch everyUnit {
+        case .daily: L10n.UXL10.cadenceDaily(interval: everyCount)
+        case .weekly: L10n.UXL10.cadenceWeekly(interval: everyCount)
+        default: G.paymentEveryMonthsCount(everyCount)
+        }
+    }
+
+    /// Elegir la frecuencia (también la misma, desde «Cambiar») vuelve a preguntar el día.
+    private func chooseFrequency(_ frequency: ChatGuidedFrequency, interval: Int) {
+        answer(clearing: [.frequency, .day]) {
+            $0.frequency = frequency
+            $0.interval = interval > 1 ? interval : nil
+            $0.dayOfMonth = nil
+            $0.weekday = nil
+            $0.date = nil
+            if frequency == .once { $0.endDate = nil }
         }
     }
 
@@ -400,7 +591,7 @@ struct ChatGuidedFlowCard: View {
     private var whenDock: some View {
         switch answers.frequency {
         case .weekly: weekdayDock
-        case .yearly, .once: dateDock
+        case .yearly, .once, .daily: dateDock
         case .monthly, nil: monthDayDock
         }
     }
@@ -509,6 +700,146 @@ struct ChatGuidedFlowCard: View {
         }
     }
 
+    // MARK: - Opciones avanzadas
+
+    private var advancedDock: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            TutorialOptionButton(title: G.advancedNo, icon: "checkmark", highlighted: true, id: "chat_guided_advanced_no") {
+                answerAdvanced(false)
+            }
+            TutorialOptionButton(title: G.advancedYes, icon: "slider.horizontal.3", id: "chat_guided_advanced_yes") {
+                answerAdvanced(true)
+            }
+        }
+    }
+
+    private var budgetNameDock: some View {
+        let trimmed = budgetNameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return HStack(spacing: DS.Spacing.sm) {
+            TextField("", text: $budgetNameText, prompt: Text(B.namePlaceholder).foregroundStyle(.tertiary))
+                .font(DS.Typography.body)
+                .focused($nameFocused)
+                .submitLabel(.done)
+                .onSubmit { if !trimmed.isEmpty { answerBudgetName(trimmed) } }
+                .padding(.horizontal, DS.Spacing.md)
+                .frame(minHeight: 48)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+                .accessibilityLabel(G.rowName)
+                .accessibilityIdentifier("chat_guided_budget_name")
+            TutorialSendButton(enabled: !trimmed.isEmpty, id: "chat_guided_budget_name_send") {
+                answerBudgetName(trimmed)
+            }
+        }
+    }
+
+    private var budgetAlertsDock: some View {
+        let current = answers.budgetAlert
+        return VStack(spacing: DS.Spacing.sm) {
+            TutorialOptionButton(title: B.alertAt75, subtitle: B.alertAt75Hint, highlighted: current == .at75And100,
+                                 id: "chat_guided_alert_75") { chooseAlert(.at75And100) }
+            TutorialOptionButton(title: B.alertAt100, highlighted: current == .at100, id: "chat_guided_alert_100") {
+                chooseAlert(.at100)
+            }
+            TutorialOptionButton(title: Plan.noThanks, highlighted: current == ChatGuidedBudgetAlert.none,
+                                 id: "chat_guided_alert_none") { chooseAlert(.none) }
+        }
+        .disabled(isAskingPermission)
+    }
+
+    private var reminderDock: some View {
+        let current = answers.reminder
+        let options: [(ChatGuidedReminder, String)] = [
+            (.threeDaysBefore, Pay.reminderThreeDays), (.oneDayBefore, Pay.reminderOneDay),
+            (.sameDay, Pay.reminderSameDay), (.none, Plan.noThanks),
+        ]
+        return VStack(spacing: DS.Spacing.sm) {
+            ForEach(options, id: \.0) { reminder, title in
+                TutorialOptionButton(title: title, highlighted: current == reminder,
+                                     id: "chat_guided_reminder_\(reminder.rawValue)") { chooseReminder(reminder) }
+            }
+        }
+        .disabled(isAskingPermission)
+    }
+
+    /// Varias cuentas a la vez; ninguna = todas.
+    private var accountsPickerDock: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            FlowLayout(spacing: DS.Spacing.sm) {
+                ForEach(data?.budgetAccounts ?? []) { account in
+                    TutorialChip(title: account.name, isOn: pickedAccounts.contains(account.id),
+                                 id: "chat_guided_pick_account") { togglePicked(account.id, in: &pickedAccounts) }
+                }
+            }
+            YalaPrimaryButton(L10n.Action.continueAction) {
+                let picked = pickedAccounts
+                answer { $0.accountIDs = picked.isEmpty ? nil : picked }
+            }
+            .accessibilityIdentifier("chat_guided_pick_accounts_continue")
+        }
+    }
+
+    /// Varias etiquetas a la vez; ninguna = sin filtro (presupuesto) o sin etiquetas (pago).
+    private var tagsPickerDock: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            FlowLayout(spacing: DS.Spacing.sm) {
+                ForEach(data?.tags ?? []) { tag in
+                    TutorialChip(title: tag.name, isOn: pickedTags.contains(tag.id), id: "chat_guided_pick_tag") {
+                        togglePicked(tag.id, in: &pickedTags)
+                    }
+                }
+            }
+            YalaPrimaryButton(L10n.Action.continueAction) {
+                let picked = pickedTags
+                answer { $0.tagIDs = picked.isEmpty ? nil : picked }
+            }
+            .accessibilityIdentifier("chat_guided_pick_tags_continue")
+        }
+    }
+
+    private func yesNoDock(yes: String, no: String, current: Bool, id: String,
+                           choose: @escaping (Bool) -> Void) -> some View {
+        VStack(spacing: DS.Spacing.sm) {
+            TutorialOptionButton(title: yes, highlighted: current, id: "\(id)_yes") { choose(true) }
+            TutorialOptionButton(title: no, highlighted: !current, id: "\(id)_no") { choose(false) }
+        }
+    }
+
+    private var endDateDock: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            TutorialOptionButton(title: G.paymentEndNever, icon: "infinity", highlighted: answers.endDate == nil,
+                                 id: "chat_guided_end_never") { answer { $0.endDate = nil } }
+            DatePicker(G.paymentEndQuestion, selection: $endDateValue,
+                       in: Calendar.current.startOfDay(for: .now)..., displayedComponents: .date)
+                .labelsHidden()
+                .accessibilityLabel(G.paymentEndQuestion)
+                .accessibilityIdentifier("chat_guided_end_date")
+            YalaPrimaryButton(G.paymentEndUntil) {
+                let date = Calendar.current.startOfDay(for: endDateValue)
+                answer { $0.endDate = date }
+            }
+            .accessibilityIdentifier("chat_guided_end_until")
+        }
+    }
+
+    private var noteDock: some View {
+        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return HStack(spacing: DS.Spacing.sm) {
+            TextField("", text: $noteText, prompt: Text(G.paymentNotePlaceholder).foregroundStyle(.tertiary))
+                .font(DS.Typography.body)
+                .focused($noteFocused)
+                .submitLabel(.done)
+                .onSubmit { if !trimmed.isEmpty { answer { $0.note = trimmed } } }
+                .padding(.horizontal, DS.Spacing.md)
+                .frame(minHeight: 48)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+                .accessibilityLabel(G.rowNote)
+                .accessibilityIdentifier("chat_guided_note")
+            TutorialSendButton(enabled: !trimmed.isEmpty, id: "chat_guided_note_send") {
+                answer { $0.note = trimmed }
+            }
+        }
+    }
+
     // MARK: - Confirmación
 
     private var confirmDock: some View {
@@ -533,23 +864,33 @@ struct ChatGuidedFlowCard: View {
     }
 
     private var confirmRows: [ChatGuidedConfirmRow.Model] {
+        var rows: [ChatGuidedConfirmRow.Model]
         switch state.kind {
         case .budget:
             let categories = answers.allExpenses == true
                 ? B.scopeAll
                 : answers.categoryIDs.compactMap { data?.category($0)?.name }.joined(separator: ", ")
-            return [
+            rows = [
                 .init(step: .categories, label: G.rowCategories, value: categories,
                       saidByYou: state.prefilled.contains(.categories)),
-                .init(step: .period, label: G.rowPeriod, value: periodTitle(answers.period),
-                      saidByYou: state.prefilled.contains(.period)),
+            ]
+            if answers.allExpenses == false {
+                rows.append(.init(step: .subcategories, label: G.rowSubcategories, value: subcategoriesValue,
+                                  saidByYou: state.prefilled.contains(.subcategories)))
+            }
+            rows.append(.init(step: .period, label: G.rowPeriod, value: periodTitle(answers.period),
+                              saidByYou: state.prefilled.contains(.period)))
+            if answers.period == .once {
+                rows.append(.init(step: .dates, label: G.rowDates, value: budgetDatesText, saidByYou: false))
+            }
+            rows += [
                 .init(step: .amount, label: G.rowLimit, value: answers.amount.map(money) ?? "—",
                       saidByYou: state.prefilled.contains(.amount)),
                 .init(step: .currency, label: G.rowCurrency, value: currencyTitle(currency),
                       saidByYou: state.prefilled.contains(.currency)),
             ]
         case .scheduledPayment:
-            return [
+            rows = [
                 .init(step: .name, label: G.rowName, value: answers.paymentName ?? "—",
                       saidByYou: state.prefilled.contains(.name)),
                 .init(step: .amount, label: G.rowAmount, value: answers.amount.map(money) ?? "—",
@@ -559,11 +900,82 @@ struct ChatGuidedFlowCard: View {
                 .init(step: .account, label: G.rowAccount, value: data?.account(answers.accountID)?.name ?? "—",
                       saidByYou: false),
                 .init(step: .subcategory, label: G.rowCategory,
-                      value: data?.subcategory(answers.subcategoryID)?.name ?? "—", saidByYou: false),
+                      value: data?.subcategory(answers.subcategoryID)?.name ?? "—",
+                      saidByYou: state.prefilled.contains(.subcategories)),
                 .init(step: .currency, label: G.rowCurrency, value: currencyTitle(currency),
                       saidByYou: state.prefilled.contains(.currency)),
             ]
         }
+        rows.append(.init(step: .advanced, label: G.rowAdvanced,
+                          value: answers.wantsAdvanced == true ? G.valueReviewed : G.valueDefaults, saidByYou: false))
+        if answers.wantsAdvanced == true {
+            rows += ChatGuidedEngine.askedSteps(state.kind, answers: answers)
+                .filter(\.isAdvancedOption)
+                .compactMap(advancedRow)
+        }
+        return rows
+    }
+
+    private func advancedRow(_ step: ChatGuidedStep) -> ChatGuidedConfirmRow.Model? {
+        let value: String
+        let label: String
+        switch step {
+        case .budgetName:
+            label = G.rowName
+            value = budgetName
+        case .budgetAlerts:
+            label = G.rowAlerts
+            switch answers.budgetAlert ?? (appPreferences.budgetAlertsEnabled ? .at75And100 : .none) {
+            case .at75And100: value = G.valueAlert75
+            case .at100: value = G.valueAlert100
+            case .none: value = G.valueNoAlerts
+            }
+        case .budgetAccounts:
+            label = G.rowAccounts
+            let names = (answers.accountIDs ?? []).compactMap { data?.account($0)?.name }
+            value = names.isEmpty ? G.valueAll : names.joined(separator: ", ")
+        case .budgetTags, .paymentTags:
+            label = G.rowTags
+            let names = (answers.tagIDs ?? []).compactMap { data?.tag($0)?.name }
+            value = names.isEmpty ? G.valueNone : names.joined(separator: ", ")
+        case .budgetShared:
+            label = G.rowShared
+            value = (answers.includeSharedExpenses ?? true) ? G.valueYes : G.valueNo
+        case .budgetPanel, .paymentPanel:
+            label = G.rowPanel
+            value = answers.showsInPanel == true ? G.valueYes : G.valueNo
+        case .paymentSubscription:
+            label = G.rowSubscription
+            value = answers.isSubscription ? G.valueYes : G.valueNo
+        case .paymentReminder:
+            label = G.rowReminder
+            switch answers.reminder ?? .threeDaysBefore {
+            case .threeDaysBefore: value = G.valueReminder3
+            case .oneDayBefore: value = G.valueReminder1
+            case .sameDay: value = G.valueReminderSame
+            case .none: value = G.valueNoReminder
+            }
+        case .paymentEnd:
+            label = G.rowEnd
+            value = answers.endDate.map { ScheduledPaymentDateText.dayMonthLong($0) } ?? G.paymentEndNever
+        case .paymentNote:
+            label = G.rowNote
+            value = (answers.note ?? "").isEmpty ? G.valueNoNote : (answers.note ?? "")
+        default:
+            return nil
+        }
+        return .init(step: step, label: label, value: value, saidByYou: false)
+    }
+
+    private var subcategoriesValue: String {
+        let total = answers.categoryIDs.reduce(0) { $0 + (data?.category($1)?.subcategoryIDs.count ?? 0) }
+        let counted = budgetSubcategoryIDs.count
+        return counted >= total ? G.valueAll : G.valueSomeOf(counted, total)
+    }
+
+    private var budgetDatesText: String {
+        guard let start = answers.budgetStart, let end = answers.budgetEnd else { return "—" }
+        return "\(ScheduledPaymentDateText.dayMonthLong(start)) – \(ScheduledPaymentDateText.dayMonthLong(end))"
     }
 
     // MARK: - Contestar
@@ -573,6 +985,7 @@ struct ChatGuidedFlowCard: View {
         amountFocused = false
         nameFocused = false
         dayFocused = false
+        noteFocused = false
         editsOtherDay = false
         viewModel.answerGuided(messageID: messageID, clearing: fields, change)
     }
@@ -592,6 +1005,66 @@ struct ChatGuidedFlowCard: View {
         answer(clearing: [.name]) {
             $0.paymentName = name
             if brand != nil { $0.isSubscription = true }
+        }
+    }
+
+    private func answerAdvanced(_ wants: Bool) {
+        errorText = nil
+        viewModel.guidedAdvanced(messageID: messageID, wants: wants)
+    }
+
+    private func answerBudgetName(_ name: String) {
+        answer { $0.budgetName = name }
+    }
+
+    private func togglePicked(_ id: PersistentIdentifier, in list: inout [PersistentIdentifier]) {
+        if let index = list.firstIndex(of: id) { list.remove(at: index) } else { list.append(id) }
+    }
+
+    /// Un aviso pide el permiso de iOS si nunca se pidió (como Primeros pasos); «No, gracias» no pide nada.
+    private func chooseAlert(_ alert: ChatGuidedBudgetAlert) {
+        guard !isAskingPermission else { return }
+        guard alert != .none else {
+            answer { $0.budgetAlert = alert }
+            return
+        }
+        askPermission { allowed in
+            answer {
+                $0.budgetAlert = alert
+                $0.notificationsAllowed = allowed
+            }
+        }
+    }
+
+    private func chooseReminder(_ reminder: ChatGuidedReminder) {
+        guard !isAskingPermission else { return }
+        guard reminder != .none else {
+            answer { $0.reminder = reminder }
+            return
+        }
+        askPermission { allowed in
+            answer {
+                $0.reminder = reminder
+                $0.notificationsAllowed = allowed
+            }
+        }
+    }
+
+    private func askPermission(_ then: @escaping (Bool) -> Void) {
+        let step = state.step
+        isAskingPermission = true
+        Task { @MainActor in
+            var allowed = true
+            #if DEBUG
+            if !UITestHooks.isActive { allowed = await TutorialPermissionMoments.remindMeChosen() }
+            #else
+            allowed = await TutorialPermissionMoments.remindMeChosen()
+            #endif
+            isAskingPermission = false
+            // Si mientras tanto la tarjeta cambió de pregunta, la respuesta ya no es de esta. Se lee el estado vivo del
+            // hilo: `state` es la copia que capturó esta tarea.
+            guard viewModel.guidedState(messageID: messageID)?.step == step else { return }
+            then(allowed)
         }
     }
 
@@ -645,7 +1118,20 @@ struct ChatGuidedFlowCard: View {
 
     private func loadIfNeeded() {
         guard data == nil, state.status == .inProgress else { return }
-        data = ChatGuidedDataSource.load(state.kind, context: modelContext, mainCurrency: mainCurrency)
+        var loaded = ChatGuidedDataSource.load(state.kind, context: modelContext, mainCurrency: mainCurrency)
+        // La subcategoría que dijo la frase («la luz») puede no estar entre las seis de Primeros pasos: se añade.
+        if let id = answers.subcategoryID, loaded.subcategory(id) == nil,
+           let subcategory = modelContext.model(for: id) as? Subcategory, !subcategory.isDeleted {
+            loaded.paymentSubcategories.insert(ChatGuidedDataSource.option(subcategory), at: 0)
+        }
+        data = loaded
+    }
+
+    /// Las respuestas sin el nombre elegido: el que se propone.
+    private var suggestedNameAnswers: ChatGuidedAnswers {
+        var plain = answers
+        plain.budgetName = nil
+        return plain
     }
 
     /// Lo escrito en los campos empieza con la respuesta que ya hay (al volver atrás o al «Cambiar»).
@@ -655,6 +1141,18 @@ struct ChatGuidedFlowCard: View {
         nameText = answers.paymentName ?? ""
         pickedCategories = answers.categoryIDs
         dateValue = answers.date ?? .now
+        removedSubcategories = Set(answers.removedSubcategoryIDs ?? [])
+        budgetStart = answers.budgetStart ?? .now
+        budgetEnd = answers.budgetEnd ?? Calendar.current.date(byAdding: .day, value: 14, to: .now) ?? .now
+        if let frequency = answers.frequency, answers.effectiveInterval > 1, frequency != .yearly {
+            everyUnit = frequency
+            everyCount = answers.effectiveInterval
+        }
+        pickedAccounts = answers.accountIDs ?? []
+        pickedTags = answers.tagIDs ?? []
+        noteText = answers.note ?? ""
+        budgetNameText = answers.budgetName ?? ""
+        endDateValue = answers.endDate ?? Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now
         editsOtherDay = false
         if let day = answers.dayOfMonth, !FirstScheduledPaymentFlowLogic.monthDayShortcuts.contains(day) {
             otherDayText = "\(day)"
@@ -693,6 +1191,7 @@ struct ChatGuidedFlowCard: View {
         case .weekly: Pay.whenWeekly
         case .yearly: Pay.whenYearly
         case .once: Pay.whenOnce
+        case .daily: L10n.UXL10.cadenceDaily(interval: 1)
         }
     }
 
@@ -704,17 +1203,20 @@ struct ChatGuidedFlowCard: View {
 
     private var cadenceText: String {
         guard let frequency = answers.frequency else { return "—" }
+        let every = answers.effectiveInterval
         switch frequency {
         case .monthly:
-            return L10n.UXL10.cadenceMonthly(interval: 1, day: answers.dayOfMonth ?? 1)
+            return L10n.UXL10.cadenceMonthly(interval: every, day: answers.dayOfMonth ?? 1)
         case .weekly:
             let symbols = Calendar.current.standaloneWeekdaySymbols
             let day = answers.weekday.map { symbols[max(0, min(6, $0 - 1))] } ?? ""
-            return [L10n.UXL10.cadenceWeekly(interval: 1), day].filter { !$0.isEmpty }.joined(separator: " · ")
+            return [L10n.UXL10.cadenceWeekly(interval: every), day].filter { !$0.isEmpty }.joined(separator: " · ")
         case .yearly:
-            return L10n.UXL10.cadenceYearly(interval: 1, date: ScheduledPaymentDateText.dayMonthLong(answers.date ?? .now))
+            return L10n.UXL10.cadenceYearly(interval: every, date: ScheduledPaymentDateText.dayMonthLong(answers.date ?? .now))
         case .once:
             return ScheduledPaymentDateText.dayMonthLong(answers.date ?? .now)
+        case .daily:
+            return L10n.UXL10.cadenceDaily(interval: every)
         }
     }
 
@@ -739,7 +1241,8 @@ struct ChatGuidedFlowCard: View {
         guard let data, let period = answers.period,
               let type = BudgetPeriodType(rawValue: period.budgetPeriodRaw) else { return 0 }
         return TutorialPlanningMath.budgetSpent(subcategoryIDs: budgetSubcategoryIDs, period: type,
-                                                currencyCode: currency, transactions: data.transactions)
+                                                currencyCode: currency, transactions: data.transactions,
+                                                startDate: answers.budgetStart, endDate: answers.budgetEnd)
     }
 
     private var budgetAverage: Double {
@@ -773,11 +1276,19 @@ struct ChatGuidedFlowCard: View {
     private var paymentDue: Date? {
         guard let frequency = answers.frequency,
               ChatGuidedEngine.scheduledPaymentSpec.isAnswered(.when, answers) else { return nil }
-        return TutorialPlanningMath.paymentFirstDue(
-            frequency: frequency.flowFrequency,
-            dayOfMonth: answers.dayOfMonth ?? 1,
-            weekday: answers.weekday ?? 2,
-            date: answers.date ?? .now
+        let calendar = Calendar.current
+        let date = answers.date ?? .now
+        guard frequency.isRecurring else { return calendar.startOfDay(for: date) }
+        // La misma cuenta que el editor, con «cada N» y la fecha de inicio de «cada N días».
+        return ScheduledPaymentEditorViewModel.firstDueDate(
+            start: calendar.startOfDay(for: frequency == .daily ? date : .now),
+            recurrenceType: frequency.recurrenceType,
+            recurrenceInterval: answers.effectiveInterval,
+            dayOfMonth: frequency == .monthly ? answers.dayOfMonth : nil,
+            weekdays: frequency == .weekly ? String(answers.weekday ?? 2) : "",
+            yearlyMonth: frequency == .yearly ? calendar.component(.month, from: date) : nil,
+            yearlyDay: frequency == .yearly ? calendar.component(.day, from: date) : nil,
+            endDate: nil
         )
     }
 
@@ -785,9 +1296,9 @@ struct ChatGuidedFlowCard: View {
         guard let amount = answers.amount, let frequency = answers.frequency, let due = paymentDue else { return nil }
         let amountText = appPreferences.currency(amount, currencyCode: currency, forceFullPrecision: true,
                                                  isEstimate: answers.isVariableAmount)
-        return TutorialPlanningMath.paymentSummary(
-            amountText: amountText, frequency: frequency.flowFrequency, dayOfMonth: answers.dayOfMonth ?? 1,
-            date: answers.date ?? .now, due: due)
+        let dueDay = Calendar.current.isDateInToday(due) ? L10n.UXL10.today : ScheduledPaymentDateText.dayMonthLong(due)
+        guard frequency.isRecurring else { return L10n.UXL10.summaryOnce(amountText, dueDay) }
+        return L10n.UXL10.summaryRecurring(amountText, cadenceText, dueDay)
     }
 }
 
