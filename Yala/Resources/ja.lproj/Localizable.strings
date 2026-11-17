@@ -9910,6 +9910,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "クレジットカードのように、使えるお金でなければオフにしてください。";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "この金額の意味";
+"heroClaro.notCountedTitle" = "含まれないもの";
+"heroClaro.notCountedBody" = "口座間の振替と残高調整：お金を移動させるだけで、収入にも支出にもなりません。";
+"heroClaro.filtersNote" = "フィルターを使っている場合、表示されている分だけを数えます。";
+"heroClaro.incomeBody" = "収入として記録したものすべて：給料、売上、入金。";
+"heroClaro.expenseBody" = "支出として記録したものすべて。返金は支出から差し引かれます。";
+"heroClaro.net.title" = "残っている額";
+"heroClaro.net.body" = "選んだ期間に入ったお金から出ていったお金を引いた額です。マイナスなら、入った額より出た額のほうが多かったということです。";
+"heroClaro.net.notBalance" = "口座にある金額ではありません。それはパネルの「今日の残高」です。";
+"heroClaro.expense.title" = "使った額";
+"heroClaro.expense.body" = "選んだ期間の支出の合計です。返金は支出から差し引かれます。";
+"heroClaro.income.title" = "入った額";
+"heroClaro.income.body" = "選んだ期間の収入の合計です。";
+"heroClaro.total.title" = "収入と支出の合計";
+"heroClaro.total.body" = "収入と支出を同時に選ぶと、引き算せずに足し合わせます。フィルターした分でどれだけのお金が動いたかを示します。";
+"heroClaro.balance.title" = "残高";
+"heroClaro.balance.body" = "口座にある金額です。カードを含むすべての口座を、符号付きで合計します。パネルの「今日の残高」と同じ金額です。";
+"heroClaro.balance.closedNote" = "終わった期間では、その終了時点の残高です。";
+"heroClaro.cashFlowEnd.title" = "月末の見込み額";
+"heroClaro.cashFlowEnd.body" = "今日の残高に、今月これから入る額を足し、これから出る額を引いたものです。下に各内訳と見込みの根拠が表示されます。";
+"heroClaro.cashFlowEnd.netNote" = "「今月残る見込み」は別のものです。すでにあったお金は含めず、月全体で入る額から出る額を引いたものです。";
+"heroClaro.cashFlowMonth.title" = "その月に残る額";
+"heroClaro.cashFlowMonth.body" = "プランに沿って、その月に入る額から出る額を引いたものです。過ぎた月は実績、これからの月は見込みです。出る額のほうが多い場合は、不足額を表示します。";
+"heroClaro.cashFlow.projectedNote" = "「このままなら、…末には」は、プランを始めたときの残高から、毎月残る額を足していったものです。";
+"heroClaro.example.shortfall" = "不足する見込み";
+"heroClaro.example.total" = "収入と支出";
+"heroClaro.example.monthEnd" = "月末の見込み";
+"heroClaro.example.refund" = "返金";
+"heroClaro.example.salary" = "給料";
+"heroClaro.example.sale" = "売上";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "カードのデザイン";

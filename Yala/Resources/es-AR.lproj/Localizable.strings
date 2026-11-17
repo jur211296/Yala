@@ -9151,6 +9151,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Apagalo si no es dinero para usar, como una tarjeta de crédito.";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "Qué significa esta cifra";
+"heroClaro.notCountedTitle" = "Qué no cuenta";
+"heroClaro.notCountedBody" = "Las transferencias entre tus cuentas y los ajustes de saldo: mueven dinero de un lado a otro, pero no lo ganas ni lo gastas.";
+"heroClaro.filtersNote" = "Si tenés filtros puestos, la cifra cuenta solo lo que ves.";
+"heroClaro.incomeBody" = "Todo lo que registraste como ingreso: sueldo, ventas, cobros.";
+"heroClaro.expenseBody" = "Todo lo que registraste como gasto. Una devolución resta de tus gastos.";
+"heroClaro.net.title" = "Lo que te queda";
+"heroClaro.net.body" = "Es lo que entró menos lo que salió en el período que elegiste. Si sale en negativo, salió más de lo que entró.";
+"heroClaro.net.notBalance" = "No es lo que tenés en tus cuentas: eso es «Tu saldo hoy», en el Panel.";
+"heroClaro.expense.title" = "Lo que gastaste";
+"heroClaro.expense.body" = "Es la suma de tus gastos en el período que elegiste. Una devolución resta de tus gastos.";
+"heroClaro.income.title" = "Lo que entró";
+"heroClaro.income.body" = "Es la suma de tus ingresos en el período que elegiste.";
+"heroClaro.total.title" = "Ingresos y gastos juntos";
+"heroClaro.total.body" = "Con ingresos y gastos elegidos a la vez, la cifra los suma sin restar: es cuánto dinero movió lo que filtraste.";
+"heroClaro.balance.title" = "Tu saldo";
+"heroClaro.balance.body" = "Es lo que hay en tus cuentas: todas, tarjetas incluidas, con su signo. Es la misma cifra que «Tu saldo hoy» del Panel.";
+"heroClaro.balance.closedNote" = "Con un período que ya terminó, es lo que tenías al cierre.";
+"heroClaro.cashFlowEnd.title" = "Lo que tendrías a fin de mes";
+"heroClaro.cashFlowEnd.body" = "Es tu saldo de hoy, más lo que falta entrar este mes, menos lo que falta salir. Debajo ves cada parte y de dónde sale lo estimado.";
+"heroClaro.cashFlowEnd.netNote" = "«Este mes te quedaría» es otra cosa: lo que entra menos lo que sale en todo el mes, sin contar lo que ya tenías.";
+"heroClaro.cashFlowMonth.title" = "Lo que te queda en el mes";
+"heroClaro.cashFlowMonth.body" = "Es lo que entra menos lo que sale en ese mes según tu plan. En un mes que ya pasó es lo real; en uno que viene, lo estimado. Si sale más de lo que entra, dice cuánto te faltaría.";
+"heroClaro.cashFlow.projectedNote" = "«Si sigue así, a fin de… tendrías» parte del saldo con el que empezaste el plan y le suma, mes a mes, lo que te queda.";
+"heroClaro.example.shortfall" = "Te faltaría";
+"heroClaro.example.total" = "Ingresos y gastos";
+"heroClaro.example.monthEnd" = "A fin de mes tendrías";
+"heroClaro.example.refund" = "Una devolución";
+"heroClaro.example.salary" = "Sueldo";
+"heroClaro.example.sale" = "Una venta";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "Diseño de tarjeta";

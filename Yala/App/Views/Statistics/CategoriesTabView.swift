@@ -111,6 +111,8 @@ struct CategoriesTabView: View {
     @State private var contentMode: DistributionContentMode = .details
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
+    @State private var heroInfo: HeroInfoRequest?
 
     /// Total agregado del período (cache de `categorySpending.reduce`).
     /// Se actualiza en `calculateData()` para evitar O(N) por render del hero.
@@ -385,20 +387,30 @@ struct CategoriesTabView: View {
         // enseñar, que es lo que el Panel decide con su propio `hasNoTrendData`.
         let showsAmount = isBalanceMode ? (balanceKPI?.hasDataInPeriod ?? false) : hasRecords
 
-        HeroHeader {
+        // El hero claro (2026-11-16): la cifra pegada al rótulo, con su «?», y la píldora del período a su lado.
+        HeroClaroHeader {
             // Qué es la cifra. NO es fijo: fuera de `isBalanceMode` este hero
             // vuelve al flujo del período (decisión del owner 2026-08-26), así
             // que un rótulo fijo "Saldo de cuentas" mentiría en esos estados.
             if showsAmount {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.distribution(
+                let caption = StatsHeroCaptionLogic.distribution(
                     isBalanceMode: isBalanceMode,
                     natures: viewModel.selectedTransactionNatures
-                ).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
+                )
+                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
+                HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
+                HeroInfoButton(identifier: "stats_hero_info") {
+                    heroInfo = HeroInfoRequest(
+                        topic: HeroClaroLogic.topic(for: caption),
+                        figureLabel: caption.text(isClosed: isClosed),
+                        isClosedPeriod: isClosed
+                    )
+                }
             }
         } period: {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
-        } content: {
+        } figure: {
             if showsAmount {
                 AmountText(
                     value: isBalanceMode ? (balanceKPI?.value ?? 0) : totalAmount,
@@ -412,7 +424,9 @@ struct CategoriesTabView: View {
                 )
                 // Lo lee el XCUITest que comprueba que la cifra sigue a un alta (`StatisticsHeroLikePanelUITests`).
                 .accessibilityIdentifier("stats_hero_amount")
-
+            }
+        } detail: {
+            if showsAmount {
                 // En «Solo gastos» la cabecera es la del Panel: cifra y su variación (decisión A de Jürgen del
                 // 2026-10-26). La variación sale del mismo total anterior que enseña la tarjeta de la tarta.
                 if sessionState.isExpensesOnlyMode {
@@ -432,6 +446,7 @@ struct CategoriesTabView: View {
         .heroVerticalPadding(summaryVerticalPadding)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
+        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
     }
 
     /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
