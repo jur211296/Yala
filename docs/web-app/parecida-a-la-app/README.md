@@ -10,6 +10,9 @@ La versión publicada, con comentarios y decisiones, es el artifact https://clau
 - `herramientas/` — para repetir las capturas de la web en cada lote (antes y después) sin entrar a producción.
 - `herramientas/recorrido-navegacion.mjs` — el recorrido del lote 3 en un Chromium sin cabeza (teclado, ⌘K, enlaces
   viejos, 390 px); cómo correrlo, en su cabecera.
+- `herramientas/capturar-pantallas.mjs` y `recorrido-lote-4.mjs` — capturas con la hoja «Nuevo registro» y el detalle
+  abiertos, y el recorrido del lote 4 (Panel, Registros y Nuevo registro); cómo correrlos, en su cabecera.
+- `capturas/lote-4/` — antes y después del lote 4: `antes-|despues-<pantalla>-<claro|oscuro>-<escritorio|movil>.jpg`.
 - `capturas/lote-1/` — antes y después del lote 1 (base visual): `antes-|despues-<pantalla>-<claro|oscuro>-<escritorio|movil>.jpg`,
   y `despues-<pantalla>-tema-<claro|oscuro>-…` con el tema forzado en Configurar.
 

@@ -8,10 +8,15 @@ const DIST = process.argv[2];
 const PORT = Number(process.argv[3] || 8787);
 const SOLO_VACIO = process.env.VACIO === "1";
 
-const mov = (id, fecha, importe, nota, tipo, categoria, subcategoria, cuenta, extra = {}) => ({
-  id, fecha: fecha.slice(0, 10), importe, divisa: "PEN", importe_en_divisa_preferida: importe, nota, tipo, categoria, subcategoria, cuenta,
-  etiquetas: [], gasto_de_grupo: false, ...extra,
-});
+// Los gastos llegan con signo negativo, como los manda el núcleo (`buscar_movimientos`); hasta el lote 4 la maqueta los
+// mandaba en positivo y la web los pintaba sin «−».
+const mov = (id, fecha, importe, nota, tipo, categoria, subcategoria, cuenta, extra = {}) => {
+  const v = tipo === "gasto" ? -importe : importe;
+  return {
+    id, fecha: fecha.slice(0, 10), importe: v, divisa: "PEN", importe_en_divisa_preferida: v, nota, tipo, categoria, subcategoria, cuenta,
+    etiquetas: [], gasto_de_grupo: false, ...extra,
+  };
+};
 
 // Lote 2: lo que manda el servidor con `apariencia` (ícono y color de la categoría, necesidad).
 const LOOK = {
@@ -33,11 +38,11 @@ const conLook = (m) => {
 const movimientos = [
   mov("m1", "2026-11-16T13:10:00Z", 38.5, "Almuerzo menú", "gasto", "Comida", "Comidas fuera", "Cuenta Principal"),
   mov("m2", "2026-11-16T09:20:00Z", 12.9, "Café y pan", "gasto", "Comida", "Cafetería", "Cuenta Principal"),
-  mov("m3", "2026-11-15T20:40:00Z", 64.0, "Uber a casa", "gasto", "Transporte", "Taxi", "Tarjeta Visa"),
+  mov("m3", "2026-11-15T20:40:00Z", 64.0, "Uber a casa", "gasto", "Transporte", "Taxi", "Tarjeta Visa", { etiquetas: ["Trabajo"] }),
   mov("m4", "2026-11-15T11:05:00Z", 212.3, "Plaza Vea", "gasto", "Comida", "Supermercado", "Tarjeta Visa"),
-  mov("m5", "2026-11-14T18:00:00Z", 45.0, "Cine con Ana", "gasto", "Ocio", "Cine", "Cuenta Principal", { gasto_de_grupo: true }),
+  mov("m5", "2026-11-14T18:00:00Z", 45.0, "Cine con Ana", "gasto", "Ocio", "Cine", "Cuenta Principal", { gasto_de_grupo: true, etiquetas: ["Compartido"] }),
   mov("m6", "2026-11-14T08:30:00Z", 8500, "Sueldo noviembre", "ingreso", "Ingresos", "Sueldo", "Cuenta Principal"),
-  mov("m7", "2026-11-13T16:45:00Z", 89.9, "Netflix + Spotify", "gasto", "Suscripciones", "Streaming", "Tarjeta Visa"),
+  mov("m7", "2026-11-13T16:45:00Z", 89.9, "Netflix + Spotify", "gasto", "Suscripciones", "Streaming", "Tarjeta Visa", { etiquetas: ["Fijo"] }),
   mov("m8", "2026-11-12T10:15:00Z", 137.0, "Veterinaria Maia", "gasto", "Mascotas", "Veterinario", "Cuenta Principal"),
   mov("m9", "2026-11-11T19:30:00Z", 72.4, "Pollo a la brasa", "gasto", "Comida", "Comidas fuera", "Tarjeta Visa"),
   mov("m10", "2026-11-10T07:50:00Z", 150.0, "Recarga gasolina", "gasto", "Transporte", "Gasolina", "Tarjeta Visa"),
@@ -67,8 +72,18 @@ const datos = {
     mes: { divisa: "PEN", ingresos: 8500, gastos: 5960, aproximado: false, top_categorias_gasto: top },
     ultimos: { movimientos: movimientos.slice(0, 6) },
   },
-  "/api/registros": { movimientos, siguiente_cursor: null, avisos: [] },
-  "/api/categorias": { categorias: [{ id: "k1", nombre: "Comida", es_ingreso: false, oculta: false, subcategorias: [{ id: "s1", nombre: "Comidas fuera", oculta: false }, { id: "s2", nombre: "Supermercado", oculta: false }] }, { id: "k2", nombre: "Transporte", es_ingreso: false, oculta: false, subcategorias: [{ id: "s3", nombre: "Taxi", oculta: false }] }] },
+  "/api/registros": { movimientos, siguiente_cursor: null, avisos: [], divisa_preferida: "PEN" },
+  // Con ícono y color (lote 2), para que Distribución del Panel y las sugerencias de Nuevo registro salgan como en la app.
+  "/api/categorias": {
+    categorias: [
+      { id: "k1", nombre: "Comida", es_ingreso: false, oculta: false, icono: "fork.knife", color: "#F59E0B", subcategorias: [{ id: "s-Comidas fuera", nombre: "Comidas fuera", oculta: false, icono: "fork.knife", color: null }, { id: "s-Supermercado", nombre: "Supermercado", oculta: false, icono: "cart.fill", color: null }, { id: "s-Cafetería", nombre: "Cafetería", oculta: false, icono: "cup.and.saucer.fill", color: null }] },
+      { id: "k2", nombre: "Transporte", es_ingreso: false, oculta: false, icono: "car.fill", color: "#0EA5E9", subcategorias: [{ id: "s-Taxi", nombre: "Taxi", oculta: false, icono: "car.fill", color: null }, { id: "s-Gasolina", nombre: "Gasolina", oculta: false, icono: "fuelpump.fill", color: null }] },
+      { id: "k3", nombre: "Fijos casa", es_ingreso: false, oculta: false, icono: "house.fill", color: "#475569", subcategorias: [{ id: "s-Alquiler", nombre: "Alquiler", oculta: false, icono: "house.fill", color: null }] },
+      { id: "k4", nombre: "Cuidado personal", es_ingreso: false, oculta: false, icono: "person.fill", color: "#A855F7", subcategorias: [{ id: "s-Gimnasio", nombre: "Gimnasio", oculta: false, icono: "dumbbell.fill", color: null }] },
+      { id: "k5", nombre: "Ocio", es_ingreso: false, oculta: false, icono: "film.fill", color: "#D946EF", subcategorias: [{ id: "s-Cine", nombre: "Cine", oculta: false, icono: "film.fill", color: null }] },
+      { id: "k6", nombre: "Ingresos", es_ingreso: true, oculta: false, icono: "briefcase.fill", color: "#22C55E", subcategorias: [{ id: "s-Sueldo", nombre: "Sueldo", oculta: false, icono: "briefcase.fill", color: null }] },
+    ],
+  },
   "/api/bandeja": {
     pendientes: [
       { sync_id: "p1", note: "Farmacia Inkafarma", amount: 46.8, date: "2026-11-16", cached_currency_code: "PEN", cached_account_name: "Tarjeta Visa", cached_subcategory_name: null, source_type_raw: "email", evidence: null, created_at: "2026-11-16T10:00:00Z", needs_user_input: ["category"] },

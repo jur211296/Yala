@@ -237,6 +237,9 @@ export function Shell({ me }: { me: Me }) {
     </button>
   );
 
+  // En el celular «+ Nuevo registro» va dentro del contenido, debajo de la cifra principal, como en la app (lote 4).
+  const actsMob = <div className="acts mob">{newRecord("add")}</div>;
+
   const tile = (s: Nav, wide = false) =>
     link(
       s,
@@ -316,12 +319,11 @@ export function Shell({ me }: { me: Me }) {
         </header>
 
         <main className="content">
-          {full && (sec === "panel" || sec === "registros") ? <div className="acts mob">{newRecord("add")}</div> : null}
           {solo && FULL_CLOUD.includes(sec) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
           {sec === "grupos" ? <Grupos /> : null}
-          {full && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
+          {full && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onGo={go} accion={actsMob} /> : null}
           {full && sec === "registros" ? (
-            <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} />
+            <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} accion={actsMob} />
           ) : null}
           {full && isPlan(sec) ? (
             <>
@@ -379,6 +381,7 @@ export function Shell({ me }: { me: Me }) {
           cuentas={panel?.cuentas.cuentas ?? []}
           divisaPreferida={panel?.cuentas.total.divisa ?? "PEN"}
           categorias={cats}
+          recientes={panel?.ultimos.movimientos}
           onClose={() => setApuntar(false)}
           onSent={() => {
             setApuntar(false);

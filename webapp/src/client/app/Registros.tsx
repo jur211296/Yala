@@ -1,16 +1,24 @@
 /**
  * Registros: lista por días, de 50 en 50, con buscar (en la nota), filtrar por mes, cuenta y categoría, y el detalle de
- * cada uno. En la beta solo se mira: editar llega cuando la web sea un aparato más (lote 4).
+ * cada uno. En la beta solo se mira: editar llega cuando la web sea un aparato más.
  *
  * Lote 2b: «Exportar CSV» baja lo que se está viendo (mismos filtros) con el formato del iPhone (`csv.ts`), y la búsqueda
  * ⌘K abre Registros ya filtrado (`inicial`).
+ *
+ * Lote 4 de «Yala web como la app»: arriba, lo que te queda en el período («Te queda», con entradas y salidas), las mismas
+ * cifras que Estadísticas (decisión D3: solo sin filtro de cuenta, categoría ni texto). Los filtros son cápsulas de
+ * cristal; cada registro, una tarjeta (`FilaRegistro`); cada día, su cabecera con lo gastado. En escritorio ancho el
+ * detalle se abre a la derecha, sin tapar la lista; en el celular, en una hoja.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Calendar, ChevronDown, CreditCard, Download, Search, Tag, X } from "lucide-react";
 import { texts } from "../i18n";
-import { getJson, type Categoria, type Cuenta, type Movimiento, type PaginaRegistros } from "./api";
+import { getJson, type Categoria, type Cuenta, type Estadisticas, type Movimiento, type PaginaRegistros } from "./api";
 import { buildCsv, CSV_MAX_ROWS } from "./csv";
-import { dayLabel, money, todayKey } from "./format";
-import { MovimientoRow } from "./Panel";
+import { money, todayKey } from "./format";
+import { DetalleRegistro, DiaRegistros, FilaRegistro } from "./FilaRegistro";
+import { gastadoDelDia } from "./registro";
+import { Monto } from "./Monto";
 
 const t = texts();
 type Periodo = "mes" | "pasado" | "todo";
@@ -44,7 +52,35 @@ function download(name: string, content: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
-export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; inicial?: FiltroInicial; onToast?: (s: string) => void }) {
+/** Desde qué ancho de ventana el detalle va a la derecha de la lista (decisión D5). */
+const ANCHO_DETALLE = "(min-width: 1100px)";
+
+/** ¿La ventana es lo bastante ancha para lista y detalle lado a lado? Sigue a la ventana si cambia de tamaño. */
+function useAncho(query: string): boolean {
+  const [ok, setOk] = useState(() => typeof window.matchMedia === "function" && window.matchMedia(query).matches);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia(query);
+    const on = () => setOk(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [query]);
+  return ok;
+}
+
+export function Registros({
+  cuentas,
+  inicial,
+  onToast,
+  accion,
+}: {
+  cuentas: Cuenta[];
+  inicial?: FiltroInicial;
+  onToast?: (s: string) => void;
+  /** «+ Nuevo registro» del celular: va debajo del resumen, como en la app. */
+  accion?: ReactNode;
+}) {
   const [periodo, setPeriodo] = useState<Periodo>(inicial?.texto ? "todo" : "mes");
   const [cuenta, setCuenta] = useState(inicial?.cuenta ?? "");
   const [categoria, setCategoria] = useState(inicial?.categoria ?? "");
@@ -57,6 +93,10 @@ export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; in
   const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [open, setOpen] = useState<Movimiento | null>(null);
+  const [divisaDia, setDivisaDia] = useState<string | null>(null);
+  const [resumen, setResumen] = useState<Estadisticas["resumen"] | null>(null);
+  const [resumenFallo, setResumenFallo] = useState(false);
+  const ancho = useAncho(ANCHO_DETALLE);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -89,10 +129,27 @@ export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; in
         if (mine !== seq.current) return;
         setItems(p.movimientos);
         setCursor(p.siguiente_cursor);
+        setDivisaDia(p.divisa_preferida ?? null);
       },
       () => mine === seq.current && setError(true),
     );
   }, [query]);
+
+  // El resumen del período: el de Estadísticas, que cuenta como la app. Solo sin filtros que la cifra no recogería.
+  const conResumen = periodo !== "todo" && !cuenta && !categoria && !buscar;
+  useEffect(() => {
+    setResumen(null);
+    setResumenFallo(false);
+    if (!conResumen) return;
+    let vivo = true;
+    getJson<Estadisticas>(`/api/estadisticas?periodo=${periodo === "mes" ? "mes_actual" : "mes_pasado"}`).then(
+      (e) => vivo && setResumen(e.resumen),
+      () => vivo && setResumenFallo(true),
+    );
+    return () => {
+      vivo = false;
+    };
+  }, [conResumen, periodo]);
 
   const more = () => {
     if (!cursor) return;
@@ -140,6 +197,7 @@ export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; in
     }
   };
 
+  
   const groups = useMemo(() => {
     const out: { day: string | null; rows: Movimiento[] }[] = [];
     for (const m of items ?? []) {
@@ -151,106 +209,151 @@ export function Registros({ cuentas, inicial, onToast }: { cuentas: Cuenta[]; in
   }, [items]);
 
   const accountNames = [...new Set(cuentas.filter((c) => !c.archivada).map((c) => c.nombre))];
+  // En escritorio ancho siempre hay un registro abierto a la derecha: el elegido o, si no, el primero.
+  const abierto = ancho ? (open && items?.some((m) => m.id === open.id) ? open : (items?.[0] ?? null)) : null;
 
-  return (
-    <>
-      <div className="chips" role="group" aria-label={t.app.registros}>
-        {(["mes", "pasado", "todo"] as const).map((p) => (
-          <button key={p} type="button" className={`chip${periodo === p ? " on" : ""}`} aria-pressed={periodo === p} onClick={() => setPeriodo(p)}>
-            {p === "mes" ? t.app.esteMes : p === "pasado" ? t.app.mesPasado : t.app.todo}
-          </button>
-        ))}
-        <select aria-label={t.app.cuenta} value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
-          <option value="">{t.app.todasLasCuentas}</option>
-          {accountNames.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        <select aria-label={t.app.categoria} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-          <option value="">{t.app.todasLasCategorias}</option>
-          {cats
-            .filter((c) => !c.oculta)
-            .map((c) => (
-              <option key={c.id} value={c.nombre}>
-                {c.nombre}
-              </option>
-            ))}
-        </select>
-        <input type="search" aria-label={t.app.buscar} placeholder={t.app.buscar} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={60} />
-        <button className="chip exp" type="button" onClick={() => void exportCsv()} disabled={exportando !== null} aria-live="polite">
-          {exportando === null ? t.csv.exportar : t.csv.exportando(exportando)}
-        </button>
-      </div>
-
-      <section className="cd" aria-busy={items === null}>
-        {error ? <p className="empty">{t.app.noCargo}</p> : null}
-        {items === null && !error ? (
-          <>
-            <div className="skel" style={{ width: "40%" }} />
-            <div className="skel" />
-            <div className="skel" />
-          </>
-        ) : null}
-        {items && items.length === 0 ? <p className="empty">{t.app.sinRegistros}</p> : null}
-        {groups.map((g, i) => (
-          <div key={`${g.day}-${i}`}>
-            <div className="day">{dayLabel(g.day)}</div>
+  const lista = (
+    <section className="reg-lista" aria-busy={items === null} aria-label={t.app.registros}>
+      {error ? <p className="empty">{t.app.noCargo}</p> : null}
+      {items === null && !error ? (
+        <div className="cd">
+          <div className="skel" style={{ width: "40%" }} />
+          <div className="skel" />
+          <div className="skel" />
+        </div>
+      ) : null}
+      {items && items.length === 0 ? <p className="empty">{t.app.sinRegistros}</p> : null}
+      {groups.map((g, i) => (
+        <div key={`${g.day}-${i}`} className="reg-dia">
+          {/* El último día de la página puede seguir en la siguiente: su total, cuando ya esté entero. */}
+          <DiaRegistros dia={g.day} gastado={cursor && i === groups.length - 1 ? null : gastadoDelDia(g.rows)} divisa={divisaDia} />
+          <div className="filas">
             {g.rows.map((m) => (
-              <MovimientoRow key={m.id} m={m} onOpen={setOpen} />
+              <FilaRegistro key={m.id} m={m} onOpen={setOpen} abierta={abierto?.id === m.id} />
             ))}
           </div>
-        ))}
-      </section>
+        </div>
+      ))}
       {cursor ? (
         <button className="more" type="button" onClick={more} disabled={loadingMore}>
           {t.app.cargarMas}
         </button>
       ) : null}
       <p className="note-y">{t.app.registrosNota}</p>
+    </section>
+  );
 
-      {open ? <Detalle m={open} onClose={() => setOpen(null)} /> : null}
+  return (
+    <>
+      {resumen ? (
+        <section className="resumen" aria-label={periodo === "mes" ? t.app.teQueda : t.app.teQuedo}>
+          <span className="cap">{periodo === "mes" ? t.app.teQueda : t.app.teQuedo}</span>
+          <span className="big">
+            {resumen.aproximado.neto ? "≈ " : ""}
+            <Monto importe={resumen.neto} divisa={resumen.divisa} tam="hero" />
+          </span>
+          <span className="inout">
+            <span>
+              ↗ {t.app.entradas} <b className="amt in">{money(resumen.ingresos, resumen.divisa)}</b>
+            </span>
+            <span>
+              ↘ {t.app.salidas} <b>{money(resumen.gastos, resumen.divisa)}</b>
+            </span>
+            <span>{t.est.movimientos(resumen.movimientos)}</span>
+          </span>
+        </section>
+      ) : conResumen && !resumenFallo ? (
+        // Mientras llega la cifra, su hueco: si no, la lista salta hacia abajo al llegar (medido en el iPhone: 1,4 s).
+        <div className="resumen" aria-busy="true">
+          <div className="skel" style={{ width: 90 }} />
+          <div className="skel" style={{ width: 200, height: 44 }} />
+          <div className="skel" style={{ width: "60%" }} />
+        </div>
+      ) : null}
+      {accion}
+
+      <div className="filtros" role="group" aria-label={t.app.registros}>
+        <label className="cap-sel on">
+          <Calendar aria-hidden={true} focusable={false} />
+          <select aria-label={t.app.fecha} value={periodo} onChange={(e) => setPeriodo(e.target.value as Periodo)}>
+            <option value="mes">{t.app.esteMes}</option>
+            <option value="pasado">{t.app.mesPasado}</option>
+            <option value="todo">{t.app.todo}</option>
+          </select>
+          <ChevronDown aria-hidden={true} focusable={false} />
+        </label>
+        <label className={`cap-sel${cuenta ? " on" : ""}`}>
+          <CreditCard aria-hidden={true} focusable={false} />
+          <select aria-label={t.app.cuenta} value={cuenta} onChange={(e) => setCuenta(e.target.value)}>
+            <option value="">{t.app.todasLasCuentas}</option>
+            {accountNames.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+          <ChevronDown aria-hidden={true} focusable={false} />
+        </label>
+        <label className={`cap-sel${categoria ? " on" : ""}`}>
+          <Tag aria-hidden={true} focusable={false} />
+          <select aria-label={t.app.categoria} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            <option value="">{t.app.todasLasCategorias}</option>
+            {cats
+              .filter((c) => !c.oculta)
+              .map((c) => (
+                <option key={c.id} value={c.nombre}>
+                  {c.nombre}
+                </option>
+              ))}
+          </select>
+          <ChevronDown aria-hidden={true} focusable={false} />
+        </label>
+        <label className="cap-buscar">
+          <Search aria-hidden={true} focusable={false} />
+          <input type="search" aria-label={t.app.buscar} placeholder={t.app.buscar} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={60} />
+        </label>
+        <button className="cap-btn exp" type="button" onClick={() => void exportCsv()} disabled={exportando !== null} aria-live="polite">
+          <Download aria-hidden={true} focusable={false} />
+          {exportando === null ? t.csv.exportar : t.csv.exportando(exportando)}
+        </button>
+      </div>
+
+      {ancho ? (
+        <div className="reg-split">
+          {lista}
+          {abierto ? (
+            <aside className="reg-det" aria-label={t.app.detalle}>
+              <DetalleRegistro m={abierto} />
+            </aside>
+          ) : null}
+        </div>
+      ) : (
+        lista
+      )}
+
+      {!ancho && open ? <Detalle m={open} onClose={() => setOpen(null)} /> : null}
     </>
   );
 }
 
+/** El detalle en una hoja: en el celular, en una ventana estrecha y desde la búsqueda ⌘K. */
 export function Detalle({ m, onClose }: { m: Movimiento; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const rows: [string, string][] = [
-    [t.app.tipo, t.app.tipos[m.tipo] ?? m.tipo],
-    [t.app.fecha, dayLabel(m.fecha)],
-    [t.app.cuenta, m.cuenta ?? t.app.sinCuenta],
-    [t.app.categoria, m.categoria ?? t.app.sinCategoria],
-  ];
-  if (m.subcategoria) rows.push([t.app.subcategoria, m.subcategoria]);
-  if (m.etiquetas.length) rows.push([t.app.etiquetas, m.etiquetas.join(", ")]);
   return (
     <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={t.app.detalle}>
-        <h2>
-          {m.nota || t.app.detalle}
-          <button className="btn-s" type="button" onClick={onClose} autoFocus>
-            {t.app.cerrar}
-          </button>
-        </h2>
-        <div className="amt-in">
-          <b className={`amt${m.tipo === "ingreso" ? " in" : ""}`} style={{ fontSize: 30 }}>
-            {money(m.importe, m.divisa, { sign: m.tipo === "ingreso" })}
-          </b>
-        </div>
-        {rows.map(([k, v]) => (
-          <div className="fld" key={k}>
-            <span>{k}</span>
-            <span>{v}</span>
-          </div>
-        ))}
-        {m.gasto_de_grupo ? <p className="note-y">{t.app.gastoDeGrupo}</p> : null}
-        <p className="note-y">{t.app.registrosNota}</p>
+      <div className="sheet det-sheet" role="dialog" aria-modal="true" aria-label={t.app.detalle}>
+        <DetalleRegistro
+          m={m}
+          acciones={
+            <button className="ib cerrar" type="button" onClick={onClose} aria-label={t.app.cerrar} autoFocus>
+              <X aria-hidden={true} focusable={false} />
+            </button>
+          }
+        />
       </div>
     </div>
   );
