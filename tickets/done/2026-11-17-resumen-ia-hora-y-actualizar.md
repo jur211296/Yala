@@ -1,10 +1,10 @@
 ---
-id: stats-ai-summary-shows-figures-from-before-the-latest-records
-status: backlog
+id: 2026-11-17-resumen-ia-hora-y-actualizar
+status: done
 area: statistics
 priority: medium
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
 source: encargo 2026-11-16-hero-claro-estadisticas-registros-flujo (captura de Jürgen)
 ---
 
@@ -43,3 +43,19 @@ Recomendada: **B** (no cambia el coste y la pantalla deja de contradecirse sin a
 
 El encargo del hero claro solo tocaba los heros; cambiar la regla de la IA es una decisión de coste y de producto, y
 vive en `StatsAIAutoRefreshLogic` / `InsightsViewModel`, fuera de sus archivos.
+
+## Decisión y resultado (2026-11-17)
+
+Antes se llamaba `stats-ai-summary-shows-figures-from-before-the-latest-records` (en `tickets/backlog/`).
+
+Jürgen eligió **B**. Se construyó así:
+
+- El umbral automático no cambia. Cuando el texto que se ve se escribió con cifras (registros o totales del período)
+  distintas de las de ahora, debajo del resumen sale «Escrito con tus datos de las 18:05 · Actualizar». Con las mismas
+  cifras no sale. La hora va en el formato de 12 o 24 horas de la persona y en el idioma de la app.
+- «Actualizar» escribe el texto otra vez con las cifras de ahora y **cuenta para el mismo techo diario** que lo
+  automático (4 por página y día), para que el botón no abra llamadas sin límite. Con el techo gastado no llama y lo
+  dice («Por hoy ya no puedes actualizar este resumen. Vuelve mañana.»); si la llamada falla, el texto viejo se queda
+  con su marca y el motivo debajo.
+- Tests: `YalaTests/ResumenIAHora/ResumenIAHoraTests`.
+- Fuera: Distribución enseña el mismo texto (`CategoriesTabView`) y todavía sin marca; queda para otro encargo.
