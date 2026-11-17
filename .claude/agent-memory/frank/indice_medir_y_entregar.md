@@ -108,3 +108,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Rojo del CI por la moneda del runner](reference_rojo_del_ci_por_la_moneda_del_runner.md) — en_US = USD; reproduce con defaults write en la app del scheme que corres (yala vs yala.dev).
 - [Turnstile en la entrada de la web](reference_turnstile_en_la_entrada_de_la_web.md) — shadow DOM cerrado; claves de prueba 3x/1x; producción reta al bot: sesión la prueba Jürgen.
 - [Contar rescates del CI](reference_contar_rescates_del_ci.md) — anotaciones «Rescatado al repetirlo» del check-run tests; -test-iterations no repite Swift Testing.
+- [Runner macOS sin presupuesto](feedback_runner_macos_sin_presupuesto.md) — 17-nov: NO a jobs nuevos en xcode-27; mide coste antes y ofrece el gate local.
