@@ -1,10 +1,13 @@
 ---
 id: reverse-on-the-iphone-left-the-local-store-empty
-status: backlog
+status: qa
 priority: high
 area: "modo-nube, migración"
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
+qa-status: needs-testing
+qa-date: 2026-11-17
+qa-notes: causa reproducida y medida en el iPhone 14; arreglo con tests y gate en verde; falta la vuelta de punta a punta con el arreglo (guion abajo)
 source: "prueba de punta a punta del encargo «Nube 2.3: los cinco bugs media» (iPhone 14, Yala Dev, staging)"
 ---
 
@@ -67,3 +70,28 @@ y copiando el store por `devicectl` en cada paso:
   antes del remonte malo, «intacto» después) y `ReverseEligibility.mirrorHistoryExpired` no ofrece la vuelta a quien ya
   purgó, con su texto en 16 idiomas. `startReverse` lo repite. Canario `cloudReverseMirrorHistoryExpired`.
 - La recuperación de esos teléfonos queda en `reverse-blocked-after-history-purge-needs-a-recovery-path`.
+
+## Guion de device-QA (iPhone 14, Yala Dev contra staging) — la vuelta de punta a punta con el arreglo
+
+La noche del 17-nov no se pudo cerrar: la ida («Pasar a tu cuenta de Yala») de `test@yala-app.pe` no cuadró la
+verificación y salió por su techo («No pudimos pasar tus datos a tu cuenta de Yala»). Es otro problema, sin medir
+(memoria de Frank, «La ida del 14 no cuadra»).
+
+**Montaje**
+1. Instala en el iPhone 14 el build de `2.3` con este arreglo (Xcode, scheme `Yala Dev`, destino el iPhone 14).
+2. Ten el teléfono en «En tu iCloud» con datos (Ajustes › «Dónde viven tus datos»).
+
+**Pasos**
+1. Ajustes › «Dónde viven tus datos» › «Pasar a tu cuenta de Yala» › «Continuar con Google» (o la cuenta de pruebas que
+   uses). Espera a «Ya casi está» y reabre Yala.
+2. Ya en la nube, crea un registro nuevo (p. ej. «Prueba vuelta», 10) y deja Yala abierta unos minutos en el Panel.
+3. Ajustes › «Dónde viven tus datos» › «Volver a tu iCloud» › «Seguir» › «Volver a tu iCloud». Reabre cuando lo pida.
+
+**Resultado esperado**
+- Tras reabrir, Registros sigue con todos tus movimientos, incluido «Prueba vuelta». No aparece «Datos no disponibles».
+- Al rato, «Dónde viven tus datos» dice «En tu iCloud».
+- Si quieres el dato fino: copia el store (`devicectl … appGroupDataContainer`) y comprueba que `ANSCKEVENT` no tiene
+  ningún `134301` nuevo y que `ATRANSACTION` no trae autor `NSCloudKitMirroringDelegate.reset`.
+
+**Y el caso del teléfono que ya purgó** (no se puede montar a mano, lo cubren los tests): verás en vez del botón
+«En este dispositivo no puedes volver a tu iCloud: se perdería lo que hiciste en tu cuenta de Yala…».

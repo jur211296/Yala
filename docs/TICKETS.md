@@ -1115,7 +1115,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
 | reverse-of-a-migrated-account-sums-records-written-after-the-migration | backlog | tickets/backlog/reverse-of-a-migrated-account-sums-records-written-after-the-migration.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
-| reverse-on-the-iphone-left-the-local-store-empty | backlog | tickets/backlog/reverse-on-the-iphone-left-the-local-store-empty.md |
+| reverse-on-the-iphone-left-the-local-store-empty | qa | tickets/qa/reverse-on-the-iphone-left-the-local-store-empty.md |
+| reverse-blocked-after-history-purge-needs-a-recovery-path | backlog | tickets/backlog/reverse-blocked-after-history-purge-needs-a-recovery-path.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | done | tickets/done/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
 | reverse-prior-icloud-scan-has-a-fixed-deadline | done | tickets/done/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
