@@ -31,6 +31,9 @@ nonisolated enum ChatGuidedEngine {
         switch kind {
         case .budget: budgetSpec
         case .scheduledPayment: scheduledPaymentSpec
+        case .account: accountSpec
+        case .category: categorySpec
+        case .favorite: favoriteSpec
         }
     }
 
@@ -89,6 +92,112 @@ nonisolated enum ChatGuidedEngine {
         }
     )
 
+    /// Cuenta (las preguntas de Primeros pasos): tipo → monedas → nombre → saldo de cada moneda → en tarjeta, cierre,
+    /// pago y recordatorio → ¿opciones avanzadas? (últimos números, ¿cuenta en tus reportes?).
+    static let accountSpec = ChatGuidedFlowSpec(
+        kind: .account,
+        steps: [.accountKind, .accountCurrencies, .accountName, .accountBalance, .accountStatementDay,
+                .accountPaymentDay, .accountReminder, .advanced, .accountNumber, .accountStats],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .accountKind: return accountKind(answers) != nil
+            case .accountCurrencies: return !(answers.accountCurrencies ?? []).isEmpty
+            case .accountName: return !trimmed(answers.accountName).isEmpty
+            case .accountBalance:
+                guard let balances = answers.accountBalances else { return false }
+                return (answers.accountCurrencies ?? []).allSatisfy { balances[$0]?.isFinite == true }
+            case .accountStatementDay: return answers.accountStatementDay.map(isDayAnswer) ?? false
+            case .accountPaymentDay: return answers.accountPaymentDay.map(isDayAnswer) ?? false
+            case .accountReminder: return answers.accountReminderLead != nil
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Categoría: ¿nueva o dentro de una que ya tienes? → (nueva: nombre, ícono y color | existente: cuál) →
+    /// subcategorías → ¿opciones avanzadas? (necesidad de cada una).
+    static let categorySpec = ChatGuidedFlowSpec(
+        kind: .category,
+        steps: [.categoryMode, .categoryParent, .categoryName, .categoryLook, .categorySubcategories, .advanced,
+                .categoryNeeds],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .categoryMode: return answers.categoryMode != nil
+            case .categoryParent: return answers.parentCategoryID != nil
+            case .categoryName: return !trimmed(answers.categoryName).isEmpty
+            case .categoryLook: return answers.categoryIcon != nil && answers.categoryColorHex != nil
+            case .categorySubcategories:
+                return !(answers.subcategoryNames ?? []).filter { !trimmed($0).isEmpty }.isEmpty
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Favorito: ¿gasto, ingreso o transferencia? → subcategoría → cuenta (y destino) → monto → nombre → ¿opciones
+    /// avanzadas? (necesidad, etiquetas, nota).
+    static let favoriteSpec = ChatGuidedFlowSpec(
+        kind: .favorite,
+        steps: [.favoriteType, .favoriteSubcategory, .favoriteAccount, .favoriteDestination, .favoriteAmount,
+                .favoriteName, .advanced, .favoriteNeed, .favoriteTags, .favoriteNote],
+        isAnswered: { step, answers in
+            if isSkipped(step, answers) { return true }
+            switch step {
+            case .favoriteType: return favoriteType(answers) != nil
+            case .favoriteSubcategory: return answers.subcategoryID != nil
+            case .favoriteAccount: return answers.accountID != nil
+            case .favoriteDestination:
+                guard let destination = answers.destinationAccountID else { return false }
+                return destination != answers.accountID
+            case .favoriteAmount: return answers.favoriteWithoutAmount == true || isValidAmount(answers.amount)
+            case .favoriteName: return !trimmed(answers.favoriteName).isEmpty
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
+            }
+        }
+    )
+
+    /// Lo que no toca con estas respuestas: no se pregunta y cuenta como contestado. Las opciones avanzadas que no
+    /// tocan se saltan igual aunque se quisieran revisar.
+    static func isSkipped(_ step: ChatGuidedStep, _ answers: ChatGuidedAnswers) -> Bool {
+        switch step {
+        // Cuenta: los días y el recordatorio son de una tarjeta; sin día de pago no hay qué recordar; el efectivo y
+        // «todo junto» no tienen número.
+        case .accountStatementDay, .accountPaymentDay: return accountKind(answers)?.isCard != true
+        case .accountReminder: return accountKind(answers)?.isCard != true || answers.accountPaymentDay == 0
+        case .accountNumber:
+            guard let kind = accountKind(answers) else { return false }
+            return kind == .cash || kind == .general
+        // Categoría: la existente no tiene nombre ni ícono propios; la nueva no tiene «en cuál».
+        case .categoryParent: return answers.categoryMode != .subcategories
+        case .categoryName, .categoryLook: return answers.categoryMode != .newCategory
+        // Favorito: una transferencia no lleva categoría, necesidad ni etiquetas, y solo ella lleva destino.
+        case .favoriteSubcategory, .favoriteTags: return favoriteType(answers) == .transfer
+        case .favoriteDestination: return favoriteType(answers) != .transfer
+        case .favoriteNeed: return favoriteType(answers) != .expense
+        default: return false
+        }
+    }
+
+    static func accountKind(_ answers: ChatGuidedAnswers) -> FirstAccountFlowLogic.Kind? {
+        answers.accountKind.flatMap(FirstAccountFlowLogic.Kind.init(rawValue:))
+    }
+
+    /// El tipo del favorito.
+    static func favoriteType(_ answers: ChatGuidedAnswers) -> ChatGuidedFavoriteType? {
+        answers.favoriteType.flatMap(ChatGuidedFavoriteType.init(rawValue:))
+    }
+
+    /// 1…31, o 0 = «No lo sé».
+    static func isDayAnswer(_ day: Int) -> Bool { day == 0 || isValidMonthDay(day) }
+
+    static func trimmed(_ text: String?) -> String {
+        (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// Una opción avanzada está contestada si no se quisieron revisar, si ya se contestó o saltó, o si no toca.
     static func isAdvancedAnswered(_ step: ChatGuidedStep, _ answers: ChatGuidedAnswers) -> Bool {
         guard step.isAdvancedOption else { return true }
@@ -100,8 +209,9 @@ nonisolated enum ChatGuidedEngine {
         spec(for: kind).steps.filter { step in
             if step.isAdvancedOption {
                 return answers.wantsAdvanced == true && !answers.isNotApplicable(step)
-                    && !(step == .paymentEnd && answers.frequency == .once)
+                    && !(step == .paymentEnd && answers.frequency == .once) && !isSkipped(step, answers)
             }
+            if isSkipped(step, answers) { return false }
             switch step {
             case .subcategories: return answers.allExpenses != true
             case .dates: return answers.period == .once

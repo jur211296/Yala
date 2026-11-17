@@ -5,7 +5,7 @@
 //  Lo que guarda un guiado de Yala IA al tocar «Crear». Por los mismos ViewModels que los editores
 //  (`BudgetEditorViewModel.saveBudget`, `ScheduledPaymentEditorViewModel.savePayment`), como Primeros pasos: mismos
 //  datos, mismo aviso a los widgets y a la sincronización. Solo se llama desde la confirmación
-//  (`ChatGuidedEngine.canCreate`).
+//  (`ChatGuidedEngine.canCreate`). La cuenta, la categoría y el favorito, en `ChatGuidedCreateCreator`.
 //
 
 import Foundation
@@ -14,9 +14,11 @@ import SwiftData
 enum ChatGuidedCreationError: Error, Equatable {
     /// La confirmación no estaba completa.
     case incomplete
-    /// El plan gratis ya tiene el máximo de presupuestos activos.
+    /// El plan gratis ya tiene el máximo de presupuestos activos (o de cuentas).
     case planLimitReached
     case notSaved
+    /// Ya hay una cuenta, una categoría o (todas) las subcategorías con ese nombre.
+    case duplicateName
 }
 
 struct ChatGuidedCreation: Equatable {
@@ -30,9 +32,11 @@ enum ChatGuidedCreator {
 
     static func create(_ state: ChatGuidedFlowState, data: ChatGuidedData, context: ModelContext,
                        budgetAlertsEnabled: Bool,
-                       canCreateBudget: ((Int) -> Bool)? = nil)
+                       canCreateBudget: ((Int) -> Bool)? = nil,
+                       canCreateAccount: ((Int) -> Bool)? = nil)
         throws -> ChatGuidedCreation {
         let canCreateBudget = canCreateBudget ?? { FeatureGateService.shared.canCreate(.budgets, currentCount: $0) }
+        let canCreateAccount = canCreateAccount ?? { FeatureGateService.shared.canCreate(.accounts, currentCount: $0) }
         guard ChatGuidedEngine.canCreate(state) else { throw ChatGuidedCreationError.incomplete }
         switch state.kind {
         case .budget:
@@ -40,6 +44,12 @@ enum ChatGuidedCreator {
                                     canCreateBudget: canCreateBudget)
         case .scheduledPayment:
             return try createPayment(state.answers, data: data, context: context)
+        case .account:
+            return try createAccount(state.answers, context: context, canCreateAccount: canCreateAccount)
+        case .category:
+            return try createCategory(state.answers, context: context)
+        case .favorite:
+            return try createFavorite(state.answers, context: context)
         }
     }
 

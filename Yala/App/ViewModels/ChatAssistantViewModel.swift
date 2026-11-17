@@ -1256,11 +1256,32 @@ extension ChatAssistantViewModel {
         guard ChatIntentClassifierService.guidedFlow(for: text) != nil else { return false }
         let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
         guard let detected = ChatGuidedIntentDetector.detect(text, catalog: catalog) else { return false }
+        // Con el plan gratis lleno de cuentas no se abre la tarjeta: se dice antes de preguntar nada.
+        if detected.kind == .account, !Self.canCreateAnotherAccount(context) {
+            appendAssistantTurn(question: text, reply: L10n.IAGuiados.accountLimitReached, attachments: [])
+            return true
+        }
         let detection = ChatGuidedDataSource.prepareStart(detected, context: context)
         let state = ChatGuidedEngine.start(detection.kind, answers: detection.answers, prefilled: detection.prefilled)
-        let reply = detection.kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
-        appendAssistantTurn(question: text, reply: reply, attachments: [.guided(state)])
+        appendAssistantTurn(question: text, reply: Self.guidedIntro(detection.kind), attachments: [.guided(state)])
         return true
+    }
+
+    /// Lo que dice Yala IA al abrir cada guiado.
+    static func guidedIntro(_ kind: ChatGuidedKind) -> String {
+        switch kind {
+        case .budget: L10n.IAGuiados.budgetIntro
+        case .scheduledPayment: L10n.IAGuiados.paymentIntro
+        case .account: L10n.IAGuiados.accountIntro
+        case .category: L10n.IAGuiados.categoryIntro
+        case .favorite: L10n.IAGuiados.favoriteIntro
+        }
+    }
+
+    /// ¿Cabe otra cuenta en el plan? Sin poder contarlas, no: el creador tampoco crearía.
+    static func canCreateAnotherAccount(_ context: ModelContext) -> Bool {
+        guard let count = ChatGuidedDataSource.billableAccountCount(context) else { return false }
+        return FeatureGateService.shared.canCreate(.accounts, currentCount: count)
     }
 
     /// Un atajo del saludo («Un presupuesto», «Un pago planificado»): abre el guiado sin pasar por la frase ni por el
@@ -1279,8 +1300,7 @@ extension ChatAssistantViewModel {
         let detection = ChatGuidedDataSource.prepareStart(
             ChatGuidedDetection(kind: kind, answers: answers, prefilled: []), context: context)
         let state = ChatGuidedEngine.start(kind, answers: detection.answers, prefilled: [])
-        let reply = kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
-        appendAssistantTurn(question: question, reply: reply, attachments: [.guided(state)])
+        appendAssistantTurn(question: question, reply: Self.guidedIntro(kind), attachments: [.guided(state)])
     }
 
     /// El guiado de un mensaje, si lo tiene.
@@ -1340,7 +1360,10 @@ extension ChatAssistantViewModel {
             return nil
         } catch ChatGuidedCreationError.planLimitReached {
             DS.Haptic.error()
-            return L10n.IAGuiados.planLimitReached
+            return state.kind == .account ? L10n.IAGuiados.accountLimitReached : L10n.IAGuiados.planLimitReached
+        } catch ChatGuidedCreationError.duplicateName {
+            DS.Haptic.error()
+            return state.kind == .account ? L10n.IAGuiados.accountNameTaken : L10n.IAGuiados.categoryNameTaken
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: Error: creating from the guided flow: \(error)")

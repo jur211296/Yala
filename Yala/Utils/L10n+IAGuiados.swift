@@ -247,5 +247,195 @@ extension L10n {
         static var valueNoReminder: String { iaGuidedString("iaGuided.value.noReminder") }
         /// «Sin nota»
         static var valueNoNote: String { iaGuidedString("iaGuided.value.noNote") }
+
+        // MARK: - Cuenta, categoría y favorito
+
+        /// «¿Qué cuenta quieres crear?»
+        static var accountKindQuestion: String { iaGuidedString("iaGuided.account.kind.question") }
+        /// «Elige la que más se parece.»
+        static var accountKindSubtitle: String { iaGuidedString("iaGuided.account.kind.subtitle") }
+        /// «¿Cuánto tienes hoy en cada moneda?»
+        static var accountBalanceEach: String { iaGuidedString("iaGuided.account.balance.each") }
+        /// «¿Cuánto debes hoy en cada moneda?»
+        static var accountBalanceEachCard: String { iaGuidedString("iaGuided.account.balance.eachCard") }
+
+        /// «Creemos tu cuenta. Solo te pregunto lo que falta.»
+        static var accountIntro: String { iaGuidedString("iaGuided.account.intro") }
+        /// «Armemos tu categoría. Solo te pregunto lo que falta.»
+        static var categoryIntro: String { iaGuidedString("iaGuided.category.intro") }
+        /// «Guardemos tu favorito. Solo te pregunto lo que falta.»
+        static var favoriteIntro: String { iaGuidedString("iaGuided.favorite.intro") }
+        /// «Nueva cuenta»
+        static var accountHeader: String { iaGuidedString("iaGuided.account.header") }
+        /// «Nueva categoría»
+        static var categoryHeader: String { iaGuidedString("iaGuided.category.header") }
+        /// «Nuevas subcategorías»
+        static var subcategoriesHeader: String { iaGuidedString("iaGuided.subcategories.header") }
+        /// «Nuevo favorito»
+        static var favoriteHeader: String { iaGuidedString("iaGuided.favorite.header") }
+        /// «Ya tienes el máximo de cuentas del plan gratis. Archiva una o pásate a Yala Pro para crear otra.»
+        static var accountLimitReached: String { iaGuidedString("iaGuided.account.limitReached") }
+        /// «Ya tienes una cuenta con ese nombre. Elige otro.»
+        static var accountNameTaken: String { iaGuidedString("iaGuided.account.nameTaken") }
+        /// «Ya tienes una categoría con ese nombre. Elige otro.»
+        static var categoryNameTaken: String { iaGuidedString("iaGuided.category.nameTaken") }
+        /// ««%@» ya está en esta categoría.»
+        static func subcategoryTaken(_ a0: String) -> String { iaGuidedString("iaGuided.subcategory.taken", a0) }
+        /// «¿Quieres anotar los últimos 4 números?»
+        static var accountNumberQuestion: String { iaGuidedString("iaGuided.account.number.question") }
+        /// «Te ayuda a reconocerla. Si no hace falta, tócale «Saltar».»
+        static var accountNumberSubtitle: String { iaGuidedString("iaGuided.account.number.subtitle") }
+        /// «¿Lo que pasa en esta cuenta cuenta en tus reportes?»
+        static var accountStatsQuestion: String { iaGuidedString("iaGuided.account.stats.question") }
+        /// «Sí, que cuente»
+        static var accountStatsYes: String { iaGuidedString("iaGuided.account.stats.yes") }
+        /// «No, déjala fuera de los reportes»
+        static var accountStatsNo: String { iaGuidedString("iaGuided.account.stats.no") }
+        /// «Crear cuenta»
+        static var confirmCreateAccount: String { iaGuidedString("iaGuided.confirm.createAccount") }
+        /// «Crear categoría»
+        static var confirmCreateCategory: String { iaGuidedString("iaGuided.confirm.createCategory") }
+        /// «Crear subcategorías»
+        static var confirmCreateSubcategories: String { iaGuidedString("iaGuided.confirm.createSubcategories") }
+        /// «Guardar favorito»
+        static var confirmSaveFavorite: String { iaGuidedString("iaGuided.confirm.saveFavorite") }
+        /// «Tipo»
+        static var rowAccountType: String { iaGuidedString("iaGuided.row.accountType") }
+        /// «Monedas»
+        static var rowCurrencies: String { iaGuidedString("iaGuided.row.currencies") }
+        /// «Saldo de hoy»
+        static var rowBalance: String { iaGuidedString("iaGuided.row.balance") }
+        /// «Cierra»
+        static var rowStatementDay: String { iaGuidedString("iaGuided.row.statementDay") }
+        /// «Se paga hasta»
+        static var rowPaymentDay: String { iaGuidedString("iaGuided.row.paymentDay") }
+        /// «Últimos números»
+        static var rowNumber: String { iaGuidedString("iaGuided.row.number") }
+        /// «En tus reportes»
+        static var rowReports: String { iaGuidedString("iaGuided.row.reports") }
+        /// «Qué creas»
+        static var rowCreate: String { iaGuidedString("iaGuided.row.create") }
+        /// «Ícono y color»
+        static var rowIcon: String { iaGuidedString("iaGuided.row.icon") }
+        /// «Necesidad»
+        static var rowNeeds: String { iaGuidedString("iaGuided.row.needs") }
+        /// «Qué es»
+        static var rowType: String { iaGuidedString("iaGuided.row.type") }
+        /// «A la cuenta»
+        static var rowDestination: String { iaGuidedString("iaGuided.row.destination") }
+        /// «No lo sé»
+        static var valueDontKnow: String { iaGuidedString("iaGuided.value.dontKnow") }
+        /// «El %d»
+        static func valueDay(_ a0: Int) -> String { iaGuidedString("iaGuided.value.day", a0) }
+        /// «Sin número»
+        static var valueNoNumber: String { iaGuidedString("iaGuided.value.noNumber") }
+        /// «Una categoría nueva»
+        static var valueNewCategory: String { iaGuidedString("iaGuided.value.newCategory") }
+        /// «Subcategorías en «%@»»
+        static func valueSubcategoriesIn(_ a0: String) -> String { iaGuidedString("iaGuided.value.subcategoriesIn", a0) }
+        /// «Sin clasificar»
+        static var valueUnclassified: String { iaGuidedString("iaGuided.value.unclassified") }
+        /// «Cambia cada vez»
+        static var valueVariable: String { iaGuidedString("iaGuided.value.variable") }
+        /// «¿Qué quieres crear?»
+        static var categoryModeQuestion: String { iaGuidedString("iaGuided.category.mode.question") }
+        /// «Una categoría nueva»
+        static var categoryModeNew: String { iaGuidedString("iaGuided.category.mode.new") }
+        /// «Con sus propias subcategorías»
+        static var categoryModeNewHint: String { iaGuidedString("iaGuided.category.mode.newHint") }
+        /// «Subcategorías en una que ya tienes»
+        static var categoryModeSub: String { iaGuidedString("iaGuided.category.mode.sub") }
+        /// «Por ejemplo, «Veterinario» dentro de «Mascotas»»
+        static var categoryModeSubHint: String { iaGuidedString("iaGuided.category.mode.subHint") }
+        /// «¿En qué categoría van?»
+        static var categoryParentQuestion: String { iaGuidedString("iaGuided.category.parent.question") }
+        /// «¿Cómo se llama la categoría?»
+        static var categoryNameQuestion: String { iaGuidedString("iaGuided.category.name.question") }
+        /// «Un nombre corto, como «Mascotas» o «Viajes».»
+        static var categoryNameSubtitle: String { iaGuidedString("iaGuided.category.name.subtitle") }
+        /// «Mascotas»
+        static var categoryNamePlaceholder: String { iaGuidedString("iaGuided.category.name.placeholder") }
+        /// «¿Con qué ícono y color la reconoces?»
+        static var categoryLookQuestion: String { iaGuidedString("iaGuided.category.look.question") }
+        /// «Te propongo uno por el nombre. Toca otro si prefieres.»
+        static var categoryLookSubtitle: String { iaGuidedString("iaGuided.category.look.subtitle") }
+        /// «Otro ícono o color»
+        static var categoryLookOther: String { iaGuidedString("iaGuided.category.look.other") }
+        /// «¿Qué entra en «%@»?»
+        static func categorySubcategoriesQuestion(_ a0: String) -> String { iaGuidedString("iaGuided.category.subcategories.question", a0) }
+        /// «Escribe al menos una y tócale «+». Así tus gastos quedan ordenados.»
+        static var categorySubcategoriesSubtitle: String { iaGuidedString("iaGuided.category.subcategories.subtitle") }
+        /// «Veterinario»
+        static var subcategoryPlaceholder: String { iaGuidedString("iaGuided.subcategory.placeholder") }
+        /// «Añadir subcategoría»
+        static var subcategoryAdd: String { iaGuidedString("iaGuided.subcategory.add") }
+        /// «Quitar %@»
+        static func subcategoryRemove(_ a0: String) -> String { iaGuidedString("iaGuided.subcategory.remove", a0) }
+        /// «¿Qué tan necesario es cada uno?»
+        static var categoryNeedsQuestion: String { iaGuidedString("iaGuided.category.needs.question") }
+        /// «Así Yala te dice cuánto va a lo esencial. Lo que no toques queda sin clasificar.»
+        static var categoryNeedsSubtitle: String { iaGuidedString("iaGuided.category.needs.subtitle") }
+        /// «¿Qué registras seguido?»
+        static var favoriteTypeQuestion: String { iaGuidedString("iaGuided.favorite.type.question") }
+        /// «Un gasto»
+        static var favoriteTypeExpense: String { iaGuidedString("iaGuided.favorite.type.expense") }
+        /// «Como el café de la mañana»
+        static var favoriteTypeExpenseHint: String { iaGuidedString("iaGuided.favorite.type.expenseHint") }
+        /// «Un ingreso»
+        static var favoriteTypeIncome: String { iaGuidedString("iaGuided.favorite.type.income") }
+        /// «Como tu sueldo»
+        static var favoriteTypeIncomeHint: String { iaGuidedString("iaGuided.favorite.type.incomeHint") }
+        /// «Una transferencia»
+        static var favoriteTypeTransfer: String { iaGuidedString("iaGuided.favorite.type.transfer") }
+        /// «Entre tus cuentas, como pasar a tus ahorros»
+        static var favoriteTypeTransferHint: String { iaGuidedString("iaGuided.favorite.type.transferHint") }
+        /// «¿De qué es?»
+        static var favoriteSubcategoryQuestion: String { iaGuidedString("iaGuided.favorite.subcategory.question") }
+        /// «Tus más usadas primero. ¿No está? Busca otra.»
+        static var favoriteSubcategorySubtitle: String { iaGuidedString("iaGuided.favorite.subcategory.subtitle") }
+        /// «¿Con qué lo pagas casi siempre?»
+        static var favoriteAccountQuestion: String { iaGuidedString("iaGuided.favorite.account.question") }
+        /// «¿A qué cuenta entra?»
+        static var favoriteAccountIncomeQuestion: String { iaGuidedString("iaGuided.favorite.account.incomeQuestion") }
+        /// «¿Desde qué cuenta?»
+        static var favoriteAccountFromQuestion: String { iaGuidedString("iaGuided.favorite.account.fromQuestion") }
+        /// «¿A qué cuenta va?»
+        static var favoriteDestinationQuestion: String { iaGuidedString("iaGuided.favorite.destination.question") }
+        /// «¿Es siempre el mismo monto?»
+        static var favoriteAmountQuestion: String { iaGuidedString("iaGuided.favorite.amount.question") }
+        /// «Lo escribes al usarlo»
+        static var favoriteAmountVariableHint: String { iaGuidedString("iaGuided.favorite.amount.variableHint") }
+        /// «¿Cómo lo llamamos?»
+        static var favoriteNameQuestion: String { iaGuidedString("iaGuided.favorite.name.question") }
+        /// «Es lo que verás al tocarlo en Favoritos.»
+        static var favoriteNameSubtitle: String { iaGuidedString("iaGuided.favorite.name.subtitle") }
+        /// «¿Qué tan necesario es este gasto?»
+        static var favoriteNeedQuestion: String { iaGuidedString("iaGuided.favorite.need.question") }
+        /// «¿Le pones alguna etiqueta?»
+        static var favoriteTagsQuestion: String { iaGuidedString("iaGuided.favorite.tags.question") }
+        /// «¿Quieres que lleve una nota?»
+        static var favoriteNoteQuestion: String { iaGuidedString("iaGuided.favorite.note.question") }
+        /// «Tu cuenta está lista»
+        static var doneAccount: String { iaGuidedString("iaGuided.done.account") }
+        /// «Tu categoría está lista»
+        static var doneCategory: String { iaGuidedString("iaGuided.done.category") }
+        /// «Tus subcategorías están listas»
+        static var doneSubcategories: String { iaGuidedString("iaGuided.done.subcategories") }
+        /// «Tu favorito está guardado»
+        static var doneFavorite: String { iaGuidedString("iaGuided.done.favorite") }
+        /// ««%@» ya está en tu Panel.»
+        static func doneAccountMessage(_ a0: String) -> String { iaGuidedString("iaGuided.done.accountMessage", a0) }
+        /// «Ya puedes usar «%@» al registrar.»
+        static func doneCategoryMessage(_ a0: String) -> String { iaGuidedString("iaGuided.done.categoryMessage", a0) }
+        /// «Tócalo en Favoritos para registrarlo en un toque.»
+        static var doneFavoriteMessage: String { iaGuidedString("iaGuided.done.favoriteMessage") }
+        /// «Ver la cuenta»
+        static var doneSeeAccount: String { iaGuidedString("iaGuided.done.seeAccount") }
+        /// «Ver tus categorías»
+        static var doneSeeCategories: String { iaGuidedString("iaGuided.done.seeCategories") }
+        /// «Ver tus favoritos»
+        static var doneSeeFavorites: String { iaGuidedString("iaGuided.done.seeFavorites") }
+        /// «Listo»
+        static var closeSheet: String { iaGuidedString("iaGuided.close") }
     }
 }

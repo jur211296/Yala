@@ -262,6 +262,159 @@ final class IAGuiadosUITests: XCTestCase {
         shot(app, "tema-\(suffix)-5-revisar")
     }
 
+    // MARK: - Cuenta, categoría y favorito (encargo del 16-nov)
+
+    func test_account_stepByStep_createsIt() {
+        let app = openChat()
+        send("Quiero crear una cuenta", in: app)
+        let savings = app.buttons["chat_guided_account_kind_savings"]
+        XCTAssertTrue(savings.waitForExistence(timeout: 10), "La primera pregunta de la cuenta es el tipo.")
+        shot(app, "guiado-cuenta-1-tipo")
+        savings.tap()
+
+        let currencies = app.buttons["chat_guided_currencies_continue"]
+        if currencies.waitForExistence(timeout: 3) {
+            shot(app, "guiado-cuenta-2-monedas")
+            currencies.tap()
+        }
+        let name = app.textFields["chat_guided_name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "En ahorros, la persona escribe el nombre.")
+        shot(app, "guiado-cuenta-3-nombre")
+        name.tap()
+        name.typeText("Ahorro viaje\n")
+
+        let zero = app.buttons["chat_guided_balance_zero"]
+        XCTAssertTrue(zero.waitForExistence(timeout: 5), "Tras el nombre va el saldo.")
+        shot(app, "guiado-cuenta-4-saldo")
+        zero.tap()
+        skipAdvanced(app)
+
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5), "Con todo contestado, «Revisa antes de crear».")
+        XCTAssertTrue(app.buttons["chat_guided_change_accountName"].exists, "Cada respuesta se puede cambiar.")
+        shot(app, "guiado-cuenta-5-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["chat_guided_open"].exists, "La tarjeta de éxito lleva a la cuenta.")
+        shot(app, "guiado-cuenta-6-lista")
+    }
+
+    func test_category_new_withSubcategoriesAndNeeds() {
+        let app = openChat()
+        send("Crea una categoría nueva", in: app)
+        let name = app.textFields["chat_guided_name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 10), "Dijo «categoría»: va directo al nombre.")
+        shot(app, "guiado-categoria-1-nombre")
+        name.tap()
+        name.typeText("Mascotas\n")
+
+        let look = app.buttons["chat_guided_look_continue"]
+        XCTAssertTrue(look.waitForExistence(timeout: 5), "Tras el nombre, ícono y color.")
+        shot(app, "guiado-categoria-2-icono")
+        look.tap()
+
+        let field = app.textFields["chat_guided_subcategory_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "Subcategorías siempre.")
+        field.tap()
+        field.typeText("Veterinario\n")
+        field.typeText("Comida\n")
+        XCTAssertTrue(app.buttons.matching(identifier: "chat_guided_subcategory_name").element(boundBy: 1)
+            .waitForExistence(timeout: 5), "Las dos subcategorías quedan como chips.")
+        dismissKeyboard(app)
+        shot(app, "guiado-categoria-3-subcategorias")
+        tap("chat_guided_subcategories_continue", in: app)
+
+        let yes = app.buttons["chat_guided_advanced_yes"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 5))
+        yes.tap()
+        let essential = app.buttons.matching(identifier: "chat_guided_need_esencial").firstMatch
+        XCTAssertTrue(essential.waitForExistence(timeout: 5), "Opciones avanzadas: la necesidad de cada una.")
+        essential.tap()
+        shot(app, "guiado-categoria-4-necesidad")
+        tap("chat_guided_needs_continue", in: app)
+
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        shot(app, "guiado-categoria-5-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        shot(app, "guiado-categoria-6-lista")
+        tap("chat_guided_open", in: app)
+        let close = app.buttons["chat_guided_list_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 10), "«Ver tus categorías» abre la lista de Ajustes.")
+        shot(app, "guiado-categoria-7-ver")
+        close.tap()
+    }
+
+    func test_subcategories_inAnExistingCategory() {
+        let app = openChat()
+        send("Agrega subcategorías", in: app)
+        let parent = app.buttons.matching(identifier: "chat_guided_parent").firstMatch
+        XCTAssertTrue(parent.waitForExistence(timeout: 10), "Dijo «subcategorías»: pregunta en cuál.")
+        shot(app, "guiado-subcategorias-1-cual")
+        parent.tap()
+        let field = app.textFields["chat_guided_subcategory_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("Propinas\n")
+        dismissKeyboard(app)
+        shot(app, "guiado-subcategorias-2-nombres")
+        tap("chat_guided_subcategories_continue", in: app)
+        skipAdvanced(app)
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        shot(app, "guiado-subcategorias-3-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+    }
+
+    func test_favorite_stepByStep_savesIt() {
+        let app = openChat()
+        send("Crea un favorito", in: app)
+        let expense = app.buttons["chat_guided_favorite_type_expense"]
+        XCTAssertTrue(expense.waitForExistence(timeout: 10), "La primera pregunta del favorito es qué registras.")
+        shot(app, "guiado-favorito-1-tipo")
+        expense.tap()
+
+        let tile = app.buttons.matching(identifier: "chat_guided_subcategory").firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 5), "Subcategorías siempre: las más usadas.")
+        shot(app, "guiado-favorito-2-subcategoria")
+        tile.tap()
+
+        let account = app.buttons.matching(identifier: "chat_guided_account").firstMatch
+        if account.waitForExistence(timeout: 3) {
+            shot(app, "guiado-favorito-3-cuenta")
+            account.tap()
+        }
+        let amount = app.textFields["chat_guided_amount"]
+        XCTAssertTrue(amount.waitForExistence(timeout: 5), "Tras la cuenta, el monto.")
+        shot(app, "guiado-favorito-4-monto")
+        amount.tap()
+        amount.typeText("12")
+        tap("chat_guided_amount_send", in: app)
+
+        let idea = app.buttons.matching(identifier: "chat_guided_name_idea").firstMatch
+        XCTAssertTrue(idea.waitForExistence(timeout: 5), "El nombre propone la subcategoría.")
+        shot(app, "guiado-favorito-5-nombre")
+        idea.tap()
+        skipAdvanced(app)
+
+        let create = app.buttons["chat_guided_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        shot(app, "guiado-favorito-6-revisar")
+        create.tap()
+        XCTAssertTrue(app.staticTexts["chat_guided_success"].waitForExistence(timeout: 10))
+        shot(app, "guiado-favorito-7-listo")
+    }
+
+    /// Un registro dicho con la palabra «cuenta» sigue siendo un registro: no abre la tarjeta.
+    func test_aRecordThatNamesAnAccount_doesNotOpenAGuidedFlow() {
+        let app = openChat()
+        send("Agrega 20 soles a la cuenta BCP", in: app)
+        XCTAssertFalse(app.staticTexts["chat_guided_header"].waitForExistence(timeout: 4),
+                       "«Agrega 20 soles a la cuenta…» es un registro.")
+    }
+
     // MARK: - Ayudantes
 
     private func openChat(extra: [String] = []) -> XCUIApplication {
@@ -303,6 +456,16 @@ final class IAGuiadosUITests: XCTestCase {
         let no = app.buttons["chat_guided_advanced_no"]
         XCTAssertTrue(no.waitForExistence(timeout: 5), "Antes de revisar se ofrecen las opciones avanzadas.")
         no.tap()
+    }
+
+    /// Baja el teclado tocando el título de la pregunta: el chat lo baja al tocar fuera de un campo
+    /// (`dismissKeyboardOnTap`). Arrastrar no vale: el chat es una hoja y el gesto intentaría cerrarla.
+    private func dismissKeyboard(_ app: XCUIApplication) {
+        guard app.keyboards.count > 0 else { return }
+        let question = app.staticTexts["chat_guided_question"]
+        if question.exists { question.tap() }
+        let gone = NSPredicate(format: "count == 0")
+        _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: app.keyboards)], timeout: 3)
     }
 
     private func shot(_ app: XCUIApplication, _ name: String) {

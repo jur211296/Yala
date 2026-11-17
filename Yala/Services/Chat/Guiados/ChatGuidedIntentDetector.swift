@@ -10,7 +10,8 @@
 //  - una pregunta («¿cuánto gasté en comida?», «cómo voy con mis presupuestos») nunca abre un guiado;
 //  - un presupuesto: la palabra («presupuesto», «budget», «orçamento»…) con algo que la pida (un verbo de crear o
 //    querer, o una cifra), o «ahorrar en…» / «gastar menos en…»;
-//  - un pago planificado: «pago fijo / recurrente / mensual», «suscripción», «recuérdame pagar…», «pago X cada mes».
+//  - un pago planificado: «pago fijo / recurrente / mensual», «suscripción», «recuérdame pagar…», «pago X cada mes»;
+//  - una cuenta, una categoría o un favorito: el verbo de crear y la cosa juntos (`ChatGuidedCreateDetector`).
 //
 //  Lo que dice la frase rellena las respuestas: monto, moneda nombrada, período o frecuencia, día del mes, categorías
 //  (por su nombre, el de sus subcategorías o las palabras del día a día del buscador) y el nombre del pago.
@@ -65,6 +66,8 @@ enum ChatGuidedIntentDetector {
         let asksForIt = matchesAny(folded, creationVerbPatterns) || folded.rangeOfCharacter(from: .decimalDigits) != nil
         // «Presupuesto» dicho con todas las letras gana: «un presupuesto para mis suscripciones» es un presupuesto.
         if matchesAny(folded, budgetNounPatterns) { return asksForIt ? .budget : nil }
+        // Crear una cuenta, una categoría o un favorito: el verbo y la cosa juntos (`ChatGuidedCreateDetector`).
+        if let create = createKind(folded) { return create }
         if matchesAny(folded, paymentRequestPatterns) { return .scheduledPayment }
         if matchesAny(folded, scheduledPaymentPatterns), asksForIt { return .scheduledPayment }
         if matchesAny(folded, budgetSavingPatterns) { return .budget }
@@ -77,6 +80,9 @@ enum ChatGuidedIntentDetector {
         switch kind {
         case .budget: return budget(text, catalog: catalog)
         case .scheduledPayment: return scheduledPayment(text, catalog: catalog)
+        case .account: return account(text, catalog: catalog)
+        case .category: return category(text, catalog: catalog)
+        case .favorite: return favorite(text, catalog: catalog)
         }
     }
 

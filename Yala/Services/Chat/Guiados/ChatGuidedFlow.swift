@@ -18,6 +18,9 @@ import SwiftData
 nonisolated enum ChatGuidedKind: String, Codable, CaseIterable, Sendable {
     case budget
     case scheduledPayment
+    case account
+    case category
+    case favorite
 }
 
 /// Una pregunta del guiado. Los dos flujos comparten las que se parecen (monto, moneda) y cada uno usa las suyas.
@@ -55,6 +58,39 @@ nonisolated enum ChatGuidedStep: String, Codable, Sendable {
     case paymentNote
     case paymentTags
     case paymentPanel
+    // Cuenta
+    case accountKind
+    case accountCurrencies
+    case accountName
+    /// El saldo de cada moneda de la cuenta, en una sola pregunta.
+    case accountBalance
+    case accountStatementDay
+    case accountPaymentDay
+    case accountReminder
+    // Opciones avanzadas de la cuenta
+    case accountNumber
+    case accountStats
+    // Categoría
+    /// «¿Una categoría nueva o subcategorías dentro de una que ya tienes?».
+    case categoryMode
+    case categoryParent
+    case categoryName
+    /// Ícono y color.
+    case categoryLook
+    case categorySubcategories
+    // Opciones avanzadas de la categoría
+    case categoryNeeds
+    // Favorito
+    case favoriteType
+    case favoriteSubcategory
+    case favoriteAccount
+    case favoriteDestination
+    case favoriteAmount
+    case favoriteName
+    // Opciones avanzadas del favorito
+    case favoriteNeed
+    case favoriteTags
+    case favoriteNote
     case confirm
     case done
 
@@ -62,6 +98,7 @@ nonisolated enum ChatGuidedStep: String, Codable, Sendable {
     static let advancedOptions: [ChatGuidedStep] = [
         .budgetName, .budgetAlerts, .budgetAccounts, .budgetTags, .budgetShared, .budgetPanel,
         .paymentSubscription, .paymentReminder, .paymentEnd, .paymentNote, .paymentTags, .paymentPanel,
+        .accountNumber, .accountStats, .categoryNeeds, .favoriteNeed, .favoriteTags, .favoriteNote,
     ]
 
     var isAdvancedOption: Bool { Self.advancedOptions.contains(self) }
@@ -104,6 +141,19 @@ nonisolated enum ChatGuidedFrequency: String, Codable, CaseIterable, Sendable {
         case .daily: .daily
         }
     }
+}
+
+/// Qué crea el guiado de categorías: una categoría con sus subcategorías, o subcategorías dentro de una que ya existe.
+nonisolated enum ChatGuidedCategoryMode: String, Codable, Sendable {
+    case newCategory
+    case subcategories
+}
+
+/// El tipo de un favorito. Los valores son los de `TransactionType.rawValue`, que es lo que guarda `FavoritePayment`.
+nonisolated enum ChatGuidedFavoriteType: String, Codable, CaseIterable, Sendable {
+    case expense
+    case income
+    case transfer
 }
 
 /// «¿Te avisamos cuando vayas llegando al tope?» (los tres de Primeros pasos, `FirstBudgetFlowLogic.Alert`).
@@ -205,6 +255,49 @@ nonisolated struct ChatGuidedAnswers: Codable, Equatable, Sendable {
     /// Lo que iOS contestó al pedir el permiso de avisos por una opción avanzada. `nil`: no se pidió.
     var notificationsAllowed: Bool?
 
+    // MARK: Cuenta
+
+    /// `FirstAccountFlowLogic.Kind.rawValue`.
+    var accountKind: String?
+    /// Las monedas de la cuenta, la principal primero.
+    var accountCurrencies: [String]?
+    var accountName: String?
+    /// El saldo de cada moneda, ya con su signo (en tarjeta, lo que se debe en negativo).
+    var accountBalances: [String: Double]?
+    /// Día de cierre y de pago de una tarjeta: 1…31, o `0` = «No lo sé». `nil`: sin contestar.
+    var accountStatementDay: Int?
+    var accountPaymentDay: Int?
+    /// Días antes del pago para recordarlo, o `-1` = «No me lo recuerdes». `nil`: sin contestar.
+    var accountReminderLead: Int?
+    /// Los últimos números de la cuenta. Vacío: sin número.
+    var accountNumber: String?
+    /// «¿Lo que pasa en esta cuenta cuenta en tus reportes?». `nil`: sí.
+    var accountCountsInReports: Bool?
+
+    // MARK: Categoría
+
+    var categoryMode: ChatGuidedCategoryMode?
+    /// La categoría donde van las subcategorías nuevas.
+    var parentCategoryID: PersistentIdentifier?
+    var categoryName: String?
+    var categoryIcon: String?
+    var categoryColorHex: String?
+    /// Las subcategorías nuevas, en el orden en que se añadieron.
+    var subcategoryNames: [String]?
+    /// La necesidad de cada subcategoría nueva (`SubcategoryNeed.rawValue`), por su nombre. Sin entrada: sin clasificar.
+    var subcategoryNeeds: [String: String]?
+
+    // MARK: Favorito
+
+    /// `TransactionType.rawValue`.
+    var favoriteType: String?
+    var destinationAccountID: PersistentIdentifier?
+    /// «Cambia cada vez»: el favorito no lleva monto.
+    var favoriteWithoutAmount: Bool?
+    var favoriteName: String?
+    /// `SubcategoryNeed.rawValue`. `nil`: la de la subcategoría.
+    var favoriteNeed: String?
+
     init() {}
 
     var effectiveInterval: Int { max(1, interval ?? 1) }
@@ -226,6 +319,10 @@ nonisolated struct ChatGuidedAnswers: Codable, Equatable, Sendable {
         endDate = nil
         note = nil
         notificationsAllowed = nil
+        accountNumber = nil
+        accountCountsInReports = nil
+        subcategoryNeeds = nil
+        favoriteNeed = nil
     }
 }
 
@@ -239,6 +336,11 @@ nonisolated enum ChatGuidedField: String, Codable, Sendable {
     case frequency
     case day
     case subcategories
+    case accountKind
+    case balance
+    case categoryMode
+    case parentCategory
+    case favoriteType
 }
 
 /// El estado entero de un guiado dentro del chat.
