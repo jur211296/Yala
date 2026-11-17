@@ -1,0 +1,10 @@
+Novedades desde la build 2.3 (2):
+• Yala IA te guía para crear un presupuesto, un pago planificado, una cuenta, una categoría, un favorito o un grupo, preguntando solo lo que falta.
+• Grupos: importa tus grupos de Splitwise y Tricount.
+• Grupos: voz, foto y Yala IA funcionan igual que en personal.
+• Registros: filtros rápidos con ícono junto a Lista y Calendario.
+• Estadísticas, Registros y Flujo de caja muestran la cifra principal tan clara como el Panel.
+• Nube: puedes volver a pasar a tu cuenta de Yala con la misma cuenta, y «Volver a tu iCloud» ya no deja el teléfono sin datos.
+• Arreglo: en iPhone SE la guía de Nuevo registro ya no señala un botón tapado.
+
+Qué probar: los guiados de Yala IA, importar un grupo, Grupos con voz y foto, los filtros de Registros y la nube. Si algo falla, envía una captura desde TestFlight.
