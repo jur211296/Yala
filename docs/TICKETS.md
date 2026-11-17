@@ -49,6 +49,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
+| 2026-11-17-banco-de-la-checklist-fuera-del-ci | backlog | tickets/backlog/2026-11-17-banco-de-la-checklist-fuera-del-ci.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
