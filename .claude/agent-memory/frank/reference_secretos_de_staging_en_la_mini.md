@@ -26,4 +26,9 @@ con OAuth de la cuenta de Cloudflare.
   `client_id` de wrangler y **`User-Agent: wrangler/…`** (sin él, 403 `error code: 1010`). Usarla sin pisar la otra:
   `CLOUDFLARE_API_TOKEN=<ese token> CLOUDFLARE_ACCOUNT_ID=86c270…` delante de wrangler. **Ese OAuth no trae Turnstile**
   (`challenge-widgets`): un widget lo crea Dan en el panel.
+- **Desplegar Yala web a producción desde la Max** (medido el 16-nov, lote 1 de la base visual): `git clone --depth 1
+  --branch <rama>` en un `mktemp -d` de la Mini, `npm ci` + `npx vite build`, y `wrangler deploy --env production` con el
+  token de Yala delante (renovado con un script que reescribe `oauth_token`, `refresh_token` y `expiration_time` en el
+  toml y deja el token en un fichero 0600 dentro del temporal, nunca en pantalla). Antes, `wrangler deployments list
+  --env production` para anotar la versión de vuelta atrás; al acabar, borrar el temporal con el token.
 Relacionado: [[decisiones-py-no-esta-en-la-max]].
