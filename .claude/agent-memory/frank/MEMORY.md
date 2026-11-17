@@ -7,7 +7,7 @@
 - [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 78 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
 - [Simulador y capturas](indice_simulador_y_capturas.md) — 86 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
 - [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
-- [Estado del trabajo](indice_estado_del_trabajo.md) — 93 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
+- [Estado del trabajo](indice_estado_del_trabajo.md) — 94 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
 - [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
