@@ -1,15 +1,18 @@
 /**
- * Configurar en la beta: la cuenta, las sesiones web (cerrar las demás), ocultar montos al abrir, el idioma (los 16 de
- * la app, lote 2b) y salir.
+ * Configurar en la beta: la cuenta, las sesiones web (cerrar las demás), ocultar montos al abrir, el tema (Como el
+ * sistema, Claro, Oscuro o Liquid Glass; lote 1 de «Yala web como la app»), el idioma (los 16 de la app, lote 2b) y salir.
  * Lo demás (categorías, cuentas, divisas, avisos, Pro) se cambia en el iPhone.
  */
 import { useCallback, useEffect, useState } from "react";
 import { chosenLang, LANGS, setChosenLang, texts, type Lang } from "../i18n";
+import { aplicarTema, guardarTema, temaElegido, TEMAS, type Tema } from "../tema";
 import { getJson, postJson, type Sesion } from "./api";
 import { ago } from "./format";
 import { readHidePref, writeHidePref, type Me } from "./Shell";
 
 const t = texts();
+
+const TEMA_NOMBRE: Record<Tema, string> = { sistema: t.app.temaValor, claro: t.app.temaClaro, oscuro: t.app.temaOscuro, liquid: t.app.temaLiquid };
 
 function sessionTitle(s: Sesion): string {
   return t.app.en(s.navegador || t.app.navegador, s.sistema);
@@ -25,6 +28,7 @@ export function Configurar({ me, onToast }: { me: Me; onToast: (msg: string) => 
   const [busy, setBusy] = useState<string | null>(null);
   const [hideOnOpen, setHideOnOpen] = useState(readHidePref);
   const [idioma, setIdioma] = useState<Lang | "">(chosenLang() ?? "");
+  const [tema, setTema] = useState<Tema>(temaElegido);
 
   const load = useCallback(() => {
     setError(false);
@@ -124,10 +128,24 @@ export function Configurar({ me, onToast }: { me: Me; onToast: (msg: string) => 
             }}
           />
         </label>
-        <div className="kv">
+        <label className="kv">
           <span>{t.app.tema}</span>
-          <span>{t.app.temaValor}</span>
-        </div>
+          <select
+            value={tema}
+            onChange={(e) => {
+              const v = e.target.value as Tema;
+              setTema(v);
+              guardarTema(v);
+              aplicarTema(v);
+            }}
+          >
+            {TEMAS.map((k) => (
+              <option key={k} value={k}>
+                {TEMA_NOMBRE[k]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="kv">
           <span>{t.app.idioma}</span>
           <select

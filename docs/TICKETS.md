@@ -43,14 +43,19 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1334)
+## Index (1340)
 
 | id | status | path |
+| 2026-11-14-bugs-entrada-lote-1 | done | tickets/done/2026-11-14-bugs-entrada-lote-1.md |
+| 2026-11-14-bugs-ui-lote-1 | done | tickets/done/2026-11-14-bugs-ui-lote-1.md |
+| 2026-11-14-texto-presupuesto-pasado | done | tickets/done/2026-11-14-texto-presupuesto-pasado.md |
+| 2026-11-15-analisis-por-cuenta | done | tickets/done/2026-11-15-analisis-por-cuenta.md |
 | 2026-11-15-ia-guiados | qa | tickets/qa/2026-11-15-ia-guiados.md |
 | 2026-11-16-video-verificacion-gmail-v4 | done | tickets/done/2026-11-16-video-verificacion-gmail-v4.md |
 | 2026-11-16-bugs-barrido-final-2-3-app | qa | tickets/qa/2026-11-16-bugs-barrido-final-2-3-app.md |
 | 2026-11-16-competencia-prestamos-ia | done | tickets/done/2026-11-16-competencia-prestamos-ia.md |
 |---|---|---|
+| 2026-11-16-web-app-lote-1-base-visual | done | tickets/done/2026-11-16-web-app-lote-1-base-visual.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
@@ -864,7 +869,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | done | tickets/done/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-2-3-arrival-and-getting-started-deck | done | tickets/done/onboarding-2-3-arrival-and-getting-started-deck.md |
-| onboarding-2-3-bank-email-step | blocked | tickets/blocked/onboarding-2-3-bank-email-step.md |
+| onboarding-2-3-bank-email-step | qa | tickets/qa/onboarding-2-3-bank-email-step.md |
 | onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
 | onboarding-2-3-first-account-questions | done | tickets/done/onboarding-2-3-first-account-questions.md |
 | onboarding-2-3-first-budget-questions | done | tickets/done/onboarding-2-3-first-budget-questions.md |

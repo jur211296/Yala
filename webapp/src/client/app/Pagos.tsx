@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { texts } from "../i18n";
 import { getJson, type Cobro, type Pagos as Data, type Suscripcion } from "./api";
 import { badge, money, named, shortDate } from "./format";
+import { Monto } from "./Monto";
 
 const t = texts();
 
@@ -110,7 +111,7 @@ export function Pagos() {
         <span className="cap">{t.pag.porPagar}</span>
         <span className="big">
           {data.aproximado ? "≈ " : ""}
-          {money(data.total_gastos, data.divisa)}
+          <Monto importe={data.total_gastos} divisa={data.divisa} tam="hero" />
         </span>
         {data.pagados > 0 ? <span className="sub">{t.pag.pagados(data.pagados)}</span> : null}
       </section>
