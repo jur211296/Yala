@@ -280,7 +280,7 @@ describe("sesiones web: ver y cerrar", () => {
     expect(sesiones.length).toBe(2);
     expect(sesiones.filter((s) => s.esta).length).toBe(1);
     expect(sesiones.find((s) => !s.esta)!.equipoCompartido).toBe(true);
-    expect(raw).not.toContain("eyJ");
+    expect(raw).not.toMatch(/eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\./); // ningún JWT (su forma entera; «eyJ» suelto sale por azar)
     expect(raw).not.toMatch(/"k"|s:[0-9a-f]{64}|"sid"/);
     expect(w.kv.sessionCount()).toBe(2);
   });
