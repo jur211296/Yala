@@ -41,3 +41,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Artifact público: lo frena el clasificador](reference_artifact_publico_lo_frena_el_clasificador.md) — ADR-113 pide hacerlo con Chrome; el clic de «Cualquier persona» se deniega: va a «Necesita de ti».
 - [Yala web con sesión, de noche en la Max](reference_web_con_sesion_de_noche_en_la_max.md) — iPhone 14 reflejado y Chrome sin extensión; staging con Playwright en la Mini sí.
 - [Consola del iPhone con Core Data llena el disco](reference_consola_del_iphone_con_core_data_llena_el_disco.md) — grep --line-buffered sin cut; parar la consola cierra la app; sin rm, clean + mv a ExtDev.
+- [zsh: `$REF:ruta` es un modificador](feedback_zsh_modificador_tras_variable.md) — `:q`, `:h`, `:t` tras `$VAR` rompen `git show $B:qa/…`; usa `"${B}:ruta"`.
