@@ -17,7 +17,25 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
 |---|---|---|
 | Unit pure-logic y context-based | **Sí**, desde el 2026-10-10 | job `tests` |
 | UI (XCUITest) | No: advisory y solo en la nocturna | job `ui` |
+| UI de lo tocado | No corre en el CI: solo en el paso 3 de `/gate`, en local | `qa/scripts/interfaz-de-lo-tocado.py` |
 | El aviso a Grok | No, salvo que no quede ningún canal | job `aviso` |
+
+## La interfaz de lo tocado corre en el gate local, no en el CI del PR
+
+**Decisión de Jürgen, 2026-11-17: ningún PR corre pruebas de interfaz en el CI.** El runner `xcode-27`
+se paga por minuto y no hay presupuesto. La propuesta P2 de `docs/verificacion/` pedía un job del PR
+en observar y luego obligatorio; se midió y se descartó. No se vuelve a proponer un job de interfaz
+por PR sin un presupuesto de macOS aprobado.
+
+- **Lo que se midió** sobre los 214 PR de 2.3 del 3 al 17-nov: 143 tocan pantallas, y en casi todos
+  `qa/scripts/interfaz-de-lo-tocado.py` encuentra más clases de las que caben (mediana sin techo:
+  ~495 min de interfaz). Con 40 min de techo y ~20 de build, eran ~59 min de macOS por PR, ~10 h/día.
+- **Lo que queda**: el script elige las clases del paso 3 de `/gate` en la Mini o la Max (gratis),
+  con techo de 30 min y la lista de lo que deja fuera. Su banco (`interfaz-de-lo-tocado-test.sh`)
+  corre en `coverage-index`, que es ubuntu y no cuesta.
+- **Lo que eso significa**: la interfaz no tiene red en el PR. Un PR que se cuele sin gate (o con
+  el paso 3 saltado) solo se ve en la nocturna, ya dentro de `2.3`. Por eso el paso 3 del gate no
+  se salta, y lo que el script deja FUERA va al informe del gate como no corrido.
 
 ## La regla: un unit en rojo pone `tests` en rojo
 

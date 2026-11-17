@@ -72,7 +72,7 @@ portó bien. Si otra sesión lo tiene tomado, esto **espera** y lo dice; no fall
 
 Si un archivo no tiene ninguna suite, **regístralo como gap** en el informe. No lo tapes.
 
-## 3 · XCUITest de las áreas tocadas
+## 3 · XCUITest de lo tocado
 
 Esto es nuevo y es el punto del gate: la fase de UI ya no espera a CI.
 
@@ -83,16 +83,22 @@ segunda **instala su `.app` encima**, así que la primera acaba tapeando un bina
 rojos **con** su línea de fallo, idénticos a una regresión. Decisión de Jürgen (2026-09-11, opción 2
 del ticket `diez-worktrees-comparten-un-simulador`): **lock de fichero, la segunda espera**.
 
-Cruza los archivos modificados contra `codeGlobs` de `qa/coverage-index.json`; para las áreas que casen y tengan `coverage: "xcuitest:<File>#<test>"`, corre esas suites:
+**Qué clases corren lo decide un script, no la mano** (desde el 2026-11-17, propuesta P2 de `docs/verificacion/`). Cruzar el diff con `codeGlobs` a mano dejó pasar las dos tandas de rojos de noviembre: el PR de categorías a un toque corrió `CategoryQuickPick23UITests` y rompió `SplitCalculatorUITests` y `AccountCardPickersUITests`, que el índice no une con lo tocado pero que usan los identificadores de `NewTransactionView.swift`. El script lee el diff contra `origin/2.3` —árbol de trabajo y ficheros sin versionar incluidos, porque el gate corre antes del commit— y suma el índice, los identificadores de las vistas tocadas y de lo que queda debajo del cambio, los textos que cambian y las vistas anfitrionas (detalle en su cabecera):
 
 ```bash
-bash qa/scripts/sim-lock.sh -- \
+python3 -I qa/scripts/interfaz-de-lo-tocado.py --formato only-testing > /tmp/gate-ui-args.txt
+# Vacía = nada que correr. Sin esta guarda, `xcodebuild test` sin -only-testing corre la suite ENTERA.
+[ -s /tmp/gate-ui-args.txt ] && bash qa/scripts/sim-lock.sh -- \
   xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  test -only-testing:YalaUITests/<Suite> 2>&1 \
+  test $(cat /tmp/gate-ui-args.txt) 2>&1 \
   | grep -E "(Test run with|Test Case|Executed|passed|failed|warning:|\*\* TEST)"
 ```
 
-Las líneas `warning:` cuentan igual que en el paso 2, solo las de los ficheros del alcance: los de `YalaUITests` no los compila ningún otro paso, así que o se leen aquí o no se leen (con el `touch` del paso 2 ya hecho, si tocaste alguno). `YalaUITests` es XCTest y sus suites son clases: medido el 2026-11-04, sus 66 clases se llaman como su fichero, así que aquí el nombre del fichero que trae `coverage` sí casa. Si un día deja de ser así, `-only-testing` no avisa: compara el `Executed N tests` con los casos que esperabas.
+El informe (stderr) dice qué clases corren, por qué capa y cuántos minutos estimados, con **techo de 30 min** por defecto (`--techo-min N` lo sube: con 40, el PR de categorías a un toque habría corrido las dos clases que rompió; con 30, una). **Lo que queda FUERA por el techo se copia al informe del gate** como «no corrido», con su motivo: no es un verde. Si el cambio toca de verdad una de esas clases (el informe dice cuál y por qué), súbela a mano. Si la lista sale vacía, el script lo dice y nombra los ficheros de la app por los que no pasa ninguna clase: eso es «sin áreas con XCUITest» y va así al informe. Si el diff solo toca documentación, el script devuelve vacío y el paso se salta.
+
+**Esta es la única red de interfaz antes del merge**: el CI del PR no corre ninguna (decisión de Jürgen del 2026-11-17: el runner macOS se paga por minuto; `.claude/rules/ci-qa.md`). La suite entera llega en la nocturna, cuando el cambio ya está en `2.3`.
+
+Las líneas `warning:` cuentan igual que en el paso 2, solo las de los ficheros del alcance: los de `YalaUITests` no los compila ningún otro paso, así que o se leen aquí o no se leen (con el `touch` del paso 2 ya hecho, si tocaste alguno). `YalaUITests` es XCTest y sus suites son clases: el script devuelve el nombre de la clase declarada (`class X: XCTestCase`), no el del fichero. `-only-testing` no avisa si un nombre no casa: compara el `Executed N tests` con los casos que esperabas.
 
 Si otra sesión lo tiene tomado, `sim-lock.sh` **espera** y dice a quién (`[cola] … lo tiene: pid …`).
 Eso no es un fallo y no se reintenta con prisa: una corrida de XCUITest dura entre 3 y 40 min y el
@@ -107,7 +113,7 @@ turno llega solo. `bash qa/scripts/sim-lock.sh --estado` contesta «¿hay cola?�
 ```bash
 bash qa/scripts/sim-lock.sh -- \
   xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  test -only-testing:YalaUITests/<Suite> > /tmp/gate-ui.log 2>&1 &
+  test $(cat /tmp/gate-ui-args.txt) > /tmp/gate-ui.log 2>&1 &
 bash qa/scripts/sim-libre.sh --vigilar $!     # exit 1 ⇒ el veredicto NO vale, repetí
 wait; grep -E "(Test Suite|Test Case|Executed|warning:|\*\* TEST)" /tmp/gate-ui.log
 ```
@@ -171,7 +177,8 @@ El sello es la huella del árbol de trabajo. El hook `PreToolUse` de `git commit
 
 Build         Yala ✓ / Yala Dev ✓   — 0 warnings nuevos
 Unit          N tests, M suites — ✓
-XCUITest      N tests en <áreas> — ✓        (o "sin áreas con XCUITest")
+XCUITest      N tests en K clases (interfaz-de-lo-tocado) — ✓   (o "sin áreas con XCUITest")
+              Fuera por el techo: <clases> (o "nada")
 Audit         ✓ limpio  (o: N críticos, N avisos)
 CI local      ✓ N/N pasos de coverage-index  (ratchet, aislamiento, bancos)
 Sello         Verificado: build 2/2 · unit M suites · interfaz K clases · índice ✓

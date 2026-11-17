@@ -51,6 +51,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
+| 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
 | 2026-11-16-ui-tests-rojos-tandas | done | tickets/done/2026-11-16-ui-tests-rojos-tandas.md |
 | split-calculator-uitests-sheet-does-not-mount | done | tickets/done/split-calculator-uitests-sheet-does-not-mount.md |
 | 2026-11-16-hero-claro-estadisticas-registros-flujo | done | tickets/done/2026-11-16-hero-claro-estadisticas-registros-flujo.md |
