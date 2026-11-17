@@ -14,6 +14,10 @@ soltar el fichero) que hace `XCUIDevice.shared.orientation = .landscapeLeft`, la
 `launchForUITest(...)` y guarda `XCUIScreen.main.screenshot().pngRepresentation` en una ruta del host.
 Los parámetros llegan con el prefijo `TEST_RUNNER_` (`TEST_RUNNER_X=1` → `X` en el runner). Se borra
 antes del commit.
+**Más barato (2026-11-17): el giro SE QUEDA al terminar el test.** Un test de una línea
+(`XCUIDevice.shared.orientation = .landscapeLeft`) y después `launch_app_sim` + `snapshot_ui`/`swipe`/`tap` de
+XcodeBuildMCP conducen la app ya girada, y `simctl io screenshot` captura. Para volver, otro test con `.portrait`.
+Dentro del test, `app.swipeUp()` en horizontal no desplazó Estadísticas; el `swipe` de XcodeBuildMCP sí.
 
 **Ventana estrecha en iPad — SÍ se puede, corrige lo que decía esta nota** (2026-09-29, paso 4 del
 carril): (1) en el iPad simulado, Ajustes → Multitarea y gestos → **Apps en ventanas** (con
