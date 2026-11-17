@@ -97,6 +97,8 @@ export interface PaginaRegistros {
   movimientos: Movimiento[];
   siguiente_cursor: string | null;
   avisos: string[];
+  /** La divisa de `importe_en_divisa_preferida` (lote 4: el total de cada día). */
+  divisa_preferida?: string;
 }
 
 export interface Categoria {

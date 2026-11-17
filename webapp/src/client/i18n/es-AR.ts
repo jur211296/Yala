@@ -22,6 +22,7 @@ export const ES_AR: TextsPatch = {
   } as Record<string, string>,
   noDisponible: "Yala web no responde ahora mismo. Volvé a intentarlo en un momento.",
   app: {
+    saldoExplica: "Suma todas tus cuentas, también las tarjetas. Lo que gastaste con tarjeta y todavía no pagaste se resta.",
     sinCuentas: "Todavía no tenés cuentas. Crealas en tu iPhone.",
     registrosNota: "En la beta los registros se miran. Para cambiar uno, abrilo en tu iPhone.",
     bandejaNota: "En la beta la Bandeja se ve acá y se aprueba en tu iPhone. Lo que anotás en la web llega con la etiqueta «Yala web».",
