@@ -5,6 +5,9 @@ paths:
   - "qa/scripts/ci-*.sh"
   - "qa/cuarentena.json"
   - "qa/scripts/cuarentena-test.sh"
+  - "qa/checklist-confiabilidad.yaml"
+  - "qa/scripts/checklist-elegir*"
+  - ".claude/agents/revisor-checklist.md"
 ---
 
 # CI de GitHub: qué frena el merge
@@ -81,6 +84,36 @@ mergeaba en verde y nadie se enteraba.
   `ci-reintentar-rojos-test.sh`, casos 21-28. Los dos en `coverage-index`.
 - Solo la LISTA se lee de 2.3; el script que la aplica sigue siendo el del PR. Leer también las
   reglas del gate de la rama base es la propuesta P4.
+
+## Revisor con checklist: en el gate, en observar, leído de 2.3
+
+Desde el 2026-11-17 (propuesta P4 de `docs/verificacion/`). Paso 4 bis de `/gate`: un solo agente
+`revisor-checklist` recibe el diff y los ítems de `qa/checklist-confiabilidad.yaml` que dispara, y
+hace hasta tres rondas con la sesión. No corre en el CI: es local, como la interfaz de lo tocado.
+
+- **Se leen de `origin/2.3`, nunca del PR**: la checklist, `qa/scripts/checklist-elegir.py` (el gate
+  lo saca con `git show`) y las instrucciones del revisor (el selector mete el cuerpo de
+  `.claude/agents/revisor-checklist.md` de 2.3 en el encargo). Un PR que cambie cualquiera de los tres
+  se juzga con los de 2.3, y el informe lo avisa. Cambiar las reglas es un PR propio a 2.3.
+- **Solo lógica cara**: aplica si dispara un ítem de nube, dinero, migración, fechas o formulario. Los
+  de `pruebas` acompañan y no lo disparan solos. Tope de 10 ítems; no se rellena hasta 3.
+- **Medido sobre los 215 PR mergeados a 2.3 del 3 al 17-nov** (con los 30 ítems de la checklist): el
+  revisor habría aplicado en 72 (≈5 al día), mediana 2 ítems, máximo 6; el tope no se alcanzó nunca;
+  2 ítems no dispararon (`salir-de-fase-repone-pendientes`, `syncid-cambiado-escribe-testigo`).
+- **Validado** sobre el PR de categorías a un toque (#920): el revisor señaló
+  `SplitCalculatorUITests` y `AccountCardPickersUITests`, las dos que ese PR rompió sin correrlas. No
+  es una prueba ciega: ese PR es uno de los dos orígenes del ítem.
+- **Modo observar**: no bloquea. El interruptor es la constante `MODO` del selector, en 2.3. El
+  resultado va al cuerpo del PR («Revisor con checklist», con los ids) y a la línea `Verificado:`
+  (`· revisor N ítems, H hallazgos, K aceptados`). `ultimo_disparo` no se escribe en el YAML: la
+  revisión mensual (P5) lo cuenta de los PR.
+- **Cuándo pasa a bloquear**: no antes del **15-dic-2026** ni de **30 PR con revisor**. Se cuenta con
+  `git log origin/2.3 --format=%B | grep -o 'revisor [0-9]* ítems*, [0-9]* hallazgos*, [0-9]* aceptados*'`.
+  Se promueve si al menos la mitad de los hallazgos acabaron aceptados (arreglados) y menos de uno de
+  cada diez PR quedó «sin acuerdo». Bloquear significa: sin sello mientras quede un hallazgo sin
+  acuerdo tras la ronda 3. Lo decide Jürgen, en una sesión corta que cambia `MODO` en 2.3.
+- Banco: `qa/scripts/checklist-elegir-test.sh` (repo de mentira con su rama de reglas), en
+  `coverage-index`.
 
 ## El tope del job cancela, y una cancelación también frena
 

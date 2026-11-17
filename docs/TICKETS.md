@@ -89,6 +89,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-14-pagos-recurrentes-s1 | done | tickets/done/2026-11-14-pagos-recurrentes-s1.md |
 | 2026-11-14-qa-ui-tandas-rojas | done | tickets/done/2026-11-14-qa-ui-tandas-rojas.md |
 | 2026-11-17-verificacion-cuarentena-y-sello | done | tickets/done/2026-11-17-verificacion-cuarentena-y-sello.md |
+| 2026-11-17-verificacion-revisor-checklist | done | tickets/done/2026-11-17-verificacion-revisor-checklist.md |
 | 2026-11-16-yala-web-produccion-subir | done | tickets/done/2026-11-16-yala-web-produccion-subir.md |
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |

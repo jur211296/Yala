@@ -65,10 +65,10 @@ se comprueba con `git rev-parse --git-common-dir`.
   en MODO AUTÓNOMO ya lo pide: ahí lo dejas tú en cola
   de auto-merge y cierras sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan los checks.
 
-**Review adversarial** —varias lentes independientes y refutación por hallazgo— cuando el cambio
-toque lógica donde un bug sale caro: sync (CKShare, bridges, notificaciones), cálculos
-financieros, migraciones SwiftData, el bridge SplitExpense ↔ TransactionItem. Para l10n,
-rebranding o polish visual no aporta y no la haces.
+**Revisión de lógica cara**: un solo revisor con la checklist de confiabilidad, el paso 4 bis de
+`/gate`. Lo dispara el diff cuando toca sync (CKShare, bridges, notificaciones), cálculos
+financieros, migraciones SwiftData o el formulario de registro, y hace hasta tres rondas contigo.
+Un revisor, nunca varias lentes en paralelo. Para l10n, rebranding o polish visual no aplica.
 
 ## Control de ejecución
 

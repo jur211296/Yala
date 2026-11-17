@@ -130,11 +130,22 @@ else mal "el hook sale 0 aunque la huella falle"; fi
 # 15. sellar mal llamado no escribe nada a medias.
 cp .claude/sessions/tests-passed "$T/antes"
 for args in "--build 3 --unit 1 --interfaz 1 --indice si" "--build 2 --unit x --interfaz 1 --indice si" \
-            "--build 2 --unit 1 --interfaz 1" "--build 2 --unit 1 --interfaz 1 --indice quizas"; do
+            "--build 2 --unit 1 --interfaz 1" "--build 2 --unit 1 --interfaz 1 --indice quizas" \
+            "--build 2 --unit 1 --interfaz 1 --indice si --revisor 3" \
+            "--build 2 --unit 1 --interfaz 1 --indice si --revisor 3 --hallazgos 1 --aceptados 2" \
+            "--build 2 --unit 1 --interfaz 1 --indice si --hallazgos 1 --aceptados 0"; do
   # shellcheck disable=SC2086
   V sellar $args 2>/dev/null; ex=$?
   if [ "$ex" = 2 ] && cmp -s .claude/sessions/tests-passed "$T/antes"; then ok "sellar rechaza: $args"; else mal "sellar rechaza: $args" "exit $ex"; fi
 done
+
+# 16. Con el revisor con checklist (P4, paso 4 bis del gate): un segmento más, con singular y plural.
+REV="$(V sellar --build 2 --unit 14 --interfaz 6 --indice si --revisor 4 --hallazgos 2 --aceptados 1)"
+[ "$REV" = "$COMPLETA · revisor 4 ítems, 2 hallazgos, 1 aceptado" ] && ok "sellar con revisor: segmento" \
+  || mal "sellar con revisor: segmento" "$REV"
+REV="$(V sellar --build 2 --unit 14 --interfaz 6 --indice si --revisor 1 --hallazgos 0 --aceptados 0)"
+[ "$REV" = "$COMPLETA · revisor 1 ítem, 0 hallazgos, 0 aceptados" ] && ok "sellar con revisor: singular" \
+  || mal "sellar con revisor: singular" "$REV"
 
 if [ "$fallos" -eq 0 ]; then
   echo "── verificado-en-commit: todos los casos en verde."

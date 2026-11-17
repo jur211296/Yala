@@ -143,6 +143,11 @@ jobs:
       # los commits dejarían de decir cómo se probaron sin que nadie lo notara.
       - name: Línea Verificado en el commit (verificado-en-commit.sh)
         run: bash qa/scripts/verificado-en-commit-test.sh
+      # El selector del revisor con checklist (2026-11-17, P4). El `/gate` lo lee de 2.3: si entrara
+      # roto, ningún PR tendría revisor y en observar nadie lo notaría. Lee el YAML con Ruby si no
+      # hay PyYAML (ubuntu-latest trae Ruby).
+      - name: Selector del revisor con checklist (checklist-elegir-test.sh)
+        run: bash qa/scripts/checklist-elegir-test.sh
       # Los unit del job `tests` BLOQUEAN desde el 2026-10-10: su rojo pone `tests` en rojo y el
       # auto-merge no mergea. Volver a ponerles `continue-on-error` no da ningun error —el CI
       # sigue verde, que es justo el fallo—, asi que este banco lo vigila sobre el propio qa.yml.

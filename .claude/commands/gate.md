@@ -1,6 +1,6 @@
 ---
-description: Gate único antes de commitear — build, unit, XCUITest de las áreas tocadas, audit de calidad y validación del índice de QA
-allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(bash qa/scripts/verificado-en-commit.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
+description: Gate único antes de commitear — build, unit, XCUITest de las áreas tocadas, audit de calidad, revisor con checklist (observar) y validación del índice de QA
+allowed-tools: Bash(git:*), Bash(python3 -I /tmp/checklist-elegir.py:*), Agent, SendMessage, Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(bash qa/scripts/verificado-en-commit.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
 ---
 
 Verificación completa de los cambios actuales. Sustituye a `/verify-ios` + `/test-smart` + `/swift-audit` corridos por separado. Un solo informe; el commit se apoya en él.
@@ -128,6 +128,33 @@ Si el centinela sale 1, **la corrida no da veredicto**. Repetila aislada. Esto n
 
 Aplica los checks de `/swift-audit` **solo sobre las líneas añadidas** del diff. Críticos que bloquean: credenciales hardcodeadas, `try?` que silencia, force unwrap sin guard previo, `print` fuera de `#if DEBUG`, `@Attribute(.unique)` en un `@Model`. El resto es informativo.
 
+## 4 bis · Revisor con la checklist (observar)
+
+Desde el 2026-11-17 (propuesta P4 de `docs/verificacion/`). **Un solo revisor** recibe el diff y los ítems de `qa/checklist-confiabilidad.yaml` que el diff dispara, y dice ítem por ítem si el cambio cumple. Sustituye a la revisión «con varias lentes»: el 14-nov un revisor bien informado encontró 9 bugs reales de 11 donde las lentes en paralelo rinden peor.
+
+**El selector, la checklist y las instrucciones del revisor se leen de `origin/2.3`**, nunca del árbol: un cambio no puede tocar las reglas que lo juzgan.
+
+```bash
+git fetch -q origin 2.3
+git show origin/2.3:qa/scripts/checklist-elegir.py > /tmp/checklist-elegir.py \
+  || echo "selector aún no está en 2.3: paso saltado"
+python3 -I /tmp/checklist-elegir.py --formato brief > /tmp/gate-revisor.md   # informe por stderr
+echo "exit $?"   # 0 = el revisor aplica · 3 = no aplica · 2 = error (sin checklist en 2.3, YAML ilegible)
+```
+
+- **Exit 3** (no dispara nada de nube, dinero, migración, fechas ni formulario): el paso se salta y el informe lo dice. Los ítems de `pruebas` solos no lo disparan.
+- **Exit 2**: el informe copia el error; en observar no bloquea.
+- **Exit 0**: lanza **un** agente `revisor-checklist` con el contenido de `/tmp/gate-revisor.md` como encargo (las instrucciones de 2.3 ya van dentro, delante de los ítems).
+
+**Rondas, hasta tres.** A cada HALLAZGO, DUDA o PIDE del revisor contestas: lo arreglas (y vuelves a correr lo que el arreglo toque), lo refutas con evidencia (`fichero:línea`, una prueba) o das el resultado de la prueba pedida. Las respuestas van al mismo revisor con `SendMessage`, para que conserve el contexto. Tras la ronda 3, lo que siga abierto queda **sin acuerdo**: al PR y a «Necesita de ti» del cierre, para que decida Jürgen. Un solo revisor siempre: nada de lanzar otro para desempatar.
+
+**Observar: no bloquea.** El veredicto del gate no depende de este paso. Su resultado va a dos sitios:
+
+- al sello, con `--revisor <ítems> --hallazgos <H> --aceptados <K>` (paso 6), donde *aceptados* son los hallazgos que arreglaste; sin revisor, sin esos flags;
+- al cuerpo del PR, sección **«Revisor con checklist»**: los ids de los ítems con su veredicto final, cada hallazgo con lo que se hizo (arreglado, refutado y por qué, sin acuerdo) y lo que quedó fuera por el tope. Esos ids son el `ultimo_disparo` que cuenta la revisión mensual (P5); el selector no escribe el YAML.
+
+Cuándo pasa a bloquear y quién lo decide: `.claude/rules/ci-qa.md`, «Revisor con checklist».
+
 ## 5 · Índice de QA y lo que bloquea el CI
 
 ```bash
@@ -148,7 +175,8 @@ Solo si **todo lo bloqueante está verde**, con lo que **de verdad corrió** en 
 
 ```bash
 bash qa/scripts/verificado-en-commit.sh sellar --build <schemes compiladas, 0-2> \
-  --unit <suites del paso 2> --interfaz <clases del paso 3> --indice si
+  --unit <suites del paso 2> --interfaz <clases del paso 3> --indice si \
+  [--revisor <ítems del paso 4 bis> --hallazgos <H> --aceptados <K>]
 ```
 
 Escribe el sello (línea 1, la huella; línea 2, el resumen) y enseña la línea que llevará el commit:
@@ -156,7 +184,8 @@ Escribe el sello (línea 1, la huella; línea 2, el resumen) y enseña la línea
 `prepare-commit-msg` la copia al mensaje; sin sello válido escribe `Verificado: ninguno` (o
 `ninguno (solo docs)`). Un paso que no corrió va con 0, no se redondea: esa línea es lo que luego
 cuenta qué entró sin interfaz o sin unit. Si solo cambió documentación, `--build 0 --unit 0
---interfaz 0`.
+--interfaz 0`. Con el revisor del paso 4 bis, la línea suma `· revisor 4 ítems, 2 hallazgos, 1
+aceptado`; si el paso no aplicó, no se pasan esos flags y la línea no lo menciona.
 
 **Varios commits sobre un mismo gate:** la huella incluye HEAD, así que tras cada commit
 `bash qa/scripts/verificado-en-commit.sh resellar` (nueva huella, mismo resumen) — solo si el disco
@@ -181,7 +210,8 @@ XCUITest      N tests en K clases (interfaz-de-lo-tocado) — ✓   (o "sin áre
               Fuera por el techo: <clases> (o "nada")
 Audit         ✓ limpio  (o: N críticos, N avisos)
 CI local      ✓ N/N pasos de coverage-index  (ratchet, aislamiento, bancos)
-Sello         Verificado: build 2/2 · unit M suites · interfaz K clases · índice ✓
+Revisor       N ítems, H hallazgos (K aceptados, S sin acuerdo) — observar  (o "no aplica")
+Sello         Verificado: build 2/2 · unit M suites · interfaz K clases · índice ✓ · revisor N ítems, …
 
 Gaps: <archivo> → sin tests    (o "ninguno")
 
