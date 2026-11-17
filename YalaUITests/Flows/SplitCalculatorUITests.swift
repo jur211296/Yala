@@ -32,6 +32,14 @@ final class SplitCalculatorUITests: XCTestCase {
         amountField.tap()
         amountField.typeText("100")
 
+        // Con el teclado abierto, la fila de categorías a un toque (decisión 21 de 2.3) baja «Mi parte» hasta debajo del
+        // teclado y el toque se pierde: se cierra antes tocando la pregunta del monto, que no es un control (molde de
+        // `TransactionFormDecided02UITests.dismissKeyboard`).
+        let question = app.descendants(matching: .any)["new_transaction_amount_question"].firstMatch
+        XCTAssertTrue(question.waitForExistence(timeout: 5), "Falta la pregunta del monto.")
+        question.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "El teclado no se cerró.")
+
         // Acción rápida "Dividir" (solo en gastos) → abre SplitCalculatorSheet con el
         // total prefilado (100).
         let splitAction = app.buttons["new_transaction_split_action"]

@@ -87,8 +87,9 @@ final class AccountCardPickersUITests: XCTestCase {
         usdPill.tap()
         XCTAssertTrue(usdPill.waitForSelected(), "La pastilla de dólares no quedó elegida.")
 
-        let accountChip = app.buttons["new_transaction_account_chip"]
-        accountChip.tap()
+        // En dólares sale la fila del tipo de cambio, que baja la pastilla de cuenta hasta debajo de la barra de «Guardar»:
+        // un toque directo cae en la barra. El ayudante la desplaza a la vista antes de tocarla.
+        _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
         XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "El selector no volvió a abrir con la tarjeta.")
         cardRow.tap()
         XCTAssertTrue(cardRow.waitForNonExistence(timeout: 5), "El selector no se cerró al tocar la tarjeta.")

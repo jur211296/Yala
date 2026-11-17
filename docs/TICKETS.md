@@ -47,7 +47,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 
 | id | status | path |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
-| split-calculator-uitests-sheet-does-not-mount | backlog | tickets/backlog/split-calculator-uitests-sheet-does-not-mount.md |
+| 2026-11-16-ui-tests-rojos-tandas | done | tickets/done/2026-11-16-ui-tests-rojos-tandas.md |
+| split-calculator-uitests-sheet-does-not-mount | done | tickets/done/split-calculator-uitests-sheet-does-not-mount.md |
 | 2026-11-16-hero-claro-estadisticas-registros-flujo | done | tickets/done/2026-11-16-hero-claro-estadisticas-registros-flujo.md |
 | stats-ai-summary-shows-figures-from-before-the-latest-records | backlog | tickets/backlog/stats-ai-summary-shows-figures-from-before-the-latest-records.md |
 | 2026-11-14-bugs-entrada-lote-1 | done | tickets/done/2026-11-14-bugs-entrada-lote-1.md |

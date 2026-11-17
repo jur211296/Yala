@@ -1,10 +1,10 @@
 ---
 id: split-calculator-uitests-sheet-does-not-mount
-status: backlog
+status: done
 priority: medium
 area: "transactions, qa"
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
 source: "gate del encargo hero claro (2026-11-16) + nocturna del CI del mismo día"
 ---
 
@@ -27,3 +27,9 @@ aserto de su ayudante `openSplitWith50Percent` (línea 43): «No se montó Split
 Las decisiones de Jürgen del 16-nov (17:40) piden encolar «el bug de Nuevo registro que no queda en reposo para
 XCUITest». Esta calculadora se abre desde Nuevo registro: probablemente es el mismo bug. Si ya hay ticket de ese bug,
 este se absorbe en él.
+
+## Cierre (2026-11-17)
+
+No era el reposo de «Nuevo registro»: con el teclado abierto, la fila de categorías a un toque (decisión 21 de 2.3) baja
+«Mi parte» hasta debajo del teclado y el toque se pierde. La prueba cierra el teclado antes de tocarlo. Detalle en
+`tickets/done/2026-11-16-ui-tests-rojos-tandas.md`.
