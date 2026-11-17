@@ -47,9 +47,17 @@ final class PersonalToGroupConversionUITests: XCTestCase {
     private func openBusEditor(_ app: XCUIApplication) {
         let row = busRow(app)
         // La lista es perezosa: con texto grande el «Bus» queda debajo (molde de `GroupsBCabosSueltosUITests.openRecord`).
+        // En las dos direcciones (nocturna del 16-nov, iOS 27.0): tras pasar el registro, la lista conserva el desplazamiento
+        // y el «Bus» de hoy puede quedar ARRIBA, bajo la cabecera (existe pero no es alcanzable). Desplazar solo hacia abajo
+        // lo sacaba de la lista perezosa y `firstMatch` pasaba a otro «Bus» más viejo, que no es del grupo.
         var swipes = 0
+        let window = app.windows.firstMatch
         while !(row.exists && row.isHittable), swipes < 10 {
-            app.swipeUp(velocity: .slow)
+            if row.exists && row.frame.midY < window.frame.midY {
+                app.swipeDown(velocity: .slow)
+            } else {
+                app.swipeUp(velocity: .slow)
+            }
             swipes += 1
         }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No está el «Bus» de hoy en Registros.")
@@ -124,7 +132,9 @@ final class PersonalToGroupConversionUITests: XCTestCase {
         capture(app, "\(capturePrefix)-4-resultado")
         XCTAssertTrue(moved.waitForNonExistence(timeout: 15), "El aviso no se retiró.")
 
-        // El mismo registro, ahora del grupo: el editor ya no ofrece pasarlo otra vez y dice dónde se gestiona.
+        // El mismo registro, ahora del grupo: el editor ya no ofrece pasarlo otra vez y dice dónde se gestiona. La lista
+        // vuelve primero arriba, donde está el «Bus» de hoy (el más reciente): así `firstMatch` es ese y no uno más viejo.
+        for _ in 0..<2 { app.swipeDown(velocity: .slow) }
         openBusEditor(app)
         XCTAssertTrue(element(app, "new_transaction_group_delete_hint").waitForExistence(timeout: 5),
                       "El registro no quedó enlazado al gasto del grupo.")
