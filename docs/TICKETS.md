@@ -48,6 +48,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | id | status | path |
 | ci-ui-runner-stalls-and-the-ax-query-times-out | backlog | tickets/backlog/ci-ui-runner-stalls-and-the-ax-query-times-out.md |
 | 2026-11-17-verificacion-checklist-curada | done | tickets/done/2026-11-17-verificacion-checklist-curada.md |
+| 2026-11-17-verificacion-escapes-y-poda | done | tickets/done/2026-11-17-verificacion-escapes-y-poda.md |
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
