@@ -38,6 +38,6 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [TestFlight del iPhone 14](reference_testflight_del_iphone_14_es_externo.md) — cuenta test, interna desde el 15-nov; el admin@ de la ficha es el contacto; sin invitar por API.
 - [Suelta el turno antes del paso 5](feedback_suelta_el_turno_antes_del_paso_5.md) — el sleep de QA bloquea sim-lock-test; rm -rf $VAR y ${(f)} los rechaza el chequeo de Bash.
 - [Limpiar staging = sus cuentas](feedback_limpiar_staging_es_sus_cuentas.md) — sus 3 de Google con todo; los 4 sintéticos i5 de los goldens se quedan.
-- [Artifact público: lo frena el clasificador](reference_artifact_publico_lo_frena_el_clasificador.md) — ADR-113 pide hacerlo con Chrome; el clic de «Cualquier persona» se deniega: va a «Necesita de ti».
+- [Artifact público con Chrome](reference_artifact_publico_lo_frena_el_clasificador.md) — 16-nov la Mini lo denegó; 17-nov la Max pasó con find + clic por ref.
 - [Yala web con sesión, de noche en la Max](reference_web_con_sesion_de_noche_en_la_max.md) — iPhone 14 reflejado y Chrome sin extensión; staging con Playwright en la Mini sí.
 - [Consola del iPhone con Core Data llena el disco](reference_consola_del_iphone_con_core_data_llena_el_disco.md) — grep --line-buffered sin cut; parar la consola cierra la app; sin rm, clean + mv a ExtDev.
