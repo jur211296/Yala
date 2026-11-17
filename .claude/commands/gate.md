@@ -191,5 +191,5 @@ Veredicto: LISTO PARA COMMIT | BLOQUEADO por <qué>
 ## Reglas
 
 - **No declares verde nada que no hayas corrido.** «Debería pasar» no es un resultado.
-- Un test en rojo se arregla o se registra en la Lista Negra con dueño y fecha. «Preexistente» no es excusa.
+- Un test en rojo se arregla, o va a la cuarentena (`qa/cuarentena.json`) o a un ticket, con dueño y fecha. «Preexistente» no es excusa.
 - Este comando no commitea ni edita código de la app. Solo verifica y sella.
