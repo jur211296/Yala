@@ -1,0 +1,8 @@
+#!/bin/bash
+# Hook de git: añade al mensaje la línea `Verificado:` con lo que midió el `/gate`
+# (o `Verificado: ninguno`). Propuesta P3 de verificación, 2026-11-17.
+#
+# Git lo corre también con `--no-verify`: un commit que se salta el gate queda marcado igual.
+# Añade y no bloquea: sale 0 siempre. Lógica y reglas: `qa/scripts/verificado-en-commit.sh`.
+bash qa/scripts/verificado-en-commit.sh hook "$@" || true
+exit 0

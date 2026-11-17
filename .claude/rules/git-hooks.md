@@ -5,13 +5,14 @@ paths:
   - "qa/scripts/commit-msg-test.sh"
   - "qa/scripts/precommit-gate.sh"
   - "qa/scripts/worktree-stamp*.sh"
+  - "qa/scripts/verificado-en-commit*.sh"
 ---
 
 # Hooks de git en Yala
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (10 entradas)
+## Índice (11 entradas)
 
 > **No hace falta leer este fichero entero** — son 8 KB. Localiza la entrada
 > aquí y salta a ella.
@@ -26,6 +27,7 @@ paths:
 - `—` [La trampa que queda abierta: el hook vive en el árbol de trabajo](#la-trampa-que-queda-abierta-el-hook-vive-en-el-rbol-de-trabajo)
 - `—` [El otro hook: `pre-commit`](#el-otro-hook-pre-commit)
 - `—` [Las rutas del repo se borran del texto antes de buscar atribución](#las-rutas-del-repo-se-borran-del-texto-antes-de-buscar-atribucin)
+- `—` [El tercero: `prepare-commit-msg` y la línea `Verificado:`](#el-tercero-prepare-commit-msg-y-la-lnea-verificado)
 
 <!-- INDICE:fin -->
 
@@ -185,3 +187,21 @@ mirar nada si no hay ficheros `.swift` en staging: un cambio de solo docs no nec
 gate. Su banco es `qa/scripts/worktree-stamp-test.sh`, que corre en `coverage-index` desde el
 2026-11-04. El sello lee los permisos con `stat`, que es distinto en BSD y en GNU: si lo tocas,
 córrelo también en Linux (o con `gstat` delante en el PATH), que es donde lo corre el CI.
+
+## El tercero: `prepare-commit-msg` y la línea `Verificado:`
+
+Desde el 2026-11-17 (propuesta P3 de verificación). Añade a cada mensaje un trailer con lo que
+midió el `/gate`: `Verificado: build 2/2 · unit 14 suites · interfaz 6 clases · índice ✓`. Sin
+sello que case con el árbol, `Verificado: ninguno` o `Verificado: ninguno (solo docs)`. Lógica en
+`qa/scripts/verificado-en-commit.sh`; banco `verificado-en-commit-test.sh`, en `coverage-index`.
+
+- **Añade, no bloquea**: sale 0 siempre. Bloquear sigue siendo cosa del `pre-commit`.
+- **Corre también con `--no-verify`** (git no lo suprime): un commit que se salta el gate queda
+  marcado como `ninguno`, que es justo lo que se quiere contar.
+- El sello tiene dos líneas: la huella (lo único que lee `precommit-gate.sh`) y el resumen. Un
+  sello viejo de una línea vale y da `Verificado: gate ✓ (sin resumen)`.
+- La huella incluye HEAD: en una tanda de varios commits, `verificado-en-commit.sh resellar` entre
+  uno y otro conserva el resumen. Un `--amend --no-edit` sin gate nuevo respeta la línea que había;
+  con gate nuevo, la reemplaza. Nunca quedan dos.
+- No toca merge ni squash. En rebase y cherry-pick git no lo invoca: el commit replayado conserva
+  la línea que traía.

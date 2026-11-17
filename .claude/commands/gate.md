@@ -1,6 +1,6 @@
 ---
 description: Gate único antes de commitear — build, unit, XCUITest de las áreas tocadas, audit de calidad y validación del índice de QA
-allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
+allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(bash qa/scripts/verificado-en-commit.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
 ---
 
 Verificación completa de los cambios actuales. Sustituye a `/verify-ios` + `/test-smart` + `/swift-audit` corridos por separado. Un solo informe; el commit se apoya en él.
@@ -138,11 +138,23 @@ Lo que el gate **no** replica del CI, a propósito: el job `tests` corre `YalaTe
 
 ## 6 · Sellar
 
-Solo si **todo lo bloqueante está verde**:
+Solo si **todo lo bloqueante está verde**, con lo que **de verdad corrió** en esta pasada:
 
 ```bash
-bash qa/scripts/worktree-stamp.sh > .claude/sessions/tests-passed
+bash qa/scripts/verificado-en-commit.sh sellar --build <schemes compiladas, 0-2> \
+  --unit <suites del paso 2> --interfaz <clases del paso 3> --indice si
 ```
+
+Escribe el sello (línea 1, la huella; línea 2, el resumen) y enseña la línea que llevará el commit:
+`Verificado: build 2/2 · unit 14 suites · interfaz 6 clases · índice ✓`. El hook
+`prepare-commit-msg` la copia al mensaje; sin sello válido escribe `Verificado: ninguno` (o
+`ninguno (solo docs)`). Un paso que no corrió va con 0, no se redondea: esa línea es lo que luego
+cuenta qué entró sin interfaz o sin unit. Si solo cambió documentación, `--build 0 --unit 0
+--interfaz 0`.
+
+**Varios commits sobre un mismo gate:** la huella incluye HEAD, así que tras cada commit
+`bash qa/scripts/verificado-en-commit.sh resellar` (nueva huella, mismo resumen) — solo si el disco
+no cambió.
 
 Si algo bloqueante falla:
 
@@ -162,6 +174,7 @@ Unit          N tests, M suites — ✓
 XCUITest      N tests en <áreas> — ✓        (o "sin áreas con XCUITest")
 Audit         ✓ limpio  (o: N críticos, N avisos)
 CI local      ✓ N/N pasos de coverage-index  (ratchet, aislamiento, bancos)
+Sello         Verificado: build 2/2 · unit M suites · interfaz K clases · índice ✓
 
 Gaps: <archivo> → sin tests    (o "ninguno")
 

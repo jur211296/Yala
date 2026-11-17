@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "que": "Pruebas que el CI puede rescatar al repetirlas. El rescate de una prueba que no está aquí se marca. El CI lee este fichero de origin/2.3, nunca del PR: un PR no puede meterse en cuarentena a sí mismo.",
+    "modo": "observar",
+    "modos": "observar = el rescate fuera de lista se anota en el resumen del job y en el PR, sin poner el CI en rojo · bloquear = el rescate fuera de lista pone el paso en rojo. Pasar de uno a otro es cambiar esta línea en 2.3.",
+    "bloquearDesde": "2026-12-01",
+    "caducidadDias": 14,
+    "caducidad": "A los caducidadDias días en la lista sin arreglo, la prueba se borra con su porqué, o sale de aquí si ya está arreglada. El CI la lista como vencida en el resumen del job; no borra nada solo.",
+    "campos": "prueba (YalaTests/Suite/caso() como la nombra el .xcresult, o YalaTests/Suite para la suite entera) · dueno · ticket · entrada (AAAA-MM-DD) · motivo",
+    "regla": ".claude/rules/ci-qa.md, sección «Cuarentena: un rescate solo vale si la prueba está en la lista»"
+  },
+  "pruebas": [
+    {
+      "prueba": "YalaTests/CurrencyConverterLatestRateArrivalTests/storeRemoteChange_dropsTheCache()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "20 rescates del 10 al 17-nov: el eco del propio guardado vacía la caché a destiempo. El arreglo está en el PR 1026; al mergearlo, sale de aquí."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterLatestRateArrivalTests/anySave_dropsTheCache()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "13 rescates del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterLatestRateArrivalTests/theRatesNotification_stillDropsTheCache()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "8 rescates del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterCacheTests/convertWithLatestRate_reusesCacheAcrossCalls()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "3 rescates del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterLatestRateArrivalTests/todaysRowSavedByAnotherContext_isUsedInTheNextConversion()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "2 rescates del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterRowMemoTests/aRemoteStoreChange_dropsWhatWasRead()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "2 rescates del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaTests/CurrencyConverterRowMemoTests/theRatesNotification_dropsWhatWasRead()",
+      "dueno": "frank",
+      "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
+      "entrada": "2026-11-17",
+      "motivo": "1 rescate del 10 al 17-nov, misma causa."
+    }
+  ]
+}

@@ -134,6 +134,15 @@ jobs:
       # `xcodebuild` y `xcrun` falsos.
       - name: Reintento de rojos (ci-reintentar-rojos.sh)
         run: bash qa/scripts/ci-reintentar-rojos-test.sh
+      # La cuarentena de pruebas inestables (2026-11-17). El job `tests` la lee de 2.3: si entrara
+      # rota, la lista quedaría vacía para todos los PR. Valida la del árbol y el lector.
+      - name: Cuarentena de pruebas inestables (cuarentena-test.sh)
+        run: bash qa/scripts/cuarentena-test.sh
+      # La línea `Verificado:` que el hook `prepare-commit-msg` añade a cada commit a partir del
+      # sello del `/gate` (2026-11-17, P3). Añade y no bloquea, así que si se rompe no da error:
+      # los commits dejarían de decir cómo se probaron sin que nadie lo notara.
+      - name: Línea Verificado en el commit (verificado-en-commit.sh)
+        run: bash qa/scripts/verificado-en-commit-test.sh
       # Los unit del job `tests` BLOQUEAN desde el 2026-10-10: su rojo pone `tests` en rojo y el
       # auto-merge no mergea. Volver a ponerles `continue-on-error` no da ningun error —el CI
       # sigue verde, que es justo el fallo—, asi que este banco lo vigila sobre el propio qa.yml.
@@ -626,6 +635,26 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet
+      # CUARENTENA (2026-11-17, propuesta P1 de verificación). Un rescate de los dos pasos de unit
+      # solo vale si la prueba está en `qa/cuarentena.json`, y esa lista se lee de `origin/2.3`,
+      # NUNCA del PR: un PR no puede meterse en cuarentena a sí mismo. Si 2.3 aún no la tiene, el
+      # script la da por vacía y en observar; si el fetch falla, deja un fichero ilegible a
+      # propósito para que el aviso lo diga. Este paso no falla nunca: también escribe en el
+      # resumen del job el modo y las vencidas (≥ 14 días). Interruptor observar/bloquear:
+      # `_meta.modo` del propio fichero en 2.3. Regla: `.claude/rules/ci-qa.md`.
+      - name: Cuarentena de pruebas inestables (leída de 2.3)
+        id: cuarentena
+        run: |
+          dest="$RUNNER_TEMP/cuarentena-2.3.json"
+          rm -f "$dest"
+          if git fetch --no-tags --depth=1 origin 2.3; then
+            if git cat-file -e FETCH_HEAD:qa/cuarentena.json 2>/dev/null; then
+              git show FETCH_HEAD:qa/cuarentena.json > "$dest"
+            fi
+          else
+            printf 'ILEGIBLE: git fetch origin 2.3 falló\n' > "$dest"
+          fi
+          bash qa/scripts/ci-reintentar-rojos.sh --informe-cuarentena "$dest" || true
       # YalaTests SALVO las 7 clases que crean un ModelContext (van en el paso siguiente).
       # BLOQUEANTE desde el 2026-10-10: sin `continue-on-error`, un rojo que siga rojo tras sus
       # reintentos pone `tests` en rojo y el auto-merge no mergea (ver «LOS UNIT BLOQUEAN» arriba
@@ -651,7 +680,8 @@ jobs:
         # maximo 24,4). Holgura para las vueltas de un flaky rescatado. Ver «TOPES DE TIEMPO».
         timeout-minutes: 45
         run: |
-          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
+          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
+            --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" -- \
             test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
@@ -682,7 +712,8 @@ jobs:
         timeout-minutes: 10
         run: |
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
-            --dir "$RUNNER_TEMP/reintentar-rojos-context" -- \
+            --dir "$RUNNER_TEMP/reintentar-rojos-context" \
+            --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" -- \
             test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
