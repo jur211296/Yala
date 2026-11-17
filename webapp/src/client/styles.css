@@ -179,23 +179,6 @@ body {
   min-height: 100dvh;
   background: var(--bg-velo) top / 100% 100lvh no-repeat, var(--bg);
 }
-.shell {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-}
-.card {
-  width: min(400px, 100%);
-  background: var(--card);
-  border: 1px solid var(--card-borde);
-  border-radius: var(--radio-tarjeta);
-  padding: 28px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: var(--sombra);
-}
 .brand {
   display: flex;
   align-items: center;
@@ -218,11 +201,6 @@ h1 {
   text-align: center;
   text-wrap: balance;
 }
-.muted {
-  color: var(--ink2);
-  margin: 0;
-  text-align: center;
-}
 .fade {
   color: var(--ink2);
   font-size: 12.5px;
@@ -232,84 +210,10 @@ h1 {
 .fade a {
   color: inherit;
 }
-.note {
-  font-size: 13.5px;
-  color: var(--ink2);
-  background: color-mix(in srgb, var(--acc) 8%, transparent);
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin: 0;
-}
-.aviso {
-  margin: 0;
-  font-size: 14px;
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: var(--badb);
-  color: var(--bad);
-}
-.aviso.ok {
-  background: var(--okb);
-  color: var(--ok);
-}
-.login {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.btn {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
-  border-radius: 12px;
-  padding: 11px 14px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 650;
-  line-height: 1.2;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-}
-.btn.dark {
-  background: var(--btn-fuerte);
-  color: var(--btn-fuerte-texto);
-  border-color: var(--btn-fuerte);
-}
-.btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-.btn:focus-visible,
 a:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--acc);
   outline-offset: 2px;
-}
-.check {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  font-size: 13.5px;
-  color: var(--ink2);
-  cursor: pointer;
-}
-.check input {
-  width: 18px;
-  height: 18px;
-  margin: 1px 0 0;
-  accent-color: var(--acc);
-  flex: 0 0 auto;
-}
-.turnstile:empty {
-  display: none;
-}
-.turnstile {
-  display: flex;
-  justify-content: center;
 }
 .kv {
   display: flex;
@@ -326,33 +230,190 @@ input:focus-visible {
   text-align: right;
 }
 
-/* Entrar con el iPhone (QR, lote 2) */
-.or {
-  text-align: center;
-  color: var(--ink2);
-  font-size: 12.5px;
-  margin: 2px 0;
+/* ───── La entrada (lote 6): entrar, el código QR, la página de la cámara y los avisos ─────
+   El fondo de la bienvenida de la app (`WelcomeF2Background`, WelcomeShowcaseView.swift): base #08081A, el índigo al
+   62 % como brillo detrás del contenido (centro a media anchura y al 26 % de alto, radio del 55 % del lado mayor) y un
+   toque turquesa al 14 % arriba a la derecha. Como la bienvenida, es SIEMPRE oscura: no lee las variables del tema.
+   Todo cuelga de clases `e-*` para no tocar la app con sesión (Ajustes y el resto usan `.fade` y `.brand`). */
+html.en-entrada,
+html.en-entrada body {
+  background: #08081a;
+  color-scheme: dark;
 }
-.qr-login .qr {
+.entrada {
+  --e-ink: #ffffff;
+  --e-ink2: rgba(255, 255, 255, 0.72);
+  --e-ink3: rgba(255, 255, 255, 0.6);
+  --e-cristal: rgba(255, 255, 255, 0.1);
+  --e-cristal-hover: rgba(255, 255, 255, 0.14);
+  --e-borde: rgba(255, 255, 255, 0.22);
+  --e-acc: #818cf8;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  color: var(--e-ink);
+  color-scheme: dark;
+  background:
+    radial-gradient(circle 45vw at 88% 6%, rgba(0, 243, 255, 0.14), rgba(0, 243, 255, 0) 100%),
+    radial-gradient(circle 55vmax at 50% 26%, rgba(96, 99, 241, 0.62), rgba(96, 99, 241, 0) 100%),
+    #08081a;
+}
+.e-caja {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  text-align: center;
+}
+/* El logo de la web, a juego con el ícono de la app (decisión de la maqueta). */
+.e-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #6063f1, #ff0080);
   display: block;
-  width: 190px;
-  height: 190px;
-  margin: 6px auto 2px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #fff;
+  margin: 0 auto 4px;
 }
-.qr-login .qr-wait {
-  background: color-mix(in srgb, var(--ink2) 12%, transparent);
-}
-.qr-code {
-  font: 700 26px/1.2 ui-monospace, "SF Mono", Menlo, monospace;
-  letter-spacing: 0.12em;
+.e-titulo {
+  font: 800 30px/1.15 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  margin: 0;
   text-align: center;
+  text-wrap: balance;
+}
+.e-sub {
+  color: var(--e-ink2);
+  font-size: 16px;
+  margin: 0;
+  text-wrap: pretty;
+}
+.e-fade {
+  color: var(--e-ink3);
+  font-size: 13px;
   margin: 0;
 }
-.small-c {
-  font-size: 12.5px;
+.e-fade a {
+  color: inherit;
+}
+.e-nota {
+  font-size: 14px;
+  color: var(--e-ink2);
+  background: rgba(129, 140, 248, 0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin: 0;
+}
+.e-aviso {
+  margin: 0;
+  font-size: 14px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 77, 128, 0.16);
+  color: #ff9db0;
+}
+.e-aviso.ok {
+  background: rgba(74, 222, 128, 0.14);
+  color: #6ee7a0;
+}
+.e-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.e-botones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+/* Los tres accesos de la app (`WelcomeAccessButton`): cristal medio, borde fino, 50 de alto, radio 16, ícono a la
+   izquierda del texto y los dos centrados. */
+.e-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 16px;
+  border: 1px solid var(--e-borde);
+  border-radius: 16px;
+  background: var(--e-cristal);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  color: var(--e-ink);
+  font: 600 17px/1.2 var(--letra);
   text-align: center;
-  margin: 4px 0 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+.e-btn:hover:not(:disabled) {
+  background: var(--e-cristal-hover);
+}
+.e-btn.fuerte {
+  background: #6063f1;
+  border-color: #6063f1;
+}
+.e-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.e-ico {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+.e-o {
+  color: var(--e-ink3);
+  font-size: 13px;
+  margin: 0;
+}
+.entrada .e-btn:focus-visible,
+.entrada a:focus-visible,
+.entrada input:focus-visible {
+  outline: 2px solid var(--e-acc);
+  outline-offset: 2px;
+}
+.e-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 14px;
+  color: var(--e-ink2);
+  cursor: pointer;
+}
+.e-check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--e-acc);
+  flex: 0 0 auto;
+}
+.e-turnstile:empty {
+  display: none;
+}
+.e-turnstile {
+  display: flex;
+  justify-content: center;
+}
+/* El QR va en su cuadro blanco: la cámara lo lee igual sobre el fondo oscuro. */
+.e-qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+  margin: 8px auto 4px;
+  border-radius: 16px;
+  background: #fff;
+}
+.e-qr-espera {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--e-borde);
+}
+.e-codigo {
+  font: 700 26px/1.2 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.12em;
+  margin: 0;
 }
