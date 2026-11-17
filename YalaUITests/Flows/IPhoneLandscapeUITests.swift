@@ -125,45 +125,38 @@ final class IPhoneLandscapeUITests: XCTestCase {
         XCTAssertTrue(edit.waitForExistence(timeout: 10), "Al volver a vertical se cerró el registro abierto en horizontal.")
     }
 
-    /// Con poco alto, la cabecera de Registros deja ver la primera fila sin deslizar: al menos la mitad de la fila
-    /// queda por encima de la barra de pestañas. Antes, en el SE girado empezaba 47 pt por debajo de la barra y en el
-    /// Pro Max asomaba 19 pt (medido el 2026-10-01). En iPad no hay barra abajo y no aplica.
+    /// Con poco alto, la primera fila de Registros se alcanza deslizando. Decisión de Jürgen (17-nov, opción B de la
+    /// tarjeta `tablero-2-3-iphone-girado-los-chips-rapidos-de-r-c94z`): con el iPhone girado los chips rápidos se
+    /// quedan, y la primera fila puede empezar bajo la barra de pestañas (medido el 14-nov: 96 pt en el 17 Pro); se baja
+    /// con el dedo. Antes este caso exigía que asomara sin deslizar. En iPad no hay barra abajo y no aplica.
     func test_shortHeight_recordsHeaderLeavesTheFirstRowInView() throws {
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "En iPad la barra de pestañas no va abajo.")
         let app = launch(deeplink: "records")
-        let row = app.buttons.matching(identifier: "record_row").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: Self.firstRowTimeout), "No hay filas de registro.")
+        let firstRow = app.buttons.matching(identifier: "record_row").firstMatch
+        XCTAssertTrue(firstRow.waitForExistence(timeout: Self.firstRowTimeout), "No hay filas de registro.")
+        // La MISMA fila durante todo el caso: al deslizar, `firstMatch` podría pasar a otra.
+        let row = app.buttons.matching(identifier: "record_row")
+            .matching(NSPredicate(format: "label == %@", firstRow.label)).firstMatch
         rotate(app, to: .landscapeLeft)
         XCTAssertTrue(element(app, "stats_hero_caption").waitForExistence(timeout: 10), "En horizontal no se ve la cabecera.")
 
         let tabBar = app.compactTabBar
         XCTAssertTrue(tabBar.waitForExistence(timeout: 10), "En horizontal no hay barra de pestañas.")
-        // La cabecera cambia de forma al medir el alto: se espera a que la fila se asiente. Desde la card 97gc la página
-        // lleva la fila de acciones de Estadísticas › Registros bajo la cabecera, y en el iPhone girado la primera fila
-        // asoma (medido: empieza 20 pt por encima de la barra, su centro queda debajo). Lo que se fija es que asome: la
-        // cabecera sin compactar la dejaba entera debajo (ticket `records-landscape-first-row-only-peeks`).
-        let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline, row.frame.minY > tabBar.frame.minY { Thread.sleep(forTimeInterval: 0.25) }
-        // En el iPhone SE girado (375 pt de alto) la fila no asoma: empieza 8 pt por DEBAJO de la barra (medido el
-        // 2026-11-05, iOS 27.2). Jürgen decidió ese día dejarlo así —se baja con el dedo— mientras sigue abierto el ticket
-        // de diseño `records-landscape-first-row-only-peeks`; el caso exige que asome solo donde cabe (17 Pro, Pro Max).
-        try XCTSkipIf(
-            app.windows.firstMatch.frame.height < 390,
-            "iPhone SE girado: la primera fila no asoma bajo la fila de acciones, decidido así (ticket "
-                + "records-landscape-first-row-only-peeks).")
-        // FALLO CONOCIDO (14-nov-2026): desde los chips rápidos de Registros (decisión 15 de 2.3) la primera fila queda
-        // 96 pt bajo la barra en el 17 Pro girado. Pendiente de decisión de Jürgen (ocultar los chips en horizontal,
-        // dejarlo, o compactar): tarjeta `tablero-2-3-iphone-girado-los-chips-rapidos-de-r-c94z`. No estricto: el caso
-        // también corre por UDID en el Pro Max, que tiene más alto. Al decidir, quitar esto o reescribir el caso.
-        let pendingDecision = XCTExpectedFailure.Options()
-        pendingDecision.isStrict = false
-        XCTExpectFailure("Chips rápidos en horizontal: tarjeta tablero-2-3-iphone-girado-los-chips-rapidos-de-r-c94z",
-                         options: pendingDecision) {
-            XCTAssertLessThan(
-                row.frame.minY, tabBar.frame.minY,
-                "Con poco alto la cabecera tapa la lista: la primera fila (\(row.frame)) queda bajo la barra de pestañas "
-                    + "(\(tabBar.frame)).")
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "En horizontal la primera fila no está en la lista.")
+
+        // Arrastres cortos por el centro de la ventana hasta que la fila quede entera por encima de la barra.
+        let window = app.windows.firstMatch
+        var drags = 0
+        while row.frame.maxY > tabBar.frame.minY, drags < 6 {
+            let center = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            center.press(forDuration: 0.05, thenDragTo: center.withOffset(CGVector(dx: 0, dy: -60)))
+            drags += 1
         }
+        XCTAssertLessThanOrEqual(
+            row.frame.maxY, tabBar.frame.minY,
+            "Deslizando no se llega a la primera fila: queda \(row.frame) y la barra empieza en \(tabBar.frame.minY).")
+        XCTAssertGreaterThan(row.frame.minY, window.frame.minY, "Al deslizar, la primera fila se fue por arriba.")
+        XCTAssertTrue(row.isHittable, "La primera fila no se puede tocar tras deslizar.")
     }
 
     /// Con poco alto, el resumen de Estadísticas va en banda —entradas y salidas al lado de la cifra, no debajo— y

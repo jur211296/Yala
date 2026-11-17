@@ -52,6 +52,15 @@ dos entraron ~20 merges a `2.3`; el causante se identificó por lo que muestra e
 - Local, iPhone 17 Pro, iOS 27.2, scheme Yala Dev: las tres clases en verde (los dos casos de la calculadora, el de
   dólares y los dos de conversión), con la hora real y con la hora corrida a la tarde.
 
+## Suma del 17-nov · `IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView`
+
+Llevaba un `XCTExpectFailure` desde el 14-nov a la espera de decidir qué hacer con los chips rápidos de Registros con el
+iPhone girado. Jürgen eligió la opción B (17-nov, 06:07): los chips se quedan y en horizontal la primera fila puede empezar
+bajo la barra de pestañas; se llega deslizando. El caso afirma eso: con la misma fila de antes de girar, unos arrastres
+cortos la dejan entera por encima de la barra y se puede tocar. Sin `XCTExpectFailure` ni el salto del iPhone SE (la
+decisión vale para todos). Local, iPhone 17 Pro: verde, y el log muestra que la fila empezaba bajo la barra y bastó un
+arrastre. Ya no queda ningún `XCTExpectFailure` en `YalaUITests`.
+
 ## Cómo evitar que se repita
 
 El PR de categorías a un toque cambió la altura del formulario de «Nuevo registro» y su gate solo corrió las pruebas de
