@@ -51,3 +51,17 @@ opciones, y al usarlas (o al escribir otra cosa) se van y queda un chat normal.
   los textos en los 16 idiomas.
 - XCUITest nuevo `ChatInicioGuiadoUITests`: inicio, las tres ramas hasta el chat limpio y el iPhone girado.
 - Se ajustaron al paso nuevo cinco XCUITest que leían las preguntas o los atajos del saludo viejo.
+
+## Guion para el iPhone 14 (pendiente: el teléfono estaba ocupado)
+
+El 17-nov el iPhone 14 lo estaba reflejando otra app y no se le quitó a otra sesión. Con Yala Dev de esta rama:
+
+1. Abre Yala IA desde el Panel o Registros. **Esperado:** el saludo y solo tres botones (rosa, índigo, turquesa).
+2. Toca «Apunta un gasto». **Esperado:** los botones se van, sale «Anotaré un gasto» como mensaje tuyo y Yala contesta
+   con tres ejemplos.
+3. Toca «Almuerzo 25». **Esperado:** queda escrito en la caja, con el teclado abierto, sin enviarse.
+4. Cambia el importe y envía. **Esperado:** los ejemplos se van y Yala propone el registro como siempre.
+5. «Nueva conversación» y toca «Pregunta por tus finanzas». **Esperado:** tres preguntas de hoy; tocar una la envía y
+   las otras se van.
+6. «Nueva conversación» y toca «Crea conversando». **Esperado:** seis opciones; «Una cuenta» abre su guiado.
+7. Repite el paso 1 en oscuro y con el teléfono girado. **Esperado:** los botones y las opciones se leen y se tocan.
