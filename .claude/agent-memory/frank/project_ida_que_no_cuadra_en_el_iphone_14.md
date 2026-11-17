@@ -9,7 +9,7 @@ El 2026-11-17 (03:00–04:00 Lima), con el arreglo de la vuelta a iCloud instala
 `test@yala-app.pe` subió las 3.260 filas y la verificación devolvió a la subida tres veces (`verify>upload`) hasta
 `verify>failed`: «No pudimos pasar tus datos a tu cuenta de Yala». El store venía de un reset del espejo seguido de una
 re-bajada de iCloud (6.236 tipos de cambio, que la ida fundió a 732) y la cuenta tenía la copia congelada de la vuelta
-anterior. Sin el motivo medido: la consola estaba filtrada.
+anterior. Un segundo intento (≈04:00, «Reintentar» → «Usar en este dispositivo», que volvió a ser una ida entera) repitió el patrón: tras la verificación volvió a la subida desde 0. Sin el motivo medido: la consola estaba filtrada.
 
 **Why:** dejó sin hacer la ida → nube → vuelta de punta a punta con el arreglo; quedó como device-QA.
 
