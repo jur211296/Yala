@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { locale, texts } from "../i18n";
 import { getJson, type Estadisticas as Data, type PeriodoEst, type Trozo } from "./api";
 import { badge, dayLabel, money } from "./format";
+import { Monto } from "./Monto";
 
 const t = texts();
 const PERIODS: PeriodoEst[] = ["mes_actual", "mes_pasado", "anio_actual"];
@@ -80,7 +81,7 @@ function Resumen({ d, periodo }: { d: Data; periodo: PeriodoEst }) {
         <span className="cap">{t.est.neto}</span>
         <span className="big">
           {r.aproximado.neto ? "≈ " : ""}
-          {money(r.neto, r.divisa, { sign: true })}
+          <Monto importe={r.neto} divisa={r.divisa} signo tam="hero" />
         </span>
         <div className="inout">
           <span>
@@ -140,7 +141,9 @@ function Distribucion({ d, periodo }: { d: Data; periodo: PeriodoEst }) {
     <>
       <section className="cd hero">
         <span className="cap">{t.est.gastadoEn[periodo]}</span>
-        <span className="big">{money(dist.total, dist.divisa)}</span>
+        <span className="big">
+          <Monto importe={dist.total} divisa={dist.divisa} tam="hero" />
+        </span>
         <p className="fade small">{t.est.nCategorias(dist.categorias.length)}</p>
       </section>
       <section className="cd">

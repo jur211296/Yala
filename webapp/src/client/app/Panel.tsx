@@ -5,6 +5,7 @@
 import { texts } from "../i18n";
 import type { Movimiento, Panel as PanelData } from "./api";
 import { accountColor, badge, money } from "./format";
+import { Monto } from "./Monto";
 
 const t = texts();
 
@@ -65,7 +66,7 @@ export function Panel({ data, error, retry, onSeeAll }: { data: PanelData | null
         <span className="cap">{t.app.saldoTotal}</span>
         <span className="big">
           {total.aproximado ? "≈ " : ""}
-          {money(total.importe, total.divisa)}
+          <Monto importe={total.importe} divisa={total.divisa} tam="hero" />
         </span>
         <div className="inout">
           <span>
