@@ -24,8 +24,11 @@ struct ChatSheetView: View {
     /// El tema elegido en la hoja de Temas sale al CERRARSE esa hoja: si toca preguntar N1, su aviso no puede pedirse
     /// con la hoja todavía arriba.
     @State private var topicAwaitingSheetDismissal: ChatTopicExample?
-    /// La ficha «Apunta un gasto» del saludo pone aquí el foco: el gasto se escribe en la caja de siempre.
+    /// Un ejemplo de «Anotaré un gasto» pone aquí el foco: el gasto se escribe en la caja de siempre.
     @FocusState private var isInputFocused: Bool
+    /// La rama del inicio que se abrió y la respuesta de la que cuelgan sus opciones (encargo del 17-nov). Vive aquí y no
+    /// en el mensaje: si el chat se cierra, al volver queda la conversación sin las opciones, un chat normal.
+    @State private var inicioOffer: ChatInicioOffer?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
@@ -121,11 +124,18 @@ struct ChatSheetView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.sm)
             }
-            if viewModel.messages.isEmpty {
-                emptyState
-            } else {
-                messagesView
+            // El inicio se va y entra el hilo fundiéndose; con Reducir movimiento, en seco. `stateSwap`: el que se va
+            // deja de leerse y de tocarse desde el primer fotograma (dos cabeceras del hilo en el árbol, si no).
+            Group {
+                if viewModel.messages.isEmpty {
+                    emptyState
+                        .transition(.stateSwap)
+                } else {
+                    messagesView
+                        .transition(.stateSwap)
+                }
             }
+            .dsAnimation(DS.Animation.appear, value: viewModel.messages.isEmpty, reduceMotion: reduceMotion)
 
             // Sin conexión a mitad de conversación: la caja se apaga, así que se dice por qué y qué hacer.
             if viewModel.availability == .offline && !viewModel.messages.isEmpty {
@@ -279,17 +289,12 @@ struct ChatSheetView: View {
                     ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
                     unavailableState
                 case .available:
-                    // UX 2.2 · L14-4: el saludo dice las dos cosas que hace, apuntar y preguntar.
-                    ChatTwoUsesGreeting(
-                        suggestions: Array(viewModel.suggestions.prefix(3)),
-                        isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
-                        onSelect: sendSuggestion,
-                        onLogExpense: {
-                            showsCourtesyGuide = false
-                            isInputFocused = true
-                        },
-                        // La prueba de cortesía de Primeros pasos solo apunta: sin atajos de guiados.
-                        onCreate: courtesyTrial == nil ? { viewModel.startGuidedFlow($0) } : nil
+                    // Encargo del 17-nov: el saludo y solo los tres botones de color. La prueba de cortesía de Primeros
+                    // pasos solo apunta y pregunta: sin «Crea conversando».
+                    ChatInicioGreeting(
+                        branches: courtesyTrial == nil
+                            ? ChatInicioBranch.allCases : [.logExpense, .askFinances],
+                        onSelect: startInicioBranch
                     )
                 }
             }
@@ -331,6 +336,46 @@ struct ChatSheetView: View {
 
     private func sendSuggestion(_ suggestion: ChatSuggestion) {
         Task { await viewModel.sendSuggestion(suggestion) }
+    }
+
+    // MARK: - Inicio (encargo del 17-nov)
+
+    /// Un botón del inicio: los tres se van, la persona «dice» lo suyo y Yala contesta en el teléfono, sin la IA.
+    private func startInicioBranch(_ branch: ChatInicioBranch) {
+        showsCourtesyGuide = false
+        DS.Haptic.light()
+        guard let replyID = viewModel.appendLocalExchange(userText: branch.userMessage, reply: branch.reply) else { return }
+        inicioOffer = ChatInicioOffer(branch: branch, replyID: replyID)
+    }
+
+    /// Las opciones de la rama abierta, debajo de su respuesta, mientras sea lo último del hilo.
+    private var visibleInicioOffer: ChatInicioOffer? {
+        guard ChatInicioLogic.showsOptions(
+            inicioOffer,
+            lastMessageID: viewModel.messages.last?.id,
+            isLoading: viewModel.isLoading,
+            isAvailable: viewModel.isAIAvailable
+        ), let inicioOffer else { return nil }
+        // Sin preguntas de hoy (no llegaron, o la prueba de cortesía no las pide) no se pinta una ficha vacía.
+        if inicioOffer.branch == .askFinances, viewModel.suggestions.isEmpty, !viewModel.suggestionsLoading {
+            return nil
+        }
+        return inicioOffer
+    }
+
+    private func inicioOptions(_ offer: ChatInicioOffer) -> some View {
+        ChatInicioOptionsView(
+            branch: offer.branch,
+            suggestions: viewModel.suggestions,
+            isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
+            onExample: { example in
+                // Rellena la caja, sin enviar: la persona pone lo suyo antes.
+                viewModel.inputText = example
+                isInputFocused = true
+            },
+            onSuggestion: sendSuggestion,
+            onCreate: { option in viewModel.startGuidedFlow(option.kind, question: option.userMessage) }
+        )
     }
 
     /// Lo único que interrumpe el hilo: la fecha y, debajo, los dos avisos de la conversación en el mismo gris pequeño.
@@ -465,6 +510,13 @@ struct ChatSheetView: View {
                             .id(message.id)
                             // Cada mensaje entra subiendo y fundido, no de golpe (card pjum).
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
+                    // Las opciones del botón del inicio, bajo su respuesta; con el mensaje siguiente se van.
+                    if let offer = visibleInicioOffer {
+                        inicioOptions(offer)
+                            .id("inicioOptions")
+                            .transition(.stateSwap)
                     }
 
                     if viewModel.showContextHint {

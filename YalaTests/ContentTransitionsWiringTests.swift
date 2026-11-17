@@ -68,7 +68,8 @@ struct ContentTransitionsWiringTests {
         ("Yala/App/Views/Statistics/InsightsTabView.swift", 6),
         ("Yala/App/Views/Statistics/CategoriesTabView.swift", 1),
         ("Yala/App/Views/Statistics/TrendsTabView.swift", 1),
-        ("Yala/App/Views/Chat/ChatGreetingBubble.swift", 1),
+        // Desde el inicio de Yala IA del 17-nov, «Preparando…» de las preguntas vive en las opciones del botón índigo.
+        ("Yala/App/Views/Chat/Inicio/ChatInicioOptionsView.swift", 1),
     ]
 
     @Test(arguments: loadingPlaceholders.indices)

@@ -90,7 +90,7 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: trendsAI.phase == .loading)"),
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)"),
-        ("Yala/App/Views/Chat/ChatGreetingBubble.swift",
+        ("Yala/App/Views/Chat/Inicio/ChatInicioOptionsView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: isPreparing)"),
         // Card C2 (los `withAnimation` / `dsWithAnimation` que no animaban dentro de las pestañas, 2026-11-02).
         ("Yala/App/Views/Panel/HeroMonthView.swift",
