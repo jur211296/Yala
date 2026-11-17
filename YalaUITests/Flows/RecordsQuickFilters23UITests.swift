@@ -27,14 +27,18 @@ final class RecordsQuickFilters23UITests: XCTestCase {
         return app
     }
 
-    /// Abre el chip «Cuenta ▾» y elige la cuenta del menú.
+    /// Abre el chip «Cuenta», marca la cuenta en la hoja (la fila de Nuevo registro) y cierra con «Listo».
     private func chooseAccount(_ name: String, in app: XCUIApplication) {
         let chip = app.descendants(matching: .any)["records_quick_account"].firstMatch
         XCTAssertTrue(chip.waitForExistence(timeout: 10), "No hay chip «Cuenta» sobre la lista de Registros.")
         chip.tap()
-        let item = app.buttons[name].firstMatch
-        XCTAssertTrue(item.waitForExistence(timeout: 5), "El menú de cuentas no ofrece «\(name)».")
+        let item = app.buttons["account_selector_row_\(name)"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "La hoja de cuentas no ofrece «\(name)».")
         item.tap()
+        let done = app.buttons["records_quick_account_done"].firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "La hoja de cuentas no tiene «Listo».")
+        done.tap()
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5), "«Listo» no cerró la hoja de cuentas.")
     }
 
     // MARK: - Punto 1 · chips rápidos

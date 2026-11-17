@@ -31,12 +31,13 @@ extension L10n {
         static var account: String { rq23("records23.quick.account") }
         /// Chip sin nada elegido: «Categoría». También el título de la hoja que abre.
         static var category: String { rq23("records23.quick.category") }
-        /// Chip sin período acotado: «Fecha».
-        static var date: String { rq23("records23.quick.date") }
         /// El chip que abre la hoja completa: «Más filtros».
         static var more: String { rq23("records23.quick.more") }
-        /// Varias cuentas elegidas en «Más filtros»: «2 cuentas». Siempre con 2 o más.
+        /// Varias cuentas elegidas: «2 cuentas». Siempre con 2 o más.
         static func accountsCount(_ count: Int) -> String { String(format: rq23("records23.quick.accountsCount"), count) }
+
+        /// La hoja de «Categoría», encima de las subcategorías de lo elegido: cómo se quitan.
+        static var subcategoriesHint: String { rq23("records23.quick.subcategoriesHint") }
 
         // MARK: - Buscador de categorías (F3)
 

@@ -209,8 +209,13 @@ usuario, la pantalla se contradice.
 **Dónde se ven los filtros (revisión 2.3, decisiones 15 y 16, 9-nov).** Las barras de Panel, Estadísticas, Registros e
 Informes pintan sus cápsulas en `FilterBand`, que las parte en líneas (ninguna queda fuera de pantalla) y trae «Quitar
 todo» desde el primer filtro; la ✕ de cada cápsula tiene 44 pt de toque. En Registros, los chips rápidos
-(`RecordsQuickFilterBar`: Cuenta · Categoría · Fecha · Más filtros) dicen lo INCLUIDO de cuenta y categoría, y la banda
-no lo repite (`hidesQuickFilterDimensions`, `FilterBandLogic.bandFilterCount`); lo oculto de esas dimensiones sí va en la
-banda. Un chip rápido escribe la sesión como la hoja y REEMPLAZA su dimensión (un toque, un valor); lo múltiple sigue en
-«Más filtros». Una cápsula nueva va dentro de la banda, no en otro carrusel horizontal. Pin: `RecordsQuickFilters23Tests`,
-`RecordsQuickFilters23UITests`.
+(`RecordsQuickFilterBar`: Cuenta · Categoría · Más filtros, en la línea de Lista/Calendario; sin chip de período desde el
+16-nov, lo hace la píldora del hero) dicen lo INCLUIDO de cuenta y categoría, y la banda no lo repite
+(`hidesQuickFilterDimensions`, `FilterBandLogic.bandFilterCount`); lo oculto de esas dimensiones sí va en la banda. **Desde
+el 16-nov (Jürgen) los chips eligen VARIAS** (hojas de `Records/QuickFilters/`) y se aplican AL CERRAR la hoja, de una vez, en la
+forma de la hoja de «Más filtros» (aplicado a cada toque, el Panel deducía «Gasto» de la primera categoría —
+`PanelViewModel.inferNatureFromSelection`— y lo dejaba puesto al sumar una de ingresos): solo categorías enteras → `selectedCategories`; alguna a medias → todo en
+`selectedSubcategories`. **Nunca las dos listas a la vez**: `FilterService` exige las dos, y «Comida entera + Taxi» no
+dejaría pasar nada (`RecordsQuickCategorySelectionLogic.committed`). Una cápsula nueva va dentro de la banda, no en otro
+carrusel horizontal. Pin: `RecordsQuickFilters23Tests`, `RecordsQuickFiltersMultiSelectTests`,
+`RecordsQuickFilters23UITests`, `RecordsQuickFiltersRowUITests`.

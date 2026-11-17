@@ -157,6 +157,10 @@ final class StatisticsRecordsFilterObservationUITests: XCTestCase {
             let all = app.buttons["Todas las cuentas"].firstMatch
             XCTAssertTrue(all.waitForExistence(timeout: 5), "Ronda \(round): el chip no ofrece «Todas las cuentas».")
             all.tap()
+            // Desde el 16-nov la hoja de «Cuenta» aplica al cerrarse.
+            let done = app.buttons["records_quick_account_done"].firstMatch
+            XCTAssertTrue(done.waitForExistence(timeout: 5), "Ronda \(round): la hoja de cuentas no tiene «Listo».")
+            done.tap()
             XCTAssertTrue(waitForValue(of: quick, ""), "Ronda \(round): el chip sigue con la cuenta elegida.")
             return
         }
