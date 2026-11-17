@@ -102,7 +102,13 @@ final class GroupPushOpensWithTheChangeUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — el seed de grupos no completó.")
         let card = row(app, "group_card")
         XCTAssertTrue(card.waitForExistence(timeout: 20), "La lista de grupos no salió.")
+        XCTAssertTrue(card.waitForHittable(timeout: 10), "La tarjeta del grupo no se puede tocar.")
         card.tap()
+        // En el runner del CI el primer toque se perdió una vez con la lista aún asentándose (17-nov, tanda 7): si la
+        // lista sigue delante sin abrir el detalle, se toca otra vez. Un grupo que no abre nunca sigue cayendo abajo.
+        if !row(app, "group_members_button").waitForExistence(timeout: 8), card.exists, card.isHittable {
+            card.tap()
+        }
         XCTAssertTrue(row(app, "group_expense_row_Mercado").waitForExistence(timeout: 15), "El grupo no se abrió.")
         XCTAssertFalse(row(app, "group_expense_row_\(change)").exists, "El cambio ya estaba antes del aviso.")
 

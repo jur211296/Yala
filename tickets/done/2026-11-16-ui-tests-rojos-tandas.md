@@ -61,6 +61,24 @@ cortos la dejan entera por encima de la barra y se puede tocar. Sin `XCTExpectFa
 decisión vale para todos). Local, iPhone 17 Pro: verde, y el log muestra que la fila empezaba bajo la barra y bastó un
 arrastre. Ya no queda ningún `XCTExpectFailure` en `YalaUITests`.
 
+## Suma del 17-nov (tarde) · `TransactionsCrudUITests.test_recordSelectorsOpenAtMediumDetent`
+
+Salió rojo 3/3 en la batería de UI sobre 2.3 de esta sesión (tanda 5) y se reprodujo en local. El selector sí se cerraba:
+la prueba elegía «Ahorros USD» (la primera fila), salía el tipo de cambio y la pastilla de cuenta bajaba bajo la barra de
+«Guardar», así que «la pastilla es tocable» daba falso. Misma familia que el caso de dólares de la tanda 9. Ahora se
+comprueba que la fila del selector desapareció; la pastilla siguiente la desplaza a la vista `openSelectorFirstRow`.
+Local: la clase entera en verde (3/3).
+
+## Suma del 17-nov (tarde) · los que pasaron solo al reintentar en la batería sobre 2.3
+
+- `TopPrimaryActionUITests.test_recordsPage_actionsRowOnTop_floatingOnlyAfterScrolling` (tanda 5): miraba el «+» flotante
+  al instante de llegar a Registros y el de la pantalla anterior seguía en el árbol. Ahora espera a que se vaya.
+- `GroupPushOpensWithTheChangeUITests.test_background_sameGroupOpen_showsTheChange` (tanda 7): el toque en la tarjeta
+  del grupo se perdió una vez. Ahora espera a que sea tocable y, si la lista sigue delante, toca otra vez.
+- Tres casos con «Timed out while evaluating UI query» (tandas 4 y 6, y dos de la nocturna del 16-nov): atasco del
+  runner, la app tarda cientos de segundos en quedar lista. Sin arreglo en la prueba: ticket
+  `ci-ui-runner-stalls-and-the-ax-query-times-out`.
+
 ## Cómo evitar que se repita
 
 El PR de categorías a un toque cambió la altura del formulario de «Nuevo registro» y su gate solo corrió las pruebas de
