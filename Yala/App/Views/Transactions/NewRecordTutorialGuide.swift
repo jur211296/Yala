@@ -34,6 +34,13 @@ nonisolated enum NewRecordTutorialGuide {
         return next == Step.account.rawValue && !hasSingleAccount ? Step.description.rawValue : next
     }
 
+    /// Lo que el formulario tiene que dejar a la vista: el ancla del paso que se ve, o nada si la guía no se ve.
+    static func scrollTarget(isShowing: Bool, index: Int) -> String? {
+        guard isShowing else { return nil }
+        let anchors = [amountAnchor, categoryAnchor, accountAnchor, descriptionAnchor, saveAnchor]
+        return anchors.indices.contains(index) ? anchors[index] : nil
+    }
+
     /// Con el teclado puesto o una hoja encima la guía se esconde (lo que señala queda tapado) y vuelve al cerrarse.
     static func isShowing(isActive: Bool, keyboardVisible: Bool, sheetOpen: Bool) -> Bool {
         isActive && !keyboardVisible && !sheetOpen
