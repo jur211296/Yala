@@ -109,6 +109,13 @@ export const COLUMNS = {
     "sync_id,name,amount,currency_code,transaction_type,is_recurring,recurrence_type,recurrence_interval,next_due_date,end_date," +
     "payment_category,is_active,last_paid_date,subcategory_ref,account_ref,created_at,day_of_month,selected_weekdays," +
     "yearly_month,yearly_day,skipped_dates_raw",
+  /**
+   * Lo de `accounts`, `categories` y `subcategories` más el ícono (nombre de SF Symbol) y el color. Solo los pide Yala web
+   * (`ToolContext.apariencia`): el conector y el gateway siguen con las de arriba, y su contrato byte a byte no cambia.
+   */
+  accountsLook: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account,parent_account_id,icon_name,color_hex",
+  categoriesLook: "sync_id,name,is_income,is_visible,sort_order,icon_name,color_hex",
+  subcategoriesLook: "sync_id,name,category_ref,nature_raw_value,is_visible,sort_order,is_system,is_default_seed,icon_name,color_hex",
   rates: "sync_id,date_key,base,rates,timestamp",
   prefs: "key,value",
 } as const;

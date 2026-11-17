@@ -13,6 +13,23 @@ const mov = (id, fecha, importe, nota, tipo, categoria, subcategoria, cuenta, ex
   etiquetas: [], gasto_de_grupo: false, ...extra,
 });
 
+// Lote 2: lo que manda el servidor con `apariencia` (ícono y color de la categoría, necesidad).
+const LOOK = {
+  "Comidas fuera": ["fork.knife", "#F59E0B", "esencial"],
+  "Cafetería": ["cup.and.saucer.fill", "#F59E0B", "opcional"],
+  "Taxi": ["car.fill", "#0EA5E9", "prioritaria"],
+  "Supermercado": ["cart.fill", "#F59E0B", "esencial"],
+  "Cine": ["film.fill", "#A855F7", "opcional"],
+  "Sueldo": ["briefcase.fill", "#22C55E", "sin_clasificacion"],
+  "Streaming": ["play.tv.fill", "#EC4899", "opcional"],
+  "Veterinario": ["pawprint.fill", "#F97316", "esencial"],
+  "Gasolina": ["fuelpump.fill", "#0EA5E9", "prioritaria"],
+};
+const conLook = (m) => {
+  const [icono, color, necesidad] = LOOK[m.subcategoria] ?? [null, null, "sin_clasificacion"];
+  return { ...m, categoria_id: "k-" + m.categoria, subcategoria_id: "s-" + m.subcategoria, cuenta_id: null, icono, color, necesidad };
+};
+
 const movimientos = [
   mov("m1", "2026-11-16T13:10:00Z", 38.5, "Almuerzo menú", "gasto", "Comida", "Comidas fuera", "Cuenta Principal"),
   mov("m2", "2026-11-16T09:20:00Z", 12.9, "Café y pan", "gasto", "Comida", "Cafetería", "Cuenta Principal"),
@@ -24,13 +41,13 @@ const movimientos = [
   mov("m8", "2026-11-12T10:15:00Z", 137.0, "Veterinaria Maia", "gasto", "Mascotas", "Veterinario", "Cuenta Principal"),
   mov("m9", "2026-11-11T19:30:00Z", 72.4, "Pollo a la brasa", "gasto", "Comida", "Comidas fuera", "Tarjeta Visa"),
   mov("m10", "2026-11-10T07:50:00Z", 150.0, "Recarga gasolina", "gasto", "Transporte", "Gasolina", "Tarjeta Visa"),
-];
+].map(conLook);
 
 const cuentas = [
-  { id: "c1", nombre: "Cuenta Principal", tipo: "corriente", divisa: "PEN", saldo: 12840.65, archivada: false, excluida_de_estadisticas: false },
-  { id: "c2", nombre: "Ahorros USD", tipo: "ahorro", divisa: "USD", saldo: 26183.0, archivada: false, excluida_de_estadisticas: false },
-  { id: "c3", nombre: "Tarjeta Visa", tipo: "credito", divisa: "PEN", saldo: -1420.3, archivada: false, excluida_de_estadisticas: false },
-  { id: "c4", nombre: "Efectivo", tipo: "efectivo", divisa: "PEN", saldo: 320.0, archivada: false, excluida_de_estadisticas: false },
+  { id: "c1", nombre: "Cuenta Principal", tipo: "corriente", divisa: "PEN", saldo: 12840.65, archivada: false, excluida_de_estadisticas: false, icono: "building.columns.fill", color: "#6366F1" },
+  { id: "c2", nombre: "Ahorros USD", tipo: "ahorro", divisa: "USD", saldo: 26183.0, archivada: false, excluida_de_estadisticas: false, icono: "banknote", color: "#16A34A" },
+  { id: "c3", nombre: "Tarjeta Visa", tipo: "credito", divisa: "PEN", saldo: -1420.3, archivada: false, excluida_de_estadisticas: false, icono: "creditcard.fill", color: "#FF0080" },
+  { id: "c4", nombre: "Efectivo", tipo: "efectivo", divisa: "PEN", saldo: 320.0, archivada: false, excluida_de_estadisticas: false, icono: "banknote.fill", color: "#F59E0B" },
 ];
 
 const top = [
@@ -151,6 +168,13 @@ http.createServer((req, res) => {
     if (SOLO_VACIO && url.pathname === "/api/panel") out = { ...body, ultimos: { movimientos: [] } };
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(out));
+    return;
+  }
+  // El marco de 390 px de las capturas de celular vive junto a este servidor, no en el build: sin esto caía en
+  // index.html y toda captura de celular salía con el Panel (medido en el lote 2).
+  if (url.pathname === "/marco.html") {
+    res.writeHead(200, { "Content-Type": tipos[".html"] });
+    fs.createReadStream(new URL("./marco.html", import.meta.url)).pipe(res);
     return;
   }
   let file = path.join(DIST, url.pathname);

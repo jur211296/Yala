@@ -4,17 +4,27 @@
  */
 import { texts } from "../i18n";
 import type { Movimiento, Panel as PanelData } from "./api";
-import { accountColor, badge, money } from "./format";
+import { accountColor, money } from "./format";
 import { Monto } from "./Monto";
+import { COLOR_POR_DEFECTO, colorSeguro, iconoLucide } from "./simbolos";
 
 const t = texts();
 
+/** El rosa de marca con que la app marca un gasto de grupo que aún no tiene subcategoría (`Color.hotPink`). */
+const ROSA_SIN_CLASIFICAR = "#FF0080";
+
+/**
+ * Fila de un registro. El círculo es el de la fila de la app (`RecordRowView.subcategoryIcon`): el ícono y el color que la
+ * persona eligió para la categoría (lote 2), con sus respaldos (la etiqueta y el índigo), y el «!» rosa en un gasto de
+ * grupo que aún no tiene subcategoría. La forma de la fila es de la base: el lote 4 la rehace.
+ */
 export function MovimientoRow({ m, onOpen }: { m: Movimiento; onOpen?: (m: Movimiento) => void }) {
-  const b = badge(m.categoria ?? m.nota);
+  const sinClasificar = m.gasto_de_grupo && !m.subcategoria_id;
+  const Icono = iconoLucide(m.icono);
   const inner = (
     <>
-      <span className="ic" style={{ background: b.color }} aria-hidden="true">
-        {b.letter}
+      <span className="ic" style={{ background: sinClasificar ? ROSA_SIN_CLASIFICAR : colorSeguro(m.color, COLOR_POR_DEFECTO) }} aria-hidden="true">
+        {sinClasificar ? "!" : <Icono size={18} strokeWidth={2.2} aria-hidden={true} focusable={false} />}
       </span>
       <span className="t">
         <b>{m.nota || m.subcategoria || m.categoria || t.app.tipos[m.tipo]}</b>
@@ -81,12 +91,21 @@ export function Panel({ data, error, retry, onSeeAll }: { data: PanelData | null
 
       {visibles.length > 0 ? (
         <div className="accs" role="list" aria-label={t.app.cuenta}>
-          {visibles.map((c, i) => (
-            <div className="ac" role="listitem" key={c.id} style={{ background: accountColor(i) }}>
-              <span>{c.nombre}</span>
-              <b>{money(c.saldo, c.divisa)}</b>
-            </div>
-          ))}
+          {visibles.map((c, i) => {
+            // El ícono de la cuenta en las listas de la app (`displayIconName`). El carrusel del Panel de la app usa además
+            // el diseño de tarjeta; eso y el color de la cuenta llegan con las tarjetas del lote 4 (con el color de la
+            // cuenta de fondo, el texto blanco no siempre se lee).
+            const Icono = iconoLucide(c.icono, "building.columns.fill");
+            return (
+              <div className="ac" role="listitem" key={c.id} style={{ background: accountColor(i) }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Icono size={16} strokeWidth={2.2} aria-hidden={true} focusable={false} />
+                  {c.nombre}
+                </span>
+                <b>{money(c.saldo, c.divisa)}</b>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <p className="note-y">{t.app.sinCuentas}</p>
