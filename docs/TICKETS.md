@@ -59,6 +59,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-app-lote-2-iconos-categoria | done | tickets/done/2026-11-16-web-app-lote-2-iconos-categoria.md |
 | 2026-11-16-web-app-lote-3-navegacion | done | tickets/done/2026-11-16-web-app-lote-3-navegacion.md |
 | 2026-11-16-web-app-lote-4-panel-registros | done | tickets/done/2026-11-16-web-app-lote-4-panel-registros.md |
+| 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
+| 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
