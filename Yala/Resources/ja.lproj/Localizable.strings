@@ -8231,6 +8231,8 @@
 "groups.d14.requests.acceptConfirm" = "%@さんをグループに承認しますか？";
 /* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
 "storage.revert.ineligibleOtherDevice" = "データは別の端末からあなたの Yala アカウントに移ったため、あなたの iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではあなたの Yala アカウントをそのまま使えます。";
+/* Volver a iCloud no disponible: el espejo de iCloud vaciaría este teléfono al remontarlo (ReverseEligibility.mirrorHistoryExpired) */
+"storage.revert.ineligibleMirrorHistory" = "この端末ではあなたの iCloud に戻せません。あなたの Yala アカウントで行った内容が失われるためです。データはアカウントに安全に保存されており、そのまま使い続けられます。";
 
 /* card vv0k */
 "image.entry.failure.busy.title" = "少々お待ちください";

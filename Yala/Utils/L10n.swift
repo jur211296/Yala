@@ -8621,6 +8621,8 @@ enum L10n {
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
             /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
             static var ineligibleOtherDevice: String { ls("storage.revert.ineligibleOtherDevice", comment: "") }
+            /// `ReverseEligibility.mirrorHistoryExpired`: volver vaciaría este teléfono. No es pasajero.
+            static var ineligibleMirrorHistory: String { ls("storage.revert.ineligibleMirrorHistory", comment: "") }
 
             /// El aviso de datos previos en iCloud antes de volver (ticket
             /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).

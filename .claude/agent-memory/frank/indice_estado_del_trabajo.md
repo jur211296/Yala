@@ -107,3 +107,4 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [Yala web como la app: maqueta](project_web_parecida_a_la_app.md) — 16-nov, pública; espera votos y 7 decisiones en su db antes de encolar 6 lotes.
 - [Doce PR de 2.3 en desbloqueo](project_doce_prs_de_2_3_en_desbloqueo.md) — 14-nov: colgados por conflicto en cola de auto-merge; dos cadenas `desbloquear-pr-*`, cards en blocked.
 - [Fallo conocido de UI en 2.3](project_fallos_conocidos_ui_2_3.md) — IPhoneLandscape con XCTExpectFailure por c94z; quitarlo al decidir Jürgen.
+- [La ida del 14 no cuadra (17-nov)](project_ida_que_no_cuadra_en_el_iphone_14.md) — test@yala-app.pe tras un reset del espejo: verify>failed ×3; mide antes de repetir la prueba.

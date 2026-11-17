@@ -1291,6 +1291,15 @@ enum CloudSyncBreadcrumb {
 
     /// §h `mountMirrorAndRelaunch`: se DESARMÓ `mirrorOffArmed` (manteniendo `.cloud` → decisión iCloudMirror
     /// al próximo launch) + se pidió relaunch asistido. iOS no se auto-relanza — el proceso NO se mata solo.
+    /// La vuelta salió a la nube antes de montar el espejo: su posición en el historial está caducada o no se dejó leer, y
+    /// montarlo vaciaría el store (ticket `reverse-on-the-iphone-left-the-local-store-empty`).
+    static func reverseRemountBlockedByMirrorHistory() {
+        logger.notice("CloudSyncReverse remountBlocked — la posición del espejo en el historial no sirve; la vuelta sale a la nube")
+        #if DEBUG
+        print("CloudSyncReverse remountBlocked — la posición del espejo en el historial no sirve; la vuelta sale a la nube")
+        #endif
+    }
+
     static func reverseRelaunchRequested() {
         logger.notice("CloudSyncReverse relaunchRequested — mirror-off desarmado; el proceso NO se mata solo (relaunch asistido = I14)")
     }

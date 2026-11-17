@@ -107,6 +107,15 @@ enum MetricsCanary: String {
     /// resucitaría borrados. Una vez por proceso (la pantalla decide cada segundo). Lo prometía el diseño desde
     /// septiembre y nadie lo emitía (card `yf9t`). Sin `detail`.
     case cloudReverseDegradedNoMap
+    /// La vuelta a iCloud se le niega a un teléfono cuyo espejo de iCloud se encontraría su posición del historial
+    /// caducada (`ReverseEligibility.mirrorHistoryExpired`): la purga de la época en la nube se la llevó, y remontarlo
+    /// borraría el store entero (ticket `reverse-on-the-iphone-left-the-local-store-empty`). Mide cuántos teléfonos
+    /// necesitan la recuperación que queda por diseñar. Una vez por proceso. Sin `detail`.
+    case cloudReverseMirrorHistoryExpired
+    /// La posición del espejo de iCloud no se dejó leer (`MirrorHistoryState.unreadable`), así que la vuelta no se ofrece.
+    /// `detail` = el motivo (`token-undecodable`, `open-failed`…). Si un iOS nuevo cambia el archivado del token, aquí
+    /// caerían todos los teléfonos migrados. Una vez por proceso.
+    case cloudReverseMirrorHistoryUnreadable
     /// El gate de boot-saves del store personal (`awaitPersonalImportForBootSave`) difirió ≥3 veces
     /// CONSECUTIVAS sin que ningún save resolviera entremedio — señal SUAVE: los ~8 boot-tasks
     /// concurrentes comparten el contador (resets intercalados), así que el umbral puede alcanzarse

@@ -934,6 +934,9 @@ protocol MigrationWorkExecuting: AnyObject {
     /// presupuesto (`stallCause`) y el copy de la espera. Default `.unknown` en la extension de abajo: un fake
     /// que no lo guiona espera el presupuesto largo.
     func reverseUploadBlocker() -> ReverseUploadBlocker
+    /// ¿Remontar el espejo de iCloud vaciaría el store? (`MirrorHistoryCheck.blocksRemount`, ticket
+    /// `reverse-on-the-iphone-left-the-local-store-empty`). Lo consulta el paso previo al montaje.
+    func mirrorHistoryBlocksRemount() -> Bool
 
     // MARK: Heartbeat del lease (I14-pre, residual pendiente #3)
 
@@ -988,6 +991,9 @@ extension MigrationWorkExecuting {
 
     /// Default del techo de `reverseUpload`: causa desconocida ⇒ presupuesto largo. Fail-open, como el canal.
     func reverseUploadBlocker() -> ReverseUploadBlocker { .unknown }
+
+    /// Default de los dobles de test: el espejo no se mira. Producción lo implementa con la sonda.
+    func mirrorHistoryBlocksRemount() -> Bool { false }
 
     /// Default: un conformador que no sella nada no tiene nada que deshacer.
     func discardLastClaimStamp() {}
@@ -1875,6 +1881,17 @@ final class MigrationRunner {
             case .reverseVerify:
                 if !(try await driveReverseVerify()) { return }
             case .reverseFreezeBackend:
+                // El último paso antes de remontar el espejo. Una vuelta que ya estaba en curso al instalar el arreglo de
+                // la purga del historial no pasó por la elegibilidad: si el espejo se encontraría su posición caducada, su
+                // reset vaciaría el store (ticket `reverse-on-the-iphone-left-the-local-store-empty`). Sale a la nube por la
+                // salida de las fases previas, intacto; la tarjeta dice después por qué no se puede volver.
+                if executor.mirrorHistoryBlocksRemount() {
+                    CloudSyncBreadcrumb.reverseRemountBlockedByMirrorHistory()
+                    _ = try await leaveReversePreMount(
+                        .reversePreMountCancelled(returnTo: try originFromJournal()),
+                        phase: .freeze, exitReason: .cancelled, hold: nil)
+                    return
+                }
                 // `reverse_freeze` server-side (I11-3): la red corta retomable SIN evento; la sesión caducada corta
                 // igual, pero deja rastro para la pantalla. Los dos, y también el rechazo del servidor, pasan por el
                 // techo de la etapa antes de cortar.

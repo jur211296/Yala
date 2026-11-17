@@ -252,6 +252,8 @@ private final class FakeExecutor: MigrationWorkExecuting {
         return outcome
     }
     func isMirrorConfirmedOn() -> Bool { mirrorOn }
+    var mirrorHistoryBlocks = false
+    func mirrorHistoryBlocksRemount() -> Bool { mirrorHistoryBlocks }
     func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome {
         sweepCallCount += 1; sweptSinceSeqs.append(sinceSeq); return sweepOutcome
     }
@@ -4182,6 +4184,34 @@ struct MigrationRunnerTests {
             #expect(j.readPendingEffects().isEmpty, "\(phase)")
             #expect(fake.count(.reverseRollback) == 1, "\(phase): des-reserva el servidor, best-effort")
             #expect(fake.count(.rearmMirrorOff) == 0, "\(phase): pre-montaje no hay espejo que re-armar")
+        }
+    }
+
+    /// Ticket `reverse-on-the-iphone-left-the-local-store-empty`: una vuelta que ya estaba en curso al instalar el arreglo
+    /// no pasó por la elegibilidad. Si el espejo se encontraría su posición del historial caducada, el paso previo al
+    /// montaje sale a la nube por la salida de las fases previas: sin congelar, sin montar y con el servidor des-reservado.
+    /// El control (sonda sana) congela y sigue hacia el montaje.
+    @Test func resume_atFreeze_withAnExpiredMirrorHistory_leavesForTheCloudWithoutMounting() async throws {
+        for blocks in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.mirrorHistoryBlocks = blocks
+            fake.freezeBackendOutcomes = [.completed]
+            try seedJournal(context, phase: .reverseFreezeBackend, reverseOriginRaw: "done")
+
+            await makeRunner(context, fake).resume()
+
+            let phase = try journal(context).readPhase().phase
+            if blocks {
+                #expect(phase == .done, "vuelve al origen, en la nube")
+                #expect(fake.freezeBackendCallCount == 0, "no congela la nube")
+                #expect(fake.count(.mountMirrorAndRelaunch) == 0, "no remonta el espejo")
+                #expect(fake.count(.reverseRollback) == 1, "des-reserva el servidor, best-effort")
+            } else {
+                #expect(fake.freezeBackendCallCount == 1, "control: con la sonda sana congela")
+                #expect(phase != .done, "control: y sigue hacia el montaje")
+            }
         }
     }
 

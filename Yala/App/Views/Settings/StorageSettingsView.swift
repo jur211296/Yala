@@ -643,20 +643,34 @@ struct StorageSettingsView: View {
                 .disabled(controller.isWorking || controller.isCheckingICloudBeforeReverse)
                 .accessibilityIdentifier("storage_revert_button")
             } else {
-                // `.degradedNoMap` no se cura esperando: la cuenta llegó a la nube desde otro dispositivo. El resto
-                // (mapa ilegible, sobre todo) sí puede cambiar, y conserva el «ahora mismo».
-                Text(eligibility == .degradedNoMap
-                     ? L10n.Storage.Revert.ineligibleOtherDevice
-                     : L10n.Storage.Revert.ineligible)
+                // `.degradedNoMap` no se cura esperando: la cuenta llegó a la nube desde otro dispositivo. Tampoco
+                // `.mirrorHistoryExpired`: volver vaciaría este teléfono. El resto (mapa ilegible, sobre todo) sí puede
+                // cambiar, y conserva el «ahora mismo».
+                Text(Self.revertIneligibleText(eligibility))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
-                    .accessibilityIdentifier(eligibility == .degradedNoMap
-                                             ? "storage_revert_ineligible_other_device"
-                                             : "storage_revert_ineligible")
+                    .accessibilityIdentifier(Self.revertIneligibleIdentifier(eligibility))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+    }
+
+    /// El texto de una vuelta que no se ofrece. Un motivo que no se cura esperando lleva el suyo; el resto, el «ahora mismo».
+    static func revertIneligibleText(_ eligibility: ReverseEligibility.Decision) -> String {
+        switch eligibility {
+        case .degradedNoMap: return L10n.Storage.Revert.ineligibleOtherDevice
+        case .mirrorHistoryExpired: return L10n.Storage.Revert.ineligibleMirrorHistory
+        default: return L10n.Storage.Revert.ineligible
+        }
+    }
+
+    static func revertIneligibleIdentifier(_ eligibility: ReverseEligibility.Decision) -> String {
+        switch eligibility {
+        case .degradedNoMap: return "storage_revert_ineligible_other_device"
+        case .mirrorHistoryExpired: return "storage_revert_ineligible_mirror_history"
+        default: return "storage_revert_ineligible"
+        }
     }
 
     // MARK: - Volver a iCloud: pregunta previa
