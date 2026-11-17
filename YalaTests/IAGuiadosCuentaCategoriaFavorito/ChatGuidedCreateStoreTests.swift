@@ -64,7 +64,10 @@ struct ChatGuidedCreateStoreTests {
 
     @Test func creditCard_keepsItsDaysReminderAndAdvancedOptions() async throws {
         let context = try makeTestContext()
-        _ = makeTestAccount(context: context, name: "Efectivo", currencyCode: "PEN")
+        // La cuenta va en la moneda principal del entorno: con PEN fijo, en un runner en_US (USD) había dos monedas y
+        // el guiado preguntaba cuál antes del nombre (rojo del CI del 17-nov).
+        let main = CurrencyDefaults.currentPreferred.uppercased()
+        _ = makeTestAccount(context: context, name: "Efectivo", currencyCode: main)
         try context.save()
 
         let viewModel = makeViewModel(context)
@@ -73,7 +76,7 @@ struct ChatGuidedCreateStoreTests {
         #expect(state.kind == .account)
         #expect(state.step == .accountName, "El tipo lo dijo y con una sola moneda no se pregunta.")
         viewModel.answerGuided(messageID: messageID) { $0.accountName = "Visa Oro" }
-        viewModel.answerGuided(messageID: messageID) { $0.accountBalances = ["PEN": -320] }
+        viewModel.answerGuided(messageID: messageID) { $0.accountBalances = [main: -320] }
         state = try guided(viewModel).state
         #expect(state.step == .accountStatementDay)
         viewModel.answerGuided(messageID: messageID) { $0.accountStatementDay = 25 }
