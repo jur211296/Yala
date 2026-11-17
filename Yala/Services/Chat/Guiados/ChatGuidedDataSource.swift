@@ -86,6 +86,43 @@ struct ChatGuidedData {
     /// Las etiquetas activas, para las opciones avanzadas.
     var tags: [TagOption] = []
 
+    // MARK: Cuenta, categoría y favorito (`ChatGuidedCreateData`)
+
+    /// Los nombres de las cuentas de la persona, plegados: el nombre de una cuenta nueva no se repite.
+    var accountNames: Set<String> = []
+    /// Las categorías de gasto de la persona (visibles y sin las de sistema), con los nombres de sus subcategorías.
+    var categoryParents: [CategoryParentOption] = []
+    /// Las subcategorías que se ofrecen en un favorito, las más usadas primero, por tipo (gasto o ingreso).
+    var favoriteSubcategories: [ChatGuidedFavoriteType: [SubcategoryOption]] = [:]
+
+    // MARK: Grupos (`ChatGuidedGroupData`)
+
+    /// Los grupos donde se puede anotar lo que se pide, con sus personas.
+    var groups: [ChatGuidedGroupOption] = []
+
+    /// Una categoría donde se pueden añadir subcategorías.
+    struct CategoryParentOption: Identifiable {
+        let id: PersistentIdentifier
+        let name: String
+        let icon: String
+        let colorHex: String
+        /// Los nombres de sus subcategorías (todas, también las ocultas), plegados: no se repiten.
+        let subcategoryNames: Set<String>
+    }
+
+    func parent(_ id: PersistentIdentifier?) -> CategoryParentOption? {
+        id.flatMap { id in categoryParents.first { $0.id == id } }
+    }
+
+    /// La subcategoría de un favorito, la busque en las de gasto o en las de ingreso.
+    func favoriteSubcategory(_ id: PersistentIdentifier?) -> SubcategoryOption? {
+        guard let id else { return nil }
+        for options in favoriteSubcategories.values {
+            if let found = options.first(where: { $0.id == id }) { return found }
+        }
+        return subcategory(id)
+    }
+
     func category(_ id: PersistentIdentifier) -> CategoryOption? { categories.first { $0.id == id } }
     func account(_ id: PersistentIdentifier?) -> AccountOption? {
         id.flatMap { id in accounts.first { $0.id == id } ?? budgetAccounts.first { $0.id == id } }
@@ -140,6 +177,7 @@ enum ChatGuidedDataSource {
                 .filter { !$0.isArchived && !$0.isSystemAccount }
             var seen: Set<String> = []
             catalog.accountCurrencies = accounts.map { $0.currencyCode.uppercased() }.filter { seen.insert($0).inserted }
+            catalog.groups = groupOptions(context)
         } catch {
             #if DEBUG
             print("ChatGuidedDataSource: Error: building the catalog: \(error)")
@@ -165,6 +203,12 @@ enum ChatGuidedDataSource {
         case .scheduledPayment:
             if !hasTags { notApplicable.append(.paymentTags) }
             prepared.answers.notApplicable = notApplicable
+        case .account, .category, .group, .groupOpeningBalance, .groupExpense:
+            return prepared
+        case .favorite:
+            if !hasTags { notApplicable.append(.favoriteTags) }
+            prepared.answers.notApplicable = notApplicable
+            return prepareFavorite(prepared, context: context)
         }
         if prepared.answers.suggestionKey == nil {
             var hasSuggestions = false
@@ -269,6 +313,10 @@ enum ChatGuidedDataSource {
                 print("ChatGuidedDataSource: Error: loading the budget data: \(error)")
                 #endif
             }
+        case .account, .category, .favorite:
+            loadCreate(kind, into: &data, context: context, now: now, calendar: calendar)
+        case .group, .groupOpeningBalance, .groupExpense:
+            loadGroups(kind, into: &data, context: context)
         case .scheduledPayment:
             data.paymentSubcategories = paymentSubcategories(context)
             do {

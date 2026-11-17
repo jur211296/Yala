@@ -19,6 +19,9 @@ final class ChatAssistantViewModel {
     private(set) var suggestions: [ChatSuggestion] = []
     private(set) var suggestionsLoading: Bool = false
     private(set) var suggestionsFailed: Bool = false
+    /// Los guiados de «Crear grupo» que esperan al servidor: la tarjeta no deja tocar nada mientras tanto, y un segundo
+    /// toque (o la tarjeta rehecha al desplazarse) no crea otro grupo.
+    private(set) var groupCreationsInFlight: Set<UUID> = []
 
     /// Qué puede hacer Yala IA ahora (decisión 42 de 2.3): sin conexión lo dice al abrir; con red y sin servidor, el
     /// mensaje de siempre. Lee `isConnected`, que en producción es `NetworkMonitor` (`@Observable`): el body que lo lea
@@ -1253,14 +1256,79 @@ extension ChatAssistantViewModel {
     /// Si la frase pide un guiado, lo abre con lo que ya dice y devuelve `true`. El turno entra en el historial del día
     /// como cualquier respuesta, para que la conversación siga teniendo sentido para el modelo.
     func startGuidedFlowIfAsked(_ text: String, context: ModelContext) -> Bool {
-        guard ChatIntentClassifierService.guidedFlow(for: text) != nil else { return false }
+        guard ChatIntentClassifierService.guidedFlow(for: text) != nil || Self.mayNameGroupPeople(text, context: context)
+        else { return false }
         let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
         guard let detected = ChatGuidedIntentDetector.detect(text, catalog: catalog) else { return false }
-        let detection = ChatGuidedDataSource.prepareStart(detected, context: context)
+        // Con el plan gratis lleno de cuentas no se abre la tarjeta: se dice antes de preguntar nada.
+        if detected.kind == .account, !Self.canCreateAnotherAccount(context) {
+            appendAssistantTurn(question: text, reply: L10n.IAGuiados.accountLimitReached, attachments: [])
+            return true
+        }
+        // Grupos: sin la cuenta de Yala (crear) o sin un grupo donde anotar (deuda, gasto), se dice en una frase.
+        if let block = ChatGuidedDataSource.groupBlock(detected.kind, groups: catalog.groups, route: Self.groupRoute()) {
+            appendAssistantTurn(question: text, reply: Self.groupBlockReply(block), attachments: [])
+            return true
+        }
+        var detection = ChatGuidedDataSource.prepareStart(detected, context: context)
+        if [.group, .groupOpeningBalance, .groupExpense].contains(detection.kind) {
+            detection = ChatGuidedDataSource.prepareGroupStart(
+                detection, catalog: catalog, profileName: UserDefaults.standard.string(forKey: "userName"))
+        }
+        if detection.kind == .groupExpense {
+            detection.answers = Self.withExpenseAccountRequirement(detection.answers, context: context)
+        }
         let state = ChatGuidedEngine.start(detection.kind, answers: detection.answers, prefilled: detection.prefilled)
-        let reply = detection.kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
-        appendAssistantTurn(question: text, reply: reply, attachments: [.guided(state)])
+        appendAssistantTurn(question: text, reply: Self.guidedIntro(detection.kind), attachments: [.guided(state)])
         return true
+    }
+
+    /// Lo que dice Yala IA al abrir cada guiado.
+    static func guidedIntro(_ kind: ChatGuidedKind) -> String {
+        switch kind {
+        case .budget: L10n.IAGuiados.budgetIntro
+        case .scheduledPayment: L10n.IAGuiados.paymentIntro
+        case .account: L10n.IAGuiados.accountIntro
+        case .category: L10n.IAGuiados.categoryIntro
+        case .favorite: L10n.IAGuiados.favoriteIntro
+        case .group: L10n.IAGuiados.groupIntro
+        case .groupOpeningBalance: L10n.IAGuiados.debtIntro
+        case .groupExpense: L10n.IAGuiados.expenseIntro
+        }
+    }
+
+    /// Un gasto de grupo dicho solo con los nombres de las personas («pagué 120 de la cena con Ana y Luis»): con una
+    /// cifra y algún grupo, se miran tus grupos. Sin cifra o sin grupos no se lee nada más.
+    static func mayNameGroupPeople(_ text: String, context: ModelContext) -> Bool {
+        guard text.rangeOfCharacter(from: .decimalDigits) != nil,
+              ChatGuidedDataSource.countVisibleGroups(context) > 0 else { return false }
+        var catalog = ChatGuidedCatalog(mainCurrency: CurrencyDefaults.currentPreferred)
+        catalog.groups = ChatGuidedDataSource.groupOptions(context)
+        return ChatGuidedIntentDetector.groupExpenseByPeople(text, catalog: catalog)
+    }
+
+    /// Por dónde se crearía un grupo ahora mismo (cuenta de Yala, permiso de Grupos, canal).
+    static func groupRoute() -> GroupCreateRoutingLogic.Route {
+        GroupCreateRoutingLogic.route(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession,
+            consentAccepted: GroupsConsentState.isAccepted
+        )
+    }
+
+    static func groupBlockReply(_ block: ChatGuidedGroupBlock) -> String {
+        switch block {
+        case .needsGroupsAccount: L10n.IAGuiados.groupNeedsAccount
+        case .channelOff: L10n.Welcome.Groups.channelOffBody
+        case .noGroupForExpense: L10n.IAGuiados.expenseNoGroup
+        case .noGroupForOpeningBalance: L10n.IAGuiados.debtNoGroup
+        }
+    }
+
+    /// ¿Cabe otra cuenta en el plan? Sin poder contarlas, no: el creador tampoco crearía.
+    static func canCreateAnotherAccount(_ context: ModelContext) -> Bool {
+        guard let count = ChatGuidedDataSource.billableAccountCount(context) else { return false }
+        return FeatureGateService.shared.canCreate(.accounts, currentCount: count)
     }
 
     /// Un atajo del saludo («Un presupuesto», «Un pago planificado»): abre el guiado sin pasar por la frase ni por el
@@ -1279,8 +1347,7 @@ extension ChatAssistantViewModel {
         let detection = ChatGuidedDataSource.prepareStart(
             ChatGuidedDetection(kind: kind, answers: answers, prefilled: []), context: context)
         let state = ChatGuidedEngine.start(kind, answers: detection.answers, prefilled: [])
-        let reply = kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
-        appendAssistantTurn(question: question, reply: reply, attachments: [.guided(state)])
+        appendAssistantTurn(question: question, reply: Self.guidedIntro(kind), attachments: [.guided(state)])
     }
 
     /// El guiado de un mensaje, si lo tiene.
@@ -1298,11 +1365,35 @@ extension ChatAssistantViewModel {
         clearing fields: Set<ChatGuidedField> = [],
         _ change: (inout ChatGuidedAnswers) -> Void
     ) {
+        let context = modelContext
         updateGuided(messageID: messageID) { state in
             var answers = state.answers
             change(&answers)
+            if state.kind == .groupExpense, let context {
+                answers = Self.withExpenseAccountRequirement(answers, context: context)
+            }
             return ChatGuidedEngine.answer(state, with: answers, clearing: fields)
         }
+    }
+
+    /// Un gasto de grupo pide la cuenta con la que pagaste solo cuando la pide el formulario (depende de quién pagó, del
+    /// grupo y de la categoría). Se recalcula con cada respuesta; una cuenta en otra moneda ya no vale.
+    static func withExpenseAccountRequirement(_ answers: ChatGuidedAnswers, context: ModelContext) -> ChatGuidedAnswers {
+        var answers = answers
+        guard answers.groupZoneID != nil, answers.payerMemberID != nil else {
+            answers.expenseAccountRequired = nil
+            return answers
+        }
+        let required = ChatGuidedCreator.groupExpenseNeedsAccount(answers, context: context)
+        answers.expenseAccountRequired = required
+        if !required {
+            answers.accountID = nil
+        } else if let id = answers.accountID {
+            // Solo una cuenta viva, sin archivar y en la moneda del gasto (las que ofrece el formulario).
+            let account = ChatGuidedCreator.liveAccount(id, context: context)
+            if account?.currencyCode.uppercased() != (answers.currencyCode ?? "").uppercased() { answers.accountID = nil }
+        }
+        return answers
     }
 
     func guidedBack(messageID: UUID) {
@@ -1333,17 +1424,62 @@ extension ChatAssistantViewModel {
                 budgetAlertsEnabled: appPreferences?.budgetAlertsEnabled ?? false
             )
             updateGuided(messageID: messageID) {
-                ChatGuidedEngine.markCreated($0, id: created.id, name: created.name, dueDate: created.dueDate)
+                ChatGuidedEngine.markCreated($0, id: created.id, name: created.name, dueDate: created.dueDate,
+                                             zoneID: created.zoneID)
             }
             applyGuidedPreferences(state)
             DS.Haptic.success()
             return nil
+        } catch ChatGuidedCreationError.message(let text) {
+            DS.Haptic.error()
+            return text
         } catch ChatGuidedCreationError.planLimitReached {
             DS.Haptic.error()
-            return L10n.IAGuiados.planLimitReached
+            return state.kind == .account ? L10n.IAGuiados.accountLimitReached : L10n.IAGuiados.planLimitReached
+        } catch ChatGuidedCreationError.duplicateName {
+            DS.Haptic.error()
+            return state.kind == .account ? L10n.IAGuiados.accountNameTaken : L10n.IAGuiados.categoryNameTaken
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: Error: creating from the guided flow: \(error)")
+            #endif
+            DS.Haptic.error()
+            return L10n.Common.saveError
+        }
+    }
+
+    /// «Crear grupo»: el único guiado que pasa por la red (el grupo se crea en el servidor). Devuelve el texto del error
+    /// si no se pudo; la tarjeta se queda en la confirmación para reintentar.
+    func createGuidedGroup(messageID: UUID) async -> String? {
+        guard !groupCreationsInFlight.contains(messageID) else { return nil }
+        guard let context = modelContext, let state = guidedState(messageID: messageID), state.kind == .group,
+              ChatGuidedEngine.canCreate(state) else { return L10n.Common.saveError }
+        groupCreationsInFlight.insert(messageID)
+        defer { groupCreationsInFlight.remove(messageID) }
+        if !SwiftDataConfiguration.isUITesting {
+            await RemoteConfigClient.shared.refreshIfDue(force: true)
+        }
+        do {
+            let created = try await ChatGuidedCreator.createGroup(
+                state.answers,
+                context: context,
+                preferredCurrency: CurrencyDefaults.currentPreferred,
+                profileName: UserDefaults.standard.string(forKey: "userName"),
+                route: Self.groupRoute()
+            )
+            // El grupo ya existe en el servidor: termina sobre la confirmación que lo pidió, aunque la tarjeta se haya
+            // movido mientras esperaba (si no, volver a «Crear» crearía otro).
+            updateGuided(messageID: messageID) { _ in
+                ChatGuidedEngine.markCreated(state, id: created.id, name: created.name, zoneID: created.zoneID)
+            }
+            DS.Haptic.success()
+            return nil
+        } catch ChatGuidedCreationError.message(let text) {
+            DS.Haptic.error()
+            return text
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: Error: creating the group from the guided flow: \(error)")
             #endif
             DS.Haptic.error()
             return L10n.Common.saveError

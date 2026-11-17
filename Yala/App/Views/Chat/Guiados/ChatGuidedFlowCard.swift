@@ -84,8 +84,24 @@ struct ChatGuidedFlowCard: View {
         case .created:
             ChatGuidedSuccessCard(state: state)
         case .inProgress:
-            inProgress
+            // Cuenta, categoría y favorito tienen su propia tarjeta, con el mismo molde.
+            if Self.isGroupKind(state.kind) {
+                ChatGuidedGroupFlowCard(messageID: messageID, state: state, viewModel: viewModel)
+            } else if Self.hasOwnCard(state.kind) {
+                ChatGuidedCreateFlowCard(messageID: messageID, state: state, viewModel: viewModel)
+            } else {
+                inProgress
+            }
         }
+    }
+
+    static func hasOwnCard(_ kind: ChatGuidedKind) -> Bool {
+        kind == .account || kind == .category || kind == .favorite
+    }
+
+    /// Crear un grupo, la deuda de antes y el gasto de grupo: su tarjeta es `ChatGuidedGroupFlowCard`.
+    static func isGroupKind(_ kind: ChatGuidedKind) -> Bool {
+        kind == .group || kind == .groupOpeningBalance || kind == .groupExpense
     }
 
     // MARK: - En curso
@@ -202,6 +218,8 @@ struct ChatGuidedFlowCard: View {
                     summary: paymentSummary
                 )
             }
+        case .account, .category, .favorite, .group, .groupOpeningBalance, .groupExpense:
+            EmptyView()
         }
     }
 
@@ -248,6 +266,8 @@ struct ChatGuidedFlowCard: View {
         case .paymentNote: G.paymentNoteQuestion
         case .paymentTags: G.paymentTagsQuestion
         case .confirm, .done: G.confirmQuestion
+        // Los de cuenta, categoría y favorito los pinta `ChatGuidedCreateFlowCard`.
+        default: G.confirmQuestion
         }
     }
 
@@ -313,6 +333,7 @@ struct ChatGuidedFlowCard: View {
         case .paymentNote: noteDock
         case .confirm: confirmDock
         case .done: EmptyView()
+        default: EmptyView()
         }
     }
 
@@ -905,6 +926,8 @@ struct ChatGuidedFlowCard: View {
                 .init(step: .currency, label: G.rowCurrency, value: currencyTitle(currency),
                       saidByYou: state.prefilled.contains(.currency)),
             ]
+        case .account, .category, .favorite, .group, .groupOpeningBalance, .groupExpense:
+            rows = []
         }
         rows.append(.init(step: .advanced, label: G.rowAdvanced,
                           value: answers.wantsAdvanced == true ? G.valueReviewed : G.valueDefaults, saidByYou: false))
@@ -1117,7 +1140,7 @@ struct ChatGuidedFlowCard: View {
     // MARK: - Carga y campos
 
     private func loadIfNeeded() {
-        guard data == nil, state.status == .inProgress else { return }
+        guard data == nil, state.status == .inProgress, !Self.hasOwnCard(state.kind) else { return }
         var loaded = ChatGuidedDataSource.load(state.kind, context: modelContext, mainCurrency: mainCurrency)
         // La subcategoría que dijo la frase («la luz») puede no estar entre las seis de Primeros pasos: se añade.
         if let id = answers.subcategoryID, loaded.subcategory(id) == nil,
@@ -1344,14 +1367,19 @@ struct ChatGuidedConfirmRow: View {
 
 // MARK: - Éxito
 
-/// Lo creado, con acceso directo. Cierra el chat y abre el presupuesto o el pago en Planificación.
+/// Lo creado, con acceso directo. El presupuesto y el pago cierran el chat y se abren en Planificación; la cuenta, en su
+/// ficha del Panel. Las categorías y los favoritos abren su lista de Ajustes en una hoja encima del chat.
 struct ChatGuidedSuccessCard: View {
     let state: ChatGuidedFlowState
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferences.self) private var appPreferences
+    @State private var listSheet: ChatGuidedCreatedList?
+    @State private var inviteTarget: ChatGuidedInviteTarget?
 
-    private var isBudget: Bool { state.kind == .budget }
+    private typealias G = L10n.IAGuiados
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -1360,7 +1388,7 @@ struct ChatGuidedSuccessCard: View {
                     .font(DS.Typography.title3)
                     .foregroundStyle(theme.onAccent, theme.accent)
                     .accessibilityHidden(true)
-                Text(isBudget ? L10n.IAGuiados.doneBudget : L10n.IAGuiados.donePayment)
+                Text(title)
                     .font(DS.Typography.headline)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("chat_guided_success")
@@ -1371,9 +1399,13 @@ struct ChatGuidedSuccessCard: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if state.kind == .group, state.createdZoneID != nil {
+                YalaPrimaryButton(G.doneInvite, action: openInvite)
+                    .accessibilityIdentifier("chat_guided_invite")
+            }
             Button(action: open) {
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(isBudget ? L10n.IAGuiados.doneSeeBudget : L10n.IAGuiados.doneSeePayment)
+                    Text(openTitle)
                         .font(DS.Typography.labelSmall)
                     Image(systemName: "arrow.right").font(DS.Typography.labelTiny)
                 }
@@ -1388,23 +1420,147 @@ struct ChatGuidedSuccessCard: View {
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(theme.card))
+        .sheet(item: $listSheet) { list in ChatGuidedCreatedListSheet(list: list) }
+        .sheet(item: $inviteTarget) { target in
+            GroupCreatedInviteSheet(group: target.group, members: target.members)
+        }
+    }
+
+    private var isSubcategories: Bool { state.answers.categoryMode == .subcategories }
+
+    private var title: String {
+        switch state.kind {
+        case .budget: G.doneBudget
+        case .scheduledPayment: G.donePayment
+        case .account: G.doneAccount
+        case .category: isSubcategories ? G.doneSubcategories : G.doneCategory
+        case .favorite: G.doneFavorite
+        case .group: G.doneGroup
+        case .groupOpeningBalance: G.doneDebt
+        case .groupExpense: G.doneExpense
+        }
+    }
+
+    private var openTitle: String {
+        switch state.kind {
+        case .budget: G.doneSeeBudget
+        case .scheduledPayment: G.doneSeePayment
+        case .account: G.doneSeeAccount
+        case .category: G.doneSeeCategories
+        case .favorite: G.doneSeeFavorites
+        case .group, .groupOpeningBalance, .groupExpense: G.doneSeeGroup
+        }
     }
 
     private var message: String? {
-        if isBudget { return state.createdName.map { L10n.PrimerosPasos23.Budget.doneMessage($0) } }
-        return state.createdDueDate.map { L10n.PrimerosPasos23.Payment.doneMessage(ScheduledPaymentDateText.dayMonthLong($0)) }
+        switch state.kind {
+        case .budget: return state.createdName.map { L10n.PrimerosPasos23.Budget.doneMessage($0) }
+        case .scheduledPayment:
+            return state.createdDueDate.map { L10n.PrimerosPasos23.Payment.doneMessage(ScheduledPaymentDateText.dayMonthLong($0)) }
+        case .account: return state.createdName.map { G.doneAccountMessage($0) }
+        case .category:
+            // En subcategorías, la primera nueva es la que se usa al registrar.
+            let name = isSubcategories ? state.answers.subcategoryNames?.first : state.createdName
+            return name.map { G.doneCategoryMessage($0) }
+        case .favorite: return G.doneFavoriteMessage
+        case .group: return G.doneGroupMessage
+        case .groupOpeningBalance: return state.createdName.map { G.doneDebtMessage($0) }
+        case .groupExpense:
+            return state.answers.amount.map { amount in
+                G.doneExpenseMessage(appPreferences.currency(amount, currencyCode: state.answers.currencyCode ?? ""),
+                                     state.createdName ?? "")
+            }
+        }
     }
 
     private func open() {
-        guard let id = state.createdID else { return }
         DS.Haptic.selection()
+        switch state.kind {
+        case .category:
+            listSheet = .categories
+            return
+        case .favorite:
+            listSheet = .favorites
+            return
+        case .group, .groupOpeningBalance, .groupExpense:
+            // El grupo, por el mismo camino que abrir uno desde un aviso (`.groupDetail` con su zona).
+            guard let zoneID = state.createdZoneID else { return }
+            dismiss()
+            RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: zoneID)))
+            return
+        case .budget, .scheduledPayment, .account:
+            break
+        }
+        guard let id = state.createdID else { return }
         dismiss()
-        if isBudget {
+        switch state.kind {
+        case .budget:
             BudgetAlertRouting.shared.request(id)
             RouterEntryGate.shared.submit(.navigate(.budgets))
-        } else {
+        case .scheduledPayment:
             AlertDeepLinkTarget.scheduledPayment.request(id)
             RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
+        case .account:
+            // La ficha de la cuenta en el Panel, por el mismo camino que el aviso de la tarjeta (`shortcutID`).
+            AlertDeepLinkTarget.account.request(id)
+            RouterEntryGate.shared.submit(.navigate(.panel))
+        case .category, .favorite, .group, .groupOpeningBalance, .groupExpense:
+            break
+        }
+    }
+
+    /// Un grupo recién creado: la hoja «Invitar» de siempre, con su dueño como único miembro.
+    private func openInvite() {
+        DS.Haptic.selection()
+        guard let zoneID = state.createdZoneID else { return }
+        do {
+            let groups = try modelContext.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
+            guard let group = groups.first(where: { !$0.isHiddenForAll }) else { return }
+            let members = try GroupService.shared.fetchMembers(for: group, context: modelContext).filter(\.isActive)
+            inviteTarget = ChatGuidedInviteTarget(group: group, members: members)
+        } catch {
+            #if DEBUG
+            print("ChatGuidedSuccessCard: Error: loading the new group: \(error)")
+            #endif
+        }
+    }
+}
+
+/// El grupo recién creado para la hoja «Invitar».
+struct ChatGuidedInviteTarget: Identifiable {
+    let id = UUID()
+    let group: SplitGroup
+    let members: [SplitMember]
+}
+
+/// La lista de Ajustes que abre «Ver tus categorías» o «Ver tus favoritos».
+enum ChatGuidedCreatedList: String, Identifiable {
+    case categories
+    case favorites
+
+    var id: String { rawValue }
+}
+
+/// La lista de Ajustes en una hoja encima del chat: lo creado se ve, se edita con su formulario y se vuelve al chat.
+struct ChatGuidedCreatedListSheet: View {
+    let list: ChatGuidedCreatedList
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                switch list {
+                case .categories: CategoriesSettingsListView()
+                case .favorites: FavoritesListView(mode: .manage)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.IAGuiados.closeSheet) { dismiss() }
+                        .accessibilityIdentifier("chat_guided_list_close")
+                }
+            }
         }
     }
 }

@@ -170,8 +170,11 @@ struct FirstAccountFlowView: View {
 
     private var isCard: Bool { draft.kind?.isCard == true }
 
-    private var suggestedName: String {
-        switch draft.kind {
+    private var suggestedName: String { Self.suggestedName(for: draft.kind) }
+
+    /// El nombre que se propone para cada tipo. Lo reusan los guiados de Yala IA.
+    static func suggestedName(for kind: Logic.Kind?) -> String {
+        switch kind {
         case .cash: return L10n.Account.AccountType.cash
         case .general: return L10n.PrimerosPasos23.Account.myMoney
         case .some(let kind): return kind.accountType.localizedName
@@ -245,7 +248,7 @@ struct FirstAccountFlowView: View {
         VStack(spacing: DS.Spacing.sm) {
             ForEach(Logic.Kind.allCases, id: \.self) { kind in
                 optionButton(
-                    title: kindTitle(kind), subtitle: kindHint(kind), icon: iconName(for: kind.accountType),
+                    title: Self.kindTitle(kind), subtitle: Self.kindHint(kind), icon: iconName(for: kind.accountType),
                     tint: Color(hex: kind.colorHex), id: "first_account_kind_\(kind.rawValue)"
                 ) {
                     draft.kind = kind
@@ -255,7 +258,8 @@ struct FirstAccountFlowView: View {
         }
     }
 
-    private func kindTitle(_ kind: Logic.Kind) -> String {
+    /// El título y la pista de cada tipo en «¿Cuál creamos primero?». Los reusan los guiados de Yala IA.
+    static func kindTitle(_ kind: Logic.Kind) -> String {
         switch kind {
         case .cash: return L10n.Account.AccountType.cash
         case .checking: return L10n.Account.AccountType.current
@@ -265,7 +269,7 @@ struct FirstAccountFlowView: View {
         }
     }
 
-    private func kindHint(_ kind: Logic.Kind) -> String {
+    static func kindHint(_ kind: Logic.Kind) -> String {
         switch kind {
         case .cash: return L10n.Onboarding.accountTypeCashHint
         case .checking: return L10n.Onboarding.accountTypeCheckingHint
@@ -371,8 +375,11 @@ struct FirstAccountFlowView: View {
         }
     }
 
-    private var nameExample: String {
-        switch draft.kind {
+    private var nameExample: String { Self.nameExample(for: draft.kind) }
+
+    /// El ejemplo del nombre de una cuenta que la persona escribe. Lo reusan los guiados de Yala IA.
+    static func nameExample(for kind: Logic.Kind?) -> String {
+        switch kind {
         case .checking: return T.exampleChecking
         case .savings: return T.exampleSavings
         default: return T.exampleCard

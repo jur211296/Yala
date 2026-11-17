@@ -2,19 +2,20 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (115 entradas)
+## Índice (116 entradas)
 
 > **No hace falta leer este fichero entero** — son 308 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
-- `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
 - `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
+- `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
 - `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
 - `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
@@ -22,9 +23,9 @@
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
-- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
@@ -39,8 +40,8 @@
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
-- `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
+- `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
 - `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
 - `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
@@ -97,8 +98,8 @@
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
 - `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
+- `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -142,6 +143,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-16] La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde
+**Contexto:** Jürgen, 16-nov (21:09), sobre la sesión que se encarga de los rojos del CI de `2.3`.
+**Decisión:** Esa sesión no usa la cola de auto-merge: mergea ella misma todos los PR terminados, deja `2.3` entera en verde, sube la build 2.3 (3) a TestFlight y actualiza el artifact de lo nuevo.
+**Razones:** Con varios PR en cola, el auto-merge aterriza cada uno cuando pasa su CI y nadie comprueba que `2.3` quede verde con todos juntos antes de subir la build.
+**Consecuencias:** Es la excepción a ADR-054 de casa solo para esa sesión; el resto de encargos en MODO AUTÓNOMO sigue dejando su PR en cola de auto-merge.
+**Estado:** Activa
 
 ### [2026-11-16] Yala web como la app: todo lo recomendado de la maqueta, en seis lotes
 **Contexto:** Jürgen revisó la maqueta comentable de `docs/web-app/parecida-a-la-app/` (16-nov, 17:46) y a las 17:21 había puesto el hero del Panel de la app como estándar de claridad.

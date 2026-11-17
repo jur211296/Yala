@@ -105,3 +105,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Desbloquear un PR viejo: mide el recorrido nuevo](feedback_desbloquear_un_pr_viejo_mide_el_recorrido_nuevo.md) — la bienvenida 2.3 apagaba la nota que el PR encendía; el bump de versión cambia Novedades.
 - [Cuenta desechable para la nube en el iPhone 14](reference_cuenta_desechable_para_la_nube_en_el_iphone_14.md) — Google test@yala-app.pe sin contraseña; SQL de staging desde la Mini; ida de 2.361 filas ≈ 9 min.
 - [La maqueta no tiene latencia](feedback_la_maqueta_no_tiene_latencia.md) — lo que llega por otra llamada solo salta en producción: hueco reservado y prueba en el iPhone.
+- [Rojo del CI por la moneda del runner](reference_rojo_del_ci_por_la_moneda_del_runner.md) — en_US = USD; reproduce con defaults write en la app del scheme que corres (yala vs yala.dev).
