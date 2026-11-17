@@ -54,19 +54,21 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         return app
     }
 
-    /// El chat vacío: el bloque de fecha y avisos arriba, las tres sugerencias debajo dentro del saludo, y ningún
-    /// aviso por debajo de la caja de escribir (antes «puede cometer errores» iba ahí).
-    func test_emptyChat_noticesSitAboveTheThread_andSuggestionsLiveInTheGreeting() {
+    /// El chat vacío: el bloque de fecha y avisos arriba, el saludo con solo sus tres botones debajo (inicio del 17-nov),
+    /// y ningún aviso por debajo de la caja de escribir (antes «puede cometer errores» iba ahí).
+    func test_emptyChat_noticesSitAboveTheThread_andTheGreetingOffersThreeButtons() {
         let app = openChat()
         let input = app.textFields["chat_input"]
 
         let header = app.descendants(matching: .any)["chat_thread_header"]
         XCTAssertTrue(header.waitForExistence(timeout: 5), "Falta el bloque de fecha y avisos arriba del hilo.")
 
-        let suggestions = app.buttons.matching(identifier: "chat_suggestion")
-        XCTAssertTrue(suggestions.firstMatch.waitForExistence(timeout: 10), "No salen las sugerencias de arranque.")
-        XCTAssertEqual(suggestions.count, 3, "El chat vacío debe ofrecer tres sugerencias.")
-        XCTAssertLessThan(header.frame.maxY, suggestions.firstMatch.frame.minY, "Los avisos deben ir antes del saludo.")
+        let logExpense = app.buttons["chat_log_expense"]
+        XCTAssertTrue(logExpense.waitForExistence(timeout: 10), "El saludo no trae sus botones.")
+        XCTAssertTrue(app.buttons["chat_start_ask"].exists && app.buttons["chat_start_create"].exists)
+        XCTAssertFalse(app.buttons.matching(identifier: "chat_suggestion").firstMatch.exists,
+                       "Las preguntas ya no van en el saludo: salen al tocar «Pregunta por tus finanzas».")
+        XCTAssertLessThan(header.frame.maxY, logExpense.frame.minY, "Los avisos deben ir antes del saludo.")
 
         let noticesBelowInput = app.staticTexts
             .matching(NSPredicate(format: "label CONTAINS[c] %@", "cometer errores"))
