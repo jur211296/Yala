@@ -9142,6 +9142,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Turn it off if it isn't money you can use, like a credit card.";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "What this figure means";
+"heroClaro.notCountedTitle" = "What doesn't count";
+"heroClaro.notCountedBody" = "Transfers between your accounts and balance adjustments: they move money from one place to another, but you don't earn or spend it.";
+"heroClaro.filtersNote" = "If you have filters on, the figure only counts what you see.";
+"heroClaro.incomeBody" = "Everything you recorded as income: salary, sales, payments you received.";
+"heroClaro.expenseBody" = "Everything you recorded as an expense. A refund is subtracted from your expenses.";
+"heroClaro.net.title" = "What you have left";
+"heroClaro.net.body" = "It's what came in minus what went out in the period you chose. If it's negative, more went out than came in.";
+"heroClaro.net.notBalance" = "It isn't what you have in your accounts: that's “Your balance today”, on the Panel.";
+"heroClaro.expense.title" = "What you spent";
+"heroClaro.expense.body" = "It's the sum of your expenses in the period you chose. A refund is subtracted from your expenses.";
+"heroClaro.income.title" = "What came in";
+"heroClaro.income.body" = "It's the sum of your income in the period you chose.";
+"heroClaro.total.title" = "Income and expenses together";
+"heroClaro.total.body" = "With income and expenses both selected, the figure adds them up without subtracting: it's how much money what you filtered moved.";
+"heroClaro.balance.title" = "Your balance";
+"heroClaro.balance.body" = "It's what's in your accounts: all of them, cards included, with their sign. It's the same figure as “Your balance today” on the Panel.";
+"heroClaro.balance.closedNote" = "For a period that has already ended, it's what you had when it closed.";
+"heroClaro.cashFlowEnd.title" = "What you'd have at the end of the month";
+"heroClaro.cashFlowEnd.body" = "It's your balance today, plus what's still to come in this month, minus what's still to go out. Below you can see each part and where the estimate comes from.";
+"heroClaro.cashFlowEnd.netNote" = "“This month you'd have left” is something else: what comes in minus what goes out over the whole month, not counting what you already had.";
+"heroClaro.cashFlowMonth.title" = "What's left in the month";
+"heroClaro.cashFlowMonth.body" = "It's what comes in minus what goes out that month, according to your plan. For a month that's over it's the actual figure; for one ahead, the estimate. If more goes out than comes in, it says how much you'd be short.";
+"heroClaro.cashFlow.projectedNote" = "“If things stay like this, by the end of… you'd have” starts from the balance you began the plan with and adds, month by month, what you have left.";
+"heroClaro.example.shortfall" = "You'd be short";
+"heroClaro.example.total" = "Income and expenses";
+"heroClaro.example.monthEnd" = "End of month you'd have";
+"heroClaro.example.refund" = "A refund";
+"heroClaro.example.salary" = "Salary";
+"heroClaro.example.sale" = "A sale";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "Card design";

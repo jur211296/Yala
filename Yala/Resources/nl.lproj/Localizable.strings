@@ -9910,6 +9910,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Zet het uit als het geen geld is om te gebruiken, zoals een creditcard.";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "Wat dit bedrag betekent";
+"heroClaro.notCountedTitle" = "Wat niet meetelt";
+"heroClaro.notCountedBody" = "Overboekingen tussen je rekeningen en saldocorrecties: ze verplaatsen geld, maar je verdient of besteedt het niet.";
+"heroClaro.filtersNote" = "Als je filters aan hebt, telt het bedrag alleen wat je ziet.";
+"heroClaro.incomeBody" = "Alles wat je als inkomsten hebt vastgelegd: salaris, verkopen, ontvangen betalingen.";
+"heroClaro.expenseBody" = "Alles wat je als uitgave hebt vastgelegd. Een terugbetaling gaat van je uitgaven af.";
+"heroClaro.net.title" = "Wat je overhoudt";
+"heroClaro.net.body" = "Het is wat er in de gekozen periode binnenkwam min wat er uitging. Is het negatief, dan ging er meer uit dan er binnenkwam.";
+"heroClaro.net.notBalance" = "Het is niet wat er op je rekeningen staat: dat is „Je saldo vandaag”, in het Panel.";
+"heroClaro.expense.title" = "Wat je hebt uitgegeven";
+"heroClaro.expense.body" = "Het is de som van je uitgaven in de gekozen periode. Een terugbetaling gaat van je uitgaven af.";
+"heroClaro.income.title" = "Wat er binnenkwam";
+"heroClaro.income.body" = "Het is de som van je inkomsten in de gekozen periode.";
+"heroClaro.total.title" = "Inkomsten en uitgaven samen";
+"heroClaro.total.body" = "Met inkomsten en uitgaven allebei gekozen, telt het bedrag ze op zonder af te trekken: zoveel geld bewoog wat je hebt gefilterd.";
+"heroClaro.balance.title" = "Je saldo";
+"heroClaro.balance.body" = "Het is wat er op je rekeningen staat: alle, kaarten inbegrepen, met hun teken. Het is hetzelfde bedrag als „Je saldo vandaag” in het Panel.";
+"heroClaro.balance.closedNote" = "Bij een afgelopen periode is het wat je bij de afsluiting had.";
+"heroClaro.cashFlowEnd.title" = "Wat je aan het eind van de maand zou hebben";
+"heroClaro.cashFlowEnd.body" = "Het is je saldo vandaag, plus wat er deze maand nog binnenkomt, min wat er nog uitgaat. Daaronder zie je elk deel en waar de schatting vandaan komt.";
+"heroClaro.cashFlowEnd.netNote" = "„Deze maand hou je naar verwachting over” is iets anders: wat er de hele maand binnenkomt min wat er uitgaat, zonder wat je al had.";
+"heroClaro.cashFlowMonth.title" = "Wat je in de maand overhoudt";
+"heroClaro.cashFlowMonth.body" = "Het is wat er die maand volgens je plan binnenkomt min wat er uitgaat. Voor een voorbije maand is het het werkelijke bedrag; voor een komende, de schatting. Gaat er meer uit dan er binnenkomt, dan staat er hoeveel je tekort zou komen.";
+"heroClaro.cashFlow.projectedNote" = "„Als het zo doorgaat, heb je eind …” begint bij het saldo waarmee je het plan startte en telt maand na maand op wat je overhoudt.";
+"heroClaro.example.shortfall" = "Je zou tekortkomen";
+"heroClaro.example.total" = "Inkomsten en uitgaven";
+"heroClaro.example.monthEnd" = "Eind van de maand heb je";
+"heroClaro.example.refund" = "Een terugbetaling";
+"heroClaro.example.salary" = "Salaris";
+"heroClaro.example.sale" = "Een verkoop";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "Kaartontwerp";

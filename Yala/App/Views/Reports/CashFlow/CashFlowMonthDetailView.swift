@@ -25,6 +25,8 @@ struct CashFlowMonthDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
+    /// La hoja del «?» de la cifra del mes (hero claro, 2026-11-16).
+    @State private var heroInfo: HeroInfoRequest?
     @State private var selectedCellLineID: UUID?
     /// La línea que el menú contextual pidió borrar; el diálogo la confirma o la suelta.
     @State private var pendingDeleteLine: CashFlowLine?
@@ -167,11 +169,20 @@ struct CashFlowMonthDetailView: View {
     /// La cifra grande del mes con las frases de C2 debajo. En el mes en curso, la cifra es «Al 30 de noviembre
     /// tendrías» con su cuenta, y lo que entra menos lo que sale pasa a una línea.
     private var monthSummary: some View {
-        HeroHeader {
-            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month, monthEndDate: currentMonthEnd?.endDate))
+        let label = CashFlowMonthSummaryLogic.heroLabel(for: month, monthEndDate: currentMonthEnd?.endDate)
+        // El hero claro (2026-11-16): el rótulo con su «?» y la cifra pegada a él, sin el aire de antes.
+        return HeroClaroHeader {
+            HeroHeaderLabel(text: label)
+            HeroInfoButton(identifier: "cashflow_hero_info") {
+                heroInfo = HeroInfoRequest(
+                    topic: HeroClaroLogic.cashFlowTopic(isCurrentMonth: month.isCurrent, hasMonthEnd: currentMonthEnd != nil),
+                    figureLabel: label,
+                    isClosedPeriod: month.isPast
+                )
+            }
         } period: {
             EmptyView()
-        } content: {
+        } figure: {
             if let end = currentMonthEnd {
                 AmountText(
                     value: end.closing,
@@ -181,15 +192,6 @@ struct CashFlowMonthDetailView: View {
                     isEstimate: end.isApproximate
                 )
                 .accessibilityIdentifier("cashflow_month_end_closing")
-
-                monthEndBreakdown(end)
-
-                Text(L10n.ProjectedFlow.source(end.source))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                netLine
             } else {
                 AmountText(
                     value: abs(month.netFlow),
@@ -198,6 +200,17 @@ struct CashFlowMonthDetailView: View {
                     secondaryFont: DS.Typography.panelHeroAmountSecondary
                 )
                 .accessibilityIdentifier("cashflow_month_net")
+            }
+        } detail: {
+            if let end = currentMonthEnd {
+                monthEndBreakdown(end)
+
+                Text(L10n.ProjectedFlow.source(end.source))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                netLine
             }
 
             if viewModel.plan?.showAccumulatedBalance ?? true {
@@ -215,6 +228,7 @@ struct CashFlowMonthDetailView: View {
                 startingBalanceRow
             }
         }
+        .heroInfoSheet($heroInfo, currencyCode: currencyCode)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow_month_summary")
     }

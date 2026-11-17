@@ -9898,6 +9898,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Schalte es aus, wenn es kein Geld zum Nutzen ist, wie bei einer Kreditkarte.";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "Was diese Zahl bedeutet";
+"heroClaro.notCountedTitle" = "Was nicht zählt";
+"heroClaro.notCountedBody" = "Überweisungen zwischen deinen Konten und Saldoanpassungen: Sie verschieben Geld, aber du verdienst oder gibst es nicht aus.";
+"heroClaro.filtersNote" = "Wenn du Filter gesetzt hast, zählt die Zahl nur, was du siehst.";
+"heroClaro.incomeBody" = "Alles, was du als Einnahme erfasst hast: Gehalt, Verkäufe, Zahlungseingänge.";
+"heroClaro.expenseBody" = "Alles, was du als Ausgabe erfasst hast. Eine Rückerstattung wird von deinen Ausgaben abgezogen.";
+"heroClaro.net.title" = "Was dir übrig bleibt";
+"heroClaro.net.body" = "Das ist, was im gewählten Zeitraum hereinkam, minus das, was hinausging. Ist es negativ, ging mehr hinaus als herein.";
+"heroClaro.net.notBalance" = "Das ist nicht, was du auf deinen Konten hast: Das ist „Dein Saldo heute“ im Panel.";
+"heroClaro.expense.title" = "Was du ausgegeben hast";
+"heroClaro.expense.body" = "Das ist die Summe deiner Ausgaben im gewählten Zeitraum. Eine Rückerstattung wird von deinen Ausgaben abgezogen.";
+"heroClaro.income.title" = "Was hereinkam";
+"heroClaro.income.body" = "Das ist die Summe deiner Einnahmen im gewählten Zeitraum.";
+"heroClaro.total.title" = "Einnahmen und Ausgaben zusammen";
+"heroClaro.total.body" = "Mit Einnahmen und Ausgaben gleichzeitig ausgewählt, addiert die Zahl beide, ohne abzuziehen: So viel Geld hat bewegt, was du gefiltert hast.";
+"heroClaro.balance.title" = "Dein Saldo";
+"heroClaro.balance.body" = "Das ist, was auf deinen Konten ist: alle, Karten eingeschlossen, mit Vorzeichen. Es ist dieselbe Zahl wie „Dein Saldo heute“ im Panel.";
+"heroClaro.balance.closedNote" = "Bei einem abgeschlossenen Zeitraum ist es das, was du am Ende hattest.";
+"heroClaro.cashFlowEnd.title" = "Was du am Monatsende hättest";
+"heroClaro.cashFlowEnd.body" = "Das ist dein Saldo heute, plus was diesen Monat noch hereinkommt, minus was noch hinausgeht. Darunter siehst du jeden Teil und woher die Schätzung kommt.";
+"heroClaro.cashFlowEnd.netNote" = "„Diesen Monat bliebe dir“ ist etwas anderes: was im ganzen Monat hereinkommt minus was hinausgeht, ohne das, was du schon hattest.";
+"heroClaro.cashFlowMonth.title" = "Was dir im Monat bleibt";
+"heroClaro.cashFlowMonth.body" = "Das ist, was in diesem Monat laut deinem Plan hereinkommt, minus was hinausgeht. Für einen vergangenen Monat ist es der tatsächliche Wert, für einen kommenden die Schätzung. Geht mehr hinaus als herein, steht da, wie viel dir fehlen würde.";
+"heroClaro.cashFlow.projectedNote" = "„Wenn es so bleibt, hättest du Ende …“ startet beim Saldo, mit dem du den Plan begonnen hast, und addiert Monat für Monat, was dir bleibt.";
+"heroClaro.example.shortfall" = "Dir würde fehlen";
+"heroClaro.example.total" = "Einnahmen und Ausgaben";
+"heroClaro.example.monthEnd" = "Am Monatsende hättest du";
+"heroClaro.example.refund" = "Eine Rückerstattung";
+"heroClaro.example.salary" = "Gehalt";
+"heroClaro.example.sale" = "Ein Verkauf";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "Kartendesign";

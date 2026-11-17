@@ -9910,6 +9910,38 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "如果不是能用的钱（比如信用卡），就关掉它。";
 
+/* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
+"heroClaro.infoButton" = "这个金额是什么意思";
+"heroClaro.notCountedTitle" = "不计入的部分";
+"heroClaro.notCountedBody" = "账户之间的转账和余额调整：只是把钱从一处挪到另一处，既不是收入也不是支出。";
+"heroClaro.filtersNote" = "如果你设置了筛选，金额只计算你看到的部分。";
+"heroClaro.incomeBody" = "你记为收入的所有款项：工资、销售、收款。";
+"heroClaro.expenseBody" = "你记为支出的所有款项。退款会从支出中扣除。";
+"heroClaro.net.title" = "剩下的钱";
+"heroClaro.net.body" = "这是你所选期间内流入的钱减去流出的钱。如果是负数，说明流出的比流入的多。";
+"heroClaro.net.notBalance" = "这不是你账户里的钱：那是面板上的“今日余额”。";
+"heroClaro.expense.title" = "你花了多少";
+"heroClaro.expense.body" = "这是你所选期间内支出的总和。退款会从支出中扣除。";
+"heroClaro.income.title" = "流入了多少";
+"heroClaro.income.body" = "这是你所选期间内收入的总和。";
+"heroClaro.total.title" = "收入和支出合计";
+"heroClaro.total.body" = "同时选中收入和支出时，金额会把两者相加而不相减：表示你筛选的内容流动了多少钱。";
+"heroClaro.balance.title" = "你的余额";
+"heroClaro.balance.body" = "这是你账户里的钱：所有账户，包括卡，按正负号计算。与面板上的“今日余额”是同一个金额。";
+"heroClaro.balance.closedNote" = "对于已经结束的期间，是期末时你拥有的金额。";
+"heroClaro.cashFlowEnd.title" = "月底你会有多少";
+"heroClaro.cashFlowEnd.body" = "这是你今天的余额，加上本月还要流入的，减去还要流出的。下面可以看到每一部分以及预估的来源。";
+"heroClaro.cashFlowEnd.netNote" = "“本月预计结余”是另一回事：整个月流入减去流出，不算你原本已有的钱。";
+"heroClaro.cashFlowMonth.title" = "当月剩下的钱";
+"heroClaro.cashFlowMonth.body" = "这是按你的计划，当月流入减去流出。已过去的月份是实际数，未来的月份是预估数。如果流出多于流入，会显示你会缺多少。";
+"heroClaro.cashFlow.projectedNote" = "“照这样下去，…底你会有”从你开始计划时的余额出发，逐月加上剩下的钱。";
+"heroClaro.example.shortfall" = "你会缺";
+"heroClaro.example.total" = "收入和支出";
+"heroClaro.example.monthEnd" = "月底你会有";
+"heroClaro.example.refund" = "一笔退款";
+"heroClaro.example.salary" = "工资";
+"heroClaro.example.sale" = "一笔销售";
+
 /* ===== Tarjetas de cuenta personalizables (2026-11-16) ===== */
 /* Card design editor: sheet title */
 "cardDesign.title" = "卡片设计";
