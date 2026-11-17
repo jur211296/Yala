@@ -63,6 +63,13 @@ export interface ToolContext {
   reader: YalaReader;
   env: ToolEnv;
   now: Date;
+  /**
+   * Solo Yala web. Con `true`, `listar_cuentas`, `listar_categorias` y `buscar_movimientos` añaden al final de cada fila
+   * el ícono y el color que guardó la app y la necesidad de cada registro (ver «Apariencia» abajo). El conector y el
+   * gateway no lo ponen nunca: ni piden esas columnas ni cambia lo que devuelven, y el modelo no ve íconos que no le
+   * sirven. Lo pone el código del Worker al construir el contexto, nunca un argumento de la herramienta.
+   */
+  apariencia?: boolean;
 }
 
 export interface ToolCore {
@@ -140,10 +147,15 @@ export async function loadGroupAdjustment(
 }
 
 export async function loadLookup(ctx: ToolContext): Promise<Lookup> {
+  const look = ctx.apariencia === true;
   const [accounts, categories, subcategories, tags] = await Promise.all([
-    ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
-    ctx.reader.all<CategoryRow>("categories", [["select", COLUMNS.categories], NOT_DELETED, ORDER_ID]),
-    ctx.reader.all<SubcategoryRow>("subcategories", [["select", COLUMNS.subcategories], NOT_DELETED, ORDER_ID]),
+    ctx.reader.all<AccountRow>("accounts", [["select", look ? COLUMNS.accountsLook : COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
+    ctx.reader.all<CategoryRow>("categories", [["select", look ? COLUMNS.categoriesLook : COLUMNS.categories], NOT_DELETED, ORDER_ID]),
+    ctx.reader.all<SubcategoryRow>("subcategories", [
+      ["select", look ? COLUMNS.subcategoriesLook : COLUMNS.subcategories],
+      NOT_DELETED,
+      ORDER_ID,
+    ]),
     ctx.reader.all<TagRow>("tags", [["select", COLUMNS.tags], NOT_DELETED, ORDER_ID]),
   ]);
   return buildLookup({ accounts: accounts.rows, categories: categories.rows, subcategories: subcategories.rows, tags: tags.rows });
@@ -201,6 +213,65 @@ export function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
     : [];
 }
 
+// ------------------------------------------------------------------ apariencia (solo Yala web)
+
+/** Lo que la app guarda de ícono y color en cuentas, categorías y subcategorías. Solo viene con `ctx.apariencia`. */
+interface Look {
+  icon_name?: string | null;
+  color_hex?: string | null;
+}
+
+/** Necesidad de un registro, con los valores crudos de la app (`SubcategoryNeed`). */
+export type Necesidad = "esencial" | "prioritaria" | "opcional" | "sin_clasificacion";
+
+const NEEDS: readonly string[] = ["esencial", "prioritaria", "opcional", "sin_clasificacion"];
+
+/**
+ * Color guardado, como «#RRGGBB» en mayúsculas, o `null` si no hay o no es un hex de 6 cifras (con o sin «#», que es lo
+ * que escribe la app). Lo que no casa no sale: la página lo pone en un `style`, y un texto libre ahí no tiene sitio.
+ */
+export function hexColor(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(v.trim());
+  return m ? `#${m[1]!.toUpperCase()}` : null;
+}
+
+/** Nombre de SF Symbol guardado («cart.fill»), o `null` si no hay o no tiene esa forma. La página lo traduce a Lucide. */
+export function sfSymbol(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  return s.length > 0 && s.length <= 80 && /^[a-z0-9]+(\.[a-z0-9]+)*$/.test(s) ? s : null;
+}
+
+/**
+ * La necesidad de un registro, la de `TransactionItem.effectiveNeed`: la que se le puso a mano (`need_override`) y, si no
+ * hay, la de su subcategoría (`nature_raw_value`). Un valor que la app no conoce es «sin clasificación», como allí.
+ * La fila de la app solo enseña la píldora cuando el registro tiene subcategoría; eso lo decide la página.
+ */
+export function effectiveNeed(needOverride: string | null | undefined, sub: SubcategoryRow | undefined): Necesidad {
+  const raw = needOverride ?? sub?.nature_raw_value ?? "";
+  return (NEEDS.includes(raw) ? raw : "sin_clasificacion") as Necesidad;
+}
+
+/** Ícono por tipo de cuenta (`iconName(for:)` de la app); el tipo se guarda con el nombre en español del enum. */
+const ACCOUNT_TYPE_ICONS: Record<string, string> = {
+  General: "creditcard",
+  Efectivo: "banknote.fill",
+  "Cuenta corriente": "building.columns.fill",
+  "Cuenta de ahorros": "banknote",
+  "Tarjeta de crédito": "creditcard.fill",
+};
+
+/**
+ * Ícono de una cuenta, la regla de `displayIconName(for:)`: el suyo, salvo que esté vacío o sea el banco por defecto
+ * («building.columns.fill», que la app trata como «sin elegir»); entonces el de su tipo, y si no, el banco.
+ */
+export function accountIcon(row: AccountRow & Look): string {
+  const own = sfSymbol(row.icon_name);
+  if (own && own !== "building.columns.fill") return own;
+  return (row.type ? ACCOUNT_TYPE_ICONS[row.type] : undefined) ?? "building.columns.fill";
+}
+
 function truncationNotice(truncated: boolean): string[] {
   return truncated ? ["Hay más datos de los que esta versión lee de una vez: la cifra puede quedarse corta."] : [];
 }
@@ -221,7 +292,11 @@ const listarCuentas: ToolCore = {
     prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
     const zone = await zoneOf(ctx, args, prefsP);
     const [accounts, txs, prefs, rates] = await Promise.all([
-      ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
+      ctx.reader.all<AccountRow & Look>("accounts", [
+        ["select", ctx.apariencia === true ? COLUMNS.accountsLook : COLUMNS.accounts],
+        NOT_DELETED,
+        ORDER_ID,
+      ]),
       ctx.reader.all<BalanceTx>("tx_items", [
         ["select", COLUMNS.txBalance],
         NOT_DELETED,
@@ -252,6 +327,14 @@ const listarCuentas: ToolCore = {
       avisos.push("El total es aproximado: alguna divisa se convirtió sin la cotización exacta de hoy. La app lo marca igual, con «≈».");
     }
     if (result.total.sin_convertir.length > 0) avisos.push("Algunas divisas no son de las que la app reconoce y su saldo no está en el total.");
+    if (ctx.apariencia === true) {
+      const byId = new Map(accounts.rows.map((a) => [a.sync_id, a]));
+      const cuentas = result.cuentas.map((c) => {
+        const row = byId.get(c.id);
+        return { ...c, icono: row ? accountIcon(row) : "building.columns.fill", color: hexColor(row?.color_hex) };
+      });
+      return { ...result, cuentas, avisos };
+    }
     return { ...result, avisos };
   },
 };
@@ -272,18 +355,23 @@ const listarCategorias: ToolCore = {
       list.push(s);
       byCategory.set(s.category_ref, list);
     }
+    const look = ctx.apariencia === true;
     const categorias = [...lookup.categories.values()]
       .filter((c) => includeHidden || c.is_visible !== false)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || (a.name ?? "").localeCompare(b.name ?? "", "es"))
-      .map((c) => ({
-        id: c.sync_id,
-        nombre: c.name ?? "(sin nombre)",
-        es_ingreso: c.is_income === true,
-        oculta: c.is_visible === false,
-        subcategorias: (byCategory.get(c.sync_id) ?? [])
+      .map((c) => {
+        const subcategorias = (byCategory.get(c.sync_id) ?? [])
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-          .map((s) => ({ id: s.sync_id, nombre: s.name ?? "(sin nombre)", naturaleza: s.nature_raw_value, oculta: s.is_visible === false })),
-      }));
+          .map((s) => {
+            const base = { id: s.sync_id, nombre: s.name ?? "(sin nombre)", naturaleza: s.nature_raw_value, oculta: s.is_visible === false };
+            // Crudos, sin heredar de la categoría: cada pantalla de la app elige su respaldo y la página hará lo mismo.
+            return look ? { ...base, icono: sfSymbol((s as Look).icon_name), color: hexColor((s as Look).color_hex) } : base;
+          });
+        const base = { id: c.sync_id, nombre: c.name ?? "(sin nombre)", es_ingreso: c.is_income === true, oculta: c.is_visible === false };
+        return look
+          ? { ...base, subcategorias, icono: sfSymbol((c as Look).icon_name), color: hexColor((c as Look).color_hex) }
+          : { ...base, subcategorias };
+      });
     return { categorias, total: categorias.length };
   },
 };
@@ -397,8 +485,10 @@ const buscarMovimientos: ToolCore = {
     const last = page[page.length - 1];
     const preferred = resolvePreferredCurrency(prefs, page.map((r) => r.preferred_currency_code));
 
+    const look = ctx.apariencia === true;
     const movimientos = page.map((tx) => {
       const sub = tx.subcategory_ref ? lookup.subcategories.get(tx.subcategory_ref) : undefined;
+      const cat = categoryOf(lookup, tx);
       // Un 0 guardado con nativo distinto de 0 es una conversión que no se escribió, no un importe
       // (`storedConversionMissing`, la regla de `CashFlowCalculator.storedConversionIsMissing`): sin importe guardado
       // que enseñar, `null`, como cuando se guardó en otra divisa.
@@ -406,19 +496,32 @@ const buscarMovimientos: ToolCore = {
         tx.preferred_currency_code?.toUpperCase() === preferred.code && !storedConversionMissing(tx)
           ? num(tx.amount_in_preferred_currency)
           : null;
-      return {
+      const account = tx.account_ref ? lookup.accounts.get(tx.account_ref) : undefined;
+      const base = {
         id: tx.sync_id,
         fecha: txDay(tx, tz),
         importe: num(tx.amount),
         divisa: tx.currency_code,
         importe_en_divisa_preferida: inPreferred === null ? null : round2(inPreferred),
         nota: tx.note,
-        tipo: txKindOf(tx, categoryOf(lookup, tx)),
-        categoria: categoryOf(lookup, tx)?.name ?? null,
+        tipo: txKindOf(tx, cat),
+        categoria: cat?.name ?? null,
         subcategoria: sub?.name ?? null,
-        cuenta: tx.account_ref ? (lookup.accounts.get(tx.account_ref)?.name ?? null) : null,
+        cuenta: account?.name ?? null,
         etiquetas: (tx.tag_refs ?? []).map((t) => lookup.tags.get(t)?.name).filter((n): n is string => !!n),
         gasto_de_grupo: tx.split_expense_id !== null,
+      };
+      if (!look) return base;
+      // El círculo de la fila de la app (`RecordRowView.subcategoryIcon`): el ícono de la subcategoría, o el de la
+      // categoría; el color, siempre el de la categoría. `null` donde la app pone su respaldo («tag.fill», el índigo).
+      return {
+        ...base,
+        categoria_id: cat?.sync_id ?? null,
+        subcategoria_id: sub?.sync_id ?? null,
+        cuenta_id: account?.sync_id ?? null,
+        icono: sfSymbol((sub as (SubcategoryRow & Look) | undefined)?.icon_name) ?? sfSymbol((cat as (CategoryRow & Look) | null)?.icon_name),
+        color: hexColor((cat as (CategoryRow & Look) | null)?.color_hex),
+        necesidad: effectiveNeed(tx.need_override, sub),
       };
     });
     return {

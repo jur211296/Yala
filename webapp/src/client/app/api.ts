@@ -48,7 +48,14 @@ export interface Cuenta {
   saldo: number;
   archivada: boolean;
   excluida_de_estadisticas: boolean;
+  /** SF Symbol de la cuenta, ya con la regla de la app (`displayIconName`): nunca vacío. Se pinta con `simbolos.ts`. */
+  icono: string;
+  /** «#RRGGBB» o `null` (la app usa su índigo). */
+  color: string | null;
 }
+
+/** Necesidad de un registro, con los valores de la app (`SubcategoryNeed`). */
+export type Necesidad = "esencial" | "prioritaria" | "opcional" | "sin_clasificacion";
 
 export interface Movimiento {
   id: string;
@@ -63,6 +70,15 @@ export interface Movimiento {
   cuenta: string | null;
   etiquetas: string[];
   gasto_de_grupo: boolean;
+  categoria_id: string | null;
+  subcategoria_id: string | null;
+  cuenta_id: string | null;
+  /** SF Symbol del círculo de la fila (el de la subcategoría o el de la categoría); `null`: el respaldo de la app. */
+  icono: string | null;
+  /** Color de la categoría, «#RRGGBB»; `null`: el índigo de la app. */
+  color: string | null;
+  /** `effectiveNeed` de la app. La fila de la app solo enseña la píldora si el registro tiene subcategoría. */
+  necesidad: Necesidad;
 }
 
 export interface Panel {
@@ -88,7 +104,10 @@ export interface Categoria {
   nombre: string;
   es_ingreso: boolean;
   oculta: boolean;
-  subcategorias: { id: string; nombre: string; oculta: boolean }[];
+  /** SF Symbol y color guardados, crudos (`null` si no hay): cada pantalla de la app elige su respaldo. */
+  icono: string | null;
+  color: string | null;
+  subcategorias: { id: string; nombre: string; oculta: boolean; icono: string | null; color: string | null }[];
 }
 
 export interface Pendiente {
