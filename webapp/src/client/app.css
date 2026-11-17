@@ -1390,35 +1390,92 @@
 
 /* ─── Lote 2b ──────────────────────────────────────────────────────────────────────────────────────────────── */
 
-/* Presupuestos: tarjetas con barra; el color de la barra dice el estado (en riesgo, ámbar; excedido, el rosa de «debes»). */
-.buds {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
-}
-.bud {
-  border: 1px solid var(--line);
-  border-radius: var(--radio-fila);
-  padding: 12px 14px;
+/* Presupuestos (lote 5): la tarjeta de la app (`BudgetRowView`), con círculo, «X de Y · 15 días», «Te quedan» y la cifra a
+   la derecha, y la barra del color de la categoría (ámbar en riesgo y rosa al pasarse). En escritorio, de dos en dos. */
+.bud-sec {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+}
+.bud-sh {
+  margin: 4px 2px 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.buds {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.bud {
+  background: var(--card);
+  border: 1px solid var(--card-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   min-width: 0;
 }
 .bud-h {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
-.bud-h b {
-  overflow-wrap: anywhere;
+.bud-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bud-t b {
+  font-size: 17px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bud-l {
+  font-size: 13px;
+  color: var(--ink2);
+}
+.bud-r {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex: 0 0 auto;
+}
+.bud-rl {
+  font-size: 12px;
+  color: var(--ink2);
+}
+.bud-ra {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bud-ra .amt {
+  font-size: 20px;
+  font-weight: 700;
+}
+.bud-r.over .bud-ra {
+  color: var(--owe);
+}
+.bud-r.over .bud-ra svg {
+  width: 14px;
+  height: 14px;
+}
+.bud .bar {
+  margin-top: 0;
 }
 .bud-st {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 650;
   color: var(--ink2);
-  white-space: nowrap;
 }
 .bud-st.st-en_riesgo {
   color: var(--risk);
@@ -1426,30 +1483,13 @@
 .bud-st.st-excedido {
   color: var(--owe);
 }
-.bud-amt .amt {
-  font: 700 20px/1.2 var(--round);
-}
-.bud-amt .fade {
-  display: inline;
-  font-size: 13px;
-}
-.bud[data-estado="en_riesgo"] .bar i {
-  background: var(--risk-fill);
-}
-.bud[data-estado="excedido"] .bar i {
-  background: var(--owe);
-}
 .bud[data-estado="inactivo"] {
   opacity: 0.72;
 }
-.bud-f {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 12.5px;
-  color: var(--ink2);
-  margin-top: 2px;
+@media (max-width: 960px) {
+  .buds {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Pagos: lo ya pagado se queda en la lista, atenuado y con su marca. */
@@ -1616,7 +1656,7 @@
   }
 }
 /* El ojo también tapa el límite y lo que queda de cada presupuesto. */
-.hideamt .bud-amt,
+.hideamt .bud-l,
 .hideamt .amt-s {
   filter: blur(7px);
 }
@@ -2466,5 +2506,476 @@
   }
   .nr-cifra input {
     font-size: 56px;
+  }
+}
+
+/* ─── Lote 5 de «Yala web como la app»: Planificación, Estadísticas, Grupos, Bandeja y Ajustes ───────────────── */
+
+.circ.chico {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+.circ.medio {
+  width: 52px;
+  height: 52px;
+}
+/* Los segmentos de cápsula como botones (Estadísticas, pestañas y acciones de un grupo). */
+button.pseg {
+  font-family: inherit;
+  cursor: pointer;
+}
+.pseg[aria-selected="true"],
+.pseg.prim {
+  background: var(--fill);
+  border-color: var(--fill);
+  color: #fff;
+}
+
+/* Pagos planificados: en escritorio, Próximos cobros a la izquierda y Suscripciones a la derecha. */
+.pag-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.pag-sub {
+  margin: -4px 2px 10px;
+  color: var(--ink2);
+  font-size: 13.5px;
+}
+.fila.paid .fila-t > b,
+.fila.paid .amt {
+  color: var(--ink2);
+}
+.fila-a small.sub {
+  font-size: 11.5px;
+  color: var(--ink2);
+}
+
+/* Estadísticas: segmentos y período en una fila; la cifra y las dos tarjetas en la misma fila en escritorio. */
+.est-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.est-per {
+  margin-left: auto;
+}
+.est-top {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.kpi-c {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.kpi-c .cap {
+  color: var(--ink2);
+  font-size: 13px;
+  font-weight: 600;
+}
+.kpi-c .sub {
+  font-size: 12.5px;
+  color: var(--ink2);
+}
+.kpi-c .kpi {
+  display: block;
+  font-size: 24px;
+}
+.slice .circ {
+  margin-top: 2px;
+}
+.slice-h .amt {
+  font-size: 15px;
+  font-weight: 650;
+}
+.slice-h b {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Grupos: la cabecera de la app («Te deben en total») con la barra rosa y verde y los dos lados. */
+.glista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.monto.owed {
+  color: var(--owed);
+}
+.monto.owe {
+  color: var(--owe);
+}
+.monto.owed .m-c,
+.monto.owed .m-d,
+.monto.owe .m-c,
+.monto.owe .m-d {
+  color: inherit;
+  opacity: 0.75;
+}
+.gbar {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-top: 6px;
+  max-width: 520px;
+}
+.gbar i {
+  display: block;
+  min-width: 3px;
+  border-radius: 99px;
+}
+.gbar i.owe {
+  background: var(--owe);
+}
+.gbar i.owed {
+  background: var(--owed);
+}
+.g-lados {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 520px;
+  font-size: 14px;
+}
+.g-lados > span {
+  display: grid;
+  gap: 1px;
+}
+.g-lados .der {
+  justify-items: end;
+}
+.g-lados .amt {
+  font-size: 17px;
+  font-weight: 650;
+}
+.owe-t {
+  color: var(--owe);
+}
+.owed-t {
+  color: var(--owed);
+}
+.g-lineas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 22px;
+}
+.saldo .g-lineas {
+  font: 700 26px/1.2 var(--round);
+}
+.gcard-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.gcard .fila-t > b {
+  font-size: 18px;
+}
+.gsaldado {
+  color: var(--ink2);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.gcard .gp {
+  font-size: 15px;
+  color: var(--ink);
+  align-items: baseline;
+}
+.gcard .gp .amt {
+  font-size: 16px;
+  font-weight: 650;
+}
+.gcard[aria-current="true"] {
+  border-color: var(--acc);
+  box-shadow: inset 0 0 0 1px var(--acc);
+}
+/* Escritorio ancho: la lista a la izquierda y el grupo abierto a la derecha. */
+.gsplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 22px;
+  align-items: start;
+}
+.gsplit .ggrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.gsplit .gdet {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100dvh - 100px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--card-borde);
+  border-radius: var(--radio-tarjeta);
+  background: var(--card);
+  box-shadow: var(--sombra);
+}
+.gsplit .gdet .cd {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--fill) 4%, transparent);
+}
+.gdet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.gdet-h {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gdet-t {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.gdet-t .fila-t > b {
+  font-size: 22px;
+  font-weight: 700;
+}
+.gdet .g-lineas {
+  font: 700 22px/1.2 var(--round);
+}
+.gsplit .gdet .tbl .tr {
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+}
+
+/* Bandeja de Entrada: panel lateral de cristal encima de la pantalla (escritorio) y hoja desde abajo (celular). */
+.band-m {
+  place-items: stretch end;
+  padding: 12px;
+}
+.sheet.band {
+  width: min(520px, 100%);
+  max-height: none;
+  height: 100%;
+  gap: 12px;
+  padding: 20px;
+  background: var(--sheet);
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+}
+.band-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.sheet.band h2 {
+  font-size: 28px;
+  font-weight: 700;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.band-h .badge {
+  position: static;
+  font-size: 13px;
+}
+.band-nota {
+  margin: 0;
+  color: var(--ink2);
+  font-size: 14px;
+}
+.sheet.band .dia {
+  padding-top: 10px;
+}
+.band-f {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.band-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.band-f .row-acts {
+  justify-content: flex-end;
+}
+.band-falta {
+  color: var(--risk);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Ajustes: columna de 700 px, perfil arriba y grupos de filas con cuadrito de color, como Ajustes de la app. */
+.ajustes {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.aj-perfil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+.av.grande {
+  width: 84px;
+  height: 84px;
+  margin-bottom: 6px;
+}
+.av.grande svg {
+  width: 42px;
+  height: 42px;
+}
+.aj-perfil b {
+  font-size: 22px;
+}
+.aj-perfil span:not(.av) {
+  color: var(--ink2);
+  font-size: 14px;
+}
+.aj-h {
+  margin: 0 16px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.aj-grupo {
+  margin: 0;
+  background: var(--card);
+  border: 1px solid var(--card-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.aj-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 16px;
+}
+.aj-fila + .aj-fila {
+  border-top: 1px solid var(--line);
+}
+.aj-sq {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #fff;
+}
+.aj-sq svg {
+  width: 18px;
+  height: 18px;
+}
+.aj-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.aj-t b {
+  font-weight: 500;
+}
+.aj-t span {
+  color: var(--ink2);
+  font-size: 13px;
+}
+.aj-v {
+  color: var(--ink2);
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.aj-fila select {
+  max-width: 55%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--cristal-borde);
+  background: var(--cristal);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+}
+.aj-todo {
+  margin-left: auto;
+}
+.aj-pie {
+  margin: 6px 16px 0;
+  color: var(--ink2);
+  font-size: 13px;
+}
+.aj-salir {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--owe);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.aj-salir:hover {
+  background: color-mix(in srgb, var(--owe) 8%, transparent);
+}
+.aj-salir:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+@media (max-width: 960px) {
+  .pag-cols,
+  .est-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .pag-cols > *,
+  .est-top > .saldo {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 760px) {
+  /* Como la app en el iPhone: el segmento elegido con su nombre; los demás, solo el ícono. */
+  .est-bar .pseg:not([aria-selected="true"]) .pseg-l {
+    display: none;
+  }
+  .est-per {
+    margin-left: 0;
+  }
+  .kpi-c .kpi {
+    font-size: 20px;
+  }
+  .band-m {
+    padding: 0;
+    place-items: end stretch;
+  }
+  .sheet.band {
+    height: auto;
+    max-height: 88dvh;
+    width: 100%;
+    padding: 16px 16px max(18px, env(safe-area-inset-bottom));
+  }
+  .sheet.band h2 {
+    font-size: 24px;
+  }
+  .aj-fila {
+    padding: 10px 14px;
   }
 }

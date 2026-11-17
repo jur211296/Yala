@@ -38,3 +38,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [TestFlight del iPhone 14](reference_testflight_del_iphone_14_es_externo.md) — cuenta test, interna desde el 15-nov; el admin@ de la ficha es el contacto; sin invitar por API.
 - [Suelta el turno antes del paso 5](feedback_suelta_el_turno_antes_del_paso_5.md) — el sleep de QA bloquea sim-lock-test; rm -rf $VAR y ${(f)} los rechaza el chequeo de Bash.
 - [Limpiar staging = sus cuentas](feedback_limpiar_staging_es_sus_cuentas.md) — sus 3 de Google con todo; los 4 sintéticos i5 de los goldens se quedan.
+- [Yala web con sesión, de noche en la Max](reference_web_con_sesion_de_noche_en_la_max.md) — iPhone 14 reflejado y Chrome sin extensión; staging con Playwright en la Mini sí.
