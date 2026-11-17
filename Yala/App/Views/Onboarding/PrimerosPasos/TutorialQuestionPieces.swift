@@ -306,6 +306,54 @@ extension TutorialQuestionScreen where Card == EmptyView {
     }
 }
 
+// MARK: - Una subcategoría que se quita o se vuelve a poner
+
+/// «¿Algo que no quieras contar?»: el círculo de una subcategoría, relleno y con ✓ si cuenta. Lo usan el paso 3 de
+/// Primeros pasos y el guiado de presupuesto de Yala IA.
+struct TutorialSubcategoryCircle: View {
+    let name: String
+    let icon: String
+    let color: Color
+    let isOn: Bool
+    let id: String
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button {
+            DS.Haptic.selection()
+            onToggle()
+        } label: {
+            VStack(spacing: DS.Spacing.xxs) {
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(isOn ? Color.white : color)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(isOn ? color : color.opacity(0.15)))
+                    .overlay(alignment: .topTrailing) {
+                        if isOn {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.white, color)
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                    .accessibilityHidden(true)
+                Text(name)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(isOn ? .primary : .secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier(id)
+    }
+}
+
 // MARK: - Las cuentas que comparten Primeros pasos y los guiados de Yala IA
 
 /// Lo gastado con un presupuesto de prueba y la frase del pago planificado: los pasos 3 y 4 de Primeros pasos y los

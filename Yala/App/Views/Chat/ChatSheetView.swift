@@ -154,6 +154,12 @@ struct ChatSheetView: View {
         .modifier(ChatFeedbackModifier(
             errorMessage: viewModel.errorMessage, isRecording: viewModel.isRecording, reduceMotion: reduceMotion))
         .environment(\.chatDraftFullFormHidden, courtesyTrial != nil)
+        // Un guiado en curso se contesta tocando la tarjeta: el teclado de la caja de escribir (el de la frase que lo
+        // abrió) se cierra para no taparla. Va aquí y no en el hilo: el hilo aparece con el primer mensaje, y un
+        // `onChange` no se dispara al aparecer.
+        .onChange(of: lastGuidedProgress) { _, progress in
+            if progress.hasSuffix("-\(ChatGuidedStatus.inProgress.rawValue)") { isInputFocused = false }
+        }
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
         .sheet(isPresented: $showAISettingsSheet) {
@@ -281,7 +287,9 @@ struct ChatSheetView: View {
                         onLogExpense: {
                             showsCourtesyGuide = false
                             isInputFocused = true
-                        }
+                        },
+                        // La prueba de cortesía de Primeros pasos solo apunta: sin atajos de guiados.
+                        onCreate: courtesyTrial == nil ? { viewModel.startGuidedFlow($0) } : nil
                     )
                 }
             }

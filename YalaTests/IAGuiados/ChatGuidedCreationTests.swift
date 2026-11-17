@@ -56,7 +56,7 @@ struct ChatGuidedCreationTests {
         #expect(state.answers.amount == 300)
         #expect(state.answers.period == .monthly)
         #expect(state.prefilled.isSuperset(of: [.categories, .amount, .period]))
-        #expect(state.step == .confirm, "Lo dijo todo: va directo a revisar.")
+        #expect(state.step == .subcategories, "Nombró la categoría: lo único que falta es qué subcategorías cuenta.")
         #expect(viewModel.allTurns.count == 1, "El turno entra en el historial del día.")
     }
 
@@ -120,12 +120,16 @@ struct ChatGuidedCreationTests {
             $0.allExpenses = false
             $0.categoryIDs = [food.persistentModelID]
         }
+        viewModel.answerGuided(messageID: messageID) { $0.removedSubcategoryIDs = [] }
         viewModel.answerGuided(messageID: messageID) { $0.period = .weekly }
         viewModel.answerGuided(messageID: messageID) { $0.amount = 150 }
         state = try guidedMessage(viewModel).state
         if state.step == .currency {
             viewModel.answerGuided(messageID: messageID) { $0.currencyCode = CurrencyDefaults.currentPreferred }
         }
+        state = try guidedMessage(viewModel).state
+        #expect(state.step == .advanced)
+        viewModel.guidedAdvanced(messageID: messageID, wants: false)
         state = try guidedMessage(viewModel).state
         #expect(state.step == .confirm)
 
@@ -151,6 +155,7 @@ struct ChatGuidedCreationTests {
         answers.period = .monthly
         answers.amount = 100
         answers.currencyCode = "PEN"
+        answers.wantsAdvanced = false
         let state = ChatGuidedEngine.start(.budget, answers: answers)
         let data = ChatGuidedData(mainCurrency: "PEN")
         #expect(throws: ChatGuidedCreationError.planLimitReached) {
@@ -181,6 +186,7 @@ struct ChatGuidedCreationTests {
             $0.accountID = card.persistentModelID
         }
         viewModel.answerGuided(messageID: messageID) { $0.subcategoryID = rent.persistentModelID }
+        viewModel.guidedAdvanced(messageID: messageID, wants: false)
         let state = try guidedMessage(viewModel).state
         #expect(state.step == .confirm)
 

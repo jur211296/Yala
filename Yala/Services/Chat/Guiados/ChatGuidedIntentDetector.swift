@@ -25,6 +25,20 @@ struct ChatGuidedCatalog {
         let id: PersistentIdentifier
         /// El nombre de la categoría, los de sus subcategorías y sus palabras del día a día, ya plegados.
         let words: [String]
+        /// El nombre de la categoría sola, plegado: nombrarla cuenta todas sus subcategorías.
+        var nameWords: [String] = []
+        var subcategories: [SubcategoryEntry] = []
+    }
+
+    struct SubcategoryEntry {
+        let id: PersistentIdentifier
+        /// `Subcategory.shortcutID`: lo que guarda el presupuesto.
+        let shortcutID: UUID
+        /// Su nombre y sus palabras del día a día, ya plegados.
+        let words: [String]
+        /// Su nombre solo, plegado. El presupuesto solo deja una subcategoría sola si la frase la nombra así: las
+        /// palabras del día a día son anchas («comida» es de Restaurantes, y «para comida» es toda la comida).
+        var name: String = ""
     }
 
     var categories: [CategoryEntry] = []
@@ -46,7 +60,7 @@ enum ChatGuidedIntentDetector {
     // MARK: - ¿Qué guiado?
 
     static func kind(of text: String) -> ChatGuidedKind? {
-        let folded = fold(text)
+        let folded = normalized(text)
         guard !folded.isEmpty, !isQuestion(folded), !matchesAny(folded, viewingPatterns) else { return nil }
         let asksForIt = matchesAny(folded, creationVerbPatterns) || folded.rangeOfCharacter(from: .decimalDigits) != nil
         // «Presupuesto» dicho con todas las letras gana: «un presupuesto para mis suscripciones» es un presupuesto.
@@ -69,7 +83,7 @@ enum ChatGuidedIntentDetector {
     // MARK: - Presupuesto
 
     static func budget(_ text: String, catalog: ChatGuidedCatalog) -> ChatGuidedDetection {
-        let folded = fold(text)
+        let folded = normalized(text)
         var answers = ChatGuidedAnswers()
         var prefilled: Set<ChatGuidedField> = []
 
@@ -78,11 +92,19 @@ enum ChatGuidedIntentDetector {
             answers.allExpenses = false
             answers.categoryIDs = categories
             prefilled.insert(.categories)
+            // «taxi» nombra una subcategoría de Transporte: solo esa cuenta, y no se vuelve a preguntar.
+            if let removed = removedSubcategories(folded, categoryIDs: categories, catalog: catalog) {
+                answers.removedSubcategoryIDs = removed
+                prefilled.insert(.subcategories)
+            }
         } else if matchesAny(folded, allExpensesPatterns) {
             answers.allExpenses = true
             prefilled.insert(.categories)
         }
-        if let period = period(folded) {
+        if matchesAny(folded, oncePatterns) {
+            answers.period = .once
+            prefilled.insert(.period)
+        } else if let period = period(folded) {
             answers.period = period
             prefilled.insert(.period)
         }
@@ -103,12 +125,21 @@ enum ChatGuidedIntentDetector {
     // MARK: - Pago planificado
 
     static func scheduledPayment(_ text: String, catalog: ChatGuidedCatalog) -> ChatGuidedDetection {
-        let folded = fold(text)
+        var folded = normalized(text)
         var answers = ChatGuidedAnswers()
         var prefilled: Set<ChatGuidedField> = []
 
+        // «cada 2 semanas», «cada 15 días»: frecuencia y cada cuántos. Se quita antes de buscar el día y el monto.
+        if let every = interval(folded) {
+            answers.frequency = every.frequency
+            answers.interval = every.value
+            prefilled.insert(.frequency)
+            folded = folded.replacingOccurrences(of: every.matched, with: " ")
+        }
         let day = monthDay(folded)
-        if let frequency = frequency(folded) {
+        if answers.frequency != nil {
+            // Ya la dijo con «cada N».
+        } else if let frequency = frequency(folded) {
             answers.frequency = frequency
             prefilled.insert(.frequency)
         } else if day != nil {
@@ -138,6 +169,12 @@ enum ChatGuidedIntentDetector {
             }
         }
         if matchesAny(folded, subscriptionWordPatterns) { answers.isSubscription = true }
+        // «la luz», «el alquiler»: la subcategoría, si la frase nombra exactamente una.
+        let named = matchedSubcategories(folded, catalog: catalog)
+        if named.count == 1, let only = named.first {
+            answers.subcategoryID = only.id
+            prefilled.insert(.subcategories)
+        }
         return ChatGuidedDetection(kind: .scheduledPayment, answers: answers, prefilled: prefilled)
     }
 
@@ -147,6 +184,11 @@ enum ChatGuidedIntentDetector {
         text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .replacingOccurrences(of: "\u{00A0}", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Plegado y con los números dichos con palabras en cifras («trescientos» → «300»): lo que leen las reglas.
+    static func normalized(_ text: String) -> String {
+        ChatGuidedNumberWords.replacingNumberWords(in: fold(text))
     }
 
     /// Una pregunta sobre lo que ya hay, no un pedido. «¿Me ayudas a crear un presupuesto?» sí es un pedido.
@@ -170,6 +212,70 @@ enum ChatGuidedIntentDetector {
         return found.sorted { $0.position < $1.position }.map(\.id)
     }
 
+    /// Lo que se quita de las categorías nombradas cuando la frase nombra subcategorías sueltas por su nombre y no la
+    /// categoría: «mercado» deja solo Mercado de Alimentación. `nil` si no nombra ninguna (se pregunta).
+    static func removedSubcategories(_ folded: String, categoryIDs: [PersistentIdentifier],
+                                     catalog: ChatGuidedCatalog) -> [UUID]? {
+        var removed: [UUID] = []
+        var namedAny = false
+        for id in categoryIDs {
+            guard let entry = catalog.categories.first(where: { $0.id == id }), !entry.subcategories.isEmpty else {
+                return nil
+            }
+            let namesCategory = entry.nameWords.contains { $0.count >= 3 && wholeWordRange(of: $0, in: folded) != nil }
+            if namesCategory { continue }
+            let named = entry.subcategories.filter { subcategory in
+                subcategory.name.count >= 3 && wholeWordRange(of: subcategory.name, in: folded) != nil
+            }
+            // Llegó por una palabra del día a día, sin nombrar una subcategoría: se pregunta con todas marcadas.
+            guard !named.isEmpty else { return nil }
+            namedAny = true
+            let keep = Set(named.map(\.shortcutID))
+            removed += entry.subcategories.map(\.shortcutID).filter { !keep.contains($0) }
+        }
+        return namedAny ? removed : nil
+    }
+
+    /// Las subcategorías que la frase nombra por su nombre o sus palabras del día a día.
+    static func matchedSubcategories(_ folded: String, catalog: ChatGuidedCatalog) -> [ChatGuidedCatalog.SubcategoryEntry] {
+        var found: [ChatGuidedCatalog.SubcategoryEntry] = []
+        for entry in catalog.categories {
+            for subcategory in entry.subcategories
+            where subcategory.words.contains(where: { $0.count >= 3 && wholeWordRange(of: $0, in: folded) != nil }) {
+                if !found.contains(where: { $0.id == subcategory.id }) { found.append(subcategory) }
+            }
+        }
+        return found
+    }
+
+    /// «cada 2 semanas», «cada 15 dias», «every 3 months», «a cada 2 semanas», «every other week», «quincenal».
+    static func interval(_ folded: String) -> (frequency: ChatGuidedFrequency, value: Int, matched: String)? {
+        let units: [(pattern: String, frequency: ChatGuidedFrequency)] = [
+            (#"(?:dias|days|dia|day)"#, .daily),
+            (#"(?:semanas|weeks|semana|week)"#, .weekly),
+            (#"(?:meses|months|mes|month|mois|monate|mesi|maanden)"#, .monthly),
+        ]
+        for unit in units {
+            let pattern = #"\b(?:cada|every|a\s+cada|toutes\s+les|alle|ogni|elke|co)\s+(\d{1,3})\s+"# + unit.pattern + #"\b"#
+            guard let regex = compiled(pattern) else { continue }
+            let range = NSRange(folded.startIndex..., in: folded)
+            guard let match = regex.firstMatch(in: folded, range: range),
+                  let numberRange = Range(match.range(at: 1), in: folded),
+                  let whole = Range(match.range, in: folded),
+                  let value = Int(folded[numberRange]), (1...365).contains(value) else { continue }
+            return (unit.frequency, value, String(folded[whole]))
+        }
+        let biweekly = [#"\b(quincenal(?:es|mente)?|cada\s+otra\s+semana|every\s+other\s+week|biweekly|bi-weekly|fortnightly|quinzenal)\b"#]
+        for pattern in biweekly {
+            guard let regex = compiled(pattern) else { continue }
+            let range = NSRange(folded.startIndex..., in: folded)
+            if let match = regex.firstMatch(in: folded, range: range), let whole = Range(match.range, in: folded) {
+                return (.weekly, 2, String(folded[whole]))
+            }
+        }
+        return nil
+    }
+
     static func period(_ folded: String) -> ChatGuidedPeriod? {
         if matchesAny(folded, weeklyPatterns) { return .weekly }
         if matchesAny(folded, yearlyPatterns) { return .yearly }
@@ -179,11 +285,13 @@ enum ChatGuidedIntentDetector {
 
     static func frequency(_ folded: String) -> ChatGuidedFrequency? {
         if matchesAny(folded, oncePatterns) { return .once }
+        if matchesAny(folded, dailyPatterns) { return .daily }
         return period(folded).map {
             switch $0 {
             case .monthly: .monthly
             case .weekly: .weekly
             case .yearly: .yearly
+            case .once: .once
             }
         }
     }
@@ -193,7 +301,7 @@ enum ChatGuidedIntentDetector {
         let patterns = [
             #"\b(?:el\s+)?dia\s+(\d{1,2})\b"#,
             #"\bel\s+(\d{1,2})\s+de\s+cada\s+mes\b"#,
-            #"\b(?:todos\s+los|cada)\s+(\d{1,2})\b(?!\s*(?:soles|dolares|euros|pesos|%|s/|usd|eur|\.|,\d))"#,
+            #"\b(?:todos\s+los|cada)\s+(\d{1,2})\b(?!\s*(?:soles|dolares|euros|pesos|%|s/|usd|eur|\.|,\d|dias|semanas|meses|anos))"#,
             #"\bel\s+(\d{1,2})\b(?=\s*(?:$|de\s+cada|del\s+mes|,|\.|y\b))"#,
             #"\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b"#,
             #"\bevery\s+(\d{1,2})(?:st|nd|rd|th)\b"#,
@@ -224,6 +332,8 @@ enum ChatGuidedIntentDetector {
         for match in regex.matches(in: folded, range: range) {
             guard let numberRange = Range(match.range(at: 2), in: folded),
                   var value = number(String(folded[numberRange])) else { continue }
+            // «2 semanas», «15 dias», «3 veces»: una cantidad de tiempo, no el monto.
+            if let whole = Range(match.range, in: folded), isFollowedByTimeUnit(folded[whole.upperBound...]) { continue }
             if match.range(at: 3).location != NSNotFound { value *= 1000 }
             let hasCurrency = match.range(at: 1).location != NSNotFound || match.range(at: 4).location != NSNotFound
             if hasCurrency { withCurrency.append(value) } else { plain.append(value) }
@@ -231,6 +341,11 @@ enum ChatGuidedIntentDetector {
         let value = withCurrency.first ?? plain.max()
         guard let value, ChatGuidedEngine.isValidAmount(value) else { return nil }
         return value
+    }
+
+    private static func isFollowedByTimeUnit(_ rest: Substring) -> Bool {
+        let pattern = #"^\s*(dias?|semanas?|meses|mes|anos?|veces|days?|weeks?|months?|years?|times|semaines?|mois|wochen|tage|monate|giorni|settimane|mesi|vezes)\b"#
+        return String(rest).range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     /// «1,200.50» → 1200.5 · «1.200,50» → 1200.5 · «1,200» → 1200 · «12,5» → 12.5.
@@ -298,6 +413,7 @@ enum ChatGuidedIntentDetector {
         while index < tokens.count, picked.count < 3 {
             let token = tokens[index]
             if token.isEmpty || token.rangeOfCharacter(from: .decimalDigits) != nil || nameStops.contains(token)
+                || ChatGuidedNumberWords.isNumberWord(token)
                 || token.hasPrefix("s/") || token.hasPrefix("$") {
                 if picked.isEmpty, nameSkips.contains(token) {
                     index += 1
@@ -371,9 +487,9 @@ enum ChatGuidedIntentDetector {
     /// Un pedido de pago que se repite aunque no lleve verbo de crear: «recuérdame pagar…», «pago X cada mes».
     private static let paymentRequestPatterns = [
         #"\b(recuerdame|recordarme|avisame|avisarme)\s+(?:que\s+)?(?:tengo\s+que\s+)?pagar\b"#,
-        #"\b(pago|pagamos|pagan|me\s+cobran|cobran)\b.*\b(cada|todos\s+los)\s+(mes|meses|semana|semanas|ano|anos|lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b"#,
+        #"\b(pago|pagamos|pagan|me\s+cobran|cobran)\b.*\b(cada|todos\s+los)\s+(?:\d{1,3}\s+)?(mes|meses|semana|semanas|dia|dias|ano|anos|lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b"#,
         #"\b(bill\s+reminder|remind\s+me\s+to\s+pay)\b"#,
-        #"\b(i\s+pay|we\s+pay|they\s+charge\s+me)\b.*\b(every|each)\s+(month|week|year)\b"#,
+        #"\b(i\s+pay|we\s+pay|they\s+charge\s+me)\b.*\b(every|each)\s+(?:\d{1,3}\s+)?(months?|weeks?|years?|days?)\b"#,
         #"\b(lembre-me\s+de\s+pagar|rappelle-moi\s+de\s+payer|erinnere\s+mich\s+(?:daran\s+)?zu\s+zahlen|ricordami\s+di\s+pagare|przypomnij\s+mi\s+zaplacic)\b"#,
     ]
 
@@ -413,8 +529,14 @@ enum ChatGuidedIntentDetector {
         #"\b(anuel(?:le)?|par\s+an|chaque\s+annee|jahrlich|pro\s+jahr|annuale|all'anno|jaarlijks|per\s+jaar|roczn\w*|co\s+rok)\b"#,
     ]
 
+    /// «todos los días», «cada día», «diario», «every day», «daily», «todos os dias».
+    private static let dailyPatterns = [
+        #"\b(todos\s+los\s+dias|cada\s+dia|diari[oa]s?|diariamente|every\s+day|each\s+day|daily|todos\s+os\s+dias|todo\s+dia|tous\s+les\s+jours|jeden\s+tag|taglich|ogni\s+giorno|elke\s+dag|codziennie)\b"#,
+    ]
+
     private static let oncePatterns = [
-        #"\b(una\s+(?:sola\s+)?vez|solo\s+una\s+vez|pago\s+unico|one\s+time|one-time|just\s+once|only\s+once|uma\s+vez|une\s+fois|einmalig|una\s+tantum|eenmalig|jednorazow\w*)\b"#,
+        // «una vez al mes» no es una sola vez: es mensual.
+        #"\b(una\s+(?:sola\s+)?vez|solo\s+una\s+vez|por\s+unica\s+vez|pago\s+unico|one\s+time|one-time|just\s+once|only\s+once|uma\s+(?:so\s+)?vez|une\s+fois|einmalig|una\s+tantum|eenmalig|jednorazow\w*)\b(?!\s+(?:al|por|cada|a\s+la|a|per|par|pro|en|em|ao|a\s+cada)\b)"#,
     ]
 
     /// Lo que anuncia el nombre: «pagar el alquiler», «pago de la luz», «suscripción a Spotify».

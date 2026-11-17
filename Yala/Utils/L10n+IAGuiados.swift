@@ -114,5 +114,138 @@ extension L10n {
         static var planLimitReached: String { iaGuidedString("iaGuided.planLimitReached") }
         /// «Cambiar …»
         static func changeA11y(_ a0: String) -> String { iaGuidedString("iaGuided.change.a11y", a0) }
+
+        // MARK: Mejoras del 16-nov: saludo, opciones avanzadas, una sola vez y cada N
+
+        /// «Hola, soy Yala IA. Puedo ayudarte con esto:»
+        static var greeting: String { iaGuidedString("iaGuided.greeting") }
+        /// «Crea conversando»
+        static var greetingCreateTitle: String { iaGuidedString("iaGuided.greeting.createTitle") }
+        /// «Te pregunto paso a paso y nada se crea sin que lo revises.»
+        static var greetingCreateSubtitle: String { iaGuidedString("iaGuided.greeting.createSubtitle") }
+        /// «Un presupuesto»
+        static var greetingCreateBudget: String { iaGuidedString("iaGuided.greeting.createBudget") }
+        /// «Un pago planificado»
+        static var greetingCreatePayment: String { iaGuidedString("iaGuided.greeting.createPayment") }
+        /// «Quiero crear un presupuesto»
+        static var shortcutBudgetMessage: String { iaGuidedString("iaGuided.shortcut.budgetMessage") }
+        /// «Quiero crear un pago planificado»
+        static var shortcutPaymentMessage: String { iaGuidedString("iaGuided.shortcut.paymentMessage") }
+        /// «¿Quieres revisar las opciones avanzadas?»
+        static var advancedQuestion: String { iaGuidedString("iaGuided.advanced.question") }
+        /// «Puedes seguir sin eso: se crea con los valores de siempre.»
+        static var advancedSubtitle: String { iaGuidedString("iaGuided.advanced.subtitle") }
+        /// «Sí, revisarlas una a una»
+        static var advancedYes: String { iaGuidedString("iaGuided.advanced.yes") }
+        /// «No, seguir así»
+        static var advancedNo: String { iaGuidedString("iaGuided.advanced.no") }
+        /// «Saltar»
+        static var skip: String { iaGuidedString("iaGuided.skip") }
+        /// «¿Le pones otro nombre?»
+        static var budgetNameQuestion: String { iaGuidedString("iaGuided.budget.name.question") }
+        /// «Si no, se llama «%@».»
+        static func budgetNameSubtitle(_ a0: String) -> String { iaGuidedString("iaGuided.budget.name.subtitle", a0) }
+        /// «¿Solo cuenta los gastos de algunas cuentas?»
+        static var budgetAccountsQuestion: String { iaGuidedString("iaGuided.budget.accounts.question") }
+        /// «Si no eliges ninguna, cuenta todas.»
+        static var budgetAccountsSubtitle: String { iaGuidedString("iaGuided.budget.accounts.subtitle") }
+        /// «¿Solo cuenta los gastos con alguna etiqueta?»
+        static var budgetTagsQuestion: String { iaGuidedString("iaGuided.budget.tags.question") }
+        /// «Si no eliges ninguna, no se fija en las etiquetas.»
+        static var budgetTagsSubtitle: String { iaGuidedString("iaGuided.budget.tags.subtitle") }
+        /// «¿Cuenta tu parte de los gastos de grupo?»
+        static var budgetSharedQuestion: String { iaGuidedString("iaGuided.budget.shared.question") }
+        /// «Sí, mi parte cuenta»
+        static var budgetSharedYes: String { iaGuidedString("iaGuided.budget.shared.yes") }
+        /// «No, sin gastos de grupo»
+        static var budgetSharedNo: String { iaGuidedString("iaGuided.budget.shared.no") }
+        /// «¿Es una suscripción?»
+        static var paymentSubscriptionQuestion: String { iaGuidedString("iaGuided.payment.subscription.question") }
+        /// «Sí, es una suscripción»
+        static var paymentSubscriptionYes: String { iaGuidedString("iaGuided.payment.subscription.yes") }
+        /// «No, es otro pago»
+        static var paymentSubscriptionNo: String { iaGuidedString("iaGuided.payment.subscription.no") }
+        /// «¿Hasta cuándo se repite?»
+        static var paymentEndQuestion: String { iaGuidedString("iaGuided.payment.end.question") }
+        /// «Sin fecha de fin»
+        static var paymentEndNever: String { iaGuidedString("iaGuided.payment.end.never") }
+        /// «Hasta esta fecha»
+        static var paymentEndUntil: String { iaGuidedString("iaGuided.payment.end.until") }
+        /// «¿Quieres agregar una nota?»
+        static var paymentNoteQuestion: String { iaGuidedString("iaGuided.payment.note.question") }
+        /// «Por ejemplo, el número de contrato»
+        static var paymentNotePlaceholder: String { iaGuidedString("iaGuided.payment.note.placeholder") }
+        /// «¿Le pones etiquetas?»
+        static var paymentTagsQuestion: String { iaGuidedString("iaGuided.payment.tags.question") }
+        /// «Cada cierto tiempo»
+        static var paymentEveryTitle: String { iaGuidedString("iaGuided.payment.every.title") }
+        /// «Cada tantos días, semanas o meses»
+        static var paymentEverySubtitle: String { iaGuidedString("iaGuided.payment.every.subtitle") }
+        /// «Días»
+        static var paymentEveryDays: String { iaGuidedString("iaGuided.payment.every.days") }
+        /// «Semanas»
+        static var paymentEveryWeeks: String { iaGuidedString("iaGuided.payment.every.weeks") }
+        /// «Meses»
+        static var paymentEveryMonths: String { iaGuidedString("iaGuided.payment.every.months") }
+        /// «cada %d meses» (el rótulo del selector de «Cada cierto tiempo»)
+        static func paymentEveryMonthsCount(_ a0: Int) -> String { iaGuidedString("iaGuided.payment.every.monthsCount", a0) }
+        /// «Cada cuántos»
+        static var paymentEveryCount: String { iaGuidedString("iaGuided.payment.every.count") }
+        /// «¿Desde qué día?»
+        static var paymentWhenStart: String { iaGuidedString("iaGuided.payment.when.start") }
+        /// «Subcategorías»
+        static var rowSubcategories: String { iaGuidedString("iaGuided.row.subcategories") }
+        /// «Fechas»
+        static var rowDates: String { iaGuidedString("iaGuided.row.dates") }
+        /// «Opciones avanzadas»
+        static var rowAdvanced: String { iaGuidedString("iaGuided.row.advanced") }
+        /// «Avisos»
+        static var rowAlerts: String { iaGuidedString("iaGuided.row.alerts") }
+        /// «Cuentas»
+        static var rowAccounts: String { iaGuidedString("iaGuided.row.accounts") }
+        /// «Etiquetas»
+        static var rowTags: String { iaGuidedString("iaGuided.row.tags") }
+        /// «Gastos de grupo»
+        static var rowShared: String { iaGuidedString("iaGuided.row.shared") }
+        /// «En el Panel»
+        static var rowPanel: String { iaGuidedString("iaGuided.row.panel") }
+        /// «Suscripción»
+        static var rowSubscription: String { iaGuidedString("iaGuided.row.subscription") }
+        /// «Aviso»
+        static var rowReminder: String { iaGuidedString("iaGuided.row.reminder") }
+        /// «Hasta»
+        static var rowEnd: String { iaGuidedString("iaGuided.row.end") }
+        /// «Nota»
+        static var rowNote: String { iaGuidedString("iaGuided.row.note") }
+        /// «Todas»
+        static var valueAll: String { iaGuidedString("iaGuided.value.all") }
+        /// «Ninguna»
+        static var valueNone: String { iaGuidedString("iaGuided.value.none") }
+        /// «%1$d de %2$d»
+        static func valueSomeOf(_ a0: Int, _ a1: Int) -> String { iaGuidedString("iaGuided.value.someOf", a0, a1) }
+        /// «Las de siempre»
+        static var valueDefaults: String { iaGuidedString("iaGuided.value.defaults") }
+        /// «Revisadas»
+        static var valueReviewed: String { iaGuidedString("iaGuided.value.reviewed") }
+        /// «Sí»
+        static var valueYes: String { iaGuidedString("iaGuided.value.yes") }
+        /// «No»
+        static var valueNo: String { iaGuidedString("iaGuided.value.no") }
+        /// «Sin avisos»
+        static var valueNoAlerts: String { iaGuidedString("iaGuided.value.noAlerts") }
+        /// «Al 75 % y al 100 %»
+        static var valueAlert75: String { iaGuidedString("iaGuided.value.alert75") }
+        /// «Al llegar al tope»
+        static var valueAlert100: String { iaGuidedString("iaGuided.value.alert100") }
+        /// «3 días antes»
+        static var valueReminder3: String { iaGuidedString("iaGuided.value.reminder3") }
+        /// «1 día antes»
+        static var valueReminder1: String { iaGuidedString("iaGuided.value.reminder1") }
+        /// «El mismo día»
+        static var valueReminderSame: String { iaGuidedString("iaGuided.value.reminderSame") }
+        /// «Sin aviso»
+        static var valueNoReminder: String { iaGuidedString("iaGuided.value.noReminder") }
+        /// «Sin nota»
+        static var valueNoNote: String { iaGuidedString("iaGuided.value.noNote") }
     }
 }

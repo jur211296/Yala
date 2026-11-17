@@ -34,29 +34,37 @@ nonisolated enum ChatGuidedEngine {
         }
     }
 
-    /// Presupuesto: ¿en qué? → ¿cada cuánto? → ¿cuánto? → ¿en qué moneda? El nombre se propone solo (se cambia en la
-    /// confirmación).
+    /// Presupuesto: ¿en qué? → ¿algo que no quieras contar? → ¿cada cuánto? → (fechas) → ¿cuánto? → ¿en qué moneda? →
+    /// ¿opciones avanzadas? El nombre se propone solo (se cambia en las avanzadas).
     static let budgetSpec = ChatGuidedFlowSpec(
         kind: .budget,
-        steps: [.categories, .period, .amount, .currency],
+        steps: [.categories, .subcategories, .period, .dates, .amount, .currency, .advanced,
+                .budgetName, .budgetAlerts, .budgetAccounts, .budgetTags, .budgetShared, .budgetPanel],
         isAnswered: { step, answers in
             switch step {
             case .categories:
                 guard let all = answers.allExpenses else { return false }
                 return all || !answers.categoryIDs.isEmpty
+            case .subcategories: return answers.allExpenses == true || answers.removedSubcategoryIDs != nil
             case .period: return answers.period != nil
+            case .dates:
+                guard answers.period == .once else { return true }
+                guard let start = answers.budgetStart, let end = answers.budgetEnd else { return false }
+                return end >= start
             case .amount: return isValidAmount(answers.amount)
             case .currency: return answers.currencyCode != nil
-            default: return true
+            case .advanced: return answers.wantsAdvanced != nil
+            default: return isAdvancedAnswered(step, answers)
             }
         }
     )
 
-    /// Pago planificado: ¿es uno de estos cobros? → nombre → monto → cada cuánto → cuándo → cuenta → categoría.
-    /// La moneda sale de la cuenta (o de la frase) y se cambia en la confirmación.
+    /// Pago planificado: ¿es uno de estos cobros? → nombre → monto → cada cuánto → cuándo → cuenta → categoría →
+    /// ¿opciones avanzadas?. La moneda sale de la cuenta (o de la frase) y se cambia en la confirmación.
     static let scheduledPaymentSpec = ChatGuidedFlowSpec(
         kind: .scheduledPayment,
-        steps: [.suggestion, .name, .amount, .frequency, .when, .account, .subcategory, .currency],
+        steps: [.suggestion, .name, .amount, .frequency, .when, .account, .subcategory, .currency, .advanced,
+                .paymentSubscription, .paymentReminder, .paymentEnd, .paymentNote, .paymentTags, .paymentPanel],
         isAnswered: { step, answers in
             switch step {
             case .suggestion: return answers.suggestionKey != nil
@@ -67,16 +75,40 @@ nonisolated enum ChatGuidedEngine {
                 switch answers.frequency {
                 case .monthly: return answers.dayOfMonth.map(isValidMonthDay) ?? false
                 case .weekly: return answers.weekday.map { (1...7).contains($0) } ?? false
-                case .yearly, .once: return answers.date != nil
+                case .yearly, .once, .daily: return answers.date != nil
                 case nil: return false
                 }
             case .account: return answers.accountID != nil
             case .subcategory: return answers.subcategoryID != nil
             case .currency: return answers.currencyCode != nil
-            default: return true
+            case .advanced: return answers.wantsAdvanced != nil
+            // Un pago de una sola vez no tiene «hasta cuándo».
+            case .paymentEnd: return answers.frequency == .once || isAdvancedAnswered(step, answers)
+            default: return isAdvancedAnswered(step, answers)
             }
         }
     )
+
+    /// Una opción avanzada está contestada si no se quisieron revisar, si ya se contestó o saltó, o si no toca.
+    static func isAdvancedAnswered(_ step: ChatGuidedStep, _ answers: ChatGuidedAnswers) -> Bool {
+        guard step.isAdvancedOption else { return true }
+        return answers.wantsAdvanced == false || answers.isDone(step) || answers.isNotApplicable(step)
+    }
+
+    /// Las preguntas que de verdad se le hacen a esta persona: las avanzadas solo con «Sí», y nunca las que no tocan.
+    static func askedSteps(_ kind: ChatGuidedKind, answers: ChatGuidedAnswers) -> [ChatGuidedStep] {
+        spec(for: kind).steps.filter { step in
+            if step.isAdvancedOption {
+                return answers.wantsAdvanced == true && !answers.isNotApplicable(step)
+                    && !(step == .paymentEnd && answers.frequency == .once)
+            }
+            switch step {
+            case .subcategories: return answers.allExpenses != true
+            case .dates: return answers.period == .once
+            default: return true
+            }
+        }
+    }
 
     // MARK: - Reglas sueltas
 
@@ -109,14 +141,21 @@ nonisolated enum ChatGuidedEngine {
     }
 
     /// Tras contestar la pregunta de ahora (las respuestas ya escritas en `answers`): la siguiente pendiente. Contestar
-    /// algo que la persona dijo en su frase quita la marca «lo dijiste tú».
+    /// algo que la persona dijo en su frase quita la marca «lo dijiste tú». Una opción avanzada contestada o saltada
+    /// («Saltar» contesta sin cambiar nada) queda hecha.
     static func answer(
         _ state: ChatGuidedFlowState,
         with answers: ChatGuidedAnswers,
         clearing fields: Set<ChatGuidedField> = []
     ) -> ChatGuidedFlowState {
         guard state.status == .inProgress, state.step != .confirm, state.step != .done else { return state }
+        // Una opción avanzada solo se contesta si se quisieron revisar: si no, el valor de siempre no se toca.
+        if state.step.isAdvancedOption, state.answers.wantsAdvanced != true { return state }
         var next = state
+        var answers = answers
+        if state.step.isAdvancedOption, !answers.isDone(state.step) {
+            answers.advancedDone = (answers.advancedDone ?? []) + [state.step]
+        }
         next.answers = answers
         next.prefilled.subtract(fields)
         next.history.append(state.step)
@@ -127,9 +166,15 @@ nonisolated enum ChatGuidedEngine {
 
     /// «Atrás»: la pregunta anterior. En la primera no hace nada (el guiado se cancela con su botón).
     static func back(_ state: ChatGuidedFlowState) -> ChatGuidedFlowState {
-        guard state.status == .inProgress, let previous = state.history.last else { return state }
+        guard state.status == .inProgress, !state.history.isEmpty else { return state }
         var next = state
-        next.history.removeLast()
+        // Lo que ya no se pregunta (una opción avanzada tras «No», las fechas tras cambiar el período) se salta.
+        let asked = Set(askedSteps(state.kind, answers: state.answers))
+        var previous = next.history.removeLast()
+        while previous != .confirm, !asked.contains(previous), let earlier = next.history.popLast() {
+            previous = earlier
+        }
+        guard previous == .confirm || asked.contains(previous) else { return state }
         next.step = previous
         if previous == .confirm { next.returnsToConfirm = false }
         return next
@@ -171,6 +216,16 @@ nonisolated enum ChatGuidedEngine {
         return next
     }
 
+    /// «¿Quieres revisar las opciones avanzadas?». «Sí» las pregunta todas otra vez (con lo ya elegido marcado); «No»
+    /// las devuelve a los valores de siempre.
+    static func answerAdvanced(_ state: ChatGuidedFlowState, wants: Bool) -> ChatGuidedFlowState {
+        guard state.step == .advanced else { return state }
+        var answers = state.answers
+        answers.wantsAdvanced = wants
+        if wants { answers.advancedDone = [] } else { answers.resetAdvancedOptions() }
+        return answer(state, with: answers)
+    }
+
     static func cancel(_ state: ChatGuidedFlowState) -> ChatGuidedFlowState {
         guard state.status == .inProgress else { return state }
         var next = state
@@ -181,10 +236,12 @@ nonisolated enum ChatGuidedEngine {
 
     // MARK: - Progreso
 
-    /// Cuántas preguntas tiene el flujo y cuántas están contestadas, para los puntos de la cabecera.
+    /// Cuántas preguntas tiene el flujo y cuántas están contestadas, para los puntos de la cabecera. Solo cuentan las
+    /// que se le hacen a esta persona.
     static func progress(_ state: ChatGuidedFlowState) -> (answered: Int, total: Int) {
         let spec = spec(for: state.kind)
-        let answered = spec.steps.filter { spec.isAnswered($0, state.answers) }.count
-        return (answered, spec.steps.count)
+        let asked = askedSteps(state.kind, answers: state.answers)
+        let answered = asked.filter { spec.isAnswered($0, state.answers) }.count
+        return (answered, asked.count)
     }
 }

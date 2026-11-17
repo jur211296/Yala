@@ -361,9 +361,13 @@ final class ChatAssistantViewModel {
         guard let context = modelContext else { return }
         guard !isLoading else { return }
 
+        // Un pedido de guiado se entiende en el teléfono y no manda nada al servidor: no pide el permiso del camino
+        // ampliado (medido en el iPhone 14 el 16-nov: «quiero un presupuesto…» sacaba ese permiso antes de la tarjeta).
+        let asksForAGuidedFlow = forceIntent == nil && ChatIntentClassifierService.guidedFlow(for: trimmed) != nil
+
         // N1 antes de la primera pregunta con el camino ampliado (decisión 1A). La respuesta se guarda en el teléfono,
         // así que sale una sola vez; sin aceptarla, la ruta es la de siempre.
-        if YalaIAChatRouteLogic.needsCloudExploreConsentPrompt(
+        if !asksForAGuidedFlow, YalaIAChatRouteLogic.needsCloudExploreConsentPrompt(
             available: cloudExploreAvailable(),
             consent: YalaIACloudExploreConsentStore.read(defaults)
         ) {
@@ -1259,6 +1263,26 @@ extension ChatAssistantViewModel {
         return true
     }
 
+    /// Un atajo del saludo («Un presupuesto», «Un pago planificado»): abre el guiado sin pasar por la frase ni por el
+    /// servidor. El pedido sale en el hilo como si la persona lo hubiera escrito.
+    func startGuidedFlow(_ kind: ChatGuidedKind) {
+        guard let context = modelContext, !isLoading else { return }
+        let question = kind == .budget ? L10n.IAGuiados.shortcutBudgetMessage : L10n.IAGuiados.shortcutPaymentMessage
+        messages.append(ChatMessage(role: .user, text: question, timestamp: Date.now))
+        var answers = ChatGuidedAnswers()
+        if kind == .budget {
+            let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
+            if Set(catalog.accountCurrencies + [catalog.mainCurrency]).count <= 1 {
+                answers.currencyCode = catalog.mainCurrency
+            }
+        }
+        let detection = ChatGuidedDataSource.prepareStart(
+            ChatGuidedDetection(kind: kind, answers: answers, prefilled: []), context: context)
+        let state = ChatGuidedEngine.start(kind, answers: detection.answers, prefilled: [])
+        let reply = kind == .budget ? L10n.IAGuiados.budgetIntro : L10n.IAGuiados.paymentIntro
+        appendAssistantTurn(question: question, reply: reply, attachments: [.guided(state)])
+    }
+
     /// El guiado de un mensaje, si lo tiene.
     func guidedState(messageID: UUID) -> ChatGuidedFlowState? {
         guard let message = messages.first(where: { $0.id == messageID }) else { return nil }
@@ -1293,6 +1317,11 @@ extension ChatAssistantViewModel {
         updateGuided(messageID: messageID) { ChatGuidedEngine.cancel($0) }
     }
 
+    /// «¿Quieres revisar las opciones avanzadas?».
+    func guidedAdvanced(messageID: UUID, wants: Bool) {
+        updateGuided(messageID: messageID) { ChatGuidedEngine.answerAdvanced($0, wants: wants) }
+    }
+
     /// «Crear»: guarda por los ViewModels de los editores y deja la tarjeta de éxito. Devuelve el texto del error si
     /// no se pudo (la tarjeta se queda en la confirmación para reintentar).
     func createGuided(messageID: UUID, data: ChatGuidedData) -> String? {
@@ -1306,6 +1335,7 @@ extension ChatAssistantViewModel {
             updateGuided(messageID: messageID) {
                 ChatGuidedEngine.markCreated($0, id: created.id, name: created.name, dueDate: created.dueDate)
             }
+            applyGuidedPreferences(state)
             DS.Haptic.success()
             return nil
         } catch ChatGuidedCreationError.planLimitReached {
@@ -1317,6 +1347,21 @@ extension ChatAssistantViewModel {
             #endif
             DS.Haptic.error()
             return L10n.Common.saveError
+        }
+    }
+
+    /// Lo que las opciones avanzadas cambian fuera de lo creado, como Primeros pasos: un aviso permitido enciende las
+    /// alertas de presupuesto de Ajustes, y «Sí, mostrarlo en el Panel» enseña su widget.
+    private func applyGuidedPreferences(_ state: ChatGuidedFlowState) {
+        guard let appPreferences else { return }
+        let answers = state.answers
+        if state.kind == .budget, answers.notificationsAllowed == true,
+           answers.budgetAlert?.flowAlert.isEnabled == true {
+            appPreferences.budgetAlertsEnabled = true
+        }
+        if answers.showsInPanel == true {
+            PrimerosPasosPlanningCreator.showInPanel(state.kind == .budget ? .budgets : .scheduledPayments,
+                                                     preferences: appPreferences)
         }
     }
 

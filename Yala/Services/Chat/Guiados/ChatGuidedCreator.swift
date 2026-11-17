@@ -64,6 +64,16 @@ enum ChatGuidedCreator {
               let periodType = BudgetPeriodType(rawValue: period.budgetPeriodRaw) else {
             throw ChatGuidedCreationError.incomplete
         }
+        let calendar = Calendar.current
+        var startDate = Date.now
+        var endDate = Date.now
+        if period == .once {
+            guard let start = answers.budgetStart, let end = answers.budgetEnd, end >= start else {
+                throw ChatGuidedCreationError.incomplete
+            }
+            startDate = calendar.startOfDay(for: start)
+            endDate = calendar.startOfDay(for: end)
+        }
         let active: Int
         do {
             active = try context.fetchCount(FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive }))
@@ -81,26 +91,39 @@ enum ChatGuidedCreator {
         let wanted = Set(data.budgetSubcategoryIDs(answers))
         let subcategoryPIDs = Set(viewModel.allSubcategories.filter { wanted.contains($0.shortcutID) }.map(\.persistentModelID))
         let name = suggestedBudgetName(answers, data: data)
-        let alert: FirstBudgetFlowLogic.Alert = alertsEnabled ? .at75And100 : .none
-        let now = Date.now
+        // Sin opciones avanzadas, el aviso de siempre: 75 % y 100 % con las alertas encendidas, ninguno si no.
+        let alert = answers.budgetAlert?.flowAlert ?? (alertsEnabled ? .at75And100 : .none)
         guard let savedID = viewModel.saveBudget(
             existing: nil,
             name: name,
             limitAmount: amount,
             currencyCode: currency,
             periodType: periodType,
-            startDate: now,
-            endDate: now,
+            startDate: startDate,
+            endDate: endDate,
             isActive: true,
-            selectedAccounts: [],
+            selectedAccounts: Set(answers.accountIDs ?? []),
             selectedSubcategories: subcategoryPIDs,
-            selectedTags: [],
+            selectedTags: Set(answers.tagIDs ?? []),
             selectedNeeds: [],
             alertEnabled: alert.isEnabled,
             alertThresholds: alert.thresholds,
-            includeSharedExpenses: true
+            includeSharedExpenses: answers.includeSharedExpenses ?? true
         ), let budget = context.model(for: savedID) as? Budget else {
             throw ChatGuidedCreationError.notSaved
+        }
+        // Ya está guardado: si falla lo del widget, no se devuelve error (reintentar crearía otro). Como Primeros pasos.
+        if answers.showsInPanel == true {
+            do {
+                let active = try context.fetch(FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive }))
+                BudgetWidgetFavoriteLogic.setShownInWidget(true, for: budget, among: active)
+                try context.save()
+                WidgetDataCache.updateCache(context: context)
+            } catch {
+                #if DEBUG
+                print("ChatGuidedCreator: Error: showing the budget in the widget: \(error)")
+                #endif
+            }
         }
         return ChatGuidedCreation(id: budget.id, name: budget.name, dueDate: nil)
     }
@@ -118,31 +141,34 @@ enum ChatGuidedCreator {
         let account = answers.accountID.flatMap { id in viewModel.activeAccounts.first { $0.persistentModelID == id } }
         let subcategory = answers.subcategoryID.flatMap { context.model(for: $0) as? Subcategory }
         let calendar = Calendar.current
-        let flow = frequency.flowFrequency
         let date = answers.date ?? .now
+        // Sin opciones avanzadas, el aviso por defecto del editor de pagos: «3 días antes».
+        let reminder = (answers.reminder ?? .threeDaysBefore).flowReminder
+        let note = answers.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // Una sola vez y «cada N días» empiezan en la fecha elegida; lo demás, hoy.
+        let startsOnDate = frequency == .once || frequency == .daily
         guard let id = viewModel.savePayment(
             existing: nil,
             name: name,
             amount: amount,
-            note: "",
+            note: note,
             currencyCode: answers.currencyCode ?? account?.currencyCode ?? data.mainCurrency,
             transactionType: TransactionType.expense.rawValue,
             paymentCategory: answers.isSubscription ? .subscription : .recurring,
             account: account,
             subcategory: subcategory,
-            selectedTags: [],
-            isRecurring: flow.isRecurring,
-            recurrenceType: flow.recurrenceType,
-            recurrenceInterval: 1,
-            paymentDate: calendar.startOfDay(for: flow == .once ? date : .now),
-            dayOfMonth: flow == .monthly ? answers.dayOfMonth : nil,
-            selectedWeekdays: flow == .weekly ? Set([answers.weekday ?? 2]) : [],
-            yearlyMonth: flow == .yearly ? calendar.component(.month, from: date) : nil,
-            yearlyDay: flow == .yearly ? calendar.component(.day, from: date) : nil,
-            endDate: nil,
-            // El aviso por defecto del editor de pagos: «3 días antes» (sin pedir permisos desde el chat).
-            notifyOnDueDate: FirstScheduledPaymentFlowLogic.Reminder.threeDaysBefore.notifyOnDueDate,
-            notifyDaysBefore: FirstScheduledPaymentFlowLogic.Reminder.threeDaysBefore.notifyDaysBefore,
+            selectedTags: Set(answers.tagIDs ?? []),
+            isRecurring: frequency.isRecurring,
+            recurrenceType: frequency.recurrenceType,
+            recurrenceInterval: frequency.isRecurring ? answers.effectiveInterval : 1,
+            paymentDate: calendar.startOfDay(for: startsOnDate ? date : .now),
+            dayOfMonth: frequency == .monthly ? answers.dayOfMonth : nil,
+            selectedWeekdays: frequency == .weekly ? Set([answers.weekday ?? 2]) : [],
+            yearlyMonth: frequency == .yearly ? calendar.component(.month, from: date) : nil,
+            yearlyDay: frequency == .yearly ? calendar.component(.day, from: date) : nil,
+            endDate: frequency.isRecurring ? answers.endDate.map { calendar.startOfDay(for: $0) } : nil,
+            notifyOnDueDate: reminder.notifyOnDueDate,
+            notifyDaysBefore: reminder.notifyDaysBefore,
             isActive: true,
             isVariableAmount: answers.isVariableAmount
         ) else {
