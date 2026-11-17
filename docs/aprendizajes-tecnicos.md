@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (43 entradas)
+## Índice (44 entradas)
 
-> **No hace falta leer este fichero entero** — son 222 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 223 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-11-17` [Qué hizo el espejo de iCloud con un store: se lee del propio SQLite, sin consola (2026-11-17)](#qu-hizo-el-espejo-de-icloud-con-un-store-se-lee-del-propio-sqlite-sin-consola-2026-11-17)
 - `2026-11-16` [Vídeo: una grabación de `simctl io recordVideo` pierde las pantallas quietas al decodificarla de cor](#vdeo-una-grabacin-de-simctl-io-recordvideo-pierde-las-pantallas-quietas-al-decodificarla-de-corrido-2026-11-16)
 - `2026-11-14` [Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierr](#web-el-list-de-workers-kv-no-ve-en-el-acto-lo-que-se-acaba-de-escribir-una-lista-que-manda-cierres-va-en-un-durable-object-2026-11-14)
 - `2026-11-14` [Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)](#supabase-un-rol-nuevo-no-puede-llamar-a-authuid-en-una-funcin-security-invoker-2026-11-14)
@@ -250,6 +251,24 @@
   **Residual ABIERTO y medido, que sí es de este canal:** **5 de las 37 keys `synced: true` NO son `PrefSyncKey`** (`moreSectionOrder`, `sankeyLabelMode` y las tres de `panelHeroKPIs`) ⇒ **suben a iKV/outbox y no vuelven JAMÁS.** Hay que decidir si entran al enum o bajan a `synced: false`; hasta entonces es pérdida silenciosa en el canal que el Modo Nube enciende.
   El detalle completo del diagnóstico y los otros tres residuales (`@AppStorage` incondicional de onboarding, `financialMindset`, `ThemeManager.resetToDefaults`/`ProTourManager.reset` re-materializando tras el wipe) están **en este mismo fichero**: son los apartados (a), (c) y (d) del bullet «Lo que el arreglo NO cierra, medido», dentro de la sección «El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target» — hoy `:255`. **Corrección medida el 2026-09-02 sobre el árbol `553b91c9`: el puntero anterior mandaba a `.claude/rules/testing.md`, y allí no hay nada que leer** — esa regla tiene hoy 102 líneas y CERO menciones de `AppPreferences`, del lavado, de `financialMindset`, de `ProTourManager` o de `@AppStorage`; el commit `9e7e8d6c` (2026-08-29) la adelgazó y los casos forenses se mudaron aquí. Se anotaron en su día en la regla de testing porque salieron cazando un contaminante de tests, **pero el daño es de SYNC**, y por eso el invariante vive aquí: quien toque `AppPreferences` o `PreferenceSyncService` recibe esta regla y no la de testing.
 
+
+### Qué hizo el espejo de iCloud con un store: se lee del propio SQLite, sin consola (2026-11-17)
+
+Ticket `reverse-on-the-iphone-left-the-local-store-empty`. El stderr de Core Data (`-com.apple.CoreData.Logging.stderr 1`)
+escribe gigas por minuto y llenó la Mini; todo lo que hacía falta estaba ya en el store, copiado con `devicectl device copy
+from --domain-type appGroupDataContainer` (molde en la memoria de Frank, «Contar el store del iPhone»):
+
+- **Eventos del espejo** — `ANSCKEVENT`: `ZCLOUDKITEVENTTYPE` (0 setup, 1 import, 2 export), `ZSTARTEDAT`/`ZENDEDAT`
+  (segundos desde 2001: `+978307200`), `ZSUCCEEDED`, `ZERRORDOMAIN`, `ZERRORCODE`. Ahí salió `NSCocoaErrorDomain 134301`
+  (historial caducado) en la exportación de ayer y la de hoy.
+- **Quién borró qué** — `ATRANSACTION` ⨝ `ATRANSACTIONSTRING` (autor) ⨝ `ACHANGE` (`ZCHANGETYPE` 0 alta, 1 cambio,
+  2 baja). El reset del espejo firma `NSCloudKitMirroringDelegate.reset`; lo que baja de iCloud,
+  `NSCloudKitMirroringDelegate.import`. Si el historial ya se purgó, no queda rastro: mira antes de purgar nada.
+- **Dónde se quedó el espejo** — `ANSCKMETADATAENTRY`, clave `NSCloudKitMirroringDelegateLastHistoryTokenKey`: un
+  `_NSPersistentHistoryToken` archivado, `{Z_METADATA.Z_UUID → número de transacción}` (`plutil -p` lo enseña).
+  Compáralo con `Z_PRIMARYKEY.Z_MAX` de `TRANSACTION` y con lo que queda en `ATRANSACTION`: si falta alguna posterior,
+  al remontar el espejo caduca y su reset vacía el store. `MirrorHistoryProbe` hace esa misma lectura.
+- **El reset no exporta sus borrados**: iCloud conserva lo suyo y el arranque siguiente lo vuelve a bajar.
 
 ## Tests · Swift Testing · XCUITest
 
