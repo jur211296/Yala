@@ -11,39 +11,40 @@ import Foundation
 import Testing
 @testable import Yala
 
+@MainActor
 @Suite("Voz y Foto de Grupos: el cupo de recibos")
 struct GroupReceiptSplitQuotaTests {
 
     @Test("cupo del día agotado en Free: se le ofrece Yala Pro")
     func dailyLimitFree() {
         let error = ReceiptSplitError.network(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily"))
-        #expect(GroupReceiptSplitView.failure(for: error, source: .image, isConnected: true, isPro: false) == .dailyLimitFree)
-        #expect(GroupReceiptSplitView.failure(for: error, source: .voice, isConnected: true, isPro: false) == .dailyLimitFree)
+        #expect(GroupCaptureModel.failure(for: error, source: .photo, isConnected: true, isPro: false) == .dailyLimitFree)
+        #expect(GroupCaptureModel.failure(for: error, source: .voice, isConnected: true, isPro: false) == .dailyLimitFree)
     }
 
     @Test("cupo del día agotado en Pro: vuelve mañana, sin ofrecer Pro")
     func dailyLimitPro() {
         let error = ReceiptSplitError.network(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily"))
-        #expect(GroupReceiptSplitView.failure(for: error, source: .image, isConnected: true, isPro: true) == .dailyLimit)
+        #expect(GroupCaptureModel.failure(for: error, source: .photo, isConnected: true, isPro: true) == .dailyLimit)
     }
 
     @Test("la nota que se transcribe y no llega por el cupo también lo dice")
     func dailyLimitOnTranscription() {
         let error = TranscriptionError.networkError(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily"))
-        #expect(GroupReceiptSplitView.failure(for: error, source: .voice, isConnected: true, isPro: false) == .dailyLimitFree)
+        #expect(GroupCaptureModel.failure(for: error, source: .voice, isConnected: true, isPro: false) == .dailyLimitFree)
     }
 
     @Test("la ráfaga sigue siendo «espera un momento», no el cupo del día")
     func burstIsNotTheDailyLimit() {
         let error = ReceiptSplitError.network(ProxyErrorMapper.quotaResponse(type: "yala_quota_burst"))
-        #expect(GroupReceiptSplitView.failure(for: error, source: .image, isConnected: true, isPro: false) == .busy)
+        #expect(GroupCaptureModel.failure(for: error, source: .photo, isConnected: true, isPro: false) == .busy)
     }
 
     @Test("un gateway sin desplegar aún contesta prueba agotada: se sigue entendiendo")
     func oldGatewayTrial() {
         let error = ReceiptSplitError.network(ProxyErrorMapper.trialExhaustedResponse())
-        #expect(GroupReceiptSplitView.failure(for: error, source: .image, isConnected: true, isPro: false) == .trialPhotos)
-        #expect(GroupReceiptSplitView.failure(for: error, source: .voice, isConnected: true, isPro: false) == .trialVoice)
+        #expect(GroupCaptureModel.failure(for: error, source: .photo, isConnected: true, isPro: false) == .trialPhotos)
+        #expect(GroupCaptureModel.failure(for: error, source: .voice, isConnected: true, isPro: false) == .trialVoice)
     }
 
     @Test("las tres tareas del recibo cuentan en el cubo `receipt`, no en las fotos y notas de personal")
@@ -109,7 +110,8 @@ struct GroupReceiptSplitHomeWiringTests {
         let row = try #require(records.range(of: "quickActions\n                    .padding(.bottom"))
         #expect(hero.lowerBound < row.lowerBound, "La fila va debajo del saldo")
         let detail = try source("Yala/App/Views/Groups/GroupDetailView.swift")
-        #expect(detail.contains("viewModel.canCurrentUserParticipate && !group.isMigratedFrozen"))
+        // La misma regla que el «+»: ni congelado ni archivado (encargo del 2026-11-16).
+        #expect(detail.contains("viewModel.canRecordNewEntries && !group.isMigratedFrozen"))
     }
 
     @Test("sin candado: los botones de Grupos no miran si eres Pro")
@@ -119,13 +121,19 @@ struct GroupReceiptSplitHomeWiringTests {
         #expect(!entry.contains("lock.fill"))
     }
 
-    @Test("Voz abre la hoja escuchando; Yala IA, para escribir el gasto")
+    @Test("Voz abre su hoja escuchando, Foto la suya y Yala IA el chat (encargo del 2026-11-16)")
     func entryModes() throws {
-        let sheet = try source("Yala/App/Views/Groups/GroupReceiptSplitView.swift")
-        #expect(sheet.contains("if startsWith == .voice { requestRead(.voice) }"))
-        #expect(sheet.contains("if startsWith == .text {\n            textCaptureView"))
+        let entry = try source("Yala/App/Views/Groups/GroupReceiptEntry.swift")
+        let sheet = try #require(entry.range(of: "private func captureSheet("))
+        let body = entry[sheet.upperBound...].prefix(1400)
+        #expect(body.contains("case .voice:\n            GroupVoiceCaptureView("))
+        #expect(body.contains("case .photo:\n            GroupPhotoCaptureView("))
+        #expect(body.contains("case .text:\n            GroupAIChatView("))
+        let voice = try source("Yala/App/Views/Groups/Captura/GroupVoiceCaptureView.swift")
+        #expect(voice.contains(".task { await requestListening() }"))
         // Lo escrito va como nota ya transcrita: gasta un recibo del día, no la prueba de personal.
-        let read = try #require(sheet.range(of: "private func readText() {"))
-        #expect(sheet[read.upperBound...].prefix(700).contains("ReceiptSplitService.shared.readNote(text: note"))
+        let model = try source("Yala/App/Views/Groups/Captura/GroupCaptureModel.swift")
+        let read = try #require(model.range(of: "func readText(_ text: String"))
+        #expect(model[read.upperBound...].prefix(800).contains("ReceiptSplitService.shared.readNote(text: note"))
     }
 }

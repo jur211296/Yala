@@ -7,8 +7,9 @@
 //  dentro del nuevo registro»). Ticket `group-receipt-split-home-buttons`.
 //
 //  - `GroupQuickActionsRow`: «Nuevo gasto», Voz, Foto y Yala IA en una fila, como la del Panel.
-//  - `groupReceiptSplitFlow`: el camino entero. Con varios grupos, «¿En qué grupo?» primero; después la hoja del recibo
-//    (Voz la abre escuchando; Yala IA, para escribir el gasto); y con «Usar este reparto», `onReady` con el grupo y el reparto para abrir Nuevo gasto
+//  - `groupReceiptSplitFlow`: el camino entero. Con varios grupos, «¿En qué grupo?» primero; después la hoja de personal
+//    que toca, hecha con sus piezas (`Groups/Captura/`, encargo del 2026-11-16): Voz escuchando, Foto con Cámara, Fotos y
+//    Archivo, y Yala IA como el chat; y con «Usar este reparto», `onReady` con el grupo y el reparto para abrir Nuevo gasto
 //    relleno. Cada hoja se pide en el `onDismiss` de la anterior: dos presentaciones seguidas del mismo ancla sin
 //    esperar a que la primera se cierre se pierden (`swiftui-ds.md`).
 //
@@ -141,7 +142,7 @@ struct GroupQuickActionsRow: View {
 
 // MARK: - Camino
 
-/// Lo que se pidió al tocar Voz o Foto: con un grupo ya decidido, la hoja del recibo; con varios, el selector.
+/// Lo que se pidió al tocar Voz, Foto o Yala IA: con un grupo ya decidido, su hoja; con varios, el selector.
 struct GroupReceiptRequest: Identifiable {
     let id = UUID()
     let groups: [SplitGroup]
@@ -158,22 +159,29 @@ private struct GroupReceiptSheet: Identifiable {
     let source: GroupReceiptEntryKind
 }
 
+/// Qué abrir al terminar la hoja: Nuevo gasto con el reparto, o vacío («Apuntarlo a mano»).
+private enum GroupCaptureOutcome {
+    case split(SplitGroup, GroupExpensePrefillTemplate)
+    case manual(SplitGroup)
+}
+
 private struct GroupReceiptSplitFlow: ViewModifier {
     @Binding var request: GroupReceiptRequest?
     let activeMembers: (SplitGroup) -> [SplitMember]
     let memberCount: (SplitGroup) -> Int
     let onReady: (SplitGroup, GroupExpensePrefillTemplate) -> Void
+    let onManualEntry: ((SplitGroup) -> Void)?
 
     @State private var picking: GroupReceiptRequest?
     @State private var chosen: GroupReceiptSheet?
     @State private var sheet: GroupReceiptSheet?
-    @State private var used: (group: SplitGroup, template: GroupExpensePrefillTemplate)?
+    @State private var outcome: GroupCaptureOutcome?
 
     func body(content: Content) -> some View {
         content
             .onChange(of: request?.id) { _, _ in start() }
             .sheet(item: $picking, onDismiss: openChosen) { request in picker(for: request) }
-            .sheet(item: $sheet, onDismiss: finish) { sheet in receiptSheet(sheet) }
+            .sheet(item: $sheet, onDismiss: finish) { sheet in captureSheet(sheet) }
     }
 
     private func start() {
@@ -204,38 +212,57 @@ private struct GroupReceiptSplitFlow: ViewModifier {
         sheet = chosen
     }
 
-    private func receiptSheet(_ sheet: GroupReceiptSheet) -> some View {
+    /// La hoja de personal que toca, hecha con sus piezas (`Groups/Captura/`): Voz escucha al abrirse, Foto ofrece Cámara,
+    /// Fotos y Archivo, y Yala IA es el chat.
+    @ViewBuilder
+    private func captureSheet(_ sheet: GroupReceiptSheet) -> some View {
         let members = activeMembers(sheet.group)
-        return GroupReceiptSplitView(
-            members: members,
-            currentMemberID: GroupExpenseService.resolveCurrentUserMember(from: members)?.id.uuidString,
-            currencyCode: sheet.group.currencyCode,
-            onUse: { used = (sheet.group, $0) },
-            startsWith: sheet.source
-        )
-        .yalaSheetDetents([.large])
+        let me = GroupExpenseService.resolveCurrentUserMember(from: members)?.id.uuidString
+        let use: (GroupExpensePrefillTemplate) -> Void = { outcome = .split(sheet.group, $0) }
+        let manual: (() -> Void)? = onManualEntry == nil ? nil : { outcome = .manual(sheet.group) }
+        switch sheet.source {
+        case .voice:
+            GroupVoiceCaptureView(
+                members: members, currentMemberID: me, currencyCode: sheet.group.currencyCode,
+                onUse: use, onManualEntry: manual)
+        case .photo:
+            GroupPhotoCaptureView(
+                members: members, currentMemberID: me, currencyCode: sheet.group.currencyCode,
+                onUse: use, onManualEntry: manual)
+        case .text:
+            GroupAIChatView(
+                members: members, currentMemberID: me, currencyCode: sheet.group.currencyCode,
+                onUse: use, onManualEntry: manual)
+            .yalaSheetDetents([.large])
+        }
     }
 
     private func finish() {
-        guard let used else { return }
-        self.used = nil
-        onReady(used.group, used.template)
+        guard let outcome else { return }
+        self.outcome = nil
+        switch outcome {
+        case .split(let group, let template): onReady(group, template)
+        case .manual(let group): onManualEntry?(group)
+        }
     }
 }
 
 extension View {
-    /// Voz y Foto de Grupos: pon `request` y el camino hace el resto; `onReady` llega con la hoja ya cerrada.
+    /// Voz, Foto y Yala IA de Grupos: pon `request` y el camino hace el resto; `onReady` llega con la hoja ya cerrada.
+    /// `onManualEntry` abre Nuevo gasto vacío cuando la IA no puede («Apuntarlo a mano»).
     func groupReceiptSplitFlow(
         request: Binding<GroupReceiptRequest?>,
         activeMembers: @escaping (SplitGroup) -> [SplitMember],
         memberCount: @escaping (SplitGroup) -> Int,
-        onReady: @escaping (SplitGroup, GroupExpensePrefillTemplate) -> Void
+        onReady: @escaping (SplitGroup, GroupExpensePrefillTemplate) -> Void,
+        onManualEntry: ((SplitGroup) -> Void)? = nil
     ) -> some View {
         modifier(GroupReceiptSplitFlow(
             request: request,
             activeMembers: activeMembers,
             memberCount: memberCount,
-            onReady: onReady
+            onReady: onReady,
+            onManualEntry: onManualEntry
         ))
     }
 }

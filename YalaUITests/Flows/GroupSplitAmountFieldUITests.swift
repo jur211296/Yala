@@ -29,7 +29,7 @@ final class GroupSplitAmountFieldUITests: XCTestCase {
             .matching(NSPredicate(format: "label BEGINSWITH %@", "Viaje a Cusco")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 30), "No apareció «Viaje a Cusco».")
         card.tap()
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 15), "El detalle no montó.")
         fab.tap()
 

@@ -187,7 +187,7 @@ final class GroupsLote19DecididoUITests: XCTestCase {
     func test_archivedGroup_offersNoNewExpenseNorSettle() {
         let app = launch(seed: "grupos")
         openFirstGroup(app)
-        XCTAssertTrue(app.buttons["group_detail_fab_new_expense"].waitForExistence(timeout: 10),
+        XCTAssertTrue(app.buttons["group_detail_action_new_expense"].waitForExistence(timeout: 10),
                       "Control: el grupo sin archivar no enseña el «+».")
         app.buttons["group_detail_tab_balances"].tap()
         XCTAssertTrue(app.buttons["group_debt_settle"].firstMatch.waitForExistence(timeout: 10),
@@ -212,7 +212,7 @@ final class GroupsLote19DecididoUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["group_detail_ready"].waitForExistence(timeout: 10))
 
         attach("archivado-gastos")
-        XCTAssertFalse(app.buttons["group_detail_fab_new_expense"].exists,
+        XCTAssertFalse(app.buttons["group_detail_action_new_expense"].exists,
                        "Un grupo archivado sigue ofreciendo apuntar un gasto.")
         app.buttons["group_detail_tab_balances"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["group_balance_summary"].waitForExistence(timeout: 10),

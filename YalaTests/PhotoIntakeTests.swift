@@ -129,7 +129,7 @@ struct PhotoIntakeTests {
         let files: [(path: String, allowed: Int)] = [
             ("Yala/App/Views/Image/ImageSelectionView.swift", 0),
             ("Yala/App/Logic/PDFPageImport.swift", 0),
-            ("Yala/App/Views/Groups/GroupReceiptSplitView.swift", 0),
+            ("Yala/App/Views/Groups/Captura/GroupPhotoCaptureView.swift", 0),
             ("Yala/App/Views/Profile/PersonalDetailsView.swift", 1),
             ("Yala/App/Commands/RootCommandsModifier.swift", 0),
         ]
@@ -143,7 +143,7 @@ struct PhotoIntakeTests {
             contentsOf: root.appendingPathComponent("Yala/App/Views/Profile/PersonalDetailsView.swift"), encoding: .utf8))
         #expect(profile.contains("ProfileImageStorage.shared.imageData"))
         // La cámara entrega un UIImage: las dos vistas con cámara lo reducen al recibirlo.
-        for file in ["Yala/App/Views/Image/ImageSelectionView.swift", "Yala/App/Views/Groups/GroupReceiptSplitView.swift"] {
+        for file in ["Yala/App/Views/Image/ImageSelectionView.swift", "Yala/App/Views/Groups/Captura/GroupPhotoCaptureView.swift"] {
             let code = try Self.codeOnly(String(contentsOf: root.appendingPathComponent(file), encoding: .utf8))
             #expect(code.contains("PhotoIntake.image(reducing:"), "\(file) guarda la foto de la cámara sin reducir")
         }

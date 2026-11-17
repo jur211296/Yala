@@ -391,8 +391,10 @@ struct ProxyTaskHeaderTests {
         }
         let voice = try String(contentsOf: repoURL("Yala/Services/VoiceTranscriptionService.swift"), encoding: .utf8)
         #expect(voice.contains("task: ProxyTask = .voiceTranscribe"), "la transcripción de personal dejó de ser voice.transcribe por defecto")
-        let receiptSheet = try String(contentsOf: repoURL("Yala/App/Views/Groups/GroupReceiptSplitView.swift"), encoding: .utf8)
-        #expect(receiptSheet.contains("task: .receiptTranscribe"), "la nota del recibo gastaría la prueba de voz de personal")
+        // Desde el 2026-11-16 la voz de Grupos vive en su motor común (Voz y el micrófono de Yala IA): las dos transcripciones.
+        let receiptEngine = try String(contentsOf: repoURL("Yala/App/Views/Groups/Captura/GroupCaptureModel.swift"), encoding: .utf8)
+        #expect(receiptEngine.components(separatedBy: "task: .receiptTranscribe").count - 1 == 2,
+                "la nota del recibo gastaría la prueba de voz de personal")
         let roots = ["Yala", "YalaShare", "YalaWidgets"]
         var offenders: [String] = []
         let fm = FileManager.default

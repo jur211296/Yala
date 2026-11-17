@@ -75,7 +75,7 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         let app = launch()
         openCusco(app)
 
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let save = app.buttons["group_expense_save"]
@@ -139,7 +139,7 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         close.tap()
 
         openCusco(app)
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let description = app.textFields["group_expense_description"]
@@ -180,7 +180,7 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         openCusco(app)
 
         // Un gasto que pagaste tú, con su cuenta: el puente lo deja en tus cuentas.
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
         fab.tap()
         let description = app.textFields["group_expense_description"]

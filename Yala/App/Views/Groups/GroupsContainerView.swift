@@ -354,6 +354,9 @@ struct GroupsContainerView: View {
                 memberCount: { viewModel.memberCount(for: $0) },
                 onReady: { group, template in
                     expenseComposerPayload = ExpenseComposerPayload(groups: [group], initialGroup: group, receiptSplit: template)
+                },
+                onManualEntry: { group in
+                    expenseComposerPayload = ExpenseComposerPayload(groups: [group], initialGroup: group, receiptSplit: nil)
                 }
             )
             .navigationDestination(item: $viewModel.selectedGroup) { group in

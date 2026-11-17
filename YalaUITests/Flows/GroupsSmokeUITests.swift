@@ -230,7 +230,7 @@ final class GroupsSmokeUITests: XCTestCase {
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
         card.tap()
 
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de nuevo gasto en el detalle.")
         fab.tap()
 

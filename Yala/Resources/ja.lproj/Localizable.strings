@@ -9977,6 +9977,23 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "クレジットカードのように、使えるお金でなければオフにしてください。";
 
+/* Grupos: voz, foto y Yala IA como en personal (2026-11-16) */
+/* Group photo sheet title, like 'Add with a photo or file' in personal */
+"gruposCaptura.photo.title" = "写真やファイルで割り勘";
+/* Group photo sheet subtitle */
+"gruposCaptura.photo.subtitle" = "レシートやPDFの各行を読み取り、グループで割り勘します。";
+/* Step shown while reading a receipt photo in a group */
+"gruposCaptura.photo.readingStep" = "各行を探しています";
+/* Confirmation message before recording again or choosing another photo with a split on screen */
+"gruposCaptura.discard.message" = "作成した割り勘は失われます。";
+/* Yala AI greeting inside a group */
+"gruposCaptura.chat.greeting" = "こんにちは、Yala AIです。支出と誰が何を頼んだかを教えてください。グループで割り勘します。";
+/* Yala AI input placeholder inside a group */
+"gruposCaptura.chat.placeholder" = "支出を入力…";
+/* Yala AI reply before showing the split */
+"gruposCaptura.chat.reply" = "このように割り勘します：";
+/* Button to open the full split review from the chat */
+"gruposCaptura.chat.adjust" = "調整";
 /* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
 "heroClaro.infoButton" = "この金額の意味";
 "heroClaro.notCountedTitle" = "含まれないもの";

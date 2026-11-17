@@ -58,7 +58,7 @@ final class GroupExpenseSuccessUITests: XCTestCase {
         card.tap()
 
         // FAB nuevo gasto → formulario.
-        let fab = app.buttons["group_detail_fab_new_expense"]
+        let fab = app.buttons["group_detail_action_new_expense"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de nuevo gasto en el detalle.")
         fab.tap()
 

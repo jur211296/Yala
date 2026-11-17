@@ -9965,6 +9965,23 @@
 /* Help line under the per-account switch */
 "panel.saldo.countsHint" = "Schalte es aus, wenn es kein Geld zum Nutzen ist, wie bei einer Kreditkarte.";
 
+/* Grupos: voz, foto y Yala IA como en personal (2026-11-16) */
+/* Group photo sheet title, like 'Add with a photo or file' in personal */
+"gruposCaptura.photo.title" = "Mit Foto oder Datei aufteilen";
+/* Group photo sheet subtitle */
+"gruposCaptura.photo.subtitle" = "Ein Beleg oder ein PDF. Ich lese jede Zeile und teile sie in der Gruppe auf.";
+/* Step shown while reading a receipt photo in a group */
+"gruposCaptura.photo.readingStep" = "Suche jede Zeile";
+/* Confirmation message before recording again or choosing another photo with a split on screen */
+"gruposCaptura.discard.message" = "Die erstellte Aufteilung geht verloren.";
+/* Yala AI greeting inside a group */
+"gruposCaptura.chat.greeting" = "Hallo, ich bin Yala KI. Nenn mir die Ausgabe und wer was hatte, und ich teile sie in der Gruppe auf.";
+/* Yala AI input placeholder inside a group */
+"gruposCaptura.chat.placeholder" = "Ausgabe eingeben…";
+/* Yala AI reply before showing the split */
+"gruposCaptura.chat.reply" = "So würde ich es aufteilen:";
+/* Button to open the full split review from the chat */
+"gruposCaptura.chat.adjust" = "Anpassen";
 /* Hero claro de Estadísticas, Registros y Flujo de caja (2026-11-16): el «?» y su hoja. */
 "heroClaro.infoButton" = "Was diese Zahl bedeutet";
 "heroClaro.notCountedTitle" = "Was nicht zählt";

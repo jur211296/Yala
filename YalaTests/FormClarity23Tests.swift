@@ -103,7 +103,9 @@ struct ProGateManualEntryWiringTests {
         "Yala/App/Views/Statistics/DetailContainerView.swift",
         "Yala/App/Views/Voice/VoiceRecordingView.swift",
         "Yala/App/Views/Image/ImageSelectionView.swift",
-        "Yala/App/Views/Groups/GroupReceiptSplitView.swift",
+        "Yala/App/Views/Groups/Captura/GroupVoiceCaptureView.swift",
+        "Yala/App/Views/Groups/Captura/GroupPhotoCaptureView.swift",
+        "Yala/App/Views/Groups/Captura/GroupAIChatView.swift",
     ])
     func everyVoiceAndPhotoGate_passesItsManualExit(path: String) throws {
         let text = try source(path)
