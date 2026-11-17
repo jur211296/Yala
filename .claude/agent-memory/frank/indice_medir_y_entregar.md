@@ -104,3 +104,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [El touch del gate tras un merge resucita borrados](feedback_el_touch_del_gate_tras_un_merge_resucita_borrados.md) — alcance con `grep -v "^D "`; un vacío tumba un source-scan.
 - [Desbloquear un PR viejo: mide el recorrido nuevo](feedback_desbloquear_un_pr_viejo_mide_el_recorrido_nuevo.md) — la bienvenida 2.3 apagaba la nota que el PR encendía; el bump de versión cambia Novedades.
 - [La maqueta no tiene latencia](feedback_la_maqueta_no_tiene_latencia.md) — lo que llega por otra llamada solo salta en producción: hueco reservado y prueba en el iPhone.
+- [Rojo del CI por la moneda del runner](reference_rojo_del_ci_por_la_moneda_del_runner.md) — en_US = USD; reproduce con defaults write en la app del scheme que corres (yala vs yala.dev).
