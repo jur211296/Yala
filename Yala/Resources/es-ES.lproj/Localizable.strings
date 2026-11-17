@@ -5846,6 +5846,12 @@
 /* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
 "insights.aiError.proRequired" = "No pudimos confirmar tu Yala Pro. Intenta de nuevo en un momento.";
 
+/* Resumen con IA escrito con cifras viejas: la hora y «Actualizar» (opción B, 2026-11-17) */
+"insights.aiStale.writtenAt" = "Escrito con tus datos de las %@";
+"insights.aiStale.refresh" = "Actualizar";
+"insights.aiStale.refreshHint" = "Vuelve a escribir el resumen con tus datos de ahora.";
+"insights.aiStale.dailyCap" = "Por hoy ya no puedes actualizar este resumen. Vuelve mañana.";
+
 /* Private gate: reading the data already on this phone failed */
 "welcome.privateICloud.deviceUnreadableTitle" = "No hemos podido revisar este dispositivo";
 

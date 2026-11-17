@@ -106,6 +106,29 @@ enum StatsAIAutoRefreshLogic {
         return .generate(.daily)
     }
 
+    // MARK: - «Escrito con tus datos de las HH:MM · Actualizar» (opción B de Jürgen, 2026-11-17)
+
+    /// Desde qué hora es VIEJO el texto que se ve: la hora en que se escribió si sus cifras (registros y totales) ya no
+    /// son las de ahora; `nil` si son las mismas o si no se sabe con qué cifras se escribió. El umbral de arriba no
+    /// cambia (ni el coste): lo que cambia es que un texto viejo ya no contradice al hero sin avisar.
+    static func writtenWithOlderData(shown: Snapshot?, writtenAt: Date?, current: Snapshot?) -> Date? {
+        guard let shown, let writtenAt, let current, shown != current else { return nil }
+        return writtenAt
+    }
+
+    /// Qué pasa al tocar «Actualizar» en la marca.
+    enum StaleRefresh: Equatable {
+        case allowed
+        /// La página ya gastó su techo de hoy: se dice, no se llama.
+        case dailyCapReached
+    }
+
+    /// «Actualizar» lo pide la persona, pero cuenta para el MISMO techo diario que lo automático (`dailyCap`): la marca
+    /// vuelve con cada cambio de cifras y, sin techo, cada toque sería una llamada más que la opción B no aprobó.
+    static func staleRefresh(today: Today) -> StaleRefresh {
+        today.automaticCount < dailyCap ? .allowed : .dailyCapReached
+    }
+
     /// ±`relevantCountDelta` registros, o algún total que se mueve `relevantTotalFraction` o más. Con un número
     /// distinto de totales (otra forma de pantalla) cuenta como relevante.
     static func isRelevantChange(from old: Snapshot, to new: Snapshot) -> Bool {

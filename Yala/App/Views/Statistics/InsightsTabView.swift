@@ -368,13 +368,20 @@ struct InsightsTabView: View {
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
                     .transition(.loadingPlaceholder)
             } else if let aiHero = viewModel.aiInsights?.heroText {
-                InsightCard(insight: InsightResult(
-                    id: "ai_hero",
-                    icon: "sparkles",
-                    text: AIInsightCardComponents.markdownAttributed(aiHero),
-                    sentiment: .neutral,
-                    isProOnly: true
-                ))
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    InsightCard(insight: InsightResult(
+                        id: "ai_hero",
+                        icon: "sparkles",
+                        text: AIInsightCardComponents.markdownAttributed(aiHero),
+                        sentiment: .neutral,
+                        isProOnly: true
+                    ))
+                    // Escrito con cifras que ya no son las de ahora: se dice, con su hora y «Actualizar» (opción B de
+                    // Jürgen, 2026-11-17). Con las mismas cifras no sale.
+                    if let writtenAt = viewModel.aiWrittenWithOlderDataAt {
+                        aiStaleMark(writtenAt: writtenAt)
+                    }
+                }
             } else if let error = viewModel.aiError, contentMode != .observations {
                 // En Observaciones el aviso va bajo su título (abajo), que es donde se está mirando.
                 AIInsightCardComponents.errorCard(error) {
@@ -388,6 +395,63 @@ struct InsightsTabView: View {
         } else {
             generateAIButton
         }
+    }
+
+    // MARK: - Texto de IA con cifras viejas
+
+    /// «Escrito con tus datos de las 18:05 · Actualizar», debajo del resumen. En fila si cabe; con texto grande,
+    /// «Actualizar» baja a su línea. Con el techo del día gastado, o si la regeneración falló, dice por qué debajo.
+    private func aiStaleMark(writtenAt: Date) -> some View {
+        let label = Text(L10n.ResumenIAHora.writtenAt(L10n.ResumenIAHora.time(writtenAt)))
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+        let button = Button {
+            Task { await viewModel.refreshStaleAI() }
+        } label: {
+            Text(L10n.ResumenIAHora.refresh)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(theme.accentText)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.ResumenIAHora.refreshHint)
+        .accessibilityIdentifier("insights_ai_stale_refresh")
+
+        return VStack(alignment: .leading, spacing: 0) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.xs) {
+                    label.fixedSize()
+                    Text(verbatim: "·")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    button.fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    label.fixedSize(horizontal: false, vertical: true)
+                    button
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("insights_ai_stale_mark")
+            if let reason = staleRefreshProblem {
+                Text(reason)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("insights_ai_stale_problem")
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Por qué «Actualizar» no trajo un texto nuevo: el techo del día o el fallo de la llamada. Nunca en silencio.
+    private var staleRefreshProblem: String? {
+        if viewModel.staleRefreshBlockedByDailyCap { return L10n.ResumenIAHora.dailyCapReached }
+        if let error = viewModel.aiError { return AIInsightCardComponents.message(for: error) }
+        return nil
     }
 
     // MARK: - Generate AI Button
