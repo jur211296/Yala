@@ -9903,26 +9903,9 @@
 "pagosRecurrentes.cadence.monthly" = "Co miesiąc, %@. dnia";
 "pagosRecurrentes.cadence.monthlyApprox" = "Co miesiąc, około %@. dnia";
 "pagosRecurrentes.cadence.weekly" = "Co tydzień, %@";
-"pagosRecurrentes.sheet.chargesFound" = "Znalezione obciążenia: %@";
-"pagosRecurrentes.sheet.lastCharge" = "Ostatnie obciążenie: %@";
-"pagosRecurrentes.sheet.amount" = "Kwota";
-"pagosRecurrentes.sheet.frequency" = "Częstotliwość";
-"pagosRecurrentes.sheet.frequencyMonthly" = "Co miesiąc";
-"pagosRecurrentes.sheet.frequencyWeekly" = "Co tydzień";
-"pagosRecurrentes.sheet.nextCharge" = "Następne obciążenie";
-"pagosRecurrentes.sheet.account" = "Konto";
-"pagosRecurrentes.sheet.chooseAccount" = "Wybierz konto";
-"pagosRecurrentes.sheet.category" = "Kategoria";
-"pagosRecurrentes.sheet.notify" = "Przypomnij";
-"pagosRecurrentes.sheet.variable" = "Kwota zmienia się z obciążenia na obciążenie: używamy ostatniej.";
 "pagosRecurrentes.sheet.create" = "Utwórz zaplanowaną płatność";
 "pagosRecurrentes.sheet.notFixed" = "Nie jest stała";
 "pagosRecurrentes.sheet.notNow" = "Nie teraz";
-"pagosRecurrentes.notify.none" = "Nie przypominaj";
-"pagosRecurrentes.notify.sameDay" = "Tego samego dnia";
-"pagosRecurrentes.notify.oneDay" = "1 dzień wcześniej";
-"pagosRecurrentes.notify.threeDays" = "3 dni wcześniej";
-"pagosRecurrentes.notify.oneWeek" = "1 tydzień wcześniej";
 "pagosRecurrentes.created.notice" = "%1$@ jest teraz zaplanowaną płatnością. Przypomnimy Ci: %2$@.";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ jest teraz zaplanowaną płatnością.";
 "pagosRecurrentes.created.view" = "Zobacz";
@@ -9935,6 +9918,7 @@
 "pagosRecurrentes.settings.done" = "Gotowe";
 "pagosRecurrentes.footer.link" = "Powtarzające się płatności";
 "pagosRecurrentes.footer.off" = "Wyłączone";
+"pagosRecurrentes.list.footer" = "Stuknij jedną, aby ją zaplanować, lub przesuń, aby ją odrzucić.";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Ustaw jako cykliczną";

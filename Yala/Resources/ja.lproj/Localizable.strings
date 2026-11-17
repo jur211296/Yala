@@ -9903,26 +9903,9 @@
 "pagosRecurrentes.cadence.monthly" = "毎月%@日";
 "pagosRecurrentes.cadence.monthlyApprox" = "毎月%@日ごろ";
 "pagosRecurrentes.cadence.weekly" = "毎週%@";
-"pagosRecurrentes.sheet.chargesFound" = "見つかった引き落とし：%@";
-"pagosRecurrentes.sheet.lastCharge" = "最後の引き落とし：%@";
-"pagosRecurrentes.sheet.amount" = "金額";
-"pagosRecurrentes.sheet.frequency" = "頻度";
-"pagosRecurrentes.sheet.frequencyMonthly" = "毎月";
-"pagosRecurrentes.sheet.frequencyWeekly" = "毎週";
-"pagosRecurrentes.sheet.nextCharge" = "次回の引き落とし";
-"pagosRecurrentes.sheet.account" = "口座";
-"pagosRecurrentes.sheet.chooseAccount" = "口座を選択";
-"pagosRecurrentes.sheet.category" = "カテゴリ";
-"pagosRecurrentes.sheet.notify" = "通知";
-"pagosRecurrentes.sheet.variable" = "金額は引き落としごとに変わります。最新の金額を使います。";
 "pagosRecurrentes.sheet.create" = "予定の支払いを作成";
 "pagosRecurrentes.sheet.notFixed" = "固定ではない";
 "pagosRecurrentes.sheet.notNow" = "今はしない";
-"pagosRecurrentes.notify.none" = "通知しない";
-"pagosRecurrentes.notify.sameDay" = "当日";
-"pagosRecurrentes.notify.oneDay" = "1日前";
-"pagosRecurrentes.notify.threeDays" = "3日前";
-"pagosRecurrentes.notify.oneWeek" = "1週間前";
 "pagosRecurrentes.created.notice" = "%1$@を予定の支払いにしました。%2$@にお知らせします。";
 "pagosRecurrentes.created.noticeNoReminder" = "%@を予定の支払いにしました。";
 "pagosRecurrentes.created.view" = "表示";
@@ -9935,6 +9918,7 @@
 "pagosRecurrentes.settings.done" = "完了";
 "pagosRecurrentes.footer.link" = "繰り返しの支払い";
 "pagosRecurrentes.footer.off" = "オフ";
+"pagosRecurrentes.list.footer" = "タップすると予定に追加できます。スワイプすると見送れます。";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "定期支払いにする";

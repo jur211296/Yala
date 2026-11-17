@@ -104,3 +104,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Cancelar la entrada en el iPhone 14](reference_reproducir_cancelar_la_entrada_en_el_iphone_14.md) — 8 toques en ráfaga; el daño sale al reabrir; -uitest-reset deja la sesión.
 - [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
+- [Girar para QA sin Device MCP Pro](reference_girar_para_qa_sin_device_mcp_pro.md) — iPhone con bloqueo: girar el simulador con ⌘← en DeviceHub; tras un rotate fallido se abrió una app personal.

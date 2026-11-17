@@ -9901,26 +9901,9 @@
 "pagosRecurrentes.cadence.monthly" = "Ogni mese, il %@";
 "pagosRecurrentes.cadence.monthlyApprox" = "Ogni mese, verso il %@";
 "pagosRecurrentes.cadence.weekly" = "Ogni settimana, il %@";
-"pagosRecurrentes.sheet.chargesFound" = "Addebiti trovati: %@";
-"pagosRecurrentes.sheet.lastCharge" = "Ultimo addebito: %@";
-"pagosRecurrentes.sheet.amount" = "Importo";
-"pagosRecurrentes.sheet.frequency" = "Frequenza";
-"pagosRecurrentes.sheet.frequencyMonthly" = "Ogni mese";
-"pagosRecurrentes.sheet.frequencyWeekly" = "Ogni settimana";
-"pagosRecurrentes.sheet.nextCharge" = "Prossimo addebito";
-"pagosRecurrentes.sheet.account" = "Conto";
-"pagosRecurrentes.sheet.chooseAccount" = "Scegli un conto";
-"pagosRecurrentes.sheet.category" = "Categoria";
-"pagosRecurrentes.sheet.notify" = "Avvisami";
-"pagosRecurrentes.sheet.variable" = "L’importo cambia da un addebito all’altro: usiamo l’ultimo.";
 "pagosRecurrentes.sheet.create" = "Crea pagamento pianificato";
 "pagosRecurrentes.sheet.notFixed" = "Non è fisso";
 "pagosRecurrentes.sheet.notNow" = "Non ora";
-"pagosRecurrentes.notify.none" = "Non avvisarmi";
-"pagosRecurrentes.notify.sameDay" = "Il giorno stesso";
-"pagosRecurrentes.notify.oneDay" = "1 giorno prima";
-"pagosRecurrentes.notify.threeDays" = "3 giorni prima";
-"pagosRecurrentes.notify.oneWeek" = "1 settimana prima";
 "pagosRecurrentes.created.notice" = "%1$@ ora è un pagamento pianificato. Ti avvisiamo il %2$@.";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ ora è un pagamento pianificato.";
 "pagosRecurrentes.created.view" = "Vedi";
@@ -9933,6 +9916,7 @@
 "pagosRecurrentes.settings.done" = "Fine";
 "pagosRecurrentes.footer.link" = "Pagamenti che si ripetono";
 "pagosRecurrentes.footer.off" = "Disattivato";
+"pagosRecurrentes.list.footer" = "Toccane uno per pianificarlo o scorrilo per scartarlo.";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Rendi ricorrente";

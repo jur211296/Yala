@@ -9892,26 +9892,9 @@
 "pagosRecurrentes.cadence.monthly" = "Chaque mois, le %@";
 "pagosRecurrentes.cadence.monthlyApprox" = "Chaque mois, vers le %@";
 "pagosRecurrentes.cadence.weekly" = "Chaque semaine, le %@";
-"pagosRecurrentes.sheet.chargesFound" = "Prélèvements trouvés : %@";
-"pagosRecurrentes.sheet.lastCharge" = "Dernier prélèvement : %@";
-"pagosRecurrentes.sheet.amount" = "Montant";
-"pagosRecurrentes.sheet.frequency" = "Fréquence";
-"pagosRecurrentes.sheet.frequencyMonthly" = "Chaque mois";
-"pagosRecurrentes.sheet.frequencyWeekly" = "Chaque semaine";
-"pagosRecurrentes.sheet.nextCharge" = "Prochain prélèvement";
-"pagosRecurrentes.sheet.account" = "Compte";
-"pagosRecurrentes.sheet.chooseAccount" = "Choisis un compte";
-"pagosRecurrentes.sheet.category" = "Catégorie";
-"pagosRecurrentes.sheet.notify" = "Me rappeler";
-"pagosRecurrentes.sheet.variable" = "Le montant change d’un prélèvement à l’autre : nous prenons le dernier.";
 "pagosRecurrentes.sheet.create" = "Créer le paiement planifié";
 "pagosRecurrentes.sheet.notFixed" = "Pas fixe";
 "pagosRecurrentes.sheet.notNow" = "Pas maintenant";
-"pagosRecurrentes.notify.none" = "Ne pas me rappeler";
-"pagosRecurrentes.notify.sameDay" = "Le jour même";
-"pagosRecurrentes.notify.oneDay" = "1 jour avant";
-"pagosRecurrentes.notify.threeDays" = "3 jours avant";
-"pagosRecurrentes.notify.oneWeek" = "1 semaine avant";
 "pagosRecurrentes.created.notice" = "%1$@ est maintenant un paiement planifié. Nous te le rappellerons le %2$@.";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ est maintenant un paiement planifié.";
 "pagosRecurrentes.created.view" = "Voir";
@@ -9924,6 +9907,7 @@
 "pagosRecurrentes.settings.done" = "OK";
 "pagosRecurrentes.footer.link" = "Paiements qui se répètent";
 "pagosRecurrentes.footer.off" = "Désactivé";
+"pagosRecurrentes.list.footer" = "Touches-en un pour le planifier, ou fais-le glisser pour l'écarter.";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Rendre récurrent";

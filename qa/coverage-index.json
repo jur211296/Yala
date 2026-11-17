@@ -2380,9 +2380,9 @@
         "S1 de docs/ux/atajo-banco-y-suscripciones"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "2026-11-17 (banner y hoja, Jürgen): la tarjeta con la lista pasa a un banner de una frase con plural («Encontramos N pagos que se repiten…») que abre una hoja grande con todos los casos; tocar uno abre el formulario completo de Nuevo pago planificado prellenado (frecuencia, día, suscripción, monto variable, divisa); descartar por deslizamiento o menú. unit:YalaTests/PagosRecurrentesBanner/PagosRecurrentesBannerTests (prellenado, primer aviso, plural en 16 idiomas, cableado) · device-qa en el iPhone 14 || device-qa",
       "owner": "frank",
-      "lastVerified": "2026-11-14"
+      "lastVerified": "2026-11-17"
     },
     {
       "area": "scheduled-payments-visual-consistency",

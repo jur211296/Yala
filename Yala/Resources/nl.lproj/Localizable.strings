@@ -9903,26 +9903,9 @@
 "pagosRecurrentes.cadence.monthly" = "Elke maand, op de %@e";
 "pagosRecurrentes.cadence.monthlyApprox" = "Elke maand, rond de %@e";
 "pagosRecurrentes.cadence.weekly" = "Elke week, op %@";
-"pagosRecurrentes.sheet.chargesFound" = "Gevonden afschrijvingen: %@";
-"pagosRecurrentes.sheet.lastCharge" = "Laatste afschrijving: %@";
-"pagosRecurrentes.sheet.amount" = "Bedrag";
-"pagosRecurrentes.sheet.frequency" = "Frequentie";
-"pagosRecurrentes.sheet.frequencyMonthly" = "Elke maand";
-"pagosRecurrentes.sheet.frequencyWeekly" = "Elke week";
-"pagosRecurrentes.sheet.nextCharge" = "Volgende afschrijving";
-"pagosRecurrentes.sheet.account" = "Rekening";
-"pagosRecurrentes.sheet.chooseAccount" = "Kies een rekening";
-"pagosRecurrentes.sheet.category" = "Categorie";
-"pagosRecurrentes.sheet.notify" = "Herinner me";
-"pagosRecurrentes.sheet.variable" = "Het bedrag verschilt per afschrijving: we nemen het laatste.";
 "pagosRecurrentes.sheet.create" = "Geplande betaling maken";
 "pagosRecurrentes.sheet.notFixed" = "Niet vast";
 "pagosRecurrentes.sheet.notNow" = "Niet nu";
-"pagosRecurrentes.notify.none" = "Niet herinneren";
-"pagosRecurrentes.notify.sameDay" = "Op de dag zelf";
-"pagosRecurrentes.notify.oneDay" = "1 dag ervoor";
-"pagosRecurrentes.notify.threeDays" = "3 dagen ervoor";
-"pagosRecurrentes.notify.oneWeek" = "1 week ervoor";
 "pagosRecurrentes.created.notice" = "%1$@ is nu een geplande betaling. We herinneren je op %2$@.";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ is nu een geplande betaling.";
 "pagosRecurrentes.created.view" = "Bekijk";
@@ -9935,6 +9918,7 @@
 "pagosRecurrentes.settings.done" = "Gereed";
 "pagosRecurrentes.footer.link" = "Terugkerende betalingen";
 "pagosRecurrentes.footer.off" = "Uit";
+"pagosRecurrentes.list.footer" = "Tik op een betaling om die te plannen, of veeg om hem af te wijzen.";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Terugkerend maken";

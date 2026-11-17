@@ -1452,6 +1452,22 @@
 			<string>%d boekingen gewijzigd</string>
 		</dict>
 	</dict>
+	<key>pagosRecurrentes.banner.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>We vonden %d terugkerende betaling. Je kunt die toevoegen aan je geplande betalingen.</string>
+			<key>other</key>
+			<string>We vonden %d terugkerende betalingen. Je kunt ze toevoegen aan je geplande betalingen.</string>
+		</dict>
+	</dict>
 	<key>pasos23.record.between.many</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

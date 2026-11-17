@@ -9903,26 +9903,9 @@
 "pagosRecurrentes.cadence.monthly" = "每月%@日";
 "pagosRecurrentes.cadence.monthlyApprox" = "每月%@日左右";
 "pagosRecurrentes.cadence.weekly" = "每周%@";
-"pagosRecurrentes.sheet.chargesFound" = "找到的扣款：%@";
-"pagosRecurrentes.sheet.lastCharge" = "最近一次扣款：%@";
-"pagosRecurrentes.sheet.amount" = "金额";
-"pagosRecurrentes.sheet.frequency" = "频率";
-"pagosRecurrentes.sheet.frequencyMonthly" = "每月";
-"pagosRecurrentes.sheet.frequencyWeekly" = "每周";
-"pagosRecurrentes.sheet.nextCharge" = "下次扣款";
-"pagosRecurrentes.sheet.account" = "账户";
-"pagosRecurrentes.sheet.chooseAccount" = "选择账户";
-"pagosRecurrentes.sheet.category" = "类别";
-"pagosRecurrentes.sheet.notify" = "提醒我";
-"pagosRecurrentes.sheet.variable" = "每次扣款金额不同：我们使用最近一次的金额。";
 "pagosRecurrentes.sheet.create" = "创建计划付款";
 "pagosRecurrentes.sheet.notFixed" = "不是固定的";
 "pagosRecurrentes.sheet.notNow" = "以后再说";
-"pagosRecurrentes.notify.none" = "不提醒";
-"pagosRecurrentes.notify.sameDay" = "当天";
-"pagosRecurrentes.notify.oneDay" = "提前1天";
-"pagosRecurrentes.notify.threeDays" = "提前3天";
-"pagosRecurrentes.notify.oneWeek" = "提前1周";
 "pagosRecurrentes.created.notice" = "%1$@ 已成为计划付款。我们会在%2$@提醒你。";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ 已成为计划付款。";
 "pagosRecurrentes.created.view" = "查看";
@@ -9935,6 +9918,7 @@
 "pagosRecurrentes.settings.done" = "完成";
 "pagosRecurrentes.footer.link" = "重复的付款";
 "pagosRecurrentes.footer.off" = "关闭";
+"pagosRecurrentes.list.footer" = "轻点一项即可加入计划，滑动可忽略。";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "设为定期付款";

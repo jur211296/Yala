@@ -33,9 +33,9 @@ struct ScheduledPaymentsView: View {
         ZStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
-                    // Pagos que se repiten (lote S1, opción P1): lo que Yala encontró en el historial, arriba de la lista
-                    // mientras haya algo por responder.
-                    RecurringProposalsCard { month in
+                    // Pagos que se repiten: un banner con cuántos encontró Yala en el historial, arriba de la lista
+                    // mientras haya algo por responder; la lista va en su hoja (Jürgen, 17-nov).
+                    RecurringProposalsBanner { month in
                         viewModel.selectedMonth = month
                         viewModel.recalculateData()
                     }
@@ -57,7 +57,7 @@ struct ScheduledPaymentsView: View {
                         onCreateFromRecord: { showsRecordPicker = true }
                     )
 
-                    // Volver a encender las propuestas o recuperar lo descartado sin tarjeta a la vista (lote S1).
+                    // Volver a encender las propuestas o recuperar lo descartado sin banner a la vista (lote S1).
                     RecurringProposalsFooterLink()
                 }
             }
