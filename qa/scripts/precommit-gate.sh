@@ -31,7 +31,9 @@ if [ ! -f "$SELLO" ]; then
     exit 1
 fi
 
-ESPERADO=$(cat "$SELLO" 2>/dev/null)
+# Línea 1 = la huella. La 2, si existe, es el resumen `Verificado: …` que el hook
+# `prepare-commit-msg` copia al mensaje (`verificado-en-commit.sh`, 2026-11-17); aquí no cuenta.
+ESPERADO=$(head -n 1 "$SELLO" 2>/dev/null)
 ACTUAL=$(bash qa/scripts/worktree-stamp.sh 2>/dev/null)
 
 if [ -z "$ACTUAL" ]; then

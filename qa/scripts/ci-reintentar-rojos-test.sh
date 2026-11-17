@@ -231,9 +231,95 @@ caso solo_pseudo 65 1 "(sin identificar: xcodebuild salió con 65 y el .xcresult
 afirma "fantasma: la repetición sin tests se anota como infraestructura" \
   grep -q "::warning title=Repetición sin tests::" "$T/fantasma/log"
 
+# 21-28. Cuarentena (2026-11-17): un rescate solo vale si la prueba está en la lista de 2.3.
+# `cuarentena <fichero> <modo> <prueba…>` escribe una lista con esas entradas, del 10-nov.
+cuarentena() {
+  local f="$1" modo="$2"; shift 2
+  python3 -I - "$f" "$modo" "$@" <<'PY'
+import json, sys
+f, modo, pruebas = sys.argv[1], sys.argv[2], sys.argv[3:]
+json.dump({"_meta": {"modo": modo, "bloquearDesde": "2026-12-01", "caducidadDias": 14},
+           "pruebas": [{"prueba": p, "dueno": "frank", "ticket": "t-" + str(i), "entrada": "2026-11-10",
+                        "motivo": "banco"} for i, p in enumerate(pruebas)]}, open(f, "w"))
+PY
+}
+export HOY=2026-11-17
+
+# 21. Rescate de una prueba EN la lista: vale, y lo dice con dueño, ticket y días.
+prepara cuar_dentro
+cuarentena "$E/c.json" observar "YalaTests/Spike/eje4b()"
+vuelta 1 65 "Failed${TAB}Spike/eje4b()"
+vuelta 2 0 "Passed${TAB}Spike/eje4b()"
+caso cuar_dentro 0 2 "" "YalaTests/Spike/eje4b()" --cuarentena "$E/c.json"
+afirma "cuarentena dentro: aviso con dueño, ticket y día 7 de 14" \
+  grep -q "::notice title=Rescatado en cuarentena::YalaTests/Spike/eje4b() está en cuarentena (dueño frank, ticket t-0, día 7 de 14)" "$T/cuar_dentro/log"
+afirma "cuarentena dentro: fuera_cuarentena vacío" grep -qx "fuera_cuarentena=" "$T/cuar_dentro/out"
+
+# 22. Rescate FUERA de la lista en observar: se anota en el PR y en el resumen; el paso sigue verde.
+prepara cuar_observar
+cuarentena "$E/c.json" observar "YalaTests/Otra/cosa()"
+vuelta 1 65 "Failed${TAB}A/x()"
+vuelta 2 0 "Passed${TAB}A/x()"
+GITHUB_STEP_SUMMARY="$E/resumen" caso cuar_observar 0 2 "" "YalaTests/A/x()" --cuarentena "$E/c.json"
+afirma "observar: anotación visible en el PR" \
+  grep -q "::warning title=Rescate fuera de cuarentena (observar)::YalaTests/A/x()" "$T/cuar_observar/log"
+afirma "observar: fuera_cuarentena lo nombra" grep -qx "fuera_cuarentena=YalaTests/A/x()" "$T/cuar_observar/out"
+afirma "observar: sale en el resumen del job" grep -q '`YalaTests/A/x()`' "$T/cuar_observar/resumen"
+
+# 23. Rescate fuera de la lista en bloquear: rojo, y el aviso de rojos lo nombra.
+prepara cuar_bloquear
+cuarentena "$E/c.json" bloquear "YalaTests/Otra/cosa()"
+vuelta 1 65 "Failed${TAB}A/x()" "Failed${TAB}Otra/cosa()"
+vuelta 2 0 "Passed${TAB}A/x()" "Passed${TAB}Otra/cosa()"
+caso cuar_bloquear 1 2 "YalaTests/A/x() (rescatado fuera de la cuarentena)" "YalaTests/A/x(); YalaTests/Otra/cosa()" --cuarentena "$E/c.json"
+afirma "bloquear: error con su título" grep -q "::error title=Rescate fuera de cuarentena::YalaTests/A/x()" "$T/cuar_bloquear/log"
+afirma "bloquear: el que sí está en la lista no es error" \
+  bash -c '! grep -q "::error title=Rescate fuera de cuarentena::YalaTests/Otra" "$0"' "$T/cuar_bloquear/log"
+
+# 24. Una entrada de SUITE cubre sus casos; un prefijo sin «/» no cubre otra suite.
+prepara cuar_suite
+cuarentena "$E/c.json" bloquear "YalaTests/Spike"
+vuelta 1 65 "Failed${TAB}Spike/eje4b()" "Failed${TAB}SpikeDos/y()"
+vuelta 2 0 "Passed${TAB}Spike/eje4b()" "Passed${TAB}SpikeDos/y()"
+caso cuar_suite 1 2 "YalaTests/SpikeDos/y() (rescatado fuera de la cuarentena)" "YalaTests/Spike/eje4b(); YalaTests/SpikeDos/y()" --cuarentena "$E/c.json"
+
+# 25. Sin fichero (el CI del PR que crea la cuarentena: aún no está en 2.3): lista vacía, observar.
+prepara cuar_ausente
+vuelta 1 65 "Failed${TAB}A/x()"
+vuelta 2 0 "Passed${TAB}A/x()"
+caso cuar_ausente 0 2 "" "YalaTests/A/x()" --cuarentena "$E/no-existe.json"
+afirma "ausente: lo dice y anota el rescate en observar" \
+  bash -c 'grep -q "::warning title=Cuarentena ausente::" "$0" && grep -q "Rescate fuera de cuarentena (observar)" "$0"' "$T/cuar_ausente/log"
+
+# 26. Fichero ilegible (el fetch de 2.3 falló): error visible, pero en observar no frena.
+prepara cuar_ilegible
+printf 'ILEGIBLE' > "$E/c.json"
+vuelta 1 65 "Failed${TAB}A/x()"
+vuelta 2 0 "Passed${TAB}A/x()"
+caso cuar_ilegible 0 2 "" "YalaTests/A/x()" --cuarentena "$E/c.json"
+afirma "ilegible: error con su título, y el rescate se anota en observar" \
+  bash -c 'grep -q "::error title=Cuarentena ilegible::" "$0" && grep -q "Rescate fuera de cuarentena (observar)::YalaTests/A/x()" "$0"' "$T/cuar_ilegible/log"
+
+# 27. Un arranque fallido rescatado no pasa por la cuarentena: es infraestructura.
+prepara cuar_arranque
+cuarentena "$E/c.json" bloquear "YalaTests/Otra/cosa()"
+vuelta 1 65 "Failed${TAB}${ERR}"
+vuelta 2 0 "Passed${TAB}A/a()"
+caso cuar_arranque 0 2 "" "(arranque fallido x1)" --cuarentena "$E/c.json"
+
+# 28. Verde a la primera con cuarentena en bloquear: nada que juzgar, ni lee el fichero.
+prepara cuar_verde
+printf 'ILEGIBLE' > "$E/c.json"
+vuelta 1 0 "Passed${TAB}A/a()"
+caso cuar_verde 0 1 "" "" --cuarentena "$E/c.json"
+afirma "verde: no avisa de una cuarentena que no necesitó" bash -c '! grep -q "Cuarentena" "$0"' "$T/cuar_verde/log"
+unset HOY
+
 # 13. Llamada mal formada.
 prepara mal
 caso mal 2 0 "" "" --vueltas x
+prepara mal_cuarentena
+caso mal_cuarentena 2 0 "" "" --cuarentena ""
 
 if [ "$fallos" -eq 0 ]; then
   echo "── ci-reintentar-rojos: todos los casos en verde."

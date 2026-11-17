@@ -3,6 +3,8 @@ description: Qué frena el merge en el CI de GitHub (qa.yml) y qué solo avisa �
 paths:
   - ".github/workflows/qa.yml"
   - "qa/scripts/ci-*.sh"
+  - "qa/cuarentena.json"
+  - "qa/scripts/cuarentena-test.sh"
 ---
 
 # CI de GitHub: qué frena el merge
@@ -38,6 +40,29 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
 
 Volver a poner un paso de unit en advisory es una decisión de Jürgen, no un arreglo. Ticket del
 cambio: `ci-warns-but-does-not-block`.
+
+## Cuarentena: un rescate solo vale si la prueba está en la lista
+
+Desde el 2026-11-17 (propuesta P1 de verificación, `docs/verificacion/`). Del 10 al 17-nov, 50
+rescates en 47 de 338 corridas, todos de la familia `CurrencyConverter*`: un rojo rescatado
+mergeaba en verde y nadie se enteraba.
+
+- **La lista es `qa/cuarentena.json`, y el CI la lee de `origin/2.3`, nunca del PR** (paso
+  «Cuarentena de pruebas inestables» del job `tests`). Apuntar una prueba es un PR propio a 2.3, con
+  dueño, ticket, fecha de entrada y motivo; no viaja dentro del PR que la rescata.
+- `ci-reintentar-rojos.sh --cuarentena` juzga cada rescate: en la lista, aviso con dueño y días;
+  fuera, aviso «Rescate fuera de cuarentena» en el PR (anotación) y en el resumen del job. Los
+  arranques fallidos del simulador no pasan por la lista: son infraestructura.
+- **Modo observar hasta el 1-dic-2026**: el rescate fuera de lista se anota y no frena. El
+  interruptor es `_meta.modo` (`observar` → `bloquear`) en el fichero de 2.3; la promoción es una
+  sesión corta aparte, que decide también si un fichero ilegible debe bloquear (hoy cuenta como
+  lista vacía en observar, con un error visible).
+- **A los 14 días sin arreglo, la prueba se borra con su porqué** (o sale de la lista si ya está
+  arreglada). El CI la lista como vencida en el resumen del job; no borra nada solo.
+- Banco: `cuarentena-test.sh` (valida la lista del árbol y el lector) y
+  `ci-reintentar-rojos-test.sh`, casos 21-28. Los dos en `coverage-index`.
+- Solo la LISTA se lee de 2.3; el script que la aplica sigue siendo el del PR. Leer también las
+  reglas del gate de la rama base es la propuesta P4.
 
 ## El tope del job cancela, y una cancelación también frena
 

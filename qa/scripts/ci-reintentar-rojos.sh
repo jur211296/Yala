@@ -58,8 +58,25 @@
 # repetición de 4 tests que corren en 0,03 s. Sin el flag, «repetir solo los rojos» cuesta lo mismo
 # que repetir la suite.
 #
+# CUARENTENA (2026-11-17, propuesta P1 de verificación). Un rescate solo vale si la prueba está en
+# la cuarentena (`qa/cuarentena.json`), que el CI lee de `origin/2.3` y nunca del PR. Con
+# `--cuarentena FICHERO`, cada rescatado se busca en la lista (el caso exacto, o su suite
+# `Bundle/Suite`):
+#   - en la lista: aviso «Rescatado en cuarentena» con dueño, ticket y días que lleva;
+#   - fuera de la lista y `_meta.modo` = `observar`: aviso «Rescate fuera de cuarentena» en el PR
+#     y en el resumen del job; el paso sigue verde;
+#   - fuera de la lista y `_meta.modo` = `bloquear`: error, el caso pasa a `rojos` y el paso sale 1.
+# Un fichero ausente o ilegible cuenta como lista vacía en modo observar, con su aviso: en el CI del
+# PR que creó la cuarentena el fichero aún no estaba en 2.3. Los arranques fallidos del simulador
+# no pasan por la cuarentena: son infraestructura, no una prueba.
+#   --informe-cuarentena F  solo escribe el estado y las vencidas (≥ `caducidadDias`) en el resumen
+#                           del job y como avisos; sale 0 siempre. No corre ningún test.
+#   --validar-cuarentena F  comprueba el formato (lo corre `cuarentena-test.sh`); sale 0 o 1.
+# `HOY=AAAA-MM-DD` fija la fecha (el banco); por defecto, la de hoy en UTC.
+#
 # Salida en `$GITHUB_OUTPUT` (si existe): `rojos` (los que siguen en rojo, separados por «; »),
-# `rescatados`, `vueltas` (las que corrieron) y `tests_primera` (casos de la primera vuelta).
+# `rescatados`, `vueltas` (las que corrieron), `tests_primera` (casos de la primera vuelta) y, con
+# `--cuarentena`, `fuera_cuarentena` (los rescatados que no estaban en la lista).
 # Exit: 0 si todo verde o todo rescatado; 1 si queda algún rojo tras repetirlo; el código de la
 # primera vuelta en la caída segura; 2 si se llama mal.
 #
@@ -71,14 +88,21 @@ XCRUN="${XCRUN:-xcrun}"
 VUELTAS=3
 MAX_ROJOS=100
 DIR="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/reintentar-rojos"
+CUARENTENA=""
+HOY="${HOY:-$(date -u +%F)}"
 
-uso() { echo "uso: $0 [--vueltas N] [--max-rojos M] [--dir DIR] -- <comunes> --- <selección>" >&2; exit 2; }
+uso() { echo "uso: $0 [--vueltas N] [--max-rojos M] [--dir DIR] [--cuarentena F] -- <comunes> --- <selección>" >&2
+       echo "     $0 --informe-cuarentena F | --validar-cuarentena F" >&2; exit 2; }
+MODO_SOLO=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --vueltas) VUELTAS="${2:-}"; shift 2 ;;
     --max-rojos) MAX_ROJOS="${2:-}"; shift 2 ;;
     --dir) DIR="${2:-}"; shift 2 ;;
+    --cuarentena) CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
+    --informe-cuarentena) MODO_SOLO="informe"; CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
+    --validar-cuarentena) MODO_SOLO="validar"; CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
     --) shift; break ;;
     *) uso ;;
   esac
@@ -86,6 +110,139 @@ done
 case "$VUELTAS" in ''|*[!0-9]*) uso ;; esac
 case "$MAX_ROJOS" in ''|*[!0-9]*) uso ;; esac
 [ "$VUELTAS" -ge 1 ] || uso
+
+# ── Cuarentena ─────────────────────────────────────────────────────────────────────────────
+# python3 -I -c "$PYC" <validar|informe|juzgar> <fichero> <hoy> [ids…]. Una línea por dato,
+# separada por tabuladores:
+#   ESTADO ok|ausente|ilegible <detalle> · MODO observar|bloquear · DESDE <fecha> · CADUCA <días>
+#   N <entradas> · VENCIDA <prueba> <dueño> <ticket> <entrada> <días> · MALA <motivo>
+#   DENTRO <id> <dueño> <ticket> <días> · FUERA <id>
+# `validar` es estricto (exit 1 con una MALA por fallo). `informe` y `juzgar` toleran: una entrada
+# mala se salta (y se dice) y un fichero que no se entiende es «ilegible» = lista vacía, observar.
+PYC='
+import json, re, sys, datetime
+accion, ruta, hoy = sys.argv[1], sys.argv[2], sys.argv[3]
+ids = sys.argv[4:]
+def out(*c): print("\t".join(str(x).replace("\t", " ").replace("\n", " ") for x in c))
+def fecha(v):
+    if not isinstance(v, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v): return None
+    try: return datetime.date.fromisoformat(v)
+    except ValueError: return None
+hoy_d = fecha(hoy)
+if hoy_d is None:
+    out("ESTADO", "ilegible", "HOY no es una fecha: " + hoy); sys.exit(2)
+try:
+    texto = open(ruta, encoding="utf-8").read()
+except FileNotFoundError:
+    out("ESTADO", "ausente", ruta); out("MODO", "observar"); out("N", 0)
+    for i in ids: out("FUERA", i)
+    sys.exit(1 if accion == "validar" else 0)
+except OSError as e:
+    texto = None; err = str(e)
+malas = []
+d = None
+if texto is not None:
+    try: d = json.loads(texto)
+    except ValueError as e: err = "JSON: " + str(e)
+meta = d.get("_meta") if isinstance(d, dict) else None
+pruebas = d.get("pruebas") if isinstance(d, dict) else None
+if not isinstance(meta, dict) or not isinstance(pruebas, list):
+    out("ESTADO", "ilegible", err if d is None else "sin _meta o sin la lista pruebas")
+    out("MODO", "observar"); out("N", 0)
+    for i in ids: out("FUERA", i)
+    sys.exit(1 if accion == "validar" else 0)
+modo = meta.get("modo")
+if modo not in ("observar", "bloquear"):
+    malas.append("_meta.modo tiene que ser observar o bloquear, no " + repr(modo)); modo = "observar"
+cad = meta.get("caducidadDias")
+if not isinstance(cad, int) or isinstance(cad, bool) or cad < 1:
+    malas.append("_meta.caducidadDias tiene que ser un entero ≥ 1"); cad = 14
+desde = meta.get("bloquearDesde")
+if fecha(desde) is None:
+    malas.append("_meta.bloquearDesde tiene que ser AAAA-MM-DD"); desde = "?"
+validas, vistas = [], set()
+for i, e in enumerate(pruebas):
+    if not isinstance(e, dict):
+        malas.append(f"pruebas[{i}] no es un objeto"); continue
+    p = e.get("prueba")
+    falta = [k for k in ("prueba", "dueno", "ticket", "entrada", "motivo") if not isinstance(e.get(k), str) or not e.get(k).strip()]
+    if falta:
+        malas.append(f"pruebas[{i}] ({p}): falta " + ", ".join(falta)); continue
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*/\S+", p):
+        malas.append(f"pruebas[{i}]: «{p}» no es Bundle/Suite[/caso()] (sin espacios)"); continue
+    en = e["entrada"]; ent = fecha(en)
+    if ent is None:
+        malas.append(f"pruebas[{i}] ({p}): entrada «{en}» no es AAAA-MM-DD"); continue
+    if ent > hoy_d:
+        malas.append(f"pruebas[{i}] ({p}): entrada {en} es posterior a hoy ({hoy})"); continue
+    if p in vistas:
+        malas.append(f"pruebas[{i}]: «{p}» repetida"); continue
+    vistas.add(p)
+    validas.append((p, e["dueno"], e["ticket"], e["entrada"], (hoy_d - ent).days))
+out("ESTADO", "ok", ruta); out("MODO", modo); out("DESDE", desde); out("CADUCA", cad); out("N", len(validas))
+for m in malas: out("MALA", m)
+if accion == "validar":
+    sys.exit(1 if malas else 0)
+if accion == "informe":
+    for p, du, t, en, dias in validas:
+        if dias >= cad: out("VENCIDA", p, du, t, en, dias)
+    sys.exit(0)
+for i in ids:
+    hit = next((v for v in validas if i == v[0] or i.startswith(v[0] + "/")), None)
+    if hit: out("DENTRO", i, hit[1], hit[2], hit[4])
+    else: out("FUERA", i)
+'
+
+# Los comandos de flujo de GitHub cortan en `%`, CR y LF.
+anota() { local s="${2//'%'/%25}"; s="${s//$'\r'/%0D}"; s="${s//$'\n'/%0A}"; echo "::$1 title=$3::$s"; }
+
+lee_cuarentena() { python3 -I -c "$PYC" "$@"; }
+campo() { printf '%s\n' "$1" | awk -F'\t' -v k="$2" '$1 == k { print $'"${3:-2}"'; exit }'; }
+resumen() { [ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; return 0; }
+
+# Avisos comunes: fichero ausente o ilegible, y entradas malas.
+avisa_estado_cuarentena() { # $1 = salida del lector
+  local estado det
+  estado="$(campo "$1" ESTADO)"; det="$(campo "$1" ESTADO 3)"
+  case "$estado" in
+    ausente) anota warning "No hay cuarentena en 2.3 ($det): cuenta como lista vacía, en modo observar." "Cuarentena ausente" ;;
+    ok) ;;
+    *) anota error "No pude leer la cuarentena de 2.3 (${det:-el lector no devolvió nada}): cuenta como lista vacía, en modo observar. Arréglala en 2.3." "Cuarentena ilegible" ;;
+  esac
+  printf '%s\n' "$1" | awk -F'\t' '$1 == "MALA" { print $2 }' | while IFS= read -r m; do
+    anota warning "Entrada de la cuarentena que no cuenta: $m" "Cuarentena: entrada mala"
+  done
+}
+
+if [ "$MODO_SOLO" = "validar" ]; then
+  sal="$(lee_cuarentena validar "$CUARENTENA" "$HOY")"; ex=$?
+  printf '%s\n' "$sal" | awk -F'\t' '$1 == "MALA" { print "MALA: " $2 } $1 == "ESTADO" && $2 != "ok" { print "ESTADO: " $2 " " $3 }'
+  [ "$ex" -eq 0 ] && echo "── cuarentena válida: $(campo "$sal" N) entrada(s), modo $(campo "$sal" MODO)."
+  exit "$ex"
+fi
+
+if [ "$MODO_SOLO" = "informe" ]; then
+  sal="$(lee_cuarentena informe "$CUARENTENA" "$HOY")"
+  avisa_estado_cuarentena "$sal"
+  modo="$(campo "$sal" MODO)"; n="$(campo "$sal" N)"; desde="$(campo "$sal" DESDE)"; cad="$(campo "$sal" CADUCA)"
+  vencidas="$(printf '%s\n' "$sal" | awk -F'\t' '$1 == "VENCIDA"')"
+  echo "── cuarentena ($(campo "$sal" ESTADO)): ${n:-0} prueba(s), modo ${modo:-observar}."
+  resumen "### Cuarentena de pruebas inestables (leída de 2.3)" "" \
+    "Modo **${modo:-observar}** · ${n:-0} prueba(s) en la lista · estado del fichero: $(campo "$sal" ESTADO)." ""
+  [ "$modo" = "observar" ] && [ -n "$desde" ] && [ "$desde" != "?" ] && \
+    resumen "Un rescate fuera de la lista se anota y no frena. Pasa a bloquear el $desde, en una sesión aparte." ""
+  if [ -n "$vencidas" ]; then
+    resumen "**Vencidas** (≥ ${cad:-14} días sin arreglo): se borran con su porqué, o salen de la lista si ya están arregladas." "" \
+      "| Prueba | Dueño | Ticket | Entrada | Días |" "|---|---|---|---|---|"
+    while IFS=$'\t' read -r _ p du t en dias; do
+      resumen "| \`$p\` | $du | $t | $en | $dias |"
+      anota warning "$p lleva $dias días en cuarentena (dueño $du, ticket $t): bórrala con su porqué o sácala si ya está arreglada." "Cuarentena vencida"
+    done <<< "$vencidas"
+  else
+    resumen "Ninguna vencida."
+  fi
+  exit 0
+fi
 
 comunes=()
 while [ $# -gt 0 ] && [ "$1" != "---" ]; do comunes+=("$1"); shift; done
@@ -137,10 +294,8 @@ leer_casos() {
   printf '%s' "$json" | python3 -I -c "$PY"
 }
 
-# Los comandos de flujo de GitHub cortan en `%`, CR y LF.
-anota() { local s="${2//'%'/%25}"; s="${s//$'\r'/%0D}"; s="${s//$'\n'/%0A}"; echo "::$1 title=$3::$s"; }
 
-rojos_txt="" rescatados_txt="" tests_primera="" vuelta=0
+rojos_txt="" rescatados_txt="" tests_primera="" vuelta=0 fuera_txt="" 
 publica() {
   [ -n "${GITHUB_OUTPUT:-}" ] || return 0
   {
@@ -148,6 +303,7 @@ publica() {
     echo "rescatados=$rescatados_txt"
     echo "vueltas=$vuelta"
     echo "tests_primera=$tests_primera"
+    [ -z "$CUARENTENA" ] || echo "fuera_cuarentena=$fuera_txt"
   } >> "$GITHUB_OUTPUT"
 }
 une() { local IFS=$'\n'; printf '%s\n' "$*" | awk 'NF' | paste -sd ';' - | sed 's/;/; /g'; }
@@ -265,6 +421,35 @@ done
 for id in "${rescatados[@]+"${rescatados[@]}"}"; do
   anota warning "$id falló y pasó al repetirlo solo: flaky, o depende del orden de la suite." "Rescatado al repetirlo"
 done
+
+# Un rescate solo vale si la prueba está en la cuarentena (ver la cabecera).
+fuera=() fuera_bloquea=""
+if [ -n "$CUARENTENA" ] && [ "${#rescatados[@]}" -gt 0 ]; then
+  sal="$(lee_cuarentena juzgar "$CUARENTENA" "$HOY" "${rescatados[@]}")"
+  avisa_estado_cuarentena "$sal"
+  modo="$(campo "$sal" MODO)"; cad="$(campo "$sal" CADUCA)"
+  while IFS=$'\t' read -r tipo id du t dias; do
+    case "$tipo" in
+      DENTRO) anota notice "$id está en cuarentena (dueño $du, ticket $t, día $dias de ${cad:-14}): el rescate vale." "Rescatado en cuarentena" ;;
+      FUERA) fuera+=("$id") ;;
+    esac
+  done <<< "$sal"
+  if [ "${#fuera[@]}" -gt 0 ]; then
+    resumen "### Rescates fuera de la cuarentena" "" \
+      "Estas pruebas fallaron y pasaron al repetirlas, y no están en \`qa/cuarentena.json\` de 2.3. Modo **$modo**." ""
+    for id in "${fuera[@]}"; do
+      resumen "- \`$id\`"
+      if [ "$modo" = "bloquear" ]; then
+        anota error "$id falló y pasó al repetirlo, y no está en la cuarentena de 2.3: un rescate fuera de la lista es un rojo. Arréglala, o apúntala con dueño y ticket en 2.3." "Rescate fuera de cuarentena"
+      else
+        anota warning "$id falló y pasó al repetirlo, y no está en la cuarentena de 2.3. Modo observar: no frena; desde que pase a bloquear, sí. Arréglala, o apúntala con dueño y ticket." "Rescate fuera de cuarentena (observar)"
+      fi
+    done
+    resumen ""
+    [ "$modo" = "bloquear" ] && fuera_bloquea="si"
+  fi
+fi
+fuera_txt="$(une "${fuera[@]+"${fuera[@]}"}")"
 for id in "${pendientes[@]+"${pendientes[@]}"}"; do
   anota error "$id sigue en rojo tras $vuelta vuelta(s)." "Test en rojo"
 done
@@ -272,9 +457,15 @@ for id in "${pseudo[@]+"${pseudo[@]}"}"; do
   anota error "$id no es un test: es un error de xcodebuild en una vuelta que sí corrió tests. No se repite y sigue en rojo." "Error fuera de los tests"
 done
 rescatados_txt="$(une "${rescatados[@]+"${rescatados[@]}"}")"
-rojos_txt="$(une "${pendientes[@]+"${pendientes[@]}"}" "${pseudo[@]+"${pseudo[@]}"}")"
+rojos_bloq=()
+[ -z "$fuera_bloquea" ] || for id in "${fuera[@]}"; do rojos_bloq+=("$id (rescatado fuera de la cuarentena)"); done
+rojos_txt="$(une "${pendientes[@]+"${pendientes[@]}"}" "${pseudo[@]+"${pseudo[@]}"}" "${rojos_bloq[@]+"${rojos_bloq[@]}"}")"
 publica
 
+if [ -n "$fuera_bloquea" ]; then
+  echo "── ${#fuera[@]} rescate(s) fuera de la cuarentena, en modo bloquear."
+  exit 1
+fi
 if [ "${#pendientes[@]}" -eq 0 ] && [ "${#pseudo[@]}" -eq 0 ]; then
   echo "── todo rescatado en $vuelta vuelta(s)."
   exit 0
