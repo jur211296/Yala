@@ -1,17 +1,34 @@
 /**
  * Estadísticas (lote 2): Resumen, Distribución y Tendencias, con las cifras que calcula el núcleo compartido con las
  * reglas del iPhone (`shared-core/src/logic/stats.ts`, paridad en `mcp/test/golden.test.ts`). Aquí solo se pintan.
+ *
+ * Lote 5 de «Yala web como la app»: segmentos con ícono y texto en el orden de la app (Resumen, Tendencias,
+ * Distribución) y el período en una cápsula; «Te queda» (o «Te quedó») es la cifra principal sobre el fondo, con el «?» y
+ * las entradas y salidas debajo; Gasto medio diario y Gasto más alto en tarjetas, en la misma fila en escritorio; y cada
+ * categoría con su ícono y su color (`categorias.ts`). «Sin categoría» va en el gris de la app.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Calendar, ChartLine, ChartPie, ChevronDown, Sparkles } from "lucide-react";
 import { locale, texts } from "../i18n";
 import { getJson, type Estadisticas as Data, type PeriodoEst, type Trozo } from "./api";
-import { badge, dayLabel, money } from "./format";
+import { dayLabel, money } from "./format";
 import { Monto } from "./Monto";
+import { CifraPrincipal } from "./Cifra";
+import { simboloPorNombre, useCategorias } from "./categorias";
 
 const t = texts();
 const PERIODS: PeriodoEst[] = ["mes_actual", "mes_pasado", "anio_actual"];
 type Tab = "resumen" | "distribucion" | "tendencias";
-const TABS: Tab[] = ["resumen", "distribucion", "tendencias"];
+/** El orden de la app: Resumen, Tendencias, Distribución. */
+const TABS: Tab[] = ["resumen", "tendencias", "distribucion"];
+const TAB_ICON: Record<Tab, ReactNode> = {
+  resumen: <Sparkles aria-hidden={true} focusable={false} />,
+  tendencias: <ChartLine aria-hidden={true} focusable={false} />,
+  distribucion: <ChartPie aria-hidden={true} focusable={false} />,
+};
+/** El gris con que la app pinta «Sin categoría» (`AppConstants.uncategorizedColorHex`). */
+const GRIS_SIN_CATEGORIA = "#9CA3AF";
+type Cats = ReturnType<typeof useCategorias>;
 
 function pct(v: number): string {
   return `${new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(v)} %`;
@@ -42,24 +59,25 @@ function sliceName(s: Trozo): string {
   return s.categoria ?? t.app.sinCategoria;
 }
 
-function Slices({ list, divisa }: { list: Trozo[]; divisa: string }) {
+function Slices({ list, divisa, cats }: { list: Trozo[]; divisa: string; cats: Cats }) {
   const max = Math.max(1, ...list.map((x) => x.importe));
   return (
     <>
       {list.map((c) => {
-        const b = badge(c.categoria);
+        const sim = c.categoria === null ? null : simboloPorNombre(cats, c.categoria);
+        const color = sim?.color ?? GRIS_SIN_CATEGORIA;
         return (
           <div className="slice" key={c.id ?? "sin"}>
-            <span className="ic" style={{ background: b.color }} aria-hidden="true">
-              {b.letter}
+            <span className="circ chico" style={{ background: color }} aria-hidden="true">
+              {sim ? <sim.Icono size={16} strokeWidth={2.4} aria-hidden={true} focusable={false} /> : "?"}
             </span>
             <div className="t">
               <div className="slice-h">
                 <b>{sliceName(c)}</b>
-                <span className="amt">{money(c.importe, divisa)}</span>
+                <Monto importe={c.importe} divisa={divisa} className="amt" />
               </div>
               <div className="bar" aria-hidden="true">
-                <i style={{ width: `${Math.max(2, (c.importe / max) * 100)}%`, background: b.color }} />
+                <i style={{ width: `${Math.max(2, (c.importe / max) * 100)}%`, background: color }} />
               </div>
               <span className="sub">
                 {pct(c.porcentaje)} · {t.est.movimientos(c.movimientos)}
@@ -72,89 +90,93 @@ function Slices({ list, divisa }: { list: Trozo[]; divisa: string }) {
   );
 }
 
-function Resumen({ d, periodo }: { d: Data; periodo: PeriodoEst }) {
+function Resumen({ d, periodo, cats }: { d: Data; periodo: PeriodoEst; cats: Cats }) {
   const r = d.resumen;
   const contra = t.est.contra[periodo];
+  const approx = r.aproximado.ingresos || r.aproximado.gastos || r.aproximado.neto;
   return (
     <>
-      <section className="cd hero" aria-label={t.est.neto}>
-        <span className="cap">{t.est.neto}</span>
-        <span className="big">
-          {r.aproximado.neto ? "≈ " : ""}
-          <Monto importe={r.neto} divisa={r.divisa} signo tam="hero" />
-        </span>
-        <div className="inout">
-          <span>
-            {t.est.entradas} <b className="amt in">{money(r.ingresos, r.divisa)}</b> <Variation value={r.variacion.ingresos} />
-          </span>
-          <span>
-            {t.est.salidas} <b>{money(r.gastos, r.divisa)}</b> <Variation value={r.variacion.gastos} worseUp />
-          </span>
-        </div>
-        <p className="fade small">{r.variacion.ingresos === null && r.variacion.gastos === null ? t.est.sinVariacion : contra}</p>
-      </section>
-      <div className="grid2">
-        <section className="cd">
-          <h2>{t.est.gastoMedio}</h2>
-          <p className="kpi">
-            {money(r.gasto_medio_diario, r.divisa)} <Variation value={r.variacion.gasto_medio_diario} worseUp />
-          </p>
-          <p className="fade small">{t.est.dias(r.dias)}</p>
-        </section>
-        <section className="cd">
-          <h2>{t.est.gastoMasAlto}</h2>
-          {r.gasto_mas_alto ? (
+      <div className="est-top">
+        <CifraPrincipal
+          rotulo={periodo === "mes_pasado" ? t.app.teQuedo : t.app.teQueda}
+          explica={[t.est.netoExplica, ...(approx ? [t.est.aproximado] : [])]}
+          debajo={
             <>
-              <p className="kpi">{money(r.gasto_mas_alto.importe, r.divisa)}</p>
+              <div className="inout">
+                <span>
+                  ↗ {t.est.entradas} <b className="amt in">{money(r.ingresos, r.divisa)}</b> <Variation value={r.variacion.ingresos} />
+                </span>
+                <span>
+                  ↘ {t.est.salidas} <b>{money(r.gastos, r.divisa)}</b> <Variation value={r.variacion.gastos} worseUp />
+                </span>
+              </div>
               <p className="fade small">
-                {[r.gasto_mas_alto.nota ?? r.gasto_mas_alto.categoria ?? t.app.sinCategoria, dayLabel(r.gasto_mas_alto.dia)].join(" · ")}
+                {[t.est.movimientos(r.movimientos), r.variacion.ingresos === null && r.variacion.gastos === null ? t.est.sinVariacion : contra].join(" · ")}
               </p>
             </>
+          }
+        >
+          {r.aproximado.neto ? "≈ " : ""}
+          <Monto importe={r.neto} divisa={r.divisa} tam="hero" />
+        </CifraPrincipal>
+        <section className="cd kpi-c" aria-label={t.est.gastoMedio}>
+          <span className="cap">{t.est.gastoMedio}</span>
+          <Monto importe={r.gasto_medio_diario} divisa={r.divisa} className="amt kpi" />
+          <span className="sub">
+            {t.est.dias(r.dias)} <Variation value={r.variacion.gasto_medio_diario} worseUp />
+          </span>
+        </section>
+        <section className="cd kpi-c" aria-label={t.est.gastoMasAlto}>
+          <span className="cap">{t.est.gastoMasAlto}</span>
+          {r.gasto_mas_alto ? (
+            <>
+              <Monto importe={r.gasto_mas_alto.importe} divisa={r.divisa} className="amt kpi" />
+              <span className="sub">{[r.gasto_mas_alto.nota ?? r.gasto_mas_alto.categoria ?? t.app.sinCategoria, dayLabel(r.gasto_mas_alto.dia)].join(" · ")}</span>
+            </>
           ) : (
-            <p className="empty">{t.est.sinGastosPeriodo}</p>
+            <span className="sub">{t.est.sinGastosPeriodo}</span>
           )}
         </section>
       </div>
-      <section className="cd">
-        <h2>{t.est.topCategorias}</h2>
-        {r.top_categorias.length === 0 ? <p className="empty">{t.est.sinGastosPeriodo}</p> : <Slices list={r.top_categorias} divisa={r.divisa} />}
+      <section aria-label={t.est.topCategorias}>
+        <h2 className="sec">{t.est.topCategorias}</h2>
+        <div className="cd">
+          {r.top_categorias.length === 0 ? <p className="empty">{t.est.sinGastosPeriodo}</p> : <Slices list={r.top_categorias} divisa={r.divisa} cats={cats} />}
+        </div>
       </section>
       {r.sin_categoria > 0 ? <p className="note-y">{t.est.sinCategoriaAviso(r.sin_categoria)}</p> : null}
     </>
   );
 }
 
-function Donut({ list }: { list: Trozo[] }) {
+function Donut({ list, cats }: { list: Trozo[]; cats: Cats }) {
   let acc = 0;
   const stops = list.map((c) => {
     const from = acc;
     acc += c.porcentaje;
-    return `${badge(c.categoria).color} ${from}% ${Math.min(100, acc)}%`;
+    const color = c.categoria === null ? GRIS_SIN_CATEGORIA : simboloPorNombre(cats, c.categoria).color;
+    return `${color} ${from}% ${Math.min(100, acc)}%`;
   });
   const bg = stops.length ? `conic-gradient(${stops.join(", ")})` : "color-mix(in srgb, var(--ink2) 18%, transparent)";
   return <div className="donut" style={{ background: bg }} aria-hidden="true" />;
 }
 
-function Distribucion({ d, periodo }: { d: Data; periodo: PeriodoEst }) {
+function Distribucion({ d, periodo, cats }: { d: Data; periodo: PeriodoEst; cats: Cats }) {
   const dist = d.distribucion;
   return (
     <>
-      <section className="cd hero">
-        <span className="cap">{t.est.gastadoEn[periodo]}</span>
-        <span className="big">
-          <Monto importe={dist.total} divisa={dist.divisa} tam="hero" />
-        </span>
-        <p className="fade small">{t.est.nCategorias(dist.categorias.length)}</p>
-      </section>
+      <CifraPrincipal rotulo={t.est.gastadoEn[periodo] ?? t.est.distribucion} debajo={<p className="fade small">{t.est.nCategorias(dist.categorias.length)}</p>}>
+        <Monto importe={dist.total} divisa={dist.divisa} tam="hero" />
+      </CifraPrincipal>
       <section className="cd">
         <h2>{t.est.porCategoria}</h2>
         {dist.categorias.length === 0 ? (
           <p className="empty">{t.est.sinGastosPeriodo}</p>
         ) : (
           <div className="dist">
-            <Donut list={dist.categorias} />
+            <Donut list={dist.categorias} cats={cats} />
             <div className="dist-list">
-              <Slices list={dist.categorias} divisa={dist.divisa} />
+              <Slices list={dist.categorias} divisa={dist.divisa} cats={cats} />
             </div>
           </div>
         )}
@@ -221,6 +243,7 @@ export function Estadisticas() {
   const [tab, setTab] = useState<Tab>("resumen");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState(false);
+  const cats = useCategorias();
 
   const load = useCallback((p: PeriodoEst) => {
     setError(false);
@@ -234,22 +257,29 @@ export function Estadisticas() {
 
   return (
     <>
-      <div className="chips" role="tablist" aria-label={t.app.estadisticas}>
-        {TABS.map((x) => (
-          <button key={x} type="button" role="tab" aria-selected={tab === x} className={`chip${tab === x ? " on" : ""}`} onClick={() => setTab(x)}>
-            {t.est[x]}
-          </button>
-        ))}
-      </div>
-      {tab !== "tendencias" ? (
-        <div className="seg seg3" role="group" aria-label={t.est.resumen}>
-          {PERIODS.map((p) => (
-            <button key={p} type="button" aria-pressed={periodo === p} onClick={() => setPeriodo(p)}>
-              {t.est.periodos[p]}
+      <div className="est-bar">
+        <div className="psegs" role="tablist" aria-label={t.app.estadisticas}>
+          {TABS.map((x) => (
+            <button key={x} type="button" role="tab" aria-selected={tab === x} aria-label={t.est[x]} className="pseg" onClick={() => setTab(x)}>
+              {TAB_ICON[x]}
+              <span className="pseg-l">{t.est[x]}</span>
             </button>
           ))}
         </div>
-      ) : null}
+        {tab !== "tendencias" ? (
+          <label className="cap-sel on est-per">
+            <Calendar aria-hidden={true} focusable={false} />
+            <select aria-label={t.app.fecha} value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoEst)}>
+              {PERIODS.map((p) => (
+                <option key={p} value={p}>
+                  {t.est.periodos[p]}
+                </option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden={true} focusable={false} />
+          </label>
+        ) : null}
+      </div>
       {error ? (
         <div className="cd">
           <p className="empty">{t.app.noCargo}</p>
@@ -260,13 +290,13 @@ export function Estadisticas() {
       ) : !data ? (
         <Skeleton />
       ) : tab === "resumen" ? (
-        <Resumen d={data} periodo={periodo} />
+        <Resumen d={data} periodo={periodo} cats={cats} />
       ) : tab === "distribucion" ? (
-        <Distribucion d={data} periodo={periodo} />
+        <Distribucion d={data} periodo={periodo} cats={cats} />
       ) : (
         <Tendencias d={data} />
       )}
-      {approx ? <p className="note-y">{t.est.aproximado}</p> : null}
+      {approx && tab !== "resumen" ? <p className="note-y">{t.est.aproximado}</p> : null}
       {data?.incompleto ? <p className="note-y">{t.est.incompleto}</p> : null}
       <p className="fade small">{t.est.nota}</p>
     </>

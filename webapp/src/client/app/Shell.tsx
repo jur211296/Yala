@@ -9,6 +9,9 @@
  * Registros, Grupos y Más) con la lupa aparte, la Bandeja en su botón arriba a la izquierda y «+ Nuevo registro» en el
  * contenido. Qué dirección abre qué, en `navegacion.ts`. Yala IA sale como «Pronto», sin abrir nada.
  *
+ * Lote 5: la Bandeja de Entrada se abre ENCIMA de la sección en la que estabas (panel lateral en escritorio, hoja en el
+ * celular), como la hoja de la app. `/bandeja` sigue siendo su dirección; abierta de entrada, debajo va la de inicio.
+ *
  * La página pregunta `/api/me` cada 30 s y al volver a primer plano: si la sesión se cerró desde el iPhone o desde otra
  * pestaña, vuelve a la pantalla de entrar en menos de un minuto (lo que promete la maqueta).
  */
@@ -84,6 +87,11 @@ export function Shell({ me }: { me: Me }) {
   const solo = me.soloGrupos === true;
   const home: Sec = solo ? "grupos" : "panel";
   const [sec, setSec] = useState<Sec>(() => secFromPath(window.location.pathname, home));
+  /** La sección que queda debajo de la Bandeja (lote 5): la última que no era la Bandeja. */
+  const [debajo, setDebajo] = useState<Sec>(() => {
+    const s = secFromPath(window.location.pathname, home);
+    return s === "bandeja" ? home : s;
+  });
   const [editando, setEditando] = useState<Enviado | null>(null);
   const [hide, setHide] = useState(readHidePref);
   const [apuntar, setApuntar] = useState(false);
@@ -98,11 +106,13 @@ export function Shell({ me }: { me: Me }) {
   /** El filtro con el que la búsqueda abrió Registros; `n` lo vuelve a montar aunque el filtro se repita. */
   const [regFiltro, setRegFiltro] = useState<{ f: FiltroInicial; n: number } | null>(null);
 
-  const go = useCallback((s: Sec) => {
+  /** `arriba`: subir al principio. Abrir la Bandeja (y cerrarla) no mueve la pantalla de debajo. */
+  const go = useCallback((s: Sec, arriba = s !== "bandeja") => {
     setSec(s);
+    if (s !== "bandeja") setDebajo(s);
     const path = pathOf(s, home);
     if (window.location.pathname !== path) window.history.pushState(null, "", path);
-    window.scrollTo(0, 0);
+    if (arriba) window.scrollTo(0, 0);
   }, [home]);
 
   const loadPanel = useCallback(() => {
@@ -118,7 +128,11 @@ export function Shell({ me }: { me: Me }) {
       loadPanel();
       loadBandeja();
     }
-    const onPop = () => setSec(secFromPath(window.location.pathname, home));
+    const onPop = () => {
+      const s = secFromPath(window.location.pathname, home);
+      setSec(s);
+      if (s !== "bandeja") setDebajo(s);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [loadPanel, loadBandeja, solo, home]);
@@ -184,13 +198,17 @@ export function Shell({ me }: { me: Me }) {
     .filter((k) => !solo || !FULL_CLOUD.includes(k))
     .map((k) => ({ key: k, label: t.app[k], icon: ICON[k] }));
 
+  const full = !solo;
+  /** La Bandeja abierta encima (solo en la nube completa; una cuenta «solo Grupos» ve su aviso, como antes). */
+  const bandejaEncima = full && sec === "bandeja";
+  /** Lo que se pinta en el contenido: la sección, o la de debajo con la Bandeja abierta. */
+  const vista: Sec = bandejaEncima ? debajo : sec;
   const pendingCount = bandeja ? bandeja.pendientes.length + bandeja.enviados.length : 0;
   const badge = pendingCount > 0 ? <span className="badge">{pendingCount}</span> : null;
-  const title = sec === "mas" ? t.app.mas : isPlan(sec) ? t.app.planificacion : t.app[sec];
+  const title = vista === "mas" ? t.app.mas : isPlan(vista) ? t.app.planificacion : t.app[vista];
   const side = sideOf(sec);
-  const tab = tabOf(sec, solo);
+  const tab = tabOf(vista, solo);
   const kbd = shortcutLabel(navigator.platform || navigator.userAgent);
-  const full = !solo;
 
   /** Un enlace de verdad (abre en otra pestaña con ⌘-clic), que navega dentro de la página con el clic normal. */
   const link = (s: Sec, className: string, current: boolean, children: ReactNode, label?: string) => (
@@ -254,7 +272,7 @@ export function Shell({ me }: { me: Me }) {
       </>,
     );
 
-  const segment = segmentOf(sec);
+  const segment = segmentOf(vista);
 
   return (
     <div className={`app${hide ? " hideamt" : ""}`}>
@@ -319,13 +337,13 @@ export function Shell({ me }: { me: Me }) {
         </header>
 
         <main className="content">
-          {solo && FULL_CLOUD.includes(sec) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
-          {sec === "grupos" ? <Grupos /> : null}
-          {full && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onGo={go} accion={actsMob} /> : null}
-          {full && sec === "registros" ? (
+          {solo && FULL_CLOUD.includes(vista) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
+          {vista === "grupos" ? <Grupos /> : null}
+          {full && vista === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onGo={go} accion={actsMob} /> : null}
+          {full && vista === "registros" ? (
             <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} accion={actsMob} />
           ) : null}
-          {full && isPlan(sec) ? (
+          {full && isPlan(vista) ? (
             <>
               <div className="psegs" role="group" aria-label={t.app.planificacion}>
                 {link("presupuestos", "pseg", segment === "presupuestos", <>{Icons.presupuestos}{t.app.presupuestos}</>)}
@@ -334,10 +352,9 @@ export function Shell({ me }: { me: Me }) {
               {segment === "pagos" ? <Pagos /> : <Presupuestos />}
             </>
           ) : null}
-          {full && sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} /> : null}
-          {full && sec === "estadisticas" ? <Estadisticas /> : null}
-          {sec === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
-          {sec === "mas" ? (
+          {full && vista === "estadisticas" ? <Estadisticas /> : null}
+          {vista === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
+          {vista === "mas" ? (
             <div className="tiles">
               {full ? tile("bandeja", true) : null}
               {tile("estadisticas", true)}
@@ -376,6 +393,9 @@ export function Shell({ me }: { me: Me }) {
         </button>
       </div>
 
+      {bandejaEncima ? (
+        <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} onClose={() => go(debajo, false)} tapada={editando !== null} />
+      ) : null}
       {apuntar ? (
         <Apuntar
           cuentas={panel?.cuentas.cuentas ?? []}
