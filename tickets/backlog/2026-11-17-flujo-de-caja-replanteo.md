@@ -70,7 +70,7 @@ En el artifact, con selector. Recomendado entre corchetes.
 
 | Sesión | Vista | Qué | Esfuerzo |
 |---|---|---|---|
-| S1 | Motor del mes (sin UI) | Una cuenta por mes: real con signo y sin categoría + lo que falta por línea + «otros» por mediana. Mes en curso desde el saldo de hoy; pasados = real; futuros encadenan desde el cierre. Sin doble conteo de fechados, promedio sin el mes a medias. Paridad con «Al 30» del Panel. Review adversarial. | Alto (1 sesión larga) |
+| S1 ✅ | Motor del mes (sin UI) — **hecha el 18-nov** (ver «S1 hecha» abajo) | Una cuenta por mes: real con signo y sin categoría + lo que falta por línea + «otros» por mediana. Mes en curso desde el saldo de hoy; pasados = real; futuros encadenan desde el cierre. Sin doble conteo de fechados, promedio sin el mes a medias. Paridad con «Al 30» del Panel. Review adversarial. | Alto (1 sesión larga) |
 | S2 | Detalle del mes y cápsulas | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
 | S3 | Detalle de línea | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
 | S4 | Cambiar límite | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
@@ -86,3 +86,25 @@ Orden: S1 → S2 → S4 → S3 → S5 → S6. S1 necesita P1, P2, P4, P5 y P6 de
   (`capturas/antes-02`).
 - La línea «Combustible» de la semilla sale con el icono genérico de cuadrícula (`capturas/antes-02`).
 - El texto «Si no eliges fecha, se asume que es hoy» de la hoja de saldo inicial no dice lo que hace el código (hallazgo 2).
+
+## S1 hecha (18-nov-2026)
+
+Motor del mes en `Yala/App/Logic/FlujoMotorMes/`; `CashFlowProjectionCalculator.calculate` conserva su firma y sus tipos
+y delega en él. Decisiones del arranque: el «Paso 0» del encargo `2026-11-18-flujo-motor-del-mes`. Cierra los hallazgos
+1 a 11 (un test por hallazgo en `YalaTests/FlujoMotorMes/FlujoMotorMesTests.swift`, con las cifras de la sonda) y el
+ticket `projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month` para el flujo de caja y para «Ver
+proyectado» con plan.
+
+Lo que ya cambia y las siguientes sesiones tienen que saber:
+- **«Ver proyectado» con plan (Panel, Tendencias, widget de Saldo) ya sale del motor** (`ProjectedFlowBuilder.planRemaining`):
+  era la única forma de que «Al 30» fuera la misma cifra y de cerrar el hallazgo 10. Con plan, los dos lados salen de él
+  (ingresos sin línea: no se proyectan) y lo no cubierto ya no va al ritmo. S6 queda para lo que no es el plan (sin plan
+  sigue el ritmo) y para revisar las pantallas.
+- **El saldo inicial manual ya no se usa.** La fila «Empezaste con · Cambiar» del detalle del mes sigue enseñando el del
+  plan hasta S2. `projection.startingBalance` es el saldo real al empezar el mes en curso.
+- **API nueva para S2/S3** (en `CashFlowMonth`): `openingBalance`, `realIncome`/`realExpense`, `incomeLeft`/`expenseLeft`,
+  `expenseGroups`/`incomeGroups` (la categoría como suma, con `unassignedAmount` = lo anotado en la madre); en
+  `CashFlowLineResult`: `datedAmount`, `pendingAmount`, `leftAmount`, `isExceeded`, `expectedAmount`, y el desglose por
+  subcategoría siempre en las líneas por categoría.
+- **Interino:** lo anotado en la categoría madre de líneas por subcategoría suma en el total del mes pero no se pinta en
+  ninguna fila hasta S3 (aviso de gasto en la categoría madre).
