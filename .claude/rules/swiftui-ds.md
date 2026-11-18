@@ -196,6 +196,13 @@ paths:
   centro de «Vaciar mis datos» abría «Exportar una copia antes» (3 de 3). **El simulador no lo reproduce**: un XCUITest
   que tocaba el centro por coordenada salió verde también sin el arreglo. Se prueba en el teléfono. Pin:
   `WipeButtonOwnTapWiringTests`.
+- **Un botón dentro de la etiqueta de otro botón no existe para XCUITest ni para VoiceOver, y un botón de fondo
+  (`.background { Button … }`) se queda el toque aunque haya otro encima (medido el 2026-11-17, iOS 27.2, hoja de foto).**
+  La descripción editable de «Esto leí» no salía en el árbol dentro del `Button` de la fila, y movida delante de un botón
+  de fondo, tocarla abría el formulario. Lo que funciona: la fila abre con `.onTapGesture` (el `Button` hijo gana su
+  toque), el botón de fondo lleva `.allowsHitTesting(false)` y solo sirve a VoiceOver (etiqueta de la fila entera e id
+  de siempre), y las piezas que no se tocan van con `.accessibilityHidden`. Y la zona del botón hijo, a lo ancho de su
+  línea: con un texto corto («Wong») el dedo caía al lado. Molde: `VoiceDraftReviewCard(editsNoteInPlace:)`.
 - **Un `PasteButton` con un `.onTapGesture` en un PADRE no recibe el dedo (medido el 2026-11-05, iPhone 14, iOS 27.2,
   QA de Grupos L12-16).** `.dismissKeyboardOnTap()` colgado del `ScrollView` de «Pega tu enlace de invitación» se quedaba
   con el toque y «Pegar» no hacía nada; quitado, pegaba. ⇒ en una pantalla con `PasteButton`, el gesto que oculta el

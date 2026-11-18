@@ -14,6 +14,8 @@ import SwiftUI
 struct MultiDraftReviewList: View {
     let drafts: [InboxDraft]
     @Binding var selection: MultiDraftReviewLogic.Selection<PersistentIdentifier>
+    /// La hoja de foto deja corregir la descripción tocándola (encargo del 2026-11-17); la de voz no lo pide.
+    var editsNoteInPlace = false
     let onOpenDetails: (InboxDraft) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -190,6 +192,7 @@ struct MultiDraftReviewList: View {
                         MultiDraftReviewRow(
                             draft: draft,
                             isMarked: selection.contains(id),
+                            editsNoteInPlace: editsNoteInPlace,
                             onToggle: {
                                 selection.toggle(id)
                                 DS.Haptic.selection()
@@ -247,6 +250,7 @@ extension MultiDraftReviewLogic {
 private struct MultiDraftReviewRow: View {
     let draft: InboxDraft
     let isMarked: Bool
+    let editsNoteInPlace: Bool
     let onToggle: () -> Void
     let onOpenDetails: () -> Void
 
@@ -259,6 +263,7 @@ private struct MultiDraftReviewRow: View {
     @Query private var allTags: [Tag]
 
     @State private var activeField: ChatDraftField?
+    @State private var isEditingNote = false
 
     private var isSaved: Bool { draft.status == .approved }
 
@@ -277,6 +282,13 @@ private struct MultiDraftReviewRow: View {
             Group {
                 if isSaved {
                     rowLabel
+                } else if editsNoteInPlace {
+                    // La descripción es un botón propio: dentro de la etiqueta de la fila se fundiría con ella. El resto de
+                    // la fila abre el formulario con un toque (el botón de la descripción, como hijo, gana el suyo), y el
+                    // botón de fondo solo existe para VoiceOver, que lee la fila entera ahí.
+                    rowLabel
+                        .onTapGesture(perform: openDetailsOrConfirmNote)
+                        .background { openDetailsButton }
                 } else {
                     Button(action: onOpenDetails) { rowLabel }
                         .buttonStyle(.plain)
@@ -339,14 +351,45 @@ private struct MultiDraftReviewRow: View {
         }
     }
 
+    /// Las piezas que no se tocan dejan el toque al gesto de la fila cuando la descripción va en línea.
+    private var passesTouches: Bool { editsNoteInPlace && !isSaved }
+
+    /// Con la descripción editable en línea, el resto de la fila abre el formulario (y, con la descripción abierta, la
+    /// confirma). VoiceOver lee la fila entera en este botón.
+    private var openDetailsButton: some View {
+        Button(action: openDetailsOrConfirmNote) {
+            Color.clear
+        }
+        .buttonStyle(.plain)
+        // Solo para VoiceOver: el dedo lo recibe el gesto de la fila, encima.
+        .allowsHitTesting(false)
+        .accessibilityLabel([title, draft.subcategory?.name ?? L10n.Common.uncategorized,
+                             draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount].joined(separator: ", "))
+        .accessibilityIdentifier("voice_draft_row")
+    }
+
+    /// Con la descripción abierta, tocar el resto de la fila la confirma; si no, abre el formulario completo.
+    private func openDetailsOrConfirmNote() {
+        if isEditingNote {
+            isEditingNote = false
+        } else {
+            onOpenDetails()
+        }
+    }
+
     private var rowLabel: some View {
         HStack(spacing: DS.ListRow.spacing) {
             ChatDraftCategoryIcon(subcategory: draft.subcategory)
+                .rowPassesTouches(passesTouches)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                if editsNoteInPlace, !isSaved {
+                    DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote)
+                } else {
+                    Text(title)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
                 detailLine
             }
             Spacer(minLength: DS.Spacing.sm)
@@ -358,6 +401,7 @@ private struct MultiDraftReviewRow: View {
                         : AnyShapeStyle(Color.amountTint(isIncome: (draft.amount ?? -1) >= 0))
                 )
                 .monospacedDigit()
+                .rowPassesTouches(passesTouches)
         }
         .contentShape(Rectangle())
     }
@@ -379,6 +423,7 @@ private struct MultiDraftReviewRow: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .rowPassesTouches(passesTouches)
         }
     }
 

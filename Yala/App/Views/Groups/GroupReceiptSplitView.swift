@@ -112,8 +112,10 @@ struct GroupReceiptSplitReview: View {
     private func itemRow(_ line: ReceiptSplitLine) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(alignment: .firstTextBaseline) {
-                Text(line.description)
-                    .font(DS.Typography.body)
+                // El nombre de la línea se corrige ahí mismo al tocarlo: es lo que arma la descripción del gasto.
+                ReceiptLineDescriptionEditor(description: line.description) { edited in
+                    model.update(line.id) { $0.description = edited }
+                }
                 Spacer(minLength: DS.Spacing.sm)
                 Text(money(line.amount))
                     .monospacedDigit()
@@ -147,6 +149,8 @@ struct GroupReceiptSplitReview: View {
             }
             .accessibilityIdentifier("receipt_split_people_\(line.description)")
         }
+        // Contenedor: sin esto, el id de la fila pisaba los de sus botones (el nombre y quién lo comió).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("receipt_split_line_\(line.description)")
     }
 
@@ -272,6 +276,8 @@ struct GroupReceiptSplitReview: View {
 /// medio y los dos botones abajo.
 struct GroupReceiptReviewContent: View {
     @Bindable var model: GroupCaptureModel
+    /// Foto lleva el título en la fila de la X (`GroupCaptureHeader`); Voz, aquí.
+    var showsTitle = true
     /// «Volver a grabar» u «Otra foto».
     let againTitle: String
     let againIdentifier: String
@@ -280,21 +286,25 @@ struct GroupReceiptReviewContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(L10n.ReceiptSplit.reviewTitle)
-                    .font(DS.Typography.title3)
-                    .foregroundStyle(.thPrimaryText)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityIdentifier("receipt_split_review_title")
-                if !model.heard.isEmpty {
-                    Text(model.heard)
-                        .font(DS.Typography.subheadline)
-                        .italic()
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
+            if showsTitle || !model.heard.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    if showsTitle {
+                        Text(L10n.ReceiptSplit.reviewTitle)
+                            .font(DS.Typography.title3)
+                            .foregroundStyle(.thPrimaryText)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("receipt_split_review_title")
+                    }
+                    if !model.heard.isEmpty {
+                        Text(model.heard)
+                            .font(DS.Typography.subheadline)
+                            .italic()
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
                 }
+                .padding(.top, DS.Spacing.xs)
             }
-            .padding(.top, DS.Spacing.xs)
 
             GroupReceiptSplitReview(model: model)
 
@@ -322,5 +332,53 @@ struct GroupReceiptReviewContent: View {
             identifier: "receipt_split_use",
             action: onUse
         )
+    }
+}
+
+/// El nombre de una línea del reparto, editable al tocarlo (encargo «X nativa en la hoja de foto», 2026-11-17). «Listo»,
+/// Intro o tocar fuera confirma; vacío deja el nombre que tenía, porque una línea sin nombre no dice qué se comió.
+private struct ReceiptLineDescriptionEditor: View {
+    let description: String
+    let onCommit: (String) -> Void
+
+    @State private var isEditing = false
+    @State private var text = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        if isEditing {
+            TextField(description, text: $text)
+                .font(DS.Typography.body)
+                .submitLabel(.done)
+                .focused($isFocused)
+                .onSubmit { isEditing = false }
+                .onAppear {
+                    text = description
+                    isFocused = true
+                }
+                .onChange(of: isFocused) { _, focused in
+                    if !focused { isEditing = false }
+                }
+                .onDisappear(perform: commit)
+                .accessibilityIdentifier("receipt_split_line_description_field")
+        } else {
+            Button {
+                isEditing = true
+            } label: {
+                Text(description)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+            }
+            // Estilo propio y sin tinte: con `.borderless` la lista lo pintaba del color de acento, como un enlace.
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("receipt_split_line_description")
+        }
+    }
+
+    private func commit() {
+        let edited = DraftNoteInlineLogic.committed(text)
+        guard !edited.isEmpty, edited != description else { return }
+        onCommit(edited)
     }
 }
