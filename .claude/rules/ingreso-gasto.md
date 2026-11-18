@@ -102,8 +102,18 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
 La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)
 dan la misma cifra porque salen de la misma cuenta: saldo vivo de las cuentas del Panel + `ProjectedFlowBuilder` hasta
 fin de mes sin filtros de sesión (`MonthEndBalanceLogic`). Si cambias cómo proyecta el Panel con Saldo, cambia esa pieza
-también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan). El horizonte del plan («a fin de mayo de 2027
-tendrías») NO sale de ahí: parte del saldo inicial del plan.
+también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan).
+
+**Con plan, lo que falta sale del motor del mes (`FlujoMotorMes`, S1 del replanteo del flujo de caja, 2026-11-18).** El
+flujo de caja y `ProjectedFlowBuilder.planRemaining` (Panel, Tendencias, widget de Saldo) piden al mismo motor lo que les
+falta a las líneas y, en gastos, «otros» por la mediana de 6 meses; los ingresos sin línea no se proyectan y lo no
+cubierto ya no va al ritmo. Un plan sin líneas también manda. Cada mes del flujo de caja es real con signo (fechado antes
+de mañana, con lo sin categoría) + lo que falta; el cierre de un mes pasado es el saldo real de las cuentas (cada divisa
+a la tasa de su cierre), el del mes en curso es «Al 30», y los futuros encadenan. El saldo inicial manual del plan ya no
+se usa. Cada movimiento tiene UN dueño (su pago con línea, su subcategoría, su categoría, el «sin subcategoría» del grupo
+o «otros») y el promedio de una línea sale de ese mismo reparto: si añades una forma de atribuir, cambia las dos a la
+vez. Lo fijan `FlujoMotorMesTests` (un caso por hallazgo del ticket `2026-11-17-flujo-de-caja-replanteo`, paridad con
+`MonthEndBalanceLogic` incluida).
 
 ## Los tests que lo fijan
 

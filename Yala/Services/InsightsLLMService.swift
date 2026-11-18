@@ -583,15 +583,17 @@ final class InsightsLLMService {
         let monthStyle = Date.FormatStyle.dateTime.month(.abbreviated).year().locale(Locale(identifier: language))
         let months = projection.months
         let currentMonth = months.first(where: { $0.isCurrent })
-        let monthsWithBalance = months.filter { $0.accumulatedBalance != nil }
+        // El saldo de los meses que vienen, con el mes en curso: un mes cerrado lleva el saldo real de tus cuentas (motor
+        // del mes del flujo de caja, 18-nov-2026) y no es lo que se proyecta; sin cuentas que sumen no hay saldo.
+        let monthsWithBalance = CashFlowPlanViewModel.monthsWithBalanceAhead(months)
         let lowestMonth = monthsWithBalance.min(by: { ($0.accumulatedBalance ?? 0) < ($1.accumulatedBalance ?? 0) })
-        let monthsNegative = months.filter { ($0.accumulatedBalance ?? 0) < 0 }.count
+        let monthsNegative = monthsWithBalance.filter { ($0.accumulatedBalance ?? 0) < 0 }.count
         let avgNet = months.isEmpty ? 0 : months.map(\.netFlow).reduce(0, +) / Double(months.count)
 
         var payload: [String: Any] = [
             "startingBalance": projection.startingBalance,
-            "monthsTotal": months.count,
-            "monthsPositive": months.count - monthsNegative,
+            "monthsTotal": monthsWithBalance.count,
+            "monthsPositive": monthsWithBalance.count - monthsNegative,
             "monthsNegative": monthsNegative,
             "avgMonthlyNet": Int(avgNet),
             "currency": currencyCode,
@@ -607,7 +609,7 @@ final class InsightsLLMService {
             ]
         }
 
-        if let last = months.last {
+        if let last = monthsWithBalance.last {
             payload["endMonth"] = [
                 "name": last.date.formatted(monthStyle).lowercased(),
                 "accumulated": Int(last.accumulatedBalance ?? 0),

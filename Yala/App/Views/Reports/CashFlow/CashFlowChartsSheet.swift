@@ -132,22 +132,16 @@ struct CashFlowChartsSheet: View {
 
         cachedDeviations = Self.buildDeviations(from: cachedPastMonths, iconLookup: iconLookup)
 
+        // Motor del mes (18-nov-2026): `netFlow` ya es lo real (más lo que falta), así que la referencia del plan es lo
+        // que dicen sus límites, y lo real sale del total del mes, con lo que no tiene línea aunque esté oculto.
         cachedSavings = projection.months.map { month in
             let isPastOrCurrent = month.isPast || month.isCurrent
-            let realInc: Double
-            let realExp: Double
-            if isPastOrCurrent {
-                realInc = month.incomeLines.reduce(0.0) { $0 + ($1.realAmount ?? $1.plannedAmount) }
-                    + (month.otherIncome?.realAmount ?? 0)
-                realExp = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? $1.plannedAmount) }
-                    + (month.otherExpenses?.realAmount ?? 0)
-            } else {
-                realInc = month.totalIncome
-                realExp = month.totalExpense
-            }
+            let plannedNet = month.incomeLines.reduce(0.0) { $0 + $1.plannedAmount }
+                - month.expenseLines.reduce(0.0) { $0 + $1.plannedAmount }
             return SavingsPoint(
                 monthKey: month.monthKey, date: month.date,
-                actual: realInc - realExp, planned: month.netFlow,
+                actual: isPastOrCurrent ? month.realIncome - month.realExpense : month.netFlow,
+                planned: plannedNet,
                 isPast: isPastOrCurrent
             )
         }

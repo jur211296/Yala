@@ -638,10 +638,35 @@ final class CashFlowPlanViewModel {
             .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
             ?? .build(from: transactions)
 
+        // Motor del mes (S1 del replanteo, 18-nov-2026): lo real son los movimientos de las cuentas que suman en el saldo
+        // del Panel, el saldo de cada mes sale de esas cuentas y los pagos pendientes, de los mismos pagos que «Al 30
+        // tendrías» (`MonthEndBalanceLogic`). Sin cuentas que sumen, todos los movimientos y sin saldo.
+        let now = Date.now
+        let calendar = Calendar.current
+        let scope = FlujoMotorMesEntrada.alcanceDelSaldo(
+            accounts: accounts, transactions: transactions, includeGroups: includeGroups
+        )
+        let balance = scope.map {
+            FlujoMotorMesEntrada.FuenteSaldo(
+                accounts: $0.accounts, transactions: $0.transactions, currencyCode: currencyCode, converter: converter
+            )
+        }
+        let lastMonth = calendar.date(
+            byAdding: .month, value: monthsAhead, to: calendar.dateInterval(of: .month, for: now)?.start ?? now
+        ) ?? now
+        let occurrences = FlujoMotorMesEntrada.ocurrencias(
+            allTransactions: transactions,
+            scheduledPayments: scheduledPayments,
+            paymentFilter: scope.map {
+                ProjectedFlowBuilder.PaymentFilter(accounts: EntityFilter(included: Set($0.accounts.map(\.persistentModelID))))
+            } ?? .none,
+            currencyCode: currencyCode, adjustment: adjustment, converter: converter,
+            lastMonth: lastMonth, now: now, calendar: calendar
+        )
         projection = CashFlowProjectionCalculator.calculate(
             plan: plan,
             lines: lines,
-            transactions: transactions,
+            transactions: scope?.transactions ?? transactions,
             allExpenseCategories: allExpenseCategories,
             allIncomeCategories: allIncomeCategories,
             scheduledPayments: scheduledPayments,
@@ -649,7 +674,12 @@ final class CashFlowPlanViewModel {
             monthsAhead: monthsAhead,
             currencyCode: currencyCode,
             adjustment: adjustment,
-            converter: converter
+            converter: converter,
+            balance: balance,
+            occurrences: occurrences,
+            historyTransactions: transactions,
+            now: now,
+            calendar: calendar
         )
         monthEnd = MonthEndBalanceLogic.compute(
             accounts: accounts,
@@ -659,7 +689,9 @@ final class CashFlowPlanViewModel {
             includeGroups: includeGroups,
             adjustment: adjustment,
             converter: converter,
-            context: modelContext
+            context: modelContext,
+            now: now,
+            calendar: calendar
         )
         LoadTimeMarks.ready(.cashFlow)
     }
@@ -787,7 +819,10 @@ final class CashFlowPlanViewModel {
         let months = projection.months
         guard !months.isEmpty else { return "" }
 
-        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
+        // El saldo de los meses que vienen (el mes en curso incluido): uno cerrado ya pasó, y sin cuentas que sumen no
+        // hay saldo del que hablar (`accumulatedBalance == nil`). Antes leía `?? 0` y decía «tendrías S/ 0».
+        let ahead = Self.monthsWithBalanceAhead(months)
+        let negativeMonths = ahead.filter { ($0.accumulatedBalance ?? 0) < 0 }
         let currentMonth = months.first(where: { $0.isCurrent })
 
         // Check for months going negative
@@ -804,7 +839,7 @@ final class CashFlowPlanViewModel {
         }
 
         // All positive — good health
-        if negativeMonths.isEmpty, let lastMonth = months.last {
+        if negativeMonths.isEmpty, let lastMonth = ahead.last {
             let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
             return L10n.CashFlowPlan.commentHealthy(endBalance)
         }
@@ -839,6 +874,11 @@ final class CashFlowPlanViewModel {
             : L10n.CashFlowPlan.deviationThisMonthMultiple(top.name, topFormatted, totalFormatted)
     }
 
+    /// Los meses del mes en curso en adelante que llevan saldo.
+    static func monthsWithBalanceAhead(_ months: [CashFlowMonth]) -> [CashFlowMonth] {
+        months.filter { !$0.isPast && $0.accumulatedBalance != nil }
+    }
+
     static func generateCombinedComment(
         _ projection: CashFlowProjection,
         savings: [(actual: Double, planned: Double)],
@@ -847,7 +887,10 @@ final class CashFlowPlanViewModel {
         let months = projection.months
         guard !months.isEmpty else { return "" }
 
-        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
+        // El saldo de los meses que vienen (el mes en curso incluido): uno cerrado ya pasó, y sin cuentas que sumen no
+        // hay saldo del que hablar (`accumulatedBalance == nil`). Antes leía `?? 0` y decía «tendrías S/ 0».
+        let ahead = Self.monthsWithBalanceAhead(months)
+        let negativeMonths = ahead.filter { ($0.accumulatedBalance ?? 0) < 0 }
         let currentMonth = months.first(where: { $0.isCurrent })
         let hasSavings = !savings.isEmpty
         let avgActual = hasSavings ? savings.map(\.actual).reduce(0, +) / Double(savings.count) : 0
@@ -873,14 +916,14 @@ final class CashFlowPlanViewModel {
         }
 
         // 4. Actual savings beat plan
-        if hasSavings, avgActual >= avgPlanned, avgPlanned > 0, let lastMonth = months.last {
+        if hasSavings, avgActual >= avgPlanned, avgPlanned > 0, let lastMonth = ahead.last {
             let diff = YalaFormatterStatic.currency(value: avgActual - avgPlanned, currencyCode: currencyCode)
             let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
             return L10n.CashFlowPlan.commentSavingsAbove(diff, endBalance)
         }
 
         // 5. Healthy plan
-        if negativeMonths.isEmpty, let lastMonth = months.last {
+        if negativeMonths.isEmpty, let lastMonth = ahead.last {
             if hasSavings {
                 let avgFormatted = YalaFormatterStatic.currency(value: avgActual, currencyCode: currencyCode)
                 let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
