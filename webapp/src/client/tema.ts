@@ -1,7 +1,8 @@
 /**
- * El tema de Yala web (lote 1 de «Yala web como la app»): «Como el sistema» (por defecto: claro, o Liquid Glass con el
- * sistema en oscuro), «Claro», «Oscuro» (el negro plano de la app) o «Liquid Glass». Se elige en Configurar y se guarda
- * en este navegador, como el idioma. Los colores de cada uno viven en `styles.css`.
+ * El tema de Yala web: «Como el sistema» (por defecto: claro u oscuro según el sistema), «Claro», «Oscuro» (el negro
+ * plano de la app) y, como extra, «Liquid Glass» (el azul noche con cristal que fue el oscuro por defecto hasta el
+ * 17-nov). Se elige en Configurar y se guarda en este navegador, como el idioma: quien ya eligió Liquid Glass lo
+ * conserva. Los colores de cada uno viven en `styles.css`.
  *
  * `aplicarTema` se llama al arrancar, antes de pintar (`main.tsx`): la CSP no deja scripts en línea en `index.html`. Sin
  * preferencia guardada no hace falta: el CSS ya sigue al sistema solo.
@@ -20,6 +21,13 @@ function storage(): { getItem(k: string): string | null; setItem(k: string, v: s
 }
 
 /** El tema elegido. En una ventana privada o con el almacenamiento bloqueado, «Como el sistema». */
+/** Si la página se ve en oscuro: el tema forzado o, con «Como el sistema», lo que diga el sistema. */
+export function temaEsOscuro(t: Tema = temaElegido()): boolean {
+  if (t !== "sistema") return t !== "claro";
+  const mm = (globalThis as { matchMedia?: (q: string) => { matches: boolean } }).matchMedia;
+  return mm?.("(prefers-color-scheme: dark)").matches === true;
+}
+
 export function temaElegido(): Tema {
   try {
     const v = storage()?.getItem(KEY) ?? null;
