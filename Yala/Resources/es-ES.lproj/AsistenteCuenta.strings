@@ -1,0 +1,31 @@
+/*
+  AsistenteCuenta.strings
+  Yala
+
+  El asistente por pasos de «Nueva cuenta» (encargo del 18-nov). Las preguntas que ya tenía Primeros pasos vienen de
+  `pasos23.account.*`, y el contenedor compartido lee sus `asistente.*` de `AsistentePresupuesto.strings`. Tabla propia,
+  leída con el idioma de la app (`AsistenteCuentaTexto`).
+*/
+
+"asistenteCuenta.discard.title" = "¿Descartar esta cuenta?";
+"asistenteCuenta.create" = "Crear cuenta";
+"asistenteCuenta.createShort" = "Crear";
+"asistenteCuenta.kind.question" = "¿Qué tipo de cuenta es?";
+"asistenteCuenta.kind.subtitle" = "Elige la que más se parece. Puedes cambiarlo después.";
+"asistenteCuenta.currency.subtitle" = "Es la moneda en la que verás su saldo.";
+"asistenteCuenta.currency.subtitleCard" = "Es la moneda en la que verás lo que debes.";
+"asistenteCuenta.currency.other" = "Otra moneda";
+"asistenteCuenta.currency.otherHint" = "Elige entre todas las monedas";
+"asistenteCuenta.name.taken" = "Ya tienes una cuenta con ese nombre.";
+"asistenteCuenta.day.label" = "Día del mes";
+"asistenteCuenta.summary.question" = "¿La creamos así?";
+"asistenteCuenta.summary.detail" = "Toca una respuesta para cambiarla.";
+"asistenteCuenta.summary.type" = "Tipo";
+"asistenteCuenta.summary.currency" = "Moneda";
+"asistenteCuenta.summary.name" = "Nombre";
+"asistenteCuenta.summary.balance" = "Saldo de hoy";
+"asistenteCuenta.summary.owe" = "Lo que debes hoy";
+"asistenteCuenta.summary.statement" = "Día de cierre";
+"asistenteCuenta.summary.payment" = "Día de pago";
+"asistenteCuenta.summary.reminder" = "Recordatorio";
+"asistenteCuenta.summary.day" = "Día %d";

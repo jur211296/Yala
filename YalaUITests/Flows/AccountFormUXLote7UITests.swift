@@ -22,6 +22,7 @@ final class AccountFormUXLote7UITests: XCTestCase {
         let addButton = app.buttons["accounts_add_button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció accounts_add_button.")
         addButton.tap()
+        app.pasarAlFormularioDeNuevaCuenta()
         XCTAssertTrue(
             app.textFields["account_name_field"].waitForExistence(timeout: 5),
             "No apareció el formulario de cuenta."
@@ -106,13 +107,13 @@ final class AccountFormUXLote7UITests: XCTestCase {
         close.tap()
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5), "La X tiró lo escrito sin preguntar.")
-        alert.buttons["Seguir editando"].tap()
+        alert.buttons["Seguir editando"].firstMatch.tap()
         XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "«Seguir editando» no cerró la alerta.")
         XCTAssertTrue(name.exists, "«Seguir editando» cerró el formulario.")
 
         close.tap()
         XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5), "La segunda X no preguntó.")
-        app.alerts.firstMatch.buttons["Descartar"].tap()
+        app.alerts.firstMatch.buttons["Descartar"].firstMatch.tap()
         XCTAssertTrue(name.waitForNonExistence(timeout: 5), "«Descartar» no cerró el formulario.")
         XCTAssertFalse(app.buttons["accounts_row_QA Descartar"].exists, "Descartar guardó la cuenta.")
     }
