@@ -1,0 +1,203 @@
+//
+//  ZZSondaFlujoCajaTests.swift — SONDA de análisis (encargo 2026-11-18). NO SE COMMITEA.
+//  Imprime con el prefijo «SONDA|» las cifras del Flujo de caja sobre un escenario armado.
+//
+
+import Foundation
+import SwiftData
+import Testing
+
+@testable import Yala
+
+@MainActor
+@Suite("SONDA flujo de caja", .serialized)
+struct ZZSondaFlujoCajaTests {
+
+    private struct Conv: CurrencyConverting {
+        func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal { rate(from, to) * amount }
+        func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal { rate(from, to) * amount }
+        func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+            -> (amount: Decimal, quality: RateQuality) { (rate(from, to) * amount, .exact) }
+        func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+            -> (amount: Decimal, quality: RateQuality) { (rate(from, to) * amount, .exact) }
+        private func rate(_ from: String, _ to: String) -> Decimal {
+            if from == to { return 1 }
+            if from == "USD" && to == "PEN" { return 3.75 }
+            if from == "PEN" && to == "USD" { return 1 / 3.75 }
+            return 1
+        }
+    }
+
+    private func p(_ s: String) { print("SONDA|" + s) }
+    private func f(_ d: Double?) -> String { d.map { String(format: "%.2f", $0) } ?? "nil" }
+
+    @Test func escenario() throws {
+        let context = try makeTestContext()
+        let cal = Calendar.current
+        let now = Date.now
+        let monthStart = try #require(cal.dateInterval(of: .month, for: now)).start
+        func day(_ monthOffset: Int, _ d: Int, hour: Int = 10) -> Date {
+            let m = cal.date(byAdding: .month, value: monthOffset, to: monthStart) ?? monthStart
+            return cal.date(byAdding: DateComponents(day: d - 1, hour: hour), to: m) ?? m
+        }
+        p("hoy=\(now) dia=\(cal.component(.day, from: now))")
+
+        let bank = Account(name: "Banco", currencyCode: "PEN", colorHex: "#000000", iconName: "banknote", type: "bank")
+        context.insert(bank)
+        let usd = Account(name: "Dolares", currencyCode: "USD", colorHex: "#000000", iconName: "banknote", type: "bank")
+        context.insert(usd)
+        func cat(_ n: String, income: Bool = false) -> YalaCategory {
+            let c = YalaCategory(name: n, colorHex: "#000000", isIncome: income); context.insert(c); return c
+        }
+        let sueldo = cat("Sueldo", income: true)
+        let freelance = cat("Freelance", income: true)
+        let vivienda = cat("Vivienda"), comida = cat("Comida"), transporte = cat("Transporte"), ocio = cat("Ocio")
+        var all: [TransactionItem] = []
+        func tx(_ amount: Double, _ date: Date, _ c: YalaCategory?, account: Account? = nil, currency: String = "PEN",
+                adjustment: String? = nil) {
+            let acc = account ?? bank
+            let converted = currency == "USD" ? amount * 3.75 : amount
+            let t = TransactionItem(date: date, amount: amount, currencyCode: currency, category: c, account: acc,
+                                    amountInPreferredCurrency: converted, preferredCurrencyCode: "PEN")
+            t.balanceAdjustmentType = adjustment
+            context.insert(t); all.append(t)
+        }
+        tx(5_000, day(-7, 1), nil, adjustment: InitialBalanceService.typeInitialBalance)
+        tx(100, day(-7, 1), nil, account: usd, currency: "USD", adjustment: InitialBalanceService.typeInitialBalance)
+        for m in -6 ... -1 {
+            tx(4_000, day(m, 1), sueldo)
+            tx(-1_500, day(m, 3), vivienda)
+            tx(-300, day(m, 5), comida); tx(-300, day(m, 15), comida); tx(-300, day(m, 25), comida)
+            tx(-200, day(m, 10), transporte)
+            tx(-300, day(m, 20), ocio)
+            tx(-100, day(m, 12), nil)
+        }
+        tx(4_000, day(0, 1), sueldo)
+        tx(-1_500, day(0, 3), vivienda)
+        tx(-400, day(0, 2), comida); tx(-400, day(0, 6), comida); tx(-300, day(0, 9), comida)
+        tx(80, day(0, 11), comida)
+        tx(-50, day(0, 4), transporte)
+        tx(-10, day(0, 7), transporte, account: usd, currency: "USD")
+        tx(-100, day(0, 8), nil)
+        tx(250, day(0, 8), nil)
+        tx(600, day(0, 8), freelance)
+        tx(-200, day(0, 28), comida)
+        tx(-150, day(1, 10), ocio)
+        try context.save()
+
+        let conv = Conv()
+        let accounts = [bank, usd]
+        let todayBal = CashFlowSetupLogic.todayBalance(
+            accounts: accounts, transactions: all, currencyCode: "PEN", includeGroups: true, now: now, converter: conv)
+        p("saldoHoy=\(f(todayBal.amount)) cuentas=\(todayBal.accountCount)")
+
+        let vm = CashFlowPlanViewModel()
+        vm.setContext(context)
+        let cats = try context.fetch(FetchDescriptor<YalaCategory>())
+        vm.generateSuggestions(transactions: all, scheduledPayments: [], categories: cats, currencyCode: "PEN")
+        for s in vm.suggestedLines {
+            p("sugerida \(s.name) ingreso=\(s.isIncome) monto=\(f(s.suggestedAmount)) meses=\(s.monthsWithActivity) elegida=\(s.isSelected)")
+        }
+        vm.selectAllSuggestedLines()
+        vm.createPlan(startingBalance: todayBal.amount)
+        p("plan.startingBalance=\(f(vm.plan?.startingBalance)) fecha=\(String(describing: vm.plan?.startingBalanceDate))")
+
+        vm.recalculate(transactions: all, allExpenseCategories: cats.filter { !$0.isIncome },
+                       allIncomeCategories: cats.filter(\.isIncome), scheduledPayments: [], currencyCode: "PEN",
+                       converter: conv, accounts: accounts, includeGroups: true)
+        let proj = try #require(vm.projection)
+        let firstFuture = proj.months.first { !$0.isPast && !$0.isCurrent }?.monthKey
+        for m in proj.months {
+            p("MES \(m.monthKey) pasado=\(m.isPast) actual=\(m.isCurrent) ingreso=\(f(m.totalIncome)) gasto=\(f(m.totalExpense)) neto=\(f(m.netFlow)) acumulado=\(f(m.accumulatedBalance)) otrosGasto=\(f(m.otherExpenses?.plannedAmount)) otrosIngreso=\(f(m.otherIncome?.plannedAmount))")
+            if m.isCurrent || m.monthKey == firstFuture || m.isPast {
+                for l in m.incomeLines + m.expenseLines {
+                    p("   \(m.monthKey) linea \(l.name) plan=\(f(l.plannedAmount)) real=\(f(l.realAmount)) progreso=\(f(l.progress))")
+                }
+            }
+        }
+        if let e = vm.monthEnd {
+            p("AL30 hoy=\(f(e.today)) faltaEntrar=\(f(e.incomeLeft)) faltaSalir=\(f(e.expenseLeft)) cierre=\(f(e.closing)) fuente=\(e.source)")
+        }
+        if let cur = proj.months.first(where: \.isCurrent) {
+            p("spentShare=\(String(describing: CashFlowMonthSummaryLogic.spentShare(of: cur)))")
+            p("rotuloNeto=\(CashFlowMonthSummaryLogic.netLabel(for: cur))")
+        }
+        if let end = CashFlowMonthSummaryLogic.projectedEnd(of: proj.months) {
+            p("finHorizonte \(end.monthKey) acumulado=\(f(end.accumulatedBalance))")
+        }
+
+        let nextMonth = try #require(cal.dateInterval(of: .month, for: day(1, 1)))
+        let horizon = DateInterval(start: monthStart, end: nextMonth.end.addingTimeInterval(-1))
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: cal)
+        let built = ProjectedFlowBuilder.build(
+            ProjectedFlowBuilder.Inputs(
+                today: now, calendar: cal,
+                overdueWindowStart: ProjectedFlowBuilder.overdueWindowStart(today: now, calendar: cal),
+                days: days, allTransactions: all, countedTransactions: all, hasSessionFilters: false,
+                scheduledPayments: [],
+                paymentFilter: ProjectedFlowBuilder.PaymentFilter(
+                    accounts: EntityFilter(included: Set(accounts.map(\.persistentModelID)))),
+                currencyCode: "PEN", adjustment: .none, converter: conv
+            ), context: context)
+        var curIn = 0.0, curOut = 0.0, nxtIn = 0.0, nxtOut = 0.0
+        for d in days {
+            guard let fl = built.flows[d] else { continue }
+            if d >= nextMonth.start { nxtIn += fl.income; nxtOut += fl.expense } else { curIn += fl.income; curOut += fl.expense }
+        }
+        p("VERPROY mesActual entra=\(f(curIn)) sale=\(f(curOut)) | mesSiguiente entra=\(f(nxtIn)) sale=\(f(nxtOut))")
+    }
+
+    /// Escenario 2: dos fuentes de «castigo» en «Falta salir».
+    /// (a) Línea por SUBCATEGORÍA y el gasto registrado en la categoría madre sin subcategoría.
+    /// (b) Un gasto puntual grande sin línea hace 45 días, que el ritmo reparte en el mes.
+    @Test func castigo() throws {
+        let context = try makeTestContext()
+        let cal = Calendar.current
+        let now = Date.now
+        let monthStart = try #require(cal.dateInterval(of: .month, for: now)).start
+        func day(_ monthOffset: Int, _ d: Int) -> Date {
+            let m = cal.date(byAdding: .month, value: monthOffset, to: monthStart) ?? monthStart
+            return cal.date(byAdding: DateComponents(day: d - 1, hour: 10), to: m) ?? m
+        }
+        let bank = Account(name: "Banco", currencyCode: "PEN", colorHex: "#000000", iconName: "banknote", type: "bank")
+        context.insert(bank)
+        let sueldo = YalaCategory(name: "Sueldo", colorHex: "#000000", isIncome: true); context.insert(sueldo)
+        let comida = YalaCategory(name: "Comida", colorHex: "#000000", isIncome: false); context.insert(comida)
+        let hogar = YalaCategory(name: "Hogar", colorHex: "#000000", isIncome: false); context.insert(hogar)
+        let super_ = Subcategory(name: "Supermercado", category: comida); context.insert(super_)
+        var all: [TransactionItem] = []
+        func tx(_ amount: Double, _ date: Date, _ c: YalaCategory?, sub: Subcategory? = nil, adj: String? = nil) {
+            let t = TransactionItem(date: date, amount: amount, currencyCode: "PEN", category: c, subcategory: sub,
+                                    account: bank, amountInPreferredCurrency: amount, preferredCurrencyCode: "PEN")
+            t.balanceAdjustmentType = adj
+            context.insert(t); all.append(t)
+        }
+        tx(3_000, day(-7, 1), nil, adj: InitialBalanceService.typeInitialBalance)
+        for m in -6 ... -1 { tx(4_000, day(m, 1), sueldo); tx(-600, day(m, 5), comida, sub: super_) }
+        tx(-2_400, cal.date(byAdding: .day, value: -45, to: now) ?? now, hogar)   // gasto puntual sin línea
+        tx(4_000, day(0, 1), sueldo)
+        tx(-500, day(0, 4), comida)                                                 // súper SIN subcategoría
+        try context.save()
+
+        let plan = CashFlowPlan(name: "", startingBalance: 0); context.insert(plan)
+        let l1 = CashFlowLine(name: "Sueldo", isIncome: true, estimationMethod: .manual, manualAmount: 4_000, category: sueldo)
+        let l2 = CashFlowLine(name: "Supermercado", isIncome: false, estimationMethod: .manual, manualAmount: 600,
+                              category: comida, subcategory: super_)
+        for l in [l1, l2] { context.insert(l); l.plan = plan }
+        try context.save()
+
+        let vm = CashFlowPlanViewModel()
+        vm.setContext(context)
+        let cats = try context.fetch(FetchDescriptor<YalaCategory>())
+        vm.recalculate(transactions: all, allExpenseCategories: cats.filter { !$0.isIncome },
+                       allIncomeCategories: cats.filter(\.isIncome), scheduledPayments: [], currencyCode: "PEN",
+                       converter: Conv(), accounts: [bank], includeGroups: true)
+        if let m = vm.projection?.months.first(where: \.isCurrent) {
+            p("C2 MES ingreso=\(f(m.totalIncome)) gasto=\(f(m.totalExpense)) neto=\(f(m.netFlow)) otrosGasto=\(f(m.otherExpenses?.plannedAmount))")
+            for l in m.expenseLines { p("C2   linea \(l.name) plan=\(f(l.plannedAmount)) real=\(f(l.realAmount))") }
+        }
+        if let e = vm.monthEnd {
+            p("C2 AL30 hoy=\(f(e.today)) faltaEntrar=\(f(e.incomeLeft)) faltaSalir=\(f(e.expenseLeft)) cierre=\(f(e.closing))")
+        }
+    }
+}

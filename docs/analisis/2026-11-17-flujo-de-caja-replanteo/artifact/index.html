@@ -1,0 +1,419 @@
+<title>Flujo de caja: replanteo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;650;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: columna de lectura de 760px; arriba lo que hay que decidir, luego la prueba (números, capturas, maquetas) y el plan. */
+:root{
+  --bg:#f6f6fb; --surface:#ffffff; --ink:#17152e; --muted:#5d5a78; --line:#e3e1f0;
+  --accent:#3d36b3; --accent-soft:#ecebfb; --pink:#c2185b; --pink-soft:#fde7f0; --teal:#0f7a80; --teal-soft:#e2f5f6;
+  --warn:#9a5b00; --warn-soft:#fff3dc;
+  --phone:#14123a; --phone-2:#221f5c; --phone-ink:#f2f1ff; --phone-muted:#a9a6d6; --phone-card:#1c1a45; --phone-line:#34307a;
+  --f-display:"Figtree",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f0e1c; --surface:#18172b; --ink:#ecebf8; --muted:#a3a0c2; --line:#2b2945;
+  --accent:#8f89ff; --accent-soft:#25234a; --pink:#ff6fa6; --pink-soft:#3a1b2c; --teal:#3fd0d8; --teal-soft:#143337;
+  --warn:#ffc266; --warn-soft:#3a2c12; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f0e1c; --surface:#18172b; --ink:#ecebf8; --muted:#a3a0c2; --line:#2b2945;
+  --accent:#8f89ff; --accent-soft:#25234a; --pink:#ff6fa6; --pink-soft:#3a1b2c; --teal:#3fd0d8; --teal-soft:#143337;
+  --warn:#ffc266; --warn-soft:#3a2c12; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);margin:0}
+.wrap{max-width:780px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:34px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:800}
+h3{font-size:17px;font-weight:650}
+p{margin:0}
+.eyebrow{font:600 12px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:17px;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.pill{display:inline-block;font:600 11.5px/1 var(--f-body);padding:5px 8px;border-radius:999px;letter-spacing:.02em}
+.p-crit{background:var(--pink-soft);color:var(--pink)} .p-high{background:var(--warn-soft);color:var(--warn)}
+.p-ok{background:var(--teal-soft);color:var(--teal)} .p-rec{background:var(--accent);color:#fff}
+.muted{color:var(--muted)} small{font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+td.r,th.r{text-align:right}
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.feel{display:grid;grid-template-columns:28px 1fr;gap:4px 12px;align-items:start}
+.feel .n{font:700 15px/1.5 var(--f-mono);color:var(--accent)}
+.verdict{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* Decisiones */
+.dec{display:flex;flex-direction:column;gap:10px}
+.dec .opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;font:500 14px/1.3 var(--f-body);cursor:pointer;text-align:left}
+.opt:hover{border-color:var(--accent)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opt .rec{font:600 11px/1 var(--f-body);color:var(--accent);display:block;margin-top:3px}
+textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:14px/1.4 var(--f-body);background:var(--bg);color:var(--ink);resize:vertical}
+.status{font-size:13px;color:var(--muted)}
+/* Capturas */
+.shots{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.shot{flex:0 0 220px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px}
+.shot img{width:220px;border-radius:18px;border:1px solid var(--line);display:block}
+.shot figcaption{font-size:13px;color:var(--muted)}
+figure{margin:0}
+/* Teléfonos (maquetas) */
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;align-items:start}
+.phone{background:linear-gradient(180deg,var(--phone-2),var(--phone) 45%);color:var(--phone-ink);border-radius:30px;padding:18px 14px 22px;display:flex;flex-direction:column;gap:12px;max-width:340px;width:100%;margin:0 auto;border:1px solid var(--phone-line);font-size:13px}
+.phone .t{font:700 15px/1.2 var(--f-display)}
+.phone .cap{color:var(--phone-muted);font-size:12px}
+.phone .big{font:800 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.phone .big small{font-size:15px;color:var(--phone-muted);font-weight:600}
+.pcard{background:var(--phone-card);border:1px solid var(--phone-line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.row span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:8px;border-radius:6px;background:#2d2a66;position:relative;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.b-real{background:#8f89ff}
+.b-est{background:repeating-linear-gradient(135deg,#8f89ff 0 4px,transparent 4px 8px);opacity:.75}
+.b-over{background:#ff6fa6}
+.tag{font:600 10.5px/1 var(--f-body);padding:4px 6px;border-radius:6px;background:#2d2a66;color:#cfcbff}
+.tag.est{background:transparent;border:1px dashed #8f89ff}
+.tag.over{background:#4a1a33;color:#ff9cc2}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:#2d2a66;border-radius:10px;padding:3px;gap:3px}
+.seg b{font-weight:600;font-size:11.5px;text-align:center;padding:7px 4px;border-radius:8px;color:#cfcbff}
+.seg b.on{background:#8f89ff;color:#14123a}
+.btn{background:#8f89ff;color:#14123a;border-radius:999px;text-align:center;padding:9px;font-weight:700}
+.ladder{display:flex;flex-direction:column;gap:4px}
+.ladder .row{padding:4px 0;border-bottom:1px dashed var(--phone-line)}
+.ladder .row.end{border-bottom:none;font-weight:700}
+.hint{color:var(--phone-muted);font-size:11.5px}
+.label-before,.label-after{font:600 12px/1 var(--f-body);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-bottom:8px}
+.label-before{color:var(--pink)} .label-after{color:var(--teal)}
+/* Sesiones */
+.sess{display:grid;grid-template-columns:52px 1fr;gap:4px 14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.sess .id{font:800 18px/1.3 var(--f-display);color:var(--accent)}
+ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+code{font-family:var(--f-mono);font-size:12.5px;background:var(--accent-soft);padding:1px 5px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+@media (max-width:420px){h1{font-size:28px}.shot{flex-basis:180px}.shot img{width:180px}}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">Yala · análisis del 18 de noviembre de 2026</span>
+  <h1>Flujo de caja: replanteo</h1>
+  <p class="lede">Tu sospecha era correcta en lo grueso. La pantalla del mes enseña tres cifras de «cómo acabo el mes» que salen de tres cuentas distintas, una de ellas parte de un saldo que se mueve solo y cuenta dos veces lo que ya pasó. La cifra grande («Al 30 tendrías») sí está bien hecha, pero hay casos medidos en los que castiga de más. Aquí van los números, cómo lo ves hoy, tres modelos para rehacerlo y un plan en seis sesiones.</p>
+</header>
+
+<section aria-labelledby="decidir">
+  <span class="eyebrow">Lo que tienes que decidir</span>
+  <h2 id="decidir">Seis decisiones antes de tocar código</h2>
+  <p class="muted">Marca una opción en cada una. Se guarda aquí y la próxima sesión la lee. La recomendada va marcada; si estás de acuerdo con todas, basta con «Todo lo recomendado».</p>
+  <div><button class="opt" id="all-rec" type="button">Todo lo recomendado</button> <span class="status" id="db-status">Cargando tus respuestas…</span></div>
+  <div id="decisions" class="grid2"></div>
+</section>
+
+<section aria-labelledby="sentir">
+  <span class="eyebrow">Tus siete sensaciones</span>
+  <h2 id="sentir">Qué dijiste y qué dicen los números</h2>
+  <div class="card" style="gap:14px">
+    <div class="feel"><span class="n">1</span><div><b>«No queda claro de dónde sale “falta salir”.»</b> <span class="pill p-crit">Confirmado</span><br><span class="muted">Mezcla cuatro cosas sin decirlo: lo que falta de cada línea, tus pagos planificados, lo ya fechado por delante y un ritmo diario de lo que no tiene línea. La pantalla solo dice «Estimado con tu plan».</span></div></div>
+    <div class="feel"><span class="n">2</span><div><b>«¿Excedidas: proyectar o asumir lo excedido? No excedidas: el límite.»</b> <span class="pill p-high">A medias</span><br><span class="muted">«Al 30» ya hace lo que pides: excedida = lo real y nada más; no excedida = el límite. Pero el total del mes y «Este mes te quedaría» usan el límite también en la excedida: comida 1,380 gastado de 900 y el total sigue contando 900.</span></div></div>
+    <div class="feel"><span class="n">3</span><div><b>«¿Cómo se cambia el límite? ¿Para siempre?»</b> <span class="pill p-crit">Confirmado</span><br><span class="muted">Con «Promedio 6 meses» el límite se mueve solo cada mes (Hobbies: 142 este mes, 120 en diciembre, 122 en enero). El cambio está al fondo de la hoja, pide el alcance después de escribir y no ofrece «todos los meses».</span></div></div>
+    <div class="feel"><span class="n">4</span><div><b>«El detalle de una línea es incompleto.»</b> <span class="pill p-crit">Confirmado</span><br><span class="muted">Solo «Últimos registros» (5), sin ir a todos; el límite y su cambio no están arriba; no dice si lo fechado por delante ya cuenta.</span></div></div>
+    <div class="feel"><span class="n">5</span><div><b>«Ingresos y gastos: todos, tengan línea o no.»</b> <span class="pill p-crit">Confirmado</span><br><span class="muted">Lo que no tiene categoría no existe para el plan (ni línea ni «Gastos no considerados»). Las devoluciones suman como gasto. En meses futuros lo que no tiene línea desaparece.</span></div></div>
+    <div class="feel"><span class="n">6</span><div><b>«Parte del saldo de hoy, que ya tiene los ingresos, y solo lo castiga con gastos.»</b> <span class="pill p-high">Dos cosas distintas</span><br><span class="muted">«Al 30» no cuenta el sueldo dos veces: parte de hoy y suma solo lo que falta. Pero sí castiga de más en dos casos medidos (+967 en el escenario 2). Y la frase «Si sigue así… tendrías» sí cuenta dos veces el mes en curso (+2,312.50 en el escenario 1).</span></div></div>
+    <div class="feel"><span class="n">7</span><div><b>«No es intuitivo.»</b> <span class="pill p-crit">Confirmado</span><br><span class="muted">Cuatro cifras grandes en el mismo bloque, dos de ellas contradictorias con tu saldo (semilla: hoy 72,181 y «a fin de mayo tendrías 24,863»).</span></div></div>
+  </div>
+</section>
+
+<section aria-labelledby="calculos">
+  <span class="eyebrow">Hallazgos de cálculo</span>
+  <h2 id="calculos">Lo medido, con números</h2>
+  <p class="muted">Escenario 1: historia de 6 meses (sueldo 4,000; vivienda 1,500; comida 900; transporte 200; ocio 300; 100 sin categoría al mes). Noviembre al día 18: sueldo cobrado, comida excedida (1,100 + devolución de 80), transporte no excedido (50 + 10 USD = 37.50), 100 sin categoría, +250 sin categoría, +600 de freelance sin línea, −200 fechado el 28 y −150 de ocio fechado el 10 de diciembre. Plan creado hoy con lo sugerido y el saldo de hoy (13,517.50). Medido corriendo el código de la app.</p>
+  <div class="grid2" id="findings"></div>
+</section>
+
+<section aria-labelledby="ejemplo">
+  <span class="eyebrow">Un mes explicado paso a paso</span>
+  <h2 id="ejemplo">Noviembre del escenario 1, hoy y con el modelo recomendado</h2>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Paso</th><th class="r">Hoy</th><th class="r">Modelo A</th></tr></thead>
+      <tbody>
+        <tr><td>Saldo al 1 de noviembre</td><td class="r num">—</td><td class="r num">11,375.00</td></tr>
+        <tr><td>Saldo de partida que usa la pantalla</td><td class="r num">13,517.50 <small class="muted">(saldo inicial = hoy)</small></td><td class="r num">13,517.50 <small class="muted">(saldo de hoy)</small></td></tr>
+        <tr><td>Entró hasta hoy (todo, con o sin línea)</td><td class="r num">4,600 <small class="muted">planeado</small></td><td class="r num">4,850.00</td></tr>
+        <tr><td>Salió hasta hoy (todo, con signo)</td><td class="r num">2,900 <small class="muted">planeado</small></td><td class="r num">2,707.50</td></tr>
+        <tr><td>Falta entrar</td><td class="r num">0.00</td><td class="r num">0.00</td></tr>
+        <tr><td>Falta salir: comida (excedida) / transporte / ocio / fechado 28</td><td class="r num">0 / 112.50 / 300 / 200</td><td class="r num">0 / 112.50 / 300 / 200</td></tr>
+        <tr><td>Falta salir: lo que no tiene línea</td><td class="r num">0.00 <small class="muted">ritmo</small></td><td class="r num">0.00 <small class="muted">mediana</small></td></tr>
+        <tr><td><b>«Al 30 tendrías»</b></td><td class="r num"><b>12,905.00</b></td><td class="r num"><b>12,905.00</b></td></tr>
+        <tr><td>«Este mes te quedaría»</td><td class="r num" style="color:var(--pink)">1,700.00</td><td class="r num">1,530.00 <small class="muted">(12,905 − 11,375)</small></td></tr>
+        <tr><td>Saldo al cierre que encadena el siguiente mes</td><td class="r num" style="color:var(--pink)">15,217.50</td><td class="r num">12,905.00</td></tr>
+        <tr><td>Diciembre: gasto previsto</td><td class="r num" style="color:var(--pink)">2,961.25 <small class="muted">(promedios con noviembre a medias)</small></td><td class="r num">3,003.33 <small class="muted">(límites fijos + mediana de lo sin línea)</small></td></tr>
+        <tr><td>Diciembre en «Ver proyectado» del Panel</td><td class="r num" style="color:var(--pink)">3,214.58 <small class="muted">(150 contados dos veces)</small></td><td class="r num">3,003.33 <small class="muted">(la misma pieza)</small></td></tr>
+        <tr><td>Al 31 de diciembre tendrías</td><td class="r num" style="color:var(--pink)">16,256.25</td><td class="r num">13,901.67</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted"><small>Con el modelo A, la cifra del mes, la frase de abajo y la cápsula dicen lo mismo: empezaste con 11,375, entraron 4,850, salen 3,320 (2,707.50 ya pasaron y 612.50 se estiman) y terminas con 12,905. La cifra grande de hoy no cambia: lo que cambia es que todo lo demás cuadra con ella.</small></p>
+</section>
+
+<section aria-labelledby="hoy">
+  <span class="eyebrow">Cómo lo ves hoy</span>
+  <h2 id="hoy">Recorrido en el simulador, semilla «rendimiento»</h2>
+  <p class="muted">Desliza para ver todas. Plan creado por la semilla con «Empezaste con S/ 0».</p>
+  <div class="shots">
+    <figure class="shot"><img src="img/antes-01-mes-en-curso-arriba.jpg" alt="Mes en curso: Al 30 tendrías 71,537; saldo hoy 72,181; te quedaría 3,286; a fin de mayo tendrías 24,863; empezaste con 0" loading="lazy"><figcaption>Cuatro cifras de fin de mes. «A fin de mayo tendrías 24,863» con 72,181 hoy.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-02-mes-en-curso-lineas.jpg" alt="Lista de gastos con barras real y estimado" loading="lazy"><figcaption>Gastos 8,498: suma de lo planeado. Las cápsulas de arriba flotan sobre las filas.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-05-gastos-no-considerados.jpg" alt="Hoja Gastos no considerados con Hogar, Entretenimiento y Mascotas" loading="lazy"><figcaption>«Gastos no considerados» 559: sí entran en este mes, no en los siguientes.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-06-detalle-linea-arriba.jpg" alt="Detalle de Hobbies y gaming: 108 de 142, promedio 6 meses" loading="lazy"><figcaption>Detalle de línea: el límite es un promedio que cambia cada mes.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-07-detalle-linea-medio.jpg" alt="Timeline 0, 0, 108, 120, 122 y últimos registros" loading="lazy"><figcaption>142 hoy, 120 en diciembre, 122 en enero. Solo «Últimos registros».</figcaption></figure>
+    <figure class="shot"><img src="img/antes-10-alcance-del-cambio.jpg" alt="Alerta: solo noviembre o noviembre y los siguientes" loading="lazy"><figcaption>El alcance se pregunta después de escribir. No hay «todos los meses».</figcaption></figure>
+    <figure class="shot"><img src="img/antes-11-mes-pasado-octubre.jpg" alt="Octubre cerrado: te quedó 3,914 con freelance te falta recibir 2,391" loading="lazy"><figcaption>Octubre, cerrado: «te quedó 3,914» con 2,391 de freelance que nunca llegaron.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-12-mes-futuro-diciembre.jpg" alt="Diciembre estimado: te quedaría 3,913" loading="lazy"><figcaption>Diciembre: sin «Gastos no considerados». Más optimista que noviembre.</figcaption></figure>
+    <figure class="shot"><img src="img/antes-13-saldo-inicial.jpg" alt="Hoja de saldo inicial con fecha opcional" loading="lazy"><figcaption>«Si no eliges fecha, se asume que es hoy»: en realidad, el mes que estés viendo.</figcaption></figure>
+  </div>
+</section>
+
+<section aria-labelledby="modelos">
+  <span class="eyebrow">Tres modelos</span>
+  <h2 id="modelos">Cómo podría calcularse un mes</h2>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th></th><th>A · Mes real + lo que falta <span class="pill p-rec">Recomendado</span></th><th>B · Plan puro</th><th>C · Proyección automática</th></tr></thead>
+      <tbody>
+        <tr><td><b>Idea</b></td><td>Lo que pasó es real; lo que falta, del plan. Igual que «Al 30» del Panel.</td><td>El mes es el plan entero; lo real solo se compara.</td><td>Yala proyecta sola por ritmo; tú solo marcas excepciones.</td></tr>
+        <tr><td><b>Real y proyectado</b></td><td>Barra sólida = real; rayada = estimado; cada cifra dice cuál es.</td><td>Todo es plan; lo real va al lado.</td><td>Todo estimado salvo el pasado.</td></tr>
+        <tr><td><b>Excedidas</b></td><td>Cuentan lo real y no se proyecta más (decisión P2).</td><td>Cuentan el límite: el exceso no mueve el saldo previsto.</td><td>Siguen al ritmo.</td></tr>
+        <tr><td><b>Sin línea</b></td><td>Lo real siempre (con o sin categoría, con signo). En el futuro, gastos por la mediana de 6 meses.</td><td>Solo si el usuario crea la línea.</td><td>Todo por ritmo.</td></tr>
+        <tr><td><b>Mes de inicio</b></td><td>Parte del saldo de hoy y suma solo lo que falta. Sin saldo inicial manual.</td><td>Parte del saldo al día 1 (hay que saberlo o calcularlo).</td><td>Saldo de hoy + ritmo.</td></tr>
+        <tr><td><b>Cambiar un límite</b></td><td>Hoja única: solo este mes, desde este mes o todos.</td><td>Igual.</td><td>No hay límites: solo excepciones.</td></tr>
+        <tr><td><b>Detalle de línea</b></td><td>Todos los registros, límite arriba, lo que falta y si sigue al ritmo.</td><td>Igual, sin «lo que falta».</td><td>Sin límite que gestionar.</td></tr>
+        <tr><td><b>Riesgo</b></td><td>Medio: un motor nuevo, pero ya existe la mitad («Al 30»).</td><td>Bajo, pero repite tu queja 2: el exceso no se ve en el saldo.</td><td>Alto: pierdes el control de tus límites; los gastos puntuales mueven todo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="maquetas">
+  <span class="eyebrow">Maquetas</span>
+  <h2 id="maquetas">Antes y después, con el modelo A</h2>
+
+  <h3>1 · El mes en curso</h3>
+  <div class="pair">
+    <figure><div class="label-before">Hoy</div><img src="img/antes-01-mes-en-curso-arriba.jpg" alt="Mes en curso hoy" style="width:100%;max-width:300px;display:block;margin:0 auto;border-radius:24px;border:1px solid var(--line)"></figure>
+    <figure><div class="label-after">Propuesta</div>
+      <div class="phone" role="img" aria-label="Maqueta del mes en curso con una sola historia del mes">
+        <div class="row"><span class="t">Noviembre 2026</span><span class="tag">Este mes · faltan 12 días</span></div>
+        <div><div class="cap">Al 30 de noviembre tendrías</div><div class="big"><small>S/</small> 12,905</div></div>
+        <div class="pcard ladder">
+          <div class="row"><span>Empezaste noviembre con</span><span>11,375.00</span></div>
+          <div class="row"><span>Entró <span class="tag">real</span></span><span>+4,850.00</span></div>
+          <div class="row"><span>Salió <span class="tag">real</span></span><span>−2,707.50</span></div>
+          <div class="row"><span>Tienes hoy</span><span>13,517.50</span></div>
+          <div class="row"><span>Falta salir <span class="tag est">estimado</span></span><span>−612.50</span></div>
+          <div class="row end"><span>Al 30</span><span>12,905.00</span></div>
+        </div>
+        <div class="hint">Toca «Falta salir» para ver de dónde sale: 3 líneas con lo que les queda y 1 gasto ya fechado.</div>
+        <div class="pcard">
+          <div class="row"><span class="t">Comida</span><span class="tag over">excedida · +120</span></div>
+          <div class="bar"><i class="b-over" style="width:100%"></i></div>
+          <div class="row cap"><span>1,020 de 900 · no proyectamos más</span><span>+200 fechado el 28</span></div>
+        </div>
+        <div class="pcard">
+          <div class="row"><span class="t">Transporte</span><span>queda 112.50</span></div>
+          <div class="bar"><i class="b-real" style="width:44%"></i><i class="b-est" style="width:56%"></i></div>
+          <div class="row cap"><span>87.50 real de 200</span><span>límite desde oct.</span></div>
+        </div>
+        <div class="pcard">
+          <div class="row"><span class="t">Sin línea</span><span>−100 · +850</span></div>
+          <div class="row cap"><span>Todo lo que no está en el plan, también sin categoría</span><span>›</span></div>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <h3>2 · El detalle de una línea</h3>
+  <div class="pair">
+    <figure><div class="label-before">Hoy</div><img src="img/antes-06-detalle-linea-arriba.jpg" alt="Detalle de línea hoy" style="width:100%;max-width:300px;display:block;margin:0 auto;border-radius:24px;border:1px solid var(--line)"></figure>
+    <figure><div class="label-after">Propuesta</div>
+      <div class="phone" role="img" aria-label="Maqueta del detalle de la línea Comida">
+        <div class="row"><span class="t">Comida · noviembre</span><span class="tag over">excedida</span></div>
+        <div class="pcard">
+          <div class="row"><span class="cap">Límite</span><span><b>S/ 900</b> · <span style="color:#a9a3ff">Cambiar</span></span></div>
+          <div class="bar"><i class="b-over" style="width:100%"></i></div>
+          <div class="row"><span>Gastado</span><span>1,020.00</span></div>
+          <div class="row"><span>Fechado por delante</span><span>200.00</span></div>
+          <div class="row"><span>Lo que falta</span><span>0.00</span></div>
+          <div class="row cap"><span>Si sigues a este ritmo, al 30 serían</span><span>1,700</span></div>
+        </div>
+        <div class="pcard">
+          <div class="row"><span class="t">Registros del mes · 6</span><span style="color:#a9a3ff">Ver en Registros</span></div>
+          <div class="row cap"><span>28 nov · Mercado <span class="tag est">fechado</span></span><span>−200.00</span></div>
+          <div class="row cap"><span>11 nov · Devolución</span><span>+80.00</span></div>
+          <div class="row cap"><span>9 nov · Súper</span><span>−300.00</span></div>
+          <div class="row cap"><span>6 nov · Súper</span><span>−400.00</span></div>
+          <div class="row cap"><span>2 nov · Súper</span><span>−400.00</span></div>
+        </div>
+        <div class="pcard">
+          <div class="t">6 meses: real y límite</div>
+          <div style="display:flex;gap:6px;align-items:flex-end;height:54px">
+            <i style="flex:1;background:#8f89ff;height:60%"></i><i style="flex:1;background:#8f89ff;height:60%"></i><i style="flex:1;background:#8f89ff;height:60%"></i><i style="flex:1;background:#8f89ff;height:60%"></i><i style="flex:1;background:#8f89ff;height:60%"></i><i style="flex:1;background:#ff6fa6;height:81%"></i>
+          </div>
+          <div class="row cap"><span>jun · · · · · nov</span><span>línea de 900</span></div>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <h3>3 · Cambiar un límite</h3>
+  <div class="pair">
+    <figure><div class="label-before">Hoy</div><img src="img/antes-10-alcance-del-cambio.jpg" alt="Alerta de alcance hoy" style="width:100%;max-width:300px;display:block;margin:0 auto;border-radius:24px;border:1px solid var(--line)"></figure>
+    <figure><div class="label-after">Propuesta</div>
+      <div class="phone" role="img" aria-label="Maqueta de la hoja para cambiar el límite">
+        <div class="t">Límite de Comida</div>
+        <div class="seg"><b>Solo noviembre</b><b class="on">Desde noviembre</b><b>Todos los meses</b></div>
+        <div class="pcard"><div class="cap">Monto al mes</div><div class="big"><small>S/</small> 1,000</div></div>
+        <div class="hint">Cambia noviembre y los meses siguientes. Octubre y antes se quedan con 900. Tu promedio de los últimos 6 meses es 900.</div>
+        <div class="hint">Puedes poner 0 si este mes no piensas gastar en esto.</div>
+        <div class="btn">Guardar</div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section aria-labelledby="consumidores">
+  <span class="eyebrow">Qué más se mueve</span>
+  <h2 id="consumidores">Pantallas que leen estas proyecciones</h2>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Pantalla</th><th>Qué cifra toma</th><th>Con el modelo A</th></tr></thead>
+      <tbody>
+        <tr><td>Panel · «Ver proyectado» y su «Al 30»</td><td>Lo que falta de cada línea del plan + ritmo de lo sin línea</td><td>Misma pieza que el mes en curso. Sin doble conteo de fechados; lo sin línea por mediana.</td></tr>
+        <tr><td>Estadísticas · Tendencias, curva proyectada</td><td>Lo mismo que el Panel</td><td>Igual que el Panel.</td></tr>
+        <tr><td>Widget de inicio · Saldo con proyección</td><td>Lo mismo, hasta fin de año</td><td>Igual; meses futuros con límites fijos.</td></tr>
+        <tr><td>Flujo de caja · gráficas, comentario de la IA, avisos</td><td>El saldo acumulado del plan</td><td>Cambian mucho: hoy parten del saldo inicial (S/ 0 en la semilla).</td></tr>
+        <tr><td>Yala IA, Observaciones, notificaciones</td><td>No usan el plan</td><td>Nada.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="plan">
+  <span class="eyebrow">Plan de arreglo</span>
+  <h2 id="plan">Seis sesiones, una vista cada una</h2>
+  <p class="muted">Orden: S1 → S2 → S4 → S3 → S5 → S6. S1 necesita P1, P2, P4, P5 y P6. Todo queda en el ticket del backlog «Flujo de caja: replanteo del modelo y de la vista».</p>
+  <div>
+    <div class="sess"><span class="id">S1</span><div><b>Motor del mes</b> <span class="pill p-crit">Esfuerzo alto</span><br><span class="muted">Una cuenta por mes: real (todo, con signo, también sin categoría) + lo que falta por línea + lo sin línea por mediana. Mes en curso desde el saldo de hoy, pasados = real, futuros encadenan desde el cierre. Sin doble conteo de fechados, promedios sin el mes a medias. Paridad con el Panel y review adversarial (cálculo financiero).</span></div></div>
+    <div class="sess"><span class="id">S2</span><div><b>Detalle del mes y cápsulas</b> <span class="pill p-high">Medio</span><br><span class="muted">Una sola historia del mes, real y estimado distinguidos. Fuera las cuatro cifras y «Empezaste con S/ 0».</span></div></div>
+    <div class="sess"><span class="id">S3</span><div><b>Detalle de línea</b> <span class="pill p-high">Medio-alto</span><br><span class="muted">Todos los registros del mes, límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses contra el límite, aviso cuando el gasto está en la categoría madre sin subcategoría.</span></div></div>
+    <div class="sess"><span class="id">S4</span><div><b>Cambiar límite</b> <span class="pill p-high">Medio</span><br><span class="muted">Hoja única con el alcance antes de escribir, admite 0, dice qué meses cambian. Retira la hoja vieja de configuración, que hoy no se abre desde ningún sitio.</span></div></div>
+    <div class="sess"><span class="id">S5</span><div><b>Crear el plan</b> <span class="pill p-ok">Bajo-medio</span><br><span class="muted">Sin «¿Con cuánto empiezas?»; líneas por categoría por defecto; límites fijos sembrados con tu promedio.</span></div></div>
+    <div class="sess"><span class="id">S6</span><div><b>Panel, Tendencias y widget</b> <span class="pill p-high">Medio</span><br><span class="muted">Los tres con la pieza de S1. Cierra el ticket del fechado contado dos veces.</span></div></div>
+  </div>
+</section>
+
+<section aria-labelledby="tickets">
+  <span class="eyebrow">Tickets que ya existían</span>
+  <h2 id="tickets">Revisados</h2>
+  <div class="grid2">
+    <div class="card"><div class="verdict"><span class="pill p-crit">Vigente</span><b>Con plan, un gasto ya fechado en un mes futuro se proyecta dos veces</b></div><p class="muted">Medido: diciembre proyecta 3,214.58 de gasto; 150 son el mismo movimiento dos veces (la línea de ocio entera + el fechado del 10). Se cierra con S1 y S6.</p></div>
+    <div class="card"><div class="verdict"><span class="pill p-ok">Obsoleto</span><b>El flujo de caja avanzado no limita a nadie</b></div><p class="muted">Ya decidiste (decisión 2 de 2.3: gratis entero) y el lote 08 retiró ese permiso; un test fija que no vuelva. Se puede cerrar. No lo moví: estaba fuera de lo que este encargo podía tocar.</p></div>
+  </div>
+</section>
+
+<footer class="muted"><small>Evidencia en el repo: <code>docs/analisis/2026-11-17-flujo-de-caja-replanteo/</code> (13 capturas, la prueba-sonda y su salida). La sonda corrió el código real de la app con un escenario armado; no queda en los tests.</small></footer>
+</div>
+
+<script>
+const FINDINGS = [
+  {sev:"crit", t:"Tres cifras de fin de mes que no cuadran", b:"«Al 30» (12,905), «Este mes te quedaría» (1,700, todo lo planeado) y «Si sigue así, a fin de mayo» (desde el saldo inicial). En la semilla: hoy 72,181 y «a fin de mayo tendrías 24,863»."},
+  {sev:"crit", t:"El saldo inicial se desliza al mes en curso", b:"Al crear el plan no se guarda fecha, y sin fecha se aplica siempre en el mes que estás viendo hoy. Un plan de octubre arranca en noviembre con el saldo de octubre."},
+  {sev:"crit", t:"El mes de inicio cuenta dos veces lo ya pasado", b:"Saldo de hoy 13,517.50 + neto planeado del mes entero 1,700 = 15,217.50. El real a fin de mes es 12,905: sobran 2,312.50, que ya estaban en el saldo."},
+  {sev:"crit", t:"Los meses cerrados enseñan el plan, no lo que pasó", b:"Octubre (semilla): «te quedó 3,914» con freelance planeado 3,764 y llegado 1,373. Y una línea excedida (comida 1,380 de 900) sigue sumando 900 al total."},
+  {sev:"high", t:"Lo que no tiene categoría no existe para el plan", b:"−100 y +250 sin categoría no salen ni en líneas ni en «Gastos no considerados». Panel, Registros y Estadísticas sí los cuentan."},
+  {sev:"high", t:"Las devoluciones suman como gasto", b:"Una devolución de +80 en Comida suma 80 en vez de restar: 1,380 en lugar de 1,220."},
+  {sev:"high", t:"«Real» incluye lo fechado después de hoy", b:"El gasto del día 28 ya cuenta como gastado el 18: la barra y el porcentaje suben antes de tiempo."},
+  {sev:"high", t:"El mes a medias contamina los promedios", b:"Comida de diciembre = 980 (por los 1,380 de noviembre a medias); transporte = 181.25 (por los 87.50 a medias)."},
+  {sev:"high", t:"«Falta salir» castiga de más (escenario 2)", b:"Línea por subcategoría y el súper anotado en la categoría madre (+500 ya pagados) y un gasto puntual de 2,400 hace 45 días repartido por el ritmo (+467): falta salir 1,066.67 cuando faltan ~100."},
+  {sev:"high", t:"El futuro olvida lo que no tiene línea", b:"Noviembre suma 559 de «Gastos no considerados»; diciembre en adelante, cero. Los meses que vienen salen más optimistas que el actual."},
+  {sev:"high", t:"El límite con promedio se mueve solo", b:"Hobbies: 142 este mes, 120 en diciembre, 122 en enero, sin que nadie lo cambie."},
+  {sev:"ok", t:"«Al 30 tendrías» está bien hecho", b:"Parte del saldo de hoy y suma solo lo que falta; la excedida no proyecta más; un fechado no se duplica dentro del mes. Es la base del modelo recomendado."}
+];
+const fEl = document.getElementById("findings");
+for (const f of FINDINGS) {
+  const c = document.createElement("div"); c.className = "card";
+  const label = f.sev === "crit" ? ["p-crit","Grave"] : f.sev === "high" ? ["p-high","Importante"] : ["p-ok","Está bien"];
+  const top = document.createElement("div"); top.className = "verdict";
+  const pill = document.createElement("span"); pill.className = "pill " + label[0]; pill.textContent = label[1];
+  const h = document.createElement("b"); h.textContent = f.t;
+  top.append(pill, h);
+  const p = document.createElement("p"); p.className = "muted"; p.textContent = f.b;
+  c.append(top, p); fEl.append(c);
+}
+
+const DECISIONS = [
+  {id:"P1", q:"¿Qué modelo seguimos?", opts:[["A","A · Mes real + lo que falta",true],["B","B · Plan puro"],["C","C · Proyección automática"]]},
+  {id:"P2", q:"Una línea excedida, ¿qué cuenta el resto del mes?", opts:[["real","Lo real y no se proyecta más",true],["ritmo","Sigue al ritmo del mes"]]},
+  {id:"P3", q:"Al cambiar un límite, ¿qué alcance viene marcado?", opts:[["desde","Desde este mes en adelante",true],["solo","Solo este mes"]]},
+  {id:"P4", q:"¿Qué es el límite de una línea?", opts:[["fijo","Un monto fijo, sembrado con tu promedio al crearla",true],["movil","El promedio móvil, que cambia cada mes"]]},
+  {id:"P5", q:"¿Mantenemos el saldo inicial que se escribe a mano?", opts:[["retirar","No: siempre parte del saldo de tus cuentas",true],["opcion","Sí, como opción avanzada"]]},
+  {id:"P6", q:"Lo que no tiene línea, ¿cómo entra en los meses futuros?", opts:[["mediana","Gastos por la mediana de 6 meses; ingresos no",true],["nada","No entra"]]}
+];
+const state = {}; let db = null; const versions = {};
+const statusEl = document.getElementById("db-status");
+const dEl = document.getElementById("decisions");
+function render() {
+  dEl.replaceChildren();
+  for (const d of DECISIONS) {
+    const c = document.createElement("div"); c.className = "card dec";
+    const h = document.createElement("h3"); h.textContent = d.id + " · " + d.q;
+    const opts = document.createElement("div"); opts.className = "opts";
+    for (const [val, label, rec] of d.opts) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "opt"; b.id = "opt-" + d.id + "-" + val;
+      b.setAttribute("aria-pressed", String(state[d.id]?.opcion === val));
+      b.textContent = label;
+      if (rec) { const r = document.createElement("span"); r.className = "rec"; r.textContent = "Recomendada"; b.append(r); }
+      b.addEventListener("click", () => choose(d.id, val));
+      opts.append(b);
+    }
+    const ta = document.createElement("textarea"); ta.id = "nota-" + d.id; ta.placeholder = "Nota (opcional)";
+    ta.value = state[d.id]?.nota || "";
+    ta.addEventListener("change", () => save(d.id, {nota: ta.value}));
+    c.append(h, opts, ta); dEl.append(c);
+  }
+}
+async function save(id, patch) {
+  state[id] = Object.assign({}, state[id], patch, {fecha: new Date().toISOString()});
+  render();
+  if (!db) { statusEl.textContent = "Sin conexión con el guardado: abre la página con tu cuenta para que quede registrado."; return; }
+  try { await db.doc("decisiones/" + id).set(state[id]); statusEl.textContent = "Guardado."; }
+  catch (e) { statusEl.textContent = "No se pudo guardar (" + (e && e.code || "error") + "). Vuelve a intentarlo."; }
+}
+function choose(id, val) { save(id, {opcion: val}); }
+document.getElementById("all-rec").addEventListener("click", async () => {
+  for (const d of DECISIONS) { const rec = d.opts.find(o => o[2]); if (rec) await save(d.id, {opcion: rec[0]}); }
+});
+render();
+(async () => {
+  const timer = setTimeout(() => { if (!db) statusEl.textContent = "Solo lectura: no hay guardado disponible en esta vista."; }, 10000);
+  try {
+    db = window.claude ? await window.claude.use("db") : null;
+  } catch (e) { db = null; }
+  clearTimeout(timer);
+  if (!db) { statusEl.textContent = "Solo lectura: abre la página con tu cuenta para elegir."; return; }
+  statusEl.textContent = "Elige una opción en cada decisión.";
+  try {
+    db.collection("decisiones").onSnapshot(snap => {
+      const docs = snap.docs || snap;
+      for (const doc of docs) { const data = typeof doc.data === "function" ? doc.data() : doc.data; if (data) state[doc.id] = data; }
+      render();
+      const n = Object.values(state).filter(s => s && s.opcion).length;
+      statusEl.textContent = n ? n + " de 6 decididas." : "Elige una opción en cada decisión.";
+    }, () => { statusEl.textContent = "No se pudieron leer tus respuestas."; });
+  } catch (e) { statusEl.textContent = "No se pudieron leer tus respuestas."; }
+})();
+</script>
