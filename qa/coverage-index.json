@@ -227,6 +227,23 @@
       "lastVerified": "2026-11-18"
     },
     {
+      "area": "account-creation-wizard",
+      "codeGlobs": [
+        "Yala/App/Views/Accounts/AsistenteCuenta/**",
+        "Yala/App/Views/Settings/AccountsSettingsListView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Accounts/AccountFormComponents.swift"
+      ],
+      "scenarioIDs": [
+        "F-ACC-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/AsistenteCuentaUITests | 2026-11-18 (encargo del 18-nov): «Nueva cuenta» (Ajustes › Cuentas y el Panel) abre el asistente por pasos; recorrido completo de una tarjeta hasta crear (nombre repetido apaga «Siguiente», días de cierre y pago, recordatorio, volver al resumen), «Usar formulario» con lo respondido y su X que pregunta, cerrar con respuestas pregunta y Atrás. Editar sigue en el formulario; crear desde Nuevo registro y desde «falta un paso» también. unit:YalaTests/AsistenteCuenta/AsistenteCuentaTests (reglas, borrador que guarda Primeros pasos, paso al formulario, textos en 16 idiomas). Los XCUITest del formulario de crear pasan por «Usar formulario» (pasarAlFormularioDeNuevaCuenta).",
+      "owner": "",
+      "lastVerified": "2026-11-18"
+    },
+    {
       "area": "budget-alerts-push-notifications",
       "codeGlobs": [
         "Yala/Services/BudgetAlertService.swift",

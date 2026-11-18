@@ -40,6 +40,7 @@ final class MultiCurrencyDiscoveryUITests: XCTestCase {
         let addButton = app.buttons["accounts_add_button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció accounts_add_button.")
         addButton.tap()
+        app.pasarAlFormularioDeNuevaCuenta()
 
         let nameField = app.textFields["account_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No apareció el formulario de cuenta.")
