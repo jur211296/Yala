@@ -45,3 +45,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Disco de la Mini con simulador y build de iPhone](reference_disco_de_la_mini_con_simulador_y_build_de_iphone.md) — DD propia 7,8 GB, SE creado 4,5 GB, iphoneos 2 GB: qué borrar y cuándo.
 - [iPhone bloqueado: pídelo en el chat](feedback_iphone_bloqueado_se_pide_en_el_chat.md) — 17-nov rechazó request_human_action; contestó «desbloqueado».
 - [Gate con la DerivedData de XcodeBuildMCP](reference_gate_con_la_derived_data_de_xcodebuildmcp.md) — disco justo: `-derivedDataPath` a la subcarpeta con hash, no al padre (duplica 6 GB).
+- [Disco justo: esquema Yala a ExtDev con paquetes locales](reference_disco_justo_esquema_yala_a_extdev_con_paquetes_locales.md) — `-clonedSourcePackagesDirPath` local evita el cuelgue; Yala Dev en local.
