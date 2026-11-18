@@ -46,9 +46,9 @@ struct ScheduledPaymentRowView: View {
         } else {
             HStack(spacing: DS.Spacing.md) {
                 Group {
-                    // El logo del servicio, si lo hay (card 9nn7, 2.3); si no, el icono de su subcategoría.
-                    if let brand = summary.payment.subscriptionBrand {
-                        SubscriptionBrandBadge(brand: brand, isDecorative: true)
+                    // El logo del comercio, si lo hay (cards 9nn7 y logos reales, 2.3); si no, el icono de su subcategoría.
+                    if let logo = summary.payment.paymentLogo {
+                        SubscriptionBrandBadge(logo: logo, isDecorative: true)
                     } else {
                         paymentIcon
                     }

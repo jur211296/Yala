@@ -1046,6 +1046,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| records-and-panel-merchant-logos | backlog | tickets/backlog/records-and-panel-merchant-logos.md |
 | records-bulk-selection-undo-and-counts | done | tickets/done/records-bulk-selection-undo-and-counts.md |
 | records-calendar-folds-to-the-chosen-week | done | tickets/done/records-calendar-folds-to-the-chosen-week.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
@@ -1169,7 +1170,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
 | scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | scheduled-payments-period-wheel-closes-the-sheet | done | tickets/done/scheduled-payments-period-wheel-closes-the-sheet.md |
-| scheduled-payments-real-brand-logos | backlog | tickets/backlog/scheduled-payments-real-brand-logos.md |
+| scheduled-payments-real-brand-logos | done | tickets/done/scheduled-payments-real-brand-logos.md |
 | scheduled-payments-show-subscription-logos | qa | tickets/qa/scheduled-payments-show-subscription-logos.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | done | tickets/done/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
