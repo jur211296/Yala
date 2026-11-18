@@ -1,10 +1,10 @@
 ---
 id: projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month
-status: backlog
+status: done
 priority: medium
 area: estadisticas
 created: 2026-11-10
-updated: 2026-11-10
+updated: 2026-11-18
 source: review adversarial del lote 02 de mejoras necesarias de 2.3 (PR del lote)
 ---
 # Con plan, un gasto ya fechado en un mes futuro se proyecta dos veces
@@ -25,3 +25,10 @@ tiene», también lo fechado por delante. Con esto, los dos caminos discrepan en
 **Para cerrarlo.** Un test con plan, horizonte a diciembre y un gasto cubierto fechado en diciembre, que fije 900; luego
 descontar lo ya fechado del mes futuro en `planRemaining` (o que el calculador del plan lo cuente como real en meses
 futuros, mirando antes qué más lee `realAmount`).
+
+## Cerrado (2026-11-18, S1 del replanteo del flujo de caja)
+
+El motor del mes (`FlujoMotorMes`) calcula lo que falta de cada línea como límite − real − fechado − pendiente, en el
+mes en curso y en los que vienen, y `ProjectedFlowBuilder.planRemaining` lo pide a ese motor: lo fechado entra una vez,
+dentro de su línea. Lo fija `FlujoMotorMesTests.loFechadoEnUnMesQueVieneEntraUnaVezDentroDeSuLinea` (ocio de diciembre:
+300, no 300 + 150).

@@ -441,7 +441,10 @@ struct ProjectedFlowBuilderPlanTests {
             context: context
         )
         #expect(built.expenseSource == .plan)
-        #expect(built.incomeSource == .scheduledOnly, "Sin líneas de ingreso ni historia, el ingreso no se estima")
+        // Con plan, los dos lados salen del motor del mes (P6 del replanteo, 18-nov-2026): sin líneas de ingreso, el
+        // ingreso no se proyecta.
+        #expect(built.incomeSource == .plan)
+        #expect(days.reduce(0.0) { $0 + (built.flows[$1]?.income ?? 0) } == 0)
         let total = days.reduce(0.0) { $0 + (built.flows[$1]?.expense ?? 0) }
         #expect(abs(total - 600) < 0.001, "El mes entero por delante lleva su plan entero")
 
@@ -457,10 +460,11 @@ struct ProjectedFlowBuilderPlanTests {
         #expect(filtered.expenseSource == .scheduledOnly, "Con filtros manda el ritmo (10A); sin historia, nada")
     }
 
-    /// Lo que ninguna línea cubre («Otros gastos» del flujo de caja) sigue al ritmo y se suma al plan: sin esto, un plan
-    /// con pocas líneas proyectaba menos gasto que no tener plan. El fixture lleva lo que separa las reglas: un gasto de
-    /// la categoría de la línea (no entra en el ritmo), uno de otra categoría y uno sin categoría (entran).
-    @Test func plan_spendingOutsideItsLinesFollowsTheRhythm() throws {
+    /// Lo que ninguna línea cubre («Otros gastos» del flujo de caja) se proyecta por la mediana de 6 meses y se suma al
+    /// plan (P6 del replanteo, 18-nov-2026; antes seguía al ritmo, y un gasto puntual se repartía en el mes). El ingreso
+    /// sin línea no se proyecta. El fixture lleva lo que separa las reglas: un gasto de la categoría de la línea y su
+    /// devolución (son de la línea), uno de otra categoría y uno sin categoría (son «otros»), y un ingreso sin categoría.
+    @Test func plan_spendingOutsideItsLinesFollowsTheMedian() throws {
         let context = try makeTestContext()
         let rent = YalaCategory(name: "Alquiler", colorHex: "#000", isIncome: false)
         let food = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
@@ -473,36 +477,27 @@ struct ProjectedFlowBuilderPlanTests {
         line.plan = plan
         context.insert(line)
 
-        let calendar = Calendar.current
-        let now = Date.now
-        let todayStart = calendar.startOfDay(for: now)
-        func daysAgo(_ n: Int) throws -> Date {
-            let day = try #require(calendar.date(byAdding: .day, value: -n, to: todayStart))
-            return day.addingTimeInterval(12 * 3600)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Lima") ?? .gmt
+        func day(_ month: Int, _ day: Int) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: 12)) ?? .distantPast
         }
-        // Una línea «pago planificado» solo aporta sus pagos: lo demás de su categoría sigue al ritmo.
-        let subscriptions = YalaCategory(name: "Suscripciones", colorHex: "#000", isIncome: false)
-        context.insert(subscriptions)
-        let netflix = CashFlowLine(name: "Netflix", isIncome: false, estimationMethod: .scheduled, category: subscriptions)
-        netflix.plan = plan
-        context.insert(netflix)
-
-        let history = [
-            TransactionItem(date: try daysAgo(30), amount: -300, currencyCode: "PEN", category: food),
-            TransactionItem(date: try daysAgo(20), amount: -600, currencyCode: "PEN", category: rent),
-            TransactionItem(date: try daysAgo(18), amount: 60, currencyCode: "PEN", category: rent),    // devolución: es de la línea
-            TransactionItem(date: try daysAgo(15), amount: -30, currencyCode: "PEN", category: subscriptions),
-            TransactionItem(date: try daysAgo(10), amount: -90, currencyCode: "PEN"),
-            TransactionItem(date: try daysAgo(5), amount: 150, currencyCode: "PEN"),                     // ingreso sin categoría
-        ]
+        let now = day(11, 18)
+        var history: [TransactionItem] = []
+        for month in 8...10 {
+            history.append(TransactionItem(date: day(month, 5), amount: -300, currencyCode: "PEN", category: food))
+            history.append(TransactionItem(date: day(month, 3), amount: -600, currencyCode: "PEN", category: rent))
+            history.append(TransactionItem(date: day(month, 12), amount: -90, currencyCode: "PEN"))
+        }
+        history.append(TransactionItem(date: day(10, 8), amount: 60, currencyCode: "PEN", category: rent))  // devolución
+        history.append(TransactionItem(date: day(10, 20), amount: 150, currencyCode: "PEN"))               // ingreso sin categoría
         history.forEach { context.insert($0) }
         try context.save()
 
-        let nextMonth = try #require(calendar.date(byAdding: .month, value: 1, to: now))
-        let nextMonthInterval = try #require(calendar.dateInterval(of: .month, for: nextMonth))
-        let horizon = DateInterval(start: nextMonthInterval.start, end: nextMonthInterval.end.addingTimeInterval(-1))
+        let december = try #require(calendar.dateInterval(of: .month, for: day(12, 1)))
+        let horizon = DateInterval(start: december.start, end: december.end.addingTimeInterval(-1))
         let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
-            .filter { $0 >= nextMonthInterval.start }
+            .filter { $0 >= december.start }
 
         let built = ProjectedFlowBuilder.build(
             ProjectedFlowBuilder.Inputs(
@@ -515,11 +510,9 @@ struct ProjectedFlowBuilderPlanTests {
         )
         #expect(built.expenseSource == .plan)
         let total = days.reduce(0.0) { $0 + (built.flows[$1]?.expense ?? 0) }
-        let outsidePerDay = (300.0 + 30.0 + 90.0) / 30.0
-        #expect(abs(total - (600 + outsidePerDay * Double(days.count))) < 0.001,
-                "La línea entera, más el ritmo de lo que no cubre (sin el alquiler ni su devolución, que son de la línea)")
-        #expect(built.incomeSource == .rhythm, "Sin líneas de ingreso, el ingreso sigue al ritmo")
-        let income = days.reduce(0.0) { $0 + (built.flows[$1]?.income ?? 0) }
-        #expect(abs(income - 150.0 / 30.0 * Double(days.count)) < 0.001)
+        #expect(abs(total - (600 + 390)) < 0.001,
+                "La línea entera, más la mediana de lo que no cubre (sin el alquiler ni su devolución): \(total)")
+        #expect(built.incomeSource == .plan)
+        #expect(days.reduce(0.0) { $0 + (built.flows[$1]?.income ?? 0) } == 0, "El ingreso sin línea no se proyecta")
     }
 }

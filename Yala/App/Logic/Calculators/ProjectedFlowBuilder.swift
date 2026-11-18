@@ -157,18 +157,6 @@ enum ProjectedFlowBuilder {
         let rhythm = rhythmPerDay(inputs)
         if rhythm.isApproximate { isApproximate = true }
         let rhythmFlows = rhythm.perDay.map { rhythmLeftOfEachMonth(inputs, perDay: $0) }
-        // Lo que ninguna línea del plan cubre («Otros» del flujo de caja) sigue al ritmo: sin esto, un plan con pocas
-        // líneas proyectaba menos gasto que no tener plan (card «Mejorar el flujo de caja para que nutra el Flujo
-        // proyectado»).
-        let uncovered: (flows: [Date: DayFlow], isApproximate: Bool)? = plan.flatMap { plan in
-            let isCovered: (TransactionItem) -> Bool = { plan.coverage.covers($0) }
-            let outside = rhythmPerDay(inputs, excluding: isCovered)
-            guard let perDay = outside.perDay else { return outside.isApproximate ? ([:], true) : nil }
-            let left = rhythmLeftOfEachMonth(inputs, perDay: perDay, excluding: isCovered)
-            return (left.flows, outside.isApproximate || left.isApproximate)
-        }
-        if uncovered?.isApproximate == true { isApproximate = true }
-
         var incomeSource: ProjectedFlowCalculator.Source = .scheduledOnly
         var expenseSource: ProjectedFlowCalculator.Source = .scheduledOnly
         var unplanned: [Date: DayFlow] = [:]
@@ -177,19 +165,13 @@ enum ProjectedFlowBuilder {
             let spread = ProjectedFlowCalculator.spread(
                 remainingByMonth: plan.remainingByMonth, over: inputs.days, today: inputs.today, calendar: inputs.calendar
             )
-            for day in inputs.days {
-                let fromPlan = spread[day] ?? DayFlow()
-                var flow = DayFlow()
-                let outside = uncovered?.flows[day] ?? DayFlow()
-                let fromRhythm = rhythmFlows?.flows[day] ?? DayFlow()
-                flow.income = plan.hasIncomeLines ? fromPlan.income + outside.income : fromRhythm.income
-                flow.expense = plan.hasExpenseLines ? fromPlan.expense + outside.expense : fromRhythm.expense
-                unplanned[day] = flow
-            }
-            incomeSource = plan.hasIncomeLines ? .plan : (rhythm.perDay == nil ? .scheduledOnly : .rhythm)
-            expenseSource = plan.hasExpenseLines ? .plan : (rhythm.perDay == nil ? .scheduledOnly : .rhythm)
-            // Lo que el mes ya tiene solo marca «≈» si el ritmo entero se pinta en algún lado.
-            if (!plan.hasIncomeLines || !plan.hasExpenseLines), rhythmFlows?.isApproximate == true { isApproximate = true }
+            // Con plan, los dos lados salen del motor del mes del flujo de caja (`FlujoMotorMes`): lo que les falta a
+            // las líneas y, en gastos, «otros» por la mediana de 6 meses; los ingresos sin línea no se proyectan (P6
+            // del replanteo, 18-nov-2026). Antes lo no cubierto seguía al ritmo, y un gasto puntual de hace 45 días
+            // se repartía en el mes (hallazgo 10).
+            for day in inputs.days { unplanned[day] = spread[day] ?? DayFlow() }
+            incomeSource = .plan
+            expenseSource = .plan
         } else if let rhythmFlows {
             if rhythmFlows.isApproximate { isApproximate = true }
             for day in inputs.days { unplanned[day] = rhythmFlows.flows[day] ?? DayFlow() }
@@ -404,39 +386,6 @@ enum ProjectedFlowBuilder {
         let hasIncomeLines: Bool
         let hasExpenseLines: Bool
         let isApproximate: Bool
-        let coverage: PlanCoverage
-    }
-
-    /// Qué movimientos cubre ya una línea activa del plan, con la regla de «Otros» del flujo de caja
-    /// (`CashFlowProjectionCalculator.calculateUncategorizedTotal`): una línea con subcategoría cubre esa subcategoría;
-    /// una sin ella, la categoría entera. Por lado: una línea de gasto no cubre un ingreso de su misma categoría. Lo sin
-    /// categoría no lo cubre ninguna. Una línea «pago planificado» no cubre nada: solo aporta sus pagos, que van en su
-    /// día, y lo demás de su categoría (otra suscripción sin pago) quedaría sin contar; lo enlazado al pago ya sale del
-    /// ritmo por su `scheduledPaymentID` (lo encontró la review del 2026-11-06).
-    struct PlanCoverage {
-        var incomeCategories: Set<PersistentIdentifier> = []
-        var incomeSubcategories: Set<PersistentIdentifier> = []
-        var expenseCategories: Set<PersistentIdentifier> = []
-        var expenseSubcategories: Set<PersistentIdentifier> = []
-
-        init(lines: [CashFlowLine]) {
-            for line in lines where line.isEnabled && line.method != .scheduled {
-                if let subID = line.subcategory?.persistentModelID {
-                    if line.isIncome { incomeSubcategories.insert(subID) } else { expenseSubcategories.insert(subID) }
-                } else if let catID = line.category?.persistentModelID {
-                    if line.isIncome { incomeCategories.insert(catID) } else { expenseCategories.insert(catID) }
-                }
-            }
-        }
-
-        func covers(_ tx: TransactionItem) -> Bool {
-            guard let categoryID = tx.category?.persistentModelID else { return false }
-            let isIncome = TransactionClassificationLogic.isIncome(tx)
-            let categories = isIncome ? incomeCategories : expenseCategories
-            if categories.contains(categoryID) { return true }
-            guard let subID = tx.subcategory?.persistentModelID else { return false }
-            return (isIncome ? incomeSubcategories : expenseSubcategories).contains(subID)
-        }
     }
 
     static func planRemaining(_ inputs: Inputs, occurrences: [Occurrence], context: ModelContext?) -> PlanRemaining? {
@@ -456,7 +405,8 @@ enum ProjectedFlowBuilder {
         let lines = (plan.lines ?? []).filter(\.isEnabled)
         let hasIncomeLines = lines.contains(where: \.isIncome)
         let hasExpenseLines = lines.contains { !$0.isIncome }
-        guard hasIncomeLines || hasExpenseLines else { return nil }
+        // Un plan sin líneas también manda: el flujo de caja lo proyecta con el motor del mes («otros» por la mediana),
+        // y «Al 30» tiene que ser la misma cifra en las dos pantallas.
 
         let calendar = inputs.calendar
         guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today)?.start,
@@ -464,59 +414,38 @@ enum ProjectedFlowBuilder {
               let lastMonth = calendar.dateInterval(of: .month, for: lastDay)?.start else { return nil }
         let monthsAhead = max(calendar.dateComponents([.month], from: currentMonth, to: lastMonth).month ?? 0, 0)
 
+        // Lo real son los movimientos que cuentan para esta cifra (con Saldo, los de las cuentas del saldo), como en el
+        // flujo de caja; los pagos pendientes, los mismos que se pintan en su día.
         let projection = CashFlowProjectionCalculator.calculate(
             plan: plan,
             lines: lines,
-            transactions: inputs.allTransactions,
+            transactions: inputs.countedTransactions,
             allExpenseCategories: [],
             scheduledPayments: inputs.scheduledPayments,
             monthsBack: 0,
             monthsAhead: monthsAhead,
             currencyCode: inputs.currencyCode,
             adjustment: inputs.adjustment,
-            converter: inputs.converter
+            converter: inputs.converter,
+            occurrences: occurrences,
+            historyTransactions: inputs.allTransactions,
+            includesSubcategoryBreakdown: false,
+            now: inputs.today,
+            calendar: calendar
         )
-        let linesByID = Dictionary(lines.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-
         var remainingByMonth: [Date: DayFlow] = [:]
-        var approximate = false
-        for month in projection.months {
-            guard let monthStart = calendar.dateInterval(of: .month, for: month.date)?.start,
-                  monthStart >= currentMonth else { continue }
-            let monthOccurrences = occurrences.filter { $0.monthStart == monthStart }
-            var remaining = DayFlow()
-            for result in month.incomeLines + month.expenseLines {
-                guard let line = linesByID[result.lineID] else { continue }
-                // Una línea de método «pago planificado» ya está entera en sus pagos, que van en su día.
-                guard line.method != .scheduled else { continue }
-                if result.isPlannedApproximate { approximate = true }
-                let pending = monthOccurrences
-                    .filter { occurrence in covers(line, occurrence) }
-                    .reduce(0.0) { $0 + (line.isIncome ? $1.flow.income : $1.flow.expense) }
-                let left = ProjectedFlowCalculator.lineRemaining(
-                    planned: result.plannedAmount, real: result.realAmount ?? 0, pendingScheduled: pending
-                )
-                if line.isIncome { remaining.income += left } else { remaining.expense += left }
-            }
-            remainingByMonth[monthStart] = remaining
+        for month in projection.months where !month.isPast {
+            guard let monthStart = calendar.dateInterval(of: .month, for: month.date)?.start else { continue }
+            remainingByMonth[monthStart] = DayFlow(
+                income: month.spreadableIncomeLeft, expense: month.spreadableExpenseLeft
+            )
         }
+        let approximate = projection.isApproximate
         return PlanRemaining(
             remainingByMonth: remainingByMonth,
             hasIncomeLines: hasIncomeLines,
             hasExpenseLines: hasExpenseLines,
-            isApproximate: approximate,
-            coverage: PlanCoverage(lines: lines)
+            isApproximate: approximate
         )
-    }
-
-    /// ¿El pago cae en la línea? Por subcategoría si la línea tiene una; si no, por categoría.
-    private static func covers(_ line: CashFlowLine, _ occurrence: Occurrence) -> Bool {
-        if let subcategoryID = line.subcategory?.persistentModelID {
-            return occurrence.subcategoryID == subcategoryID
-        }
-        if let categoryID = line.category?.persistentModelID {
-            return occurrence.categoryID == categoryID
-        }
-        return false
     }
 }
