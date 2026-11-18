@@ -1,10 +1,10 @@
 ---
 id: records-and-panel-merchant-logos
-status: backlog
+status: done
 priority: medium
-area: "records, panel, statistics"
+area: "scheduled-payments"
 created: 2026-11-17
-updated: 2026-11-17
+updated: 2026-11-18
 source: "encargo logos reales y banco amplio de comercios (2026-11-17), punto «si el mismo catálogo serviría para los registros»"
 ---
 
@@ -35,3 +35,21 @@ un registro. Sin campo nuevo: se decide al pintar, por la descripción, como en 
 
 Decidido el punto 1 con Jürgen, medido el 3 sobre el corpus, y las filas de Registros y del Panel enseñan el logo donde
 casa, sin coste visible al desplazar una lista larga.
+
+## Decisión (Jürgen, 2026-11-18, 06:26 Lima)
+
+El logo va **solo en Pagos planificados**, en sus tres vistas: lista, línea de tiempo y calendario. **No en Registros ni
+en el Panel.** Con eso los puntos 1 y 3 de arriba dejan de aplicar a los movimientos: no se pinta nada sobre su icono.
+
+## Hecho (2026-11-18)
+
+- Las tres vistas ya pintaban el logo, cada una con su propio casado. Ahora deciden con una pieza común
+  (`Yala/App/Views/Planning/LogoComercio/PagoLogoComercio.swift`): logo si el pago casa con el banco o tiene uno
+  elegido; si no, lo de antes (icono de la subcategoría en la lista, nada en la línea de tiempo, punto en el calendario).
+- **Coste al desplazar:** la pieza recuerda el casado por (logo guardado, nombre). Antes cada pintado recorría ~2.000
+  formas, y el calendario lo hacía dos veces por pago y celda. Renombrar o elegir otro logo cambia la clave.
+- **Letra grande:** la fila de la lista enseñaba el icono de la subcategoría aunque el pago tuviera logo. Ahora enseña
+  el logo, como a tamaño normal.
+- **Medido sobre la semilla `realista`:** de 8 pagos casan Netflix, Spotify e iCloud+; gimnasio, alquiler, teléfono,
+  internet y seguro se quedan con su icono, también en los 16 idiomas. Lo fija
+  `YalaTests/PagosLogoComercio/PagoLogoComercioSemillaTests`.

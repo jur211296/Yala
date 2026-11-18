@@ -4024,15 +4024,16 @@
         "Yala/App/Logic/MerchantLogos/**",
         "Yala/App/Views/Planning/MerchantLogoPicker.swift",
         "Yala/App/Views/Planning/PagosRecurrentes/RecurringProposalsCard.swift",
-        "Yala/App/Views/Planning/PagosRecurrentes/RecurringProposalSheet.swift"
+        "Yala/App/Views/Planning/PagosRecurrentes/RecurringProposalSheet.swift",
+        "Yala/App/Views/Planning/LogoComercio/**"
       ],
       "scenarioIDs": [
         "P23-LOGOS-01"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/Flows/MerchantLogosUITests + xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_scheduledPayment_knownName_proposesItsLogo_canRemoveIt_andTheListShowsIt + unit:YalaTests/MerchantLogos/MerchantCatalogTests + unit:YalaTests/SubscriptionBrandCatalogTests | 2026-11-17 (card scheduled-payments-real-brand-logos): logos reales empaquetados (MerchantCatalog.json + MerchantLogos.xcassets, generados por scripts/merchant_logos.py, sin red en el telefono) para un banco de 666 comercios con prioridad Peru y Latam; casado tolerante (sufijos J1/P2, tramites delante, razon social detras); el logo se elige a mano en una hoja con buscador. Sin imagen, la inicial sobre color de siempre. | 2026-11-06 (card 9nn7): un nombre conocido propone su distintivo; se quita, se elige otro o vuelve al automatico.",
+      "coverage": "xcuitest:YalaUITests/Flows/MerchantLogosUITests + xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_scheduledPayment_knownName_proposesItsLogo_canRemoveIt_andTheListShowsIt + unit:YalaTests/MerchantLogos/MerchantCatalogTests + unit:YalaTests/SubscriptionBrandCatalogTests + unit:YalaTests/PagosLogoComercio/PagoLogoComercioTests,PagoLogoComercioSemillaTests | 2026-11-18 (logo del comercio solo en Pagos planificados, decisión de Jürgen): la lista, la línea de tiempo y el calendario deciden logo o icono con una pieza común (PagoLogoComercio) que recuerda el casado por (logo guardado, nombre); la fila con letra grande enseña el logo (antes, el icono). Medido sobre la semilla realista: casan Netflix, Spotify e iCloud+; los genéricos no casan en los 16 idiomas. | 2026-11-17 (card scheduled-payments-real-brand-logos): logos reales empaquetados (MerchantCatalog.json + MerchantLogos.xcassets, generados por scripts/merchant_logos.py, sin red en el telefono) para un banco de 666 comercios con prioridad Peru y Latam; casado tolerante (sufijos J1/P2, tramites delante, razon social detras); el logo se elige a mano en una hoja con buscador. Sin imagen, la inicial sobre color de siempre. | 2026-11-06 (card 9nn7): un nombre conocido propone su distintivo; se quita, se elige otro o vuelve al automatico.",
       "owner": "frank",
-      "lastVerified": "2026-11-17"
+      "lastVerified": "2026-11-18"
     },
     {
       "area": "new-record-description-suggestions",

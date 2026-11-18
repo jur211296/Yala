@@ -65,6 +65,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
+| inbox-approve-and-make-recurring-no-longer-opens-the-editor | backlog | tickets/backlog/inbox-approve-and-make-recurring-no-longer-opens-the-editor.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
@@ -1059,7 +1060,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
-| records-and-panel-merchant-logos | backlog | tickets/backlog/records-and-panel-merchant-logos.md |
+| records-and-panel-merchant-logos | done | tickets/done/records-and-panel-merchant-logos.md |
 | records-bulk-selection-undo-and-counts | done | tickets/done/records-bulk-selection-undo-and-counts.md |
 | records-calendar-folds-to-the-chosen-week | done | tickets/done/records-calendar-folds-to-the-chosen-week.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
