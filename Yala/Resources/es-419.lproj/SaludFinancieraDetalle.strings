@@ -1,0 +1,62 @@
+/*
+  SaludFinancieraDetalle.strings
+  Yala
+
+  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
+  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+*/
+
+"saludDetalle.section.alerts" = "Para revisar";
+"saludDetalle.section.budgets" = "Tus presupuestos";
+"saludDetalle.section.payments" = "Próximos pagos";
+"saludDetalle.section.streak" = "Tu racha";
+"saludDetalle.section.improve" = "Para subir tu nota";
+"saludDetalle.section.howItWorks" = "¿Cómo se calcula?";
+"saludDetalle.alerts.none.title" = "Nada que revisar hoy";
+"saludDetalle.alerts.none.detail" = "Tus presupuestos, pagos y cuentas van en orden.";
+"saludDetalle.alert.overBudget.title" = "Te pasaste en %@";
+"saludDetalle.alert.overBudget.detail" = "Toca para ver en qué se fue.";
+"saludDetalle.alert.atLimit.title" = "%@ está cerca del límite";
+"saludDetalle.alert.atLimit.detail" = "Vas por el %d %% de lo que te pusiste.";
+"saludDetalle.alert.negativeAccount.title" = "%@ está en negativo";
+"saludDetalle.alert.negativeAccount.detail" = "Revisa su saldo o registra lo que falta.";
+"saludDetalle.alert.overdue.title" = "%@ ya venció";
+"saludDetalle.alert.overdue.detail" = "Márcalo como pagado o sáltalo.";
+"saludDetalle.alert.notCovered.title" = "Tus pagos del mes no están cubiertos";
+"saludDetalle.alert.notCovered.detail" = "Con lo que tienes y lo que falta, al cierre tendrías:";
+"saludDetalle.budgets.empty.title" = "Aún no tienes presupuestos";
+"saludDetalle.budgets.empty.detail" = "Ponle un límite a lo que más gastas y Yala te avisa antes de pasarte.";
+"saludDetalle.budgets.empty.cta" = "Crear presupuesto";
+"saludDetalle.budgets.seeAll" = "Ver todos (%d)";
+"saludDetalle.budgets.left" = "Te quedan";
+"saludDetalle.budgets.over" = "Te pasaste por";
+"saludDetalle.payments.today" = "Hoy";
+"saludDetalle.payments.tomorrow" = "Mañana";
+"saludDetalle.payments.inDays" = "En %d días";
+"saludDetalle.payments.overdue" = "Venció";
+"saludDetalle.payments.none" = "Ningún pago en las próximas dos semanas.";
+"saludDetalle.payments.empty.title" = "Aún no tienes pagos planificados";
+"saludDetalle.payments.empty.detail" = "Renta, luz, suscripciones: Yala te recuerda cada uno antes de que venza.";
+"saludDetalle.payments.empty.cta" = "Agregar pago";
+"saludDetalle.payments.seeAll" = "Ver todos";
+"saludDetalle.payments.covered" = "Alcanza para tus pagos del mes.";
+"saludDetalle.payments.notCovered" = "No alcanza para tus pagos del mes.";
+"saludDetalle.streak.days.one" = "%d día seguido";
+"saludDetalle.streak.days.other" = "%d días seguidos";
+"saludDetalle.streak.today" = "Ya registraste hoy. ¡Sigue así!";
+"saludDetalle.streak.keep" = "Registra algo hoy para no perderla.";
+"saludDetalle.streak.start" = "Registra un movimiento hoy para empezarla.";
+"saludDetalle.streak.cta" = "Registrar";
+"saludDetalle.streak.caption" = "Últimos %d días";
+"saludDetalle.streak.dayRecorded" = "Con registros";
+"saludDetalle.streak.dayEmpty" = "Sin registros";
+"saludDetalle.improve.crearPresupuesto" = "Crea tu primer presupuesto";
+"saludDetalle.improve.registrarHoy" = "Registra un movimiento hoy";
+"saludDetalle.improve.agregarPagos" = "Agrega tus pagos fijos";
+"saludDetalle.improve.revisarPresupuestos" = "Revisa los presupuestos que se pasan";
+"saludDetalle.improve.revisarRitmo" = "Registra más seguido";
+"saludDetalle.improve.revisarPagos" = "Revisa tus pagos del mes";
+"saludDetalle.improve.weight" = "%@ pesa el %d %% de tu nota";
+"saludDetalle.loading" = "Cargando…";
+"saludDetalle.alert.reachedLimit.title" = "%@ llegó a su límite";
+"saludDetalle.alert.atLimitMany.title" = "%d presupuestos cerca del límite";

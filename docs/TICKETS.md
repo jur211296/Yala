@@ -43,10 +43,11 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1380)
+## Index (1381)
 
 | id | status | path |
 | 2026-11-17-asistente-nueva-cuenta | done | tickets/done/2026-11-17-asistente-nueva-cuenta.md |
+| 2026-11-17-salud-financiera-detalle-visual | done | tickets/done/2026-11-17-salud-financiera-detalle-visual.md |
 | 2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado | backlog | tickets/backlog/2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado.md |
 | 2026-11-17-asistente-nuevo-pago-planificado | done | tickets/done/2026-11-17-asistente-nuevo-pago-planificado.md |
 | 2026-11-17-web-logo-oficial-y-tema-sistema | done | tickets/done/2026-11-17-web-logo-oficial-y-tema-sistema.md |
