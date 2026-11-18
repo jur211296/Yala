@@ -991,6 +991,16 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
   abierto, la hoja de siempre. El panel es `TransactionDetailSheet(presentation: .pane)`: cabecera propia con X y
   Editar, porque un `.toolbar` o el título inline ahí dentro cambiarían la barra de Estadísticas.
+  **Con la vista calendario en ventana ancha no hay panel** (decisión 66 de 2.3, la de Registros): la página va a una
+  columna, el calendario a ancho legible y lo abierto se cierra sin sacar hoja (`RecordsOpenRecordOnNarrowing`).
+- **Estadísticas › Registros es IDÉNTICA a la pestaña Registros (Jürgen, 2026-11-17).** Las dos montan
+  `RecordsSharedList` (`Views/Records/Compartida/`), la única entrada a `RecordsTabView`: chips rápidos con
+  Lista/Calendario, «Buscar en Registros», filas, agrupación, calendario, selección, «···» y tinte. Sustituye a «Estadísticas
+  no lleva chips rápidos» (decisión 15 de 2.3, F2) y a «el buscador solo en Registros» (decisión 14). ⇒ **algo nuevo de la
+  lista va en la pieza compartida, no en un anfitrión, y no se le añaden llaves por pantalla**: así divergieron. Cada
+  anfitrión decide solo lo de alrededor (columna o panel, avatar, «Seleccionar» con icono en la columna del iPad). En
+  Estadísticas, lo escrito en el buscador recalcula solo la lista (`recalculateRecordsList`), no la pasada entera. Pin:
+  `YalaTests/RegistrosEstadisticasIguales/`, `YalaUITests/RegistrosEstadisticasIguales/RegistrosEstadisticasIgualesUITests`.
 
 ## iPhone Duo (SDK 27.1, medido el 2026-10-24 en el simulador)
 
