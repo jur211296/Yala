@@ -113,3 +113,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Integrar un PR ajeno: YalaTests entero](reference_integrar_pr_ajeno_suite_entera.md) — ~7 min; un rojo de una vez se repite antes de creerlo.
 - [Artifact público: pocas imágenes](reference_artifact_publico_con_muchas_imagenes.md) — 600 logos sueltos no se comparten; lámina única + pares en una imagen.
 - [Sonda numérica sin commitear](reference_sonda_numerica_sin_commitear.md) — test temporal con «SONDA|»; su DerivedData pesa 8 GB: bórralo con osascript.
+- [build-for-testing genérico duplica el disco](feedback_build_for_testing_generico_duplica_el_disco.md) — compila x86_64 también: usa el id del simulador; df antes de un simulador temporal.
