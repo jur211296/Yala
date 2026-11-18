@@ -108,3 +108,23 @@ Lo que ya cambia y las siguientes sesiones tienen que saber:
   subcategoría siempre en las líneas por categoría.
 - **Interino:** lo anotado en la categoría madre de líneas por subcategoría suma en el total del mes pero no se pinta en
   ninguna fila hasta S3 (aviso de gasto en la categoría madre).
+
+## S2 hecha (18-nov-2026)
+
+El detalle del mes cuenta una sola historia: la cifra grande es «Terminas con» (en pasado «Terminaste», en un mes que
+viene «Terminarías», con «≈» si no ha cerrado) y debajo «Empezaste con · Entró · Salió», con lo que falta (estimado) bajo
+lo real en el mes en curso. Si la suma no da el saldo de las cuentas (ajustes de saldo, movimientos sin cuenta, divisas),
+una fila «Ajustes de saldo» lo dice. Sin cuentas que sumen, la cifra vuelve a ser lo que queda. Lógica pura en
+`Yala/App/Views/Reports/CashFlow/DetalleMes/FlujoDetalleMesLogica.swift`; decisiones en el «Paso 0» del encargo
+`2026-11-18-flujo-detalle-del-mes`.
+
+- Fuera: «Empezaste con · Cambiar» (la hoja del saldo inicial ya no se abre desde la tabla), «Este mes te quedaría», «Si
+  sigue así, a fin de … tendrías» y el desglose «Tienes hoy / Falta entrar / Falta salir».
+- La cápsula de cada mes dice con cuánto terminas (la misma cifra grande).
+- La tabla agrupa por categoría (cabecera plegable con su suma) y la fila base es la subcategoría. Una línea por categoría
+  de antes enseña su desglose por subcategoría debajo; lo anotado en la madre sin subcategoría sale como fila «Sin
+  subcategoría» del grupo (cierra el interino de S1 en la tabla; el aviso sigue siendo de S3).
+- La barra «Comparativa / Flujo de caja» ya no deja leer las filas detrás (`safeAreaBar`).
+
+Pendiente para S3 y siguientes: crear líneas siempre por subcategoría (hoy el armado y «Agregar línea» aún pueden crear
+una línea por categoría; la tabla la enseña con su desglose).
