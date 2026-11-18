@@ -77,9 +77,8 @@ final class FavoritesCrudUITests: XCTestCase {
         app.openProfile()
         app.openSettingsSection("profile_favorites")
 
-        let addButton = app.buttons["favorites_add_button"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció favorites_add_button.")
-        addButton.tap()
+        // El «+» abre el asistente por pasos (encargo del 17-nov): el formulario, por «Usar formulario».
+        app.abrirFormularioDeNuevoFavorito()
 
         let nameField = app.textFields["favorite_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No apareció el editor de favorito (favorite_name_field).")

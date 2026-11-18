@@ -63,8 +63,14 @@ struct FavoriteEditorView: View {
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
-    init(favorite: FavoritePayment? = nil) {
+    /// Lo respondido en el asistente de «Nuevo favorito» antes de tocar «Usar formulario» (encargo del 17-nov). Con él,
+    /// el formulario arranca relleno y la X o el gesto de bajar preguntan antes de tirarlo.
+    let wizardPrefill: FavoriteWizardPrefill?
+    @State private var showDiscardWizard = false
+
+    init(favorite: FavoritePayment? = nil, wizardPrefill: FavoriteWizardPrefill? = nil) {
         self.favorite = favorite
+        self.wizardPrefill = favorite == nil ? wizardPrefill : nil
         _opensAsTransfer = State(initialValue: Self.isTransferFavorite(favorite))
     }
 
@@ -119,7 +125,7 @@ struct FavoriteEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        if wizardPrefill != nil { showDiscardWizard = true } else { dismiss() }
                     }
                 }
 
@@ -218,11 +224,14 @@ struct FavoriteEditorView: View {
         } message: {
             Text(L10n.UXL7.Favorites.deleteConfirmMessage)
         }
+        .modifier(FavoriteWizardDiscardPresentation(isActive: wizardPrefill != nil, isPresented: $showDiscardWizard) {
+            dismiss()
+        })
         .onAppear {
             viewModel.setContext(modelContext)
             loadFavoriteData()
-            // Auto-focus name field for new favorites
-            if favorite == nil {
+            // Auto-focus name field for new favorites (con lo respondido en el asistente, el nombre ya viene)
+            if favorite == nil && wizardPrefill == nil {
                 Task {
                     try? await Task.sleep(for: .milliseconds(500))
                     isNameFieldFocused = true
@@ -510,6 +519,10 @@ struct FavoriteEditorView: View {
     // MARK: - Actions
 
     private func loadFavoriteData() {
+        if favorite == nil, let wizardPrefill {
+            applyWizardPrefill(wizardPrefill)
+            return
+        }
         guard let favorite = favorite else { return }
 
         name = favorite.name
@@ -561,6 +574,23 @@ struct FavoriteEditorView: View {
         }
     }
 
+    /// Rellena el formulario con lo respondido en el asistente, una sola vez (un `onAppear` repetido no pisa lo que la
+    /// persona ya cambió aquí). Los ids salen de modelos ya cargados en este contexto: `registeredModel` no fabrica uno.
+    private func applyWizardPrefill(_ wizard: FavoriteWizardPrefill) {
+        guard !didApplyWizardPrefill else { return }
+        didApplyWizardPrefill = true
+        transactionType = wizard.type
+        name = wizard.name
+        if let amount = wizard.amount { amountString = AmountInputHelper.formatWithGrouping(amount) }
+        if let id = wizard.accountID { selectedAccount = modelContext.registeredModel(for: id) as Account? }
+        if let id = wizard.destinationAccountID {
+            selectedDestinationAccount = modelContext.registeredModel(for: id) as Account?
+        }
+        if let id = wizard.subcategoryID { selectedSubcategory = modelContext.registeredModel(for: id) as Subcategory? }
+    }
+
+    @State private var didApplyWizardPrefill = false
+
     // MARK: - Helpers
 
     private func filterAmountInput(_ input: String) -> String {
@@ -583,4 +613,39 @@ enum FavoriteEditorTypeLogic {
 
 #Preview {
     FavoriteEditorView()
+}
+
+
+// MARK: - Lo que llega del asistente
+
+/// Lo respondido en el asistente de «Nuevo favorito», tal cual lo recibe el formulario
+/// (`AsistenteFavoritoLogica.alFormulario`). Lo que no se contestó va vacío y el formulario lo deja como siempre.
+struct FavoriteWizardPrefill: Equatable {
+    var type: TransactionType
+    var name: String
+    var amount: Double?
+    var subcategoryID: PersistentIdentifier?
+    var accountID: PersistentIdentifier?
+    var destinationAccountID: PersistentIdentifier?
+}
+
+/// Con lo respondido en el asistente, ni la X ni el gesto de bajar la hoja tiran nada sin preguntar (los mismos textos
+/// que el asistente). En su propio modificador para no alargar el `body` (`swiftui-ds.md`, el compilador del CI).
+private struct FavoriteWizardDiscardPresentation: ViewModifier {
+    let isActive: Bool
+    @Binding var isPresented: Bool
+    let onDiscard: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onSheetDismissAttempt(isActive: isActive) { isPresented = true }
+            .alert(L10n.AsistenteFavorito.descartarTitulo, isPresented: $isPresented) {
+                Button(AsistenteCreacionTexto.descartar, role: .destructive, action: onDiscard)
+                    .accessibilityIdentifier("asistente_discard_confirm")
+                Button(AsistenteCreacionTexto.seguir, role: .cancel) {}
+                    .accessibilityIdentifier("asistente_discard_keep")
+            } message: {
+                Text(AsistenteCreacionTexto.descartarMensaje)
+            }
+    }
 }

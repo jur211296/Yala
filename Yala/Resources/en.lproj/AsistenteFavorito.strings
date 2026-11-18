@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "Discard this favorite?";
+"asistenteFavorito.create" = "Create favorite";
+"asistenteFavorito.createShort" = "Create";
+"asistenteFavorito.kind.question" = "What do you want to save?";
+"asistenteFavorito.kind.detail" = "A favorite is a record you repeat: later you log it with one tap.";
+"asistenteFavorito.kind.hint.expense" = "Something you pay often: coffee, a taxi, lunch.";
+"asistenteFavorito.kind.hint.income" = "Something you receive often: your salary, a payment.";
+"asistenteFavorito.kind.hint.transfer" = "Money you move between your accounts.";
+"asistenteFavorito.category.question" = "Which category does it go in?";
+"asistenteFavorito.category.detail" = "The ones you use most, or pick another.";
+"asistenteFavorito.category.none" = "No category";
+"asistenteFavorito.category.noneHint" = "You pick it each time you use it.";
+"asistenteFavorito.category.other" = "Another category";
+"asistenteFavorito.name.question" = "What should we call it?";
+"asistenteFavorito.name.detail" = "This is how you'll see it in your favorites.";
+"asistenteFavorito.amount.question.expense" = "How much do you usually pay?";
+"asistenteFavorito.amount.question.income" = "How much do you usually receive?";
+"asistenteFavorito.amount.question.transfer" = "How much do you usually move?";
+"asistenteFavorito.amount.detail" = "If it changes every time, leave it empty: we'll ask when you use it.";
+"asistenteFavorito.account.question.expense" = "Which account do you pay with?";
+"asistenteFavorito.account.question.income" = "Which account does it go into?";
+"asistenteFavorito.account.question.transfer" = "Which account does it come from?";
+"asistenteFavorito.account.detail" = "You can change it when you use it.";
+"asistenteFavorito.account.none" = "No account";
+"asistenteFavorito.account.noneHint" = "You pick it each time you use it.";
+"asistenteFavorito.destination.question" = "Which account does it go to?";
+"asistenteFavorito.destination.detail" = "It has to be a different account from the source.";
+"asistenteFavorito.summary.question" = "Create it like this?";
+"asistenteFavorito.summary.detail" = "Tap an answer to change it.";
+"asistenteFavorito.summary.kind" = "Type";
+"asistenteFavorito.summary.category" = "Category";
+"asistenteFavorito.summary.name" = "Name";
+"asistenteFavorito.summary.amount" = "Amount";
+"asistenteFavorito.summary.amountEmpty" = "You enter it when you use it";
+"asistenteFavorito.summary.account" = "Account";
+"asistenteFavorito.summary.origin" = "From";
+"asistenteFavorito.summary.destination" = "To";

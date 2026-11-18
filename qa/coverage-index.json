@@ -891,9 +891,24 @@
         "F-FAV-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/FavoritesAlRegistrar23UITests + 2026-11-12 (revisión 2.3, decisiones 22, 69-72, favoritos al registrar): tocar un favorito deja el monto seleccionado con el teclado abierto y escribir lo sustituye (F1; también el monto de origen de una transferencia entre monedas); los textos dejan de prometer «un toque» (F4, 16 idiomas); la fila del formulario solo enseña los favoritos del tipo elegido; el editor ofrece Gasto, Ingreso y Transferencia; deslizar para borrar pregunta antes (y resuelve el índice sobre la lista que se ve: con «Solo gastos» borraba otro); una transferencia sin destino dice su cuenta, no «Cuenta Principal → …». unit:YalaTests/FavoritesAlRegistrar23Tests — xcuitest:YalaUITests/FavoritesCrudUITests · 2026-10-17 (UX 2.2 · L7-14): lista vacía con «Crear favorito» y «Eliminar favorito» en el editor. — 2026-10-22 (L2-14): `FavoritePayment.destinationAccount` (campo nuevo de CloudKit `CD_destinationAccount`); la fila de un favorito de transferencia dice «origen → destino». Migración: unit:YalaTests/FavoritePaymentDestinationMigrationTests. — 2026-10-25 (lote 12.2 · 93ta): un favorito de transferencia se edita como tal (origen, destino ≠ origen, sin categoría ni etiquetas): `FavoritesCrudUITests#test_transferFavorite_editsOriginAndDestination`; lógica en unit:YalaTests/FavoriteEditorViewModelTests. | 2026-11-13 (decisión 47 de 2.3, B1): «Favoritos» de Ajustes pasa a «Registros favoritos»; «Presupuestos en el Panel» se abre desde Configurar Panel (GruposAjustesLote23ChicoUITests). | 2026-11-12 (revisión 2.3, decisión 63): con texto de accesibilidad el importe de cada favorito en Ajustes › Favoritos baja a su línea y se lee entero (antes «S/ / 3,000. / 00»); a tamaño normal, la fila de siempre. xcuitest:YalaUITests/NuevoRegistroTextoGrande23UITests#test_63_* (rojo en la base a AX3, verde con el arreglo).",
+      "coverage": "xcuitest:YalaUITests/FavoritesAlRegistrar23UITests + 2026-11-12 (revisión 2.3, decisiones 22, 69-72, favoritos al registrar): tocar un favorito deja el monto seleccionado con el teclado abierto y escribir lo sustituye (F1; también el monto de origen de una transferencia entre monedas); los textos dejan de prometer «un toque» (F4, 16 idiomas); la fila del formulario solo enseña los favoritos del tipo elegido; el editor ofrece Gasto, Ingreso y Transferencia; deslizar para borrar pregunta antes (y resuelve el índice sobre la lista que se ve: con «Solo gastos» borraba otro); una transferencia sin destino dice su cuenta, no «Cuenta Principal → …». unit:YalaTests/FavoritesAlRegistrar23Tests — xcuitest:YalaUITests/FavoritesCrudUITests · 2026-10-17 (UX 2.2 · L7-14): lista vacía con «Crear favorito» y «Eliminar favorito» en el editor. — 2026-10-22 (L2-14): `FavoritePayment.destinationAccount` (campo nuevo de CloudKit `CD_destinationAccount`); la fila de un favorito de transferencia dice «origen → destino». Migración: unit:YalaTests/FavoritePaymentDestinationMigrationTests. — 2026-10-25 (lote 12.2 · 93ta): un favorito de transferencia se edita como tal (origen, destino ≠ origen, sin categoría ni etiquetas): `FavoritesCrudUITests#test_transferFavorite_editsOriginAndDestination`; lógica en unit:YalaTests/FavoriteEditorViewModelTests. | 2026-11-13 (decisión 47 de 2.3, B1): «Favoritos» de Ajustes pasa a «Registros favoritos»; «Presupuestos en el Panel» se abre desde Configurar Panel (GruposAjustesLote23ChicoUITests). | 2026-11-12 (revisión 2.3, decisión 63): con texto de accesibilidad el importe de cada favorito en Ajustes › Favoritos baja a su línea y se lee entero (antes «S/ / 3,000. / 00»); a tamaño normal, la fila de siempre. xcuitest:YalaUITests/NuevoRegistroTextoGrande23UITests#test_63_* (rojo en la base a AX3, verde con el arreglo). | 2026-11-18 (encargo del 17-nov): el «+» y «Crear favorito» de la lista abren el asistente por pasos; el formulario de crear se abre desde ahí con «Usar formulario» (helper `abrirFormularioDeNuevoFavorito`) y, con lo respondido, pregunta antes de descartar. Editar sigue en el formulario.",
       "owner": "",
-      "lastVerified": "2026-11-13"
+      "lastVerified": "2026-11-18"
+    },
+    {
+      "area": "favorite-creation-wizard",
+      "codeGlobs": [
+        "Yala/App/Views/Favorites/AsistenteFavorito/**",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Favorites/FavoriteEditorView.swift"
+      ],
+      "scenarioIDs": [
+        "F-FAV-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/AsistenteFavoritoUITests | 2026-11-18 (encargo del 17-nov): «Nuevo favorito» abre el asistente por pasos (tipo, categoría o cuentas de origen y destino, nombre, monto y resumen); recorrido de un gasto y de una transferencia hasta crear, «Usar formulario» con lo respondido y sin nada, cerrar con respuestas pregunta (también el formulario abierto desde el asistente). Editar y «Guardar como favorito» desde un registro siguen en el formulario. unit:YalaTests/AsistenteFavorito/AsistenteFavoritoTests (reglas, lo sugerido, navegador con estas preguntas, paso al formulario, estado, textos en 16 idiomas).",
+      "owner": "frank",
+      "lastVerified": "2026-11-18"
     },
     {
       "area": "filters",

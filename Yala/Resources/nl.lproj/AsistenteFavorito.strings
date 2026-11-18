@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "Deze favoriet weggooien?";
+"asistenteFavorito.create" = "Favoriet maken";
+"asistenteFavorito.createShort" = "Maken";
+"asistenteFavorito.kind.question" = "Wat wil je bewaren?";
+"asistenteFavorito.kind.detail" = "Een favoriet is een boeking die je herhaalt: daarna leg je die met één tik vast.";
+"asistenteFavorito.kind.hint.expense" = "Iets wat je vaak betaalt: koffie, een taxi, lunch.";
+"asistenteFavorito.kind.hint.income" = "Iets wat je vaak ontvangt: je salaris, een betaling.";
+"asistenteFavorito.kind.hint.transfer" = "Geld dat je tussen je rekeningen verplaatst.";
+"asistenteFavorito.category.question" = "In welke categorie hoort het?";
+"asistenteFavorito.category.detail" = "Die je het meest gebruikt, of kies een andere.";
+"asistenteFavorito.category.none" = "Geen categorie";
+"asistenteFavorito.category.noneHint" = "Je kiest die elke keer dat je het gebruikt.";
+"asistenteFavorito.category.other" = "Andere categorie";
+"asistenteFavorito.name.question" = "Hoe noemen we het?";
+"asistenteFavorito.name.detail" = "Zo zie je het in je lijst met favorieten.";
+"asistenteFavorito.amount.question.expense" = "Hoeveel betaal je meestal?";
+"asistenteFavorito.amount.question.income" = "Hoeveel ontvang je meestal?";
+"asistenteFavorito.amount.question.transfer" = "Hoeveel verplaats je meestal?";
+"asistenteFavorito.amount.detail" = "Verandert het elke keer, laat het leeg: we vragen het als je het gebruikt.";
+"asistenteFavorito.account.question.expense" = "Met welke rekening betaal je?";
+"asistenteFavorito.account.question.income" = "Op welke rekening komt het binnen?";
+"asistenteFavorito.account.question.transfer" = "Van welke rekening gaat het af?";
+"asistenteFavorito.account.detail" = "Je kunt het wijzigen als je het gebruikt.";
+"asistenteFavorito.account.none" = "Geen rekening";
+"asistenteFavorito.account.noneHint" = "Je kiest die elke keer dat je het gebruikt.";
+"asistenteFavorito.destination.question" = "Naar welke rekening gaat het?";
+"asistenteFavorito.destination.detail" = "Het moet een andere rekening zijn dan die van herkomst.";
+"asistenteFavorito.summary.question" = "Zo aanmaken?";
+"asistenteFavorito.summary.detail" = "Tik op een antwoord om het te wijzigen.";
+"asistenteFavorito.summary.kind" = "Soort";
+"asistenteFavorito.summary.category" = "Categorie";
+"asistenteFavorito.summary.name" = "Naam";
+"asistenteFavorito.summary.amount" = "Bedrag";
+"asistenteFavorito.summary.amountEmpty" = "Vul je in bij gebruik";
+"asistenteFavorito.summary.account" = "Rekening";
+"asistenteFavorito.summary.origin" = "Van";
+"asistenteFavorito.summary.destination" = "Naar";
