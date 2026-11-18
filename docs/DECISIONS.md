@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (120 entradas)
+## Índice (121 entradas)
 
-> **No hace falta leer este fichero entero** — son 314 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 316 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-17` [Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la ho](#2026-11-17-lote-del-17-nov-tarde-desde-un-registro-yala-web-nuevo-registro-una-vista-por-sesin-y-la-hoja-esto-le)
 - `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
@@ -64,8 +65,8 @@
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
-- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
+- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-24` [Rediseño Welcome → Restore → Onboarding + invitaciones (6 commits)](#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
@@ -90,16 +91,16 @@
 - `2026-05-10` [..05-11] Onboarding restyle — 5 iteraciones de QA visual (iter1-iter5)](#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5)
 - `2026-05-09` [Onboarding completo restyling — Welcome Hero/Chooser + Yala AI + 8 steps](#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps)
 - `2026-05-09` [Fix bug deeplinks a tabs ocultos en "Más" — centralizar `selectMainTab`](#2026-05-09-fix-bug-deeplinks-a-tabs-ocultos-en-ms--centralizar-selectmaintab)
+- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
-- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
+- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
-- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
 - `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
@@ -107,17 +108,17 @@
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
 - `2026-04-25` [AI toggles removal completo](#2026-04-25-ai-toggles-removal-completo)
-- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
+- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
-- `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
 - `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
+- `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
 - `2026-04-09` [GC-12: Permisos de grupo y flujo de invitación (2026-04-09)](#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09)
 - `2026-03-25` [Mindset onboarding: cuenta única = patrimonial, separadas = cashFlow](#2026-03-25-mindset-onboarding-cuenta-nica--patrimonial-separadas--cashflow)
 - `2026-03-05` [Filtros Excluir: Income/Expense siempre usa semántica de inclusión](#2026-03-05-filtros-excluir-incomeexpense-siempre-usa-semntica-de-inclusin)
@@ -146,6 +147,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-17] Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la hoja «Esto leí»
+**Contexto:** Cinco decisiones que Jürgen tomó en el chat el 17-nov (17:35 a 18:15, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de los logos reales de pagos planificados; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Pagos planificados:** «Desde un registro» pasa a un nombre corto («Reusar») o solo ícono, nunca un botón debajo del otro; su hoja (a pantalla grande) lleva los filtros rápidos y el buscador de Registros. Aparte, la vista de Registros dentro de Estadísticas tiene que ser idéntica a Registros a solas. (2) **Yala web:** usa el logo oficial (no el cuadrado con degradado); el tema inicial es claro u oscuro según el sistema, con el Liquid Glass morado solo como extra opcional; la entrada web no copia el estilo de la bienvenida de iOS. (3) **Nuevo registro:** se quitan las categorías sugeridas (píldoras) debajo del monto; las hojas de foto o archivo (personal y Grupos) usan la X de cierre del sistema, no una X chica hecha a mano. (4) **Cada sesión de Yala se enfoca en una sola vista:** no se mezclan arreglos de vistas distintas en una misma sesión, aunque sean chicos. (5) **Hoja de foto «Esto leí»:** cabecera ordenada sin hueco (título, miniatura y X), la descripción se edita tocándola ahí mismo sin abrir Nuevo registro, y la hoja se cierra sola cuando ya se guardaron todos.
+**Razones:** Las da Jürgen al revisar la build 2.3 en su teléfono.
+**Consecuencias:** Faltan los encargos que ejecuten (1), (2), (3) y (5); (4) rige el reparto de los encargos desde hoy.
+**Estado:** Activa
 
 ### [2026-11-17] Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR
 **Contexto:** El 17-nov (08:37, Lima) Jürgen aprobó aplicar todo lo recomendado de la propuesta de verificación (`docs/verificacion/`): P1 (pruebas inestables de divisas y cuarentena con dueño), P2 (interfaz de lo tocado en cada PR, elegida por script), P3 (línea «Verificado:» en cada commit) y P4 tras P1-P3. La sesión de P2 midió sobre los 214 PRs de 2.3 del 3 al 17-nov que un job de interfaz por PR costaba ~59 min de runner macOS por PR con pantallas (~10 h/día), y lo preguntó.
