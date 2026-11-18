@@ -10,6 +10,9 @@
 //    «Empezaste con S/ 0 · Cambiar»— en lugar del pie «Disponible / Acumulado» con «?» y un lápiz (L18-10).
 //  - Lienzo «Una sola Yala»: el resumen es la cifra grande de los heros, «Ingresos» y «Gastos» son títulos de sección
 //    de la app con su total en blanco a la derecha, y cada línea es una tarjeta como un presupuesto (2A).
+//  - S2 del replanteo (decisiones de Jürgen del 18-nov-2026): una sola historia, «Empezaste con · Entró · Salió · Terminas
+//    con» (`FlujoDetalleMesLogica`), en lugar de «Al 30 tendrías», «Este mes te quedaría», «Si sigue así, a fin de…» y
+//    «Empezaste con S/ 0 · Cambiar». Y cada categoría agrupa sus líneas (la subcategoría es la fila base) y se pliega.
 //
 
 import SwiftData
@@ -25,6 +28,8 @@ struct CashFlowMonthDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
+    /// Las categorías plegadas (por su id). Vive en la pantalla: no se guarda.
+    @State private var collapsedGroups: Set<PersistentIdentifier> = []
     /// La hoja del «?» de la cifra del mes (hero claro, 2026-11-16).
     @State private var heroInfo: HeroInfoRequest?
     @State private var selectedCellLineID: UUID?
@@ -55,6 +60,7 @@ struct CashFlowMonthDetailView: View {
         // pestaña (card 8atf; regla de `swiftui-ds.md`).
         .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: incomeCollapsed)
         .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: collapsedGroups)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)
         .sheet(isPresented: Binding(
@@ -160,22 +166,29 @@ struct CashFlowMonthDetailView: View {
         }
     }
 
-    /// «Al 30 de noviembre tendrías» del mes en curso (decisión 30 de 2.3): la misma cifra que el Panel. Otro mes, o sin
-    /// cuentas que sumen, no la tiene.
+    /// «Al 30 de noviembre tendrías» del mes en curso (decisión 30 de 2.3): de ahí sale la línea de qué cuentas suman
+    /// hoy. La cifra es la de la historia del mes, que el motor calcula igual que el Panel.
     private var currentMonthEnd: MonthEndBalanceLogic.Result? {
         month.isCurrent ? viewModel.monthEnd : nil
     }
 
-    /// La cifra grande del mes con las frases de C2 debajo. En el mes en curso, la cifra es «Al 30 de noviembre
-    /// tendrías» con su cuenta, y lo que entra menos lo que sale pasa a una línea.
+    private var historia: FlujoDetalleMesLogica.Historia { FlujoDetalleMesLogica.historia(month) }
+
+    /// La cifra grande del mes —con cuánto terminas— y debajo la historia que la explica: empezaste, entró, salió. Sin
+    /// cuentas que sumen, la cifra es lo que queda (o falta) ese mes, como antes.
     private var monthSummary: some View {
-        let label = CashFlowMonthSummaryLogic.heroLabel(for: month, monthEndDate: currentMonthEnd?.endDate)
+        let historia = historia
+        let label = historia.terminas != nil
+            ? L10n.FlujoDetalleMes.terminas(historia.tiempo)
+            : CashFlowMonthSummaryLogic.netLabel(for: month)
         // El hero claro (2026-11-16): el rótulo con su «?» y la cifra pegada a él, sin el aire de antes.
         return HeroClaroHeader {
             HeroHeaderLabel(text: label)
             HeroInfoButton(identifier: "cashflow_hero_info") {
                 heroInfo = HeroInfoRequest(
-                    topic: HeroClaroLogic.cashFlowTopic(isCurrentMonth: month.isCurrent, hasMonthEnd: currentMonthEnd != nil),
+                    topic: HeroClaroLogic.cashFlowTopic(
+                        isCurrentMonth: month.isCurrent, hasMonthEnd: month.isCurrent && historia.terminas != nil
+                    ),
                     figureLabel: label,
                     isClosedPeriod: month.isPast
                 )
@@ -183,13 +196,13 @@ struct CashFlowMonthDetailView: View {
         } period: {
             EmptyView()
         } figure: {
-            if let end = currentMonthEnd {
+            if let terminas = historia.terminas {
                 AmountText(
-                    value: end.closing,
+                    value: terminas,
                     currencyCode: currencyCode,
                     font: DS.Typography.panelHeroAmount,
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: end.isApproximate
+                    isEstimate: historia.esEstimada
                 )
                 .accessibilityIdentifier("cashflow_month_end_closing")
             } else {
@@ -197,113 +210,24 @@ struct CashFlowMonthDetailView: View {
                     value: abs(month.netFlow),
                     currencyCode: currencyCode,
                     font: DS.Typography.panelHeroAmount,
-                    secondaryFont: DS.Typography.panelHeroAmountSecondary
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    isEstimate: historia.esEstimada
                 )
                 .accessibilityIdentifier("cashflow_month_net")
             }
         } detail: {
-            if let end = currentMonthEnd {
-                monthEndBreakdown(end)
+            FlujoDetalleMesHistoriaView(historia: historia, currencyCode: currencyCode)
 
+            if let end = currentMonthEnd, historia.terminas != nil {
                 Text(L10n.ProjectedFlow.source(end.source))
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                netLine
-            }
-
-            if viewModel.plan?.showAccumulatedBalance ?? true {
-                if let end = CashFlowMonthSummaryLogic.projectedEnd(of: viewModel.projection?.months ?? []),
-                   let balance = end.accumulatedBalance {
-                    Text(L10n.UXL18.projectedEnd(
-                        CashFlowMonthSummaryLogic.monthName(end.date),
-                        appPreferences.currency(balance, currencyCode: currencyCode)
-                    ))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("cashflow_month_projected_end")
-                }
-                startingBalanceRow
             }
         }
         .heroInfoSheet($heroInfo, currencyCode: currencyCode)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow_month_summary")
-    }
-
-    /// La cuenta de «Al 30 tendrías»: «Tienes hoy» (o «Debes hoy», sin signo, como el Panel), «Falta entrar» y «Falta
-    /// salir». Con texto de accesibilidad, el importe baja bajo su nombre.
-    private func monthEndBreakdown(_ end: MonthEndBalanceLogic.Result) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            monthEndRow(
-                label: end.today < 0 && !CurrencyFormattingHelper.isShownAsZero(end.today)
-                    ? L10n.Panel.Hero.oweToday : L10n.Panel.Hero.haveToday,
-                value: abs(end.today),
-                identifier: "cashflow_month_end_today"
-            )
-            monthEndRow(label: L10n.ProjectedFlow.leftToComeIn, value: end.incomeLeft, identifier: "cashflow_month_end_in")
-            monthEndRow(label: L10n.ProjectedFlow.leftToGoOut, value: end.expenseLeft, identifier: "cashflow_month_end_out")
-        }
-        .padding(.top, DS.Spacing.xxs)
-    }
-
-    private func monthEndRow(label: String, value: Double, identifier: String) -> some View {
-        AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xxs) {
-            Text(label)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-        } trailing: {
-            AmountText(
-                value: value,
-                currencyCode: currencyCode,
-                font: DS.Typography.subheadline.monospacedDigit()
-            )
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(identifier)
-    }
-
-    /// «Este mes te quedaría S/ 396.18» / «Este mes te faltaría S/ 120»: lo que entra menos lo que sale en el mes entero,
-    /// que antes era la cifra grande. El importe va en `AmountText` para que «Ocultar montos» lo tape.
-    private var netLine: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            Text(CashFlowMonthSummaryLogic.netLabel(for: month))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            AmountText(
-                value: abs(month.netFlow),
-                currencyCode: currencyCode,
-                font: DS.Typography.subheadlineEmphasized.monospacedDigit()
-            )
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("cashflow_month_net_line")
-    }
-
-    /// «Empezaste con S/ X · Cambiar» (L18-10): sustituye al lápiz tachado del pie.
-    private var startingBalanceRow: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(L10n.UXL18.startedWith(
-                appPreferences.currency(viewModel.plan?.startingBalance ?? 0, currencyCode: currencyCode)
-            ))
-            .font(DS.Typography.caption)
-            .foregroundStyle(.secondary)
-            Button {
-                viewModel.showEditStartingBalance = true
-            } label: {
-                Text("· " + L10n.UXL18.change)
-                    .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(theme.accentText)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            // Suelto en el rotor de VoiceOver, «Cambiar» no dice qué cambia.
-            .accessibilityLabel(L10n.CashFlowPlan.editStartingBalance)
-            .accessibilityIdentifier("cashflow_change_starting_balance")
-        }
     }
 
     // MARK: - Secciones
@@ -317,7 +241,7 @@ struct CashFlowMonthDetailView: View {
             )
 
             if !incomeCollapsed {
-                lineRows(for: month.incomeLines)
+                groupedLines(month.incomeLines, groups: month.incomeGroups)
                 uncategorizedRow(
                     result: month.otherIncome,
                     label: L10n.CashFlowPlan.otherIncomeLabel,
@@ -339,7 +263,7 @@ struct CashFlowMonthDetailView: View {
             .coachMarkAnchor("cfTableCell")
 
             if !expenseCollapsed {
-                lineRows(for: month.expenseLines)
+                groupedLines(month.expenseLines, groups: month.expenseGroups)
                 uncategorizedRow(
                     result: month.otherExpenses,
                     label: L10n.CashFlowPlan.otherExpensesLabel,
@@ -368,13 +292,58 @@ struct CashFlowMonthDetailView: View {
         }
     }
 
+    // MARK: - Líneas por categoría
+
+    /// Cada categoría agrupa sus líneas y se pliega; las líneas sin categoría van después (ajuste obligatorio de Jürgen
+    /// del 18-nov-2026: la subcategoría es la fila base, la categoría su suma).
+    @ViewBuilder
+    private func groupedLines(_ lines: [CashFlowLineResult], groups: [CashFlowCategoryGroup]) -> some View {
+        let tabla = FlujoDetalleMesLogica.tabla(lineas: lines, grupos: groups)
+        ForEach(tabla.grupos) { grupo in
+            let category = groupCategory(grupo)
+            FlujoDetalleMesGrupoView(
+                grupo: grupo,
+                iconName: category?.iconName,
+                colorHex: category?.colorHex,
+                currencyCode: currencyCode,
+                isCollapsed: collapsedGroups.contains(grupo.id),
+                onToggle: { toggleGroup(grupo.id) }
+            ) { lineResult in
+                lineRow(lineResult)
+            }
+        }
+        lineRows(for: tabla.sueltas)
+    }
+
+    /// La categoría del grupo, para su icono: la de cualquiera de sus líneas.
+    private func groupCategory(_ grupo: FlujoDetalleMesLogica.Grupo) -> Category? {
+        for lineResult in grupo.lineas {
+            guard let line = viewModel.line(for: lineResult.lineID) else { continue }
+            if let category = line.category ?? line.subcategory?.category { return category }
+        }
+        return nil
+    }
+
+    private func toggleGroup(_ id: PersistentIdentifier) {
+        if collapsedGroups.contains(id) {
+            collapsedGroups.remove(id)
+        } else {
+            collapsedGroups.insert(id)
+        }
+    }
+
     // MARK: - Line Rows
 
     @ViewBuilder
     private func lineRows(for lines: [CashFlowLineResult]) -> some View {
         ForEach(lines, id: \.lineID) { lineResult in
-            let line = viewModel.line(for: lineResult.lineID)
-            CashFlowDetailLineRow(
+            lineRow(lineResult)
+        }
+    }
+
+    private func lineRow(_ lineResult: CashFlowLineResult) -> some View {
+        let line = viewModel.line(for: lineResult.lineID)
+        return CashFlowDetailLineRow(
                 lineResult: lineResult,
                 line: line,
                 month: month,
@@ -389,7 +358,6 @@ struct CashFlowMonthDetailView: View {
                     }
                 }
             )
-        }
     }
 
     // MARK: - Uncategorized Row

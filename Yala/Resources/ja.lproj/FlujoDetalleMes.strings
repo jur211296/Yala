@@ -1,0 +1,25 @@
+/*
+  FlujoDetalleMes.strings
+  Yala
+
+  El detalle del mes del flujo de caja como una sola historia: «Empezaste con · Entró · Salió · Terminas con» (S2
+  del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoDetalleMes`).
+*/
+
+"flujoDetalleMes.started.past" = "月初の残高";
+"flujoDetalleMes.started.current" = "月初の残高";
+"flujoDetalleMes.started.future" = "月初の残高（見込み）";
+"flujoDetalleMes.in.past" = "入金";
+"flujoDetalleMes.in.current" = "入金";
+"flujoDetalleMes.in.future" = "入金見込み";
+"flujoDetalleMes.out.past" = "出金";
+"flujoDetalleMes.out.current" = "出金";
+"flujoDetalleMes.out.future" = "出金見込み";
+"flujoDetalleMes.end.past" = "月末の残高";
+"flujoDetalleMes.end.current" = "月末の残高（見込み）";
+"flujoDetalleMes.end.future" = "月末の残高（見込み）";
+"flujoDetalleMes.leftIn" = "これからの入金（見込み）";
+"flujoDetalleMes.leftOut" = "これからの出金（見込み）";
+"flujoDetalleMes.adjustment" = "残高の調整";
+"flujoDetalleMes.estimated" = "見込み";
+"flujoDetalleMes.group.lines" = "%d 行";
