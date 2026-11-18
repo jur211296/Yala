@@ -1,0 +1,584 @@
+<title>Avisos del banco sin Gmail</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: una columna de lectura (≈760 px) con bandas a todo el ancho para el aviso del banco, la tabla y el plan. */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --sunk:#e8ecee; --fg:#14202a; --muted:#5a6873; --line:#d3dade;
+  --accent:#0d6e66; --accent-soft:#d6ece9; --accent-fg:#ffffff;
+  --good:#1d7a3e; --good-soft:#dcf1e2; --warn:#9a6200; --warn-soft:#fbeccf; --bad:#b3261e; --bad-soft:#f8dcd9;
+  --notif:#ffffffd9; --notif-line:#c9d1d6;
+  --f-display:"Manrope",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161b; --surface:#172129; --sunk:#1e2a33; --fg:#e4ebef; --muted:#9aa9b4; --line:#2c3a45;
+  --accent:#4fc3b5; --accent-soft:#163b38; --accent-fg:#0b1a19;
+  --good:#6fd38f; --good-soft:#173524; --warn:#f0b958; --warn-soft:#3a2c12; --bad:#f08a80; --bad-soft:#3d1c19;
+  --notif:#1e2a33e6; --notif-line:#34434f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f161b; --surface:#172129; --sunk:#1e2a33; --fg:#e4ebef; --muted:#9aa9b4; --line:#2c3a45;
+  --accent:#4fc3b5; --accent-soft:#163b38; --accent-fg:#0b1a19;
+  --good:#6fd38f; --good-soft:#173524; --warn:#f0b958; --warn-soft:#3a2c12; --bad:#f08a80; --bad-soft:#3d1c19;
+  --notif:#1e2a33e6; --notif-line:#34434f; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wide{max-width:1100px}
+section{padding-block:40px 8px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(30px,6vw,46px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(22px,4vw,28px);font-weight:800;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.lead{font-size:18px;color:var(--muted);max-width:62ch}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-good{background:var(--good-soft);color:var(--good)} .t-warn{background:var(--warn-soft);color:var(--warn)} .t-bad{background:var(--bad-soft);color:var(--bad)} .t-acc{background:var(--accent-soft);color:var(--accent)}
+
+/* Cabecera */
+header{padding-block:44px 8px}
+.hero{display:grid;grid-template-columns:1fr;gap:28px}
+.figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.fig b{display:block;font-family:var(--f-display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.fig span{font-size:13px;color:var(--muted)}
+@media (max-width:640px){.figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.verdict{background:var(--accent);color:var(--accent-fg);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:8px}
+.verdict .eyebrow{color:inherit;opacity:.85}
+.verdict p{font-size:17px;line-height:1.5}
+
+/* El aviso */
+.flow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:16px;align-items:center;margin-top:18px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);justify-self:center}}
+.notif{background:var(--notif);border:1px solid var(--notif-line);border-radius:18px;padding:12px 14px;box-shadow:0 6px 18px #0000000f;display:grid;grid-template-columns:34px 1fr;gap:10px}
+.notif .ic{width:34px;height:34px;border-radius:8px;background:#1d3f8f;color:#fff;font:700 11px/34px var(--f-display);text-align:center}
+.notif .hd{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.notif .tt{font-weight:600;font-size:14px}
+.notif .bd{font-size:14px}
+.arrow{font-family:var(--f-mono);color:var(--accent);font-size:22px}
+.draft{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.draft .row{display:flex;justify-content:space-between;gap:12px;font-weight:600}
+.draft .amt{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* Tablas */
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunk);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.name{font-weight:600;min-width:180px}
+.cmp td{min-width:118px}
+.cmp td.name{min-width:200px}
+.cmp tr.dropped{opacity:.72}
+.cmp tr.rec td.name{box-shadow:inset 3px 0 0 var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--fg);font:500 13px var(--f-body);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+
+/* Recorridos */
+.paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.paths{grid-template-columns:1fr}}
+details.path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0}
+details.path[open]{border-color:var(--accent)}
+details.path summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+details.path summary::-webkit-details-marker{display:none}
+details.path summary .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+details.path .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+ol.steps li::marker{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+.note{font-size:14px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px}
+
+/* Listas de lo que perdemos */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.panel ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.panel.lose{border-top:3px solid var(--bad)} .panel.keep{border-top:3px solid var(--good)} .panel.idle{border-top:3px solid var(--warn)}
+.wish{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.wish div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px}
+.wish b{display:block;font-family:var(--f-display)}
+
+/* Plan */
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.phases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.phases{grid-template-columns:1fr}}
+.phase{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.phase h3{font-size:17px}
+.phase ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.phase.now{border-color:var(--accent);background:linear-gradient(var(--accent-soft),var(--accent-soft)) top/100% 6px no-repeat,var(--surface)}
+.phase.no{opacity:.85}
+
+/* Respuesta a Google */
+.mail{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mail .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--sunk);font-size:13px;color:var(--muted);flex-wrap:wrap}
+.mail pre{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;font-family:var(--f-mono);font-size:13px;line-height:1.6;max-height:520px;overflow:auto}
+button.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);border-radius:8px;font:600 13px var(--f-body);padding:7px 12px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+
+/* Sesiones y veredictos */
+.sessions{display:flex;flex-direction:column;gap:10px}
+.sess{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:start}
+@media (max-width:640px){.sess{grid-template-columns:1fr}}
+.sess .meta{display:flex;flex-wrap:wrap;gap:6px}
+.sess p{font-size:14px;color:var(--muted)}
+.vote{display:flex;flex-direction:column;gap:6px;min-width:0}
+.vote .seg button{padding:6px 10px}
+.vote .seg button[data-v="no"][aria-pressed="true"]{background:var(--bad);color:#fff}
+.vote .seg button[data-v="despues"][aria-pressed="true"]{background:var(--warn);color:#fff}
+.vote textarea{width:100%;min-height:38px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font:14px var(--f-body);padding:6px 8px}
+.vote .st{font-size:12px;color:var(--muted);min-height:16px}
+.sources{font-size:14px;display:flex;flex-direction:column;gap:10px}
+.sources li{overflow-wrap:anywhere}
+footer{padding-block:40px 60px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:no-preference){details.path[open] .body{animation:in .18s ease-out}@keyframes in{from{opacity:.4;transform:translateY(-3px)}to{opacity:1;transform:none}}}
+</style>
+
+<header class="wrap">
+  <div class="hero">
+    <div class="stack">
+      <span class="eyebrow">Yala · verificación de Google · 18-nov-2026</span>
+      <h1>Avisos del banco sin Gmail</h1>
+      <p class="lead">Google pide una auditoría de seguridad de pago (CASA) para que Yala pueda leer Gmail. Decidiste no pagarla. Esta página reúne lo que tenemos, lo que queremos, lo que perdemos y el camino que recomiendo, para que decidas de una vez.</p>
+    </div>
+    <div class="figures" role="list">
+      <div class="fig" role="listitem"><b>0</b><span>personas de la App Store usan «Conectar Gmail»: nunca salió de Yala Dev</span></div>
+      <div class="fig" role="listitem"><b>2</b><span>caminos sin Gmail que 2.3 ya trae construidos</span></div>
+      <div class="fig" role="listitem"><b>16-feb</b><span>plazo de Google para la auditoría (2027)</span></div>
+      <div class="fig" role="listitem"><b>0 USD</b><span>de gasto nuevo en el plan recomendado</span></div>
+    </div>
+    <div class="verdict">
+      <span class="eyebrow">Recomendación</span>
+      <p><b>Retirar ya el permiso de leer Gmail</b> (pedir una exención no se sostiene: con la cuenta en la nube, lo leído de Gmail termina en nuestro servidor) y contestarle a Google que solo queda «Iniciar sesión con Google». En 2.3, que el registro automático salga por lo que ya está construido: <b>el atajo de la notificación del banco</b> (gratis y leído en el iPhone) y <b>el reenvío a tu dirección de Yala</b>. El historial de meses anteriores, que es lo único que de verdad perdemos, vuelve en 2.4 con el conector de IA y la importación del estado de cuenta.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="wrap">
+  <div class="stack">
+    <span class="eyebrow">El objeto de todo esto</span>
+    <h2>Un aviso del banco que se convierte en un registro</h2>
+    <p>Es el formato del aviso de consumo del BCP, con el que se diseñó el atajo del banco. Todas las vías de esta página lo convierten en el mismo borrador de la Bandeja; lo que cambia es por dónde viaja.</p>
+  </div>
+  <div class="flow" aria-label="Del aviso del banco al borrador">
+    <div class="notif">
+      <div class="ic">BCP</div>
+      <div>
+        <div class="hd"><span>Banca Móvil BCP</span><span>ahora</span></div>
+        <div class="tt">Consumo con tu tarjeta</div>
+        <div class="bd">Realizaste un consumo de S/ 45.90 con tu Tarjeta de Débito BCP ****4821 en TAMBO+ MIRAFLORES.</div>
+      </div>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="draft">
+      <span class="eyebrow">Bandeja · por confirmar</span>
+      <div class="row"><span>TAMBO+ MIRAFLORES</span><span class="amt">−S/ 45,90</span></div>
+      <span class="small muted">Aviso de BCP · Débito ****4821 · hoy</span>
+    </div>
+  </div>
+</section>
+
+<section class="wrap wide" id="tenemos">
+  <div class="stack">
+    <span class="eyebrow">1 · Lo que tenemos</span>
+    <h2>Todo lo que en Yala toca Google, medido en el código</h2>
+    <p>Medido el 18-nov en la rama <code>2.3</code>, en la rama publicada (<code>1.0</code>, la 2.2 de la App Store) y en el PR abierto de «Conectar Gmail». No se consultó ninguna base de producción ni la consola de Google.</p>
+  </div>
+  <div class="tablebox" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Pieza</th><th>Qué hace hoy</th><th>Dónde está</th><th>¿Necesita leer Gmail?</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Iniciar sesión con Google</td><td>Crea o abre la cuenta en la nube. Pide solo nombre, correo e identidad (<code>openid</code>, <code>email</code>, <code>profile</code>).</td><td>App Store 2.2 y 2.3 (bienvenida, Tu cuenta), Yala web y el conector de Claude</td><td><span class="tag t-good">No</span></td></tr>
+        <tr><td class="name">Quitar el acceso de Google al eliminar la cuenta</td><td>Revoca el permiso de Yala en la cuenta de Google.</td><td>App Store 2.2 y 2.3</td><td><span class="tag t-good">No</span></td></tr>
+        <tr><td class="name">«Conectar Gmail»</td><td>Pide el permiso de leer Gmail, busca los 5 avisos más recientes del BCP de los últimos 6 meses y los deja como borradores. Lee en el iPhone. Solo conoce el remitente del BCP.</td><td>Solo en el PR abierto «Conectar Gmail mínimo», detrás de Yala Dev. Nunca se mergeó. Sirvió para los videos v2 a v4.</td><td><span class="tag t-bad">Sí · es lo único</span></td></tr>
+        <tr><td class="name">Correo del banco por reenvío</td><td>Cada persona tiene <code>auto+código@yalainbox.com</code>. Reenvía los avisos con un filtro de Gmail, Outlook o iCloud Mail; el servidor los lee con IA y el movimiento llega a la Bandeja. Muestra en la app el código del correo con el que Gmail confirma la dirección. 5 correos de prueba, después Pro. Exige cuenta en la nube.</td><td>2.3, sin publicar. El buzón ya recibe: los MX de Cloudflare de yalainbox.com responden (medido con <code>dig</code>).</td><td><span class="tag t-good">No</span></td></tr>
+        <tr><td class="name">Atajo del banco</td><td>Una automatización de Atajos «al recibir una notificación de la app del banco» pasa el texto a Yala, que lo lee en el iPhone con reglas y, si no, con el modelo del teléfono. Gratis y también con iCloud privado.</td><td>2.3. Probado en el iPhone 14 con iOS 27.2.1: corre con el teléfono bloqueado y no pide nada. Falta B2: la fila en Ajustes, elegir el banco y los atajos listos por enlace.</td><td><span class="tag t-good">No</span></td></tr>
+        <tr><td class="name">Conector de IA (Claude)</td><td>La IA de la persona consulta Yala y deja borradores en la Bandeja. Si la persona ya conectó su Gmail a su IA, la IA puede leerlo con su propio permiso.</td><td>Servidor y web; endureciéndose para producción.</td><td><span class="tag t-good">No · usa el permiso de la IA</span></td></tr>
+        <tr><td class="name">Política y términos de la web</td><td>Sección 5 «Si conectas tu Gmail» con el Uso Limitado de Google, y Gmail nombrado en datos, derechos, proveedores, conservación y términos.</td><td>Publicado en yala-app.pe, en 6 idiomas, y en 2.3</td><td><span class="tag t-warn">Habla de algo que no saldrá</span></td></tr>
+        <tr><td class="name">Proyecto de Google <code>yala-502622</code></td><td>Estado «En producción». Clientes: Yala iOS (dev), Yala iOS (prod) y Yala Web (MCP). Tiene <code>gmail.readonly</code> declarado y la API de Gmail encendida. El 23-oct iban 3 de 100 usuarios del tope de permisos sin verificar.</td><td>Consola de Google (no se abrió en esta sesión)</td><td><span class="tag t-warn">Hay que retirarlo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="two" style="margin-top:14px">
+    <div class="panel">
+      <h3>Bancos que cubre cada vía</h3>
+      <ul>
+        <li><b>«Conectar Gmail»:</b> solo el BCP (un remitente escrito en el código).</li>
+        <li><b>Reenvío:</b> cualquier banco que mande correo. La lectura con IA ya nombra BCP, Interbank, BBVA, Scotiabank, BanBif, Pichincha, Falabella, Ripley, Mibanco, cajas, Yape y Plin.</li>
+        <li><b>Atajo del banco:</b> reglas para BCP, Yape y Plin, genéricas para Interbank, BBVA y Scotiabank, y el modelo del iPhone de respaldo. Cualquier app que avise con el monto en la notificación.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Quién lo usa</h3>
+      <ul>
+        <li><b>Leer Gmail:</b> cero personas de la App Store, por construcción: la función no está en ninguna versión publicada. Solo Jürgen la usó, en Yala Dev.</li>
+        <li><b>Iniciar sesión con Google:</b> no se midió (pediría la base de producción). No cambia nada para ellas con este plan.</li>
+        <li><b>Reenvío y atajo:</b> aún nadie fuera del equipo; salen con 2.3.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="hoy">
+  <div class="stack">
+    <span class="eyebrow">Hoy, sin verificar</span>
+    <h2>Qué ve alguien que no está en la lista de prueba</h2>
+    <p>El proyecto <code>yala-502622</code> está «En producción», no en «Prueba». Lo que ve cada persona depende de qué permisos pide la app:</p>
+  </div>
+  <div class="two" style="margin-top:16px">
+    <div class="panel">
+      <h3>Si solo inicia sesión con Google</h3>
+      <ul>
+        <li>Es lo que hace la App Store hoy: nombre, correo e identidad. Son permisos no sensibles: <b>no hay pantalla de advertencia ni tope de usuarios</b>, y Google no exige verificación.</li>
+        <li>Para que salgan el nombre y el logo de Yala basta la <b>verificación de marca</b>, un trámite aparte de 2 a 3 días hábiles y sin costo.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Si pide leer Gmail sin verificar</h3>
+      <ul>
+        <li>Antes del permiso aparece «Google no verificó esta app». Se puede seguir con un clic, pero asusta.</li>
+        <li>Cada persona que pasa por esa pantalla cuenta para un <b>tope de 100 usuarios nuevos para toda la vida del proyecto</b>, que no se reinicia. El 23-oct íbamos 3 de 100.</li>
+        <li>Google avisa que agotar ese tope puede acabar con el inicio de sesión con Google desactivado.</li>
+        <li>En modo «Prueba» (que no es el nuestro) serían 100 usuarios de prueba y el permiso caduca a los 7 días: habría que reconectar cada semana.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="stack" style="margin-top:12px">
+    <p class="small muted">Por qué Google pide CASA: su regla es que la auditoría hace falta cuando los datos de Gmail se guardan o viajan por un servidor. «Conectar Gmail» lee en el iPhone, pero con la cuenta en la nube el borrador que sale del aviso, con su texto, se sincroniza a nuestra base (medido: la tabla <code>inbox_drafts</code> guarda <code>raw_text</code> y <code>evidence</code>). Por eso pedir una exención no se sostiene sin limitar Gmail a iCloud privado.</p>
+  </div>
+</section>
+
+<section class="wrap" id="queremos">
+  <div class="stack">
+    <span class="eyebrow">2 · Lo que queremos</span>
+    <h2>La experiencia ideal</h2>
+    <p>Pagas con tu tarjeta o con Yape y, sin hacer nada más, el movimiento está en la Bandeja con el monto, el comercio y la cuenta correcta, esperando un toque. Estos son los siete criterios con los que se mide cada alternativa:</p>
+  </div>
+  <div class="wish" style="margin-top:16px">
+    <div><b>Llega solo</b>en segundos, sin abrir Yala ni reenviar a mano.</div>
+    <div><b>Se activa en un minuto</b>uno o dos toques, sin manuales.</div>
+    <div><b>Todos los bancos</b>BCP, Interbank, BBVA, Scotiabank, Yape, Plin y los demás.</div>
+    <div><b>Gratis y con iCloud</b>sin cuenta en la nube y sin costo por aviso.</div>
+    <div><b>Privado</b>leído en el iPhone, nunca con la clave del banco.</div>
+    <div><b>Con historial</b>al empezar trae los meses anteriores.</div>
+    <div><b>Exacto</b>sin duplicados y en la cuenta de esos 4 dígitos.</div>
+  </div>
+</section>
+
+<section class="wrap" id="perdemos">
+  <div class="stack">
+    <span class="eyebrow">3 · Lo que perdemos</span>
+    <h2>Sin el permiso de Gmail, y si no hacemos nada</h2>
+  </div>
+  <div class="two" style="margin-top:16px">
+    <div class="panel lose">
+      <h3>Lo que perdemos</h3>
+      <ul>
+        <li><b>El historial al conectar.</b> «Conectar Gmail» traía hasta 6 meses de avisos el primer día. El reenvío y el atajo solo ven lo que llega desde que los activas.</li>
+        <li><b>La conexión de un toque.</b> «Continuar con Google» era una sola pantalla. El reenvío pide pasos en Gmail desde el navegador; el atajo, dos toques por banco.</li>
+        <li><b>El correo leído en el iPhone sin depender de la app Mail.</b> El reenvío pasa por nuestro servidor y por OpenAI (sin guardarlo). El atajo lee en el iPhone la notificación, el SMS o el correo, pero el correo solo si la persona usa la app Mail de Apple.</li>
+        <li><b>El correo sin cuenta en la nube.</b> El reenvío la exige; «Conectar Gmail» no.</li>
+        <li><b>La paridad con Pablo y Clever</b> en «conectar el correo», que la decisión del 21-oct ponía como meta.</li>
+      </ul>
+    </div>
+    <div class="panel keep">
+      <h3>Lo que no perdemos</h3>
+      <ul>
+        <li><b>Ninguna persona de la App Store</b> pierde nada: la función nunca salió.</li>
+        <li><b>«Iniciar sesión con Google»</b> no usa permisos restringidos ni pide auditoría.</li>
+        <li><b>La versión 2.3</b> no depende de Gmail: la decisión del 21-oct ya dejó que Gmail «no frena 2.3».</li>
+        <li><b>El registro automático</b>: el atajo y el reenvío cubren más bancos que «Conectar Gmail», que solo leía el BCP.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel idle" style="margin-top:12px">
+    <h3>Si no hacemos nada antes del 16-feb</h3>
+    <ul>
+      <li><b>Lo que dice Google:</b> si la solicitud se rechaza, los permisos no aprobados dejan de funcionar en la app; y mantener un permiso restringido verificado exige repetir la evaluación cada 12 meses.</li>
+      <li><b>Lo que no dice:</b> no hay una fuente oficial que describa qué pasa exactamente al vencer el plazo de CASA. Lo esperable es que la parte de Gmail se cierre sin aprobar.</li>
+      <li><b>Para la App Store, nada cambia:</b> no pide Gmail. El riesgo real es dejar el permiso declarado: la solicitud queda abierta, Yala Dev sigue sumando al tope de 100 y la política sigue describiendo una función que no saldrá.</li>
+      <li><b>Por eso conviene cerrarlo nosotros</b>, con una respuesta limpia, en vez de esperar a que venza.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="wrap wide" id="alternativas">
+  <div class="stack">
+    <span class="eyebrow">4 · Alternativas</span>
+    <h2>Comparadas con los mismos siete criterios</h2>
+    <p>Verde es bueno, ámbar es aceptable con condiciones, rojo es un problema. La columna «Costo nuevo» aplica la regla de no sumar gastos. La fila marcada en el borde es la recomendada.</p>
+  </div>
+  <div class="toolbar" style="margin-top:14px">
+    <div class="seg" role="group" aria-label="Qué alternativas mostrar">
+      <button type="button" id="f-all" aria-pressed="true">Todas</button>
+      <button type="button" id="f-live" aria-pressed="false">Solo las viables</button>
+    </div>
+    <div class="legend"><span class="tag t-good">bien</span><span class="tag t-warn">con condiciones</span><span class="tag t-bad">problema</span></div>
+  </div>
+  <div class="tablebox" style="margin-top:10px">
+    <table class="cmp" id="cmp">
+      <thead><tr><th>Alternativa</th><th>Costo nuevo</th><th>Esfuerzo</th><th>Privacidad</th><th>Fricción</th><th>Bancos del Perú</th><th>Historial</th><th>Riesgo Apple / Google</th></tr></thead>
+      <tbody id="cmp-body"></tbody>
+    </table>
+  </div>
+
+  <div class="stack" style="margin-top:28px">
+    <h3>Cómo lo vive la persona, alternativa por alternativa</h3>
+    <p class="small muted">Toca una para ver el recorrido completo y lo que hay que construir.</p>
+  </div>
+  <div class="paths" id="paths" style="margin-top:12px"></div>
+</section>
+
+<section class="wrap wide" id="plan">
+  <div class="stack">
+    <span class="eyebrow">5 · Recomendación</span>
+    <h2>Plan por fases</h2>
+  </div>
+  <div class="phases" style="margin-top:16px">
+    <div class="phase now">
+      <span class="tag t-acc">Ya · sin código de la app</span>
+      <h3>Cerrar Gmail con Google</h3>
+      <ul>
+        <li>Quitar <code>gmail.readonly</code> de «Acceso a los datos» y apagar la API de Gmail en <code>yala-502622</code>.</li>
+        <li>Contestar a Google con el texto de abajo: se retira el permiso restringido, queda solo iniciar sesión.</li>
+        <li>Sacar la sección de Gmail de la política y los términos (hotfix de la web, 6 idiomas).</li>
+        <li>Cerrar el PR de «Conectar Gmail» mínimo y sus cards, con el porqué.</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <span class="tag t-good">2.3</span>
+      <h3>Lo que ya está construido</h3>
+      <ul>
+        <li><b>Atajo del banco (B2)</b> como camino principal y gratis, con tres disparadores según el banco: la notificación de su app, su SMS (Interbank, BBVA) o su correo en la app Mail (BCP, Yape). Atajo listo por enlace, fila en Ajustes y confirmación con avisos reales.</li>
+        <li><b>Reenvío</b> como segundo camino: la guía dice el remitente de cada banco y el servidor lee con reglas antes de llamar a la IA.</li>
+        <li>La bienvenida y la Bandeja nombran estas dos vías y nunca «Conectar Gmail».</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <span class="tag t-warn">2.4</span>
+      <h3>Traer el historial</h3>
+      <ul>
+        <li><b>Conector de IA:</b> «registra mis consumos del BCP de este mes» desde Claude o ChatGPT con el Gmail que la persona ya les conectó. Borradores a la Bandeja.</li>
+        <li><b>Importar el estado de cuenta</b> del banco (CSV o Excel) con plantillas por banco.</li>
+        <li><b>Compartir un correo a Yala</b> (texto o PDF) desde Mail o Gmail, para el aviso suelto.</li>
+      </ul>
+    </div>
+    <div class="phase no">
+      <span class="tag t-bad">Descartado</span>
+      <h3>No ahora</h3>
+      <ul>
+        <li>Pagar CASA cada año.</li>
+        <li>FinanceKit: no está disponible en Perú.</li>
+        <li>Agregadores y open banking: piden la clave del banco o un contrato de pago.</li>
+        <li>Mantener Gmail en el proyecto de producción, aunque sea «para pocos».</li>
+        <li>Outlook y el complemento de Gmail: se revisan si los datos lo piden.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="google">
+  <div class="stack">
+    <span class="eyebrow">Qué contestarle a Google</span>
+    <h2>Retirar solo el permiso restringido</h2>
+    <p>Orden: primero alguien con acceso a la consola quita <code>gmail.readonly</code> y apaga la API de Gmail; después se contesta en el mismo hilo del correo de Google. La envía Dan con tu visto bueno. Va en inglés, que es el idioma del hilo.</p>
+  </div>
+  <div class="mail" style="margin-top:14px">
+    <div class="bar"><span>Re: [Action Needed] OAuth Verification Request — Yala (project yala-502622)</span><button type="button" class="btn ghost" id="copy-mail">Copiar texto</button></div>
+    <pre id="mail-text">Hello Third-Party Data Safety Team,
+
+Thank you for the review and for the details about the CASA security assessment.
+
+We have decided not to use the restricted Gmail scope. We have removed https://www.googleapis.com/auth/gmail.readonly from the Data Access configuration of project yala-502622 and disabled the Gmail API. The feature that used it ("Connect Gmail") was only built in our development app for this verification and was never released to our users. We will not request any restricted or sensitive scope.
+
+Please withdraw the restricted-scope part of our verification request. From now on Yala only uses Sign in with Google with the openid, userinfo.email and userinfo.profile scopes, in our iOS app ("Yala iOS (prod)" and "Yala iOS (dev)") and on our website ("Yala Web (MCP)").
+
+If our brand verification (app name, logo, home page https://yala-app.pe, privacy policy https://yala-app.pe/privacy and terms https://yala-app.pe/terms) still needs anything from us, please let us know. We are also updating our privacy policy so that it no longer describes Gmail access.
+
+Best regards,
+Jürgen Schmidt
+Yala</pre>
+  </div>
+  <p class="small muted" style="margin-top:10px">En español: no usaremos el permiso restringido; ya lo quitamos del proyecto y apagamos la API de Gmail; la función nunca llegó a los usuarios; retiren esa parte de la solicitud; seguimos solo con iniciar sesión con Google; si la verificación de la marca necesita algo, avísennos; la política ya no hablará de Gmail.</p>
+</section>
+
+<section class="wrap" id="sesiones">
+  <div class="stack">
+    <span class="eyebrow">Sesiones de implementación propuestas</span>
+    <h2>Lo que habría que encargar, sin encolar</h2>
+    <p>Marca cada una con sí, no o después, y deja una nota si quieres. Queda guardado aquí y lo leo desde la próxima sesión.</p>
+    <p class="small muted" id="vote-hint">Cargando tus respuestas…</p>
+  </div>
+  <div class="sessions" id="sessions" style="margin-top:14px"></div>
+</section>
+
+<section class="wrap" id="fuentes">
+  <div class="stack">
+    <span class="eyebrow">Fuentes</span>
+    <h2>De dónde sale cada afirmación</h2>
+    <p class="small muted">Las del repo se midieron en la rama <code>2.3</code> el 18-nov-2026. Las de la web son páginas oficiales; donde no hubo fuente oficial, se dice.</p>
+  </div>
+  <ol class="sources">
+    <li><b>Tope de 100 usuarios, para toda la vida del proyecto; modo Prueba con caducidad de 7 días:</b> <a href="https://support.google.com/cloud/answer/15549945">support.google.com/cloud/answer/15549945</a> — «The user cap applies over the entire lifetime of the project, and it cannot be reset or changed.» · «Authorizations by a test user will expire seven days from the time of consent».</li>
+    <li><b>Pantalla de app no verificada, y el inicio de sesión desactivado al agotar el tope:</b> <a href="https://support.google.com/cloud/answer/13464323">answer/13464323</a> y <a href="https://support.google.com/cloud/answer/13463817">answer/13463817</a> — «… 100 new-user cap eventually getting exhausted and Google sign-in being disabled».</li>
+    <li><b><code>gmail.readonly</code> es restringido; CASA solo si los datos van a un servidor:</b> <a href="https://developers.google.com/workspace/gmail/api/auth/scopes">developers.google.com/workspace/gmail/api/auth/scopes</a> — «If you store restricted scope data on servers (or transmit), then you must go through a security assessment.» · <a href="https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification">restricted-scope-verification</a>.</li>
+    <li><b>CASA cada año y la paga el desarrollador:</b> <a href="https://support.google.com/cloud/answer/13465431">answer/13465431</a> — «All applications must be revalidated every year.» · <a href="https://support.google.com/cloud/answer/13463817">answer/13463817</a> — «Google does not charge the developer any fees».</li>
+    <li><b>Solo permisos no sensibles: sin verificación obligatoria; verificación de marca aparte:</b> <a href="https://support.google.com/cloud/answer/13463073">answer/13463073</a> — «a lighter-weight verification process known as "brand-verification"». Plazos (marca 2-3 días hábiles, restringidos 6 semanas) y rechazo («access to the unapproved … scopes … will no longer work»): <a href="https://support.google.com/cloud/answer/13463817">answer/13463817</a>.</li>
+    <li><b>Qué pasa al vencer el plazo de CASA:</b> sin fuente oficial que lo diga.</li>
+    <li><b>Reenvío de Gmail (confirmación por enlace, filtros, solo desde el ordenador):</b> <a href="https://support.google.com/mail/answer/10957">support.google.com/mail/answer/10957</a>.</li>
+    <li><b>Complementos de Gmail (permiso sensible, también en el celular):</b> <a href="https://developers.google.com/workspace/add-ons/gmail">developers.google.com/workspace/add-ons/gmail</a> y la lista de permisos de arriba.</li>
+    <li><b>Atajos: disparadores de Correo y Mensaje, y cuáles corren sin preguntar:</b> <a href="https://support.apple.com/guide/shortcuts/communication-triggers-apdd711f9dff/9.0/ios/26">communication-triggers</a> · <a href="https://support.apple.com/guide/shortcuts/apd602971e63/9.0/ios/26">correr sin preguntar</a>. El disparador de notificación de iOS 27 lo medimos en el iPhone 14 (ticket del atajo del banco B0 y B1, 14-nov).</li>
+    <li><b>FinanceKit, solo EE. UU. y Reino Unido:</b> <a href="https://developer.apple.com/financekit/">developer.apple.com/financekit</a>.</li>
+    <li><b>Reglas de la App Store (datos personales, compartir con IA):</b> <a href="https://developer.apple.com/app-store/review/guidelines/">guidelines</a>, 5.1.1 y 5.1.2.</li>
+    <li><b>Finanzas abiertas en Perú, en consulta pública:</b> <a href="https://busquedas.elperuano.pe/dispositivo/NL/2561262-1">Resolución SBS 02433-2026</a> · <a href="https://busquedas.elperuano.pe/dispositivo/NL/2565681-1">Resolución SBS 02519-2026</a> · calendario según la SBS en <a href="https://elperuano.pe/noticia/298694">El Peruano</a>.</li>
+    <li><b>Avisos de los bancos:</b> BCP por correo en cada operación con tarjeta, <a href="https://www.viabcp.com/notificacionesbcp">viabcp.com/notificacionesbcp</a> · Interbank por SMS y en la app, <a href="https://interbank.pe/blog/interbank-para-mi/alertas-de-consumo-tu-aliado-en-seguridad">interbank.pe</a> · BBVA al celular o al correo, <a href="https://www.bbva.pe/personas/productos/tarjetas/beneficios/configura-tus-tarjetas.html">bbva.pe</a> · Yape por correo al enviar, <a href="https://www.yape.com.pe/preguntas-frecuentes/sobre-tu-cuenta-yape/como-recibo-un-correo-de-aviso-cada-vez-que-envie-un-yapeo">yape.com.pe</a>. Scotiabank y Plin: sin fuente oficial leída.</li>
+    <li><b>Cloudflare Email Routing (gratis, 25 MiB, direcciones con «+»):</b> <a href="https://developers.cloudflare.com/email-routing/limits/">limits</a> · <a href="https://developers.cloudflare.com/email-routing/setup/email-routing-addresses/">subaddressing</a>.</li>
+    <li><b>Outlook (Mail.Read en cuentas personales):</b> <a href="https://learn.microsoft.com/en-us/graph/permissions-reference">learn.microsoft.com/graph/permissions-reference</a>. No se encontró una regla oficial que exija verificación del editor para ese permiso.</li>
+    <li><b>Del repo (rama 2.3, 18-nov):</b> <code>CloudAuthService.swift</code> (<code>additionalScopes: nil</code>), <code>BankNoticeIntent.swift</code> y <code>BankNoticeRules.swift</code>, <code>gateway/src/mail/</code>, <code>supabase-staging.ddl</code> (<code>inbox_drafts</code>), <code>YalaShare/Info.plist</code>, <code>Web/src/i18n/translations.ts</code>, la entrada del 21-oct de <code>docs/DECISIONS.md</code> y el PR abierto de «Conectar Gmail» mínimo.</li>
+  </ol>
+</section>
+</main>
+
+<footer class="wrap">Análisis de Frank para Jürgen · Yala · 18-nov-2026 · solo lectura del repo, sin tocar producción, la consola ni el correo de Google.</footer>
+
+<script>
+const ALTS = [
+  { id:"atajo", name:"Atajo de la notificación del banco", status:"En 2.3 · falta B2", rec:true, live:true,
+    c:[["g","Ninguno"],["g","Bajo: falta B2"],["g","En el iPhone"],["w","2 toques por banco"],["w","Las que tengan app con aviso"],["b","Solo desde hoy"],["g","API oficial de Atajos"]],
+    steps:["En Yala, Ajustes › «Lo que Yala apunta solo» › elige tu banco (BCP, Interbank, Yape…).","Toca «Añadir atajo»: se abre Atajos con la automatización ya armada para la app de ese banco.","Enciende el interruptor «Automatización». Listo.","Pagas: llega la notificación del banco, el atajo corre solo (también con el iPhone bloqueado) y el movimiento queda en la Bandeja."],
+    note:"Medido en el iPhone 14 con iOS 27.2.1 con un aviso simulado. Falta confirmar que la app real de cada banco deja pasar el texto con el monto: se prueba con el primer aviso real." },
+  { id:"reenvio", name:"Reenvío a tu dirección de Yala (filtro de Gmail)", status:"En 2.3 · construido", rec:true, live:true,
+    c:[["w","Cloudflare gratis; IA por correo, ya prevista con Pro"],["g","Bajo: guía y reglas"],["w","Pasa por el servidor y OpenAI, sin guardarse"],["b","5 pasos en Gmail web"],["g","Todos los que mandan correo"],["b","Solo desde hoy"],["g","Ninguno: lo configura la persona"]],
+    steps:["En Yala, Ajustes › «Correo del banco»: copia tu dirección auto+código@yalainbox.com.","En Gmail desde el navegador: Configuración › Reenvío y correo POP/IMAP › Agregar una dirección de reenvío.","Gmail manda un correo de confirmación a tu dirección de Yala; Yala te enseña el código y lo escribes en Gmail.","Crea un filtro con el remitente de tu banco y «Reenviarlo a» tu dirección.","Cada aviso nuevo llega a la Bandeja. Los 5 primeros son de prueba; después, con Pro."],
+    note:"El BCP manda un correo por cada operación con tarjeta, y Yape uno por cada yapeo que envías: el correo cubre a los dos de forma oficial. Con Outlook y iCloud Mail son reglas parecidas. Exige cuenta en la nube. Mejora propuesta: la guía con el remitente exacto de cada banco y lectura por reglas antes de la IA, para bajar el costo por correo." },
+  { id:"mail", name:"Atajo «al recibir correo» en Mail de Apple", status:"Probado en B0", rec:false, live:true,
+    c:[["g","Ninguno"],["g","Bajo: mismo atajo"],["g","En el iPhone"],["w","Solo si usas la app Mail"],["g","Todos los que mandan correo"],["b","Solo desde hoy"],["g","API oficial de Atajos"]],
+    steps:["Agrega tu Gmail a la app Mail de Apple, si no lo está.","En Yala, elige «Por correo» y toca «Añadir atajo»: automatización «Al recibir un correo de» el remitente del banco.","Enciende la automatización.","Cuando Mail recibe el aviso, el atajo pasa el cuerpo a Yala y queda en la Bandeja."],
+    note:"En B0 el disparador «Correo» entregó el cuerpo entero sin preguntar, con el iPhone desbloqueado, y Apple lo lista entre las automatizaciones que corren solas. Sirve para los correos del BCP y de Yape. Solo sirve a quien usa la app Mail; muchos usan la app de Gmail." },
+  { id:"sms", name:"Atajo «al recibir mensaje» (SMS)", status:"Por evaluar", rec:false, live:true,
+    c:[["g","Ninguno"],["g","Bajo: mismo atajo"],["g","En el iPhone"],["g","2 toques"],["w","Interbank y BBVA, por SMS"],["b","Solo desde hoy"],["g","API oficial de Atajos"]],
+    steps:["En Yala, elige «Por SMS» y tu banco.","Toca «Añadir atajo»: automatización «Al recibir un mensaje que contiene» el texto del banco.","Enciéndela; cada SMS del banco llega a la Bandeja."],
+    note:"Apple deja que la automatización «Mensaje que contiene» corra sin pedir confirmación. Interbank manda un SMS por cada consumo desde el monto que eliges, y BBVA avisa al celular. Es el camino natural para quien no tiene la app del banco con notificaciones. Falta medir los textos reales." },
+  { id:"compartir", name:"Compartir el correo con Yala", status:"Pide un cambio pequeño", rec:false, live:true,
+    c:[["g","Ninguno"],["g","Bajo"],["w","Depende de cómo se lea"],["b","A mano, uno por uno"],["g","Todos"],["w","Uno por uno, a mano"],["g","Ninguno"]],
+    steps:["Abres el aviso en Mail o en Gmail.","Seleccionas el texto (o haces una captura) y tocas Compartir › Yala.","Yala lo lee y deja el borrador."],
+    note:"Hoy la extensión de compartir de Yala acepta imágenes (hasta 100) y un PDF, no texto. Con la captura funciona ya, pero pasa por la lectura de imagen. Sumar texto es un cambio pequeño. Apple no documenta compartir un correo entero desde Mail; lo que sí hay es seleccionar texto o imprimir." },
+  { id:"ia", name:"Conector de IA que lee tu Gmail", status:"2.4 · con el conector en producción", rec:false, live:true,
+    c:[["g","Ninguno: la IA la paga la persona"],["w","Medio: conector en producción"],["w","Lo lee la IA de la persona"],["w","Una frase en Claude o ChatGPT"],["g","Todos"],["g","Sí, los meses que pidas"],["g","El permiso lo tiene la IA, no Yala"]],
+    steps:["En Claude o ChatGPT, con Gmail y Yala conectados.","Escribes: «Registra en Yala mis consumos del BCP de octubre».","La IA busca los avisos en tu Gmail y llama a Yala.","Los borradores llegan a la Bandeja por confirmar."],
+    note:"Es la única vía sin auditoría que trae historial desde el correo. Depende de que la persona use una IA con Gmail conectado." },
+  { id:"import", name:"Importar el estado de cuenta", status:"Existe para CSV y Excel", rec:false, live:true,
+    c:[["g","Ninguno"],["w","Medio: plantillas por banco"],["g","En el iPhone"],["w","Descargar del banco e importar"],["w","Según el formato de cada banco"],["g","Sí, meses enteros"],["g","Ninguno"]],
+    steps:["Descargas el estado de cuenta en Excel o CSV desde la banca por internet.","En Yala, Importar › eliges el archivo.","Yala reconoce el formato del banco y crea los registros."],
+    note:"Hoy el importador pide las columnas de la plantilla de Yala. Reconocer el formato de cada banco es el trabajo." },
+  { id:"exencion", name:"Pedir a Google que no exija CASA", status:"Descartado tras medir", rec:false, live:false,
+    c:[["g","Ninguno"],["w","Limitar Gmail a iCloud privado"],["g","En el iPhone"],["g","Un toque"],["b","Solo BCP hoy"],["g","6 meses"],["b","Contradice la nube de 2.3"]],
+    steps:["Contestar a Google que los datos de Gmail se leen en el iPhone y no van a nuestro servidor.","Para que sea verdad, apagar «Conectar Gmail» con la cuenta en la nube.","Esperar la verificación del permiso restringido (unas 6 semanas) y repetirla cada año."],
+    note:"Google exige CASA cuando los datos de Gmail se guardan o viajan por un servidor. Con la cuenta en la nube el borrador y su texto se sincronizan a nuestra base, así que la exención solo valdría para iCloud privado, justo cuando la bienvenida empuja hacia la nube." },
+  { id:"prueba", name:"Gmail solo en modo prueba para el equipo", status:"Proyecto aparte", rec:false, live:false,
+    c:[["g","Ninguno"],["w","Proyecto y cliente nuevos"],["g","En el iPhone"],["b","Reconectar cada 7 días"],["b","Solo BCP"],["g","Sí"],["w","Solo para el equipo"]],
+    steps:["Un proyecto de Google nuevo, en modo «Prueba», con su propio cliente para Yala Dev.","Jürgen y los testers se agregan como usuarios de prueba (máximo 100).","Conectan Gmail como en el video; el permiso caduca a los 7 días."],
+    note:"No sirve para usuarios reales. Solo tendría sentido para juntar formatos de avisos, y para eso ya sirven el reenvío y el atajo." },
+  { id:"casa", name:"Pagar CASA y seguir con «Conectar Gmail»", status:"Descartado el 18-nov", rec:false, live:false,
+    c:[["b","499 a 855 USD por año"],["b","Alto: auditoría y servidor"],["g","En el iPhone"],["g","Un toque"],["w","Solo correo"],["g","6 meses"],["w","Renovar cada año"]],
+    steps:["Contratar un laboratorio autorizado y pasar la auditoría antes del 16-feb.","Repetirla cada año.","Publicar «Conectar Gmail»."],
+    note:"Es la referencia de lo que se pierde. Decidiste no pagarla." },
+  { id:"financekit", name:"Apple FinanceKit", status:"No está en Perú", rec:false, live:false,
+    c:[["g","Ninguno"],["w","Medio"],["g","En el iPhone"],["g","Un permiso"],["b","Ninguno"],["g","Sí"],["w","Requiere permiso especial de Apple"]],
+    steps:["La app pide permiso para leer las tarjetas de Wallet.","Lee los movimientos de las tarjetas compatibles."],
+    note:"Apple solo lo ofrece en EE. UU. (Apple Card, Apple Cash, Savings) y en el Reino Unido (bancos por open banking), y exige que la app se distribuya allí. No aplica a Perú." },
+  { id:"agreg", name:"Open banking o agregadores", status:"Descartado", rec:false, live:false,
+    c:[["b","Contrato por conexión"],["b","Alto"],["b","Clave del banco a un tercero"],["w","Login del banco"],["w","Según el agregador"],["g","Sí"],["w","Promesa rota: «sin claves bancarias»"]],
+    steps:["La persona elige su banco y entrega su usuario y clave a un agregador.","El agregador trae los movimientos por API o leyendo la web del banco."],
+    note:"En Perú las finanzas abiertas están en consulta pública (SBS, octubre de 2026); los primeros intercambios se esperan en 2028 y al inicio solo para los cuatro bancos grandes. Belvo cubre Brasil y México; Prometeo no se pudo verificar; ninguno publica precios. Además rompe la promesa de la política: «Yala no te pide claves bancarias»." },
+  { id:"outlook", name:"«Conectar Outlook» con Microsoft", status:"Más adelante, si hace falta", rec:false, live:false,
+    c:[["g","Ninguno"],["w","Medio"],["g","En el iPhone"],["g","Un toque"],["w","Solo quien usa Outlook"],["g","Sí"],["g","Sin auditoría de pago"]],
+    steps:["«Continuar con Microsoft», permiso de leer el correo.","Yala busca los avisos del banco y crea borradores."],
+    note:"El permiso de leer el correo de Microsoft (Mail.Read) se puede consentir en cuentas personales sin auditoría de pago. En el Perú casi todos usan Gmail: cubriría a pocos." },
+  { id:"addon", name:"Complemento dentro de Gmail", status:"Más adelante, si hace falta", rec:false, live:false,
+    c:[["g","Ninguno"],["b","Alto: otra plataforma"],["w","El mensaje abierto pasa por el servidor"],["b","A mano, correo por correo"],["g","Todos"],["w","Uno por uno"],["g","Permiso sensible, sin auditoría de pago"]],
+    steps:["Instalas «Yala» desde el Marketplace de Google Workspace.","Abres un aviso en Gmail y tocas «Enviar a Yala»."],
+    note:"El permiso del complemento (leer el mensaje abierto) es sensible, no restringido: pide verificación gratuita, no CASA. Funciona en la app de Gmail del iPhone. Pero es otra plataforma que mantener, la persona actúa correo por correo y el aviso pasa por un servidor nuestro." }
+];
+const CLS = {g:"t-good",w:"t-warn",b:"t-bad"};
+let onlyLive = false;
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderTable(){
+  const body=document.getElementById("cmp-body"); body.textContent="";
+  ALTS.filter(a=>!onlyLive||a.live).forEach(a=>{
+    const tr=document.createElement("tr"); if(a.rec) tr.className="rec"; if(!a.live) tr.classList.add("dropped");
+    tr.innerHTML=`<td class="name">${esc(a.name)}<br><span class="small muted" style="font-weight:400">${esc(a.status)}</span></td>`+
+      a.c.map(([k,t])=>`<td><span class="tag ${CLS[k]}" style="white-space:normal">${esc(t)}</span></td>`).join("");
+    body.appendChild(tr);
+  });
+}
+function renderPaths(){
+  const box=document.getElementById("paths");
+  box.innerHTML=ALTS.map(a=>`<details class="path" id="p-${a.id}"><summary><div class="top"><h3>${esc(a.name)}</h3>${a.rec?'<span class="tag t-acc">recomendada</span>':(a.live?'':'<span class="tag t-bad">descartada</span>')}</div><span class="small muted">${esc(a.status)}</span></summary><div class="body"><ol class="steps">${a.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol><p class="note">${esc(a.note)}</p></div></details>`).join("");
+}
+document.getElementById("f-all").addEventListener("click",e=>{onlyLive=false;e.target.setAttribute("aria-pressed","true");document.getElementById("f-live").setAttribute("aria-pressed","false");renderTable()});
+document.getElementById("f-live").addEventListener("click",e=>{onlyLive=true;e.target.setAttribute("aria-pressed","true");document.getElementById("f-all").setAttribute("aria-pressed","false");renderTable()});
+renderTable(); renderPaths();
+
+document.getElementById("copy-mail").addEventListener("click",async e=>{
+  const t=document.getElementById("mail-text").textContent;
+  try{await navigator.clipboard.writeText(t);e.target.textContent="Copiado"}
+  catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById("mail-text"));const s=getSelection();s.removeAllRanges();s.addRange(r);e.target.textContent="Texto seleccionado"}
+});
+
+const SESSIONS = [
+  {id:"s0-consola", who:"Jürgen y Dan", when:"Ya", title:"Cerrar Gmail en Google", text:"Quitar gmail.readonly y apagar la API de Gmail en la consola de yala-502622; enviar la respuesta de arriba en el hilo de Google; cerrar el PR de «Conectar Gmail» mínimo y sus cards. No es una sesión de Frank: pide la consola y el correo."},
+  {id:"s1-web", who:"Frank", when:"Ya · hotfix", title:"Política y términos sin Gmail", text:"Hotfix de la web desde 1.0 y el mismo cambio en 2.3: quitar la sección 5 «Si conectas tu Gmail», el Uso Limitado y las menciones en datos, derechos, proveedores, conservación y términos, en los 6 idiomas. Google queda como «Iniciar sesión con Google». Va junto con la respuesta a Google."},
+  {id:"s2-atajo-b2", who:"Frank", when:"2.3", title:"Atajo del banco B2 con avisos reales", text:"La fila «Lo que Yala apunta solo», elegir banco, atajos listos por enlace y contadores (lo que ya estaba planeado), más los disparadores de SMS (Interbank y BBVA avisan así) y de correo en la app Mail (BCP y Yape avisan así), con la misma acción de Yala. Cierra con una ronda de avisos reales en el iPhone de Jürgen para ajustar las reglas."},
+  {id:"s3-reenvio", who:"Frank", when:"2.3", title:"Reenvío más fácil y más barato", text:"La guía de Gmail con el remitente exacto de cada banco y su filtro listo para copiar; en el servidor, las mismas reglas del atajo antes de llamar a la IA, para que la mayoría de avisos no cueste nada. Con eso se puede revisar si el cupo de prueba de 5 correos sigue haciendo falta."},
+  {id:"s4-textos", who:"Frank", when:"2.3", title:"Textos sin «Conectar Gmail»", text:"Barrido de la app, la bienvenida, la ficha de ayuda y la web de 2.3 para que nada prometa conectar Gmail; la Bandeja vacía ofrece el atajo y el reenvío. Pequeña; puede ir dentro de la sesión del atajo."},
+  {id:"s5-compartir", who:"Frank", when:"2.4", title:"Compartir un correo a Yala", text:"La extensión de compartir acepta también texto y lee el aviso con las reglas del atajo, en el iPhone. Sirve para el aviso suelto y para el historial a mano."},
+  {id:"s6-ia", who:"Frank", when:"2.4", title:"Historial con el conector de IA", text:"Con el conector endurecido en producción: un ejemplo guiado «registra mis avisos del BCP de este mes» en Claude y ChatGPT, con borradores a la Bandeja y sin duplicar lo que ya llegó por el atajo."},
+  {id:"s7-import", who:"Frank", when:"2.4", title:"Importar el estado de cuenta por banco", text:"Reconocer los Excel o CSV que descargan el BCP, Interbank, BBVA y Scotiabank, para traer meses enteros de una vez. Empieza midiendo los formatos con archivos reales de Jürgen."}
+];
+function renderSessions(state, canWrite){
+  const box=document.getElementById("sessions");
+  box.innerHTML=SESSIONS.map(s=>{
+    const v=(state[s.id]||{}).valor||"", n=(state[s.id]||{}).nota||"";
+    const b=(val,lab)=>`<button type="button" data-s="${s.id}" data-v="${val}" aria-pressed="${v===val}" ${canWrite?"":"disabled"}>${lab}</button>`;
+    return `<div class="sess"><div class="stack" style="gap:6px"><div class="meta"><span class="tag t-acc">${esc(s.when)}</span><span class="tag" style="background:var(--sunk);color:var(--muted)">${esc(s.who)}</span></div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></div>
+    <div class="vote"><div class="seg" role="group" aria-label="Veredicto de ${esc(s.title)}">${b("si","Sí")}${b("no","No")}${b("despues","Después")}</div>
+    <textarea id="nota-${s.id}" data-s="${s.id}" placeholder="Nota (opcional)" ${canWrite?"":"disabled"}>${esc(n)}</textarea><span class="st" id="st-${s.id}"></span></div></div>`;
+  }).join("");
+}
+(async()=>{
+  const hint=document.getElementById("vote-hint");
+  let state={}; renderSessions(state,false);
+  let db=null,user=null;
+  try{ if(window.claude&&window.claude.use){ [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]); } }catch(_){}
+  if(!db){hint.textContent="Las respuestas se guardan solo con la sesión de Jürgen iniciada en claude.ai.";return}
+  let owner=false; try{owner=user?await user.isOwner():false}catch(_){}
+  hint.textContent=owner?"Tus respuestas se guardan al tocar.":"Solo Jürgen puede marcar; aquí ves lo que eligió.";
+  const col=db.collection("veredictos");
+  const t=setTimeout(()=>{if(!Object.keys(state).length)hint.textContent+=" (sin respuestas todavía)"},10000);
+  col.onSnapshot(snap=>{clearTimeout(t);state={};snap.docs.forEach(d=>{if(d.exists)state[d.id]=d.data()});renderSessions(state,owner)},()=>{clearTimeout(t)});
+  const box=document.getElementById("sessions");
+  box.addEventListener("click",async e=>{
+    const btn=e.target.closest("button[data-s]"); if(!btn||!owner)return;
+    const id=btn.dataset.s, st=document.getElementById("st-"+id);
+    const nota=(document.getElementById("nota-"+id)||{}).value||"";
+    try{await col.doc(id).set({valor:btn.dataset.v,nota,actualizado:new Date().toISOString()});st.textContent="Guardado"}catch(err){st.textContent="No se guardó: "+(err&&err.code||"error")}
+  });
+  box.addEventListener("change",async e=>{
+    const ta=e.target.closest("textarea[data-s]"); if(!ta||!owner)return;
+    const id=ta.dataset.s, st=document.getElementById("st-"+id), prev=state[id]||{};
+    try{await col.doc(id).set({valor:prev.valor||"",nota:ta.value,actualizado:new Date().toISOString()});st.textContent="Nota guardada"}catch(err){st.textContent="No se guardó: "+(err&&err.code||"error")}
+  });
+})();
+</script>

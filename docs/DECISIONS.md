@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (123 entradas)
+## Índice (124 entradas)
 
-> **No hace falta leer este fichero entero** — son 319 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 321 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
 - `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
 - `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
@@ -149,6 +150,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-18] Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`
+**Contexto:** El 18-nov (14:21, Lima) Google contestó a la verificación del permiso restringido `gmail.readonly` del proyecto `yala-502622`: para seguir pide una evaluación de seguridad ADA-CASA AL1 antes del 16-feb-2027, de pago y anual (precios vistos: 499 a 855 USD por año). Decisión de Jürgen del 18-nov (15:59), capturada en el chat por el bot dueño (ADR-082 de casa) y pendiente de pasar al repo. La incorpora la sesión que analiza qué se pierde sin ese permiso.
+**Decisión:** No se paga la evaluación CASA. Una sesión analiza lo que Yala tiene, lo que quiere tener y lo que pierde sin `gmail.readonly`, y propone las mejores soluciones (`docs/analisis/2026-11-18-verificacion-google-sin-casa/`).
+**Razones:** el coste es demasiado alto para una función que ningún usuario de producción tiene: «Conectar Gmail» nunca salió de Yala Dev.
+**Consecuencias:** deja sin efecto la línea de la decisión del 21-oct («Conectar Gmail (y Outlook) llega en cuanto Google apruebe la verificación de su permiso restringido») y la opción A de la decisión del 9-nov, mientras no se decida otra cosa. El correo del banco sigue llegando por reenvío a yalainbox.com y por el atajo del banco. Qué contestar a Google y qué entra en cada versión lo decide Jürgen sobre el análisis.
+**Estado:** Activa
 
 ### [2026-11-18] Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificados y Yala web a producción
 **Contexto:** Tres decisiones que Jürgen tomó en el chat el 18-nov (06:26, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del asistente de «Nueva cuenta»; no las ejecuta, porque no son de su encargo.
