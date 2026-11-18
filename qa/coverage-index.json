@@ -207,9 +207,24 @@
         "F-BUD-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests | 2026-11-10 (lote 04 de mejoras necesarias 2.3): el editor frena reactivar un presupuesto sobre el límite gratis y acepta un «Único» de un día; las alertas no cambian. unit:YalaTests/PlanningNecesariasLote04Tests.",
+      "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests | 2026-11-10 (lote 04 de mejoras necesarias 2.3): el editor frena reactivar un presupuesto sobre el límite gratis y acepta un «Único» de un día; las alertas no cambian. unit:YalaTests/PlanningNecesariasLote04Tests. | 2026-11-18: el formulario de crear se abre desde el asistente con «Usar formulario» (helper `abrirFormularioDeNuevoPresupuesto`) y, con lo respondido, pregunta antes de descartar.",
       "owner": "",
-      "lastVerified": "2026-11-14"
+      "lastVerified": "2026-11-18"
+    },
+    {
+      "area": "budget-creation-wizard",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/AsistenteCreacion/**",
+        "Yala/App/Views/Planning/BudgetsListView.swift",
+        "Yala/App/Views/Planning/BudgetEditorView.swift"
+      ],
+      "scenarioIDs": [
+        "F-BUD-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/AsistentePresupuestoUITests | 2026-11-18 (encargo del 17-nov): «Nuevo presupuesto» abre el asistente por pasos; recorrido completo hasta crear, «Usar formulario» con lo respondido, cerrar con respuestas pregunta, Atrás y volver al resumen. Editar sigue en el formulario. unit:YalaTests/AsistentePresupuesto/AsistentePresupuestoTests (navegador compartido, reglas, paso al formulario, textos en 16 idiomas).",
+      "owner": "",
+      "lastVerified": "2026-11-18"
     },
     {
       "area": "budget-alerts-push-notifications",

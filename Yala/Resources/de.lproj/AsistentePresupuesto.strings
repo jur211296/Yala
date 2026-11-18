@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "Formular verwenden";
+"asistente.useFormHint" = "Öffnet das gewohnte Formular mit deinen bisherigen Antworten";
+"asistente.stepOf" = "Schritt %1$d von %2$d";
+"asistente.discard.message" = "Deine Antworten gehen verloren.";
+"asistente.discard.confirm" = "Verwerfen";
+"asistente.discard.keep" = "Weitermachen";
+"asistente.changeHint" = "Tippe, um diese Antwort zu ändern";
+"asistentePresupuesto.discard.title" = "Dieses Budget verwerfen?";
+"asistentePresupuesto.create" = "Budget erstellen";
+"asistentePresupuesto.createShort" = "Erstellen";
+"asistentePresupuesto.name.weekly" = "Meine Ausgaben der Woche";
+"asistentePresupuesto.name.monthly" = "Meine Ausgaben des Monats";
+"asistentePresupuesto.name.yearly" = "Meine Ausgaben des Jahres";
+"asistentePresupuesto.name.once" = "Meine Ausgaben";
+"asistentePresupuesto.limit.last.weekly" = "Letzte Woche hast du dafür %@ ausgegeben.";
+"asistentePresupuesto.limit.last.monthly" = "Letzten Monat hast du dafür %@ ausgegeben.";
+"asistentePresupuesto.limit.last.yearly" = "Letztes Jahr hast du dafür %@ ausgegeben.";
+"asistentePresupuesto.limit.same" = "Gleich viel";
+"asistentePresupuesto.limit.less10" = "10 % weniger";
+"asistentePresupuesto.limit.less20" = "20 % weniger";
+"asistentePresupuesto.summary.question" = "So erstellen?";
+"asistentePresupuesto.summary.detail" = "Tippe auf eine Antwort, um sie zu ändern.";
+"asistentePresupuesto.summary.counts" = "Was zählt";
+"asistentePresupuesto.summary.period" = "Erneuert sich";
+"asistentePresupuesto.summary.dates" = "Zeitraum";
+"asistentePresupuesto.summary.limit" = "Limit";
+"asistentePresupuesto.summary.name" = "Name";
+"asistentePresupuesto.summary.alert" = "Hinweise";
+"asistentePresupuesto.alert.none" = "Keine Hinweise";
+"asistentePresupuesto.categories.empty" = "Du hast noch keine Ausgabenkategorien. Du kannst alle Ausgaben zählen.";

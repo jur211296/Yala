@@ -25,6 +25,10 @@ struct BudgetEditorView: View {
     /// El tipo con el que se abre un presupuesto NUEVO: el de la pestaña que se estaba mirando (UX 2.2 · L9-3). Antes el +
     /// abría siempre en Mensual, también desde Anual o Único.
     var initialPeriodType: BudgetPeriodType? = nil
+    /// Lo respondido en el asistente antes de tocar «Usar formulario» (encargo del 17-nov). Con él, el formulario
+    /// arranca relleno y la X o el gesto de bajar preguntan antes de tirarlo.
+    var prefill: BudgetEditorPrefill? = nil
+    @State private var showDiscardPrefill = false
 
     // Error state
     @State private var showSaveError = false
@@ -152,7 +156,7 @@ struct BudgetEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        if prefill != nil { showDiscardPrefill = true } else { dismiss() }
                     }
                 }
 
@@ -176,8 +180,8 @@ struct BudgetEditorView: View {
                 Task { @MainActor in
                     didLoadInitialData = true
                 }
-                // Auto-focus name field for new budgets
-                if budget == nil {
+                // Auto-focus name field for new budgets (con lo respondido en el asistente, el nombre ya viene)
+                if budget == nil, prefill == nil {
                     Task {
                         try? await Task.sleep(for: .milliseconds(500))
                         isNameFieldFocused = true
@@ -191,6 +195,9 @@ struct BudgetEditorView: View {
                 updateCurrencyFromAccounts(newAccounts)
             }
             .modifier(BudgetAlertNotificationPrimer(alertEnabled: alertEnabled, isLoaded: didLoadInitialData))
+            .modifier(BudgetPrefillDiscardPresentation(isActive: prefill != nil, isPresented: $showDiscardPrefill) {
+                dismiss()
+            })
             .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
             .alert(
                 L10n.Common.error,
@@ -924,6 +931,7 @@ struct BudgetEditorView: View {
 
         guard let budget = budget else {
             selectedPeriodType = initialPeriodType ?? .monthly
+            if let prefill { applyPrefill(prefill) }
             return
         }
 
@@ -1037,34 +1045,58 @@ struct BudgetEditorView: View {
             DS.Haptic.success()
             applyShowInWidget(savedID: savedID)
             sessionState.needsBudgetsWidgetRefresh = true
-            if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
-                // «¿Era de prueba?» solo si este es el ÚNICO presupuesto (ver `markFirstCreation`).
-                // Mismo criterio que `autoDetect` desde el Panel: los presupuestos activos.
-                do {
-                    let total = try modelContext.fetchCount(
-                        FetchDescriptor<Budget>(predicate: #Predicate<Budget> { $0.isActive })
-                    )
-                    SetupChecklistManager.shared.markFirstCreation(
-                        .firstBudget,
-                        totalOfKind: total,
-                        practiceItem: PracticeCleanupItem(
-                            stepID: .firstBudget,
-                            itemName: name,
-                            persistentID: savedID
-                        )
-                    )
-                } catch {
-                    #if DEBUG
-                    print("BudgetEditorView: Error counting budgets: \(error)")
-                    #endif
-                    // Sin recuento no se sabe si es el primero: no se ofrece borrarlo como prueba.
-                    SetupChecklistManager.shared.markCompleted(.firstBudget)
-                }
+            if budget == nil {
+                Self.noteCreated(name: name, savedID: savedID, in: modelContext)
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstBudget)
             }
             dismiss()
         }
+    }
+
+    /// Lo que se apunta al crear un presupuesto, desde el formulario o desde el asistente: el paso «primer presupuesto»
+    /// y, si es el ÚNICO, la pregunta «¿Era de prueba?» (ver `markFirstCreation`). Mismo criterio que `autoDetect`
+    /// desde el Panel: los presupuestos activos.
+    static func noteCreated(name: String, savedID: PersistentIdentifier, in modelContext: ModelContext) {
+        guard SetupChecklistManager.shared.stepCompleted[.firstBudget] != true else {
+            SetupChecklistManager.shared.markCompleted(.firstBudget)
+            return
+        }
+        do {
+            let total = try modelContext.fetchCount(
+                FetchDescriptor<Budget>(predicate: #Predicate<Budget> { $0.isActive })
+            )
+            SetupChecklistManager.shared.markFirstCreation(
+                .firstBudget,
+                totalOfKind: total,
+                practiceItem: PracticeCleanupItem(
+                    stepID: .firstBudget,
+                    itemName: name,
+                    persistentID: savedID
+                )
+            )
+        } catch {
+            #if DEBUG
+            print("BudgetEditorView: Error counting budgets: \(error)")
+            #endif
+            // Sin recuento no se sabe si es el primero: no se ofrece borrarlo como prueba.
+            SetupChecklistManager.shared.markCompleted(.firstBudget)
+        }
+    }
+
+    /// Rellena el formulario con lo respondido en el asistente. Las subcategorías llegan por su `shortcutID`.
+    private func applyPrefill(_ prefill: BudgetEditorPrefill) {
+        name = prefill.name
+        if let limit = prefill.limit { limitAmount = AmountInputHelper.formatWithGrouping(limit) }
+        selectedPeriodType = prefill.periodType
+        startDate = prefill.startDate
+        endDate = prefill.endDate
+        let wanted = Set(prefill.subcategoryIDs)
+        selectedSubcategories = Set(
+            viewModel.allSubcategories.filter { wanted.contains($0.shortcutID) }.map(\.persistentModelID)
+        )
+        alertEnabled = !prefill.alertThresholds.isEmpty
+        selectedThresholds = prefill.alertThresholds
     }
 
     /// «Mostrar en el widget» con el mismo orden que Perfil › Presupuestos: entra al final de los favoritos.
@@ -1130,5 +1162,42 @@ struct BudgetEditorView: View {
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
         }
+    }
+}
+
+// MARK: - Lo que llega del asistente
+
+/// Lo respondido en el asistente de «Nuevo presupuesto», tal cual lo recibe el formulario
+/// (`AsistentePresupuestoLogica.alFormulario`). Lo que no se contestó va vacío y el formulario lo deja como siempre.
+nonisolated struct BudgetEditorPrefill: Equatable {
+    var name: String
+    var limit: Double?
+    var periodType: BudgetPeriodType
+    var startDate: Date
+    var endDate: Date
+    /// `Subcategory.shortcutID`. Vacío = todos los gastos.
+    var subcategoryIDs: [UUID]
+    /// Umbrales del aviso. Vacío = sin aviso.
+    var alertThresholds: Set<Int>
+}
+
+/// Con lo respondido en el asistente, ni la X ni el gesto de bajar la hoja tiran nada sin preguntar (los mismos textos
+/// que el asistente). En su propio modificador para no alargar el `body` (`swiftui-ds.md`, el compilador del CI).
+private struct BudgetPrefillDiscardPresentation: ViewModifier {
+    let isActive: Bool
+    @Binding var isPresented: Bool
+    let onDiscard: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onSheetDismissAttempt(isActive: isActive) { isPresented = true }
+            .alert(L10n.AsistentePresupuesto.descartarTitulo, isPresented: $isPresented) {
+                Button(AsistenteCreacionTexto.descartar, role: .destructive, action: onDiscard)
+                    .accessibilityIdentifier("asistente_discard_confirm")
+                Button(AsistenteCreacionTexto.seguir, role: .cancel) {}
+                    .accessibilityIdentifier("asistente_discard_keep")
+            } message: {
+                Text(AsistenteCreacionTexto.descartarMensaje)
+            }
     }
 }

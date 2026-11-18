@@ -56,7 +56,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
 - [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
-- [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
+- [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — axe sin toques ni tras reiniciar: conductor; variantes por TEST_RUNNER_ en una corrida.
 - [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
 - [El «antes» con la app base en Products](reference_el_antes_con_la_app_base_en_products.md) — regrabar el antes sin otra build: cambia el Yala.app de Products.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
