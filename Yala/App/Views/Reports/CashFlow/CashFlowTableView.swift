@@ -97,16 +97,6 @@ struct CashFlowTableView: View {
             }
             viewModel.planJustCreated = false
         }
-        .sheet(isPresented: $viewModel.showLineConfig, onDismiss: { recalculate() }) {
-            if let line = viewModel.selectedLine {
-                CashFlowLineConfigSheet(
-                    viewModel: viewModel,
-                    line: line,
-                    currencyCode: currencyCode,
-                    transactions: transactions
-                )
-            }
-        }
         .sheet(isPresented: $viewModel.showOthersBreakdown, onDismiss: { recalculate() }) {
             CashFlowOthersSheet(
                 viewModel: viewModel,
