@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (122 entradas)
+## Índice (123 entradas)
 
-> **No hace falta leer este fichero entero** — son 318 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 319 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-18` [Lote del 18-nov (madrugada): flujo de caja por subcategoría, logo del comercio solo en Pagos planifi](#2026-11-18-lote-del-18-nov-madrugada-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
 - `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
@@ -148,6 +149,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-18] Lote del 18-nov (madrugada): flujo de caja por subcategoría, logo del comercio solo en Pagos planificados y Yala web a producción
+**Contexto:** Tres decisiones que Jürgen tomó en el chat el 18-nov (06:26, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del asistente de «Nuevo favorito»; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Flujo de caja:** se aceptan todas las recomendaciones del análisis (P1 a P6 y el modelo recomendado), con un ajuste: el nivel de detalle llega siempre a subcategoría, que es el id base; la categoría se deriva de ella y puede mostrarse plegable. (2) **El logo del comercio** va solo en Pagos planificados, en sus vistas de calendario, lista y línea de tiempo; no en Registros ni en el Panel. (3) **Yala web (logo oficial y tema del sistema):** opción B, se despliega ya a producción y Jürgen la prueba allí.
+**Razones:** Las da Jürgen al revisar el análisis del flujo de caja y los PR de la víspera.
+**Consecuencias:** (1) y (2) necesitan su encargo; (3) es un hotfix de `Web/` sobre `1.0` (en `2.3` no se publica hasta la próxima versión, `docs/FLUJO-RAMAS-Y-HOTFIX.md`).
+**Estado:** Activa
 
 ### [2026-11-17] Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja de cuenta y iPhone Duo
 **Contexto:** Siete decisiones que Jürgen tomó en el chat el 17-nov (20:47 a 21:10, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de la hoja de foto (X del sistema, descripción editable y cierre al guardar); no las ejecuta, porque no son de su encargo.
