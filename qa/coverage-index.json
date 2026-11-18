@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 181,
-      "deterministic": 79,
+      "total": 182,
+      "deterministic": 80,
       "agentic": 35,
       "manual": 59,
       "deterministicSinXCUITest": 0
@@ -4288,6 +4288,23 @@
       "coverage": "xcuitest:YalaUITests/CardDesignUITests#test_designCard_withTemplateAndLastFour_showsOnThePanelCard | xcuitest:YalaUITests/CardDesignUITests#test_cancel_keepsTheCardAsItWas | xcuitest:YalaUITests/CardDesignUITests#test_groupsCard_hasNoPaletteButton | unit:YalaTests/DisenoTarjeta/CardDesignStoreTests (guardar y leer por cuenta, diseño por defecto, sin campo de esquema) | unit:YalaTests/DisenoTarjeta/CardLookContrastTests (contraste WCAG de las 27 plantillas, todos los patrones y una barrida de colores; catálogo; solo 4 dígitos; VoiceOver «terminada en»).",
       "owner": "frank",
       "lastVerified": "2026-11-16"
+    },
+    {
+      "area": "profile-personalization",
+      "codeGlobs": [
+        "Yala/App/Views/Profile/PerfilPersonalizacion/**",
+        "Yala/App/Views/Profile/PersonalDetailsView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/Resources/*.lproj/PerfilPersonalizacion.strings",
+        "Yala/App/Views/Profile/ProfileView.swift"
+      ],
+      "scenarioIDs": [
+        "2026-11-17-perfil-personalizacion-tarjeta"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/PerfilPersonalizacionUITests#test_personalize_emojiColorAndBackground_isKeptAfterReopening (la cabecera de Ajustes es la tarjeta de perfil; emoji, color y fondo se guardan al cerrar y vuelven al abrir; «Volver al perfil de siempre» lo deshace; cae si no se guarda el estilo, medido con mutante) | xcuitest:YalaUITests/PerfilPersonalizacionUITests#test_initials_comeFromTheName | unit:YalaTests/PerfilPersonalizacion/ProfileStyleTests (guardar y leer, lectura tolerante, migración de quien ya tenía símbolo, caídas del avatar, iniciales, emojis, catálogos, contraste de la tarjeta con las 27 plantillas y los 14 colores, preferencia sincronizada `userProfileStyle`, «Vaciar mis datos», textos en 16 idiomas).",
+      "owner": "frank",
+      "lastVerified": "2026-11-18"
     },
     {
       "area": "groups-import-splitwise-tricount",

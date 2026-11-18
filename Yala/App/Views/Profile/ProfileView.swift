@@ -26,7 +26,6 @@ struct ProfileView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
 
     @State private var viewModel = ProfileViewModel()
 
@@ -1451,64 +1450,32 @@ struct ProfileView: View {
 
     // MARK: - Header
 
+    /// La cabecera de Ajustes es la tarjeta de perfil (decisión de Jürgen del 18-nov: «el perfil se muestra como
+    /// tarjeta»): la misma de «Detalles personales», con el avatar, el color y el fondo elegidos, el nombre y «Yala Pro».
+    /// Tocarla abre «Detalles personales», como «Editar perfil».
     private var profileHeader: some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Avatar - tappable to edit profile
+        let style = ProfileStyleLogic.decode(appPreferences.userProfileStyle)
+        let look = ProfileStyleLogic.cardLook(
+            style: style, themeAccentHex: ProfileCardThemeColor.accentHex(theme.accent, colorScheme: colorScheme))
+        return VStack(spacing: DS.Spacing.md) {
             Button {
                 activeSheet = .personalDetails
             } label: {
-                ZStack {
-                    // Aro sólido: dorado con Pro, el color de acento sin él (UX 2.2 · L16-12). Antes, degradado.
-                    Circle()
-                        .stroke(showsProBadge ? Color.proGold : theme.accent, lineWidth: 4)
-                        .frame(width: 100, height: 100)
-
-                    if let uiImage = profileStorage.image {
-                        // User photo
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 90, height: 90)
-                            .clipShape(Circle())
-                    } else {
-                        // Custom icon or default
-                        Circle()
-                            .fill(theme.accent.opacity(0.1))
-                            .frame(width: 90, height: 90)
-
-                        Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
-                            .font(.system(size: avatarIconSize))
-                            .foregroundStyle(theme.accentText)
-                    }
-
-                    // Spark badge for Pro users
-                    if showsProBadge {
-                        ZStack {
-                            Circle()
-                                .fill(.thCard)
-                            // Chispa cian sólida, la de la variante elegida (UX 2.2 · L16-12): la dorada iba en degradado.
-                            YalaSparkShape()
-                                .fill(Color.neonCyan)
-                                .frame(width: 14, height: 14)
-                        }
-                        .frame(width: 28, height: 28)
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        .offset(x: 38, y: -38)
-                    }
+                ProfileCardView(
+                    look: look, name: appPreferences.userName, showsPro: showsProBadge, identifier: "profile_header_card"
+                ) {
+                    ProfileCardAvatar(appearance: .stored(appPreferences, photo: profileStorage.image), look: look)
                 }
+                .frame(maxWidth: 420)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            // La lista de Ajustes no trae margen lateral para la cabecera: el de las secciones de debajo.
+            .padding(.horizontal, DS.Spacing.lg)
             .accessibilityLabel(L10n.Accessibility.profile)
-
-            // Name
-            Text(appPreferences.userName)
-                .font(DS.Typography.title)
-                .foregroundStyle(.primary)
-
-            // Pro badge with cyan spark (only here, so it stands out)
-            if showsProBadge {
-                proBadgeWithCyanSpark
-            }
+            // Dentro de la etiqueta de un botón el id de la tarjeta no llega al árbol: va en el botón.
+            .accessibilityIdentifier("profile_header_card")
 
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
@@ -1519,7 +1486,6 @@ struct ProfileView: View {
 
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, showsProBadge ? DS.Spacing.lg : 0)
         // Sin el tinte dorado en degradado que llevaba detrás con Pro (UX 2.2 · L16-12): se veía como un rectángulo.
         .sheet(isPresented: $showUpgradeForVoice) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
@@ -1533,27 +1499,6 @@ struct ProfileView: View {
         .sheet(isPresented: $showUpgradeForChat) {
             UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
         }
-    }
-
-    // MARK: - Pro Badge with Cyan Spark
-
-    /// La insignia «Yala Pro» de la cabecera: dorado sólido con el texto oscuro (UX 2.2 · L16-12, variante 1). Antes,
-    /// «PRO» en blanco sobre el degradado amarillo-naranja.
-    private var proBadgeWithCyanSpark: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            YalaSparkShape()
-                .fill(Color.proGoldInk)
-                .frame(width: 12, height: 12)
-                .accessibilityHidden(true)
-
-            Text(verbatim: "Yala Pro")
-                .font(DS.Typography.labelSmall.weight(.bold))
-                .foregroundStyle(Color.proGoldInk)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(Capsule().fill(Color.proGold))
-        .accessibilityIdentifier("profile_pro_badge")
     }
 
     // MARK: - Sections
