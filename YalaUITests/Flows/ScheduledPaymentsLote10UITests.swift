@@ -153,7 +153,8 @@ final class ScheduledPaymentsLote10UITests: XCTestCase {
         let app = XCUIApplication()
         launch(app)
         app.openScheduledPaymentsList()
-        app.buttons["scheduled_payments_create_button"].tap()
+        // «Nuevo pago planificado» abre el asistente: este caso prueba el formulario (encargo del 17-nov).
+        app.abrirFormularioDeNuevoPago()
         let save = app.buttons["toolbar_save_button"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No se abrió el editor.")
         XCTAssertTrue(save.isEnabled, "El ✓ debe poder tocarse aunque falte algo.")
