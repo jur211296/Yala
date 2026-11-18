@@ -22,7 +22,9 @@ final class ImageEntryReviewUITests: XCTestCase {
     /// Abre la hoja de imagen desde el FAB con el resultado fijo `profile` y toca Fotos.
     private func openAndRead(_ profile: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, aiConsent: true, extraArguments: ["-uitest-image-result", profile])
+        // Con todo guardado la hoja se cierra sola (encargo del 2026-11-17); el seam alarga la confirmación para leerla.
+        app.launchForUITest(pro: true, aiConsent: true,
+                            extraArguments: ["-uitest-image-result", profile, "-uitest-image-autoclose-seconds", "4"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openImageEntry(app)
@@ -58,7 +60,7 @@ final class ImageEntryReviewUITests: XCTestCase {
     }
 
     /// Sin cuenta atrás: al elegir, la hoja lee con la foto a la vista y Cancelar; después, lo leído completo se guarda
-    /// en la misma hoja y queda un solo botón para cerrar.
+    /// en la misma hoja y la hoja se cierra sola.
     func test_readsWithoutCountdown_andSavesInTheSameSheet() {
         let app = openAndRead("one")
 
@@ -80,10 +82,10 @@ final class ImageEntryReviewUITests: XCTestCase {
         )
         XCTAssertFalse(app.buttons["image_save"].exists, "Con todo guardado no debe quedar Guardar.")
 
-        let finish = app.buttons["image_finish"]
-        XCTAssertTrue(finish.waitForExistence(timeout: 5), "Falta Listo para cerrar (image_finish).")
-        finish.tap()
-        XCTAssertTrue(finish.waitForNonExistence(timeout: 10), "Listo no cerró la hoja.")
+        // Sin «Listo»: con todo guardado la hoja se cierra sola tras la confirmación.
+        XCTAssertFalse(app.buttons["image_finish"].exists, "Con todo guardado ya no se pide «Listo».")
+        XCTAssertTrue(app.staticTexts["image_review_title"].waitForNonExistence(timeout: 12),
+                      "Con todo guardado, la hoja tenía que cerrarse sola.")
     }
 
     /// Sin subcategoría, Guardar está apagado y la píldora en ámbar la ofrece; al elegirla, Guardar se enciende.

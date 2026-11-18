@@ -4292,6 +4292,29 @@
       "coverage": "xcuitest:YalaUITests/GroupReceiptSplitUITests + xcuitest:YalaUITests/GruposCapturaFlotanteUITests + unit:YalaTests/GruposCapturaEnrutadoTests,GruposCapturaPiezasDePersonalTests,GruposCapturaFlotanteTests | 2026-11-16 (encargo «Grupos: voz, foto y Yala IA idénticos a personal»): Voz, Foto y Yala IA de un grupo usan las piezas de personal (onda y frase en vivo, orbe, fichas Cámara/Fotos/Archivo, burbujas y barra del chat) con el motor de recibos de Grupos (GroupCaptureModel, cupo receipt sin candado) y terminan en Nuevo gasto relleno; el «+» del detalle sale solo al desplazar la fila de «Nuevo gasto» (revealsFloatingActionWhenScrolledAway), medido también en un iPhone SE. Device-QA en el iPhone 14 pendiente (micro y cámara reales).",
       "owner": "",
       "lastVerified": "2026-11-16"
+    },
+    {
+      "area": "photo-sheet-native-close-inline-note-autoclose",
+      "codeGlobs": [
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Image/EntrySheetCloseButton.swift",
+        "Yala/App/Views/Image/DraftNoteInlineEditor.swift",
+        "Yala/App/Views/Image/ImageEntryAutoClose.swift",
+        "Yala/App/Views/Voice/VoiceDraftReviewCard.swift",
+        "Yala/App/Views/Voice/MultiDraftReviewList.swift",
+        "Yala/App/Views/Groups/Captura/GroupCaptureChrome.swift",
+        "Yala/App/Views/Groups/Captura/GroupPhotoCaptureView.swift",
+        "Yala/App/Views/Groups/GroupReceiptSplitView.swift"
+      ],
+      "scenarioIDs": [
+        "photo-sheet-native-close",
+        "photo-sheet-inline-note",
+        "photo-sheet-autoclose"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/XNativaHojaFotoUITests + xcuitest:YalaUITests/ImageEntryReviewUITests + unit:YalaTests/XNativaHojaFotoNoteTests,XNativaHojaFotoAutoCloseTests,XNativaHojaFotoWiringTests | 2026-11-17 (encargo «Hoja de foto: X nativa, cabecera ordenada, descripción editable y cierre automático»): la X del sistema (role .close, 44 pt) en la misma fila que el título y las miniaturas, en personal y en Voz/Foto de Grupos; la descripción de «Esto leí» se corrige tocándola (solo la hoja de foto) y el nombre de cada línea del reparto de Grupos igual; con todo guardado y sin avisos la hoja enseña «Guardado» ~0,6 s y se cierra sola. Device-QA en el iPhone 14 pendiente (teclado real en la fila).",
+      "owner": "",
+      "lastVerified": "2026-11-17"
     }
   ]
 }
