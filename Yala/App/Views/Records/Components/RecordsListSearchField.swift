@@ -96,7 +96,8 @@ private struct RecordsListSearchContainerModifier: ViewModifier {
 
 // MARK: - El campo
 
-private struct RecordsListSearchField: View {
+/// También lo usa, siempre a la vista, la hoja de «Reusar» de Pagos planificados (encargo del 17-nov).
+struct RecordsListSearchField: View {
     @Binding var text: String
     var onClear: () -> Void
 

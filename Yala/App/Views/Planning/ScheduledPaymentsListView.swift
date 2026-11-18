@@ -22,8 +22,8 @@ struct ScheduledPaymentsListView: View {
     let onRefresh: () -> Void
     /// `true` cuando el scroll se lleva «Nuevo pago planificado» de arriba: entonces sale el «+» flotante (card kzhe).
     @Binding var showsFloatingNew: Bool
-    /// «Desde un registro» (encargo del 15-nov): el selector de registros recientes para crear el recurrente a partir de
-    /// uno. `nil`: no se ofrece.
+    /// «Reusar» (encargo del 15-nov; nombre del 17-nov): el selector de registros recientes para crear el recurrente a
+    /// partir de uno. `nil`: no se ofrece.
     var onCreateFromRecord: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -48,26 +48,67 @@ struct ScheduledPaymentsListView: View {
     @ViewBuilder
     private var createActions: some View {
         if let onCreateFromRecord {
-            let fromRecord = TopPrimaryActionPill(
-                title: L10n.RecurringFromRecord.fromRecord,
-                systemImage: "doc.text.magnifyingglass",
-                isPrimary: false,
-                accessibilityIdentifier: "scheduled_payments_create_from_record_button",
-                action: onCreateFromRecord
-            )
+            // Nunca uno debajo del otro (Jürgen, 17-nov): si «Reusar» no cabe al lado con su nombre, queda solo su
+            // icono, con el nombre para VoiceOver. Con texto grande el de «Nuevo» pasa a dos líneas y el icono se queda.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Spacing.sm) {
                     newPaymentPill
-                    fromRecord
+                    reusePill(action: onCreateFromRecord)
                 }
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.sm) {
                     newPaymentPill
-                    fromRecord
+                    reuseIconButton(action: onCreateFromRecord)
                 }
             }
         } else {
             newPaymentPill
         }
+    }
+
+    private static let reuseSystemImage = "doc.on.doc"
+
+    private func reusePill(action: @escaping () -> Void) -> some View {
+        TopPrimaryActionPill(
+            title: ReusarRegistroText.button,
+            systemImage: Self.reuseSystemImage,
+            isPrimary: false,
+            accessibilityIdentifier: "scheduled_payments_create_from_record_button",
+            action: action
+        )
+        .accessibilityHint(ReusarRegistroText.buttonHint)
+    }
+
+    /// «Reusar» sin su nombre: el mismo botón de tarjeta que la píldora, redondo y de 44 pt.
+    private func reuseIconButton(action: @escaping () -> Void) -> some View {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
+            Image(systemName: Self.reuseSystemImage)
+                .font(DS.Typography.label)
+                // Topado: con texto de accesibilidad el icono se salía del círculo y le quitaba sitio a «Nuevo pago
+                // planificado», que es el que tiene que leerse. El nombre lo da VoiceOver (y el visor de contenido).
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                .foregroundStyle(Color.primary)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                .background(Circle().fill(theme.card))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .shadow(
+            color: DS.Shadow.small.color,
+            radius: DS.Shadow.small.radius,
+            x: DS.Shadow.small.x,
+            y: DS.Shadow.small.y
+        )
+        .fixedSize()
+        .layoutPriority(1)
+        .accessibilityShowsLargeContentViewer {
+            Label(ReusarRegistroText.button, systemImage: Self.reuseSystemImage)
+        }
+        .accessibilityLabel(ReusarRegistroText.button)
+        .accessibilityHint(ReusarRegistroText.buttonHint)
+        .accessibilityIdentifier("scheduled_payments_create_from_record_button")
     }
 
     var body: some View {
@@ -76,7 +117,7 @@ struct ScheduledPaymentsListView: View {
                 .padding(.bottom, DS.Spacing.xs)
 
             // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe). A su lado,
-            // «Desde un registro» (encargo del 15-nov); si no caben los dos en una fila, va debajo.
+            // «Reusar» (encargo del 15-nov), siempre en la misma fila.
             createActions
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)

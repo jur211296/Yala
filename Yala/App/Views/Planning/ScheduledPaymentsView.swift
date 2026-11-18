@@ -94,7 +94,9 @@ struct ScheduledPaymentsView: View {
             }
         }
         .sheet(isPresented: $showsRecordPicker, onDismiss: { refreshData() }) {
+            // «Reusar»: grande desde el principio, como Registros (encargo del 17-nov).
             RecurringRecordPickerSheet()
+                .presentationDetents([.large])
         }
         // «¿Era de prueba?» del primer pago, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
         .practiceCleanupPrompt(for: [.scheduledPayment], editorClosedToken: paymentEditorClosedToken) { refreshData() }
