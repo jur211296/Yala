@@ -28,6 +28,14 @@ comparativa y los recorridos de cada alternativa, está en
 - **La web publicada sí habla de Gmail:** sección 5 de la política, proveedores, conservación, derechos y términos,
   en 6 idiomas.
 
+## Decisión de Jürgen tras el análisis (18-nov, en el chat de la sesión)
+
+«Si requiere el pago, fuera. Nos quedamos con lo que tenemos.» «Conectar Gmail» queda fuera porque exige CASA, y el
+registro automático sigue con lo que 2.3 ya trae: el atajo del banco y el reenvío a la dirección de Yala. En la sesión
+del análisis no se implementó nada nuevo. Lo que queda abierto es la parte de Google (retirar el permiso en la
+consola, contestar el correo y quitar la sección de Gmail de la política), que sigue en la card «Avisos del banco sin
+Gmail» para su GO.
+
 ## Recomendación
 
 1. **Ya (sin código de la app):** retirar `gmail.readonly` del proyecto, contestar a Google que se retira el permiso
