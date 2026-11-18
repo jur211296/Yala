@@ -1,0 +1,50 @@
+/*
+  AsistenteGrupo.strings
+  Yala
+
+  El asistente por pasos de «Nuevo grupo» (encargo del 17-nov). Los textos del contenedor (`asistente.*`) viven en
+  `AsistentePresupuesto.strings`; aquí solo los de grupos. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteGrupo`).
+*/
+
+"asistenteGrupo.discard.title" = "Scartare questo gruppo?";
+"asistenteGrupo.create" = "Crea gruppo";
+"asistenteGrupo.createShort" = "Crea";
+"asistenteGrupo.name.question" = "Come si chiama il gruppo?";
+"asistenteGrupo.name.detail" = "Tutti vedranno questo nome. Puoi cambiarlo dopo.";
+"asistenteGrupo.name.ideas" = "Idee";
+"asistenteGrupo.idea.viaje" = "Viaggio";
+"asistenteGrupo.idea.casa" = "Casa";
+"asistenteGrupo.idea.pareja" = "Coppia";
+"asistenteGrupo.idea.amigos" = "Amici";
+"asistenteGrupo.idea.trabajo" = "Lavoro";
+"asistenteGrupo.icon.question" = "Con quale icona lo riconosci?";
+"asistenteGrupo.icon.detail" = "Così lo trovi subito nella tua lista.";
+"asistenteGrupo.icon.more" = "Altre icone e colori";
+"asistenteGrupo.icon.option" = "Icona %d";
+"asistenteGrupo.split.question" = "Come dividete di solito le spese?";
+"asistenteGrupo.split.detail" = "È quello che compare per primo quando aggiungi una spesa. Puoi cambiarlo in ognuna.";
+"asistenteGrupo.split.equal.hint" = "Tutti pagano lo stesso.";
+"asistenteGrupo.split.percentage.hint" = "Ognuno paga una percentuale del totale.";
+"asistenteGrupo.split.exact.hint" = "Scrivi quanto paga ciascuno.";
+"asistenteGrupo.split.shares.hint" = "Per quote: uno può pagare il doppio di un altro.";
+"asistenteGrupo.debts.question" = "Uniamo i debiti per avere meno pagamenti?";
+"asistenteGrupo.debts.detail" = "Fa la differenza nei gruppi da tre in su.";
+"asistenteGrupo.debts.yes" = "Sì, meno pagamenti";
+"asistenteGrupo.debts.yes.hint" = "Se Ana ti deve dei soldi e tu li devi a Luis, Ana paga direttamente Luis.";
+"asistenteGrupo.debts.no" = "No, ogni debito a parte";
+"asistenteGrupo.debts.no.hint" = "Ognuno restituisce a chi gli ha prestato.";
+"asistenteGrupo.currency.question" = "Come vedete quanto vi dovete?";
+"asistenteGrupo.currency.detail" = "Nel caso spendiate in più di una valuta.";
+"asistenteGrupo.currency.each" = "Ogni spesa nella sua valuta";
+"asistenteGrupo.currency.each.hint" = "I debiti restano nella valuta in cui si è pagato.";
+"asistenteGrupo.currency.single" = "Tutto in una sola valuta";
+"asistenteGrupo.currency.single.hint" = "Le spese in altre valute vengono convertite al cambio di oggi.";
+"asistenteGrupo.currency.pick" = "Valuta";
+"asistenteGrupo.summary.question" = "Lo creiamo così?";
+"asistenteGrupo.summary.detail" = "Tocca una risposta per cambiarla.";
+"asistenteGrupo.summary.name" = "Nome";
+"asistenteGrupo.summary.split" = "Come dividete";
+"asistenteGrupo.summary.debts" = "Debiti";
+"asistenteGrupo.summary.currency" = "Valuta";
+"asistenteGrupo.summary.iconHint" = "Tocca per cambiare l’icona";

@@ -51,6 +51,8 @@ final class GruposAjustesLote23ChicoUITests: XCTestCase {
         let newGroup = app.buttons.matching(NSPredicate(format: "identifier IN %@", ["groups_toolbar_new_group", "groups_action_new_group"])).firstMatch
         XCTAssertTrue(newGroup.waitForExistence(timeout: 15), "No apareció «Nuevo grupo».")
         newGroup.tap()
+        // «Nuevo grupo» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.pasarDelAsistenteAlFormularioDeGrupo()
         let more = app.buttons["group_form_more_options"]
         XCTAssertTrue(more.waitForExistence(timeout: 10), "No se abrió el formulario de grupo.")
         more.tap()

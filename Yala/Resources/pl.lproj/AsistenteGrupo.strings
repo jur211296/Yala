@@ -1,0 +1,50 @@
+/*
+  AsistenteGrupo.strings
+  Yala
+
+  El asistente por pasos de «Nuevo grupo» (encargo del 17-nov). Los textos del contenedor (`asistente.*`) viven en
+  `AsistentePresupuesto.strings`; aquí solo los de grupos. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteGrupo`).
+*/
+
+"asistenteGrupo.discard.title" = "Odrzucić tę grupę?";
+"asistenteGrupo.create" = "Utwórz grupę";
+"asistenteGrupo.createShort" = "Utwórz";
+"asistenteGrupo.name.question" = "Jak nazywa się grupa?";
+"asistenteGrupo.name.detail" = "Wszyscy zobaczą tę nazwę. Możesz ją później zmienić.";
+"asistenteGrupo.name.ideas" = "Pomysły";
+"asistenteGrupo.idea.viaje" = "Podróż";
+"asistenteGrupo.idea.casa" = "Dom";
+"asistenteGrupo.idea.pareja" = "Para";
+"asistenteGrupo.idea.amigos" = "Przyjaciele";
+"asistenteGrupo.idea.trabajo" = "Praca";
+"asistenteGrupo.icon.question" = "Po jakiej ikonie ją rozpoznasz?";
+"asistenteGrupo.icon.detail" = "Dzięki temu szybko znajdziesz ją na liście.";
+"asistenteGrupo.icon.more" = "Więcej ikon i kolorów";
+"asistenteGrupo.icon.option" = "Ikona %d";
+"asistenteGrupo.split.question" = "Jak zwykle dzielicie wydatki?";
+"asistenteGrupo.split.detail" = "To pojawi się najpierw przy dodawaniu wydatku. W każdym możesz to zmienić.";
+"asistenteGrupo.split.equal.hint" = "Wszyscy płacą tyle samo.";
+"asistenteGrupo.split.percentage.hint" = "Każdy płaci procent całości.";
+"asistenteGrupo.split.exact.hint" = "Wpisujesz, ile płaci każdy.";
+"asistenteGrupo.split.shares.hint" = "Według udziałów: ktoś może zapłacić dwa razy więcej niż inny.";
+"asistenteGrupo.debts.question" = "Łączymy długi, żeby było mniej płatności?";
+"asistenteGrupo.debts.detail" = "Ma to znaczenie w grupach od trzech osób.";
+"asistenteGrupo.debts.yes" = "Tak, mniej płatności";
+"asistenteGrupo.debts.yes.hint" = "Jeśli Ana jest winna tobie, a ty Luisowi, Ana płaci od razu Luisowi.";
+"asistenteGrupo.debts.no" = "Nie, każdy dług osobno";
+"asistenteGrupo.debts.no.hint" = "Każdy oddaje temu, kto mu pożyczył.";
+"asistenteGrupo.currency.question" = "Jak widzicie, ile jesteście sobie winni?";
+"asistenteGrupo.currency.detail" = "Na wypadek, gdybyście wydawali w kilku walutach.";
+"asistenteGrupo.currency.each" = "Każdy wydatek w swojej walucie";
+"asistenteGrupo.currency.each.hint" = "Długi zostają w walucie, w której zapłacono.";
+"asistenteGrupo.currency.single" = "Wszystko w jednej walucie";
+"asistenteGrupo.currency.single.hint" = "Wydatki w innych walutach są przeliczane po dzisiejszym kursie.";
+"asistenteGrupo.currency.pick" = "Waluta";
+"asistenteGrupo.summary.question" = "Utworzyć tak?";
+"asistenteGrupo.summary.detail" = "Stuknij odpowiedź, aby ją zmienić.";
+"asistenteGrupo.summary.name" = "Nazwa";
+"asistenteGrupo.summary.split" = "Jak dzielicie";
+"asistenteGrupo.summary.debts" = "Długi";
+"asistenteGrupo.summary.currency" = "Waluta";
+"asistenteGrupo.summary.iconHint" = "Stuknij, aby zmienić ikonę";

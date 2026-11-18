@@ -24,6 +24,9 @@ struct GroupFormView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    /// Encargo del 17-nov · lo respondido en el asistente de «Nuevo grupo» al tocar «Usar formulario» (`nil` en los demás
+    /// formularios). Llega por el entorno para que la llamada de la pestaña siga siendo la de siempre.
+    @Environment(\.groupFormPrefill) private var prefill
 
     // MARK: - Input
 
@@ -69,6 +72,8 @@ struct GroupFormView: View {
     @State private var didOpenNamePrompt = false
     /// 2.3 · el export de Splitwise o Tricount aceptado en «Traer un grupo…» (solo al crear).
     @State private var importSelection: ImportarGrupoSeleccion?
+    /// Encargo del 17-nov · cerrar el formulario que trae lo respondido en el asistente pregunta antes de tirarlo.
+    @State private var showDiscardPrefill = false
 
     // MARK: - Sheet State
 
@@ -121,7 +126,7 @@ struct GroupFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
-                        close()
+                        if asksBeforeDiscardingPrefill { showDiscardPrefill = true } else { close() }
                     }
                     .accessibilityIdentifier("group_form_close")
                     // Cerrar a mitad del guardado separaba el grupo creado de lo que venía después (la hoja de
@@ -185,6 +190,18 @@ struct GroupFormView: View {
                 Text(L10n.Welcome.Groups.closeNameBody)
             }
         }
+        // Encargo del 17-nov · con lo respondido en el asistente, ni la X ni el gesto de bajar lo tiran sin preguntar.
+        .asksBeforeDiscardingGroupForm(
+            hasUnsavedInput: asksBeforeDiscardingPrefill,
+            title: L10n.AsistenteGrupo.descartarTitulo,
+            isPresented: $showDiscardPrefill,
+            onDiscard: { dismiss() }
+        )
+    }
+
+    /// El formulario viene del asistente con algo respondido (solo al crear) y no está guardando.
+    private var asksBeforeDiscardingPrefill: Bool {
+        group == nil && prefill != nil && !isSaving
     }
 
     // MARK: - Icon Preview
@@ -562,6 +579,17 @@ struct GroupFormView: View {
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
             selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+        } else if let prefill {
+            // Encargo del 17-nov · lo respondido en el asistente. «Más opciones» se abre si alguna no es la de siempre.
+            name = prefill.name
+            iconName = prefill.iconName
+            colorHex = prefill.colorHex
+            simplifyDebts = prefill.simplifyDebts
+            showDebtsInSingleCurrency = prefill.showDebtsInSingleCurrency
+            selectedCurrency = prefill.currency
+            defaultSplitType = prefill.splitType
+            importSelection = prefill.importSelection
+            showsMoreOptions = prefill.changesMoreOptions
         } else if isFirstGroupSetup {
             // El alta escribirá la divisa de la región al guardar; la de antes del alta puede ser la del dueño del
             // Apple ID (la aplica el arranque neutro), así que el selector arranca ya en la que va a valer.

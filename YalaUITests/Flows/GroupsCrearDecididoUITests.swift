@@ -60,6 +60,8 @@ final class GroupsCrearDecididoUITests: XCTestCase {
         app.launchForUITest(seed: "grupos", deeplink: "groups", cloudSession: true, groupsConsent: true)
 
         openNewGroupForm(in: app)
+        // «Nuevo grupo» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.pasarDelAsistenteAlFormularioDeGrupo()
 
         let nameInput = app.textFields["group_form_name_input"]
         XCTAssertTrue(nameInput.waitForExistence(timeout: 10), "No se abrió el formulario de grupo.")
@@ -91,6 +93,8 @@ final class GroupsCrearDecididoUITests: XCTestCase {
         XCTAssertTrue(accept.waitForExistence(timeout: 15), "«Nuevo grupo» sin consentimiento no lo pidió.")
         accept.tap()
 
+        // Desde el encargo del 17-nov, «Nuevo grupo» abre el asistente: la cadena vuelve a él, y de ahí al formulario.
+        app.pasarDelAsistenteAlFormularioDeGrupo()
         XCTAssertTrue(app.textFields["group_form_name_input"].waitForExistence(timeout: 15),
                       "Tras aceptar, la cadena no volvió al formulario de grupo (L12-11).")
     }
@@ -110,6 +114,8 @@ final class GroupsCrearDecididoUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 10),
                       "Sin grupos, «Grupo» no explicó que primero hay que crear uno (L13-8).")
         app.buttons["group_needed_create"].tap()
+        // Desde el encargo del 17-nov, «Crear grupo» abre el asistente por pasos; este caso mira el formulario.
+        app.pasarDelAsistenteAlFormularioDeGrupo()
 
         let nameInput = app.textFields["group_form_name_input"]
         XCTAssertTrue(nameInput.waitForExistence(timeout: 15), "«Crear grupo» no abrió el formulario de grupo.")
