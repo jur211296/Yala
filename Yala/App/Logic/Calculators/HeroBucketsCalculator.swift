@@ -85,106 +85,160 @@ enum HeroBucketsCalculator {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Buckets {
-        var monthIncome: Double = 0
-        var monthExpense: Double = 0
-        var prevExpense: Double = 0
-        var prevHasAnyTx = false
-        var periodIncome: Double = 0
-        var periodExpense: Double = 0
-        var periodPrevExpense: Double = 0
+        var accumulator = Accumulator(
+            monthInterval: monthInterval,
+            prevInterval: prevInterval,
+            periodInterval: periodInterval,
+            periodPrevInterval: periodPrevInterval,
+            eligibleAccountIDs: eligibleAccountIDs,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+        accumulator.add(transactions)
+        return accumulator.buckets
+    }
+
+    /// La pasada de `calculate`, por partes: se le dan los movimientos en tramos (`add`) y al final se leen las cifras
+    /// (`buckets`). Sumar en tramos da lo mismo que de una vez porque cada movimiento solo suma en sus propios
+    /// acumuladores y ninguno depende del orden. Lo usa el Panel para ceder el hilo principal entre tramo y tramo con un
+    /// historial grande (Sentry YALA-IOS-N: la pasada entera, en el hilo principal, dejaba la app sin responder).
+    struct Accumulator {
+        let monthInterval: DateInterval
+        let prevInterval: DateInterval
+        let periodInterval: DateInterval
+        let periodPrevInterval: DateInterval?
+        let eligibleAccountIDs: Set<PersistentIdentifier>
+        let currencyCode: String
+        let adjustment: GroupBridgeStatsAdjustment
+        let converter: CurrencyConverting
+
+        private var monthIncome: Double = 0
+        private var monthExpense: Double = 0
+        private var prevExpense: Double = 0
+        private var prevHasAnyTx = false
+        private var periodIncome: Double = 0
+        private var periodExpense: Double = 0
+        private var periodPrevExpense: Double = 0
         // Numerador y denominador del umbral, por lado, los dos en MAGNITUDES sumadas, como `CashFlowCalculator` y el
         // resumen de Registros: desde el 2026-10-23 `periodIncome`/`periodExpense` se acumulan con signo, y una
         // devolución que los encoge dispararía el cociente (la marca del hero se separaba de la del Flujo de caja con
         // las mismas filas; lo cazó la review). El neto sigue dividiendo entre el número que se pinta.
-        var periodIncomeApproximateAmount: Double = 0
-        var periodExpenseApproximateAmount: Double = 0
-        var periodIncomeMagnitude: Double = 0
-        var periodExpenseMagnitude: Double = 0
-        var periodHasAnyTx = false
+        private var periodIncomeApproximateAmount: Double = 0
+        private var periodExpenseApproximateAmount: Double = 0
+        private var periodIncomeMagnitude: Double = 0
+        private var periodExpenseMagnitude: Double = 0
+        private var periodHasAnyTx = false
 
-        for tx in transactions where tx.balanceAdjustmentType == nil {
-            guard let account = tx.account,
-                  eligibleAccountIDs.contains(account.persistentModelID)
-            else { continue }
-            // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
-            guard !adjustment.isSuppressed(tx) else { continue }
+        init(
+            monthInterval: DateInterval,
+            prevInterval: DateInterval,
+            periodInterval: DateInterval,
+            periodPrevInterval: DateInterval? = nil,
+            eligibleAccountIDs: Set<PersistentIdentifier>,
+            currencyCode: String,
+            adjustment: GroupBridgeStatsAdjustment = .none,
+            converter: CurrencyConverting = CurrencyConverter.shared
+        ) {
+            self.monthInterval = monthInterval
+            self.prevInterval = prevInterval
+            self.periodInterval = periodInterval
+            self.periodPrevInterval = periodPrevInterval
+            self.eligibleAccountIDs = eligibleAccountIDs
+            self.currencyCode = currencyCode
+            self.adjustment = adjustment
+            self.converter = converter
+        }
 
-            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto); `resolvedAmount`
-            // lo lleva a `currencyCode` aunque la fila se guardara en otra divisa principal.
-            let resolved = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            )
-            // Ingreso o gasto con la regla de toda la app (la categoría manda; sin categoría, el signo), y lo que la
-            // fila aporta a su lado CON SIGNO: una devolución en una categoría de gasto resta del gasto, como en
-            // Registros, Flujo de caja y Tendencias. Hasta el 2026-10-23 el hero sumaba magnitudes y daba por gasto
-            // todo lo que no tuviera categoría de ingreso: el mismo mes salía con otras cifras que en esas pantallas
-            // (ticket `records-standalone-amount-discrepancy`).
-            let isIncome = TransactionClassificationLogic.isIncome(tx)
-            let amount = isIncome ? resolved.value : -resolved.value
+        /// Suma un tramo de movimientos.
+        mutating func add(_ transactions: some Sequence<TransactionItem>) {
+            for tx in transactions where tx.balanceAdjustmentType == nil {
+                guard let account = tx.account,
+                      eligibleAccountIDs.contains(account.persistentModelID)
+                else { continue }
+                // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+                guard !adjustment.isSuppressed(tx) else { continue }
 
-            if monthInterval.contains(tx.date) {
-                if isIncome { monthIncome += amount } else { monthExpense += amount }
-            } else if prevInterval.contains(tx.date) {
-                prevHasAnyTx = true
-                if !isIncome { prevExpense += amount }
-            }
+                // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto); `resolvedAmount`
+                // lo lleva a `currencyCode` aunque la fila se guardara en otra divisa principal.
+                let resolved = CashFlowCalculator.resolvedAmount(
+                    tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                )
+                // Ingreso o gasto con la regla de toda la app (la categoría manda; sin categoría, el signo), y lo que la
+                // fila aporta a su lado CON SIGNO: una devolución en una categoría de gasto resta del gasto, como en
+                // Registros, Flujo de caja y Tendencias. Hasta el 2026-10-23 el hero sumaba magnitudes y daba por gasto
+                // todo lo que no tuviera categoría de ingreso: el mismo mes salía con otras cifras que en esas pantallas
+                // (ticket `records-standalone-amount-discrepancy`).
+                let isIncome = TransactionClassificationLogic.isIncome(tx)
+                let amount = isIncome ? resolved.value : -resolved.value
 
-            // Period puede solaparse con monthInterval — sumamos en buckets
-            // independientes para que la card "Disponible" sea exacta tanto
-            // si el periodo coincide con el mes como si difiere.
-            if periodInterval.contains(tx.date) {
-                // La magnitud dudosa NO la da la fila: en un gasto de grupo `amount` es el NETO de
-                // varias patas y el flag de la fila describe solo una (ver `resolvedAmount`).
-                let approximate = resolved.approximateMagnitude
-                periodHasAnyTx = true
-                if isIncome {
-                    periodIncome += amount
-                    periodIncomeApproximateAmount += approximate
-                    periodIncomeMagnitude += abs(amount)
-                } else {
-                    periodExpense += amount
-                    periodExpenseApproximateAmount += approximate
-                    periodExpenseMagnitude += abs(amount)
+                if monthInterval.contains(tx.date) {
+                    if isIncome { monthIncome += amount } else { monthExpense += amount }
+                } else if prevInterval.contains(tx.date) {
+                    prevHasAnyTx = true
+                    if !isIncome { prevExpense += amount }
                 }
-            }
 
-            // Ventana previa comparable (solo gasto). Estrictamente disjunta de
-            // periodInterval: `DateInterval` es CERRADO en ambos extremos, así que una TX
-            // fechada en el instante de cierre del previo caería en AMBOS buckets → doble
-            // conteo que infla la base del comparativo.
-            //
-            // Desde el 2026-09-02 `PreviousPeriodHelper` SÍ resta 1s en todas sus ramas
-            // (`.thisMonth` era la última sin hacerlo), así que hoy este guard es
-            // REDUNDANTE para el camino normal. NO se retira: es la única red que
-            // detectaría una regresión de esa fuente, el caller puede pasar un intervalo
-            // artesanal, y su coste es una comparación. Su test (`:371`) sigue siendo un
-            // test de contrato, no de implementación.
-            if let periodPrevInterval, !isIncome,
-               periodPrevInterval.contains(tx.date), !periodInterval.contains(tx.date) {
-                periodPrevExpense += amount
+                // Period puede solaparse con monthInterval — sumamos en buckets
+                // independientes para que la card "Disponible" sea exacta tanto
+                // si el periodo coincide con el mes como si difiere.
+                if periodInterval.contains(tx.date) {
+                    // La magnitud dudosa NO la da la fila: en un gasto de grupo `amount` es el NETO de
+                    // varias patas y el flag de la fila describe solo una (ver `resolvedAmount`).
+                    let approximate = resolved.approximateMagnitude
+                    periodHasAnyTx = true
+                    if isIncome {
+                        periodIncome += amount
+                        periodIncomeApproximateAmount += approximate
+                        periodIncomeMagnitude += abs(amount)
+                    } else {
+                        periodExpense += amount
+                        periodExpenseApproximateAmount += approximate
+                        periodExpenseMagnitude += abs(amount)
+                    }
+                }
+
+                // Ventana previa comparable (solo gasto). Estrictamente disjunta de
+                // periodInterval: `DateInterval` es CERRADO en ambos extremos, así que una TX
+                // fechada en el instante de cierre del previo caería en AMBOS buckets → doble
+                // conteo que infla la base del comparativo.
+                //
+                // Desde el 2026-09-02 `PreviousPeriodHelper` SÍ resta 1s en todas sus ramas
+                // (`.thisMonth` era la última sin hacerlo), así que hoy este guard es
+                // REDUNDANTE para el camino normal. NO se retira: es la única red que
+                // detectaría una regresión de esa fuente, el caller puede pasar un intervalo
+                // artesanal, y su coste es una comparación. Su test (`:371`) sigue siendo un
+                // test de contrato, no de implementación.
+                if let periodPrevInterval, !isIncome,
+                   periodPrevInterval.contains(tx.date), !periodInterval.contains(tx.date) {
+                    periodPrevExpense += amount
+                }
             }
         }
 
-        return Buckets(
-            monthIncome: monthIncome,
-            monthExpense: monthExpense,
-            prevExpense: prevExpense,
-            prevHasAnyTx: prevHasAnyTx,
-            periodIncome: periodIncome,
-            periodExpense: periodExpense,
-            periodPrevExpense: periodPrevExpense,
-            periodHasAnyTx: periodHasAnyTx,
-            periodIncomeApproximate: ApproximateMarkThreshold.marks(
-                approximate: periodIncomeApproximateAmount, total: periodIncomeMagnitude
-            ),
-            periodExpenseApproximate: ApproximateMarkThreshold.marks(
-                approximate: periodExpenseApproximateAmount, total: periodExpenseMagnitude
-            ),
-            periodNetApproximate: ApproximateMarkThreshold.marks(
-                approximate: periodIncomeApproximateAmount + periodExpenseApproximateAmount,
-                total: periodIncome - periodExpense
+        /// Las cifras de lo sumado hasta ahora.
+        var buckets: Buckets {
+            return Buckets(
+                monthIncome: monthIncome,
+                monthExpense: monthExpense,
+                prevExpense: prevExpense,
+                prevHasAnyTx: prevHasAnyTx,
+                periodIncome: periodIncome,
+                periodExpense: periodExpense,
+                periodPrevExpense: periodPrevExpense,
+                periodHasAnyTx: periodHasAnyTx,
+                periodIncomeApproximate: ApproximateMarkThreshold.marks(
+                    approximate: periodIncomeApproximateAmount, total: periodIncomeMagnitude
+                ),
+                periodExpenseApproximate: ApproximateMarkThreshold.marks(
+                    approximate: periodExpenseApproximateAmount, total: periodExpenseMagnitude
+                ),
+                periodNetApproximate: ApproximateMarkThreshold.marks(
+                    approximate: periodIncomeApproximateAmount + periodExpenseApproximateAmount,
+                    total: periodIncome - periodExpense
+                )
             )
-        )
+        }
     }
 
     /// Ventana previa COMPARABLE al `currentInterval` del período seleccionado,

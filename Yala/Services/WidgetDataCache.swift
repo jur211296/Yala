@@ -6,6 +6,7 @@
 //  This runs in the main app and pushes data to UserDefaults for widget access.
 //
 
+import CoreData
 import Foundation
 import SwiftData
 import WidgetKit
@@ -387,6 +388,8 @@ enum WidgetDataCache {
     /// fondo que va a terminar, el paso a segundo plano— llama a `updateCacheNow` o a `flushPendingUpdate()`.
     static func updateCache(context: ModelContext) {
         pendingContext = context
+        // Una petición que llega con la foto ya a medias puede traer algo que esa foto no leyó: otra al terminar.
+        if stagedBuildIsRunning { requestedDuringStagedBuild = true }
         guard pendingRebuild == nil else { return }
         #if DEBUG
         debugRebuildWindowsOpened += 1
@@ -394,9 +397,92 @@ enum WidgetDataCache {
         pendingRebuild = Task { @MainActor in
             do { try await Task.sleep(for: rebuildDelay) } catch { return }
             guard !Task.isCancelled else { return }
-            flushPendingUpdate()
+            await rebuildPendingInStages()
         }
     }
+
+    /// La foto pedida, por etapas, cediendo el hilo principal entre una y otra (Sentry YALA-IOS-M, 2026-11-18): de un
+    /// tirón tardaba ~3 s con 20.000 movimientos en el simulador, y más en un iPhone con iOS 27.3. Se publica por el
+    /// camino de siempre (`updateCacheNow`, con su puerta del borrado armado), que la toma ya hecha.
+    ///
+    /// Mientras dura sigue contando como pedida (`hasPendingUpdate`): pasar a segundo plano la cancela y hace la foto de
+    /// una vez (`flushPendingUpdate`), y soltar el contenedor la olvida (`cancelPendingUpdate`). Si entre dos etapas se
+    /// guarda algo en SwiftData o el espejo de iCloud funde cambios, la foto a medias se tira y se pide otra: pudo ser un
+    /// borrado, y leer un `@Model` borrado aborta en el iPhone (card f8rj). Con cambios seguidos (una importación, el pull
+    /// de la nube) la foto espera a que paren o a que la app pase a segundo plano.
+    private static func rebuildPendingInStages() async {
+        guard let context = pendingContext else {
+            pendingRebuild = nil
+            return
+        }
+        // Con un borrado armado no se construye nada: la foto de una vez lo dice y no escribe.
+        guard !isWipeArmed else {
+            flushPendingUpdate()
+            return
+        }
+        let savesAtStart = StoreSaveCounter.shared.count
+        let remoteChangesAtStart = StoreRemoteChangeCounter.shared.count
+        stagedBuildIsRunning = true
+        requestedDuringStagedBuild = false
+        defer { stagedBuildIsRunning = false }
+        var stages: [@MainActor () -> Void] = []
+        let finish = buildSnapshot(context: context, now: .now, stages: &stages)
+        for (index, stage) in stages.enumerated() {
+            if index > 0 {
+                // Un milisegundo y no `Task.yield()`: lo que hace falta es que el run loop atienda los toques.
+                do { try await Task.sleep(for: stagePause) } catch { return }
+                // Cancelada: quien canceló (el paso a segundo plano, el cambio de almacén) ya se hizo cargo.
+                guard !Task.isCancelled else { return }
+                // Lo que funde el espejo de iCloud no pasa por `ModelContext.didSave`: cuenta aparte.
+                guard StoreSaveCounter.shared.count == savesAtStart,
+                      StoreRemoteChangeCounter.shared.count == remoteChangesAtStart,
+                      pendingContext === context else {
+                    #if DEBUG
+                    debugStagedBuildsRestarted += 1
+                    #endif
+                    pendingRebuild = nil
+                    if let latest = pendingContext { updateCache(context: latest) }
+                    return
+                }
+            }
+            stage()
+        }
+        #if DEBUG
+        debugLastStagedBuildStages = stages.count
+        #endif
+        let requestedAgain = requestedDuringStagedBuild
+        stagedSnapshot = (context: ObjectIdentifier(context), saves: savesAtStart, remoteChanges: remoteChangesAtStart,
+                          built: finish())
+        flushPendingUpdate()
+        stagedSnapshot = nil
+        if requestedAgain { updateCache(context: context) }
+    }
+
+    /// La foto que `rebuildPendingInStages` acaba de terminar, si es de ESTE contexto y nada se guardó desde que empezó.
+    /// Se toma una vez: después, `updateCacheNow` vuelve a hacer la foto en el acto.
+    private static func takeStagedSnapshot(for context: ModelContext) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot)? {
+        guard let staged = stagedSnapshot else { return nil }
+        stagedSnapshot = nil
+        guard staged.context == ObjectIdentifier(context), staged.saves == StoreSaveCounter.shared.count,
+              staged.remoteChanges == StoreRemoteChangeCounter.shared.count else { return nil }
+        return staged.built
+    }
+
+    /// Lo que se cede entre dos etapas de la foto.
+    static let stagePause: Duration = .milliseconds(1)
+
+    private static var stagedBuildIsRunning = false
+    private static var requestedDuringStagedBuild = false
+    private static var stagedSnapshot: (context: ObjectIdentifier, saves: Int, remoteChanges: Int,
+                                        built: (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot))?
+
+    #if DEBUG
+    /// Etapas de la última foto hecha por etapas, y fotos a medias tiradas porque algo se guardó. Solo para los tests.
+    private(set) static var debugLastStagedBuildStages = 0
+    private(set) static var debugStagedBuildsRestarted = 0
+    /// `true` mientras una foto se hace por etapas.
+    static var debugIsStagedBuildRunning: Bool { stagedBuildIsRunning }
+    #endif
 
     /// Cuánto se esperan más peticiones antes de rehacer la foto. Los widgets se recargan a petición de iOS, que no
     /// promete hacerlo en el acto; un segundo no se nota en la pantalla de inicio y junta una ráfaga (importar, aprobar
@@ -444,7 +530,8 @@ enum WidgetDataCache {
         }
 
         // Lo que tarda en estar la foto que leen los widgets (y Siri): la extensión solo la decodifica.
-        let built = LoadTimeMarks.measure(.widgetCache) { buildSnapshot(context: context) }
+        // La de `rebuildPendingInStages` si la hay; si no, de una vez.
+        let built = LoadTimeMarks.measure(.widgetCache) { takeStagedSnapshot(for: context) ?? buildSnapshot(context: context) }
         saveSnapshot(built.widget)
         // Los grupos que lleva esta foto: `WidgetGroupsRefresh` la rehace solo si cambian después.
         WidgetGroupsRefresh.shared.notePublished(built.widget.groups)
@@ -540,93 +627,107 @@ enum WidgetDataCache {
 
     // MARK: - Private Helpers
 
+    /// Las etapas de la foto, en orden, y lo que la arma al final (Sentry YALA-IOS-M, 2026-11-18). Cada etapa es un
+    /// recorrido del historial (o unas lecturas) y deja su parte en las variables que comparten; ninguna lee algo que
+    /// la siguiente cambie, así que la foto es la misma se corran seguidas (`buildSnapshot(context:now:)`) o con el
+    /// hilo principal cedido entre una y otra (`rebuildPendingInStages`). Con un historial grande la foto entera tardaba
+    /// varios segundos de un tirón en el hilo principal y la app dejaba de responder.
+    ///
     /// `now` es el «ahora» de la foto: los ocho períodos, el mes de los pagos, Siri y `lastUpdated` salen de él. Los
     /// widgets miden los períodos a la hora de la foto (`lastUpdated`), así que un segundo reloj para ella haría que una
     /// foto empezada a las 23:59:59 del último día del mes y guardada pasada la medianoche leyera «Este mes» como el
     /// siguiente. Solo los tests lo fijan.
     static func buildSnapshot(
-        context: ModelContext, now: Date = .now
-    ) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
+        context: ModelContext, now: Date = .now, stages: inout [@MainActor () -> Void]
+    ) -> @MainActor () -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
         // Fetch ALL transactions for correct balance calculation
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
         )
 
         var allTransactions: [TransactionItem] = []
-        do {
-            // Lo que espera su borrado con «Deshacer» no cuenta en los widgets (`RecordPendingDeletion`).
-            allTransactions = RecordPendingDeletion.shared.visible(try context.fetch(allTransactionsDescriptor))
-        } catch {
-            #if DEBUG
-            print("WidgetDataCache: Error fetching transactions: \(error)")
-            #endif
+        var recentTransactions: [TransactionItem] = []
+        stages.append {
+            do {
+                // Lo que espera su borrado con «Deshacer» no cuenta en los widgets (`RecordPendingDeletion`).
+                allTransactions = RecordPendingDeletion.shared.visible(try context.fetch(allTransactionsDescriptor))
+            } catch {
+                #if DEBUG
+                print("WidgetDataCache: Error fetching transactions: \(error)")
+                #endif
+            }
+
+            // Filter to last 90 days for widget display (max 500)
+            let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date.now) ?? Date.now
+            recentTransactions = Array(allTransactions.filter { $0.date >= ninetyDaysAgo }.prefix(500))
         }
-
-        // Filter to last 90 days for widget display (max 500)
-        let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date.now) ?? Date.now
-        let recentTransactions = Array(allTransactions.filter { $0.date >= ninetyDaysAgo }.prefix(500))
-
-        // Fetch active budgets
-        let budgetDescriptor = FetchDescriptor<Budget>(
-            predicate: #Predicate { $0.isActive },
-            sortBy: [SortDescriptor(\.name)]
-        )
 
         var budgets: [Budget] = []
-        do {
-            budgets = try context.fetch(budgetDescriptor)
-        } catch {
-            #if DEBUG
-            print("WidgetDataCache: Error fetching budgets: \(error)")
-            #endif
-        }
-
-        // Fetch active scheduled payments
-        let paymentDescriptor = FetchDescriptor<ScheduledPayment>(
-            predicate: #Predicate { $0.isActive },
-            sortBy: [SortDescriptor(\.nextDueDate)]
-        )
-
         var scheduledPayments: [ScheduledPayment] = []
-        do {
-            // Un pago que espera su borrado con «Deshacer» no cuenta en los widgets (`ScheduledPaymentPendingDeletion`).
-            scheduledPayments = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentDescriptor))
-        } catch {
-            #if DEBUG
-            print("WidgetDataCache: Error fetching scheduled payments: \(error)")
-            #endif
-        }
-
-        // Fetch ALL accounts (including archived) — archived still count for total balance
-        let accountDescriptor = FetchDescriptor<Account>(
-            sortBy: [SortDescriptor(\.name)]
-        )
-
         var accounts: [Account] = []
-        do {
-            accounts = try context.fetch(accountDescriptor)
-        } catch {
-            #if DEBUG
-            print("WidgetDataCache: Error fetching accounts: \(error)")
-            #endif
-        }
+        var eligibleTransactions: [TransactionItem] = []
+        var eligibleRecentTransactions: [TransactionItem] = []
+        stages.append {
+            // Fetch active budgets
+            let budgetDescriptor = FetchDescriptor<Budget>(
+                predicate: #Predicate { $0.isActive },
+                sortBy: [SortDescriptor(\.name)]
+            )
 
-        // Pre-filter: fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una
-        // cuenta archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera
-        // (`LiveBalanceCalculator.entersBalance`, decisión 6 de 2.3).
-        let excludedAccountIDs = Set(
-            accounts.filter { !$0.keepsHistory }.map { $0.persistentModelID }
-        )
-        let isEligible: (TransactionItem) -> Bool = { tx in
-            countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
+            do {
+                budgets = try context.fetch(budgetDescriptor)
+            } catch {
+                #if DEBUG
+                print("WidgetDataCache: Error fetching budgets: \(error)")
+                #endif
+            }
+
+            // Fetch active scheduled payments
+            let paymentDescriptor = FetchDescriptor<ScheduledPayment>(
+                predicate: #Predicate { $0.isActive },
+                sortBy: [SortDescriptor(\.nextDueDate)]
+            )
+
+            do {
+                // Un pago que espera su borrado con «Deshacer» no cuenta en los widgets (`ScheduledPaymentPendingDeletion`).
+                scheduledPayments = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentDescriptor))
+            } catch {
+                #if DEBUG
+                print("WidgetDataCache: Error fetching scheduled payments: \(error)")
+                #endif
+            }
+
+            // Fetch ALL accounts (including archived) — archived still count for total balance
+            let accountDescriptor = FetchDescriptor<Account>(
+                sortBy: [SortDescriptor(\.name)]
+            )
+
+            do {
+                accounts = try context.fetch(accountDescriptor)
+            } catch {
+                #if DEBUG
+                print("WidgetDataCache: Error fetching accounts: \(error)")
+                #endif
+            }
+
+            // Pre-filter: fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una
+            // cuenta archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera
+            // (`LiveBalanceCalculator.entersBalance`, decisión 6 de 2.3).
+            let excludedAccountIDs = Set(
+                accounts.filter { !$0.keepsHistory }.map { $0.persistentModelID }
+            )
+            let isEligible: (TransactionItem) -> Bool = { tx in
+                countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
+            }
+            eligibleTransactions = allTransactions.filter(isEligible)
+            eligibleRecentTransactions = recentTransactions.filter(isEligible)
         }
-        let eligibleTransactions = allTransactions.filter(isEligible)
-        let eligibleRecentTransactions = recentTransactions.filter(isEligible)
 
         // Netea los gastos de grupo bridgeados a "mi parte" en las superficies de stats.
         // Se construye del set MÁS AMPLIO (`allTransactions`, antes del filtro de elegibilidad)
         // para garantizar AMBAS hermanas del bridge; el consumo usa el subset elegible.
-        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context)
+        var adjustment: GroupBridgeStatsAdjustment = .none
+        stages.append { adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context) }
 
         // La divisa principal, con la regla de toda la app si falta (`CurrencyDefaults.preferred`, card 2jj6). Hasta el
         // 2026-10-30 caía a dólares y reconvertía todo el histórico mientras la app pintaba soles.
@@ -636,95 +737,110 @@ enum WidgetDataCache {
         // saldo, curva) y cada conversión del converter compartido lee sus tasas del store.
         let converter: CurrencyConverting = SnapshotMemoizedConverter(base: CurrencyConverter.shared)
 
-        // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
-        // El widget consume este Double ya convertido — el calculator NO se
-        // expone al target widget extension.
-        let totalBalance = LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
-            transactions: eligibleTransactions,
-            preferredCurrencyCode: preferredCurrency
-        )
+        var totalBalance: Double = 0
+        var widgetTransactions: [WidgetTransaction] = []
+        stages.append {
+            // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
+            // El widget consume este Double ya convertido — el calculator NO se
+            // expone al target widget extension.
+            totalBalance = LiveBalanceCalculator.liveBalance(
+                accounts: accounts,
+                transactions: eligibleTransactions,
+                preferredCurrencyCode: preferredCurrency
+            )
 
-        // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
-        let widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
-            widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
-        }
-
-        // Build widget budgets with spent calculation
-        // For yearly/unique budgets, use allTransactions (90-day window is insufficient)
-        let widgetBudgets = budgets.map { budget in
-            let transactionsForBudget: [TransactionItem]
-            let periodType = BudgetPeriodType(rawValue: budget.periodType)
-            if periodType == .yearly || periodType == .unique {
-                transactionsForBudget = allTransactions
-            } else {
-                transactionsForBudget = recentTransactions
+            // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
+            widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
+                widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
             }
-            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget, adjustment: adjustment)
-            let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
-            // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
-            let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
-
-            return WidgetBudget(
-                id: budget.id.uuidString,
-                name: budget.name,
-                limitAmount: budget.limitAmount,
-                spentAmount: spent,
-                currencyCode: budget.currencyCode,
-                periodType: budget.periodType,
-                percentUsed: percentUsed,
-                iconName: icon,
-                colorHex: color
-            )
         }
 
-        // Build widget scheduled payments
-        let today = Calendar.current.startOfDay(for: Date.now)
-        let widgetPayments = scheduledPayments.map { payment in
-            let (icon, color) = getPaymentDisplayProperties(payment: payment)
+        var widgetBudgets: [WidgetBudget] = []
+        var widgetPayments: [WidgetScheduledPayment] = []
+        stages.append {
+            // Build widget budgets with spent calculation
+            // For yearly/unique budgets, use allTransactions (90-day window is insufficient)
+            widgetBudgets = budgets.map { budget in
+                let transactionsForBudget: [TransactionItem]
+                let periodType = BudgetPeriodType(rawValue: budget.periodType)
+                if periodType == .yearly || periodType == .unique {
+                    transactionsForBudget = allTransactions
+                } else {
+                    transactionsForBudget = recentTransactions
+                }
+                let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget, adjustment: adjustment)
+                let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
+                // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+                let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
 
-            return WidgetScheduledPayment(
-                id: payment.id.uuidString,
-                name: payment.name,
-                amount: payment.amount,
-                currencyCode: payment.currencyCode,
-                nextDueDate: payment.nextDueDate,
-                isOverdue: payment.nextDueDate < today,
-                paymentCategory: payment.paymentCategory,
-                isIncome: payment.transactionType == "income",
-                iconName: icon,
-                colorHex: color,
-                isVariableAmount: payment.isVariableAmount,
-                canMarkPaid: ScheduledPaymentWidgetPayLogic.canMarkPaid(
-                    isGroupPayment: payment.isGroupPayment, hasAccount: payment.account != nil,
-                    hasSubcategory: payment.subcategory != nil, isVariableAmount: payment.isVariableAmount)
-            )
+                return WidgetBudget(
+                    id: budget.id.uuidString,
+                    name: budget.name,
+                    limitAmount: budget.limitAmount,
+                    spentAmount: spent,
+                    currencyCode: budget.currencyCode,
+                    periodType: budget.periodType,
+                    percentUsed: percentUsed,
+                    iconName: icon,
+                    colorHex: color
+                )
+            }
+
+            // Build widget scheduled payments
+            let today = Calendar.current.startOfDay(for: Date.now)
+            widgetPayments = scheduledPayments.map { payment in
+                let (icon, color) = getPaymentDisplayProperties(payment: payment)
+
+                return WidgetScheduledPayment(
+                    id: payment.id.uuidString,
+                    name: payment.name,
+                    amount: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    nextDueDate: payment.nextDueDate,
+                    isOverdue: payment.nextDueDate < today,
+                    paymentCategory: payment.paymentCategory,
+                    isIncome: payment.transactionType == "income",
+                    iconName: icon,
+                    colorHex: color,
+                    isVariableAmount: payment.isVariableAmount,
+                    canMarkPaid: ScheduledPaymentWidgetPayLogic.canMarkPaid(
+                        isGroupPayment: payment.isGroupPayment, hasAccount: payment.account != nil,
+                        hasSubcategory: payment.subcategory != nil, isVariableAmount: payment.isVariableAmount)
+                )
+            }
         }
 
         // Build trend data with multiple granularities (uses eligible transactions)
-        let trendData = buildTrendData(
-            transactions: eligibleTransactions,
-            totalBalance: totalBalance,
-            currencyCode: preferredCurrency,
-            converter: converter
-        )
+        var trendData: WidgetTrendData?
+        stages.append {
+            trendData = buildTrendData(
+                transactions: eligibleTransactions,
+                totalBalance: totalBalance,
+                currencyCode: preferredCurrency,
+                converter: converter
+            )
+        }
 
         // Build account balances for widgets (only visible accounts shown as cards).
         // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
         // pasada O(N+M) sobre transactions vía batchCalculateBalances.
-        let visibleAccounts = filterVisibleAccountsForWidget(accounts)
-        let nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
-            accounts: visibleAccounts, transactions: allTransactions
-        )
-        let widgetAccountBalances = visibleAccounts.map { account in
-            let nativeBalance = nativeBalancesByAccount[account.persistentModelID] ?? 0
-            return WidgetAccountBalance(
-                id: account.persistentModelID.hashValue.description,
-                name: account.name,
-                balance: NSDecimalNumber(decimal: nativeBalance).doubleValue,
-                currencyCode: account.currencyCode,
-                isExcludedFromStats: account.excludeFromStatistics
+        var nativeBalancesByAccount: [PersistentIdentifier: Decimal] = [:]
+        var widgetAccountBalances: [WidgetAccountBalance] = []
+        stages.append {
+            let visibleAccounts = filterVisibleAccountsForWidget(accounts)
+            nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
+                accounts: visibleAccounts, transactions: allTransactions
             )
+            widgetAccountBalances = visibleAccounts.map { account in
+                let nativeBalance = nativeBalancesByAccount[account.persistentModelID] ?? 0
+                return WidgetAccountBalance(
+                    id: account.persistentModelID.hashValue.description,
+                    name: account.name,
+                    balance: NSDecimalNumber(decimal: nativeBalance).doubleValue,
+                    currencyCode: account.currencyCode,
+                    isExcludedFromStats: account.excludeFromStatistics
+                )
+            }
         }
 
         // Get currency display format preference
@@ -743,67 +859,41 @@ enum WidgetDataCache {
         // Un solo «ahora» para los ocho períodos y para la foto de Siri, que guarda el inicio de cada uno: con dos
         // relojes, un cálculo a caballo de medianoche del día 1 etiquetaría los totales de septiembre como de octubre.
         let periodsNow = now
+        // Un período por etapa: cada uno recorre el historial entero.
         for period in widgetPeriods {
-            let interval = period.dateInterval(now: periodsNow)
-            let summary = buildPeriodSummary(
-                transactions: eligibleTransactions,
-                periodStart: interval.start,
-                periodEnd: interval.end,
-                currencyCode: preferredCurrency,
-                allTransactionsForBalance: eligibleTransactions,
-                adjustment: adjustment,
-                converter: converter
-            )
-            periodSummaries[period.rawValue] = summary
+            stages.append {
+                let interval = period.dateInterval(now: periodsNow)
+                let summary = buildPeriodSummary(
+                    transactions: eligibleTransactions,
+                    periodStart: interval.start,
+                    periodEnd: interval.end,
+                    currencyCode: preferredCurrency,
+                    allTransactionsForBalance: eligibleTransactions,
+                    adjustment: adjustment,
+                    converter: converter
+                )
+                periodSummaries[period.rawValue] = summary
+            }
         }
-
-        // Legacy fields for backwards compatibility
-        let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
-            transactions: eligibleRecentTransactions,
-            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: periodsNow)) ?? periodsNow,
-            periodEnd: periodsNow,
-            currencyCode: preferredCurrency,
-            adjustment: adjustment,
-            converter: converter
-        )
-
-        let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
-            transactions: eligibleTransactions,
-            periodStart: Date.distantPast,
-            periodEnd: periodsNow,
-            currencyCode: preferredCurrency,
-            adjustment: adjustment,
-            converter: converter
-        )
 
         // El mes de los pagos para el calendario del extragrande vertical de «Pagos planificados». Mismo «ahora» que
         // los períodos: a caballo de medianoche del día 1 no puede salir el calendario de un mes y los totales de otro.
-        let paymentsMonth = buildPaymentsMonth(
-            payments: scheduledPayments,
-            paid: ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-                for: scheduledPayments, month: periodsNow, context: context
-            ),
-            month: periodsNow,
-            currencyCode: preferredCurrency,
-            converter: converter
-        )
+        var paymentsMonth: WidgetPaymentsMonth?
+        stages.append {
+            paymentsMonth = buildPaymentsMonth(
+                payments: scheduledPayments,
+                paid: ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                    for: scheduledPayments, month: periodsNow, context: context
+                ),
+                month: periodsNow,
+                currencyCode: preferredCurrency,
+                converter: converter
+            )
+        }
 
-        let widgetSnapshot = WidgetDataSnapshot(
-            lastUpdated: periodsNow,
-            preferredCurrencyCode: preferredCurrency,
-            currencyDisplayFormat: currencyDisplayFormat,
-            accountBalances: widgetAccountBalances,
-            totalBalance: totalBalance,
-            transactions: widgetTransactions,
-            budgets: widgetBudgets,
-            scheduledPayments: widgetPayments,
-            trendData: trendData,
-            thisMonthSummary: thisMonthSummary,
-            allTimeSummary: allTimeSummary,
-            periodSummaries: periodSummaries,
-            paymentsMonth: paymentsMonth,
-            groups: WidgetGroupsSnapshotBuilder.build(context: context),
-            projectedFlow: buildProjectedFlow(
+        var projectedFlow: WidgetProjectedFlow?
+        stages.append {
+            projectedFlow = buildProjectedFlow(
                 allTransactions: allTransactions,
                 eligibleTransactions: eligibleTransactions,
                 scheduledPayments: scheduledPayments,
@@ -813,25 +903,86 @@ enum WidgetDataCache {
                 context: context,
                 now: periodsNow
             )
-        )
-
-        // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
-        // nativo de las que el Panel enseña. `SiriFinanceSnapshotBuilder` decide cuáles salen.
-        let siriAccounts = accounts.map { account in
-            SiriAccountInput(
-                node: AccountLineNode(account),
-                name: account.name,
-                excludedFromStatistics: account.excludeFromStatistics,
-                nativeBalance: NSDecimalNumber(decimal: nativeBalancesByAccount[account.persistentModelID] ?? 0).doubleValue
-            )
         }
-        let siriSnapshot = SiriFinanceSnapshotBuilder.make(
-            widget: widgetSnapshot,
-            accounts: siriAccounts,
-            now: periodsNow,
-            calendar: userConfiguredCalendar()
-        )
-        return (widgetSnapshot, siriSnapshot)
+
+        return {
+            // Legacy fields for backwards compatibility
+            let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
+                transactions: eligibleRecentTransactions,
+                periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: periodsNow)) ?? periodsNow,
+                periodEnd: periodsNow,
+                currencyCode: preferredCurrency,
+                adjustment: adjustment,
+                converter: converter
+            )
+
+            let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
+                transactions: eligibleTransactions,
+                periodStart: Date.distantPast,
+                periodEnd: periodsNow,
+                currencyCode: preferredCurrency,
+                adjustment: adjustment,
+                converter: converter
+            )
+
+            let widgetSnapshot = WidgetDataSnapshot(
+                lastUpdated: periodsNow,
+                preferredCurrencyCode: preferredCurrency,
+                currencyDisplayFormat: currencyDisplayFormat,
+                accountBalances: widgetAccountBalances,
+                totalBalance: totalBalance,
+                transactions: widgetTransactions,
+                budgets: widgetBudgets,
+                scheduledPayments: widgetPayments,
+                trendData: trendData ?? buildTrendData(
+                    transactions: eligibleTransactions, totalBalance: totalBalance,
+                    currencyCode: preferredCurrency, converter: converter
+                ),
+                thisMonthSummary: thisMonthSummary,
+                allTimeSummary: allTimeSummary,
+                periodSummaries: periodSummaries,
+                paymentsMonth: paymentsMonth ?? buildPaymentsMonth(
+                    payments: scheduledPayments,
+                    paid: ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                        for: scheduledPayments, month: periodsNow, context: context
+                    ),
+                    month: periodsNow,
+                    currencyCode: preferredCurrency,
+                    converter: converter
+                ),
+                groups: WidgetGroupsSnapshotBuilder.build(context: context),
+                projectedFlow: projectedFlow
+            )
+
+            // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
+            // nativo de las que el Panel enseña. `SiriFinanceSnapshotBuilder` decide cuáles salen.
+            let siriAccounts = accounts.map { account in
+                SiriAccountInput(
+                    node: AccountLineNode(account),
+                    name: account.name,
+                    excludedFromStatistics: account.excludeFromStatistics,
+                    nativeBalance: NSDecimalNumber(decimal: nativeBalancesByAccount[account.persistentModelID] ?? 0).doubleValue
+                )
+            }
+            let siriSnapshot = SiriFinanceSnapshotBuilder.make(
+                widget: widgetSnapshot,
+                accounts: siriAccounts,
+                now: periodsNow,
+                calendar: userConfiguredCalendar()
+            )
+            return (widgetSnapshot, siriSnapshot)
+        }
+    }
+
+    /// La foto de una vez: todas las etapas seguidas, en el mismo tramo del hilo principal. La usan el paso a segundo
+    /// plano (iOS puede suspender la app antes de que acabe una foto por etapas), las tareas de fondo y los tests.
+    static func buildSnapshot(
+        context: ModelContext, now: Date = .now
+    ) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
+        var stages: [@MainActor () -> Void] = []
+        let finish = buildSnapshot(context: context, now: now, stages: &stages)
+        for stage in stages { stage() }
+        return finish()
     }
 
     /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.
@@ -1619,5 +1770,25 @@ private final class SnapshotMemoizedConverter: CurrencyConverting {
     /// protocolo las pediría una a una.
     func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]] {
         base.rateFactors(for: codes, to: to, on: dates)
+    }
+}
+
+/// Cuántos avisos de cambio remoto del almacén (`NSPersistentStoreRemoteChange`) llegaron en este proceso desde la primera
+/// lectura. Es la señal de lo que funde el espejo de iCloud, que no publica `ModelContext.didSave` y por eso no lo cuenta
+/// `StoreSaveCounter`. La leen los cálculos que ceden el hilo a mitad (la foto de los widgets por etapas, el hero del
+/// Panel por tramos): si cambió, lo que tienen en la mano pudo borrarse, y leer un `@Model` borrado aborta en el iPhone.
+@MainActor
+final class StoreRemoteChangeCounter {
+
+    static let shared = StoreRemoteChangeCounter()
+
+    private(set) var count = 0
+    private var observer: NSObjectProtocol?
+
+    init(center: NotificationCenter = .default) {
+        // El aviso llega en la cola del coordinador del almacén: el contador vive en el main actor.
+        observer = center.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.count &+= 1 }
+        }
     }
 }

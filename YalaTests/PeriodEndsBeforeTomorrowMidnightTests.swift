@@ -109,8 +109,9 @@ struct PeriodEndsBeforeTomorrowMidnightTests {
         #expect(!code.contains("let endOfToday = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now"))
         #expect(code.contains("let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow"))
         #expect(code.contains("end: max(calendarMonth.start, calendarMonth.end.addingTimeInterval(-1)))"))
-        // Y es ese mes cerrado el que llega al calculador, no el natural.
-        let call = try #require(code.range(of: "let buckets = HeroBucketsCalculator.calculate("))
+        // Y es ese mes cerrado el que llega al calculador, no el natural. Desde YALA-IOS-N (2026-11-18) el Panel suma con
+        // el acumulador del calculador, por tramos con un historial grande.
+        let call = try #require(code.range(of: "var accumulator = HeroBucketsCalculator.Accumulator("))
         #expect(code[call.upperBound...].prefix(200).contains("monthInterval: monthInterval,"))
         #expect(!code[call.upperBound...].prefix(200).contains("monthInterval: calendarMonth"))
     }
