@@ -1,0 +1,29 @@
+/*
+  PerfilPersonalizacion.strings
+  Yala
+
+  La personalización del perfil (encargo del 17-nov): tarjeta de perfil, avatar con símbolo, emoji o iniciales, su
+  color y el fondo de la tarjeta. Tabla propia, leída con el idioma de la app (`L10n.PerfilPersonalizacion`).
+*/
+
+"perfil.card.label" = "La tua scheda profilo";
+"perfil.avatar.menu" = "Cambia la tua foto";
+"perfil.section.avatar" = "Il tuo avatar";
+"perfil.kind.picker" = "Cosa mostra il tuo avatar";
+"perfil.kind.symbol" = "Simbolo";
+"perfil.kind.emoji" = "Emoji";
+"perfil.kind.initials" = "Iniziali";
+"perfil.kind.photo" = "Foto";
+"perfil.symbol.numbered" = "Simbolo %d";
+"perfil.initials.detail" = "Prese dal tuo nome.";
+"perfil.initials.needName" = "Scrivi il tuo nome qui sopra per vedere le iniziali.";
+"perfil.photo.choose" = "Scegli foto";
+"perfil.photo.change" = "Cambia foto";
+"perfil.photo.remove" = "Rimuovi foto";
+"perfil.photo.detail" = "La foto resta su questo dispositivo. Sugli altri si vede l’avatar che scegli qui.";
+"perfil.section.color" = "Colore dell’avatar";
+"perfil.color.theme" = "Dal tema";
+"perfil.color.numbered" = "Colore %d";
+"perfil.color.custom" = "Altro colore";
+"perfil.section.card" = "Sfondo della scheda";
+"perfil.reset" = "Torna al profilo di sempre";
