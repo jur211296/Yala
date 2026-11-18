@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "Usar formulario";
+"asistente.useFormHint" = "Abre el formulario de siempre con lo que ya respondiste";
+"asistente.stepOf" = "Paso %1$d de %2$d";
+"asistente.discard.message" = "Se pierde lo que respondiste.";
+"asistente.discard.confirm" = "Descartar";
+"asistente.discard.keep" = "Seguir";
+"asistente.changeHint" = "Tocá para cambiar esta respuesta";
+"asistentePresupuesto.discard.title" = "¿Descartar este presupuesto?";
+"asistentePresupuesto.create" = "Crear presupuesto";
+"asistentePresupuesto.createShort" = "Crear";
+"asistentePresupuesto.name.weekly" = "Mis gastos de la semana";
+"asistentePresupuesto.name.monthly" = "Mis gastos del mes";
+"asistentePresupuesto.name.yearly" = "Mis gastos del año";
+"asistentePresupuesto.name.once" = "Mis gastos";
+"asistentePresupuesto.limit.last.weekly" = "La semana pasada gastaste %@ en esto.";
+"asistentePresupuesto.limit.last.monthly" = "El mes pasado gastaste %@ en esto.";
+"asistentePresupuesto.limit.last.yearly" = "El año pasado gastaste %@ en esto.";
+"asistentePresupuesto.limit.same" = "Lo mismo";
+"asistentePresupuesto.limit.less10" = "10 % menos";
+"asistentePresupuesto.limit.less20" = "20 % menos";
+"asistentePresupuesto.summary.question" = "¿Lo creamos así?";
+"asistentePresupuesto.summary.detail" = "Tocá una respuesta para cambiarla.";
+"asistentePresupuesto.summary.counts" = "Qué cuenta";
+"asistentePresupuesto.summary.period" = "Se renueva";
+"asistentePresupuesto.summary.dates" = "Fechas";
+"asistentePresupuesto.summary.limit" = "Tope";
+"asistentePresupuesto.summary.name" = "Nombre";
+"asistentePresupuesto.summary.alert" = "Avisos";
+"asistentePresupuesto.alert.none" = "Sin avisos";
+"asistentePresupuesto.categories.empty" = "Todavía no tenés categorías de gasto. Podés contar todos tus gastos.";

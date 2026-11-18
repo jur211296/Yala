@@ -129,9 +129,8 @@ final class AccountCardPickersUITests: XCTestCase {
         let planningTab = app.tabEntry(.planning)
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10))
         planningTab.tap()
-        let fab = app.buttons["budgets_create_button"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5))
-        fab.tap()
+        // «Nuevo presupuesto» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.abrirFormularioDeNuevoPresupuesto(desde: app.buttons["budgets_create_button"])
 
         let nameField = app.textFields["budget_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5))
