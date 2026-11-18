@@ -92,8 +92,8 @@ struct RecurringProposalSheet: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: DS.Spacing.md) {
-            if let brandID = proposal.brandID, let brand = SubscriptionBrandCatalog.brand(id: brandID) {
-                SubscriptionBrandBadge(brand: brand, isDecorative: true)
+            if let logo = PaymentLogoResolver.resolve(storedID: proposal.brandID, name: proposal.displayName) {
+                SubscriptionBrandBadge(logo: logo, isDecorative: true)
             }
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(proposal.displayName)

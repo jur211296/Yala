@@ -192,8 +192,8 @@ struct ScheduledPaymentsListView: View {
     /// dos formas (`AnyLayout`).
     @ViewBuilder
     private func timelineBrandBadge(_ summary: ScheduledPaymentSummary) -> some View {
-        if let brand = summary.payment.subscriptionBrand {
-            SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall, isDecorative: true)
+        if let logo = summary.payment.paymentLogo {
+            SubscriptionBrandBadge(logo: logo, diameter: DS.Icon.badgeSmall, isDecorative: true)
         }
     }
 
@@ -503,7 +503,7 @@ struct ScheduledPaymentsListView: View {
 
                 if hasPayments {
                     // Con algún logo caben dos marcas por celda en vez de tres puntos (card 9nn7, 2.3).
-                    let markLimit = summaries.contains { $0.payment.subscriptionBrand != nil } ? 2 : 3
+                    let markLimit = summaries.contains { $0.payment.paymentLogo != nil } ? 2 : 3
                     HStack(spacing: 3) {
                         ForEach(Array(summaries.prefix(markLimit).enumerated()), id: \.offset) { _, summary in
                             calendarMark(summary, isSelected: isSelected)
@@ -539,24 +539,15 @@ struct ScheduledPaymentsListView: View {
         .buttonStyle(.plain)
     }
 
-    /// La marca de un pago en su día: el punto de estado o, si tiene logo, su círculo con la inicial y un aro del color
+    /// La marca de un pago en su día: el punto de estado o, si tiene logo, el logo (o su inicial) con un aro del color
     /// del estado (pagado, vencido, pendiente), para no perder lo que decían los puntos.
     @ViewBuilder
     private func calendarMark(_ summary: ScheduledPaymentSummary, isSelected: Bool) -> some View {
         let stateColor = isSelected
             ? theme.onAccent
             : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent)
-        if let brand = summary.payment.subscriptionBrand {
-            let fill = Color(hex: brand.colorHex)
-            ZStack {
-                Circle().fill(fill).frame(width: 12, height: 12)
-                Text(verbatim: String(brand.monogram.prefix(1)))
-                    .font(.system(size: 7, weight: .heavy, design: .rounded)) // A11Y-DT: micro-marca del calendario
-                    .foregroundStyle(theme.onFill(fill))
-                Circle().stroke(stateColor, lineWidth: 1.5).frame(width: 15, height: 15)
-            }
-            .frame(width: 15, height: 15)
-            .accessibilityHidden(true)
+        if let logo = summary.payment.paymentLogo {
+            PaymentLogoCalendarMark(logo: logo, stateColor: stateColor)
         } else {
             Circle()
                 .fill(stateColor)
