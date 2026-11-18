@@ -111,3 +111,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Runner macOS sin presupuesto](feedback_runner_macos_sin_presupuesto.md) — 17-nov: NO a jobs nuevos en xcode-27; mide coste antes y ofrece el gate local.
 - [Mergear a mano: mira todos los checks](feedback_mergear_a_mano_mira_todos_los_checks.md) — webapp rojo no requerido se coló el 17-nov.
 - [Integrar un PR ajeno: YalaTests entero](reference_integrar_pr_ajeno_suite_entera.md) — ~7 min; un rojo de una vez se repite antes de creerlo.
+- [Artifact público: pocas imágenes](reference_artifact_publico_con_muchas_imagenes.md) — 600 logos sueltos no se comparten; lámina única + pares en una imagen.
