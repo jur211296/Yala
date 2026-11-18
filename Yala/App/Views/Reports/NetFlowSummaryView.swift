@@ -95,15 +95,24 @@ struct NetFlowSummaryView: View {
         .minimumScaleFactor(0.7)
     }
 
+    /// La misma marca que las filas de la tabla (Comparativa simple, 17-nov): más que antes es verde.
+    private var change: ComparisonChange {
+        ComparisonChange.make(
+            variation: variation,
+            hasPrevious: previousAmount != nil,
+            currentAmount: currentAmount,
+            isExpense: false
+        )
+    }
+
     @ViewBuilder
     private var chip: some View {
         if showVariations && showsComparison {
-            VariationChip(
-                variation: variation,
-                size: .small,
-                showNAWhenNil: previousAmount == nil,
-                isExpenseContext: false,
-                usesAccessibleTextTone: true
+            ComparisonChangeBadge(
+                change: change,
+                spokenText: change.accessibilityText(
+                    versus: ComparativaSimpleText.versus(previousPeriodName, isDayRange: previousIsDayRange)
+                )
             )
         }
     }

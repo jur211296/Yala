@@ -181,7 +181,18 @@ struct NetFlowSummaryContrastTests {
         #expect(!code.contains("hotPink"))
         #expect(code.contains("Color.incomeAmount"))
         #expect(code.contains("Color.groupOweAmount"))
-        #expect(code.contains("usesAccessibleTextTone: true"), "La variación del resumen no pide el tono de texto AA.")
+        // Desde la Comparativa simple (17-nov) la variación es la marca de las filas, con sus tokens de texto AA.
+        #expect(code.contains("ComparisonChangeBadge("), "La variación del resumen no usa la marca de la tabla.")
+    }
+
+    /// La marca de cambio de la Comparativa pinta con tokens de texto AA (verde y rosa de Grupos), nunca con la paleta.
+    @Test func laMarcaDeCambio_usaTokensDeTexto() throws {
+        let code = try Lote08Source.code("Yala/App/Views/Reports/ReportComparisonViews.swift")
+        let badge = try Lote08Source.slice(code, from: "struct ComparisonChangeBadge", to: "var body: some View")
+        #expect(badge.contains(".groupOwedAmount"))
+        #expect(badge.contains(".groupOweAmount"))
+        #expect(!badge.contains("electricIndigo"))
+        #expect(!badge.contains("hotPink"))
     }
 
     /// El modo AA del chip usa los mismos dos tokens, y el resto de la app sigue con la paleta (no se pidió cambiarlo).
