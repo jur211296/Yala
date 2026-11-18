@@ -278,8 +278,7 @@ export function Shell({ me }: { me: Me }) {
     <div className={`app${hide ? " hideamt" : ""}`}>
       <aside className="side" aria-label="Yala">
         <div className="brand">
-          <i aria-hidden="true" />
-          Yala
+          <i role="img" aria-label="Yala" />
           <span className="lk">{t.app.beta}</span>
         </div>
         <button className="sfield" type="button" aria-keyshortcuts="Meta+K Control+K" onClick={openSearch}>

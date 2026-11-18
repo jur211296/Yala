@@ -7,6 +7,7 @@ import { Smartphone } from "lucide-react";
 import { lang, texts, privacyUrl, turnstileLang } from "./i18n";
 import { Shell } from "./app/Shell";
 import { QrLogin } from "./QrLogin";
+import { temaEsOscuro } from "./tema";
 
 interface Me {
   nombre: string;
@@ -104,30 +105,15 @@ export function App() {
   );
 }
 
-/** El color de la barra del navegador en la entrada: el fondo de la bienvenida, con el sistema en claro o en oscuro. */
-const FONDO_ENTRADA = "#08081a";
-
 /**
- * La entrada de Yala web (lote 6): el fondo de la bienvenida de la app (`WelcomeF2Background`) y el logo encima, sin
- * tarjeta. Como la bienvenida de la app, es siempre oscura: no sigue al tema ni al sistema. Mientras se ve, `<html>`
- * lleva `en-entrada` (el fondo que asoma al estirar la página) y la barra del navegador toma el color del fondo.
+ * La entrada de Yala web: el logo oficial sobre una tarjeta, con el tema de la web (claro u oscuro según el sistema, o
+ * el elegido en Ajustes) y el estilo del resto de la app web. Desde el 17-nov ya no copia la bienvenida de iOS.
  */
 function Entrada({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    const html = document.documentElement;
-    html.classList.add("en-entrada");
-    const metas = Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'));
-    const antes = metas.map((m) => m.content);
-    for (const m of metas) m.content = FONDO_ENTRADA;
-    return () => {
-      html.classList.remove("en-entrada");
-      metas.forEach((m, i) => (m.content = antes[i] ?? m.content));
-    };
-  }, []);
   return (
     <main className="entrada">
       <div className="e-caja">
-        <span className="e-logo" aria-hidden="true" />
+        <span className="e-logo" role="img" aria-label="Yala" />
         {children}
       </div>
     </main>
@@ -191,8 +177,8 @@ function SsoLogin({ siteKey, onQr }: { siteKey: string; onQr: (token: string, co
         sitekey: siteKey,
         language: turnstileLang(),
         appearance: "interaction-only",
-        // La entrada es siempre oscura: el reto, también (con «auto» salía claro sobre el fondo oscuro con el sistema en claro).
-        theme: "dark",
+        // El reto sigue al tema de la página («auto» solo mira al sistema y no ve el tema elegido en Ajustes).
+        theme: temaEsOscuro() ? "dark" : "light",
         callback: (tok: string) => setToken(tok),
         "expired-callback": () => setToken(null),
         "error-callback": () => setToken(null),

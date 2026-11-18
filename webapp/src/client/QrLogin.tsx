@@ -6,8 +6,8 @@
  * La página no ve ningún secreto: el código va en claro a propósito y lo que liga este navegador a él es una cookie
  * `HttpOnly` (ver `src/worker/pairing.ts`).
  *
- * Se pinta dentro de la entrada (`Entrada` en `App.tsx`, lote 6): fondo de la bienvenida de la app, siempre oscuro. El
- * código va sobre su propio cuadro blanco para que la cámara lo lea igual con cualquier fondo.
+ * Se pinta dentro de la entrada (`Entrada` en `App.tsx`), con el tema de la web. El código va sobre su propio cuadro
+ * blanco para que la cámara lo lea igual en claro y en oscuro.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import qrcode from "qrcode-generator";
