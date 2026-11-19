@@ -304,31 +304,18 @@ struct DeletedModelMoreFormsGuardWiringTests {
 
     // MARK: - Flujo de caja
 
-    @Test func lineaDelFlujo_laHojaLeeLaLineaSoloPorSuAccesor() throws {
-        let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowLineConfigSheet.swift")
-        #expect(source.contains(".navigationTitle(shown.name)"))
-        // Lo que corre con la línea viva: el init (mira antes), la copia, el accesor, las dos funciones que la toman
-        // del accesor, el guardado y el borrado.
-        let rest = try Self.code(source, without: [
-            "init(reading line: CashFlowLine) {",
-            "init(viewModel: CashFlowPlanViewModel, line: CashFlowLine, currencyCode: String, transactions: [TransactionItem] = []) {",
-            "private var readableLine: CashFlowLine? {",
-            "private func previewForMethod(_ method: EstimationMethod) -> Double {",
-            "private func computeHistoricalStats() -> HistoricalStats {",
-            "private func applyChanges() {",
-        ])
-        let reads = Self.matches(#"\bline\.\w"#, in: rest)
-        #expect(reads.isEmpty, "Lecturas de la línea fuera de su accesor: \(reads)")
-        #expect(source.contains("guard let line = readableLine else { return 0 }"))
-        #expect(source.contains("guard let line = readableLine else {"))
-        #expect(source.contains("let readable = !line.isDeleted && line.modelContext != nil"))
-    }
+    // La hoja de configuración de línea (`CashFlowLineConfigSheet`) se retiró en S4 del replanteo del flujo de caja
+    // (18-nov-2026): nadie la abría. Su sustituta, «Cambiar límite», no lee la línea en el `body`
+    // (`FlujoCambiarLimiteCableadoTests.laHoja_noLeeLaLineaEnElBody`).
 
     @Test func celdaDelFlujo_noLeeLaLineaNiRegistrosBorrados() throws {
         let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
-        #expect(source.contains(".filter { !$0.isDeleted && $0.modelContext != nil }"))
-        try Self.expectOrder(".filter { !$0.isDeleted && $0.modelContext != nil }", before: "tx.date",
-                             after: "private var activeTransactions: [TransactionItem] {", in: source)
+        // Desde S3 del replanteo (18-nov-2026) los registros de la línea salen de `FlujoDetalleLineaLogica.registros`,
+        // que salta lo ya borrado antes de leer la fecha.
+        let logica = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/DetalleLinea/FlujoDetalleLineaLogica.swift")
+        #expect(source.contains("FlujoDetalleLineaLogica.registros("))
+        try Self.expectOrder("guard !tx.isDeleted, tx.modelContext != nil,", before: "tx.date",
+                             after: "static func registros(", in: logica)
         // La línea solo se lee en la copia del icono, en el accesor y en la acción que abre el selector de método (con
         // la línea viva); el resto va por `readableLine`.
         let rest = try Self.code(source, without: [

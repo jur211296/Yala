@@ -2,8 +2,8 @@
    su código Swift (YalaTheme.swift). Una sola fuente para la entrada y la app con sesión; app.css no define colores.
 
    Cuatro temas, como el selector de Ajustes (src/client/tema.ts):
-   - «Como el sistema» (sin `data-tema`): claro, o Liquid Glass si el sistema está en oscuro. Es el de por defecto.
-   - `data-tema="claro"`, `"oscuro"` (el negro plano de la app) y `"liquid"` lo fuerzan.
+   - «Como el sistema» (sin `data-tema`): claro u oscuro según el sistema. Es el de por defecto.
+   - `data-tema="claro"` y `"oscuro"` (el negro plano de la app) lo fuerzan; `"liquid"` es el extra opcional.
    Cada bloque define TODAS las variables: lo comprueba test/base-visual.test.ts. */
 
 /* La letra redondeada de las cifras: SF Rounded en los aparatos de Apple (`ui-rounded`) y Nunito en el resto. Nunito
@@ -62,42 +62,45 @@
   --owed: #13804f;
   --risk: #b45309;
   --risk-fill: #ff9500;
+  --logo: url("/logo-claro.png");
   color-scheme: light;
 }
 
-/* Liquid Glass: azul noche con un degradado índigo arriba y tarjetas de cristal. Por defecto con el sistema en oscuro. */
+/* Oscuro por sistema: el mismo bloque que «Oscuro» forzado, más abajo (lo comprueba test/base-visual.test.ts). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema]) {
-    --bg: #060612;
-    --bg-velo: linear-gradient(180deg, #26275f 0%, #11112b 34%, #060612 70%);
-    --card: rgba(255, 255, 255, 0.055);
-    --card-borde: rgba(255, 255, 255, 0.09);
+    --bg: #000000;
+    --bg-velo: none;
+    --card: #1c1c1e;
+    --card-borde: rgba(255, 255, 255, 0.08);
     --sombra: none;
-    --sheet: #0e0e1a;
+    --sheet: #1c1c1e;
     --ink: #f2f2f7;
-    --ink2: rgba(235, 235, 245, 0.62);
-    --line: rgba(255, 255, 255, 0.09);
+    --ink2: #9a9aa6;
+    --line: rgba(255, 255, 255, 0.1);
     --acc: #818cf8;
     --fill: #6063f1;
-    --cristal: rgba(58, 58, 110, 0.5);
-    --cristal-borde: rgba(255, 255, 255, 0.12);
-    --barra: rgba(17, 17, 43, 0.55);
-    --side: rgba(30, 30, 62, 0.55);
+    --cristal: rgba(44, 44, 46, 0.72);
+    --cristal-borde: rgba(255, 255, 255, 0.1);
+    --barra: rgba(0, 0, 0, 0.78);
+    --side: rgba(14, 14, 16, 0.86);
     --btn-fuerte: #ffffff;
     --btn-fuerte-texto: #000000;
     --pink: #ff0080;
     --bad: #ff7d93;
-    --badb: rgba(255, 77, 128, 0.16);
-    --ok: #4ade80;
-    --okb: rgba(74, 222, 128, 0.14);
+    --badb: #3c1620;
+    --ok: #4fd393;
+    --okb: #143325;
     --in: #00c2cb;
     --owe: #ff4da6;
-    --owed: #4ade80;
+    --owed: #4fd393;
     --risk: #fbbf24;
     --risk-fill: #ff9f0a;
+    --logo: url("/logo-oscuro.png");
     color-scheme: dark;
   }
 }
+/* Liquid Glass, el extra de Ajustes: azul noche con un degradado índigo arriba y tarjetas de cristal. */
 :root[data-tema="liquid"] {
   --bg: #060612;
   --bg-velo: linear-gradient(180deg, #26275f 0%, #11112b 34%, #060612 70%);
@@ -126,6 +129,7 @@
   --owed: #4ade80;
   --risk: #fbbf24;
   --risk-fill: #ff9f0a;
+  --logo: url("/logo-oscuro.png");
   color-scheme: dark;
 }
 
@@ -158,6 +162,7 @@
   --owed: #4fd393;
   --risk: #fbbf24;
   --risk-fill: #ff9f0a;
+  --logo: url("/logo-oscuro.png");
   color-scheme: dark;
 }
 
@@ -187,11 +192,11 @@ body {
   font: 800 22px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   padding-bottom: 4px;
 }
+/* El logo oficial en la barra lateral, el mismo que en la entrada (cambia con el tema). */
 .brand i {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(140deg, #6063f1, #ff0080);
+  height: 40px;
+  aspect-ratio: 402 / 308;
+  background: var(--logo) center / contain no-repeat;
   display: inline-block;
 }
 h1 {
@@ -230,34 +235,16 @@ input:focus-visible {
   text-align: right;
 }
 
-/* ───── La entrada (lote 6): entrar, el código QR, la página de la cámara y los avisos ─────
-   El fondo de la bienvenida de la app (`WelcomeF2Background`, WelcomeShowcaseView.swift): base #08081A, el índigo al
-   62 % como brillo detrás del contenido (centro a media anchura y al 26 % de alto, radio del 55 % del lado mayor) y un
-   toque turquesa al 14 % arriba a la derecha. Como la bienvenida, es SIEMPRE oscura: no lee las variables del tema.
-   Todo cuelga de clases `e-*` para no tocar la app con sesión (Ajustes y el resto usan `.fade` y `.brand`). */
-html.en-entrada,
-html.en-entrada body {
-  background: #08081a;
-  color-scheme: dark;
-}
+/* ───── La entrada: entrar, el código QR, la página de la cámara y los avisos ─────
+   Desde el 17-nov sigue el tema de la web (claro u oscuro según el sistema, o el elegido en Ajustes) con el estilo del
+   resto de la app web: el fondo de la página, una tarjeta y los botones redondos. Ya no lleva el fondo de la bienvenida
+   de iOS. El logo oficial cambia con el tema (`--logo`). Todo cuelga de clases `e-*` para no tocar la app con sesión. */
 .entrada {
-  --e-ink: #ffffff;
-  --e-ink2: rgba(255, 255, 255, 0.72);
-  --e-ink3: rgba(255, 255, 255, 0.6);
-  --e-cristal: rgba(255, 255, 255, 0.1);
-  --e-cristal-hover: rgba(255, 255, 255, 0.14);
-  --e-borde: rgba(255, 255, 255, 0.22);
-  --e-acc: #818cf8;
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
-  color: var(--e-ink);
-  color-scheme: dark;
-  background:
-    radial-gradient(circle 45vw at 88% 6%, rgba(0, 243, 255, 0.14), rgba(0, 243, 255, 0) 100%),
-    radial-gradient(circle 55vmax at 50% 26%, rgba(96, 99, 241, 0.62), rgba(96, 99, 241, 0) 100%),
-    #08081a;
+  color: var(--ink);
 }
 .e-caja {
   width: min(420px, 100%);
@@ -266,31 +253,35 @@ html.en-entrada body {
   align-items: stretch;
   gap: 12px;
   text-align: center;
+  padding: 28px 24px;
+  background: var(--card);
+  border: 1px solid var(--card-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra);
 }
-/* El logo de la web, a juego con el ícono de la app (decisión de la maqueta). */
+/* El logo oficial (Web/public/images/logo*.png), sin deformar: su proporción es la del PNG recortado (402 × 308). */
 .e-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #6063f1, #ff0080);
+  width: 104px;
+  aspect-ratio: 402 / 308;
+  background: var(--logo) center / contain no-repeat;
   display: block;
   margin: 0 auto 4px;
 }
 .e-titulo {
-  font: 800 30px/1.15 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font: 800 28px/1.15 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   letter-spacing: -0.01em;
   margin: 0;
   text-align: center;
   text-wrap: balance;
 }
 .e-sub {
-  color: var(--e-ink2);
+  color: var(--ink2);
   font-size: 16px;
   margin: 0;
   text-wrap: pretty;
 }
 .e-fade {
-  color: var(--e-ink3);
+  color: var(--ink2);
   font-size: 13px;
   margin: 0;
 }
@@ -299,8 +290,8 @@ html.en-entrada body {
 }
 .e-nota {
   font-size: 14px;
-  color: var(--e-ink2);
-  background: rgba(129, 140, 248, 0.14);
+  color: var(--ink2);
+  background: color-mix(in srgb, var(--acc) 14%, transparent);
   border-radius: 14px;
   padding: 10px 12px;
   margin: 0;
@@ -310,12 +301,12 @@ html.en-entrada body {
   font-size: 14px;
   border-radius: 14px;
   padding: 10px 12px;
-  background: rgba(255, 77, 128, 0.16);
-  color: #ff9db0;
+  background: var(--badb);
+  color: var(--bad);
 }
 .e-aviso.ok {
-  background: rgba(74, 222, 128, 0.14);
-  color: #6ee7a0;
+  background: var(--okb);
+  color: var(--ok);
 }
 .e-login {
   display: flex;
@@ -328,8 +319,7 @@ html.en-entrada body {
   gap: 10px;
   margin-top: 10px;
 }
-/* Los tres accesos de la app (`WelcomeAccessButton`): cristal medio, borde fino, 50 de alto, radio 16, ícono a la
-   izquierda del texto y los dos centrados. */
+/* Los tres accesos: el botón redondo de la app web (`.btn-s` en app.css), a lo ancho y con su ícono a la izquierda. */
 .e-btn {
   display: flex;
   align-items: center;
@@ -338,23 +328,21 @@ html.en-entrada body {
   width: 100%;
   min-height: 50px;
   padding: 10px 16px;
-  border: 1px solid var(--e-borde);
-  border-radius: 16px;
-  background: var(--e-cristal);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-  color: var(--e-ink);
+  border: 0;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink2) 14%, transparent);
+  color: var(--ink);
   font: 600 17px/1.2 var(--letra);
   text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
 .e-btn:hover:not(:disabled) {
-  background: var(--e-cristal-hover);
+  background: color-mix(in srgb, var(--ink2) 22%, transparent);
 }
 .e-btn.fuerte {
-  background: #6063f1;
-  border-color: #6063f1;
+  background: var(--fill);
+  color: #fff;
 }
 .e-btn:disabled {
   opacity: 0.45;
@@ -366,14 +354,14 @@ html.en-entrada body {
   flex: 0 0 auto;
 }
 .e-o {
-  color: var(--e-ink3);
+  color: var(--ink2);
   font-size: 13px;
   margin: 0;
 }
 .entrada .e-btn:focus-visible,
 .entrada a:focus-visible,
 .entrada input:focus-visible {
-  outline: 2px solid var(--e-acc);
+  outline: 2px solid var(--acc);
   outline-offset: 2px;
 }
 .e-check {
@@ -382,14 +370,14 @@ html.en-entrada body {
   align-items: flex-start;
   text-align: left;
   font-size: 14px;
-  color: var(--e-ink2);
+  color: var(--ink2);
   cursor: pointer;
 }
 .e-check input {
   width: 18px;
   height: 18px;
   margin: 1px 0 0;
-  accent-color: var(--e-acc);
+  accent-color: var(--acc);
   flex: 0 0 auto;
 }
 .e-turnstile:empty {
@@ -399,7 +387,7 @@ html.en-entrada body {
   display: flex;
   justify-content: center;
 }
-/* El QR va en su cuadro blanco: la cámara lo lee igual sobre el fondo oscuro. */
+/* El QR va en su cuadro blanco: la cámara lo lee igual en claro y en oscuro. */
 .e-qr {
   display: block;
   width: 200px;
@@ -409,8 +397,8 @@ html.en-entrada body {
   background: #fff;
 }
 .e-qr-espera {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--e-borde);
+  background: color-mix(in srgb, var(--ink2) 10%, transparent);
+  border: 1px solid var(--line);
 }
 .e-codigo {
   font: 700 26px/1.2 ui-monospace, "SF Mono", Menlo, monospace;

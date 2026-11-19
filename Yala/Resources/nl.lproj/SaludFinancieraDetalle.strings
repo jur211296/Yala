@@ -1,0 +1,62 @@
+/*
+  SaludFinancieraDetalle.strings
+  Yala
+
+  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
+  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+*/
+
+"saludDetalle.section.alerts" = "Om na te kijken";
+"saludDetalle.section.budgets" = "Je budgetten";
+"saludDetalle.section.payments" = "Komende betalingen";
+"saludDetalle.section.streak" = "Je reeks";
+"saludDetalle.section.improve" = "Zo gaat je score omhoog";
+"saludDetalle.section.howItWorks" = "Hoe wordt hij berekend?";
+"saludDetalle.alerts.none.title" = "Vandaag niets na te kijken";
+"saludDetalle.alerts.none.detail" = "Je budgetten, betalingen en rekeningen zijn op orde.";
+"saludDetalle.alert.overBudget.title" = "Je zit over %@ heen";
+"saludDetalle.alert.overBudget.detail" = "Tik om te zien waar het heen ging.";
+"saludDetalle.alert.atLimit.title" = "%@ zit bijna aan de limiet";
+"saludDetalle.alert.atLimit.detail" = "Je zit op %d %% van wat je instelde.";
+"saludDetalle.alert.negativeAccount.title" = "%@ staat rood";
+"saludDetalle.alert.negativeAccount.detail" = "Controleer het saldo of leg vast wat ontbreekt.";
+"saludDetalle.alert.overdue.title" = "%@ is verlopen";
+"saludDetalle.alert.overdue.detail" = "Markeer als betaald of sla over.";
+"saludDetalle.alert.notCovered.title" = "De betalingen van deze maand zijn niet gedekt";
+"saludDetalle.alert.notCovered.detail" = "Met wat je hebt en wat nog komt, heb je aan het eind van de maand:";
+"saludDetalle.budgets.empty.title" = "Nog geen budgetten";
+"saludDetalle.budgets.empty.detail" = "Stel een limiet in voor waar je het meest aan uitgeeft en Yala waarschuwt je op tijd.";
+"saludDetalle.budgets.empty.cta" = "Budget maken";
+"saludDetalle.budgets.seeAll" = "Alles bekijken (%d)";
+"saludDetalle.budgets.left" = "Over";
+"saludDetalle.budgets.over" = "Over met";
+"saludDetalle.payments.today" = "Vandaag";
+"saludDetalle.payments.tomorrow" = "Morgen";
+"saludDetalle.payments.inDays" = "Over %d dagen";
+"saludDetalle.payments.overdue" = "Verlopen";
+"saludDetalle.payments.none" = "Geen betalingen in de komende twee weken.";
+"saludDetalle.payments.empty.title" = "Nog geen geplande betalingen";
+"saludDetalle.payments.empty.detail" = "Huur, stroom, abonnementen: Yala herinnert je aan elke betaling.";
+"saludDetalle.payments.empty.cta" = "Betaling toevoegen";
+"saludDetalle.payments.seeAll" = "Alles bekijken";
+"saludDetalle.payments.covered" = "Genoeg voor de betalingen van deze maand.";
+"saludDetalle.payments.notCovered" = "Niet genoeg voor de betalingen van deze maand.";
+"saludDetalle.streak.days.one" = "%d dag op rij";
+"saludDetalle.streak.days.other" = "%d dagen op rij";
+"saludDetalle.streak.today" = "Je hebt vandaag al iets vastgelegd. Ga zo door!";
+"saludDetalle.streak.keep" = "Leg vandaag iets vast om hem te houden.";
+"saludDetalle.streak.start" = "Leg vandaag een transactie vast om er een te starten.";
+"saludDetalle.streak.cta" = "Vastleggen";
+"saludDetalle.streak.caption" = "Laatste %d dagen";
+"saludDetalle.streak.dayRecorded" = "Met transacties";
+"saludDetalle.streak.dayEmpty" = "Zonder transacties";
+"saludDetalle.improve.crearPresupuesto" = "Maak je eerste budget";
+"saludDetalle.improve.registrarHoy" = "Leg vandaag een transactie vast";
+"saludDetalle.improve.agregarPagos" = "Voeg je vaste betalingen toe";
+"saludDetalle.improve.revisarPresupuestos" = "Bekijk de overschreden budgetten";
+"saludDetalle.improve.revisarRitmo" = "Leg vaker vast";
+"saludDetalle.improve.revisarPagos" = "Bekijk de betalingen van deze maand";
+"saludDetalle.improve.weight" = "%@ telt voor %d %% van je score";
+"saludDetalle.loading" = "Laden…";
+"saludDetalle.alert.reachedLimit.title" = "%@ zit aan de limiet";
+"saludDetalle.alert.atLimitMany.title" = "%d budgetten bijna aan de limiet";

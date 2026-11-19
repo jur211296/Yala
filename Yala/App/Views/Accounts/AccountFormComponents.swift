@@ -143,7 +143,9 @@ struct DiscardAccountChangesAlert: ViewModifier {
     func body(content: Content) -> some View {
         content.alert(L10n.Inbox.discardChangesTitle, isPresented: $isPresented) {
             Button(L10n.Inbox.discardChanges, role: .destructive) { onDiscard() }
+                .accessibilityIdentifier("account_discard_confirm")
             Button(L10n.Inbox.keepEditing, role: .cancel) {}
+                .accessibilityIdentifier("account_discard_keep")
         } message: {
             Text(L10n.Inbox.discardChangesMessage)
         }

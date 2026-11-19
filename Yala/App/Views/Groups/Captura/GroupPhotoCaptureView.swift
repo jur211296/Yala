@@ -61,7 +61,12 @@ struct GroupPhotoCaptureView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
-            GroupCaptureHeader(showsClose: model.phase != .processing, closeIdentifier: "receipt_split_close") { dismiss() }
+            GroupCaptureHeader(
+                showsClose: model.phase != .processing,
+                closeIdentifier: "receipt_split_close",
+                title: headerTitle?.text,
+                titleIdentifier: headerTitle?.identifier
+            ) { dismiss() }
             content
         }
         .padding(.horizontal, DS.Spacing.xl)
@@ -124,6 +129,7 @@ struct GroupPhotoCaptureView: View {
         case .review:
             GroupReceiptReviewContent(
                 model: model,
+                showsTitle: false,
                 againTitle: L10n.Image.Entry.otherPhoto,
                 againIdentifier: "receipt_split_other_photo",
                 onAgain: { showOtherPhotoConfirmation = true },
@@ -145,17 +151,21 @@ struct GroupPhotoCaptureView: View {
         }
     }
 
+    /// El título que va en la fila de la X: elegir y «lo entendido». Leyendo (sin X) y el fallo llevan el suyo abajo.
+    private var headerTitle: (text: String, identifier: String)? {
+        switch model.phase {
+        case .idle, .starting, .listening: (L10n.GruposCaptura.photoTitle, "group_photo_title")
+        case .review: (L10n.ReceiptSplit.reviewTitle, "receipt_split_review_title")
+        case .processing, .failure: nil
+        }
+    }
+
     // MARK: - Elegir
 
     private var chooseContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.GruposCaptura.photoTitle)
-                        .font(DS.Typography.title3)
-                        .foregroundStyle(.thPrimaryText)
-                        .accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("group_photo_title")
                     Text(L10n.GruposCaptura.photoSubtitle)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)

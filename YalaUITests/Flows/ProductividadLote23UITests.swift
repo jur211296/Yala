@@ -49,9 +49,8 @@ final class ProductividadLote23UITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         app.openScheduledPaymentsList()
 
-        let addButton = app.buttons["scheduled_payments_create_button"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció el + de Pagos planificados.")
-        addButton.tap()
+        // «Nuevo pago planificado» abre el asistente: este caso prueba el formulario (encargo del 17-nov).
+        app.abrirFormularioDeNuevoPago()
 
         let nameField = app.textFields["scheduled_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No se montó el editor.")

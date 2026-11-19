@@ -243,6 +243,7 @@ struct AppPreferencesSyncedMirrorResetTests {
         .panelSectionsOrder: { $0.panelSectionsOrder },
         .panelMoneyAccountOverrides: { $0.panelMoneyAccountOverrides },
         .accountCardDesigns: { $0.accountCardDesigns },
+        .userProfileStyle: { $0.userProfileStyle },
         .budgetAlertsEnabled: { $0.budgetAlertsEnabled },
         .expensesOnlyMode: { $0.expensesOnlyMode },
         .colorfulIcons: { $0.colorfulIcons },
@@ -287,6 +288,7 @@ struct AppPreferencesSyncedMirrorResetTests {
         d.set("00000000-0000-0000-0000-00000000000A:1", forKey: AppPreferences.Keys.panelMoneyAccountOverrides)
         d.set("{\"00000000-0000-0000-0000-00000000000A\":{\"ch\":true,\"t\":\"gold\"}}",
               forKey: AppPreferences.Keys.accountCardDesigns)
+        d.set("{\"e\":\"🦊\",\"k\":\"emoji\"}", forKey: AppPreferences.Keys.userProfileStyle)
         d.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
         d.set(true, forKey: AppPreferences.Keys.budgetAlertsEnabled)
         d.set(true, forKey: AppPreferences.Keys.expensesOnlyMode)

@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { LANGS, loadLang, loadTexts, locale } from "../src/client/i18n";
 import { money, moneyParts } from "../src/client/app/format";
-import { aplicarTema, guardarTema, temaElegido, TEMAS } from "../src/client/tema";
+import { aplicarTema, guardarTema, temaElegido, temaEsOscuro, TEMAS } from "../src/client/tema";
 
 /** Un `localStorage` en memoria. */
 function memStorage() {
@@ -117,7 +117,7 @@ describe("el tema", () => {
   it("pone data-tema en <html> y el color de la barra del navegador, y lo devuelve al sistema", () => {
     const metas = [
       { content: "#fafbff", dataset: {} as Record<string, string | undefined> },
-      { content: "#26275f", dataset: {} as Record<string, string | undefined> },
+      { content: "#000000", dataset: {} as Record<string, string | undefined> },
     ];
     const doc = { documentElement: { dataset: {} as Record<string, string | undefined> }, querySelectorAll: () => metas };
     aplicarTema("oscuro", doc);
@@ -129,7 +129,7 @@ describe("el tema", () => {
     expect(metas.map((m) => m.content)).toEqual(["#fafbff", "#fafbff"]);
     aplicarTema("sistema", doc);
     expect("tema" in doc.documentElement.dataset).toBe(false);
-    expect(metas.map((m) => m.content)).toEqual(["#fafbff", "#26275f"]);
+    expect(metas.map((m) => m.content)).toEqual(["#fafbff", "#000000"]);
   });
 
   it("sin documento (en el Worker) no hace nada", () => {
@@ -160,7 +160,7 @@ describe("los colores de cada tema", () => {
     expect(vars(':root[data-tema="oscuro"]')).toEqual(claro);
   });
 
-  it("Liquid Glass por sistema y forzado son el mismo", () => {
+  it("el oscuro por sistema es el «Oscuro» de Ajustes, no Liquid Glass", () => {
     const bloque = (sel: string) => {
       const i = styles.indexOf(`${sel} {`);
       return styles
@@ -169,18 +169,31 @@ describe("los colores de cada tema", () => {
         .map((l) => l.trim())
         .filter(Boolean);
     };
-    expect(bloque(":root:not([data-tema])")).toEqual(bloque(':root[data-tema="liquid"]'));
+    expect(bloque(":root:not([data-tema])")).toEqual(bloque(':root[data-tema="oscuro"]'));
+    expect(bloque(":root:not([data-tema])")).not.toEqual(bloque(':root[data-tema="liquid"]'));
   });
 
   it("app.css y la entrada no deciden colores por el sistema", () => {
     expect(app).not.toMatch(/prefers-color-scheme/);
-    // En styles.css solo el bloque de Liquid Glass por defecto mira al sistema.
+    // En styles.css solo el bloque del oscuro por sistema mira al sistema.
     expect(styles.match(/prefers-color-scheme/g)).toHaveLength(1);
+  });
+
+  it("cada tema lleva el logo oficial de su fondo, y los dos están en public/", () => {
+    const logo = (sel: string) => {
+      const i = sel === "claro" ? styles.indexOf(":root {\n  --bg:") : styles.indexOf(`${sel} {`);
+      return styles.slice(i, styles.indexOf("}", i)).match(/--logo: url\("\/([^"]+)"\)/)?.[1];
+    };
+    expect(logo("claro")).toBe("logo-claro.png");
+    for (const sel of [":root:not([data-tema])", ':root[data-tema="oscuro"]', ':root[data-tema="liquid"]']) expect(logo(sel), sel).toBe("logo-oscuro.png");
+    for (const f of ["logo-claro.png", "logo-oscuro.png", "favicon-32.png", "apple-touch-icon.png"]) {
+      expect(() => readFileSync(new URL(`../public/${f}`, import.meta.url))).not.toThrow();
+    }
   });
 
   it("la letra de las cifras cae en Nunito, servida desde aquí", () => {
     expect(styles).toMatch(/--round: ui-rounded, "SF Pro Rounded", Nunito,/);
-    for (const m of styles.matchAll(/url\("([^"]+)"\)/g)) {
+    for (const m of styles.matchAll(/url\("(\.\/fonts\/[^"]+)"\)/g)) {
       expect(m[1]!.startsWith("./fonts/")).toBe(true);
       expect(() => readFileSync(new URL(`../src/client/${m[1]!.slice(2)}`, import.meta.url))).not.toThrow();
     }
@@ -194,5 +207,21 @@ describe("los nombres de los temas", () => {
       expect(tx.app[k].trim().length, k).toBeGreaterThan(0);
     }
     expect(new Set([tx.app.temaValor, tx.app.temaClaro, tx.app.temaOscuro, tx.app.temaLiquid]).size).toBe(4);
+  });
+});
+
+describe("si la página se ve en oscuro", () => {
+  const g = globalThis as { matchMedia?: unknown };
+  afterEach(() => delete g.matchMedia);
+
+  it("un tema forzado manda; «Como el sistema» pregunta al sistema", () => {
+    expect(temaEsOscuro("claro")).toBe(false);
+    expect(temaEsOscuro("oscuro")).toBe(true);
+    expect(temaEsOscuro("liquid")).toBe(true);
+    expect(temaEsOscuro("sistema")).toBe(false); // sin matchMedia (el Worker), claro
+    g.matchMedia = () => ({ matches: true });
+    expect(temaEsOscuro("sistema")).toBe(true);
+    g.matchMedia = () => ({ matches: false });
+    expect(temaEsOscuro("sistema")).toBe(false);
   });
 });

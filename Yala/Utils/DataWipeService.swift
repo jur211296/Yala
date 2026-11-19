@@ -1342,6 +1342,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "userAlias")              // Default: ""
         defaults.removeObject(forKey: "userProfileImageData")   // Default: nil
         defaults.removeObject(forKey: "userProfileIcon")        // Default: "" (sin emoji)
+        defaults.removeObject(forKey: AppPreferences.Keys.userProfileStyle)  // Default: "" (el perfil de siempre)
 
         // --- Features de entrada ---
         defaults.removeObject(forKey: "voiceInputEnabled")      // Default: false

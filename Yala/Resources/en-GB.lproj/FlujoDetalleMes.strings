@@ -1,0 +1,25 @@
+/*
+  FlujoDetalleMes.strings
+  Yala
+
+  El detalle del mes del flujo de caja como una sola historia: «Empezaste con · Entró · Salió · Terminas con» (S2
+  del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoDetalleMes`).
+*/
+
+"flujoDetalleMes.started.past" = "You started with";
+"flujoDetalleMes.started.current" = "You started with";
+"flujoDetalleMes.started.future" = "You'd start with";
+"flujoDetalleMes.in.past" = "Came in";
+"flujoDetalleMes.in.current" = "Came in";
+"flujoDetalleMes.in.future" = "Would come in";
+"flujoDetalleMes.out.past" = "Went out";
+"flujoDetalleMes.out.current" = "Went out";
+"flujoDetalleMes.out.future" = "Would go out";
+"flujoDetalleMes.end.past" = "You ended with";
+"flujoDetalleMes.end.current" = "You end with";
+"flujoDetalleMes.end.future" = "You'd end with";
+"flujoDetalleMes.leftIn" = "Still to come in (estimate)";
+"flujoDetalleMes.leftOut" = "Still to go out (estimate)";
+"flujoDetalleMes.adjustment" = "Balance adjustments";
+"flujoDetalleMes.estimated" = "estimate";
+"flujoDetalleMes.group.lines" = "%d lines";

@@ -28,6 +28,9 @@ struct ScheduledPaymentsView: View {
     @State private var showFloatingNew = false
     /// «Desde un registro» (encargo del 15-nov): el selector de registros que lleva al editor prellenado.
     @State private var showsRecordPicker = false
+    /// Lo respondido en el asistente de «Nuevo pago planificado». Vive aquí, en quien presenta la hoja, y se olvida al
+    /// cerrarla: el contenido de una hoja puede rehacerse sin cerrarla (`swiftui-ds.md`).
+    @State private var newPaymentWizard = AsistentePagoPlanificadoEstado()
 
     var body: some View {
         ZStack {
@@ -72,7 +75,10 @@ struct ScheduledPaymentsView: View {
         // anima dentro de una pestaña (card 8atf).
         .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)
         .yalaScreenBackground(.panel)
+        // Crear abre el asistente por pasos, con «Usar formulario» arriba (encargo del 17-nov); editar sigue abriendo el
+        // formulario.
         .sheet(isPresented: $viewModel.showPaymentEditor, onDismiss: {
+            newPaymentWizard.olvidar()
             paymentEditorClosedToken += 1
             announceFirstPaymentIfNew()
         }) {
@@ -83,10 +89,11 @@ struct ScheduledPaymentsView: View {
                         refreshData()
                     }
             } else {
-                ScheduledPaymentEditorView(
-                    payment: nil,
+                NuevoPagoPlanificadoHoja(
+                    estado: newPaymentWizard,
                     defaultCategory: viewModel.selectedTab.categoryFilter,
-                    onSaved: { newlySavedPaymentID = $0 }
+                    alGuardar: { newlySavedPaymentID = $0 },
+                    alCerrar: { viewModel.showPaymentEditor = false }
                 )
                     .onDisappear {
                         refreshData()

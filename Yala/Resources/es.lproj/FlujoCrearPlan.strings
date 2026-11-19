@@ -1,0 +1,22 @@
+/*
+  FlujoCrearPlan.strings
+  Yala
+
+  Crear el plan del flujo de caja: se parte del saldo de las cuentas, líneas por subcategoría agrupadas bajo su
+  categoría y límites fijos sembrados con el promedio (S5 del replanteo, 18-nov-2026). Tabla propia, leída con el
+  idioma de la app (`L10n.FlujoCrearPlan`).
+*/
+
+"flujoCrearPlan.hero.label" = "Tienes hoy";
+"flujoCrearPlan.hero.caption.none" = "Sin cuentas que sumar. El plan cuenta lo que entra y lo que sale.";
+"flujoCrearPlan.hero.caption.one" = "En 1 cuenta. Tu plan parte de aquí.";
+"flujoCrearPlan.hero.caption.other" = "En %d cuentas. Tu plan parte de aquí.";
+"flujoCrearPlan.group.uncategorized" = "Sin categoría";
+"flujoCrearPlan.group.expanded" = "Desplegada";
+"flujoCrearPlan.group.collapsed" = "Plegada";
+"flujoCrearPlan.group.selected" = "%1$d de %2$d";
+"flujoCrearPlan.limits.note" = "Cada límite queda fijo con tu promedio. Lo cambias cuando quieras, solo un mes o desde un mes en adelante.";
+"flujoCrearPlan.addLine.seed" = "Calcular el límite con";
+"flujoCrearPlan.addLine.limit.expense" = "Límite al mes";
+"flujoCrearPlan.addLine.limit.income" = "Esperado al mes";
+"flujoCrearPlan.addLine.pickSubcategory" = "Elige una subcategoría";

@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "Diese Zahlung verwerfen?";
+"asistentePago.create" = "Zahlung erstellen";
+"asistentePago.createShort" = "Erstellen";
+"asistentePago.name.question" = "Wie sollen wir sie nennen?";
+"asistentePago.name.detail" = "So siehst du sie in deiner Liste und in der Erinnerung.";
+"asistentePago.amount.question" = "Wie viel zahlst du jedes Mal?";
+"asistentePago.amount.detail" = "Wenn es sich jedes Mal ändert, gib den üblichen Betrag ein und aktiviere „Ändert sich jedes Mal“.";
+"asistentePago.frequency.question" = "Wie oft zahlst du?";
+"asistentePago.frequency.detail" = "Am Zahltag legt Yala sie in deinem Posteingang bereit, damit du sie bestätigst.";
+"asistentePago.frequency.monthlyHint" = "Jeden Monat am selben Tag: Miete, Strom, Telefon.";
+"asistentePago.frequency.weeklyHint" = "Jede Woche am selben Tag.";
+"asistentePago.frequency.yearlyHint" = "Ein Datum im Jahr: Versicherungen, Mitgliedschaften, Domains.";
+"asistentePago.frequency.onceHint" = "Eine einzelne Zahlung mit Datum.";
+"asistentePago.day.question.monthly" = "An welchem Tag im Monat?";
+"asistentePago.day.question.weekly" = "An welchem Wochentag?";
+"asistentePago.day.question.yearly" = "An welchem Datum jedes Jahr?";
+"asistentePago.day.question.once" = "An welchem Tag ist sie fällig?";
+"asistentePago.day.detail" = "Du kannst das jederzeit ändern.";
+"asistentePago.day.other" = "Anderer Tag";
+"asistentePago.day.ofMonth" = "Am %d.";
+"asistentePago.summary.question" = "So erstellen?";
+"asistentePago.summary.detail" = "Tippe auf eine Antwort, um sie zu ändern.";
+"asistentePago.summary.kind" = "Art";
+"asistentePago.summary.name" = "Name";
+"asistentePago.summary.amount" = "Betrag";
+"asistentePago.summary.frequency" = "Wiederholung";
+"asistentePago.summary.when" = "Wann";
+"asistentePago.summary.reminder" = "Erinnerung";
+"asistentePago.reminder.none" = "Keine Erinnerung";

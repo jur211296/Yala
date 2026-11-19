@@ -16,6 +16,8 @@ import SwiftUI
 
 struct VoiceDraftReviewCard: View {
     let draft: InboxDraft
+    /// La hoja de foto deja corregir la descripción tocándola (encargo del 2026-11-17); la de voz no lo pide.
+    var editsNoteInPlace = false
     let onOpenDetails: () -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -26,6 +28,7 @@ struct VoiceDraftReviewCard: View {
     @Query private var allTags: [Tag]
 
     @State private var activeField: ChatDraftField?
+    @State private var isEditingNote = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isSaved: Bool { draft.status == .approved }
@@ -38,11 +41,20 @@ struct VoiceDraftReviewCard: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("voice_draft_row")
             } else {
-                Button(action: onOpenDetails) {
+                if editsNoteInPlace {
+                    // La descripción es un botón propio: dentro de la etiqueta de la fila se fundiría con ella. El resto de
+                    // la fila abre el formulario con un toque (el botón de la descripción, como hijo, gana el suyo), y el
+                    // botón de fondo solo existe para VoiceOver, que lee la fila entera ahí.
                     row
+                        .onTapGesture(perform: openDetailsOrConfirmNote)
+                        .background { openDetailsButton }
+                } else {
+                    Button(action: onOpenDetails) {
+                        row
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("voice_draft_row")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("voice_draft_row")
 
                 chipsRow
             }
@@ -75,6 +87,36 @@ struct VoiceDraftReviewCard: View {
             .contentShape(Rectangle())
     }
 
+    /// Con la descripción editable en línea, el resto de la fila abre el formulario (y, con la descripción abierta, la
+    /// confirma). VoiceOver lee la fila entera en este botón.
+    private var openDetailsButton: some View {
+        Button(action: openDetailsOrConfirmNote) {
+            Color.clear
+        }
+        .buttonStyle(.plain)
+        // Solo para VoiceOver: el dedo lo recibe el gesto de la fila, encima.
+        .allowsHitTesting(false)
+        .accessibilityLabel(rowAccessibilityLabel)
+        .accessibilityIdentifier("voice_draft_row")
+    }
+
+    /// Con la descripción abierta, tocar el resto de la fila la confirma; si no, abre el formulario completo.
+    private func openDetailsOrConfirmNote() {
+        if isEditingNote {
+            isEditingNote = false
+        } else {
+            onOpenDetails()
+        }
+    }
+
+    private var rowAccessibilityLabel: String {
+        let amount = draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount
+        return [title, subtitle, amount].joined(separator: ", ")
+    }
+
+    /// Las piezas que no se tocan dejan el toque al gesto de la fila cuando la descripción va en línea.
+    private var passesTouches: Bool { editsNoteInPlace && !isSaved }
+
     /// Con el texto al máximo el importe baja a su propia línea, entero: a su lado se partía en «S/ / 25.0 / 0»
     /// (barrido final 2.2). A tamaño normal, la fila de siempre, con los mismos hijos en el mismo `HStack`.
     @ViewBuilder
@@ -83,30 +125,38 @@ struct VoiceDraftReviewCard: View {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(spacing: DS.ListRow.spacing) {
                     ChatDraftCategoryIcon(subcategory: draft.subcategory)
+                        .rowPassesTouches(passesTouches)
                     rowTexts
                 }
                 amountColumn(alignment: .leading)
+                    .rowPassesTouches(passesTouches)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             HStack(spacing: DS.ListRow.spacing) {
                 ChatDraftCategoryIcon(subcategory: draft.subcategory)
+                    .rowPassesTouches(passesTouches)
 
                 rowTexts
 
                 Spacer(minLength: DS.Spacing.sm)
 
                 amountColumn(alignment: .trailing)
+                    .rowPassesTouches(passesTouches)
             }
         }
     }
 
     private var rowTexts: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(DS.Typography.label)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            if editsNoteInPlace, !isSaved {
+                DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote)
+            } else {
+                Text(title)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
             Text(subtitle)
                 .font(DS.Typography.caption)
                 .foregroundStyle(
@@ -114,6 +164,7 @@ struct VoiceDraftReviewCard: View {
                         ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
                 )
                 .lineLimit(1)
+                .rowPassesTouches(passesTouches)
         }
     }
 
@@ -289,5 +340,14 @@ enum VoiceDraftFieldEditing {
             print("VoiceDraftReviewCard: Error saving draft change: \(error)")
             #endif
         }
+    }
+}
+
+extension View {
+    /// Una pieza de una fila de «Esto leí» que no se toca: con la descripción en línea deja el toque al gesto de la fila,
+    /// y VoiceOver la oye en el botón de fondo de la fila, no suelta.
+    func rowPassesTouches(_ passes: Bool) -> some View {
+        allowsHitTesting(!passes)
+            .accessibilityHidden(passes)
     }
 }

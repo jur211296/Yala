@@ -35,7 +35,8 @@ final class CaptureConvertToGroupUITests: XCTestCase {
     private func convertTheDraft(in app: XCUIApplication) {
         let row = app.buttons["voice_draft_row"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No apareció el registro entendido (voice_draft_row).")
-        row.tap()
+        // El importe, a la derecha: en la hoja de foto la descripción se edita al tocarla (encargo del 2026-11-17).
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
 
         let convert = app.buttons["inbox_convert_to_shared_button"]
         XCTAssertTrue(convert.waitForExistence(timeout: 10), "La hoja del registro no ofreció «Convertir a gasto compartido».")

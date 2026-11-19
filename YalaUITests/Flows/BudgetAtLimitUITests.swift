@@ -51,9 +51,8 @@ final class BudgetAtLimitUITests: XCTestCase {
     // MARK: - Helpers
 
     private func createBudget(_ app: XCUIApplication, name: String, amount: String) {
-        let fab = app.buttons["budgets_create_button"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 15), "No apareció budgets_create_button.")
-        fab.tap()
+        // «Nuevo presupuesto» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.abrirFormularioDeNuevoPresupuesto(desde: app.buttons["budgets_create_button"])
 
         let nameField = app.textFields["budget_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No se montó el editor (budget_name_field).")

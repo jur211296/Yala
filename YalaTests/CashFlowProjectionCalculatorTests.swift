@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
@@ -401,11 +402,11 @@ struct CashFlowProjectionCalculatorTests {
             currencyCode: "USD", converter: MockCurrencyConverter()
         )
 
-        // Net per month = 5000 - 2000 = 3000
-        #expect(result.startingBalance == 1000)
-        #expect(abs(result.months[0].accumulatedBalance! - 4000) < 0.01) // 1000 + 3000
-        #expect(abs(result.months[1].accumulatedBalance! - 7000) < 0.01) // 4000 + 3000
-        #expect(abs(result.months[2].accumulatedBalance! - 10000) < 0.01) // 7000 + 3000
+        // P5 del replanteo (18-nov-2026): el saldo inicial manual ya no manda; el saldo sale de tus cuentas. Sin fuente
+        // de saldo, ningún mes lo lleva. La cadena con cuentas la fija `FlujoMotorMesTests` (hallazgos 1, 2 y 11).
+        #expect(result.startingBalance == 0)
+        #expect(result.months.allSatisfy { $0.accumulatedBalance == nil })
+        #expect(abs(result.months[1].netFlow - 3000) < 0.01) // 5000 - 2000
     }
 
     // MARK: - 15. Income line
@@ -743,139 +744,33 @@ struct CashFlowProjectionCalculatorTests {
         #expect(planned == 0)
     }
 
-    // MARK: - 30. Starting balance date — applies at correct month
+    // MARK: - 30-34. El saldo inicial manual ya no manda (P5 del replanteo, 18-nov-2026)
 
-    @Test func startingBalanceDate_appliesAtCorrectMonth() {
+    /// Hasta el replanteo, el saldo inicial del plan sembraba el acumulado en el mes de su fecha, o en el mes en curso
+    /// sin fecha (hallazgo 2: «se desliza al mes en curso»). Ahora el saldo sale de tus cuentas: con cualquier saldo
+    /// inicial y cualquier fecha, sin fuente de saldo ningún mes lo lleva. La cadena con cuentas la fija
+    /// `FlujoMotorMesTests`.
+    @Test func startingBalance_isIgnored_withAnyDate() {
         let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let expenseCat = makeCategory(name: "Rent")
-        let plan = makePlan(startingBalance: 5000)
-
-        // Set balance date to 1 month ahead
-        let futureMonth = calendar.date(byAdding: .month, value: 1, to: currentMonthStart)!
-        plan.startingBalanceDate = futureMonth
-
-        let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 3000, category: incomeCat)
-        let expense = makeLine(name: "Rent", method: .manual, manualAmount: 1000, category: expenseCat)
-
-        let result = CashFlowProjectionCalculator.calculate(
-            plan: plan, lines: [income, expense], transactions: [],
-            allExpenseCategories: [], scheduledPayments: [],
-            monthsBack: 1, monthsAhead: 2,
-            currencyCode: "USD", converter: MockCurrencyConverter()
-        )
-
-        // Net per month = 3000 - 1000 = 2000
-        // Month -1 (past, before balance date): nil
-        #expect(result.months[0].accumulatedBalance == nil)
-        // Month 0 (current, before balance date): nil
-        #expect(result.months[1].accumulatedBalance == nil)
-        // Month +1 (balance date): 5000 + 2000 = 7000
-        #expect(abs(result.months[2].accumulatedBalance! - 7000) < 0.01)
-        // Month +2: 7000 + 2000 = 9000
-        #expect(abs(result.months[3].accumulatedBalance! - 9000) < 0.01)
-    }
-
-    // MARK: - 31. Starting balance date nil — applies at current month
-
-    @Test func startingBalanceDate_nil_appliesAtCurrentMonth() {
-        let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let plan = makePlan(startingBalance: 1000)
-        // startingBalanceDate = nil → "hoy" = mes actual
-
-        let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 500, category: incomeCat)
-
-        let result = CashFlowProjectionCalculator.calculate(
-            plan: plan, lines: [income], transactions: [],
-            allExpenseCategories: [], scheduledPayments: [],
-            monthsBack: 0, monthsAhead: 2,
-            currencyCode: "USD", converter: MockCurrencyConverter()
-        )
-
-        // Month 0 (current, balance date): 1000 + 500 = 1500
-        #expect(abs(result.months[0].accumulatedBalance! - 1500) < 0.01)
-        // Month +1: 1500 + 500 = 2000
-        #expect(abs(result.months[1].accumulatedBalance! - 2000) < 0.01)
-        // Month +2: 2000 + 500 = 2500
-        #expect(abs(result.months[2].accumulatedBalance! - 2500) < 0.01)
-    }
-
-    // MARK: - 32. Starting balance date nil with monthsBack — past months from zero
-
-    @Test func startingBalanceDate_nil_withMonthsBack_appliesAtCurrentMonth() {
-        let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let plan = makePlan(startingBalance: 5000)
-        // nil → current month; past months should have nil balance
-
         let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 1000, category: incomeCat)
-
-        let result = CashFlowProjectionCalculator.calculate(
-            plan: plan, lines: [income], transactions: [],
-            allExpenseCategories: [], scheduledPayments: [],
-            monthsBack: 2, monthsAhead: 1,
-            currencyCode: "USD", converter: MockCurrencyConverter()
-        )
-
-        // Month -2 (past, before balance date): nil
-        #expect(result.months[0].accumulatedBalance == nil)
-        // Month -1 (past, before balance date): nil
-        #expect(result.months[1].accumulatedBalance == nil)
-        // Month 0 (current, balance date): 5000 + 1000 = 6000
-        #expect(abs(result.months[2].accumulatedBalance! - 6000) < 0.01)
-        // Month +1: 6000 + 1000 = 7000
-        #expect(abs(result.months[3].accumulatedBalance! - 7000) < 0.01)
-    }
-
-    // MARK: - 33. Starting balance date before range — seeds immediately
-
-    @Test func startingBalanceDate_beforeRange_seedsImmediately() {
-        let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let plan = makePlan(startingBalance: 3000)
-
-        // Set balance date to 12 months ago (well before any visible month)
-        let oldDate = calendar.date(byAdding: .month, value: -12, to: currentMonthStart)!
-        plan.startingBalanceDate = oldDate
-
-        let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 500, category: incomeCat)
-
-        let result = CashFlowProjectionCalculator.calculate(
-            plan: plan, lines: [income], transactions: [],
-            allExpenseCategories: [], scheduledPayments: [],
-            monthsBack: 1, monthsAhead: 1,
-            currencyCode: "USD", converter: MockCurrencyConverter()
-        )
-
-        // Balance date is before range → seed at first month (legacy behavior)
-        // Month -1: 3000 + 500 = 3500
-        #expect(abs(result.months[0].accumulatedBalance! - 3500) < 0.01)
-        // Month 0: 3500 + 500 = 4000
-        #expect(abs(result.months[1].accumulatedBalance! - 4000) < 0.01)
-        // Month +1: 4000 + 500 = 4500
-        #expect(abs(result.months[2].accumulatedBalance! - 4500) < 0.01)
-    }
-
-    // MARK: - 34. Starting balance date after range — all from zero
-
-    @Test func startingBalanceDate_afterRange_allFromZero() {
-        let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let plan = makePlan(startingBalance: 10000)
-
-        // Set balance date to 12 months in the future (beyond visible range)
-        let farFuture = calendar.date(byAdding: .month, value: 12, to: currentMonthStart)!
-        plan.startingBalanceDate = farFuture
-
-        let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 1000, category: incomeCat)
-
-        let result = CashFlowProjectionCalculator.calculate(
-            plan: plan, lines: [income], transactions: [],
-            allExpenseCategories: [], scheduledPayments: [],
-            monthsBack: 0, monthsAhead: 2,
-            currencyCode: "USD", converter: MockCurrencyConverter()
-        )
-
-        // Balance date is beyond range → all months have nil balance
-        #expect(result.months[0].accumulatedBalance == nil)
-        #expect(result.months[1].accumulatedBalance == nil)
-        #expect(result.months[2].accumulatedBalance == nil)
+        let dates: [Date?] = [
+            nil,
+            calendar.date(byAdding: .month, value: 1, to: currentMonthStart),
+            calendar.date(byAdding: .month, value: -12, to: currentMonthStart),
+            calendar.date(byAdding: .year, value: 5, to: currentMonthStart),
+        ]
+        for date in dates {
+            let plan = makePlan(startingBalance: 5000)
+            plan.startingBalanceDate = date
+            let result = CashFlowProjectionCalculator.calculate(
+                plan: plan, lines: [income], transactions: [],
+                allExpenseCategories: [], scheduledPayments: [],
+                monthsBack: 2, monthsAhead: 2,
+                currencyCode: "USD", converter: MockCurrencyConverter()
+            )
+            #expect(result.startingBalance == 0)
+            #expect(result.months.allSatisfy { $0.accumulatedBalance == nil })
+        }
     }
 
     // MARK: - 35. Subcategory-level uncategorized: sibling subcategories in Others
@@ -1032,10 +927,13 @@ struct CashFlowProjectionCalculatorTests {
             currencyCode: "USD", converter: MockCurrencyConverter()
         )
 
-        // Transaction without subcategory (100) should be in Others
+        // Lo anotado en la categoría madre sin subcategoría es del grupo de esa categoría, no de «otros» (hallazgo 10 del
+        // replanteo, 18-nov-2026): descuenta de lo que les falta a sus líneas por subcategoría y suma en el total.
         let other = result.months[0].otherExpenses
-        #expect(other != nil)
-        #expect(abs(other!.plannedAmount - 100) < 0.01)
+        #expect(other.map { abs($0.plannedAmount) < 0.01 } ?? true)
+        let group = result.months[0].expenseGroups.first { $0.categoryID == housingCat.persistentModelID }
+        #expect(group.map { abs($0.unassignedAmount - 100) < 0.01 } == true)
+        #expect(abs(result.months[0].totalExpense - 400) < 0.01)
     }
 }
 

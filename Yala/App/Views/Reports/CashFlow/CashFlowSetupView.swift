@@ -4,6 +4,11 @@
 //
 //  Setup view for creating a cash flow plan from suggested lines.
 //
+//  S5 del replanteo (18-nov-2026, encargo `2026-11-18-flujo-crear-plan`): fuera «¿Con cuánto empiezas?» (P5: el plan
+//  parte del saldo de las cuentas, sin cifra a mano); las líneas llegan a la subcategoría, agrupadas bajo su categoría
+//  con cabecera plegable, y al crear cada límite queda fijo con la cifra calculada (P4). Lógica en
+//  `CrearPlan/FlujoCrearPlanLogica.swift`.
+//
 //  Auditoría UX 2.2 · lote 18 decidido:
 //  - L18-5 (opción C, variante 2) + L18-10 (C): arriba, «¿Con cuánto empiezas?» con lo que la persona tiene hoy en sus
 //    cuentas ya puesto (el plan ya no nace en S/ 0); la lista se parte en lo que entra, lo que sale cada mes (a la vista)
@@ -28,10 +33,9 @@ struct CashFlowSetupView: View {
     let accounts: [Account]
     let currencyCode: String
 
-    /// El saldo con el que nace el plan. `nil` = el de las cuentas (lo de hoy); un número = lo que escribió la persona.
-    @State private var typedStartingBalance: Double?
-    @State private var showStartingBalanceSheet = false
     @State private var showVariableLines = false
+    /// Las categorías plegadas en el armado (`FlujoCrearPlanLogica.Grupo.id`). Al abrir, todas desplegadas.
+    @State private var collapsedGroups: Set<String> = []
     @State private var editingLine: SuggestedLine?
     /// Decisión 33 de 2.3: lo que la persona contestó a «¿Cuánto recibes al mes?» (`nil` = nada escrito) y si contestó
     /// «Aún no lo sé».
@@ -42,6 +46,7 @@ struct CashFlowSetupView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // MARK: - Computed
 
@@ -55,8 +60,6 @@ struct CashFlowSetupView: View {
             includeGroups: appPreferences.includeGroupsInPanelTotal
         )
     }
-
-    private var startingBalance: Double { typedStartingBalance ?? todayBalance.amount }
 
     private var selectedIncome: Double {
         viewModel.suggestedLines
@@ -93,13 +96,17 @@ struct CashFlowSetupView: View {
         viewModel.suggestedLines.filter(\.isIncome)
     }
 
-    private var recurringExpenseLines: [SuggestedLine] {
-        viewModel.suggestedLines.filter { !$0.isIncome && $0.isRecurring }
+    /// Los grupos de gasto: a la vista los que tienen alguna línea que se repite; plegados en «Gastos que cambian», el
+    /// resto (L18-5, ahora por categoría).
+    private var expenseGroups: [FlujoCrearPlanLogica.Grupo] {
+        FlujoCrearPlanLogica.agrupar(viewModel.suggestedLines.filter { !$0.isIncome })
     }
 
-    private var variableExpenseLines: [SuggestedLine] {
-        viewModel.suggestedLines.filter { !$0.isIncome && !$0.isRecurring }
-    }
+    private var recurringExpenseGroups: [FlujoCrearPlanLogica.Grupo] { expenseGroups.filter(\.seRepite) }
+
+    private var variableExpenseGroups: [FlujoCrearPlanLogica.Grupo] { expenseGroups.filter { !$0.seRepite } }
+
+    private var variableExpenseLines: [SuggestedLine] { variableExpenseGroups.flatMap(\.lineas) }
 
     // MARK: - Body
 
@@ -120,17 +127,19 @@ struct CashFlowSetupView: View {
                     if asksForIncome {
                         incomeQuestion
                     }
-                    if !recurringExpenseLines.isEmpty || !variableExpenseLines.isEmpty {
+                    if !expenseGroups.isEmpty {
                         expenseSection
                     }
                     if !awaitsIncomeAnswer {
                         summarySection
+                        fixedLimitsNote
                         createButton
                     }
                 }
             }
             // Implícita en el contenedor común: en una pestaña un `withAnimation` no anima (card oxyr).
             .animation(reduceMotion ? nil : DS.Animation.appear, value: showVariableLines)
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: collapsedGroups)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
@@ -146,6 +155,8 @@ struct CashFlowSetupView: View {
                 categories: categories,
                 currencyCode: currencyCode
             )
+            // El detalle llega siempre a la subcategoría (ajuste de Jürgen del 18-nov).
+            viewModel.suggestedLines = FlujoCrearPlanLogica.porSubcategoria(viewModel.suggestedLines)
         }
         .sheet(item: $editingLine) { line in
             CashFlowMethodPickerSheet(
@@ -153,18 +164,6 @@ struct CashFlowSetupView: View {
                 currencyCode: currencyCode,
                 viewModel: viewModel
             )
-        }
-        .sheet(isPresented: $showStartingBalanceSheet) {
-            CashFlowStartingBalanceSheet(
-                title: L10n.UXL18.startTitle,
-                initialAmount: startingBalance,
-                initialDate: nil,
-                todayBalance: todayBalance.accountCount > 0 ? todayBalance : nil,
-                currencyCode: currencyCode,
-                showsDate: false
-            ) { amount, _ in
-                typedStartingBalance = amount
-            }
         }
         .sheet(isPresented: $showIncomeSheet) {
             CashFlowStartingBalanceSheet(
@@ -238,47 +237,29 @@ struct CashFlowSetupView: View {
         .accessibilityIdentifier("cashflow_setup_income_question")
     }
 
-    // MARK: - ¿Con cuánto empiezas? (L18-5 / L18-10)
+    // MARK: - Tienes hoy (P5 del replanteo: se parte del saldo de las cuentas)
 
-    private var startingBalanceCaption: String {
-        if typedStartingBalance != nil { return L10n.UXL18.startCaptionTyped }
-        switch todayBalance.accountCount {
-        case 0: return L10n.UXL18.startCaptionNone
-        case 1: return L10n.UXL18.startCaptionOne
-        default: return L10n.UXL18.startCaption(todayBalance.accountCount)
-        }
-    }
-
+    /// La cifra del Panel, sin «Cambiar»: el plan parte de lo que hay en las cuentas y no de un número escrito a mano.
     private var startingBalanceHero: some View {
         HeroHeader {
-            HeroHeaderLabel(text: L10n.UXL18.startTitle)
+            HeroHeaderLabel(text: L10n.FlujoCrearPlan.tienesHoy)
                 .accessibilityIdentifier("cashflow_setup_view")
         } period: {
             EmptyView()
         } content: {
             AmountText(
-                value: startingBalance,
+                value: todayBalance.amount,
                 currencyCode: currencyCode,
                 font: DS.Typography.panelHeroAmount,
                 secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                isEstimate: typedStartingBalance == nil && todayBalance.isApproximate
+                isEstimate: todayBalance.isApproximate
             )
             .accessibilityIdentifier("cashflow_setup_starting_amount")
-            HStack(spacing: DS.Spacing.xs) {
-                Text(startingBalanceCaption)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                Button {
-                    showStartingBalanceSheet = true
-                } label: {
-                    Text(L10n.UXL18.startChange)
-                        .font(DS.Typography.caption.weight(.semibold))
-                        .foregroundStyle(theme.accentText)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("cashflow_setup_change_starting")
-            }
+            Text(L10n.FlujoCrearPlan.pie(cuentas: todayBalance.accountCount))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("cashflow_setup_starting_caption")
         }
         .accessibilityElement(children: .contain)
     }
@@ -358,34 +339,98 @@ struct CashFlowSetupView: View {
     private func lineSection(title: String, lines: [SuggestedLine]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionTitle(title)
-            linesCard(lines)
+            groupCards(FlujoCrearPlanLogica.agrupar(lines))
         }
     }
 
-    private func linesCard(_ lines: [SuggestedLine]) -> some View {
-        VStack(spacing: DS.Spacing.none) {
-            ForEach(lines) { line in
-                suggestedLineRow(line)
-                if line.id != lines.last?.id {
-                    Divider()
-                        .padding(.leading, DS.Spacing.lg + 40 + DS.Spacing.md)
+    /// Una tarjeta por categoría: la cabecera con la suma de lo elegido y, desplegadas, sus subcategorías.
+    private func groupCards(_ groups: [FlujoCrearPlanLogica.Grupo]) -> some View {
+        VStack(spacing: DS.Spacing.sm) {
+            ForEach(groups) { group in
+                VStack(spacing: DS.Spacing.none) {
+                    groupHeader(group)
+                    if !collapsedGroups.contains(group.id) {
+                        ForEach(group.lineas) { line in
+                            Divider()
+                                .padding(.leading, DS.Spacing.lg + 40 + DS.Spacing.md)
+                            suggestedLineRow(line)
+                        }
+                    }
                 }
+                .solidCard()
             }
         }
-        .solidCard()
+    }
+
+    private func groupHeader(_ group: FlujoCrearPlanLogica.Grupo) -> some View {
+        let isCollapsed = collapsedGroups.contains(group.id)
+        let name = group.categoria?.name ?? L10n.FlujoCrearPlan.sinCategoria
+        let iconName = group.categoria?.iconName ?? "tag.fill"
+        let colorHex = group.categoria?.colorHex ?? AppConstants.defaultColorHex
+        let isIncome = group.lineas.first?.isIncome ?? false
+        return Button {
+            // Lo anima la implícita del `VStack` del `body` (card oxyr).
+            if isCollapsed { collapsedGroups.remove(group.id) } else { collapsedGroups.insert(group.id) }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: iconName)
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Color(hex: colorHex)))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(name)
+                        .font(DS.Typography.label.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    Text(L10n.FlujoCrearPlan.elegidas(group.elegidas, de: group.lineas.count))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                    // A tamaños de accesibilidad el importe baja a su línea: al lado partía el nombre («Ingre-sos»).
+                    if dynamicTypeSize.isAccessibilitySize {
+                        groupAmount(group, isIncome: isIncome)
+                    }
+                }
+                Spacer(minLength: DS.Spacing.xs)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    groupAmount(group, isIncome: isIncome)
+                }
+                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(isCollapsed ? L10n.FlujoCrearPlan.plegado : L10n.FlujoCrearPlan.desplegado)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityIdentifier("cashflow_setup_group")
+    }
+
+    private func groupAmount(_ group: FlujoCrearPlanLogica.Grupo, isIncome: Bool) -> some View {
+        AmountText(
+            value: group.totalElegido,
+            currencyCode: currencyCode,
+            font: DS.Typography.label.weight(.semibold).monospacedDigit(),
+            tint: .color(Color.amountTint(isIncome: isIncome))
+        )
     }
 
     /// «Lo que sale»: lo que se repite a la vista y los gastos que cambian, plegados en una fila que se despliega.
     private var expenseSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionTitle(L10n.UXL18.sectionOut)
-            if !recurringExpenseLines.isEmpty {
-                linesCard(recurringExpenseLines)
+            if !recurringExpenseGroups.isEmpty {
+                groupCards(recurringExpenseGroups)
             }
-            if !variableExpenseLines.isEmpty {
+            if !variableExpenseGroups.isEmpty {
                 variableLinesRow
                 if showVariableLines {
-                    linesCard(variableExpenseLines)
+                    groupCards(variableExpenseGroups)
                         .transition(.opacity)
                 }
             }
@@ -520,6 +565,16 @@ struct CashFlowSetupView: View {
         .accessibilityIdentifier("cashflow_setup_summary")
     }
 
+    /// P4: el límite es un monto fijo sembrado con el promedio, y se dice antes de crear.
+    private var fixedLimitsNote: some View {
+        Text(L10n.FlujoCrearPlan.limitesFijos)
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("cashflow_setup_fixed_limits_note")
+    }
+
     private func summaryRow(label: String, amount: Double, tint: Color, isBold: Bool = false) -> some View {
         HStack {
             Text(label)
@@ -542,8 +597,11 @@ struct CashFlowSetupView: View {
             icon: "plus.circle.fill",
             isDisabled: viewModel.suggestedLines.filter(\.isSelected).isEmpty
         ) {
+            // P4: lo calculado por promedio se guarda como monto fijo con su cifra.
+            viewModel.suggestedLines = FlujoCrearPlanLogica.conLimiteFijo(viewModel.suggestedLines)
+            // P5: el motor parte del saldo real de las cuentas; el campo guarda el de hoy solo como registro.
             viewModel.createPlan(
-                startingBalance: startingBalance,
+                startingBalance: todayBalance.amount,
                 typedIncome: asksForIncome ? typedIncome : nil,
                 incomeCategory: CashFlowSetupLogic.typedIncomeCategory(in: categories)
             )

@@ -1,0 +1,62 @@
+/*
+  SaludFinancieraDetalle.strings
+  Yala
+
+  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
+  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+*/
+
+"saludDetalle.section.alerts" = "確認すること";
+"saludDetalle.section.budgets" = "予算";
+"saludDetalle.section.payments" = "今後の支払い";
+"saludDetalle.section.streak" = "連続記録";
+"saludDetalle.section.improve" = "スコアを上げるには";
+"saludDetalle.section.howItWorks" = "計算方法";
+"saludDetalle.alerts.none.title" = "今日確認することはありません";
+"saludDetalle.alerts.none.detail" = "予算・支払い・口座は順調です。";
+"saludDetalle.alert.overBudget.title" = "%@が上限を超えました";
+"saludDetalle.alert.overBudget.detail" = "タップして内訳を確認。";
+"saludDetalle.alert.atLimit.title" = "%@が上限に近づいています";
+"saludDetalle.alert.atLimit.detail" = "設定額の%d %%まで使いました。";
+"saludDetalle.alert.negativeAccount.title" = "%@がマイナスです";
+"saludDetalle.alert.negativeAccount.detail" = "残高を確認するか、足りない記録を追加しましょう。";
+"saludDetalle.alert.overdue.title" = "%@の期限が過ぎています";
+"saludDetalle.alert.overdue.detail" = "支払い済みにするかスキップしましょう。";
+"saludDetalle.alert.notCovered.title" = "今月の支払いがまかなえません";
+"saludDetalle.alert.notCovered.detail" = "手持ちとこれからの入出金で、月末には:";
+"saludDetalle.budgets.empty.title" = "予算はまだありません";
+"saludDetalle.budgets.empty.detail" = "よく使う項目に上限を設定すると、超える前にYalaがお知らせします。";
+"saludDetalle.budgets.empty.cta" = "予算を作成";
+"saludDetalle.budgets.seeAll" = "すべて表示（%d）";
+"saludDetalle.budgets.left" = "残り";
+"saludDetalle.budgets.over" = "超過";
+"saludDetalle.payments.today" = "今日";
+"saludDetalle.payments.tomorrow" = "明日";
+"saludDetalle.payments.inDays" = "%d日後";
+"saludDetalle.payments.overdue" = "期限切れ";
+"saludDetalle.payments.none" = "今後2週間の支払いはありません。";
+"saludDetalle.payments.empty.title" = "予定された支払いはまだありません";
+"saludDetalle.payments.empty.detail" = "家賃、電気、サブスク：期限前にYalaがお知らせします。";
+"saludDetalle.payments.empty.cta" = "支払いを追加";
+"saludDetalle.payments.seeAll" = "すべて表示";
+"saludDetalle.payments.covered" = "今月の支払いはまかなえます。";
+"saludDetalle.payments.notCovered" = "今月の支払いにはたりません。";
+"saludDetalle.streak.days.one" = "%d日連続";
+"saludDetalle.streak.days.other" = "%d日連続";
+"saludDetalle.streak.today" = "今日はもう記録しました。その調子！";
+"saludDetalle.streak.keep" = "今日も記録して連続を守りましょう。";
+"saludDetalle.streak.start" = "今日記録して連続記録を始めましょう。";
+"saludDetalle.streak.cta" = "記録する";
+"saludDetalle.streak.caption" = "過去%d日";
+"saludDetalle.streak.dayRecorded" = "記録あり";
+"saludDetalle.streak.dayEmpty" = "記録なし";
+"saludDetalle.improve.crearPresupuesto" = "最初の予算を作成";
+"saludDetalle.improve.registrarHoy" = "今日1件記録する";
+"saludDetalle.improve.agregarPagos" = "固定の支払いを追加";
+"saludDetalle.improve.revisarPresupuestos" = "超過した予算を確認";
+"saludDetalle.improve.revisarRitmo" = "もっとこまめに記録";
+"saludDetalle.improve.revisarPagos" = "今月の支払いを確認";
+"saludDetalle.improve.weight" = "%@はスコアの%d %%";
+"saludDetalle.loading" = "読み込み中…";
+"saludDetalle.alert.reachedLimit.title" = "%@が上限に達しました";
+"saludDetalle.alert.atLimitMany.title" = "上限に近い予算：%d件";

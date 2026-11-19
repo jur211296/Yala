@@ -147,6 +147,15 @@ final class AppPreferences {
         }
     }
 
+    /// La personalización del perfil (2026-11-18): tipo de avatar, emoji, color del avatar y fondo de la tarjeta, un JSON
+    /// corto que se lee y se escribe con `ProfileStyleLogic`. El símbolo sigue en `userProfileIcon`. "" = el de siempre.
+    var userProfileStyle: String = "" {
+        didSet {
+            guard oldValue != userProfileStyle else { return }
+            persistString(userProfileStyle, forKey: Keys.userProfileStyle, synced: true)
+        }
+    }
+
     var colorfulIcons: Bool = true {
         didSet {
             guard oldValue != colorfulIcons else { return }
@@ -1169,6 +1178,8 @@ final class AppPreferences {
         }
         userAlias = defaults.string(forKey: Keys.userAlias) ?? ""
         userProfileIcon = defaults.string(forKey: Keys.userProfileIcon) ?? ""
+        // Sin la clave, el perfil de siempre: un borrado o un pull que la retira vuelve a él.
+        userProfileStyle = defaults.string(forKey: Keys.userProfileStyle) ?? ""
         if defaults.object(forKey: Keys.colorfulIcons) != nil {
             colorfulIcons = defaults.bool(forKey: Keys.colorfulIcons)
         }
@@ -1391,6 +1402,7 @@ final class AppPreferences {
         // Identity
         userName = "Usuario"
         userProfileIcon = ""
+        userProfileStyle = ""
         colorfulIcons = true
 
         // Session / Period
@@ -1500,6 +1512,7 @@ final class AppPreferences {
         static let userName = "userName"
         static let userAlias = "userAlias"
         static let userProfileIcon = "userProfileIcon"
+        static let userProfileStyle = "userProfileStyle"
         static let colorfulIcons = "colorfulIcons"
 
         // Session / Period

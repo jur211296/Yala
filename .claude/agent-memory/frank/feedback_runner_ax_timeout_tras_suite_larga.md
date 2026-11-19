@@ -22,3 +22,7 @@ corrida de XCUITest cayó caso por caso con `Failed to get matching snapshots: E
 kAXErrorAPIDisabled` y `uitest_ready ausente — bootstrap no completó` (timeouts de 125 s). Costó 12 de los 30 min de
 presupuesto. Tras `shutdown` + `boot` + `bootstatus -b`, 43/43 verdes con `test-without-building`. **Reinicia el simulador
 ANTES de la primera corrida de XCUITest de una sesión**, no después del primer rojo.
+
+**Tercera vez, 2026-11-18 (Mini, motor del mes del flujo de caja):** mismo síntoma por el mismo orden (gate paso 2 con
+`YalaTests` entero y luego el paso 3). Con un choke-point tocado, **reinicia el simulador entre el paso 2 y el 3 de
+antemano**: cuesta 40 s y ahorra una vuelta de 7 min.

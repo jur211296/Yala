@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "この支払いを破棄しますか？";
+"asistentePago.create" = "支払いを作成";
+"asistentePago.createShort" = "作成";
+"asistentePago.name.question" = "名前はどうしますか？";
+"asistentePago.name.detail" = "リストと通知にこの名前で表示されます。";
+"asistentePago.amount.question" = "毎回いくら支払いますか？";
+"asistentePago.amount.detail" = "毎回変わる場合は、いつもの金額を入れて「毎回変わる」をオンにしてください。";
+"asistentePago.frequency.question" = "どのくらいの頻度で支払いますか？";
+"asistentePago.frequency.detail" = "支払日になると、Yala が受信箱に用意します。確認して承認してください。";
+"asistentePago.frequency.monthlyHint" = "毎月同じ日：家賃、電気、電話。";
+"asistentePago.frequency.weeklyHint" = "毎週同じ曜日。";
+"asistentePago.frequency.yearlyHint" = "年に一度の日付：保険、会員費、ドメイン。";
+"asistentePago.frequency.onceHint" = "一回だけの支払い。";
+"asistentePago.day.question.monthly" = "毎月何日ですか？";
+"asistentePago.day.question.weekly" = "何曜日ですか？";
+"asistentePago.day.question.yearly" = "毎年何月何日ですか？";
+"asistentePago.day.question.once" = "支払日はいつですか？";
+"asistentePago.day.detail" = "いつでも変更できます。";
+"asistentePago.day.other" = "ほかの日";
+"asistentePago.day.ofMonth" = "%d日";
+"asistentePago.summary.question" = "この内容で作成しますか？";
+"asistentePago.summary.detail" = "回答をタップすると変更できます。";
+"asistentePago.summary.kind" = "種類";
+"asistentePago.summary.name" = "名前";
+"asistentePago.summary.amount" = "金額";
+"asistentePago.summary.frequency" = "繰り返し";
+"asistentePago.summary.when" = "いつ";
+"asistentePago.summary.reminder" = "通知";
+"asistentePago.reminder.none" = "通知なし";

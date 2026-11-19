@@ -129,7 +129,11 @@ struct CashFlowDetailLineRow: View {
     @ViewBuilder
     private var trailingFigure: some View {
         if hasRealData, let real = lineResult.realAmount {
-            let remaining = lineResult.plannedAmount - real
+            // En el mes en curso, «Estimado que falta» es lo que el mes suma todavía en esta línea (motor del mes,
+            // 18-nov-2026): lo fechado, lo pendiente y lo que le queda, ya sin lo anotado en su categoría madre. Así la
+            // fila dice lo mismo que el total del mes.
+            let overBy = lineResult.plannedAmount - real
+            let remaining = month.isCurrent && overBy >= 0 ? lineResult.expectedAmount - real : overBy
             let isOver = remaining < 0
             // Un ingreso cobrado entero dice «Real» y lo cobrado, no «Te falta recibir S/ 0.00»; en el mes en curso, un
             // gasto ya hecho entero tampoco dice «Estimado que falta S/ 0.00» (decisión 31 de 2.3).

@@ -5,6 +5,11 @@
 //  Sheet for adding a new line to the cash flow plan.
 //  3 flows: from expenses (subcategories), from scheduled payments, custom line.
 //
+//  S5 del replanteo (18-nov-2026): «Desde mis gastos» elige la subcategoría (la categoría sale de ella; una categoría
+//  sin subcategorías se elige entera) y la línea nace con un límite FIJO sembrado con el método elegido, calculado como
+//  el motor (`FlujoCrearPlanLogica.semilla`: meses completos anteriores, con signo). Antes guardaba el método y el
+//  límite se movía solo cada mes, y la vista previa ignoraba el método elegido.
+//
 
 import SwiftUI
 import SwiftData
@@ -62,6 +67,7 @@ struct CashFlowAddLineSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("cashflow_add_from_expenses")
 
                         Divider().padding(.leading, DS.Spacing.xxl)
 
@@ -210,8 +216,11 @@ struct CashFlowAddFromExpensesView: View {
     let categories: [Category]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// El índice de movimientos del plan, armado una vez al aparecer: recorre todos los movimientos.
+    @State private var index: TransactionIndex?
     @State private var selectedCategory: Category?
     @State private var selectedSubcategory: Subcategory?
     @State private var name: String = ""
@@ -219,9 +228,13 @@ struct CashFlowAddFromExpensesView: View {
 
     private var isSaveDisabled: Bool {
         if name.isEmpty { return true }
+        return awaitsSubcategory
+    }
+
+    /// Una categoría con subcategorías no lleva línea propia: falta elegir la subcategoría.
+    private var awaitsSubcategory: Bool {
         guard let cat = selectedCategory else { return false }
-        let hasVisibleSubs = !(cat.subcategories ?? []).filter(\.isVisible).isEmpty
-        return hasVisibleSubs && selectedSubcategory == nil
+        return !FlujoCrearPlanLogica.categoriaSinSubcategorias(cat) && selectedSubcategory == nil
     }
 
     var body: some View {
@@ -235,7 +248,13 @@ struct CashFlowAddFromExpensesView: View {
                         )
                     } else {
                         categoryList
-                        if selectedCategory != nil {
+                        if awaitsSubcategory {
+                            Text(L10n.FlujoCrearPlan.eligeSubcategoria)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityIdentifier("cashflow_add_pick_subcategory")
+                        } else if selectedCategory != nil {
                             nameField
                             methodSelector
                             previewCard
@@ -260,6 +279,18 @@ struct CashFlowAddFromExpensesView: View {
                 }, isDisabled: isSaveDisabled)
             }
         }
+        .onAppear { buildIndex() }
+    }
+
+    private func buildIndex() {
+        guard index == nil else { return }
+        index = TransactionIndex(
+            transactions: FlujoCrearPlanLogica.movimientosDelPlan(transactions),
+            currencyCode: currencyCode.isEmpty ? "USD" : currencyCode,
+            adjustment: GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext),
+            converter: CurrencyConverter.shared,
+            calendar: .current
+        )
     }
 
     private var categoryList: some View {
@@ -322,6 +353,7 @@ struct CashFlowAddFromExpensesView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("cashflow_add_category")
 
                     // Subcategories (expanded when parent selected)
                     if selectedCategory?.persistentModelID == cat.persistentModelID,
@@ -365,6 +397,7 @@ struct CashFlowAddFromExpensesView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("cashflow_add_subcategory")
                         }
                     }
 
@@ -400,7 +433,7 @@ struct CashFlowAddFromExpensesView: View {
 
     private var methodSelector: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.CashFlowPlan.estimationMethod)
+            Text(L10n.FlujoCrearPlan.calcularCon)
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
 
@@ -432,27 +465,31 @@ struct CashFlowAddFromExpensesView: View {
 
     private var previewCard: some View {
         let amount = computePreview()
-        return HStack {
-            Text(L10n.CashFlowPlan.plan)
-                .font(DS.Typography.body)
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack {
+                Text(L10n.FlujoCrearPlan.limiteAlMes(esIngreso: isIncome))
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
+                    tint: .color(Color.amountTint(isIncome: isIncome))
+                )
+                .accessibilityIdentifier("cashflow_add_limit_amount")
+            }
+            .padding(DS.Spacing.lg)
+            .solidCard()
+            // P4: el límite queda fijo con esta cifra.
+            Text(L10n.FlujoCrearPlan.limitesFijos)
+                .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
-            Spacer()
-            AmountText(
-                value: amount,
-                currencyCode: currencyCode,
-                font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
-                tint: .color(Color.amountTint(isIncome: isIncome))
-            )
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(DS.Spacing.lg)
-        .solidCard()
     }
 
     // MARK: - Helpers
-
-    private func averageAmount(for category: Category) -> Double {
-        sixMonthTotal(for: category) / 6
-    }
 
     /// Lo que movió una categoría en los 6 últimos meses, en la divisa del plan (`CashFlowCalculator.resolvedAmount`):
     /// antes sumaba el importe de cada movimiento en su divisa y lo pintaba con el símbolo del plan.
@@ -472,24 +509,28 @@ struct CashFlowAddFromExpensesView: View {
         return total
     }
 
+    /// La cifra con que nace la línea: la del método elegido, como la calcula el motor.
     private func computePreview() -> Double {
-        if let sub = selectedSubcategory {
-            return sixMonthTotal { $0.subcategory?.persistentModelID == sub.persistentModelID } / 6
-        }
-        if let cat = selectedCategory {
-            return averageAmount(for: cat)
-        }
-        return 0
+        guard let index, !awaitsSubcategory else { return 0 }
+        return FlujoCrearPlanLogica.semilla(
+            metodo: selectedMethod,
+            categoria: selectedSubcategory?.category ?? selectedCategory,
+            subcategoria: selectedSubcategory,
+            esIngreso: isIncome,
+            indice: index
+        )
     }
 
+    /// P4: la línea nace con monto fijo sembrado con el método elegido; después se cambia con «Cambiar límite».
     private func createLine() {
         let maxOrder = (viewModel.plan?.lines ?? []).map(\.sortOrder).max() ?? 0
         let line = CashFlowLine(
             name: name,
             isIncome: isIncome,
             sortOrder: maxOrder + 1,
-            estimationMethod: selectedMethod,
-            category: selectedCategory,
+            estimationMethod: .manual,
+            manualAmount: computePreview(),
+            category: selectedSubcategory?.category ?? selectedCategory,
             subcategory: selectedSubcategory
         )
         viewModel.addLine(line)
