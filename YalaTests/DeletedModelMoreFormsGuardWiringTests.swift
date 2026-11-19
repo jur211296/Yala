@@ -310,9 +310,12 @@ struct DeletedModelMoreFormsGuardWiringTests {
 
     @Test func celdaDelFlujo_noLeeLaLineaNiRegistrosBorrados() throws {
         let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
-        #expect(source.contains(".filter { !$0.isDeleted && $0.modelContext != nil }"))
-        try Self.expectOrder(".filter { !$0.isDeleted && $0.modelContext != nil }", before: "tx.date",
-                             after: "private var activeTransactions: [TransactionItem] {", in: source)
+        // Desde S3 del replanteo (18-nov-2026) los registros de la línea salen de `FlujoDetalleLineaLogica.registros`,
+        // que salta lo ya borrado antes de leer la fecha.
+        let logica = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/DetalleLinea/FlujoDetalleLineaLogica.swift")
+        #expect(source.contains("FlujoDetalleLineaLogica.registros("))
+        try Self.expectOrder("guard !tx.isDeleted, tx.modelContext != nil,", before: "tx.date",
+                             after: "static func registros(", in: logica)
         // La línea solo se lee en la copia del icono, en el accesor y en la acción que abre el selector de método (con
         // la línea viva); el resto va por `readableLine`.
         let rest = try Self.code(source, without: [

@@ -2,9 +2,12 @@
 //  CashFlowCellDetailSheet.swift
 //  Yala
 //
-//  Rich detail sheet for a cash flow line cell.
-//  3 variants: current month (chart + transactions), past month (comparison),
-//  future month (estimation + adjust). Timeline navigable within sheet.
+//  El detalle de una línea del flujo de caja. Desde S3 del replanteo (18-nov-2026, variante A, decisiones en el
+//  «Paso 0» del encargo `2026-11-18-flujo-detalle-de-linea`): arriba el límite del mes con «Cambiar» (abre la hoja de
+//  S4), lo que falta y si sigue al ritmo, y «‹ mes ›» para recorrer el plan; debajo, seis meses de real contra límite y
+//  TODOS los registros que el motor da a la línea en ese mes, por día, con «Ver en Registros». Si la línea es una
+//  subcategoría, la cabecera dice su categoría y avisa de lo anotado en la madre sin subcategoría. Se retiraron la
+//  gráfica diaria, la tira de ±2 meses, «Últimos registros» (5) y «Ajustar monto» al pie.
 //
 //  Auditoría UX 2.2 · lote 18 decidido:
 //  - L18-7 (opción B): «Cómo se calcula: Promedio 6 meses · Cambiar» (abre el mismo selector que crear el plan) y, al
@@ -13,7 +16,7 @@
 //    cada mes».
 //  - S4 del replanteo (18-nov-2026, sustituye a L18-9): «Ajustar monto» abre «Cambiar límite»
 //    (`FlujoCambiarLimiteSheet`), que pregunta qué meses cambian ANTES del monto. Aquí ya no hay campo ni alerta.
-//  - Lienzo «Una sola Yala»: «Últimos registros» con la fila de Registros (y se puede tocar), la barra de Presupuestos.
+//  - Lienzo «Una sola Yala»: los registros con la fila de Registros (y se puede tocar), la barra de Presupuestos.
 //
 
 import Charts
@@ -32,9 +35,16 @@ struct CashFlowCellDetailSheet: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
+
+    /// Las cuentas del saldo del Panel, para leer los registros con el mismo alcance que la cifra del mes.
+    @Query private var accounts: [Account]
 
     // Local navigation state (resets on dismiss)
     @State private var activeMonthKey: String = ""
+    /// Los registros del mes y los seis meses: se calculan al cambiar de mes o de plan, no en cada pasada del `body`.
+    @State private var datos: Datos?
 
     /// «Ajustar monto» abre «Cambiar límite» (S4 del replanteo); guardar ahí cierra también este detalle, que enseña
     /// cifras del plan de antes de guardar.
@@ -112,40 +122,12 @@ struct CashFlowCellDetailSheet: View {
         return all.first { $0.lineID == lineResult.lineID }
     }
 
-    private var activeTransactions: [TransactionItem] {
-        guard let m = activeMonth else { return [] }
-        let calendar = Calendar.current
-        // Sin los registros ya borrados: borrar uno desde su detalle o su editor (hojas sobre ésta) lo deja en
-        // `transactions`, que llega del padre, y esta hoja se repinta antes de recibir la lista nueva.
-        let lineToMatch = readableLine
-        return transactions
-            .filter { !$0.isDeleted && $0.modelContext != nil }
-            .filter { tx in
-                let txKey = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
-                guard txKey == m.monthKey else { return false }
-                if let sub = lineToMatch?.subcategory {
-                    return tx.subcategory?.persistentModelID == sub.persistentModelID
-                }
-                if let cat = lineToMatch?.category {
-                    return tx.category?.persistentModelID == cat.persistentModelID
-                }
-                return false
-            }
-            .sorted { $0.date > $1.date }
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 if let m = activeMonth, let lr = activeLineResult {
                     VStack(spacing: DS.Spacing.xl) {
-                        if m.isCurrent {
-                            currentMonthContent(m: m, lr: lr)
-                        } else if m.isPast {
-                            pastMonthContent(m: m, lr: lr)
-                        } else {
-                            futureMonthContent(m: m, lr: lr)
-                        }
+                        content(m: m, lr: lr)
                         deleteLineButton
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -169,6 +151,7 @@ struct CashFlowCellDetailSheet: View {
         }
         .presentationDetents([.large])
         .onAppear { activeMonthKey = month.monthKey }
+        .task(id: dataKey) { loadData() }
         .sheet(item: $cambiarLimite, onDismiss: {
             if limiteGuardado { dismiss() }
         }) { peticion in
@@ -221,18 +204,30 @@ struct CashFlowCellDetailSheet: View {
 
     // MARK: - Header
 
-    private func headerInfo(m: CashFlowMonth) -> some View {
+    /// El icono y el nombre; si la línea es una subcategoría, su categoría encima («Comida» › «Restaurantes»).
+    private var headerInfo: some View {
         HStack(spacing: DS.Spacing.md) {
             categoryIcon
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                if let parentCategoryName {
+                    Text(parentCategoryName)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("cashflow_detail_parent_category")
+                }
                 Text(lineResult.name)
                     .font(DS.Typography.headline)
-                Text(m.date.formatted(.dateTime.month(.wide).year()))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
             Spacer()
         }
+    }
+
+    /// La categoría de una línea por subcategoría; `nil` en una línea por categoría o sin ella.
+    private var parentCategoryName: String? {
+        guard let sub = readableLine?.subcategory, let category = sub.category,
+              !category.isDeleted, category.modelContext != nil else { return nil }
+        return category.name
     }
 
     private var categoryIcon: some View {
@@ -257,27 +252,16 @@ struct CashFlowCellDetailSheet: View {
     /// que vale aquí, «Desde noviembre: S/ 9,000 cada mes» (L18-8).
     private func methodSection(lr: CashFlowLineResult) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.xs) {
-                Text(L10n.UXL18.howItsCalculated)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: DS.Spacing.sm)
-                Text(lr.estimationMethod.displayName)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .accessibilityIdentifier("cashflow_detail_method")
-                if line != nil {
-                    Button {
-                        openMethodPicker(lr: lr)
-                    } label: {
-                        Text("· " + L10n.UXL18.change)
-                            .font(DS.Typography.label.weight(.semibold))
-                            .foregroundStyle(theme.accentText)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.UXL18.change)
-                    .accessibilityIdentifier("cashflow_detail_change_method")
+            // Con texto grande la fila no cabe y partía las palabras («Prome-dio»): el método baja bajo el rótulo.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.xs) {
+                    methodLabel
+                    Spacer(minLength: DS.Spacing.sm)
+                    methodValue(lr: lr)
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    methodLabel
+                    methodValue(lr: lr)
                 }
             }
             Text(lr.estimationMethod.descriptionText)
@@ -304,6 +288,37 @@ struct CashFlowCellDetailSheet: View {
         }
     }
 
+    private var methodLabel: some View {
+        Text(L10n.UXL18.howItsCalculated)
+            .font(DS.Typography.label)
+            .foregroundStyle(.secondary)
+            .fixedSize()
+    }
+
+    private func methodValue(lr: CashFlowLineResult) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Text(lr.estimationMethod.displayName)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .fixedSize()
+                .accessibilityIdentifier("cashflow_detail_method")
+            if line != nil {
+                Button {
+                    openMethodPicker(lr: lr)
+                } label: {
+                    Text("· " + L10n.UXL18.change)
+                        .font(DS.Typography.label.weight(.semibold))
+                        .foregroundStyle(theme.accentText)
+                        .fixedSize()
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.UXL18.change)
+                .accessibilityIdentifier("cashflow_detail_change_method")
+            }
+        }
+    }
+
     private func openMethodPicker(lr: CashFlowLineResult) {
         guard let line else { return }
         viewModel.prepareMethodPreviews(transactions: transactions, currencyCode: currencyCode)
@@ -320,85 +335,53 @@ struct CashFlowCellDetailSheet: View {
         )
     }
 
-    // MARK: - Current Month
+    // MARK: - Contenido (S3 del replanteo, variante A: el límite primero)
 
-    private func currentMonthContent(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
+    private func content(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
         VStack(spacing: DS.Spacing.xl) {
-            currentProgressCard(m: m, lr: lr)
+            limitCard(m: m, lr: lr)
 
-            if !activeTransactions.isEmpty {
-                CashFlowCellMiniChart(
-                    transactions: activeTransactions,
-                    plannedAmount: lr.plannedAmount,
-                    month: m,
-                    currencyCode: currencyCode,
-                    isIncome: lr.isIncome
+            if let meses = datos?.seisMeses, !meses.isEmpty {
+                FlujoDetalleLineaSeisMesesView(
+                    meses: meses, esIngreso: lr.isIncome, currencyCode: currencyCode, mesActivo: m.monthKey
                 )
+                .padding(DS.Spacing.lg)
                 .solidCard()
             }
 
-            monthTimeline
-
-            if !activeTransactions.isEmpty {
-                recentTransactionsCard
+            if let datos, datos.monthKey == m.monthKey {
+                FlujoDetalleLineaRegistrosView(
+                    dias: datos.dias,
+                    mesNombre: monthName(m.monthKey),
+                    currencyCode: currencyCode,
+                    onVerEnRegistros: canSeeInRecords ? { seeInRecords(m: m) } : nil,
+                    onAbrir: { detailTransaction = $0 }
+                )
             }
-
-            adjustAmountButton(m: m, lr: lr)
         }
     }
 
-    private func currentProgressCard(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            headerInfo(m: m)
+    // MARK: - El límite (arriba, con «Cambiar»)
+
+    private func limitCard(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            headerInfo
+            monthSwitcher(m: m)
 
             Divider()
 
-            HStack(alignment: .firstTextBaseline) {
-                AmountText(
-                    value: lr.realAmount ?? 0,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.title.weight(.bold).monospacedDigit()
-                )
-                Text(L10n.CashFlowPlan.cellDetailOf)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-                AmountText(
-                    value: lr.plannedAmount,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.body.monospacedDigit(),
-                    tint: .secondary,
-                    isEstimate: lr.isPlannedApproximate
-                )
+            limitRow(m: m, lr: lr)
+
+            if m.isCurrent {
+                currentProgress(m: m, lr: lr)
+            } else if m.isPast {
+                pastProgress(lr: lr)
+            } else {
+                futureProgress(lr: lr)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let progress = lr.progress {
-                VStack(spacing: DS.Spacing.xs) {
-                    BudgetProgressBar(
-                        percentage: progress * 100,
-                        color: "",
-                        isExceeded: CashFlowLineSideLogic.progressIsAlarm(progress: progress, isIncome: lr.isIncome),
-                        simplified: true
-                    )
-
-                    HStack {
-                        Text("\(Int(min(progress, 9.99) * 100))%")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                        Spacer()
-                        let remaining = lr.plannedAmount - (lr.realAmount ?? 0)
-                        if remaining > 0 {
-                            // En un ingreso lo que falta no es dinero que te queda: es lo que aún no recibiste.
-                            let remainingText = appPreferences.currency(remaining, currencyCode: currencyCode)
-                            Text(lr.isIncome
-                                ? L10n.CashFlowPlan.cellDetailPendingIncome(remainingText)
-                                : L10n.CashFlowPlan.cellDetailRemaining(remainingText))
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
+            if let parent = parentNotice(m: m, lr: lr) {
+                parent
             }
 
             Divider()
@@ -409,158 +392,339 @@ struct CashFlowCellDetailSheet: View {
         .solidCard()
     }
 
-    // MARK: - Past Month
-
-    private func pastMonthContent(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
-        VStack(spacing: DS.Spacing.xl) {
-            VStack(spacing: DS.Spacing.md) {
-                headerInfo(m: m)
-
-                Divider()
-
-                if let real = lr.realAmount, let diff = lr.difference {
-                    let isGood = lr.isIncome ? diff >= 0 : diff <= 0
-                    let diffAbs = abs(diff)
-                    let percent = lr.differencePercent.map { abs($0) } ?? 0
-                    let realText = appPreferences.currency(real, currencyCode: currencyCode)
-                    let plannedText = appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode)
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        // Una frase entera por idioma: el «vs» pegado a mano salía «vs» en los 16 (lote 08 de 2.3).
-                        Text(lr.isIncome
-                             ? L10n.CashFlowPlan.cellDetailEarnedVsPlan(realText, plannedText)
-                             : L10n.CashFlowPlan.cellDetailSpentVsPlan(realText, plannedText))
-                            .font(DS.Typography.body)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
-                            Text("\(appPreferences.currency(diffAbs, currencyCode: currencyCode)) \(diff > 0 ? L10n.CashFlowPlan.cellDetailMore : L10n.CashFlowPlan.cellDetailLess) (\(String(format: "%.1f", percent))%)")
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
-                            Spacer()
-                        }
-                    }
-
-                    Divider()
-
-                    detailRow(label: L10n.CashFlowPlan.plan, value: lr.plannedAmount, isEstimate: lr.isPlannedApproximate)
-                    detailRow(label: lr.isIncome ? L10n.CashFlowPlan.realIncome : L10n.CashFlowPlan.real, value: real)
-                    detailRow(label: L10n.CashFlowPlan.difference, value: diff, color: isGood ? Color.electricIndigo : Color.hotPink)
-                }
-
-                Divider()
-
-                methodSection(lr: lr)
+    /// «Límite de noviembre   S/ 900   Cambiar»: la cifra y su gesto en la misma fila; con texto grande, «Cambiar» baja.
+    private func limitRow(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
+        let title = L10n.FlujoDetalleLinea.limite(mes: monthName(m.monthKey), esIngreso: lr.isIncome)
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                limitAmount(title: title, lr: lr)
+                Spacer(minLength: DS.Spacing.sm)
+                changeLimitButton(m: m, lr: lr)
             }
-            .padding(DS.Spacing.lg)
-            .solidCard()
-
-            // Chart for past months (they have real data)
-            if !activeTransactions.isEmpty {
-                CashFlowCellMiniChart(
-                    transactions: activeTransactions,
-                    plannedAmount: lr.plannedAmount,
-                    month: m,
-                    currencyCode: currencyCode,
-                    isIncome: lr.isIncome
-                )
-                .solidCard()
-            }
-
-            monthTimeline
-
-            // Transactions for past months
-            if !activeTransactions.isEmpty {
-                recentTransactionsCard
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                limitAmount(title: title, lr: lr)
+                changeLimitButton(m: m, lr: lr)
             }
         }
     }
 
-    // MARK: - Future Month
-
-    private func futureMonthContent(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
-        VStack(spacing: DS.Spacing.xl) {
-            VStack(spacing: DS.Spacing.md) {
-                headerInfo(m: m)
-
-                Divider()
-
-                HStack {
-                    Text(L10n.CashFlowPlan.plan)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    AmountText(
-                        value: lr.plannedAmount,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.title.weight(.bold).monospacedDigit(),
-                        isEstimate: lr.isPlannedApproximate
-                    )
-                    .accessibilityIdentifier("cashflow_detail_planned_amount")
-                }
-
-                Divider()
-
-                methodSection(lr: lr)
-            }
-            .padding(DS.Spacing.lg)
-            .solidCard()
-
-            monthTimeline
-
-            adjustAmountButton(m: m, lr: lr)
+    private func limitAmount(title: String, lr: CashFlowLineResult) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.secondary)
+            AmountText(
+                value: lr.plannedAmount,
+                currencyCode: currencyCode,
+                font: DS.Typography.title.weight(.bold).monospacedDigit(),
+                isEstimate: lr.isPlannedApproximate
+            )
+            .accessibilityIdentifier("cashflow_detail_planned_amount")
         }
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Recent Transactions
-
-    /// «Últimos registros» con la fila de Registros: icono de 40, la cuenta debajo y el monto; tocarla abre el registro.
-    private var recentTransactionsCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.CashFlowPlan.cellDetailRecentTransactions)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-
-            VStack(spacing: DS.Spacing.sm) {
-                ForEach(Array(activeTransactions.prefix(5)), id: \.persistentModelID) { tx in
-                    RecordRowView(
-                        record: tx,
-                        currencyCode: currencyCode,
-                        isSelectionMode: false,
-                        isSelected: false,
-                        onTap: { detailTransaction = tx },
-                        onToggleSelection: {}
-                    )
-                }
-            }
-        }
-    }
-
-    // MARK: - Ajustar monto → Cambiar límite (S4)
-
-    /// Abre «Cambiar límite» para el mes que se ve. El alcance se elige allí, antes del monto.
+    /// Abre «Cambiar límite» (S4) para el mes que se ve. El alcance se elige allí, antes del monto.
     @ViewBuilder
-    private func adjustAmountButton(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
+    private func changeLimitButton(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
         if readableLine != nil {
             Button {
                 cambiarLimite = FlujoCambiarLimitePeticion(lineID: lr.lineID, monthKey: m.monthKey)
             } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "pencil.line")
-                    Text(L10n.CashFlowPlan.adjustAmount)
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "pencil")
+                        .accessibilityHidden(true)
+                    Text(L10n.FlujoDetalleLinea.cambiar)
                 }
-                .font(DS.Typography.label)
+                .font(DS.Typography.label.weight(.semibold))
                 .foregroundStyle(theme.accentText)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.md)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.FlujoDetalleLinea.cambiarAccesible(esIngreso: lr.isIncome))
             .accessibilityIdentifier("cashflow_adjust_amount")
         }
+    }
+
+    /// Mes en curso: «Llevas S/ 600 de S/ 900», la barra, «Te quedan S/ 300» y el ritmo.
+    private func currentProgress(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
+        let real = lr.realAmount ?? 0
+        let ritmo = FlujoDetalleLineaLogica.ritmo(
+            real: real, limite: lr.plannedAmount, isExceeded: lr.isExceeded, esIngreso: lr.isIncome,
+            esMesActual: true, realMasFechado: real + lr.datedAmount, now: .now, calendar: .current
+        )
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // «Llevas S/ 600 de S/ 900» en una línea; si no cabe (texto grande), «de S/ 900» baja entero.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    soFarAmount(real: real, lr: lr)
+                    ofLimitText(lr: lr)
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    soFarAmount(real: real, lr: lr)
+                    ofLimitText(lr: lr)
+                }
+            }
+            .accessibilityElement(children: .combine)
+
+            if let progress = lr.progress {
+                BudgetProgressBar(
+                    percentage: progress * 100,
+                    color: "",
+                    isExceeded: CashFlowLineSideLogic.progressIsAlarm(progress: progress, isIncome: lr.isIncome),
+                    simplified: true
+                )
+            }
+
+            switch ritmo {
+            case .excedida(let porCuanto):
+                sentence(
+                    L10n.FlujoDetalleLinea.excedida(appPreferences.currency(porCuanto, currencyCode: currencyCode)),
+                    icon: "exclamationmark.circle.fill", tint: DS.Semantic.errorForeground, id: "cashflow_detail_exceeded"
+                )
+            case .alRitmo, .ninguno:
+                // Lo que falta: en un gasto, lo que te queda; en un ingreso, lo que aún no recibiste.
+                let left = max(0, lr.plannedAmount - real)
+                if left > 0.005 {
+                    sentence(
+                        L10n.FlujoDetalleLinea.quedan(appPreferences.currency(left, currencyCode: currencyCode), esIngreso: lr.isIncome),
+                        icon: nil, tint: .secondary, id: "cashflow_detail_left"
+                    )
+                }
+            }
+
+            if case .alRitmo(let llegarias, let sePasa) = ritmo {
+                // Espacio duro: en el SE la frase partía entre «~S/» y la cifra.
+                let total = appPreferences.currency(llegarias, currencyCode: currencyCode)
+                    .replacingOccurrences(of: " ", with: "\u{00A0}")
+                sentence(
+                    sePasa
+                        ? L10n.FlujoDetalleLinea.ritmoSePasa(
+                            total, exceso: appPreferences.currency(llegarias - lr.plannedAmount, currencyCode: currencyCode))
+                        : L10n.FlujoDetalleLinea.ritmo(total),
+                    icon: "speedometer", tint: sePasa ? DS.Semantic.errorForeground : .secondary, id: "cashflow_detail_pace"
+                )
+            }
+
+            let scheduled = lr.datedAmount + lr.pendingAmount
+            if scheduled > 0.005 {
+                sentence(
+                    L10n.FlujoDetalleLinea.programado(appPreferences.currency(scheduled, currencyCode: currencyCode)),
+                    icon: "calendar", tint: .secondary, id: "cashflow_detail_scheduled"
+                )
+            }
+        }
+    }
+
+    private func soFarAmount(real: Double, lr: CashFlowLineResult) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            Text(L10n.FlujoDetalleLinea.llevas(esIngreso: lr.isIncome))
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+            AmountText(value: real, currencyCode: currencyCode, font: DS.Typography.headline.monospacedDigit())
+                .accessibilityIdentifier("cashflow_detail_real_amount")
+        }
+        .fixedSize()
+    }
+
+    private func ofLimitText(lr: CashFlowLineResult) -> some View {
+        Text(L10n.FlujoDetalleLinea.deLimite(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode)))
+            .font(DS.Typography.body)
+            .foregroundStyle(.secondary)
+            .fixedSize()
+    }
+
+    /// Mes cerrado: «Gastaste S/ 820 de S/ 900» y cuánto más o menos que el límite.
+    @ViewBuilder
+    private func pastProgress(lr: CashFlowLineResult) -> some View {
+        if let real = lr.realAmount {
+            let diff = real - lr.plannedAmount
+            let isGood = lr.isIncome ? diff >= -0.005 : diff <= 0.005
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(L10n.FlujoDetalleLinea.cerrado(
+                    appPreferences.currency(real, currencyCode: currencyCode),
+                    de: appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode),
+                    esIngreso: lr.isIncome
+                ))
+                .font(DS.Typography.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("cashflow_detail_closed")
+                if abs(diff) > 0.005 {
+                    sentence(
+                        L10n.FlujoDetalleLinea.diferencia(appPreferences.currency(abs(diff), currencyCode: currencyCode), esMas: diff > 0),
+                        icon: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill",
+                        tint: isGood ? theme.accentText : DS.Semantic.errorForeground,
+                        id: "cashflow_detail_difference"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Mes que viene: lo ya programado (fechado y pagos pendientes), si hay.
+    @ViewBuilder
+    private func futureProgress(lr: CashFlowLineResult) -> some View {
+        let scheduled = lr.datedAmount + lr.pendingAmount
+        if scheduled > 0.005 {
+            sentence(
+                L10n.FlujoDetalleLinea.programado(appPreferences.currency(scheduled, currencyCode: currencyCode)),
+                icon: "calendar", tint: .secondary, id: "cashflow_detail_scheduled"
+            )
+        }
+    }
+
+    /// Lo anotado en la categoría madre sin subcategoría cuando la línea es por subcategoría (ajuste de Jürgen: el
+    /// detalle llega a subcategoría): cuenta en el mes y no en esta línea.
+    private func parentNotice(m: CashFlowMonth, lr: CashFlowLineResult) -> AnyView? {
+        guard let parentName = parentCategoryName,
+              let amount = FlujoDetalleLineaLogica.anotadoEnLaMadre(
+                lineID: lr.lineID, esPorSubcategoria: true, grupos: lr.isIncome ? m.incomeGroups : m.expenseGroups
+              ) else { return nil }
+        return AnyView(
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.FlujoDetalleLinea.anotadoEnLaMadre(
+                    appPreferences.currency(amount, currencyCode: currencyCode), categoria: parentName
+                ))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(Color.secondary.opacity(0.1))
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("cashflow_detail_parent_notice")
+        )
+    }
+
+    private func sentence(_ text: String, icon: String?, tint: Color, id: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            if let icon {
+                Image(systemName: icon)
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+            }
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(tint)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(id)
+    }
+
+    // MARK: - Cambiar de mes
+
+    /// «‹ noviembre de 2026 ›»: recorre los meses del plan sin salir del detalle (sustituye a la tira de ±2 meses).
+    private func monthSwitcher(m: CashFlowMonth) -> some View {
+        let keys = viewModel.projection?.months.map(\.monthKey) ?? []
+        let index = keys.firstIndex(of: m.monthKey)
+        let previous = index.flatMap { $0 > 0 ? keys[$0 - 1] : nil }
+        let next = index.flatMap { $0 + 1 < keys.count ? keys[$0 + 1] : nil }
+        return HStack(spacing: DS.Spacing.sm) {
+            monthArrow("chevron.left", target: previous, label: L10n.FlujoDetalleLinea.mesAnterior, id: "cashflow_detail_previous_month")
+            Text(m.date.formatted(.dateTime.month(.wide).year()))
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("cashflow_detail_month")
+            monthArrow("chevron.right", target: next, label: L10n.FlujoDetalleLinea.mesSiguiente, id: "cashflow_detail_next_month")
+        }
+    }
+
+    private func monthArrow(_ symbol: String, target: String?, label: String, id: String) -> some View {
+        Button {
+            guard let target else { return }
+            // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+            dsWithAnimation(reduceMotion, .easeInOut(duration: DS.Animation.fast)) {
+                activeMonthKey = target
+            }
+            DS.Haptic.selection()
+        } label: {
+            Image(systemName: symbol)
+                .font(DS.Typography.label.weight(.semibold))
+                .foregroundStyle(target == nil ? Color.secondary.opacity(0.4) : theme.accentText)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(target == nil)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(id)
+    }
+
+    // MARK: - Ver en Registros
+
+    private var canSeeInRecords: Bool {
+        guard let liveLine = readableLine else { return false }
+        return liveLine.subcategory != nil || liveLine.category != nil
+    }
+
+    /// Solo esta subcategoría (o categoría) y el período del mes, y a Registros: el gesto de Distribución.
+    private func seeInRecords(m: CashFlowMonth) {
+        guard let liveLine = readableLine else { return }
+        let session = SessionState.shared
+        if let sub = liveLine.subcategory {
+            session.selectedSubcategoryIDs = [sub.persistentModelID]
+            session.selectedCategoryIDs = []
+        } else if let cat = liveLine.category {
+            session.selectedCategoryIDs = [cat.persistentModelID]
+            session.selectedSubcategoryIDs = []
+        }
+        let period = FlujoDetalleLineaLogica.periodoDeRegistros(mes: m.date, now: .now, calendar: .current)
+        session.choosePeriod(period.period, customRange: period.range, stepUnit: period.period == .custom ? .month : nil)
+        dismiss()
+        navigation.selectMainTab(.records)
+    }
+
+    // MARK: - Datos (registros y seis meses)
+
+    /// Lo que cambia la lista o la gráfica: el mes, el plan y los movimientos.
+    private var dataKey: String {
+        "\(activeMonthKey)|\(viewModel.planRevision)|\(transactions.count)|\(viewModel.projection?.months.count ?? 0)"
+    }
+
+    private func loadData() {
+        guard let m = activeMonth, let liveLine = readableLine, let plan = viewModel.plan else {
+            datos = nil
+            return
+        }
+        let calendar = Calendar.current
+        let now = Date.now
+        let converter = CurrencyConverter.shared
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext)
+        // El mismo alcance que la cifra del mes (`CashFlowPlanViewModel.recalculate`): las cuentas del saldo del Panel.
+        let scoped = FlujoMotorMesEntrada.alcanceDelSaldo(
+            accounts: accounts, transactions: transactions, includeGroups: appPreferences.includeGroupsInPanelTotal
+        )?.transactions ?? transactions
+        let planLines = FlujoDetalleLineaLogica.ordenDelPlan(plan.lines ?? [])
+        let registros = FlujoDetalleLineaLogica.registros(
+            de: liveLine.id, mes: m.date, lineas: planLines.map { FlujoMotorMesEntrada.linea($0) },
+            transactions: scoped, currencyCode: currencyCode, adjustment: adjustment, converter: converter,
+            now: now, calendar: calendar
+        )
+        let seisMeses = FlujoDetalleLineaLogica.seisMeses(
+            line: liveLine, lineasPlan: planLines, transactions: scoped, historia: transactions, hasta: m.date,
+            currencyCode: currencyCode, adjustment: adjustment, converter: converter, now: now, calendar: calendar
+        )
+        datos = Datos(
+            monthKey: m.monthKey,
+            dias: FlujoDetalleLineaLogica.dias(registros, calendar: calendar),
+            seisMeses: seisMeses
+        )
+    }
+
+    struct Datos {
+        let monthKey: String
+        let dias: [FlujoDetalleLineaLogica.Dia]
+        let seisMeses: [FlujoDetalleLineaLogica.MesHistoria]
     }
 
     // MARK: - Eliminar línea (L18-7)
@@ -583,131 +747,11 @@ struct CashFlowCellDetailSheet: View {
         }
     }
 
-    // MARK: - Month Timeline
-
-    private var monthTimeline: some View {
-        let snapshots = timelineSnapshots
-        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            if snapshots.count > 1 {
-                HStack(spacing: DS.Spacing.none) {
-                    ForEach(snapshots, id: \.monthKey) { snap in
-                        Button {
-                            // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
-                            dsWithAnimation(reduceMotion, .easeInOut(duration: DS.Animation.fast)) {
-                                activeMonthKey = snap.monthKey
-                            }
-                        } label: {
-                            VStack(spacing: DS.Spacing.xs) {
-                                Text(snap.label)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(snap.isActive ? .primary : .tertiary)
-                                    .fontWeight(snap.isActive ? .semibold : .regular)
-
-                                Text(YalaFormatter.amountCompactTable(value: snap.amount))
-                                    .font(snap.isActive ? DS.Typography.label : DS.Typography.captionSmall)
-                                    .fontWeight(snap.isActive ? .bold : .regular)
-                                    .foregroundStyle(snap.isActive ? .primary : .secondary)
-                                    .monospacedDigit()
-
-                                Circle()
-                                    .fill(snap.dotColor)
-                                    .frame(width: snap.isActive ? 8 : 5, height: snap.isActive ? 8 : 5)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("cashflow_detail_timeline_\(snap.monthKey)")
-                    }
-                }
-                .padding(DS.Spacing.lg)
-                .solidCard()
-            }
-        }
-    }
-
-    private struct TimelineSnapshot {
-        let monthKey: String
-        let label: String
-        let amount: Double
-        let plannedAmount: Double
-        let isActive: Bool
-        let isPastOrCurrent: Bool
-        let isIncome: Bool
-        let dotColor: Color
-    }
-
-    private var timelineSnapshots: [TimelineSnapshot] {
-        guard let projection = viewModel.projection else { return [] }
-
-        let allMonths = projection.months
-        guard let originIdx = allMonths.firstIndex(where: { $0.monthKey == month.monthKey }) else { return [] }
-
-        let startIdx = max(0, originIdx - 2)
-        let endIdx = min(allMonths.count - 1, originIdx + 2)
-
-        var snapshots: [TimelineSnapshot] = []
-        for i in startIdx...endIdx {
-            let m = allMonths[i]
-            let allLines = m.incomeLines + m.expenseLines
-            let lineData = allLines.first { $0.lineID == lineResult.lineID }
-            let planned = lineData?.plannedAmount ?? 0
-            let real = lineData?.realAmount
-            let displayAmount: Double
-            if let real, m.isPast || m.isCurrent {
-                displayAmount = real
-            } else {
-                displayAmount = planned
-            }
-
-            // Dot color: past/current with real data → indigo if on track, hotPink if over
-            let dotColor: Color
-            if let real, (m.isPast || m.isCurrent), planned > 0 {
-                let isIncome = lineData?.isIncome ?? false
-                if isIncome {
-                    dotColor = real >= planned ? .electricIndigo : .hotPink
-                } else {
-                    dotColor = real <= planned ? .electricIndigo : .hotPink
-                }
-            } else {
-                dotColor = .secondary.opacity(0.3)
-            }
-
-            snapshots.append(TimelineSnapshot(
-                monthKey: m.monthKey,
-                label: m.date.formatted(.dateTime.month(.abbreviated)),
-                amount: displayAmount,
-                plannedAmount: planned,
-                isActive: m.monthKey == activeMonthKey,
-                isPastOrCurrent: m.isPast || m.isCurrent,
-                isIncome: lineData?.isIncome ?? false,
-                dotColor: dotColor
-            ))
-        }
-        return snapshots
-    }
-
     // MARK: - Helpers
 
     /// «noviembre» desde la clave `yyyy-MM`.
     private func monthName(_ key: String) -> String {
         guard let date = CashFlowDetailLineRow.monthDate(key) else { return key }
         return CashFlowMonthSummaryLogic.monthInSentence(date)
-    }
-
-    private func detailRow(label: String, value: Double, color: Color? = nil, isEstimate: Bool = false) -> some View {
-        HStack {
-            Text(label)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-            AmountText(
-                value: value,
-                currencyCode: currencyCode,
-                font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
-                tint: color.map { .color($0) } ?? .primary,
-                isEstimate: isEstimate
-            )
-        }
     }
 }
