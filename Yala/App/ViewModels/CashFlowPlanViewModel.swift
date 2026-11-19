@@ -65,8 +65,6 @@ final class CashFlowPlanViewModel {
     private var lastDeviationKey: String = ""
 
     // UI state
-    var selectedLine: CashFlowLine?
-    var showLineConfig: Bool = false
     var showChartsSheet: Bool = false
     var showOthersBreakdown: Bool = false
     var showOthersIncomeBreakdown: Bool = false

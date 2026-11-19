@@ -304,25 +304,9 @@ struct DeletedModelMoreFormsGuardWiringTests {
 
     // MARK: - Flujo de caja
 
-    @Test func lineaDelFlujo_laHojaLeeLaLineaSoloPorSuAccesor() throws {
-        let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowLineConfigSheet.swift")
-        #expect(source.contains(".navigationTitle(shown.name)"))
-        // Lo que corre con la línea viva: el init (mira antes), la copia, el accesor, las dos funciones que la toman
-        // del accesor, el guardado y el borrado.
-        let rest = try Self.code(source, without: [
-            "init(reading line: CashFlowLine) {",
-            "init(viewModel: CashFlowPlanViewModel, line: CashFlowLine, currencyCode: String, transactions: [TransactionItem] = []) {",
-            "private var readableLine: CashFlowLine? {",
-            "private func previewForMethod(_ method: EstimationMethod) -> Double {",
-            "private func computeHistoricalStats() -> HistoricalStats {",
-            "private func applyChanges() {",
-        ])
-        let reads = Self.matches(#"\bline\.\w"#, in: rest)
-        #expect(reads.isEmpty, "Lecturas de la línea fuera de su accesor: \(reads)")
-        #expect(source.contains("guard let line = readableLine else { return 0 }"))
-        #expect(source.contains("guard let line = readableLine else {"))
-        #expect(source.contains("let readable = !line.isDeleted && line.modelContext != nil"))
-    }
+    // La hoja de configuración de línea (`CashFlowLineConfigSheet`) se retiró en S4 del replanteo del flujo de caja
+    // (18-nov-2026): nadie la abría. Su sustituta, «Cambiar límite», no lee la línea en el `body`
+    // (`FlujoCambiarLimiteCableadoTests.laHoja_noLeeLaLineaEnElBody`).
 
     @Test func celdaDelFlujo_noLeeLaLineaNiRegistrosBorrados() throws {
         let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")

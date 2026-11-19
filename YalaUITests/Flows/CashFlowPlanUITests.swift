@@ -271,19 +271,21 @@ final class CashFlowPlanUITests: XCTestCase {
         var tries = 0
         while !adjust.isHittable, tries < 6 { sheet.swipeUp(); tries += 1 }
         adjust.tap()
-        let field = app.textFields["cashflow_adjust_amount_field"]
+        // S4 del replanteo: «Ajustar monto» abre «Cambiar límite», que trae elegido «desde este mes en adelante».
+        let from = app.buttons["flujo_cambiar_limite_alcance_desdeEsteMes"]
+        XCTAssertTrue(from.waitForExistence(timeout: 5), "No se abrió «Cambiar límite».")
+        XCTAssertTrue(from.isSelected, "«Desde este mes en adelante» tiene que venir elegido (P3).")
+        let field = app.textFields["flujo_cambiar_limite_monto"]
         XCTAssertTrue(field.waitForExistence(timeout: 5), "No apareció el campo del monto.")
         field.tap()
         let fieldText = (field.value as? String) ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: fieldText.count + 2))
         field.typeText("4321")
 
-        let save = app.buttons["cashflow_adjust_keyboard_save"]
-        XCTAssertTrue(save.waitForExistence(timeout: 5), "No está «Guardar» en la barra del teclado.")
+        let save = app.buttons["flujo_cambiar_limite_guardar"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "No está «Guardar».")
+        XCTAssertTrue(app.waitForSettledLayout(of: save), "«Guardar» no se quedó quieto.")
         save.tap()
-        let alsoFollowing = app.alerts.buttons["cashflow_scope_also_following"].firstMatch
-        XCTAssertTrue(alsoFollowing.waitForExistence(timeout: 5), "No preguntó «solo este mes o también los siguientes».")
-        alsoFollowing.tap()
         XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), "El detalle no se cerró al guardar.")
 
         let newAmount = NSPredicate(format: "label CONTAINS '4,321' OR label CONTAINS '4.321' OR label CONTAINS '4321'")

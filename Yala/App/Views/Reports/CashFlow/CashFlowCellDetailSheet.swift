@@ -11,8 +11,8 @@
 //    final, «Eliminar línea» a la vista. El método ya no se pinta en el color de los enlaces.
 //  - L18-8 (opción A): «y los siguientes» guarda desde qué mes vale el monto nuevo; aquí se ve «Desde noviembre: S/ X
 //    cada mes».
-//  - L18-9 (opción C): el campo dice «Monto para noviembre», «Guardar» va también en la barra sobre el teclado y la
-//    pregunta nombra el mes («¿Solo noviembre, o noviembre y los siguientes?»).
+//  - S4 del replanteo (18-nov-2026, sustituye a L18-9): «Ajustar monto» abre «Cambiar límite»
+//    (`FlujoCambiarLimiteSheet`), que pregunta qué meses cambian ANTES del monto. Aquí ya no hay campo ni alerta.
 //  - Lienzo «Una sola Yala»: «Últimos registros» con la fila de Registros (y se puede tocar), la barra de Presupuestos.
 //
 
@@ -36,16 +36,10 @@ struct CashFlowCellDetailSheet: View {
     // Local navigation state (resets on dismiss)
     @State private var activeMonthKey: String = ""
 
-    @State private var showAdjustAmount = false
-    @State private var adjustAmountText = ""
-    @State private var adjustNote = ""
-    @FocusState private var amountFieldFocused: Bool
-
-    @State private var showOverrideScopeAlert = false
-    @State private var pendingOverrideAmount: Double = 0
-    @State private var pendingOverrideNote: String = ""
-    @State private var pendingOverrideLine: CashFlowLine?
-    @State private var pendingOverrideMonthKey: String = ""
+    /// «Ajustar monto» abre «Cambiar límite» (S4 del replanteo); guardar ahí cierra también este detalle, que enseña
+    /// cifras del plan de antes de guardar.
+    @State private var cambiarLimite: FlujoCambiarLimitePeticion?
+    @State private var limiteGuardado = false
 
     @State private var methodPickerLine: SuggestedLine?
     @State private var showDeleteLineAlert = false
@@ -171,37 +165,19 @@ struct CashFlowCellDetailSheet: View {
                         dismiss()
                     }
                 }
-                // L18-9: «Guardar» sobre el teclado; el teclado numérico tapaba el botón de abajo.
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(L10n.Action.save) {
-                        saveAdjustment()
-                    }
-                    .fontWeight(.semibold)
-                    .accessibilityIdentifier("cashflow_adjust_keyboard_save")
-                }
             }
         }
         .presentationDetents([.large])
         .onAppear { activeMonthKey = month.monthKey }
-        // El título nombra el mes (L18-9). Los botones van literales: un texto que dependa del estado en el `actions`
-        // de una alerta rompió flujos ajenos (`swiftui-ds.md`).
-        .alert(L10n.UXL18.scopeQuestion(monthName(pendingOverrideMonthKey)), isPresented: $showOverrideScopeAlert) {
-            Button(L10n.UXL18.scopeOnlyThatMonth) {
-                if let line = pendingOverrideLine {
-                    viewModel.setOverride(line: line, monthKey: pendingOverrideMonthKey, amount: pendingOverrideAmount, note: pendingOverrideNote)
-                }
-                dismiss()
+        .sheet(item: $cambiarLimite, onDismiss: {
+            if limiteGuardado { dismiss() }
+        }) { peticion in
+            if let line = readableLine {
+                FlujoCambiarLimiteSheet(
+                    peticion: peticion, line: line, currencyCode: currencyCode, viewModel: viewModel,
+                    onSaved: { limiteGuardado = true }
+                )
             }
-            .accessibilityIdentifier("cashflow_scope_only_month")
-            Button(L10n.UXL18.scopeAlsoFollowing) {
-                if let line = pendingOverrideLine {
-                    viewModel.setAmountFromMonthOnward(line: line, monthKey: pendingOverrideMonthKey, amount: pendingOverrideAmount)
-                }
-                dismiss()
-            }
-            .accessibilityIdentifier("cashflow_scope_also_following")
-            Button(L10n.Action.cancel, role: .cancel) { }
         }
         .alert(L10n.CashFlowPlan.deleteLineConfirmation, isPresented: $showDeleteLineAlert) {
             Button(L10n.Action.delete, role: .destructive) {
@@ -563,83 +539,27 @@ struct CashFlowCellDetailSheet: View {
         }
     }
 
-    // MARK: - Adjust Amount (L18-9)
+    // MARK: - Ajustar monto → Cambiar límite (S4)
 
+    /// Abre «Cambiar límite» para el mes que se ve. El alcance se elige allí, antes del monto.
+    @ViewBuilder
     private func adjustAmountButton(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            if showAdjustAmount {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    Text(L10n.UXL18.amountFor(monthName(m.monthKey)))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(appPreferences.currencyIdentifier(for: currencyCode))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                        TextField("0", text: $adjustAmountText)
-                            .keyboardType(.decimalPad)
-                            .font(DS.Typography.headline)
-                            .monospacedDigit()
-                            .focused($amountFieldFocused)
-                            .accessibilityLabel(L10n.UXL18.amountFor(monthName(m.monthKey)))
-                            .accessibilityIdentifier("cashflow_adjust_amount_field")
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                            .fill(.thCard)
-                    )
-
-                    TextField(L10n.CashFlowPlan.cellDetailNote, text: $adjustNote)
-                        .font(DS.Typography.body)
-                        .padding(DS.Spacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                                .fill(.thCard)
-                        )
-
-                    YalaPrimaryButton(L10n.CashFlowPlan.cellDetailSaveAdjustment, icon: "checkmark.circle.fill") {
-                        saveAdjustment()
-                    }
+        if readableLine != nil {
+            Button {
+                cambiarLimite = FlujoCambiarLimitePeticion(lineID: lr.lineID, monthKey: m.monthKey)
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "pencil.line")
+                    Text(L10n.CashFlowPlan.adjustAmount)
                 }
-                .padding(DS.Spacing.lg)
-                .solidCard()
-            } else {
-                Button {
-                    adjustAmountText = CashFlowStartingBalanceSheet.editableText(lr.plannedAmount)
-                    showAdjustAmount = true
-                    amountFieldFocused = true
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Image(systemName: "pencil.line")
-                        Text(L10n.CashFlowPlan.adjustAmount)
-                    }
-                    .font(DS.Typography.label)
-                    .foregroundStyle(theme.accentText)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("cashflow_adjust_amount")
+                .font(DS.Typography.label)
+                .foregroundStyle(theme.accentText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .contentShape(Rectangle())
             }
-        }
-    }
-
-    /// Lo comparten el botón de abajo y el «Guardar» de sobre el teclado.
-    private func saveAdjustment() {
-        guard showAdjustAmount, let m = activeMonth else { return }
-        let amount = AmountInputHelper.parseDecimal(adjustAmountText)
-        amountFieldFocused = false
-        if let line, amount > 0 {
-            pendingOverrideAmount = amount
-            pendingOverrideNote = adjustNote
-            pendingOverrideLine = line
-            pendingOverrideMonthKey = m.monthKey
-            showOverrideScopeAlert = true
-        } else {
-            dismiss()
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("cashflow_adjust_amount")
         }
     }
 
@@ -675,7 +595,6 @@ struct CashFlowCellDetailSheet: View {
                             // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
                             dsWithAnimation(reduceMotion, .easeInOut(duration: DS.Animation.fast)) {
                                 activeMonthKey = snap.monthKey
-                                showAdjustAmount = false
                             }
                         } label: {
                             VStack(spacing: DS.Spacing.xs) {

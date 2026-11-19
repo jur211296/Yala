@@ -73,7 +73,7 @@ En el artifact, con selector. Recomendado entre corchetes.
 | S1 ✅ | Motor del mes (sin UI) — **hecha el 18-nov** (ver «S1 hecha» abajo) | Una cuenta por mes: real con signo y sin categoría + lo que falta por línea + «otros» por mediana. Mes en curso desde el saldo de hoy; pasados = real; futuros encadenan desde el cierre. Sin doble conteo de fechados, promedio sin el mes a medias. Paridad con «Al 30» del Panel. Review adversarial. | Alto (1 sesión larga) |
 | S2 | Detalle del mes y cápsulas | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
 | S3 | Detalle de línea | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
-| S4 | Cambiar límite | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
+| S4 ✅ | Cambiar límite — **hecha el 18-nov** (ver «S4 hecha» abajo) | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
 | S5 | Crear plan | Sin «¿Con cuánto empiezas?», líneas por categoría por defecto, límites fijos sembrados con el promedio. | Bajo-medio |
 | S6 | Consumidores | Panel «Ver proyectado», widget de Saldo y Tendencias con la misma pieza de S1 (otros por mediana, sin doble conteo). | Medio |
 
@@ -81,7 +81,7 @@ Orden: S1 → S2 → S4 → S3 → S5 → S6. S1 necesita P1, P2, P4, P5 y P6 de
 
 ## Encontrado y no tocado
 
-- `CashFlowLineConfigSheet` (528 líneas) no se abre desde ningún sitio: nadie pone `showLineConfig = true`.
+- ~~`CashFlowLineConfigSheet` (528 líneas) no se abre desde ningún sitio~~: retirada en S4.
 - Las cápsulas «Comparativa / Flujo de caja» flotan sobre las filas al desplazar y se lee el texto de detrás
   (`capturas/antes-02`).
 - La línea «Combustible» de la semilla sale con el icono genérico de cuadrícula (`capturas/antes-02`).
@@ -128,3 +128,23 @@ una fila «Ajustes de saldo» lo dice. Sin cuentas que sumen, la cifra vuelve a 
 
 Pendiente para S3 y siguientes: crear líneas siempre por subcategoría (hoy el armado y «Agregar línea» aún pueden crear
 una línea por categoría; la tabla la enseña con su desglose).
+
+## S4 hecha (18-nov-2026)
+
+«Cambiar límite» en `Yala/App/Views/Reports/CashFlow/CambiarLimite/`: una hoja que pregunta primero qué meses cambian
+(solo este mes / desde este mes en adelante, elegido por defecto / todos los meses), después el monto (admite 0), y
+enseña «Así quedan» mes a mes antes de guardar. Decisiones del arranque: el «Paso 0» del encargo
+`2026-11-18-flujo-cambiar-limite`.
+
+- **Qué escribe cada alcance** (`FlujoCambiarLimiteLogica.escritura`, aplicado por `CashFlowPlanViewModel.cambiarLimite`):
+  solo este mes = ajuste de un mes; desde este mes = cambio «desde» (los meses siguientes con ajuste propio lo conservan
+  y la hoja los nombra); todos = monto fijo sin cambios «desde» ni ajustes de un mes (en un pago planificado, un cambio «desde» el primer
+  mes del plan, para no desligarlo de sus pagos).
+- **Meses cerrados: se puede.** En el motor un mes pasado es lo real, así que el límite solo cambia con qué se compara; la
+  hoja lo dice.
+- **Punto de entrada para S3:** presentar `FlujoCambiarLimiteSheet` con `FlujoCambiarLimitePeticion(lineID:monthKey:)`.
+  Hoy la abre «Ajustar monto» del detalle de línea (`CashFlowCellDetailSheet`), que ya no tiene campo ni alerta de alcance.
+  S3 mueve ese «Cambiar» arriba, junto al límite.
+- **Retirado:** `CashFlowLineConfigSheet`, `showLineConfig` y `selectedLine` del ViewModel.
+- **Pendiente para S5:** el método de la línea sigue existiendo («Cómo se calcula · Cambiar»); P4 (límite fijo sembrado
+  con el promedio) lo resuelve el crear plan.
