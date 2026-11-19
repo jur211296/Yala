@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # La línea `Verificado:` de cada commit (2026-11-17, propuesta P3 de verificación).
 #
-#   bash qa/scripts/verificado-en-commit.sh sellar --build N --unit N --interfaz N --indice si|no
+#   bash qa/scripts/verificado-en-commit.sh sellar --build N --unit N --interfaz N --indice si|no \
+#        [--revisor N --hallazgos N --aceptados N]
 #   bash qa/scripts/verificado-en-commit.sh resellar      # tras un commit de una tanda: nueva huella, mismo resumen
 #   bash qa/scripts/verificado-en-commit.sh linea         # la línea que llevaría el commit ahora
 #   bash qa/scripts/verificado-en-commit.sh hook <fichero-del-mensaje> [origen] [sha]
@@ -13,6 +14,10 @@
 # EL SELLO (`.claude/sessions/tests-passed`). Línea 1: la huella del árbol (`worktree-stamp.sh`),
 # que es lo único que lee `precommit-gate.sh`. Línea 2: el resumen, con formato fijo y contable:
 #   Verificado: build 2/2 · unit 14 suites · interfaz 6 clases · índice ✓
+# y, si corrió el revisor con checklist del paso 4 bis (P4, en observar), un segmento más:
+#   … · índice ✓ · revisor 4 ítems, 2 hallazgos, 1 aceptado
+# `--revisor` exige `--hallazgos` y `--aceptados` (aceptados ≤ hallazgos). Sin `--revisor`, sin
+# segmento: el revisor no aplicó (nada de lógica cara en el diff) o el gate es anterior.
 # Un sello viejo de una sola línea sigue valiendo para el pre-commit y da
 # `Verificado: gate ✓ (sin resumen)`.
 #
@@ -43,7 +48,7 @@ SELLO=".claude/sessions/tests-passed"
 STAMP="${VERIFICADO_STAMP:-qa/scripts/worktree-stamp.sh}"
 
 uso() {
-  echo "uso: $0 sellar --build N --unit N --interfaz N --indice si|no | resellar | linea | hook <fichero> [origen] [sha]" >&2
+  echo "uso: $0 sellar --build N --unit N --interfaz N --indice si|no [--revisor N --hallazgos N --aceptados N] | resellar | linea | hook <fichero> [origen] [sha]" >&2
   exit 2
 }
 entero() { case "${1:-}" in ''|*[!0-9]*) return 1 ;; esac; return 0; }
@@ -87,24 +92,33 @@ linea() {
 case "${1:-}" in
   sellar)
     shift
-    build="" unit="" interfaz="" indice=""
+    build="" unit="" interfaz="" indice="" revisor="" hallazgos="" aceptados=""
     while [ $# -gt 0 ]; do
       case "$1" in
         --build) build="${2:-}"; shift 2 ;;
         --unit) unit="${2:-}"; shift 2 ;;
         --interfaz) interfaz="${2:-}"; shift 2 ;;
         --indice) indice="${2:-}"; shift 2 ;;
+        --revisor) revisor="${2:-}"; shift 2 ;;
+        --hallazgos) hallazgos="${2:-}"; shift 2 ;;
+        --aceptados) aceptados="${2:-}"; shift 2 ;;
         *) uso ;;
       esac
     done
     entero "$build" && entero "$unit" && entero "$interfaz" || uso
     [ "$build" -le 2 ] || uso
     case "$indice" in si) ind="✓" ;; no) ind="✗" ;; *) uso ;; esac
+    rev=""
+    if [ -n "$revisor$hallazgos$aceptados" ]; then
+      entero "$revisor" && entero "$hallazgos" && entero "$aceptados" || uso
+      [ "$aceptados" -le "$hallazgos" ] || uso
+      rev=" · revisor $(plural "$revisor" ítem ítems), $(plural "$hallazgos" hallazgo hallazgos), $(plural "$aceptados" aceptado aceptados)"
+    fi
     h="$(huella)"
     [ -n "$h" ] || { echo "verificado-en-commit: no pude calcular la huella del árbol" >&2; exit 1; }
     mkdir -p "$(dirname "$SELLO")"
-    printf '%s\nVerificado: build %s/2 · unit %s · interfaz %s · índice %s\n' \
-      "$h" "$build" "$(plural "$unit" suite suites)" "$(plural "$interfaz" clase clases)" "$ind" > "$SELLO"
+    printf '%s\nVerificado: build %s/2 · unit %s · interfaz %s · índice %s%s\n' \
+      "$h" "$build" "$(plural "$unit" suite suites)" "$(plural "$interfaz" clase clases)" "$ind" "$rev" > "$SELLO"
     sed -n '2p' "$SELLO"
     ;;
   resellar)

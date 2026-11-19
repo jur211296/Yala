@@ -66,10 +66,10 @@ se comprueba con `git rev-parse --git-common-dir`.
   de auto-merge y no cierras hasta verlo mergeado: un conflicto o un CI rojo tuyo los arreglas tú y
   vuelves a esperar (ADR-054 y ADR-125 de casa; el detalle, en el `CLAUDE.md`).
 
-**Review adversarial** —varias lentes independientes y refutación por hallazgo— cuando el cambio
-toque lógica donde un bug sale caro: sync (CKShare, bridges, notificaciones), cálculos
-financieros, migraciones SwiftData, el bridge SplitExpense ↔ TransactionItem. Para l10n,
-rebranding o polish visual no aporta y no la haces.
+**Revisión de lógica cara**: un solo revisor con la checklist de confiabilidad, el paso 4 bis de
+`/gate`. Lo dispara el diff cuando toca sync (CKShare, bridges, notificaciones), cálculos
+financieros, migraciones SwiftData o el formulario de registro, y hace hasta tres rondas contigo.
+Un revisor, nunca varias lentes en paralelo. Para l10n, rebranding o polish visual no aplica.
 
 ## Control de ejecución
 

@@ -70,7 +70,7 @@ Captura → Diseño → Construcción → Gate → Commit → QA → Cierre
 
 - **`/spec`** desarrolla el plan dentro del ticket en `tickets/`. Luego **Plan Mode + `/review-plan`** — su sección de "Diferidos" es lo que evita el retrabajo; no la saltes.
 - **Construcción**: sesión larga y autónoma. `/verify-ios` para el bucle corto de «¿compila?».
-- **Review adversarial** (varias lentes independientes + refutación por hallazgo) cuando el cambio toque lógica densa donde un bug sale caro: sync/race (CKShare, bridges, notificaciones), cálculos financieros, migraciones SwiftData, bridge SplitExpense ↔ TransactionItem. Para l10n, rebranding o polish visual no aporta.
+- **Revisión de lógica cara: un solo revisor con la checklist**, en el paso 4 bis de `/gate` (desde el 2026-11-17, en observar). Un script elige los ítems de `qa/checklist-confiabilidad.yaml` que dispara el diff —nube, dinero, migraciones, fechas, formulario de registro— y un agente `revisor-checklist` los repasa en hasta tres rondas; todo se lee de `origin/2.3`. Sustituye a la review «con varias lentes»: un revisor bien informado rinde más que varios en paralelo. Para l10n, rebranding o polish visual no aplica.
 - **`/gate`** antes de commitear: build ×2, unit, XCUITest de las áreas tocadas, audit y validación del índice. Sella el árbol; el hook de pre-commit comprueba ese sello.
 - **`/qa`** es por lotes: una sesión drena varios tickets `qa_`, no uno.
 - **QA de una versión con Jürgen: dos sesiones, en orden.** `/barrido-qa` prueba en el simulador lo que se pueda y le deja solo lo que pide su iPhone o su aprobación; después `/qa-guiado` lo guía paso a paso en el teléfono.
