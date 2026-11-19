@@ -74,7 +74,7 @@ En el artifact, con selector. Recomendado entre corchetes.
 | S2 | Detalle del mes y cápsulas | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
 | S3 ✅ | Detalle de línea — **hecha el 18-nov** (ver «S3 hecha» abajo) | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
 | S4 ✅ | Cambiar límite — **hecha el 18-nov** (ver «S4 hecha» abajo) | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
-| S5 | Crear plan | Sin «¿Con cuánto empiezas?», líneas por categoría por defecto, límites fijos sembrados con el promedio. | Bajo-medio |
+| S5 ✅ | Crear plan — **hecha el 18-nov** (ver «S5 hecha» abajo) | Sin «¿Con cuánto empiezas?», líneas por subcategoría agrupadas bajo su categoría, límites fijos sembrados con el promedio. | Bajo-medio |
 | S6 | Consumidores | Panel «Ver proyectado», widget de Saldo y Tendencias con la misma pieza de S1 (otros por mediana, sin doble conteo). | Medio |
 
 Orden: S1 → S2 → S4 → S3 → S5 → S6. S1 necesita P1, P2, P4, P5 y P6 decididas.
@@ -169,3 +169,25 @@ encima del nombre y avisa de lo anotado en la madre sin subcategoría. Lógica p
 
 Pendiente para S5 y siguientes: crear líneas siempre por subcategoría (sigue igual que tras S2).
 
+## S5 hecha (18-nov-2026)
+
+Crear el plan, en `Yala/App/Views/Reports/CashFlow/CrearPlan/` (lógica `FlujoCrearPlanLogica`). Decisiones del arranque:
+el «Paso 0» del encargo `2026-11-18-flujo-crear-plan`.
+
+- **Fuera «¿Con cuánto empiezas?» (P5).** La cabecera del armado dice «Tienes hoy» con el saldo de las cuentas (la cifra
+  del Panel) y que el plan parte de ahí, sin «Cambiar». La hoja del saldo inicial queda inalcanzable como tal; la misma
+  pieza sigue para «¿Cuánto recibes al mes?».
+- **Migración:** ninguna. El saldo inicial guardado en los planes de antes se queda intacto (no se pierde) y nadie lo lee
+  desde S1. Un plan nuevo guarda ahí el saldo de hoy, solo como registro.
+- **Líneas por subcategoría.** El armado retira las sugerencias por categoría cuando la categoría tiene subcategorías
+  visibles; lo anotado en la madre queda en «Sin subcategoría» del mes y en «otros» por la mediana. Una categoría sin
+  subcategorías visibles sí lleva línea propia (no hay detalle que perder), como ya hacía «Agregar a mi plan».
+- **Agrupado:** cada sección agrupa sus líneas bajo la categoría, con cabecera plegable que suma lo elegido. Los gastos
+  que cambian siguen plegados (L18-5), ahora por categoría: un grupo va a la vista si alguna línea se repite.
+- **Límite fijo (P4).** Al crear, cada línea por promedio se guarda como monto fijo con la cifra calculada; un pago
+  planificado sigue con su pago. «Agregar línea › Desde mis gastos» pide la subcategoría y la línea nace con monto fijo
+  sembrado con el método elegido, calculado como el motor (meses completos anteriores, con signo).
+
+Pendiente para S6 y fuera de S5: las líneas por promedio de planes ya creados siguen moviéndose cada mes («Cómo se
+calcula · Cambiar» del detalle de línea); «Agregar a mi plan» desde otros (`promoteFromOthers`) aún crea líneas por
+promedio.
