@@ -102,6 +102,9 @@ a CloudKit y esperaba a `cloudd` (47 s a 6,5 min según el runner). **Un unit no
 si un caso tarda decenas de segundos sin trabajo que lo explique, mira si espera a un servicio del
 sistema antes de subir el tope. Ticket: `qa-2-2-se-cancela-tests-unitarios-context-based`.
 
+Y otra vez el 2026-11-19, sin llegar a cancelar: el máximo verde iba a 74,9 de 80 (build y pure-logic casi se doblaron
+desde el 26-oct). Job a 110, build a 50, pure-logic a 55, con la tabla re-medida en `qa.yml`.
+
 ## La UI se reparte en tandas, y una tanda que agota su tope no dice nada
 
 La UI de la nocturna va en tandas paralelas (job `ui`, matriz). Una tanda que agota los 110 min de
@@ -119,6 +122,14 @@ aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se 
   **todas** las tandas completas (se niega si alguna no corrió casos). Una suite que no está en la
   tabla pesa 46 s por caso: una suite que se salta entera (vídeos, medidas de carga) tiene que estar
   en la tabla, o pesa minutos que no gasta. Una tabla vieja descompensa; nunca deja una suite fuera.
+  **Desde el 2026-11-19 se regenera con varios runs** (`ci-ui-tiempos.sh <run> <run> <run>`): cada suite pesa la
+  mediana y cada caso cuenta como mucho 600 s. Con uno solo, un runner congelado (un caso de 29 min «passed») pesaba
+  la suite al triple. Ese día la suite sumaba ~872 min y las tandas pasaron de 9 a 14.
+- **Cada caso tiene tope de 10 min** (`-default-test-execution-time-allowance 600` en el paso de UI, 2026-11-19). El
+  más lento legítimo mide ~6. Si una suite nueva necesita más, se parte el caso; no se sube el tope a ciegas.
+- **El runner de XCUITest se calienta aparte** («Calentar el runner de XCUITest», un caso corto del Panel que no
+  cuenta). Calentar el simulador solo abre la app, y el primer caso de cada tanda seguía pagando el arranque del
+  runner y de la accesibilidad. Si cambias el caso de calentamiento, que siga siendo corto y verde cada noche.
 - **Las tandas no compilan (2026-11-04).** El job `ui-build` compila una vez y sube
   `.ddp/Build/Products`; cada tanda lo baja y corre `test-without-building`. Antes compilaba cada
   una en frío con tope de 25 y el runner tarda de 11 a 25+ min: cuatro de ocho se quedaron sin
