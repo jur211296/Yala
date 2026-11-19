@@ -1,0 +1,15 @@
+Novedades desde la build 2.3 (4):
+• Flujo de caja: los montos aislados (un mes 3 veces o más por encima de lo normal) ya no inflan el Promedio ni la Tendencia de una línea; siguen contando en su mes.
+• Flujo de caja: los límites se mueven solos cada mes con los meses anteriores; solo «Monto fijo» deja un número quieto.
+• Flujo de caja: nueva hoja «Cálculo del monto», con el monto en vivo, cuánto daría cada método y qué meses quedaron fuera.
+• Flujo de caja: en el detalle de una línea, mantén una barra para ver el mes, lo gastado y el límite; tócala para cambiar la lista a ese mes.
+• Flujo de caja: «No considerados» agrupados por subcategoría bajo su categoría.
+• Flujo de caja: con plan, los meses que vienen solo suman lo fijo y seguro (ingresos fijos y gastos que se repiten), con «Considerar a futuro» en cada partida.
+• Proyección inteligente: el sueldo y otros ingresos fijos se proyectan aunque no tengan línea; un gasto grande que no se repite ya no mueve los meses que vienen.
+• Modo claro: fondo gris claro, y los botones, chips y campos blancos llevan un borde fino y una sombra suave.
+• Pagos planificados: los pagos que se repiten aparecen como un banner y se agregan con el formulario completo ya lleno.
+• Nuevo grupo y nuevo favorito, paso a paso, con la opción «Usar formulario».
+• Nuevo registro: sin categorías sugeridas debajo del monto.
+• Arreglados dos cuelgues: el resumen del Panel y la foto de los widgets ya no dejan la app sin responder.
+
+Qué probar: el Flujo de caja de una línea con un mes muy alto (Promedio, «Cálculo del monto», mantener y tocar una barra), los meses que vienen con plan, el modo claro en Nuevo registro y Yala IA, el banner de pagos que se repiten, y crear un grupo y un favorito. Si algo falla, envía una captura desde TestFlight.
