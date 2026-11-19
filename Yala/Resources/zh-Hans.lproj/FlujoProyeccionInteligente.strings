@@ -1,0 +1,21 @@
+/*
+  FlujoProyeccionInteligente.strings
+  Yala
+
+  La hoja «Otros» del flujo de caja: qué se proyectó como fijo y qué se dejó fuera por aislado (decisión de Jürgen
+  del 19-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoProyeccion`).
+*/
+
+"flujoProyeccion.fixed.title" = "每月固定";
+"flujoProyeccion.fixed.desc.income" = "在你的记录中以相近金额重复出现的收入。即使不在你的计划里，也会计入预测。";
+"flujoProyeccion.fixed.desc.expense" = "在你的记录中以相近金额重复出现的支出。即使不在你的计划里，也会计入预测。";
+"flujoProyeccion.fixed.day" = "%1$@ · 每月%2$d日";
+"flujoProyeccion.fixed.perMonth" = "每月%@";
+"flujoProyeccion.fixed.seen" = "%2$d个月中有%1$d个月";
+"flujoProyeccion.fixed.done.income" = "本月已到账";
+"flujoProyeccion.fixed.done.expense" = "本月已支付";
+"flujoProyeccion.isolated.title" = "未计入预测";
+"flujoProyeccion.isolated.desc" = "不会重复的大额款项。它们计入发生的那个月，但不计入之后的月份。";
+"flujoProyeccion.variable.expense" = "其余支出按你平常一个月的花费预测：%@。";
+"flujoProyeccion.variable.income" = "每月金额不同的收入不计入预测。";
+"flujoProyeccion.shortHistory" = "记录不足%d个月时，还无法区分固定款项和一次性款项。目前收入只按计划付款预测，支出按你平常一个月的花费预测。";

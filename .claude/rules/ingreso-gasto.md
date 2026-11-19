@@ -89,9 +89,10 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
   cuenta en lo gastado lo que no tiene subcategoría, y el desglose también. Lo fija `BudgetBreakdownSumsSpentTests`.
 - **El día más caro de Estadísticas sale de una entrada**, `WeekdaySpendingCalculator.forStatistics`, para Resumen y
   Tendencias (ignora el chip Ingresos/Gastos; con «Todo», cuenta hasta hoy). Lo fija `WeekdayPriciestDayParityTests`.
-- **El ritmo del flujo proyectado proyecta lo que falta de cada mes** (decisión de Jürgen): ritmo × días del mes menos
-  lo que el mes ya tiene, real o fechado, por lado y nunca negativo (`ProjectedFlowBuilder.rhythmLeftOfEachMonth`). Un
-  ritmo a secas por día volvía a contar el sueldo ya cobrado. Lo fija `ProjectedFlowCalculatorTests`.
+- **El flujo proyectado proyecta lo que falta de cada mes** (decisión de Jürgen del 2026-11-10; desde S6 del replanteo
+  del flujo de caja, 18-nov-2026, con la mediana del motor del mes en vez del ritmo de 90 días): lo esperado del mes
+  menos lo que ya tiene, real o fechado, por lado y nunca negativo. Contar lo esperado a secas por día volvía a contar
+  el sueldo ya cobrado. Lo fijan `ProjectedFlowCalculatorTests` y `FlujoConsumidoresParidadTests`.
 - **Un reparto de grupo cuadra al céntimo** (decisión de Jürgen): «Monto» y «Porcentaje» con
   `GroupSplitCalculator.balanceTolerance` (medio céntimo, solo coma flotante), y la insignia del formulario con la misma.
   Un porcentaje que se REABRE (edición, plantilla, pago planificado) pasa por `GroupExpenseViewModel.loadPercentages`,
@@ -102,8 +103,40 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
 La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)
 dan la misma cifra porque salen de la misma cuenta: saldo vivo de las cuentas del Panel + `ProjectedFlowBuilder` hasta
 fin de mes sin filtros de sesión (`MonthEndBalanceLogic`). Si cambias cómo proyecta el Panel con Saldo, cambia esa pieza
-también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan). El horizonte del plan («a fin de mayo de 2027
-tendrías») NO sale de ahí: parte del saldo inicial del plan.
+también; lo fija `FlujoAl30YEstimadoTests` (paridad y caso con plan).
+
+**Con plan, lo que falta sale del motor del mes (`FlujoMotorMes`, S1 del replanteo del flujo de caja, 2026-11-18).** El
+flujo de caja y `ProjectedFlowBuilder.planRemaining` (Panel, Tendencias, widget de Saldo) piden al mismo motor lo que les
+falta a las líneas y, en «otros», lo que se detecta en los registros (párrafo de la proyección inteligente, abajo); lo no
+cubierto ya no va al ritmo. Un plan sin líneas también manda. Cada mes del flujo de caja es real con signo (fechado antes
+de mañana, con lo sin categoría) + lo que falta; el cierre de un mes pasado es el saldo real de las cuentas (cada divisa
+a la tasa de su cierre), el del mes en curso es «Al 30», y los futuros encadenan. El saldo inicial manual del plan ya no
+se usa. Cada movimiento tiene UN dueño (su pago con línea, su subcategoría, su categoría, el «sin subcategoría» del grupo
+o «otros») y el promedio de una línea sale de ese mismo reparto: si añades una forma de atribuir, cambia las dos a la
+vez. Lo fijan `FlujoMotorMesTests` (un caso por hallazgo del ticket `2026-11-17-flujo-de-caja-replanteo`, paridad con
+`MonthEndBalanceLogic` incluida).
+
+**Sin plan, o con filtros de sesión, el mismo motor sin líneas (S6, 18-nov-2026).** `ProjectedFlowBuilder.othersRemaining`
+pide al motor «otros» (la proyección inteligente, abajo); ya no hay ritmo de 90 días. Sin filtros, la mediana sale de todos los movimientos, como con plan; con filtros, de los filtrados. Sin un mes
+completo de historia no hay mediana: solo pagos planificados y lo fechado. Panel, Tendencias y el widget de Saldo
+heredan la pieza por `ProjectedFlowBuilder.build`: «Al 30» del flujo de caja, del Panel y el último punto del mes del
+widget son la misma cifra, con plan y sin plan (`FlujoConsumidoresParidadTests`).
+
+**Proyección inteligente de lo que no tiene línea (decisión de Jürgen del 19-nov-2026, corrige P6 del replanteo).**
+`FlujoProyeccionInteligente`, llamado desde `FlujoMotorMes.calcular`, detecta en los movimientos de «otros»:
+**ingresos fijos** (un grupo —subcategoría, categoría o sin categoría; dentro de uno que varía, un comercio por su nota—
+con un monto parecido, ±25 %, en ≥ 2/3 de los 6 meses completos y presente el último mes o el actual), que se proyectan
+con su monto y su día típico; y **aislados** (≥ 3 meses típicos sin repetirse en su grupo), que cuentan en su mes y salen
+de la mediana de gastos, sin comerse lo que falta del mes en que ocurren (ni ellos ni su devolución). Los ingresos que
+varían no se proyectan; con < 3 meses de historia no se detecta nada. En gastos no se parte por grupos: la mediana
+mensual de «otros» sigue siendo una sola. Sin doble conteo: lo ya cobrado del fijo (también con otra categoría de monto
+parecido, o adelantado a fin del mes anterior), los pagos planificados de su grupo y una línea libre del plan descuentan
+de lo que le falta; si ya llegó el 75 %, no se proyecta la diferencia. Los ingresos fijos se detectan solo en lo que
+cuenta para la cifra (con Saldo, las cuentas que suman): un cobro en una cuenta excluida no se proyecta en ese saldo.
+En «Ver proyectado», un fijo de una vez al mes se dibuja en su día (`dayPlacedFlows`), no repartido; el cierre del mes no
+cambia. Los umbrales viven en `FlujoProyeccionInteligente.Umbrales`; lo fijan `YalaTests/FlujoProyeccionInteligente/`
+(un caso por cada hallazgo de su review adversarial) y la paridad con Panel, widget y Tendencias. Las líneas con método
+de promedio no quitan aislados (card abierta).
 
 ## Los tests que lo fijan
 

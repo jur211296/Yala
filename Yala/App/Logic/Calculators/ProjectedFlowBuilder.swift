@@ -3,8 +3,10 @@
 //  Yala
 //
 //  Reúne lo que alimenta cada día de «Ver proyectado»: pagos planificados en su día (los vencidos sin registrar,
-//  mañana), movimientos ya fechados por delante, y lo no planificado —del plan de flujo de caja o del ritmo de los
-//  últimos meses—. La aritmética vive en `ProjectedFlowCalculator`; aquí, solo de dónde sale cada importe.
+//  mañana), movimientos ya fechados por delante, y lo no planificado, del motor del mes del flujo de caja
+//  (`FlujoMotorMes`): con plan, lo que les falta a sus líneas; sin plan o con filtros, «otros» con los fijos detectados en
+//  tus registros y, en gastos, lo variable por la mediana de 6 meses sin aislados (`FlujoProyeccionInteligente`).
+//  La aritmética vive en `ProjectedFlowCalculator`; aquí, solo de dónde sale cada importe.
 //
 //  Lo usan Tendencias (`StatisticsViewModel`), el Panel (`PanelViewModel`) y la foto de los widgets
 //  (`WidgetDataCache`).
@@ -99,10 +101,10 @@ enum ProjectedFlowBuilder {
         /// Todos los movimientos: con ellos se sabe qué ocurrencias de un pago ya se pagaron y se calcula el plan.
         let allTransactions: [TransactionItem]
         /// Los movimientos que cuentan para esta gráfica (filtros de sesión y cuentas elegibles, sin recorte de fecha):
-        /// alimentan el ritmo y los movimientos ya fechados por delante.
+        /// lo que cada mes ya tiene, los movimientos ya fechados por delante y, con filtros, la mediana de «otros».
         let countedTransactions: [TransactionItem]
-        /// Hay filtros de sesión: el plan no se sabe repartir por cuenta, categoría o etiqueta, y manda el ritmo
-        /// (respuesta 10A).
+        /// Hay filtros de sesión: el plan no se sabe repartir por cuenta, categoría o etiqueta, y manda el motor sin
+        /// líneas sobre lo filtrado (respuesta 10A; desde S6 del replanteo, la mediana en vez del ritmo).
         let hasSessionFilters: Bool
         let scheduledPayments: [ScheduledPayment]
         let paymentFilter: PaymentFilter
@@ -152,51 +154,36 @@ enum ProjectedFlowBuilder {
         for (day, flow) in futureDated.flows { flows[day, default: DayFlow()] += flow }
         if futureDated.isApproximate { isApproximate = true }
 
-        // 3. Lo no planificado: del plan por lado, si lo hay y no hay filtros; si no, del ritmo.
-        let plan = inputs.hasSessionFilters ? nil : planRemaining(inputs, occurrences: occurrences, context: context)
-        let rhythm = rhythmPerDay(inputs)
-        if rhythm.isApproximate { isApproximate = true }
-        let rhythmFlows = rhythm.perDay.map { rhythmLeftOfEachMonth(inputs, perDay: $0) }
-        // Lo que ninguna línea del plan cubre («Otros» del flujo de caja) sigue al ritmo: sin esto, un plan con pocas
-        // líneas proyectaba menos gasto que no tener plan (card «Mejorar el flujo de caja para que nutra el Flujo
-        // proyectado»).
-        let uncovered: (flows: [Date: DayFlow], isApproximate: Bool)? = plan.flatMap { plan in
-            let isCovered: (TransactionItem) -> Bool = { plan.coverage.covers($0) }
-            let outside = rhythmPerDay(inputs, excluding: isCovered)
-            guard let perDay = outside.perDay else { return outside.isApproximate ? ([:], true) : nil }
-            let left = rhythmLeftOfEachMonth(inputs, perDay: perDay, excluding: isCovered)
-            return (left.flows, outside.isApproximate || left.isApproximate)
-        }
-        if uncovered?.isApproximate == true { isApproximate = true }
-
+        // 3. Lo no planificado, del motor del mes del flujo de caja (`FlujoMotorMes`). Con plan y sin filtros, lo que les
+        // falta a las líneas y, en gastos, «otros» por la mediana de 6 meses (S1 del replanteo, 18-nov-2026). Sin plan, o
+        // con filtros que el plan no sabe repartir, el mismo motor sin líneas: «otros» por la mediana (S6). En los dos,
+        // los ingresos sin línea no se proyectan (P6). Hasta S6, sin plan seguía el ritmo de los últimos 90 días, por
+        // día y por lado: el sueldo se proyectaba aunque no fuera a llegar y un gasto puntual se repartía en el mes.
         var incomeSource: ProjectedFlowCalculator.Source = .scheduledOnly
         var expenseSource: ProjectedFlowCalculator.Source = .scheduledOnly
-        var unplanned: [Date: DayFlow] = [:]
-        if let plan {
-            if plan.isApproximate { isApproximate = true }
-            let spread = ProjectedFlowCalculator.spread(
-                remainingByMonth: plan.remainingByMonth, over: inputs.days, today: inputs.today, calendar: inputs.calendar
-            )
-            for day in inputs.days {
-                let fromPlan = spread[day] ?? DayFlow()
-                var flow = DayFlow()
-                let outside = uncovered?.flows[day] ?? DayFlow()
-                let fromRhythm = rhythmFlows?.flows[day] ?? DayFlow()
-                flow.income = plan.hasIncomeLines ? fromPlan.income + outside.income : fromRhythm.income
-                flow.expense = plan.hasExpenseLines ? fromPlan.expense + outside.expense : fromRhythm.expense
-                unplanned[day] = flow
-            }
-            incomeSource = plan.hasIncomeLines ? .plan : (rhythm.perDay == nil ? .scheduledOnly : .rhythm)
-            expenseSource = plan.hasExpenseLines ? .plan : (rhythm.perDay == nil ? .scheduledOnly : .rhythm)
-            // Lo que el mes ya tiene solo marca «≈» si el ritmo entero se pinta en algún lado.
-            if (!plan.hasIncomeLines || !plan.hasExpenseLines), rhythmFlows?.isApproximate == true { isApproximate = true }
-        } else if let rhythmFlows {
-            if rhythmFlows.isApproximate { isApproximate = true }
-            for day in inputs.days { unplanned[day] = rhythmFlows.flows[day] ?? DayFlow() }
-            incomeSource = .rhythm
-            expenseSource = .rhythm
+        var remaining: PlanRemaining?
+        if !inputs.hasSessionFilters, let plan = planRemaining(inputs, occurrences: occurrences, context: context) {
+            remaining = plan
+            incomeSource = .plan
+            expenseSource = .plan
+        } else if let others = othersRemaining(inputs, occurrences: occurrences) {
+            remaining = others
+            // El gasto estimado se sigue nombrando «tu ritmo de gasto»: la mediana es lo que gastas en un mes normal. Los
+            // ingresos fijos detectados no tienen rótulo propio todavía (card aparte): el de ingresos no cambia.
+            if others.hasExpenseLines { expenseSource = .rhythm }
         }
-        for (day, flow) in unplanned { flows[day, default: DayFlow()] += flow }
+        if let remaining {
+            if remaining.isApproximate { isApproximate = true }
+            let spread = ProjectedFlowCalculator.spread(
+                remainingByMonth: remaining.remainingByMonth, over: inputs.days, today: inputs.today,
+                calendar: inputs.calendar
+            )
+            for (day, flow) in spread { flows[day, default: DayFlow()] += flow }
+            // Los fijos detectados que llegan una vez al mes, en su día (o mañana si ya pasó sin llegar).
+            for (day, flow) in dayPlacedFlows(remaining.byDayOfMonth, inputs: inputs) {
+                flows[day, default: DayFlow()] += flow
+            }
+        }
 
         return Result(flows: flows, incomeSource: incomeSource, expenseSource: expenseSource, isApproximate: isApproximate)
     }
@@ -302,141 +289,109 @@ enum ProjectedFlowBuilder {
         return (flows, approximate)
     }
 
-    // MARK: - Ritmo
+    // MARK: - Fijos en su día
 
-    /// `excluding`: los movimientos que no entran (los que ya cubre una línea del plan); entran igual en el cálculo de
-    /// cuántos días de historia hay, que es de la persona y no de una categoría.
-    static func rhythmPerDay(
-        _ inputs: Inputs,
-        excluding isExcluded: (TransactionItem) -> Bool = { _ in false }
-    ) -> (perDay: DayFlow?, isApproximate: Bool) {
+    /// Lo que les falta a los fijos de un día (mes → día del mes → lo que falta) puesto en su día: el día típico, o el
+    /// último del mes si el mes es más corto; si ya pasó, mañana (como un pago vencido). Solo los días pedidos: el cierre
+    /// del mes no cambia, solo en qué día se dibuja.
+    static func dayPlacedFlows(_ byDay: [Date: [Int: DayFlow]], inputs: Inputs) -> [Date: DayFlow] {
         let calendar = inputs.calendar
-        let todayStart = calendar.startOfDay(for: inputs.today)
-        guard let windowStart = calendar.date(
-            byAdding: .day, value: -ProjectedFlowCalculator.rhythmWindowDays, to: todayStart
-        ) else { return (nil, false) }
-
-        var income: Double = 0
-        var expense: Double = 0
-        var firstDate: Date?
-        var approximate = false
-        for tx in inputs.countedTransactions where tx.date < todayStart {
-            guard tx.balanceAdjustmentType == nil, !inputs.adjustment.isSuppressed(tx) else { continue }
-            if firstDate.map({ tx.date < $0 }) ?? true { firstDate = tx.date }
-            // Lo enlazado a un pago planificado ya se proyecta en su día: contarlo también en el ritmo lo duplicaría.
-            guard tx.date >= windowStart, tx.scheduledPaymentID == nil, !isExcluded(tx) else { continue }
-            let resolved = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment, converter: inputs.converter
-            )
-            if resolved.approximateMagnitude > 0 { approximate = true }
-            if TransactionClassificationLogic.isIncome(tx) {
-                income += resolved.value
-            } else {
-                expense -= resolved.value
+        let pedidos = Set(inputs.days)
+        var result: [Date: DayFlow] = [:]
+        for (mes, porDia) in byDay {
+            guard let diasDelMes = calendar.range(of: .day, in: .month, for: mes)?.count else { continue }
+            for (dia, flow) in porDia {
+                guard let fecha = calendar.date(byAdding: .day, value: min(dia, diasDelMes) - 1, to: mes),
+                      let dibujo = ProjectedFlowCalculator.drawingDay(
+                        forOccurrence: fecha, today: inputs.today, calendar: calendar),
+                      calendar.isDate(dibujo, equalTo: mes, toGranularity: .month),
+                      pedidos.contains(dibujo) else { continue }
+                result[dibujo, default: DayFlow()] += flow
             }
         }
-        guard let firstDate else { return (nil, false) }
-        let historyStart = max(windowStart, calendar.startOfDay(for: firstDate))
-        let historyDays = calendar.dateComponents([.day], from: historyStart, to: todayStart).day ?? 0
-        guard let perDay = ProjectedFlowCalculator.rhythm(
-            incomeTotal: income, expenseTotal: expense, historyDays: historyDays
-        ) else { return (nil, false) }
-        return (perDay, approximate)
+        return result
     }
 
-    /// Lo que el ritmo proyecta en cada día: por mes, lo previsto (ritmo × días del mes) menos lo que ese mes ya tiene
-    /// —real o fechado por delante, con el mismo filtro que el ritmo—, repartido entre sus días por delante, como lo
-    /// que falta de una línea del plan (`ProjectedFlowCalculator.spread`). Por lado y nunca negativo: un mes que ya pasó
-    /// de lo previsto no proyecta nada más.
-    ///
-    /// Decisión de Jürgen del 2026-11-10 (lote 02 de mejoras necesarias de 2.3): antes cada día sumaba el ritmo a
-    /// secas, y el sueldo cobrado el día 1 se volvía a contar en los días que quedaban; «Proyectado al cierre» bajaba
-    /// de S/ 76,613 a S/ 69,390 solo con crear el plan sugerido. Un mes que aún no empezó y no tiene nada suyo recibe el
-    /// ritmo entero cada día, como antes.
-    static func rhythmLeftOfEachMonth(
-        _ inputs: Inputs,
-        perDay: DayFlow,
-        excluding isExcluded: (TransactionItem) -> Bool = { _ in false }
-    ) -> (flows: [Date: DayFlow], isApproximate: Bool) {
+    /// De lo que falta por día de cada lado a la forma de `dayPlacedFlows`.
+    static func byDayOfMonth(income: [Int: Double], expense: [Int: Double]) -> [Int: DayFlow] {
+        var result: [Int: DayFlow] = [:]
+        for (dia, importe) in income { result[dia, default: DayFlow()].income += importe }
+        for (dia, importe) in expense { result[dia, default: DayFlow()].expense += importe }
+        return result
+    }
+
+    // MARK: - Sin plan: «otros» por la mediana
+
+    /// Lo que falta cada mes sin plan, o con filtros de sesión: el motor del mes sin líneas, así que todo es «otros».
+    /// Con lo detectado en tus registros (`FlujoProyeccionInteligente`, 19-nov-2026): los fijos de los dos lados, con su
+    /// monto y su día, y en gastos lo variable por la mediana de 6 meses sin fijos ni aislados, menos lo que el mes ya
+    /// tiene (sin lo enlazado a un pago, que va en su día). Los ingresos que varían no se proyectan. Sin filtros, sale
+    /// de todos los movimientos, como con plan, para que Panel, Tendencias y el widget den la misma cifra; con filtros,
+    /// de los filtrados («Solo Comida» proyecta lo de comida). `nil` si no hay nada que estimar (sin un mes completo de
+    /// historia, o sin gasto variable ni fijos).
+    static func othersRemaining(_ inputs: Inputs, occurrences: [Occurrence]) -> PlanRemaining? {
         let calendar = inputs.calendar
-        var monthStarts = Set<Date>()
-        for day in inputs.days {
-            if let start = calendar.dateInterval(of: .month, for: day)?.start { monthStarts.insert(start) }
+        guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today),
+              let lastDay = inputs.days.last,
+              let lastMonth = calendar.dateInterval(of: .month, for: lastDay)?.start else { return nil }
+        var meses: [Date] = []
+        var cursor = currentMonth.start
+        while cursor <= lastMonth {
+            meses.append(cursor)
+            guard let next = calendar.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
         }
-        var already: [Date: DayFlow] = [:]
-        var approximate = false
-        for tx in inputs.countedTransactions {
-            guard let month = calendar.dateInterval(of: .month, for: tx.date)?.start, monthStarts.contains(month) else {
-                continue
-            }
-            // El mismo filtro que el ritmo: lo enlazado a un pago planificado ya va en su día y no es «lo no planificado».
-            guard tx.balanceAdjustmentType == nil, !inputs.adjustment.isSuppressed(tx),
-                  tx.scheduledPaymentID == nil, !isExcluded(tx) else { continue }
-            let resolved = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment, converter: inputs.converter
-            )
-            if resolved.approximateMagnitude > 0 { approximate = true }
-            if TransactionClassificationLogic.isIncome(tx) {
-                already[month, default: DayFlow()].income += resolved.value
-            } else {
-                already[month, default: DayFlow()].expense -= resolved.value
-            }
-        }
-        var remainingByMonth: [Date: DayFlow] = [:]
-        for month in monthStarts {
-            let daysInMonth = Double(calendar.range(of: .day, in: .month, for: month)?.count ?? 0)
-            let has = already[month] ?? DayFlow()
-            remainingByMonth[month] = DayFlow(
-                income: max(perDay.income * daysInMonth - has.income, 0),
-                expense: max(perDay.expense * daysInMonth - has.expense, 0)
-            )
-        }
-        let flows = ProjectedFlowCalculator.spread(
-            remainingByMonth: remainingByMonth, over: inputs.days, today: inputs.today, calendar: calendar
+        let startOfTomorrow = LiveBalanceCalculator.TodayCutoff(asOf: inputs.today, calendar: calendar).startOfTomorrow
+        let contados = FlujoMotorMesEntrada.movimientos(
+            inputs.countedTransactions, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment,
+            converter: inputs.converter, startOfTomorrow: startOfTomorrow, calendar: calendar
         )
-        return (flows, approximate)
+        let historia = inputs.hasSessionFilters ? contados.movimientos : FlujoMotorMesEntrada.movimientos(
+            inputs.allTransactions, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment,
+            converter: inputs.converter, startOfTomorrow: startOfTomorrow, calendar: calendar
+        ).movimientos
+        let entrada = FlujoMotorMes.Entrada(
+            meses: meses,
+            mesEnCurso: currentMonth.start,
+            quedanDiasEnElMes: startOfTomorrow < currentMonth.end,
+            lineas: [],
+            limite: { _, _ in 0 },
+            movimientos: contados.movimientos,
+            pendientes: FlujoMotorMesEntrada.pendientes(occurrences, calendar: calendar),
+            calendar: calendar,
+            historia: historia
+        )
+        let deteccion = FlujoMotorMes.detectar(entrada)
+        let estimaGastos = deteccion.gastos.variable > 0 || !deteccion.gastos.fijos.isEmpty
+        let estimaIngresos = !deteccion.ingresos.fijos.isEmpty
+        guard estimaGastos || estimaIngresos else { return nil }
+        var remainingByMonth: [Date: DayFlow] = [:]
+        var byDay: [Date: [Int: DayFlow]] = [:]
+        for mes in FlujoMotorMes.calcular(entrada) where !mes.esPasado {
+            remainingByMonth[mes.inicio] = DayFlow(
+                income: mes.ingresos.faltaRepartible, expense: mes.gastos.faltaRepartible
+            )
+            byDay[mes.inicio] = byDayOfMonth(income: mes.ingresos.faltaPorDia, expense: mes.gastos.faltaPorDia)
+        }
+        return PlanRemaining(
+            remainingByMonth: remainingByMonth,
+            hasIncomeLines: estimaIngresos,
+            hasExpenseLines: estimaGastos,
+            isApproximate: contados.aproximado,
+            byDayOfMonth: byDay
+        )
     }
 
     // MARK: - Plan de flujo de caja
 
     struct PlanRemaining {
         let remainingByMonth: [Date: DayFlow]
+        /// Con plan: tiene líneas de ese lado. Sin plan: ese lado tiene algo estimado (fijos o, en gastos, lo variable).
         let hasIncomeLines: Bool
         let hasExpenseLines: Bool
         let isApproximate: Bool
-        let coverage: PlanCoverage
-    }
-
-    /// Qué movimientos cubre ya una línea activa del plan, con la regla de «Otros» del flujo de caja
-    /// (`CashFlowProjectionCalculator.calculateUncategorizedTotal`): una línea con subcategoría cubre esa subcategoría;
-    /// una sin ella, la categoría entera. Por lado: una línea de gasto no cubre un ingreso de su misma categoría. Lo sin
-    /// categoría no lo cubre ninguna. Una línea «pago planificado» no cubre nada: solo aporta sus pagos, que van en su
-    /// día, y lo demás de su categoría (otra suscripción sin pago) quedaría sin contar; lo enlazado al pago ya sale del
-    /// ritmo por su `scheduledPaymentID` (lo encontró la review del 2026-11-06).
-    struct PlanCoverage {
-        var incomeCategories: Set<PersistentIdentifier> = []
-        var incomeSubcategories: Set<PersistentIdentifier> = []
-        var expenseCategories: Set<PersistentIdentifier> = []
-        var expenseSubcategories: Set<PersistentIdentifier> = []
-
-        init(lines: [CashFlowLine]) {
-            for line in lines where line.isEnabled && line.method != .scheduled {
-                if let subID = line.subcategory?.persistentModelID {
-                    if line.isIncome { incomeSubcategories.insert(subID) } else { expenseSubcategories.insert(subID) }
-                } else if let catID = line.category?.persistentModelID {
-                    if line.isIncome { incomeCategories.insert(catID) } else { expenseCategories.insert(catID) }
-                }
-            }
-        }
-
-        func covers(_ tx: TransactionItem) -> Bool {
-            guard let categoryID = tx.category?.persistentModelID else { return false }
-            let isIncome = TransactionClassificationLogic.isIncome(tx)
-            let categories = isIncome ? incomeCategories : expenseCategories
-            if categories.contains(categoryID) { return true }
-            guard let subID = tx.subcategory?.persistentModelID else { return false }
-            return (isIncome ? incomeSubcategories : expenseSubcategories).contains(subID)
-        }
+        /// Lo que les falta a los fijos de un día, por mes (inicio) y día del mes: va en su día, no repartido.
+        var byDayOfMonth: [Date: [Int: DayFlow]] = [:]
     }
 
     static func planRemaining(_ inputs: Inputs, occurrences: [Occurrence], context: ModelContext?) -> PlanRemaining? {
@@ -456,7 +411,8 @@ enum ProjectedFlowBuilder {
         let lines = (plan.lines ?? []).filter(\.isEnabled)
         let hasIncomeLines = lines.contains(where: \.isIncome)
         let hasExpenseLines = lines.contains { !$0.isIncome }
-        guard hasIncomeLines || hasExpenseLines else { return nil }
+        // Un plan sin líneas también manda: el flujo de caja lo proyecta con el motor del mes («otros» por la mediana),
+        // y «Al 30» tiene que ser la misma cifra en las dos pantallas.
 
         let calendar = inputs.calendar
         guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today)?.start,
@@ -464,59 +420,41 @@ enum ProjectedFlowBuilder {
               let lastMonth = calendar.dateInterval(of: .month, for: lastDay)?.start else { return nil }
         let monthsAhead = max(calendar.dateComponents([.month], from: currentMonth, to: lastMonth).month ?? 0, 0)
 
+        // Lo real son los movimientos que cuentan para esta cifra (con Saldo, los de las cuentas del saldo), como en el
+        // flujo de caja; los pagos pendientes, los mismos que se pintan en su día.
         let projection = CashFlowProjectionCalculator.calculate(
             plan: plan,
             lines: lines,
-            transactions: inputs.allTransactions,
+            transactions: inputs.countedTransactions,
             allExpenseCategories: [],
             scheduledPayments: inputs.scheduledPayments,
             monthsBack: 0,
             monthsAhead: monthsAhead,
             currencyCode: inputs.currencyCode,
             adjustment: inputs.adjustment,
-            converter: inputs.converter
+            converter: inputs.converter,
+            occurrences: occurrences,
+            historyTransactions: inputs.allTransactions,
+            includesSubcategoryBreakdown: false,
+            now: inputs.today,
+            calendar: calendar
         )
-        let linesByID = Dictionary(lines.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-
         var remainingByMonth: [Date: DayFlow] = [:]
-        var approximate = false
-        for month in projection.months {
-            guard let monthStart = calendar.dateInterval(of: .month, for: month.date)?.start,
-                  monthStart >= currentMonth else { continue }
-            let monthOccurrences = occurrences.filter { $0.monthStart == monthStart }
-            var remaining = DayFlow()
-            for result in month.incomeLines + month.expenseLines {
-                guard let line = linesByID[result.lineID] else { continue }
-                // Una línea de método «pago planificado» ya está entera en sus pagos, que van en su día.
-                guard line.method != .scheduled else { continue }
-                if result.isPlannedApproximate { approximate = true }
-                let pending = monthOccurrences
-                    .filter { occurrence in covers(line, occurrence) }
-                    .reduce(0.0) { $0 + (line.isIncome ? $1.flow.income : $1.flow.expense) }
-                let left = ProjectedFlowCalculator.lineRemaining(
-                    planned: result.plannedAmount, real: result.realAmount ?? 0, pendingScheduled: pending
-                )
-                if line.isIncome { remaining.income += left } else { remaining.expense += left }
-            }
-            remainingByMonth[monthStart] = remaining
+        var byDay: [Date: [Int: DayFlow]] = [:]
+        for month in projection.months where !month.isPast {
+            guard let monthStart = calendar.dateInterval(of: .month, for: month.date)?.start else { continue }
+            remainingByMonth[monthStart] = DayFlow(
+                income: month.spreadableIncomeLeft, expense: month.spreadableExpenseLeft
+            )
+            byDay[monthStart] = byDayOfMonth(income: month.dayPlacedIncomeLeft, expense: month.dayPlacedExpenseLeft)
         }
+        let approximate = projection.isApproximate
         return PlanRemaining(
             remainingByMonth: remainingByMonth,
             hasIncomeLines: hasIncomeLines,
             hasExpenseLines: hasExpenseLines,
             isApproximate: approximate,
-            coverage: PlanCoverage(lines: lines)
+            byDayOfMonth: byDay
         )
-    }
-
-    /// ¿El pago cae en la línea? Por subcategoría si la línea tiene una; si no, por categoría.
-    private static func covers(_ line: CashFlowLine, _ occurrence: Occurrence) -> Bool {
-        if let subcategoryID = line.subcategory?.persistentModelID {
-            return occurrence.subcategoryID == subcategoryID
-        }
-        if let categoryID = line.category?.persistentModelID {
-            return occurrence.categoryID == categoryID
-        }
-        return false
     }
 }

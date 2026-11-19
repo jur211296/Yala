@@ -62,6 +62,9 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: incomeCollapsed)"),
         ("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)"),
+        // S2 del replanteo del flujo de caja (18-nov-2026): plegar una categoría.
+        ("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
+         ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: collapsedGroups)"),
         ("Yala/App/Views/Reports/CashFlow/CashFlowMonthStrip.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: selectedMonthKey)"),
         // Card pjum (pasada de fluidez, 2026-10-31).

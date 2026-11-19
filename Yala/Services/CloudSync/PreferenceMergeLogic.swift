@@ -65,10 +65,10 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **39**
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **40**
 /// (+1 el 2026-11-05: `timeZoneIdentifier`, la zona del teléfono para el conector de Claude; +1 el 2026-11-16:
 /// `panelMoneyAccountOverrides`, qué cuentas suman en «Tu dinero hoy»; +1 el 2026-11-16: `accountCardDesigns`, el diseño
-/// de la tarjeta de cada cuenta)
+/// de la tarjeta de cada cuenta; +1 el 2026-11-18: `userProfileStyle`, la personalización del perfil)
 /// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; C1 SACÓ las dos del
 /// consent de Grupos — ver el bloque de abajo; y el barrido del 2026-09-13 se llevó las dos del modelo
 /// viejo de sesiones, que describían el dispositivo y no a la persona).
@@ -107,6 +107,10 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     // El diseño de la tarjeta de cada cuenta del carrusel «Tus finanzas» (2026-11-16): JSON compacto por `shortcutID` con
     // solo las cuentas cambiadas (`CardDesignLogic`). "" es válido: todas con su diseño por defecto.
     case accountCardDesigns
+    // La personalización del perfil (2026-11-18): avatar con símbolo, emoji o iniciales, su color y el fondo de la tarjeta,
+    // JSON corto (`ProfileStyleLogic`). El símbolo sigue en `userProfileIcon`. "" es válido: el perfil de siempre, y volver
+    // a él tiene que viajar.
+    case userProfileStyle
     // Bools por presencia (10)
     case budgetAlertsEnabled
     case expensesOnlyMode
@@ -149,7 +153,8 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
         case .panelTendenciasOrder, .panelTendenciasHidden,
              .panelDistribucionOrder, .panelDistribucionHidden,
              .panelPlanificacionOrder, .panelPlanificacionHidden,
-             .panelSectionsHidden, .panelSectionsOrder, .panelMoneyAccountOverrides, .accountCardDesigns:
+             .panelSectionsHidden, .panelSectionsOrder, .panelMoneyAccountOverrides, .accountCardDesigns,
+             .userProfileStyle:
             return .panelPresenceEmptyValid
         case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
              .panelAccountsCollapsed, .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,

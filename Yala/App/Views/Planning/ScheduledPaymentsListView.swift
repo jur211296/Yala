@@ -229,15 +229,14 @@ struct ScheduledPaymentsListView: View {
         .accessibilityHidden(true)
     }
 
-    /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
-    /// dos formas (`AnyLayout`).
-    @ViewBuilder
+    /// El logo del comercio delante del nombre, con el criterio común de Pagos planificados (`PagoLogoComercio`). Sin
+    /// logo no pinta nada: el icono de la línea de tiempo es el círculo del día.
     private func timelineBrandBadge(_ summary: ScheduledPaymentSummary) -> some View {
-        if let logo = summary.payment.paymentLogo {
-            SubscriptionBrandBadge(logo: logo, diameter: DS.Icon.badgeSmall, isDecorative: true)
-        }
+        PagoLogoDistintivo(logo: PagoLogoComercio.logo(for: summary.payment), diameter: DS.Icon.badgeSmall)
     }
 
+    /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
+    /// dos formas (`AnyLayout`).
     private func statusLineLayout<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
         let layout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
@@ -544,7 +543,7 @@ struct ScheduledPaymentsListView: View {
 
                 if hasPayments {
                     // Con algún logo caben dos marcas por celda en vez de tres puntos (card 9nn7, 2.3).
-                    let markLimit = summaries.contains { $0.payment.paymentLogo != nil } ? 2 : 3
+                    let markLimit = summaries.contains { PagoLogoComercio.logo(for: $0.payment) != nil } ? 2 : 3
                     HStack(spacing: 3) {
                         ForEach(Array(summaries.prefix(markLimit).enumerated()), id: \.offset) { _, summary in
                             calendarMark(summary, isSelected: isSelected)
@@ -587,7 +586,7 @@ struct ScheduledPaymentsListView: View {
         let stateColor = isSelected
             ? theme.onAccent
             : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent)
-        if let logo = summary.payment.paymentLogo {
+        if let logo = PagoLogoComercio.logo(for: summary.payment) {
             PaymentLogoCalendarMark(logo: logo, stateColor: stateColor)
         } else {
             Circle()

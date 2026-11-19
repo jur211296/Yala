@@ -1,0 +1,21 @@
+/*
+  FlujoProyeccionInteligente.strings
+  Yala
+
+  La hoja «Otros» del flujo de caja: qué se proyectó como fijo y qué se dejó fuera por aislado (decisión de Jürgen
+  del 19-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoProyeccion`).
+*/
+
+"flujoProyeccion.fixed.title" = "Fixo, todo mês";
+"flujoProyeccion.fixed.desc.income" = "Receitas que se repetem nos seus registros com um valor parecido. Elas entram na projeção mesmo sem estar no seu plano.";
+"flujoProyeccion.fixed.desc.expense" = "Gastos que se repetem nos seus registros com um valor parecido. Eles entram na projeção mesmo sem estar no seu plano.";
+"flujoProyeccion.fixed.day" = "%1$@ · dia %2$d";
+"flujoProyeccion.fixed.perMonth" = "%@ por mês";
+"flujoProyeccion.fixed.seen" = "Em %1$d de %2$d meses";
+"flujoProyeccion.fixed.done.income" = "Já entrou este mês";
+"flujoProyeccion.fixed.done.expense" = "Já foi pago este mês";
+"flujoProyeccion.isolated.title" = "Fora da projeção";
+"flujoProyeccion.isolated.desc" = "Valores altos que não se repetem. Contam no mês em que aconteceram, mas não nos próximos meses.";
+"flujoProyeccion.variable.expense" = "O restante dos seus gastos é projetado pelo que você gasta em um mês normal: %@.";
+"flujoProyeccion.variable.income" = "Receitas que mudam de um mês para outro não entram na projeção.";
+"flujoProyeccion.shortHistory" = "Com menos de %d meses de registros, ainda não dá para separar o fixo do pontual. Por enquanto, as receitas só entram pelos pagamentos planejados, e os gastos pelo que você gasta em um mês normal.";
