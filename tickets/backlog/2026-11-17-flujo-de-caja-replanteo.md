@@ -72,7 +72,7 @@ En el artifact, con selector. Recomendado entre corchetes.
 |---|---|---|---|
 | S1 ✅ | Motor del mes (sin UI) — **hecha el 18-nov** (ver «S1 hecha» abajo) | Una cuenta por mes: real con signo y sin categoría + lo que falta por línea + «otros» por mediana. Mes en curso desde el saldo de hoy; pasados = real; futuros encadenan desde el cierre. Sin doble conteo de fechados, promedio sin el mes a medias. Paridad con «Al 30» del Panel. Review adversarial. | Alto (1 sesión larga) |
 | S2 | Detalle del mes y cápsulas | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
-| S3 | Detalle de línea | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
+| S3 ✅ | Detalle de línea — **hecha el 18-nov** (ver «S3 hecha» abajo) | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
 | S4 ✅ | Cambiar límite — **hecha el 18-nov** (ver «S4 hecha» abajo) | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
 | S5 | Crear plan | Sin «¿Con cuánto empiezas?», líneas por categoría por defecto, límites fijos sembrados con el promedio. | Bajo-medio |
 | S6 | Consumidores | Panel «Ver proyectado», widget de Saldo y Tendencias con la misma pieza de S1 (otros por mediana, sin doble conteo). | Medio |
@@ -148,3 +148,24 @@ enseña «Así quedan» mes a mes antes de guardar. Decisiones del arranque: el 
 - **Retirado:** `CashFlowLineConfigSheet`, `showLineConfig` y `selectedLine` del ViewModel.
 - **Pendiente para S5:** el método de la línea sigue existiendo («Cómo se calcula · Cambiar»); P4 (límite fijo sembrado
   con el promedio) lo resuelve el crear plan.
+
+## S3 hecha (18-nov-2026)
+
+El detalle de una línea pone arriba «Límite de noviembre · S/ X · Cambiar» (abre la hoja de S4) con «‹ mes ›» para
+recorrer el plan; debajo, lo que llevas, lo que falta y, en gastos del mes en curso, si sigue al ritmo («Al ritmo de este
+mes llegarías a ~S/ X», en rosa si pasa del límite; excedida: «Te pasaste por X. No se proyecta más.»). Luego «Últimos 6
+meses» (barra de lo real y raya del límite de cada mes) y TODOS los registros del mes por día, con su total y «Ver en
+Registros» (filtra la subcategoría o la categoría y el período del mes). Una línea por subcategoría dice su categoría
+encima del nombre y avisa de lo anotado en la madre sin subcategoría. Lógica pura en
+`Yala/App/Views/Reports/CashFlow/DetalleLinea/FlujoDetalleLineaLogica.swift`; decisiones en el «Paso 0» del encargo
+`2026-11-18-flujo-detalle-de-linea` (variante A de tres).
+
+- Los registros salen del reparto del motor (un dueño por movimiento) con el alcance de cuentas de la cifra: la lista
+  suma lo real de la línea. Antes se filtraba por categoría a mano y una línea por categoría contaba lo de sus
+  subcategorías con línea propia.
+- Los seis meses salen del mismo reparto y de `resolvePlanned`, así que no dependen de los 3 meses atrás del plan.
+- Fuera: la gráfica diaria (`CashFlowCellMiniChart`, sumaba magnitudes sin convertir), la tira de ±2 meses, «Últimos
+  registros» (5) y «Ajustar monto» al pie.
+
+Pendiente para S5 y siguientes: crear líneas siempre por subcategoría (sigue igual que tras S2).
+
