@@ -79,6 +79,13 @@ final class CashFlowPlanViewModel {
         projection?.months.first { $0.monthKey == selectedMonthKey }
     }
 
+    /// Un cambio del plan hecho fuera de este fichero (las extensiones de `CashFlow/`: «Cálculo del monto», «Considerar
+    /// a futuro», agregar una subcategoría): el flujo de caja recalcula con `planRevision`, y sin esto la tarjeta del
+    /// detalle de una línea o el total de una hoja abierta seguían con la cifra de antes.
+    func marcarPlanCambiado() {
+        planRevision += 1
+    }
+
     func line(for lineID: UUID) -> CashFlowLine? {
         plan?.lines?.first { $0.id == lineID }
     }
@@ -623,6 +630,9 @@ final class CashFlowPlanViewModel {
             return
         }
 
+        // Límites móviles (19-nov-2026): las líneas que el P4 guardó como monto fijo vuelven a su promedio, una vez.
+        migrarLimitesSembradosSiHaceFalta(transactions: transactions, currencyCode: currencyCode)
+
         let lines = (plan.lines ?? []).filter(\.isEnabled)
 
         // El horizonte entero es gratis a propósito (decisión 2 de la revisión 2.3, 2026-11-09): Free lo tiene desde 2.1,
@@ -733,6 +743,8 @@ final class CashFlowPlanViewModel {
 
         // .cascade deleteRule handles lines and overrides automatically
         ctx.delete(plan)
+        // Lo apagado en «Considerar a futuro» era de este plan: el siguiente empieza con todo encendido (19-nov-2026).
+        FlujoFijosAFuturo.olvidarTodo()
 
         do {
             try ctx.save()

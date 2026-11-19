@@ -86,7 +86,11 @@ struct FlujoProyeccionInteligenteTextosTests {
         #expect(hoja.contains("L10n.FlujoProyeccion.aisladosTitulo"))
         #expect(hoja.contains("\"cashflow_others_fixed_section\""))
         #expect(hoja.contains("\"cashflow_others_isolated_section\""))
-        // Un solo botón por fila de categoría, como antes: las secciones nuevas solo explican.
-        #expect(hoja.components(separatedBy: "Button {").count - 1 == 1)
+        // Desde el 19-nov-2026 (subcategorías y «Considerar a futuro»): la lista por subcategoría con su +, el plegado
+        // de cada categoría y el interruptor; el + agrega la subcategoría, no la categoría entera.
+        #expect(hoja.contains("subcategoryGroups(other)"))
+        #expect(hoja.contains("viewModel.promoteSubcategory(sub, isIncome: isIncome)"))
+        #expect(hoja.contains("\"cashflow_others_consider\""))
+        #expect(!hoja.contains("promoteCategory(named:"), "volvió el + que agregaba la categoría entera")
     }
 }

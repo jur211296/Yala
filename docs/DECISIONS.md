@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (126 entradas)
+## Índice (127 entradas)
 
-> **No hace falta leer este fichero entero** — son 323 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 325 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-19` [Flujo de caja: aislados en las líneas por promedio, límites móviles y solo fijos en los meses que vi](#2026-11-19-flujo-de-caja-aislados-en-las-lneas-por-promedio-lmites-mviles-y-solo-fijos-en-los-meses-que-vienen)
 - `2026-11-19` [Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)](#2026-11-19-flujo-de-caja-proyeccin-inteligente-con-ingresos-recurrentes-y-sin-outliers-corrige-p6)
 - `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
 - `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
@@ -152,6 +153,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-19] Flujo de caja: aislados en las líneas por promedio, límites móviles y solo fijos en los meses que vienen
+**Contexto:** Tres decisiones de Jürgen en el chat del 19-nov (10:10, 10:21 y 10:47, Lima), capturadas por el bot dueño (ADR-082 de casa). La de las 10:21 sustituye a la del 18-nov (09:53) en lo que toca a P4 del replanteo («el límite es un monto fijo, sembrado con tu promedio al crear»); la de las 10:47 sustituye en parte a la de las 06:11 (proyección inteligente, entrada siguiente). Las ejecuta la sesión del encargo `2026-11-19-flujo-aislados-promedio-y-detalle-mes`.
+**Decisión:** (1) Las líneas con Promedio 6 meses o Tendencia (y Promedio 3 meses y Último mes) dejan fuera de su cálculo los gastos aislados; el detalle de línea tiene tooltip en las barras de 6 meses y tocar un mes cambia la lista de registros a ese mes. (2) Los límites de Promedio 6 meses, Promedio 3 meses y Último mes se recalculan cada mes con los meses anteriores a ese mes; solo «Monto fijo» deja un número quieto. (3) En los meses que vienen, fuera de las líneas solo se proyectan ingresos y gastos fijos y asegurados (recurrentes detectados, sin outliers), con criterio conservador; cada uno se ve por subcategoría y se puede dejar de considerar a futuro, con la elección guardada. Nada de proyectar promedios de todo lo no planificado.
+**Razones:** Las da Jürgen: los aislados «arruinan la media»; un límite congelado no sigue al gasto real; «exagerar significa decirle al usuario que está mucho peor que lo que realmente está».
+**Consecuencias:** Cómo se aplicó (aislados a nivel de mes, ventana de los meses futuros, migración de las líneas congeladas por P4, «solo fijos» solo con plan, «Considerar a futuro» como preferencia local) está en el Paso 0 del encargo y en `.claude/rules/ingreso-gasto.md`. Ticket `tickets/done/2026-11-19-flujo-aislados-promedio-y-detalle-mes.md`.
+**Estado:** Activa · sustituye a la del 18-nov (09:53) en P4 y en parte a la del 19-nov (06:11)
 
 ### [2026-11-19] Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)
 **Contexto:** Decisión de Jürgen en el chat del 19-nov (06:11, Lima), capturada por el bot dueño (ADR-082 de casa); sustituye a la del 18-nov (06:26) en lo que toca a P6 del replanteo de Flujo de caja (`tickets/done/2026-11-17-flujo-de-caja-replanteo.md`). La registra la sesión de la subida a TestFlight 2.3 (4); no la ejecuta, porque no es de su encargo.

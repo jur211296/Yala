@@ -159,11 +159,8 @@ struct CashFlowSetupView: View {
             viewModel.suggestedLines = FlujoCrearPlanLogica.porSubcategoria(viewModel.suggestedLines)
         }
         .sheet(item: $editingLine) { line in
-            CashFlowMethodPickerSheet(
-                line: line,
-                currencyCode: currencyCode,
-                viewModel: viewModel
-            )
+            // «Cálculo del monto», rediseñada el 19-nov-2026 (`CalculoMonto/`).
+            FlujoCalculoMontoSheet(origen: .sugerencia(line), currencyCode: currencyCode, viewModel: viewModel)
         }
         .sheet(isPresented: $showIncomeSheet) {
             CashFlowStartingBalanceSheet(
@@ -565,9 +562,9 @@ struct CashFlowSetupView: View {
         .accessibilityIdentifier("cashflow_setup_summary")
     }
 
-    /// P4: el límite es un monto fijo sembrado con el promedio, y se dice antes de crear.
+    /// Límites móviles (19-nov-2026, corrige el P4): cada límite se recalcula cada mes, y se dice antes de crear.
     private var fixedLimitsNote: some View {
-        Text(L10n.FlujoCrearPlan.limitesFijos)
+        Text(L10n.FlujoDetalleLinea.limitesMoviles)
             .font(DS.Typography.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -597,8 +594,8 @@ struct CashFlowSetupView: View {
             icon: "plus.circle.fill",
             isDisabled: viewModel.suggestedLines.filter(\.isSelected).isEmpty
         ) {
-            // P4: lo calculado por promedio se guarda como monto fijo con su cifra.
-            viewModel.suggestedLines = FlujoCrearPlanLogica.conLimiteFijo(viewModel.suggestedLines)
+            // Límites móviles (decisión de Jürgen del 19-nov-2026, corrige el P4): cada línea guarda su método; solo
+            // «Monto fijo» deja un número quieto.
             // P5: el motor parte del saldo real de las cuentas; el campo guarda el de hoy solo como registro.
             viewModel.createPlan(
                 startingBalance: todayBalance.amount,
@@ -606,186 +603,5 @@ struct CashFlowSetupView: View {
                 incomeCategory: CashFlowSetupLogic.typedIncomeCategory(in: categories)
             )
         }
-    }
-}
-
-// MARK: - Method Picker Sheet
-
-/// El selector de cómo se calcula una línea. Lo usa crear el plan (sobre una sugerencia) y, desde L18-7, «Cómo se calcula ·
-/// Cambiar» del detalle de una línea ya creada (`onApply`), en lugar de la hoja de configuración que se retiró en marzo.
-struct CashFlowMethodPickerSheet: View {
-    let line: SuggestedLine
-    let currencyCode: String
-    @Bindable var viewModel: CashFlowPlanViewModel
-    /// Con una línea ya creada: qué hacer con lo elegido. `nil` = una sugerencia del asistente.
-    var onApply: ((EstimationMethod, Double?) -> Void)? = nil
-
-    @State private var selectedMethod: EstimationMethod
-    @State private var manualAmountText: String = ""
-    @State private var previewAmount: Double
-    @State private var selectedDetent: PresentationDetent = .medium
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.yalaTheme) private var theme
-    @Environment(AppPreferences.self) private var appPreferences
-
-    init(
-        line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel,
-        onApply: ((EstimationMethod, Double?) -> Void)? = nil
-    ) {
-        self.line = line
-        self.currencyCode = currencyCode
-        self.viewModel = viewModel
-        self.onApply = onApply
-        self._selectedMethod = State(initialValue: line.estimationMethod)
-        self._previewAmount = State(initialValue: line.suggestedAmount)
-        if line.estimationMethod == .manual {
-            // Con sus decimales: la hoja abre también líneas ya creadas, y redondear aquí cambiaba el monto al guardar.
-            self._manualAmountText = State(initialValue: CashFlowStartingBalanceSheet.editableText(line.suggestedAmount))
-        }
-    }
-
-    private var isLargeDetent: Bool { selectedDetent == .large }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xl) {
-                        // Live amount preview
-                        VStack(spacing: DS.Spacing.xs) {
-                            Text(line.name)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.secondary)
-                            AmountText(
-                                value: previewAmount,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.title.weight(.bold).monospacedDigit()
-                            )
-                                .contentTransition(.numericText())
-                                .animation(.default, value: previewAmount)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, DS.Spacing.md)
-
-                        // Methods
-                        VStack(spacing: DS.Spacing.none) {
-                            ForEach(availableMethods, id: \.self) { method in
-                                methodRow(method: method)
-                                if method != availableMethods.last {
-                                    Divider().padding(.leading, DS.Spacing.xxl)
-                                }
-                            }
-                        }
-                        .solidCard()
-
-                        // Manual amount field
-                        if selectedMethod == .manual {
-                            TextField("0", text: $manualAmountText)
-                                .keyboardType(.decimalPad)
-                                .font(DS.Typography.headline)
-                                .monospacedDigit()
-                                .padding(DS.Spacing.md)
-                                .background(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                                        .fill(.thCard)
-                                )
-                                .onChange(of: manualAmountText) {
-                                    let parsed = AmountInputHelper.parseDecimal(manualAmountText)
-                                    previewAmount = parsed
-                                }
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
-                    .yalaSafeBottomPadding()
-                    .dismissKeyboardOnTap()
-                }
-                .scrollDismissesKeyboard(.interactively)
-            }
-            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
-            .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    // «Monto fijo» sin cifra dejaría la línea en 0 en todos los meses.
-                    YalaSaveButton(
-                        action: { applyAndDismiss() },
-                        isDisabled: selectedMethod == .manual && AmountInputHelper.parseDecimal(manualAmountText) <= 0
-                    )
-                }
-            }
-        }
-        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
-    }
-
-    // MARK: - Helpers
-
-    private var availableMethods: [EstimationMethod] {
-        var methods: [EstimationMethod] = [.average6m, .average3m, .lastMonth, .manual]
-        if line.scheduledPayment != nil {
-            methods.insert(.scheduled, at: 0)
-        }
-        // Una línea antigua con un método que esta lista ya no ofrece lo conserva a la vista, elegido.
-        if !methods.contains(line.estimationMethod) {
-            methods.insert(line.estimationMethod, at: 0)
-        }
-        return methods
-    }
-
-    private func methodRow(method: EstimationMethod) -> some View {
-        Button {
-            selectedMethod = method
-            recalculatePreview()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: selectedMethod == method ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(selectedMethod == method ? theme.accentText : .secondary)
-                    .font(DS.Typography.headline)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(methodDisplayName(method))
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                    Text(method.descriptionText)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func recalculatePreview() {
-        if selectedMethod == .manual {
-            let parsed = AmountInputHelper.parseDecimal(manualAmountText)
-            previewAmount = parsed
-        } else {
-            previewAmount = viewModel.previewAmount(for: line, method: selectedMethod)
-        }
-    }
-
-    private func methodDisplayName(_ method: EstimationMethod) -> String {
-        method.displayName
-    }
-
-    private func applyAndDismiss() {
-        let manualAmount: Double? = manualAmountText.isEmpty ? nil : AmountInputHelper.parseDecimal(manualAmountText)
-        if let onApply {
-            onApply(selectedMethod, manualAmount)
-        } else {
-            viewModel.updateEstimationMethod(for: line.id, to: selectedMethod, manualAmount: manualAmount)
-        }
-        dismiss()
     }
 }

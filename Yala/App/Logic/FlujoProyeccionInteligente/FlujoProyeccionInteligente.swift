@@ -51,6 +51,9 @@ enum FlujoProyeccionInteligente {
         static let factorAislado = 3.0
         /// …y no se repite: ningún otro movimiento de su grupo, en otro mes de la ventana, llega a la mitad de su monto.
         static let repeticion = 0.5
+        /// Un gasto fijo llega cada mes cerca de su día típico: a no más de 5 días (decisión de Jürgen del 19-nov-2026,
+        /// «solo fijos, asegurados»). Lo que se paga a cualquier altura del mes no es un fijo, aunque sume parecido.
+        static let toleranciaDia = 5
     }
 
     // MARK: - Salida
@@ -84,6 +87,26 @@ enum FlujoProyeccionInteligente {
         let categoria: Category?
         let subcategoriaNombre: String?
         let comercioVisible: String?
+        /// La subcategoría, para la clave estable de «Considerar a futuro» y el + de la hoja.
+        var subcategoria: Subcategory? = nil
+
+        /// La clave con que se guarda «Considerar a futuro» (`FlujoFijosAFuturo`): no cambia entre arranques ni al
+        /// pasar el almacén a la nube. Lado, subcategoría (su `shortcutID`), categoría (su `syncID` o su nombre) o sin
+        /// categoría, y el comercio si el fijo es de uno.
+        var claveEstable: String {
+            let lado = esIngreso ? "in" : "out"
+            let grupo: String
+            switch clave.base {
+            case .subcategoria:
+                grupo = subcategoria.map { "s:\($0.shortcutID.uuidString)" }
+                    ?? "s:\(categoria?.name ?? ""):\(subcategoriaNombre ?? "")"
+            case .categoria:
+                grupo = "c:" + (categoria?.syncID?.uuidString ?? categoria?.name ?? "")
+            case .sinCategoria:
+                grupo = "n"
+            }
+            return [lado, grupo, clave.comercio].compactMap { $0 }.joined(separator: "|")
+        }
     }
 
     struct Aislado {
@@ -103,6 +126,10 @@ enum FlujoProyeccionInteligente {
         /// Hay historia para detectar fijos y aislados (`Umbrales.mesesMinimos`).
         var detecta: Bool { mesesDeHistoria >= Umbrales.mesesMinimos }
         let fijos: [Fijo]
+        /// Lo que se proyecta en los meses que vienen con plan (decisión de Jürgen del 19-nov-2026, 10:47): en ingresos,
+        /// los mismos fijos; en gastos, los fijos de verdad —una vez al mes, monto parecido, día regular, sin aislados—.
+        /// Fuera de las líneas, nada más: ni la mediana ni un promedio de lo no planificado.
+        var fijosAFuturo: [Fijo] = []
         /// Los aislados de la ventana: no entran en lo variable.
         let aisladosVentana: [Aislado]
         /// Lo que se proyecta cada mes por lo variable: la mediana mensual sin fijos ni aislados. 0 en ingresos.
@@ -117,6 +144,19 @@ enum FlujoProyeccionInteligente {
         static func vacio(esIngreso: Bool) -> Lado {
             Lado(esIngreso: esIngreso, mesesDeHistoria: 0, fijos: [], aisladosVentana: [], variable: 0, mesTipico: 0,
                  mayorPorGrupo: [:])
+        }
+
+        /// El fijo a futuro de un movimiento: en ingresos, el que lo reconoce (`fijoQueReconoce`); en gastos, el de su
+        /// comercio y, si no, el de su grupo exacto (un gasto de otra subcategoría no paga el alquiler).
+        func fijoAFuturo(de mov: FlujoMotorMes.Movimiento) -> Fijo? {
+            guard mov.esIngreso == esIngreso else { return nil }
+            if esIngreso { return fijoQueReconoce(mov) }
+            let base = FlujoProyeccionInteligente.base(de: mov)
+            if let comercio = mov.comercio,
+               let fijo = fijosAFuturo.first(where: { $0.clave == Clave(base: base, comercio: comercio) }) {
+                return fijo
+            }
+            return fijosAFuturo.first { $0.clave == Clave(base: base, comercio: nil) }
         }
 
         /// El fijo que reconoce un movimiento como suyo al contar lo que el mes ya cobró: el de su comercio o su grupo
@@ -262,7 +302,13 @@ enum FlujoProyeccionInteligente {
 
         let variables = restantes.filter { !fuera.contains($0) }.map { movs[$0] }
         let sinAislados = movs.indices.filter { !fuera.contains($0) }.map { movs[$0] }
-        return Lado(
+        // 4. Gastos fijos a futuro: entre lo que no es aislado, por grupo y, dentro de uno que no lo es, por comercio. Solo
+        // lo que llega una vez al mes cerca de su día. No toca lo variable: en el mes en curso y sin plan se sigue
+        // proyectando por la mediana, como hasta ahora.
+        let fijosAFuturo: [Fijo] = esIngreso ? fijos : gastosFijos(
+            variables.filter { $0.importe > 0 }, ventana: ventana, enCurso: enCurso
+        )
+        var lado = Lado(
             esIngreso: esIngreso,
             mesesDeHistoria: ventana.count,
             fijos: fijos.sorted { ($0.monto, nombreOrden($0)) > ($1.monto, nombreOrden($1)) },
@@ -273,6 +319,56 @@ enum FlujoProyeccionInteligente {
             mesTipico: mesTipico(totalesPorMes(sinAislados, ventana: ventana)),
             mayorPorGrupo: mayorPorGrupo
         )
+        lado.fijosAFuturo = fijosAFuturo.sorted { ($0.monto, nombreOrden($0)) > ($1.monto, nombreOrden($1)) }
+        return lado
+    }
+
+    /// Los gastos fijos de verdad: por grupo y, dentro de un grupo que no lo es, por comercio; con la regla de un fijo
+    /// (`fijo(_:_:ventana:enCurso:)`) y además una vez al mes y cerca de su día en todos los meses en que apareció.
+    private static func gastosFijos(
+        _ movs: [FlujoMotorMes.Movimiento], ventana: [Date], enCurso: [FlujoMotorMes.Movimiento]
+    ) -> [Fijo] {
+        var result: [Fijo] = []
+        let porGrupo = Dictionary(grouping: movs, by: { base(de: $0) })
+        for (grupoBase, delGrupo) in porGrupo.sorted(by: { orden($0.key) < orden($1.key) }) {
+            if let fijo = fijo(Clave(base: grupoBase, comercio: nil), delGrupo, ventana: ventana, enCurso: enCurso),
+               esFijoDeVerdad(fijo, delGrupo) {
+                result.append(fijo)
+                continue
+            }
+            let porComercio = Dictionary(grouping: delGrupo.filter { $0.comercio != nil }, by: { $0.comercio ?? "" })
+            for (comercio, delComercio) in porComercio.sorted(by: { $0.key < $1.key }) {
+                if let fijo = fijo(Clave(base: grupoBase, comercio: comercio), delComercio, ventana: ventana,
+                                   enCurso: enCurso),
+                   esFijoDeVerdad(fijo, delComercio) {
+                    result.append(fijo)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Un fijo de gasto llega una vez al mes y siempre cerca de su día típico.
+    private static func esFijoDeVerdad(_ fijo: Fijo, _ movs: [FlujoMotorMes.Movimiento]) -> Bool {
+        guard fijo.unaVezAlMes else { return false }
+        let dias = movs.filter { $0.importe > 0 }.map(\.dia)
+        guard !dias.isEmpty else { return false }
+        return dias.allSatisfy { abs($0 - fijo.dia) <= Umbrales.toleranciaDia }
+    }
+
+    // MARK: - Aislados de una línea (por mes)
+
+    /// Los meses aislados de una línea del plan: con al menos `mesesMinimos` meses con algo en la ventana, los que
+    /// suman al menos `factorAislado` veces la mediana de esos meses. A nivel de mes y no de movimiento: dos meses
+    /// fuertes en la misma línea se «repetirían» entre sí y ninguno saldría (el ejemplo de Jürgen del 19-nov, Fitness con
+    /// agosto y octubre). La mediana aguanta menos de la mitad de meses raros, así que nunca se quita la mayoría; con
+    /// historia corta no se quita nada.
+    static func mesesAislados(_ totales: [Date: Double]) -> Set<Date> {
+        let conAlgo = totales.filter { $0.value > 0 }
+        guard conAlgo.count >= Umbrales.mesesMinimos else { return [] }
+        let tipico = FlujoMotorMes.mediana(Array(conAlgo.values))
+        guard tipico > 0 else { return [] }
+        return Set(conAlgo.filter { $0.value >= Umbrales.factorAislado * tipico }.keys)
     }
 
     /// Un fijo de esos movimientos, si se repite: aparece con un monto parecido en al menos 2/3 de los meses de la
@@ -321,7 +417,8 @@ enum FlujoProyeccionInteligente {
             mesesVentana: ventana.count,
             categoria: muestra?.categoria,
             subcategoriaNombre: clave.base.esSubcategoria ? muestra?.subcategoriaNombre : nil,
-            comercioVisible: clave.comercio == nil ? nil : movs.compactMap(\.comercioVisible).first
+            comercioVisible: clave.comercio == nil ? nil : movs.compactMap(\.comercioVisible).first,
+            subcategoria: clave.base.esSubcategoria ? muestra?.subcategoria : nil
         )
     }
 

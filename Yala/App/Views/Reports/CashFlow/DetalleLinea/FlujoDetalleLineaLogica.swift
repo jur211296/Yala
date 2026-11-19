@@ -125,7 +125,136 @@ enum FlujoDetalleLineaLogica {
         let real: Double
         let limite: Double
         let esActual: Bool
+        /// El mes quedó fuera del límite del mes que se ve por aislado (19-nov-2026).
+        var esAislado: Bool = false
         var id: String { monthKey }
+        /// Lo real menos el límite: en un gasto, positivo es pasarse.
+        var diferencia: Double { real - limite }
+    }
+
+    /// Los seis meses y cómo sale el límite del mes que se ve.
+    struct Historia {
+        let meses: [MesHistoria]
+        /// `nil` si el límite del mes no sale de un método que mira la historia (monto fijo, un ajuste, un cambio
+        /// «desde», un pago planificado).
+        let explicacion: CashFlowProjectionCalculator.LimitEstimate?
+        /// El índice del límite, para las cifras de cada método en «Cálculo del monto».
+        let indice: TransactionIndex
+        /// El mes con que se calcula el límite del mes que se ve (el mismo, o el en curso si es un mes que viene).
+        let referencia: Date
+    }
+
+    /// Los seis meses que acaban en `hasta` y cómo sale el límite de `hasta` (si es un método que mira la historia),
+    /// con los meses que se dejaron fuera por aislados marcados en la gráfica.
+    static func historia(
+        line: CashFlowLine,
+        lineasPlan: [CashFlowLine],
+        transactions: [TransactionItem],
+        historia: [TransactionItem],
+        hasta: Date,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: any CurrencyConverting,
+        now: Date,
+        calendar: Calendar
+    ) -> Historia? {
+        guard let actual = calendar.dateInterval(of: .month, for: now)?.start,
+              let pedido = calendar.dateInterval(of: .month, for: hasta)?.start else { return nil }
+        let lineas = ordenDelPlan(lineasPlan).map { FlujoMotorMesEntrada.linea($0) }
+        let index = indiceDelLimite(
+            lineas: lineas, historia: historia, currencyCode: currencyCode, adjustment: adjustment,
+            converter: converter, now: now, calendar: calendar
+        )
+        let referencia = min(pedido, actual)
+        let explicacion = explicacion(
+            line: line, monthKey: CashFlowProjectionCalculator.monthKey(for: pedido, calendar: calendar),
+            referencia: referencia, index: index, calendar: calendar
+        )
+        let aislados = Set(explicacion?.isolatedMonths ?? [])
+        let meses = seisMeses(
+            line: line, lineasPlan: lineasPlan, transactions: transactions, historia: historia, hasta: hasta,
+            currencyCode: currencyCode, adjustment: adjustment, converter: converter, now: now, calendar: calendar,
+            index: index
+        ).map { mes in
+            var marcado = mes
+            marcado.esAislado = aislados.contains(mes.mes)
+            return marcado
+        }
+        return Historia(meses: meses, explicacion: explicacion, indice: index, referencia: referencia)
+    }
+
+    /// Cómo sale el límite de la línea en el mes, si sale de su método y el método mira la historia. Un ajuste de un
+    /// mes o un cambio «desde» mandan sobre el método (`resolvePlanned`): ahí no hay promedio que explicar.
+    static func explicacion(
+        line: CashFlowLine, monthKey: String, referencia: Date, index: TransactionIndex, calendar: Calendar
+    ) -> CashFlowProjectionCalculator.LimitEstimate? {
+        guard line.monthOverride(for: monthKey) == nil,
+              CashFlowAmountChangeLogic.change(for: monthKey, in: line.amountChanges) == nil else { return nil }
+        switch line.method {
+        case .average3m, .average6m, .average12m, .lastMonth, .trend:
+            return CashFlowProjectionCalculator.explainEstimate(
+                method: line.method, line: line, referenceDate: referencia, index: index, calendar: calendar
+            )
+        default:
+            return nil
+        }
+    }
+
+    /// El texto de «Cómo se calcula» del mes: el método, su ventana y los meses que se dejaron fuera por aislados; o
+    /// «Monto fijo desde noviembre», o «Monto fijo: el mismo número cada mes». `nil` para lo que ya explica la
+    /// descripción del método (un pago planificado, meses elegidos a mano).
+    static func comoSeCalcula(
+        line: CashFlowLine, explicacion: CashFlowProjectionCalculator.LimitEstimate?, cambioDesde: Date?
+    ) -> String? {
+        if let cambioDesde {
+            return L10n.FlujoDetalleLinea.comoFijoDesde(CashFlowMonthSummaryLogic.monthInSentence(cambioDesde))
+        }
+        if let explicacion {
+            let aislados = L10n.FlujoDetalleLinea.listaDeMeses(explicacion.isolatedMonths)
+            switch explicacion.method {
+            case .average3m, .average6m, .average12m:
+                guard !explicacion.usedMonths.isEmpty else { return L10n.FlujoDetalleLinea.comoSinDatos }
+                let meses = explicacion.method == .average3m ? 3 : explicacion.method == .average6m ? 6 : 12
+                return L10n.FlujoDetalleLinea.comoPromedio(meses: meses, aislados: aislados)
+            case .lastMonth:
+                guard let mes = explicacion.usedMonths.first else { return L10n.FlujoDetalleLinea.comoSinDatos }
+                return L10n.FlujoDetalleLinea.comoUltimoMes(
+                    CashFlowMonthSummaryLogic.monthInSentence(mes), aislados: aislados
+                )
+            case .trend:
+                return L10n.FlujoDetalleLinea.comoTendencia(aislados: aislados)
+            default:
+                return nil
+            }
+        }
+        return line.method == .manual ? L10n.FlujoDetalleLinea.comoFijo : nil
+    }
+
+    /// El índice con que el motor calcula los límites (`CashFlowProjectionCalculator.calculate`): por categoría y
+    /// subcategoría, y lo que el reparto de dueños da a cada línea.
+    static func indiceDelLimite(
+        lineas: [FlujoMotorMes.Linea],
+        historia: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: any CurrencyConverting,
+        now: Date,
+        calendar: Calendar
+    ) -> TransactionIndex {
+        let startOfTomorrow = LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar).startOfTomorrow
+        let movHistoria = FlujoMotorMesEntrada.movimientos(
+            historia, currencyCode: currencyCode, adjustment: adjustment, converter: converter,
+            startOfTomorrow: startOfTomorrow, calendar: calendar
+        ).movimientos
+        var index = TransactionIndex(
+            transactions: historia.filter { $0.balanceAdjustmentType == nil },
+            currencyCode: currencyCode, adjustment: adjustment, converter: converter, calendar: calendar
+        )
+        index.byLineMonth = FlujoMotorMes.importesPorLinea(movHistoria, lineas: lineas).mapValues { byMonth in
+            Dictionary(byMonth.map { (CashFlowProjectionCalculator.monthKey(for: $0.key, calendar: calendar), $0.value) },
+                       uniquingKeysWith: +)
+        }
+        return index
     }
 
     /// Los seis meses que acaban en `hasta` (sin pasar del mes en curso): real de la línea contra su límite.
@@ -141,7 +270,8 @@ enum FlujoDetalleLineaLogica {
         adjustment: GroupBridgeStatsAdjustment,
         converter: any CurrencyConverting,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        index indiceDado: TransactionIndex? = nil
     ) -> [MesHistoria] {
         guard let actual = calendar.dateInterval(of: .month, for: now)?.start,
               let pedido = calendar.dateInterval(of: .month, for: hasta)?.start else { return [] }
@@ -157,18 +287,10 @@ enum FlujoDetalleLineaLogica {
         let realPorMes = FlujoMotorMes.importesPorLinea(reales, lineas: lineas)[line.id] ?? [:]
 
         // El índice del límite, como en `CashFlowProjectionCalculator.calculate`.
-        let movHistoria = FlujoMotorMesEntrada.movimientos(
-            historia, currencyCode: currencyCode, adjustment: adjustment, converter: converter,
-            startOfTomorrow: startOfTomorrow, calendar: calendar
-        ).movimientos
-        var index = TransactionIndex(
-            transactions: historia.filter { $0.balanceAdjustmentType == nil },
-            currencyCode: currencyCode, adjustment: adjustment, converter: converter, calendar: calendar
+        let index = indiceDado ?? indiceDelLimite(
+            lineas: lineas, historia: historia, currencyCode: currencyCode, adjustment: adjustment,
+            converter: converter, now: now, calendar: calendar
         )
-        index.byLineMonth = FlujoMotorMes.importesPorLinea(movHistoria, lineas: lineas).mapValues { byMonth in
-            Dictionary(byMonth.map { (CashFlowProjectionCalculator.monthKey(for: $0.key, calendar: calendar), $0.value) },
-                       uniquingKeysWith: +)
-        }
 
         return meses.map { mes in
             let key = CashFlowProjectionCalculator.monthKey(for: mes, calendar: calendar)

@@ -81,9 +81,14 @@ struct FlujoDetalleLineaTextosTests {
         #expect(!hoja.contains("tx.category?.persistentModelID == cat.persistentModelID"))
     }
 
-    @Test func elLimiteVaArribaConCambiar_queAbreLaHojaDeS4() throws {
+    /// Un solo «Cambiar» (Jürgen, 19-nov-2026: «hay doble Cambiar»): junto al límite, abre «Cálculo del monto»; «Cómo se
+    /// calcula» queda como texto.
+    @Test func elLimiteVaArribaConCambiar_queAbreCalculoDelMonto() throws {
         let hoja = try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
-        #expect(hoja.contains("FlujoCambiarLimiteSheet("))
+        #expect(hoja.contains("FlujoCalculoMontoSheet("))
+        #expect(!hoja.contains("\"cashflow_detail_change_method\""), "volvió el segundo «Cambiar»")
+        #expect(!hoja.contains("CashFlowMethodPickerSheet("))
+        #expect(hoja.contains("\"cashflow_detail_how\""))
         #expect(hoja.contains("\"cashflow_adjust_amount\""))
         #expect(!hoja.contains("L10n.CashFlowPlan.adjustAmount"))
         // La tarjeta del límite va antes que la gráfica y que los registros.
@@ -107,7 +112,9 @@ struct FlujoDetalleLineaTextosTests {
     @Test func losDatosNoSeCalculanEnElBody() throws {
         let hoja = try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
         #expect(hoja.contains(".task(id: dataKey) { loadData() }"))
-        #expect(hoja.components(separatedBy: "FlujoDetalleLineaLogica.seisMeses(").count == 2)
+        #expect(hoja.contains(".task(id: listKey) { loadList() }"))
+        #expect(hoja.components(separatedBy: "FlujoDetalleLineaLogica.historia(").count == 2)
+        #expect(hoja.components(separatedBy: "FlujoDetalleLineaLogica.registros(").count == 2)
     }
 
     /// «Ver en Registros» escribe el filtro de la subcategoría y el período, y cambia a la pestaña de Registros.

@@ -102,6 +102,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
 | 2026-11-17-flujo-de-caja-replanteo | done | tickets/done/2026-11-17-flujo-de-caja-replanteo.md |
 | 2026-11-19-flujo-proyeccion-inteligente | done | tickets/done/2026-11-19-flujo-proyeccion-inteligente.md |
+| 2026-11-19-flujo-aislados-promedio-y-detalle-mes | done | tickets/done/2026-11-19-flujo-aislados-promedio-y-detalle-mes.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |

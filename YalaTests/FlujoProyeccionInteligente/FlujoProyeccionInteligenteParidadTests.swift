@@ -173,6 +173,11 @@ struct FlujoProyeccionInteligenteParidadTests {
         #expect(otrosGastos.isolatedItems.count == 1)
         #expect(Self.near(otrosGastos.isolatedItems.first?.amount ?? 0, 6_000))
         #expect(Self.near(otrosGastos.variableEstimate, 800))
+        // Con plan, diciembre proyecta fuera de las líneas solo lo fijo (19-nov-2026): la comida de 700 el día 6 y los
+        // 100 sin categoría del 12 se repiten con monto y día; el iPhone, no. Nada de la mediana.
+        #expect(otrosGastos.isFixedOnly)
+        #expect(Self.near(otrosGastos.variableLeft, 0))
+        #expect(Self.near(otrosGastos.items.reduce(0) { $0 + $1.total }, otrosGastos.plannedAmount))
         #expect(Self.near(dic.totalIncome, 3_000))
         #expect(Self.near(dic.totalExpense, 800))
 
@@ -187,5 +192,43 @@ struct FlujoProyeccionInteligenteParidadTests {
         let diciembre = t.days.filter { $0 >= Self.date(2026, 12, 1, hour: 0) }
         #expect(Self.near(diciembre.reduce(0) { $0 + (t.flows[$1]?.income ?? 0) }, dic.totalIncome))
         #expect(Self.near(diciembre.reduce(0) { $0 + (t.flows[$1]?.expense ?? 0) }, dic.totalExpense))
+    }
+
+    // MARK: - Con plan y una partida apagada a futuro
+
+    /// «Considerar a futuro» apagado en la comida fija: diciembre deja de proyectarla en el flujo de caja, y Tendencias
+    /// («Ver proyectado») suma lo mismo, porque las dos leen el mismo almacén por el mismo cálculo.
+    @Test func conPlan_partidaApagada_flujoDeCajaYTendencias_danLoMismo() throws {
+        let e = try Self.escenario()
+        let plan = CashFlowPlan(name: "Plan")
+        e.context.insert(plan)
+        try e.context.save()
+        let defaults = makeIsolatedDefaults()
+        FlujoFijosAFuturo._testDefaults = defaults
+        defer { FlujoFijosAFuturo._testDefaults = nil }
+
+        func diciembre() throws -> CashFlowMonth {
+            let projection = CashFlowProjectionCalculator.calculate(
+                plan: plan, lines: [], transactions: e.transactions, allExpenseCategories: [],
+                scheduledPayments: [], monthsBack: 0, monthsAhead: 1, currencyCode: "PEN",
+                adjustment: .none, converter: IdentityConverter(), historyTransactions: e.transactions,
+                now: Self.now, calendar: Self.calendar
+            )
+            return try #require(projection.months.last)
+        }
+        let antes = try diciembre()
+        let comida = try #require(antes.otherExpenses?.items.first { $0.name == "Comida" }?.fixedItems.first)
+        FlujoFijosAFuturo.considerar(comida.stableKey, false)
+
+        let dic = try diciembre()
+        #expect(Self.near(dic.totalExpense, antes.totalExpense - 700))
+        let fila = try #require(dic.otherExpenses?.items.first { $0.name == "Comida" })
+        #expect(fila.fixedItems.first?.isConsideredInFuture == false)
+        #expect(Self.near(fila.total, 0))
+
+        let t = Self.tendencias(e)
+        let dias = t.days.filter { $0 >= Self.date(2026, 12, 1, hour: 0) }
+        #expect(Self.near(dias.reduce(0) { $0 + (t.flows[$1]?.expense ?? 0) }, dic.totalExpense))
+        #expect(Self.near(dias.reduce(0) { $0 + (t.flows[$1]?.income ?? 0) }, dic.totalIncome))
     }
 }
