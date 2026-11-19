@@ -89,9 +89,10 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
   cuenta en lo gastado lo que no tiene subcategoría, y el desglose también. Lo fija `BudgetBreakdownSumsSpentTests`.
 - **El día más caro de Estadísticas sale de una entrada**, `WeekdaySpendingCalculator.forStatistics`, para Resumen y
   Tendencias (ignora el chip Ingresos/Gastos; con «Todo», cuenta hasta hoy). Lo fija `WeekdayPriciestDayParityTests`.
-- **El ritmo del flujo proyectado proyecta lo que falta de cada mes** (decisión de Jürgen): ritmo × días del mes menos
-  lo que el mes ya tiene, real o fechado, por lado y nunca negativo (`ProjectedFlowBuilder.rhythmLeftOfEachMonth`). Un
-  ritmo a secas por día volvía a contar el sueldo ya cobrado. Lo fija `ProjectedFlowCalculatorTests`.
+- **El flujo proyectado proyecta lo que falta de cada mes** (decisión de Jürgen del 2026-11-10; desde S6 del replanteo
+  del flujo de caja, 18-nov-2026, con la mediana del motor del mes en vez del ritmo de 90 días): lo esperado del mes
+  menos lo que ya tiene, real o fechado, por lado y nunca negativo. Contar lo esperado a secas por día volvía a contar
+  el sueldo ya cobrado. Lo fijan `ProjectedFlowCalculatorTests` y `FlujoConsumidoresParidadTests`.
 - **Un reparto de grupo cuadra al céntimo** (decisión de Jürgen): «Monto» y «Porcentaje» con
   `GroupSplitCalculator.balanceTolerance` (medio céntimo, solo coma flotante), y la insignia del formulario con la misma.
   Un porcentaje que se REABRE (edición, plantilla, pago planificado) pasa por `GroupExpenseViewModel.loadPercentages`,
@@ -114,6 +115,13 @@ se usa. Cada movimiento tiene UN dueño (su pago con línea, su subcategoría, s
 o «otros») y el promedio de una línea sale de ese mismo reparto: si añades una forma de atribuir, cambia las dos a la
 vez. Lo fijan `FlujoMotorMesTests` (un caso por hallazgo del ticket `2026-11-17-flujo-de-caja-replanteo`, paridad con
 `MonthEndBalanceLogic` incluida).
+
+**Sin plan, o con filtros de sesión, el mismo motor sin líneas (S6, 18-nov-2026).** `ProjectedFlowBuilder.othersRemaining`
+pide al motor «otros» por la mediana de 6 meses (gastos) y no proyecta ingresos sin pago planificado; ya no hay ritmo de
+90 días. Sin filtros, la mediana sale de todos los movimientos, como con plan; con filtros, de los filtrados. Sin un mes
+completo de historia no hay mediana: solo pagos planificados y lo fechado. Panel, Tendencias y el widget de Saldo
+heredan la pieza por `ProjectedFlowBuilder.build`: «Al 30» del flujo de caja, del Panel y el último punto del mes del
+widget son la misma cifra, con plan y sin plan (`FlujoConsumidoresParidadTests`).
 
 ## Los tests que lo fijan
 

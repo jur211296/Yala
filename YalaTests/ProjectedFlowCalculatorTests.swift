@@ -275,99 +275,105 @@ struct ProjectedFlowCalculatorTests {
         #expect(built.expenseSource == .scheduledOnly, "Sin historia no hay ritmo")
     }
 
-    /// El fixture de paridad de `ingreso-gasto.md`: un movimiento sin categoría de cada signo y uno de signo contrario a
-    /// su categoría (una devolución). Con la regla del signo el ritmo daría otra cifra.
-    @Test func builder_rhythm_followsTheIncomeExpenseRule_andSkipsPaymentLinkedRows() {
+    /// Sin plan, lo no planificado sale del motor del mes sin líneas (S6 del replanteo del flujo de caja, 18-nov-2026):
+    /// el gasto, «otros» por la mediana de los meses completos; el ingreso no se proyecta (P6). El fixture de paridad de
+    /// `ingreso-gasto.md`: un movimiento sin categoría de cada signo y uno de signo contrario a su categoría (una
+    /// devolución); lo enlazado a un pago planificado no entra en la mediana (su pago va en su día).
+    @Test func builder_withoutPlan_othersFollowTheIncomeExpenseRule_andSkipPaymentLinkedRows() {
         let groceries = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
         let salary = YalaCategory(name: "Sueldo", colorHex: "#000", isIncome: true)
-        let start = date(2026, 10, 7, hour: 12)   // 30 días de historia
         let linked = tx(-1_000, on: date(2026, 10, 20), category: groceries)
         linked.scheduledPaymentID = UUID().uuidString
         let history = [
-            tx(-300, on: start, category: groceries),
+            tx(-300, on: date(2026, 10, 7, hour: 12), category: groceries),
             tx(60, on: date(2026, 10, 12), category: groceries),     // devolución: resta del gasto
             tx(-90, on: date(2026, 10, 14)),                         // sin categoría y negativo: gasto
             tx(900, on: date(2026, 10, 30), category: salary),
             tx(30, on: date(2026, 11, 2)),                           // sin categoría y positivo: ingreso
             linked,
         ]
-        // Diciembre entero por delante: sin nada suyo todavía, cada día recibe el ritmo tal cual. (En noviembre se
-        // descuenta lo que ya hay del mes: lo fija `builder_rhythmWithoutPlan_projectsWhatIsLeftOfTheMonth`.)
+        // Diciembre por delante, sin nada suyo: la mediana entera (un solo mes completo, octubre) repartida en sus días.
         let december = (1...3).map { date(2026, 12, $0) }
         let built = ProjectedFlowBuilder.build(inputs(transactions: history, days: december), context: nil)
         let day = date(2026, 12, 2)
         #expect(built.expenseSource == .rhythm)
-        #expect(abs((built.flows[day]?.expense ?? 0) - 11) < 0.0001, "(300 − 60 + 90) / 30")
-        #expect(abs((built.flows[day]?.income ?? 0) - 31) < 0.0001, "(900 + 30) / 30")
+        #expect(abs((built.flows[day]?.expense ?? 0) - 330.0 / 31) < 0.0001, "(300 − 60 + 90) / 31 días")
+        #expect((built.flows[day]?.income ?? 0) == 0, "Sin plan, el ingreso sin pago planificado no se proyecta")
+        #expect(built.incomeSource == .scheduledOnly)
     }
 
-    /// Sin plan, el ritmo proyecta LO QUE FALTA de cada mes (decisión de Jürgen del 2026-11-10, lote 02 de mejoras
-    /// necesarias de 2.3): lo previsto (ritmo × días del mes) menos lo que el mes ya tiene, real o fechado por delante,
-    /// repartido en sus días por delante. Antes cada día sumaba el ritmo a secas, y el sueldo del día 1 se volvía a
-    /// contar: «Proyectado al cierre» bajaba de S/ 76,613 a S/ 69,390 solo con crear el plan sugerido.
+    /// Lo que falta de cada mes: la mediana menos lo que el mes ya tiene, real o fechado por delante, repartido en sus
+    /// días por delante; un mes que aún no empezó recibe la mediana entera. El sueldo del 1-nov no se vuelve a proyectar
+    /// (era el arreglo del 2026-11-10 al ritmo; con la mediana, el ingreso ni se proyecta).
     ///
-    /// Caso medido: 90 días de historia; tres sueldos de 3.000 (1-sep, 1-oct, 1-nov) ⇒ 100 al día de ingreso; 2.100 de
-    /// gasto el 8-ago y 600 el 3-nov ⇒ 30 al día. Hoy, 6-nov; un gasto de 100 ya fechado para el 20-nov.
-    @Test func builder_rhythmWithoutPlan_projectsWhatIsLeftOfTheMonth() {
+    /// Caso: gasto de 900 en agosto, septiembre y octubre ⇒ mediana 900. Noviembre lleva 600 y 100 fechado para el 20.
+    @Test func builder_withoutPlan_projectsWhatIsLeftOfEachMonth() {
         let salary = YalaCategory(name: "Sueldo", colorHex: "#000", isIncome: true)
         let groceries = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
-        let history = [
-            tx(-2_100, on: date(2026, 8, 8, hour: 12), category: groceries),
-            tx(3_000, on: date(2026, 9, 1, hour: 9), category: salary),
-            tx(3_000, on: date(2026, 10, 1, hour: 9), category: salary),
+        var history = [
             tx(3_000, on: date(2026, 11, 1, hour: 9), category: salary),
             tx(-600, on: date(2026, 11, 3, hour: 12), category: groceries),
             tx(-100, on: date(2026, 11, 20, hour: 12), category: groceries),   // ya fechado por delante
         ]
+        for month in 8...10 {
+            history.append(tx(3_000, on: date(2026, month, 1, hour: 9), category: salary))
+            history.append(tx(-900, on: date(2026, month, 8, hour: 12), category: groceries))
+        }
         let november = ProjectedFlowCalculator.futureDays(in: thisMonth, today: today, calendar: calendar)
         let december = (1...3).map { date(2026, 12, $0) }
         let built = ProjectedFlowBuilder.build(inputs(transactions: history, days: november + december), context: nil)
-        #expect(built.incomeSource == .rhythm)
-        #expect(built.expenseSource == .rhythm)
 
         let novemberIncome = november.reduce(0.0) { $0 + (built.flows[$1]?.income ?? 0) }
         let novemberExpense = november.reduce(0.0) { $0 + (built.flows[$1]?.expense ?? 0) }
-        #expect(abs(novemberIncome) < 0.0001, "Previsto 100 × 30 = 3.000, y el sueldo del 1-nov ya entró: no falta nada")
-        #expect(abs(novemberExpense - 300) < 0.0001,
-                "Previsto 30 × 30 = 900; el mes ya tiene 600 + 100 fechado: faltan 200, más los 100 en su día")
+        #expect(novemberIncome == 0)
+        #expect(abs(novemberExpense - 300) < 0.0001, "Mediana 900; el mes ya tiene 600 + 100 fechado: faltan 200, más los 100 en su día")
         #expect(abs((built.flows[date(2026, 11, 20)]?.expense ?? 0) - (100 + 200.0 / 24)) < 0.0001)
-
-        // Un mes que aún no empezó y no tiene nada suyo: el ritmo entero, cada día.
-        #expect(abs((built.flows[date(2026, 12, 2)]?.income ?? 0) - 100) < 0.0001)
-        #expect(abs((built.flows[date(2026, 12, 2)]?.expense ?? 0) - 30) < 0.0001)
+        #expect(abs((built.flows[date(2026, 12, 2)]?.expense ?? 0) - 900.0 / 31) < 0.0001)
     }
 
-    /// Lo que el mes ya tiene usa el mismo filtro que el ritmo: un ajuste de saldo y un gasto enlazado a un pago
-    /// planificado (que va en su día) no se descuentan de lo previsto.
-    @Test func builder_rhythmWithoutPlan_adjustmentsAndPaymentLinkedRows_doNotCountAsAlreadyThere() {
+    /// Lo que el mes ya tiene usa el mismo filtro que la mediana: un ajuste de saldo no es gasto, y un gasto enlazado a
+    /// un pago planificado va con su pago, así que ninguno se descuenta de lo que le falta a «otros».
+    @Test func builder_withoutPlan_adjustmentsAndPaymentLinkedRows_doNotCountAsAlreadyThere() {
         let groceries = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
         let adjustment = tx(-500, on: date(2026, 11, 2, hour: 12), category: groceries)
         adjustment.balanceAdjustmentType = InitialBalanceService.typeAdjustment
         let linked = tx(-400, on: date(2026, 11, 3, hour: 12), category: groceries)
         linked.scheduledPaymentID = UUID().uuidString
         let history = [
-            tx(-2_700, on: date(2026, 8, 8, hour: 12), category: groceries),   // 30 al día
+            tx(-900, on: date(2026, 10, 8, hour: 12), category: groceries),   // mediana 900
             adjustment,
             linked,
         ]
         let built = ProjectedFlowBuilder.build(inputs(transactions: history), context: nil)
         let days = ProjectedFlowCalculator.futureDays(in: thisMonth, today: today, calendar: calendar)
         let expense = days.reduce(0.0) { $0 + (built.flows[$1]?.expense ?? 0) }
-        #expect(abs(expense - 900) < 0.0001, "Previsto 30 × 30 = 900 y el mes no tiene nada que cuente")
+        #expect(abs(expense - 900) < 0.0001, "La mediana entera: el mes no tiene nada que cuente")
     }
 
-    /// Lo previsto es un techo, no un mínimo que se pierde: un mes que ya pasó de lo previsto no proyecta nada más, y
-    /// no resta (el ritmo no inventa devoluciones).
-    @Test func builder_rhythmWithoutPlan_aMonthAlreadyOverItsRhythm_projectsNothingMore() {
+    /// La mediana es un techo, no un mínimo que se pierde: un mes que ya pasó de ella no proyecta nada más, y no resta.
+    /// Y un gasto puntual grande no la mueve (hallazgo 10 del replanteo): con 300, 300 y 3.000, la mediana es 300.
+    @Test func builder_withoutPlan_aMonthAlreadyOverTheMedian_projectsNothingMore() {
         let groceries = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
         let history = [
-            tx(-900, on: date(2026, 8, 8, hour: 12), category: groceries),     // (900 + 900) / 90 = 20 al día
-            tx(-900, on: date(2026, 11, 2, hour: 12), category: groceries),    // previsto del mes: 600; ya van 900
+            tx(-300, on: date(2026, 8, 8, hour: 12), category: groceries),
+            tx(-300, on: date(2026, 9, 8, hour: 12), category: groceries),
+            tx(-3_000, on: date(2026, 10, 8, hour: 12), category: groceries),
+            tx(-400, on: date(2026, 11, 2, hour: 12), category: groceries),
         ]
         let built = ProjectedFlowBuilder.build(inputs(transactions: history), context: nil)
         #expect(built.expenseSource == .rhythm)
         let days = ProjectedFlowCalculator.futureDays(in: thisMonth, today: today, calendar: calendar)
         #expect(days.allSatisfy { (built.flows[$0]?.expense ?? 0) == 0 })
+    }
+
+    /// Sin un mes completo de historia no hay mediana: solo pagos planificados y lo ya fechado.
+    @Test func builder_withoutPlan_withoutACompleteMonth_projectsOnlyScheduled() {
+        let groceries = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
+        let built = ProjectedFlowBuilder.build(
+            inputs(transactions: [tx(-400, on: date(2026, 11, 2, hour: 12), category: groceries)]), context: nil
+        )
+        #expect(built.expenseSource == .scheduledOnly)
+        #expect(built.flows.values.allSatisfy { $0.expense == 0 && $0.income == 0 })
     }
 
     @Test func builder_balanceSource_prefersPlanThenRhythm() {
@@ -457,7 +463,7 @@ struct ProjectedFlowBuilderPlanTests {
             ),
             context: context
         )
-        #expect(filtered.expenseSource == .scheduledOnly, "Con filtros manda el ritmo (10A); sin historia, nada")
+        #expect(filtered.expenseSource == .scheduledOnly, "Con filtros manda el motor sin líneas sobre lo filtrado; sin historia, nada")
     }
 
     /// Lo que ninguna línea cubre («Otros gastos» del flujo de caja) se proyecta por la mediana de 6 meses y se suma al
