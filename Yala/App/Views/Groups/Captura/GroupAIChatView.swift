@@ -360,8 +360,8 @@ struct GroupAIChatView: View {
         .padding(.leading, DS.Spacing.lg)
         .padding(.trailing, DS.Spacing.xs)
         .padding(.vertical, DS.Spacing.xs)
-        .background(.thCard)
-        .clipShape(ChatBubbleShape())
+        // El fondo va en la forma, sin recortar: el recorte se comería el contorno del campo en el tema claro.
+        .background(.thCard, in: ChatBubbleShape())
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
     }

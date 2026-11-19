@@ -20,7 +20,8 @@ struct YalaTheme: Equatable, Sendable {
     /// El color del tema como TEXTO o icono sobre el fondo y las tarjetas del tema (enlaces, «Ver todo», chips
     /// seleccionados, cifras en el color de la app). En los temas oscuros es más claro que `accent`: un mismo color no
     /// puede dar AA al blanco encima del botón y al texto encima del fondo oscuro (card 1c9w). ≥ 4,5:1 en todas las
-    /// superficies del tema salvo el Claro, que hereda el índigo de marca (4,61 sobre blanco). Lo fija `ThemeTokenContrastTests`.
+    /// superficies del tema. En el Claro es el índigo de marca un 5 % más oscuro (#5B5EE4: 4,59 sobre el fondo gris, 5,1 sobre
+    /// blanco; 19-nov-2026). Lo fijan `ThemeTokenContrastTests` y `ContrasteModoClaroTests`.
     let accentText: Color
     /// El TEXTO (o icono) encima de un relleno de `accent`: blanco en los temas índigo, negro donde el acento es claro
     /// (Rosa, Teal, Minimalista), para llegar a AA en los ocho temas (card lbcr). Lo fija `ThemeTokenContrastTests`.
@@ -40,6 +41,10 @@ struct YalaTheme: Equatable, Sendable {
     let baseColorScheme: ColorScheme
     let mapsColorsToGrayscale: Bool
     let usesMaterial: Bool
+    /// El contorno de las superficies (`.thCard`: tarjetas, chips, campos y botones blancos) sobre el fondo. Solo en el
+    /// tema claro, donde el blanco sobre un fondo casi blanco no dejaba ver qué era un botón (Jürgen, 19-nov-2026). En los
+    /// temas oscuros es `nil`: ahí la tarjeta ya se separa del fondo por luminancia. Lo fija `ContrasteModoClaroTests`.
+    let surfaceEdge: SurfaceEdge?
 
     init(
         background: Color,
@@ -64,7 +69,8 @@ struct YalaTheme: Equatable, Sendable {
         hasGradient: Bool,
         baseColorScheme: ColorScheme,
         mapsColorsToGrayscale: Bool = false,
-        usesMaterial: Bool = false
+        usesMaterial: Bool = false,
+        surfaceEdge: SurfaceEdge? = nil
     ) {
         self.background = background
         self.card = card
@@ -89,21 +95,48 @@ struct YalaTheme: Equatable, Sendable {
         self.baseColorScheme = baseColorScheme
         self.mapsColorsToGrayscale = mapsColorsToGrayscale
         self.usesMaterial = usesMaterial
+        self.surfaceEdge = surfaceEdge
     }
+}
+
+// MARK: - Contorno de las superficies
+
+/// Cómo se despega una superficie blanca del fondo claro: una sombra de medio punto sin desplazamiento, que se lee como
+/// un borde finísimo alrededor, y una sombra suave debajo (molde de la referencia «Send money» que eligió Jürgen). Va
+/// dentro del propio relleno (`ThemeSurface`), así que todo lo que se pinta con `.thCard` lo hereda sin tocar la vista.
+struct SurfaceEdge: Equatable, Sendable {
+    /// La línea del contorno.
+    let line: Color
+    let lineRadius: CGFloat
+    /// La sombra suave, la que da volumen. Con opacidad 0 no se pinta.
+    let soft: Color
+    let softRadius: CGFloat
+    let softY: CGFloat
 }
 
 // MARK: - Free Themes
 
 extension YalaTheme {
 
+    /// Un color que se marca más con «Aumentar contraste» del sistema.
+    private static func contrastAware(_ normal: UIColor, increased: UIColor) -> Color {
+        Color(uiColor: UIColor { $0.accessibilityContrast == .high ? increased : normal })
+    }
+
     static let light = YalaTheme(
-        background: Color(red: 0.98, green: 0.984, blue: 1.0),  // #FAFBFF
+        // Gris claro neutro (Jürgen, 19-nov-2026): con el #FAFBFF de antes los campos y botones blancos se fundían con el
+        // fondo (1,03:1). Elegido entre cuatro variantes en el simulador, cerca del gris de su referencia. Con «Aumentar
+        // contraste», un punto más oscuro.
+        background: contrastAware(UIColor(Color(hex: "F4F4F6")), increased: UIColor(Color(hex: "EAEAEE"))),
         card: .white,
-        cardBorder: Color.primary.opacity(0.05),
+        cardBorder: contrastAware(
+            UIColor.black.withAlphaComponent(0.08), increased: UIColor.black.withAlphaComponent(0.22)
+        ),
         primaryText: Color.primary,
         secondaryText: Color.secondary,
         accent: .electricIndigo,
-        accentText: .electricIndigo,
+        // El índigo de marca como TEXTO bajaba a 4,20:1 sobre el gris; un 5 % más oscuro vuelve a AA (4,59).
+        accentText: Color(hex: "5B5EE4"),
         onAccent: .white,
         accentSecondary: .hotPink,
         income: .priorityNeed,
@@ -117,7 +150,19 @@ extension YalaTheme {
         optionalNeed: .optionalNeed,
         shadowOpacity: 0.05,
         hasGradient: true,
-        baseColorScheme: .light
+        baseColorScheme: .light,
+        // Borde finísimo + sombra suave en todo lo que se rellena con `.thCard` (chips, campos, botones blancos).
+        surfaceEdge: SurfaceEdge(
+            line: contrastAware(
+                UIColor.black.withAlphaComponent(0.16), increased: UIColor.black.withAlphaComponent(0.4)
+            ),
+            lineRadius: 0.5,
+            soft: contrastAware(
+                UIColor.black.withAlphaComponent(0.06), increased: UIColor.black.withAlphaComponent(0.08)
+            ),
+            softRadius: 6,
+            softY: 2
+        )
     )
 
     static let dark = YalaTheme(
@@ -326,3 +371,4 @@ extension YalaTheme {
 extension EnvironmentValues {
     @Entry var yalaTheme: YalaTheme = .light
 }
+

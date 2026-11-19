@@ -11,6 +11,7 @@
 - [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
+- [Cierre espera el merge real](feedback_cierre_espera_el_merge_real.md) — 19-nov: auto-merge en cola, pero no cierres hasta MERGED; conflicto o CI rojo los arreglas tú; 45 min ajeno → anotar.
 - [Verificación Gmail: sin CASA](project_verificacion_gmail_video_v2.md) — 18-nov: no se paga CASA; análisis entregado, espera veredictos en su db.
 - [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe no toca la web; Device MCP sí, con el espejo en ese simulador (pídelo con el login).
 - [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.

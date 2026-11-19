@@ -111,3 +111,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.
 - [Capturas del flujo de caja con axe](reference_capturas_del_flujo_de_caja_con_axe.md) — plan que no persiste, barra plegada en SE, gestos en iPad, hojas fuera del árbol.
 - [Conductor de barrido por secciones](feedback_conductor_de_barrido_por_secciones.md) — 30 min = 17 Pro ×2 + SE + iPad + Duo parcial; SE y Duo esconden pestañas.
+- [SE e iPad temporales en la Max](reference_simulador_temporal_se_e_ipad_en_la_max.md) — runtime iOS-27-2 (no el del Duo); `panel_action_new` vale en iPad; artifact sin enlace público.

@@ -57,6 +57,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-19-barrido-qa-2-3-post-flujo | done | tickets/done/2026-11-19-barrido-qa-2-3-post-flujo.md |
 | 2026-11-19-subir-testflight-2-3 | done | tickets/done/2026-11-19-subir-testflight-2-3.md |
 | 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
+| 2026-11-19-contraste-modo-claro-botones-blancos | done | tickets/done/2026-11-19-contraste-modo-claro-botones-blancos.md |
 | 2026-11-18-verificacion-google-sin-casa | backlog | tickets/backlog/2026-11-18-verificacion-google-sin-casa.md |
 | 2026-11-17-perfil-personalizacion-tarjeta | done | tickets/done/2026-11-17-perfil-personalizacion-tarjeta.md |
 | 2026-11-17-asistente-nueva-cuenta | done | tickets/done/2026-11-17-asistente-nueva-cuenta.md |

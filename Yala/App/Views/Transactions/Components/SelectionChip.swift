@@ -35,9 +35,10 @@ struct SelectionChip: View {
         return fillsWhenSelected ? .white : baseColor
     }
 
-    private var background: Color {
-        guard isSelected else { return theme.card }
-        return fillsWhenSelected ? Color.selectedFill(baseColor) : baseColor.opacity(0.12)
+    /// Sin elegir, la superficie del tema (`.thCard`), que en el claro trae su contorno sobre el fondo gris.
+    private var background: AnyShapeStyle {
+        guard isSelected else { return AnyShapeStyle(.thCard) }
+        return AnyShapeStyle(fillsWhenSelected ? Color.selectedFill(baseColor) : baseColor.opacity(0.12))
     }
 
     private var stroke: Color {

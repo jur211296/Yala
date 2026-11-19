@@ -703,8 +703,8 @@ struct ChatSheetView: View {
             .padding(.leading, DS.Spacing.lg)
             .padding(.trailing, DS.Spacing.xs)
             .padding(.vertical, DS.Spacing.xs)
-            .background(.thCard)
-            .clipShape(ChatBubbleShape())
+            // El fondo va en la forma, sin recortar: el recorte se comería el contorno del campo en el tema claro.
+            .background(.thCard, in: ChatBubbleShape())
         }
         // Con el tope no se atenúa la barra entera: el aviso de la caja tiene que leerse (contraste AA). Se atenúa el «+».
         .opacity(viewModel.isAIAvailable ? 1 : 0.5)
