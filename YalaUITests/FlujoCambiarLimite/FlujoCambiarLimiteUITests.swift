@@ -2,8 +2,9 @@
 //  FlujoCambiarLimiteUITests.swift
 //  YalaUITests
 //
-//  S4 del replanteo del flujo de caja (18-nov-2026): «Ajustar monto» abre «Cambiar límite», que pregunta qué meses
-//  cambian antes del monto, trae «desde este mes en adelante» elegido, admite 0 y dice cómo queda cada mes.
+//  S4 del replanteo del flujo de caja (18-nov-2026): cambiar el límite pregunta qué meses cambian, trae «desde este mes en
+//  adelante» elegido y admite 0. Desde el 19-nov-2026 se llega por el único «Cambiar» del detalle, que abre «Cálculo del
+//  monto»: «Monto fijo» pone el campo arriba y el alcance debajo (`FlujoCalculoMontoSheet`).
 //
 
 import XCTest
@@ -22,7 +23,7 @@ final class FlujoCambiarLimiteUITests: XCTestCase {
         return String(format: "%04d-%02d", comps.year ?? 0, comps.month ?? 0)
     }
 
-    /// «Solo este mes» con 0: la vista previa enseña el 0 solo en este mes y, al guardar, el mes siguiente sigue igual.
+    /// «Solo este mes» con 0: al guardar, el mes en curso toma el 0 y el mes siguiente sigue igual.
     func test_soloEsteMes_conCero_cambiaSoloEseMes() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
@@ -58,15 +59,18 @@ final class FlujoCambiarLimiteUITests: XCTestCase {
         while !adjust.isHittable, tries < 6 { detail.swipeUp(); tries += 1 }
         adjust.tap()
 
-        // El alcance va antes que el monto y trae elegido «desde este mes» (P3).
-        let from = app.buttons["flujo_cambiar_limite_alcance_desdeEsteMes"]
-        XCTAssertTrue(from.waitForExistence(timeout: 5), "No se abrió «Cambiar límite».")
+        // «Cálculo del monto»: «Monto fijo» trae el campo arriba y el alcance con «desde este mes» elegido (P3).
+        let manual = app.buttons["cashflow_method_manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se abrió «Cálculo del monto».")
+        manual.tap()
+        let from = app.buttons["cashflow_method_scope_desdeEsteMes"]
+        XCTAssertTrue(from.waitForExistence(timeout: 5), "Con «Monto fijo» no aparece qué meses cambian.")
         XCTAssertTrue(from.isSelected, "«Desde este mes en adelante» tiene que venir elegido.")
-        let field = app.textFields["flujo_cambiar_limite_monto"]
-        XCTAssertTrue(field.exists)
-        XCTAssertLessThan(from.frame.minY, field.frame.minY, "El alcance va antes que el monto.")
+        let field = app.textFields["cashflow_method_manual_amount"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "No apareció el campo del monto.")
+        XCTAssertLessThan(field.frame.minY, from.frame.minY, "El campo va arriba, antes que el alcance.")
 
-        let only = app.buttons["flujo_cambiar_limite_alcance_soloEsteMes"]
+        let only = app.buttons["cashflow_method_scope_soloEsteMes"]
         only.tap()
         XCTAssertTrue(only.isSelected)
 
@@ -74,20 +78,16 @@ final class FlujoCambiarLimiteUITests: XCTestCase {
         let fieldText = (field.value as? String) ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: fieldText.count + 2))
         field.typeText("0")
-        XCTAssertTrue(app.staticTexts["flujo_cambiar_limite_cero"].waitForExistence(timeout: 3),
-                      "Con 0 la hoja dice qué significa.")
 
-        // La vista previa nombra los dos meses.
-        XCTAssertTrue(app.descendants(matching: .any)["flujo_cambiar_limite_fila_\(monthKey(0))"].firstMatch.exists,
-                      "Falta el mes en curso en «Así quedan».")
-        XCTAssertTrue(app.descendants(matching: .any)["flujo_cambiar_limite_fila_\(monthKey(1))"].firstMatch.exists,
-                      "Falta el mes siguiente en «Así quedan».")
-
-        let save = app.buttons["flujo_cambiar_limite_guardar"]
+        let save = app.buttons["cashflow_method_save"]
         XCTAssertTrue(save.isEnabled, "0 se puede guardar.")
         XCTAssertTrue(app.waitForSettledLayout(of: save), "«Guardar» no se quedó quieto.")
         save.tap()
-        XCTAssertTrue(detail.waitForNonExistence(timeout: 5), "El detalle no se cerró al guardar.")
+        XCTAssertTrue(manual.waitForNonExistence(timeout: 5), "«Cálculo del monto» no se cerró al guardar.")
+        let close = app.buttons["cashflow_cell_detail_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
+        XCTAssertTrue(detail.waitForNonExistence(timeout: 5), "El detalle no se cerró.")
 
         showMonth(app, monthKey(0))
         let currentAfter = lineRow(app, named: name)

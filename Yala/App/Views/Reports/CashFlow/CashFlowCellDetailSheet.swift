@@ -17,6 +17,9 @@
 //  - S4 del replanteo (18-nov-2026, sustituye a L18-9): «Ajustar monto» abre «Cambiar límite»
 //    (`FlujoCambiarLimiteSheet`), que pregunta qué meses cambian ANTES del monto. Aquí ya no hay campo ni alerta.
 //  - Lienzo «Una sola Yala»: los registros con la fila de Registros (y se puede tocar), la barra de Presupuestos.
+//  - 19-nov-2026 (aislados y límites móviles): un solo «Cambiar», junto al límite, que abre «Cálculo del monto»
+//    (`FlujoCalculoMontoSheet`); «Cómo se calcula» queda como texto, con la ventana y los meses que se dejaron fuera por
+//    aislados. En «Últimos 6 meses», mantener una barra enseña su detalle y tocarla cambia la lista de abajo a ese mes.
 //
 
 import Charts
@@ -43,15 +46,16 @@ struct CashFlowCellDetailSheet: View {
 
     // Local navigation state (resets on dismiss)
     @State private var activeMonthKey: String = ""
-    /// Los registros del mes y los seis meses: se calculan al cambiar de mes o de plan, no en cada pasada del `body`.
+    /// Los seis meses y cómo sale el límite: se calculan al cambiar de mes o de plan, no en cada pasada del `body`.
     @State private var datos: Datos?
+    /// El mes elegido en la gráfica: la lista de abajo enseña sus registros. `nil` = el mes que se ve.
+    @State private var mesDeLaLista: String?
+    /// Los registros del mes de la lista.
+    @State private var lista: Lista?
 
-    /// «Ajustar monto» abre «Cambiar límite» (S4 del replanteo); guardar ahí cierra también este detalle, que enseña
-    /// cifras del plan de antes de guardar.
-    @State private var cambiarLimite: FlujoCambiarLimitePeticion?
-    @State private var limiteGuardado = false
+    /// «Cambiar» abre «Cálculo del monto» para el mes que se ve.
+    @State private var calculoMonto: CalculoPeticion?
 
-    @State private var methodPickerLine: SuggestedLine?
     @State private var showDeleteLineAlert = false
 
     @State private var detailTransaction: TransactionItem?
@@ -146,19 +150,22 @@ struct CashFlowCellDetailSheet: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("cashflow_cell_detail_close")
                 }
             }
         }
         .presentationDetents([.large])
         .onAppear { activeMonthKey = month.monthKey }
         .task(id: dataKey) { loadData() }
-        .sheet(item: $cambiarLimite, onDismiss: {
-            if limiteGuardado { dismiss() }
-        }) { peticion in
+        .task(id: listKey) { loadList() }
+        .onChange(of: activeMonthKey) { mesDeLaLista = nil }
+        .sheet(item: $calculoMonto) { peticion in
             if let line = readableLine {
-                FlujoCambiarLimiteSheet(
-                    peticion: peticion, line: line, currencyCode: currencyCode, viewModel: viewModel,
-                    onSaved: { limiteGuardado = true }
+                FlujoCalculoMontoSheet(
+                    origen: .linea(line, monthKey: peticion.monthKey, previews: previews(for: line),
+                                   actual: activeLineResult?.plannedAmount ?? 0),
+                    currencyCode: currencyCode,
+                    viewModel: viewModel
                 )
             }
         }
@@ -171,13 +178,6 @@ struct CashFlowCellDetailSheet: View {
             }
             .accessibilityIdentifier("cashflow_detail_delete_confirm")
             Button(L10n.Action.cancel, role: .cancel) { }
-        }
-        .sheet(item: $methodPickerLine) { suggestion in
-            CashFlowMethodPickerSheet(line: suggestion, currencyCode: currencyCode, viewModel: viewModel) { method, manual in
-                if let line {
-                    viewModel.changeEstimationMethod(line: line, to: method, manualAmount: manual)
-                }
-            }
         }
         // `item:` y no `isPresented:` + un `@State` aparte (regla de `swiftui-ds.md`): con el segundo la hoja salía vacía.
         .sheet(item: $detailTransaction, onDismiss: handleRecordDetailDismiss) { transaction in
@@ -246,10 +246,10 @@ struct CashFlowCellDetailSheet: View {
         .accessibilityHidden(true)
     }
 
-    // MARK: - Cómo se calcula (L18-7)
+    // MARK: - Cómo se calcula (L18-7; informativo desde el 19-nov-2026)
 
-    /// «Cómo se calcula: Promedio 6 meses · Cambiar», su explicación y, si la línea tiene un cambio «desde este mes»
-    /// que vale aquí, «Desde noviembre: S/ 9,000 cada mes» (L18-8).
+    /// «Cómo se calcula: Promedio 6 meses» y debajo cómo sale este mes: la ventana y los meses que se dejaron fuera por
+    /// aislados, o «Monto fijo desde noviembre». Ya no lleva su propio «Cambiar»: el único está junto al límite.
     private func methodSection(lr: CashFlowLineResult) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             // Con texto grande la fila no cabe y partía las palabras («Prome-dio»): el método baja bajo el rótulo.
@@ -264,18 +264,11 @@ struct CashFlowCellDetailSheet: View {
                     methodValue(lr: lr)
                 }
             }
-            Text(lr.estimationMethod.descriptionText)
+            Text(howText(lr: lr))
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
-            if let from = lr.amountChangeFromMonthKey {
-                Text(L10n.UXL18.changeFrom(
-                    monthName(from),
-                    appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode)
-                ))
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("cashflow_detail_change_from")
-            }
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("cashflow_detail_how")
             if lr.isOverride {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "pencil.circle.fill")
@@ -286,6 +279,20 @@ struct CashFlowCellDetailSheet: View {
                 }
             }
         }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Lo que dice el texto de «Cómo se calcula» del mes que se ve.
+    private func howText(lr: CashFlowLineResult) -> String {
+        let cambioDesde = lr.amountChangeFromMonthKey.flatMap { CashFlowDetailLineRow.monthDate($0) }
+        if let liveLine = readableLine,
+           let texto = FlujoDetalleLineaLogica.comoSeCalcula(
+               line: liveLine, explicacion: datos?.monthKey == activeMonthKey ? datos?.historia.explicacion : nil,
+               cambioDesde: cambioDesde
+           ) {
+            return texto
+        }
+        return lr.estimationMethod.descriptionText
     }
 
     private var methodLabel: some View {
@@ -296,43 +303,26 @@ struct CashFlowCellDetailSheet: View {
     }
 
     private func methodValue(lr: CashFlowLineResult) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(lr.estimationMethod.displayName)
-                .font(DS.Typography.label)
-                .foregroundStyle(.primary)
-                .fixedSize()
-                .accessibilityIdentifier("cashflow_detail_method")
-            if line != nil {
-                Button {
-                    openMethodPicker(lr: lr)
-                } label: {
-                    Text("· " + L10n.UXL18.change)
-                        .font(DS.Typography.label.weight(.semibold))
-                        .foregroundStyle(theme.accentText)
-                        .fixedSize()
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.UXL18.change)
-                .accessibilityIdentifier("cashflow_detail_change_method")
-            }
-        }
+        // Un monto escrito «desde» un mes es un monto fijo, aunque los meses de antes sigan con su promedio.
+        let name = lr.amountChangeFromMonthKey != nil ? EstimationMethod.manual.displayName : lr.estimationMethod.displayName
+        return Text(name)
+            .font(DS.Typography.label)
+            .foregroundStyle(.primary)
+            .fixedSize()
+            .accessibilityIdentifier("cashflow_detail_method")
     }
 
-    private func openMethodPicker(lr: CashFlowLineResult) {
-        guard let line else { return }
-        viewModel.prepareMethodPreviews(transactions: transactions, currencyCode: currencyCode)
-        methodPickerLine = SuggestedLine(
-            category: line.category,
-            subcategory: line.subcategory,
-            scheduledPayment: line.scheduledPayment,
-            name: line.name,
-            isIncome: line.isIncome,
-            suggestedAmount: line.method == .manual ? (line.manualAmount ?? lr.plannedAmount) : lr.plannedAmount,
-            estimationMethod: line.method,
-            monthsWithActivity: 0,
-            isSelected: true
-        )
+    /// Lo que daría cada método con los registros, con el mismo índice y el mismo mes de referencia que el límite.
+    private func previews(for line: CashFlowLine) -> [EstimationMethod: CashFlowProjectionCalculator.LimitEstimate] {
+        guard let historia = datos?.historia else { return [:] }
+        var result: [EstimationMethod: CashFlowProjectionCalculator.LimitEstimate] = [:]
+        for method in [EstimationMethod.average6m, .average3m, .lastMonth, .average12m, .trend] {
+            result[method] = CashFlowProjectionCalculator.explainEstimate(
+                method: method, line: line, referenceDate: historia.referencia, index: historia.indice,
+                calendar: .current
+            )
+        }
+        return result
     }
 
     // MARK: - Contenido (S3 del replanteo, variante A: el límite primero)
@@ -341,20 +331,26 @@ struct CashFlowCellDetailSheet: View {
         VStack(spacing: DS.Spacing.xl) {
             limitCard(m: m, lr: lr)
 
-            if let meses = datos?.seisMeses, !meses.isEmpty {
+            if let meses = datos?.historia.meses, !meses.isEmpty {
                 FlujoDetalleLineaSeisMesesView(
-                    meses: meses, esIngreso: lr.isIncome, currencyCode: currencyCode, mesActivo: m.monthKey
+                    meses: meses, esIngreso: lr.isIncome, currencyCode: currencyCode, mesActivo: m.monthKey,
+                    mesElegido: $mesDeLaLista
                 )
                 .padding(DS.Spacing.lg)
                 .solidCard()
             }
 
-            if let datos, datos.monthKey == m.monthKey {
+            if let lista, lista.monthKey == listMonthKey {
                 FlujoDetalleLineaRegistrosView(
-                    dias: datos.dias,
-                    mesNombre: monthName(m.monthKey),
+                    dias: lista.dias,
+                    mesNombre: monthName(lista.monthKey),
                     currencyCode: currencyCode,
-                    onVerEnRegistros: canSeeInRecords ? { seeInRecords(m: m) } : nil,
+                    // Lo real del mes, como la barra y el tooltip (sin lo programado de mañana en adelante).
+                    total: lista.monthKey == m.monthKey ? nil : lista.dias.flatMap(\.registros)
+                        .filter { !$0.esFechado }.reduce(0) { $0 + $1.importe },
+                    volverA: lista.monthKey == m.monthKey ? nil : monthName(m.monthKey),
+                    onVolver: { mesDeLaLista = nil },
+                    onVerEnRegistros: canSeeInRecords ? { seeInRecords(monthKey: lista.monthKey) } : nil,
                     onAbrir: { detailTransaction = $0 }
                 )
             }
@@ -429,7 +425,7 @@ struct CashFlowCellDetailSheet: View {
     private func changeLimitButton(m: CashFlowMonth, lr: CashFlowLineResult) -> some View {
         if readableLine != nil {
             Button {
-                cambiarLimite = FlujoCambiarLimitePeticion(lineID: lr.lineID, monthKey: m.monthKey)
+                calculoMonto = CalculoPeticion(monthKey: m.monthKey)
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "pencil")
@@ -478,12 +474,14 @@ struct CashFlowCellDetailSheet: View {
             }
 
             switch ritmo {
-            case .excedida(let porCuanto):
+            // Justo en el límite (lo gastado es el límite): no hay exceso que contar. Con límites móviles es lo normal en
+            // un gasto fijo de cada mes, y «Te pasaste por S/ 0.00» era falso.
+            case .excedida(let porCuanto) where porCuanto >= 0.005:
                 sentence(
                     L10n.FlujoDetalleLinea.excedida(appPreferences.currency(porCuanto, currencyCode: currencyCode)),
                     icon: "exclamationmark.circle.fill", tint: DS.Semantic.errorForeground, id: "cashflow_detail_exceeded"
                 )
-            case .alRitmo, .ninguno:
+            case .excedida, .alRitmo, .ninguno:
                 // Lo que falta: en un gasto, lo que te queda; en un ingreso, lo que aún no recibiste.
                 let left = max(0, lr.plannedAmount - real)
                 if left > 0.005 {
@@ -667,9 +665,9 @@ struct CashFlowCellDetailSheet: View {
         return liveLine.subcategory != nil || liveLine.category != nil
     }
 
-    /// Solo esta subcategoría (o categoría) y el período del mes, y a Registros: el gesto de Distribución.
-    private func seeInRecords(m: CashFlowMonth) {
-        guard let liveLine = readableLine else { return }
+    /// Solo esta subcategoría (o categoría) y el período del mes de la lista, y a Registros: el gesto de Distribución.
+    private func seeInRecords(monthKey: String) {
+        guard let liveLine = readableLine, let monthDate = CashFlowDetailLineRow.monthDate(monthKey) else { return }
         let session = SessionState.shared
         if let sub = liveLine.subcategory {
             session.selectedSubcategoryIDs = [sub.persistentModelID]
@@ -678,7 +676,7 @@ struct CashFlowCellDetailSheet: View {
             session.selectedCategoryIDs = [cat.persistentModelID]
             session.selectedSubcategoryIDs = []
         }
-        let period = FlujoDetalleLineaLogica.periodoDeRegistros(mes: m.date, now: .now, calendar: .current)
+        let period = FlujoDetalleLineaLogica.periodoDeRegistros(mes: monthDate, now: .now, calendar: .current)
         session.choosePeriod(period.period, customRange: period.range, stepUnit: period.period == .custom ? .month : nil)
         dismiss()
         navigation.selectMainTab(.records)
@@ -686,9 +684,19 @@ struct CashFlowCellDetailSheet: View {
 
     // MARK: - Datos (registros y seis meses)
 
-    /// Lo que cambia la lista o la gráfica: el mes, el plan y los movimientos.
+    /// Lo que cambia la gráfica y la explicación del límite: el mes, el plan, los movimientos y la propia línea (su
+    /// método, sus cambios «desde» y el límite que da el motor, para que «Cálculo del monto» se vea al guardar).
     private var dataKey: String {
-        "\(activeMonthKey)|\(viewModel.planRevision)|\(transactions.count)|\(viewModel.projection?.months.count ?? 0)"
+        let lineKey = readableLine.map { "\($0.estimationMethod)|\($0.amountChangesRaw ?? "")|\($0.manualAmount ?? -1)" } ?? ""
+        return "\(activeMonthKey)|\(viewModel.planRevision)|\(transactions.count)|\(viewModel.projection?.months.count ?? 0)"
+            + "|\(lineKey)|\(activeLineResult?.plannedAmount ?? 0)"
+    }
+
+    /// El mes de la lista de registros: el elegido en la gráfica o el que se ve.
+    private var listMonthKey: String { mesDeLaLista ?? activeMonthKey }
+
+    private var listKey: String {
+        "\(listMonthKey)|\(viewModel.planRevision)|\(transactions.count)|\(activeLineResult?.realAmount ?? 0)"
     }
 
     private func loadData() {
@@ -697,34 +705,58 @@ struct CashFlowCellDetailSheet: View {
             return
         }
         let calendar = Calendar.current
-        let now = Date.now
         let converter = CurrencyConverter.shared
         let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext)
-        // El mismo alcance que la cifra del mes (`CashFlowPlanViewModel.recalculate`): las cuentas del saldo del Panel.
-        let scoped = FlujoMotorMesEntrada.alcanceDelSaldo(
-            accounts: accounts, transactions: transactions, includeGroups: appPreferences.includeGroupsInPanelTotal
-        )?.transactions ?? transactions
+        let planLines = FlujoDetalleLineaLogica.ordenDelPlan(plan.lines ?? [])
+        guard let historia = FlujoDetalleLineaLogica.historia(
+            line: liveLine, lineasPlan: planLines, transactions: scopedTransactions, historia: transactions,
+            hasta: m.date, currencyCode: currencyCode, adjustment: adjustment, converter: converter, now: .now,
+            calendar: calendar
+        ) else {
+            datos = nil
+            return
+        }
+        datos = Datos(monthKey: m.monthKey, historia: historia)
+    }
+
+    private func loadList() {
+        guard let liveLine = readableLine, let plan = viewModel.plan,
+              let mes = CashFlowDetailLineRow.monthDate(listMonthKey) else {
+            lista = nil
+            return
+        }
+        let calendar = Calendar.current
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext)
         let planLines = FlujoDetalleLineaLogica.ordenDelPlan(plan.lines ?? [])
         let registros = FlujoDetalleLineaLogica.registros(
-            de: liveLine.id, mes: m.date, lineas: planLines.map { FlujoMotorMesEntrada.linea($0) },
-            transactions: scoped, currencyCode: currencyCode, adjustment: adjustment, converter: converter,
-            now: now, calendar: calendar
+            de: liveLine.id, mes: mes, lineas: planLines.map { FlujoMotorMesEntrada.linea($0) },
+            transactions: scopedTransactions, currencyCode: currencyCode, adjustment: adjustment,
+            converter: CurrencyConverter.shared, now: .now, calendar: calendar
         )
-        let seisMeses = FlujoDetalleLineaLogica.seisMeses(
-            line: liveLine, lineasPlan: planLines, transactions: scoped, historia: transactions, hasta: m.date,
-            currencyCode: currencyCode, adjustment: adjustment, converter: converter, now: now, calendar: calendar
-        )
-        datos = Datos(
-            monthKey: m.monthKey,
-            dias: FlujoDetalleLineaLogica.dias(registros, calendar: calendar),
-            seisMeses: seisMeses
-        )
+        lista = Lista(monthKey: listMonthKey, dias: FlujoDetalleLineaLogica.dias(registros, calendar: calendar))
+    }
+
+    /// El mismo alcance que la cifra del mes (`CashFlowPlanViewModel.recalculate`): las cuentas del saldo del Panel.
+    private var scopedTransactions: [TransactionItem] {
+        FlujoMotorMesEntrada.alcanceDelSaldo(
+            accounts: accounts, transactions: transactions, includeGroups: appPreferences.includeGroupsInPanelTotal
+        )?.transactions ?? transactions
     }
 
     struct Datos {
         let monthKey: String
+        let historia: FlujoDetalleLineaLogica.Historia
+    }
+
+    struct Lista {
+        let monthKey: String
         let dias: [FlujoDetalleLineaLogica.Dia]
-        let seisMeses: [FlujoDetalleLineaLogica.MesHistoria]
+    }
+
+    /// «Cambiar» para un mes: abre «Cálculo del monto».
+    struct CalculoPeticion: Identifiable {
+        let monthKey: String
+        var id: String { monthKey }
     }
 
     // MARK: - Eliminar línea (L18-7)

@@ -316,12 +316,11 @@ struct DeletedModelMoreFormsGuardWiringTests {
         #expect(source.contains("FlujoDetalleLineaLogica.registros("))
         try Self.expectOrder("guard !tx.isDeleted, tx.modelContext != nil,", before: "tx.date",
                              after: "static func registros(", in: logica)
-        // La línea solo se lee en la copia del icono, en el accesor y en la acción que abre el selector de método (con
-        // la línea viva); el resto va por `readableLine`.
+        // La línea solo se lee en la copia del icono y en el accesor; el resto va por `readableLine`. (Desde el 19-nov-2026
+        // no hay selector de método aparte: el único «Cambiar» abre «Cálculo del monto» con la línea viva.)
         let rest = try Self.code(source, without: [
             "init(reading line: CashFlowLine) {",
             "private static func readable(_ line: CashFlowLine?) -> CashFlowLine? {",
-            "private func openMethodPicker(lr: CashFlowLineResult) {",
         ])
         let reads = Self.matches(#"\bline(\?|!)?\.\w"#, in: rest)
         #expect(reads.isEmpty, "Lecturas de la línea sin pasar por `readableLine`: \(reads)")

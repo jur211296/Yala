@@ -47,6 +47,42 @@ extension L10n {
             "flujoDetalleLinea.records.seeInRecords",
             "flujoDetalleLinea.records.empty",
             "flujoDetalleLinea.records.scheduledDay",
+            "flujoDetalleLinea.limits.moving",
+            "flujoDetalleLinea.how.average",
+            "flujoDetalleLinea.how.average.isolated",
+            "flujoDetalleLinea.how.lastMonth",
+            "flujoDetalleLinea.how.lastMonth.isolated",
+            "flujoDetalleLinea.how.trend",
+            "flujoDetalleLinea.how.trend.isolated",
+            "flujoDetalleLinea.how.fixed",
+            "flujoDetalleLinea.how.fixedFrom",
+            "flujoDetalleLinea.how.noData",
+            "flujoDetalleLinea.tip.isolated",
+            "flujoDetalleLinea.tip.hint",
+            "flujoDetalleLinea.sel.back",
+            "flujoDetalleLinea.records.total",
+            "flujoDetalleLinea.calc.methods",
+            "flujoDetalleLinea.calc.would",
+            "flujoDetalleLinea.calc.isolated",
+            "flujoDetalleLinea.calc.noData",
+            "flujoDetalleLinea.calc.fixed.field",
+            "flujoDetalleLinea.calc.fixed.scope",
+            "flujoDetalleLinea.calc.result.expense",
+            "flujoDetalleLinea.calc.result.income",
+            "flujoDetalleLinea.others.total",
+            "flujoDetalleLinea.others.future.note.expense",
+            "flujoDetalleLinea.others.future.note.income",
+            "flujoDetalleLinea.others.future.empty.expense",
+            "flujoDetalleLinea.others.future.empty.income",
+            "flujoDetalleLinea.others.consider",
+            "flujoDetalleLinea.others.reason.day",
+            "flujoDetalleLinea.others.reason.noDay",
+            "flujoDetalleLinea.others.isolated",
+            "flujoDetalleLinea.others.scheduled",
+            "flujoDetalleLinea.others.variable",
+            "flujoDetalleLinea.others.add.a11y",
+            "flujoDetalleLinea.others.parent",
+            "flujoDetalleLinea.others.notConsidered",
         ]
 
         static func string(_ key: String, resolution: LocaleResolution = LanguageManager.resolved) -> String {
@@ -121,5 +157,91 @@ extension L10n {
         static func sinRegistros(mes: String) -> String { f("records.empty", mes) }
         /// «Programado», la marca de un día de mañana en adelante.
         static var programadoDia: String { s("records.scheduledDay") }
+
+        // MARK: Límites móviles y aislados (19-nov-2026)
+
+        /// «Cada límite se calcula con tus últimos meses, sin los montos aislados…», la nota de crear el plan y de
+        /// «Agregar línea».
+        static var limitesMoviles: String { s("limits.moving") }
+        /// «Promedio de los últimos 6 meses[, sin agosto y octubre por ser montos aislados]. Se actualiza solo cada mes.»
+        static func comoPromedio(meses: Int, aislados: String?) -> String {
+            aislados.map { f("how.average.isolated", meses, $0) } ?? f("how.average", meses)
+        }
+        /// «Lo de octubre, el último mes completo…» / «Lo de septiembre: octubre se dejó fuera…».
+        static func comoUltimoMes(_ mes: String, aislados: String?) -> String {
+            aislados.map { f("how.lastMonth.isolated", mes, $0) } ?? f("how.lastMonth", mes)
+        }
+        /// «La tendencia de los últimos 6 meses[, sin …]…».
+        static func comoTendencia(aislados: String?) -> String {
+            aislados.map { f("how.trend.isolated", $0) } ?? s("how.trend")
+        }
+        /// «Monto fijo: el mismo número cada mes.»
+        static var comoFijo: String { s("how.fixed") }
+        /// «Monto fijo desde noviembre.»
+        static func comoFijoDesde(_ mes: String) -> String { f("how.fixedFrom", mes) }
+        /// «Todavía no hay meses con registros para calcularlo.»
+        static var comoSinDatos: String { s("how.noData") }
+
+        /// «Aislado: fuera del cálculo», en el tooltip de una barra.
+        static var tooltipAislado: String { s("tip.isolated") }
+        /// «Mantén presionada una barra… Tócala para ver sus registros.»
+        static var tooltipAyuda: String { s("tip.hint") }
+        /// «Volver a noviembre».
+        static func volverA(_ mes: String) -> String { f("sel.back", mes) }
+        /// «Total: S/ 1,600».
+        static func totalRegistros(_ monto: String) -> String { f("records.total", monto) }
+
+        // MARK: Cálculo del monto
+
+        /// «Cómo calcularlo».
+        static var calculoMetodos: String { s("calc.methods") }
+        /// «Con tus registros: S/ 150».
+        static func calculoDaria(_ monto: String) -> String { f("calc.would", monto) }
+        /// «Sin agosto y octubre (montos aislados)».
+        static func calculoSinAislados(_ meses: String) -> String { f("calc.isolated", meses) }
+        /// «Sin registros suficientes».
+        static var calculoSinDatos: String { s("calc.noData") }
+        /// «Monto de cada mes».
+        static var calculoCampoFijo: String { s("calc.fixed.field") }
+        /// «Qué meses cambian».
+        static var calculoAlcance: String { s("calc.fixed.scope") }
+        /// «Límite de cada mes» / «Esperado cada mes».
+        static func calculoResultado(esIngreso: Bool) -> String { s("calc.result.\(lado(esIngreso))") }
+
+        // MARK: No considerados
+
+        /// «Total en diciembre».
+        static func otrosTotal(_ mes: String) -> String { f("others.total", mes) }
+        /// «En los meses que vienen, fuera de tu plan solo se cuentan los gastos fijos…».
+        static func otrosNotaFutura(esIngreso: Bool) -> String { s("others.future.note.\(lado(esIngreso))") }
+        /// «No hay gastos fijos fuera de tu plan…».
+        static func otrosFuturoVacio(esIngreso: Bool) -> String { s("others.future.empty.\(lado(esIngreso))") }
+        /// «Considerar a futuro».
+        static var otrosConsiderar: String { s("others.consider") }
+        /// «Se repite cada mes: día 5, en 5 de 6 meses».
+        static func otrosRazon(dia: Int?, vistos: Int, de total: Int) -> String {
+            dia.map { f("others.reason.day", $0, vistos, total) } ?? f("others.reason.noDay", vistos, total)
+        }
+        /// «Aislado».
+        static var otrosAislado: String { s("others.isolated") }
+        /// «Programado: S/ 150».
+        static func otrosProgramado(_ monto: String) -> String { f("others.scheduled", monto) }
+        /// «Lo variable que falta este mes».
+        static var otrosVariable: String { s("others.variable") }
+        /// «Agregar Gimnasio al plan», para VoiceOver.
+        static func otrosAgregar(_ nombre: String) -> String { f("others.add.a11y", nombre) }
+        /// «Anotado en Comida sin subcategoría».
+        static func otrosMadre(_ categoria: String) -> String { f("others.parent", categoria) }
+        /// «No se cuenta a futuro».
+        static var otrosNoConsiderado: String { s("others.notConsidered") }
+
+        /// «agosto y octubre», con la conjunción del idioma de la app.
+        static func listaDeMeses(_ meses: [Foundation.Date]) -> String? {
+            guard !meses.isEmpty else { return nil }
+            let nombres = meses.sorted().map {
+                $0.formatted(Foundation.Date.FormatStyle().month(.wide).locale(AppLocale.current))
+            }
+            return nombres.formatted(.list(type: .and).locale(AppLocale.current))
+        }
     }
 }

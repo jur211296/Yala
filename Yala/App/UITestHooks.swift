@@ -147,6 +147,11 @@ final class UITestHooks {
     /// para ver el saldo de hoy con un movimiento futuro. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedFutureMovement: Bool { hasArg("-uitest-seed-future-movement") }
 
+    /// `-uitest-seed-flujo-aislados`: añade dos compras grandes en «Fitness y actividad física», hace 3 meses y el mes
+    /// pasado (`DevSeedFlujoAislados`): el ejemplo de los aislados en una línea por promedio del flujo de caja (encargo
+    /// del 19-nov-2026). Aditivo al perfil de `-uitest-seed`.
+    nonisolated static var seedFlujoAislados: Bool { hasArg("-uitest-seed-flujo-aislados") }
+
     /// `-uitest-seed-today-record`: añade un gasto «Bus» hace un minuto sin salir de hoy en la cuenta principal
     /// (`DevSeedTodayRecord`), el registro más reciente del corpus, para que el Panel enseñe un registro conocido en «Este
     /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.

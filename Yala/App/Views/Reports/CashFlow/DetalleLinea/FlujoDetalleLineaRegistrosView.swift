@@ -5,6 +5,7 @@
 //  «Registros de noviembre» del detalle de una línea del flujo de caja (S3 del replanteo): todos los registros que el
 //  motor da a la línea en el mes, por día y con lo que suma cada día, con la fila de Registros (se puede tocar) y
 //  «Ver en Registros» a la derecha del título. Un día de mañana en adelante dice «Programado».
+//  Desde el 19-nov-2026 enseña también el mes elegido en la gráfica de 6 meses, con su total y «Volver a noviembre».
 //
 
 import SwiftData
@@ -14,6 +15,11 @@ struct FlujoDetalleLineaRegistrosView: View {
     let dias: [FlujoDetalleLineaLogica.Dia]
     let mesNombre: String
     let currencyCode: String
+    /// El total del mes, cuando la lista es de un mes elegido en la gráfica; `nil` en el mes que se ve.
+    var total: Double? = nil
+    /// «Volver a noviembre»: el mes que se ve, cuando la lista es de otro. `nil` = no hay a dónde volver.
+    var volverA: String? = nil
+    var onVolver: () -> Void = {}
     /// `nil`: la línea no tiene categoría que filtrar (no sale «Ver en Registros»).
     let onVerEnRegistros: (() -> Void)?
     let onAbrir: (TransactionItem) -> Void
@@ -22,6 +28,22 @@ struct FlujoDetalleLineaRegistrosView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            if let volverA {
+                Button(action: onVolver) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(DS.Typography.labelSmall)
+                            .accessibilityHidden(true)
+                        Text(L10n.FlujoDetalleLinea.volverA(volverA))
+                    }
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thAccentText)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("cashflow_line_records_back")
+            }
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline) {
                     titulo
@@ -51,10 +73,20 @@ struct FlujoDetalleLineaRegistrosView: View {
     }
 
     private var titulo: some View {
-        Text(L10n.FlujoDetalleLinea.registrosTitulo(mes: mesNombre))
-            .font(DS.Typography.headline)
-            .foregroundStyle(.primary)
-            .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(L10n.FlujoDetalleLinea.registrosTitulo(mes: mesNombre))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("cashflow_line_records_title")
+            if let total {
+                Text(L10n.FlujoDetalleLinea.totalRegistros(appPreferences.currency(total, currencyCode: currencyCode)))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .accessibilityIdentifier("cashflow_line_records_total")
+            }
+        }
     }
 
     @ViewBuilder

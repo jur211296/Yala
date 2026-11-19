@@ -49,6 +49,7 @@ enum FlujoMotorMesEntrada {
             // El comercio sale de la nota, como en la memoria de comercios (se canoniza solo donde se mira: la ventana).
             movimiento.nota = tx.note
             movimiento.subcategoriaNombre = tx.subcategory?.name
+            movimiento.subcategoria = tx.subcategory
             result.append(movimiento)
         }
         return (result, aproximado)

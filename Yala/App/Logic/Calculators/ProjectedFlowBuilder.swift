@@ -411,8 +411,9 @@ enum ProjectedFlowBuilder {
         let lines = (plan.lines ?? []).filter(\.isEnabled)
         let hasIncomeLines = lines.contains(where: \.isIncome)
         let hasExpenseLines = lines.contains { !$0.isIncome }
-        // Un plan sin líneas también manda: el flujo de caja lo proyecta con el motor del mes («otros» por la mediana),
-        // y «Al 30» tiene que ser la misma cifra en las dos pantallas.
+        // Un plan sin líneas también manda: el flujo de caja lo proyecta con el motor del mes (en el mes en curso, «otros»
+        // por la mediana; en los que vienen, solo lo fijo, decisión del 19-nov-2026), y «Al 30» tiene que ser la misma
+        // cifra en las dos pantallas.
 
         let calendar = inputs.calendar
         guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today)?.start,

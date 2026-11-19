@@ -481,8 +481,8 @@ struct CashFlowAddFromExpensesView: View {
             }
             .padding(DS.Spacing.lg)
             .solidCard()
-            // P4: el límite queda fijo con esta cifra.
-            Text(L10n.FlujoCrearPlan.limitesFijos)
+            // Límites móviles (19-nov-2026): el límite se recalcula cada mes con el método elegido.
+            Text(L10n.FlujoDetalleLinea.limitesMoviles)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -521,15 +521,16 @@ struct CashFlowAddFromExpensesView: View {
         )
     }
 
-    /// P4: la línea nace con monto fijo sembrado con el método elegido; después se cambia con «Cambiar límite».
+    /// La línea nace con el método elegido (límites móviles, 19-nov-2026; antes del cambio, el P4 la sembraba como
+    /// monto fijo): se recalcula cada mes. Después se cambia con «Cambiar».
     private func createLine() {
         let maxOrder = (viewModel.plan?.lines ?? []).map(\.sortOrder).max() ?? 0
         let line = CashFlowLine(
             name: name,
             isIncome: isIncome,
             sortOrder: maxOrder + 1,
-            estimationMethod: .manual,
-            manualAmount: computePreview(),
+            estimationMethod: selectedMethod,
+            manualAmount: selectedMethod == .manual ? computePreview() : nil,
             category: selectedSubcategory?.category ?? selectedCategory,
             subcategory: selectedSubcategory
         )

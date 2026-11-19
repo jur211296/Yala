@@ -135,8 +135,25 @@ de lo que le falta; si ya llegó el 75 %, no se proyecta la diferencia. Los ingr
 cuenta para la cifra (con Saldo, las cuentas que suman): un cobro en una cuenta excluida no se proyecta en ese saldo.
 En «Ver proyectado», un fijo de una vez al mes se dibuja en su día (`dayPlacedFlows`), no repartido; el cierre del mes no
 cambia. Los umbrales viven en `FlujoProyeccionInteligente.Umbrales`; lo fijan `YalaTests/FlujoProyeccionInteligente/`
-(un caso por cada hallazgo de su review adversarial) y la paridad con Panel, widget y Tendencias. Las líneas con método
-de promedio no quitan aislados (card abierta).
+(un caso por cada hallazgo de su review adversarial) y la paridad con Panel, widget y Tendencias.
+
+**Con plan, los meses que vienen proyectan fuera de las líneas solo lo fijo (decisión de Jürgen del 19-nov-2026, 10:47).**
+`FlujoMotorMes.Entrada.soloFijosEnMesesFuturos` (lo enciende `CashFlowProjectionCalculator.calculate`, que siempre tiene
+plan): en «otros» de un mes que viene no hay mediana, solo los fijos a futuro de `FlujoProyeccionInteligente.Lado`
+(ingresos: los mismos fijos; gastos: una vez al mes, ±25 %, día dentro de ±5 de su día típico, sin aislados). El mes en
+curso y los pasados no cambian, y sin plan (Panel sin plan) se sigue proyectando lo variable. Cada fijo se puede apagar
+en «Considerar a futuro» (`FlujoFijosAFuturo`, preferencia LOCAL del dispositivo: no se sincroniza). La hoja de no
+considerados pinta `CashFlowOtherResult.items` (una fila por subcategoría): su suma más `variableLeft` es el total del
+mes. Lo fijan `FlujoAisladosPromedioTests` y el caso «partida apagada» de `FlujoProyeccionInteligenteParidadTests`.
+
+**Las líneas por promedio, último mes o tendencia dejan fuera los meses aislados, y su límite se mueve solo (19-nov-2026,
+10:10 y 10:21; corrige el P4 del replanteo).** `CashFlowProjectionCalculator.explainEstimate` busca los meses aislados de
+la línea con `FlujoProyeccionInteligente.mesesAislados` (a nivel de MES: ≥ 3 veces la mediana de los meses con algo, con
+≥ 3 meses; a nivel de movimiento dos meses fuertes se «repetirían» entre sí) en los 6 meses anteriores (12 con «Promedio
+12 meses») y cada método mira su ventana sin ellos. Cada mes pasado o en curso usa su propia ventana; los que vienen, la
+del mes en curso. Crear el plan y «Agregar línea» guardan el método elegido: solo «Monto fijo» deja un número quieto
+(`FlujoLimitesMovilesMigracion` devuelve a su método, una vez, las líneas que el P4 sembró). Si cambias cómo sale un
+límite, la explicación de «Cómo se calcula» y las cifras de «Cálculo del monto» salen de la misma función.
 
 ## Los tests que lo fijan
 

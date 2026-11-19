@@ -133,6 +133,47 @@ struct CashFlowOtherResult {
     /// Meses completos de historia que miró la detección, y si alcanzan para detectar (3 o más).
     var historyMonths: Int = 0
     var detects: Bool = false
+    /// Las filas de la hoja por subcategoría (decisión de Jürgen del 19-nov-2026: «siempre a nivel de subcategoría»):
+    /// lo real, lo programado y lo proyectado de cada una. Su suma más `variableLeft` es `plannedAmount`.
+    var items: [OtherSubcategoryItem] = []
+    /// Con plan, un mes que viene: «otros» proyecta solo lo fijo.
+    var isFixedOnly: Bool = false
+}
+
+/// Una fila de «Ingresos/Gastos no considerados»: una subcategoría, lo anotado en una categoría sin subcategoría o lo
+/// sin categoría.
+struct OtherSubcategoryItem: Identifiable {
+    enum Kind {
+        /// Una subcategoría: el + la agrega al plan.
+        case subcategory
+        /// Lo anotado en la categoría madre sin subcategoría, cuando la categoría tiene subcategorías.
+        case parentWithoutSubcategory
+        /// Una categoría que no tiene subcategorías: su línea es la categoría.
+        case categoryWithoutSubcategories
+        case uncategorized
+    }
+
+    let id: String
+    let kind: Kind
+    let name: String
+    /// La categoría que la agrupa en la hoja.
+    let categoryName: String
+    let iconName: String
+    let colorHex: String
+    let category: Category?
+    let subcategory: Subcategory?
+    let realAmount: Double
+    /// Lo fechado por delante y los pagos planificados pendientes.
+    let scheduledAmount: Double
+    /// Lo que se proyecta por sus fijos.
+    let projectedAmount: Double
+    /// Lo real de esta fila que se dejó fuera por aislado.
+    let isolatedAmount: Double
+    let fixedItems: [OtherFixedItem]
+
+    var total: Double { realAmount + scheduledAmount + projectedAmount }
+    /// Se puede agregar al plan sin perder el detalle de subcategoría.
+    var canBecomeLine: Bool { kind == .subcategory || kind == .categoryWithoutSubcategories }
 }
 
 /// Un fijo detectado, para la hoja de «Otros».
@@ -153,6 +194,10 @@ struct OtherFixedItem {
     let monthsWindow: Int
     /// Lo que de verdad entró en el mes elegido (sin lo fechado ni un pago pendiente): «Ya llegó este mes» sale de aquí.
     var receivedAmount: Double = 0
+    /// La clave de «Considerar a futuro» (`FlujoFijosAFuturo`).
+    var stableKey: String = ""
+    /// Encendido en «Considerar a futuro»: se proyecta en los meses que vienen.
+    var isConsideredInFuture: Bool = true
 }
 
 /// Un movimiento aislado que no entra en la proyección de los meses que vienen.
@@ -276,6 +321,7 @@ struct CashFlowProjectionCalculator {
         occurrences: [ProjectedFlowBuilder.Occurrence]? = nil,
         historyTransactions: [TransactionItem]? = nil,
         includesSubcategoryBreakdown: Bool = true,
+        excludedFutureFixed: Set<String>? = nil,
         now: Date = .now,
         calendar: Calendar = .current
     ) -> CashFlowProjection {
@@ -354,7 +400,10 @@ struct CashFlowProjectionCalculator {
             movimientos: movimientos,
             pendientes: FlujoMotorMesEntrada.pendientes(pending, calendar: calendar),
             calendar: calendar,
-            historia: historia
+            historia: historia,
+            // Con plan, en los meses que vienen «otros» proyecta solo lo fijo (decisión de Jürgen del 19-nov-2026).
+            soloFijosEnMesesFuturos: true,
+            excluidosAFuturo: excludedFutureFixed ?? FlujoFijosAFuturo.excluidos()
         ))
         let isApproximate = resolved.aproximado || planned.values.contains { $0.values.contains(where: \.isApproximate) }
 
@@ -370,6 +419,13 @@ struct CashFlowProjectionCalculator {
         let movimientosPorMes = includesSubcategoryBreakdown
             ? Dictionary(grouping: movimientos.filter { !$0.esFechado }, by: \.mes) : [:]
 
+        // Para nombrar las partidas de «otros» que solo llegan por un pago planificado (sin movimientos en el mes).
+        var namesByID: [PersistentIdentifier: (Category?, Subcategory?)] = [:]
+        for payment in scheduledPayments {
+            guard let sub = payment.subcategory else { continue }
+            namesByID[sub.persistentModelID] = (sub.category, sub)
+            if let cat = sub.category { namesByID[cat.persistentModelID] = (cat, nil) }
+        }
         let categoriesByID = Dictionary(
             orderedLines.compactMap { line in
                 (line.category ?? line.subcategory?.category).map { ($0.persistentModelID, $0) }
@@ -407,9 +463,9 @@ struct CashFlowProjectionCalculator {
                 monthKey: mKey, date: month, isPast: result.esPasado, isCurrent: result.esEnCurso,
                 incomeLines: incomeResults, expenseLines: expenseResults,
                 otherExpenses: otherResult(result.gastos, isPast: result.esPasado, isCurrent: result.esEnCurso,
-                                           showsPlannedOthers: plan.showOtherExpenses),
+                                           showsPlannedOthers: plan.showOtherExpenses, names: namesByID),
                 otherIncome: otherResult(result.ingresos, isPast: result.esPasado, isCurrent: result.esEnCurso,
-                                         showsPlannedOthers: plan.showOtherExpenses),
+                                         showsPlannedOthers: plan.showOtherExpenses, names: namesByID),
                 totalIncome: totalIncome, totalExpense: totalExpense,
                 netFlow: totalIncome - totalExpense,
                 accumulatedBalance: closing,
@@ -441,7 +497,8 @@ struct CashFlowProjectionCalculator {
     /// considerados» apagado (`showOtherExpenses`), no se pinta, aunque su dinero sigue en los totales del mes: un total
     /// sin él no sería lo que pasa en tus cuentas.
     private static func otherResult(
-        _ side: FlujoMotorMes.Lado, isPast: Bool, isCurrent: Bool, showsPlannedOthers: Bool
+        _ side: FlujoMotorMes.Lado, isPast: Bool, isCurrent: Bool, showsPlannedOthers: Bool,
+        names: [PersistentIdentifier: (Category?, Subcategory?)] = [:]
     ) -> CashFlowOtherResult? {
         guard showsPlannedOthers else { return nil }
         let otros = side.otros
@@ -455,8 +512,14 @@ struct CashFlowProjectionCalculator {
             )
         }
         // Un mes cerrado no proyecta nada: ni fijos ni aislados que explicar.
+        let apagados = Set(otros.fijosApagados.map(\.fijo.claveEstable))
         let fixed: [OtherFixedItem] = isPast ? [] : otros.fijos.map {
-            fixedItem($0.fijo, left: $0.falta, received: $0.cobrado)
+            var item = fixedItem($0.fijo, left: $0.falta, received: $0.cobrado)
+            item.isConsideredInFuture = !apagados.contains(item.stableKey)
+            return item
+        }
+        let items: [OtherSubcategoryItem] = otros.partidas.map { partida in
+            subcategoryItem(partida, names: names, apagados: apagados, isPast: isPast)
         }
         let isolated = (isPast ? [] : otros.aislados + deteccion.aisladosVentana).map { aislado in
             OtherIsolatedItem(
@@ -480,7 +543,67 @@ struct CashFlowProjectionCalculator {
             variableEstimate: deteccion.variable,
             variableLeft: otros.faltaVariable,
             historyMonths: deteccion.mesesDeHistoria,
-            detects: deteccion.detecta
+            detects: deteccion.detecta,
+            items: items,
+            isFixedOnly: otros.soloFijos
+        )
+    }
+
+    /// Una fila de la hoja de no considerados: una subcategoría (el id base), lo anotado en una categoría sin
+    /// subcategoría o lo sin categoría, con su categoría como agrupador.
+    private static func subcategoryItem(
+        _ partida: FlujoMotorMes.PartidaOtros, names: [PersistentIdentifier: (Category?, Subcategory?)],
+        apagados: Set<String>, isPast: Bool
+    ) -> OtherSubcategoryItem {
+        var category = partida.categoria
+        var subcategory = partida.subcategoria
+        var subName = partida.subcategoriaNombre
+        switch partida.base {
+        case .subcategoria(let id):
+            if let named = names[id] {
+                category = category ?? named.0
+                subcategory = subcategory ?? named.1
+                subName = subName ?? named.1?.name
+            }
+        case .categoria(let id):
+            category = category ?? names[id]?.0
+        case .sinCategoria:
+            break
+        }
+        let readableCategory = category.flatMap { $0.isDeleted ? nil : $0 }
+        let kind: OtherSubcategoryItem.Kind
+        switch partida.base {
+        case .subcategoria: kind = .subcategory
+        case .categoria:
+            let hasVisibleSubs = (readableCategory?.subcategories ?? []).contains(where: \.isVisible)
+            kind = hasVisibleSubs ? .parentWithoutSubcategory : .categoryWithoutSubcategories
+        case .sinCategoria: kind = .uncategorized
+        }
+        let name: String
+        switch kind {
+        case .subcategory: name = subName ?? readableCategory?.name ?? L10n.Report.uncategorized
+        case .parentWithoutSubcategory: name = L10n.Report.noSubcategory
+        case .categoryWithoutSubcategories: name = readableCategory?.name ?? L10n.Report.uncategorized
+        case .uncategorized: name = L10n.Report.uncategorized
+        }
+        return OtherSubcategoryItem(
+            id: String(describing: partida.base),
+            kind: kind,
+            name: name,
+            categoryName: readableCategory?.name ?? L10n.Report.uncategorized,
+            iconName: (subcategory?.iconName ?? readableCategory?.iconName) ?? AppConstants.uncategorizedIconName,
+            colorHex: (subcategory?.colorHex ?? readableCategory?.colorHex) ?? AppConstants.uncategorizedColorHex,
+            category: readableCategory,
+            subcategory: subcategory,
+            realAmount: partida.real,
+            scheduledAmount: partida.programado,
+            projectedAmount: partida.proyectado,
+            isolatedAmount: partida.aislado,
+            fixedItems: isPast ? [] : partida.fijos.map { fijoMes in
+                var item = fixedItem(fijoMes.fijo, left: fijoMes.falta, received: fijoMes.cobrado)
+                item.isConsideredInFuture = !apagados.contains(item.stableKey)
+                return item
+            }
         )
     }
 
@@ -499,7 +622,8 @@ struct CashFlowProjectionCalculator {
             leftAmount: left,
             monthsSeen: fijo.mesesVistos,
             monthsWindow: fijo.mesesVentana,
-            receivedAmount: received
+            receivedAmount: received,
+            stableKey: fijo.claveEstable
         )
     }
 
@@ -715,26 +839,94 @@ struct CashFlowProjectionCalculator {
 
     // MARK: - Average Estimation
 
+    /// Cómo sale el límite de una línea por un método que mira la historia: el monto, los meses que entraron y los que
+    /// se dejaron fuera por aislados (decisión de Jürgen del 19-nov-2026: «a veces son súper claros y arruinan la
+    /// media»). Los aislados se buscan en los 6 meses anteriores (12 con «Promedio 12 meses») con
+    /// `FlujoProyeccionInteligente.mesesAislados`, y cada método mira su ventana sin ellos. `excludesIsolated: false` es
+    /// la regla de antes (la usa la migración de las líneas sembradas por P4).
+    struct LimitEstimate: Equatable {
+        let method: EstimationMethod
+        let amount: Double
+        /// Los meses que entraron en la cifra, del más reciente al más antiguo.
+        let usedMonths: [Date]
+        /// Los meses de la ventana del método que se dejaron fuera por aislados, del más reciente al más antiguo.
+        let isolatedMonths: [Date]
+    }
+
+    static func explainEstimate(
+        method: EstimationMethod, line: CashFlowLine, referenceDate: Date,
+        index: TransactionIndex, calendar: Calendar, excludesIsolated: Bool = true
+    ) -> LimitEstimate {
+        let empty = LimitEstimate(method: method, amount: 0, usedMonths: [], isolatedMonths: [])
+        guard line.subcategory != nil || line.category != nil else { return empty }
+        let detection = method == .average12m ? 12 : 6
+        var totals: [Date: Double] = [:]
+        var monthsBack: [Date] = []
+        for offset in 1...detection {
+            guard let month = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
+            monthsBack.append(month)
+            totals[month] = lookupTotal(line: line, index: index, monthKey: monthKey(for: month, calendar: calendar))
+        }
+        let isolated = excludesIsolated ? FlujoProyeccionInteligente.mesesAislados(totals) : []
+
+        switch method {
+        case .average3m, .average6m, .average12m:
+            let window = Array(monthsBack.prefix(method == .average3m ? 3 : method == .average6m ? 6 : 12))
+            let used = window.filter { !isolated.contains($0) && (totals[$0] ?? 0) > 0 }
+            let total = used.reduce(0.0) { $0 + (totals[$1] ?? 0) }
+            return LimitEstimate(
+                method: method, amount: used.isEmpty ? 0 : total / Double(used.count),
+                usedMonths: used, isolatedMonths: window.filter(isolated.contains)
+            )
+        case .lastMonth:
+            // El último mes que no fue aislado (si el mes pasado lo fue, el anterior).
+            guard let chosen = monthsBack.first(where: { !isolated.contains($0) }) ?? monthsBack.first else {
+                return empty
+            }
+            let skipped = monthsBack.prefix { $0 != chosen }
+            return LimitEstimate(
+                method: method, amount: totals[chosen] ?? 0, usedMonths: [chosen], isolatedMonths: Array(skipped)
+            )
+        case .trend:
+            // Regresión lineal sobre los 6 meses (x = 0 el más antiguo), sin los aislados, proyectada al mes siguiente.
+            let points: [(month: Date, x: Double, y: Double)] = monthsBack.prefix(6).enumerated().compactMap { i, month in
+                guard !isolated.contains(month) else { return nil }
+                return (month, Double(5 - i), totals[month] ?? 0)
+            }
+            let isolatedInWindow = monthsBack.prefix(6).filter(isolated.contains)
+            guard points.count >= 2 else {
+                return LimitEstimate(method: method, amount: 0, usedMonths: points.map(\.month),
+                                     isolatedMonths: isolatedInWindow)
+            }
+            let n = Double(points.count)
+            let sumX = points.reduce(0.0) { $0 + $1.x }
+            let sumY = points.reduce(0.0) { $0 + $1.y }
+            let sumXY = points.reduce(0.0) { $0 + $1.x * $1.y }
+            let sumX2 = points.reduce(0.0) { $0 + $1.x * $1.x }
+            let denominator = n * sumX2 - sumX * sumX
+            let amount: Double
+            if denominator == 0 {
+                amount = sumY / n
+            } else {
+                let m = (n * sumXY - sumX * sumY) / denominator
+                let b = (sumY - m * sumX) / n
+                amount = max(0, m * 6 + b)
+            }
+            return LimitEstimate(method: method, amount: amount, usedMonths: points.map(\.month),
+                                 isolatedMonths: isolatedInWindow)
+        default:
+            return empty
+        }
+    }
+
     static func estimateAverage(
         months: Int, line: CashFlowLine, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard line.subcategory != nil || line.category != nil else { return 0 }
-
-        var total: Double = 0
-        var monthCount = 0
-
-        for offset in 1...months {
-            guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
-            let key = Self.monthKey(for: monthStart, calendar: calendar)
-            let amount = lookupTotal(line: line, index: index, monthKey: key)
-            if amount > 0 {
-                total += amount
-                monthCount += 1
-            }
-        }
-
-        return monthCount > 0 ? total / Double(monthCount) : 0
+        let method: EstimationMethod = months <= 3 ? .average3m : months >= 12 ? .average12m : .average6m
+        return explainEstimate(
+            method: method, line: line, referenceDate: referenceDate, index: index, calendar: calendar
+        ).amount
     }
 
     /// Category-based average (used by calculateOtherExpenses)
@@ -766,10 +958,8 @@ struct CashFlowProjectionCalculator {
         line: CashFlowLine, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard line.subcategory != nil || line.category != nil else { return 0 }
-        guard let lastMonthDate = calendar.date(byAdding: .month, value: -1, to: referenceDate) else { return 0 }
-        let key = Self.monthKey(for: lastMonthDate, calendar: calendar)
-        return lookupTotal(line: line, index: index, monthKey: key)
+        explainEstimate(method: .lastMonth, line: line, referenceDate: referenceDate, index: index, calendar: calendar)
+            .amount
     }
 
     // MARK: - Scheduled Estimation
@@ -797,32 +987,8 @@ struct CashFlowProjectionCalculator {
         line: CashFlowLine, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard line.subcategory != nil || line.category != nil else { return 0 }
-
-        var dataPoints: [(x: Double, y: Double)] = []
-        for offset in (1...6).reversed() {
-            guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
-            let key = Self.monthKey(for: monthStart, calendar: calendar)
-            let amount = lookupTotal(line: line, index: index, monthKey: key)
-            dataPoints.append((x: Double(6 - offset), y: amount))
-        }
-
-        guard dataPoints.count >= 2 else { return 0 }
-
-        let n = Double(dataPoints.count)
-        let sumX = dataPoints.reduce(0.0) { $0 + $1.x }
-        let sumY = dataPoints.reduce(0.0) { $0 + $1.y }
-        let sumXY = dataPoints.reduce(0.0) { $0 + $1.x * $1.y }
-        let sumX2 = dataPoints.reduce(0.0) { $0 + $1.x * $1.x }
-
-        let denominator = n * sumX2 - sumX * sumX
-        guard denominator != 0 else { return sumY / n }
-
-        let m = (n * sumXY - sumX * sumY) / denominator
-        let b = (sumY - m * sumX) / n
-
-        let predicted = m * n + b
-        return max(0, predicted)
+        explainEstimate(method: .trend, line: line, referenceDate: referenceDate, index: index, calendar: calendar)
+            .amount
     }
 
     // MARK: - Custom Estimation

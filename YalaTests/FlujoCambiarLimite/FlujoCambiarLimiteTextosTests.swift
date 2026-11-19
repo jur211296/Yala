@@ -90,7 +90,9 @@ struct FlujoCambiarLimiteCableadoTests {
 
     @Test func ajustarMonto_abreLaHojaNueva_sinCampoNiAlerta() throws {
         let detalle = try source("Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
-        #expect(detalle.contains("FlujoCambiarLimiteSheet("))
+        // Desde el 19-nov-2026 el único «Cambiar» abre «Cálculo del monto», que lleva el alcance de esta hoja al
+        // escribir un monto fijo (`FlujoCalculoMontoSheet` → `cambiarLimite`).
+        #expect(detalle.contains("FlujoCalculoMontoSheet("))
         #expect(detalle.contains("\"cashflow_adjust_amount\""))
         #expect(!detalle.contains("cashflow_adjust_amount_field"))
         #expect(!detalle.contains("showOverrideScopeAlert"))

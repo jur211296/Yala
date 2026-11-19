@@ -108,12 +108,13 @@ struct FlujoCrearPlanCableadoTests {
         #expect(generate.lowerBound < filter.lowerBound, "el filtro va después de generar las sugerencias")
     }
 
-    @Test func alCrear_elLimiteQuedaFijo_antesDeGuardar() throws {
+    /// Límites móviles (decisión de Jürgen del 19-nov-2026, corrige el P4): crear el plan ya no convierte el promedio en
+    /// monto fijo; cada línea guarda su método y la nota lo dice.
+    @Test func alCrear_cadaLineaGuardaSuMetodo() throws {
         let setup = try source(setupPath)
-        let fija = try #require(
-            setup.range(of: "viewModel.suggestedLines = FlujoCrearPlanLogica.conLimiteFijo(viewModel.suggestedLines)"))
-        let crea = try #require(setup.range(of: "viewModel.createPlan("))
-        #expect(fija.lowerBound < crea.lowerBound)
+        #expect(!setup.contains("FlujoCrearPlanLogica.conLimiteFijo("), "volvió el límite fijo del P4")
+        #expect(setup.contains("Text(L10n.FlujoDetalleLinea.limitesMoviles)"))
+        #expect(setup.contains("viewModel.createPlan("))
     }
 
     @Test func elArmado_agrupaPorCategoria() throws {
@@ -123,11 +124,13 @@ struct FlujoCrearPlanCableadoTests {
         #expect(!setup.contains("linesCard("), "las líneas sueltas sin su categoría no vuelven")
     }
 
-    @Test func agregarLinea_naceConLimiteFijoSembrado_yPideLaSubcategoria() throws {
+    /// Límites móviles (19-nov-2026): la línea nace con el método elegido, que se recalcula cada mes.
+    @Test func agregarLinea_naceConSuMetodo_yPideLaSubcategoria() throws {
         let add = try source(addLinePath)
-        #expect(add.contains("estimationMethod: .manual,\n            manualAmount: computePreview(),"))
+        #expect(add.contains("estimationMethod: selectedMethod,"))
+        #expect(!add.contains("estimationMethod: .manual,\n            manualAmount: computePreview(),"),
+                "volvió el límite fijo sembrado del P4")
         #expect(add.contains("FlujoCrearPlanLogica.semilla("))
         #expect(add.contains("!FlujoCrearPlanLogica.categoriaSinSubcategorias(cat) && selectedSubcategory == nil"))
-        #expect(!add.contains("estimationMethod: selectedMethod"), "volvió el límite que se mueve solo")
     }
 }

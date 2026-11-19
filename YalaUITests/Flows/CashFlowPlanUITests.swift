@@ -271,22 +271,30 @@ final class CashFlowPlanUITests: XCTestCase {
         var tries = 0
         while !adjust.isHittable, tries < 6 { sheet.swipeUp(); tries += 1 }
         adjust.tap()
-        // S4 del replanteo: «Ajustar monto» abre «Cambiar límite», que trae elegido «desde este mes en adelante».
-        let from = app.buttons["flujo_cambiar_limite_alcance_desdeEsteMes"]
-        XCTAssertTrue(from.waitForExistence(timeout: 5), "No se abrió «Cambiar límite».")
+        // Desde el 19-nov-2026 el único «Cambiar» abre «Cálculo del monto»; «Monto fijo» trae el alcance con «desde este
+        // mes en adelante» elegido (P3).
+        let manual = app.buttons["cashflow_method_manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se abrió «Cálculo del monto».")
+        manual.tap()
+        let from = app.buttons["cashflow_method_scope_desdeEsteMes"]
+        XCTAssertTrue(from.waitForExistence(timeout: 5), "Con «Monto fijo» no aparece qué meses cambian.")
         XCTAssertTrue(from.isSelected, "«Desde este mes en adelante» tiene que venir elegido (P3).")
-        let field = app.textFields["flujo_cambiar_limite_monto"]
+        let field = app.textFields["cashflow_method_manual_amount"]
         XCTAssertTrue(field.waitForExistence(timeout: 5), "No apareció el campo del monto.")
         field.tap()
         let fieldText = (field.value as? String) ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: fieldText.count + 2))
         field.typeText("4321")
 
-        let save = app.buttons["flujo_cambiar_limite_guardar"]
+        let save = app.buttons["cashflow_method_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No está «Guardar».")
         XCTAssertTrue(app.waitForSettledLayout(of: save), "«Guardar» no se quedó quieto.")
         save.tap()
-        XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), "El detalle no se cerró al guardar.")
+        XCTAssertTrue(manual.waitForNonExistence(timeout: 5), "«Cálculo del monto» no se cerró al guardar.")
+        let close = app.buttons["cashflow_cell_detail_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), "El detalle no se cerró.")
 
         let newAmount = NSPredicate(format: "label CONTAINS '4,321' OR label CONTAINS '4.321' OR label CONTAINS '4321'")
         showMonth(app, monthKey(1))

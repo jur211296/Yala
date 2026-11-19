@@ -366,7 +366,9 @@ struct CashFlowMonthDetailView: View {
     private func uncategorizedRow(
         result: CashFlowOtherResult?, label: String, identifier: String, action: @escaping () -> Void
     ) -> some View {
-        if let result, result.plannedAmount > 0 {
+        // En un mes que viene, con plan, la fila se ve también en 0 (19-nov-2026): la hoja dice que no hay fijos fuera
+        // del plan y deja volver a encender una partida apagada en «Considerar a futuro».
+        if let result, result.plannedAmount > 0 || result.isFixedOnly {
             Button(action: action) {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "ellipsis")

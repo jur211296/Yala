@@ -76,6 +76,38 @@ final class FlujoDetalleLineaUITests: XCTestCase {
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cashflow_detail_timeline_'")).firstMatch.exists)
     }
 
+    /// 19-nov-2026: un solo «Cambiar» (el de «Cómo se calcula» se retiró), y tocar una barra de los seis meses cambia la
+    /// lista de registros a ese mes; «Volver a…» regresa al mes que se ve.
+    func test_unSoloCambiar_yTocarUnMesCambiaLosRegistros() {
+        let app = XCUIApplication()
+        openFirstExpenseLine(app)
+
+        XCTAssertTrue(app.buttons["cashflow_adjust_amount"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["cashflow_detail_change_method"].exists, "Volvió el segundo «Cambiar».")
+        XCTAssertTrue(app.descendants(matching: .any)["cashflow_detail_how"].firstMatch.exists,
+                      "«Cómo se calcula» tiene que decir cómo sale el límite.")
+
+        let sheet = app.scrollViews["cashflow_cell_detail"]
+        let grafica = app.descendants(matching: .any)["cashflow_line_history_chart"].firstMatch
+        XCTAssertTrue(grafica.waitForExistence(timeout: 5), "No están los seis meses.")
+        var tries = 0
+        while grafica.frame.maxY > app.frame.height * 0.7, tries < 6 {
+            let from = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+            from.press(forDuration: 0.05, thenDragTo: sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
+            tries += 1
+        }
+        // La tercera barra (tres meses atrás): sobre el área de la gráfica, que deja el eje a la derecha.
+        grafica.coordinate(withNormalizedOffset: CGVector(dx: 2.5 / 6 * 0.86, dy: 0.55)).tap()
+        let volver = app.buttons["cashflow_line_records_back"]
+        XCTAssertTrue(volver.waitForExistence(timeout: 5), "Tocar un mes no cambió la lista de registros.")
+        XCTAssertTrue(app.descendants(matching: .any)["cashflow_line_records_total"].firstMatch.exists,
+                      "La lista de otro mes dice su total.")
+        tries = 0
+        while !volver.isHittable, tries < 4 { sheet.swipeUp(); tries += 1 }
+        volver.tap()
+        XCTAssertTrue(volver.waitForNonExistence(timeout: 5), "«Volver» no regresó al mes que se ve.")
+    }
+
     /// «‹ mes ›» recorre el plan sin salir del detalle.
     func test_lasFlechasCambianDeMes() {
         let app = XCUIApplication()
