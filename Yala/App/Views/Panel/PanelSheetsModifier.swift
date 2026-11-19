@@ -50,23 +50,8 @@ struct PanelSheetsModifier: ViewModifier {
             .modifier(PrimerosPasosPlanningPresentations(sheets: $sheets, viewModel: viewModel))
             // Primeros pasos 2.3: el paso 7 (Y23-16).
             .modifier(PrimerosPasosHomeScreenPresentation(sheets: $sheets))
-            .sheet(item: $sheets.accountFormSheet) { sheet in
-                let names: [String] = {
-                    guard let editing = sheet.account else {
-                        return viewModel.accounts.map(\.name)
-                    }
-                    return viewModel.accounts
-                        .filter { $0.persistentModelID != editing.persistentModelID }
-                        .map(\.name)
-                }()
-                AccountFormView(
-                    existingNames: names,
-                    accountToEdit: sheet.account
-                )
-                .onDisappear {
-                    viewModel.reloadAndRecalculate()
-                }
-            }
+            // Crear abre el asistente por pasos (con «Usar formulario» dentro, encargo del 18-nov); editar, el formulario.
+            .modifier(PanelAccountSheet(sheets: $sheets, viewModel: viewModel))
             .sheet(item: $sheets.accountDetail) { presentation in
                 AccountDetailSheet(
                     account: presentation.account,
@@ -365,5 +350,39 @@ struct PanelSheetsModifier: ViewModifier {
         }
 
         viewModel.reloadAndRecalculate()
+    }
+}
+
+/// La hoja de cuenta del Panel: el asistente por pasos al crear (encargo del 18-nov) y el formulario al editar. En su
+/// propio modificador: el `body` de `PanelSheetsModifier` ya va al límite de lo que tipa el compilador del CI
+/// (`swiftui-ds.md`), y lo respondido vive aquí, en quien presenta la hoja.
+private struct PanelAccountSheet: ViewModifier {
+    @Binding var sheets: PanelSheetState
+    let viewModel: PanelViewModel
+
+    @State private var newAccountWizard = AsistenteCuentaEstado()
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $sheets.accountFormSheet, onDismiss: { newAccountWizard.terminar() }) { sheet in
+                sheetContent(sheet)
+                    .onDisappear { viewModel.reloadAndRecalculate() }
+            }
+    }
+
+    @ViewBuilder
+    private func sheetContent(_ sheet: AccountFormSheet) -> some View {
+        if let editing = sheet.account {
+            AccountFormView(
+                existingNames: viewModel.accounts
+                    .filter { $0.persistentModelID != editing.persistentModelID }
+                    .map(\.name),
+                accountToEdit: editing
+            )
+        } else {
+            NuevaCuentaHoja(estado: newAccountWizard, nombresExistentes: viewModel.accounts.map(\.name)) {
+                sheets.accountFormSheet = nil
+            }
+        }
     }
 }

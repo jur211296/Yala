@@ -11,7 +11,7 @@
 - [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
-- [Verificación Gmail: v4 hecho](project_verificacion_gmail_video_v2.md) — 16-nov: Gmail de origen + punta a punta; espera aprobación y Dan; dos logins.
+- [Verificación Gmail: sin CASA](project_verificacion_gmail_video_v2.md) — 18-nov: no se paga CASA; análisis entregado, espera veredictos en su db.
 - [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe no toca la web; Device MCP sí, con el espejo en ese simulador (pídelo con el login).
 - [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.
 - [Google Sign-In sigue el idioma del sistema](reference_idioma_de_google_en_el_simulador.md) — -AppleLanguages no basta: defaults -g + reboot.
@@ -113,7 +113,7 @@
 - [Tema claro de Yala en el simulador](reference_tema_claro_de_yala_en_el_simulador.md) — `-userTheme 1`; la apariencia del simulador no cambia el tema de la app.
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
-- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte para el diff de píxeles; para una captura, respaldo + `git show HEAD:`.
+- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, ANTES de editar; poco disco: mis cambios encima y build incremental.
 - [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.

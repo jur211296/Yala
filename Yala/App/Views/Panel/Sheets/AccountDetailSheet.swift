@@ -20,6 +20,10 @@
 //  distribución por categoría, con la comparación contra el período anterior), y abajo los gastos más grandes y los
 //  últimos registros. Se fue la curva propia y la lista de barras de «En qué se fue»: no seguían el design system.
 //
+//  Rediseño del 2026-11-17 (pedido de Jürgen, variante A «Wallet»): arriba la tarjeta tal como la personalizó la persona,
+//  grande y con entrada animada; debajo el monto grande con su rótulo y, en tarjetas de crédito, lo que debes repartido
+//  con la fecha de pago y el próximo corte (`HojaCuentaTarjeta/`). Lo demás sigue igual, en el mismo orden.
+//
 
 import SwiftData
 import SwiftUI
@@ -169,10 +173,6 @@ struct AccountDetailSheet: View {
 
     // MARK: - Lo de arriba (media altura)
 
-    private var accountColor: Color {
-        account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex)
-    }
-
     private var currencyCode: String { normalizeCurrencyCode(shown.currencyCode) }
 
     private var periodName: String { sessionState.selectedPeriod.displayName }
@@ -206,25 +206,17 @@ struct AccountDetailSheet: View {
         return PanelAccountCardLogic.subtitle(typeName: typeName, currencyCode: currencyCode)
     }
 
+    /// Arriba, la tarjeta tal como la personalizó la persona, grande; debajo, qué es el número y el número (pedido de
+    /// Jürgen del 17-nov-2026, variante A «Wallet», `HojaCuentaTarjeta/`).
     private var hero: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
-            Image(systemName: account.iconName)
-                .font(DS.Typography.title3)
-                .foregroundStyle(Color.contrastingText(for: accountColor))
-                .frame(width: DS.Icon.badgeLarge + DS.Spacing.xs, height: DS.Icon.badgeLarge + DS.Spacing.xs)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                        .fill(accountColor)
-                )
-                .accessibilityHidden(true)
+        VStack(spacing: DS.Spacing.lg) {
+            HojaCuentaTarjetaCara(account: account, subtitulo: subtitle)
+                .frame(maxWidth: .infinity)
+                .padding(.top, DS.Spacing.sm)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(verbatim: subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(2)
+            VStack(spacing: DS.Spacing.xxs) {
                 Text(verbatim: amountLabel)
-                    .font(DS.Typography.caption)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(theme.secondaryText)
                     .lineLimit(2)
                 if hasLines {
@@ -239,18 +231,37 @@ struct AccountDetailSheet: View {
                     )
                 }
             }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("hoja_cuenta_monto")
         }
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Estado de cuenta (card nmtk, D2-A)
 
-    /// Bajo la cabecera: lo facturado en el último corte y lo que entra en el siguiente, de todas las divisas de la
-    /// tarjeta. En «solo gastos» no va, como la cuenta del saldo: ese modo no lleva saldos.
+    /// Bajo el monto: lo que debes repartido entre facturado y por facturar, la fecha de pago y el próximo corte, de
+    /// todas las divisas de la tarjeta (`HojaCuentaTarjetaEstado`). Sin fechas, las pide. En «solo gastos» no va, como
+    /// la cuenta del saldo: ese modo no lleva saldos.
     @ViewBuilder
     private var statementBlock: some View {
-        if let statement, !isExpensesOnlyMode {
-            CreditCardStatementBlock(card: statement)
+        switch HojaCuentaTarjetaLogica.bloque(
+            esTarjetaDeCredito: AccountType(rawValue: account.type) == .creditCard,
+            tieneEstadoDeCuenta: statement != nil,
+            esCuentaDeSistema: account.isSystemAccount,
+            soloGastos: isExpensesOnlyMode,
+            puedeEditar: PanelAccountCardLogic.canEdit(isSystemAccount: account.isSystemAccount)
+        ) {
+        case .estadoDeCuenta:
+            if let statement { HojaCuentaTarjetaEstado(card: statement) }
+        case .pedirFechas:
+            // Los días de corte y de pago son de la principal: el formulario se abre sobre ella.
+            HojaCuentaTarjetaSinFechas {
+                selectedLineID = nil
+                isEditing = true
+            }
+        case .ninguno:
+            EmptyView()
         }
     }
 
@@ -286,7 +297,7 @@ struct AccountDetailSheet: View {
             let outcome = currencyConverter.convertCheckedWithLatestRate(Decimal(value), from: code, to: target)
             return (outcome.amount as NSDecimalNumber).doubleValue
         }
-        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+        return VStack(alignment: .center, spacing: DS.Spacing.xxs) {
             ForEach(cardMembers, id: \.persistentModelID) { member in
                 let kind = memberKind(member)
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {

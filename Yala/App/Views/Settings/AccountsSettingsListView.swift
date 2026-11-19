@@ -21,6 +21,8 @@ struct AccountsSettingsListView: View {
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
+    /// Lo respondido en el asistente de «Nueva cuenta»: vive aquí, en quien presenta la hoja (`swiftui-ds.md`).
+    @State private var newAccountWizard = AsistenteCuentaEstado()
     /// Alto de cada fila de la lista (el `List` no se desplaza: su alto lo calcula la pantalla). Escala con el tamaño del
     /// texto: fijo, la línea anidada de una tarjeta quedaba fuera con texto grande. A tamaño normal, los 80 y 48 de
     /// siempre.
@@ -99,7 +101,7 @@ struct AccountsSettingsListView: View {
 
                     YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         if FeatureGateService.shared.canCreate(.accounts, currentCount: activeAccountsCount) {
-                            viewModel.isPresentingCreateAccount = true
+                            presentNewAccount()
                         } else {
                             showUpgradeSheet = true
                         }
@@ -108,10 +110,14 @@ struct AccountsSettingsListView: View {
                 }
             }
         }
+        // Crear abre el asistente por pasos, que lleva dentro «Usar formulario» (encargo del 18-nov); editar, el formulario.
         .sheet(isPresented: $viewModel.isPresentingCreateAccount, onDismiss: {
+            newAccountWizard.terminar()
             viewModel.loadData()
         }) {
-            AccountFormView(existingNames: viewModel.existingNames)
+            NuevaCuentaHoja(estado: newAccountWizard, nombresExistentes: viewModel.existingNames) {
+                viewModel.isPresentingCreateAccount = false
+            }
         }
         .sheet(item: $viewModel.accountToEdit, onDismiss: {
             viewModel.loadData()
@@ -123,7 +129,7 @@ struct AccountsSettingsListView: View {
         }
         // Si compra Pro ahí, al cerrarse se abre la cuenta nueva que se quería crear (UX 2.2 · L17-9).
         .proUpgradeSheet(isPresented: $showUpgradeSheet, feature: .accounts, context: .limitReached) {
-            viewModel.isPresentingCreateAccount = true
+            presentNewAccount()
         }
         .onAppear {
             LoadTimeMarks.begin(.settingsAccounts)
@@ -430,5 +436,14 @@ struct AccountsSettingsListView: View {
         } else {
             baseRow.accessibilityElement(children: .combine)
         }
+    }
+
+    /// «Nueva cuenta»: el asistente empieza de cero, con la moneda principal y los nombres que ya existen.
+    private func presentNewAccount() {
+        newAccountWizard.empezar(
+            monedaPrincipal: appPreferences.defaultCurrencyCode.rawValue,
+            nombresExistentes: viewModel.existingNames
+        )
+        viewModel.isPresentingCreateAccount = true
     }
 }

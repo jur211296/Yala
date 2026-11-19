@@ -1,0 +1,31 @@
+/*
+  AsistenteCuenta.strings
+  Yala
+
+  El asistente por pasos de «Nueva cuenta» (encargo del 18-nov). Las preguntas que ya tenía Primeros pasos vienen de
+  `pasos23.account.*`, y el contenedor compartido lee sus `asistente.*` de `AsistentePresupuesto.strings`. Tabla propia,
+  leída con el idioma de la app (`AsistenteCuentaTexto`).
+*/
+
+"asistenteCuenta.discard.title" = "この口座を破棄しますか？";
+"asistenteCuenta.create" = "口座を作成";
+"asistenteCuenta.createShort" = "作成";
+"asistenteCuenta.kind.question" = "どんな種類の口座ですか？";
+"asistenteCuenta.kind.subtitle" = "いちばん近いものを選んでください。あとで変更できます。";
+"asistenteCuenta.currency.subtitle" = "残高を表示する通貨です。";
+"asistenteCuenta.currency.subtitleCard" = "支払う額を表示する通貨です。";
+"asistenteCuenta.currency.other" = "ほかの通貨";
+"asistenteCuenta.currency.otherHint" = "すべての通貨から選ぶ";
+"asistenteCuenta.name.taken" = "同じ名前の口座がすでにあります。";
+"asistenteCuenta.day.label" = "日付";
+"asistenteCuenta.summary.question" = "この内容で作成しますか？";
+"asistenteCuenta.summary.detail" = "回答をタップすると変更できます。";
+"asistenteCuenta.summary.type" = "種類";
+"asistenteCuenta.summary.currency" = "通貨";
+"asistenteCuenta.summary.name" = "名前";
+"asistenteCuenta.summary.balance" = "今日の残高";
+"asistenteCuenta.summary.owe" = "今日の支払額";
+"asistenteCuenta.summary.statement" = "締め日";
+"asistenteCuenta.summary.payment" = "支払日";
+"asistenteCuenta.summary.reminder" = "リマインダー";
+"asistenteCuenta.summary.day" = "%d日";

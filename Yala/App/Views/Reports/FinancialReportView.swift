@@ -85,7 +85,10 @@ struct FinancialReportView: View {
                 tabContent
             }
             .yalaScreenBackground()
-            .safeAreaInset(edge: .top) {
+            // Barra y no `safeAreaInset`: con el inset las filas del flujo de caja pasaban por debajo de las cápsulas
+            // «Comparativa / Flujo de caja» y su texto se leía detrás (S2 del replanteo, 18-nov-2026). La barra
+            // difumina el borde del scroll bajo ella (`swiftui-ds.md`).
+            .safeAreaBar(edge: .top) {
                 navigationChipsBar
             }
             .navigationTitle(L10n.Report.title)

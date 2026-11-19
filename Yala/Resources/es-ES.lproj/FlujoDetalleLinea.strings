@@ -1,0 +1,42 @@
+/*
+  FlujoDetalleLinea.strings
+  Yala
+
+  El detalle de una línea del flujo de caja: el límite arriba, lo que falta y el ritmo, seis meses de real contra
+  límite y todos los registros del mes (S3 del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app
+  (`L10n.FlujoDetalleLinea`).
+*/
+
+"flujoDetalleLinea.limit.expense" = "Límite de %@";
+"flujoDetalleLinea.limit.income" = "Esperado en %@";
+"flujoDetalleLinea.change" = "Cambiar";
+"flujoDetalleLinea.change.a11y.expense" = "Cambiar el límite";
+"flujoDetalleLinea.change.a11y.income" = "Cambiar el importe esperado";
+"flujoDetalleLinea.soFar.expense" = "Llevas";
+"flujoDetalleLinea.soFar.income" = "Recibiste";
+"flujoDetalleLinea.ofLimit" = "de %@";
+"flujoDetalleLinea.left.expense" = "Te quedan %@";
+"flujoDetalleLinea.left.income" = "Falta recibir %@";
+"flujoDetalleLinea.exceeded" = "Te pasaste por %@. No se proyecta más.";
+"flujoDetalleLinea.pace" = "Al ritmo de este mes llegarías a ~%@.";
+"flujoDetalleLinea.pace.over" = "Al ritmo de este mes llegarías a ~%1$@: %2$@ más que el límite.";
+"flujoDetalleLinea.scheduled" = "Ya programado: %@";
+"flujoDetalleLinea.closed.expense" = "Gastaste %1$@ de %2$@";
+"flujoDetalleLinea.closed.income" = "Recibiste %1$@ de %2$@";
+"flujoDetalleLinea.diff.more" = "%@ más que el límite";
+"flujoDetalleLinea.diff.less" = "%@ menos que el límite";
+"flujoDetalleLinea.parent.notice" = "Hay %1$@ en %2$@ sin subcategoría. Cuenta en el mes, no en esta línea.";
+"flujoDetalleLinea.month.previous" = "Mes anterior";
+"flujoDetalleLinea.month.next" = "Mes siguiente";
+"flujoDetalleLinea.history.title" = "Últimos 6 meses";
+"flujoDetalleLinea.history.real.expense" = "Gastado";
+"flujoDetalleLinea.history.real.income" = "Recibido";
+"flujoDetalleLinea.history.limit.expense" = "Límite";
+"flujoDetalleLinea.history.limit.income" = "Esperado";
+"flujoDetalleLinea.history.summary.expense" = "En %1$d de %2$d meses gastaste lo del límite o menos.";
+"flujoDetalleLinea.history.summary.income" = "En %1$d de %2$d meses recibiste lo esperado o más.";
+"flujoDetalleLinea.history.month" = "%1$@: %2$@ de %3$@";
+"flujoDetalleLinea.records.title" = "Registros de %@";
+"flujoDetalleLinea.records.seeInRecords" = "Ver en Registros";
+"flujoDetalleLinea.records.empty" = "Sin registros en %@.";
+"flujoDetalleLinea.records.scheduledDay" = "Programado";

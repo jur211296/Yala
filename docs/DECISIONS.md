@@ -2,12 +2,15 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (123 entradas)
+## Índice (126 entradas)
 
-> **No hace falta leer este fichero entero** — son 319 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 323 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-18` [Lote del 18-nov (madrugada): flujo de caja por subcategoría, logo del comercio solo en Pagos planifi](#2026-11-18-lote-del-18-nov-madrugada-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
+- `2026-11-19` [Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)](#2026-11-19-flujo-de-caja-proyeccin-inteligente-con-ingresos-recurrentes-y-sin-outliers-corrige-p6)
+- `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
+- `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
+- `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
 - `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
@@ -150,11 +153,31 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
-### [2026-11-18] Lote del 18-nov (madrugada): flujo de caja por subcategoría, logo del comercio solo en Pagos planificados y Yala web a producción
-**Contexto:** Tres decisiones que Jürgen tomó en el chat el 18-nov (06:26, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del asistente de «Nuevo favorito»; no las ejecuta, porque no son de su encargo.
-**Decisión:** (1) **Flujo de caja:** se aceptan todas las recomendaciones del análisis (P1 a P6 y el modelo recomendado), con un ajuste: el nivel de detalle llega siempre a subcategoría, que es el id base; la categoría se deriva de ella y puede mostrarse plegable. (2) **El logo del comercio** va solo en Pagos planificados, en sus vistas de calendario, lista y línea de tiempo; no en Registros ni en el Panel. (3) **Yala web (logo oficial y tema del sistema):** opción B, se despliega ya a producción y Jürgen la prueba allí.
-**Razones:** Las da Jürgen al revisar el análisis del flujo de caja y los PR de la víspera.
-**Consecuencias:** (1) y (2) necesitan su encargo; (3) es un hotfix de `Web/` sobre `1.0` (en `2.3` no se publica hasta la próxima versión, `docs/FLUJO-RAMAS-Y-HOTFIX.md`).
+### [2026-11-19] Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)
+**Contexto:** Decisión de Jürgen en el chat del 19-nov (06:11, Lima), capturada por el bot dueño (ADR-082 de casa); sustituye a la del 18-nov (06:26) en lo que toca a P6 del replanteo de Flujo de caja (`tickets/done/2026-11-17-flujo-de-caja-replanteo.md`). La registra la sesión de la subida a TestFlight 2.3 (4); no la ejecuta, porque no es de su encargo.
+**Decisión:** Los ingresos fijos o recurrentes que se detecten en los registros sí se proyectan en los meses futuros, aunque no haya plan ni línea. Los outliers (gastos o ingresos aislados, como un iPhone de S/ 6,000 comprado una sola vez) se detectan y no se usan en las proyecciones, ni en ingresos ni en gastos. La proyección debe ser realista.
+**Razones:** La da Jürgen: la proyección tiene que ser realista.
+**Consecuencias:** Corrige la respuesta de P6 del replanteo. Falta el encargo que revise la proyección ya mergeada contra esta regla; la build 2.3 (4) sale sin ese cambio.
+**Estado:** Activa
+
+### [2026-11-18] Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay
+**Contexto:** Tras el análisis de qué se pierde sin el permiso, Jürgen decidió en el chat el 18-nov (16:16, Lima): «Si requiere el pago, fuera. Nos quedamos con lo que tenemos». Capturada por el bot dueño (ADR-082 de casa); la registra la sesión de «Cambiar límite» del flujo de caja, que no la ejecuta. Sustituye entera a la de las 15:59 (abajo), que pedía el análisis.
+**Decisión:** Todo lo que exija pagar la evaluación CASA queda fuera. Se quita `gmail.readonly` y Yala se queda con lo que ya tiene para registrar avisos del banco: el atajo del banco y el reenvío a la dirección de Yala. «Conectar Gmail» nunca llegó a la app publicada.
+**Consecuencias:** lo de Google que queda (retirar el permiso en la consola, contestar el correo y quitar la sección de Gmail de la política) sigue en la card «Avisos del banco sin Gmail», a la espera del GO de Jürgen (`tickets/backlog/2026-11-18-verificacion-google-sin-casa.md`).
+**Estado:** Activa · sustituye a la decisión de las 15:59 del mismo día
+
+### [2026-11-18] Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`
+**Contexto:** El 18-nov (14:21, Lima) Google contestó a la verificación del permiso restringido `gmail.readonly` del proyecto `yala-502622`: para seguir pide una evaluación de seguridad ADA-CASA AL1 antes del 16-feb-2027, de pago y anual (precios vistos: 499 a 855 USD por año). Decisión de Jürgen del 18-nov (15:59), capturada en el chat por el bot dueño (ADR-082 de casa) y pendiente de pasar al repo. La incorpora la sesión que analiza qué se pierde sin ese permiso.
+**Decisión:** No se paga la evaluación CASA. Una sesión analiza lo que Yala tiene, lo que quiere tener y lo que pierde sin `gmail.readonly`, y propone las mejores soluciones (`docs/analisis/2026-11-18-verificacion-google-sin-casa/`).
+**Razones:** el coste es demasiado alto para una función que ningún usuario de producción tiene: «Conectar Gmail» nunca salió de Yala Dev.
+**Consecuencias:** deja sin efecto la línea de la decisión del 21-oct («Conectar Gmail (y Outlook) llega en cuanto Google apruebe la verificación de su permiso restringido») y la opción A de la decisión del 9-nov, mientras no se decida otra cosa. El correo del banco sigue llegando por reenvío a yalainbox.com y por el atajo del banco. Qué contestar a Google y qué entra en cada versión lo decide Jürgen sobre el análisis.
+**Estado:** Sustituida por «Avisos del banco sin Gmail» (18-nov, 16:16)
+
+### [2026-11-18] Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificados y Yala web a producción
+**Contexto:** Tres decisiones que Jürgen tomó en el chat el 18-nov (06:26, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del asistente de «Nueva cuenta»; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Flujo de caja:** se aceptan todas las recomendaciones del análisis (P1 a P6 y el modelo recomendado), con un ajuste: el nivel de detalle llega siempre a subcategoría, que es el id base; la categoría se deriva de ella y puede mostrarse colapsable. (2) **El logo del comercio** va solo en Pagos planificados, en las vistas de calendario, lista y timeline; no en Registros ni en el Panel. (3) **Yala web (logo oficial y tema del sistema):** opción B, desplegar ya a producción y Jürgen la prueba allí.
+**Razones:** Las da Jürgen al revisar el análisis de flujo de caja, la propuesta de logos y la web.
+**Consecuencias:** (1) y (2) necesitan su encargo. (3) es un despliegue de `Web/`, que sale de `1.0` como arreglo sobre lo publicado (`docs/FLUJO-RAMAS-Y-HOTFIX.md`).
 **Estado:** Activa
 
 ### [2026-11-17] Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja de cuenta y iPhone Duo

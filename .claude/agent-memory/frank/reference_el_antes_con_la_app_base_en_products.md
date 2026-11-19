@@ -17,3 +17,8 @@ instala el `Yala.app` de Products; el runner de UI no lo enlaza, así que el con
 
 **How to apply:** guarda la copia base nada más compilarla, antes de tocar código. Y mide el «antes» de verdad: el de
 Ajustes desde Más salió IGUAL que el después, y eso refutó la premisa de la auditoría (no era «alto»).
+
+**18-nov (Cambiar límite):** volví a caer. Un bucle de `xcodebuild test` por temas (oscuro, claro) recompila en cada
+vuelta, así que la segunda ya captura MI código; `xcodebuild test` no deja `.xctestrun` en Products para un
+`test-without-building` posterior. Para un «antes» en varios temas: `build-for-testing` de la base, copia del `Yala.app`
+y del `.xctestrun`, y luego `test-without-building` por tema. Me quedé con el «antes» solo en oscuro.

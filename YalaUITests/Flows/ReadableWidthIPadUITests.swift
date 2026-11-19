@@ -182,6 +182,7 @@ final class ReadableWidthIPadUITests: XCTestCase {
         let addButton = app.buttons["accounts_add_button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 10), "No apareció accounts_add_button.")
         addButton.tap()
+        app.pasarAlFormularioDeNuevaCuenta()
 
         let name = app.textFields["account_name_field"]
         XCTAssertTrue(name.waitForExistence(timeout: 10), "No apareció el formulario de cuenta.")

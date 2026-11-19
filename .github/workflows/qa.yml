@@ -487,6 +487,20 @@ jobs:
     # en el job `ui`, partida en tandas paralelas; sus topes y cifras estan alli. Este job queda
     # igual en la nocturna que en un PR, y su tope de nocturna baja de 150 a 60.
     #
+    # RE-MEDIDA DEL 2026-11-19 (encargo «CI de la 2.3 todo en verde»), sobre los 82 jobs `tests` en
+    # verde de todas las ramas del 15 al 19-nov. Es la tabla que manda hoy:
+    #
+    #   paso / conjunto              medido                       tope
+    #   Build for testing            14,9 · 26,9 · 31,2 · 33,4      50   (40 hasta el 19-nov)
+    #   Unit pure-logic              16,4 · 29,8 · 33,8 · 36,9      55   (45 hasta el 19-nov)
+    #   Unit context-based           2,2 · 3,9 · 4,7 · 6,0          10
+    #   JOB `tests` (PR y nocturna)  35,4 · 63,6 · 70,5 · 74,9     110   (80 hasta el 19-nov)
+    #
+    # POR QUE SUBIO OTRA VEZ (2026-11-19). Ningun job se habia cancelado todavia por el tope (las 11
+    # cancelaciones de esos dias eran PR sustituidos por un push nuevo), pero el maximo verde ya iba a
+    # 1,07x del tope de 80: el build y pure-logic casi se doblaron desde el 26-oct (14,0 → 26,9 y 16,5
+    # → 29,8 de mediana). El job vuelve a ~1,5x el maximo verde y los dos pasos, a ~1,5x el suyo.
+    #
     # Los topes de JOB son ~1,5x el maximo observado; los de PASO, ~1,4-1,8x. Se ha
     # tirado hacia lo holgado a proposito: el coste de un tope generoso es una hora de
     # runner, y el de uno ceñido es cortar corridas sanas — que es como se acaba
@@ -522,8 +536,8 @@ jobs:
     # `ci-reintentar-rojos.sh` (~5,5 min el 7-oct). Hasta ese dia era una expresion (PR 45,
     # nocturna 60); si vuelven a divergir, `timeout-minutes` la admite (comprobado con actionlint
     # 1.7.12, que rechaza el texto plano con «expecting a single ${{...}} expression or float
-    # number literal»).
-    timeout-minutes: 80
+    # number literal»). Desde el 2026-11-19, 110: ver «RE-MEDIDA DEL 2026-11-19».
+    timeout-minutes: 110
     # Los tests de intervalos construyen sus expectativas con un calendario fijado a
     # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
     # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
@@ -631,9 +645,9 @@ jobs:
         run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
         id: build
-        # 40 desde el 2026-10-26 (era 30 y el maximo verde llego a 28,6; 25 hasta el 24-oct).
-        # Ver «TOPES DE TIEMPO».
-        timeout-minutes: 40
+        # 50 desde el 2026-11-19 (era 40 y el maximo verde llego a 33,4; 30 hasta el 26-oct, 25 hasta
+        # el 24-oct). Ver «TOPES DE TIEMPO».
+        timeout-minutes: 50
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
@@ -682,9 +696,9 @@ jobs:
       # diagnósticos: el `.xcresult` y el log bastan.
       - name: Unit tests (YalaTests pure-logic)
         id: unit_pure
-        # 45 desde el 2026-10-26 (era 35 y el maximo verde llego a 30,9; 30 hasta el 24-oct, con
-        # maximo 24,4). Holgura para las vueltas de un flaky rescatado. Ver «TOPES DE TIEMPO».
-        timeout-minutes: 45
+        # 55 desde el 2026-11-19 (era 45 y el maximo verde llego a 36,9; 35 hasta el 26-oct, 30
+        # hasta el 24-oct). Holgura para las vueltas de un flaky rescatado. Ver «TOPES DE TIEMPO».
+        timeout-minutes: 55
         run: |
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
             --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" -- \
@@ -779,7 +793,7 @@ jobs:
   # quedarse desfasado y dejar una tanda sin lanzar. Al cambiarlas, lo unico que hay que tocar a
   # mano son las salidas `ui_N` de abajo y su lectura en el job `aviso`.
   #
-  # TOPES. Paso de UI 110 y job 150. Antes de la UI cada tanda gasta ~20 min (simulador hasta 3,
+  # TOPES. Paso de UI 110 y job 165 (150 hasta el 19-nov, cuando entro «Calentar el runner de XCUITest», hasta 12). Antes de la UI cada tanda gasta ~20 min (simulador hasta 3,
   # build hasta 16; desde el 2026-11-04 el build es una descarga, ver «UN SOLO BUILD»), asi que
   # aunque el paso agote sus 110 el job conserva ~20 min: el corte lo da
   # siempre el tope del PASO, que deja el job vivo para contarlo (ver «POR QUE TAMBIEN EN CADA
@@ -826,6 +840,28 @@ jobs:
   # reparto pesa ahora cada suite con `qa/ci-ui-tiempos.json` (ver la cabecera de `ci-ui-tandas.sh`); se
   # regenera con `qa/scripts/ci-ui-tiempos.sh <run>` cuando una tanda vuelva a acercarse a ~80.
   #
+  # POR QUE CATORCE (2026-11-19, encargo «CI de la 2.3 todo en verde»). Con nueve, los pasos de UI de
+  # las nocturnas del 17 y el 18-nov y del dispatch 44074738336 iban de 80 a 110 min, y en cada uno una
+  # o dos tandas agotaron los 110 sin terminar (las suites que no abrieron no salen en ningun sitio). La
+  # suite paso de 519 min (tabla del 5-nov) a ~872 de mediana. Tabla regenerada con los tres runs
+  # (mediana por suite, cada caso topado a 600 s: ver `ci-ui-tiempos.sh`) y simulada, minutos de test de
+  # la tanda mas larga: 12 → 75 · 13 → 69 · 14 → 64 · 15 → 60. Catorce deja el paso en ~74 con el
+  # arranque y el calentamiento (1,5x del tope, lo que pide la tabla de octubre). No sube los minutos de
+  # test; cada tanda nueva suma ~15 min de runner de arranque. Con `max-parallel: 3` son cinco oleadas:
+  # la nocturna pasa de ~6,3 h a ~7,5 h de reloj.
+  #
+  # TOPE POR CASO (2026-11-19). `-default-test-execution-time-allowance 600`: en esos tres runs, casos
+  # de 19 y 29 min con el runner congelado acabaron «passed» y se comieron la tanda. El caso legitimo mas
+  # lento mide ~6 min. Un caso que pase de 10 min lo corta XCTest (sale rojo y `-retry-tests-on-failure`
+  # lo repite), y la tanda sigue con el resto.
+  #
+  # CALENTAR EL RUNNER (2026-11-19). El paso «Calentar el simulador» abre la app, pero no el runner de
+  # XCUITest ni su sesion de accesibilidad, y eso es lo que paga el primer caso de cada tanda: en los tres
+  # runs fue casi siempre el lento o el rescatado (4-10 min, «App event loop idle notification not
+  # received», 184 s esperando `uitest_ready`), fuera la suite que fuera (`AIConsentAlertUITests`,
+  # `AsistenteCuentaUITests`, `AjustesYProNecesariasLote10UITests`…). El paso «Calentar el runner de
+  # XCUITest» corre antes un caso corto del Panel que no cuenta.
+  #
   # `max-parallel: 3`. Tres tandas a la vez, como antes: con el job `tests` son cuatro `macOS` y
   # queda uno libre para el CI de los PR, que la nocturna pisa porque GitHub la sirve de dia (ver el
   # cron). Las ocho caben en tres oleadas (~3 h de nocturna en vez de ~2,2; las nueve, tambien). Abrirlas todas a la vez
@@ -845,7 +881,7 @@ jobs:
     name: UI tests (build compartido)
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       # Mismo paso y mismo porque que en el job `tests`.
@@ -859,9 +895,10 @@ jobs:
         id: sim
         timeout-minutes: 25
         run: bash qa/scripts/ci-simulador.sh
-      # 40, como el build del job `tests`, que compila lo mismo (maximo verde medido 28,6).
+      # 50, como el build del job `tests`, que compila lo mismo (maximo verde medido 33,4 el 19-nov; el job
+      # sube de 60 a 75 con el: simulador hasta 25 + build 50).
       - name: Build for testing
-        timeout-minutes: 40
+        timeout-minutes: 50
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
@@ -888,14 +925,15 @@ jobs:
     needs: ui-build
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: xcode-27
-    timeout-minutes: 150
+    timeout-minutes: 165
     strategy:
       # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
       fail-fast: false
-      # Ver «POR QUE OCHO» y «POR QUE NUEVE»: tres a la vez deja un `macOS` libre para el CI de los PR.
+      # Ver «POR QUE OCHO», «POR QUE NUEVE» y «POR QUE CATORCE»: tres a la vez deja un `macOS` libre
+      # para el CI de los PR.
       max-parallel: 3
       matrix:
-        tanda: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        tanda: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     env:
       TEST_RUNNER_TZ: America/Lima
     # Una salida por tanda, con nombre fijo. En una matriz, si dos patas escriben la MISMA salida
@@ -911,6 +949,11 @@ jobs:
       ui_7: ${{ steps.salida.outputs.ui_7 }}
       ui_8: ${{ steps.salida.outputs.ui_8 }}
       ui_9: ${{ steps.salida.outputs.ui_9 }}
+      ui_10: ${{ steps.salida.outputs.ui_10 }}
+      ui_11: ${{ steps.salida.outputs.ui_11 }}
+      ui_12: ${{ steps.salida.outputs.ui_12 }}
+      ui_13: ${{ steps.salida.outputs.ui_13 }}
+      ui_14: ${{ steps.salida.outputs.ui_14 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Mismo paso y mismo porque que en el job `tests`.
@@ -943,6 +986,21 @@ jobs:
         env:
           UDID: ${{ steps.sim.outputs.udid }}
         run: bash qa/scripts/ci-calentar-simulador.sh
+      # Ver «CALENTAR EL RUNNER». Un caso corto y estable, en su propio `xcodebuild` y con su propio
+      # `.xcresult`: no entra en el conteo ni en el resultado de la tanda. Advisory: si falla, la tanda
+      # corre igual, como antes de este paso.
+      - name: Calentar el runner de XCUITest
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          xcodebuild test-without-building \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:YalaUITests/PanelHealthCompactUITests/test_compactCard_isOnByDefault_saysTheNextStep_andOpensTheBreakdown \
+            -derivedDataPath .ddp \
+            -resultBundlePath "$RUNNER_TEMP/calentar.xcresult" \
+            -parallel-testing-enabled NO 2>&1 | tail -n 40
       - name: UI tests (YalaUITests, tanda ${{ matrix.tanda }}) — advisory (flaky en runner frío, ver Lista Negra)
         id: ui
         continue-on-error: true
@@ -967,6 +1025,8 @@ jobs:
             -derivedDataPath .ddp \
             -resultBundlePath "$RUNNER_TEMP/tanda.xcresult" \
             -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 600 \
             -retry-tests-on-failure 2>&1 | tee "$RUNNER_TEMP/tanda.log"
       # ¿EJECUTO TESTS LA TANDA? (2026-11-07). Del 5 al 7-nov las nueve tandas corrieron CERO tests
       # (el paquete no cargaba) y el run salia verde: el paso de arriba es `continue-on-error` y su
@@ -1069,6 +1129,11 @@ jobs:
           R_UI_7: ${{ needs.ui.outputs.ui_7 }}
           R_UI_8: ${{ needs.ui.outputs.ui_8 }}
           R_UI_9: ${{ needs.ui.outputs.ui_9 }}
+          R_UI_10: ${{ needs.ui.outputs.ui_10 }}
+          R_UI_11: ${{ needs.ui.outputs.ui_11 }}
+          R_UI_12: ${{ needs.ui.outputs.ui_12 }}
+          R_UI_13: ${{ needs.ui.outputs.ui_13 }}
+          R_UI_14: ${{ needs.ui.outputs.ui_14 }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
           RESULTADO_JOB: ${{ needs.tests.result }}
           RESULTADO_UI: ${{ needs.ui.result }}
@@ -1103,7 +1168,7 @@ jobs:
             fi
           fi
           # Una variable por tanda (`R_UI_<n>`), de la 1 a la ultima de la matriz.
-          UI_TANDAS="1 2 3 4 5 6 7 8 9"
+          UI_TANDAS="1 2 3 4 5 6 7 8 9 10 11 12 13 14"
           ui_resumen=""
           # `sin_tests` (2026-11-07): la tanda no ejecuto NINGUN test (el paquete no cargo, o la
           # seleccion quedo vacia). No es un rojo de test: va en su propia lista y su propio asunto.

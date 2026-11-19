@@ -1,0 +1,31 @@
+/*
+  AsistenteCuenta.strings
+  Yala
+
+  El asistente por pasos de «Nueva cuenta» (encargo del 18-nov). Las preguntas que ya tenía Primeros pasos vienen de
+  `pasos23.account.*`, y el contenedor compartido lee sus `asistente.*` de `AsistentePresupuesto.strings`. Tabla propia,
+  leída con el idioma de la app (`AsistenteCuentaTexto`).
+*/
+
+"asistenteCuenta.discard.title" = "Deze rekening weggooien?";
+"asistenteCuenta.create" = "Rekening maken";
+"asistenteCuenta.createShort" = "Maken";
+"asistenteCuenta.kind.question" = "Wat voor rekening is het?";
+"asistenteCuenta.kind.subtitle" = "Kies de rekening die het meest lijkt. Je kunt het later wijzigen.";
+"asistenteCuenta.currency.subtitle" = "Het is de valuta waarin je het saldo ziet.";
+"asistenteCuenta.currency.subtitleCard" = "Het is de valuta waarin je ziet wat je schuldig bent.";
+"asistenteCuenta.currency.other" = "Andere valuta";
+"asistenteCuenta.currency.otherHint" = "Kies uit alle valuta's";
+"asistenteCuenta.name.taken" = "Je hebt al een rekening met die naam.";
+"asistenteCuenta.day.label" = "Dag van de maand";
+"asistenteCuenta.summary.question" = "Zo maken?";
+"asistenteCuenta.summary.detail" = "Tik op een antwoord om het te wijzigen.";
+"asistenteCuenta.summary.type" = "Type";
+"asistenteCuenta.summary.currency" = "Valuta";
+"asistenteCuenta.summary.name" = "Naam";
+"asistenteCuenta.summary.balance" = "Saldo vandaag";
+"asistenteCuenta.summary.owe" = "Vandaag verschuldigd";
+"asistenteCuenta.summary.statement" = "Afsluitdag";
+"asistenteCuenta.summary.payment" = "Betaaldag";
+"asistenteCuenta.summary.reminder" = "Herinnering";
+"asistenteCuenta.summary.day" = "Dag %d";
