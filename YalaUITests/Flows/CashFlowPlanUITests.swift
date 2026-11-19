@@ -300,8 +300,9 @@ final class CashFlowPlanUITests: XCTestCase {
         XCTAssertEqual(pastAfter.label, pastBefore, "El mes pasado cambió con «este mes y los siguientes».")
     }
 
-    /// L18-5 y L18-10. Crear el plan arranca con el saldo de hoy y se puede cambiar en una hoja con la cifra; los
-    /// gastos que cambian van plegados y se ven al tocarlos.
+    /// L18-5 y L18-10, con S5 del replanteo (P5, 18-nov-2026): crear el plan enseña el saldo de hoy y ya no deja
+    /// escribir otro («¿Con cuánto empiezas? · Cambiar» se retiró: el plan parte de las cuentas); los gastos que cambian
+    /// van plegados y se ven al tocarlos.
     func test_setup_startsWithTodaysBalance_andTheVariableExpensesUnfold() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
@@ -309,28 +310,8 @@ final class CashFlowPlanUITests: XCTestCase {
         app.openReport("flujoDeCaja")
 
         let amount = app.descendants(matching: .any).matching(identifier: "cashflow_setup_starting_amount").firstMatch
-        XCTAssertTrue(amount.waitForExistence(timeout: 15), "No está «¿Con cuánto empiezas?» con el saldo.")
-        let change = app.buttons["cashflow_setup_change_starting"]
-        XCTAssertTrue(change.waitForExistence(timeout: 5))
-        change.tap()
-
-        let field = app.textFields["cashflow_starting_balance_field"]
-        XCTAssertTrue(field.waitForExistence(timeout: 5), "No se abrió la hoja del saldo inicial.")
-        let useToday = app.buttons["cashflow_starting_balance_use_today"]
-        XCTAssertFalse(useToday.exists, "Con el saldo de hoy ya puesto, «Usar este monto» no hace nada.")
-        let typed = (field.value as? String) ?? ""
-        field.tap()
-        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: typed.count + 2))
-        field.typeText("1000")
-        XCTAssertTrue(useToday.waitForExistence(timeout: 3), "Con otro monto escrito no aparece «Usar este monto».")
-        app.buttons["cashflow_starting_balance_save"].tap()
-        XCTAssertTrue(field.waitForNonExistence(timeout: 5))
-        let thousand = NSPredicate(format: "label CONTAINS '1,000' OR label CONTAINS '1.000' OR label CONTAINS '1000'")
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: thousand, object: amount)], timeout: 5),
-            .completed,
-            "El saldo de arriba no tomó el monto nuevo: \(amount.label)"
-        )
+        XCTAssertTrue(amount.waitForExistence(timeout: 15), "No está «Tienes hoy» con el saldo.")
+        XCTAssertFalse(app.buttons["cashflow_setup_change_starting"].exists, "Sigue la forma de cambiar el saldo inicial.")
 
         let lines = app.descendants(matching: .any).matching(identifier: "cashflow_setup_line")
         let toggle = app.buttons["cashflow_setup_variable_toggle"]
