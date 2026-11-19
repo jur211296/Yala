@@ -55,6 +55,10 @@ struct CashFlowMonth {
     /// aunque «Gastos no considerados» esté oculto.
     var spreadableIncomeLeft: Double = 0
     var spreadableExpenseLeft: Double = 0
+    /// Lo que les falta a los fijos detectados que llegan una vez al mes, por su día típico (día del mes → importe): el
+    /// flujo proyectado lo dibuja ese día en vez de repartirlo (`FlujoProyeccionInteligente`).
+    var dayPlacedIncomeLeft: [Int: Double] = [:]
+    var dayPlacedExpenseLeft: [Int: Double] = [:]
 
     /// Lo que falta entrar y salir: lo fechado por delante, los pagos pendientes y lo que queda a líneas y «otros».
     var incomeLeft: Double { totalIncome - realIncome }
@@ -112,12 +116,53 @@ struct CashFlowCategoryGroup {
 }
 
 struct CashFlowOtherResult {
-    /// Todo lo que suma el mes: real + fechado + pendiente + lo que falta por la mediana.
+    /// Todo lo que suma el mes: real + fechado + pendiente + lo que falta (fijos y lo variable).
     let plannedAmount: Double
     let realAmount: Double?
     let categoryBreakdown: [OtherCategoryItem]
-    /// Lo que falta por la mediana de 6 meses (solo gastos, mes en curso y futuros).
+    /// Lo que falta: lo de los fijos detectados más lo variable (mes en curso y futuros).
     var leftAmount: Double = 0
+    /// Lo que se proyecta como fijo (decisión de Jürgen del 19-nov-2026): lo que se repite cada mes en tus registros.
+    var fixedItems: [OtherFixedItem] = []
+    /// Lo que se dejó fuera de la proyección por aislado: de los últimos meses y de este mes.
+    var isolatedItems: [OtherIsolatedItem] = []
+    /// Lo que se proyecta por lo variable en un mes (la mediana sin fijos ni aislados). 0 en ingresos.
+    var variableEstimate: Double = 0
+    /// Lo que falta por lo variable en este mes.
+    var variableLeft: Double = 0
+    /// Meses completos de historia que miró la detección, y si alcanzan para detectar (3 o más).
+    var historyMonths: Int = 0
+    var detects: Bool = false
+}
+
+/// Un fijo detectado, para la hoja de «Otros».
+struct OtherFixedItem {
+    /// El comercio, la subcategoría o la categoría (o «Sin categoría»).
+    let name: String
+    /// La categoría que lo agrupa cuando el nombre es su subcategoría o un comercio; `nil` si el nombre ya es la categoría.
+    var groupName: String? = nil
+    let iconName: String
+    let colorHex: String
+    /// Lo que suma cada mes.
+    let monthlyAmount: Double
+    /// El día del mes en que suele llegar; `nil` si llega varias veces al mes.
+    let day: Int?
+    /// Lo que le falta en el mes elegido (0 si ya llegó o lo cubre un pago planificado).
+    let leftAmount: Double
+    let monthsSeen: Int
+    let monthsWindow: Int
+    /// Lo que de verdad entró en el mes elegido (sin lo fechado ni un pago pendiente): «Ya llegó este mes» sale de aquí.
+    var receivedAmount: Double = 0
+}
+
+/// Un movimiento aislado que no entra en la proyección de los meses que vienen.
+struct OtherIsolatedItem {
+    let name: String
+    var groupName: String? = nil
+    let iconName: String
+    let colorHex: String
+    let amount: Double
+    let month: Date
 }
 
 struct OtherCategoryItem {
@@ -361,9 +406,9 @@ struct CashFlowProjectionCalculator {
             projectedMonths.append(CashFlowMonth(
                 monthKey: mKey, date: month, isPast: result.esPasado, isCurrent: result.esEnCurso,
                 incomeLines: incomeResults, expenseLines: expenseResults,
-                otherExpenses: otherResult(result.gastos.otros, isPast: result.esPasado, isCurrent: result.esEnCurso,
+                otherExpenses: otherResult(result.gastos, isPast: result.esPasado, isCurrent: result.esEnCurso,
                                            showsPlannedOthers: plan.showOtherExpenses),
-                otherIncome: otherResult(result.ingresos.otros, isPast: result.esPasado, isCurrent: result.esEnCurso,
+                otherIncome: otherResult(result.ingresos, isPast: result.esPasado, isCurrent: result.esEnCurso,
                                          showsPlannedOthers: plan.showOtherExpenses),
                 totalIncome: totalIncome, totalExpense: totalExpense,
                 netFlow: totalIncome - totalExpense,
@@ -374,7 +419,9 @@ struct CashFlowProjectionCalculator {
                 incomeGroups: groups(result.ingresos, results: incomeResults, categories: categoriesByID),
                 expenseGroups: groups(result.gastos, results: expenseResults, categories: categoriesByID),
                 spreadableIncomeLeft: result.ingresos.faltaRepartible,
-                spreadableExpenseLeft: result.gastos.faltaRepartible
+                spreadableExpenseLeft: result.gastos.faltaRepartible,
+                dayPlacedIncomeLeft: result.ingresos.faltaPorDia,
+                dayPlacedExpenseLeft: result.gastos.faltaPorDia
             ))
             previousClosing = closing
             totalProjectedIncome += totalIncome
@@ -394,9 +441,11 @@ struct CashFlowProjectionCalculator {
     /// considerados» apagado (`showOtherExpenses`), no se pinta, aunque su dinero sigue en los totales del mes: un total
     /// sin él no sería lo que pasa en tus cuentas.
     private static func otherResult(
-        _ otros: FlujoMotorMes.OtrosMes, isPast: Bool, isCurrent: Bool, showsPlannedOthers: Bool
+        _ side: FlujoMotorMes.Lado, isPast: Bool, isCurrent: Bool, showsPlannedOthers: Bool
     ) -> CashFlowOtherResult? {
         guard showsPlannedOthers else { return nil }
+        let otros = side.otros
+        let deteccion = side.deteccion
         let breakdown = otros.porCategoria.map { item in
             OtherCategoryItem(
                 categoryName: item.categoria?.name ?? L10n.Report.uncategorized,
@@ -405,12 +454,69 @@ struct CashFlowProjectionCalculator {
                 amount: item.importe
             )
         }
+        // Un mes cerrado no proyecta nada: ni fijos ni aislados que explicar.
+        let fixed: [OtherFixedItem] = isPast ? [] : otros.fijos.map {
+            fixedItem($0.fijo, left: $0.falta, received: $0.cobrado)
+        }
+        let isolated = (isPast ? [] : otros.aislados + deteccion.aisladosVentana).map { aislado in
+            OtherIsolatedItem(
+                name: displayName(categoria: aislado.categoria, subcategoria: aislado.subcategoriaNombre,
+                                  comercio: aislado.comercioVisible),
+                groupName: groupName(categoria: aislado.categoria, subcategoria: aislado.subcategoriaNombre,
+                                     comercio: aislado.comercioVisible),
+                iconName: aislado.categoria.map { $0.iconName ?? "folder" } ?? AppConstants.uncategorizedIconName,
+                colorHex: aislado.categoria?.colorHex ?? AppConstants.uncategorizedColorHex,
+                amount: aislado.importe,
+                month: aislado.mes
+            )
+        }
         return CashFlowOtherResult(
             plannedAmount: otros.esperado,
             realAmount: (isPast || isCurrent) ? otros.real : nil,
             categoryBreakdown: breakdown,
-            leftAmount: otros.falta
+            leftAmount: otros.falta,
+            fixedItems: fixed,
+            isolatedItems: isolated,
+            variableEstimate: deteccion.variable,
+            variableLeft: otros.faltaVariable,
+            historyMonths: deteccion.mesesDeHistoria,
+            detects: deteccion.detecta
         )
+    }
+
+    private static func fixedItem(
+        _ fijo: FlujoProyeccionInteligente.Fijo, left: Double, received: Double
+    ) -> OtherFixedItem {
+        OtherFixedItem(
+            name: displayName(categoria: fijo.categoria, subcategoria: fijo.subcategoriaNombre,
+                              comercio: fijo.comercioVisible),
+            groupName: groupName(categoria: fijo.categoria, subcategoria: fijo.subcategoriaNombre,
+                                 comercio: fijo.comercioVisible),
+            iconName: fijo.categoria.map { $0.iconName ?? "folder" } ?? AppConstants.uncategorizedIconName,
+            colorHex: fijo.categoria?.colorHex ?? AppConstants.uncategorizedColorHex,
+            monthlyAmount: fijo.monto,
+            day: fijo.unaVezAlMes ? fijo.dia : nil,
+            leftAmount: left,
+            monthsSeen: fijo.mesesVistos,
+            monthsWindow: fijo.mesesVentana,
+            receivedAmount: received
+        )
+    }
+
+    /// El nombre de un fijo o de un aislado: el comercio si lo hay, si no la subcategoría y si no la categoría (o «Sin
+    /// categoría»). El detalle llega a subcategoría; la categoría va aparte, como agrupador (`groupName`).
+    private static func displayName(categoria: Category?, subcategoria: String?, comercio: String?) -> String {
+        comercio ?? subcategoria ?? categoria?.name ?? L10n.Report.uncategorized
+    }
+
+    /// Lo que agrupa al nombre: la categoría cuando el nombre es su subcategoría o un comercio (con la subcategoría si la
+    /// hay); `nil` cuando el nombre ya es la categoría.
+    private static func groupName(categoria: Category?, subcategoria: String?, comercio: String?) -> String? {
+        if comercio != nil {
+            let grupo = subcategoria.map { sub in categoria.map { "\($0.name) · \(sub)" } ?? sub } ?? categoria?.name
+            return grupo ?? L10n.Report.uncategorized
+        }
+        return subcategoria == nil ? nil : categoria?.name
     }
 
     private static func groups(

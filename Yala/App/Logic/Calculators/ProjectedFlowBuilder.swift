@@ -4,7 +4,8 @@
 //
 //  Reúne lo que alimenta cada día de «Ver proyectado»: pagos planificados en su día (los vencidos sin registrar,
 //  mañana), movimientos ya fechados por delante, y lo no planificado, del motor del mes del flujo de caja
-//  (`FlujoMotorMes`): con plan, lo que les falta a sus líneas; sin plan o con filtros, «otros» por la mediana de 6 meses.
+//  (`FlujoMotorMes`): con plan, lo que les falta a sus líneas; sin plan o con filtros, «otros» con los fijos detectados en
+//  tus registros y, en gastos, lo variable por la mediana de 6 meses sin aislados (`FlujoProyeccionInteligente`).
 //  La aritmética vive en `ProjectedFlowCalculator`; aquí, solo de dónde sale cada importe.
 //
 //  Lo usan Tendencias (`StatisticsViewModel`), el Panel (`PanelViewModel`) y la foto de los widgets
@@ -167,8 +168,9 @@ enum ProjectedFlowBuilder {
             expenseSource = .plan
         } else if let others = othersRemaining(inputs, occurrences: occurrences) {
             remaining = others
-            // El gasto estimado se sigue nombrando «tu ritmo de gasto»: la mediana es lo que gastas en un mes normal.
-            expenseSource = .rhythm
+            // El gasto estimado se sigue nombrando «tu ritmo de gasto»: la mediana es lo que gastas en un mes normal. Los
+            // ingresos fijos detectados no tienen rótulo propio todavía (card aparte): el de ingresos no cambia.
+            if others.hasExpenseLines { expenseSource = .rhythm }
         }
         if let remaining {
             if remaining.isApproximate { isApproximate = true }
@@ -177,6 +179,10 @@ enum ProjectedFlowBuilder {
                 calendar: inputs.calendar
             )
             for (day, flow) in spread { flows[day, default: DayFlow()] += flow }
+            // Los fijos detectados que llegan una vez al mes, en su día (o mañana si ya pasó sin llegar).
+            for (day, flow) in dayPlacedFlows(remaining.byDayOfMonth, inputs: inputs) {
+                flows[day, default: DayFlow()] += flow
+            }
         }
 
         return Result(flows: flows, incomeSource: incomeSource, expenseSource: expenseSource, isApproximate: isApproximate)
@@ -283,13 +289,46 @@ enum ProjectedFlowBuilder {
         return (flows, approximate)
     }
 
+    // MARK: - Fijos en su día
+
+    /// Lo que les falta a los fijos de un día (mes → día del mes → lo que falta) puesto en su día: el día típico, o el
+    /// último del mes si el mes es más corto; si ya pasó, mañana (como un pago vencido). Solo los días pedidos: el cierre
+    /// del mes no cambia, solo en qué día se dibuja.
+    static func dayPlacedFlows(_ byDay: [Date: [Int: DayFlow]], inputs: Inputs) -> [Date: DayFlow] {
+        let calendar = inputs.calendar
+        let pedidos = Set(inputs.days)
+        var result: [Date: DayFlow] = [:]
+        for (mes, porDia) in byDay {
+            guard let diasDelMes = calendar.range(of: .day, in: .month, for: mes)?.count else { continue }
+            for (dia, flow) in porDia {
+                guard let fecha = calendar.date(byAdding: .day, value: min(dia, diasDelMes) - 1, to: mes),
+                      let dibujo = ProjectedFlowCalculator.drawingDay(
+                        forOccurrence: fecha, today: inputs.today, calendar: calendar),
+                      calendar.isDate(dibujo, equalTo: mes, toGranularity: .month),
+                      pedidos.contains(dibujo) else { continue }
+                result[dibujo, default: DayFlow()] += flow
+            }
+        }
+        return result
+    }
+
+    /// De lo que falta por día de cada lado a la forma de `dayPlacedFlows`.
+    static func byDayOfMonth(income: [Int: Double], expense: [Int: Double]) -> [Int: DayFlow] {
+        var result: [Int: DayFlow] = [:]
+        for (dia, importe) in income { result[dia, default: DayFlow()].income += importe }
+        for (dia, importe) in expense { result[dia, default: DayFlow()].expense += importe }
+        return result
+    }
+
     // MARK: - Sin plan: «otros» por la mediana
 
     /// Lo que falta cada mes sin plan, o con filtros de sesión: el motor del mes sin líneas, así que todo es «otros».
-    /// Gastos: la mediana de los 6 meses completos anteriores menos lo que el mes ya tiene (real o fechado, sin lo
-    /// enlazado a un pago, que va en su día). Ingresos: no se proyectan. Sin filtros, la mediana sale de todos los
-    /// movimientos, como con plan, para que Panel, Tendencias y el widget den la misma cifra; con filtros, de los
-    /// filtrados («Solo Comida» proyecta lo de comida). `nil` sin un mes completo de historia: nada que estimar.
+    /// Con lo detectado en tus registros (`FlujoProyeccionInteligente`, 19-nov-2026): los fijos de los dos lados, con su
+    /// monto y su día, y en gastos lo variable por la mediana de 6 meses sin fijos ni aislados, menos lo que el mes ya
+    /// tiene (sin lo enlazado a un pago, que va en su día). Los ingresos que varían no se proyectan. Sin filtros, sale
+    /// de todos los movimientos, como con plan, para que Panel, Tendencias y el widget den la misma cifra; con filtros,
+    /// de los filtrados («Solo Comida» proyecta lo de comida). `nil` si no hay nada que estimar (sin un mes completo de
+    /// historia, o sin gasto variable ni fijos).
     static func othersRemaining(_ inputs: Inputs, occurrences: [Occurrence]) -> PlanRemaining? {
         let calendar = inputs.calendar
         guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today),
@@ -322,18 +361,24 @@ enum ProjectedFlowBuilder {
             calendar: calendar,
             historia: historia
         )
-        guard FlujoMotorMes.medianaDeOtros(entrada) > 0 else { return nil }
+        let deteccion = FlujoMotorMes.detectar(entrada)
+        let estimaGastos = deteccion.gastos.variable > 0 || !deteccion.gastos.fijos.isEmpty
+        let estimaIngresos = !deteccion.ingresos.fijos.isEmpty
+        guard estimaGastos || estimaIngresos else { return nil }
         var remainingByMonth: [Date: DayFlow] = [:]
+        var byDay: [Date: [Int: DayFlow]] = [:]
         for mes in FlujoMotorMes.calcular(entrada) where !mes.esPasado {
             remainingByMonth[mes.inicio] = DayFlow(
                 income: mes.ingresos.faltaRepartible, expense: mes.gastos.faltaRepartible
             )
+            byDay[mes.inicio] = byDayOfMonth(income: mes.ingresos.faltaPorDia, expense: mes.gastos.faltaPorDia)
         }
         return PlanRemaining(
             remainingByMonth: remainingByMonth,
-            hasIncomeLines: false,
-            hasExpenseLines: false,
-            isApproximate: contados.aproximado
+            hasIncomeLines: estimaIngresos,
+            hasExpenseLines: estimaGastos,
+            isApproximate: contados.aproximado,
+            byDayOfMonth: byDay
         )
     }
 
@@ -341,9 +386,12 @@ enum ProjectedFlowBuilder {
 
     struct PlanRemaining {
         let remainingByMonth: [Date: DayFlow]
+        /// Con plan: tiene líneas de ese lado. Sin plan: ese lado tiene algo estimado (fijos o, en gastos, lo variable).
         let hasIncomeLines: Bool
         let hasExpenseLines: Bool
         let isApproximate: Bool
+        /// Lo que les falta a los fijos de un día, por mes (inicio) y día del mes: va en su día, no repartido.
+        var byDayOfMonth: [Date: [Int: DayFlow]] = [:]
     }
 
     static func planRemaining(_ inputs: Inputs, occurrences: [Occurrence], context: ModelContext?) -> PlanRemaining? {
@@ -392,18 +440,21 @@ enum ProjectedFlowBuilder {
             calendar: calendar
         )
         var remainingByMonth: [Date: DayFlow] = [:]
+        var byDay: [Date: [Int: DayFlow]] = [:]
         for month in projection.months where !month.isPast {
             guard let monthStart = calendar.dateInterval(of: .month, for: month.date)?.start else { continue }
             remainingByMonth[monthStart] = DayFlow(
                 income: month.spreadableIncomeLeft, expense: month.spreadableExpenseLeft
             )
+            byDay[monthStart] = byDayOfMonth(income: month.dayPlacedIncomeLeft, expense: month.dayPlacedExpenseLeft)
         }
         let approximate = projection.isApproximate
         return PlanRemaining(
             remainingByMonth: remainingByMonth,
             hasIncomeLines: hasIncomeLines,
             hasExpenseLines: hasExpenseLines,
-            isApproximate: approximate
+            isApproximate: approximate,
+            byDayOfMonth: byDay
         )
     }
 }

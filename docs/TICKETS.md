@@ -43,10 +43,11 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1383)
+## Index (1384)
 
 | id | status | path |
-| 2026-11-17-pagos-que-se-repiten-banner-y-hoja | done | tickets/done/2026-11-17-pagos-que-se-repiten-banner-y-hoja.md |
+| 2026-11-19-barrido-qa-2-3-post-flujo | done | tickets/done/2026-11-19-barrido-qa-2-3-post-flujo.md |
+| 2026-11-19-subir-testflight-2-3 | done | tickets/done/2026-11-19-subir-testflight-2-3.md |
 | 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
 | 2026-11-18-verificacion-google-sin-casa | backlog | tickets/backlog/2026-11-18-verificacion-google-sin-casa.md |
 | 2026-11-17-perfil-personalizacion-tarjeta | done | tickets/done/2026-11-17-perfil-personalizacion-tarjeta.md |
@@ -100,6 +101,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
 | 2026-11-17-flujo-de-caja-replanteo | done | tickets/done/2026-11-17-flujo-de-caja-replanteo.md |
+| 2026-11-19-flujo-proyeccion-inteligente | done | tickets/done/2026-11-19-flujo-proyeccion-inteligente.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |

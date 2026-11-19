@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (125 entradas)
+## Índice (126 entradas)
 
-> **No hace falta leer este fichero entero** — son 322 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 323 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-19` [Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)](#2026-11-19-flujo-de-caja-proyeccin-inteligente-con-ingresos-recurrentes-y-sin-outliers-corrige-p6)
 - `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
 - `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
 - `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
@@ -151,6 +152,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-19] Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)
+**Contexto:** Decisión de Jürgen en el chat del 19-nov (06:11, Lima), capturada por el bot dueño (ADR-082 de casa); sustituye a la del 18-nov (06:26) en lo que toca a P6 del replanteo de Flujo de caja (`tickets/done/2026-11-17-flujo-de-caja-replanteo.md`). La registra la sesión de la subida a TestFlight 2.3 (4); no la ejecuta, porque no es de su encargo.
+**Decisión:** Los ingresos fijos o recurrentes que se detecten en los registros sí se proyectan en los meses futuros, aunque no haya plan ni línea. Los outliers (gastos o ingresos aislados, como un iPhone de S/ 6,000 comprado una sola vez) se detectan y no se usan en las proyecciones, ni en ingresos ni en gastos. La proyección debe ser realista.
+**Razones:** La da Jürgen: la proyección tiene que ser realista.
+**Consecuencias:** Corrige la respuesta de P6 del replanteo. Falta el encargo que revise la proyección ya mergeada contra esta regla; la build 2.3 (4) sale sin ese cambio.
+**Estado:** Activa
 
 ### [2026-11-18] Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay
 **Contexto:** Tras el análisis de qué se pierde sin el permiso, Jürgen decidió en el chat el 18-nov (16:16, Lima): «Si requiere el pago, fuera. Nos quedamos con lo que tenemos». Capturada por el bot dueño (ADR-082 de casa); la registra la sesión de «Cambiar límite» del flujo de caja, que no la ejecuta. Sustituye entera a la de las 15:59 (abajo), que pedía el análisis.
