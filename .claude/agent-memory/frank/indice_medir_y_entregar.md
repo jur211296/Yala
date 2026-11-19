@@ -109,6 +109,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Turnstile en la entrada de la web](reference_turnstile_en_la_entrada_de_la_web.md) — shadow DOM cerrado; claves de prueba 3x/1x; producción reta al bot: sesión la prueba Jürgen.
 - [Contar rescates del CI](reference_contar_rescates_del_ci.md) — anotaciones «Rescatado al repetirlo» del check-run tests; -test-iterations no repite Swift Testing.
 - [Runner macOS sin presupuesto](feedback_runner_macos_sin_presupuesto.md) — 17-nov: NO a jobs nuevos en xcode-27; mide coste antes y ofrece el gate local.
+- [PR huérfano en cola: se rebasa](feedback_pr_huerfano_en_cola_se_rebasa.md) — choque menor de una sesión cerrada: rebase + force-with-lease; el merge mete Swift y el hook lo bloquea.
 - [Mergear a mano: mira todos los checks](feedback_mergear_a_mano_mira_todos_los_checks.md) — webapp rojo no requerido se coló el 17-nov.
 - [Integrar un PR ajeno: YalaTests entero](reference_integrar_pr_ajeno_suite_entera.md) — ~7 min; un rojo de una vez se repite antes de creerlo.
 - [Artifact público: pocas imágenes](reference_artifact_publico_con_muchas_imagenes.md) — 600 logos sueltos no se comparten; lámina única + pares en una imagen.

@@ -14,3 +14,7 @@ nada porque ninguno era ejecutable, pero el texto quedó mutilado y pudo correr 
 
 **How to apply:** para interpolar una ruta en un script que lleva markdown, pásala por argumento o variable de entorno
 y deja el heredoc entre comillas. Relacionado: [[el-sello-cubre-el-encargo]] (heredoc con markdown, siempre…).
+
+**Se repitió el 2026-11-17** (escapes y poda): `python3 - <<EOF` con motivos de archivo que llevaban
+`CKConstants`, `Yala/`, `[STALE]`; zsh intentó ejecutarlos. Si el texto lleva backticks y necesitas una ruta,
+`export S=…` y `<<'EOF'` con `os.environ['S']`.

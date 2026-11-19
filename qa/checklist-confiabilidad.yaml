@@ -46,7 +46,7 @@ items:
       - {fecha: "2026-09-22", ref: "PR #211", que: "el verify leyó un fetch fallido como outbox vacío"}
       - {fecha: "2026-09-26", ref: "PR #271", que: "el outbox de preferencias ilegible se pisaba"}
       - {fecha: "2026-10-06", ref: "PR #378", que: "una muestra ilegible de la vuelta esperaba 72 h"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:394-430", ".claude/rules/swiftdata-cloudkit.md:602-658", ".claude/rules/swiftdata-cloudkit.md:1128-1136", ".claude/rules/swiftdata-cloudkit.md:2080-2097"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:385-420", ".claude/rules/swiftdata-cloudkit.md:593-648", ".claude/rules/archivo/swiftdata-cloudkit.md:79-87", ".claude/rules/swiftdata-cloudkit.md:2019-2036"]
     ultimo_disparo: null
 
   - id: cierre-sin-perder-lo-pendiente
@@ -66,7 +66,7 @@ items:
       - {fecha: "2026-09-26", ref: "PR #256", que: "«Empezar de cero» mataba escrituras de grupo sin subir"}
       - {fecha: "2026-09-26", ref: "PR #257", que: "un drain de Grupos a medias se leía «nada pendiente» al borrar"}
       - {fecha: "2026-09-26", ref: "PR #269", que: "el cierre privado perdía capturas de Apple Pay y Siri sin materializar"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:334-393", ".claude/rules/swiftdata-cloudkit.md:484-532", ".claude/rules/swiftdata-cloudkit.md:1802-1804"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:325-383", ".claude/rules/swiftdata-cloudkit.md:475-523", ".claude/rules/swiftdata-cloudkit.md:1741-1741", ".claude/rules/archivo/swiftdata-cloudkit.md:112-112"]
     ultimo_disparo: null
 
   - id: hlc-sendlocal-y-orden-de-subida
@@ -84,7 +84,7 @@ items:
     origen:
       - {fecha: "2026-09-26", ref: "PR #259", que: "el reloj por delante encallaba el drain de Grupos para siempre"}
       - {fecha: "2026-10-07", ref: "commit a1b7297c5", que: "un teléfono con la hora adelantada ganaba todos los conflictos"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:533-592"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:524-583"]
     ultimo_disparo: null
 
   - id: columna-de-sync-declara-since
@@ -100,7 +100,7 @@ items:
     origen:
       - {fecha: "2026-10-18", ref: "commit 968335ddb", que: "una columna a secas divergía el Merkle en teléfonos viejos"}
       - {fecha: "2026-10-24", ref: "PR #623", que: "Grupos sin cabecera de capability apagaba el Merkle del parque viejo"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:184-193"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:179-187"]
     ultimo_disparo: null
 
   - id: campo-de-modelo-es-campo-de-cloudkit
@@ -117,7 +117,7 @@ items:
     origen:
       - {fecha: "2026-06-27", ref: "commit 9f64e02c1", que: "«isOpeningBalance» entró sin desplegar el esquema: el sync de Grupos quedó muerto cuatro días"}
       - {fecha: "2026-10-10", ref: "PR #442", que: "faltaban 14 campos en el esquema de producción y 31 en el de desarrollo"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:180-183"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:177-177"]
     ultimo_disparo: null
 
   - id: drain-y-apply-sin-tablas-enteras
@@ -134,7 +134,7 @@ items:
     origen:
       - {fecha: "2026-10-31", ref: "PR #723", que: "la app se congelaba segundos en el drain (YALA-IOS-2)"}
       - {fecha: "2026-11-13", ref: "commit b3e31c700", que: "el apply buscaba fila a fila, 4 s por página (YALA-IOS-J)"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:2004-2022", ".claude/rules/swiftdata-cloudkit.md:2080-2097"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:1943-1961", ".claude/rules/swiftdata-cloudkit.md:2019-2036"]
     ultimo_disparo: null
 
   - id: token-nil-no-es-sesion-caducada
@@ -151,7 +151,7 @@ items:
       - {fecha: "2026-09-15", ref: "commit 6428e1462", que: "el canal de Grupos llamaba caducada a una sesión viva sin red"}
       - {fecha: "2026-09-16", ref: "PR #188", que: "el canal personal leía el refresh sin red como sesión caducada"}
       - {fecha: "2026-09-22", ref: "PR #209", que: "el Merkle, el último cliente en copiar el criterio"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1812-1814"]
+    regla: [".claude/rules/archivo/swiftdata-cloudkit.md:118-124"]
     ultimo_disparo: null
 
   - id: signout-se-verifica
@@ -168,7 +168,7 @@ items:
     origen:
       - {fecha: "2026-09-23", ref: "PR #230", que: "la sesión del adopt sobrevivía a su salida"}
       - {fecha: "2026-09-26", ref: "PR #255", que: "el desasociar no verificaba que la sesión se cerrara"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1404-1441", ".claude/rules/swiftdata-cloudkit.md:1837-1863"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:1343-1380", ".claude/rules/swiftdata-cloudkit.md:1776-1802"]
     ultimo_disparo: null
 
   - id: frontera-de-persona-no-hereda
@@ -189,7 +189,7 @@ items:
       - {fecha: "2026-09-17", ref: "PR #192", que: "la sesión de la persona anterior sobrevivía a empezar de cero y reinstalar"}
       - {fecha: "2026-09-29", ref: "PR #298", que: "otra cuenta entraba sobre el corpus y el outbox de la primera"}
       - {fecha: "2026-10-01", ref: "PR #317", que: "quien entraba por un grupo heredaba las preferencias del dueño"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1746-1746", ".claude/rules/swiftdata-cloudkit.md:1766-1768", ".claude/rules/swiftdata-cloudkit.md:1963-1984"]
+    regla: [".claude/rules/archivo/swiftdata-cloudkit.md:100-100", ".claude/rules/swiftdata-cloudkit.md:1705-1705", ".claude/rules/archivo/swiftdata-cloudkit.md:106-106", ".claude/rules/swiftdata-cloudkit.md:1902-1923"]
     ultimo_disparo: null
 
   # ───────────────────────────────── Puente de Grupos ─────────────────────────────────
@@ -208,7 +208,7 @@ items:
       - {fecha: "2026-09-27", ref: "PR #282", que: "«Empezar desde cero» perdía las patas de liquidación de grupo"}
       - {fecha: "2026-09-27", ref: "PR #283", que: "tras «Vaciar datos» los gastos de grupo desaparecían de lo personal"}
       - {fecha: "2026-09-27", ref: "PR #287", que: "el receptor tardío de la señal borraba lo repuesto y nadie lo pedía"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1865-1875"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:1804-1814", ".claude/rules/archivo/swiftdata-cloudkit.md:130-130"]
     ultimo_disparo: null
 
   - id: puente-materializa-lo-que-llega
@@ -224,7 +224,7 @@ items:
       - {fecha: "2026-07-30", ref: "commit ad9371481", que: "el gasto de grupo que llegaba por sync se quedaba sin registro personal"}
       - {fecha: "2026-08-02", ref: "commit 830516882", que: "quien recibía el borrado de un gasto se quedaba la transacción"}
       - {fecha: "2026-09-05", ref: "commit ac8880de8", que: "el gasto de quien acababa de unirse no llegaba a su cuenta sin relanzar"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1754-1754", ".claude/rules/swiftdata-cloudkit.md:1772-1772"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:1693-1693", ".claude/rules/swiftdata-cloudkit.md:1711-1711"]
     ultimo_disparo: null
 
   - id: gasto-de-grupo-cuenta-mi-parte-una-vez
@@ -264,7 +264,7 @@ items:
       - {fecha: "2026-09-22", ref: "PR #215", que: "un journal ilegible se leía como «notStarted» y concedía"}
       - {fecha: "2026-09-27", ref: "PR #273", que: "el cambio de Apple ID se comprobaba antes de existir el controller"}
       - {fecha: "2026-09-27", ref: "PR #274", que: "el cierre privado borraba lo local con una migración en vuelo"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:230-333"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:221-323"]
     ultimo_disparo: null
 
   - id: esperas-de-migracion-con-techo
@@ -284,7 +284,7 @@ items:
       - {fecha: "2026-09-22", ref: "PR #212", que: "la subida del snapshot se quedaba al 55 % sin techo"}
       - {fecha: "2026-09-23", ref: "PR #223", que: "causas definitivas alternando nunca llegaban al techo corto"}
       - {fecha: "2026-09-23", ref: "PR #226", que: "el efecto del adopt reintentaba para siempre"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:692-855", ".claude/rules/swiftdata-cloudkit.md:1445-1445", ".claude/rules/swiftdata-cloudkit.md:1472-1609"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:683-845", ".claude/rules/swiftdata-cloudkit.md:1384-1384", ".claude/rules/swiftdata-cloudkit.md:1411-1548"]
     ultimo_disparo: null
 
   - id: salir-de-fase-repone-pendientes
@@ -301,7 +301,7 @@ items:
     origen:
       - {fecha: "2026-09-16", ref: "PR #186", que: "«migration_in_progress» se quedaba puesto en el backend para siempre"}
       - {fecha: "2026-09-27", ref: "PR #275", que: "Activar la nube perdía el «completeReverseServer»"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1447-1447", ".claude/rules/swiftdata-cloudkit.md:1668-1681"]
+    regla: [".claude/rules/swiftdata-cloudkit.md:1386-1386", ".claude/rules/swiftdata-cloudkit.md:1607-1620"]
     ultimo_disparo: null
 
   - id: syncid-cambiado-escribe-testigo
@@ -319,7 +319,7 @@ items:
       - {fecha: "2026-09-24", ref: "PR #243", que: "el líder desplazado re-identificaba filas y duplicaba"}
       - {fecha: "2026-09-25", ref: "PR #244", que: "borrar una fila re-identificada emitía la identidad del líder"}
       - {fecha: "2026-09-25", ref: "PR #246", que: "el adopt con marcador no casaba filas re-identificadas"}
-    regla: [".claude/rules/swiftdata-cloudkit.md:1091-1222"]
+    regla: [".claude/rules/archivo/swiftdata-cloudkit.md:42-94", ".claude/rules/swiftdata-cloudkit.md:1084-1161"]
     ultimo_disparo: null
 
   # ──────────────────────────────── Dinero: divisas y saldos ────────────────────────────────
@@ -518,7 +518,7 @@ items:
       - {fecha: "2026-10-09", ref: "PR #414", que: "el chip de cuenta estaba en y=716 al tocar y en y=513 al llegar"}
       - {fecha: "2026-11-09", ref: "PR #876", que: "«Calcúlalo conmigo» quedó bajo la barra y caía cada noche"}
       - {fecha: "2026-11-17", ref: "PR #1020", que: "«Mi parte» quedó bajo el teclado"}
-    regla: [".claude/rules/testing.md:176-176", ".claude/rules/testing.md:215-227"]
+    regla: [".claude/rules/testing.md:179-179", ".claude/rules/testing.md:205-217"]
     ultimo_disparo: null
 
   - id: aviso-deshacer-no-cabe-en-5s
@@ -534,7 +534,7 @@ items:
     origen:
       - {fecha: "2026-10-25", ref: "PR #631 (deshacer)", que: "el segundo borrado tardó más de 5,4 s"}
       - {fecha: "2026-10-29", ref: "PR #690", que: "seis pruebas caían cada noche en el CI y pasaban en local"}
-    regla: [".claude/rules/testing.md:178-194"]
+    regla: [".claude/rules/archivo/testing.md:37-50"]
     ultimo_disparo: null
 
   - id: ahora-fijo-en-pruebas
@@ -551,7 +551,7 @@ items:
       - {fecha: "2026-10-08", ref: "commit 3d7f0e3c7", que: "los tests de períodos del widget dependían de la zona del runner"}
       - {fecha: "2026-11-01", ref: "commit 87a44f204", que: "doce casos caían a las 00:30 del día 1"}
       - {fecha: "2026-11-05", ref: "commit 788ae8061", que: "la app del simulador heredaba UTC y caían dos XCUITest"}
-    regla: [".claude/rules/testing.md:132-150"]
+    regla: [".claude/rules/testing.md:134-153", ".claude/rules/archivo/testing.md:24-31"]
     ultimo_disparo: null
 
   - id: defaults-aislados-en-pruebas
@@ -567,5 +567,5 @@ items:
     origen:
       - {fecha: "2026-10-26", ref: "commit 8691e5844", que: "«solo gastos» se colaba entre suites y Registros perdía los ingresos"}
       - {fecha: "2026-11-04", ref: "PR #786", que: "1.262 ficheros de preferencias por corrida en el simulador"}
-    regla: [".claude/rules/testing.md:76-76", ".claude/rules/testing.md:97-109"]
+    regla: [".claude/rules/testing.md:78-78", ".claude/rules/testing.md:99-111"]
     ultimo_disparo: null

@@ -147,49 +147,54 @@ archivar o recortar. Lo que no aparece aquí sigue viviendo solo en la regla.
 | `.claude/rules/ingreso-gasto.md:67-75` | Qué filas entran en un saldo: `LiveBalanceCalculator.entersBalance` | `saldo-filas-que-entran` |
 | `.claude/rules/ingreso-gasto.md:77-81` | Lo gastado de un presupuesto: `BudgetsViewModel.calculateSpending` | `gasto-de-grupo-cuenta-mi-parte-una-vez` |
 | `.claude/rules/session-filters.md:198-202` | El interruptor de Estadísticas (`includeGroupTransactionsInStats`) también lo recibe, desde el 2026-10-12 | `gasto-de-grupo-cuenta-mi-parte-una-vez` |
-| `.claude/rules/swiftdata-cloudkit.md:180-183` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR: | `campo-de-modelo-es-campo-de-cloudkit` |
-| `.claude/rules/swiftdata-cloudkit.md:184-193` | Una columna nueva del canal personal del Modo Nube lleva `since` en el manifest, y sube `manifest_version` (20… | `columna-de-sync-declara-since` |
-| `.claude/rules/swiftdata-cloudkit.md:230-333` | Un journal que no se deja leer NO es `notStarted`, y una lectura no escribe (2026-09-22). | `guard-de-migracion-no-falla-abierto` |
-| `.claude/rules/swiftdata-cloudkit.md:334-393` | El push-all del cierre de sesión también pasa por el candado del motor, y «pendiente» incluye el History (2026… | `cierre-sin-perder-lo-pendiente` |
-| `.claude/rules/swiftdata-cloudkit.md:394-430` | En el apply del pull, «no pude leer» NUNCA es «no hay nada» (2026-09-22). | `lectura-fallida-no-es-vacio` |
-| `.claude/rules/swiftdata-cloudkit.md:484-532` | El de Grupos también devuelve si terminó (2026-09-26), y ahí la traducción cortada SÍ es `false` | `cierre-sin-perder-lo-pendiente` |
-| `.claude/rules/swiftdata-cloudkit.md:533-592` | **Y el drain de Grupos estampa con `HLCClock.sendLocal(eventTime: tx.timestamp)`, no con `send` (2026-09-26, | `hlc-sendlocal-y-orden-de-subida` |
-| `.claude/rules/swiftdata-cloudkit.md:602-658` | Y el Merkle tampoco, en ninguno de los dos canales (2026-09-22 personal · 2026-09-23 Grupos). | `lectura-fallida-no-es-vacio` |
-| `.claude/rules/swiftdata-cloudkit.md:692-855` | La subida del snapshot de la IDA también tiene techo y salida, con dos relojes (2026-09-22). | `esperas-de-migracion-con-techo` |
-| `.claude/rules/swiftdata-cloudkit.md:1091-1222` | Y lo que el líder desplazado exporta TARDE a iCloud no le cambia la identidad al relevo (2026-09-24). | `syncid-cambiado-escribe-testigo` |
-| `.claude/rules/swiftdata-cloudkit.md:1128-1136` | una lectura que falla es avería local, también la de los metadatos de CloudKit | `lectura-fallida-no-es-vacio` |
-| `.claude/rules/swiftdata-cloudkit.md:1404-1441` | Y la sesión que abrió el adopt se cierra cuando el adopt sale (2026-09-23). | `signout-se-verifica` |
-| `.claude/rules/swiftdata-cloudkit.md:1445-1445` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | `esperas-de-migracion-con-techo` |
-| `.claude/rules/swiftdata-cloudkit.md:1447-1447` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | `salir-de-fase-repone-pendientes` |
-| `.claude/rules/swiftdata-cloudkit.md:1472-1609` | Y las cuatro fases previas al montaje también tienen techo y salida, con efectos CERO (2026-09-21). | `esperas-de-migracion-con-techo` |
-| `.claude/rules/swiftdata-cloudkit.md:1668-1681` | «Activar la nube» devuelve lo que tiró si sale antes del claim (2026-09-27). | `salir-de-fase-repone-pendientes` |
-| `.claude/rules/swiftdata-cloudkit.md:1746-1746` | Las altas solo-grupos retiran en LOCAL las preferencias que dejó el arranque neutro, y las copias en memoria c… | `frontera-de-persona-no-hereda` |
-| `.claude/rules/swiftdata-cloudkit.md:1754-1754` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda reso… | `puente-materializa-lo-que-llega` |
-| `.claude/rules/swiftdata-cloudkit.md:1766-1768` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | `frontera-de-persona-no-hereda` |
-| `.claude/rules/swiftdata-cloudkit.md:1772-1772` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (… | `puente-materializa-lo-que-llega` |
-| `.claude/rules/swiftdata-cloudkit.md:1802-1804` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo despué… | `cierre-sin-perder-lo-pendiente` |
-| `.claude/rules/swiftdata-cloudkit.md:1812-1814` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | `token-nil-no-es-sesion-caducada` |
-| `.claude/rules/swiftdata-cloudkit.md:1837-1863` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | `signout-se-verifica` |
-| `.claude/rules/swiftdata-cloudkit.md:1865-1875` | Tras un borrado de filas que conserva los grupos (`.importedRows`), las patas de las liquidaciones vuelven por… | `borrados-que-conservan-grupos` |
-| `.claude/rules/swiftdata-cloudkit.md:1963-1984` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | `frontera-de-persona-no-hereda` |
-| `.claude/rules/swiftdata-cloudkit.md:2004-2022` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | `drain-y-apply-sin-tablas-enteras` |
-| `.claude/rules/swiftdata-cloudkit.md:2080-2097` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | `drain-y-apply-sin-tablas-enteras` |
-| `.claude/rules/swiftdata-cloudkit.md:2080-2097` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | `lectura-fallida-no-es-vacio` |
+| `.claude/rules/swiftdata-cloudkit.md:177-177` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR: | `campo-de-modelo-es-campo-de-cloudkit` |
+| `.claude/rules/swiftdata-cloudkit.md:179-187` | Una columna nueva del canal personal del Modo Nube lleva `since` en el manifest, y sube `manifest_version` (20… | `columna-de-sync-declara-since` |
+| `.claude/rules/swiftdata-cloudkit.md:221-323` | Un journal que no se deja leer NO es `notStarted`, y una lectura no escribe (2026-09-22). | `guard-de-migracion-no-falla-abierto` |
+| `.claude/rules/swiftdata-cloudkit.md:325-383` | El push-all del cierre de sesión también pasa por el candado del motor, y «pendiente» incluye el History (2026… | `cierre-sin-perder-lo-pendiente` |
+| `.claude/rules/swiftdata-cloudkit.md:385-420` | En el apply del pull, «no pude leer» NUNCA es «no hay nada» (2026-09-22). | `lectura-fallida-no-es-vacio` |
+| `.claude/rules/swiftdata-cloudkit.md:475-523` | El de Grupos también devuelve si terminó (2026-09-26), y ahí la traducción cortada SÍ es `false` | `cierre-sin-perder-lo-pendiente` |
+| `.claude/rules/swiftdata-cloudkit.md:524-583` | **Y el drain de Grupos estampa con `HLCClock.sendLocal(eventTime: tx.timestamp)`, no con `send` (2026-09-26, | `hlc-sendlocal-y-orden-de-subida` |
+| `.claude/rules/swiftdata-cloudkit.md:593-648` | Y el Merkle tampoco, en ninguno de los dos canales (2026-09-22 personal · 2026-09-23 Grupos). | `lectura-fallida-no-es-vacio` |
+| `.claude/rules/swiftdata-cloudkit.md:683-845` | La subida del snapshot de la IDA también tiene techo y salida, con dos relojes (2026-09-22). | `esperas-de-migracion-con-techo` |
+| `.claude/rules/archivo/swiftdata-cloudkit.md:42-94` · `.claude/rules/swiftdata-cloudkit.md:1084-1161` | Y lo que el líder desplazado exporta TARDE a iCloud no le cambia la identidad al relevo (2026-09-24). | `syncid-cambiado-escribe-testigo` |
+| `.claude/rules/archivo/swiftdata-cloudkit.md:79-87` | una lectura que falla es avería local, también la de los metadatos de CloudKit | `lectura-fallida-no-es-vacio` |
+| `.claude/rules/swiftdata-cloudkit.md:1343-1380` | Y la sesión que abrió el adopt se cierra cuando el adopt sale (2026-09-23). | `signout-se-verifica` |
+| `.claude/rules/swiftdata-cloudkit.md:1384-1384` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | `esperas-de-migracion-con-techo` |
+| `.claude/rules/swiftdata-cloudkit.md:1386-1386` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | `salir-de-fase-repone-pendientes` |
+| `.claude/rules/swiftdata-cloudkit.md:1411-1548` | Y las cuatro fases previas al montaje también tienen techo y salida, con efectos CERO (2026-09-21). | `esperas-de-migracion-con-techo` |
+| `.claude/rules/swiftdata-cloudkit.md:1607-1620` | «Activar la nube» devuelve lo que tiró si sale antes del claim (2026-09-27). | `salir-de-fase-repone-pendientes` |
+| `.claude/rules/archivo/swiftdata-cloudkit.md:100-100` | Las altas solo-grupos retiran en LOCAL las preferencias que dejó el arranque neutro, y las copias en memoria c… | `frontera-de-persona-no-hereda` |
+| `.claude/rules/swiftdata-cloudkit.md:1693-1693` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda reso… | `puente-materializa-lo-que-llega` |
+| `.claude/rules/swiftdata-cloudkit.md:1705-1705` · `.claude/rules/archivo/swiftdata-cloudkit.md:106-106` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | `frontera-de-persona-no-hereda` |
+| `.claude/rules/swiftdata-cloudkit.md:1711-1711` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (… | `puente-materializa-lo-que-llega` |
+| `.claude/rules/swiftdata-cloudkit.md:1741-1741` · `.claude/rules/archivo/swiftdata-cloudkit.md:112-112` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo despué… | `cierre-sin-perder-lo-pendiente` |
+| `.claude/rules/archivo/swiftdata-cloudkit.md:118-124` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | `token-nil-no-es-sesion-caducada` |
+| `.claude/rules/swiftdata-cloudkit.md:1776-1802` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | `signout-se-verifica` |
+| `.claude/rules/swiftdata-cloudkit.md:1804-1814` · `.claude/rules/archivo/swiftdata-cloudkit.md:130-130` | Tras un borrado de filas que conserva los grupos (`.importedRows`), las patas de las liquidaciones vuelven por… | `borrados-que-conservan-grupos` |
+| `.claude/rules/swiftdata-cloudkit.md:1902-1923` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | `frontera-de-persona-no-hereda` |
+| `.claude/rules/swiftdata-cloudkit.md:1943-1961` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | `drain-y-apply-sin-tablas-enteras` |
+| `.claude/rules/swiftdata-cloudkit.md:2019-2036` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | `drain-y-apply-sin-tablas-enteras` |
+| `.claude/rules/swiftdata-cloudkit.md:2019-2036` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | `lectura-fallida-no-es-vacio` |
 | `.claude/rules/swiftui-ds.md:23-30` | El contenido de una hoja puede rehacerse SIN cerrarla, y su `@State` nace de cero (medido el 2026-11-04). | `borrador-sobrevive-a-la-hoja` |
 | `.claude/rules/swiftui-ds.md:425-431` | Una pantalla que reparte su alto con `Spacer`s y no tiene scroll no cabe en un iPhone SE (medido 2026-09-28). | `nuevo-registro-cambia-de-alto` |
-| `.claude/rules/testing.md:76-76` | Nunca `UserDefaults(suiteName:)` pelado (2026-11-04) | `defaults-aislados-en-pruebas` |
-| `.claude/rules/testing.md:97-109` | NUNCA tocar singletons `.shared` sin `@Suite(.serialized)` + `defer { restore }` o `_testReset()`. | `defaults-aislados-en-pruebas` |
-| `.claude/rules/testing.md:132-150` | NUNCA `Date()` / `Calendar.current` en lógica testeada — inyectar vía param opcional `now: Date = .now` (patró… | `ahora-fijo-en-pruebas` |
-| `.claude/rules/testing.md:176-176` | Tocar algo justo después de `typeText` pierde el toque en iOS 27.0: el teclado sigue entrando y la pantalla se… | `tocar-tras-escribir-en-xcuitest` |
-| `.claude/rules/testing.md:178-194` | **Un XCUITest no cabe en los 5 s del aviso con «Deshacer» si encadena dos gestos (medido el 2026-10-25, iOS 27… | `aviso-deshacer-no-cabe-en-5s` |
-| `.claude/rules/testing.md:215-227` | Lo mismo bajo una `.safeAreaBar(edge: .bottom)` con el teclado abierto (medido el 2026-11-09, iOS 27.2). | `tocar-tras-escribir-en-xcuitest` |
+| `.claude/rules/testing.md:78-78` | Nunca `UserDefaults(suiteName:)` pelado (2026-11-04) | `defaults-aislados-en-pruebas` |
+| `.claude/rules/testing.md:99-111` | NUNCA tocar singletons `.shared` sin `@Suite(.serialized)` + `defer { restore }` o `_testReset()`. | `defaults-aislados-en-pruebas` |
+| `.claude/rules/testing.md:134-153` · `.claude/rules/archivo/testing.md:24-31` | NUNCA `Date()` / `Calendar.current` en lógica testeada — inyectar vía param opcional `now: Date = .now` (patró… | `ahora-fijo-en-pruebas` |
+| `.claude/rules/testing.md:179-179` | Tocar algo justo después de `typeText` pierde el toque en iOS 27.0: el teclado sigue entrando y la pantalla se… | `tocar-tras-escribir-en-xcuitest` |
+| `.claude/rules/archivo/testing.md:37-50` | **Un XCUITest no cabe en los 5 s del aviso con «Deshacer» si encadena dos gestos (medido el 2026-10-25, iOS 27… | `aviso-deshacer-no-cabe-en-5s` |
+| `.claude/rules/testing.md:205-217` | Lo mismo bajo una `.safeAreaBar(edge: .bottom)` con el teclado abierto (medido el 2026-11-09, iOS 27.2). | `tocar-tras-escribir-en-xcuitest` |
 | `.claude/rules/widgets.md:41-44` | Lo que el widget deduce de la foto vive en `WidgetInsightsLogic` | `widget-cuenta-con-las-funciones-de-la-app` |
 | `.claude/rules/widgets.md:85-88` | Los grupos de la foto los calcula `WidgetGroupsSnapshotBuilder` con las funciones de la app | `widget-cuenta-con-las-funciones-de-la-app` |
 | `CLAUDE.md:46-50` | Cálculos con fechas | `periodo-que-cierra-en-medianoche` |
 | `tickets/done/2026-11-16-ui-tests-rojos-tandas.md:64-69` | Cómo evitar que se repita | `nuevo-registro-cambia-de-alto` |
 
 `puente-materializa-lo-que-llega` no tiene una regla de prosa propia: su lección vive solo en los tres commits de
-arreglo. Apunta a las dos entradas de identidad del canal (1754 y 1772), que cubren el caso de quien se une.
+arreglo. Apunta a las dos entradas de identidad del canal («`isCurrentUser` es un flag…» y «El resolvedor canónico…»),
+que cubren el caso de quien se une.
+
+> **2026-11-17 (poda de P5):** los punteros de esta tabla y los `regla:` del YAML se recalcularon buscando el
+> texto tras mover 12 entradas a `.claude/rules/archivo/`. Si una entrada cambia de sitio, se vuelven a calcular igual:
+> `docs/verificacion/revision-de-escapes.md`, «La poda».
 
 ## Qué queda en observar y cuándo se promueve
 

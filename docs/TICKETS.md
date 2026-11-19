@@ -66,6 +66,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-registros-estadisticas-identica | qa | tickets/qa/2026-11-17-registros-estadisticas-identica.md |
 | 2026-11-17-resumen-ia-hora-y-actualizar | done | tickets/done/2026-11-17-resumen-ia-hora-y-actualizar.md |
 | 2026-11-17-verificacion-checklist-curada | done | tickets/done/2026-11-17-verificacion-checklist-curada.md |
+| 2026-11-17-verificacion-escapes-y-poda | done | tickets/done/2026-11-17-verificacion-escapes-y-poda.md |
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
