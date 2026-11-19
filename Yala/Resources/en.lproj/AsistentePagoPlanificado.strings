@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "Discard this payment?";
+"asistentePago.create" = "Create payment";
+"asistentePago.createShort" = "Create";
+"asistentePago.name.question" = "What should we call it?";
+"asistentePago.name.detail" = "This is how it shows in your list and in the reminder.";
+"asistentePago.amount.question" = "How much do you pay each time?";
+"asistentePago.amount.detail" = "If it changes each time, enter the usual amount and turn on “Changes each time”.";
+"asistentePago.frequency.question" = "How often do you pay it?";
+"asistentePago.frequency.detail" = "On the payment day, Yala leaves it ready in your Inbox for you to approve.";
+"asistentePago.frequency.monthlyHint" = "Same day every month: rent, electricity, phone.";
+"asistentePago.frequency.weeklyHint" = "Same day every week.";
+"asistentePago.frequency.yearlyHint" = "One date a year: insurance, memberships, domains.";
+"asistentePago.frequency.onceHint" = "A single payment, on its date.";
+"asistentePago.day.question.monthly" = "Which day of the month?";
+"asistentePago.day.question.weekly" = "Which day of the week?";
+"asistentePago.day.question.yearly" = "Which date each year?";
+"asistentePago.day.question.once" = "Which day is it due?";
+"asistentePago.day.detail" = "You can change it anytime.";
+"asistentePago.day.other" = "Another day";
+"asistentePago.day.ofMonth" = "Day %d";
+"asistentePago.summary.question" = "Create it like this?";
+"asistentePago.summary.detail" = "Tap an answer to change it.";
+"asistentePago.summary.kind" = "Type";
+"asistentePago.summary.name" = "Name";
+"asistentePago.summary.amount" = "Amount";
+"asistentePago.summary.frequency" = "Repeats";
+"asistentePago.summary.when" = "When";
+"asistentePago.summary.reminder" = "Reminder";
+"asistentePago.reminder.none" = "No reminder";

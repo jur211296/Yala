@@ -33,9 +33,8 @@ final class MerchantLogosUITests: XCTestCase {
     }
 
     private func openNewPayment(_ app: XCUIApplication) -> XCUIElement {
-        let addButton = app.buttons["scheduled_payments_create_button"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció el + de Pagos planificados.")
-        addButton.tap()
+        // «Nuevo pago planificado» abre el asistente: este caso prueba el formulario (encargo del 17-nov).
+        app.abrirFormularioDeNuevoPago()
         let nameField = app.textFields["scheduled_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No se montó el editor.")
         nameField.tap()

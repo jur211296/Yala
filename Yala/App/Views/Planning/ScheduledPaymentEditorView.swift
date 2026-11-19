@@ -43,6 +43,10 @@ struct ScheduledPaymentEditorView: View {
     let onSaved: ((UUID) -> Void)?
     /// Quien abre el editor vibra él el éxito del guardado (Nuevo registro, al cerrarse con su aviso): aquí no se repite.
     let hostVibratesOnSave: Bool
+    /// Lo respondido en el asistente antes de tocar «Usar formulario» (encargo del 17-nov). Con él, el formulario
+    /// arranca relleno y la X o el gesto de bajar preguntan antes de tirarlo.
+    let wizardPrefill: ScheduledPaymentWizardPrefill?
+    @State private var showDiscardWizard = false
 
     // Error state
     @State private var showSaveError = false
@@ -143,7 +147,8 @@ struct ScheduledPaymentEditorView: View {
         onDelete: (() -> Void)? = nil,
         prefill: ScheduledPaymentPrefill? = nil,
         onSaved: ((UUID) -> Void)? = nil,
-        hostVibratesOnSave: Bool = false
+        hostVibratesOnSave: Bool = false,
+        wizardPrefill: ScheduledPaymentWizardPrefill? = nil
     ) {
         self.payment = payment
         self.defaultCategory = defaultCategory
@@ -151,6 +156,7 @@ struct ScheduledPaymentEditorView: View {
         self.prefill = prefill
         self.onSaved = onSaved
         self.hostVibratesOnSave = hostVibratesOnSave
+        self.wizardPrefill = wizardPrefill
     }
 
     var body: some View {
@@ -235,13 +241,16 @@ struct ScheduledPaymentEditorView: View {
         .scrollViewGlassEdges()
         .scrollDismissesKeyboard(.interactively)
         .yalaScreenBackground(.subtle)
+        .modifier(ScheduledWizardDiscardPresentation(isActive: wizardPrefill != nil, isPresented: $showDiscardWizard) {
+            dismiss()
+        })
     }
 
     @ToolbarContentBuilder
     private var editorToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                dismiss()
+                if wizardPrefill != nil { showDiscardWizard = true } else { dismiss() }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -259,7 +268,8 @@ struct ScheduledPaymentEditorView: View {
         if sessionState.isExpensesOnlyMode {
             transactionType = "expense"
         }
-        if payment == nil && prefill == nil {
+        // Con lo respondido en el asistente, el nombre ya viene: sin teclado de entrada.
+        if payment == nil && prefill == nil && wizardPrefill == nil {
             Task {
                 try? await Task.sleep(for: .milliseconds(500))
                 isNameFieldFocused = true
@@ -1581,7 +1591,8 @@ struct ScheduledPaymentEditorView: View {
     /// sin decirlo.
     private func applyNewPaymentDefaults() {
         guard payment == nil else { return }
-        if prefill == nil {
+        // Lo respondido en el asistente ya trae su día (el sugerido también es hoy).
+        if prefill == nil && wizardPrefill == nil {
             let calendar = Calendar.current
             let now = Date.now
             dayOfMonth = calendar.component(.day, from: now)
@@ -1632,6 +1643,12 @@ struct ScheduledPaymentEditorView: View {
         // Set default category from tab if creating new
         if payment == nil, let defaultCat = defaultCategory {
             paymentCategory = PaymentCategory(rawValue: defaultCat) ?? .recurring
+        }
+
+        // Lo respondido en el asistente de «Nuevo pago planificado».
+        if payment == nil, let wizardPrefill {
+            applyWizardPrefill(wizardPrefill)
+            return
         }
 
         // Pre-fill from transaction data (when creating from "Save as Recurring")
@@ -1786,37 +1803,70 @@ struct ScheduledPaymentEditorView: View {
             // vibra al cerrarse, no.
             if !hostVibratesOnSave { DS.Haptic.success() }
             onSaved?(id)
-            if payment == nil, SetupChecklistManager.shared.stepCompleted[.scheduledPayment] != true {
-                // Find PersistentIdentifier from UUID
-                let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
-                do {
-                    if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
-                        // «¿Era de prueba?» solo si es el ÚNICO pago planificado (ver
-                        // `markFirstCreation`). Mismo criterio que `autoDetect` desde el Panel: todos.
-                        let total = try modelContext.fetchCount(FetchDescriptor<ScheduledPayment>())
-                        SetupChecklistManager.shared.markFirstCreation(
-                            .scheduledPayment,
-                            totalOfKind: total,
-                            practiceItem: PracticeCleanupItem(
-                                stepID: .scheduledPayment,
-                                itemName: name,
-                                persistentID: persistentID
-                            )
-                        )
-                    } else {
-                        SetupChecklistManager.shared.markCompleted(.scheduledPayment)
-                    }
-                } catch {
-                    #if DEBUG
-                    print("ScheduledPaymentEditor: Error fetching saved payment: \(error)")
-                    #endif
-                    SetupChecklistManager.shared.markCompleted(.scheduledPayment)
-                }
+            if payment == nil {
+                Self.noteCreated(name: name, paymentID: id, in: modelContext)
             } else {
                 SetupChecklistManager.shared.markCompleted(.scheduledPayment)
             }
             finishAfterSave(isNew: payment == nil)
         }
+    }
+
+    /// Lo que se apunta al crear un pago, desde el formulario o desde el asistente: el paso «primer pago planificado» y,
+    /// si es el ÚNICO, la pregunta «¿Era de prueba?» (ver `markFirstCreation`). Mismo criterio que `autoDetect` desde el
+    /// Panel: todos los pagos.
+    static func noteCreated(name: String, paymentID id: UUID, in modelContext: ModelContext) {
+        guard SetupChecklistManager.shared.stepCompleted[.scheduledPayment] != true else {
+            SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+            return
+        }
+        let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
+        do {
+            if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
+                let total = try modelContext.fetchCount(FetchDescriptor<ScheduledPayment>())
+                SetupChecklistManager.shared.markFirstCreation(
+                    .scheduledPayment,
+                    totalOfKind: total,
+                    practiceItem: PracticeCleanupItem(
+                        stepID: .scheduledPayment,
+                        itemName: name,
+                        persistentID: persistentID
+                    )
+                )
+            } else {
+                SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditor: Error fetching saved payment: \(error)")
+            #endif
+            SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+        }
+    }
+
+    /// Rellena el formulario con lo respondido en el asistente. Lo que no llegó (monto, tipo, aviso) queda como en un
+    /// pago nuevo.
+    private func applyWizardPrefill(_ wizard: ScheduledPaymentWizardPrefill) {
+        let calendar = Calendar.current
+        transactionType = TransactionType.expense.rawValue
+        name = wizard.name
+        if let value = wizard.amount { amount = AmountInputHelper.formatWithGrouping(value) }
+        isVariableAmount = wizard.isVariableAmount
+        isSubscription = wizard.isSubscription
+        paymentCategory = wizard.isSubscription ? .subscription : .recurring
+        if let id = wizard.subcategoryID {
+            selectedSubcategory = modelContext.model(for: id) as? Subcategory
+        }
+        isRecurring = wizard.isRecurring
+        recurrenceType = wizard.recurrenceType
+        recurrenceInterval = 1
+        paymentDate = wizard.isRecurring ? today : calendar.startOfDay(for: wizard.date)
+        dayOfMonth = wizard.dayOfMonth
+        selectedWeekdays = [wizard.weekday]
+        yearlyMonth = calendar.component(.month, from: wizard.date)
+        yearlyDay = calendar.component(.day, from: wizard.date)
+        if let onDueDate = wizard.notifyOnDueDate { notifyOnDueDate = onDueDate }
+        if let daysBefore = wizard.notifyDaysBefore { notifyDaysBefore = daysBefore }
     }
 
     /// Un pago NUEVO es el momento de pedir las notificaciones (UX 2.2 · L5-14): la hoja sale sobre el editor y, al
@@ -1997,5 +2047,49 @@ private extension ScheduledPaymentEditorView {
                     }
                 )
         }
+    }
+}
+
+
+// MARK: - Lo que llega del asistente
+
+/// Lo respondido en el asistente de «Nuevo pago planificado», tal cual lo recibe el formulario
+/// (`AsistentePagoPlanificadoLogica.alFormulario`). Lo que no se contestó va vacío y el formulario lo deja como siempre.
+struct ScheduledPaymentWizardPrefill: Equatable {
+    var name: String
+    var amount: Double?
+    var isVariableAmount: Bool
+    var isSubscription: Bool
+    var subcategoryID: PersistentIdentifier?
+    var isRecurring: Bool
+    var recurrenceType: RecurrenceType
+    var dayOfMonth: Int
+    /// Día de la semana del calendario (1 = domingo).
+    var weekday: Int
+    /// La fecha de «Cada año» y de «Una vez».
+    var date: Date
+    /// El aviso, solo si se contestó en el asistente.
+    var notifyOnDueDate: Bool?
+    var notifyDaysBefore: Int?
+}
+
+/// Con lo respondido en el asistente, ni la X ni el gesto de bajar la hoja tiran nada sin preguntar (los mismos textos
+/// que el asistente). En su propio modificador para no alargar el `body` (`swiftui-ds.md`, el compilador del CI).
+private struct ScheduledWizardDiscardPresentation: ViewModifier {
+    let isActive: Bool
+    @Binding var isPresented: Bool
+    let onDiscard: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onSheetDismissAttempt(isActive: isActive) { isPresented = true }
+            .alert(L10n.AsistentePagoPlanificado.descartarTitulo, isPresented: $isPresented) {
+                Button(AsistenteCreacionTexto.descartar, role: .destructive, action: onDiscard)
+                    .accessibilityIdentifier("asistente_discard_confirm")
+                Button(AsistenteCreacionTexto.seguir, role: .cancel) {}
+                    .accessibilityIdentifier("asistente_discard_keep")
+            } message: {
+                Text(AsistenteCreacionTexto.descartarMensaje)
+            }
     }
 }

@@ -1,0 +1,62 @@
+/*
+  SaludFinancieraDetalle.strings
+  Yala
+
+  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
+  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+*/
+
+"saludDetalle.section.alerts" = "To review";
+"saludDetalle.section.budgets" = "Your budgets";
+"saludDetalle.section.payments" = "Upcoming payments";
+"saludDetalle.section.streak" = "Your streak";
+"saludDetalle.section.improve" = "To raise your score";
+"saludDetalle.section.howItWorks" = "How is it calculated?";
+"saludDetalle.alerts.none.title" = "Nothing to review today";
+"saludDetalle.alerts.none.detail" = "Your budgets, payments and accounts are in order.";
+"saludDetalle.alert.overBudget.title" = "You went over on %@";
+"saludDetalle.alert.overBudget.detail" = "Tap to see where it went.";
+"saludDetalle.alert.atLimit.title" = "%@ is close to its limit";
+"saludDetalle.alert.atLimit.detail" = "You’re at %d %% of what you set.";
+"saludDetalle.alert.negativeAccount.title" = "%@ is negative";
+"saludDetalle.alert.negativeAccount.detail" = "Check its balance or log what’s missing.";
+"saludDetalle.alert.overdue.title" = "%@ is overdue";
+"saludDetalle.alert.overdue.detail" = "Mark it as paid or skip it.";
+"saludDetalle.alert.notCovered.title" = "This month’s payments aren’t covered";
+"saludDetalle.alert.notCovered.detail" = "With what you have and what’s left, at month end you’d have:";
+"saludDetalle.budgets.empty.title" = "No budgets yet";
+"saludDetalle.budgets.empty.detail" = "Set a limit on what you spend most on and Yala warns you before you go over.";
+"saludDetalle.budgets.empty.cta" = "Create budget";
+"saludDetalle.budgets.seeAll" = "See all (%d)";
+"saludDetalle.budgets.left" = "Left";
+"saludDetalle.budgets.over" = "Over by";
+"saludDetalle.payments.today" = "Today";
+"saludDetalle.payments.tomorrow" = "Tomorrow";
+"saludDetalle.payments.inDays" = "In %d days";
+"saludDetalle.payments.overdue" = "Overdue";
+"saludDetalle.payments.none" = "No payments in the next two weeks.";
+"saludDetalle.payments.empty.title" = "No planned payments yet";
+"saludDetalle.payments.empty.detail" = "Rent, power, subscriptions: Yala reminds you of each one before it’s due.";
+"saludDetalle.payments.empty.cta" = "Add payment";
+"saludDetalle.payments.seeAll" = "See all";
+"saludDetalle.payments.covered" = "Enough for this month’s payments.";
+"saludDetalle.payments.notCovered" = "Not enough for this month’s payments.";
+"saludDetalle.streak.days.one" = "%d day in a row";
+"saludDetalle.streak.days.other" = "%d days in a row";
+"saludDetalle.streak.today" = "You’ve logged today. Keep it up!";
+"saludDetalle.streak.keep" = "Log something today to keep it going.";
+"saludDetalle.streak.start" = "Log a transaction today to start one.";
+"saludDetalle.streak.cta" = "Log";
+"saludDetalle.streak.caption" = "Last %d days";
+"saludDetalle.streak.dayRecorded" = "Logged";
+"saludDetalle.streak.dayEmpty" = "Nothing logged";
+"saludDetalle.improve.crearPresupuesto" = "Create your first budget";
+"saludDetalle.improve.registrarHoy" = "Log a transaction today";
+"saludDetalle.improve.agregarPagos" = "Add your regular payments";
+"saludDetalle.improve.revisarPresupuestos" = "Check the budgets that went over";
+"saludDetalle.improve.revisarRitmo" = "Log more often";
+"saludDetalle.improve.revisarPagos" = "Check this month’s payments";
+"saludDetalle.improve.weight" = "%@ is %d %% of your score";
+"saludDetalle.loading" = "Loading…";
+"saludDetalle.alert.reachedLimit.title" = "%@ hit its limit";
+"saludDetalle.alert.atLimitMany.title" = "%d budgets close to their limit";

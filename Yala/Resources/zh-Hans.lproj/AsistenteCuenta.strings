@@ -1,0 +1,31 @@
+/*
+  AsistenteCuenta.strings
+  Yala
+
+  El asistente por pasos de «Nueva cuenta» (encargo del 18-nov). Las preguntas que ya tenía Primeros pasos vienen de
+  `pasos23.account.*`, y el contenedor compartido lee sus `asistente.*` de `AsistentePresupuesto.strings`. Tabla propia,
+  leída con el idioma de la app (`AsistenteCuentaTexto`).
+*/
+
+"asistenteCuenta.discard.title" = "放弃此账户？";
+"asistenteCuenta.create" = "创建账户";
+"asistenteCuenta.createShort" = "创建";
+"asistenteCuenta.kind.question" = "这是什么类型的账户？";
+"asistenteCuenta.kind.subtitle" = "选最接近的一种，之后可以更改。";
+"asistenteCuenta.currency.subtitle" = "这是显示余额所用的货币。";
+"asistenteCuenta.currency.subtitleCard" = "这是显示欠款所用的货币。";
+"asistenteCuenta.currency.other" = "其他货币";
+"asistenteCuenta.currency.otherHint" = "从所有货币中选择";
+"asistenteCuenta.name.taken" = "已有同名账户。";
+"asistenteCuenta.day.label" = "每月日期";
+"asistenteCuenta.summary.question" = "就这样创建吗？";
+"asistenteCuenta.summary.detail" = "轻点某个回答即可更改。";
+"asistenteCuenta.summary.type" = "类型";
+"asistenteCuenta.summary.currency" = "货币";
+"asistenteCuenta.summary.name" = "名称";
+"asistenteCuenta.summary.balance" = "今日余额";
+"asistenteCuenta.summary.owe" = "今日欠款";
+"asistenteCuenta.summary.statement" = "账单日";
+"asistenteCuenta.summary.payment" = "还款日";
+"asistenteCuenta.summary.reminder" = "提醒";
+"asistenteCuenta.summary.day" = "%d日";

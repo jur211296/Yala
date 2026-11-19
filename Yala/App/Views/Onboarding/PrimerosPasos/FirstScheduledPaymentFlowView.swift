@@ -137,7 +137,7 @@ struct FirstScheduledPaymentFlowView: View {
         switch step {
         case .kind: return T.kindSubtitle
         case .details:
-            let type = draft.kind.map(kindTitle) ?? selectedSubcategory?.name ?? ""
+            let type = draft.kind.map { Self.kindTitle($0) } ?? selectedSubcategory?.name ?? ""
             return accountName.isEmpty ? type : T.detailsSubtitle(type, accountName)
         case .when: return nil
         case .reminder: return T.reminderSubtitle
@@ -194,7 +194,7 @@ struct FirstScheduledPaymentFlowView: View {
                     TutorialSelectableTile(
                         icon: kind.seedIcon,
                         color: color(of: kindSubcategories[kind]),
-                        title: kindTitle(kind),
+                        title: Self.kindTitle(kind),
                         isOn: draft.kind == kind,
                         id: "first_payment_kind_\(kind.rawValue)"
                     ) { choose(kind) }
@@ -282,7 +282,7 @@ struct FirstScheduledPaymentFlowView: View {
                 .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
                 if let kind = draft.kind, !nameFocused, !amountFocused {
                     FlowLayout(spacing: DS.Spacing.sm) {
-                        ForEach(examples(for: kind), id: \.self) { example in
+                        ForEach(Self.examples(for: kind), id: \.self) { example in
                             TutorialChip(title: example, isOn: draft.name == example, id: "first_payment_example") {
                                 draft.name = example
                             }
@@ -328,7 +328,7 @@ struct FirstScheduledPaymentFlowView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             FlowLayout(spacing: DS.Spacing.sm) {
                 ForEach(Logic.Frequency.allCases) { frequency in
-                    TutorialChip(title: frequencyTitle(frequency), isOn: draft.frequency == frequency,
+                    TutorialChip(title: Self.frequencyTitle(frequency), isOn: draft.frequency == frequency,
                                  id: "first_payment_frequency_\(frequency.rawValue)") {
                         draft.frequency = frequency
                         editsOtherDay = false
@@ -452,7 +452,7 @@ struct FirstScheduledPaymentFlowView: View {
 
     // MARK: - Textos
 
-    private func kindTitle(_ kind: Logic.Kind) -> String {
+    static func kindTitle(_ kind: Logic.Kind) -> String {
         switch kind {
         case .rent: return T.kindRent
         case .utilities: return T.kindUtilities
@@ -463,7 +463,7 @@ struct FirstScheduledPaymentFlowView: View {
         }
     }
 
-    private func prefilledName(_ kind: Logic.Kind) -> String {
+    static func prefilledName(_ kind: Logic.Kind) -> String {
         switch kind {
         case .rent: return T.nameRent
         case .utilities: return T.nameUtilities
@@ -473,7 +473,7 @@ struct FirstScheduledPaymentFlowView: View {
         }
     }
 
-    private func examples(for kind: Logic.Kind) -> [String] {
+    static func examples(for kind: Logic.Kind) -> [String] {
         switch kind {
         case .rent: return [T.exampleRent1, T.exampleRent2, T.exampleRent3]
         case .utilities: return [T.exampleUtilities1, T.exampleUtilities2, T.exampleUtilities3]
@@ -486,7 +486,7 @@ struct FirstScheduledPaymentFlowView: View {
         }
     }
 
-    private func frequencyTitle(_ frequency: Logic.Frequency) -> String {
+    static func frequencyTitle(_ frequency: Logic.Frequency) -> String {
         switch frequency {
         case .monthly: return T.whenMonthly
         case .weekly: return T.whenWeekly
@@ -505,6 +505,12 @@ struct FirstScheduledPaymentFlowView: View {
         let account = viewModel.lastUsedAccount() ?? viewModel.activeAccounts.first
         accountName = account?.name ?? ""
         currencyCode = account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
+        kindSubcategories = Self.kindSubcategories(in: modelContext)
+    }
+
+    /// La subcategoría de cada tipo entre las de gasto visibles (la del seed primero). La reusa el asistente de «Nuevo
+    /// pago planificado».
+    static func kindSubcategories(in modelContext: ModelContext) -> [Logic.Kind: Subcategory] {
         do {
             let subcategories = try modelContext.fetch(FetchDescriptor<Subcategory>())
                 .filter { $0.isVisible && !$0.isAnySystem && $0.category?.isIncome == false }
@@ -513,11 +519,12 @@ struct FirstScheduledPaymentFlowView: View {
                 found[kind] = subcategories.first { $0.isDefaultSeed && $0.iconName == kind.seedIcon }
                     ?? subcategories.first { $0.iconName == kind.seedIcon }
             }
-            kindSubcategories = found
+            return found
         } catch {
             #if DEBUG
             print("FirstScheduledPaymentFlowView: Error: loading subcategories: \(error)")
             #endif
+            return [:]
         }
     }
 
@@ -552,7 +559,7 @@ struct FirstScheduledPaymentFlowView: View {
         otherSubcategory = nil
         draft.kind = kind
         draft.subcategoryID = subcategory.persistentModelID
-        draft.name = prefilledName(kind)
+        draft.name = Self.prefilledName(kind)
         draft.isVariableAmount = kind.isVariableAmount
         draft.isSubscription = kind.isSubscription
     }

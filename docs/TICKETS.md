@@ -43,10 +43,18 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1378)
+## Index (1384)
 
 | id | status | path |
 | 2026-11-17-asistente-nuevo-grupo | done | tickets/done/2026-11-17-asistente-nuevo-grupo.md |
+| 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
+| 2026-11-18-verificacion-google-sin-casa | backlog | tickets/backlog/2026-11-18-verificacion-google-sin-casa.md |
+| 2026-11-17-perfil-personalizacion-tarjeta | done | tickets/done/2026-11-17-perfil-personalizacion-tarjeta.md |
+| 2026-11-17-asistente-nueva-cuenta | done | tickets/done/2026-11-17-asistente-nueva-cuenta.md |
+| 2026-11-17-salud-financiera-detalle-visual | done | tickets/done/2026-11-17-salud-financiera-detalle-visual.md |
+| 2026-11-17-hoja-cuenta-panel-tarjeta | done | tickets/done/2026-11-17-hoja-cuenta-panel-tarjeta.md |
+| 2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado | backlog | tickets/backlog/2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado.md |
+| 2026-11-17-asistente-nuevo-pago-planificado | done | tickets/done/2026-11-17-asistente-nuevo-pago-planificado.md |
 | 2026-11-17-web-logo-oficial-y-tema-sistema | done | tickets/done/2026-11-17-web-logo-oficial-y-tema-sistema.md |
 | 2026-11-17-asistente-nuevo-presupuesto | done | tickets/done/2026-11-17-asistente-nuevo-presupuesto.md |
 | 2026-11-17-comparativa-simple-variacion-color | done | tickets/done/2026-11-17-comparativa-simple-variacion-color.md |
@@ -60,6 +68,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
+| inbox-approve-and-make-recurring-no-longer-opens-the-editor | backlog | tickets/backlog/inbox-approve-and-make-recurring-no-longer-opens-the-editor.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
@@ -90,7 +99,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone | backlog | tickets/backlog/2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone.md |
 | 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
-| 2026-11-17-flujo-de-caja-replanteo | backlog | tickets/backlog/2026-11-17-flujo-de-caja-replanteo.md |
+| 2026-11-17-flujo-de-caja-replanteo | done | tickets/done/2026-11-17-flujo-de-caja-replanteo.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
@@ -250,7 +259,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
-| cash-flow-advanced-gate-never-limits-free-users | backlog | tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md |
+| cash-flow-advanced-gate-never-limits-free-users | done | tickets/done/cash-flow-advanced-gate-never-limits-free-users.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cash-flow-month-vs-empty-and-contrast-necessary-08-2-3 | done | tickets/done/cash-flow-month-vs-empty-and-contrast-necessary-08-2-3.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
@@ -1027,7 +1036,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
 | production-hangs-cloud-apply-panel-recalc-freeze | done | tickets/done/production-hangs-cloud-apply-panel-recalc-freeze.md |
 | profile-pro-gate-sheets-are-never-opened | backlog | tickets/backlog/profile-pro-gate-sheets-are-never-opened.md |
-| projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month | backlog | tickets/backlog/projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month.md |
+| projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month | done | tickets/done/projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | done | tickets/done/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | done | tickets/done/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
@@ -1054,7 +1063,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
-| records-and-panel-merchant-logos | backlog | tickets/backlog/records-and-panel-merchant-logos.md |
+| records-and-panel-merchant-logos | done | tickets/done/records-and-panel-merchant-logos.md |
 | records-bulk-selection-undo-and-counts | done | tickets/done/records-bulk-selection-undo-and-counts.md |
 | records-calendar-folds-to-the-chosen-week | done | tickets/done/records-calendar-folds-to-the-chosen-week.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |

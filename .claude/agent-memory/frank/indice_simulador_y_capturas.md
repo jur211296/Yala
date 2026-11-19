@@ -13,7 +13,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
-- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte para el diff de píxeles; para una captura, respaldo + `git show HEAD:`.
+- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, ANTES de editar; poco disco: mis cambios encima y build incremental.
 - [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
@@ -105,4 +105,5 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Cancelar la entrada en el iPhone 14](reference_reproducir_cancelar_la_entrada_en_el_iphone_14.md) — 8 toques en ráfaga; el daño sale al reabrir; -uitest-reset deja la sesión.
 - [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
-- [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; con letra grande el tap de MCP cae desplazado: screenshot + axe tap.
+- [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; tap de MCP desplazado; en Pagos con AX5 el deeplink no aterriza: pestaña por coordenada + chip por id.
+- [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.

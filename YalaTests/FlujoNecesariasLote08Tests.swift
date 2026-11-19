@@ -136,8 +136,9 @@ struct CashFlowCellDetailVsTests {
     @Test func elDetalleNoPegaVsAMano() throws {
         let code = try Lote08Source.code("Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")
         #expect(!code.contains(") vs \\("), "El detalle sigue pegando «vs» entre dos cifras.")
-        #expect(code.contains("cellDetailSpentVsPlan"))
-        #expect(code.contains("cellDetailEarnedVsPlan"))
+        // Desde S3 del replanteo (18-nov-2026) el mes cerrado dice «Gastaste X de Y» con su propia tabla, una frase
+        // entera por idioma con sus dos cifras (`FlujoDetalleLineaTextosTests`).
+        #expect(code.contains("L10n.FlujoDetalleLinea.cerrado("))
     }
 }
 

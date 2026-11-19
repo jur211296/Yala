@@ -1,0 +1,42 @@
+/*
+  FlujoDetalleLinea.strings
+  Yala
+
+  El detalle de una línea del flujo de caja: el límite arriba, lo que falta y el ritmo, seis meses de real contra
+  límite y todos los registros del mes (S3 del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app
+  (`L10n.FlujoDetalleLinea`).
+*/
+
+"flujoDetalleLinea.limit.expense" = "Limit for %@";
+"flujoDetalleLinea.limit.income" = "Expected in %@";
+"flujoDetalleLinea.change" = "Change";
+"flujoDetalleLinea.change.a11y.expense" = "Change the limit";
+"flujoDetalleLinea.change.a11y.income" = "Change the expected amount";
+"flujoDetalleLinea.soFar.expense" = "So far";
+"flujoDetalleLinea.soFar.income" = "Received";
+"flujoDetalleLinea.ofLimit" = "of %@";
+"flujoDetalleLinea.left.expense" = "%@ left";
+"flujoDetalleLinea.left.income" = "%@ still to come";
+"flujoDetalleLinea.exceeded" = "You went over by %@. Nothing more is projected.";
+"flujoDetalleLinea.pace" = "At this month's pace you'd reach ~%@.";
+"flujoDetalleLinea.pace.over" = "At this month's pace you'd reach ~%1$@: %2$@ over the limit.";
+"flujoDetalleLinea.scheduled" = "Already scheduled: %@";
+"flujoDetalleLinea.closed.expense" = "You spent %1$@ of %2$@";
+"flujoDetalleLinea.closed.income" = "You received %1$@ of %2$@";
+"flujoDetalleLinea.diff.more" = "%@ over the limit";
+"flujoDetalleLinea.diff.less" = "%@ under the limit";
+"flujoDetalleLinea.parent.notice" = "There's %1$@ in %2$@ with no subcategory. It counts in the month, not in this line.";
+"flujoDetalleLinea.month.previous" = "Previous month";
+"flujoDetalleLinea.month.next" = "Next month";
+"flujoDetalleLinea.history.title" = "Last 6 months";
+"flujoDetalleLinea.history.real.expense" = "Spent";
+"flujoDetalleLinea.history.real.income" = "Received";
+"flujoDetalleLinea.history.limit.expense" = "Limit";
+"flujoDetalleLinea.history.limit.income" = "Expected";
+"flujoDetalleLinea.history.summary.expense" = "In %1$d of %2$d months you spent the limit or less.";
+"flujoDetalleLinea.history.summary.income" = "In %1$d of %2$d months you received the expected amount or more.";
+"flujoDetalleLinea.history.month" = "%1$@: %2$@ of %3$@";
+"flujoDetalleLinea.records.title" = "Records for %@";
+"flujoDetalleLinea.records.seeInRecords" = "See in Records";
+"flujoDetalleLinea.records.empty" = "No records in %@.";
+"flujoDetalleLinea.records.scheduledDay" = "Scheduled";

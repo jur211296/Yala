@@ -65,9 +65,8 @@ final class PlanningNecesariasLote04UITests: XCTestCase {
         app.openScheduledPaymentsList()
         XCTAssertFalse(app.descendants(matching: .any)["scheduled_tab_picker"].label.isEmpty,
                        "El segmentado de la lista no tiene nombre.")
-        let newPayment = app.buttons["scheduled_payments_create_button"]
-        XCTAssertTrue(newPayment.waitForExistence(timeout: 5), "No apareció «Nuevo pago planificado».")
-        newPayment.tap()
+        // «Nuevo pago planificado» abre el asistente: este caso prueba el formulario (encargo del 17-nov).
+        app.abrirFormularioDeNuevoPago()
 
         let recurrence = app.segmentedControls["scheduled_recurrence_picker"]
         XCTAssertTrue(recurrence.waitForExistence(timeout: 5), "No se montó el editor.")
