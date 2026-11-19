@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "Scartare questo pagamento?";
+"asistentePago.create" = "Crea pagamento";
+"asistentePago.createShort" = "Crea";
+"asistentePago.name.question" = "Come lo chiamiamo?";
+"asistentePago.name.detail" = "Così lo vedrai nella tua lista e nel promemoria.";
+"asistentePago.amount.question" = "Quanto paghi ogni volta?";
+"asistentePago.amount.detail" = "Se cambia ogni volta, inserisci l’importo abituale e attiva «Cambia ogni volta».";
+"asistentePago.frequency.question" = "Ogni quanto lo paghi?";
+"asistentePago.frequency.detail" = "Il giorno del pagamento, Yala lo prepara nella tua Posta in arrivo da approvare.";
+"asistentePago.frequency.monthlyHint" = "Lo stesso giorno ogni mese: affitto, luce, telefono.";
+"asistentePago.frequency.weeklyHint" = "Lo stesso giorno ogni settimana.";
+"asistentePago.frequency.yearlyHint" = "Una data all’anno: assicurazioni, abbonamenti, domini.";
+"asistentePago.frequency.onceHint" = "Un solo pagamento, con la sua data.";
+"asistentePago.day.question.monthly" = "Che giorno del mese?";
+"asistentePago.day.question.weekly" = "Che giorno della settimana?";
+"asistentePago.day.question.yearly" = "In che data ogni anno?";
+"asistentePago.day.question.once" = "Che giorno va pagato?";
+"asistentePago.day.detail" = "Puoi cambiarlo quando vuoi.";
+"asistentePago.day.other" = "Altro giorno";
+"asistentePago.day.ofMonth" = "Il giorno %d";
+"asistentePago.summary.question" = "Lo creiamo così?";
+"asistentePago.summary.detail" = "Tocca una risposta per cambiarla.";
+"asistentePago.summary.kind" = "Tipo";
+"asistentePago.summary.name" = "Nome";
+"asistentePago.summary.amount" = "Importo";
+"asistentePago.summary.frequency" = "Si ripete";
+"asistentePago.summary.when" = "Quando";
+"asistentePago.summary.reminder" = "Promemoria";
+"asistentePago.reminder.none" = "Nessun promemoria";

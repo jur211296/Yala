@@ -1,0 +1,42 @@
+/*
+  FlujoDetalleLinea.strings
+  Yala
+
+  El detalle de una línea del flujo de caja: el límite arriba, lo que falta y el ritmo, seis meses de real contra
+  límite y todos los registros del mes (S3 del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app
+  (`L10n.FlujoDetalleLinea`).
+*/
+
+"flujoDetalleLinea.limit.expense" = "Limit na %@";
+"flujoDetalleLinea.limit.income" = "Oczekiwane w: %@";
+"flujoDetalleLinea.change" = "Zmień";
+"flujoDetalleLinea.change.a11y.expense" = "Zmień limit";
+"flujoDetalleLinea.change.a11y.income" = "Zmień oczekiwaną kwotę";
+"flujoDetalleLinea.soFar.expense" = "Do tej pory";
+"flujoDetalleLinea.soFar.income" = "Otrzymano";
+"flujoDetalleLinea.ofLimit" = "z %@";
+"flujoDetalleLinea.left.expense" = "Zostało %@";
+"flujoDetalleLinea.left.income" = "Do otrzymania: %@";
+"flujoDetalleLinea.exceeded" = "Przekroczono o %@. Nic więcej nie jest prognozowane.";
+"flujoDetalleLinea.pace" = "W tempie z tego miesiąca dojdziesz do ~%@.";
+"flujoDetalleLinea.pace.over" = "W tempie z tego miesiąca dojdziesz do ~%1$@: %2$@ ponad limit.";
+"flujoDetalleLinea.scheduled" = "Już zaplanowane: %@";
+"flujoDetalleLinea.closed.expense" = "Wydano %1$@ z %2$@";
+"flujoDetalleLinea.closed.income" = "Otrzymano %1$@ z %2$@";
+"flujoDetalleLinea.diff.more" = "%@ ponad limit";
+"flujoDetalleLinea.diff.less" = "%@ poniżej limitu";
+"flujoDetalleLinea.parent.notice" = "W kategorii %2$@ jest %1$@ bez podkategorii. Liczy się w miesiącu, nie w tej pozycji.";
+"flujoDetalleLinea.month.previous" = "Poprzedni miesiąc";
+"flujoDetalleLinea.month.next" = "Następny miesiąc";
+"flujoDetalleLinea.history.title" = "Ostatnie 6 miesięcy";
+"flujoDetalleLinea.history.real.expense" = "Wydano";
+"flujoDetalleLinea.history.real.income" = "Otrzymano";
+"flujoDetalleLinea.history.limit.expense" = "Limit";
+"flujoDetalleLinea.history.limit.income" = "Oczekiwane";
+"flujoDetalleLinea.history.summary.expense" = "W %1$d z %2$d miesięcy zmieściłeś się w limicie.";
+"flujoDetalleLinea.history.summary.income" = "W %1$d z %2$d miesięcy otrzymałeś oczekiwaną kwotę lub więcej.";
+"flujoDetalleLinea.history.month" = "%1$@: %2$@ z %3$@";
+"flujoDetalleLinea.records.title" = "Transakcje: %@";
+"flujoDetalleLinea.records.seeInRecords" = "Zobacz w Transakcjach";
+"flujoDetalleLinea.records.empty" = "Brak transakcji: %@.";
+"flujoDetalleLinea.records.scheduledDay" = "Zaplanowane";

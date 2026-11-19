@@ -70,8 +70,8 @@ final class DemoIAPizzaUITests: XCTestCase {
         let input = app.textFields["chat_input"]
         XCTAssertTrue(input.waitForExistence(timeout: 10), "No se abrió Yala IA.")
         XCTAssertTrue(
-            app.buttons.matching(identifier: "chat_suggestion").firstMatch.waitForExistence(timeout: 10),
-            "El chat vacío no enseña las sugerencias."
+            app.buttons["chat_log_expense"].waitForExistence(timeout: 10),
+            "El chat vacío no enseña sus botones."
         )
         marca("chat-abierto")
         pausa(1.8)

@@ -13,7 +13,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
-- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte para el diff de píxeles; para una captura, respaldo + `git show HEAD:`.
+- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, ANTES de editar; poco disco: mis cambios encima y build incremental.
 - [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
@@ -36,6 +36,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo…
 - [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una esper…
 - [Maqueta de estados del Welcome](reference_maqueta_de_estados_del_welcome.md) — `-mock6`; el cover de la nube se cae sobre la app: lánzalo desde el Welcome.
+- [Captura girada por XCUITest](reference_captura_girada_por_xcuitest.md) — `app.screenshot()` sale medio negro en horizontal; `XCUIScreen` + `magick -auto-orient`.
 - [Maqueta de variantes por XCUITest](reference_maqueta_de_variantes_por_xcuitest.md) — `-mockv N` + PNG al Mac; `launchForUITest` pisa args: `extraArguments:`.
 - [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
 - [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
@@ -55,7 +56,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
 - [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
-- [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
+- [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — axe sin toques ni tras reiniciar: conductor; variantes por TEST_RUNNER_ en una corrida.
 - [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
 - [El «antes» con la app base en Products](reference_el_antes_con_la_app_base_en_products.md) — regrabar el antes sin otra build: cambia el Yala.app de Products.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
@@ -104,3 +105,8 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Cancelar la entrada en el iPhone 14](reference_reproducir_cancelar_la_entrada_en_el_iphone_14.md) — 8 toques en ráfaga; el daño sale al reabrir; -uitest-reset deja la sesión.
 - [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
+- [iPhone SE en la Mini](reference_iphone_se_en_la_mini.md) — se crea en iOS 27.2; un xctestrun sirve para los dos devices; en SE+AX3 no arrastres desde el importe.
+- [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; tap de MCP desplazado; en Pagos con AX5 el deeplink no aterriza: pestaña por coordenada + chip por id.
+- [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.
+- [Capturas del flujo de caja con axe](reference_capturas_del_flujo_de_caja_con_axe.md) — plan que no persiste, barra plegada en SE, gestos en iPad, hojas fuera del árbol.
+- [Conductor de barrido por secciones](feedback_conductor_de_barrido_por_secciones.md) — 30 min = 17 Pro ×2 + SE + iPad + Duo parcial; SE y Duo esconden pestañas.

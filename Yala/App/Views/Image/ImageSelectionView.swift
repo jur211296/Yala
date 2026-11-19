@@ -85,6 +85,10 @@ struct ImageSelectionView: View {
     @State private var manualEntryReturnsToReview = false
     /// «Otra foto» con lo leído sin guardar pregunta antes de borrarlo (decisión 81 de la revisión 2.3).
     @State private var showOtherPhotoConfirmation = false
+    /// El cierre automático tras guardar todo; se cancela si la hoja se va antes.
+    @State private var autoCloseTask: Task<Void, Never>?
+    /// La hoja ya se va a cerrar sola: no se ofrece «Listo» durante la confirmación.
+    @State private var isClosingAlone = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -240,6 +244,9 @@ struct ImageSelectionView: View {
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    /// Una sola fila, sin hueco arriba (encargo «X nativa en la hoja de foto», 2026-11-17): el título de la fase —y en
+    /// «Esto leí» y «Guardado», las miniaturas— a la izquierda y la X del sistema a la derecha. Con «Omitir» la fila es
+    /// «Omitir … X» y el título va en el contenido, debajo: tres piezas no caben en una fila sin apretarse.
     @ViewBuilder
     private var header: some View {
         if let courtesyTrialText, let skip = onSetupTrialSkipped {
@@ -249,26 +256,55 @@ struct ImageSelectionView: View {
             }
             .padding(.top, DS.Spacing.md)
         }
-        HStack {
-            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .reading {
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
+            if showsSkip, let skip = onSetupTrialSkipped {
                 Button(L10n.SetupChecklist.skipStep) {
                     skip()
                     dismiss()
                 }
                 .font(DS.Typography.label)
                 .frame(minHeight: 44)
-            }
-            Spacer()
-            if phase != .reading {
-                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                    dismiss()
+                Spacer()
+            } else if let headerTitle {
+                Text(headerTitle.text)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier(headerTitle.identifier)
+                    // Un título, una vista: al cambiar de fase no se funde con el anterior.
+                    .id(headerTitle.text)
+                    .transition(.asymmetric(insertion: .opacity, removal: .identity))
+                if phase == .review {
+                    thumbnails
                 }
-                .buttonStyle(.glass)
-                .accessibilityIdentifier("image_close")
+            } else {
+                Spacer()
+            }
+            if phase != .reading {
+                EntrySheetCloseButton { dismiss() }
+                    .accessibilityIdentifier("image_close")
             }
         }
         .frame(minHeight: 44)
         .padding(.top, DS.Spacing.md)
+    }
+
+    /// «Ahora no» de la práctica guiada, mientras no haya nada que revisar.
+    private var showsSkip: Bool {
+        courtesyTrialText == nil && onSetupTrialSkipped != nil && phase != .review && phase != .reading
+    }
+
+    /// El título que va en la fila de la X. Leyendo (sin X) y el fallo (icono centrado) llevan el suyo en el contenido.
+    private var headerTitle: (text: String, identifier: String)? {
+        guard !showsSkip else { return nil }
+        switch phase {
+        case .choose: return (L10n.Image.Entry.title, "image_choose_title")
+        case .password: return (L10n.Image.Entry.passwordTitle, "image_password_title")
+        case .review: return (reviewTitle, "image_review_title")
+        case .reading, .failure: return nil
+        }
     }
 
     @ViewBuilder
@@ -292,11 +328,13 @@ struct ImageSelectionView: View {
     private var chooseContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(L10n.Image.Entry.title)
-                    .font(DS.Typography.title3)
-                    .foregroundStyle(.thPrimaryText)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityIdentifier("image_choose_title")
+                if headerTitle == nil {
+                    Text(L10n.Image.Entry.title)
+                        .font(DS.Typography.title3)
+                        .foregroundStyle(.thPrimaryText)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("image_choose_title")
+                }
                 Text(L10n.Image.Entry.subtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
@@ -462,11 +500,13 @@ struct ImageSelectionView: View {
     private func passwordContent(wrongPassword: Bool) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(L10n.Image.Entry.passwordTitle)
-                    .font(DS.Typography.title3)
-                    .foregroundStyle(.thPrimaryText)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityIdentifier("image_password_title")
+                if headerTitle == nil {
+                    Text(L10n.Image.Entry.passwordTitle)
+                        .font(DS.Typography.title3)
+                        .foregroundStyle(.thPrimaryText)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("image_password_title")
+                }
                 Text(L10n.Image.Entry.passwordMessage)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
@@ -617,25 +657,18 @@ struct ImageSelectionView: View {
         VStack(spacing: DS.Spacing.md) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Text(reviewTitle)
-                            .font(DS.Typography.title3)
-                            .foregroundStyle(.thPrimaryText)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("image_review_title")
-                        Spacer(minLength: DS.Spacing.sm)
-                        thumbnails
-                    }
-
                     if dynamicTypeSize.isAccessibilitySize {
                         missingHint
                     }
 
+                    // La descripción se corrige ahí mismo al tocarla; el resto de la fila abre el formulario completo.
                     if isMulti {
-                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                        MultiDraftReviewList(drafts: drafts, selection: $selection, editsNoteInPlace: true) {
+                            detailDraft = $0
+                        }
                     } else {
                         ForEach(drafts, id: \.persistentModelID) { draft in
-                            VoiceDraftReviewCard(draft: draft) {
+                            VoiceDraftReviewCard(draft: draft, editsNoteInPlace: true) {
                                 detailDraft = draft
                             }
                         }
@@ -676,7 +709,9 @@ struct ImageSelectionView: View {
             }
 
             actionsLayout {
-                if isFinished {
+                if isClosingAlone {
+                    EmptyView()
+                } else if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "image_finish") {
                         dismiss()
                     }
@@ -1496,6 +1531,34 @@ struct ImageSelectionView: View {
         if !saveFailed {
             DS.Haptic.success()
         }
+        closeIfEverythingIsSaved()
+    }
+
+    /// Con todo guardado y nada más que avisar, la hoja enseña «Guardado» un instante y se cierra sola, sin «Listo»
+    /// (encargo «X nativa en la hoja de foto», 2026-11-17). Con algo pendiente o un error, se queda abierta.
+    private func closeIfEverythingIsSaved() {
+        let state = ImageEntryAutoCloseLogic.State(
+            draftCount: drafts.count,
+            savedCount: drafts.filter { $0.status == .approved }.count,
+            saveFailed: saveFailed,
+            failedPhotos: failedImages.count,
+            leftOut: pagesLeftOut + sharedPhotosLeftOut + sharedFilesLeftOut
+        )
+        guard phase == .review, ImageEntryAutoCloseLogic.closesAfterSaving(state) else { return }
+        autoCloseTask?.cancel()
+        isClosingAlone = true
+        autoCloseTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: ImageEntryAutoCloseLogic.delay)
+            } catch {
+                return
+            }
+            guard phase == .review, allSaved, detailDraft == nil else {
+                isClosingAlone = false
+                return
+            }
+            dismiss()
+        }
     }
 
     /// Tras el formulario de grupo: el borrador convertido ya no está, y el aviso dice adónde fue.
@@ -1515,6 +1578,11 @@ struct ImageSelectionView: View {
         }
         if drafts.isEmpty, phase == .review {
             dismiss()
+            return
+        }
+        // Si el último pendiente se guardó desde el formulario completo, cuenta igual que «Guardar».
+        if allSaved {
+            closeIfEverythingIsSaved()
         }
     }
 
@@ -1543,6 +1611,8 @@ struct ImageSelectionView: View {
     }
 
     private func tearDown() {
+        autoCloseTask?.cancel()
+        autoCloseTask = nil
         readTask?.cancel()
         readTask = nil
         fileBatch = nil

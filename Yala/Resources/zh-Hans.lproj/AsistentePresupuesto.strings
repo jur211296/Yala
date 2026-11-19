@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "使用表单";
+"asistente.useFormHint" = "打开常用表单，并带上你已填写的回答";
+"asistente.stepOf" = "第 %1$d 步，共 %2$d 步";
+"asistente.discard.message" = "你填写的回答将会丢失。";
+"asistente.discard.confirm" = "放弃";
+"asistente.discard.keep" = "继续";
+"asistente.changeHint" = "轻点以更改此回答";
+"asistentePresupuesto.discard.title" = "放弃此预算？";
+"asistentePresupuesto.create" = "创建预算";
+"asistentePresupuesto.createShort" = "创建";
+"asistentePresupuesto.name.weekly" = "本周支出";
+"asistentePresupuesto.name.monthly" = "本月支出";
+"asistentePresupuesto.name.yearly" = "本年支出";
+"asistentePresupuesto.name.once" = "我的支出";
+"asistentePresupuesto.limit.last.weekly" = "上周你在这上面花了 %@。";
+"asistentePresupuesto.limit.last.monthly" = "上个月你在这上面花了 %@。";
+"asistentePresupuesto.limit.last.yearly" = "去年你在这上面花了 %@。";
+"asistentePresupuesto.limit.same" = "相同";
+"asistentePresupuesto.limit.less10" = "少 10%";
+"asistentePresupuesto.limit.less20" = "少 20%";
+"asistentePresupuesto.summary.question" = "就这样创建吗？";
+"asistentePresupuesto.summary.detail" = "轻点某个回答即可更改。";
+"asistentePresupuesto.summary.counts" = "计入范围";
+"asistentePresupuesto.summary.period" = "更新周期";
+"asistentePresupuesto.summary.dates" = "日期";
+"asistentePresupuesto.summary.limit" = "上限";
+"asistentePresupuesto.summary.name" = "名称";
+"asistentePresupuesto.summary.alert" = "提醒";
+"asistentePresupuesto.alert.none" = "不提醒";
+"asistentePresupuesto.categories.empty" = "你还没有支出分类。可以计入所有支出。";

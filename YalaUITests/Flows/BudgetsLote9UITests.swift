@@ -46,9 +46,8 @@ final class BudgetsLote9UITests: XCTestCase {
         XCTAssertTrue(yearlyOption.waitForExistence(timeout: 5), "El menú del selector de tipo no ofrece Anual.")
         yearlyOption.tap()
 
-        let fab = app.buttons["budgets_create_button"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
-        fab.tap()
+        // «Nuevo presupuesto» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.abrirFormularioDeNuevoPresupuesto(desde: app.buttons["budgets_create_button"])
 
         let editorPicker = app.segmentedControls["budget_editor_period_picker"]
         XCTAssertTrue(editorPicker.waitForExistence(timeout: 5), "No se montó el editor.")

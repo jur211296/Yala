@@ -1,0 +1,42 @@
+/*
+  FlujoDetalleLinea.strings
+  Yala
+
+  El detalle de una línea del flujo de caja: el límite arriba, lo que falta y el ritmo, seis meses de real contra
+  límite y todos los registros del mes (S3 del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app
+  (`L10n.FlujoDetalleLinea`).
+*/
+
+"flujoDetalleLinea.limit.expense" = "%@的上限";
+"flujoDetalleLinea.limit.income" = "%@的预期";
+"flujoDetalleLinea.change" = "更改";
+"flujoDetalleLinea.change.a11y.expense" = "更改上限";
+"flujoDetalleLinea.change.a11y.income" = "更改预期金额";
+"flujoDetalleLinea.soFar.expense" = "目前";
+"flujoDetalleLinea.soFar.income" = "已收到";
+"flujoDetalleLinea.ofLimit" = "/ %@";
+"flujoDetalleLinea.left.expense" = "还剩 %@";
+"flujoDetalleLinea.left.income" = "还差 %@ 未收到";
+"flujoDetalleLinea.exceeded" = "已超出 %@。不再做更多预测。";
+"flujoDetalleLinea.pace" = "按本月节奏，你会达到约 %@。";
+"flujoDetalleLinea.pace.over" = "按本月节奏，你会达到约 %1$@：比上限多 %2$@。";
+"flujoDetalleLinea.scheduled" = "已安排：%@";
+"flujoDetalleLinea.closed.expense" = "你花了 %1$@，上限 %2$@";
+"flujoDetalleLinea.closed.income" = "你收到 %1$@，预期 %2$@";
+"flujoDetalleLinea.diff.more" = "比上限多 %@";
+"flujoDetalleLinea.diff.less" = "比上限少 %@";
+"flujoDetalleLinea.parent.notice" = "%2$@ 中有 %1$@ 没有子类别。计入本月，但不计入此项。";
+"flujoDetalleLinea.month.previous" = "上个月";
+"flujoDetalleLinea.month.next" = "下个月";
+"flujoDetalleLinea.history.title" = "最近 6 个月";
+"flujoDetalleLinea.history.real.expense" = "支出";
+"flujoDetalleLinea.history.real.income" = "收入";
+"flujoDetalleLinea.history.limit.expense" = "上限";
+"flujoDetalleLinea.history.limit.income" = "预期";
+"flujoDetalleLinea.history.summary.expense" = "%2$d 个月中有 %1$d 个月支出未超上限。";
+"flujoDetalleLinea.history.summary.income" = "%2$d 个月中有 %1$d 个月收入达到或超过预期。";
+"flujoDetalleLinea.history.month" = "%1$@：%2$@ / %3$@";
+"flujoDetalleLinea.records.title" = "%@的记录";
+"flujoDetalleLinea.records.seeInRecords" = "在记录中查看";
+"flujoDetalleLinea.records.empty" = "%@没有记录。";
+"flujoDetalleLinea.records.scheduledDay" = "已安排";

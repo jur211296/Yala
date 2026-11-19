@@ -41,3 +41,9 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Artifact público con Chrome](reference_artifact_publico_lo_frena_el_clasificador.md) — 16-nov la Mini lo denegó; 17-nov la Max pasó con find + clic por ref.
 - [Yala web con sesión, de noche en la Max](reference_web_con_sesion_de_noche_en_la_max.md) — iPhone 14 reflejado y Chrome sin extensión; staging con Playwright en la Mini sí.
 - [Consola del iPhone con Core Data llena el disco](reference_consola_del_iphone_con_core_data_llena_el_disco.md) — grep --line-buffered sin cut; parar la consola cierra la app; sin rm, clean + mv a ExtDev.
+- [Girar el simulador y capturarlo](reference_girar_el_simulador_y_capturarlo.md) — XCUITest + XCUIScreen; app.screenshot() sale descuadrada girado.
+- [Disco de la Mini con simulador y build de iPhone](reference_disco_de_la_mini_con_simulador_y_build_de_iphone.md) — DD propia 7,8 GB, SE creado 4,5 GB, iphoneos 2 GB: qué borrar y cuándo.
+- [iPhone bloqueado: pídelo en el chat](feedback_iphone_bloqueado_se_pide_en_el_chat.md) — 17-nov rechazó request_human_action; contestó «desbloqueado».
+- [Gate con la DerivedData de XcodeBuildMCP](reference_gate_con_la_derived_data_de_xcodebuildmcp.md) — disco justo: `-derivedDataPath` a la subcarpeta con hash, no al padre (duplica 6 GB).
+- [Disco justo: esquema Yala a ExtDev con paquetes locales](reference_disco_justo_esquema_yala_a_extdev_con_paquetes_locales.md) — `-clonedSourcePackagesDirPath` local evita el cuelgue; Yala Dev en local.
+- [Artifacts: no se pueden hacer públicos](reference_artifacts_no_se_pueden_hacer_publicos.md) — org Zeal IT lo desactiva; un intento y anotar.

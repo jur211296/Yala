@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "Use form";
+"asistente.useFormHint" = "Opens the usual form with what you already answered";
+"asistente.stepOf" = "Step %1$d of %2$d";
+"asistente.discard.message" = "What you answered will be lost.";
+"asistente.discard.confirm" = "Discard";
+"asistente.discard.keep" = "Keep going";
+"asistente.changeHint" = "Tap to change this answer";
+"asistentePresupuesto.discard.title" = "Discard this budget?";
+"asistentePresupuesto.create" = "Create budget";
+"asistentePresupuesto.createShort" = "Create";
+"asistentePresupuesto.name.weekly" = "My expenses this week";
+"asistentePresupuesto.name.monthly" = "My expenses this month";
+"asistentePresupuesto.name.yearly" = "My expenses this year";
+"asistentePresupuesto.name.once" = "My expenses";
+"asistentePresupuesto.limit.last.weekly" = "Last week you spent %@ on this.";
+"asistentePresupuesto.limit.last.monthly" = "Last month you spent %@ on this.";
+"asistentePresupuesto.limit.last.yearly" = "Last year you spent %@ on this.";
+"asistentePresupuesto.limit.same" = "The same";
+"asistentePresupuesto.limit.less10" = "10% less";
+"asistentePresupuesto.limit.less20" = "20% less";
+"asistentePresupuesto.summary.question" = "Create it like this?";
+"asistentePresupuesto.summary.detail" = "Tap an answer to change it.";
+"asistentePresupuesto.summary.counts" = "What counts";
+"asistentePresupuesto.summary.period" = "Renews";
+"asistentePresupuesto.summary.dates" = "Dates";
+"asistentePresupuesto.summary.limit" = "Limit";
+"asistentePresupuesto.summary.name" = "Name";
+"asistentePresupuesto.summary.alert" = "Alerts";
+"asistentePresupuesto.alert.none" = "No alerts";
+"asistentePresupuesto.categories.empty" = "You don't have expense categories yet. You can count all your expenses.";

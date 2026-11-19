@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "Formulier gebruiken";
+"asistente.useFormHint" = "Opent het gewone formulier met wat je al hebt ingevuld";
+"asistente.stepOf" = "Stap %1$d van %2$d";
+"asistente.discard.message" = "Je antwoorden gaan verloren.";
+"asistente.discard.confirm" = "Weggooien";
+"asistente.discard.keep" = "Doorgaan";
+"asistente.changeHint" = "Tik om dit antwoord te wijzigen";
+"asistentePresupuesto.discard.title" = "Dit budget weggooien?";
+"asistentePresupuesto.create" = "Budget maken";
+"asistentePresupuesto.createShort" = "Maken";
+"asistentePresupuesto.name.weekly" = "Mijn uitgaven deze week";
+"asistentePresupuesto.name.monthly" = "Mijn uitgaven deze maand";
+"asistentePresupuesto.name.yearly" = "Mijn uitgaven dit jaar";
+"asistentePresupuesto.name.once" = "Mijn uitgaven";
+"asistentePresupuesto.limit.last.weekly" = "Vorige week gaf je hier %@ aan uit.";
+"asistentePresupuesto.limit.last.monthly" = "Vorige maand gaf je hier %@ aan uit.";
+"asistentePresupuesto.limit.last.yearly" = "Vorig jaar gaf je hier %@ aan uit.";
+"asistentePresupuesto.limit.same" = "Hetzelfde";
+"asistentePresupuesto.limit.less10" = "10% minder";
+"asistentePresupuesto.limit.less20" = "20% minder";
+"asistentePresupuesto.summary.question" = "Zo maken?";
+"asistentePresupuesto.summary.detail" = "Tik op een antwoord om het te wijzigen.";
+"asistentePresupuesto.summary.counts" = "Wat telt";
+"asistentePresupuesto.summary.period" = "Vernieuwt";
+"asistentePresupuesto.summary.dates" = "Datums";
+"asistentePresupuesto.summary.limit" = "Limiet";
+"asistentePresupuesto.summary.name" = "Naam";
+"asistentePresupuesto.summary.alert" = "Meldingen";
+"asistentePresupuesto.alert.none" = "Geen meldingen";
+"asistentePresupuesto.categories.empty" = "Je hebt nog geen uitgavencategorieën. Je kunt al je uitgaven tellen.";

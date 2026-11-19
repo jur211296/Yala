@@ -81,6 +81,8 @@ struct DetailContainerView: View {
     @State private var liveCalculationID: UUID?
     /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
     @State private var recordsWidth: CGFloat = 0
+    /// El filtrado pedido por «Buscar en Registros»: solo la lista, con su propia espera (`recalculateRecordsList`).
+    @State private var recordsListSearchTask: Task<Void, Never>?
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -370,6 +372,7 @@ struct DetailContainerView: View {
             .modifier(StatsRecordsPaneObservers(
                 recordsViewModel: recordsViewModel,
                 horizontalSizeClass: horizontalSizeClass,
+                pageSizeClass: recordsPageSizeClass,
                 recordsTabIsShown: selectedTab == .records,
                 allTransactions: dataViewModel.allTransactions))
             .modifier(StatsAIAutoRefreshTrigger(insights: insightsViewModel))
@@ -548,9 +551,15 @@ struct DetailContainerView: View {
 
     // MARK: - Registros: lista y registro abierto
 
-    /// Ventana ancha: tocar un registro lo abre en un panel, no en hoja (`RecordsViewModel.opensDetailInColumn`,
+    /// Cómo se monta la página del chip: como la ventana, salvo con la vista calendario en una ventana ancha, que va a
+    /// una columna (decisión 66 de 2.3, la de la página Registros; aquí desde el 17-nov).
+    private var recordsPageSizeClass: UserInterfaceSizeClass? {
+        RecordsCalendarPageLogic.pageSizeClass(window: horizontalSizeClass, viewMode: recordsViewModel.recordsViewMode)
+    }
+
+    /// Página ancha: tocar un registro lo abre en un panel, no en hoja (`RecordsViewModel.opensDetailInColumn`,
     /// el molde de la página Registros). Sin `NavigationSplitView`: este chip vive dentro de la pila de Estadísticas.
-    private var recordsOpensInPane: Bool { horizontalSizeClass == .regular }
+    private var recordsOpensInPane: Bool { recordsPageSizeClass == .regular }
 
     /// Anchos de la lista, los de `ListDetailSplit`: más ancha con texto de accesibilidad.
     private var recordsListWidths: DS.Adaptive.ListColumnWidths {
@@ -589,7 +598,9 @@ struct DetailContainerView: View {
         let sideBySide = recordsSideBySide
         let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Spacing.none)) : AnyLayout(ZStackLayout())
         return layout {
-            RecordsTabView(
+            // La misma lista que la pestaña Registros (`Records/Compartida/`, decisión de Jürgen del 17-nov): chips
+            // rápidos, «Buscar en Registros», lista y calendario.
+            RecordsSharedList(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
                 categories: dataViewModel.categories,
@@ -598,8 +609,10 @@ struct DetailContainerView: View {
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
+                onListSearchChange: { recalculateRecordsList() },
                 loadFailed: dataViewModel.transactionsLoadFailed,
-                onRetryLoad: { reloadAndRecalculate() }
+                onRetryLoad: { reloadAndRecalculate() },
+                keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
             )
             .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
@@ -686,20 +699,12 @@ struct DetailContainerView: View {
 
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
-        // Tab Registros: «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
         if selectedTab == .records {
+            // Tab Registros: «Seleccionar» a la vista y «···» (Seleccionar · Filtrar · Identificar duplicados), los mismos
+            // de la pestaña Registros (`RecordsToolbarItems`, 17-nov).
+            RecordsToolbarItems(viewModel: recordsViewModel, accent: theme.accentText)
+        } else {
             ToolbarItem(placement: .topBarTrailing) {
-                RecordsSelectToolbarButton(viewModel: recordsViewModel)
-            }
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
-        }
-
-        ToolbarItem(placement: .topBarTrailing) {
-            if selectedTab == .records {
-                // Tab Registros: menú (···) con Seleccionar + Filtrar + Identificar duplicados.
-                RecordsOverflowMenu(viewModel: recordsViewModel)
-                    .accessibilityIdentifier("records_overflow_menu")
-            } else {
                 // Tendencias / Categorías / Insights: solo botón Filtrar (→ trendsViewModel).
                 Button {
                     trendsViewModel.showFiltersSheet = true
@@ -734,15 +739,7 @@ struct DetailContainerView: View {
 
     @ToolbarContentBuilder
     private var selectionModeToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button(L10n.Common.cancel) {
-                recordsViewModel.exitSelectionMode()
-            }
-        }
-
-        ToolbarItem(placement: .topBarTrailing) {
-            RecordsSelectAllButton(viewModel: recordsViewModel)
-        }
+        RecordsSelectionToolbar(viewModel: recordsViewModel)
     }
 
     // MARK: - Actions
@@ -750,6 +747,26 @@ struct DetailContainerView: View {
     /// Filter changes — recalculate from cache, NO DB fetch
     private func recalculateData() {
         scheduleRecalculation(reload: false)
+    }
+
+    /// «Buscar en Registros» (17-nov): lo escrito solo filtra la lista, así que solo se recalcula la lista, con la misma
+    /// espera de 150 ms que la pestaña Registros. La pasada entera (Tendencias, Resumen) tarda segundos con años de
+    /// datos (decisión 28 de 2.3) y no depende del texto. Lee lo ya cargado: sin pasada previa no hay nada que filtrar,
+    /// y la primera ya lee el texto que haya.
+    private func recalculateRecordsList() {
+        recordsListSearchTask?.cancel()
+        recordsListSearchTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled, hasCalculatedOnce, !dataViewModel.isDetachedFromMountedStore else { return }
+            recordsViewModel.applyFilters(
+                transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
+                context: modelContext,
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue
+            )
+        }
     }
 
     /// Data mutations (dataVersion, sheet dismiss) — reload DB + recalculate
@@ -1155,7 +1172,10 @@ private struct SessionStateObservers: ViewModifier {
 /// esta vista: el compilador de CI no tipa a tiempo una cadena larga de `onChange` con cierres.
 private struct StatsRecordsPaneObservers: ViewModifier {
     let recordsViewModel: RecordsViewModel
+    /// El de la ventana.
     let horizontalSizeClass: UserInterfaceSizeClass?
+    /// El de la página del chip: la ventana, salvo el calendario en ancha, que va a una columna (decisión 66 de 2.3).
+    let pageSizeClass: UserInterfaceSizeClass?
     /// El chip Registros está a la vista. Con otro chip delante, estrechar cierra lo abierto sin sacar una hoja
     /// encima del Resumen o de Tendencias.
     let recordsTabIsShown: Bool
@@ -1163,17 +1183,20 @@ private struct StatsRecordsPaneObservers: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: horizontalSizeClass, initial: true) { _, newClass in sizeClassChanged(newClass) }
+            .onChange(of: pageSizeClass, initial: true) { _, newClass in pageSizeClassChanged(newClass) }
             .onChange(of: allTransactions) { closeIfTheRecordIsGone() }
     }
 
-    /// En ancha el toque abre el panel; en compacta, la hoja. Si la ventana se estrecha con un registro abierto en
-    /// el panel, pasa a la hoja: el mismo registro sigue a la vista.
-    private func sizeClassChanged(_ newClass: UserInterfaceSizeClass?) {
+    /// Página ancha: el toque abre el panel; si no, la hoja. Lo abierto en el panel cuando la página se estrecha
+    /// (`RecordsOpenRecordOnNarrowing`): si se estrechó la ventana, pasa a la hoja y sigue a la vista; si se eligió el
+    /// calendario en una ventana ancha, se cierra, como en la pestaña Registros.
+    private func pageSizeClassChanged(_ newClass: UserInterfaceSizeClass?) {
         recordsViewModel.opensDetailInColumn = newClass == .regular
-        guard newClass != .regular, let id = recordsViewModel.openRecordID else { return }
+        let action = RecordsOpenRecordOnNarrowing.action(
+            window: horizontalSizeClass, page: newClass, hasOpenRecord: recordsViewModel.openRecordID != nil)
+        guard action != .keep, let id = recordsViewModel.openRecordID else { return }
         recordsViewModel.openRecordID = nil
-        guard recordsTabIsShown,
+        guard action == .moveToSheet, recordsTabIsShown,
               let record = allTransactions.first(where: { $0.persistentModelID == id }) else { return }
         recordsViewModel.editingTransaction = record
         recordsViewModel.showTransactionDetail = true

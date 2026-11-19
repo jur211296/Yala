@@ -1,0 +1,31 @@
+/*
+  AsistenteCuenta.strings
+  Yala
+
+  El asistente por pasos de «Nueva cuenta» (encargo del 18-nov). Las preguntas que ya tenía Primeros pasos vienen de
+  `pasos23.account.*`, y el contenedor compartido lee sus `asistente.*` de `AsistentePresupuesto.strings`. Tabla propia,
+  leída con el idioma de la app (`AsistenteCuentaTexto`).
+*/
+
+"asistenteCuenta.discard.title" = "Odrzucić to konto?";
+"asistenteCuenta.create" = "Utwórz konto";
+"asistenteCuenta.createShort" = "Utwórz";
+"asistenteCuenta.kind.question" = "Jakie to konto?";
+"asistenteCuenta.kind.subtitle" = "Wybierz najbardziej podobne. Możesz to zmienić później.";
+"asistenteCuenta.currency.subtitle" = "W tej walucie zobaczysz saldo.";
+"asistenteCuenta.currency.subtitleCard" = "W tej walucie zobaczysz, ile jesteś winien.";
+"asistenteCuenta.currency.other" = "Inna waluta";
+"asistenteCuenta.currency.otherHint" = "Wybierz spośród wszystkich walut";
+"asistenteCuenta.name.taken" = "Masz już konto o tej nazwie.";
+"asistenteCuenta.day.label" = "Dzień miesiąca";
+"asistenteCuenta.summary.question" = "Utworzyć tak?";
+"asistenteCuenta.summary.detail" = "Stuknij odpowiedź, aby ją zmienić.";
+"asistenteCuenta.summary.type" = "Typ";
+"asistenteCuenta.summary.currency" = "Waluta";
+"asistenteCuenta.summary.name" = "Nazwa";
+"asistenteCuenta.summary.balance" = "Saldo dziś";
+"asistenteCuenta.summary.owe" = "Do spłaty dziś";
+"asistenteCuenta.summary.statement" = "Dzień zamknięcia";
+"asistenteCuenta.summary.payment" = "Dzień płatności";
+"asistenteCuenta.summary.reminder" = "Przypomnienie";
+"asistenteCuenta.summary.day" = "Dzień %d";

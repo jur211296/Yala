@@ -272,7 +272,8 @@ struct RecordsStandaloneView: View {
     }
 
     private var listColumn: some View {
-            RecordsTabView(
+            // La misma lista que Estadísticas › Registros (`Records/Compartida/`, decisión de Jürgen del 17-nov).
+            RecordsSharedList(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
                 categories: dataViewModel.categories,
@@ -281,7 +282,7 @@ struct RecordsStandaloneView: View {
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
-                showsQuickFilters: true,
+                onListSearchChange: { recalculateData() },
                 loadFailed: dataViewModel.transactionsLoadFailed,
                 onRetryLoad: { reloadAndRecalculate() },
                 keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
@@ -289,8 +290,6 @@ struct RecordsStandaloneView: View {
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
             // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
             .environment(\.statsQuickActions, recordsQuickActions)
-            // «Buscar en Registros» (decisión 14 de 2.3): el campo que asoma al tirar de la lista es de esta pantalla.
-            .environment(\.offersRecordsListSearch, true)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
                     // Un contenedor propio para los flotantes: su animación no alcanza a la barra de selección.
@@ -435,18 +434,11 @@ struct RecordsStandaloneView: View {
 
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
-        // «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
-        ToolbarItem(placement: .topBarTrailing) {
-            // En la columna de la lista del iPad, con icono: con el texto, el título no cabía (decisión 67 de 2.3). La
-            // columna de lista no tiene título grande (medido: `.large` no cambia nada ahí).
-            RecordsSelectToolbarButton(viewModel: recordsViewModel, iconOnly: pageSizeClass == .regular)
-        }
-
-        ToolbarSpacer(.fixed, placement: .topBarTrailing)
-
-        ToolbarItem(placement: .topBarTrailing) {
-            RecordsOverflowMenu(viewModel: recordsViewModel)
-        }
+        // «Seleccionar» a la vista y «···», los mismos de Estadísticas › Registros (`RecordsToolbarItems`). En la columna
+        // de la lista del iPad, «Seleccionar» con icono: con el texto, el título no cabía (decisión 67 de 2.3). La
+        // columna de lista no tiene título grande (medido: `.large` no cambia nada ahí).
+        RecordsToolbarItems(
+            viewModel: recordsViewModel, accent: theme.accentText, selectIconOnly: pageSizeClass == .regular)
 
         // iOS 26 spacer creates separate glass groups
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -460,15 +452,7 @@ struct RecordsStandaloneView: View {
 
     @ToolbarContentBuilder
     private var selectionModeToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button(L10n.Common.cancel) {
-                recordsViewModel.exitSelectionMode()
-            }
-        }
-
-        ToolbarItem(placement: .topBarTrailing) {
-            RecordsSelectAllButton(viewModel: recordsViewModel)
-        }
+        RecordsSelectionToolbar(viewModel: recordsViewModel)
     }
 
     // MARK: - Actions

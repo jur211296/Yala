@@ -28,6 +28,9 @@ struct BudgetsListView: View {
     @State private var showFloatingNew = false
     /// Sube al cerrarse el editor: es cuando se pregunta «¿era de prueba?» (UX 2.2 · L5-5).
     @State private var budgetEditorClosedToken = 0
+    /// Lo respondido en el asistente de «Nuevo presupuesto». Vive aquí, en quien presenta la hoja, y se tira al cerrarla:
+    /// el contenido de una hoja puede rehacerse sin cerrarla (`swiftui-ds.md`).
+    @State private var newBudgetWizard = AsistentePresupuestoEstado()
 
     private var activeBudgetsCount: Int {
         viewModel.activeBudgetsCount
@@ -113,10 +116,13 @@ struct BudgetsListView: View {
                 .id(navID.id)
         }
         // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
-        // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.
-        .sheet(isPresented: $viewModel.showBudgetEditor, onDismiss: { budgetEditorClosedToken += 1 }) {
-            // Un presupuesto nuevo se abre en el tipo de la pestaña que se miraba (UX 2.2 · L9-3).
-            BudgetEditorView(budget: viewModel.editingBudget, initialPeriodType: viewModel.selectedPeriodType)
+        // (menú contextual de la fila, fase 3). Crear abre el asistente por pasos, con «Usar formulario» arriba
+        // (encargo del 17-nov); editar sigue abriendo el formulario.
+        .sheet(isPresented: $viewModel.showBudgetEditor, onDismiss: {
+            newBudgetWizard.empezar(periodo: viewModel.selectedPeriodType)
+            budgetEditorClosedToken += 1
+        }) {
+            budgetSheetContent
                 .onDisappear {
                     viewModel.editingBudget = nil
                     refreshData()
@@ -133,8 +139,7 @@ struct BudgetsListView: View {
         }
         // Si compra Pro ahí, al cerrarse se abre el presupuesto nuevo que se quería crear (UX 2.2 · L17-9).
         .proUpgradeSheet(isPresented: $showUpgradeSheet, feature: .budgets, context: .limitReached) {
-            viewModel.editingBudget = nil
-            viewModel.showBudgetEditor = true
+            openNewBudget()
         }
         // Tocar una alerta abre ESE presupuesto, en su tipo y su período actual (UX 2.2 · L9-5).
         .modifier(BudgetAlertOpening(viewModel: viewModel, selectedSegment: $selectedSegment, onPeriodReset: { recalculatePeriodFilters() }))
@@ -165,8 +170,7 @@ struct BudgetsListView: View {
         .routerConsumer(.planning) {
             if case .autoOpenBudgetEditor = AppRouter.shared.peekNext(for: .planning, in: navigation.id) {
                 _ = AppRouter.shared.drainNext(for: .planning, in: navigation.id)
-                viewModel.editingBudget = nil
-                viewModel.showBudgetEditor = true
+                openNewBudget()
             }
         }
     }
@@ -340,13 +344,29 @@ struct BudgetsListView: View {
 
     // MARK: - New Budget FAB
 
-    /// «Nuevo presupuesto», del botón de arriba o del flotante: el editor, o el paywall si se llegó al límite.
+    /// «Nuevo presupuesto», del botón de arriba o del flotante: el asistente, o el paywall si se llegó al límite.
     private func createBudget() {
         if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
-            viewModel.editingBudget = nil
-            viewModel.showBudgetEditor = true
+            openNewBudget()
         } else {
             showUpgradeSheet = true
+        }
+    }
+
+    /// El asistente de cero, en el tipo de la pestaña que se miraba (UX 2.2 · L9-3).
+    private func openNewBudget() {
+        newBudgetWizard.empezar(periodo: viewModel.selectedPeriodType)
+        viewModel.editingBudget = nil
+        viewModel.showBudgetEditor = true
+    }
+
+    /// Editar abre el formulario; crear, el asistente (que lleva dentro «Usar formulario»).
+    @ViewBuilder
+    private var budgetSheetContent: some View {
+        if let budget = viewModel.editingBudget {
+            BudgetEditorView(budget: budget, initialPeriodType: viewModel.selectedPeriodType)
+        } else {
+            NuevoPresupuestoHoja(estado: newBudgetWizard) { viewModel.showBudgetEditor = false }
         }
     }
 
