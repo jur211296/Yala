@@ -105,6 +105,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Cancelar la entrada en el iPhone 14](reference_reproducir_cancelar_la_entrada_en_el_iphone_14.md) — 8 toques en ráfaga; el daño sale al reabrir; -uitest-reset deja la sesión.
 - [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
+- [Girar para QA sin Device MCP Pro](reference_girar_para_qa_sin_device_mcp_pro.md) — iPhone con bloqueo: girar el simulador con ⌘← en DeviceHub; tras un rotate fallido se abrió una app personal.
 - [iPhone SE en la Mini](reference_iphone_se_en_la_mini.md) — se crea en iOS 27.2; un xctestrun sirve para los dos devices; en SE+AX3 no arrastres desde el importe.
 - [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; tap de MCP desplazado; en Pagos con AX5 el deeplink no aterriza: pestaña por coordenada + chip por id.
 - [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.

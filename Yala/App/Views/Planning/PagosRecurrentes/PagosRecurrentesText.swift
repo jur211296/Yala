@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Textos de «Pagos que se repiten» (lote S1). En su propio fichero, como `L10n+UXAudit22Lote10.swift`, para no tocar
-//  `L10n.swift`. Sin plurales: la frase lleva el número detrás de dos puntos («Cobros encontrados: 5»).
+//  `L10n.swift`. El único plural, el del banner, vive en el `.stringsdict`.
 //
 
 import Foundation
@@ -35,27 +35,14 @@ enum PagosRecurrentesText {
     static func cadenceMonthlyApprox(day: String) -> String { String(format: pr("cadence.monthlyApprox"), day) }
     static func cadenceWeekly(weekday: String) -> String { String(format: pr("cadence.weekly"), weekday) }
 
-    static func chargesFound(_ count: String) -> String { String(format: pr("sheet.chargesFound"), count) }
-    static func lastCharge(_ date: String) -> String { String(format: pr("sheet.lastCharge"), date) }
-    static var amount: String { pr("sheet.amount") }
-    static var frequency: String { pr("sheet.frequency") }
-    static var frequencyMonthly: String { pr("sheet.frequencyMonthly") }
-    static var frequencyWeekly: String { pr("sheet.frequencyWeekly") }
-    static var nextCharge: String { pr("sheet.nextCharge") }
-    static var account: String { pr("sheet.account") }
-    static var chooseAccount: String { pr("sheet.chooseAccount") }
-    static var category: String { pr("sheet.category") }
-    static var notify: String { pr("sheet.notify") }
-    static var variableAmount: String { pr("sheet.variable") }
+    /// «Encontramos 3 pagos que se repiten. Puedes agregarlos a tus pagos planificados.» Plural del `.stringsdict`.
+    static func bannerFound(_ count: Int) -> String {
+        String.localizedStringWithFormat(pr("banner.found"), count)
+    }
+    static var listFooter: String { pr("list.footer") }
     static var create: String { pr("sheet.create") }
     static var notFixed: String { pr("sheet.notFixed") }
     static var notNow: String { pr("sheet.notNow") }
-
-    static var notifyNone: String { pr("notify.none") }
-    static var notifySameDay: String { pr("notify.sameDay") }
-    static var notifyOneDay: String { pr("notify.oneDay") }
-    static var notifyThreeDays: String { pr("notify.threeDays") }
-    static var notifyOneWeek: String { pr("notify.oneWeek") }
 
     static func createdNotice(name: String, reminderDate: String) -> String {
         String(format: pr("created.notice"), name, reminderDate)

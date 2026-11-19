@@ -1452,6 +1452,22 @@
 			<string>%d enregistrements modifiés</string>
 		</dict>
 	</dict>
+	<key>pagosRecurrentes.banner.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Nous avons trouvé %d paiement qui se répète. Tu peux l'ajouter à tes paiements planifiés.</string>
+			<key>other</key>
+			<string>Nous avons trouvé %d paiements qui se répètent. Tu peux les ajouter à tes paiements planifiés.</string>
+		</dict>
+	</dict>
 	<key>pasos23.record.between.many</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

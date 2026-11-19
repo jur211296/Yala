@@ -1812,6 +1812,26 @@
 			<string>Zmieniono %d wpisu</string>
 		</dict>
 	</dict>
+	<key>pagosRecurrentes.banner.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Znaleźliśmy %d powtarzającą się płatność. Możesz dodać ją do zaplanowanych płatności.</string>
+			<key>few</key>
+			<string>Znaleźliśmy %d powtarzające się płatności. Możesz dodać je do zaplanowanych płatności.</string>
+			<key>many</key>
+			<string>Znaleźliśmy %d powtarzających się płatności. Możesz dodać je do zaplanowanych płatności.</string>
+			<key>other</key>
+			<string>Znaleźliśmy %d powtarzających się płatności. Możesz dodać je do zaplanowanych płatności.</string>
+		</dict>
+	</dict>
 	<key>pasos23.record.between.many</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

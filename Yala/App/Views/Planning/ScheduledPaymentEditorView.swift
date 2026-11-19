@@ -21,6 +21,13 @@ struct ScheduledPaymentPrefill {
     /// El nombre del pago. `nil`: la descripción del registro, como desde «Hacer recurrente › Más opciones…». Desde un
     /// registro ya guardado sin nota, su subcategoría (`RecurringFromRecordLogic.paymentName`).
     var name: String? = nil
+    /// Desde «Pagos que se repiten» (encargo del 17-nov): lo que dedujo el historial. Por defecto, lo de un registro
+    /// (cada mes, el día del registro, pago fijo y recurrente).
+    var recurrenceType: RecurrenceType? = nil
+    /// El día del mes que se guarda si no es el de `transactionDate` (cobros el 31 y próximo el 30 de noviembre).
+    var dayOfMonth: Int? = nil
+    var isSubscription: Bool = false
+    var isVariableAmount: Bool = false
 }
 
 struct ScheduledPaymentEditorView: View {
@@ -361,7 +368,8 @@ struct ScheduledPaymentEditorView: View {
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         } else if let account = selectedAccount {
-                            Text(account.currencyCode)
+                            // La divisa que se guarda: la del prellenado mientras la cuenta sea la suya.
+                            Text(prefillCurrency ?? account.currencyCode)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1605,6 +1613,14 @@ struct ScheduledPaymentEditorView: View {
         }
     }
 
+    /// Desde un registro, la divisa del importe que enseñaba su pantalla, sin convertir, mientras la cuenta sea la suya
+    /// (card 4k2q: un gasto de 50 USD en una cuenta en soles creaba un pago de 50 PEN). La misma para enseñar y guardar.
+    private var prefillCurrency: String? {
+        prefill.flatMap { prefill in
+            prefill.account?.persistentModelID == selectedAccount?.persistentModelID ? prefill.currencyCode : nil
+        }
+    }
+
     // MARK: - Validation
 
     private var canSave: Bool {
@@ -1669,6 +1685,13 @@ struct ScheduledPaymentEditorView: View {
             selectedWeekdays = [calendar.component(.weekday, from: prefill.transactionDate)]
             yearlyMonth = calendar.component(.month, from: prefill.transactionDate)
             yearlyDay = calendar.component(.day, from: prefill.transactionDate)
+            if let recurrence = prefill.recurrenceType { recurrenceType = recurrence }
+            if let day = prefill.dayOfMonth { dayOfMonth = day }
+            if prefill.isSubscription {
+                isSubscription = true
+                paymentCategory = .subscription
+            }
+            isVariableAmount = prefill.isVariableAmount
             return
         }
 
@@ -1756,11 +1779,6 @@ struct ScheduledPaymentEditorView: View {
         // Gasto compartido: `amount` guardado = MI PARTE (splitMyShare); el total va a
         // splitTotalAmount. Moneda = la elegida para el gasto de grupo. Etiquetas no aplican.
         let amountToSave = isGroupExpense ? splitMyShare : amountValue
-        // Desde un registro, la divisa del importe que enseñaba su pantalla, sin convertir, mientras la cuenta sea la
-        // suya (card 4k2q: un gasto de 50 USD en una cuenta en soles creaba un pago de 50 PEN).
-        let prefillCurrency = prefill.flatMap { prefill in
-            prefill.account?.persistentModelID == selectedAccount?.persistentModelID ? prefill.currencyCode : nil
-        }
         let currencyToSave = isGroupExpense
             ? splitCurrency.rawValue
             : (prefillCurrency ?? selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue)

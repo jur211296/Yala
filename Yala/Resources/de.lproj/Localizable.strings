@@ -9891,26 +9891,9 @@
 "pagosRecurrentes.cadence.monthly" = "Jeden Monat am %@.";
 "pagosRecurrentes.cadence.monthlyApprox" = "Jeden Monat um den %@.";
 "pagosRecurrentes.cadence.weekly" = "Jede Woche am %@";
-"pagosRecurrentes.sheet.chargesFound" = "Gefundene Abbuchungen: %@";
-"pagosRecurrentes.sheet.lastCharge" = "Letzte Abbuchung: %@";
-"pagosRecurrentes.sheet.amount" = "Betrag";
-"pagosRecurrentes.sheet.frequency" = "Häufigkeit";
-"pagosRecurrentes.sheet.frequencyMonthly" = "Jeden Monat";
-"pagosRecurrentes.sheet.frequencyWeekly" = "Jede Woche";
-"pagosRecurrentes.sheet.nextCharge" = "Nächste Abbuchung";
-"pagosRecurrentes.sheet.account" = "Konto";
-"pagosRecurrentes.sheet.chooseAccount" = "Konto wählen";
-"pagosRecurrentes.sheet.category" = "Kategorie";
-"pagosRecurrentes.sheet.notify" = "Erinnern";
-"pagosRecurrentes.sheet.variable" = "Der Betrag ändert sich von Abbuchung zu Abbuchung: Wir nehmen den letzten.";
 "pagosRecurrentes.sheet.create" = "Geplante Zahlung erstellen";
 "pagosRecurrentes.sheet.notFixed" = "Nicht fest";
 "pagosRecurrentes.sheet.notNow" = "Jetzt nicht";
-"pagosRecurrentes.notify.none" = "Nicht erinnern";
-"pagosRecurrentes.notify.sameDay" = "Am selben Tag";
-"pagosRecurrentes.notify.oneDay" = "1 Tag vorher";
-"pagosRecurrentes.notify.threeDays" = "3 Tage vorher";
-"pagosRecurrentes.notify.oneWeek" = "1 Woche vorher";
 "pagosRecurrentes.created.notice" = "%1$@ ist jetzt eine geplante Zahlung. Wir erinnern dich am %2$@.";
 "pagosRecurrentes.created.noticeNoReminder" = "%@ ist jetzt eine geplante Zahlung.";
 "pagosRecurrentes.created.view" = "Ansehen";
@@ -9923,6 +9906,7 @@
 "pagosRecurrentes.settings.done" = "Fertig";
 "pagosRecurrentes.footer.link" = "Wiederkehrende Zahlungen";
 "pagosRecurrentes.footer.off" = "Aus";
+"pagosRecurrentes.list.footer" = "Tippe auf eine, um sie zu planen, oder wische sie zur Seite, um sie zu verwerfen.";
 
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Als wiederkehrend anlegen";
