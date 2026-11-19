@@ -49,9 +49,15 @@ struct DevSeedDrafts {
             to: Calendar.current.startOfDay(for: Date.now).addingTimeInterval(12 * 3600)
         ) ?? Date.now
 
+        // Los dos importes llevan céntimos a propósito. El generador de la semilla pone todo gasto en soles ENTEROS
+        // (`DevSeedTransactions`, `.rounded()`), en la misma cuenta: con «Taxi aeropuerto» a −18,00, el día que salía un
+        // transporte de −18 en hoy−3 el borrador tenía gemelo («Posible duplicado», `InboxDuplicateCheck`: mismo día,
+        // importe y cuenta) y caían los cuatro XCUITest que lo guardan (nocturna del 18-nov, 3 de 3). Con céntimos no
+        // puede igualar nada que genere la semilla; el gemelo que un test SÍ quiere lo siembra
+        // `-uitest-inbox-duplicate-draft`.
         let defs: [(note: String, amount: Double, date: Date)] = [
             (draftNoteA, -42.50, Date.now),
-            (draftNoteB, -18.00, pastDate),
+            (draftNoteB, -18.40, pastDate),
         ]
 
         for def in defs {
