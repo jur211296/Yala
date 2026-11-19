@@ -106,3 +106,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Teclear en una hoja con XcodeBuildMCP](reference_teclear_en_una_hoja_con_xcodebuildmcp.md) — type_text no escribe; tap + key_press HID sí; luego resetea HardwareKeyboardLastSeen.
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
 - [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; tap de MCP desplazado; en Pagos con AX5 el deeplink no aterriza: pestaña por coordenada + chip por id.
+- [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.
