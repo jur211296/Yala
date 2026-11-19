@@ -2831,9 +2831,9 @@
         "F-SET-04"
       ],
       "classification": "agentic",
-      "coverage": "device-qa | 2026-10-25 (lote 12.3, cards lbcr · 1c9w · elwl): tres tokens de color por tema —`accent` (relleno), `accentText` (texto e iconos: #818CF8 en los índigo oscuros, #FF4DA6 en Rosa) y `onAccent` (encima del relleno: negro en Teal, Rosa y Minimalista)— y `Color.incomeAmount` adaptativo (#00C2CB en oscuro). unit:YalaTests/ThemeTokenContrastTests mide AA (WCAG) en los diez temas; capturas antes/después de los ocho temas en el PR del lote.",
+      "coverage": "device-qa | 2026-10-25 (lote 12.3, cards lbcr · 1c9w · elwl): tres tokens de color por tema —`accent` (relleno), `accentText` (texto e iconos: #818CF8 en los índigo oscuros, #FF4DA6 en Rosa) y `onAccent` (encima del relleno: negro en Teal, Rosa y Minimalista)— y `Color.incomeAmount` adaptativo (#00C2CB en oscuro). unit:YalaTests/ThemeTokenContrastTests mide AA (WCAG) en los diez temas; capturas antes/después de los ocho temas en el PR del lote. · 2026-11-19 (contraste en modo claro): el Claro pasa a fondo gris neutro #F4F4F6 (#EAEAEE con «Aumentar contraste»), `accentText` #5B5EE4 y `.thCard` con contorno dentro del relleno (`ThemeSurface` + `YalaTheme.surfaceEdge`, nil en los oscuros). unit:YalaTests/ContrasteModoClaro/ContrasteModoClaroTests; capturas antes/después en claro y oscuro (iPhone 17 Pro, SE, iPad Pro 13) e iPhone 14 en el PR.",
       "owner": "",
-      "lastVerified": "2026-10-31"
+      "lastVerified": "2026-11-19"
     },
     {
       "area": "transaction-success-view",

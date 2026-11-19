@@ -22,9 +22,11 @@ struct PanelBackgroundView: View {
                     endPoint: .bottom
                 )
             } else if theme.hasGradient {
+                // Arriba, el fondo del tema (el gris claro neutro desde el 19-nov-2026, para que las tarjetas blancas
+                // se despeguen); abajo, el tinte índigo de siempre.
                 LinearGradient(
                     colors: [
-                        Color.financeBackgroundTop,
+                        theme.background,
                         Color.financeBackgroundBottom,
                     ],
                     startPoint: .top,

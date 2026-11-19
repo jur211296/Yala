@@ -386,7 +386,6 @@ extension Color {
     static let financeOrange = Color(red: 1.00, green: 0.58, blue: 0.30)
 
     // Estos se deprecarian a favor de yalaBackground, pero los mantenemos por compatibilidad inmediata
-    static let financeBackgroundTop = Color(red: 0.99, green: 0.99, blue: 1.00)
     static let financeBackgroundBottom = electricIndigo.opacity(0.1)
 
     // MARK: - Semantic Aliases
