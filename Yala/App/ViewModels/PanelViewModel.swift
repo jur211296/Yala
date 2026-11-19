@@ -276,7 +276,7 @@ final class PanelViewModel {
 
     /// Un recálculo pedido que se canceló sin correr (salir del Panel en su espera): la próxima vuelta lo hace.
     @ObservationIgnored
-    private var hasInterruptedWork = false
+    private(set) var hasInterruptedWork = false
 
     /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
     /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
@@ -2891,7 +2891,9 @@ final class PanelViewModel {
 
     /// Cancel any pending recalculation
     func cancelRecalculation() {
-        if recalculateTask != nil { hasInterruptedWork = true }
+        if recalculateTask != nil || heroSliceTask != nil { hasInterruptedWork = true }
+        heroSliceTask?.cancel()
+        heroSliceTask = nil
         recalculateTask?.cancel()
         recalculateTask = nil
     }
@@ -3465,7 +3467,7 @@ final class PanelViewModel {
         // honra el toggle "incluir gastos de grupo en stats" aquí: los buckets del Hero son
         // ingreso/gasto (NO saldo). Toggle ON (default) = identidad; OFF = excluye bridgeados.
         let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
-        let heroTransactions = transactions.filter { tx in
+        let includesInHero: (TransactionItem) -> Bool = { tx in
             BridgedTransactionFilter.shouldInclude(
                 splitExpenseID: tx.splitExpenseID,
                 splitSettlementID: tx.splitSettlementID,
@@ -3473,8 +3475,7 @@ final class PanelViewModel {
             )
         }
 
-        let buckets = HeroBucketsCalculator.calculate(
-            transactions: heroTransactions,
+        var accumulator = HeroBucketsCalculator.Accumulator(
             monthInterval: monthInterval,
             prevInterval: prevInterval,
             periodInterval: periodInterval,
@@ -3484,7 +3485,92 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             converter: currencyConverter
         )
+        let totalMonthlyBudget = budgets
+            .filter { $0.periodType == "monthly" }
+            .reduce(0.0) { $0 + $1.limitAmount }
 
+        // Sentry YALA-IOS-N (2026-11-18): la pasada recorre el historial entero leyendo cada `@Model`, y con un historial
+        // grande dejaba la app sin responder. Un cálculo nuevo releva al que esté a medias.
+        heroSliceTask?.cancel()
+        heroSliceTask = nil
+        let source = transactions
+        let size = heroSliceSize
+        guard source.count > size else {
+            #if DEBUG
+            lastHeroSlices = 1
+            #endif
+            accumulator.add(source.lazy.filter(includesInHero))
+            publishHero(accumulator.buckets, periodPrevInterval: periodPrevInterval, totalMonthlyBudget: totalMonthlyBudget)
+            return
+        }
+        // Por tramos, cediendo el hilo entre uno y otro, como la lectura de los movimientos (YALA-IOS-K). Las cifras son las
+        // mismas: cada movimiento suma solo en lo suyo (`HeroBucketsCalculator.Accumulator`). Lo que se borró mientras se
+        // esperaba se salta: leer un `@Model` borrado aborta en el iPhone (card f8rj).
+        // Se lee al copiar los movimientos, no al arrancar la tarea: un aviso que llegue entre medias tiene que verse.
+        let remoteChangesAtStart = StoreRemoteChangeCounter.shared.count
+        heroSliceTask = Task { @MainActor [weak self] in
+            var accumulator = accumulator
+            var start = source.startIndex
+            var slices = 0
+            while start < source.endIndex {
+                // Cancelada: quien canceló (un cálculo nuevo, salir del Panel) ya soltó la tarea.
+                guard !Task.isCancelled, let self else { return }
+                guard !self.boundStore.isDetached else {
+                    self.heroSliceTask = nil
+                    return
+                }
+                // El espejo de iCloud fundió cambios mientras se esperaba (no pasa por `ModelContext.didSave`): pudo
+                // borrar algo de lo que queda por leer. Se recarga y el hero sale de la vuelta siguiente.
+                guard StoreRemoteChangeCounter.shared.count == remoteChangesAtStart else {
+                    #if DEBUG
+                    self.debugHeroCutsByRemoteChange += 1
+                    #endif
+                    self.heroSliceTask = nil
+                    self.scheduleRecalculation(reload: true)
+                    return
+                }
+                let end = min(start + size, source.endIndex)
+                let slice = source[start..<end].lazy.filter { !$0.isDeleted && $0.modelContext != nil }
+                accumulator.add(slice.filter(includesInHero))
+                slices += 1
+                start = end
+                guard start < source.endIndex else { break }
+                // Un milisegundo y no `Task.yield()`: lo que hace falta es que el run loop atienda los toques.
+                do { try await Task.sleep(for: .milliseconds(1)) } catch { return }
+            }
+            guard !Task.isCancelled, let self else { return }
+            self.heroSliceTask = nil
+            guard !self.boundStore.isDetached else { return }
+            #if DEBUG
+            self.lastHeroSlices = slices
+            #endif
+            self.publishHero(accumulator.buckets, periodPrevInterval: periodPrevInterval,
+                             totalMonthlyBudget: totalMonthlyBudget)
+        }
+    }
+
+    /// Movimientos por tramo del hero. Hasta este número, la pasada es de una vez, como siempre. Los tests lo cambian
+    /// para comparar la pasada por tramos con la de una vez sobre las mismas filas.
+    @ObservationIgnored var heroSliceSize = 1_000
+
+    /// El hero a medias, si el historial pasa de un tramo (`calculateHeroWidget`).
+    @ObservationIgnored private var heroSliceTask: Task<Void, Never>?
+
+    #if DEBUG
+    /// Tramos de la última pasada completa del hero. Testigo de `CuelguesHeroWidget`; sin uso en la app.
+    @ObservationIgnored private(set) var lastHeroSlices = 0
+    /// Veces que un aviso del espejo de iCloud cortó el hero a medias. Solo para los tests.
+    @ObservationIgnored private(set) var debugHeroCutsByRemoteChange = 0
+    /// `true` mientras el hero se calcula por tramos. Solo para los tests.
+    var isHeroCalculating: Bool { heroSliceTask != nil }
+    #endif
+
+    /// Lo que el hero pinta, a partir de sus cifras.
+    private func publishHero(
+        _ buckets: HeroBucketsCalculator.Buckets,
+        periodPrevInterval: DateInterval?,
+        totalMonthlyBudget: Double
+    ) {
         var newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
         newPeriod.periodPrevExpense = periodPrevInterval == nil ? nil : buckets.periodPrevExpense
         newPeriod.incomeApproximate = buckets.periodIncomeApproximate
@@ -3492,10 +3578,6 @@ final class PanelViewModel {
         newPeriod.amountsAreApproximate = buckets.periodNetApproximate
         newPeriod.periodHadMovements = buckets.periodHasAnyTx
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
-
-        let totalMonthlyBudget = budgets
-            .filter { $0.periodType == "monthly" }
-            .reduce(0.0) { $0 + $1.limitAmount }
 
         let newData = HeroMonthCalculator.calculate(
             monthIncome: buckets.monthIncome,
