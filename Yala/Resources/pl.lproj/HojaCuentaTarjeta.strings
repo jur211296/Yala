@@ -1,0 +1,12 @@
+/*
+  HojaCuentaTarjeta.strings
+  Yala
+
+  La hoja de una cuenta del Panel con la tarjeta personalizada arriba (pedido de Jürgen del 17-nov-2026). Tabla propia,
+  leída con el idioma de la app (`L10n.HojaCuentaTarjeta`).
+*/
+
+"hojaCuenta.nextStatement" = "Następne zestawienie: %@";
+"hojaCuenta.noDates.title" = "Dodaj dzień zestawienia i płatności";
+"hojaCuenta.noDates.detail" = "Yala powie ci, ile zapłacić i do kiedy.";
+"hojaCuenta.noDates.action" = "Dodaj daty";

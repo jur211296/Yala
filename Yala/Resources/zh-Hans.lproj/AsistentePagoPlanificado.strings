@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "放弃这笔付款？";
+"asistentePago.create" = "创建付款";
+"asistentePago.createShort" = "创建";
+"asistentePago.name.question" = "怎么称呼它？";
+"asistentePago.name.detail" = "它会以这个名字显示在列表和提醒中。";
+"asistentePago.amount.question" = "每次付多少？";
+"asistentePago.amount.detail" = "如果每次金额不同，请填写平常的金额并打开“每次都不一样”。";
+"asistentePago.frequency.question" = "多久付一次？";
+"asistentePago.frequency.detail" = "到了付款日，Yala 会把它放进你的收件箱，等你确认。";
+"asistentePago.frequency.monthlyHint" = "每月同一天：房租、电费、话费。";
+"asistentePago.frequency.weeklyHint" = "每周同一天。";
+"asistentePago.frequency.yearlyHint" = "每年一个日期：保险、会员、域名。";
+"asistentePago.frequency.onceHint" = "只付一次，在指定日期。";
+"asistentePago.day.question.monthly" = "每月几号？";
+"asistentePago.day.question.weekly" = "每周星期几？";
+"asistentePago.day.question.yearly" = "每年哪一天？";
+"asistentePago.day.question.once" = "哪天付款？";
+"asistentePago.day.detail" = "随时可以修改。";
+"asistentePago.day.other" = "其他日期";
+"asistentePago.day.ofMonth" = "%d 号";
+"asistentePago.summary.question" = "就这样创建吗？";
+"asistentePago.summary.detail" = "轻点某个回答即可更改。";
+"asistentePago.summary.kind" = "类型";
+"asistentePago.summary.name" = "名称";
+"asistentePago.summary.amount" = "金额";
+"asistentePago.summary.frequency" = "重复";
+"asistentePago.summary.when" = "何时";
+"asistentePago.summary.reminder" = "提醒";
+"asistentePago.reminder.none" = "不提醒";

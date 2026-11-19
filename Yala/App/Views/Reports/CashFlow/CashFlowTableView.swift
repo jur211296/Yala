@@ -97,16 +97,6 @@ struct CashFlowTableView: View {
             }
             viewModel.planJustCreated = false
         }
-        .sheet(isPresented: $viewModel.showLineConfig, onDismiss: { recalculate() }) {
-            if let line = viewModel.selectedLine {
-                CashFlowLineConfigSheet(
-                    viewModel: viewModel,
-                    line: line,
-                    currencyCode: currencyCode,
-                    transactions: transactions
-                )
-            }
-        }
         .sheet(isPresented: $viewModel.showOthersBreakdown, onDismiss: { recalculate() }) {
             CashFlowOthersSheet(
                 viewModel: viewModel,
@@ -127,28 +117,6 @@ struct CashFlowTableView: View {
                 transactions: transactions
             )
         }
-        .sheet(isPresented: $viewModel.showEditStartingBalance, onDismiss: { recalculate() }) {
-            // UX 2.2 · L18-10: la misma hoja que «Cambiar el monto» de crear el plan, con la divisa y «Usar este monto».
-            CashFlowStartingBalanceSheet(
-                title: L10n.CashFlowPlan.editStartingBalance,
-                initialAmount: viewModel.plan?.startingBalance ?? 0,
-                initialDate: viewModel.plan?.startingBalanceDate,
-                todayBalance: startingBalanceToday,
-                currencyCode: currencyCode,
-                showsDate: true
-            ) { amount, date in
-                viewModel.updateStartingBalance(amount, date: date)
-            }
-        }
-    }
-
-    /// Lo de hoy en las cuentas, para «Usar este monto». `nil` sin cuentas que sumen.
-    private var startingBalanceToday: CashFlowSetupLogic.TodayBalance? {
-        let balance = CashFlowSetupLogic.todayBalance(
-            accounts: accounts, transactions: transactions, currencyCode: currencyCode,
-            includeGroups: appPreferences.includeGroupsInPanelTotal
-        )
-        return balance.accountCount > 0 ? balance : nil
     }
 
     // MARK: - Navigation

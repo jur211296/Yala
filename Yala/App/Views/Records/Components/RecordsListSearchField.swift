@@ -11,7 +11,7 @@
 //  pestaña ese cajón reserva su alto al volver y lo pliega, y el contenido salta (`swiftui-ds.md`,
 //  `GroupsSearchDrawerWiringTests`). Por eso vive dentro del scroll, encima de la cabecera, y se enseña al tirar.
 //
-//  Lo lleva solo Registros: `RecordsTabView` lo monta también Estadísticas › Registros, y ahí el entorno no lo ofrece.
+//  Lo ofrece `RecordsSharedList` (`Records/Compartida/`), así que sale en Registros y en Estadísticas › Registros (17-nov).
 //
 
 import SwiftUI
@@ -23,7 +23,7 @@ private struct OffersRecordsListSearchKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Registros (`RecordsStandaloneView`) ofrece el campo; Estadísticas › Registros no.
+    /// Lo pone `RecordsSharedList`: el campo sale en Registros y en Estadísticas › Registros.
     var offersRecordsListSearch: Bool {
         get { self[OffersRecordsListSearchKey.self] }
         set { self[OffersRecordsListSearchKey.self] = newValue }
@@ -96,7 +96,8 @@ private struct RecordsListSearchContainerModifier: ViewModifier {
 
 // MARK: - El campo
 
-private struct RecordsListSearchField: View {
+/// También lo usa, siempre a la vista, la hoja de «Reusar» de Pagos planificados (encargo del 17-nov).
+struct RecordsListSearchField: View {
     @Binding var text: String
     var onClear: () -> Void
 

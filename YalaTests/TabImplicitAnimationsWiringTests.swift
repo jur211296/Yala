@@ -62,6 +62,9 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: incomeCollapsed)"),
         ("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)"),
+        // S2 del replanteo del flujo de caja (18-nov-2026): plegar una categoría.
+        ("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
+         ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: collapsedGroups)"),
         ("Yala/App/Views/Reports/CashFlow/CashFlowMonthStrip.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: selectedMonthKey)"),
         // Card pjum (pasada de fluidez, 2026-10-31).
@@ -90,7 +93,7 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: trendsAI.phase == .loading)"),
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)"),
-        ("Yala/App/Views/Chat/ChatGreetingBubble.swift",
+        ("Yala/App/Views/Chat/Inicio/ChatInicioOptionsView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: isPreparing)"),
         // Card C2 (los `withAnimation` / `dsWithAnimation` que no animaban dentro de las pestañas, 2026-11-02).
         ("Yala/App/Views/Panel/HeroMonthView.swift",

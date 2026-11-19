@@ -1,0 +1,26 @@
+/*
+  YalaIAInicio.strings
+  Yala
+
+  El inicio de Yala IA: lo que dice la persona al tocar uno de los tres botones, lo que contesta Yala
+  (sin llamar a la IA) y las opciones que ofrece debajo. Tabla propia, leída con el idioma de la app
+  (`YalaIAInicioText`).
+*/
+
+"yalaIAInicio.log.userMessage" = "我要记一笔支出";
+"yalaIAInicio.log.reply" = "好的！你可以用这几种方式。点一个，按你的情况改一改再发送。";
+"yalaIAInicio.log.example1" = "午饭 25";
+"yalaIAInicio.log.example2" = "打车 18，咖啡 9";
+"yalaIAInicio.log.example3" = "昨天在超市刷卡付了 120";
+"yalaIAInicio.ask.userMessage" = "我想问问我的财务状况";
+"yalaIAInicio.ask.reply" = "好主意！用你自己的话问我：花了多少钱、钱都花在哪儿，或者预算执行得怎么样。先给你三个问题：";
+"yalaIAInicio.create.userMessage" = "我想创建点什么";
+"yalaIAInicio.create.reply" = "我们一步一步一起来。我只问缺少的信息，你确认之前什么都不会保存。你想创建什么？";
+"yalaIAInicio.create.account" = "一个账户";
+"yalaIAInicio.create.accountMessage" = "我想创建一个账户";
+"yalaIAInicio.create.category" = "一个分类";
+"yalaIAInicio.create.categoryMessage" = "我想创建一个分类";
+"yalaIAInicio.create.favorite" = "一个收藏";
+"yalaIAInicio.create.favoriteMessage" = "我想创建一个收藏";
+"yalaIAInicio.create.group" = "一个群组";
+"yalaIAInicio.create.groupMessage" = "我想创建一个群组";

@@ -149,8 +149,11 @@ final class TransactionsCrudUITests: XCTestCase {
             } else {
                 app.buttons["toolbar_save_button"].tap()
             }
+            // Se mira que la hoja se fue, no que la pastilla sea tocable: si la cuenta elegida es de otra divisa sale el
+            // tipo de cambio y la pastilla baja bajo la barra de «Guardar» (17-nov). La pastilla siguiente la desplaza
+            // a la vista `openSelectorFirstRow`.
             XCTAssertTrue(
-                app.buttons[selector.chip].waitForHittable(timeout: 5),
+                firstRow.waitForNonExistence(timeout: 5),
                 "El selector de \(selector.chip) no se cerró."
             )
         }

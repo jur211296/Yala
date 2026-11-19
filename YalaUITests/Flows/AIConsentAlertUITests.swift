@@ -39,8 +39,10 @@ final class AIConsentAlertUITests: XCTestCase {
             : alert.buttons.element(boundBy: alert.buttons.count - 1)
         cancel.tap()
 
+        // 15 s y no 5: es el primer caso de su tanda en la nocturna, y en el runner frío una sola consulta llegó a tardar
+        // 17 s (nocturna del 18-nov, 3 de 3; rescatado en las del 17). Con el aviso sin cerrarse sigue cayendo.
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
-        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed, "«Cancelar» no cerró el aviso.")
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 15), .completed, "«Cancelar» no cerró el aviso.")
         // Aceptar abre la hoja de voz a los 500 ms; con «Cancelar» no debe aparecer su botón de cerrar.
         XCTAssertFalse(app.buttons["voice_close"].waitForExistence(timeout: 2), "Cancelar abrió la grabación igualmente.")
     }

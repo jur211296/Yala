@@ -1,0 +1,15 @@
+Novedades desde la build 2.3 (3):
+• Flujo de caja replanteado: un solo cálculo del mes (lo real más lo que falta), el detalle del mes agrupado por categoría y una sola historia por mes.
+• Flujo de caja: el detalle de una línea muestra su límite arriba y todos sus registros; cambiar el límite pregunta primero a qué meses aplica.
+• Flujo de caja: crear el plan parte del saldo de tus cuentas, por subcategoría y con límites fijos.
+• Panel, Tendencias y el widget de Saldo proyectan el mes aunque no tengas un plan.
+• Perfil como tarjeta personalizable: avatar con símbolo, emoji, iniciales o foto.
+• Panel: la hoja de una cuenta abre con su tarjeta personalizada arriba.
+• Salud financiera: hoja más visual, con un toque a cada punto.
+• Nuevo presupuesto, nuevo pago planificado y nueva cuenta, paso a paso, con la opción «Usar formulario».
+• Pagos planificados: logos reales de comercios, botón «Reusar» y registros con los mismos filtros y buscador de Registros.
+• Yala IA: inicio limpio con tres botones; el resumen de Estadísticas dice a qué hora se escribió y tiene «Actualizar».
+• Estadísticas: Registros igual que la pestaña Registros, y una comparativa más simple con % de variación.
+• Hoja de foto: cabecera en una fila, descripción editable y se cierra al guardar.
+
+Qué probar: Flujo de caja de punta a punta (crear el plan, cambiar un límite, abrir el detalle de un mes y de una línea), el Panel y el widget de Saldo sin plan, tu Perfil y la hoja de una cuenta, y los nuevos pasos para crear presupuesto, pago planificado y cuenta. Si algo falla, envía una captura desde TestFlight.

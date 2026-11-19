@@ -17,8 +17,19 @@
 import SwiftData
 import SwiftUI
 
-struct RecordsQuickFilterBar<Trailing: View>: View {
-    @Bindable var viewModel: RecordsViewModel
+/// Lo que la barra lee y escribe. Registros le pasa su `RecordsViewModel` (filtros de la sesión); la hoja de «Reusar» de
+/// Pagos planificados, unos filtros propios que no tocan los de la sesión (encargo del 17-nov).
+protocol RecordsQuickFilterModel: AnyObject, Observable {
+    var selectedAccounts: Set<PersistentIdentifier> { get set }
+    var selectedCategories: Set<PersistentIdentifier> { get set }
+    var selectedSubcategories: Set<PersistentIdentifier> { get set }
+    var showFiltersSheet: Bool { get set }
+}
+
+extension RecordsViewModel: RecordsQuickFilterModel {}
+
+struct RecordsQuickFilterBar<Model: RecordsQuickFilterModel, Trailing: View>: View {
+    @Bindable var viewModel: Model
     let accounts: [Account]
     let categories: [Category]
     let subcategories: [Subcategory]

@@ -48,8 +48,12 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
 
     func test_topics_areGroupedByArea_andALogExampleLandsInTheBox() {
         let app = openChat()
+        // Inicio del 17-nov: las preguntas de hoy salen al tocar «Pregunta por tus finanzas».
+        let ask = app.buttons["chat_start_ask"]
+        XCTAssertTrue(ask.waitForExistence(timeout: 10), "El saludo no trae su botón de preguntar.")
+        ask.tap()
         let suggestions = app.buttons.matching(identifier: "chat_suggestion")
-        XCTAssertTrue(suggestions.firstMatch.waitForExistence(timeout: 10), "El saludo no trae sugerencias.")
+        XCTAssertTrue(suggestions.firstMatch.waitForExistence(timeout: 10), "Preguntar no trae sugerencias.")
         let greeting = Set(suggestions.allElementsBoundByIndex.map(\.label))
         app.buttons["chat_topics"].tap()
 
@@ -69,10 +73,9 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
         let input = app.textFields["chat_input"]
         XCTAssertTrue(spending.waitForNonExistence(timeout: 10), "Temas no se cerró.")
         XCTAssertEqual(input.value as? String, text, "El ejemplo de Apuntar tiene que quedar escrito en la caja, sin enviarse.")
-        // Sin nada enviado el hilo sigue vacío y el saludo sigue ahí: un envío lo habría sustituido por el mensaje, aunque
-        // luego fallara por red y devolviera el texto a la caja.
-        XCTAssertTrue(app.descendants(matching: .any)["chat_log_expense"].exists, "El ejemplo se envió: el saludo ya no está.")
-        XCTAssertFalse(app.buttons["chat_new_conversation"].exists, "El ejemplo se envió: hay una conversación nueva.")
+        // Sin nada enviado las preguntas siguen bajo la respuesta: un envío habría añadido un mensaje y las habría
+        // retirado, aunque luego fallara por red y devolviera el texto a la caja.
+        XCTAssertTrue(suggestions.firstMatch.exists, "El ejemplo se envió: las preguntas de la respuesta ya no están.")
     }
 
     // MARK: - L14-7

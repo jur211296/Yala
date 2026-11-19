@@ -2,9 +2,10 @@
 //  FinancialScoreDetailSheet.swift
 //  Yala
 //
-//  Medium-detent sheet presented when the user taps any ring in the Panel 2.0
-//  "Salud Financiera" card. Hero ring + headline + explanation + optional
-//  navigation CTA (nil for the total — the user is already on the Panel).
+//  La hoja de la nota de salud. La nota TOTAL (tarjeta del Panel, «?» de Estadísticas) es visual y accionable desde
+//  el 18-nov-2026 (`SaludFinanciera/SaludFinancieraDetalleView`): alertas, presupuestos, pagos, racha y qué hacer para
+//  subirla, cada fila con su toque; abre grande. Las hojas de cada parte siguen igual: anillo, titular, explicación y
+//  el botón a su vista, a media altura.
 //
 //  Uses the app's canonical sheet chrome: NavigationStack + inline title +
 //  `YalaToolbarButton` in `.topBarLeading` for close. No `.presentationBackground`
@@ -46,8 +47,25 @@ struct FinancialScoreDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
 
-    @State private var selectedDetent: PresentationDetent = .medium
+    /// La nota total abre grande: enseña alertas, presupuestos, pagos y racha (18-nov-2026). Las partes, a media altura.
+    @State private var selectedDetent: PresentationDetent
+
+    init(
+        kind: FinancialScoreDetailKind,
+        score: Int?,
+        onPrimaryCTA: (() -> Void)? = nil,
+        breakdown: FinancialScore? = nil,
+        hasBudgets: Bool = false
+    ) {
+        self.kind = kind
+        self.score = score
+        self.onPrimaryCTA = onPrimaryCTA
+        self.breakdown = breakdown
+        self.hasBudgets = hasBudgets
+        _selectedDetent = State(initialValue: kind == .total && breakdown != nil ? .large : .medium)
+    }
 
     // A11Y-DT: hero ring and central number scale with Dynamic Type.
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 120
@@ -84,6 +102,56 @@ struct FinancialScoreDetailSheet: View {
     // truncate nor push the CTA out of sight; the CTA stays pinned below.
     @ViewBuilder
     private var content: some View {
+        if kind == .total, let breakdown {
+            // La nota total, visual y accionable (pedido de Jürgen del 17-nov-2026): `SaludFinancieraDetalleView`.
+            ScrollView {
+                SaludFinancieraDetalleView(score: breakdown, hasBudgets: hasBudgets, abrir: abrir)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.md)
+                    .padding(.bottom, DS.Spacing.xl)
+                    .readableColumn()
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        } else {
+            partContent
+        }
+    }
+
+    /// Cierra la hoja y, cuando ya bajó, lleva a lo tocado (como el botón de las partes: así la barra de pestañas no
+    /// salta a media transición).
+    private func abrir(_ destino: SaludFinancieraDetalleDestino) {
+        dismiss()
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+            } catch {
+                return
+            }
+            switch destino {
+            case .presupuesto(let id):
+                navigation.pendingBudgetID = id
+                navigation.navigateToBudgets()
+            case .presupuestos:
+                navigation.navigateToBudgets()
+            case .pago(let id):
+                navigation.pendingScheduledPaymentID = id
+                navigation.navigateToScheduledPayments()
+            case .pagos:
+                navigation.navigateToScheduledPayments()
+            case .cuenta(let id):
+                navigation.pendingAccountID = id
+                navigation.selectMainTab(.panel)
+            case .nuevoRegistro:
+                RouterEntryGate.shared.submit(.presentNewTransaction)
+            case .registros:
+                sessionState.navigateToRecordsStandalone()
+            }
+        }
+    }
+
+    /// Las hojas de cada parte (Presupuestos, Ritmo, Compromisos): sin cambios.
+    @ViewBuilder
+    private var partContent: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
@@ -95,9 +163,6 @@ struct FinancialScoreDetailSheet: View {
                         explanationBlock
                     }
 
-                    if kind == .total, let breakdown {
-                        breakdownBlock(breakdown)
-                    }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.lg)
@@ -176,107 +241,6 @@ struct FinancialScoreDetailSheet: View {
             return AnyShapeStyle(tint)
         }
         return AnyShapeStyle(FinancialScoreTint.color(for: score ?? 100))
-    }
-
-    // MARK: - De dónde sale la nota (UX 2.2 · L3-14)
-
-    /// Las tres partes con su peso y su nota, y una frase de qué mejorar. Antes la hoja decía que «pesan distinto» sin
-    /// decir cuánto, y Ritmo y Compromisos no se explicaban.
-    private func breakdownBlock(_ breakdown: FinancialScore) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            VStack(spacing: DS.Spacing.sm) {
-                partRow(
-                    title: L10n.Panel.Health.subScoreBudget,
-                    detail: L10n.Panel.Health.partBudget,
-                    weight: FinancialScoreCalculator.weightBudget,
-                    value: breakdown.budget
-                )
-                Divider()
-                partRow(
-                    title: L10n.Panel.Health.subScoreActivity,
-                    detail: L10n.Panel.Health.partActivity,
-                    weight: FinancialScoreCalculator.weightRhythm,
-                    value: breakdown.activity
-                )
-                Divider()
-                partRow(
-                    title: L10n.Panel.Health.subScoreBills,
-                    detail: L10n.Panel.Health.partBills,
-                    weight: FinancialScoreCalculator.weightCommitments,
-                    value: breakdown.bills
-                )
-            }
-            .padding(DS.Spacing.md)
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-
-            // Revisión 2.3, decisión 9 (PN-2): lo mismo que dice la tarjeta.
-            if let missing = FinancialScoreCopy.missingLine(for: breakdown) {
-                Text(missing)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("health_sheet_missing_parts")
-            }
-            if let unseen = FinancialScoreCopy.unseenLine(for: breakdown, isExpensesOnlyMode: sessionState.isExpensesOnlyMode) {
-                Text(unseen)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("health_sheet_unseen")
-            }
-
-            if let improvement = improvementLine(breakdown) {
-                Text(improvement)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("health_improvement_tip")
-            }
-
-            Text(L10n.Panel.Health.scaleNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityIdentifier("health_breakdown")
-    }
-
-    private func partRow(title: String, detail: String, weight: Double, value: Int?) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Panel.Health.partTitle(title, weight: Int((weight * 100).rounded())))
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                Text(detail)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: DS.Spacing.sm)
-            Text(value.map { "\($0)" } ?? L10n.Panel.Health.partNotCounting)
-                .font(value == nil ? DS.Typography.caption : DS.Typography.headline)
-                .monospacedDigit()
-                .foregroundStyle(value == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                .multilineTextAlignment(.trailing)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    /// Sin ninguna parte con nota no hay nada que decir: «lo que ya cuenta va bien» sería falso.
-    private func improvementLine(_ breakdown: FinancialScore) -> String? {
-        guard breakdown.budget != nil || breakdown.activity != nil || breakdown.bills != nil else { return nil }
-        switch FinancialScoreCalculator.weakestPart(of: breakdown) {
-        case .budget: return L10n.Panel.Health.improveBudget
-        case .activity: return L10n.Panel.Health.improveActivity
-        case .bills: return L10n.Panel.Health.improveBills
-        case .total, nil:
-            // Revisión 2.3, decisión 9 (PN-2): «Sigue así» debajo de una alerta es la misma contradicción que
-            // «¡Vas increíble!»; con alertas, la línea de lo que la nota no ve ya dice qué mirar.
-            return breakdown.alerts.hasAlerts(isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
-                ? nil
-                : L10n.Panel.Health.improveNothing
-        }
     }
 
     // MARK: - Derived copy

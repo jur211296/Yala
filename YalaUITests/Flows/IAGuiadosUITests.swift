@@ -157,9 +157,11 @@ final class IAGuiadosUITests: XCTestCase {
 
     // MARK: - Mejoras del 16-nov
 
-    /// El saludo dice que crea conversando, y sus atajos abren el guiado sin escribir nada.
+    /// El saludo dice que crea conversando, y sus atajos abren el guiado sin escribir nada. Desde el inicio del 17-nov,
+    /// los atajos salen al tocar «Crea conversando».
     func test_greeting_shortcuts_openTheGuidedFlows() {
         let app = openChat()
+        tap("chat_start_create", in: app)
         let budget = app.buttons["chat_create_budget"]
         XCTAssertTrue(budget.waitForExistence(timeout: 10), "El saludo trae el atajo «Un presupuesto».")
         XCTAssertTrue(app.buttons["chat_create_payment"].exists, "Y el de «Un pago planificado».")
@@ -236,7 +238,7 @@ final class IAGuiadosUITests: XCTestCase {
 
     private func captureWalkthrough(theme: String, suffix: String) {
         let app = openChat(extra: ["-userTheme", theme])
-        XCTAssertTrue(app.buttons["chat_create_budget"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["chat_start_create"].waitForExistence(timeout: 10))
         shot(app, "tema-\(suffix)-1-saludo")
         send("Quiero un presupuesto de trescientos al mes para alimentación", in: app)
         let chip = app.buttons.matching(identifier: "chat_guided_subcategory_chip").firstMatch

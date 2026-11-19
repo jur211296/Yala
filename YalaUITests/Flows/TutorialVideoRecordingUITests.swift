@@ -119,6 +119,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         app.openProfile()
         tap(app.buttons["profile_accounts"], "Cuentas")
         tap(app.buttons["accounts_add_button"], "el +")
+        app.pasarAlFormularioDeNuevaCuenta()
         pause(1.2)
         mark("start")
         type(app.textFields["account_name_field"], "Ahorro viaje")

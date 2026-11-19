@@ -1,0 +1,16 @@
+/*
+  ComparativaSimple.strings
+  Yala
+
+  La Comparativa de Reportes más simple (pedido del 17-nov): lo que lee VoiceOver de la marca de cambio de cada fila
+  y de «Te quedó». Tabla propia, leída con el idioma de la app (`ComparativaSimpleText`).
+*/
+
+"comparativaSimple.versus" = "compared with %@";
+"comparativaSimple.versusRange" = "compared with %@";
+"comparativaSimple.a11y.up" = "up %1$@ %2$@";
+"comparativaSimple.a11y.down" = "down %1$@ %2$@";
+"comparativaSimple.a11y.same" = "no change %@";
+"comparativaSimple.a11y.new" = "new, nothing before";
+"comparativaSimple.a11y.none" = "nothing in either period";
+"comparativaSimple.a11y.before" = "before, %@";

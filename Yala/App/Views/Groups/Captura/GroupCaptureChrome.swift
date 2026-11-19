@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Las piezas comunes de Voz y Foto de Grupos, copiadas al píxel de las hojas de personal (`VoiceRecordingView`,
-//  `ImageSelectionView`): la cabecera con la X de cristal, los dos botones en cápsula, la pantalla de fallo con su disco y
+//  `ImageSelectionView`): la cabecera con la X del sistema, los dos botones en cápsula, la pantalla de fallo con su disco y
 //  la foto que se está leyendo. En personal son privadas de cada hoja y el encargo no deja cambiarlas: si un día pasan a
 //  ser compartidas, Grupos las usa en lugar de estas.
 //
@@ -70,18 +70,33 @@ struct GroupCaptureSecondaryButton: View {
 
 // MARK: - Cabecera
 
-/// La X de cristal arriba a la derecha, solo cuando no hay un Cancelar abajo (como personal).
+/// La X del sistema arriba a la derecha (`EntrySheetCloseButton`), solo cuando no hay un Cancelar abajo, como personal. Con
+/// título, va en la misma fila que la X, sin hueco arriba (encargo «X nativa en la hoja de foto», 2026-11-17).
 struct GroupCaptureHeader: View {
     let showsClose: Bool
     let closeIdentifier: String
+    var title: String?
+    var titleIdentifier: String?
     let onClose: () -> Void
 
     var body: some View {
-        HStack {
-            Spacer()
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
+            if let title {
+                Text(title)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier(titleIdentifier ?? "")
+                    // Un título, una vista: al cambiar de fase no se funde con el anterior.
+                    .id(title)
+                    .transition(.asymmetric(insertion: .opacity, removal: .identity))
+            } else {
+                Spacer()
+            }
             if showsClose {
-                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close, action: onClose)
-                    .buttonStyle(.glass)
+                EntrySheetCloseButton(action: onClose)
                     .accessibilityIdentifier(closeIdentifier)
             }
         }

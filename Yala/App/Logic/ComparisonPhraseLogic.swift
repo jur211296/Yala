@@ -96,3 +96,140 @@ enum ComparisonPhraseLogic {
         return L10n.UXL11.comparedWith(rangeText(interval, now: now, calendar: calendar, locale: locale))
     }
 }
+
+// MARK: - La marca de cambio de la Comparativa
+
+/// Cómo se pinta el cambio de una fila de la Comparativa de Reportes (pedido de Jürgen del 17-nov: «más simple y visual»).
+/// Una flecha y el porcentaje, en verde si el cambio te favorece y en rosa si no; en gris si no cambió casi nada.
+///
+/// Lógica pura: la vista solo elige color y texto a partir de esto.
+enum ComparisonChange: Equatable {
+    /// Subió o bajó al menos un 1 %. `isGood`: más ingresos o menos gasto.
+    case up(percent: Double, isGood: Bool)
+    case down(percent: Double, isGood: Bool)
+    /// Se movió, pero menos de un 1 %: flecha sin bueno ni malo.
+    case minorUp(percent: Double)
+    case minorDown(percent: Double)
+    /// Redondea a 0 %: «igual».
+    case same
+    /// No hubo nada en el período anterior y ahora sí: «nuevo», nunca un % infinito.
+    case new
+    /// Ni antes ni ahora: «—».
+    case empty
+
+    /// Por debajo de este cambio (en %) la flecha va en gris.
+    static let minorThreshold: Double = 1
+    /// Por debajo de esto el porcentaje redondea a 0: «igual».
+    static let sameThreshold: Double = 0.05
+
+    /// - Parameters:
+    ///   - variation: el cambio en % (`PivotNode.variation`): positivo si el monto creció, también en gastos (se calcula
+    ///     sobre los valores absolutos).
+    ///   - hasPrevious: si hubo movimientos en el período anterior.
+    ///   - currentAmount: el monto actual, para separar «nuevo» de «—».
+    ///   - isExpense: un gasto que sube es malo; un ingreso o lo que te quedó que sube es bueno.
+    static func make(variation: Double?, hasPrevious: Bool, currentAmount: Double, isExpense: Bool) -> ComparisonChange {
+        guard hasPrevious, let variation, variation.isFinite else {
+            return currentAmount == 0 ? .empty : .new
+        }
+        let magnitude = abs(variation)
+        if magnitude < sameThreshold { return .same }
+        if magnitude < minorThreshold {
+            return variation > 0 ? .minorUp(percent: magnitude) : .minorDown(percent: magnitude)
+        }
+        let isGood = isExpense ? variation < 0 : variation > 0
+        return variation > 0 ? .up(percent: magnitude, isGood: isGood) : .down(percent: magnitude, isGood: isGood)
+    }
+
+    /// El porcentaje sin signo («27 %», «4,5 %»): la dirección la dice la flecha. Sin decimales desde el 10 %; más de
+    /// 999 % se escribe «> 999 %».
+    static func percentText(_ percent: Double, locale: Locale = AppLocale.current) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .percent
+        formatter.locale = locale
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = percent < 10 ? 1 : 0
+        if percent > 999 {
+            let capped = formatter.string(from: NSNumber(value: 9.99)) ?? "999%"
+            return "> \(capped)"
+        }
+        return formatter.string(from: NSNumber(value: percent / 100)) ?? "\(Int(percent.rounded()))%"
+    }
+
+    /// El texto visible de la marca, sin la flecha.
+    func text(locale: Locale = AppLocale.current) -> String {
+        switch self {
+        case .up(let p, _), .down(let p, _), .minorUp(let p), .minorDown(let p):
+            return Self.percentText(p, locale: locale)
+        case .same: return L10n.UXL18.changeSame
+        case .new: return L10n.UXL18.changeNew
+        case .empty: return "—"
+        }
+    }
+
+    /// La flecha (símbolo SF), o `nil` si la marca es una palabra.
+    var arrowSymbol: String? {
+        switch self {
+        case .up, .minorUp: return "arrow.up"
+        case .down, .minorDown: return "arrow.down"
+        case .same, .new, .empty: return nil
+        }
+    }
+
+    /// `true` bueno, `false` malo, `nil` neutro (sin color).
+    var isGood: Bool? {
+        switch self {
+        case .up(_, let good), .down(_, let good): return good
+        default: return nil
+        }
+    }
+
+    /// Lo que lee VoiceOver tras el monto: «subió 27 % frente a octubre». `versus` ya trae la preposición
+    /// (`ComparativaSimpleText.versus`).
+    func accessibilityText(versus: String, locale: Locale = AppLocale.current) -> String {
+        switch self {
+        case .up(let p, _), .minorUp(let p):
+            return ComparativaSimpleText.up(Self.percentText(p, locale: locale), versus)
+        case .down(let p, _), .minorDown(let p):
+            return ComparativaSimpleText.down(Self.percentText(p, locale: locale), versus)
+        case .same: return ComparativaSimpleText.same(versus)
+        case .new: return ComparativaSimpleText.new
+        case .empty: return ComparativaSimpleText.nothing
+        }
+    }
+}
+
+// MARK: - Textos
+
+/// Los textos de la Comparativa simple, en su tabla propia (`ComparativaSimple.strings`), con la misma cadena de idiomas
+/// que `ls()`: el idioma elegido dentro de Yala, su variante y su idioma padre.
+enum ComparativaSimpleText {
+    static let table = "ComparativaSimple"
+
+    static func string(_ key: String, resolution: LocaleResolution = LanguageManager.resolved) -> String {
+        let sentinel = "__YALA_MISSING__"
+        let fullKey = "comparativaSimple.\(key)"
+        var value = resolution.bundle.localizedString(forKey: fullKey, value: sentinel, table: table)
+        if value == sentinel, let parent = resolution.parentBundle {
+            value = parent.localizedString(forKey: fullKey, value: sentinel, table: table)
+        }
+        if value == sentinel {
+            value = Bundle.main.localizedString(forKey: fullKey, value: sentinel, table: table)
+        }
+        return value == sentinel ? fullKey : value
+    }
+
+    /// «frente a octubre» / «frente al 1–17 de octubre» (un tramo de días lleva artículo).
+    static func versus(_ period: String, isDayRange: Bool) -> String {
+        String(format: string(isDayRange ? "versusRange" : "versus"), period)
+    }
+    static func up(_ percent: String, _ versus: String) -> String { String(format: string("a11y.up"), percent, versus) }
+    static func down(_ percent: String, _ versus: String) -> String { String(format: string("a11y.down"), percent, versus) }
+    static func same(_ versus: String) -> String { String(format: string("a11y.same"), versus) }
+    /// «nuevo, antes no había nada»: sin período, que no aporta nada a VoiceOver.
+    static var new: String { string("a11y.new") }
+    /// Ni antes ni ahora.
+    static var nothing: String { string("a11y.none") }
+    /// «antes, S/ 9,976».
+    static func before(_ amount: String) -> String { String(format: string("a11y.before"), amount) }
+}

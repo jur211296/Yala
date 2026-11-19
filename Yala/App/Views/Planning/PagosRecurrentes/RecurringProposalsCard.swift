@@ -218,8 +218,8 @@ struct RecurringProposalRow: View {
 
     @ViewBuilder
     private var badge: some View {
-        if let brandID = item.proposal.brandID, let brand = SubscriptionBrandCatalog.brand(id: brandID) {
-            SubscriptionBrandBadge(brand: brand, isDecorative: true)
+        if let logo = PaymentLogoResolver.resolve(storedID: item.proposal.brandID, name: item.proposal.displayName) {
+            SubscriptionBrandBadge(logo: logo, isDecorative: true)
         } else {
             ZStack {
                 Circle().fill(theme.accent)

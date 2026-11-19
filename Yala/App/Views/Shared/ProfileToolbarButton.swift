@@ -22,11 +22,6 @@ struct ProfileToolbarButton: View {
         FeatureGateService.shared.isProUser
     }
 
-    /// The icon to display (custom or default)
-    private var displayIcon: String {
-        appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon
-    }
-
     // MARK: - Properties
 
     let action: () -> Void
@@ -61,29 +56,17 @@ struct ProfileToolbarButton: View {
 
     // MARK: - Avatar
 
+    /// El avatar elegido en «Detalles personales» (foto, símbolo, emoji o iniciales, y su color). Sin color elegido, el de
+    /// siempre: fondo blanco con tema de degradado o el fondo del tema, y el símbolo en el color de acento.
     private var avatar: some View {
-        Group {
-            // Ya decodificada y reducida (YALA-IOS-9/A): decodificarla aquí, en cada pestaña y cada dibujado, era 1 GB.
-            if let uiImage = profileStorage.image {
-                // User photo
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: size, height: size)
-            } else {
-                // Adaptive background with icon (custom or default)
-                // Light mode: white background / Dark mode: yalaBackground
-                // Icon: electricIndigo in both modes
-                (theme.hasGradient ? Color.white : theme.background)
-                    .frame(width: size, height: size)
-                    .overlay {
-                        Image(systemName: displayIcon)
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(theme.accentText)
-                    }
-            }
-        }
-        .clipShape(Circle())
+        // La foto ya llega decodificada y reducida (YALA-IOS-9/A): decodificarla aquí, en cada pestaña y cada dibujado, era 1 GB.
+        ProfileAvatarView(
+            appearance: .stored(appPreferences, photo: profileStorage.image),
+            size: size,
+            defaultFill: theme.hasGradient ? Color.white : theme.background,
+            defaultForeground: theme.accentText,
+            symbolFont: DS.Typography.bodyBold
+        )
         .overlay {
             Circle()
                 .strokeBorder(ringColor, lineWidth: ringWidth)

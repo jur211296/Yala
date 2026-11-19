@@ -31,6 +31,22 @@ final class InsightsViewModel {
     private(set) var aiError: AIInsightFailure?
     private(set) var aiActivated = false
 
+    /// Con qué cifras y a qué hora se escribió el texto que se ve (`aiInsights`). `nil` si no se sabe (la caché vieja
+    /// por número de registros): entonces no se marca nada.
+    private(set) var shownAISnapshot: StatsAIAutoRefreshLogic.Snapshot?
+    private(set) var shownAIWrittenAt: Date?
+    /// «Actualizar» de la marca tocado con el techo del día ya gastado: la marca lo dice en vez de llamar.
+    private(set) var staleRefreshBlockedByDailyCap = false
+
+    /// La hora en que se escribió el texto que se ve, si se escribió con cifras que ya no son las de ahora
+    /// («Escrito con tus datos de las HH:MM · Actualizar»). `nil` con las mismas cifras: sin marca.
+    var aiWrittenWithOlderDataAt: Date? {
+        guard aiInsights != nil else { return nil }
+        return StatsAIAutoRefreshLogic.writtenWithOlderData(
+            shown: shownAISnapshot, writtenAt: shownAIWrittenAt, current: currentAISnapshot()
+        )
+    }
+
     // MARK: - AI Generation Context (stored for on-demand button)
 
     private var lastPeriod: DetailPeriod?
@@ -230,7 +246,7 @@ final class InsightsViewModel {
 
     /// Called from the "Generate AI Insights" button. Uses stored context. `refresh` («Actualizar») pide uno nuevo aunque
     /// haya uno guardado para estos mismos datos.
-    func triggerAIGeneration(refresh: Bool = false) async {
+    func triggerAIGeneration(refresh: Bool = false, countsTowardDailyCap: Bool = false) async {
         guard let period = lastPeriod else { return }
         aiActivated = true
         await generateAIInsights(
@@ -243,8 +259,23 @@ final class InsightsViewModel {
             accounts: lastAccounts,
             categories: lastCategories,
             tags: lastTags,
-            refresh: refresh
+            refresh: refresh,
+            countsTowardDailyCap: countsTowardDailyCap
         )
+    }
+
+    /// «Actualizar» de la marca: escribe el texto otra vez con las cifras de ahora. Cuenta para el techo diario de la
+    /// página (`StatsAIAutoRefreshLogic.staleRefresh`); con el techo gastado no llama y la marca lo dice. Un fallo deja
+    /// el texto de antes con su marca y el motivo en `aiError`, que la marca enseña.
+    func refreshStaleAI(now: Date = .now) async {
+        guard aiWrittenWithOlderDataAt != nil, !isLoadingAI, let slot = currentAISlot() else { return }
+        let today = autoRefreshStore.today(page: .summary, slot: slot, now: now)
+        guard StatsAIAutoRefreshLogic.staleRefresh(today: today) == .allowed else {
+            staleRefreshBlockedByDailyCap = true
+            return
+        }
+        staleRefreshBlockedByDailyCap = false
+        await triggerAIGeneration(refresh: true, countsTowardDailyCap: true)
     }
 
     // MARK: - Resumen con IA automático en Pro (UX 2.2 · L11-7)
@@ -343,20 +374,36 @@ final class InsightsViewModel {
         isAwaitingAutoDecision = false
         guard canGenerateAIAutomatically else { return }
         if let fingerprint = currentAIFingerprint(), let saved = aiResultStore.response(for: fingerprint) {
-            show(saved)
+            show(saved, writtenWith: currentAISnapshot(), at: savedAtIfSameFingerprint(fingerprint))
         } else if let slot = currentAISlot(),
-                  let (_, saved) = autoRefreshStore.response(LLMInsightResponse.self, page: .summary, slot: slot) {
-            show(saved)
+                  let (entry, saved) = autoRefreshStore.response(LLMInsightResponse.self, page: .summary, slot: slot) {
+            // La última de la ranura, quizá con otras cifras: si lo son, la marca lo dice con su hora.
+            show(saved, writtenWith: entry.snapshot, at: entry.savedAt)
         } else {
             isAwaitingAutoDecision = transactionCountInView >= StatsAIAutoRefreshLogic.minimumTransactions
         }
     }
 
-    private func show(_ saved: LLMInsightResponse) {
+    private func show(_ saved: LLMInsightResponse, writtenWith snapshot: StatsAIAutoRefreshLogic.Snapshot?, at date: Date?) {
         aiInsights = saved
         aiError = nil
         isLoadingAI = false
         aiActivated = true
+        noteShown(writtenWith: snapshot, at: date)
+    }
+
+    private func noteShown(writtenWith snapshot: StatsAIAutoRefreshLogic.Snapshot?, at date: Date?) {
+        shownAISnapshot = snapshot
+        shownAIWrittenAt = date
+        staleRefreshBlockedByDailyCap = false
+    }
+
+    /// La hora de lo guardado por huella, que solo conoce la ranura si es la misma huella. Con las mismas cifras no se
+    /// enseña: sin ella, `nil`.
+    private func savedAtIfSameFingerprint(_ fingerprint: String) -> Date? {
+        guard let slot = currentAISlot(), let entry = autoRefreshStore.entry(page: .summary, slot: slot),
+              entry.fingerprint == fingerprint else { return nil }
+        return entry.savedAt
     }
 
     /// Al abrir Estadísticas, y tras cada recálculo: el resumen sale solo para Pro con la IA aceptada, una vez al día o
@@ -375,7 +422,7 @@ final class InsightsViewModel {
             if autoRefreshStore.entry(page: .summary, slot: slot)?.fingerprint != fingerprint {
                 saveToSlot(exact, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
             }
-            if !isLoadingAI { show(exact) }
+            if !isLoadingAI { show(exact, writtenWith: snapshot, at: savedAtIfSameFingerprint(fingerprint)) }
             isAwaitingAutoDecision = false
             return
         }
@@ -433,6 +480,7 @@ final class InsightsViewModel {
         isLoadingAI = false
         aiError = nil
         isAwaitingAutoDecision = false
+        noteShown(writtenWith: nil, at: nil)
     }
 
     // MARK: - AI Insights
@@ -452,7 +500,8 @@ final class InsightsViewModel {
         categories: [Category] = [],
         tags: [Tag] = [],
         refresh: Bool = false,
-        automatic: Bool = false
+        automatic: Bool = false,
+        countsTowardDailyCap: Bool = false
     ) async {
         guard let data = insightData else { return }
 
@@ -463,7 +512,7 @@ final class InsightsViewModel {
 
         guard isPro, hasConsent, isOnline else {
             // Lo automático no quita lo que hay a la vista: sin red, lo guardado se queda.
-            if !automatic { aiInsights = nil }
+            if !automatic { aiInsights = nil; noteShown(writtenWith: nil, at: nil) }
             return
         }
 
@@ -475,9 +524,11 @@ final class InsightsViewModel {
         let slot = currentAISlot()
         let snapshot = currentAISnapshot()
         if !refresh, let fingerprint, let saved = aiResultStore.response(for: fingerprint) {
+            let writtenAt = savedAtIfSameFingerprint(fingerprint)
             aiInsights = saved
             aiError = nil
             aiActivated = true
+            noteShown(writtenWith: snapshot, at: writtenAt)
             saveToSlot(saved, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
             return
         }
@@ -503,6 +554,8 @@ final class InsightsViewModel {
         if !refresh, !automatic, let cached = InsightsLLMService.shared.getCached(key: key) {
             aiInsights = cached
             aiActivated = true
+            // Con qué cifras se escribió no se sabe (su clave es el número de registros): sin marca.
+            noteShown(writtenWith: nil, at: nil)
             return
         }
 
@@ -515,8 +568,9 @@ final class InsightsViewModel {
         }
         aiError = nil
         if !automatic, let slot {
-            // Lo pedido a mano no cuenta para el techo automático, pero sí para «una al día» y el antirrebote.
-            autoRefreshStore.recordGeneration(page: .summary, slot: slot, automatic: false)
+            // Lo pedido a mano no cuenta para el techo automático, pero sí para «una al día» y el antirrebote. El
+            // «Actualizar» de la marca sí cuenta para el techo (`refreshStaleAI`).
+            autoRefreshStore.recordGeneration(page: .summary, slot: slot, automatic: countsTowardDailyCap)
         }
 
         // Build aggregated data (never individual transactions)
@@ -550,6 +604,7 @@ final class InsightsViewModel {
             guard stillCurrent() else { return }
             aiInsights = response
             aiActivated = true
+            noteShown(writtenWith: snapshot, at: .now)
         } catch {
             if inFlightAIFingerprint == fingerprint { inFlightAIFingerprint = nil }
             guard stillCurrent() else { return }

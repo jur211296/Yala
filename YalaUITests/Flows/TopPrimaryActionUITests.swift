@@ -137,7 +137,10 @@ final class TopPrimaryActionUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(identifier: "record_row").firstMatch.waitForExistence(timeout: 15),
                       "Control: Registros no tiene filas que desplazar.")
         let floating = app.buttons["fab_new_transaction"]
-        XCTAssertFalse(floating.exists, "Con la fila a la vista, el «+» flotante sobra en Registros: volvió a ser fijo.")
+        // Se espera a que se vaya y no se mira al instante: en el runner del CI el «+» de la pantalla de antes seguía en el
+        // árbol al llegar (rojo de una vez el 17-nov). Si volviera a ser fijo no se iría nunca, así que el caso sigue cayendo.
+        XCTAssertTrue(floating.waitForNonExistence(timeout: 5),
+                      "Con la fila a la vista, el «+» flotante sobra en Registros: volvió a ser fijo.")
         attach(app, "\(capturePrefix)-arriba")
 
         let shown = scrollUntilFloatingShows(app, top: top, floating: floating)

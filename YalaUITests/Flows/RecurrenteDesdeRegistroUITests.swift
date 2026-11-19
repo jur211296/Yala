@@ -139,16 +139,53 @@ final class RecurrenteDesdeRegistroUITests: XCTestCase {
         app.openScheduledPaymentsList()
 
         let fromRecord = app.buttons["scheduled_payments_create_from_record_button"]
-        XCTAssertTrue(fromRecord.waitForExistence(timeout: 5), "Pagos no ofrece «Desde un registro».")
-        XCTAssertTrue(app.buttons["scheduled_payments_create_button"].exists, "«Nuevo pago planificado» dejó de salir.")
-        attachScreenshot("pagos-desde-un-registro", of: app)
+        XCTAssertTrue(fromRecord.waitForExistence(timeout: 5), "Pagos no ofrece «Reusar».")
+        let newPayment = app.buttons["scheduled_payments_create_button"]
+        XCTAssertTrue(newPayment.exists, "«Nuevo pago planificado» dejó de salir.")
+        // Nunca uno debajo del otro (Jürgen, 17-nov): los dos en la misma fila.
+        XCTAssertEqual(fromRecord.frame.midY, newPayment.frame.midY, accuracy: 2,
+                       "«Reusar» quedó en otra fila que «Nuevo pago planificado».")
+        attachScreenshot("pagos-reusar", of: app)
         fromRecord.tap()
 
-        let pickerRow = app.buttons.matching(identifier: "recurring_record_picker_row").firstMatch
+        // Las filas de Registros, dentro de la hoja (con la hoja encima, Registros sigue en el árbol: se busca dentro).
+        let picker = app.descendants(matching: .any)["recurring_record_picker_list"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10), "No se abrió la hoja de «Reusar».")
+        XCTAssertTrue(picker.buttons["records_quick_account"].exists, "La hoja no trae el chip de Cuenta.")
+        XCTAssertTrue(picker.textFields["records_list_search_field"].exists, "La hoja no trae el buscador.")
+        let pickerRow = picker.buttons.matching(identifier: "record_row").firstMatch
         XCTAssertTrue(pickerRow.waitForExistence(timeout: 10), "El selector no lista registros recientes.")
         attachScreenshot("selector-de-registros", of: app)
         pickerRow.tap()
 
         waitForPrefilledEditor(app)
+    }
+
+    /// Con el iPhone girado (encargo del 17-nov): «Reusar» sigue al lado de «Nuevo pago planificado» y la hoja abre con
+    /// el buscador, los chips y las filas.
+    func test_planning_reuse_inLandscape_staysInTheSameRow_andThePickerOpens() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        app.openScheduledPaymentsList()
+
+        let fromRecord = app.buttons["scheduled_payments_create_from_record_button"]
+        XCTAssertTrue(fromRecord.waitForExistence(timeout: 5), "Pagos no ofrece «Reusar» con el iPhone girado.")
+        let newPayment = app.buttons["scheduled_payments_create_button"]
+        XCTAssertTrue(newPayment.exists, "«Nuevo pago planificado» dejó de salir con el iPhone girado.")
+        XCTAssertEqual(fromRecord.frame.midY, newPayment.frame.midY, accuracy: 2,
+                       "Girado, «Reusar» quedó en otra fila que «Nuevo pago planificado».")
+        attachScreenshot("pagos-reusar-girado", of: app)
+        fromRecord.tap()
+
+        let picker = app.descendants(matching: .any)["recurring_record_picker_list"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10), "Girado, no se abrió la hoja de «Reusar».")
+        XCTAssertTrue(picker.buttons["records_quick_account"].exists, "Girado, la hoja no trae el chip de Cuenta.")
+        XCTAssertTrue(picker.textFields["records_list_search_field"].exists, "Girado, la hoja no trae el buscador.")
+        XCTAssertTrue(picker.buttons.matching(identifier: "record_row").firstMatch.waitForExistence(timeout: 10),
+                      "Girado, el selector no lista registros.")
+        attachScreenshot("selector-de-registros-girado", of: app)
     }
 }

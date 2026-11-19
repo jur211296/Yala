@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "Użyj formularza";
+"asistente.useFormHint" = "Otwiera zwykły formularz z Twoimi odpowiedziami";
+"asistente.stepOf" = "Krok %1$d z %2$d";
+"asistente.discard.message" = "Twoje odpowiedzi zostaną utracone.";
+"asistente.discard.confirm" = "Odrzuć";
+"asistente.discard.keep" = "Kontynuuj";
+"asistente.changeHint" = "Stuknij, aby zmienić tę odpowiedź";
+"asistentePresupuesto.discard.title" = "Odrzucić ten budżet?";
+"asistentePresupuesto.create" = "Utwórz budżet";
+"asistentePresupuesto.createShort" = "Utwórz";
+"asistentePresupuesto.name.weekly" = "Moje wydatki w tym tygodniu";
+"asistentePresupuesto.name.monthly" = "Moje wydatki w tym miesiącu";
+"asistentePresupuesto.name.yearly" = "Moje wydatki w tym roku";
+"asistentePresupuesto.name.once" = "Moje wydatki";
+"asistentePresupuesto.limit.last.weekly" = "W zeszłym tygodniu wydałeś na to %@.";
+"asistentePresupuesto.limit.last.monthly" = "W zeszłym miesiącu wydałeś na to %@.";
+"asistentePresupuesto.limit.last.yearly" = "W zeszłym roku wydałeś na to %@.";
+"asistentePresupuesto.limit.same" = "Tyle samo";
+"asistentePresupuesto.limit.less10" = "10% mniej";
+"asistentePresupuesto.limit.less20" = "20% mniej";
+"asistentePresupuesto.summary.question" = "Utworzyć tak?";
+"asistentePresupuesto.summary.detail" = "Stuknij odpowiedź, aby ją zmienić.";
+"asistentePresupuesto.summary.counts" = "Co się liczy";
+"asistentePresupuesto.summary.period" = "Odnawia się";
+"asistentePresupuesto.summary.dates" = "Daty";
+"asistentePresupuesto.summary.limit" = "Limit";
+"asistentePresupuesto.summary.name" = "Nazwa";
+"asistentePresupuesto.summary.alert" = "Powiadomienia";
+"asistentePresupuesto.alert.none" = "Bez powiadomień";
+"asistentePresupuesto.categories.empty" = "Nie masz jeszcze kategorii wydatków. Możesz liczyć wszystkie wydatki.";

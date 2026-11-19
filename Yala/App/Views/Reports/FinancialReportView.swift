@@ -33,7 +33,11 @@ struct FinancialReportView: View {
 
     /// Anchos de las columnas de la tabla (UX 2.2 · L18-3), escalados con el tamaño de texto.
     @ScaledMetric(relativeTo: .caption) private var currentColumnWidth: CGFloat = 96
-    @ScaledMetric(relativeTo: .caption) private var changeColumnWidth: CGFloat = 56
+    @ScaledMetric(relativeTo: .caption) private var changeColumnWidth: CGFloat = 72
+    /// La columna del período anterior en ventana ancha (Comparativa simple, 17-nov).
+    @ScaledMetric(relativeTo: .caption) private var previousColumnWidth: CGFloat = 96
+    /// Ventana ancha: el monto anterior va en su columna. Se lee aquí, fuera de la tabla.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - Queries
 
@@ -81,7 +85,10 @@ struct FinancialReportView: View {
                 tabContent
             }
             .yalaScreenBackground()
-            .safeAreaInset(edge: .top) {
+            // Barra y no `safeAreaInset`: con el inset las filas del flujo de caja pasaban por debajo de las cápsulas
+            // «Comparativa / Flujo de caja» y su texto se leía detrás (S2 del replanteo, 18-nov-2026). La barra
+            // difumina el borde del scroll bajo ella (`swiftui-ds.md`).
+            .safeAreaBar(edge: .top) {
                 navigationChipsBar
             }
             .navigationTitle(L10n.Report.title)
@@ -274,7 +281,7 @@ struct FinancialReportView: View {
     }
 
     private var pivotColumnWidths: PivotColumnWidths {
-        PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth)
+        PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth, previous: previousColumnWidth)
     }
 
     /// El nombre del período que se mira («Octubre»; en curso, el tramo que entra: «1–7 nov», decisión 32 de 2.3).
@@ -298,12 +305,17 @@ struct FinancialReportView: View {
         )
     }
 
+    /// El monto anterior en su propia columna solo en ventana ancha; en el iPhone, debajo del actual.
+    private var showsPreviousColumn: Bool { horizontalSizeClass == .regular }
+
     private var pivotTable: some View {
         LazyVStack(spacing: DS.Spacing.none) {
             if comparedPeriodName != nil {
                 PivotHeaderRow(
                     currentName: currentPeriodName.column,
-                    widths: pivotColumnWidths
+                    previousName: comparedPeriodName?.column ?? "",
+                    widths: pivotColumnWidths,
+                    showsPreviousColumn: showsPreviousColumn
                 )
                 Divider()
             }
@@ -314,8 +326,10 @@ struct FinancialReportView: View {
                     preferredCurrency: preferredCurrencyCode,
                     showsComparison: viewModel.supportsComparison,
                     widths: pivotColumnWidths,
+                    showsPreviousColumn: showsPreviousColumn,
                     currentPeriodName: currentPeriodName.inSentence,
                     previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                    previousIsDayRange: comparedPeriodName?.isDayRange ?? false,
                     previousPeriodColumnName: comparedPeriodName?.column ?? ""
                 )
 

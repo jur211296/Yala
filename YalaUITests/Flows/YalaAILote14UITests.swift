@@ -65,13 +65,15 @@ final class YalaAILote14UITests: XCTestCase {
         XCTAssertEqual(app.alerts.count, 0, "Aceptado en la presentación, no debe volver a pedirse en un aviso.")
         let logExpense = app.buttons["chat_log_expense"]
         XCTAssertTrue(logExpense.waitForExistence(timeout: 5), "El saludo debe ofrecer «Apunta un gasto».")
-        let suggestions = app.buttons.matching(identifier: "chat_suggestion")
-        XCTAssertTrue(suggestions.firstMatch.waitForExistence(timeout: 10), "Faltan las preguntas del saludo.")
-        XCTAssertEqual(suggestions.count, 3, "El saludo debe ofrecer tres preguntas.")
-        XCTAssertLessThan(logExpense.frame.maxY, suggestions.firstMatch.frame.minY, "Apuntar va antes que preguntar.")
+        let ask = app.buttons["chat_start_ask"]
+        XCTAssertTrue(ask.exists, "El saludo debe ofrecer «Pregunta por tus finanzas».")
+        XCTAssertLessThan(logExpense.frame.maxY, ask.frame.minY, "Apuntar va antes que preguntar.")
 
+        // Inicio del 17-nov: «Apunta un gasto» ya no abre el teclado; Yala contesta con tres ejemplos.
         logExpense.tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "«Apunta un gasto» debe abrir el teclado.")
+        let examples = app.buttons.matching(identifier: "chat_start_example")
+        XCTAssertTrue(examples.firstMatch.waitForExistence(timeout: 5), "«Apunta un gasto» debe ofrecer sus ejemplos.")
+        XCTAssertEqual(examples.count, 3, "Tres ejemplos.")
 
         // Cerrar y volver a entrar: ya no hay presentación ni aviso, el chat abre directo.
         let close = app.buttons["chat_close"]

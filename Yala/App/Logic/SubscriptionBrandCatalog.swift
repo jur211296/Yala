@@ -4,9 +4,10 @@
 //
 //  Logos de suscripción en pagos planificados (card 2.3 `tablero-logos-de-suscripcion-en-pagos-planificad-9nn7`).
 //
-//  Un «logo» es un distintivo propio de Yala: las iniciales del servicio sobre su color de marca. NO son imágenes de
-//  logos de terceros (licencia de marcas). El catálogo va empaquetado: el nombre del pago se compara con los nombres y
-//  alias de cada servicio y, si casa, se propone el suyo.
+//  Este catálogo decide qué es una SUSCRIPCIÓN conocida (detector de recurrentes, chat guiado): monto exacto y categoría.
+//  Lo que se PINTA ya no sale de aquí: desde la card de logos reales (2026-11-17) lo decide `MerchantCatalog`, que tiene
+//  estos mismos ids y cientos de comercios más, con su logo empaquetado. Aquí quedan las iniciales y el color de marca,
+//  que se pintan cuando no hay imagen.
 //
 //  Qué guarda el pago (`ScheduledPayment.brandLogoID`):
 //  - `nil`: automático, el que case con el nombre (también para los pagos de antes de esta función).

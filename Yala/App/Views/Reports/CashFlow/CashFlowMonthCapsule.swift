@@ -8,6 +8,9 @@
 //  arriba ni la mini gráfica. Lienzo «Una sola Yala» (5A): el mes elegido va relleno en el acento, como un chip elegido.
 //  El saldo que se tendría lo dice la frase del resumen, debajo.
 //
+//  S2 del replanteo (18-nov-2026): el número de la cápsula es el de la cifra grande del mes, con cuánto terminas («≈» si
+//  aún no ha cerrado). Sin cuentas que sumen, lo que queda, como antes.
+//
 
 import SwiftUI
 
@@ -18,6 +21,7 @@ struct CashFlowMonthCapsule: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
@@ -37,7 +41,9 @@ struct CashFlowMonthCapsule: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        .frame(width: 72)
+        // Con texto de accesibilidad la cápsula crece con su cifra: a 72 pt salía «66.…» (S2 del replanteo).
+        .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 72)
+        .frame(minWidth: 72)
         .padding(.vertical, DS.Spacing.md)
         .padding(.horizontal, DS.Spacing.xxs)
         .background(
@@ -51,16 +57,24 @@ struct CashFlowMonthCapsule: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// «+3,283»: con signo, sin divisa (la cápsula es estrecha; el resumen de debajo la dice entera). Un cero, sin signo.
+    private var historia: FlujoDetalleMesLogica.Historia { FlujoDetalleMesLogica.historia(month) }
+
+    /// «12.4k», «≈ 9,820»; sin cuentas, «+3,283». Sin divisa (la cápsula es estrecha; el detalle la dice entera).
     private var netFlowText: String {
-        CashFlowMonthSummaryLogic.capsuleNetText(month.netFlow)
+        FlujoDetalleMesLogica.textoCapsula(historia)
     }
 
-    /// «octubre de 2026, te sobran S/ 3,283.23».
+    /// «octubre de 2026, terminaste con S/ 12,403.20»; si no ha cerrado, «…, estimado».
     private var accessibilityText: String {
-        let amount = appPreferences.currency(abs(month.netFlow), currencyCode: currencyCode)
+        let historia = historia
         let monthName = month.date.formatted(.dateTime.month(.wide).year())
-        let summary = CashFlowMonthSummaryLogic.heroLabel(for: month)
-        return "\(monthName), \(summary) \(amount)"
+        guard let terminas = historia.terminas else {
+            let amount = appPreferences.currency(abs(month.netFlow), currencyCode: currencyCode)
+            return "\(monthName), \(CashFlowMonthSummaryLogic.netLabel(for: month)) \(amount)"
+        }
+        let amount = appPreferences.currency(terminas, currencyCode: currencyCode)
+        let label = L10n.FlujoDetalleMes.terminas(historia.tiempo)
+        let text = "\(monthName), \(label) \(amount)"
+        return historia.esEstimada ? "\(text), \(L10n.FlujoDetalleMes.estimado)" : text
     }
 }

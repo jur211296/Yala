@@ -142,3 +142,45 @@ struct ReportChoiceChip: View {
             .contentShape(Capsule())
     }
 }
+
+/// La marca de cambio de una fila de la Comparativa (pedido del 17-nov): flecha y porcentaje, en verde si el cambio te
+/// favorece y en rosa si no. La flecha da la dirección sin depender del color; «igual», «nuevo» y «—» van en gris.
+struct ComparisonChangeBadge: View {
+    let change: ComparisonChange
+    /// Lo que lee VoiceOver. `nil` cuando lo lee quien la contiene (la fila de la tabla es un solo elemento).
+    var spokenText: String? = nil
+
+    private var tint: Color {
+        switch change.isGood {
+        case true?: return .groupOwedAmount
+        case false?: return .groupOweAmount
+        case nil: return .secondary
+        }
+    }
+
+    private var fill: Color {
+        change.isGood == nil ? DS.Semantic.neutralBackground : tint.opacity(0.12)
+    }
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            if let arrow = change.arrowSymbol {
+                Image(systemName: arrow)
+                    .font(DS.Typography.captionSmall.weight(.bold))
+            }
+            Text(change.text())
+                .font(DS.Typography.labelSmall.weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(fill))
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spokenText ?? "")
+        .accessibilityHidden(spokenText == nil)
+        .accessibilityIdentifier("comparison_change_badge")
+    }
+}

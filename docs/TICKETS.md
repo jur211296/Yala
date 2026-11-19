@@ -43,20 +43,39 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1366)
+## Index (1384)
 
 | id | status | path |
+| 2026-11-19-barrido-qa-2-3-post-flujo | done | tickets/done/2026-11-19-barrido-qa-2-3-post-flujo.md |
+| 2026-11-19-subir-testflight-2-3 | done | tickets/done/2026-11-19-subir-testflight-2-3.md |
+| 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
+| 2026-11-18-verificacion-google-sin-casa | backlog | tickets/backlog/2026-11-18-verificacion-google-sin-casa.md |
+| 2026-11-17-perfil-personalizacion-tarjeta | done | tickets/done/2026-11-17-perfil-personalizacion-tarjeta.md |
+| 2026-11-17-asistente-nueva-cuenta | done | tickets/done/2026-11-17-asistente-nueva-cuenta.md |
+| 2026-11-17-salud-financiera-detalle-visual | done | tickets/done/2026-11-17-salud-financiera-detalle-visual.md |
+| 2026-11-17-hoja-cuenta-panel-tarjeta | done | tickets/done/2026-11-17-hoja-cuenta-panel-tarjeta.md |
+| 2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado | backlog | tickets/backlog/2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado.md |
+| 2026-11-17-asistente-nuevo-pago-planificado | done | tickets/done/2026-11-17-asistente-nuevo-pago-planificado.md |
+| 2026-11-17-web-logo-oficial-y-tema-sistema | done | tickets/done/2026-11-17-web-logo-oficial-y-tema-sistema.md |
+| 2026-11-17-asistente-nuevo-presupuesto | done | tickets/done/2026-11-17-asistente-nuevo-presupuesto.md |
+| 2026-11-17-comparativa-simple-variacion-color | done | tickets/done/2026-11-17-comparativa-simple-variacion-color.md |
+| 2026-11-17-x-nativa-hoja-foto | done | tickets/done/2026-11-17-x-nativa-hoja-foto.md |
+| 2026-11-17-reusar-registro-hoja-con-filtros | done | tickets/done/2026-11-17-reusar-registro-hoja-con-filtros.md |
+| 2026-11-17-yala-ia-inicio-limpio-tres-botones | done | tickets/done/2026-11-17-yala-ia-inicio-limpio-tres-botones.md |
+| ci-ui-runner-stalls-and-the-ax-query-times-out | backlog | tickets/backlog/ci-ui-runner-stalls-and-the-ax-query-times-out.md |
+| 2026-11-17-registros-estadisticas-identica | qa | tickets/qa/2026-11-17-registros-estadisticas-identica.md |
+| 2026-11-17-resumen-ia-hora-y-actualizar | done | tickets/done/2026-11-17-resumen-ia-hora-y-actualizar.md |
+| 2026-11-17-verificacion-checklist-curada | done | tickets/done/2026-11-17-verificacion-checklist-curada.md |
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
-| 2026-11-17-banco-de-la-checklist-fuera-del-ci | backlog | tickets/backlog/2026-11-17-banco-de-la-checklist-fuera-del-ci.md |
+| inbox-approve-and-make-recurring-no-longer-opens-the-editor | backlog | tickets/backlog/inbox-approve-and-make-recurring-no-longer-opens-the-editor.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
 | 2026-11-16-ui-tests-rojos-tandas | done | tickets/done/2026-11-16-ui-tests-rojos-tandas.md |
 | split-calculator-uitests-sheet-does-not-mount | done | tickets/done/split-calculator-uitests-sheet-does-not-mount.md |
 | 2026-11-16-hero-claro-estadisticas-registros-flujo | done | tickets/done/2026-11-16-hero-claro-estadisticas-registros-flujo.md |
-| stats-ai-summary-shows-figures-from-before-the-latest-records | backlog | tickets/backlog/stats-ai-summary-shows-figures-from-before-the-latest-records.md |
 | 2026-11-14-bugs-entrada-lote-1 | done | tickets/done/2026-11-14-bugs-entrada-lote-1.md |
 | 2026-11-14-bugs-ui-lote-1 | done | tickets/done/2026-11-14-bugs-ui-lote-1.md |
 | 2026-11-14-texto-presupuesto-pasado | done | tickets/done/2026-11-14-texto-presupuesto-pasado.md |
@@ -81,6 +100,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone | backlog | tickets/backlog/2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone.md |
 | 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
+| 2026-11-17-flujo-de-caja-replanteo | done | tickets/done/2026-11-17-flujo-de-caja-replanteo.md |
+| 2026-11-19-flujo-proyeccion-inteligente | done | tickets/done/2026-11-19-flujo-proyeccion-inteligente.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
@@ -90,7 +111,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-14-pagos-recurrentes-s1 | done | tickets/done/2026-11-14-pagos-recurrentes-s1.md |
 | 2026-11-14-qa-ui-tandas-rojas | done | tickets/done/2026-11-14-qa-ui-tandas-rojas.md |
 | 2026-11-17-verificacion-cuarentena-y-sello | done | tickets/done/2026-11-17-verificacion-cuarentena-y-sello.md |
-| 2026-11-17-verificacion-revisor-checklist | done | tickets/done/2026-11-17-verificacion-revisor-checklist.md |
 | 2026-11-16-yala-web-produccion-subir | done | tickets/done/2026-11-16-yala-web-produccion-subir.md |
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
@@ -241,7 +261,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
-| cash-flow-advanced-gate-never-limits-free-users | backlog | tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md |
+| cash-flow-advanced-gate-never-limits-free-users | done | tickets/done/cash-flow-advanced-gate-never-limits-free-users.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cash-flow-month-vs-empty-and-contrast-necessary-08-2-3 | done | tickets/done/cash-flow-month-vs-empty-and-contrast-necessary-08-2-3.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
@@ -1018,7 +1038,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
 | production-hangs-cloud-apply-panel-recalc-freeze | done | tickets/done/production-hangs-cloud-apply-panel-recalc-freeze.md |
 | profile-pro-gate-sheets-are-never-opened | backlog | tickets/backlog/profile-pro-gate-sheets-are-never-opened.md |
-| projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month | backlog | tickets/backlog/projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month.md |
+| projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month | done | tickets/done/projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | done | tickets/done/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | done | tickets/done/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
@@ -1045,6 +1065,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| records-and-panel-merchant-logos | done | tickets/done/records-and-panel-merchant-logos.md |
 | records-bulk-selection-undo-and-counts | done | tickets/done/records-bulk-selection-undo-and-counts.md |
 | records-calendar-folds-to-the-chosen-week | done | tickets/done/records-calendar-folds-to-the-chosen-week.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
@@ -1168,7 +1189,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
 | scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | scheduled-payments-period-wheel-closes-the-sheet | done | tickets/done/scheduled-payments-period-wheel-closes-the-sheet.md |
-| scheduled-payments-real-brand-logos | backlog | tickets/backlog/scheduled-payments-real-brand-logos.md |
+| scheduled-payments-real-brand-logos | done | tickets/done/scheduled-payments-real-brand-logos.md |
 | scheduled-payments-show-subscription-logos | qa | tickets/qa/scheduled-payments-show-subscription-logos.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | done | tickets/done/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |

@@ -1,0 +1,26 @@
+/*
+  YalaIAInicio.strings
+  Yala
+
+  El inicio de Yala IA: lo que dice la persona al tocar uno de los tres botones, lo que contesta Yala
+  (sin llamar a la IA) y las opciones que ofrece debajo. Tabla propia, leída con el idioma de la app
+  (`YalaIAInicioText`).
+*/
+
+"yalaIAInicio.log.userMessage" = "Vou anotar um gasto";
+"yalaIAInicio.log.reply" = "Perfeito! Você pode fazer isso destas formas. Toque em uma, mude como quiser e envie.";
+"yalaIAInicio.log.example1" = "Almoço 25";
+"yalaIAInicio.log.example2" = "Táxi 18 e café 6";
+"yalaIAInicio.log.example3" = "Ontem paguei 120 no mercado com o cartão";
+"yalaIAInicio.ask.userMessage" = "Vou perguntar sobre minhas finanças";
+"yalaIAInicio.ask.reply" = "Boa ideia! Pergunte com suas palavras: quanto você gastou, para onde vai seu dinheiro ou como estão seus orçamentos. Aqui vão três para começar:";
+"yalaIAInicio.create.userMessage" = "Quero criar algo";
+"yalaIAInicio.create.reply" = "Vamos montar juntos, passo a passo. Só pergunto o que falta e nada é salvo sem que você revise. O que você quer criar?";
+"yalaIAInicio.create.account" = "Uma conta";
+"yalaIAInicio.create.accountMessage" = "Quero criar uma conta";
+"yalaIAInicio.create.category" = "Uma categoria";
+"yalaIAInicio.create.categoryMessage" = "Quero criar uma categoria";
+"yalaIAInicio.create.favorite" = "Um favorito";
+"yalaIAInicio.create.favoriteMessage" = "Quero criar um favorito";
+"yalaIAInicio.create.group" = "Um grupo";
+"yalaIAInicio.create.groupMessage" = "Quero criar um grupo";

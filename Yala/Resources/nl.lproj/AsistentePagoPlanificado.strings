@@ -1,0 +1,38 @@
+/*
+  AsistentePagoPlanificado.strings
+  Yala
+
+  El asistente por pasos de «Nuevo pago planificado» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`; las preguntas de tipo, día y aviso vienen de Primeros pasos
+  (`pasos23.payment.*`). Tabla propia, leída con el idioma de la app (`L10n.AsistentePagoPlanificado`).
+*/
+
+"asistentePago.discard.title" = "Deze betaling verwijderen?";
+"asistentePago.create" = "Betaling maken";
+"asistentePago.createShort" = "Maken";
+"asistentePago.name.question" = "Hoe noemen we het?";
+"asistentePago.name.detail" = "Zo zie je het in je lijst en in de herinnering.";
+"asistentePago.amount.question" = "Hoeveel betaal je elke keer?";
+"asistentePago.amount.detail" = "Verschilt het per keer, vul dan het gebruikelijke bedrag in en zet „Verschilt per keer” aan.";
+"asistentePago.frequency.question" = "Hoe vaak betaal je het?";
+"asistentePago.frequency.detail" = "Op de betaaldag zet Yala het klaar in je Inbox, zodat je het kunt goedkeuren.";
+"asistentePago.frequency.monthlyHint" = "Elke maand op dezelfde dag: huur, stroom, telefoon.";
+"asistentePago.frequency.weeklyHint" = "Elke week op dezelfde dag.";
+"asistentePago.frequency.yearlyHint" = "Eén datum per jaar: verzekeringen, lidmaatschappen, domeinen.";
+"asistentePago.frequency.onceHint" = "Eén betaling, op de datum.";
+"asistentePago.day.question.monthly" = "Welke dag van de maand?";
+"asistentePago.day.question.weekly" = "Welke dag van de week?";
+"asistentePago.day.question.yearly" = "Op welke datum elk jaar?";
+"asistentePago.day.question.once" = "Op welke dag moet het betaald?";
+"asistentePago.day.detail" = "Je kunt het altijd wijzigen.";
+"asistentePago.day.other" = "Andere dag";
+"asistentePago.day.ofMonth" = "Dag %d";
+"asistentePago.summary.question" = "Zo maken?";
+"asistentePago.summary.detail" = "Tik op een antwoord om het te wijzigen.";
+"asistentePago.summary.kind" = "Soort";
+"asistentePago.summary.name" = "Naam";
+"asistentePago.summary.amount" = "Bedrag";
+"asistentePago.summary.frequency" = "Herhaalt";
+"asistentePago.summary.when" = "Wanneer";
+"asistentePago.summary.reminder" = "Herinnering";
+"asistentePago.reminder.none" = "Geen herinnering";

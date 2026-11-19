@@ -17,7 +17,7 @@ final class CashFlowMonthEndUITests: XCTestCase {
     }
 
     /// Con el plan recién creado, el mes en curso enseña la cifra al fin de mes y su cuenta, y no la cifra grande de
-    /// antes; el neto del mes sigue, como línea.
+    /// antes.
     func test_currentMonth_opensWithTheMonthEndFigure_andItsBreakdown() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
@@ -37,7 +37,8 @@ final class CashFlowMonthEndUITests: XCTestCase {
         let any = app.descendants(matching: .any)
         XCTAssertTrue(any["cashflow_month_end_closing"].firstMatch.waitForExistence(timeout: 10),
                       "El mes en curso no abre con «Al 30 tendrías».")
-        for id in ["cashflow_month_end_today", "cashflow_month_end_in", "cashflow_month_end_out", "cashflow_month_net_line"] {
+        // Desde S2 del replanteo (18-nov-2026) la cuenta debajo es la historia del mes: empezaste, entró y salió.
+        for id in ["cashflow_story_started", "cashflow_story_in", "cashflow_story_out"] {
             XCTAssertTrue(any[id].firstMatch.exists, "Falta \(id) en la cabecera del mes.")
         }
         XCTAssertFalse(any["cashflow_month_net"].firstMatch.exists,
