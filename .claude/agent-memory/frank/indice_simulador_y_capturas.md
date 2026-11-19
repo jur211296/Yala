@@ -107,3 +107,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Voz del chat en el iPhone 14](reference_voz_del_chat_en_el_iphone_14.md) — no oye el `say` del Mac; «Simular Pro» en Ajustes sin reset; reconnect si Device Hub lo toma.
 - [Capturas en el SE con letra grande (Mini)](reference_capturas_se_letra_grande_en_la_mini.md) — crear y borrar el SE; tap de MCP desplazado; en Pagos con AX5 el deeplink no aterriza: pestaña por coordenada + chip por id.
 - [Reportes por la barra en capturas](reference_reportes_por_la_barra_en_capturas.md) — SE o letra AX: «Más» no se alcanza; -tabBarConfiguration con reports + report_chip_<id>.
+- [Capturas del flujo de caja con axe](reference_capturas_del_flujo_de_caja_con_axe.md) — plan que no persiste, barra plegada en SE, gestos en iPad, hojas fuera del árbol.
