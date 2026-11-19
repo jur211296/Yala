@@ -90,6 +90,9 @@ struct GroupsContainerView: View {
     /// L12-10 · el grupo que el formulario acaba de crear, apuntado ANTES de que la hoja se cierre. Al cerrarse pasa a
     /// `groupReadyToInvite` (encadenado por su `onDismiss`: dos hojas del mismo ancla a la vez no se presentan).
     @State private var groupAwaitingInviteSheet: SplitGroup?
+    /// Encargo del 17-nov · lo respondido en el asistente de «Nuevo grupo». Vive aquí, en quien presenta la hoja, y se
+    /// vuelve a empezar cada vez que se abre: el contenido de la hoja puede rehacerse y perder su `@State`.
+    @State private var newGroupWizard = AsistenteGrupoEstado()
     @State private var groupReadyToInvite: SplitGroup?
     #if DEBUG
     @State private var didPresentUITestCreatedSheet = false
@@ -327,7 +330,15 @@ struct GroupsContainerView: View {
                 viewModel.loadData()
                 presentCreatedGroupInviteIfPending()
             }) {
-                GroupFormView(group: nil, onCreated: { receiveCreatedGroup($0) })
+                // Encargo del 17-nov · crear abre el asistente por pasos; «Usar formulario» cambia a este formulario en la
+                // misma hoja, con lo respondido (por el entorno). Los dos avisan del grupo creado igual.
+                NuevoGrupoHoja(
+                    estado: newGroupWizard,
+                    alCrear: { receiveCreatedGroup($0) },
+                    alCerrar: { viewModel.showCreateGroup = false }
+                ) {
+                    GroupFormView(group: nil, onCreated: { receiveCreatedGroup($0) })
+                }
             }
             // L12-8 · los avisos de grupo se piden DENTRO de esta hoja (y de «Ya estás en «X»»), con su porqué: ya no hay
             // alerta suelta en la lista al aparecer el primer grupo.
@@ -1207,8 +1218,10 @@ struct GroupsContainerView: View {
             consentAccepted: GroupsConsentState.isAccepted
         ) {
         case .backend:
-            // El anchor de ESTA vista abre el form; la creación la resuelve `GroupFormView.saveAsync`.
+            // El anchor de ESTA vista abre el asistente (o, con «Usar formulario», el form); la creación la resuelven
+            // `AsistenteGrupoView.crear` y `GroupFormView.saveAsync`.
             navigation.pendingCreateGroupAfterIdentity = false
+            newGroupWizard.empezar(moneda: appPreferences.defaultCurrencyCode)
             viewModel.showCreateGroup = true
         case .channelOff:
             // El copy que YA existe para este hecho, el de la puerta del Welcome (`welcome.groups.channelOff*`):

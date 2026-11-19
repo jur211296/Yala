@@ -227,6 +227,19 @@
       "lastVerified": "2026-11-18"
     },
     {
+      "area": "group-creation-wizard",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/AsistenteGrupo/**",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/AsistenteGrupoUITests | 2026-11-18 (encargo del 17-nov): «Nuevo grupo» abre el asistente por pasos (nombre con ideas, icono, cómo dividen, menos pagos, moneda, resumen); recorrido completo hasta «Crear grupo» (sin canal en el simulador, avisa y se queda), cambiar desde el resumen, Atrás, «Usar formulario» con y sin lo respondido, y cerrar con algo respondido pregunta (también el formulario abierto desde el asistente). Editar sigue en el formulario. Los XCUITest del formulario de crear pasan antes por «Usar formulario» (`pasarDelAsistenteAlFormularioDeGrupo`). unit:YalaTests/AsistenteGrupo/AsistenteGrupoTests (reglas, estado, paso al formulario, cableado de la pestaña y del formulario, textos en 16 idiomas).",
+      "owner": "",
+      "lastVerified": "2026-11-18"
+    },
+    {
       "area": "account-creation-wizard",
       "codeGlobs": [
         "Yala/App/Views/Accounts/AsistenteCuenta/**",

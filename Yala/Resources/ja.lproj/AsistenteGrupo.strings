@@ -1,0 +1,50 @@
+/*
+  AsistenteGrupo.strings
+  Yala
+
+  El asistente por pasos de «Nuevo grupo» (encargo del 17-nov). Los textos del contenedor (`asistente.*`) viven en
+  `AsistentePresupuesto.strings`; aquí solo los de grupos. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteGrupo`).
+*/
+
+"asistenteGrupo.discard.title" = "このグループを破棄しますか？";
+"asistenteGrupo.create" = "グループを作成";
+"asistenteGrupo.createShort" = "作成";
+"asistenteGrupo.name.question" = "グループの名前は？";
+"asistenteGrupo.name.detail" = "みんなにこの名前が表示されます。あとで変更できます。";
+"asistenteGrupo.name.ideas" = "アイデア";
+"asistenteGrupo.idea.viaje" = "旅行";
+"asistenteGrupo.idea.casa" = "家";
+"asistenteGrupo.idea.pareja" = "カップル";
+"asistenteGrupo.idea.amigos" = "友達";
+"asistenteGrupo.idea.trabajo" = "仕事";
+"asistenteGrupo.icon.question" = "どのアイコンで見分けますか？";
+"asistenteGrupo.icon.detail" = "リストですぐに見つけられます。";
+"asistenteGrupo.icon.more" = "ほかのアイコンと色";
+"asistenteGrupo.icon.option" = "アイコン %d";
+"asistenteGrupo.split.question" = "いつもどうやって費用を分けますか？";
+"asistenteGrupo.split.detail" = "費用を追加するときに最初に表示されます。費用ごとに変更できます。";
+"asistenteGrupo.split.equal.hint" = "全員が同じ金額を払います。";
+"asistenteGrupo.split.percentage.hint" = "それぞれが合計の何％かを払います。";
+"asistenteGrupo.split.exact.hint" = "それぞれが払う金額を入力します。";
+"asistenteGrupo.split.shares.hint" = "割合で：ほかの人の2倍払う人がいても大丈夫です。";
+"asistenteGrupo.debts.question" = "支払いを減らすために借りをまとめますか？";
+"asistenteGrupo.debts.detail" = "3人以上のグループで違いが出ます。";
+"asistenteGrupo.debts.yes" = "はい、支払いを減らす";
+"asistenteGrupo.debts.yes.hint" = "アナがあなたに、あなたがルイスに借りがあるなら、アナがルイスに直接払います。";
+"asistenteGrupo.debts.no" = "いいえ、借りは別々に";
+"asistenteGrupo.debts.no.hint" = "それぞれが貸してくれた人に返します。";
+"asistenteGrupo.currency.question" = "お互いの借りをどう表示しますか？";
+"asistenteGrupo.currency.detail" = "複数の通貨で使う場合に。";
+"asistenteGrupo.currency.each" = "費用ごとの通貨で";
+"asistenteGrupo.currency.each.hint" = "借りは支払った通貨のままです。";
+"asistenteGrupo.currency.single" = "すべて1つの通貨で";
+"asistenteGrupo.currency.single.hint" = "ほかの通貨の費用は今日のレートで換算されます。";
+"asistenteGrupo.currency.pick" = "通貨";
+"asistenteGrupo.summary.question" = "この内容で作成しますか？";
+"asistenteGrupo.summary.detail" = "回答をタップすると変更できます。";
+"asistenteGrupo.summary.name" = "名前";
+"asistenteGrupo.summary.split" = "分け方";
+"asistenteGrupo.summary.debts" = "借り";
+"asistenteGrupo.summary.currency" = "通貨";
+"asistenteGrupo.summary.iconHint" = "タップしてアイコンを変更";

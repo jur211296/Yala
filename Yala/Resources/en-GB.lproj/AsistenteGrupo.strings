@@ -1,0 +1,50 @@
+/*
+  AsistenteGrupo.strings
+  Yala
+
+  El asistente por pasos de «Nuevo grupo» (encargo del 17-nov). Los textos del contenedor (`asistente.*`) viven en
+  `AsistentePresupuesto.strings`; aquí solo los de grupos. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteGrupo`).
+*/
+
+"asistenteGrupo.discard.title" = "Discard this group?";
+"asistenteGrupo.create" = "Create group";
+"asistenteGrupo.createShort" = "Create";
+"asistenteGrupo.name.question" = "What’s the group called?";
+"asistenteGrupo.name.detail" = "Everyone will see this name. You can change it later.";
+"asistenteGrupo.name.ideas" = "Ideas";
+"asistenteGrupo.idea.viaje" = "Trip";
+"asistenteGrupo.idea.casa" = "Home";
+"asistenteGrupo.idea.pareja" = "Couple";
+"asistenteGrupo.idea.amigos" = "Friends";
+"asistenteGrupo.idea.trabajo" = "Work";
+"asistenteGrupo.icon.question" = "Which icon helps you spot it?";
+"asistenteGrupo.icon.detail" = "So you can find it quickly in your list.";
+"asistenteGrupo.icon.more" = "More icons and colours";
+"asistenteGrupo.icon.option" = "Icon %d";
+"asistenteGrupo.split.question" = "How do you usually split expenses?";
+"asistenteGrupo.split.detail" = "It’s what shows first when you add an expense. You can change it on each one.";
+"asistenteGrupo.split.equal.hint" = "Everyone pays the same.";
+"asistenteGrupo.split.percentage.hint" = "Each person pays a percentage of the total.";
+"asistenteGrupo.split.exact.hint" = "You type how much each person pays.";
+"asistenteGrupo.split.shares.hint" = "By shares: one person can pay twice as much as another.";
+"asistenteGrupo.debts.question" = "Shall we combine debts so there are fewer payments?";
+"asistenteGrupo.debts.detail" = "It makes a difference in groups of three or more.";
+"asistenteGrupo.debts.yes" = "Yes, fewer payments";
+"asistenteGrupo.debts.yes.hint" = "If Ana owes you and you owe Luis, Ana pays Luis directly.";
+"asistenteGrupo.debts.no" = "No, keep each debt separate";
+"asistenteGrupo.debts.no.hint" = "Everyone pays back whoever lent to them.";
+"asistenteGrupo.currency.question" = "How do you see what you owe each other?";
+"asistenteGrupo.currency.detail" = "In case you spend in more than one currency.";
+"asistenteGrupo.currency.each" = "Each expense in its own currency";
+"asistenteGrupo.currency.each.hint" = "Debts stay in the currency that was paid.";
+"asistenteGrupo.currency.single" = "All in one currency";
+"asistenteGrupo.currency.single.hint" = "Expenses in other currencies are converted at today’s exchange rate.";
+"asistenteGrupo.currency.pick" = "Currency";
+"asistenteGrupo.summary.question" = "Create it like this?";
+"asistenteGrupo.summary.detail" = "Tap an answer to change it.";
+"asistenteGrupo.summary.name" = "Name";
+"asistenteGrupo.summary.split" = "How you split";
+"asistenteGrupo.summary.debts" = "Debts";
+"asistenteGrupo.summary.currency" = "Currency";
+"asistenteGrupo.summary.iconHint" = "Tap to change the icon";

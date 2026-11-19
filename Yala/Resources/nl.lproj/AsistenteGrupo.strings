@@ -1,0 +1,50 @@
+/*
+  AsistenteGrupo.strings
+  Yala
+
+  El asistente por pasos de «Nuevo grupo» (encargo del 17-nov). Los textos del contenedor (`asistente.*`) viven en
+  `AsistentePresupuesto.strings`; aquí solo los de grupos. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteGrupo`).
+*/
+
+"asistenteGrupo.discard.title" = "Deze groep weggooien?";
+"asistenteGrupo.create" = "Groep maken";
+"asistenteGrupo.createShort" = "Maken";
+"asistenteGrupo.name.question" = "Hoe heet de groep?";
+"asistenteGrupo.name.detail" = "Iedereen ziet deze naam. Je kunt hem later wijzigen.";
+"asistenteGrupo.name.ideas" = "Ideeën";
+"asistenteGrupo.idea.viaje" = "Reis";
+"asistenteGrupo.idea.casa" = "Thuis";
+"asistenteGrupo.idea.pareja" = "Stel";
+"asistenteGrupo.idea.amigos" = "Vrienden";
+"asistenteGrupo.idea.trabajo" = "Werk";
+"asistenteGrupo.icon.question" = "Aan welk icoon herken je hem?";
+"asistenteGrupo.icon.detail" = "Zo vind je hem snel in je lijst.";
+"asistenteGrupo.icon.more" = "Meer iconen en kleuren";
+"asistenteGrupo.icon.option" = "Icoon %d";
+"asistenteGrupo.split.question" = "Hoe verdelen jullie uitgaven meestal?";
+"asistenteGrupo.split.detail" = "Dit verschijnt eerst als je een uitgave toevoegt. Je kunt het per uitgave wijzigen.";
+"asistenteGrupo.split.equal.hint" = "Iedereen betaalt evenveel.";
+"asistenteGrupo.split.percentage.hint" = "Iedereen betaalt een percentage van het totaal.";
+"asistenteGrupo.split.exact.hint" = "Je typt hoeveel iedereen betaalt.";
+"asistenteGrupo.split.shares.hint" = "Naar aandelen: de een kan het dubbele betalen van de ander.";
+"asistenteGrupo.debts.question" = "Zullen we schulden samenvoegen voor minder betalingen?";
+"asistenteGrupo.debts.detail" = "Dat maakt verschil vanaf drie personen.";
+"asistenteGrupo.debts.yes" = "Ja, minder betalingen";
+"asistenteGrupo.debts.yes.hint" = "Als Ana jou iets schuldig is en jij Luis, betaalt Ana Luis direct.";
+"asistenteGrupo.debts.no" = "Nee, elke schuld apart";
+"asistenteGrupo.debts.no.hint" = "Iedereen betaalt terug aan wie hem iets leende.";
+"asistenteGrupo.currency.question" = "Hoe zien jullie wat je elkaar schuldig bent?";
+"asistenteGrupo.currency.detail" = "Voor als jullie in meer dan één valuta uitgeven.";
+"asistenteGrupo.currency.each" = "Elke uitgave in eigen valuta";
+"asistenteGrupo.currency.each.hint" = "Schulden blijven in de valuta waarin betaald is.";
+"asistenteGrupo.currency.single" = "Alles in één valuta";
+"asistenteGrupo.currency.single.hint" = "Uitgaven in andere valuta worden omgerekend tegen de koers van vandaag.";
+"asistenteGrupo.currency.pick" = "Valuta";
+"asistenteGrupo.summary.question" = "Zo aanmaken?";
+"asistenteGrupo.summary.detail" = "Tik op een antwoord om het te wijzigen.";
+"asistenteGrupo.summary.name" = "Naam";
+"asistenteGrupo.summary.split" = "Verdeling";
+"asistenteGrupo.summary.debts" = "Schulden";
+"asistenteGrupo.summary.currency" = "Valuta";
+"asistenteGrupo.summary.iconHint" = "Tik om het icoon te wijzigen";

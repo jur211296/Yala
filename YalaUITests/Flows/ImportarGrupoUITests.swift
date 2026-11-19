@@ -48,6 +48,8 @@ final class ImportarGrupoUITests: XCTestCase {
                                                         ["groups_toolbar_new_group", "groups_action_new_group"])).firstMatch
         XCTAssertTrue(newGroup.waitForExistence(timeout: 30), "No apareció «Nuevo grupo».")
         newGroup.tap()
+        // «Nuevo grupo» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.pasarDelAsistenteAlFormularioDeGrupo()
         XCTAssertTrue(app.textFields["group_form_name_input"].waitForExistence(timeout: 10), "No se abrió el formulario.")
     }
 
