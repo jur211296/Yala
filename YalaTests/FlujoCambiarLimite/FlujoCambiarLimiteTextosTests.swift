@@ -2,8 +2,9 @@
 //  FlujoCambiarLimiteTextosTests.swift
 //  YalaTests
 //
-//  S4 del replanteo: los textos de «Cambiar límite» en los 16 idiomas, y el cableado que se retira (la hoja de
-//  configuración de línea, que nadie abría, y el campo con la alerta de alcance del detalle de línea).
+//  S4 del replanteo: los textos del alcance de «Monto fijo» en los 16 idiomas, y el cableado que se retira (la hoja de
+//  configuración de línea, que nadie abría, el campo con la alerta de alcance del detalle de línea y, desde el
+//  19-nov-2026, la hoja «Cambiar límite», que se quedó sin entrada).
 //
 
 import Foundation
@@ -99,11 +100,15 @@ struct FlujoCambiarLimiteCableadoTests {
         #expect(!detalle.contains("setAmountFromMonthOnward"))
     }
 
-    /// La hoja no lee la línea en el `body`: solo la pasa a `cambiarLimite`, que mira antes si sigue viva. Así, si otra
-    /// pantalla la borra con la hoja abierta, no hay lectura de un modelo borrado (card 1w89).
-    @Test func laHoja_noLeeLaLineaEnElBody() throws {
-        let hoja = try source("Yala/App/Views/Reports/CashFlow/CambiarLimite/FlujoCambiarLimiteSheet.swift")
-        #expect(hoja.matches(of: /\bline(\?|!)?\.\w/).isEmpty)
+    /// La hoja «Cambiar límite» se retiró el 19-nov-2026 (todo pasa por «Cálculo del monto»), y nadie la vuelve a
+    /// nombrar. Lo que queda de ella es la escritura, que mira antes si la línea sigue viva (card 1w89).
+    @Test func laHojaCambiarLimite_seRetiro_yLaEscrituraMiraLaLinea() throws {
+        let root = FlujoCambiarLimiteTextosTests.repoRoot()
+        let path = root.appending(path: "Yala/App/Views/Reports/CashFlow/CambiarLimite/FlujoCambiarLimiteSheet.swift").path
+        #expect(!FileManager.default.fileExists(atPath: path))
+        #expect(try !source("Yala/App/Views/Reports/CashFlow/CalculoMonto/FlujoCalculoMontoSheet.swift")
+            .contains("FlujoCambiarLimiteSheet"))
+        #expect(try !source("Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift").contains("FlujoCambiarLimiteSheet"))
         let vm = try source("Yala/App/Views/Reports/CashFlow/CambiarLimite/CashFlowPlanViewModel+CambiarLimite.swift")
         #expect(vm.contains("guard !line.isDeleted, let ctx = line.modelContext,"))
     }

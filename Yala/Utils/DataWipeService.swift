@@ -1366,6 +1366,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.cashFlowAIEnabled)  // Default: false
         // Flujo de caja (19-nov-2026): las partidas fijas apagadas en «Considerar a futuro» y la pasada de límites móviles.
         defaults.removeObject(forKey: FlujoFijosAFuturo.defaultsKey)
+        defaults.removeObject(forKey: FlujoFijosAFuturo.legacyDefaultsKey)
         defaults.removeObject(forKey: FlujoLimitesMovilesMigracion.defaultsKey)
         defaults.removeObject(forKey: AppPreferences.Keys.insightsTone)       // Default: .normal
         defaults.removeObject(forKey: AppPreferences.Keys.insightsFocus)      // Default: .balanced

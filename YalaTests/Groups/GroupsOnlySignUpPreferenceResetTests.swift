@@ -261,9 +261,10 @@ struct AppPreferencesSyncedMirrorResetTests {
 
     /// `financialMindset` vive en `SessionState`; el idioma, en `LanguageManager`; el consentimiento de la nube y la
     /// zona del teléfono (la escribe la app sola al volver a primer plano, para el conector de Claude) no tienen copia
-    /// en memoria.
+    /// en memoria; «Considerar a futuro» del flujo de caja tampoco (`FlujoFijosAFuturo` lee el almacén en cada cálculo).
     private static let mirroredElsewhere: Set<PrefSyncKey> = [
-        .financialMindset, .appLanguageOverride, .cloudConsentAcceptedAt, .cloudConsentTextVersion, .timeZoneIdentifier
+        .financialMindset, .appLanguageOverride, .cloudConsentAcceptedAt, .cloudConsentTextVersion, .timeZoneIdentifier,
+        .cashFlowFutureExcludedFixed,
     ]
 
     /// Un valor de dueño por key, válido para su tipo y distinto del de fábrica.

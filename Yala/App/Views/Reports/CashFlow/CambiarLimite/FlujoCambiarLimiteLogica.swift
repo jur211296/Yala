@@ -2,8 +2,10 @@
 //  FlujoCambiarLimiteLogica.swift
 //  Yala
 //
-//  Flujo de caja · S4 del replanteo (18-nov-2026): cambiar el límite de una línea en una hoja que pregunta el alcance
-//  ANTES de escribir el monto. Decisión P3 de Jürgen: por defecto, «desde este mes en adelante».
+//  Flujo de caja · S4 del replanteo (18-nov-2026): cambiar el límite de una línea con un alcance. Decisión P3 de Jürgen:
+//  por defecto, «desde este mes en adelante». Nació para la hoja «Cambiar límite», retirada el 19-nov-2026 (quedó sin
+//  entrada: todo pasa por «Cálculo del monto»). Queda lo que «Cálculo del monto» usa al guardar un monto fijo: el alcance,
+//  leer el monto escrito y qué se escribe (`escritura`, que aplica `CashFlowPlanViewModel.cambiarLimite`).
 //
 //  Los tres alcances, con la misma precedencia que ya usa el cálculo (`CashFlowProjectionCalculator.resolvePlanned`:
 //  ajuste de un mes › último cambio «desde» › método de la línea):
@@ -32,60 +34,6 @@ nonisolated enum FlujoCambiarLimiteLogica {
         static let porDefecto: Alcance = .desdeEsteMes
     }
 
-    /// Un mes del plan tal como se ve hoy.
-    struct Mes: Equatable, Sendable {
-        let monthKey: String
-        let limite: Double
-        /// El mes tiene un ajuste de un solo mes.
-        let tieneAjustePropio: Bool
-        let esPasado: Bool
-    }
-
-    /// Cómo queda un mes con el monto nuevo.
-    struct Fila: Equatable, Sendable {
-        let monthKey: String
-        let antes: Double
-        let despues: Double
-        let cambia: Bool
-        /// No cambia porque conserva su ajuste de un solo mes («Desde este mes»).
-        let conservaAjuste: Bool
-        let esPasado: Bool
-    }
-
-    /// ¿Cambia `mes` con este alcance, contando desde `elegido`?
-    static func cambia(_ mes: Mes, alcance: Alcance, elegido: String) -> Bool {
-        switch alcance {
-        case .soloEsteMes:
-            return mes.monthKey == elegido
-        case .desdeEsteMes:
-            guard mes.monthKey >= elegido else { return false }
-            return mes.monthKey == elegido || !mes.tieneAjustePropio
-        case .todos:
-            return true
-        }
-    }
-
-    /// Las filas de «Así quedan», en orden de mes. Sin monto válido, `despues` repite `antes`.
-    static func filas(meses: [Mes], alcance: Alcance, elegido: String, monto: Double?) -> [Fila] {
-        let valido = monto.flatMap { esMontoValido($0) ? $0 : nil }
-        return meses.sorted { $0.monthKey < $1.monthKey }.map { mes in
-            let afectado = cambia(mes, alcance: alcance, elegido: elegido)
-            return Fila(
-                monthKey: mes.monthKey,
-                antes: mes.limite,
-                despues: afectado ? (valido ?? mes.limite) : mes.limite,
-                cambia: afectado,
-                conservaAjuste: alcance == .desdeEsteMes && mes.monthKey > elegido && mes.tieneAjustePropio,
-                esPasado: mes.esPasado
-            )
-        }
-    }
-
-    /// Dos montos que se ven iguales (a céntimos) no son un cambio: el campo parte del límite redondeado.
-    static func mismoMonto(_ a: Double, _ b: Double) -> Bool {
-        abs(a - b) < 0.005
-    }
-
     /// Lo que se puede guardar: cero incluido (no esperas nada en esa línea), nunca negativo.
     static func esMontoValido(_ monto: Double) -> Bool {
         monto.isFinite && monto >= 0
@@ -100,11 +48,6 @@ nonisolated enum FlujoCambiarLimiteLogica {
         let normal = agrupado.replacing(locale.decimalSeparator ?? ".", with: ".")
         guard let valor = Double(normal), esMontoValido(valor) else { return nil }
         return valor
-    }
-
-    /// Los meses que conservan su ajuste con «Desde este mes», para nombrarlos en la hoja.
-    static func conservanAjuste(meses: [Mes], elegido: String) -> [String] {
-        meses.filter { $0.monthKey > elegido && $0.tieneAjustePropio }.map(\.monthKey).sorted()
     }
 
     // MARK: - Lo que se escribe

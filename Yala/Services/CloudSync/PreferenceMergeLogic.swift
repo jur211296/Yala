@@ -58,6 +58,9 @@ nonisolated enum PrefSideSignal {
     case weekday
     /// Cambió `appLanguageOverride` → post `.languageDidChange` (re-render de UI en caliente).
     case language
+    /// Cambió lo apagado en «Considerar a futuro» del flujo de caja → `dataVersion` (Panel, flujo de caja, Tendencias y
+    /// widget recalculan con la cifra nueva).
+    case cashFlowPlan
 }
 
 // MARK: - PrefSyncKey (SSOT de la taxonomía)
@@ -65,10 +68,11 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **40**
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **41**
 /// (+1 el 2026-11-05: `timeZoneIdentifier`, la zona del teléfono para el conector de Claude; +1 el 2026-11-16:
 /// `panelMoneyAccountOverrides`, qué cuentas suman en «Tu dinero hoy»; +1 el 2026-11-16: `accountCardDesigns`, el diseño
-/// de la tarjeta de cada cuenta; +1 el 2026-11-18: `userProfileStyle`, la personalización del perfil)
+/// de la tarjeta de cada cuenta; +1 el 2026-11-18: `userProfileStyle`, la personalización del perfil; +1 el 2026-11-19:
+/// `cashFlowFutureExcludedFixed`, lo apagado en «Considerar a futuro» del flujo de caja)
 /// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; C1 SACÓ las dos del
 /// consent de Grupos — ver el bloque de abajo; y el barrido del 2026-09-13 se llevó las dos del modelo
 /// viejo de sesiones, que describían el dispositivo y no a la persona).
@@ -111,6 +115,9 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     // JSON corto (`ProfileStyleLogic`). El símbolo sigue en `userProfileIcon`. "" es válido: el perfil de siempre, y volver
     // a él tiene que viajar.
     case userProfileStyle
+    // Lo apagado en «Considerar a futuro» del flujo de caja (2026-11-19): lista JSON de claves estables de fijos
+    // (`FlujoFijosAFuturo`). "" es válido: todo encendido, y volver a encenderlo todo tiene que viajar.
+    case cashFlowFutureExcludedFixed
     // Bools por presencia (10)
     case budgetAlertsEnabled
     case expensesOnlyMode
@@ -154,7 +161,7 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
              .panelDistribucionOrder, .panelDistribucionHidden,
              .panelPlanificacionOrder, .panelPlanificacionHidden,
              .panelSectionsHidden, .panelSectionsOrder, .panelMoneyAccountOverrides, .accountCardDesigns,
-             .userProfileStyle:
+             .userProfileStyle, .cashFlowFutureExcludedFixed:
             return .panelPresenceEmptyValid
         case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
              .panelAccountsCollapsed, .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,
@@ -185,6 +192,7 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
         case .currencyDisplayFormat, .decimalPlaces: return .formatting
         case .firstWeekday: return .weekday
         case .appLanguageOverride: return .language
+        case .cashFlowFutureExcludedFixed: return .cashFlowPlan
         default: return nil
         }
     }

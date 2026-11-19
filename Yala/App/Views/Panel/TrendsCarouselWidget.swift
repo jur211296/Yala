@@ -264,6 +264,7 @@ struct TrendsCarouselWidget: View {
            let summary = PanelTrendSummaryLogic.startEnd(
                rawPoints: viewModel.rawTrendPoints,
                liveAnchor: viewModel.trendLiveAnchor,
+               periodStartBalance: viewModel.trendPeriodStartBalance,
                today: .now,
                calendar: .current
            ) {

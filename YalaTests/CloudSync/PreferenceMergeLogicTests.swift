@@ -200,7 +200,8 @@ struct PreferenceMergeLogicTests {
         // +1 el 2026-11-16 = panelMoneyAccountOverrides (qué cuentas suman en «Tu dinero hoy», .panelPresenceEmptyValid).
         // +1 el 2026-11-16 = accountCardDesigns (el diseño de la tarjeta de cada cuenta, .panelPresenceEmptyValid).
         // +1 el 2026-11-18 = userProfileStyle (la personalización del perfil, .panelPresenceEmptyValid).
-        #expect(PrefSyncKey.allCases.count == 40)
+        // +1 el 2026-11-19 = cashFlowFutureExcludedFixed («Considerar a futuro» del flujo de caja, .panelPresenceEmptyValid).
+        #expect(PrefSyncKey.allCases.count == 41)
         // Y no pueden volver por la puerta de atrás: el canal de prefs no debe transportar este consent.
         #expect(!PrefSyncKey.allCases.contains { $0.rawValue.hasPrefix("groupsConsent") })
     }

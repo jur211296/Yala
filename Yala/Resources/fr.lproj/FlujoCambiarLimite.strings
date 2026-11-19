@@ -2,33 +2,13 @@
   FlujoCambiarLimite.strings
   Yala
 
-  «Cambiar límite» del flujo de caja: una hoja que pregunta qué meses cambian antes del monto (S4 del replanteo,
-  18-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoCambiarLimite`).
+  El alcance de «Monto fijo» en «Cálculo del monto» del flujo de caja (qué meses cambian) y su guardado. Nació con la
+  hoja «Cambiar límite» (S4 del replanteo, 18-nov-2026), retirada el 19-nov-2026: quedan solo las claves que «Cálculo del
+  monto» usa. Tabla propia, leída con el idioma de la app (`L10n.FlujoCambiarLimite`).
 */
 
-"flujoCambiarLimite.title.expense" = "Modifier la limite";
-"flujoCambiarLimite.title.income" = "Modifier le montant attendu";
-"flujoCambiarLimite.scope.header" = "Quels mois changent ?";
 "flujoCambiarLimite.scope.only" = "Seulement %@";
 "flujoCambiarLimite.scope.from" = "À partir de %@";
 "flujoCambiarLimite.scope.all" = "Tous les mois";
-"flujoCambiarLimite.desc.only" = "Les autres mois restent tels quels.";
-"flujoCambiarLimite.desc.from" = "Les mois précédents ne changent pas.";
-"flujoCambiarLimite.desc.from.keeps" = "Gardent leur propre ajustement : %@.";
-"flujoCambiarLimite.desc.all" = "Les mois précédents aussi. Les ajustements d’un seul mois sont supprimés.";
-"flujoCambiarLimite.amount.only.expense" = "Limite de %@";
-"flujoCambiarLimite.amount.from.expense" = "Limite à partir de %@";
-"flujoCambiarLimite.amount.all.expense" = "Limite de chaque mois";
-"flujoCambiarLimite.amount.only.income" = "Montant de %@";
-"flujoCambiarLimite.amount.from.income" = "Montant à partir de %@";
-"flujoCambiarLimite.amount.all.income" = "Montant de chaque mois";
-"flujoCambiarLimite.current" = "Actuellement : %@";
-"flujoCambiarLimite.zero.expense" = "Avec 0, tu ne prévois aucune dépense sur cette ligne.";
-"flujoCambiarLimite.zero.income" = "Avec 0, tu ne prévois aucune rentrée sur cette ligne.";
-"flujoCambiarLimite.past" = "%@ est terminé : le modifier ne change pas ce qui s’est passé, seulement ce à quoi tu le compares.";
-"flujoCambiarLimite.preview.header" = "Résultat";
-"flujoCambiarLimite.row.unchanged" = "Sans changement";
-"flujoCambiarLimite.row.keeps" = "Ajustement propre";
-"flujoCambiarLimite.row.a11y" = "%1$@ : de %2$@ à %3$@";
 "flujoCambiarLimite.invalid" = "Saisis un montant de 0 ou plus.";
 "flujoCambiarLimite.save" = "Enregistrer";

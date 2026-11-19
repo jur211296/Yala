@@ -382,6 +382,9 @@ final class AppBootstrapper {
             PanelPreferencesMigration.runIfNeeded(appPreferences: appPreferences)
             // La nota de salud a la vista, una vez, para quien nunca tocó Configurar Panel (opción A de Jürgen).
             PanelPreferencesMigration.showHealthOnceIfUntouched(appPreferences: appPreferences)
+            // «Considerar a futuro» se guardaba solo en este teléfono: una vez, sube lo apagado al canal de preferencias
+            // (tras el primer import, como la siembra del Panel, para unir lo que ya llegó de otro teléfono).
+            FlujoFijosAFuturo.migrarLoLocalSiHaceFalta()
         }
 
         // 9. Update widget cache
