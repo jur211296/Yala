@@ -305,8 +305,9 @@ struct DeletedModelMoreFormsGuardWiringTests {
     // MARK: - Flujo de caja
 
     // La hoja de configuración de línea (`CashFlowLineConfigSheet`) se retiró en S4 del replanteo del flujo de caja
-    // (18-nov-2026): nadie la abría. Su sustituta, «Cambiar límite», no lee la línea en el `body`
-    // (`FlujoCambiarLimiteCableadoTests.laHoja_noLeeLaLineaEnElBody`).
+    // (18-nov-2026): nadie la abría. Su sustituta, «Cambiar límite», se retiró el 19-nov-2026; su escritura, que usa
+    // «Cálculo del monto», mira antes si la línea sigue viva
+    // (`FlujoCambiarLimiteCableadoTests.laHojaCambiarLimite_seRetiro_yLaEscrituraMiraLaLinea`).
 
     @Test func celdaDelFlujo_noLeeLaLineaNiRegistrosBorrados() throws {
         let source = try Self.readSource(of: "Yala/App/Views/Reports/CashFlow/CashFlowCellDetailSheet.swift")

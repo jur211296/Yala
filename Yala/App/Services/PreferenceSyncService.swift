@@ -464,6 +464,7 @@ final class PreferenceSyncService {
             case .formatting: formattingChanged = true
             case .weekday: weekdayChanged = true
             case .language: NotificationCenter.default.post(name: .languageDidChange, object: nil)
+            case .cashFlowPlan: SessionState.shared.incrementDataVersion()
             }
         }
     }

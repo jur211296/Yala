@@ -4,7 +4,8 @@
 //
 //  La gráfica de saldo del Panel dice con palabras lo que compara (decisión 11 de la revisión 2.3, opción A + B):
 //  el chip nombra la fecha del período anterior («+10.3 % vs 20 oct») y, debajo de la gráfica, una fila dice de dónde
-//  partió el saldo y dónde está («1 nov S/ 68,203 → hoy S/ 64,690 · −5.2 %»). La escala no se toca: el eje sigue sin
+//  partió el saldo y dónde está («1 nov S/ 68,203 → hoy S/ 64,690 · −5.2 %»). Desde el 19-nov-2026 «partió» es el saldo al
+//  empezar el día 1, el mismo «Empezaste con» del flujo de caja. La escala no se toca: el eje sigue sin
 //  arrancar en cero (opción C descartada); la fila da el tamaño real del cambio sin que haya que leer el eje.
 //
 
@@ -27,9 +28,14 @@ enum PanelTrendSummaryLogic {
     /// La fila de inicio y fin. El final es el saldo vivo cuando el período cubre hoy (`liveAnchor`, la misma cifra que
     /// la cabecera de la tarjeta); si no, el último punto que no pasa de hoy. Con un solo día no hay recorrido que
     /// contar y no sale nada: la gráfica se queda con su punto suelto (decisión 10).
+    ///
+    /// El inicio es el saldo al EMPEZAR el período (`periodStartBalance`, el «Empezaste con» del flujo de caja) cuando se
+    /// conoce (19-nov-2026): el primer punto de la curva es el cierre de su primer día y contaba lo movido ese día, así
+    /// que el Panel decía «1 nov S/ 72,979» y el flujo de caja «Empezaste con S/ 64,345». Sin él, el primer punto.
     static func startEnd(
         rawPoints: [BarPoint],
         liveAnchor: BarPoint?,
+        periodStartBalance: Double? = nil,
         today: Date,
         calendar: Calendar
     ) -> StartEnd? {
@@ -48,14 +54,32 @@ enum PanelTrendSummaryLogic {
             endIsToday = calendar.isDate(last.date, inSameDayAs: today)
         }
         guard calendar.startOfDay(for: end.date) > calendar.startOfDay(for: first.date) else { return nil }
+        let startValue = periodStartBalance ?? first.value
         return StartEnd(
             startDate: first.date,
-            startValue: first.value,
+            startValue: startValue,
             endDate: end.date,
             endValue: end.value,
             endIsToday: endIsToday,
-            variation: PreviousPeriodHelper.calculateVariation(currentAmount: end.value, previousAmount: first.value)
+            variation: PreviousPeriodHelper.calculateVariation(currentAmount: end.value, previousAmount: startValue)
         )
+    }
+
+    /// El saldo al empezar el período: lo que había en las cuentas del saldo antes de su primer instante. Es la cuenta de
+    /// «Empezaste con» del flujo de caja (`FlujoMotorMesEntrada.FuenteSaldo.saldos(antesDe:)`), no otra igual: con las
+    /// cuentas del saldo del Panel sin filtro, las dos pantallas dan la misma cifra de inicio de mes.
+    static func periodStartBalance(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        currencyCode: String,
+        converter: any CurrencyConverting,
+        periodStart: Date,
+        now: Date,
+        calendar: Calendar
+    ) -> Double? {
+        FlujoMotorMesEntrada.FuenteSaldo(
+            accounts: accounts, transactions: transactions, currencyCode: currencyCode, converter: converter
+        ).saldos(antesDe: [periodStart], now: now, calendar: calendar)[periodStart]
     }
 
     /// Una fecha corta de la gráfica: «20 oct»; con el año si no es el de hoy («20 nov 2025»), para que la comparación

@@ -32,6 +32,10 @@ struct PanelTrendData: Equatable {
     /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación hasta el final del período.
     /// `nil` sin días por delante; la píldora del widget solo decide si se pinta.
     var trendProjection: ProjectedFlowCalculator.Projection? = nil
+    /// El saldo al EMPEZAR el período (lo que había antes de su primer instante), con la misma cuenta que «Empezaste con»
+    /// del flujo de caja (`FlujoMotorMesEntrada.FuenteSaldo.saldos(antesDe:)`). Lo pinta la fila «1 nov S/ … → hoy»: el
+    /// primer punto de la curva es el cierre del día 1 y contaba lo movido ese día (19-nov-2026). `nil` fuera de Saldo.
+    var trendPeriodStartBalance: Double? = nil
 }
 
 struct PanelCategoriesData: Equatable {
@@ -780,6 +784,7 @@ final class PanelViewModel {
     var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var trendLiveAnchorIsApproximate: Bool { trendChart.trendLiveAnchorIsApproximate }
     var trendProjection: ProjectedFlowCalculator.Projection? { trendChart.trendProjection }
+    var trendPeriodStartBalance: Double? { trendChart.trendPeriodStartBalance }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -1542,6 +1547,7 @@ final class PanelViewModel {
         var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
         var newTrendLiveAnchorIsApproximate = false
         var newTrendProjection: ProjectedFlowCalculator.Projection? = nil
+        var newTrendPeriodStartBalance: Double? = nil
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
@@ -1576,6 +1582,18 @@ final class PanelViewModel {
             newTrendLiveAnchor = result.liveAnchor
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
             newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
+            if trendType == .balance {
+                // La misma fuente que «Empezaste con» del flujo de caja: el saldo antes del día 1, no el cierre del día 1.
+                newTrendPeriodStartBalance = PanelTrendSummaryLogic.periodStartBalance(
+                    accounts: calcContext.balanceAccounts,
+                    transactions: calcContext.balanceTransactions,
+                    currencyCode: calcContext.defaultCurrencyCode,
+                    converter: calcContext.converter,
+                    periodStart: calcContext.effectiveInterval.start,
+                    now: .now,
+                    calendar: .current
+                )
+            }
             newTrendProjection = calculateTrendProjection(
                 context: calcContext,
                 realPoints: result.rawPoints,
@@ -1679,7 +1697,8 @@ final class PanelViewModel {
                 trendLiveAnchor: newTrendLiveAnchor,
                 trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown,
                 trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate,
-                trendProjection: newTrendProjection
+                trendProjection: newTrendProjection,
+                trendPeriodStartBalance: newTrendPeriodStartBalance
             )
             if newTrend != trendChart { trendChart = newTrend }
         }

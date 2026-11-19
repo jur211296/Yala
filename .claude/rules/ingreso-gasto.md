@@ -142,9 +142,19 @@ cambia. Los umbrales viven en `FlujoProyeccionInteligente.Umbrales`; lo fijan `Y
 plan): en «otros» de un mes que viene no hay mediana, solo los fijos a futuro de `FlujoProyeccionInteligente.Lado`
 (ingresos: los mismos fijos; gastos: una vez al mes, ±25 %, día dentro de ±5 de su día típico, sin aislados). El mes en
 curso y los pasados no cambian, y sin plan (Panel sin plan) se sigue proyectando lo variable. Cada fijo se puede apagar
-en «Considerar a futuro» (`FlujoFijosAFuturo`, preferencia LOCAL del dispositivo: no se sincroniza). La hoja de no
+en «Considerar a futuro» (`FlujoFijosAFuturo`). Desde el 19-nov-2026 (tarde) viaja entre teléfonos como preferencia
+sincronizada (`PrefSyncKey.cashFlowFutureExcludedFixed`, lista JSON; iCloud clave-valor o la tabla de preferencias del
+Modo Nube, sin despliegue); la lista local de antes la une la lectura y la sube una pasada al arrancar. Lo fija
+`YalaTests/FlujoSyncYPanelDia1/`. La hoja de no
 considerados pinta `CashFlowOtherResult.items` (una fila por subcategoría): su suma más `variableLeft` es el total del
 mes. Lo fijan `FlujoAisladosPromedioTests` y el caso «partida apagada» de `FlujoProyeccionInteligenteParidadTests`.
+
+**El saldo al empezar el mes es una cifra, la de «Empezaste con» (decisión de Jürgen del 19-nov-2026, 14:04).** La fila
+del gráfico de saldo del Panel («1 nov S/ … → hoy S/ … · %») parte de lo que había ANTES del primer instante del período,
+con `FlujoMotorMesEntrada.FuenteSaldo.saldos(antesDe:)`, la misma pieza del flujo de caja (`PanelTrendData.trendPeriodStartBalance`).
+El primer punto de la curva es el CIERRE de su primer día y contaba lo movido el día 1 (el sueldo): el Panel decía
+S/ 72,979 y el flujo de caja S/ 64,345. La curva no cambia. El widget y Tendencias no pintan esa cifra. Lo fija
+`YalaTests/FlujoSyncYPanelDia1/`.
 
 **Las líneas por promedio, último mes o tendencia dejan fuera los meses aislados, y su límite se mueve solo (19-nov-2026,
 10:10 y 10:21; corrige el P4 del replanteo).** `CashFlowProjectionCalculator.explainEstimate` busca los meses aislados de

@@ -14,8 +14,9 @@
 //    final, «Eliminar línea» a la vista. El método ya no se pinta en el color de los enlaces.
 //  - L18-8 (opción A): «y los siguientes» guarda desde qué mes vale el monto nuevo; aquí se ve «Desde noviembre: S/ X
 //    cada mes».
-//  - S4 del replanteo (18-nov-2026, sustituye a L18-9): «Ajustar monto» abre «Cambiar límite»
-//    (`FlujoCambiarLimiteSheet`), que pregunta qué meses cambian ANTES del monto. Aquí ya no hay campo ni alerta.
+//  - S4 del replanteo (18-nov-2026, sustituye a L18-9): «Ajustar monto» abría «Cambiar límite», que preguntaba qué meses
+//    cambian ANTES del monto (hoja retirada el 19-nov-2026; su alcance vive en «Cálculo del monto»). Aquí no hay campo
+//    ni alerta.
 //  - Lienzo «Una sola Yala»: los registros con la fila de Registros (y se puede tocar), la barra de Presupuestos.
 //  - 19-nov-2026 (aislados y límites móviles): un solo «Cambiar», junto al límite, que abre «Cálculo del monto»
 //    (`FlujoCalculoMontoSheet`); «Cómo se calcula» queda como texto, con la ventana y los meses que se dejaron fuera por

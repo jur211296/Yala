@@ -2,8 +2,9 @@
 //  FlujoCambiarLimiteTexto.swift
 //  Yala
 //
-//  Los textos de «Cambiar límite» del flujo de caja (`flujoCambiarLimite.*` en `FlujoCambiarLimite.strings`, los 16
-//  idiomas), leídos con el idioma de la app (variante → padre → main → la clave), como `L10n.FlujoDetalleMes`.
+//  Los textos del alcance de «Monto fijo» en «Cálculo del monto» (`flujoCambiarLimite.*` en `FlujoCambiarLimite.strings`,
+//  los 16 idiomas), leídos con el idioma de la app (variante → padre → main → la clave), como `L10n.FlujoDetalleMes`.
+//  Nacieron con la hoja «Cambiar límite», retirada el 19-nov-2026: quedan los que «Cálculo del monto» usa.
 //
 
 import Foundation
@@ -28,12 +29,6 @@ extension L10n {
         private static func f(_ key: String, _ args: CVarArg...) -> String {
             String(format: s(key), locale: AppLocale.current, arguments: args)
         }
-        private static func lado(_ esIngreso: Bool) -> String { esIngreso ? "income" : "expense" }
-
-        /// «Cambiar límite» (gastos) / «Cambiar monto esperado» (ingresos).
-        static func titulo(esIngreso: Bool) -> String { s("title.\(lado(esIngreso))") }
-        /// «¿Qué meses cambian?»
-        static var alcanceTitulo: String { s("scope.header") }
 
         /// El nombre de cada alcance, con el mes elegido.
         static func alcance(_ alcance: FlujoCambiarLimiteLogica.Alcance, mes: String) -> String {
@@ -44,46 +39,11 @@ extension L10n {
             }
         }
 
-        static var descripcionSolo: String { s("desc.only") }
-        static var descripcionDesde: String { s("desc.from") }
-        /// «Conservan su ajuste propio: diciembre, enero.»
-        static func conservan(_ meses: String) -> String { f("desc.from.keeps", meses) }
-        static var descripcionTodos: String { s("desc.all") }
-
-        /// El rótulo del campo del monto, según el alcance y el lado.
-        static func montoRotulo(_ alcance: FlujoCambiarLimiteLogica.Alcance, mes: String, esIngreso: Bool) -> String {
-            switch alcance {
-            case .soloEsteMes: f("amount.only.\(lado(esIngreso))", mes)
-            case .desdeEsteMes: f("amount.from.\(lado(esIngreso))", mes)
-            case .todos: s("amount.all.\(lado(esIngreso))")
-            }
-        }
-
-        /// «Ahora: S/ 900».
-        static func ahora(_ monto: String) -> String { f("current", monto) }
-        /// Qué significa un 0.
-        static func cero(esIngreso: Bool) -> String { s("zero.\(lado(esIngreso))") }
-        /// El mes elegido ya cerró.
-        static func pasado(_ mes: String) -> String { f("past", mes) }
-        /// «Así quedan».
-        static var vistaPrevia: String { s("preview.header") }
-        static var sinCambio: String { s("row.unchanged") }
-        static var ajustePropio: String { s("row.keeps") }
-        /// VoiceOver de una fila que cambia: «diciembre: de S/ 900 a S/ 1,000».
-        static func filaCambia(mes: String, antes: String, despues: String) -> String {
-            f("row.a11y", mes, antes, despues)
-        }
         static var montoInvalido: String { s("invalid") }
         static var guardar: String { s("save") }
 
-        /// Las claves que la hoja usa, para la prueba de que existen en los 16 idiomas.
-        static let claves: [String] = [
-            "title.expense", "title.income", "scope.header", "scope.only", "scope.from", "scope.all",
-            "desc.only", "desc.from", "desc.from.keeps", "desc.all",
-            "amount.only.expense", "amount.from.expense", "amount.all.expense",
-            "amount.only.income", "amount.from.income", "amount.all.income",
-            "current", "zero.expense", "zero.income", "past",
-            "preview.header", "row.unchanged", "row.keeps", "row.a11y", "invalid", "save",
-        ].map { "flujoCambiarLimite.\($0)" }
+        /// Las claves que «Cálculo del monto» usa, para la prueba de que existen en los 16 idiomas.
+        static let claves: [String] = ["scope.only", "scope.from", "scope.all", "invalid", "save"]
+            .map { "flujoCambiarLimite.\($0)" }
     }
 }
