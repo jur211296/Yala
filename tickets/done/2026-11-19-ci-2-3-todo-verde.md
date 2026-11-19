@@ -35,6 +35,9 @@ verdad: sin tandas cortadas por su tope, sin cancelaciones y sin rojos que no se
   150 → 165.
 - Semilla: «Taxi aeropuerto» a −18,40, con céntimos como «Fijos casa» (card 04ek).
 - `AIConsentAlertUITests`: la espera de cierre del aviso, 5 → 15 s.
+- `DailyAllowanceUITests` usa el presupuesto determinista «QA 30» (`-uitest-seed-budget-states`): con «Comidas fuera»
+  de la semilla `realista`, el 19-nov iba en 1.831 de 1.800 y la app escondía el cupo con razón (rojo 3/3 en el run
+  del PR y en local).
 - Regla `ci-qa.md` al día.
 
 Decisiones y su porqué: `encargos/lanzados/2026-11-19-ci-2-3-todo-verde.md`, Paso 0, y el cuerpo del PR.
