@@ -1,6 +1,6 @@
 ---
 id: 2026-11-17-flujo-de-caja-replanteo
-status: backlog
+status: done
 priority: high
 area: cash-flow
 created: 2026-11-18
@@ -71,11 +71,11 @@ En el artifact, con selector. Recomendado entre corchetes.
 | Sesión | Vista | Qué | Esfuerzo |
 |---|---|---|---|
 | S1 ✅ | Motor del mes (sin UI) — **hecha el 18-nov** (ver «S1 hecha» abajo) | Una cuenta por mes: real con signo y sin categoría + lo que falta por línea + «otros» por mediana. Mes en curso desde el saldo de hoy; pasados = real; futuros encadenan desde el cierre. Sin doble conteo de fechados, promedio sin el mes a medias. Paridad con «Al 30» del Panel. Review adversarial. | Alto (1 sesión larga) |
-| S2 | Detalle del mes y cápsulas | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
+| S2 ✅ | Detalle del mes y cápsulas — **hecha el 18-nov** (ver «S2 hecha» abajo) | Una historia: «Empezaste con · Entró · Salió · Terminas con», real y estimado distinguidos. Fuera «Empezaste con S/ 0» y las tres cifras. | Medio |
 | S3 ✅ | Detalle de línea — **hecha el 18-nov** (ver «S3 hecha» abajo) | Todos los registros del mes (por día, «Ver en Registros»), límite arriba con «Cambiar», lo que falta y si sigue al ritmo, 6 meses real vs límite, aviso de gasto en la categoría madre. | Medio-alto |
 | S4 ✅ | Cambiar límite — **hecha el 18-nov** (ver «S4 hecha» abajo) | Hoja única con alcance ANTES de escribir (solo este mes / desde este mes / todos), admite 0, dice qué meses cambian. Retirar `CashFlowLineConfigSheet` (inalcanzable). | Medio |
 | S5 ✅ | Crear plan — **hecha el 18-nov** (ver «S5 hecha» abajo) | Sin «¿Con cuánto empiezas?», líneas por subcategoría agrupadas bajo su categoría, límites fijos sembrados con el promedio. | Bajo-medio |
-| S6 | Consumidores | Panel «Ver proyectado», widget de Saldo y Tendencias con la misma pieza de S1 (otros por mediana, sin doble conteo). | Medio |
+| S6 ✅ | Consumidores — **hecha el 18-nov** (ver «S6 hecha» abajo) | Panel «Ver proyectado», widget de Saldo y Tendencias con la misma pieza de S1 (otros por mediana, sin doble conteo). | Medio |
 
 Orden: S1 → S2 → S4 → S3 → S5 → S6. S1 necesita P1, P2, P4, P5 y P6 decididas.
 
@@ -191,3 +191,40 @@ el «Paso 0» del encargo `2026-11-18-flujo-crear-plan`.
 Pendiente para S6 y fuera de S5: las líneas por promedio de planes ya creados siguen moviéndose cada mes («Cómo se
 calcula · Cambiar» del detalle de línea); «Agregar a mi plan» desde otros (`promoteFromOthers`) aún crea líneas por
 promedio.
+
+## S6 hecha (18-nov-2026)
+
+Panel («Ver proyectado» y «Al 30»), Tendencias y el widget de Saldo ya pasaban los tres por `ProjectedFlowBuilder.build`;
+con plan salían del motor desde S1. Sin plan, o con filtros de sesión, seguían el ritmo de 90 días. Ahora
+`ProjectedFlowBuilder.othersRemaining` pide al mismo motor, sin líneas, «otros» por la mediana de 6 meses (gastos) y no
+proyecta ingresos sin pago planificado (P6). Se retira el ritmo del builder. Decisiones del arranque: el «Paso 0» del
+encargo `2026-11-18-flujo-panel-widget-tendencias`.
+
+- **Paridad con test:** «Al 30» del flujo de caja, del Panel y el último punto del mes del widget de Saldo dan la misma
+  cifra, con plan y sin plan (`YalaTests/FlujoConsumidores/FlujoConsumidoresParidadTests`, con el fixture discriminante).
+- **Lo fechado entra una vez** también sin plan (cierra el residual del ticket del doble conteo).
+- **Con filtros**, la mediana es la de lo filtrado; sin filtros, la de todos los movimientos, como con plan.
+- **Medido en la semilla `realista` (sin plan):** «Al 30 de noviembre» de S/ 70,354.22 a S/ 69,733.55; «Al 31 de
+  diciembre» de S/ 72,296.27 a S/ 61,584.55, porque el sueldo de diciembre ya no se da por hecho si no es un pago
+  planificado.
+- Sin cambios de diseño ni textos nuevos: el gasto estimado sigue diciendo «Estimado con tu ritmo de gasto».
+
+## Resumen de las seis sesiones
+
+1. **S1 · Motor del mes:** una cuenta por mes (real con signo + lo que falta), un dueño por movimiento, «otros» por la
+   mediana, sin doble conteo; «Al 30» igual al del Panel.
+2. **S2 · Detalle del mes:** una sola historia («Empezaste con · Entró · Salió · Terminas con») y la tabla agrupada por
+   categoría con la subcategoría como fila base.
+3. **S3 · Detalle de línea:** el límite arriba con «Cambiar», todos los registros del mes y los 6 meses de real contra
+   límite.
+4. **S4 · Cambiar límite:** una hoja que pregunta primero qué meses cambian y enseña cómo quedan.
+5. **S5 · Crear plan:** sin saldo inicial manual, líneas por subcategoría y límites fijos sembrados con el promedio.
+6. **S6 · Consumidores:** Panel, Tendencias y widget de Saldo con el mismo motor, también sin plan.
+
+## Queda fuera del replanteo
+
+- Las líneas por promedio de planes ya creados siguen moviéndose cada mes («Cómo se calcula · Cambiar» del detalle de
+  línea), y «Agregar a mi plan» desde otros (`promoteFromOthers`) aún crea líneas por promedio (anotado en S5).
+- El ritmo puro (`ProjectedFlowCalculator.rhythm`, `minimumRhythmDays`, `rhythmWindowDays`) quedó sin uso tras S6; vive
+  en un fichero que S6 no tocaba.
+

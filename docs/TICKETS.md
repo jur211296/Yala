@@ -97,7 +97,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone | backlog | tickets/backlog/2026-11-16-web-grupos-nota-lista-dice-usa-tu-iphone.md |
 | 2026-11-16-web-gasto-de-grupo-en-el-total-del-dia | backlog | tickets/backlog/2026-11-16-web-gasto-de-grupo-en-el-total-del-dia.md |
 | 2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x | backlog | tickets/backlog/2026-11-16-web-nuevo-registro-con-teclado-esconde-la-x.md |
-| 2026-11-17-flujo-de-caja-replanteo | backlog | tickets/backlog/2026-11-17-flujo-de-caja-replanteo.md |
+| 2026-11-17-flujo-de-caja-replanteo | done | tickets/done/2026-11-17-flujo-de-caja-replanteo.md |
 | ci-ui-nocturna-sin-runtime-en-la-imagen-20261112 | backlog | tickets/backlog/ci-ui-nocturna-sin-runtime-en-la-imagen-20261112.md |
 | 2026-11-16-ci-simulador-runner | done | tickets/done/2026-11-16-ci-simulador-runner.md |
 | 2026-11-15-saldo-panel | done | tickets/done/2026-11-15-saldo-panel.md |
@@ -257,7 +257,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
-| cash-flow-advanced-gate-never-limits-free-users | backlog | tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md |
+| cash-flow-advanced-gate-never-limits-free-users | done | tickets/done/cash-flow-advanced-gate-never-limits-free-users.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cash-flow-month-vs-empty-and-contrast-necessary-08-2-3 | done | tickets/done/cash-flow-month-vs-empty-and-contrast-necessary-08-2-3.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |

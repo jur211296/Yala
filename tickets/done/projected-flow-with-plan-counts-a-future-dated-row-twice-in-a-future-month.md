@@ -32,3 +32,6 @@ El motor del mes (`FlujoMotorMes`) calcula lo que falta de cada línea como lím
 mes en curso y en los que vienen, y `ProjectedFlowBuilder.planRemaining` lo pide a ese motor: lo fechado entra una vez,
 dentro de su línea. Lo fija `FlujoMotorMesTests.loFechadoEnUnMesQueVieneEntraUnaVezDentroDeSuLinea` (ocio de diciembre:
 300, no 300 + 150).
+
+**S6 (2026-11-18):** sin plan, o con filtros, el mismo motor sin líneas: lo fechado de un mes que viene descuenta de lo
+que le falta a «otros» y se pinta una vez, en su día. Lo fija `FlujoConsumidoresParidadTests.sinPlan_loFechadoEntraUnaVez`.
