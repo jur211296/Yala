@@ -36,6 +36,24 @@ enum FlujoMotorMes {
         let pagoID: UUID?
         /// Fechado de mañana en adelante: aún no es real, y entra una vez, en lo que falta.
         let esFechado: Bool
+        /// Para reconocer lo fijo y lo aislado (`FlujoProyeccionInteligente`): el día del mes, la nota (de ella sale el
+        /// comercio) y el nombre de su subcategoría.
+        var dia: Int = 1
+        var nota: String? = nil
+        var subcategoriaNombre: String? = nil
+
+        /// El comercio canónico de la nota (`MerchantCanonicalizer`), `nil` sin nota. Se calcula al leerlo: solo lo leen
+        /// los movimientos de la ventana de la detección y, con un fijo por comercio, los del mes.
+        var comercio: String? {
+            guard let nota, !nota.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            let canonico = MerchantCanonicalizer.canonicalize(nota)
+            return canonico.isEmpty ? nil : canonico
+        }
+        /// El comercio como lo escribió la persona, sin el prefijo del procesador de pago.
+        var comercioVisible: String? {
+            guard comercio != nil, let nota else { return nil }
+            return MerchantCanonicalizer.displayName(for: nota)
+        }
 
         var enPagoProgramado: Bool { pagoID != nil }
     }
@@ -107,13 +125,33 @@ enum FlujoMotorMes {
         var sinSubcategoria: Double { sinSubcategoriaReal + sinSubcategoriaFechado + sinSubcategoriaPendiente }
     }
 
+    /// Un fijo detectado (`FlujoProyeccionInteligente`) en un mes: lo que ya llevó y lo que le falta.
+    struct FijoMes {
+        let fijo: FlujoProyeccionInteligente.Fijo
+        /// Lo que ya tiene el mes de ese fijo (real o fechado, enlazado a un pago o no).
+        let llevado: Double
+        /// Pagos programados pendientes del mismo grupo en el mes: ya se proyectan en su día.
+        let pendiente: Double
+        let falta: Double
+        /// Lo que de verdad entró este mes de ese fijo (sin lo fechado ni lo adelantado): «Ya llegó» sale de aquí.
+        var cobrado: Double = 0
+    }
+
     struct OtrosMes {
         let real: Double
         let fechado: Double
         let pendiente: Double
+        /// Lo que falta: lo de los fijos más lo variable.
         let falta: Double
         /// Lo real por categoría (`nil` = sin categoría), sin ceros.
         let porCategoria: [(categoria: Category?, importe: Double)]
+        /// Cada fijo del lado en el mes (vacío en un mes cerrado y sin historia).
+        var fijos: [FijoMes] = []
+        /// Lo que falta por lo variable (la mediana sin fijos ni aislados).
+        var faltaVariable: Double = 0
+        /// Los aislados de este mes (en curso o que viene): cuentan en él, pero no se comen lo que falta de lo variable.
+        var aislados: [FlujoProyeccionInteligente.Aislado] = []
+        var faltaFijos: Double { fijos.reduce(0) { $0 + $1.falta } }
         var esperado: Double { real + fechado + pendiente + falta }
     }
 
@@ -121,6 +159,8 @@ enum FlujoMotorMes {
         let lineas: [UUID: LineaMes]
         let grupos: [GrupoMes]
         let otros: OtrosMes
+        /// Lo que se detectó en los registros de este lado: fijos, aislados y lo variable.
+        var deteccion: FlujoProyeccionInteligente.Lado = .vacio(esIngreso: false)
         var real: Double {
             lineas.values.reduce(0) { $0 + $1.real } + grupos.reduce(0) { $0 + $1.sinSubcategoriaReal } + otros.real
         }
@@ -130,9 +170,20 @@ enum FlujoMotorMes {
         }
         /// Lo que falta en este lado: fechado, pendiente, lo que queda a las líneas y a «otros».
         var resto: Double { total - real }
-        /// Lo que falta que no está ya en un pago pendiente ni en un movimiento fechado: lo que el flujo proyectado
-        /// reparte entre los días que quedan.
-        var faltaRepartible: Double { lineas.values.reduce(0) { $0 + $1.falta } + otros.falta }
+        /// Lo que falta que no está ya en un pago pendiente ni en un movimiento fechado ni es un fijo de un día: lo que
+        /// el flujo proyectado reparte entre los días que quedan.
+        var faltaRepartible: Double {
+            lineas.values.reduce(0) { $0 + $1.falta } + otros.falta - faltaPorDia.values.reduce(0, +)
+        }
+        /// Lo que les falta a los fijos que llegan una vez al mes, por su día típico: el flujo proyectado lo dibuja ese
+        /// día (o mañana, si ya pasó sin llegar).
+        var faltaPorDia: [Int: Double] {
+            var result: [Int: Double] = [:]
+            for item in otros.fijos where item.fijo.unaVezAlMes && item.falta > 0 {
+                result[item.fijo.dia, default: 0] += item.falta
+            }
+            return result
+        }
     }
 
     struct Mes {
@@ -147,22 +198,24 @@ enum FlujoMotorMes {
 
     static func calcular(_ entrada: Entrada) -> [Mes] {
         let dueños = Dueños(lineas: entrada.lineas)
-        let medianaOtros = medianaDeOtros(entrada, dueños: dueños)
+        let deteccion = detectar(entrada, dueños: dueños)
         return entrada.meses.map { mes in
             let esPasado = mes < entrada.mesEnCurso
             let esEnCurso = mes == entrada.mesEnCurso
             let proyecta = !esPasado && (!esEnCurso || entrada.quedanDiasEnElMes)
             let movimientos = entrada.movimientos.filter { $0.mes == mes }
             let pendientes = proyecta ? entrada.pendientes.filter { $0.mes == mes } : []
+            let mesAnterior = entrada.calendar.date(byAdding: .month, value: -1, to: mes)
+            let anteriores = proyecta ? entrada.movimientos.filter { $0.mes == mesAnterior && $0.esIngreso } : []
             return Mes(
                 inicio: mes, esPasado: esPasado, esEnCurso: esEnCurso,
                 ingresos: lado(
                     esIngreso: true, mes: mes, proyecta: proyecta, movimientos: movimientos, pendientes: pendientes,
-                    entrada: entrada, dueños: dueños, medianaOtros: 0
+                    entrada: entrada, dueños: dueños, deteccion: deteccion.ingresos, mesAnterior: anteriores
                 ),
                 gastos: lado(
                     esIngreso: false, mes: mes, proyecta: proyecta, movimientos: movimientos, pendientes: pendientes,
-                    entrada: entrada, dueños: dueños, medianaOtros: medianaOtros
+                    entrada: entrada, dueños: dueños, deteccion: deteccion.gastos, mesAnterior: []
                 )
             )
         }
@@ -177,10 +230,21 @@ enum FlujoMotorMes {
     private static func lado(
         esIngreso: Bool, mes: Date, proyecta: Bool,
         movimientos: [Movimiento], pendientes: [Pendiente],
-        entrada: Entrada, dueños: Dueños, medianaOtros: Double
+        entrada: Entrada, dueños: Dueños, deteccion: FlujoProyeccionInteligente.Lado,
+        mesAnterior: [Movimiento]
     ) -> Lado {
         var porDueño: [Dueño: Suma] = [:]
-        var otrosSinPago = 0.0
+        // Lo que el mes ya tiene de lo variable de «otros»: sin lo enlazado a un pago (se proyecta por su pago), sin lo
+        // de un fijo (tiene su cuenta) y sin un aislado (cuenta en el mes, pero no se come lo que falta de lo demás).
+        var otrosVariable = 0.0
+        var aisladosDelMes: [FlujoProyeccionInteligente.Aislado] = []
+        // Lo que el mes ya tiene de cada fijo, con o sin pago y sea de quien sea: un sueldo cobrado por su pago
+        // programado ya es el sueldo del mes.
+        var llevadoPorFijo: [FlujoProyeccionInteligente.Clave: Double] = [:]
+        var cobradoPorFijo: [FlujoProyeccionInteligente.Clave: Double] = [:]
+        // Lo apartado como aislado y lo devuelto de su mismo grupo en el mes: la devolución sale con él.
+        var aisladoPorGrupo: [FlujoProyeccionInteligente.Clave.Base: Double] = [:]
+        var devueltoPorGrupo: [FlujoProyeccionInteligente.Clave.Base: Double] = [:]
         var otrosPorCategoria: [PersistentIdentifier?: (Category?, Double)] = [:]
         for mov in movimientos where mov.esIngreso == esIngreso {
             let dueño = dueños.dueño(
@@ -192,8 +256,21 @@ enum FlujoMotorMes {
             } else {
                 porDueño[dueño, default: Suma()].real += mov.importe
             }
+            if let fijo = deteccion.fijoQueReconoce(mov) {
+                llevadoPorFijo[fijo.clave, default: 0] += mov.importe
+                if !mov.esFechado { cobradoPorFijo[fijo.clave, default: 0] += mov.importe }
+            }
             if dueño == .otros {
-                if !mov.enPagoProgramado { otrosSinPago += mov.importe }
+                if !mov.enPagoProgramado, deteccion.fijo(de: mov) == nil {
+                    let grupo = FlujoProyeccionInteligente.base(de: mov)
+                    if proyecta, deteccion.esAisladoEnMesProyectado(mov) {
+                        aisladosDelMes.append(FlujoProyeccionInteligente.aislado(mov))
+                        aisladoPorGrupo[grupo, default: 0] += mov.importe
+                    } else {
+                        otrosVariable += mov.importe
+                        if mov.importe < 0 { devueltoPorGrupo[grupo, default: 0] -= mov.importe }
+                    }
+                }
                 if !mov.esFechado {
                     let previo = otrosPorCategoria[mov.categoriaID]?.1 ?? 0
                     otrosPorCategoria[mov.categoriaID] = (mov.categoria, previo + mov.importe)
@@ -254,18 +331,82 @@ enum FlujoMotorMes {
         let otros = porDueño[.otros] ?? Suma()
         // Una línea libre (sin categoría ni pago) no recibe nada real: su gasto cae en «otros». Lo que le falta y lo que
         // a «otros» le falta por la mediana son el mismo gasto sin categoría del plan; cuenta el mayor de los dos.
+        // Con los fijos detectados vale lo mismo: una línea libre de ingresos «Sueldo» y el sueldo fijo de «otros» son el
+        // mismo dinero. La línea absorbe primero lo variable y después, en proporción, lo que les falta a los fijos.
         let faltaLibres = dueños.libres(esIngreso: esIngreso).reduce(0.0) { $0 + (lineas[$1]?.falta ?? 0) }
-        let faltaOtros = proyecta ? max(medianaOtros - otrosSinPago - faltaLibres, 0) : 0
+        // La devolución de un aislado del mes no cuenta como gasto negativo de lo demás.
+        for (grupo, devuelto) in devueltoPorGrupo {
+            otrosVariable += min(devuelto, aisladoPorGrupo[grupo] ?? 0)
+        }
+        let variableQueFalta = proyecta ? max(deteccion.variable - otrosVariable, 0) : 0
+        let faltaVariable = max(variableQueFalta - faltaLibres, 0)
+        let libresSobrantes = max(faltaLibres - variableQueFalta, 0)
+        // Cada fijo: su monto menos lo que el mes ya tiene de él, lo que llegó adelantado a fin del mes anterior y los
+        // pagos pendientes de su grupo (de un fijo por comercio, solo uno de monto parecido), nunca negativo. Si ya llegó
+        // casi entero (dentro de la tolerancia: un sueldo en dólares a otra tasa), no falta nada: proyectar la
+        // diferencia inventaría un ingreso.
+        let fijosBrutos: [FijoMes] = proyecta ? deteccion.fijos.map { fijo in
+            let pendiente = pendientes.filter { pendiente in
+                pendiente.esIngreso == esIngreso && FlujoProyeccionInteligente.cubre(pendiente, a: fijo)
+            }.reduce(0.0) { $0 + $1.importe }
+            let llevado = (llevadoPorFijo[fijo.clave] ?? 0)
+                + FlujoProyeccionInteligente.adelantado(fijo, enElMesAnterior: mesAnterior, lado: deteccion)
+            let yaLlego = FlujoProyeccionInteligente.yaLlego(llevado, de: fijo.monto)
+            return FijoMes(fijo: fijo, llevado: llevado, pendiente: pendiente,
+                           falta: yaLlego ? 0 : max(fijo.monto - llevado - pendiente, 0),
+                           cobrado: cobradoPorFijo[fijo.clave] ?? 0)
+        } : []
+        let faltaFijosBruta = fijosBrutos.reduce(0.0) { $0 + $1.falta }
+        let factorFijos = faltaFijosBruta > 0 ? max(faltaFijosBruta - libresSobrantes, 0) / faltaFijosBruta : 0
+        let fijos = fijosBrutos.map { item in
+            FijoMes(fijo: item.fijo, llevado: item.llevado, pendiente: item.pendiente, falta: item.falta * factorFijos,
+                    cobrado: item.cobrado)
+        }
+        let faltaFijos = fijos.reduce(0.0) { $0 + $1.falta }
         return Lado(
             lineas: lineas,
             grupos: grupos,
             otros: OtrosMes(
-                real: otros.real, fechado: otros.fechado, pendiente: otros.pendiente, falta: faltaOtros,
+                real: otros.real, fechado: otros.fechado, pendiente: otros.pendiente,
+                falta: faltaVariable + faltaFijos,
                 porCategoria: otrosPorCategoria.values
                     .filter { abs($0.1) > 0.000_5 }
                     .sorted { $0.1 > $1.1 }
-                    .map { (categoria: $0.0, importe: $0.1) }
-            )
+                    .map { (categoria: $0.0, importe: $0.1) },
+                fijos: fijos,
+                faltaVariable: faltaVariable,
+                aislados: aisladosDelMes.sorted { $0.importe > $1.importe }
+            ),
+            deteccion: deteccion
+        )
+    }
+
+    // MARK: - Fijos y aislados
+
+    /// Lo detectado en los dos lados sobre los movimientos de «otros» de la historia (sin línea con el plan de hoy).
+    static func detectar(_ entrada: Entrada) -> (ingresos: FlujoProyeccionInteligente.Lado,
+                                                 gastos: FlujoProyeccionInteligente.Lado) {
+        detectar(entrada, dueños: Dueños(lineas: entrada.lineas))
+    }
+
+    private static func detectar(_ entrada: Entrada, dueños: Dueños) -> (ingresos: FlujoProyeccionInteligente.Lado,
+                                                                        gastos: FlujoProyeccionInteligente.Lado) {
+        let historia = entrada.historia ?? entrada.movimientos
+        let primerMes = historia.map(\.mes).min()
+        let esDeOtros: (Movimiento) -> Bool = { mov in
+            dueños.dueño(esIngreso: mov.esIngreso, categoriaID: mov.categoriaID, subcategoriaID: mov.subcategoriaID,
+                         pagoID: nil) == .otros
+        }
+        // Los gastos, de toda la historia, como la mediana desde S1 (el Panel y el flujo de caja proyectan lo mismo). Los
+        // ingresos fijos, solo de lo que cuenta para esta cifra (con Saldo, las cuentas que suman): un cobro que cae en
+        // una cuenta excluida nunca llega a ese saldo, y proyectarlo inventaría un ingreso.
+        return (
+            FlujoProyeccionInteligente.detectar(esIngreso: true, historia: entrada.movimientos.filter(esDeOtros),
+                                                primerMes: primerMes, mesEnCurso: entrada.mesEnCurso,
+                                                calendar: entrada.calendar),
+            FlujoProyeccionInteligente.detectar(esIngreso: false, historia: historia.filter(esDeOtros),
+                                                primerMes: primerMes, mesEnCurso: entrada.mesEnCurso,
+                                                calendar: entrada.calendar)
         )
     }
 

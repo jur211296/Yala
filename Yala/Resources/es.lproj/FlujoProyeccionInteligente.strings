@@ -1,0 +1,21 @@
+/*
+  FlujoProyeccionInteligente.strings
+  Yala
+
+  La hoja «Otros» del flujo de caja: qué se proyectó como fijo y qué se dejó fuera por aislado (decisión de Jürgen
+  del 19-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoProyeccion`).
+*/
+
+"flujoProyeccion.fixed.title" = "Lo fijo, cada mes";
+"flujoProyeccion.fixed.desc.income" = "Ingresos que se repiten en tus registros con un monto parecido. Se proyectan aunque no estén en tu plan.";
+"flujoProyeccion.fixed.desc.expense" = "Gastos que se repiten en tus registros con un monto parecido. Se proyectan aunque no estén en tu plan.";
+"flujoProyeccion.fixed.day" = "%1$@ · día %2$d";
+"flujoProyeccion.fixed.perMonth" = "%@ al mes";
+"flujoProyeccion.fixed.seen" = "En %1$d de %2$d meses";
+"flujoProyeccion.fixed.done.income" = "Ya llegó este mes";
+"flujoProyeccion.fixed.done.expense" = "Ya se pagó este mes";
+"flujoProyeccion.isolated.title" = "Fuera de la proyección";
+"flujoProyeccion.isolated.desc" = "Montos grandes que no se repiten. Cuentan en el mes en que ocurrieron, pero no en los meses que vienen.";
+"flujoProyeccion.variable.expense" = "El resto de tus gastos se proyecta por lo que gastas en un mes normal: %@.";
+"flujoProyeccion.variable.income" = "Los ingresos que cambian de un mes a otro no se proyectan.";
+"flujoProyeccion.shortHistory" = "Con menos de %d meses de registros todavía no se distingue lo fijo de lo aislado. Por ahora no se proyectan ingresos sin un pago planificado, y los gastos van por lo que gastas en un mes normal.";
