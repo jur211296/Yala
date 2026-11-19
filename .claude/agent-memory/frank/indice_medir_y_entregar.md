@@ -115,3 +115,6 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Artifact público: pocas imágenes](reference_artifact_publico_con_muchas_imagenes.md) — 600 logos sueltos no se comparten; lámina única + pares en una imagen.
 - [Sonda numérica sin commitear](reference_sonda_numerica_sin_commitear.md) — test temporal con «SONDA|»; su DerivedData pesa 8 GB: bórralo con osascript.
 - [build-for-testing genérico duplica el disco](feedback_build_for_testing_generico_duplica_el_disco.md) — compila x86_64 también: usa el id del simulador; df antes de un simulador temporal.
+- [Banco con YAML: el CI tiene PyYAML](reference_banco_yaml_en_ci_tiene_pyyaml.md) — en la Mac cae a Ruby y pasa; prueba el camino PyYAML con un venv.
+- [Desatascar PRs en serie: TICKETS.md fuera](feedback_desatascar_prs_en_serie_saca_el_indice.md) — índice como en 2.3 y filas al final; el índice de QA por área.
+- [No cerrar hasta ver el PR dentro](feedback_no_cerrar_hasta_ver_el_pr_dentro.md) — 19-nov: auto-merge armado no basta; esperar MERGED y arreglar lo que choque.

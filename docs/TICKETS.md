@@ -43,9 +43,16 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1384)
+## Index (1391)
 
 | id | status | path |
+| 2026-11-17-pagos-que-se-repiten-banner-y-hoja | done | tickets/done/2026-11-17-pagos-que-se-repiten-banner-y-hoja.md |
+| 2026-11-17-verificacion-revisor-checklist | done | tickets/done/2026-11-17-verificacion-revisor-checklist.md |
+| 2026-11-17-banco-de-la-checklist-fuera-del-ci | backlog | tickets/backlog/2026-11-17-banco-de-la-checklist-fuera-del-ci.md |
+| 2026-11-18-sentry-cuelgues-hero-y-widget | done | tickets/done/2026-11-18-sentry-cuelgues-hero-y-widget.md |
+| 2026-11-17-asistente-nuevo-favorito | done | tickets/done/2026-11-17-asistente-nuevo-favorito.md |
+| 2026-11-17-asistente-nuevo-grupo | done | tickets/done/2026-11-17-asistente-nuevo-grupo.md |
+| 2026-11-17-nuevo-registro-sin-sugerencias-categoria | done | tickets/done/2026-11-17-nuevo-registro-sin-sugerencias-categoria.md |
 | 2026-11-19-barrido-qa-2-3-post-flujo | done | tickets/done/2026-11-19-barrido-qa-2-3-post-flujo.md |
 | 2026-11-19-subir-testflight-2-3 | done | tickets/done/2026-11-19-subir-testflight-2-3.md |
 | 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
