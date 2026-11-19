@@ -1,0 +1,51 @@
+SONDA|hoy=2026-11-18 06:13:07 +0000 dia=18
+SONDA|saldoHoy=13517.50 cuentas=2
+SONDA|sugerida Sueldo ingreso=true monto=4000.00 meses=6 elegida=true
+SONDA|sugerida Vivienda ingreso=false monto=1500.00 meses=6 elegida=true
+SONDA|sugerida Comida ingreso=false monto=900.00 meses=6 elegida=true
+SONDA|sugerida Ocio ingreso=false monto=300.00 meses=5 elegida=true
+SONDA|sugerida Transporte ingreso=false monto=200.00 meses=6 elegida=true
+SONDA|plan.startingBalance=13517.50 fecha=nil
+SONDA|MES 2026-08 pasado=true actual=false ingreso=4000.00 gasto=2900.00 neto=1100.00 acumulado=nil otrosGasto=0.00 otrosIngreso=0.00
+SONDA|   2026-08 linea Sueldo plan=4000.00 real=4000.00 progreso=nil
+SONDA|   2026-08 linea Vivienda plan=1500.00 real=1500.00 progreso=nil
+SONDA|   2026-08 linea Comida plan=900.00 real=900.00 progreso=nil
+SONDA|   2026-08 linea Ocio plan=300.00 real=300.00 progreso=nil
+SONDA|   2026-08 linea Transporte plan=200.00 real=200.00 progreso=nil
+SONDA|MES 2026-09 pasado=true actual=false ingreso=4000.00 gasto=2900.00 neto=1100.00 acumulado=nil otrosGasto=0.00 otrosIngreso=0.00
+SONDA|   2026-09 linea Sueldo plan=4000.00 real=4000.00 progreso=nil
+SONDA|   2026-09 linea Vivienda plan=1500.00 real=1500.00 progreso=nil
+SONDA|   2026-09 linea Comida plan=900.00 real=900.00 progreso=nil
+SONDA|   2026-09 linea Ocio plan=300.00 real=300.00 progreso=nil
+SONDA|   2026-09 linea Transporte plan=200.00 real=200.00 progreso=nil
+SONDA|MES 2026-10 pasado=true actual=false ingreso=4000.00 gasto=2900.00 neto=1100.00 acumulado=nil otrosGasto=0.00 otrosIngreso=0.00
+SONDA|   2026-10 linea Sueldo plan=4000.00 real=4000.00 progreso=nil
+SONDA|   2026-10 linea Vivienda plan=1500.00 real=1500.00 progreso=nil
+SONDA|   2026-10 linea Comida plan=900.00 real=900.00 progreso=nil
+SONDA|   2026-10 linea Ocio plan=300.00 real=300.00 progreso=nil
+SONDA|   2026-10 linea Transporte plan=200.00 real=200.00 progreso=nil
+SONDA|MES 2026-11 pasado=false actual=true ingreso=4600.00 gasto=2900.00 neto=1700.00 acumulado=15217.50 otrosGasto=0.00 otrosIngreso=600.00
+SONDA|   2026-11 linea Sueldo plan=4000.00 real=4000.00 progreso=1.00
+SONDA|   2026-11 linea Vivienda plan=1500.00 real=1500.00 progreso=1.00
+SONDA|   2026-11 linea Comida plan=900.00 real=1380.00 progreso=1.53
+SONDA|   2026-11 linea Ocio plan=300.00 real=0.00 progreso=0.00
+SONDA|   2026-11 linea Transporte plan=200.00 real=87.50 progreso=0.44
+SONDA|MES 2026-12 pasado=false actual=false ingreso=4000.00 gasto=2961.25 neto=1038.75 acumulado=16256.25 otrosGasto=nil otrosIngreso=nil
+SONDA|   2026-12 linea Sueldo plan=4000.00 real=nil progreso=nil
+SONDA|   2026-12 linea Vivienda plan=1500.00 real=nil progreso=nil
+SONDA|   2026-12 linea Comida plan=980.00 real=nil progreso=nil
+SONDA|   2026-12 linea Ocio plan=300.00 real=nil progreso=nil
+SONDA|   2026-12 linea Transporte plan=181.25 real=nil progreso=nil
+SONDA|MES 2027-01 pasado=false actual=false ingreso=4000.00 gasto=2943.50 neto=1056.50 acumulado=17312.75 otrosGasto=nil otrosIngreso=nil
+SONDA|MES 2027-02 pasado=false actual=false ingreso=4000.00 gasto=2954.38 neto=1045.62 acumulado=18358.38 otrosGasto=nil otrosIngreso=nil
+SONDA|MES 2027-03 pasado=false actual=false ingreso=4000.00 gasto=2972.50 neto=1027.50 acumulado=19385.88 otrosGasto=nil otrosIngreso=nil
+SONDA|MES 2027-04 pasado=false actual=false ingreso=4000.00 gasto=3008.75 neto=991.25 acumulado=20377.12 otrosGasto=nil otrosIngreso=nil
+SONDA|MES 2027-05 pasado=false actual=false ingreso=4000.00 gasto=3117.50 neto=882.50 acumulado=21259.62 otrosGasto=nil otrosIngreso=nil
+SONDA|AL30 hoy=13517.50 faltaEntrar=0.00 faltaSalir=612.50 cierre=12905.00 fuente=plan
+SONDA|spentShare=Optional(102)
+SONDA|rotuloNeto=Este mes te quedaría
+SONDA|finHorizonte 2027-05 acumulado=21259.62
+SONDA|VERPROY mesActual entra=0.00 sale=612.50 | mesSiguiente entra=4292.78 sale=3214.58
+SONDA|C2 MES ingreso=4000.00 gasto=1100.00 neto=2900.00 otrosGasto=500.00
+SONDA|C2   linea Supermercado plan=600.00 real=0.00
+SONDA|C2 AL30 hoy=24500.00 faltaEntrar=0.00 faltaSalir=1066.67 cierre=23433.33

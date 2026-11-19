@@ -22,3 +22,12 @@ pierde si se edita primero.
 
 **How to apply:** cualquier encargo con más de dos pantallas que fotografiar. Relacionado:
 [[el-antes-sale-del-build-del-rojo]], [[conducir-simulador-con-axe]].
+
+**Vuelto a comprobar el 2026-11-18 (asistente de presupuesto, Mini, iOS 27.2):** `axe tap` dejó de llegar a la app
+(app quieta, hilo principal libre, `axe describe-ui` sí respondía) y **reiniciar el simulador no lo curó**. No perseguirlo:
+directo al conductor XCUITest. Dos mejoras que ahorraron corridas:
+- **Varias variantes en una sola corrida**: el caso lee `TEST_RUNNER_YALA_CAPTURAS="oscuro:|claro:-userTheme 1|letra:-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXL"`
+  y relanza la app por variante con `extraArguments:`; las fotos salen del `.xcresult` con
+  `xcresulttool export attachments` (nombre por `suggestedHumanReadableName`). SE e iPad: otro `-destination`.
+- **Foto 0,45 s después del toque**: sin la espera, la foto pilló el fundido entre preguntas, y eso destapó un defecto
+  real (las dos preguntas superpuestas), no solo de la foto.

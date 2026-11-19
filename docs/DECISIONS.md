@@ -2,23 +2,28 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (120 entradas)
+## Índice (125 entradas)
 
-> **No hace falta leer este fichero entero** — son 314 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 322 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
+- `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
+- `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
+- `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
+- `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
-- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
+- `2026-11-17` [Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la ho](#2026-11-17-lote-del-17-nov-tarde-desde-un-registro-yala-web-nuevo-registro-una-vista-por-sesin-y-la-hoja-esto-le)
+- `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
+- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
-- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
+- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
 - `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
@@ -26,9 +31,9 @@
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
-- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
@@ -64,8 +69,8 @@
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
-- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
+- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-24` [Rediseño Welcome → Restore → Onboarding + invitaciones (6 commits)](#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
@@ -101,8 +106,8 @@
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -112,8 +117,8 @@
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
-- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
+- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
@@ -146,6 +151,40 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-18] Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay
+**Contexto:** Tras el análisis de qué se pierde sin el permiso, Jürgen decidió en el chat el 18-nov (16:16, Lima): «Si requiere el pago, fuera. Nos quedamos con lo que tenemos». Capturada por el bot dueño (ADR-082 de casa); la registra la sesión de «Cambiar límite» del flujo de caja, que no la ejecuta. Sustituye entera a la de las 15:59 (abajo), que pedía el análisis.
+**Decisión:** Todo lo que exija pagar la evaluación CASA queda fuera. Se quita `gmail.readonly` y Yala se queda con lo que ya tiene para registrar avisos del banco: el atajo del banco y el reenvío a la dirección de Yala. «Conectar Gmail» nunca llegó a la app publicada.
+**Consecuencias:** lo de Google que queda (retirar el permiso en la consola, contestar el correo y quitar la sección de Gmail de la política) sigue en la card «Avisos del banco sin Gmail», a la espera del GO de Jürgen (`tickets/backlog/2026-11-18-verificacion-google-sin-casa.md`).
+**Estado:** Activa · sustituye a la decisión de las 15:59 del mismo día
+
+### [2026-11-18] Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`
+**Contexto:** El 18-nov (14:21, Lima) Google contestó a la verificación del permiso restringido `gmail.readonly` del proyecto `yala-502622`: para seguir pide una evaluación de seguridad ADA-CASA AL1 antes del 16-feb-2027, de pago y anual (precios vistos: 499 a 855 USD por año). Decisión de Jürgen del 18-nov (15:59), capturada en el chat por el bot dueño (ADR-082 de casa) y pendiente de pasar al repo. La incorpora la sesión que analiza qué se pierde sin ese permiso.
+**Decisión:** No se paga la evaluación CASA. Una sesión analiza lo que Yala tiene, lo que quiere tener y lo que pierde sin `gmail.readonly`, y propone las mejores soluciones (`docs/analisis/2026-11-18-verificacion-google-sin-casa/`).
+**Razones:** el coste es demasiado alto para una función que ningún usuario de producción tiene: «Conectar Gmail» nunca salió de Yala Dev.
+**Consecuencias:** deja sin efecto la línea de la decisión del 21-oct («Conectar Gmail (y Outlook) llega en cuanto Google apruebe la verificación de su permiso restringido») y la opción A de la decisión del 9-nov, mientras no se decida otra cosa. El correo del banco sigue llegando por reenvío a yalainbox.com y por el atajo del banco. Qué contestar a Google y qué entra en cada versión lo decide Jürgen sobre el análisis.
+**Estado:** Sustituida por «Avisos del banco sin Gmail» (18-nov, 16:16)
+
+### [2026-11-18] Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificados y Yala web a producción
+**Contexto:** Tres decisiones que Jürgen tomó en el chat el 18-nov (06:26, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del asistente de «Nueva cuenta»; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Flujo de caja:** se aceptan todas las recomendaciones del análisis (P1 a P6 y el modelo recomendado), con un ajuste: el nivel de detalle llega siempre a subcategoría, que es el id base; la categoría se deriva de ella y puede mostrarse colapsable. (2) **El logo del comercio** va solo en Pagos planificados, en las vistas de calendario, lista y timeline; no en Registros ni en el Panel. (3) **Yala web (logo oficial y tema del sistema):** opción B, desplegar ya a producción y Jürgen la prueba allí.
+**Razones:** Las da Jürgen al revisar el análisis de flujo de caja, la propuesta de logos y la web.
+**Consecuencias:** (1) y (2) necesitan su encargo. (3) es un despliegue de `Web/`, que sale de `1.0` como arreglo sobre lo publicado (`docs/FLUJO-RAMAS-Y-HOTFIX.md`).
+**Estado:** Activa
+
+### [2026-11-17] Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja de cuenta y iPhone Duo
+**Contexto:** Siete decisiones que Jürgen tomó en el chat el 17-nov (20:47 a 21:10, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de la hoja de foto (X del sistema, descripción editable y cierre al guardar); no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Flujo de caja se replantea:** ingresos y gastos cuentan todos los registros reales aunque no tengan línea; las líneas no excedidas proyectan su límite; el mes de inicio no cuenta dos veces los ingresos que ya están en el saldo; el detalle de una línea enseña todos sus registros y deja gestionar el límite fácilmente. Antes, una sesión de análisis crítico con propuestas. (2) **Comparativa de Reportes** más simple y visual, como una tabla dinámica: por fila, el % de variación frente al periodo anterior con color de bueno o malo según sea ingreso o gasto. (3) **Crear** presupuesto, pago planificado, grupo, cuenta y favorito abre un proceso por pasos con preguntas, con una opción arriba tipo «Prefiero formulario» que enseña el formulario de hoy; editar sigue en el formulario. (4) **Detalle de Salud financiera** visual y accionable (alertas, presupuestos, racha de días registrando), no texto que explica pesos. (5) **El perfil y su personalización** suben al nivel de las cuentas estilo tarjeta. (6) **La hoja de cuenta del Panel** enseña arriba la tarjeta personalizada de la cuenta como protagonista, con monto y uso de línea. (7) **En 2.3 se anuncia la compatibilidad con iPhone Duo** (ya soportada desde 2.2): novedades y notas de versión, y capturas de iPhone Duo en App Store Connect para el distintivo «Made for iPhone Duo» (build con el SDK de iOS 27.1).
+**Razones:** Las da Jürgen al revisar la build 2.3.
+**Consecuencias:** Faltan los encargos que ejecuten las siete; (1) empieza por la sesión de análisis. Las capturas y textos de la ficha de (7) son de Lola (`marketing/`). Del lote de la tarde, la parte de la hoja de foto —la X del sistema de (3) y la (5) entera— la ejecuta el PR de esta sesión.
+**Estado:** Activa
+
+### [2026-11-17] Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la hoja «Esto leí»
+**Contexto:** Cinco decisiones que Jürgen tomó en el chat el 17-nov (17:35 a 18:15, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de los logos reales de pagos planificados; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Pagos planificados:** «Desde un registro» pasa a un nombre corto («Reusar») o solo ícono, nunca un botón debajo del otro; su hoja (a pantalla grande) lleva los filtros rápidos y el buscador de Registros. Aparte, la vista de Registros dentro de Estadísticas tiene que ser idéntica a Registros a solas. (2) **Yala web:** usa el logo oficial (no el cuadrado con degradado); el tema inicial es claro u oscuro según el sistema, con el Liquid Glass morado solo como extra opcional; la entrada web no copia el estilo de la bienvenida de iOS. (3) **Nuevo registro:** se quitan las categorías sugeridas (píldoras) debajo del monto; las hojas de foto o archivo (personal y Grupos) usan la X de cierre del sistema, no una X chica hecha a mano. (4) **Cada sesión de Yala se enfoca en una sola vista:** no se mezclan arreglos de vistas distintas en una misma sesión, aunque sean chicos. (5) **Hoja de foto «Esto leí»:** cabecera ordenada sin hueco (título, miniatura y X), la descripción se edita tocándola ahí mismo sin abrir Nuevo registro, y la hoja se cierra sola cuando ya se guardaron todos.
+**Razones:** Las da Jürgen al revisar la build 2.3 en su teléfono.
+**Consecuencias:** Faltan los encargos que ejecuten (1), (2), (3) y (5); (4) rige el reparto de los encargos desde hoy.
+**Estado:** Activa
 
 ### [2026-11-17] Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR
 **Contexto:** El 17-nov (08:37, Lima) Jürgen aprobó aplicar todo lo recomendado de la propuesta de verificación (`docs/verificacion/`): P1 (pruebas inestables de divisas y cuarentena con dueño), P2 (interfaz de lo tocado en cada PR, elegida por script), P3 (línea «Verificado:» en cada commit) y P4 tras P1-P3. La sesión de P2 midió sobre los 214 PRs de 2.3 del 3 al 17-nov que un job de interfaz por PR costaba ~59 min de runner macOS por PR con pantallas (~10 h/día), y lo preguntó.

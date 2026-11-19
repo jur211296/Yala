@@ -36,7 +36,7 @@ struct ScheduledPaymentRowView: View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(spacing: DS.Spacing.md) {
-                    paymentIcon
+                    distintivo
                         .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
                     nameAndStatus(state)
                 }
@@ -45,14 +45,7 @@ struct ScheduledPaymentRowView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             HStack(spacing: DS.Spacing.md) {
-                Group {
-                    // El logo del servicio, si lo hay (card 9nn7, 2.3); si no, el icono de su subcategoría.
-                    if let brand = summary.payment.subscriptionBrand {
-                        SubscriptionBrandBadge(brand: brand, isDecorative: true)
-                    } else {
-                        paymentIcon
-                    }
-                }
+                distintivo
                     // Lo hecho, saltado o pausado, atenuado: lo que falta es lo que llama la atención.
                     .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
 
@@ -107,6 +100,12 @@ struct ScheduledPaymentRowView: View {
     }
 
     // MARK: - Components
+
+    /// El logo del comercio, si lo hay; si no, el icono de su subcategoría. El mismo en las dos formas de la fila: con
+    /// letra grande también (antes la de accesibilidad pintaba siempre el icono). Criterio común de Pagos planificados.
+    private var distintivo: some View {
+        PagoLogoDistintivo(logo: PagoLogoComercio.logo(for: summary.payment)) { paymentIcon }
+    }
 
     private var paymentIcon: some View {
         ZStack {

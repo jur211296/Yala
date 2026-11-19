@@ -34,16 +34,16 @@ struct RecordsTabView: View {
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
-    /// Registros (la pestaña) lleva los chips rápidos sobre la lista (revisión 2.3, decisión 15, F2); Estadísticas ›
-    /// Registros, no.
-    var showsQuickFilters: Bool = false
+    /// Cambió lo escrito en «Buscar en Registros»: solo filtra esta lista (en Estadísticas no recalcula las demás
+    /// pestañas por cada tecla).
+    var onListSearchChange: () -> Void
     /// La última lectura de los movimientos falló (decisión 78 de 2.3): con la lista vacía se enseña el error, no
     /// «Sin registros». Lo da `DetailContainerViewModel.transactionsLoadFailed`.
     var loadFailed: Bool = false
     /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
     var onRetryLoad: () -> Void = {}
-    /// Registros en una ventana ancha (decisión 66 de 2.3): con la vista calendario la página va a una sola columna y su
-    /// contenido, al ancho legible. Estadísticas › Registros no lo pide.
+    /// Una ventana ancha (decisión 66 de 2.3): con la vista calendario la página va a una sola columna y su contenido,
+    /// al ancho legible. Desde el 17-nov, en Registros y en Estadísticas › Registros.
     var keepsCalendarAtReadableWidth = false
 
     @State private var showCustomPeriodPicker: Bool = false
@@ -55,7 +55,8 @@ struct RecordsTabView: View {
         ScrollView {
             ScrollViewReader { scrollProxy in
                 VStack(spacing: DS.Spacing.md) {
-                    // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
+                    // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar. Lo ofrece `RecordsSharedList`, así que
+                    // sale en Registros y en Estadísticas › Registros (17-nov).
                     RecordsListSearchSlot(viewModel: viewModel)
                     StatsGuideSlot()
                     // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
@@ -133,7 +134,7 @@ struct RecordsTabView: View {
                 .padding(.top, DS.Spacing.sm)
                 .modifier(RecordsCalendarReadableWidth(
                     isActive: keepsCalendarAtReadableWidth && viewModel.recordsViewMode == .calendar))
-                .recordsListSearchContainer(viewModel, onQueryChange: onFilterChange)
+                .recordsListSearchContainer(viewModel, onQueryChange: onListSearchChange)
                 // C2: con el mes plegado a la semana, la semana sube arriba y la lista del día queda a la vista
                 // debajo, también con texto grande.
                 .onChange(of: viewModel.selectedCalendarDay) { _, day in
@@ -298,7 +299,7 @@ struct RecordsTabView: View {
             onFilterChange: onFilterChange,
             panelStyle: true,
             inlinePeriodSelector: false,
-            hidesQuickFilterDimensions: showsQuickFilters && !viewModel.duplicateModeActive
+            hidesQuickFilterDimensions: !viewModel.duplicateModeActive
         )
     }
 
@@ -791,9 +792,10 @@ struct RecordsTabView: View {
         }
     }
 
-    /// Los chips rápidos se ven (pestaña Registros, fuera del modo duplicados) y llevan Lista/Calendario en su fila.
+    /// Los chips rápidos se ven (fuera del modo duplicados) y llevan Lista/Calendario en su fila. En las dos pantallas
+    /// desde el 17-nov (antes, solo en la pestaña Registros: decisión 15 de 2.3, F2).
     private var quickFiltersHostViewMode: Bool {
-        showsQuickFilters && !viewModel.duplicateModeActive
+        !viewModel.duplicateModeActive
     }
 
     private var viewModeHeader: some View {

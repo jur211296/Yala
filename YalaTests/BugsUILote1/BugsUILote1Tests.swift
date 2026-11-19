@@ -87,7 +87,7 @@ struct BugsUILote1RecordsSearchSlotWiringTests {
     @Test("La animación y la escucha del texto cuelgan de la pila de RecordsTabView")
     func laPilaLlevaElContenedorDelBuscador() throws {
         let tab = try Self.readSource("Yala/App/Views/Statistics/RecordsTabView.swift")
-        #expect(tab.contains(".recordsListSearchContainer(viewModel, onQueryChange: onFilterChange)"))
+        #expect(tab.contains(".recordsListSearchContainer(viewModel, onQueryChange: onListSearchChange)"))
         let field = try Self.readSource("Yala/App/Views/Records/Components/RecordsListSearchField.swift")
         #expect(field.contains(".onChange(of: viewModel.listSearchText) { _, _ in onQueryChange() }"))
         #expect(field.contains("value: viewModel.isListSearchRevealed"))

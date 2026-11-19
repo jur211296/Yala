@@ -129,7 +129,12 @@ struct ZeroChangeSignWidgetWiringTests {
     @Test("La cápsula del mes y el resumen del plan usan la lógica del cero")
     func cashFlowViews_useTheZeroAwareLogic() throws {
         let capsule = Self.codeOnly(try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowMonthCapsule.swift"))
-        #expect(capsule.contains("CashFlowMonthSummaryLogic.capsuleNetText(month.netFlow)"))
+        // Desde S2 del replanteo (18-nov-2026) la cápsula dice con cuánto terminas el mes; sin cuentas, el neto, por la
+        // misma lógica del cero.
+        #expect(capsule.contains("FlujoDetalleMesLogica.textoCapsula(historia)"))
+        let detalle = Self.codeOnly(try Self.source(
+            "Yala/App/Views/Reports/CashFlow/DetalleMes/FlujoDetalleMesLogica.swift"))
+        #expect(detalle.contains("CashFlowMonthSummaryLogic.capsuleNetText(historia.neto)"))
         let setup = Self.codeOnly(try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowSetupView.swift"))
         // Desde la decisión 33 de 2.3 el resumen decide por `CashFlowSetupLogic.summaryOutcome`, que sigue preguntando a
         // la lógica del cero (y suma «Falta tu ingreso» cuando no hay ingresos a la vista).

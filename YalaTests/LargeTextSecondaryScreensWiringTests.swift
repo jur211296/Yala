@@ -15,7 +15,10 @@
 //
 
 import Foundation
+import SwiftUI
 import Testing
+
+@testable import Yala
 
 @Suite("Mejoras necesarias 2.3 · texto grande en pantallas secundarias (source-scan)")
 struct LargeTextSecondaryScreensWiringTests {
@@ -40,13 +43,23 @@ struct LargeTextSecondaryScreensWiringTests {
     func stacksAtAccessibilitySizes(path: String) throws {
         let src = try Self.code(path)
         #expect(src.contains("@Environment(\\.dynamicTypeSize) private var dynamicTypeSize"), "\(path) no lee el tamaño de texto.")
-        #expect(src.contains("if dynamicTypeSize.isAccessibilitySize {"), "\(path) ya no tiene forma apilada.")
+        // La fila de la Comparativa se apila desde XXL (Comparativa simple, 17-nov), que incluye los de accesibilidad.
+        let stacks = src.contains("if dynamicTypeSize.isAccessibilitySize {")
+            || src.contains("if PivotColumnWidths.stacks(dynamicTypeSize) {")
+        #expect(stacks, "\(path) ya no tiene forma apilada.")
+    }
+
+    /// El corte de la Comparativa incluye todos los tamaños de accesibilidad.
+    @Test func pivotStacks_atEveryAccessibilitySize() {
+        for size in DynamicTypeSize.allCases where size.isAccessibilitySize {
+            #expect(PivotColumnWidths.stacks(size), "\(size) no apila la fila.")
+        }
     }
 
     @Test("La fila de la Comparativa apilada no reserva la columna de la cifra ni le da prioridad sobre el nombre")
     func pivotRow_stackedHasNoAmountColumn() throws {
         let src = try Self.code("Yala/App/Views/Reports/PivotRowView.swift")
-        guard let stacked = src.range(of: "if dynamicTypeSize.isAccessibilitySize {"),
+        guard let stacked = src.range(of: "if PivotColumnWidths.stacks(dynamicTypeSize) {"),
               let flat = src.range(of: "} else {", range: stacked.upperBound..<src.endIndex) else {
             Issue.record("No se encuentran las dos formas de la fila.")
             return
@@ -55,7 +68,7 @@ struct LargeTextSecondaryScreensWiringTests {
         #expect(!stackedBranch.contains(".layoutPriority(1)"),
                 "Apilada, la prioridad de la cifra vuelve a dejar al nombre sin sitio.")
         #expect(!stackedBranch.contains("minWidth: widths.current"))
-        #expect(stackedBranch.contains("variationChip(minWidth: nil)"))
+        #expect(stackedBranch.contains("changeBadge(minWidth: nil)"))
     }
 
     @Test("Etiquetas y Cuentas no fijan el alto de su lista con una cuenta a mano")

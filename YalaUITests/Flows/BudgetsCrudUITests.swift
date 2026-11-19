@@ -50,9 +50,8 @@ final class BudgetsCrudUITests: XCTestCase {
 
         openPlanningBudgets(app)
 
-        let fab = app.buttons["budgets_create_button"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
-        fab.tap()
+        // «Nuevo presupuesto» abre el asistente por pasos (encargo del 17-nov): este caso prueba el formulario.
+        app.abrirFormularioDeNuevoPresupuesto(desde: app.buttons["budgets_create_button"])
 
         // Nombre (el editor auto-enfoca este campo para presupuestos nuevos).
         let nameField = app.textFields["budget_name_field"]

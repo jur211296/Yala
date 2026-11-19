@@ -1260,15 +1260,23 @@ extension ChatAssistantViewModel {
         else { return false }
         let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
         guard let detected = ChatGuidedIntentDetector.detect(text, catalog: catalog) else { return false }
+        openGuidedFlow(detected, question: text, catalog: catalog, context: context)
+        return true
+    }
+
+    /// Abre el guiado de lo detectado (o del atajo tocado), con las puertas de siempre: el tope de cuentas del plan y la
+    /// cuenta de Yala de Grupos se dicen en una frase en vez de abrir la tarjeta.
+    private func openGuidedFlow(_ detected: ChatGuidedDetection, question text: String, catalog: ChatGuidedCatalog,
+                                context: ModelContext) {
         // Con el plan gratis lleno de cuentas no se abre la tarjeta: se dice antes de preguntar nada.
         if detected.kind == .account, !Self.canCreateAnotherAccount(context) {
             appendAssistantTurn(question: text, reply: L10n.IAGuiados.accountLimitReached, attachments: [])
-            return true
+            return
         }
         // Grupos: sin la cuenta de Yala (crear) o sin un grupo donde anotar (deuda, gasto), se dice en una frase.
         if let block = ChatGuidedDataSource.groupBlock(detected.kind, groups: catalog.groups, route: Self.groupRoute()) {
             appendAssistantTurn(question: text, reply: Self.groupBlockReply(block), attachments: [])
-            return true
+            return
         }
         var detection = ChatGuidedDataSource.prepareStart(detected, context: context)
         if [.group, .groupOpeningBalance, .groupExpense].contains(detection.kind) {
@@ -1280,7 +1288,6 @@ extension ChatAssistantViewModel {
         }
         let state = ChatGuidedEngine.start(detection.kind, answers: detection.answers, prefilled: detection.prefilled)
         appendAssistantTurn(question: text, reply: Self.guidedIntro(detection.kind), attachments: [.guided(state)])
-        return true
     }
 
     /// Lo que dice Yala IA al abrir cada guiado.
@@ -1331,23 +1338,32 @@ extension ChatAssistantViewModel {
         return FeatureGateService.shared.canCreate(.accounts, currentCount: count)
     }
 
-    /// Un atajo del saludo («Un presupuesto», «Un pago planificado»): abre el guiado sin pasar por la frase ni por el
-    /// servidor. El pedido sale en el hilo como si la persona lo hubiera escrito.
-    func startGuidedFlow(_ kind: ChatGuidedKind) {
+    /// Una opción de «Quiero crear algo» del inicio (o un atajo del saludo de antes): abre el guiado sin pasar por la
+    /// frase ni por el servidor, con las mismas puertas que la frase (tope de cuentas, cuenta de Yala de Grupos). El
+    /// pedido sale en el hilo como si la persona lo hubiera escrito; sin `question`, el de presupuesto o pago de siempre.
+    func startGuidedFlow(_ kind: ChatGuidedKind, question asked: String? = nil) {
         guard let context = modelContext, !isLoading else { return }
-        let question = kind == .budget ? L10n.IAGuiados.shortcutBudgetMessage : L10n.IAGuiados.shortcutPaymentMessage
+        let question = asked
+            ?? (kind == .budget ? L10n.IAGuiados.shortcutBudgetMessage : L10n.IAGuiados.shortcutPaymentMessage)
         messages.append(ChatMessage(role: .user, text: question, timestamp: Date.now))
+        let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
         var answers = ChatGuidedAnswers()
-        if kind == .budget {
-            let catalog = ChatGuidedDataSource.catalog(context: context, mainCurrency: CurrencyDefaults.currentPreferred)
-            if Set(catalog.accountCurrencies + [catalog.mainCurrency]).count <= 1 {
-                answers.currencyCode = catalog.mainCurrency
-            }
+        if kind == .budget, Set(catalog.accountCurrencies + [catalog.mainCurrency]).count <= 1 {
+            answers.currencyCode = catalog.mainCurrency
         }
-        let detection = ChatGuidedDataSource.prepareStart(
-            ChatGuidedDetection(kind: kind, answers: answers, prefilled: []), context: context)
-        let state = ChatGuidedEngine.start(kind, answers: detection.answers, prefilled: [])
-        appendAssistantTurn(question: question, reply: Self.guidedIntro(kind), attachments: [.guided(state)])
+        openGuidedFlow(ChatGuidedDetection(kind: kind, answers: answers, prefilled: []), question: question,
+                       catalog: catalog, context: context)
+    }
+
+    /// Un botón del inicio de Yala IA (encargo del 17-nov): el mensaje de la persona y la respuesta de Yala entran al
+    /// hilo y al historial del día sin llamar a la IA ni gastar el cupo. Devuelve el id de la respuesta, del que cuelgan
+    /// las opciones que la vista pinta debajo; `nil` con una pregunta en vuelo.
+    @discardableResult
+    func appendLocalExchange(userText: String, reply: String) -> UUID? {
+        guard !isLoading else { return nil }
+        messages.append(ChatMessage(role: .user, text: userText, timestamp: Date.now))
+        appendAssistantTurn(question: userText, reply: reply, attachments: [])
+        return messages.last?.id
     }
 
     /// El guiado de un mensaje, si lo tiene.

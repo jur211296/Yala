@@ -1,0 +1,40 @@
+/*
+  AsistentePresupuesto.strings
+  Yala
+
+  El asistente por pasos de «Nuevo presupuesto» (encargo del 17-nov). Las claves `asistente.*` son del contenedor
+  compartido (`Views/Shared/AsistenteCreacion/`) y las reusan los asistentes que vengan; las `asistentePresupuesto.*`,
+  solo de presupuestos. Las preguntas de presupuesto vienen de Primeros pasos (`pasos23.budget.*`). Tabla propia, leída
+  con el idioma de la app (`AsistenteCreacionTexto`).
+*/
+
+"asistente.useForm" = "フォームを使う";
+"asistente.useFormHint" = "これまでの回答を入れたいつものフォームを開きます";
+"asistente.stepOf" = "ステップ %1$d / %2$d";
+"asistente.discard.message" = "回答した内容は失われます。";
+"asistente.discard.confirm" = "破棄";
+"asistente.discard.keep" = "続ける";
+"asistente.changeHint" = "タップしてこの回答を変更";
+"asistentePresupuesto.discard.title" = "この予算を破棄しますか？";
+"asistentePresupuesto.create" = "予算を作成";
+"asistentePresupuesto.createShort" = "作成";
+"asistentePresupuesto.name.weekly" = "今週の支出";
+"asistentePresupuesto.name.monthly" = "今月の支出";
+"asistentePresupuesto.name.yearly" = "今年の支出";
+"asistentePresupuesto.name.once" = "支出";
+"asistentePresupuesto.limit.last.weekly" = "先週はこれに %@ 使いました。";
+"asistentePresupuesto.limit.last.monthly" = "先月はこれに %@ 使いました。";
+"asistentePresupuesto.limit.last.yearly" = "昨年はこれに %@ 使いました。";
+"asistentePresupuesto.limit.same" = "同じ";
+"asistentePresupuesto.limit.less10" = "10% 減";
+"asistentePresupuesto.limit.less20" = "20% 減";
+"asistentePresupuesto.summary.question" = "この内容で作成しますか？";
+"asistentePresupuesto.summary.detail" = "回答をタップすると変更できます。";
+"asistentePresupuesto.summary.counts" = "対象";
+"asistentePresupuesto.summary.period" = "更新";
+"asistentePresupuesto.summary.dates" = "期間";
+"asistentePresupuesto.summary.limit" = "上限";
+"asistentePresupuesto.summary.name" = "名前";
+"asistentePresupuesto.summary.alert" = "通知";
+"asistentePresupuesto.alert.none" = "通知なし";
+"asistentePresupuesto.categories.empty" = "まだ支出カテゴリがありません。すべての支出を対象にできます。";

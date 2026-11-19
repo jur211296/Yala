@@ -1,0 +1,26 @@
+/*
+  YalaIAInicio.strings
+  Yala
+
+  El inicio de Yala IA: lo que dice la persona al tocar uno de los tres botones, lo que contesta Yala
+  (sin llamar a la IA) y las opciones que ofrece debajo. Tabla propia, leída con el idioma de la app
+  (`YalaIAInicioText`).
+*/
+
+"yalaIAInicio.log.userMessage" = "支出を記録します";
+"yalaIAInicio.log.reply" = "いいですね！こんな書き方ができます。どれかをタップして、好きなように変えてから送ってください。";
+"yalaIAInicio.log.example1" = "ランチ 1200";
+"yalaIAInicio.log.example2" = "タクシー 1800 とコーヒー 400";
+"yalaIAInicio.log.example3" = "昨日スーパーでカードで 6000 払った";
+"yalaIAInicio.ask.userMessage" = "お金について質問します";
+"yalaIAInicio.ask.reply" = "いいですね！自分の言葉で聞いてください。いくら使ったか、お金が何に消えているか、予算の進み具合など。まずはこの3つからどうぞ：";
+"yalaIAInicio.create.userMessage" = "何か作りたい";
+"yalaIAInicio.create.reply" = "一緒に一歩ずつ作りましょう。足りないことだけ聞いて、確認するまでは何も保存しません。何を作りますか？";
+"yalaIAInicio.create.account" = "口座";
+"yalaIAInicio.create.accountMessage" = "口座を作りたい";
+"yalaIAInicio.create.category" = "カテゴリ";
+"yalaIAInicio.create.categoryMessage" = "カテゴリを作りたい";
+"yalaIAInicio.create.favorite" = "お気に入り";
+"yalaIAInicio.create.favoriteMessage" = "お気に入りを作りたい";
+"yalaIAInicio.create.group" = "グループ";
+"yalaIAInicio.create.groupMessage" = "グループを作りたい";

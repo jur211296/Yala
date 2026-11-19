@@ -1,0 +1,62 @@
+/*
+  SaludFinancieraDetalle.strings
+  Yala
+
+  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
+  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+*/
+
+"saludDetalle.section.alerts" = "需要留意";
+"saludDetalle.section.budgets" = "你的预算";
+"saludDetalle.section.payments" = "即将付款";
+"saludDetalle.section.streak" = "连续记账";
+"saludDetalle.section.improve" = "提高评分";
+"saludDetalle.section.howItWorks" = "如何计算？";
+"saludDetalle.alerts.none.title" = "今天没有需要留意的";
+"saludDetalle.alerts.none.detail" = "你的预算、付款和账户都很正常。";
+"saludDetalle.alert.overBudget.title" = "%@ 已超支";
+"saludDetalle.alert.overBudget.detail" = "轻点查看花在哪里。";
+"saludDetalle.alert.atLimit.title" = "%@ 接近上限";
+"saludDetalle.alert.atLimit.detail" = "已用到设定的 %d %%。";
+"saludDetalle.alert.negativeAccount.title" = "%@ 为负数";
+"saludDetalle.alert.negativeAccount.detail" = "检查余额或补记缺少的记录。";
+"saludDetalle.alert.overdue.title" = "%@ 已逾期";
+"saludDetalle.alert.overdue.detail" = "标记为已付或跳过。";
+"saludDetalle.alert.notCovered.title" = "本月付款不够支付";
+"saludDetalle.alert.notCovered.detail" = "按现有余额和剩余收支，月底你将有：";
+"saludDetalle.budgets.empty.title" = "还没有预算";
+"saludDetalle.budgets.empty.detail" = "给花得最多的项目设个上限，超支前 Yala 会提醒你。";
+"saludDetalle.budgets.empty.cta" = "创建预算";
+"saludDetalle.budgets.seeAll" = "查看全部（%d）";
+"saludDetalle.budgets.left" = "剩余";
+"saludDetalle.budgets.over" = "超出";
+"saludDetalle.payments.today" = "今天";
+"saludDetalle.payments.tomorrow" = "明天";
+"saludDetalle.payments.inDays" = "%d 天后";
+"saludDetalle.payments.overdue" = "已逾期";
+"saludDetalle.payments.none" = "未来两周没有付款。";
+"saludDetalle.payments.empty.title" = "还没有计划付款";
+"saludDetalle.payments.empty.detail" = "房租、电费、订阅：Yala 会在每笔到期前提醒你。";
+"saludDetalle.payments.empty.cta" = "添加付款";
+"saludDetalle.payments.seeAll" = "查看全部";
+"saludDetalle.payments.covered" = "足够支付本月付款。";
+"saludDetalle.payments.notCovered" = "不够支付本月付款。";
+"saludDetalle.streak.days.one" = "连续 %d 天";
+"saludDetalle.streak.days.other" = "连续 %d 天";
+"saludDetalle.streak.today" = "今天已记账，继续保持！";
+"saludDetalle.streak.keep" = "今天记一笔，保持连续。";
+"saludDetalle.streak.start" = "今天记一笔，开始连续记账。";
+"saludDetalle.streak.cta" = "记账";
+"saludDetalle.streak.caption" = "最近 %d 天";
+"saludDetalle.streak.dayRecorded" = "有记录";
+"saludDetalle.streak.dayEmpty" = "无记录";
+"saludDetalle.improve.crearPresupuesto" = "创建第一个预算";
+"saludDetalle.improve.registrarHoy" = "今天记一笔";
+"saludDetalle.improve.agregarPagos" = "添加固定付款";
+"saludDetalle.improve.revisarPresupuestos" = "查看超支的预算";
+"saludDetalle.improve.revisarRitmo" = "更频繁地记账";
+"saludDetalle.improve.revisarPagos" = "查看本月付款";
+"saludDetalle.improve.weight" = "%@ 占评分的 %d %%";
+"saludDetalle.loading" = "加载中…";
+"saludDetalle.alert.reachedLimit.title" = "%@ 已达上限";
+"saludDetalle.alert.atLimitMany.title" = "%d 个预算接近上限";

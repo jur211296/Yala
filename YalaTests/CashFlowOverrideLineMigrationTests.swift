@@ -500,7 +500,7 @@ struct CashFlowOverrideLineMigrationTests {
         let inverse = /\.overrides\s*(=(?!=)|\?*\.append|\?*\.insert)/
         // Las únicas `self.line =` legítimas: vistas que reciben una `CashFlowLine`, no un ajuste.
         let viewsHoldingALine: Set<String> = [
-            "CashFlowLineConfigSheet.swift", "CashFlowSetupView.swift", "CashFlowCellDetailSheet.swift",
+            "CashFlowSetupView.swift", "CashFlowCellDetailSheet.swift",
         ]
         for case let url as URL in enumerator where url.pathExtension == "swift" {
             let text = try String(contentsOf: url, encoding: .utf8)

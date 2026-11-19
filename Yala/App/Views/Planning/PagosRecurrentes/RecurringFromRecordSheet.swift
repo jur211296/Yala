@@ -159,10 +159,14 @@ struct RecurringFromRecordSheet: View {
     }
 }
 
-// MARK: - Selector de registros (Planificación › Pagos › «Desde un registro»)
+// MARK: - Selector de registros (Planificación › Pagos › «Reusar»)
 
-/// Los registros recientes que se pueden hacer recurrentes, con buscador. Al elegir uno sigue el mismo flujo que el
-/// menú de un registro, en la misma hoja.
+/// Los registros recientes que se pueden hacer recurrentes, como en Registros (encargo del 17-nov): el buscador, los
+/// filtros rápidos (Cuenta · Categoría · Más filtros) y las mismas filas agrupadas por día. Al elegir uno sigue el mismo
+/// flujo que el menú de un registro, en la misma hoja.
+///
+/// Los filtros son de la hoja (`ReusarRegistroFilters`), no de la sesión: elegir una cuenta para encontrar el registro no
+/// deja filtrados Registros, el Panel ni Estadísticas.
 struct RecurringRecordPickerSheet: View {
     var onFinished: (() -> Void)? = nil
 
@@ -171,9 +175,17 @@ struct RecurringRecordPickerSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var records: [TransactionItem] = []
+    @State private var accounts: [Account] = []
+    @State private var categories: [Category] = []
+    @State private var subcategories: [Subcategory] = []
+    @State private var tags: [Tag] = []
+    @State private var filters = ReusarRegistroFilters()
     @State private var query = ""
     @State private var chosen: TransactionItem?
     @State private var hasLoaded = false
+    /// El monto de la sesión al abrir «Más filtros»: esa hoja lo escribe en la sesión (`SessionState.applyAmountFilter`)
+    /// y aquí se pasa a los filtros propios y se devuelve el de la sesión al cerrarla.
+    @State private var sessionAmountBeforeMoreFilters: ReusarRegistroLogic.SessionAmount?
 
     /// Hasta dónde mira atrás: seis meses cubren cualquier cobro mensual o trimestral reciente.
     private static let lookbackMonths = 6
@@ -184,13 +196,9 @@ struct RecurringRecordPickerSheet: View {
             RecurringFromRecordSheet(record: chosen, onFinished: onFinished)
         } else {
             NavigationStack {
-                list
+                content
                     .navigationTitle(L10n.RecurringFromRecord.pickerTitle)
                     .navigationBarTitleDisplayMode(.inline)
-                    .searchable(
-                        text: $query,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: L10n.RecurringFromRecord.pickerSearchPrompt)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -200,66 +208,131 @@ struct RecurringRecordPickerSheet: View {
                     }
                     .yalaScreenBackground(.subtle)
             }
+            .providesGroupNames()
             .onAppear(perform: load)
+            .sheet(isPresented: $filters.showFiltersSheet, onDismiss: takeAmountFromMoreFilters) {
+                RecordsFiltersView(recordsViewModel: filters)
+                    .onAppear(perform: rememberSessionAmount)
+            }
         }
+    }
+
+    private var content: some View {
+        let groups = ReusarRegistroLogic.groups(
+            records, criteria: filters.filterCriteria(withTagCatalog: tags), query: query, tags: tags)
+        return ScrollView {
+            VStack(spacing: DS.Spacing.md) {
+                RecordsListSearchField(text: $query, onClear: { query = "" })
+                RecordsQuickFilterBar(
+                    viewModel: filters,
+                    accounts: accounts,
+                    categories: categories,
+                    subcategories: subcategories,
+                    onFilterChange: {}
+                ) {
+                    if filters.hasActiveFilters {
+                        clearFiltersButton
+                    }
+                }
+                list(groups)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .padding(.bottom, DS.Spacing.xl)
+            .frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .accessibilityIdentifier("recurring_record_picker_list")
+    }
+
+    /// Solo con algún filtro puesto, al final de la fila de chips. Sin texto: con «Limpiar filtros» escrito, en el iPhone
+    /// SE los chips bajaban a tres líneas.
+    private var clearFiltersButton: some View {
+        Button {
+            DS.Haptic.selection()
+            filters.clearFilters()
+        } label: {
+            Image(systemName: "xmark")
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(.thAccentText)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(ReusarRegistroText.clearFilters)
+        .accessibilityIdentifier("recurring_record_picker_clear_filters")
     }
 
     @ViewBuilder
-    private var list: some View {
-        let shown = RecurringRecordPickerFilter.matching(records, query: query)
+    private func list(_ groups: [(date: Date, records: [TransactionItem])]) -> some View {
         if hasLoaded && records.isEmpty {
             ContentUnavailableView(L10n.RecurringFromRecord.pickerEmpty, systemImage: "repeat")
-        } else if !query.isEmpty && shown.isEmpty {
-            ContentUnavailableView(L10n.RecurringFromRecord.pickerNoResults(query), systemImage: "magnifyingglass")
-        } else {
-            List {
-                Section {
-                    ForEach(shown, id: \.persistentModelID) { record in
-                        Button {
-                            DS.Haptic.selection()
-                            chosen = record
-                        } label: {
-                            row(record)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("recurring_record_picker_row")
-                    }
-                } footer: {
-                    Text(L10n.RecurringFromRecord.pickerFooter)
-                }
+        } else if groups.isEmpty && hasLoaded {
+            if !RecordsListSearchLogic.query(query).isEmpty {
+                ContentUnavailableView(L10n.RecurringFromRecord.pickerNoResults(query), systemImage: "magnifyingglass")
+            } else {
+                ContentUnavailableView(
+                    ReusarRegistroText.noMatches,
+                    systemImage: "line.3.horizontal.decrease",
+                    description: Text(ReusarRegistroText.noMatchesHint))
             }
-            .scrollContentBackground(.hidden)
-            .accessibilityIdentifier("recurring_record_picker_list")
+        } else {
+            LazyVStack(spacing: DS.Spacing.sm) {
+                ForEach(groups, id: \.date) { day in
+                    RecordDateSectionView(
+                        date: day.date,
+                        includesYear: RecordsMonthSectionsLogic.dayHeaderIncludesYear(day.date),
+                        showsWeekday: true
+                    )
+                    ForEach(day.records, id: \.persistentModelID) { record in
+                        RecordRowView(
+                            record: record,
+                            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                            isSelectionMode: false,
+                            isSelected: false,
+                            onTap: { choose(record) },
+                            onToggleSelection: {}
+                        )
+                    }
+                }
+                Text(L10n.RecurringFromRecord.pickerFooter)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, DS.Spacing.md)
+            }
         }
     }
 
-    private func row(_ record: TransactionItem) -> some View {
-        let dateStyle = Date.FormatStyle(date: .abbreviated, time: .omitted).locale(AppLocale.current)
-        let title = RecurringFromRecordLogic.paymentName(note: record.note, subcategoryName: record.subcategory?.name)
-        let detail = [record.date.formatted(dateStyle), record.account?.name].compactMap { $0 }.joined(separator: " · ")
-        return HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(title.isEmpty ? appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode) : title)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                Text(detail)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: DS.Spacing.sm)
-            Text(appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode))
-                .font(DS.Typography.body)
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-        }
-        .padding(.vertical, DS.Spacing.xs)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+    private func choose(_ record: TransactionItem) {
+        DS.Haptic.selection()
+        chosen = record
     }
+
+    // MARK: - «Más filtros» y el monto de la sesión
+
+    private func rememberSessionAmount() {
+        guard sessionAmountBeforeMoreFilters == nil else { return }
+        sessionAmountBeforeMoreFilters = .init(
+            condition: SessionState.shared.amountCondition, currency: SessionState.shared.amountCurrency)
+    }
+
+    private func takeAmountFromMoreFilters() {
+        guard let before = sessionAmountBeforeMoreFilters else { return }
+        sessionAmountBeforeMoreFilters = nil
+        let after = ReusarRegistroLogic.SessionAmount(
+            condition: SessionState.shared.amountCondition, currency: SessionState.shared.amountCurrency)
+        guard after != before else { return }
+        filters.amountCondition = after.condition
+        SessionState.shared.applyAmountFilter(before.condition, in: before.currency)
+    }
+
+    // MARK: - Carga
 
     private func load() {
         guard !hasLoaded else { return }
-        hasLoaded = true
         let calendar = Calendar.current
         let cutoff = calendar.date(byAdding: .month, value: -Self.lookbackMonths, to: calendar.startOfDay(for: .now))
             ?? .distantPast
@@ -269,33 +342,108 @@ struct RecurringRecordPickerSheet: View {
         descriptor.fetchLimit = Self.fetchLimit
         do {
             records = try modelContext.fetch(descriptor).filter(RecurringFromRecordService.offersMakeRecurring)
+            accounts = try modelContext.fetch(FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)]))
+            categories = try modelContext.fetch(FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)]))
+            subcategories = try modelContext.fetch(FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)]))
+            tags = try modelContext.fetch(FetchDescriptor<Tag>())
         } catch {
             #if DEBUG
             print("RecurringRecordPickerSheet: Error fetching records: \(error)")
             #endif
             records = []
         }
+        hasLoaded = true
     }
 }
 
-/// El buscador del selector: descripción, categoría o subcategoría, sin distinguir mayúsculas ni tildes.
-enum RecurringRecordPickerFilter {
-    @MainActor
-    static func matching(_ records: [TransactionItem], query: String) -> [TransactionItem] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return records }
-        return records.filter { record in
-            guard !record.isDeleted else { return false }
-            return matches(
-                fields: [record.note, record.subcategory?.name, record.category?.name, record.account?.name],
-                query: trimmed)
-        }
+// MARK: - Filtros de la hoja
+
+/// Los filtros del selector: los mismos que Registros (la barra rápida y «Más filtros» los escriben igual), pero
+/// propios de la hoja. Nacen vacíos y mueren con ella.
+@MainActor
+@Observable
+final class ReusarRegistroFilters: Filterable, RecordsQuickFilterModel {
+    var selectedAccounts: Set<PersistentIdentifier> = []
+    var selectedCategories: Set<PersistentIdentifier> = []
+    var selectedSubcategories: Set<PersistentIdentifier> = []
+    var selectedNeeds: Set<SubcategoryNeed> = []
+    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedCurrencies: Set<CurrencyCode> = []
+    var amountCondition: AmountFilterCondition = .any
+    var searchText: String = ""
+    var excludedAccounts: Set<PersistentIdentifier> = []
+    var excludedCategories: Set<PersistentIdentifier> = []
+    var excludedSubcategories: Set<PersistentIdentifier> = []
+    var excludedNeeds: Set<SubcategoryNeed> = []
+    var excludedTags: Set<PersistentIdentifier> = []
+    var excludedCurrencies: Set<CurrencyCode> = []
+    var selectedTransactionNatures: Set<TransactionNature> = []
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+    /// «Más filtros» abierto: lo enciende la barra rápida.
+    var showFiltersSheet = false
+
+    var hasActiveFilters: Bool { hasActiveFiltersDefault }
+    var activeFilterCount: Int { activeFilterCountDefault }
+    func clearFilters() { clearFiltersDefault() }
+}
+
+// MARK: - Lógica
+
+enum ReusarRegistroLogic {
+    /// El monto que la sesión tenía puesto, con su moneda.
+    struct SessionAmount: Equatable {
+        let condition: AmountFilterCondition
+        let currency: CurrencyCode?
     }
 
-    nonisolated static func matches(fields: [String?], query: String) -> Bool {
-        fields.contains { field in
-            guard let field, !field.isEmpty else { return false }
-            return field.localizedStandardContains(query)
+    /// Lo que se ve: los registros que pasan los filtros de la hoja, por día (el más reciente arriba) y, dentro de cada
+    /// día, en el orden en que llegaron; después, el buscador de Registros (descripción, categoría, cuenta, etiqueta o
+    /// importe).
+    static func groups(
+        _ records: [TransactionItem],
+        criteria: FilterCriteria,
+        query: String,
+        tags: [Tag],
+        calendar: Calendar = .current
+    ) -> [(date: Date, records: [TransactionItem])] {
+        var byDay: [Date: [TransactionItem]] = [:]
+        var order: [Date] = []
+        for record in records where !record.isDeleted && FilterService.matchesCriteria(record, criteria: criteria) {
+            let day = calendar.startOfDay(for: record.date)
+            if byDay[day] == nil { order.append(day) }
+            byDay[day, default: []].append(record)
         }
+        let grouped = order.sorted(by: >).map { (date: $0, records: byDay[$0] ?? []) }
+        return RecordsViewModel.applyingListSearch(query, to: grouped, tags: tags)
     }
+}
+
+// MARK: - Textos
+
+/// Los textos de «Reusar», en su tabla propia (`ReusarRegistro.strings`). Se leen con la misma cadena que `ls()` de
+/// `L10n.swift`: el idioma elegido dentro de Yala, su variante y su idioma padre.
+enum ReusarRegistroText {
+    static let table = "ReusarRegistro"
+
+    /// La clave en la tabla, con la cadena de idiomas de la app (variante → padre → main → la clave).
+    static func string(_ key: String, resolution: LocaleResolution = LanguageManager.resolved) -> String {
+        let sentinel = "__YALA_MISSING__"
+        let fullKey = "reusarRegistro.\(key)"
+        var value = resolution.bundle.localizedString(forKey: fullKey, value: sentinel, table: table)
+        if value == sentinel, let parent = resolution.parentBundle {
+            value = parent.localizedString(forKey: fullKey, value: sentinel, table: table)
+        }
+        if value == sentinel {
+            value = Bundle.main.localizedString(forKey: fullKey, value: sentinel, table: table)
+        }
+        return value == sentinel ? fullKey : value
+    }
+
+    /// «Reusar», junto a «Nuevo pago planificado».
+    static var button: String { string("button") }
+    /// Lo que hace el botón, para VoiceOver.
+    static var buttonHint: String { string("buttonHint") }
+    static var clearFilters: String { string("clearFilters") }
+    static var noMatches: String { string("noMatches") }
+    static var noMatchesHint: String { string("noMatchesHint") }
 }

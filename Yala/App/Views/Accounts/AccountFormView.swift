@@ -62,11 +62,15 @@ struct AccountFormView: View {
     @State private var lineBeingRemoved: UUID?
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Abierto con «Usar formulario» desde el asistente de «Nueva cuenta» (encargo del 18-nov): llega grande, como el
+    /// asistente, y con lo respondido pregunta antes de descartar aunque no se haya tocado nada aquí.
+    private let openedFromWizard: Bool
+    private let hasPrefill: Bool
 
     /// Editar abre grande (S30). Al crear, con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la
     /// hoja también abre grande.
     private var sheetDetents: Set<PresentationDetent> {
-        viewModel.isEditing || dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
+        viewModel.isEditing || openedFromWizard || dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
     }
 
     /// Grande si el usuario la arrastró o si no hay medium que mostrar: la ventana ancha
@@ -80,17 +84,41 @@ struct AccountFormView: View {
         case name, accountNumber, balance
     }
 
-    init(existingNames: [String], accountToEdit: Account? = nil) {
-        _selectedDetent = State(initialValue: accountToEdit == nil ? .medium : .large)
+    init(
+        existingNames: [String],
+        accountToEdit: Account? = nil,
+        prefill: AccountFormPrefill? = nil,
+        openedFromWizard: Bool = false
+    ) {
+        self.openedFromWizard = openedFromWizard
+        hasPrefill = prefill != nil && accountToEdit == nil
+        _selectedDetent = State(initialValue: accountToEdit == nil && !openedFromWizard ? .medium : .large)
         // Mira antes de leer: quien presenta el formulario puede volver a crearlo con la cuenta ya eliminada mientras se
         // cierra (manda el `@State` de la primera vez, pero el ViewModel se construye igual y lee la cuenta), y en iOS
         // 27.x leer un modelo borrado aborta (card 1w89). Esa construcción se descarta: da igual que sea un alta.
         let readableAccount = accountToEdit.flatMap { !$0.isDeleted && $0.modelContext != nil ? $0 : nil }
-        _viewModel = State(
-            initialValue: AccountFormViewModel(
-                accountToEdit: readableAccount,
-                existingNames: existingNames
-            ))
+        let model = AccountFormViewModel(accountToEdit: readableAccount, existingNames: existingNames)
+        if let prefill, readableAccount == nil { Self.apply(prefill, to: model) }
+        _viewModel = State(initialValue: model)
+    }
+
+    /// Lo respondido en el asistente, en los campos del formulario. Va antes del contexto: la foto de partida
+    /// (`hasUnsavedChanges`) lo incluye, y por eso la X pregunta con `hasPrefill`.
+    private static func apply(_ prefill: AccountFormPrefill, to model: AccountFormViewModel) {
+        model.name = prefill.name
+        model.selectedType = prefill.kind.accountType
+        model.selectedColorHex = prefill.kind.colorHex
+        model.customColor = Color(hex: prefill.kind.colorHex)
+        if let currency = CurrencyCode(rawValue: prefill.currencyCode) { model.selectedCurrency = currency }
+        if let magnitude = prefill.balanceMagnitude {
+            model.isPositive = !prefill.balanceIsNegative
+            model.balanceText = AmountInputHelper.formatWithGrouping(magnitude)
+        }
+        guard prefill.kind.isCard else { return }
+        model.creditCardStatementDay = prefill.statementDay
+        if let paymentDay = prefill.paymentDay { model.creditCardPaymentDay = paymentDay }
+        model.creditCardPaymentReminder = prefill.paymentDay != nil && prefill.reminderDaysBefore != nil
+        model.creditCardReminderDaysBefore = prefill.reminderDaysBefore ?? 0
     }
 
     // MARK: Body
@@ -193,8 +221,8 @@ struct AccountFormView: View {
                 viewModel.editsTodayBalance = !sessionState.isExpensesOnlyMode
                 viewModel.loadCountsInMoney(overrides: PanelMoneyScopeLogic.decode(appPreferences.panelMoneyAccountOverrides))
                 viewModel.setContext(modelContext)
-                // Auto-focus name field for new accounts
-                if !viewModel.isEditing {
+                // Auto-focus name field for new accounts (no con lo respondido en el asistente: ya trae nombre)
+                if !viewModel.isEditing && !hasPrefill {
                     Task {
                         try? await Task.sleep(for: .milliseconds(500))
                         focusedField = .name
@@ -317,7 +345,7 @@ struct AccountFormView: View {
         // dejaría la cuenta en un estado que ninguna pantalla sabe leer. Y con algo escrito, el gesto de
         // cerrar pregunta antes de tirarlo, como la X (L7-5).
         // Con la cuenta ya creada (la pregunta de otra divisa) no queda nada que descartar.
-        .onSheetDismissAttempt(isActive: !isOfferingLine && (viewModel.isConvertingCurrency || viewModel.hasUnsavedChanges)) {
+        .onSheetDismissAttempt(isActive: !isOfferingLine && (viewModel.isConvertingCurrency || hasDiscardableChanges)) {
             guard !viewModel.isConvertingCurrency else { return }
             showDiscardChangesAlert = true
         }
@@ -396,9 +424,14 @@ struct AccountFormView: View {
                 .scrollDismissesKeyboard(.interactively)
     }
 
+    /// Algo escrito aquí, o lo respondido en el asistente: cerrar lo tiraría.
+    private var hasDiscardableChanges: Bool {
+        hasPrefill || viewModel.hasUnsavedChanges
+    }
+
     /// La X: con algo escrito pregunta «¿Descartar cambios?», como la Bandeja y Categorías (L7-5).
     private func requestClose() {
-        if !isOfferingLine && viewModel.hasUnsavedChanges {
+        if !isOfferingLine && hasDiscardableChanges {
             focusedField = nil
             showDiscardChangesAlert = true
         } else {

@@ -1,0 +1,14 @@
+/*
+  ReusarRegistro.strings
+  Yala
+
+  «Reusar» en Pagos planificados: el botón junto a «Nuevo pago planificado» y la hoja que elige el registro, con
+  los filtros y el buscador de Registros (encargo del 17-nov). Tabla propia, leída con el idioma de la app
+  (`ReusarRegistroText`).
+*/
+
+"reusarRegistro.button" = "Riusa";
+"reusarRegistro.buttonHint" = "Crea un pagamento programmato da uno dei tuoi movimenti";
+"reusarRegistro.clearFilters" = "Cancella filtri";
+"reusarRegistro.noMatches" = "Nessun movimento corrisponde a questi filtri";
+"reusarRegistro.noMatchesHint" = "Prova altri filtri o cancellali.";

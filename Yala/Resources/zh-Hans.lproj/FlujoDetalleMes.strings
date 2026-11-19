@@ -1,0 +1,25 @@
+/*
+  FlujoDetalleMes.strings
+  Yala
+
+  El detalle del mes del flujo de caja como una sola historia: «Empezaste con · Entró · Salió · Terminas con» (S2
+  del replanteo, 18-nov-2026). Tabla propia, leída con el idioma de la app (`L10n.FlujoDetalleMes`).
+*/
+
+"flujoDetalleMes.started.past" = "月初余额";
+"flujoDetalleMes.started.current" = "月初余额";
+"flujoDetalleMes.started.future" = "预计月初余额";
+"flujoDetalleMes.in.past" = "收入";
+"flujoDetalleMes.in.current" = "收入";
+"flujoDetalleMes.in.future" = "预计收入";
+"flujoDetalleMes.out.past" = "支出";
+"flujoDetalleMes.out.current" = "支出";
+"flujoDetalleMes.out.future" = "预计支出";
+"flujoDetalleMes.end.past" = "月末余额";
+"flujoDetalleMes.end.current" = "预计月末余额";
+"flujoDetalleMes.end.future" = "预计月末余额";
+"flujoDetalleMes.leftIn" = "待收入（估算）";
+"flujoDetalleMes.leftOut" = "待支出（估算）";
+"flujoDetalleMes.adjustment" = "余额调整";
+"flujoDetalleMes.estimated" = "估算";
+"flujoDetalleMes.group.lines" = "%d 行";

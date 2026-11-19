@@ -95,12 +95,14 @@ final class StatisticsCategoryDetailUITests: XCTestCase {
         XCTAssertTrue(detail(app).waitForNonExistence(timeout: 5), "«Ver en Registros» no salió del detalle.")
         XCTAssertTrue(app.descendants(matching: .any)["stats_tab_records"].waitForExistence(timeout: 10),
                       "«Ver en Registros» no llevó al chip Registros.")
+        // Desde el 17-nov Estadísticas › Registros es la lista de Registros: «Solo <categoría>» lo dice el chip rápido
+        // «Categoría», no una cápsula de la banda (que no repite lo incluido de cuenta y categoría).
+        let quickCategory = app.descendants(matching: .any)["records_quick_category"].firstMatch
+        XCTAssertTrue(quickCategory.waitForExistence(timeout: 5), "Registros no tiene el chip «Categoría».")
         let deadline = Date().addingTimeInterval(5)
-        func onlyChip() -> Bool {
-            appliedChips(app).allElementsBoundByIndex.contains { $0.label.contains(name) && $0.label != name }
-        }
+        func onlyChip() -> Bool { (quickCategory.value as? String ?? "") == name }
         while !onlyChip(), Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
-        XCTAssertTrue(onlyChip(), "Registros no enseña «Solo \(name)»: \(appliedChips(app).allElementsBoundByIndex.map(\.label))")
+        XCTAssertTrue(onlyChip(), "El chip «Categoría» no dice «\(name)» (dice «\(String(describing: quickCategory.value))»).")
         attachScreenshot("ver-en-registros")
     }
 }
