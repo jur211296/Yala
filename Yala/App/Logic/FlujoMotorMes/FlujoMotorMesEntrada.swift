@@ -35,7 +35,7 @@ enum FlujoMotorMesEntrada {
             )
             if resolved.approximateMagnitude > 0 { aproximado = true }
             let esIngreso = TransactionClassificationLogic.isIncome(tx)
-            result.append(FlujoMotorMes.Movimiento(
+            var movimiento = FlujoMotorMes.Movimiento(
                 mes: mes,
                 importe: esIngreso ? resolved.value : -resolved.value,
                 esIngreso: esIngreso,
@@ -44,7 +44,12 @@ enum FlujoMotorMesEntrada {
                 categoria: tx.category,
                 pagoID: tx.scheduledPaymentID.flatMap(UUID.init(uuidString:)),
                 esFechado: tx.date >= startOfTomorrow
-            ))
+            )
+            movimiento.dia = calendar.component(.day, from: tx.date)
+            // El comercio sale de la nota, como en la memoria de comercios (se canoniza solo donde se mira: la ventana).
+            movimiento.nota = tx.note
+            movimiento.subcategoriaNombre = tx.subcategory?.name
+            result.append(movimiento)
         }
         return (result, aproximado)
     }
