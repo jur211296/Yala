@@ -76,9 +76,13 @@ def yaml_a_datos(texto):
     """PyYAML si está; si no, Ruby (la Max no trae PyYAML). Igual que el banco de la checklist."""
     try:
         import yaml  # noqa: PLC0415
-        return yaml.safe_load(texto)
     except ImportError:
-        pass
+        yaml = None
+    if yaml is not None:
+        try:
+            return yaml.safe_load(texto)
+        except yaml.YAMLError as e:
+            raise Fallo(f"YAML ilegible: {str(e)[:300]}")
     try:
         r = subprocess.run(
             ["ruby", "-ryaml", "-rjson", "-e", "puts JSON.generate(YAML.safe_load(STDIN.read))"],
