@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "放弃这个收藏？";
+"asistenteFavorito.create" = "创建收藏";
+"asistenteFavorito.createShort" = "创建";
+"asistenteFavorito.kind.question" = "你想保存什么？";
+"asistenteFavorito.kind.detail" = "收藏是你会重复记的一笔：之后轻点一下就能记账。";
+"asistenteFavorito.kind.hint.expense" = "经常支付的：咖啡、打车、午餐。";
+"asistenteFavorito.kind.hint.income" = "经常收到的：工资、一笔收款。";
+"asistenteFavorito.kind.hint.transfer" = "在你的账户之间转移的钱。";
+"asistenteFavorito.category.question" = "放在哪个分类？";
+"asistenteFavorito.category.detail" = "你最常用的，或选择其他。";
+"asistenteFavorito.category.none" = "无分类";
+"asistenteFavorito.category.noneHint" = "每次使用时再选。";
+"asistenteFavorito.category.other" = "其他分类";
+"asistenteFavorito.name.question" = "叫什么名字？";
+"asistenteFavorito.name.detail" = "你会在收藏列表里看到这个名字。";
+"asistenteFavorito.amount.question.expense" = "你通常付多少？";
+"asistenteFavorito.amount.question.income" = "你通常收到多少？";
+"asistenteFavorito.amount.question.transfer" = "你通常转多少？";
+"asistenteFavorito.amount.detail" = "如果每次都不同，就留空：使用时再问你。";
+"asistenteFavorito.account.question.expense" = "用哪个账户支付？";
+"asistenteFavorito.account.question.income" = "进入哪个账户？";
+"asistenteFavorito.account.question.transfer" = "从哪个账户转出？";
+"asistenteFavorito.account.detail" = "使用时可以更改。";
+"asistenteFavorito.account.none" = "无账户";
+"asistenteFavorito.account.noneHint" = "每次使用时再选。";
+"asistenteFavorito.destination.question" = "转入哪个账户？";
+"asistenteFavorito.destination.detail" = "必须是与转出账户不同的账户。";
+"asistenteFavorito.summary.question" = "就这样创建吗？";
+"asistenteFavorito.summary.detail" = "轻点一个回答即可修改。";
+"asistenteFavorito.summary.kind" = "类型";
+"asistenteFavorito.summary.category" = "分类";
+"asistenteFavorito.summary.name" = "名称";
+"asistenteFavorito.summary.amount" = "金额";
+"asistenteFavorito.summary.amountEmpty" = "使用时填写";
+"asistenteFavorito.summary.account" = "账户";
+"asistenteFavorito.summary.origin" = "从";
+"asistenteFavorito.summary.destination" = "到";

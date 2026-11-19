@@ -103,7 +103,8 @@ final class FavoritesAlRegistrar23UITests: XCTestCase {
     func test_editor_namesTheThreeTypes_andTransferAsksForOriginAndDestination() {
         let app = launch()
         openFavoritesSettings(app)
-        app.buttons["favorites_add_button"].tap()
+        // El «+» abre el asistente por pasos (encargo del 17-nov): el formulario, por «Usar formulario».
+        app.abrirFormularioDeNuevoFavorito()
         XCTAssertTrue(app.textFields["favorite_name_field"].waitForExistence(timeout: 5), "No se abrió el editor.")
 
         let expense = app.buttons["favorite_editor_type_expense"]

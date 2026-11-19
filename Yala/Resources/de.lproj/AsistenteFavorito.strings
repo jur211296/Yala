@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "Diesen Favoriten verwerfen?";
+"asistenteFavorito.create" = "Favorit erstellen";
+"asistenteFavorito.createShort" = "Erstellen";
+"asistenteFavorito.kind.question" = "Was möchtest du speichern?";
+"asistenteFavorito.kind.detail" = "Ein Favorit ist eine Buchung, die du wiederholst: später trägst du sie mit einem Tipp ein.";
+"asistenteFavorito.kind.hint.expense" = "Etwas, das du oft bezahlst: Kaffee, Taxi, Mittagessen.";
+"asistenteFavorito.kind.hint.income" = "Etwas, das du oft bekommst: dein Gehalt, eine Zahlung.";
+"asistenteFavorito.kind.hint.transfer" = "Geld, das du zwischen deinen Konten bewegst.";
+"asistenteFavorito.category.question" = "In welche Kategorie gehört es?";
+"asistenteFavorito.category.detail" = "Die, die du am meisten nutzt, oder wähle eine andere.";
+"asistenteFavorito.category.none" = "Ohne Kategorie";
+"asistenteFavorito.category.noneHint" = "Du wählst sie bei jeder Nutzung.";
+"asistenteFavorito.category.other" = "Andere Kategorie";
+"asistenteFavorito.name.question" = "Wie nennen wir es?";
+"asistenteFavorito.name.detail" = "So siehst du es in deiner Favoritenliste.";
+"asistenteFavorito.amount.question.expense" = "Wie viel zahlst du normalerweise?";
+"asistenteFavorito.amount.question.income" = "Wie viel bekommst du normalerweise?";
+"asistenteFavorito.amount.question.transfer" = "Wie viel bewegst du normalerweise?";
+"asistenteFavorito.amount.detail" = "Wenn es sich jedes Mal ändert, lass es leer: wir fragen bei der Nutzung.";
+"asistenteFavorito.account.question.expense" = "Mit welchem Konto zahlst du?";
+"asistenteFavorito.account.question.income" = "Auf welches Konto geht es ein?";
+"asistenteFavorito.account.question.transfer" = "Von welchem Konto geht es ab?";
+"asistenteFavorito.account.detail" = "Du kannst es bei der Nutzung ändern.";
+"asistenteFavorito.account.none" = "Ohne Konto";
+"asistenteFavorito.account.noneHint" = "Du wählst es bei jeder Nutzung.";
+"asistenteFavorito.destination.question" = "Auf welches Konto geht es?";
+"asistenteFavorito.destination.detail" = "Es muss ein anderes Konto als das Ausgangskonto sein.";
+"asistenteFavorito.summary.question" = "So erstellen?";
+"asistenteFavorito.summary.detail" = "Tippe auf eine Antwort, um sie zu ändern.";
+"asistenteFavorito.summary.kind" = "Art";
+"asistenteFavorito.summary.category" = "Kategorie";
+"asistenteFavorito.summary.name" = "Name";
+"asistenteFavorito.summary.amount" = "Betrag";
+"asistenteFavorito.summary.amountEmpty" = "Gibst du bei der Nutzung ein";
+"asistenteFavorito.summary.account" = "Konto";
+"asistenteFavorito.summary.origin" = "Von";
+"asistenteFavorito.summary.destination" = "Nach";

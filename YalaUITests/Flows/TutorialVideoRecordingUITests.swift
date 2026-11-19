@@ -522,7 +522,8 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         // La semilla no trae favoritos: se crea uno antes de grabar.
         app.openProfile()
         tap(app.buttons["profile_favorites"], "Pagos favoritos")
-        tap(app.buttons["favorites_add_button"], "el +")
+        // El «+» abre el asistente por pasos (encargo del 17-nov): el formulario, por «Usar formulario».
+        app.abrirFormularioDeNuevoFavorito()
         type(app.textFields["favorite_name_field"], "Cafe de la manana")
         tap(app.buttons["toolbar_save_button"], "Guardar")
         pause(1)

@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "このお気に入りを破棄しますか？";
+"asistenteFavorito.create" = "お気に入りを作成";
+"asistenteFavorito.createShort" = "作成";
+"asistenteFavorito.kind.question" = "何を保存しますか？";
+"asistenteFavorito.kind.detail" = "お気に入りは繰り返す記録です。あとからワンタップで記録できます。";
+"asistenteFavorito.kind.hint.expense" = "よく支払うもの：コーヒー、タクシー、ランチ。";
+"asistenteFavorito.kind.hint.income" = "よく受け取るもの：給料、入金。";
+"asistenteFavorito.kind.hint.transfer" = "自分の口座間で移すお金。";
+"asistenteFavorito.category.question" = "どのカテゴリですか？";
+"asistenteFavorito.category.detail" = "よく使うものから選ぶか、別のものを選びます。";
+"asistenteFavorito.category.none" = "カテゴリなし";
+"asistenteFavorito.category.noneHint" = "使うたびに選びます。";
+"asistenteFavorito.category.other" = "別のカテゴリ";
+"asistenteFavorito.name.question" = "名前は何にしますか？";
+"asistenteFavorito.name.detail" = "お気に入りの一覧にこの名前で表示されます。";
+"asistenteFavorito.amount.question.expense" = "いつもいくら払いますか？";
+"asistenteFavorito.amount.question.income" = "いつもいくら受け取りますか？";
+"asistenteFavorito.amount.question.transfer" = "いつもいくら移しますか？";
+"asistenteFavorito.amount.detail" = "毎回変わる場合は空欄に。使うときに入力します。";
+"asistenteFavorito.account.question.expense" = "どの口座で払いますか？";
+"asistenteFavorito.account.question.income" = "どの口座に入りますか？";
+"asistenteFavorito.account.question.transfer" = "どの口座から出しますか？";
+"asistenteFavorito.account.detail" = "使うときに変更できます。";
+"asistenteFavorito.account.none" = "口座なし";
+"asistenteFavorito.account.noneHint" = "使うたびに選びます。";
+"asistenteFavorito.destination.question" = "どの口座に移しますか？";
+"asistenteFavorito.destination.detail" = "移動元とは別の口座を選んでください。";
+"asistenteFavorito.summary.question" = "この内容で作成しますか？";
+"asistenteFavorito.summary.detail" = "答えをタップすると変更できます。";
+"asistenteFavorito.summary.kind" = "種類";
+"asistenteFavorito.summary.category" = "カテゴリ";
+"asistenteFavorito.summary.name" = "名前";
+"asistenteFavorito.summary.amount" = "金額";
+"asistenteFavorito.summary.amountEmpty" = "使うときに入力";
+"asistenteFavorito.summary.account" = "口座";
+"asistenteFavorito.summary.origin" = "移動元";
+"asistenteFavorito.summary.destination" = "移動先";

@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "Abandonner ce favori ?";
+"asistenteFavorito.create" = "Créer le favori";
+"asistenteFavorito.createShort" = "Créer";
+"asistenteFavorito.kind.question" = "Que veux-tu enregistrer ?";
+"asistenteFavorito.kind.detail" = "Un favori est une opération que tu répètes : ensuite tu la notes d’un geste.";
+"asistenteFavorito.kind.hint.expense" = "Ce que tu paies souvent : le café, le taxi, le déjeuner.";
+"asistenteFavorito.kind.hint.income" = "Ce que tu reçois souvent : ton salaire, un paiement.";
+"asistenteFavorito.kind.hint.transfer" = "De l’argent que tu déplaces entre tes comptes.";
+"asistenteFavorito.category.question" = "Dans quelle catégorie ?";
+"asistenteFavorito.category.detail" = "Celles que tu utilises le plus, ou choisis-en une autre.";
+"asistenteFavorito.category.none" = "Sans catégorie";
+"asistenteFavorito.category.noneHint" = "Tu la choisis à chaque utilisation.";
+"asistenteFavorito.category.other" = "Autre catégorie";
+"asistenteFavorito.name.question" = "Comment l’appelle-t-on ?";
+"asistenteFavorito.name.detail" = "C’est ainsi que tu le verras dans tes favoris.";
+"asistenteFavorito.amount.question.expense" = "Combien paies-tu d’habitude ?";
+"asistenteFavorito.amount.question.income" = "Combien reçois-tu d’habitude ?";
+"asistenteFavorito.amount.question.transfer" = "Combien déplaces-tu d’habitude ?";
+"asistenteFavorito.amount.detail" = "Si ça change à chaque fois, laisse vide : on te le demandera à l’utilisation.";
+"asistenteFavorito.account.question.expense" = "Avec quel compte paies-tu ?";
+"asistenteFavorito.account.question.income" = "Sur quel compte le reçois-tu ?";
+"asistenteFavorito.account.question.transfer" = "De quel compte part-il ?";
+"asistenteFavorito.account.detail" = "Tu pourras le changer à l’utilisation.";
+"asistenteFavorito.account.none" = "Sans compte";
+"asistenteFavorito.account.noneHint" = "Tu le choisis à chaque utilisation.";
+"asistenteFavorito.destination.question" = "Vers quel compte va-t-il ?";
+"asistenteFavorito.destination.detail" = "Ce doit être un autre compte que celui d’origine.";
+"asistenteFavorito.summary.question" = "On le crée comme ça ?";
+"asistenteFavorito.summary.detail" = "Touche une réponse pour la modifier.";
+"asistenteFavorito.summary.kind" = "Type";
+"asistenteFavorito.summary.category" = "Catégorie";
+"asistenteFavorito.summary.name" = "Nom";
+"asistenteFavorito.summary.amount" = "Montant";
+"asistenteFavorito.summary.amountEmpty" = "À saisir à l’utilisation";
+"asistenteFavorito.summary.account" = "Compte";
+"asistenteFavorito.summary.origin" = "De";
+"asistenteFavorito.summary.destination" = "Vers";

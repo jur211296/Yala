@@ -1,0 +1,46 @@
+/*
+  AsistenteFavorito.strings
+  Yala
+
+  El asistente por pasos de «Nuevo favorito» (encargo del 17-nov). Las claves del contenedor compartido
+  (`asistente.*`) viven en `AsistentePresupuesto.strings`. Tabla propia, leída con el idioma de la app
+  (`L10n.AsistenteFavorito`).
+*/
+
+"asistenteFavorito.discard.title" = "Scartare questo preferito?";
+"asistenteFavorito.create" = "Crea preferito";
+"asistenteFavorito.createShort" = "Crea";
+"asistenteFavorito.kind.question" = "Cosa vuoi salvare?";
+"asistenteFavorito.kind.detail" = "Un preferito è un movimento che ripeti: poi lo registri con un tocco.";
+"asistenteFavorito.kind.hint.expense" = "Qualcosa che paghi spesso: il caffè, il taxi, il pranzo.";
+"asistenteFavorito.kind.hint.income" = "Qualcosa che ricevi spesso: lo stipendio, un pagamento.";
+"asistenteFavorito.kind.hint.transfer" = "Denaro che sposti tra i tuoi conti.";
+"asistenteFavorito.category.question" = "In quale categoria va?";
+"asistenteFavorito.category.detail" = "Quelle che usi di più, o scegline un’altra.";
+"asistenteFavorito.category.none" = "Senza categoria";
+"asistenteFavorito.category.noneHint" = "La scegli ogni volta che lo usi.";
+"asistenteFavorito.category.other" = "Altra categoria";
+"asistenteFavorito.name.question" = "Come lo chiamiamo?";
+"asistenteFavorito.name.detail" = "Così lo vedrai nella lista dei preferiti.";
+"asistenteFavorito.amount.question.expense" = "Quanto paghi di solito?";
+"asistenteFavorito.amount.question.income" = "Quanto ricevi di solito?";
+"asistenteFavorito.amount.question.transfer" = "Quanto sposti di solito?";
+"asistenteFavorito.amount.detail" = "Se cambia ogni volta, lascialo vuoto: te lo chiediamo quando lo usi.";
+"asistenteFavorito.account.question.expense" = "Con quale conto paghi?";
+"asistenteFavorito.account.question.income" = "Su quale conto ti arriva?";
+"asistenteFavorito.account.question.transfer" = "Da quale conto parte?";
+"asistenteFavorito.account.detail" = "Puoi cambiarlo quando lo usi.";
+"asistenteFavorito.account.none" = "Senza conto";
+"asistenteFavorito.account.noneHint" = "Lo scegli ogni volta che lo usi.";
+"asistenteFavorito.destination.question" = "Verso quale conto va?";
+"asistenteFavorito.destination.detail" = "Deve essere un conto diverso da quello di origine.";
+"asistenteFavorito.summary.question" = "Lo creiamo così?";
+"asistenteFavorito.summary.detail" = "Tocca una risposta per cambiarla.";
+"asistenteFavorito.summary.kind" = "Tipo";
+"asistenteFavorito.summary.category" = "Categoria";
+"asistenteFavorito.summary.name" = "Nome";
+"asistenteFavorito.summary.amount" = "Importo";
+"asistenteFavorito.summary.amountEmpty" = "Lo inserisci quando lo usi";
+"asistenteFavorito.summary.account" = "Conto";
+"asistenteFavorito.summary.origin" = "Da";
+"asistenteFavorito.summary.destination" = "A";

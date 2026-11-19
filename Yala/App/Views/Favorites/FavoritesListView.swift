@@ -26,6 +26,9 @@ struct FavoritesListView: View {
     @Environment(\.editMode) private var editMode
 
     @State private var viewModel = FavoritesListViewModel()
+    /// Lo respondido en el asistente de «Nuevo favorito». Vive aquí, en quien presenta la hoja, y se olvida al cerrarla:
+    /// el contenido de una hoja puede rehacerse sin cerrarla (`swiftui-ds.md`).
+    @State private var newFavoriteWizard = AsistenteFavoritoEstado()
 
     let mode: FavoritesListMode
     var onSelect: ((FavoritePayment) -> Void)?
@@ -103,13 +106,16 @@ struct FavoritesListView: View {
         .sheet(
             isPresented: $viewModel.showEditor,
             onDismiss: {
+                newFavoriteWizard.olvidar()
                 viewModel.closeEditor()
             }
         ) {
+            // Crear abre el asistente por pasos, con «Usar formulario» arriba (encargo del 17-nov); editar sigue abriendo
+            // el formulario.
             if let favorite = viewModel.favoriteToEdit {
                 FavoriteEditorView(favorite: favorite)
             } else {
-                FavoriteEditorView(favorite: nil)
+                NuevoFavoritoHoja(estado: newFavoriteWizard, alCerrar: { viewModel.showEditor = false })
             }
         }
         .alert(L10n.UXL7.Favorites.deleteConfirmTitle, isPresented: $viewModel.showDeleteConfirmation) {
