@@ -5,7 +5,8 @@
 //  S6 del replanteo del flujo de caja (ticket `2026-11-17-flujo-de-caja-replanteo`, decisiones de Jürgen del
 //  18-nov-2026): «Ver proyectado» del Panel, Tendencias y el widget de Saldo usan la misma pieza del motor del mes
 //  (`FlujoMotorMes`). Con plan, lo que les falta a las líneas; sin plan o con filtros, «otros» por la mediana de 6 meses
-//  sin líneas. Los ingresos sin línea no se proyectan, y nada se cuenta dos veces.
+//  sin líneas. Desde el 19-nov-2026 los ingresos sin línea se proyectan solo si son fijos detectados
+//  (`FlujoProyeccionInteligente`), y nada se cuenta dos veces.
 //
 //  Paridad: «Al 30» del flujo de caja (el cierre del mes en curso), «Al 30» del Panel (`MonthEndBalanceLogic`) y el
 //  último punto del mes del widget de Saldo (`WidgetDataCache.buildProjectedFlow` acumulado como lo acumula el widget)
@@ -195,7 +196,13 @@ struct FlujoConsumidoresParidadTests {
         let novemberExpense = days.filter { $0 < Self.date(2026, 12, 1, hour: 0) }
             .reduce(0.0) { $0 + (built.flows[$1]?.expense ?? 0) }
         #expect(abs(novemberExpense - (40 + 800 + 150)) < 0.001)
-        #expect(days.allSatisfy { (built.flows[$0]?.income ?? 0) == 0 }, "Ni noviembre ni diciembre proyectan ingresos")
+        // Desde el 19-nov-2026 (proyección inteligente) el sueldo de agosto a octubre es un ingreso fijo detectado: en
+        // noviembre ya llegó y no se proyecta otra vez; en diciembre entra entero el día 1, su día típico.
+        #expect(days.filter { $0 < Self.date(2026, 12, 1, hour: 0) }.allSatisfy { (built.flows[$0]?.income ?? 0) == 0 },
+                "Noviembre ya cobró su sueldo")
+        #expect(abs((built.flows[Self.calendar.startOfDay(for: Self.date(2026, 12, 1))]?.income ?? 0) - 3_000) < 0.001,
+                "Diciembre: el sueldo fijo en su día")
+        #expect(abs(december.reduce(0.0) { $0 + (built.flows[$1]?.income ?? 0) } - 3_000) < 0.001)
         #expect(built.incomeSource == .scheduledOnly)
     }
 
