@@ -13,6 +13,23 @@ import SwiftUI
 @Observable
 final class ScheduledPaymentEditorViewModel {
 
+    /// Guarda el logo propio solo si cambió: una foto nueva estrena referencia (el otro teléfono en el Modo Nube la
+    /// baja por ella) y la misma foto conserva la suya, así guardar otra cosa del pago no la vuelve a subir.
+    static func applyCustomLogo(_ photo: Data?, to payment: ScheduledPayment) {
+        guard photo != payment.customLogoData else { return }
+        payment.customLogoData = photo
+        payment.customLogoRef = photo == nil ? nil : PagoLogoPropioFoto.nuevaReferencia()
+        if photo != nil { PagoLogoPropioSync.shared.noteLocalChange() }
+    }
+
+    /// Qué se guarda del logo: un gasto de grupo no lleva (`.some(nil)`); si no, solo lo que cambió en esta edición
+    /// (`.none` = no tocar lo guardado). Guardar a ciegas lo que se leyó al abrir pisaría una foto o un logo que llegó
+    /// de otro teléfono mientras el editor estaba abierto.
+    static func logoEdit<T: Equatable>(_ current: T?, loaded: T?, isGroupExpense: Bool) -> T?? {
+        if isGroupExpense { return .some(nil) }
+        return current == loaded ? .none : .some(current)
+    }
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -130,7 +147,9 @@ final class ScheduledPaymentEditorViewModel {
         splitParticipantIDs: [UUID] = [],
         splitValues: [UUID: Double] = [:],
         // Logo de suscripción (card 9nn7): `.none` = no tocar lo guardado; `.some(nil)` = automático por el nombre.
-        brandLogoID: String?? = .none
+        brandLogoID: String?? = .none,
+        // Logo propio (2026-11-20): `.none` = no tocar lo guardado; `.some(nil)` = sin foto.
+        customLogoData: Data?? = .none
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -166,6 +185,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.setTags(from: tagsArray)
             existingPayment.needOverride = needOverride
             if case .some(let logo) = brandLogoID { existingPayment.brandLogoID = logo }
+            if case .some(let photo) = customLogoData { Self.applyCustomLogo(photo, to: existingPayment) }
 
             // Recurrence
             existingPayment.isRecurring = isRecurring
@@ -220,6 +240,7 @@ final class ScheduledPaymentEditorViewModel {
             context.insert(newPayment)
 
             if case .some(let logo) = brandLogoID { newPayment.brandLogoID = logo }
+            if case .some(let photo) = customLogoData { Self.applyCustomLogo(photo, to: newPayment) }
 
             // Group shared expense (F3)
             newPayment.groupZoneID = groupZoneID

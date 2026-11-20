@@ -8,6 +8,8 @@ tags: [cloudkit, despliegue, owner, v2.2]
 **Para quién:** Jürgen, desde el Mac (la consola de CloudKit no se usa bien desde el móvil).
 **Cuánto lleva:** unos 15 minutos los dos contenedores.
 **Cuándo:** antes de subir a TestFlight cualquier build de 2.2. TestFlight ya usa el entorno Production de iCloud.
+**Y para 2.3:** la sección «Añadido el 2026-11-20» (el logo propio de un pago planificado) va antes de subir a TestFlight
+cualquier build de 2.3.
 
 **Por qué no lo hizo Frank:** en la Mini no hay token de gestión de CloudKit (`xcrun cktool get-teams` responde «No
 management token found», medido el 2026-10-22). Y llevar un esquema a Production solo se hace desde la consola.
@@ -92,6 +94,30 @@ En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgensc
 
 Si haces esta pasada junto con las de arriba, basta un solo **Deploy** por contenedor. **Antes de subir a TestFlight una
 build que escriba la receta.**
+
+## Añadido el 2026-11-20: el logo propio de un pago planificado (2.3)
+
+Tres campos en `CD_ScheduledPayment`, sin índices: la foto que la persona elige como logo del pago y su referencia del
+Modo Nube. La build de 2.3 los escribe al guardar un pago con «Usar una foto». **Sin ellos en Production, iCloud rechaza
+sin avisar el pago que lleve foto** (los demás pagos siguen viajando: un campo vacío no se manda).
+
+| Record type | Campo | Tipo | Índices |
+|---|---|---|---|
+| `CD_ScheduledPayment` | `CD_customLogoData` | Bytes | ninguno |
+| `CD_ScheduledPayment` | `CD_customLogoData_ckAsset` | Asset | ninguno |
+| `CD_ScheduledPayment` | `CD_customLogoRef` | String | ninguno |
+
+En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgenschmidt.yala.dev`):
+
+1. Selector de entorno en **Development**. **Schema → Record Types → `CD_ScheduledPayment`**.
+2. Si falta alguno de los tres, **+** con su nombre y su tipo de la tabla, **Save**. No marques ningún índice.
+3. **Schema → Deploy Schema Changes…** La lista trae solo altas, y entre ellas estas tres. Con un «Remove» o «Change»,
+   **Cancel** y avisa a Frank.
+4. **Deploy**. Cambia a **Production**, abre `CD_ScheduledPayment` y comprueba los tres campos con su tipo.
+
+**Antes de subir a TestFlight una build que deje elegir la foto.** Cómo se comprueba con dos iPhone en iCloud: en A,
+Planificación → Pagos planificados → un pago → Editar → «Logo» → «Usar una foto» → elige una → Guardar; en B, al rato, el
+mismo pago enseña esa foto en la lista.
 
 ## Cuando acabes
 

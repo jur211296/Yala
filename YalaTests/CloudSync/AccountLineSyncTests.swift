@@ -148,7 +148,7 @@ struct AccountLineSyncTests {
         defer { restoreCapability() }
         SyncCapability.recordBackendManifestVersion(7)
         #expect(SyncCapability.declaredLevel == SyncCapability.clientManifestVersion)
-        #expect(SyncCapability.declaredLevel == 6, "v6: la receta de líneas de tu parte (Grupos B, card 1)")
+        #expect(SyncCapability.declaredLevel == 7, "v7: el logo propio de un pago planificado (2026-11-20)")
     }
 
     @Test func capability_workerRolledBack_goesBackToV1() {
@@ -197,6 +197,7 @@ struct AccountLineSyncTests {
             "cashflow_lines": ["amount_changes_raw": 3],
             "favorite_payments": ["destination_account_ref": 4],
             "tx_items": ["split_lines_raw": 6],
+            "scheduled_payments": ["custom_logo_ref": 7],
         ], "control: el test lee algo")
         #expect(manifest.manifest_version == SyncCapability.clientManifestVersion,
                 "subir el manifest sin subir lo que entiende el cliente (o al revés) deja una columna sin gate")

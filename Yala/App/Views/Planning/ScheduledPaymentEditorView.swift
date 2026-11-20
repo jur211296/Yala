@@ -70,6 +70,12 @@ struct ScheduledPaymentEditorView: View {
     /// Logo de suscripción (card 9nn7, 2.3): `nil` = automático por el nombre, `SubscriptionBrandCatalog.noneID` =
     /// quitado, o el id del servicio elegido.
     @State private var brandLogoID: String?
+    /// Logo propio: la foto del pago ya reducida (`PagoLogoPropioFoto`). `nil` = sin foto.
+    @State private var customLogoData: Data?
+    /// Lo que tenía el pago al abrir el editor: el logo se guarda solo si la persona lo cambió aquí, así no pisa una foto
+    /// que llegó de otro teléfono con el editor abierto (lo cazó el revisor del gate, 2026-11-20).
+    @State private var loadedBrandLogoID: String?
+    @State private var loadedCustomLogoData: Data?
     @State private var showLogoPicker = false
 
     // Classification
@@ -539,15 +545,21 @@ struct ScheduledPaymentEditorView: View {
     // MARK: - Logo del comercio (cards 9nn7 y logos reales, 2.3)
 
     private var resolvedLogo: PaymentLogo? {
-        PaymentLogoResolver.resolve(storedID: brandLogoID, name: name)
+        // El logo propio gana (encargo del 2026-11-20).
+        if let customLogoData, let photo = PhotoIntake.image(from: customLogoData, maxEdge: PagoLogoPropioFoto.lado) {
+            return PaymentLogo(photo: photo, paymentName: name)
+        }
+        return PaymentLogoResolver.resolve(storedID: brandLogoID, name: name)
     }
 
-    /// Solo donde aporta: hay un logo (propuesto o elegido), se quitó uno, o el pago es una suscripción.
+    /// En todo pago personal: desde el logo propio (2026-11-20) la fila también sirve al pago cuyo comercio no está en
+    /// el banco, que es justo el que no proponía nada. Un gasto de grupo no lleva logo.
     private var showsLogoRow: Bool {
-        !isGroupExpense && (resolvedLogo != nil || brandLogoID != nil || isSubscription)
+        !isGroupExpense
     }
 
     private var logoRowValue: String {
+        if customLogoData != nil { return PagoLogoPropioText.yourPhoto }
         if brandLogoID == SubscriptionBrandCatalog.noneID { return L10n.Scheduled.logoNone }
         if brandLogoID == nil {
             return resolvedLogo.map { L10n.Scheduled.logoAutoNamed($0.name) } ?? L10n.Scheduled.logoNone
@@ -582,7 +594,7 @@ struct ScheduledPaymentEditorView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("scheduled_logo_row")
         .sheet(isPresented: $showLogoPicker) {
-            MerchantLogoPickerSheet(brandLogoID: $brandLogoID, paymentName: name)
+            MerchantLogoPickerSheet(brandLogoID: $brandLogoID, customLogoData: $customLogoData, paymentName: name)
         }
     }
 
@@ -1704,6 +1716,9 @@ struct ScheduledPaymentEditorView: View {
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
         isSubscription = paymentCategory == .subscription
         brandLogoID = payment.brandLogoID
+        customLogoData = payment.customLogoData
+        loadedBrandLogoID = payment.brandLogoID
+        loadedCustomLogoData = payment.customLogoData
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
         // CSV-mirror SSOT via resolver + TagResolver → set of persistentModelIDs.
@@ -1813,7 +1828,10 @@ struct ScheduledPaymentEditorView: View {
             splitType: isGroupExpense ? splitConfigType.rawValue : nil,
             splitParticipantIDs: isGroupExpense ? splitParticipantIDs : [],
             splitValues: isGroupExpense ? splitValues : [:],
-            brandLogoID: .some(isGroupExpense ? nil : brandLogoID)
+            brandLogoID: ScheduledPaymentEditorViewModel.logoEdit(
+                brandLogoID, loaded: loadedBrandLogoID, isGroupExpense: isGroupExpense),
+            customLogoData: ScheduledPaymentEditorViewModel.logoEdit(
+                customLogoData, loaded: loadedCustomLogoData, isGroupExpense: isGroupExpense)
         )
 
         if let id = savedID {

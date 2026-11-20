@@ -340,6 +340,7 @@ CREATE TABLE scheduled_payments (
   split_type TEXT,
   split_participant_ids_raw TEXT,
   split_values_raw TEXT,
+  custom_logo_ref TEXT,
   field_hlcs JSONB,
   hlc TEXT NOT NULL,
   deleted BOOLEAN NOT NULL DEFAULT false,

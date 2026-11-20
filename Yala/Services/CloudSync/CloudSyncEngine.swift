@@ -3169,6 +3169,11 @@ final class CloudSyncEngine {
                let item = model as? TransactionItem, let itemSyncID = item.syncID {
                 SyncCapability.noteSuppressedSplitLines(itemSyncID)
             }
+            // Y con el logo propio de un pago planificado (v7), también cuando se quita.
+            if level < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
+               let payment = model as? ScheduledPayment {
+                SyncCapability.noteSuppressedCustomLogo(payment.id)
+            }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,

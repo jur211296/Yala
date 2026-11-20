@@ -1,0 +1,14 @@
+/*
+  PagoLogoPropio.strings
+  Yala
+
+  Logo propio de un pago planificado con una foto (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`PagoLogoPropioText`).
+*/
+
+"pagoLogoPropio.section" = "Ton propre logo";
+"pagoLogoPropio.usePhoto" = "Utiliser une photo";
+"pagoLogoPropio.yourPhoto" = "Ta photo";
+"pagoLogoPropio.change" = "Changer";
+"pagoLogoPropio.footer" = "Choisis une photo de ta photothèque : elle est recadrée en cercle, comme les autres logos. Pour la retirer, choisis une autre option.";
+"pagoLogoPropio.unreadable" = "Impossible d'utiliser cette photo. Essaie avec une autre.";
