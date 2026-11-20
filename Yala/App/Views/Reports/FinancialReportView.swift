@@ -22,6 +22,11 @@ struct FinancialReportView: View {
     @State private var recalculateTask: Task<Void, Never>?
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D watchdog kill.
     @State private var isInBackground = false
+    /// La Comparativa no calcula mientras no se ve (encargo de fluidez del 20-nov-2026): un cambio de filtro desde el
+    /// Flujo de caja o desde otra pestaña la deja pendiente y calcula al aparecer (`FlujoFluidezLogica`).
+    @State private var comparativaPendiente = true
+    @State private var comparativaGuardadosVistos: Int?
+    @State private var comparativaDiaVisto: Date?
 
     // MARK: - Environment
 
@@ -30,6 +35,8 @@ struct FinancialReportView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    /// `false` con Reportes montado detrás de otra pestaña (`MainTabView` monta las seis páginas).
+    @Environment(\.isRootPageShown) private var isRootPageShown
 
     /// Anchos de las columnas de la tabla (UX 2.2 · L18-3), escalados con el tamaño de texto.
     @ScaledMetric(relativeTo: .caption) private var currentColumnWidth: CGFloat = 96
@@ -59,7 +66,6 @@ struct FinancialReportView: View {
 
     /// Alias for `appPreferences.defaultCurrencyCode.rawValue` — minimizes diff across 7 callsites.
     private var preferredCurrencyCode: String { appPreferences.defaultCurrencyCode.rawValue }
-    private var showVariations: Bool { appPreferences.showVariations }
 
     // MARK: - Tab Visibility
 
@@ -78,25 +84,24 @@ struct FinancialReportView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: DS.Spacing.none) {
-                reportGuide
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.xs)
-                tabContent
-            }
-            .yalaScreenBackground()
-            // Barra y no `safeAreaInset`: con el inset las filas del flujo de caja pasaban por debajo de las cápsulas
-            // «Comparativa / Flujo de caja» y su texto se leía detrás (S2 del replanteo, 18-nov-2026). La barra
-            // difumina el borde del scroll bajo ella (`swiftui-ds.md`).
-            .safeAreaBar(edge: .top) {
-                navigationChipsBar
-            }
-            .navigationTitle(L10n.Report.title)
-            .navigationBarTitleDisplayMode(.large)
-            .prefersToolbarItemsInVerticalBar()
-            .toolbar {
-                reportToolbar
-            }
+            // El scroll de cada pestaña es la raíz, sin nada encima (encargo de fluidez del 20-nov-2026). Con la guía de la
+            // Comparativa en un `VStack` por encima del scroll, al lanzar la lista hasta un borde la barra de pestañas
+            // se encogía y se desplegaba sin parar y la lista rebotaba sola (medido en vídeo; el Panel, con el scroll de
+            // raíz, no lo hacía). La guía va dentro del scroll, como `StatsGuideSlot` en Estadísticas.
+            tabContent
+                .yalaScreenBackground()
+                // Barra y no `safeAreaInset`: con el inset las filas del flujo de caja pasaban por debajo de las cápsulas
+                // «Comparativa / Flujo de caja» y su texto se leía detrás (S2 del replanteo, 18-nov-2026). La barra
+                // difumina el borde del scroll bajo ella (`swiftui-ds.md`).
+                .safeAreaBar(edge: .top) {
+                    navigationChipsBar
+                }
+                .navigationTitle(L10n.Report.title)
+                .navigationBarTitleDisplayMode(.large)
+                .prefersToolbarItemsInVerticalBar()
+                .toolbar {
+                    reportToolbar
+                }
         }
         .sheet(isPresented: $showCustomDatePicker) {
             CustomPeriodPickerSheet(
@@ -128,7 +133,6 @@ struct FinancialReportView: View {
             onReset: { cashFlowViewModel.resetPlan() }
         )
         .onAppear {
-            recalculate()
             cashFlowViewModel.setContext(modelContext)
         }
         .onDisappear { recalculateTask?.cancel() }
@@ -204,20 +208,6 @@ struct FinancialReportView: View {
         .accessibilityIdentifier("report_chip_\(tab.rawValue)")
     }
 
-    // MARK: - Report Guide
-
-    @ViewBuilder
-    private var reportGuide: some View {
-        switch effectiveReportTab {
-        case .comparativa:
-            ContextualGuideBanner.comparative()
-        case .flujoDeCaja:
-            // Sin banner (UX 2.2 · L5-6, opción A): el flujo de caja ya trae su propia explicación («¿Qué es el flujo
-            // de caja?») y su guía sombreada, y con el banner eran tres a la vez.
-            EmptyView()
-        }
-    }
-
     // MARK: - Tab Content
 
     @ViewBuilder
@@ -235,6 +225,10 @@ struct FinancialReportView: View {
     private var comparativaContent: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
+                // La guía de primera visita, primera pieza del scroll: se va con el contenido al desplazar. El Flujo de
+                // caja no lleva guía (UX 2.2 · L5-6, opción A): ya trae su «¿Qué es el flujo de caja?».
+                ContextualGuideBanner.comparative()
+                    .padding(.horizontal, DS.Spacing.lg)
                 filterBar
                 comparisonHeader
                 GroupingChipsBar(state: $viewModel.groupingState)
@@ -268,6 +262,9 @@ struct FinancialReportView: View {
             .readableColumn()
         }
         .scrollViewGlassEdges()
+        // Al entrar (o volver desde el Flujo de caja o desde otra pestaña), calcula solo si quedó algo pendiente.
+        .onAppear { recalculateComparativaIfNeeded() }
+        .onChange(of: isRootPageShown) { _, shown in if shown { recalculateComparativaIfNeeded() } }
     }
 
     /// «Por tarjeta · Por línea» (entrega 4): solo con la agrupación por cuenta puesta y alguna tarjeta con líneas. El
@@ -470,7 +467,8 @@ struct FinancialReportView: View {
         if let compared = comparedPeriodName {
             ReportComparisonHeader(
                 heading: ComparativeLabelsLogic.heading(current: currentPeriodName, compared: compared),
-                showsChips: showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod),
+                // Con o sin «Mostrar variaciones»: en la Comparativa elegir con qué comparar no depende de ese ajuste.
+                showsChips: PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod),
                 previousTitle: ComparativeLabelsLogic.previousChipTitle(for: viewModel.detailPeriod),
                 yearAgoTitle: L10n.UXL18.chipYearAgo(
                     ComparativeLabelsLogic.yearAgoChipName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
@@ -512,6 +510,9 @@ struct FinancialReportView: View {
     }
 
     private func scheduleRecalculate() {
+        // Sin la Comparativa a la vista no se calcula: queda pendiente para cuando aparezca.
+        comparativaPendiente = true
+        guard effectiveReportTab == .comparativa, isRootPageShown else { return }
         guard !isInBackground else { return }
         guard UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
@@ -523,13 +524,32 @@ struct FinancialReportView: View {
         }
     }
 
+    /// Al aparecer la Comparativa: calcula si quedó pendiente, si se guardó algo desde la última vez o si cambió el día.
+    private func recalculateComparativaIfNeeded() {
+        let debe = FlujoFluidezLogica.comparativaDebeCalcular(
+            pendiente: comparativaPendiente,
+            guardadosVistos: comparativaGuardadosVistos,
+            guardadosAhora: StoreSaveCounter.shared.count,
+            diaVisto: comparativaDiaVisto,
+            diaAhora: Calendar.current.startOfDay(for: .now)
+        )
+        guard debe else { return }
+        recalculateTask?.cancel()
+        recalculate()
+    }
+
     private func recalculate() {
+        comparativaPendiente = false
+        comparativaGuardadosVistos = StoreSaveCounter.shared.count
+        comparativaDiaVisto = Calendar.current.startOfDay(for: .now)
+        FlujoFluidezMedida.medir(.comparativaCalcular) {
         viewModel.calculateReport(
             transactions: transactions,
             accounts: accounts,
             preferredCurrency: preferredCurrencyCode,
             allTags: tags
         )
+        }
     }
 }
 

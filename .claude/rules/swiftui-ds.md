@@ -423,6 +423,16 @@ paths:
   los leía del grupo borrado. ⇒ lo que solo vale con el modelo vivo va `@autoclosure` y detrás de `isDeleted`. El detalle
   guarda su `body` con `isGroupReadable` (título de `viewModel.groupName`) y el ViewModel suelta con `releaseDeletedGroup`.
 
+- **En una página de pestaña, el scroll es la raíz de su `NavigationStack`: nada encima de él en un `VStack` (medido en
+  vídeo el 2026-11-20, iOS 27.2, encargo de fluidez de Reportes).** Con la guía de la Comparativa en un `VStack` por encima
+  del scroll, lanzar la lista hasta un borde y soltarla dejaba un bucle: la barra de pestañas (`.onScrollDown`) se
+  encogía y se desplegaba sola y la lista saltaba ~88 pt cada ~1,2 s, en Flujo de caja y en Comparativa; el Panel, con
+  el mismo gesto, no. Con el scroll de raíz y la guía dentro, un solo movimiento. ⇒ lo que va arriba de la lista va
+  DENTRO del scroll (molde `StatsGuideSlot`) o en una `.safeAreaBar`; nunca en un contenedor que envuelva al scroll. El
+  gesto que lo reproduce: `YalaUITests/FlujoDeCajaFluidez/FlujoFluidezMedicionUITests.test_rebote` (cinco
+  `swipeUp(.fast)` y un `swipeDown(velocity: 4_000)`); con `axe swipe` no sale. Pin del cableado:
+  `FlujoFluidezCableadoTests`.
+
 - **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
   el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a
   Grupos la barra reservaba el alto del cajón vacío ~0,4 s y luego lo plegaba, y el contenido saltaba ~45 pt de golpe
