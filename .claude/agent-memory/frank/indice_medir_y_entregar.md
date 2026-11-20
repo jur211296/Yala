@@ -118,3 +118,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Banco con YAML: el CI tiene PyYAML](reference_banco_yaml_en_ci_tiene_pyyaml.md) — en la Mac cae a Ruby y pasa; prueba el camino PyYAML con un venv.
 - [Desatascar PRs en serie: TICKETS.md fuera](feedback_desatascar_prs_en_serie_saca_el_indice.md) — índice como en 2.3 y filas al final; el índice de QA por área.
 - [No cerrar hasta ver el PR dentro](feedback_no_cerrar_hasta_ver_el_pr_dentro.md) — 19-nov: auto-merge armado no basta; esperar MERGED y arreglar lo que choque.
+- [El título de Sentry no es la pantalla](feedback_el_titulo_de_sentry_no_es_la_pantalla.md) — 20-nov: lee la pila del evento antes de aceptar el área; el enlazador fusiona funciones gemelas.
