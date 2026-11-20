@@ -16,6 +16,10 @@
 //  abajo y solo, y «Ahora no» en la barra (nunca un botón debajo de otro). «¡Listo! Tienes Pro» enseña «Pruébalo ahora»
 //  en lugar del tour Pro (tema 3).
 //
+//  Opción A de Jürgen (20-nov-2026, «Oferta Pro: más beneficios»): la cabecera más corta y una tarjeta con cuatro
+//  bloques que nombran las ocho puertas Pro (`OfertaProBeneficiosCard`), y «Ver todos los beneficios ›», que empuja
+//  «Qué incluye Yala Pro» dentro de la misma hoja con el mismo botón de empezar abajo.
+//
 
 import StoreKit
 import SwiftUI
@@ -51,6 +55,8 @@ struct SetupCompleteTrialOfferSheet: View {
     @State private var reminderScheduled = false
     /// Hay permiso de avisos: sin él, la línea de tiempo no promete el aviso (no se pide, Y23-17).
     @State private var canRemind = false
+    /// «Qué incluye Yala Pro» empujada encima de la oferta. No guarda plan: compra el que se eligió aquí.
+    @State private var showsAllBenefits = false
 
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -76,6 +82,9 @@ struct SetupCompleteTrialOfferSheet: View {
                 .padding(.bottom, DS.Spacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .navigationDestination(isPresented: $showsAllBenefits) {
+                OfertaProTodosLosBeneficiosPage { bottomButton }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !showsSuccess {
@@ -122,27 +131,28 @@ struct SetupCompleteTrialOfferSheet: View {
     // MARK: - La oferta
 
     private var offer: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.md) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Cabecera corta (opción A): 4 pt entre piezas, para que en el SE quepan la tarjeta y los dos planes.
+            VStack(spacing: DS.Spacing.xs) {
                 YalaSpark(size: .large, animated: false, solid: true)
                     .accessibilityHidden(true)
                 Text(title)
-                    .font(DS.Typography.welcomeHeadline)
+                    .font(DS.Typography.title)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("setup_offer_title")
                 Text(subtitle)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("setup_offer_subtitle")
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, DS.Spacing.md)
+            .padding(.top, DS.Spacing.xs)
 
-            SetupOfferFeatures()
+            OfertaProBeneficiosCard { showsAllBenefits = true }
 
             if !store.planOffers.isEmpty {
                 VStack(spacing: DS.Spacing.sm) {
@@ -208,7 +218,7 @@ struct SetupCompleteTrialOfferSheet: View {
         case .voice: P.triedVoice
         case .photo: P.triedPhoto
         case .ai: P.triedAI
-        case .manual, nil: T.offerSubtitle
+        case .manual, nil: OfertaProBeneficiosText.subtitle
         }
     }
 
@@ -299,6 +309,7 @@ struct SetupCompleteTrialOfferSheet: View {
         let startsTrial = purchaseInFlight && store.isInTrial
         purchaseInFlight = false
         purchased = true
+        showsAllBenefits = false
         DS.Haptic.success()
         guard startsTrial, let end = store.trialEndDate else { return }
         Task {
@@ -315,44 +326,6 @@ struct SetupCompleteTrialOfferSheet: View {
 }
 
 // MARK: - Piezas
-
-/// Las tres funciones que se acaban de probar en el paso 2 (la maqueta del tema 4: antes eran seis).
-private struct SetupOfferFeatures: View {
-    private typealias P = PrimerosPasosPaso7Text.Offer
-
-    @Environment(\.yalaTheme) private var theme
-
-    private var items: [(icon: String, color: Color, title: String)] {
-        [
-            ("waveform", .hotPink, P.featureVoice),
-            ("doc.text.viewfinder", .teal, P.featurePhoto),
-            ("sparkles", .electricIndigo, P.featureAI),
-        ]
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            ForEach(items, id: \.title) { item in
-                HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: item.icon)
-                        .font(DS.Typography.body.weight(.semibold))
-                        .foregroundStyle(item.color)
-                        .frame(width: 28)
-                        .accessibilityHidden(true)
-                    Text(item.title)
-                        .font(DS.Typography.body.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                }
-            }
-        }
-        .padding(DS.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("setup_offer_features")
-    }
-}
 
 /// «Hoy no pagas · te avisamos el … · cobro el …» en una sola línea, con las fechas reales (la maqueta del tema 4: antes
 /// era una lista de tres pasos). Sin permiso de avisos, sin el aviso: no se promete lo que no puede salir (decisión de

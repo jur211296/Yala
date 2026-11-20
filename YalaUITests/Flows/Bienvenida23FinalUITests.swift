@@ -184,4 +184,49 @@ final class Bienvenida23FinalUITests: XCTestCase {
         tapWhenSettled(app, "setup_offer_start_using")
         XCTAssertTrue(element(app, "setup_offer_success_title").waitForNonExistence(timeout: 10))
     }
+
+    /// Oferta Pro con todos los beneficios (opción A, 20-nov-2026): «Ver todos los beneficios» empuja «Qué incluye Yala
+    /// Pro» en la misma hoja, con el botón de empezar fijo abajo, y «‹» vuelve con el plan que se eligió antes.
+    func test_final_offer_seeAllBenefits_pushesAndComesBack() {
+        let app = launch(atStep: 8)
+        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, "setup_offer_block_capture").exists, "«Anota sin teclear».")
+        XCTAssertTrue(element(app, "setup_offer_block_style").exists, "«A tu estilo».")
+        // El mensual, elegido antes de ir a la página (el anual llega preseleccionado).
+        let monthly = app.buttons["pro_plan_monthly"].firstMatch
+        XCTAssertTrue(monthly.waitForExistence(timeout: 5))
+        _ = app.waitForSettledLayout(of: monthly)
+        monthly.tap()
+        XCTAssertTrue(monthly.isSelected, "No quedó elegido el mensual.")
+
+        tapWhenSettled(app, "setup_offer_see_all")
+        XCTAssertTrue(element(app, "setup_offer_all_benefits").waitForExistence(timeout: 10),
+                      "«Ver todos los beneficios» no empujó «Qué incluye Yala Pro».")
+        XCTAssertTrue(element(app, "setup_offer_all_benefits_row_accounts").exists, "La fila de cuentas.")
+        XCTAssertTrue(element(app, "setup_offer_cta").isHittable, "«Empezar mi mes gratis» fijo abajo en la página.")
+        XCTAssertFalse(element(app, "setup_offer_plans").exists, "La página no repite los planes.")
+        attach(app, "que-incluye-yala-pro")
+
+        let back = app.navigationBars.buttons["BackButton"].firstMatch.exists
+            ? app.navigationBars.buttons["BackButton"].firstMatch
+            : app.navigationBars.buttons.element(boundBy: 0)
+        back.tap()
+        XCTAssertTrue(element(app, "setup_offer_all_benefits").waitForNonExistence(timeout: 10), "«‹» no volvió.")
+        XCTAssertTrue(app.buttons["pro_plan_monthly"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["pro_plan_monthly"].firstMatch.isSelected, "Al volver se perdió el plan elegido.")
+        XCTAssertFalse(app.buttons["pro_plan_yearly"].firstMatch.isSelected)
+    }
+
+    /// Desde «Qué incluye Yala Pro», «Empezar mi mes gratis» compra el plan de la oferta y queda «¡Listo! Tienes Pro».
+    func test_final_offer_purchaseFromAllBenefits_showsProIsOn() {
+        let app = launch(atStep: 8, extra: ["-uitest-fake-purchase", "-uitest-pro-trial-days", "30"])
+        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 15))
+        tapWhenSettled(app, "setup_offer_see_all")
+        XCTAssertTrue(element(app, "setup_offer_all_benefits").waitForExistence(timeout: 10))
+        tapWhenSettled(app, "setup_offer_cta")
+        XCTAssertTrue(element(app, "setup_offer_success_title").waitForExistence(timeout: 10),
+                      "Comprar desde la página no dejó «¡Listo! Tienes Pro».")
+        XCTAssertFalse(element(app, "setup_offer_all_benefits").exists, "La página no se retiró tras la compra.")
+        attach(app, "listo-desde-la-pagina")
+    }
 }

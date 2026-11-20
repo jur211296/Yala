@@ -135,7 +135,7 @@ struct PrimerosPasosPaso7OfferTests {
         #expect(manager.contains("guard SetupCompleteTrialOfferLogic.offersAtCompletion(offeredAfterRecordStep:"))
     }
 
-    @Test("la hoja: «Ahora no» arriba, el botón de empezar solo y fijo abajo, tres funciones")
+    @Test("la hoja: «Ahora no» arriba, el botón de empezar solo y fijo abajo, los cuatro bloques de Pro")
     func sheet_layout() throws {
         let sheet = try Paso7Source.code("Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift")
         #expect(sheet.contains("ToolbarItem(placement: .topBarLeading)"))
@@ -145,9 +145,9 @@ struct PrimerosPasosPaso7OfferTests {
         let bottom = try Paso7Source.body(after: "private var bottomButton: some View {", in: sheet)
         #expect(bottom.components(separatedBy: "YalaPrimaryButton(").count - 1 == 2, "Un botón por estado, nunca dos.")
         #expect(bottom.components(separatedBy: "Button(").count - 1 == 2, "Nada más abajo.")
-        let features = try Paso7Source.body(after: "private var items: [(icon: String, color: Color, title: String)] {",
-                                            in: sheet)
-        #expect(features.components(separatedBy: "P.feature").count - 1 == 3)
+        // Desde la opción A de «Oferta Pro: más beneficios» (20-nov-2026), cuatro bloques con las ocho puertas Pro en
+        // vez de tres funciones: lo fija `OfertaProBeneficiosTests`.
+        #expect(sheet.contains("OfertaProBeneficiosCard {"))
         let content = try Paso7Source.code("Yala/App/ContentView.swift")
         #expect(content.contains("trialOfferTriedMethods = SetupCompleteTrialOfferLogic.takeTriedMethods()"))
         #expect(content.contains("SetupCompleteTrialOfferSheet(triedMethods: trialOfferTriedMethods,"))
