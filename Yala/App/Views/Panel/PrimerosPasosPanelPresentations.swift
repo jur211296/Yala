@@ -69,7 +69,8 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
         // Panel» (la guía de «días después», Y23-15). El tutorial solo existe en instalaciones nuevas de 2.3.
         appPreferences.materializePanelDefaultsIfNeeded()
         appPreferences.panelSectionsHidden = Self.sectionsHiddenAfterLearningToRecord(
-            current: appPreferences.resolvedSectionsHidden)
+            current: appPreferences.resolvedSectionsHidden,
+            keepsPlanning: SetupChecklistManager.shared.isPlanningShownInPanel)
         viewModel.reloadAndRecalculate()
         // Con algo anotado que se queda, Más lleva su punto de «algo nuevo».
         if keptAny { MoreTabNews.shared.markPending() }
@@ -101,12 +102,51 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
 
     /// Las secciones ocultas al terminar el paso 2: todas menos la cuenta y «Últimos registros», en orden canónico (el
     /// mismo que escribe «Configurar Panel», para no empujar a iCloud un cambio que no cambia nada).
-    static func sectionsHiddenAfterLearningToRecord(current: [String]) -> [String] {
-        let kept: Set<PanelSectionKind> = [.accounts, .latestRecords]
+    ///
+    /// `keepsPlanning`: ya dijo «Sí, mostrarlo en el Panel» en el paso 3 o el 4 (abiertos antes desde «Ver los 7
+    /// pasos»). Planificación se queda: ocultarla aquí deshacía su sí.
+    static func sectionsHiddenAfterLearningToRecord(current: [String], keepsPlanning: Bool = false) -> [String] {
+        var kept: Set<PanelSectionKind> = [.accounts, .latestRecords]
+        if keepsPlanning { kept.insert(.planificacion) }
         var hidden = Set(current)
         for kind in PanelSectionKind.allCases {
             if kept.contains(kind) { hidden.remove(kind.rawValue) } else { hidden.insert(kind.rawValue) }
         }
         return PanelSectionKind.allCases.map(\.rawValue).filter { hidden.contains($0) }
     }
+}
+
+// MARK: - Panel progresivo
+
+/// Panel progresivo (acuerdo de Jürgen del 19-nov-2026): cuando el mazo abre algo (la cuenta, «Últimos registros»,
+/// Planificación) o termina, el Panel vuelve a calcular qué secciones pinta. Y los consejos de TipKit se callan mientras
+/// Primeros pasos está a medias (`PrimerosPasosTipGate`). En su propio modificador para no alargar la cadena de
+/// `PanelView` (el CI tipa peor las cadenas largas: `swiftui-ds.md`).
+struct PrimerosPasosPanelGateObserver: ViewModifier {
+    let gate: PrimerosPasosPanelGate
+    let viewModel: PanelViewModel
+
+    @Environment(AppPreferences.self) private var appPreferences
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: gate) { _, newGate in apply(newGate) }
+            .task(id: gate.isActive) { PrimerosPasosTipGate.update(primerosPasosShown: gate.isActive) }
+    }
+
+    private func apply(_ newGate: PrimerosPasosPanelGate) {
+        let next = newGate.hiddenSections(PanelView.parseHiddenSections(appPreferences.resolvedSectionsHidden))
+        guard viewModel.hiddenSections != next else { return }
+        let previous = viewModel.hiddenSections
+        viewModel.hiddenSections = next
+        // Como con «Configurar Panel»: solo recalcula si una sección se hizo visible.
+        if !next.isSuperset(of: previous) { viewModel.recalculateData() }
+    }
+}
+
+/// La clave de la tarea del tour Pro del Panel: la fase y si el Panel lo deja salir. Al terminar Primeros pasos la tarea
+/// vuelve a correr y el tour sale si estaba pendiente.
+struct ProTourPanelKey: Equatable {
+    let phase: ProTourManager.Phase
+    let allowed: Bool
 }

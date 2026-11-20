@@ -323,13 +323,18 @@ enum PrimerosPasosPanelWidgetLogic {
     /// Enseña un widget de «Planificación» (Presupuestos o Pagos planificados). Al terminar el paso 2 el Panel solo
     /// enseña la cuenta y «Últimos registros», así que la sección suele estar oculta: al abrirla se enseña SOLO este widget
     /// (el otro queda oculto hasta su paso). Si la sección ya se veía, solo se quita este widget de los ocultos.
+    ///
+    /// `firstYesWhileProgressive`: el primer «Sí» con Primeros pasos a medias (Panel progresivo, 19-nov-2026). El Panel
+    /// aún no enseñaba Planificación aunque la lista guardada la tuviera a la vista (de fábrica lo está), así que cuenta
+    /// como oculta: se abre con SOLO este widget, y no con el del otro paso, que no ha hecho.
     static func show(
         _ widget: WidgetType,
         sectionsHidden: [String],
-        planningHidden: [String]
+        planningHidden: [String],
+        firstYesWhileProgressive: Bool = false
     ) -> Change {
         let section = PanelSectionKind.planificacion.rawValue
-        let sectionWasHidden = sectionsHidden.contains(section)
+        let sectionWasHidden = sectionsHidden.contains(section) || firstYesWhileProgressive
         let newSections = sectionsHidden.filter { $0 != section }
         let planning = WidgetType.defaultWidgets(in: .planificacion).map(\.rawValue)
         let newPlanning: [String]

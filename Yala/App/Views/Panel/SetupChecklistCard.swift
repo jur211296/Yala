@@ -23,6 +23,8 @@ struct SetupChecklistCard: View {
 
     let manager: SetupChecklistManager
     let onStepTapped: (SetupStepID) -> Void
+    /// «Solo gastos»: la cuenta que Yala creó sola, para la línea del paso 1 en «Ver los 7 pasos».
+    var expensesAccountName: String? = nil
 
     // MARK: - State
 
@@ -69,7 +71,8 @@ struct SetupChecklistCard: View {
                 }
             }
             .sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList) {
-                SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 })
+                SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 },
+                                    expensesAccountName: expensesAccountName)
             }
         }
     }

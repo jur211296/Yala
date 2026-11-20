@@ -18,6 +18,8 @@ struct SetupStepsListSheet: View {
     /// Un paso tocado en la lista. Quien presenta la hoja lo abre al terminar de cerrarla (`onDismiss`): pedirlo con la
     /// hoja aún arriba sería presentar sobre una presentación.
     var onOpenStep: (SetupStepID) -> Void = { _ in }
+    /// «Solo gastos»: la cuenta que Yala creó sola. El paso 1 sale hecho y su línea la nombra.
+    var expensesAccountName: String? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDetent: PresentationDetent = SetupStepsListLogic.initialDetent
@@ -88,7 +90,7 @@ struct SetupStepsListSheet: View {
                 dismiss()
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
-                    SetupStepRow(step: step, position: position, isCurrent: isCurrent)
+                    SetupStepRow(step: step, position: position, isCurrent: isCurrent, detail: detail(for: step.id))
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
@@ -99,9 +101,13 @@ struct SetupStepsListSheet: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("setup_steps_row_\(String(describing: step.id))")
         } else {
-            SetupStepRow(step: step, position: position, isCurrent: isCurrent)
+            SetupStepRow(step: step, position: position, isCurrent: isCurrent, detail: detail(for: step.id))
                 .accessibilityIdentifier("setup_steps_row_\(String(describing: step.id))")
         }
+    }
+
+    private func detail(for step: SetupStepID) -> String? {
+        SetupStepsListLogic.detail(for: step, expensesAccountName: expensesAccountName)
     }
 }
 
@@ -112,24 +118,12 @@ enum SetupStepsListLogic {
 
     /// Se abre cualquier paso que no esté hecho, también uno omitido o uno que no es el siguiente.
     static func opens(_ step: SetupStep) -> Bool { !step.isCompleted }
-}
 
-/// La llegada con «Solo gastos» (Y23-05): la única acción es «Anotar el primer gasto», y debajo a qué cuenta van, que
-/// Yala crea sola como hoy.
-struct SetupFirstExpenseAction: View {
-    let accountName: String?
-    let action: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            YalaPrimaryButton(L10n.SetupChecklist.Deck.firstExpense, action: action)
-                .accessibilityIdentifier("setup_first_expense")
-            if let accountName {
-                Text(L10n.SetupChecklist.Deck.firstExpenseNote(accountName))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thSecondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
+    /// La línea de debajo de un paso cuando el modo la cambia. Con «Solo gastos» (Jürgen, 19-nov-2026) el paso 1 lo
+    /// hizo Yala al crear la cuenta de gastos: la línea la nombra («Tus gastos van a «Gastos Soles», que Yala crea
+    /// sola.») en vez de «Dónde está tu dinero y cuánto tienes». `nil`: la línea de siempre.
+    static func detail(for step: SetupStepID, expensesAccountName: String?) -> String? {
+        guard step == .firstAccount, let expensesAccountName, !expensesAccountName.isEmpty else { return nil }
+        return L10n.SetupChecklist.Deck.firstExpenseNote(expensesAccountName)
     }
 }
