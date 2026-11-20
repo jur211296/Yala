@@ -579,13 +579,10 @@ struct WelcomeRestoreView: View {
                 .accessibilityIdentifier("welcome_restore_continue")
 
                 if foundActions.offersStartFresh {
-                    Button {
+                    // Destructivo y con su área de 44 pt, con el peso de siempre (ticket
+                    // `welcome-destructive-buttons-are-plain-text-taps`, molde de `WelcomePrivateICloudGateView`).
+                    startFreshButton(L10n.Welcome.Restore.startFresh) {
                         showStartFreshConfirm = true
-                    } label: {
-                        Text(L10n.Welcome.Restore.startFresh)
-                            .font(DS.Typography.label)
-                            // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
                     }
                     .accessibilityIdentifier("welcome_restore_found_start_fresh")
                 }
@@ -918,16 +915,26 @@ struct WelcomeRestoreView: View {
             Spacer()
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(primaryTitle, action: primaryAction)
+                // La secundaria de estas pantallas es siempre «Empezar desde cero»: abre un borrado.
                 if let secondaryTitle, let secondaryAction {
-                    Button(action: secondaryAction) {
-                        Text(secondaryTitle)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
-                    }
+                    startFreshButton(secondaryTitle, action: secondaryAction)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
+        }
+    }
+
+    /// «Empezar desde cero» bajo el botón principal: `role: .destructive` y el área táctil estándar, con el texto gris
+    /// de siempre para que la salida que no borra siga siendo la evidente. Abre la confirmación, no borra.
+    /// `.secondary` dentro de un `Button` deriva del tinte (índigo sobre el fondo oscuro, 1,9:1): gris fijo del sistema.
+    private func startFreshButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(role: .destructive, action: action) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
+                .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                .contentShape(Rectangle())
         }
     }
 }

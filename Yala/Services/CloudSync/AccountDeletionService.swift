@@ -161,6 +161,10 @@ final class AccountDeletionService {
                 guard let jwt = await CloudAuthService.shared.accessToken(), !jwt.isEmpty else {
                     return .sessionExpired(detail: "no jwt")
                 }
+                // Las fotos de los logos propios (Storage) no cuelgan de la cuenta en la base: se borran antes.
+                if let userID = CloudAuthService.shared.currentUserID {
+                    await PagoLogoPropioSync.shared.deleteAll(userID: userID, token: jwt)
+                }
                 let client = CloudAccountClient(attestProvider: AttestSessionProvider.live)
                 return await client.deleteAccount(jwt: jwt)
             },

@@ -5,6 +5,7 @@
 //  El logo del comercio en Pagos planificados, con UN criterio para sus tres vistas: lista, línea de tiempo y calendario
 //  (decisión de Jürgen del 2026-11-18: el logo va solo en Pagos planificados, no en Registros ni en el Panel). Si el pago
 //  casa con el banco (`MerchantCatalog`) o tiene un logo elegido, se pinta el logo; si no, lo que cada vista pintaba antes.
+//  Un logo propio (la foto del pago, `PagoLogoPropio.swift`) gana a todo lo demás.
 //
 //  El casado recorre ~2.000 formas por nombre, en dos pasadas. Antes cada vista lo repetía en cada pintado (el calendario,
 //  dos veces por pago y celda), así que aquí se recuerda por (logo guardado, nombre): el banco es estático y, si la persona
@@ -31,7 +32,12 @@ enum PagoLogoComercio {
 
     /// El logo que se pinta para este pago, o `nil` si no hay (cada vista pinta entonces lo de siempre).
     static func logo(for payment: ScheduledPayment) -> PaymentLogo? {
-        logo(logoGuardado: payment.brandLogoID, nombre: payment.name)
+        // El logo propio gana: es lo que la persona eligió para este pago (encargo del 2026-11-20).
+        if let datos = payment.customLogoData,
+           let foto = PagoLogoPropioImagenes.imagen(pago: payment.id, datos: datos) {
+            return PaymentLogo(photo: foto, paymentName: payment.name)
+        }
+        return logo(logoGuardado: payment.brandLogoID, nombre: payment.name)
     }
 
     static func logo(logoGuardado: String?, nombre: String) -> PaymentLogo? {

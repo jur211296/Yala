@@ -1,10 +1,10 @@
 ---
 id: welcome-destructive-buttons-are-plain-text-taps
-status: backlog
+status: done
 priority: low
 area: "ui, onboarding, a11y"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-11-19
 source: "review adversarial del paso 4, lente de SwiftUI/DS"
 ---
 
@@ -43,3 +43,12 @@ molde original.
 - La confirmación que abren (`showStartFreshConfirm`, ~215) sí lleva `role: .destructive`: el borrado no ocurre con un solo toque.
 
 Triage 2026-10-08: abierto · low → low · siguen siendo texto suelto, pero el borrado pasa por una confirmación destructiva.
+
+## Cerrado (2026-11-19, lote del Welcome)
+
+Medido en `2.3` antes de tocar: quedaban los mismos dos sitios, los dos en `WelcomeRestoreView` (el «Empezar desde cero»
+bajo «Continuar» y el secundario de las pantallas de estado, que en las cuatro que lo usan es «Empezar desde cero»). El
+resto del Welcome ya llevaba `role: .destructive` (`WelcomePrivateICloudGateView.destructiveButton`,
+`WelcomeGroupsGateView`). Los dos pasan por `startFreshButton`: `Button(role: .destructive)`, alto mínimo de 44 pt a todo
+el ancho y `contentShape`, con el mismo texto gris del sistema y sin relleno, así que «Continuar» sigue siendo la salida
+evidente. Pin: `YalaTests/WelcomeCarruselBarrasYToque` (`WelcomeEmpezarDeCeroTests`).

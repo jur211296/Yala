@@ -94,6 +94,73 @@ enum WelcomeShowcaseLogic {
         (0..<count).contains(index) ? index : 0
     }
 
+    // MARK: - Barras como historias (encargo del 19-nov)
+
+    /// Cuánto se llena cada barra, como en las historias: las anteriores llenas, la actual con su avance y las
+    /// siguientes vacías. Vale igual al avanzar solo, al deslizar a un lado u otro y con pausa. Antes cada barra animaba
+    /// su propio relleno, y la anterior seguía llenándose a la vez que la nueva (captura de Jürgen, 2.3 (5), 19-nov).
+    static func segmentFill(at offset: Int, current: Int, progress: Double) -> Double {
+        if offset < current { return 1 }
+        if offset > current { return 0 }
+        return min(max(progress, 0), 1)
+    }
+
+    /// El reloj de la función en pantalla. Guarda lo que ya corrió para que la pausa congele la barra donde está y al
+    /// reanudar siga desde ahí, con el tiempo que le quedaba (no con otros cinco segundos).
+    struct StoryClock: Equatable {
+        /// Lo que corrió antes de la última pausa.
+        private(set) var banked: TimeInterval = 0
+        /// Desde cuándo corre; `nil` si está parado.
+        private(set) var runningSince: Date?
+
+        /// Un reloj nuevo para una función que empieza: en cero, corriendo o parado.
+        static func started(at now: Date, running: Bool) -> StoryClock {
+            StoryClock(banked: 0, runningSince: running ? now : nil)
+        }
+
+        var isRunning: Bool { runningSince != nil }
+
+        func elapsed(at now: Date) -> TimeInterval {
+            guard let runningSince else { return banked }
+            return banked + max(0, now.timeIntervalSince(runningSince))
+        }
+
+        /// De 0 a 1 sobre lo que dura cada función.
+        func progress(at now: Date, dwell: TimeInterval = WelcomeShowcaseLogic.dwellSeconds) -> Double {
+            guard dwell > 0 else { return 1 }
+            return min(max(elapsed(at: now) / dwell, 0), 1)
+        }
+
+        /// Lo que le queda a la función en pantalla antes de pasar a la siguiente.
+        func remaining(at now: Date, dwell: TimeInterval = WelcomeShowcaseLogic.dwellSeconds) -> TimeInterval {
+            max(0, dwell - elapsed(at: now))
+        }
+
+        mutating func pause(at now: Date) {
+            guard isRunning else { return }
+            banked = elapsed(at: now)
+            runningSince = nil
+        }
+
+        mutating func resume(at now: Date) {
+            guard !isRunning else { return }
+            runningSince = now
+        }
+    }
+
+    static var dwellSeconds: TimeInterval {
+        let parts = dwell.components
+        return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
+    }
+
+    /// Tocar la vitrina: la mitad del final pasa a la siguiente función y la del principio vuelve a la anterior, como en
+    /// las historias. En un idioma de derecha a izquierda las mitades se invierten. Devuelve +1 o −1.
+    static func tapStep(atX x: CGFloat, width: CGFloat, rightToLeft: Bool = false) -> Int {
+        guard width > 0 else { return 1 }
+        let inTrailingHalf = rightToLeft ? x < width / 2 : x >= width / 2
+        return inTrailingHalf ? 1 : -1
+    }
+
     /// Distancia lateral mínima para cambiar de función al deslizar (el umbral del prototipo, 40 pt). La dirección y que
     /// el gesto sea lateral los decide `HorizontalSwipeGesture`, que no le quita el arrastre al scroll de la página.
     static let swipeThreshold: CGFloat = 40

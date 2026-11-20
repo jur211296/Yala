@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 6
+    static let clientManifestVersion = 7
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -63,6 +63,10 @@ nonisolated enum SyncCapability {
     /// líneas, la receta del puente).
     static let splitLinesSince = 6
 
+    /// Versión del manifest que estrena `scheduled_payments.custom_logo_ref` (logo propio de un pago planificado con una
+    /// foto, encargo del 2026-11-20).
+    static let customLogoSince = 7
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -71,6 +75,7 @@ nonisolated enum SyncCapability {
     static let suppressedFavoriteDestinationsKey = "cloudSync.favoriteDestinationsSuppressed"
     static let suppressedCreditCardCyclesKey = "cloudSync.creditCardCyclesSuppressed"
     static let suppressedSplitLinesKey = "cloudSync.splitLinesSuppressed"
+    static let suppressedCustomLogosKey = "cloudSync.customLogosSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -242,6 +247,29 @@ nonisolated enum SyncCapability {
             current[id] = remaining.isEmpty ? nil : remaining
         }
         storeSuppressedCreditCardCycles(current)
+    }
+
+    // MARK: - Logos propios de pagos planificados que no subieron (v7)
+
+    /// Los pagos planificados (por `id`) cuya foto de logo este teléfono cambió o subió mientras hablaba una versión que
+    /// no conoce `custom_logo_ref`: la emisión la quitó y el servidor no la tiene. Una sola columna: el apunte es por fila.
+    static var suppressedCustomLogos: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedCustomLogosKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `custom_logo_ref` por la versión. Apuntar de más es inocuo: la reemisión sube el valor de ese
+    /// momento.
+    static func noteSuppressedCustomLogo(_ paymentID: UUID) {
+        var current = suppressedCustomLogos
+        guard current.insert(paymentID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedCustomLogosKey)
+    }
+
+    /// Retira los que ya se encolaron. Solo esos: uno que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCustomLogos(_ paymentIDs: Set<UUID>) {
+        let remaining = suppressedCustomLogos.subtracting(paymentIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedCustomLogosKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCustomLogosKey) }
     }
 
     // MARK: - Recetas de líneas de tu parte que no subieron (v6)

@@ -64,6 +64,9 @@ struct ShellDataAlertsModifier: ViewModifier {
     private var freshStartGroupsBlock: CloudSessionSignOut.FreshStartGroupsBlock? {
         CloudSessionSignOut.shared.freshStartGroupsBlock
     }
+    /// El último «Empiezo de cero» falló DESPUÉS de borrar lo personal: el aviso no puede decir «tus datos siguen aquí»
+    /// (ticket `welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe`).
+    @State private var freshStartFailedAfterPersonalWipe = false
 
     func body(content: Content) -> some View {
         content
@@ -214,7 +217,7 @@ struct ShellDataAlertsModifier: ViewModifier {
                 Text(freshStartGroupsBlock.map {
                     SignOutBlockedCopy.freshStartGroupsPendingMessage($0, retryOffersTheLossExit: false)
                 }
-                     ?? L10n.Welcome.FreshStart.failedMessage)
+                     ?? FreshStartWipeFailureCopy.message(personalAlreadyWiped: freshStartFailedAfterPersonalWipe))
             }
     }
 
@@ -279,6 +282,8 @@ struct ShellDataAlertsModifier: ViewModifier {
 
     private func performFreshStartWipe() {
         let purgesGroups = Self.purgesGroupsDomainNow()
+        var personalWiped = false
+        freshStartFailedAfterPersonalWipe = false
         do {
             // El cinturón del escritor, ANTES del primer borrado: si lanzara dentro de `wipeLocalGroupsDomain`, lo
             // personal ya estaría borrado y los grupos enteros. Sin purga no hay outbox que perder.
@@ -292,6 +297,7 @@ struct ShellDataAlertsModifier: ViewModifier {
                 broadcastSignal: false,
                 resetsPreferences: purgesGroups
             )
+            personalWiped = true
             // La limpieza de prefs residuales vive AQUÍ y no en el disparador del alert:
             // corriendo antes del `if`, «Cancelar» no la deshacía y el usuario perdía
             // `userName` y `defaultCurrencyCode` por preguntar. Se limpia cuando se
@@ -340,8 +346,19 @@ struct ShellDataAlertsModifier: ViewModifier {
             // Canario FUERA de `#if DEBUG` a propósito: este fallo era invisible en
             // producción. Sin PII — el detalle es de qué alert vino.
             MetricsService.canary(.freshStartWipeFailed, detail: "welcomeFreshStart")
+            freshStartFailedAfterPersonalWipe = personalWiped
             showFreshStartWipeFailedAlert = true
         }
     }
 
+}
+
+/// Qué dice el aviso de fallo de «Empiezo de cero» (ticket
+/// `welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe`). Lo personal se borra antes que los
+/// grupos: si el fallo llega después, «Tus datos siguen aquí» es falso, y se dice lo mismo que la puerta del teléfono
+/// (`wipeDeviceFailedBody`: «Puede que parte de tus datos ya no esté y el resto siga aquí»).
+enum FreshStartWipeFailureCopy {
+    static func message(personalAlreadyWiped: Bool) -> String {
+        personalAlreadyWiped ? L10n.Welcome.PrivateICloud.wipeDeviceFailedBody : L10n.Welcome.FreshStart.failedMessage
+    }
 }

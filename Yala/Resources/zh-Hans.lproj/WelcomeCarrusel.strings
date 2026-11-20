@@ -1,0 +1,9 @@
+/*
+  WelcomeCarrusel.strings
+  Yala
+
+  La vitrina del Welcome como historias (encargo del 19-nov): las acciones de VoiceOver para cambiar de función.
+*/
+
+"welcomeCarrusel.next" = "下一个功能";
+"welcomeCarrusel.previous" = "上一个功能";

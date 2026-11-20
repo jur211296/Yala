@@ -84,6 +84,11 @@ enum DeltaEmitter {
            let item = model as? TransactionItem, item.splitLinesRaw != nil, let syncID = item.syncID {
             SyncCapability.noteSuppressedSplitLines(syncID)
         }
+        // Y con el logo propio de un pago planificado (v7, 2026-11-20).
+        if capabilityLevel < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
+           let payment = model as? ScheduledPayment, payment.customLogoRef != nil {
+            SyncCapability.noteSuppressedCustomLogo(payment.id)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]

@@ -18,7 +18,9 @@
  * es todo menos esas dos, y `v5` el set completo.
  *
  * Desde el 2026-11-01 (Grupos B, card 1) hay una v6: `tx_items.split_lines_raw`, la receta de tu parte de un gasto de
- * grupo en líneas. `v5` es todo menos esa columna, y `v6` el set completo.
+ * grupo en líneas. `v5` es todo menos esa columna.
+ * Desde el 2026-11-20 hay una v7: `scheduled_payments.custom_logo_ref`, la referencia de la foto del logo propio de un
+ * pago planificado. `v6` es todo menos esa columna, y `v7` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -67,8 +69,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 6, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(6);
+  it("el Worker anuncia la versión 7, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(7);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -76,7 +78,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5) y la receta de líneas (6)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6) y el logo propio (7)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -89,6 +91,7 @@ describe("capability-set por versión del manifest", () => {
       "accounts.parent_account_id@2",
       "cashflow_lines.amount_changes_raw@3",
       "favorite_payments.destination_account_ref@4",
+      "scheduled_payments.custom_logo_ref@7",
       "tx_items.split_lines_raw@6",
     ]);
   });
@@ -100,7 +103,8 @@ describe("capability-set por versión del manifest", () => {
     expect([...(cap.columns!.cashflow_lines ?? [])]).not.toContain("amount_changes_raw");
     expect([...(cap.columns!.favorite_payments ?? [])]).not.toContain("destination_account_ref");
     expect([...(cap.columns!.tx_items ?? [])]).not.toContain("split_lines_raw");
-    const later = new Set(["accounts", "cashflow_lines", "favorite_payments", "tx_items"]);
+    expect([...(cap.columns!.scheduled_payments ?? [])]).not.toContain("custom_logo_ref");
+    const later = new Set(["accounts", "cashflow_lines", "favorite_payments", "tx_items", "scheduled_payments"]);
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       if (later.has(entity)) continue;
       expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
@@ -153,8 +157,46 @@ describe("capability-set por versión del manifest", () => {
     );
   });
 
-  it("v6, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v6", "v99", "full", null]) {
+  it("v6 = todo menos el logo propio: la receta de líneas sí", () => {
+    const cap = resolveCapabilitySet("v6");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.tx_items ?? [])]).toContain("split_lines_raw");
+    const payments = [...(cap.columns!.scheduled_payments ?? [])];
+    expect(payments).not.toContain("custom_logo_ref");
+    expect(payments.sort()).toEqual(
+      Object.keys(manifest.entities.scheduled_payments.columns).filter((c) => c !== "custom_logo_ref").sort(),
+    );
+  });
+
+  it("el pull de v6 no baja la referencia del logo propio ni su unidad; el de v7 sí", () => {
+    const row = { sync_id: "6b2c3d4e-2222-4333-8444-a55566667777", name: "Colegio", custom_logo_ref: "0f5e8a1c-1d2e-4f30-8a4b-5c6d7e8f9a0b.jpg" };
+    const stored = { name: HLC, custom_logo_ref: HLC };
+    const v6 = projectRowToDelta("scheduled_payments", row, stored, resolveCapabilitySet("v6"));
+    expect(v6.fields).not.toHaveProperty("custom_logo_ref");
+    expect(v6.field_hlcs).not.toHaveProperty("custom_logo_ref");
+    expect(v6.fields.name).toBe("Colegio");
+    const v7 = projectRowToDelta("scheduled_payments", row, stored, resolveCapabilitySet("v7"));
+    expect(v7.fields.custom_logo_ref).toBe(row.custom_logo_ref);
+    expect(v7.field_hlcs.custom_logo_ref).toBe(HLC);
+  });
+
+  it("el Merkle de v6 no hashea el logo propio; el de v7 sí (como null en un pago sin foto)", () => {
+    const row = { sync_id: "6b2c3d4e-2222-4333-8444-a55566667777", name: "Alquiler", custom_logo_ref: null };
+    const v6 = merkleColumns("scheduled_payments", resolveCapabilitySet("v6"));
+    expect(v6).not.toContain("custom_logo_ref");
+    expect(canonRowC1("scheduled_payments", row, v6)).not.toContain("custom_logo_ref");
+    const v7 = merkleColumns("scheduled_payments", resolveCapabilitySet("v7"));
+    expect(v7).toContain("custom_logo_ref");
+    expect(canonRowC1("scheduled_payments", row, v7)).toContain('"custom_logo_ref":null');
+  });
+
+  it("un push con la referencia del logo propio tiene forma válida (columna safe), también al quitarla", () => {
+    expect(validateUpsertShape("scheduled_payments", { custom_logo_ref: "a.jpg" }, { custom_logo_ref: HLC })).toBeNull();
+    expect(validateUpsertShape("scheduled_payments", { custom_logo_ref: null }, { custom_logo_ref: HLC })).toBeNull();
+  });
+
+  it("v7, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v7", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
   });

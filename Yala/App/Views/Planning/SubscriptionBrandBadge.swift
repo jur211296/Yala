@@ -22,7 +22,16 @@ struct SubscriptionBrandBadge: View {
 
     var body: some View {
         Group {
-            if let assetName = logo.assetName {
+            if let photo = logo.photo {
+                // Logo propio: la foto ya viene cuadrada (`PagoLogoPropioFoto`), se recorta al círculo con su borde.
+                Image(uiImage: photo)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: diameter, height: diameter)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 0.5))
+            } else if let assetName = logo.assetName {
                 Image(assetName)
                     .resizable()
                     .interpolation(.high)
@@ -66,7 +75,14 @@ struct PaymentLogoCalendarMark: View {
 
     var body: some View {
         ZStack {
-            if let assetName = logo.assetName {
+            if let photo = logo.photo {
+                Image(uiImage: photo)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: 12, height: 12)
+                    .clipShape(Circle())
+            } else if let assetName = logo.assetName {
                 Image(assetName)
                     .resizable()
                     .interpolation(.high)

@@ -14,3 +14,5 @@ salir gris, no buscar otra vía.
 atascados quedó público (`artifact-publico comprobar` → `publico`). El ajuste de la organización no es fijo:
 haz siempre el intento entero (Compartir → «Cualquier persona con el enlace» → «Compartir públicamente», todo
 con `find`) y anota solo lo que salga ese día.
+
+**20-nov (00:30, Max):** otra vez gris con el mismo aviso. Van dos de tres intentos fallidos.

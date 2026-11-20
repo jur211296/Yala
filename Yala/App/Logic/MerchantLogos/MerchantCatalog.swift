@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// Un comercio del banco.
 struct Merchant: Identifiable, Equatable, Decodable {
@@ -174,7 +175,8 @@ enum MerchantNameCleaner {
     }
 }
 
-/// Lo que se pinta para un pago: el logo del banco o, sin imagen, la inicial sobre color.
+/// Lo que se pinta para un pago: el logo del banco, la foto que eligió la persona (logo propio) o, sin imagen, la
+/// inicial sobre color.
 struct PaymentLogo: Identifiable, Equatable {
     let id: String
     let name: String
@@ -182,6 +184,26 @@ struct PaymentLogo: Identifiable, Equatable {
     let assetName: String?
     let monogram: String
     let colorHex: String
+    /// Logo propio: la foto del pago, ya decodificada (`PagoLogoPropioImagenes`). Gana a `assetName` y al monograma.
+    var photo: UIImage? = nil
+
+    /// El id de un logo propio, también para los `accessibilityIdentifier` (`scheduled_brand_badge_custom_photo`).
+    static let customPhotoID = "custom_photo"
+
+    /// El logo propio de un pago: su foto, con el nombre del pago (VoiceOver lo lee así en el editor).
+    init(photo: UIImage, paymentName: String) {
+        id = Self.customPhotoID
+        name = paymentName
+        assetName = nil
+        monogram = PaymentLogo.monogram(for: paymentName)
+        colorHex = PaymentLogo.fallbackColor(for: paymentName)
+        self.photo = photo
+    }
+
+    static func == (lhs: PaymentLogo, rhs: PaymentLogo) -> Bool {
+        lhs.id == rhs.id && lhs.name == rhs.name && lhs.assetName == rhs.assetName && lhs.monogram == rhs.monogram
+            && lhs.colorHex == rhs.colorHex && lhs.photo === rhs.photo
+    }
 
     init(merchant: Merchant) {
         id = merchant.id

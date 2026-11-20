@@ -114,3 +114,5 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Conductor de barrido por secciones](feedback_conductor_de_barrido_por_secciones.md) — 30 min = 17 Pro ×2 + SE + iPad + Duo parcial; SE y Duo esconden pestañas.
 - [SE e iPad temporales en la Max](reference_simulador_temporal_se_e_ipad_en_la_max.md) — runtime iOS-27-2 (no el del Duo); `panel_action_new` vale en iPad; artifact sin enlace público.
 - [Reproducir el cierre privado en el simulador](reference_reproducir_el_cierre_privado_en_el_simulador.md) — ancla a mano en defaults para ver «Cambios por subir»; contar el historial con sqlite.
+- [Tours de Ajustes y Pro no se capturan](reference_tours_de_ajustes_y_pro_no_se_capturan.md) — apagados con -uitest; sin él, bienvenida: recrear sobre captura.
+- [Galería del sistema: solo XCUITest](reference_galeria_del_sistema_solo_con_xcuitest.md) — PhotosPicker fuera del árbol; axe no elige foto; toque por coordenadas; recordVideo «ocupado» → record_sim_video.
