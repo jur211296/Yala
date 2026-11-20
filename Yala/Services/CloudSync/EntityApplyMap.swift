@@ -874,9 +874,14 @@ enum EntityApplyMap {
     ///
     /// Las dos lecturas son ESTRICTAS (`find*`): una que lanza devuelve `.unreadable`, nunca `.rowGone` ni
     /// `.targetMissing` — «no pude leer la fila» no es «la fila ya no existe».
-    static func reresolveDangler(_ dangler: SyncDanglingRef, context: ModelContext) -> DanglerOutcome {
+    ///
+    /// Con `batch`, las tres refs de un movimiento (categoría, subcategoría, cuenta) no se asignan aquí: se apuntan y el
+    /// pase las asigna en bloque al final (`DanglerRelationshipBatch.flush`). Sin él, como siempre.
+    static func reresolveDangler(
+        _ dangler: SyncDanglingRef, context: ModelContext, batch: DanglerRelationshipBatch? = nil
+    ) -> DanglerOutcome {
         do {
-            return try reresolveDanglerReadingStrictly(dangler, context: context)
+            return try reresolveDanglerReadingStrictly(dangler, context: context, batch: batch)
         } catch {
             #if DEBUG
             print("EntityApplyMap.reresolveDangler: lectura ilegible (\(dangler.entityTable).\(dangler.column)): \(error)")
@@ -886,24 +891,24 @@ enum EntityApplyMap {
     }
 
     private static func reresolveDanglerReadingStrictly(
-        _ dangler: SyncDanglingRef, context: ModelContext
+        _ dangler: SyncDanglingRef, context: ModelContext, batch: DanglerRelationshipBatch?
     ) throws -> DanglerOutcome {
         let target = dangler.targetUUID
         switch (dangler.entityTable, dangler.column) {
         case (transactionItem.table, "category_ref"):
             guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findCategory(bySyncID: target, context: context) else { return .targetMissing }
-            row.category = t
+            if let batch { batch.assign(row, category: t) } else { row.category = t }
             return .resolved
         case (transactionItem.table, "subcategory_ref"):
             guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
-            row.subcategory = t
+            if let batch { batch.assign(row, subcategory: t) } else { row.subcategory = t }
             return .resolved
         case (transactionItem.table, "account_ref"):
             guard let row = try findTransactionItem(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
-            row.account = t
+            if let batch { batch.assign(row, account: t) } else { row.account = t }
             return .resolved
         case (inboxDraft.table, "account_ref"):
             guard let row = try findInboxDraft(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
@@ -1360,8 +1365,9 @@ enum EntityApplyMap {
 
     // MARK: - Búsquedas de una página por LOTE (YALA-IOS-J, 2026-11-13)
 
-    /// Las búsquedas de la página que `applyPage` está aplicando, o `nil` fuera de ella. Las pone y las quita
-    /// `CloudSyncEngine.applyPage` alrededor de su bucle; solo las consultan las búsquedas de ESE contexto.
+    /// Las búsquedas de la página que `applyPage` está aplicando, o del pase de refs colgadas, o `nil` fuera de ellos. Las
+    /// ponen y las quitan `CloudSyncEngine.applyPage` y `reresolveDanglingRefs` alrededor de su bucle; solo las consultan
+    /// las búsquedas de ESE contexto.
     static var pageLookups: ApplyPageLookups?
 
     /// Las búsquedas de la página en curso si son de `context`; si no, `nil`.
@@ -1414,55 +1420,7 @@ enum EntityApplyMap {
         // Las filas de la página, por tabla. `CashFlowLine` y `CashFlowOverride` no: los borra en cascada su plan, y esa
         // cascada solo la ve un `fetch` (ver `ApplyPageLookups`).
         for (table, ids) in idsByTable {
-            switch table {
-            case transactionItem.table:
-                lookups.load(TransactionItem.self, ids: ids, key: { $0.syncID }) { chunk in
-                    let keys = chunk.map { Optional($0) }
-                    return try fetchAllOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { keys.contains($0.syncID) }), context)
-                }
-            case inboxDraft.table:
-                lookups.load(InboxDraft.self, ids: ids, key: { $0.syncID }) { chunk in
-                    let keys = chunk.map { Optional($0) }
-                    return try fetchAllOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { keys.contains($0.syncID) }), context)
-                }
-            case favoritePayment.table:
-                lookups.load(FavoritePayment.self, ids: ids, key: { $0.syncID }) { chunk in
-                    let keys = chunk.map { Optional($0) }
-                    return try fetchAllOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { keys.contains($0.syncID) }), context)
-                }
-            case merchantMemory.table:
-                lookups.load(MerchantMemory.self, ids: ids, key: { $0.syncID }) { chunk in
-                    let keys = chunk.map { Optional($0) }
-                    return try fetchAllOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { keys.contains($0.syncID) }), context)
-                }
-            case exchangeRate.table:
-                lookups.load(ExchangeRate.self, ids: ids, key: { $0.syncID }) { chunk in
-                    let keys = chunk.map { Optional($0) }
-                    return try fetchAllOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { keys.contains($0.syncID) }), context)
-                }
-            case budget.table:
-                lookups.load(Budget.self, ids: ids, key: { $0.id }) { chunk in
-                    try fetchAllOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { chunk.contains($0.id) }), context)
-                }
-            case scheduledPayment.table:
-                lookups.load(ScheduledPayment.self, ids: ids, key: { $0.id }) { chunk in
-                    try fetchAllOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { chunk.contains($0.id) }), context)
-                }
-            case notificationItem.table:
-                lookups.load(NotificationItem.self, ids: ids, key: { $0.id }) { chunk in
-                    try fetchAllOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { chunk.contains($0.id) }), context)
-                }
-            case cashFlowPlan.table:
-                lookups.load(CashFlowPlan.self, ids: ids, key: { $0.id }) { chunk in
-                    try fetchAllOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { chunk.contains($0.id) }), context)
-                }
-            case groupBridgePreference.table:
-                lookups.load(GroupBridgePreference.self, ids: ids, key: { $0.id }) { chunk in
-                    try fetchAllOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { chunk.contains($0.id) }), context)
-                }
-            default:
-                break  // cuentas, categorías, subcategorías y etiquetas ya van enteras; el resto se busca como siempre.
-            }
+            loadRows(table, ids: ids, into: lookups, context: context)
         }
 
         // Testigos de identidad, relojes por unidad y danglers de las filas de la página.
@@ -1478,6 +1436,129 @@ enum EntityApplyMap {
         return lookups
     }
 
+    /// Lee por `IN` las filas `ids` de `table` en `lookups`. Sin caso: cuentas, categorías, subcategorías y etiquetas (van
+    /// enteras con `loadWholeTable`) y `CashFlowLine`/`CashFlowOverride` (los borra en cascada su plan): se buscan como
+    /// siempre. Lo comparten la página del apply y el pase de refs colgadas.
+    private static func loadRows(_ table: String, ids: [UUID], into lookups: ApplyPageLookups, context: ModelContext) {
+        switch table {
+        case transactionItem.table:
+            lookups.load(TransactionItem.self, ids: ids, key: { $0.syncID }) { chunk in
+                let keys = chunk.map { Optional($0) }
+                return try fetchAllOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+            }
+        case inboxDraft.table:
+            lookups.load(InboxDraft.self, ids: ids, key: { $0.syncID }) { chunk in
+                let keys = chunk.map { Optional($0) }
+                return try fetchAllOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+            }
+        case favoritePayment.table:
+            lookups.load(FavoritePayment.self, ids: ids, key: { $0.syncID }) { chunk in
+                let keys = chunk.map { Optional($0) }
+                return try fetchAllOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+            }
+        case merchantMemory.table:
+            lookups.load(MerchantMemory.self, ids: ids, key: { $0.syncID }) { chunk in
+                let keys = chunk.map { Optional($0) }
+                return try fetchAllOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+            }
+        case exchangeRate.table:
+            lookups.load(ExchangeRate.self, ids: ids, key: { $0.syncID }) { chunk in
+                let keys = chunk.map { Optional($0) }
+                return try fetchAllOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+            }
+        case budget.table:
+            lookups.load(Budget.self, ids: ids, key: { $0.id }) { chunk in
+                try fetchAllOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { chunk.contains($0.id) }), context)
+            }
+        case scheduledPayment.table:
+            lookups.load(ScheduledPayment.self, ids: ids, key: { $0.id }) { chunk in
+                try fetchAllOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { chunk.contains($0.id) }), context)
+            }
+        case notificationItem.table:
+            lookups.load(NotificationItem.self, ids: ids, key: { $0.id }) { chunk in
+                try fetchAllOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { chunk.contains($0.id) }), context)
+            }
+        case cashFlowPlan.table:
+            lookups.load(CashFlowPlan.self, ids: ids, key: { $0.id }) { chunk in
+                try fetchAllOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { chunk.contains($0.id) }), context)
+            }
+        case groupBridgePreference.table:
+            lookups.load(GroupBridgePreference.self, ids: ids, key: { $0.id }) { chunk in
+                try fetchAllOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { chunk.contains($0.id) }), context)
+            }
+        default:
+            break  // cuentas, categorías, subcategorías y etiquetas ya van enteras; el resto se busca como siempre.
+        }
+    }
+
+    /// Lee por LOTE lo que el pase final de refs colgadas (`CloudSyncEngine.reresolveDanglingRefs`) va a buscar de dos en dos
+    /// por dangler: la fila origen (un `IN` por tabla), los destinos que son filas de tablas grandes (movimientos, pagos
+    /// planificados, planes de flujo) y enteras las tablas pequeñas a las que apuntan las refs (cuentas, categorías,
+    /// subcategorías).
+    ///
+    /// Sin esto, el pase hacía dos lecturas sueltas por dangler, sin índice, en el hilo principal y al final de CADA ciclo de
+    /// la nube: 800 danglers sobre 4.000 movimientos eran 3,5 s en el simulador (YALA-IOS-13, 2026-11-20). Mismo contrato
+    /// que `prepareLookups`: una lectura por lote que falla deja la tabla sin cubrir y la búsqueda de esa fila va al `fetch`
+    /// de siempre, que lanza (`.unreadable`, el dangler se conserva). El pase solo fija relaciones y borra danglers, que
+    /// esta caché no guarda: lo que lee no cambia mientras vive.
+    static func prepareDanglerLookups(for danglers: [SyncDanglingRef], context: ModelContext) -> ApplyPageLookups {
+        let lookups = ApplyPageLookups(context: context)
+        guard !danglers.isEmpty else { return lookups }
+        // Enteras, solo las que algún dangler va a consultar: un dangler que nunca se resuelve no hace leer cuentas,
+        // categorías y subcategorías en cada ciclo si no apunta a ellas.
+        var whole: Set<DanglerWholeTable> = []
+        for dangler in danglers { whole.formUnion(danglerWholeTables(dangler)) }
+        if whole.contains(.account) {
+            lookups.loadWholeTable(Account.self, key: { $0.shortcutID }) { try fetchAllOrThrow(FetchDescriptor<Account>(), context) }
+        }
+        if whole.contains(.category) {
+            lookups.loadWholeTable(Category.self, key: { $0.syncID }) { try fetchAllOrThrow(FetchDescriptor<Category>(), context) }
+        }
+        if whole.contains(.subcategory) {
+            lookups.loadWholeTable(Subcategory.self, key: { $0.shortcutID }) {
+                try fetchAllOrThrow(FetchDescriptor<Subcategory>(), context)
+            }
+        }
+        var idsByTable: [String: [UUID]] = [:]
+        for dangler in danglers {
+            idsByTable[dangler.entityTable, default: []].append(dangler.rowSyncID)
+            if let targetTable = danglerTargetRowTable(dangler) {
+                idsByTable[targetTable, default: []].append(dangler.targetUUID)
+            }
+        }
+        for (table, ids) in idsByTable {
+            loadRows(table, ids: ids, into: lookups, context: context)
+        }
+        return lookups
+    }
+
+    enum DanglerWholeTable: Hashable { case account, category, subcategory }
+
+    /// Las tablas pequeñas, leídas enteras, que consulta la re-resolución de un dangler: la del destino de cada ref a
+    /// cuenta, categoría o subcategoría, y la de la fila origen cuando es una subcategoría. Espejo de las ramas de
+    /// `reresolveDanglerReadingStrictly`, como `danglerTargetRowTable`.
+    private static func danglerWholeTables(_ dangler: SyncDanglingRef) -> Set<DanglerWholeTable> {
+        switch (dangler.entityTable, dangler.column) {
+        case (subcategory.table, "category_ref"): return [.category, .subcategory]
+        case (_, "account_ref"), (_, "destination_account_ref"): return [.account]
+        case (_, "category_ref"), (_, "category_id"): return [.category]
+        case (_, "subcategory_ref"): return [.subcategory]
+        default: return []
+        }
+    }
+
+    /// La tabla del DESTINO de un dangler cuando el destino es una fila de las que se leen por `IN` (no una tabla que ya va
+    /// entera). Espejo de los destinos de `reresolveDanglerReadingStrictly`: un caso nuevo ahí con destino en otra tabla
+    /// grande se añade aquí, o su destino se sigue buscando fila a fila.
+    private static func danglerTargetRowTable(_ dangler: SyncDanglingRef) -> String? {
+        switch (dangler.entityTable, dangler.column) {
+        case (inboxDraft.table, "approved_transaction_ref"): return transactionItem.table
+        case (cashFlowLine.table, "scheduled_payment_ref"): return scheduledPayment.table
+        case (cashFlowLine.table, "plan_ref"): return cashFlowPlan.table
+        default: return nil  // cuentas, categorías y subcategorías van enteras; la línea del ajuste, como siempre (cascada)
+        }
+    }
+
     /// Tipos (nombre de clase) cuyas lecturas estrictas (`find*`, `fetchAllOrThrow` de los M2M, el registro
     /// `SyncDanglingRef`) y cuyo barrido `deleteLiveRows` LANZAN como si la base no se dejara leer. Vacío = nunca.
     /// SOLO tests (tickets `apply-overwrites-a-pending-local-write-without-its-guards` y
@@ -1487,6 +1568,62 @@ enum EntityApplyMap {
     /// Búsquedas de UNA fila que llegaron al almacén (`fetchFirstOrThrow`). Testigo de `SentryHangs2026Nov`: con las
     /// búsquedas por lote, una página no hace una por delta. Solo lo leen y lo ponen a cero los tests.
     static var _testSingleRowFetches = 0
+}
+
+/// Las refs de movimientos que el pase de refs colgadas resolvió, para asignarlas EN BLOQUE desde el lado de la lista
+/// (`Category.transactions`, `Subcategory.transactions`, `Account.transactions`).
+///
+/// Asignar `tx.category = c` una a una cuesta lo que mide la lista inversa de `c`: SwiftData la reescribe en cada asignación.
+/// Con una categoría de 3.200 movimientos eran ~3 ms por asignación en el simulador (200 asignaciones, 0,6 s); añadir los
+/// 200 de una vez a la lista, 0,009 s (YALA-IOS-13, 2026-11-20). El resultado es el mismo: SwiftData mantiene el otro lado.
+///
+/// Si el mismo movimiento recibe dos destinos para la misma columna (danglers duplicados, sin `.unique`), gana el último,
+/// como con la asignación suelta. Un movimiento que ya apunta a su destino no se vuelve a añadir.
+@MainActor
+final class DanglerRelationshipBatch {
+    private var category: [ObjectIdentifier: (row: TransactionItem, target: Category)] = [:]
+    private var subcategory: [ObjectIdentifier: (row: TransactionItem, target: Subcategory)] = [:]
+    private var account: [ObjectIdentifier: (row: TransactionItem, target: Account)] = [:]
+
+    func assign(_ row: TransactionItem, category target: Category) { category[ObjectIdentifier(row)] = (row, target) }
+    func assign(_ row: TransactionItem, subcategory target: Subcategory) { subcategory[ObjectIdentifier(row)] = (row, target) }
+    func assign(_ row: TransactionItem, account target: Account) { account[ObjectIdentifier(row)] = (row, target) }
+
+    /// Asignaciones hechas en bloque (las que no apuntaban ya a su destino) desde que el test lo puso a cero. Solo lo leen
+    /// y lo ponen a cero los tests.
+    static var _testBulkAssigned = 0
+
+    /// Asigna todo lo apuntado: una escritura de la lista por destino.
+    func flush() {
+        for (target, rows) in Self.byTarget(category.values.filter { $0.row.category !== $0.target }) {
+            target.transactions = (target.transactions ?? []) + rows
+            Self._testBulkAssigned += rows.count
+        }
+        for (target, rows) in Self.byTarget(subcategory.values.filter { $0.row.subcategory !== $0.target }) {
+            target.transactions = (target.transactions ?? []) + rows
+            Self._testBulkAssigned += rows.count
+        }
+        for (target, rows) in Self.byTarget(account.values.filter { $0.row.account !== $0.target }) {
+            target.transactions = (target.transactions ?? []) + rows
+            Self._testBulkAssigned += rows.count
+        }
+        category = [:]
+        subcategory = [:]
+        account = [:]
+    }
+
+    private static func byTarget<T: AnyObject>(
+        _ pairs: [(row: TransactionItem, target: T)]
+    ) -> [(T, [TransactionItem])] {
+        var order: [ObjectIdentifier] = []
+        var grouped: [ObjectIdentifier: (T, [TransactionItem])] = [:]
+        for pair in pairs {
+            let key = ObjectIdentifier(pair.target)
+            if grouped[key] == nil { order.append(key); grouped[key] = (pair.target, []) }
+            grouped[key]?.1.append(pair.row)
+        }
+        return order.compactMap { grouped[$0] }
+    }
 }
 
 /// Una lectura de la que depende el apply (búsqueda de fila, barrido) lanzó. El payload es el tipo, sin PII.
