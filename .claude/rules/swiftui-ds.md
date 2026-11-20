@@ -155,6 +155,16 @@ paths:
 
 ## Gotchas de vistas
 
+- **Con Primeros pasos a medias el Panel es progresivo y nada enseña consejos (acuerdo de Jürgen del 19-nov-2026).** La
+  regla vive en `PrimerosPasosPanelGate` (`SetupDeckLogic.swift`): solo las secciones que el mazo ya abrió (la cuenta tras
+  el paso 1, o tras el 2 en «Solo gastos»; «Últimos registros» tras el 2; Planificación tras un «Sí» en el 3 o el 4), sin
+  barra de filtros, sin tarjeta de tipo de cambio y solo los avisos de la nube y de versión nueva. Las guías de pantalla
+  con X, los coach marks, los consejos de TipKit y la guía de «días después» se callan con
+  `SetupChecklistManager.isPrimerosPasosShown` y no se dan por vistos. ⇒ **una sección, un aviso, una guía, un coach mark
+  o un `Tip` nuevos pasan por esa puerta**: un `PanelNotice` nuevo entra en `allows(_:)`, un `Tip` lleva la regla de
+  `PrimerosPasosTipGate`, y un coach mark que SEA parte de un paso lleva `partOfPrimerosPasos: true`. Pin:
+  `YalaTests/PanelProgresivo/`, `YalaTests/SoloGastosPrimerosPasos/`.
+
 - **Una foto que la persona elige entra por `PhotoIntake`, nunca por `UIImage(data:)` (medido el 2026-11-12, YALA-IOS-B).**
   `Image(uiImage:)` decodifica la foto a tamaño completo al pintarla, también en una miniatura, y la copia vive mientras
   se ve: diez fotos de 48 MP subieron la app de 65 MB a 1.929 MB. `PhotoIntake.image(from:maxEdge:)` la reduce al leerla

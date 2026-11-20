@@ -148,15 +148,21 @@ enum PrimerosPasosPlanningCreator {
 
     // MARK: - Panel
 
-    /// «Sí, mostrarlo en el Panel»: la sección Planificación con este widget (`PrimerosPasosPanelWidgetLogic`).
-    static func showInPanel(_ widget: WidgetType, preferences: AppPreferences) {
+    /// «Sí, mostrarlo en el Panel»: la sección Planificación con este widget (`PrimerosPasosPanelWidgetLogic`). Con
+    /// Primeros pasos a medias, el primer «Sí» la abre con solo este widget (Panel progresivo, 19-nov-2026).
+    static func showInPanel(_ widget: WidgetType, preferences: AppPreferences,
+                            checklist injected: SetupChecklistManager? = nil) {
+        // Sin valor por defecto `.shared` en la firma: el argumento por defecto se evalúa fuera del main actor.
+        let checklist = injected ?? SetupChecklistManager.shared
         preferences.materializePanelDefaultsIfNeeded()
         let change = PrimerosPasosPanelWidgetLogic.show(
             widget,
             sectionsHidden: preferences.panelSectionsHidden,
-            planningHidden: preferences.hidden(for: .planificacion)
+            planningHidden: preferences.hidden(for: .planificacion),
+            firstYesWhileProgressive: checklist.isInProgress && !checklist.isPlanningShownInPanel
         )
         preferences.setHidden(change.planningHidden, for: .planificacion)
         preferences.panelSectionsHidden = change.sectionsHidden
+        checklist.markPlanningShownInPanel()
     }
 }

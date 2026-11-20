@@ -87,6 +87,8 @@ struct NewRecordTutorialGuideHost: ViewModifier {
                 steps: NewRecordTutorialGuide.steps,
                 isPresented: isShowing ? $isActive : .constant(false),
                 currentIndex: $index,
+                // La guía de «Aprender a registrar»: es el paso, no un consejo de más (Panel progresivo).
+                partOfPrimerosPasos: true,
                 onSecondary: { _ in
                     awaitsName = true
                     onWriteName()

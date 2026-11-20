@@ -28,6 +28,8 @@ final class SetupChecklistManager {
         static let completedDismissed = "setup.completedDismissed"
         static let isNewInstall = "setup.isNewInstall"
         static let recordTutorialRunning = "setup.recordTutorial.running"
+        /// Dijo «Sí, mostrarlo en el Panel» en el paso 3 o en el 4: la puerta del Panel progresivo abre Planificación.
+        static let planningShownInPanel = "setup.panel.planningShown"
         // Step keys: SetupStepID.storageKey ("setup.step.N.completed")
     }
 
@@ -109,6 +111,32 @@ final class SetupChecklistManager {
     /// Primeros pasos está a medias: el mazo se ve y no está terminado.
     var isInProgress: Bool {
         showsDeck && !isAllComplete
+    }
+
+    /// Primeros pasos se ve en el Panel y está a medias: es lo que calla las guías, los coach tips y lo que el Panel aún no
+    /// enseña (acuerdo de Jürgen del 19-nov-2026). Bajo `-uitest` el mazo se calla, salvo `-uitest-show-setup-deck`, y con
+    /// él la puerta: así los tests de las guías siguen viéndolas.
+    var isPrimerosPasosShown: Bool {
+        (!UITestHooks.isActive || UITestHooks.showsSetupDeck) && isInProgress
+    }
+
+    /// Dijo «Sí, mostrarlo en el Panel» en el paso 3 o en el 4 (`PrimerosPasosPlanningCreator.showInPanel`).
+    private(set) var isPlanningShownInPanel: Bool = false
+
+    func markPlanningShownInPanel() {
+        guard !isPlanningShownInPanel else { return }
+        isPlanningShownInPanel = true
+        UserDefaults.standard.set(true, forKey: Keys.planningShownInPanel)
+    }
+
+    /// Lo que el Panel deja ver ahora (Panel progresivo).
+    func panelGate(expensesOnly: Bool) -> PrimerosPasosPanelGate {
+        PrimerosPasosPanelGate.make(
+            deckInProgress: isPrimerosPasosShown,
+            expensesOnly: expensesOnly,
+            accountStepResolved: isResolved(.firstAccount),
+            recordStepResolved: isResolved(.firstExpense),
+            planningShown: isPlanningShownInPanel)
     }
 
     /// Se está aprendiendo a registrar (paso 2): ahí se apuntan hasta cuatro registros de prueba.
@@ -393,9 +421,11 @@ final class SetupChecklistManager {
         defaults.removeObject(forKey: Keys.completedAllDate)
         defaults.removeObject(forKey: Keys.completedDismissed)
         defaults.removeObject(forKey: Keys.recordTutorialRunning)
+        defaults.removeObject(forKey: Keys.planningShownInPanel)
         // Keep isNewInstall — a new install remains new after wipe
 
         isRecordTutorialRunning = false
+        isPlanningShownInPanel = false
         RecordTutorialSession.shared.reset()
         MoreTabNews.shared.clear()
         stepCompleted = [:]
@@ -420,6 +450,7 @@ final class SetupChecklistManager {
         isAllComplete = defaults.bool(forKey: Keys.completedAll)
         isCompletedDismissed = defaults.bool(forKey: Keys.completedDismissed)
         isRecordTutorialRunning = defaults.bool(forKey: Keys.recordTutorialRunning)
+        isPlanningShownInPanel = defaults.bool(forKey: Keys.planningShownInPanel)
 
         let timestamp = defaults.double(forKey: Keys.completedAllDate)
         if timestamp > 0 {

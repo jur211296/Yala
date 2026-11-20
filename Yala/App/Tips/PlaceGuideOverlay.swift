@@ -131,7 +131,8 @@ private struct PlaceGuidePanelHost: ViewModifier {
             hasMoreTab: sizeClass != .regular,
             guideOnScreen: center.isActive || proTourOnScreen,
             stepSixResolved: SetupChecklistManager.shared.isResolved(.whereMoneyGoes),
-            silencedForUITest: UITestHooks.isActive && !UITestHooks.showsLaterChartsGuide)
+            silencedForUITest: UITestHooks.isActive && !UITestHooks.showsLaterChartsGuide,
+            primerosPasosShown: SetupChecklistManager.shared.isPrimerosPasosShown)
         guard LaterChartsGuideLogic.mayCheck(inputs) else { return }
         guard LaterChartsGuideLogic.distinctDays(in: recordDayBounds()) >= LaterChartsGuideLogic.minimumDistinctDays
         else { return }
@@ -474,12 +475,16 @@ nonisolated enum LaterChartsGuideLogic {
         var guideOnScreen: Bool
         var stepSixResolved: Bool
         var silencedForUITest: Bool
+        /// Primeros pasos está a la vista y a medias (`SetupChecklistManager.isPrimerosPasosShown`). Acuerdo de Jürgen del
+        /// 19-nov-2026: durante Primeros pasos no sale ninguna guía que la persona no haya pedido. El paso 6 tiene la suya.
+        var primerosPasosShown: Bool = false
     }
 
     /// Todo lo que no cuesta leer el almacén. Si da `false`, no se cuentan días.
     static func mayCheck(_ inputs: Inputs) -> Bool {
         inputs.isFreshInstall && !inputs.alreadyShown && !inputs.statisticsInBar && inputs.hasMoreTab
             && !inputs.guideOnScreen && !inputs.stepSixResolved && !inputs.silencedForUITest
+            && !inputs.primerosPasosShown
     }
 
     /// Cuántos días de calendario distintos hay entre unas fechas.

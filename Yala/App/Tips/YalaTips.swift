@@ -165,6 +165,18 @@ enum ProTourSteps {
 
 // MARK: - TipKit Tip (standalone)
 
+/// Panel progresivo (acuerdo de Jürgen del 19-nov-2026): con Primeros pasos a medias no sale ningún consejo de TipKit.
+/// Cada consejo lleva la regla; el Panel la mueve al cambiar el mazo (`PrimerosPasosPanelGateObserver`).
+enum PrimerosPasosTipGate {
+    @Parameter
+    static var primerosPasosShown: Bool = false
+
+    static func update(primerosPasosShown shown: Bool) {
+        guard primerosPasosShown != shown else { return }
+        primerosPasosShown = shown
+    }
+}
+
 struct ComparisonTip: Tip {
     @Parameter
     static var hasVisitedStatistics: Bool = false
@@ -173,7 +185,8 @@ struct ComparisonTip: Tip {
     var message: Text? { Text(L10n.TipKit.comparisonMessage) }
 
     var rules: [Rule] {
-        [#Rule(Self.$hasVisitedStatistics) { $0 == true }]
+        [#Rule(Self.$hasVisitedStatistics) { $0 == true },
+         #Rule(PrimerosPasosTipGate.$primerosPasosShown) { $0 == false }]
     }
 }
 
@@ -185,7 +198,8 @@ struct AIChartsProTip: Tip {
     var message: Text? { Text(L10n.TipKit.aiChartsProMessage) }
 
     var rules: [Rule] {
-        [#Rule(Self.$hasSeenCharts) { $0 == true }]
+        [#Rule(Self.$hasSeenCharts) { $0 == true },
+         #Rule(PrimerosPasosTipGate.$primerosPasosShown) { $0 == false }]
     }
 }
 
@@ -197,6 +211,7 @@ struct AIChartsFreeUpsellTip: Tip {
     var message: Text? { Text(L10n.TipKit.aiChartsFreeMessage) }
 
     var rules: [Rule] {
-        [#Rule(Self.$hasSeenCharts) { $0 == true }]
+        [#Rule(Self.$hasSeenCharts) { $0 == true },
+         #Rule(PrimerosPasosTipGate.$primerosPasosShown) { $0 == false }]
     }
 }

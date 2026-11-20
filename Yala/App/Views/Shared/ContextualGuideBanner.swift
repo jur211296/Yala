@@ -43,7 +43,10 @@ struct ContextualGuideBanner: View {
     // MARK: - Body
 
     var body: some View {
-        if !UITestHooks.isActive || UITestHooks.showsContextualGuides, !isDismissible || !dismissed {
+        // Panel progresivo (acuerdo de Jürgen del 19-nov-2026): con Primeros pasos a medias no sale ninguna guía de
+        // principiante. Las tarjetas informativas (sin X) sí: explican algo de esa pantalla, no son un consejo.
+        if !UITestHooks.isActive || UITestHooks.showsContextualGuides, !isDismissible || !dismissed,
+           !isDismissible || !SetupChecklistManager.shared.isPrimerosPasosShown {
             if isDismissible {
                 guideCard
                     // Quien volvió por «Ya tengo una cuenta» y ya tiene aquí sus datos no ve la guía de principiante:

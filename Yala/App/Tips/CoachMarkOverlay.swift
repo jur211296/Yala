@@ -533,17 +533,23 @@ extension View {
     /// Attaches a coach mark tour overlay to this view.
     /// The view must contain children with `.coachMarkAnchor("id")` matching the step IDs.
     /// Pass a `ScrollViewProxy` to auto-scroll to off-screen targets.
+    ///
+    /// Panel progresivo (acuerdo de Jürgen del 19-nov-2026): con Primeros pasos a medias no sale ningún coach mark (el
+    /// tour de Ajustes, el de Pro, el del flujo de caja…). Solo la guía que ES parte de un paso (`partOfPrimerosPasos`, la
+    /// de Nuevo registro en «Aprender a registrar»). El tour no se da por visto: sale cuando termine Primeros pasos.
     func coachMarkOverlay(
         steps: [CoachMarkStep],
         isPresented: Binding<Bool>,
         currentIndex: Binding<Int>,
         scrollProxy: ScrollViewProxy? = nil,
+        partOfPrimerosPasos: Bool = false,
         onSkip: (() -> Void)? = nil,
         onSecondary: ((String) -> Void)? = nil,
         onComplete: @escaping () -> Void
     ) -> some View {
         self.overlayPreferenceValue(CoachMarkAnchorKey.self) { anchors in
-            if isPresented.wrappedValue {
+            if isPresented.wrappedValue,
+               partOfPrimerosPasos || !SetupChecklistManager.shared.isPrimerosPasosShown {
                 GeometryReader { proxy in
                     CoachMarkOverlay(
                         steps: steps,
