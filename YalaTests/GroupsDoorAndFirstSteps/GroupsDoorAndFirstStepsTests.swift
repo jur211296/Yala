@@ -148,7 +148,8 @@ struct SetupStepsListTests {
     func tappedStepOpensAfterTheSheetCloses() throws {
         let card = try Source.code("Yala/App/Views/Panel/SetupChecklistCard.swift")
         #expect(card.contains(".sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList)"))
-        #expect(card.contains("SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 })"))
+        // Desde el 20-nov la hoja recibe además la cuenta de «Solo gastos» (línea del paso 1): el mismo camino.
+        #expect(card.contains("SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 },"))
         let open = try Source.body(of: "private func openStepTappedInList() {", in: card)
         #expect(open.contains("onStepTapped(step)"))
         #expect(open.contains("stepOpenedFromList = nil"))

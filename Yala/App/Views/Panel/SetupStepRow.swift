@@ -13,6 +13,8 @@ struct SetupStepRow: View {
     let step: SetupStep
     let position: Int
     let isCurrent: Bool
+    /// La línea de debajo, si el modo la cambia: con «Solo gastos» el paso 1 dice a qué cuenta van los gastos.
+    var detail: String? = nil
 
     @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var badgeSize: CGFloat = 30
@@ -25,7 +27,7 @@ struct SetupStepRow: View {
                 Text(step.id.localizedTitle)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(step.isCompleted || step.isSkipped ? .thSecondaryText : .thPrimaryText)
-                Text(step.id.localizedSubtitle)
+                Text(detail ?? step.id.localizedSubtitle)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thSecondaryText)
             }
@@ -260,11 +262,7 @@ extension L10n {
             static var resume: String {
                 NSLocalizedString("setup.deck.resume", comment: "Getting started list: close and go back to where I was")
             }
-            /// «Solo gastos», en la llegada: la única acción.
-            static var firstExpense: String {
-                NSLocalizedString("setup.deck.firstExpense", comment: "Expenses-only arrival: note your first expense")
-            }
-            /// Debajo de «Anotar el primer gasto»: a qué cuenta van.
+            /// «Solo gastos», en «Ver los 7 pasos»: el paso 1 lo hizo Yala, y la línea dice a qué cuenta van los gastos.
             static func firstExpenseNote(_ accountName: String) -> String {
                 String(format: NSLocalizedString("setup.deck.firstExpense.note", comment: "Expenses-only arrival: your expenses go to «%@», which Yala creates on its own"), accountName)
             }

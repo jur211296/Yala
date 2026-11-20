@@ -43,11 +43,13 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1410)
+## Index (1412)
 
 | id | status | path |
 | 2026-11-19-pago-planificado-logo-propio-foto | qa | tickets/qa/2026-11-19-pago-planificado-logo-propio-foto.md |
 | 2026-11-19-primeros-pasos-paso-7-y-prueba-maquetas | done | tickets/done/2026-11-19-primeros-pasos-paso-7-y-prueba-maquetas.md |
+| 2026-11-19-solo-gastos-primeros-pasos | done | tickets/done/2026-11-19-solo-gastos-primeros-pasos.md |
+| 2026-11-19-panel-progresivo-primeros-pasos | done | tickets/done/2026-11-19-panel-progresivo-primeros-pasos.md |
 | 2026-11-20-oferta-de-un-mes-se-cae-en-silencio | backlog | tickets/backlog/2026-11-20-oferta-de-un-mes-se-cae-en-silencio.md |
 | 2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3 | backlog | tickets/backlog/2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3.md |
 | 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |

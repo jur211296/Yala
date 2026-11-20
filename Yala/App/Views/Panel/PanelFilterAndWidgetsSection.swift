@@ -19,6 +19,9 @@ struct PanelFilterAndWidgetsSection: View {
     @Binding var showCustomPeriodPicker: Bool
     /// Abre la hoja de Filtros del Panel al tocar una cápsula de «Filtros aplicados» (UX 2.2 · L8-17).
     var onOpenFilters: (() -> Void)? = nil
+    /// Panel progresivo (19-nov-2026): con Primeros pasos a medias la barra de período y filtros no sale; solo los widgets
+    /// que la persona ya abrió (`PrimerosPasosPanelGate.showsFilterBar`).
+    var showsFilterBar: Bool = true
 
     var body: some View {
         // `xxl` (32) y no `md` (12): entre dos sections tiene que haber MÁS
@@ -36,12 +39,14 @@ struct PanelFilterAndWidgetsSection: View {
 
             // Filter bar sits between Tu panorama and the thematic sections —
             // period + chips travel with the widgets they affect, not with the hero.
-            PanelFilterControlBar(
-                viewModel: viewModel,
-                sessionState: sessionState,
-                showCustomPeriodPicker: $showCustomPeriodPicker,
-                onOpenFilters: onOpenFilters
-            )
+            if showsFilterBar {
+                PanelFilterControlBar(
+                    viewModel: viewModel,
+                    sessionState: sessionState,
+                    showCustomPeriodPicker: $showCustomPeriodPicker,
+                    onOpenFilters: onOpenFilters
+                )
+            }
 
             let thematicSections = orderedVisibleSections.filter {
                 $0 != .accounts && $0 != .health

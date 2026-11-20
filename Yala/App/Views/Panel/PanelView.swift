@@ -112,6 +112,8 @@ struct PanelView: View {
         guard viewModel.trendLiveAnchor != nil else { return false }
         guard (viewModel.trendLiveAnchorBreakdown?.count ?? 0) > 1 else { return false }
         guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
+        // Panel progresivo: ningún coach mark con Primeros pasos a medias (acuerdo del 19-nov-2026).
+        guard panelGate.allowsCoachMarks else { return false }
         let proTourActive = ProTourManager.shared.triggered
             && !ProTourManager.shared.hasCompleted
         return !proTourActive
@@ -129,23 +131,23 @@ struct PanelView: View {
         showsSetupDeck && SetupChecklistManager.shared.isQuietArrival
     }
 
-    @ViewBuilder
+    /// Lo que el Panel deja ver con Primeros pasos a medias (Panel progresivo, acuerdo de Jürgen del 19-nov-2026).
+    private var panelGate: PrimerosPasosPanelGate {
+        SetupChecklistManager.shared.panelGate(expensesOnly: sessionState.isExpensesOnlyMode)
+    }
+
+    /// El mazo, también con «Solo gastos» (Jürgen, 19-nov-2026): los mismos siete pasos. Hasta entonces «Solo gastos»
+    /// llegaba con un botón suelto «Anotar el primer gasto» en vez del mazo, y Primeros pasos no salía.
     private var setupDeckSlot: some View {
-        if isQuietArrival && sessionState.isExpensesOnlyMode {
-            // «Solo gastos»: «Anotar el primer gasto», y la cuenta que Yala creó sola, como hoy.
-            SetupFirstExpenseAction(
-                accountName: viewModel.accounts.first(where: \.isBillableUserAccount)?.name
-            ) {
-                sheets.showNewTransaction = true
-            }
-        } else {
-            SetupChecklistCard(
-                manager: SetupChecklistManager.shared,
-                onStepTapped: { step in handleSetupStep(step) }
-            )
-            // Telemetría del usuario nuevo (card 4b7h): vio Primeros pasos.
-            .onAppear { MetricsService.used(.primerosPasosVe) }
-        }
+        SetupChecklistCard(
+            manager: SetupChecklistManager.shared,
+            onStepTapped: { step in handleSetupStep(step) },
+            // «Solo gastos»: el paso 1 lo hizo Yala, que creó la cuenta de gastos; la lista lo dice con su nombre.
+            expensesAccountName: sessionState.isExpensesOnlyMode
+                ? viewModel.accounts.first(where: \.isBillableUserAccount)?.name : nil
+        )
+        // Telemetría del usuario nuevo (card 4b7h): vio Primeros pasos.
+        .onAppear { MetricsService.used(.primerosPasosVe) }
     }
 
     /// Lo que cuenta para dar pasos por hechos; si cambia, se vuelve a mirar.
@@ -433,10 +435,12 @@ struct PanelView: View {
                 ProTourManager.shared.advancePhase()
             }
         )
-        .task(id: ProTourManager.shared.currentPhase) {
+        .task(id: ProTourPanelKey(phase: ProTourManager.shared.currentPhase, allowed: panelGate.allowsCoachMarks)) {
             // `-uitest-pro-tour-panel` saca esta fase en el simulador para grabarla (card v84b).
             let forcedForUITest = UITestHooks.showsProTourPanel
             guard !UITestHooks.isActive || forcedForUITest else { return }
+            // Panel progresivo: el tour espera a que termine Primeros pasos (la clave de la tarea lo vuelve a pedir).
+            guard panelGate.allowsCoachMarks else { return }
             guard !ProTourManager.shared.hasCompleted,
                   ProTourManager.shared.currentPhase == .panel || forcedForUITest else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
@@ -462,6 +466,8 @@ struct PanelView: View {
         .placeGuidePanelHost(isPageShown: isRootPageShown)
         // Paso 5 (Y23-13): «Tus grupos, a un toque» al volver de crear o unirse a un grupo.
         .modifier(PrimerosPasosGroupsGuideObserver(sheets: $sheets, isPageShown: isRootPageShown))
+        // Panel progresivo: lo que el mazo abre o cierra cambia las secciones que se pintan, y los consejos de TipKit.
+        .modifier(PrimerosPasosPanelGateObserver(gate: panelGate, viewModel: viewModel))
         .onAppear {
             LoadTimeMarks.begin(.panel)
             // Inject AppPreferences BEFORE setContext so the first performCalculation
@@ -476,7 +482,8 @@ struct PanelView: View {
             )
             // Seed BEFORE the first calculation so hidden sections don't do
             // work on app launch.
-            viewModel.hiddenSections = Self.parseHiddenSections(appPreferences.resolvedSectionsHidden)
+            viewModel.hiddenSections = panelGate.hiddenSections(
+                Self.parseHiddenSections(appPreferences.resolvedSectionsHidden))
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
@@ -528,7 +535,7 @@ struct PanelView: View {
         // nada (el `didSet` corta al comparar `[]` con `[]`) y se quedaría viendo el
         // curado hasta reiniciar la app.
         .onChange(of: appPreferences.resolvedSectionsHidden) { oldValue, newValue in
-            let next = Self.parseHiddenSections(newValue)
+            let next = panelGate.hiddenSections(Self.parseHiddenSections(newValue))
             guard viewModel.hiddenSections != next else { return }
             let previous = viewModel.hiddenSections
             viewModel.hiddenSections = next
@@ -568,7 +575,7 @@ struct PanelView: View {
 
     /// Drops unknown raw values so a legacy/future preference string doesn't
     /// pollute the typed set.
-    private static func parseHiddenSections(_ raw: [String]) -> Set<PanelSectionKind> {
+    static func parseHiddenSections(_ raw: [String]) -> Set<PanelSectionKind> {
         Set(raw.compactMap(PanelSectionKind.init(rawValue:)))
     }
 
@@ -634,7 +641,8 @@ struct PanelView: View {
             || (!FeatureGateService.shared.isProUser && showPeriodicBanner)
         flags.nudge = !UITestHooks.isActive && NudgeService.shared.currentNudge != nil && showNudgeBanner
         flags.siriTip = !UITestHooks.isActive && appPreferences.showSiriTip && viewModel.transactions.count >= 5
-        return flags
+        // Panel progresivo: con Primeros pasos a medias solo siguen los avisos sobre los datos y la versión nueva.
+        return panelGate.filtering(flags)
     }
 
     /// El flotante sin cuenta o sin categorías lleva a la misma salida que la fila del hero (card 7jfp).
@@ -840,7 +848,10 @@ struct PanelView: View {
                         // DENTRO de la card, no aquí: con el `if` fuera, cruzar el umbral mientras
                         // el usuario lee el detalle destruía la hoja abierta, y leer la propiedad
                         // aquí invalidaba este body entero en cada gasto.
-                        FXPnLCard(viewModel: viewModel)
+                        // Panel progresivo: es contenido del Panel, como un widget; espera a que termine Primeros pasos.
+                        if panelGate.showsExchangeResultCard {
+                            FXPnLCard(viewModel: viewModel)
+                        }
 
                         // «Tus finanzas» (cuentas + salud). En compacta va aquí, tras los avisos, como siempre; en
                         // ancha, `HeaderBandLayout` la sube a la columna derecha de la cabecera.
@@ -874,7 +885,8 @@ struct PanelView: View {
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
-                            onOpenFilters: { sheets.showFilters = true }
+                            onOpenFilters: { sheets.showFilters = true },
+                            showsFilterBar: panelGate.showsFilterBar
                         )
                         // Tocar un segmento de una tarta o un top pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25),
                         // como en Distribución: el mismo gesto no escribe distinto según la pantalla.
