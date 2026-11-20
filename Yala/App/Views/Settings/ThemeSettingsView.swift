@@ -43,6 +43,7 @@ struct ThemeSettingsView: View {
                         Text(L10n.Profile.appearance)
                             .font(DS.Typography.title2.bold())
                             .foregroundStyle(.thPrimaryText)
+                            .accessibilityIdentifier("theme_settings_title")
 
                         Text(L10n.Settings.themeDescription)
                             .font(DS.Typography.body)

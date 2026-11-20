@@ -135,8 +135,9 @@ extension YalaTheme {
         primaryText: Color.primary,
         secondaryText: Color.secondary,
         accent: .electricIndigo,
-        // El índigo de marca como TEXTO bajaba a 4,20:1 sobre el gris; un 5 % más oscuro vuelve a AA (4,59).
-        accentText: Color(hex: "5B5EE4"),
+        // El índigo de marca como TEXTO bajaba a 4,20:1 sobre el gris; un 5 % más oscuro vuelve a AA (4,59). Con «Aumentar
+        // contraste» el fondo baja a #EAEAEE y ese tono volvía a 4,20: ahí, un punto más (#5053D9: 4,89; 5,87 sobre blanco).
+        accentText: contrastAware(UIColor(Color(hex: "5B5EE4")), increased: UIColor(Color(hex: "5053D9"))),
         onAccent: .white,
         accentSecondary: .hotPink,
         income: .priorityNeed,

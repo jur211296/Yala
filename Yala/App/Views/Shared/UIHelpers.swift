@@ -328,8 +328,9 @@ extension Color {
         traits.userInterfaceStyle == .dark ? .white : UIColor(Color.electricIndigo)
     })
 
-    /// Rosa profundo: la tarjeta «¿No sabes tu saldo?». `hotPink` (#FF0080) con texto blanco da 3,8:1;
-    /// este tono da 5,2:1 sin dejar de ser el rosa de marca.
+    /// Rosa profundo: el RELLENO rosa de marca cuando lleva texto blanco encima (la tarjeta «¿No sabes tu saldo?», el
+    /// porcentaje elegido de la calculadora de reparto, la etiqueta de ahorro del plan elegido en la compra de Pro).
+    /// `hotPink` (#FF0080) con texto blanco da 3,77:1; este tono da 5,16:1 sin dejar de ser el rosa de marca.
     static let emphasisPinkFill = Color(hex: "D6006B")
 
     /// TEXTO de «te pasaste» de un presupuesto (UX 2.2 · L9-1): `hotPink` sobre tarjeta blanca da 3,77 y no llega al AA
@@ -396,23 +397,36 @@ extension Color {
     static let expenseGraph = hotPink
     static let darkBackground = deepSlate
 
-    /// Returns either white or black depending on which contrasts better with the given color.
+    /// Texto blanco o negro sobre un relleno de color (etiquetas, cuentas, rellenos que no son el acento del tema), con el
+    /// contraste de WCAG 2.x. **Blanco si llega a AA (4,5:1) o si queda a menos de medio punto del negro; si no, negro.**
+    /// El medio punto es un empate práctico: el índigo por defecto de las cuentas (#6366F1) da 4,47 con blanco y 4,70 con
+    /// negro, y ahí el blanco es el aspecto de marca. Pasa a negro donde el blanco fallaba de verdad: con la fórmula de vídeo de
+    /// antes (0,299 R + 0,587 G + 0,114 B, sin linealizar, corte en 0,6) el turquesa de marca salía blanco a 2,19:1 y un
+    /// naranja a 2,8:1 (ticket `contrasting-text-helper-is-not-wcag-on-tags-and-account-colors`, 19-nov-2026). Lo fija
+    /// `YalaTests/TemasRepintadoYContraste/ContrastingTextWCAGTests`.
     static func contrastingText(for color: Color) -> Color {
         #if canImport(UIKit)
-            let uiColor = UIColor(color)
             var red: CGFloat = 0
             var green: CGFloat = 0
             var blue: CGFloat = 0
             var alpha: CGFloat = 0
-
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-
-            // Luminance formula
-            let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
-            return luminance > 0.6 ? .black : .white  // 0.6 threshold favors white text slightly more for mid-tones
+            UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            return contrastingTextIsWhite(red: Double(red), green: Double(green), blue: Double(blue)) ? .white : .black
         #else
             return .white  // Fallback
         #endif
+    }
+
+    /// La decisión de `contrastingText(for:)` sobre componentes sRGB (0…1), separada para poder medirla.
+    static func contrastingTextIsWhite(red: Double, green: Double, blue: Double) -> Bool {
+        func linear(_ value: Double) -> Double {
+            let v = min(max(value, 0), 1)
+            return v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+        let onWhite = 1.05 / (luminance + 0.05)
+        let onBlack = (luminance + 0.05) / 0.05
+        return onWhite >= 4.5 || onWhite + 0.5 >= onBlack
     }
 
 }

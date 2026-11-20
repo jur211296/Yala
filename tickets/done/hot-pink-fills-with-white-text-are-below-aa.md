@@ -1,10 +1,10 @@
 ---
 id: hot-pink-fills-with-white-text-are-below-aa
-status: backlog
+status: done
 priority: very-low
 area: "design-system, accesibilidad"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-11-19
 source: "lote 12.3 (card lbcr), visto al barrer el texto sobre rellenos"
 ---
 
@@ -18,3 +18,9 @@ tema y no entraron en el lote 12.3:
 
 El molde ya existe: `Color.emphasisPinkFill` (#D6006B, 5,2:1 con blanco), el rosa profundo de la tarjeta «¿No sabes tu
 saldo?». Cambiarlo es cambiar el rosa de esos dos chips; por eso no se tocó sin decisión.
+
+## Cerrado (2026-11-19, lote de temas)
+
+Los dos rellenos pasan a `Color.emphasisPinkFill` (#D6006B, 5,16:1 con blanco): el porcentaje elegido de la calculadora
+de reparto y la etiqueta de ahorro del plan elegido en la compra de Pro. Mismo matiz de marca, un tono más profundo, el
+molde que ya usa la tarjeta «¿No sabes tu saldo?». Lo fija `ContrastingTextWCAGTests.pinkFills_wiring`.

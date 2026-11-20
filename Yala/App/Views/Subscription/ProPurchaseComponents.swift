@@ -149,10 +149,11 @@ struct ProPlanCard: View {
                         if let savingsBadge {
                             Text(savingsBadge)
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(theme.onFill(isSelected ? Color.hotPink : theme.accent))
+                                .foregroundStyle(theme.onFill(isSelected ? Color.emphasisPinkFill : theme.accent))
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xxs)
-                                .background(Capsule().fill(isSelected ? Color.hotPink : theme.accent))
+                                // El rosa elegido lleva texto blanco: el profundo (5,16:1), no `hotPink` (3,77).
+                                .background(Capsule().fill(isSelected ? Color.emphasisPinkFill : theme.accent))
                                 .accessibilityIdentifier("subscription_save_badge")
                         }
                     }

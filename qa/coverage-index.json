@@ -2833,7 +2833,7 @@
         "F-SET-04"
       ],
       "classification": "agentic",
-      "coverage": "device-qa | 2026-10-25 (lote 12.3, cards lbcr · 1c9w · elwl): tres tokens de color por tema —`accent` (relleno), `accentText` (texto e iconos: #818CF8 en los índigo oscuros, #FF4DA6 en Rosa) y `onAccent` (encima del relleno: negro en Teal, Rosa y Minimalista)— y `Color.incomeAmount` adaptativo (#00C2CB en oscuro). unit:YalaTests/ThemeTokenContrastTests mide AA (WCAG) en los diez temas; capturas antes/después de los ocho temas en el PR del lote. · 2026-11-19 (contraste en modo claro): el Claro pasa a fondo gris neutro #F4F4F6 (#EAEAEE con «Aumentar contraste»), `accentText` #5B5EE4 y `.thCard` con contorno dentro del relleno (`ThemeSurface` + `YalaTheme.surfaceEdge`, nil en los oscuros). unit:YalaTests/ContrasteModoClaro/ContrasteModoClaroTests; capturas antes/después en claro y oscuro (iPhone 17 Pro, SE, iPad Pro 13) e iPhone 14 en el PR.",
+      "coverage": "device-qa | 2026-10-25 (lote 12.3, cards lbcr · 1c9w · elwl): tres tokens de color por tema —`accent` (relleno), `accentText` (texto e iconos: #818CF8 en los índigo oscuros, #FF4DA6 en Rosa) y `onAccent` (encima del relleno: negro en Teal, Rosa y Minimalista)— y `Color.incomeAmount` adaptativo (#00C2CB en oscuro). unit:YalaTests/ThemeTokenContrastTests mide AA (WCAG) en los diez temas; capturas antes/después de los ocho temas en el PR del lote. · 2026-11-19 (contraste en modo claro): el Claro pasa a fondo gris neutro #F4F4F6 (#EAEAEE con «Aumentar contraste»), `accentText` #5B5EE4 y `.thCard` con contorno dentro del relleno (`ThemeSurface` + `YalaTheme.surfaceEdge`, nil en los oscuros). unit:YalaTests/ContrasteModoClaro/ContrasteModoClaroTests; capturas antes/después en claro y oscuro (iPhone 17 Pro, SE, iPad Pro 13) e iPhone 14 en el PR. · 2026-11-19 (temas con la hoja abierta y contraste): el claro u oscuro del tema va también en la ventana y en lo presentado (`ThemeWindowStyle`), así Ajustes › Temas se repinta al cambiar de tema; `accentText` del Claro #5053D9 con «Aumentar contraste». Ver el área `theme-switch-repaints-open-sheets`.",
       "owner": "",
       "lastVerified": "2026-11-19"
     },
@@ -4415,6 +4415,24 @@
       "coverage": "xcuitest:YalaUITests/XNativaHojaFotoUITests + xcuitest:YalaUITests/ImageEntryReviewUITests + unit:YalaTests/XNativaHojaFotoNoteTests,XNativaHojaFotoAutoCloseTests,XNativaHojaFotoWiringTests | 2026-11-17 (encargo «Hoja de foto: X nativa, cabecera ordenada, descripción editable y cierre automático»): la X del sistema (role .close, 44 pt) en la misma fila que el título y las miniaturas, en personal y en Voz/Foto de Grupos; la descripción de «Esto leí» se corrige tocándola (solo la hoja de foto) y el nombre de cada línea del reparto de Grupos igual; con todo guardado y sin avisos la hoja enseña «Guardado» ~0,6 s y se cierra sola. Device-QA en el iPhone 14 pendiente (teclado real en la fila).",
       "owner": "",
       "lastVerified": "2026-11-17"
+    },
+    {
+      "area": "theme-switch-repaints-open-sheets",
+      "codeGlobs": [
+        "Yala/App/Theme/ThemeWindowStyle.swift",
+        "Yala/App/Views/Shared/UIHelpers.swift",
+        "Yala/App/Views/Shared/SplitCalculatorSheet.swift",
+        "Yala/App/Views/Subscription/ProPurchaseComponents.swift"
+      ],
+      "scenarioIDs": [
+        "theme-switch-open-sheet-repaints",
+        "contrasting-text-wcag",
+        "pink-fills-white-text-aa"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/TemasRepintadoUITests + unit:YalaTests/ThemeWindowStyleTests,ContrastingTextWCAGTests | 2026-11-19 (Jürgen, build 2.3 (5)): con Ajustes › Temas abierto, Claro → Oscuro → Claro y Claro → Índigo, Rosa, Liquid Glass y Sistema repintan la hoja al instante (el XCUITest mide los píxeles del título y de la fila «Temas»; sin el arreglo, título a 0,0 sobre negro). `contrastingText` con WCAG (blanco si llega a AA o empata a medio punto con el negro), rellenos rosa con blanco en `emphasisPinkFill`.",
+      "owner": "",
+      "lastVerified": "2026-11-19"
     }
   ]
 }

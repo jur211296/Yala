@@ -1,10 +1,10 @@
 ---
 id: indigo-small-text-on-the-light-background-is-4-46
-status: backlog
+status: done
 priority: very-low
 area: "design-system, accesibilidad"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-11-19
 source: "lote 12.3 (card 1c9w), medido al fijar `ThemeTokenContrastTests`"
 ---
 
@@ -17,3 +17,10 @@ fondo, sin tarjeta (enlaces de pie de sección, «Ver todo» fuera de tarjeta). 
 
 Salida barata si se quiere cerrar: un `accentText` de claro un punto más oscuro (p. ej. #5558E8: 5,1:1 sobre el fondo y 5,3 sobre blanco), sin tocar el
 relleno de los botones. `ThemeTokenContrastTests.accentText_light_onWhiteCard` pasaría a medir también el fondo.
+
+## Cerrado (2026-11-19, lote de temas)
+
+El caso del ticket ya lo había resuelto el modo claro del 19-nov: `accentText` del Claro es #5B5EE4 (4,59:1 sobre el
+fondo gris #F4F4F6, 5,04 sobre blanco). Quedaba un hueco medido: con «Aumentar contraste» el fondo baja a #EAEAEE y ese
+tono volvía a 4,20. Ahora `accentText` del Claro es consciente del contraste: #5053D9 con «Aumentar contraste» (4,89
+sobre #EAEAEE, 5,87 sobre blanco). Lo fija `ContrastingTextWCAGTests.accentText_light_isAA_withIncreasedContrast`.
