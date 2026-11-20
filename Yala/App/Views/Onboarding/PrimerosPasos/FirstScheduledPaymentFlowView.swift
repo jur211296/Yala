@@ -64,8 +64,7 @@ struct FirstScheduledPaymentFlowView: View {
                     part: $introPart,
                     currencyCode: currencyCode,
                     onBack: { onClose(.closed) },
-                    onStart: startQuestions,
-                    onSkip: { onClose(.skipped) }
+                    onStart: startQuestions
                 )
                 .transition(.opacity)
             } else {
@@ -124,7 +123,7 @@ struct FirstScheduledPaymentFlowView: View {
 
     private var questionTitle: String {
         switch step {
-        case .kind: return T.kindQuestion
+        case .kind: return PrimerosPasosPulidoText.paymentKindQuestion
         case .details: return T.detailsQuestion
         case .when: return T.whenQuestion
         case .reminder: return T.reminderQuestion
@@ -135,7 +134,7 @@ struct FirstScheduledPaymentFlowView: View {
 
     private var questionDetail: String? {
         switch step {
-        case .kind: return T.kindSubtitle
+        case .kind: return PrimerosPasosPulidoText.paymentKindAutoDetect
         case .details:
             let type = draft.kind.map { Self.kindTitle($0) } ?? selectedSubcategory?.name ?? ""
             return accountName.isEmpty ? type : T.detailsSubtitle(type, accountName)
@@ -169,24 +168,28 @@ struct FirstScheduledPaymentFlowView: View {
                 }
             }
         case .done:
-            VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(P.seePanel) { onClose(createdCount > 0 ? .created : .closed) }
-                    .accessibilityIdentifier("first_payment_done")
-                    .primerosPasosButtonText()
-                // Los pagos planificados no tienen límite en el plan gratis (`ProFeature`).
-                Button(T.doneAnother) { startAnother() }
-                    .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(.thAccentText)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .accessibilityIdentifier("first_payment_another")
-            }
+            // Los pagos planificados no tienen límite en el plan gratis (`ProFeature` no los cuenta): el texto dice «todos
+            // los que quieras» en vez de inventar un número.
+            PrimerosPasosPlanningDoneDock(
+                freeNote: PrimerosPasosPulidoText.paymentDoneFree,
+                anotherTitle: T.doneAnother,
+                anotherID: "first_payment_another",
+                doneTitle: P.seePanel,
+                doneID: "first_payment_done",
+                onAnother: startAnother,
+                onDone: { onClose(createdCount > 0 ? .created : .closed) }
+            )
         }
     }
 
     // MARK: Pantalla 1 · el tipo
 
     private var kindDock: some View {
-        VStack(spacing: DS.Spacing.md) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // La salida sin crear nada, arriba de las respuestas y nunca debajo de otro botón (encargo del 2026-11-20).
+            PrimerosPasosDeclineLink(title: PrimerosPasosPulidoText.paymentNoneOption, id: "first_payment_none") {
+                onClose(createdCount > 0 ? .created : .skipped)
+            }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm),
                                      count: TutorialGridColumns.count(3, dynamicTypeSize: dynamicTypeSize)),
                       spacing: DS.Spacing.sm) {
@@ -253,8 +256,9 @@ struct FirstScheduledPaymentFlowView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(T.detailsName).font(DS.Typography.caption.weight(.semibold)).foregroundStyle(.secondary)
                 HStack(spacing: DS.Spacing.sm) {
-                    TextField("", text: $draft.name, prompt: Text(T.detailsNamePlaceholder).foregroundStyle(.tertiary))
+                    TextField("", text: $draft.name, prompt: Text(T.detailsNamePlaceholder).yalaFieldPrompt())
                         .font(DS.Typography.body)
+                        .yalaFieldText()
                         .focused($nameFocused)
                         .submitLabel(.next)
                         .onSubmit {
@@ -382,8 +386,9 @@ struct FirstScheduledPaymentFlowView: View {
             }
             if editsOtherDay {
                 HStack(spacing: DS.Spacing.sm) {
-                TextField("", text: $otherDayText, prompt: Text(verbatim: "18").foregroundStyle(.tertiary))
+                TextField("", text: $otherDayText, prompt: Text(verbatim: "18").yalaFieldPrompt())
                     .font(DS.Typography.title3.weight(.semibold))
+                    .yalaFieldText()
                     .keyboardType(.numberPad)
                     .focused($dayFocused)
                     .padding(.horizontal, DS.Spacing.md)

@@ -70,7 +70,13 @@ final class Bienvenida23PasosUITests: XCTestCase {
                       "La moneda se pregunta con «+ Añadir moneda» antes de guardar.")
         attach(app, "paso1-3-moneda")
         tapWhenSettled(app, "first_account_currency_continue")
-        type(app, "Visa del trabajo", into: "first_account_name_field")
+        // El nombre llega escrito con el del tipo y se cambia ahí mismo (pulido del 2026-11-20).
+        let nameField = element(app, "first_account_name_field")
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        XCTAssertEqual(nameField.value as? String, "Tarjeta de crédito", "El nombre llega precargado con el tipo.")
+        tapWhenSettled(app, "first_account_name_field")
+        let typedName = nameField.value as? String ?? ""
+        nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: typedName.count) + "Visa del trabajo")
         tapWhenSettled(app, "first_account_send")
 
         // Saldo: lo que debo, escrito.

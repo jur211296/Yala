@@ -2,14 +2,15 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (128 entradas)
+## Índice (129 entradas)
 
-> **No hace falta leer este fichero entero** — son 327 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 330 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-19` [Lote del 19-nov (noche): logo propio en pagos planificados, Panel progresivo, «Eliminar mi cuenta» e](#2026-11-19-lote-del-19-nov-noche-logo-propio-en-pagos-planificados-panel-progresivo-eliminar-mi-cuenta-en-icloud-privado-intros-como-historias-y-el-iphone-14-compartido)
+- `2026-11-20` [Lote del 20-nov (mañana): Primeros pasos, Nuevo registro, Registros, flujo de caja, Comparativa y Es](#2026-11-20-lote-del-20-nov-maana-primeros-pasos-nuevo-registro-registros-flujo-de-caja-comparativa-y-estadsticas)
 - `2026-11-19` [Flujo de caja: aislados en las líneas por promedio, límites móviles y solo fijos en los meses que vi](#2026-11-19-flujo-de-caja-aislados-en-las-lneas-por-promedio-lmites-mviles-y-solo-fijos-en-los-meses-que-vienen)
 - `2026-11-19` [Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)](#2026-11-19-flujo-de-caja-proyeccin-inteligente-con-ingresos-recurrentes-y-sin-outliers-corrige-p6)
+- `2026-11-19` [Lote del 19-nov (noche): logo propio en pagos planificados, Panel progresivo, «Eliminar mi cuenta» e](#2026-11-19-lote-del-19-nov-noche-logo-propio-en-pagos-planificados-panel-progresivo-eliminar-mi-cuenta-en-icloud-privado-intros-como-historias-y-el-iphone-14-compartido)
 - `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
 - `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
 - `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
@@ -34,12 +35,12 @@
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
-- `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
+- `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
-- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
+- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-11-06` [IA en la nube: lee todo lo que haga falta, y el permiso lo dice](#2026-11-06-ia-en-la-nube-lee-todo-lo-que-haga-falta-y-el-permiso-lo-dice)
 - `2026-11-05` [Tu IA registra en Yala: el conector deja borradores en la cola común, nunca en la nube de la persona](#2026-11-05-tu-ia-registra-en-yala-el-conector-deja-borradores-en-la-cola-comn-nunca-en-la-nube-de-la-persona)
@@ -80,15 +81,15 @@
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
 - `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
-- `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
+- `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
-- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
+- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-26` [Refactor V3 unificado del CSV-mirror SSOT (7 commits)](#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits)
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
-- `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
+- `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
@@ -101,8 +102,8 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
-- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
+- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
@@ -154,6 +155,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-20] Lote del 20-nov (mañana): Primeros pasos, Nuevo registro, Registros, flujo de caja, Comparativa y Estadísticas
+**Contexto:** Trece decisiones que Jürgen tomó en el chat el 20-nov (06:05 a 06:55, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del pulido de Primeros pasos; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) **Primeros pasos:** opción B en los cuatro temas de las maquetas (paso 7, hoja de los 7 pasos, coach tips de Ajustes y Pro, oferta de un mes); se encola la implementación. (2) **Worker de producción:** se deja la versión nueva que desplegó la sesión del logo propio (manifest), sin revertir. (3) **CloudKit Production:** los campos `CD_customLogoData`, `CD_customLogoData_ckAsset` y `CD_customLogoRef` los despliega Dan por consola. (4) **Nuevo registro:** B1 con pantalla de éxito minimalista. Los chips de abajo van siempre en una fila: etiquetas como «#2» y, si no alcanza, se trunca el nombre de la cuenta. En transferencias, la fecha va donde estaría la categoría y la fila de chips queda para las dos cuentas, también en una fila. Éxito: descripción suelta bajo el monto y campos en orden fecha, cuenta, subcategoría, naturaleza y etiqueta si tiene. (5) **Sentry 2.3 (4):** se encolan los cuelgues nuevos (aplicar cambios de la nube, leer fecha y pago planificado de los registros, agrupar Registros por mes y el congelamiento de varios segundos que volvió). (6) **Sugerencias de descripción:** al elegir una, si esos consumos tuvieron la misma cuenta y la misma subcategoría o etiqueta, también se asignan. (7) **Registros:** se quita la barra de búsqueda de arriba (en Estadísticas › Registros y en Registros); la pestaña «Buscar» ya lo hace. (8) **Flujo de caja fluido:** sin rebote arriba, sin lentitud de la página ni al ir a otras páginas con filtros; sesión propia. (9) **Límite de una línea del flujo de caja:** podrá depender de uno o varios pagos planificados (más un extra opcional) y recalcularse al cambiar, y ponerse en otra moneda convertida con el tipo de cambio, enseñando el original y avisando la conversión. Primero maquetas. (10) **Comparativa:** el mismo arreglo de rebote y lentitud, en la sesión de (8). (11) **Comparativa:** chip de variación con color por fila (subió o bajó), reusando el de Estadísticas, en la misma sesión. (12) **Hero de Estadísticas:** fuera «Te queda»; todos dicen «Tu dinero hoy» (la cifra del Panel; «al cierre» en períodos cerrados), con solo el número grande, su título e ingresos y gastos con flechas, sin rótulos ni la línea de registros o categorías. (13) **Distribución:** su hero se iguala al de las demás pestañas.
+**Razones:** Las da Jürgen al revisar las maquetas de Primeros pasos, Nuevo registro, Registros, el flujo de caja, Comparativa y Estadísticas.
+**Consecuencias:** (1), (4), (6), (7), (8) a (13) necesitan su encargo. (2) y (3) son operación, no código. (5) va a la cola de Sentry.
+**Estado:** Activa
 
 ### [2026-11-19] Lote del 19-nov (noche): logo propio en pagos planificados, Panel progresivo, «Eliminar mi cuenta» en iCloud privado, intros como historias y el iPhone 14 compartido
 **Contexto:** Cinco decisiones de Jürgen en el chat del 19-nov (21:28 a 22:07, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de maquetas de Primeros pasos del 20-nov, que no las ejecuta: no son de su encargo, salvo para alinear las maquetas. Dos llegaron cortadas en la captura; se copian tal como llegaron.

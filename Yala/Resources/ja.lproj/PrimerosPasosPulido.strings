@@ -1,0 +1,15 @@
+/*
+  PrimerosPasosPulido.strings
+  Yala
+
+  Primeros pasos, pulido del 2026-11-20: «No deseo crear…», el título del paso 4 y el cierre de los pasos 3 y 4.
+  Tabla propia, leída con el idioma de la app (`PrimerosPasosPulidoText`).
+*/
+
+"primerosPasosPulido.budget.noneOption" = "予算は作成しない";
+"primerosPasosPulido.payment.noneOption" = "計画した支払いは作成しない";
+"primerosPasosPulido.payment.kindQuestion" = "定期的に支払っているものを選んでください";
+"primerosPasosPulido.payment.kindAutoDetect" = "3か月後には、固定の支払いを自動で見つけます。";
+"primerosPasosPulido.budget.doneFreeLimit" = "予算は%d件まで無料で作成でき、好きな項目を好きな細かさで管理できます。";
+"primerosPasosPulido.budget.createAnother" = "もう1つ作成";
+"primerosPasosPulido.payment.doneFree" = "固定の支払いは無料でいくつでも作成でき、繰り返す支出を忘れずに記録できます。";

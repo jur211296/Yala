@@ -155,8 +155,9 @@ struct AsistentePagoPlanificadoView: View {
     private var nombre: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             AsistenteTarjeta {
-                TextField("", text: $estado.draft.name, prompt: Text(T.detailsNamePlaceholder).foregroundStyle(.tertiary))
+                TextField("", text: $estado.draft.name, prompt: Text(T.detailsNamePlaceholder).yalaFieldPrompt())
                     .font(DS.Typography.title3)
+                    .yalaFieldText()
                     .focused($nombreEnfocado)
                     .submitLabel(.next)
                     .onSubmit { if estado.puedeSeguir { seguir() } }
@@ -189,8 +190,9 @@ struct AsistentePagoPlanificadoView: View {
                         .font(DS.Typography.title2)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    TextField("", text: $estado.montoTexto, prompt: Text(verbatim: "0").foregroundStyle(.tertiary))
+                    TextField("", text: $estado.montoTexto, prompt: Text(verbatim: "0").yalaFieldPrompt())
                         .font(DS.Typography.largeTitle.weight(.bold))
+                        .yalaFieldText()
                         .amountKeyboard()
                         .focused($montoEnfocado)
                         .onChange(of: estado.montoTexto) { _, nuevo in filtrarMonto(nuevo) }

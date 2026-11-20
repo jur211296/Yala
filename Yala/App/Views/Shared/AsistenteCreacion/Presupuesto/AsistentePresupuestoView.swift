@@ -194,8 +194,9 @@ struct AsistentePresupuestoView: View {
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                     TextField("", text: $estado.topeTexto,
-                              prompt: Text(verbatim: "0").foregroundStyle(.tertiary))
+                              prompt: Text(verbatim: "0").yalaFieldPrompt())
                         .font(DS.Typography.largeTitle.weight(.bold))
+                        .yalaFieldText()
                         .amountKeyboard()
                         .focused($topeEnfocado)
                         .onChange(of: estado.topeTexto) { _, nuevo in filtrarTope(nuevo) }
@@ -242,8 +243,9 @@ struct AsistentePresupuestoView: View {
 
     private var nombre: some View {
         AsistenteTarjeta {
-            TextField("", text: $estado.nombre, prompt: Text(T.namePlaceholder).foregroundStyle(.tertiary))
+            TextField("", text: $estado.nombre, prompt: Text(T.namePlaceholder).yalaFieldPrompt())
                 .font(DS.Typography.title3)
+                .yalaFieldText()
                 .focused($nombreEnfocado)
                 .submitLabel(.next)
                 .onSubmit { if estado.puedeSeguir { seguir() } }

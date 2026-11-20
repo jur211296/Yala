@@ -806,3 +806,19 @@ ocupa su hueco. Saltando a ese instante con `-ss` **antes** de `-i` (un salto po
 **Qué hacer.** Antes de montar, reconstruir la toma con un salto por fotograma a 15 fps y montar sobre esa copia. La receta
 está en `docs/verificacion-google/video-v4-2026-11-16.md` («Cómo se rehace»). Y revisar el montaje con fotogramas del
 resultado, no solo con la tira de la grabación cruda: la tira hecha con `-ss` engaña, porque ella sí ve lo que el montaje pierde.
+
+### SwiftUI: un reloj por parte rehecho en `onChange` llega tarde al `.task(id:)`, y una pulsación larga finita no avisa al soltar (2026-11-20)
+
+**Qué pasó.** Al pasar las intros de Primeros pasos a historias (tocar por mitades, mantener para pausar), dos cosas
+salieron mal y solo las cazó un XCUITest. La primera: tras pasar sola a la parte 2, la historia saltaba a la 3 casi en el
+acto, sin que nadie tocara nada. La segunda: con `onLongPressGesture(minimumDuration: 0.25, …, onPressingChanged:)`,
+mantener pausaba la barra pero al soltar la historia se quedaba quieta para siempre.
+
+**Por qué.** (1) El reloj de la parte se rehacía en un `onChange(of: part)`, pero el `.task(id:)` de la parte nueva
+arrancaba antes y calculaba lo que faltaba con el reloj agotado de la anterior: cero segundos, y a la siguiente. (2) Con
+duración finita, el gesto se completa al cumplirse el tiempo y el cierre de «soltar» no llega con fiabilidad.
+
+**Qué hacer.** (1) Lo que el temporizador lee lo prepara el propio `.task`: el reloj guarda a qué parte pertenece y el
+`.task` lo rehace si ve otra (`TutorialStoryPage.clockPart`). (2) Para «mientras el dedo esté puesto», duración
+`.infinity`: el gesto no se completa nunca y avisa al levantar el dedo. El toque que llega tras una pausa larga se descarta
+(`TutorialStoryLogic.wasAHold`). Medido con `axe touch --down` / `--up` y con `press(forDuration:)` de XCUITest.

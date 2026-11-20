@@ -31,7 +31,9 @@ struct Bienvenida23FinalTests {
         #expect(finished == 0)
 
         center.start(.chartsStep, onFinish: { finished += 1 }, onSkip: { skipped += 1 })
+        // Pulido del 2026-11-20: el paso 6 ya está en Más; tocar «Más» (lo hace el Panel al abrirla) no la cierra.
         center.tabDidChange(to: .more)
+        #expect(center.isActive)
         center.advance()
         #expect(finished == 1)
         #expect(skipped == 1, "terminarla no la omite")
@@ -65,7 +67,6 @@ struct Bienvenida23FinalTests {
         center.skip()
         #expect(finished == 0)
         center.start(.chartsStep) { finished += 1 }
-        center.tabDidChange(to: .more)
         center.advance()
         #expect(finished == 1)
     }

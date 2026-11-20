@@ -50,6 +50,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-19-primeros-pasos-paso-7-y-prueba-maquetas | done | tickets/done/2026-11-19-primeros-pasos-paso-7-y-prueba-maquetas.md |
 | 2026-11-19-solo-gastos-primeros-pasos | done | tickets/done/2026-11-19-solo-gastos-primeros-pasos.md |
 | 2026-11-19-panel-progresivo-primeros-pasos | done | tickets/done/2026-11-19-panel-progresivo-primeros-pasos.md |
+| 2026-11-19-primeros-pasos-pulido | done | tickets/done/2026-11-19-primeros-pasos-pulido.md |
 | 2026-11-20-oferta-de-un-mes-se-cae-en-silencio | backlog | tickets/backlog/2026-11-20-oferta-de-un-mes-se-cae-en-silencio.md |
 | 2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3 | backlog | tickets/backlog/2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3.md |
 | 2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios | done | tickets/done/2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios.md |

@@ -3,14 +3,17 @@
 //  Yala
 //
 //  La página corta de Primeros pasos (patrón E2 del prototipo oficial v35): unas pocas partes que avanzan solas cada
-//  3,4 s con una barra de segmentos arriba, y un botón fijo abajo. La usan «qué son las cuentas» (Y23-07, tres partes)
-//  y «Cuatro maneras de anotar» (Y23-08, cuatro). Accesibilidad de la ficha: con Reducir movimiento o VoiceOver no
-//  avanza sola y solo se funde; tocar la parte (o un segmento) pasa a la siguiente.
+//  3,4 s con una barra de segmentos arriba, y un botón fijo abajo. La usan las intros de los pasos 1 a 5 y el 7.
+//  Desde el pulido del 2026-11-20 se comporta como las historias de Instagram, igual que la vitrina del Welcome: tocar la
+//  mitad derecha avanza, la izquierda vuelve, y mantener el dedo pausa la barra donde está (al soltar sigue con lo que le
+//  quedaba). El reloj y la regla de las mitades son los del Welcome (`WelcomeShowcaseLogic.StoryClock` y `tapStep`).
+//  Accesibilidad de la ficha: con Reducir movimiento o VoiceOver no avanza sola y solo se funde; el gesto «Siguiente» y
+//  los segmentos cambian de parte.
 //
 
 import SwiftUI
 
-/// Cuándo pasa sola a la siguiente parte.
+/// Cuándo pasa sola a la siguiente parte, y a cuál lleva un toque.
 nonisolated enum TutorialStoryLogic {
     /// Lo que dura cada parte (ficha: 3,4 s).
     static let partDuration: Duration = .milliseconds(3400)
@@ -20,71 +23,83 @@ nonisolated enum TutorialStoryLogic {
     /// anotar.
     static let slowPartDuration: Duration = .milliseconds(6000)
 
-    /// Si la página avanza sola: nunca con Reducir movimiento ni con VoiceOver, y nunca desde la última parte.
-    static func advancesAutomatically(part: Int, count: Int, reduceMotion: Bool, voiceOver: Bool) -> Bool {
-        !reduceMotion && !voiceOver && part < count - 1
+    /// Si la página avanza sola: nunca con Reducir movimiento ni con VoiceOver, nunca con el dedo puesto (pausa) y nunca
+    /// desde la última parte.
+    static func advancesAutomatically(part: Int, count: Int, reduceMotion: Bool, voiceOver: Bool,
+                                      paused: Bool = false) -> Bool {
+        !reduceMotion && !voiceOver && !paused && part < count - 1
     }
 
     /// La parte que sigue al tocar: la siguiente, sin pasar de la última.
     static func tapped(part: Int, count: Int) -> Int {
-        min(count - 1, part + 1)
+        stepped(part: part, by: 1, count: count)
+    }
+
+    /// La parte tras un toque en una mitad (+1 la derecha, −1 la izquierda). No da la vuelta: en la primera, la mitad
+    /// izquierda no hace nada, y en la última, la derecha tampoco (el botón de abajo es el que sigue).
+    static func stepped(part: Int, by step: Int, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        return min(count - 1, max(0, part + step))
+    }
+
+    /// Lo que dura una parte, en segundos, para el reloj de las historias.
+    static func seconds(_ duration: Duration) -> TimeInterval {
+        TimeInterval(duration.components.seconds) + TimeInterval(duration.components.attoseconds) / 1e18
+    }
+
+    /// Lo que se mantiene el dedo para que cuente como pausa y no como toque: soltar tras una pausa así no cambia de
+    /// parte.
+    static let pauseAfter: TimeInterval = 0.25
+
+    /// Si un toque que termina ahora fue en realidad una pausa (el dedo estuvo puesto `pauseAfter` o más).
+    static func wasAHold(pressedAt start: Date?, now: Date) -> Bool {
+        guard let start else { return false }
+        return now.timeIntervalSince(start) >= pauseAfter
     }
 }
 
-/// La barra de segmentos: hechos, el de ahora (que se llena mientras dura) y los que faltan.
+/// La barra de segmentos: hechos, el de ahora (con lo que lleva) y los que faltan. El relleno sale del reloj en cada
+/// fotograma, como en el Welcome: con la pausa se queda quieto donde está.
 struct TutorialStorySegments: View {
     let count: Int
     @Binding var part: Int
+    /// Lo que lleva la parte de ahora, de 0 a 1. Sin avance solo (Reducir movimiento o VoiceOver), 1.
+    let progress: (Date) -> Double
     let isRunning: Bool
-    var partDuration: Duration = TutorialStoryLogic.partDuration
 
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            ForEach(0..<count, id: \.self) { index in
-                Button {
-                    part = index
-                } label: {
-                    Capsule()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(height: 4)
-                        .overlay(alignment: .leading) {
-                            if index == part && isRunning {
-                                // El de ahora se llena mientras dura la parte.
-                                SegmentRunningFill(color: theme.accent, duration: partDuration).id(part)
-                            } else if index <= part {
-                                Capsule().fill(theme.accent)
+        TimelineView(.animation(minimumInterval: nil, paused: !isRunning)) { context in
+            let current = progress(context.date)
+            HStack(spacing: DS.Spacing.xs) {
+                ForEach(0..<count, id: \.self) { index in
+                    Button {
+                        part = index
+                    } label: {
+                        Capsule()
+                            .fill(Color.primary.opacity(0.15))
+                            .frame(height: 4)
+                            .overlay(alignment: .leading) {
+                                GeometryReader { proxy in
+                                    Capsule()
+                                        .fill(theme.accent)
+                                        .frame(width: proxy.size.width * WelcomeShowcaseLogic.segmentFill(
+                                            at: index, current: part, progress: current))
+                                }
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.PrimerosPasos23.partOf(index + 1, count))
+                    .accessibilityAddTraits(index == part ? .isSelected : [])
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.PrimerosPasos23.partOf(index + 1, count))
-                .accessibilityAddTraits(index == part ? .isSelected : [])
             }
         }
-    }
-}
-
-/// El relleno del segmento de ahora: de cero a lleno en lo que dura la parte. Solo existe mientras la página avanza sola
-/// (sin Reducir movimiento ni VoiceOver).
-private struct SegmentRunningFill: View {
-    let color: Color
-    let duration: Duration
-    @State private var filled = false
-
-    var body: some View {
-        GeometryReader { proxy in
-            Capsule()
-                .fill(color)
-                .frame(width: filled ? proxy.size.width : 0)
-                .animation(.linear(duration: Double(duration.components.seconds)
-                                   + Double(duration.components.attoseconds) / 1e18), value: filled)
-        }
-        .onAppear { filled = true }
+        // Cambiar de parte llena la anterior y vacía las siguientes en el acto, sin animarlo.
+        .transaction { $0.animation = nil }
     }
 }
 
@@ -101,10 +116,29 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    /// El dedo está puesto sobre la parte: la barra se queda donde está.
+    @State private var paused = false
+    /// Cuándo se puso el dedo por última vez: un toque que llega tras mantenerlo no cambia de parte.
+    @State private var pressedAt: Date?
+    /// El reloj de la parte de ahora: guarda lo que ya corrió para que la pausa no la reinicie.
+    @State private var clock = WelcomeShowcaseLogic.StoryClock()
+    /// La parte a la que pertenece `clock`. El temporizador lo rehace él mismo al ver otra parte: rehecho en un
+    /// `onChange(of: part)`, el temporizador de la parte nueva arrancaba a veces con el reloj agotado de la anterior y se
+    /// saltaba una parte entera (medido el 2026-11-20 en el simulador: de la 1 a la 3).
+    @State private var clockPart = -1
+    /// El ancho de la zona que se toca, para saber en qué mitad cayó el dedo.
+    @State private var stageWidth: CGFloat = 0
+
+    private var canRun: Bool { !reduceMotion && !voiceOver }
 
     private var runs: Bool {
-        TutorialStoryLogic.advancesAutomatically(part: part, count: count, reduceMotion: reduceMotion, voiceOver: voiceOver)
+        TutorialStoryLogic.advancesAutomatically(part: part, count: count, reduceMotion: reduceMotion,
+                                                 voiceOver: voiceOver, paused: paused)
     }
+
+    private var dwell: TimeInterval { TutorialStoryLogic.seconds(partDuration) }
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
@@ -118,17 +152,45 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                 Spacer()
                 Color.clear.frame(width: 44, height: 44)
             }
-            TutorialStorySegments(count: count, part: $part, isRunning: runs, partDuration: partDuration)
+            TutorialStorySegments(
+                count: count,
+                part: $part,
+                progress: { date in
+                    // Sin avance solo, la de ahora va llena; en la última, también (no hay a dónde pasar).
+                    guard canRun && part < count - 1 else { return 1 }
+                    return clockPart == part ? clock.progress(at: date, dwell: dwell) : 0
+                },
+                isRunning: runs
+            )
             ScrollView {
                 content(part)
                     .id(part)
                     .transition(.opacity)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
-                    .onTapGesture { part = TutorialStoryLogic.tapped(part: part, count: count) }
-                    .accessibilityAction(named: L10n.TipKit.next) {
-                        part = TutorialStoryLogic.tapped(part: part, count: count)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stageWidth = $0 }
+                    // Como las historias: la mitad derecha avanza y la izquierda vuelve; mantener el dedo pausa. Los
+                    // botones de dentro (si los hay) ganan su toque.
+                    .onTapGesture(coordinateSpace: .local) { location in
+                        let held = TutorialStoryLogic.wasAHold(pressedAt: pressedAt, now: .now)
+                        pressedAt = nil
+                        guard !held else { return }
+                        let step = WelcomeShowcaseLogic.tapStep(
+                            atX: location.x, width: stageWidth, rightToLeft: layoutDirection == .rightToLeft)
+                        move(to: TutorialStoryLogic.stepped(part: part, by: step, count: count))
                     }
+                    // Duración infinita: el gesto nunca se completa y avisa al levantar el dedo. Con una duración
+                    // finita, al completarse ya no avisaba del «soltar» y la historia se quedaba en pausa (medido en
+                    // XCUITest el 2026-11-20).
+                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: 24, perform: {},
+                                        onPressingChanged: { pressing in
+                                            if pressing { pressedAt = .now }
+                                            paused = pressing
+                                        })
+                    .accessibilityAction(named: L10n.TipKit.next) {
+                        move(to: TutorialStoryLogic.tapped(part: part, count: count))
+                    }
+                    .accessibilityIdentifier("tutorial_story_stage")
             }
             .scrollBounceBehavior(.basedOnSize)
             .animation(reduceMotion ? nil : DS.Animation.appear, value: part)
@@ -139,12 +201,26 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
         }
-        // Una parte nueva rearma el reloj; con VoiceOver o Reducir movimiento no corre.
+        // Una parte nueva rearma el reloj desde cero; la pausa lo congela y al soltar sigue con lo que le quedaba.
         .task(id: TimerKey(part: part, runs: runs)) {
             guard runs else { return }
-            do { try await Task.sleep(for: partDuration) } catch { return }
-            part = TutorialStoryLogic.tapped(part: part, count: count)
+            if clockPart != part {
+                clock = .started(at: .now, running: true)
+                clockPart = part
+            } else if !clock.isRunning {
+                clock.resume(at: .now)
+            }
+            do { try await Task.sleep(for: .seconds(clock.remaining(at: .now, dwell: dwell))) } catch { return }
+            move(to: TutorialStoryLogic.tapped(part: part, count: count))
         }
+        .onChange(of: paused) { _, nowPaused in
+            if nowPaused { clock.pause(at: .now) } else if canRun && clockPart == part { clock.resume(at: .now) }
+        }
+    }
+
+    private func move(to next: Int) {
+        guard next != part else { return }
+        part = next
     }
 
     private struct TimerKey: Equatable {

@@ -1,0 +1,15 @@
+/*
+  PrimerosPasosPulido.strings
+  Yala
+
+  Primeros pasos, pulido del 2026-11-20: «No deseo crear…», el título del paso 4 y el cierre de los pasos 3 y 4.
+  Tabla propia, leída con el idioma de la app (`PrimerosPasosPulidoText`).
+*/
+
+"primerosPasosPulido.budget.noneOption" = "No quiero crear ningún presupuesto";
+"primerosPasosPulido.payment.noneOption" = "No quiero crear ningún pago planificado";
+"primerosPasosPulido.payment.kindQuestion" = "Elige un pago que hagas cada cierto tiempo";
+"primerosPasosPulido.payment.kindAutoDetect" = "También identificaremos automáticamente tus pagos fijos a los 3 meses.";
+"primerosPasosPulido.budget.doneFreeLimit" = "Puedes crear hasta %d presupuestos gratis y medir tus gastos en lo que quieras, al nivel que quieras.";
+"primerosPasosPulido.budget.createAnother" = "Crear otro";
+"primerosPasosPulido.payment.doneFree" = "Puedes crear gratis todos los pagos fijos que quieras y recordar cada gasto que se repite.";

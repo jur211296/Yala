@@ -139,7 +139,7 @@ struct PlaceGuide23Tests {
     @Test func skipping_orLeaving_doesNotFinish() {
         let center = PlaceGuideCenter()
         var finished = 0
-        center.start(.chartsStep) { finished += 1 }
+        center.start(.chartsLater) { finished += 1 }
         center.skip()
         #expect(!center.isActive)
         center.start(.chartsStep) { finished += 1 }

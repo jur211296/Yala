@@ -181,7 +181,8 @@ struct TutorialSelectableTile: View {
                 }
             }
             .padding(DS.Spacing.sm)
-            .frame(maxWidth: .infinity, minHeight: 104, alignment: .top)
+            // Las vecinas de una fila miden lo mismo aunque una ocupe dos líneas (encargo del 2026-11-20).
+            .frame(maxWidth: .infinity, minHeight: 104, maxHeight: .infinity, alignment: .top)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -280,10 +281,12 @@ struct TutorialAmountField: View {
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(currencySymbol).font(DS.Typography.headline).foregroundStyle(.secondary)
-            TextField("", text: $text, prompt: Text(verbatim: prompt).foregroundStyle(.tertiary))
-                .font(DS.Typography.title3.weight(.semibold))
+        // El símbolo y el número en la misma línea base y la misma letra, con aire entre ellos (encargo del 2026-11-20).
+        HStack(alignment: .firstTextBaseline, spacing: YalaFieldPrefix.spacing) {
+            Text(currencySymbol).font(YalaFieldPrefix.font).foregroundStyle(.secondary)
+            TextField("", text: $text, prompt: Text(verbatim: prompt).yalaFieldPrompt())
+                .font(YalaFieldPrefix.font)
+                .yalaFieldText()
                 .amountKeyboard()
                 .focused(focus)
                 .accessibilityLabel(accessibilityLabel)
@@ -292,6 +295,92 @@ struct TutorialAmountField: View {
         .padding(.horizontal, DS.Spacing.md)
         .frame(minHeight: 48)
         .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+    }
+}
+
+/// La salida sin crear nada de la primera pregunta de los pasos 3 y 4 («No deseo crear ningún presupuesto»). Va ARRIBA
+/// de las respuestas: nunca debajo de otro botón (encargo del 2026-11-20). Sustituye a «Omitir este paso» de la intro.
+struct PrimerosPasosDeclineLink: View {
+    let title: String
+    let id: String
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
+            Text(title)
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(.thAccentText)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+}
+
+/// El final de los pasos 3 y 4: lo que se puede crear gratis y, lado a lado, «Crear otro» y «Ver mi Panel» (nunca uno
+/// debajo del otro, encargo del 2026-11-20). Sin sitio para los dos (texto grande), se apilan con el principal arriba.
+struct PrimerosPasosPlanningDoneDock: View {
+    let freeNote: String
+    /// `nil` si no cabe otro (el límite del plan gratis).
+    let anotherTitle: String?
+    let anotherID: String
+    let doneTitle: String
+    let doneID: String
+    let onAnother: () -> Void
+    let onDone: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            Text(freeNote)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("primeros_pasos_free_note")
+            if let anotherTitle {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Spacing.sm) {
+                        another(anotherTitle)
+                        done
+                    }
+                    VStack(spacing: DS.Spacing.sm) {
+                        done
+                        another(anotherTitle)
+                    }
+                }
+            } else {
+                done
+            }
+        }
+    }
+
+    private var done: some View {
+        YalaPrimaryButton(doneTitle, action: onDone)
+            .accessibilityIdentifier(doneID)
+            .primerosPasosButtonText()
+    }
+
+    private func another(_ title: String) -> some View {
+        Button(action: onAnother) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.thAccentText)
+                .lineLimit(1)
+                .padding(.horizontal, DS.Spacing.md)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(Capsule().fill(.thCard))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(anotherID)
     }
 }
 

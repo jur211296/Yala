@@ -63,7 +63,7 @@ t() { # salida esperado(0|1) descripcion [motivo] — evalúa el último `correr
     # también sale 1, y así pasó en la primera versión de este banco (el caso de push «malo» era
     # verde por accidente; lo destapó su control negativo).
     local got=$1 esp=$2 desc=$3 motivo=${4:-}
-    if [ -n "$motivo" ] && ! printf '%s' "$OUT" | grep -qF "$motivo"; then got="$got sin «$motivo»"; fi
+    if [ -n "$motivo" ] && ! printf '%s' "$OUT" | grep -qF "$motivo"; then got="$got sin «${motivo}»"; fi
     if [ "$got" = "$esp" ]; then echo "  ✓ $desc → $got"; ok=$((ok+1))
     else echo "  ✘ $desc → $got (esperado $esp)"; printf '%s\n' "$OUT" | sed 's/^/      /' | tail -6; ko=$((ko+1)); fi
 }

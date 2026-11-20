@@ -1,0 +1,15 @@
+/*
+  PrimerosPasosPulido.strings
+  Yala
+
+  Primeros pasos, pulido del 2026-11-20: «No deseo crear…», el título del paso 4 y el cierre de los pasos 3 y 4.
+  Tabla propia, leída con el idioma de la app (`PrimerosPasosPulidoText`).
+*/
+
+"primerosPasosPulido.budget.noneOption" = "我不想创建预算";
+"primerosPasosPulido.payment.noneOption" = "我不想创建计划付款";
+"primerosPasosPulido.payment.kindQuestion" = "选择一项你定期支付的款项";
+"primerosPasosPulido.payment.kindAutoDetect" = "3 个月后，我们还会自动识别你的固定支出。";
+"primerosPasosPulido.budget.doneFreeLimit" = "你可以免费创建最多 %d 个预算，按你想要的项目和细度追踪支出。";
+"primerosPasosPulido.budget.createAnother" = "再创建一个";
+"primerosPasosPulido.payment.doneFree" = "你可以免费创建任意数量的固定付款，记住每一笔重复的支出。";

@@ -129,7 +129,7 @@ case "${GITHUB_EVENT_NAME:-}" in
         revisar_commits "$base..$head" ${EXCLUIR[@]+--not "${EXCLUIR[@]}"}
         # Lo que escribirá GitHub al mergear. El committer de ese commit es GitHub.
         printf 'Merge pull request #%s from %s\n\n%s\n' "$num" "$rama" "$titulo" > "$TMP/titulo"
-        revisar "$TMP/titulo" "Merge" "merge@github.invalid" "GitHub" "noreply@github.com" "título del PR «$titulo»"
+        revisar "$TMP/titulo" "Merge" "merge@github.invalid" "GitHub" "noreply@github.com" "título del PR «${titulo}»"
         ;;
     push)
         antes=$(evento before); despues=$(evento after)
