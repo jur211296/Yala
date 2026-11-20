@@ -119,3 +119,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Desatascar PRs en serie: TICKETS.md fuera](feedback_desatascar_prs_en_serie_saca_el_indice.md) — índice como en 2.3 y filas al final; el índice de QA por área.
 - [No cerrar hasta ver el PR dentro](feedback_no_cerrar_hasta_ver_el_pr_dentro.md) — 19-nov: auto-merge armado no basta; esperar MERGED y arreglar lo que choque.
 - [El título de Sentry no es la pantalla](feedback_el_titulo_de_sentry_no_es_la_pantalla.md) — 20-nov: lee la pila del evento antes de aceptar el área; el enlazador fusiona funciones gemelas.
+- [Síntoma visual: pregunta pronto con opciones](feedback_un_sintoma_visual_se_pregunta_con_opciones_pronto.md) — 20-nov: el rebote era un gesto que no medía; contestó en minutos.
