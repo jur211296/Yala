@@ -172,7 +172,25 @@ struct WipeDataKeepsAccountWiringTests {
     /// no se podría eliminar nunca. Cualquier otro fallo (red, iCloud ocupado) sí para, con la cuenta todavía viva.
     @Test func privateAccountDeletion_wipesTheICloudZoneBeforeTheServer() throws {
         let service = try Self.source("Yala/Services/CloudSync/AccountDeletionService.swift")
-        let flow = try #require(Self.body(of: "func deleteAccount(context: ModelContext) async", in: service))
+        let whole = try #require(Self.body(of: "func deleteAccount(context: ModelContext) async", in: service))
+        // La rama de iCloud privado sin cuenta de Yala (2026-11-19) va antes y repite dos piezas: tiene su propio orden, y el
+        // de la D se lee sin ella.
+        let iCloudStart = try #require(whole.range(of: "if iCloudOnly {"))
+        let iCloudEnd = try #require(whole.range(of: "if privateCell {"))
+        let iCloudBranch = String(whole[iCloudStart.lowerBound..<iCloudEnd.lowerBound])
+        let iCloudMarks = [
+            "if let reason = await deps.iCloudDeletionBlock(context) {",
+            "phase = .failed(step: .iCloudPrivateBlocked)",
+            "guard await deps.wipePrivateICloud() else {",
+            "phase = .failed(step: .personalWipe)",
+            "await closeLocally(context: context, privateCell: true, completedStep: \"icloudPrivate\")",
+        ]
+        let iCloudPos = try #require(Self.offsets(iCloudMarks, in: iCloudBranch), "Falta una pieza de la rama de iCloud privado")
+        #expect(iCloudPos == iCloudPos.sorted(), "iCloud privado: frenos → zona de iCloud → cierre local")
+        #expect(!iCloudBranch.contains("deletePersonalAccount") && !iCloudBranch.contains("forgetGroupsUser"),
+                "la rama de iCloud privado no llama al servidor")
+        // La D, sin la rama de iCloud privado en medio.
+        let flow = whole.replacingOccurrences(of: iCloudBranch, with: "")
         let marks = [
             // La celda se decide con la cuenta viva; con la marca de un cierre a medias es la D (ticket
             // `account-deletion-private-close-has-no-durable-intent`).
@@ -197,7 +215,7 @@ struct WipeDataKeepsAccountWiringTests {
         let src = try Self.source("Yala/Services/CloudSync/AccountDeletionService.swift")
         #expect(src.contains("closeLocalPrivate: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionPrivate(context: $0) },"))
         #expect(src.contains("let privateCell = pendingPrivateClose || (!deps.storageModeIsCloud() && deps.hasPrivateSession())"))
-        #expect(src.contains("private func closeLocally(context: ModelContext, privateCell: Bool) async {"))
+        #expect(src.contains("private func closeLocally(context: ModelContext, privateCell: Bool, completedStep: String = \"groupsOnly\") async {"))
         #expect(src.contains("if !privateCell {"))
         #expect(src.contains("if await deps.closeLocalPrivate(context) {"))
     }

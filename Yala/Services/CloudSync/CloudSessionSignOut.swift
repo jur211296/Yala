@@ -2676,6 +2676,43 @@ final class CloudSessionSignOut {
     /// (`accountDeletionProceedsWithoutICloud`): fallaría en cada reintento y la cuenta no se podría eliminar nunca (review
     /// adversarial). Se sigue con lo de este dispositivo y queda el canario.
     func wipeICloudBeforeAccountDeletion() async -> Bool {
+        await wipeICloudForAccountDeletion()
+    }
+
+    /// **«Eliminar mi cuenta» en iCloud privado sin cuenta de Yala (C): ¿hay algo que lo pare antes de tocar nada?** (revisor
+    /// con checklist del 2026-11-19). Los dos frenos del «Cerrar sesión» de esta celda, en su orden: una migración entre
+    /// iCloud y la nube que no está en reposo (`migrationBlockReason`, el mismo predicado y lector que
+    /// `blockIfMigrationNotAtRest`) y los cambios de grupos sin subir (`.sessionExpired`: su texto pide volver a entrar).
+    /// `nil` = sigue.
+    ///
+    /// **Los cambios de grupos** (ítem `cierre-sin-perder-lo-pendiente`). Una sesión de grupos que caducó puede dejar filas en
+    /// el outbox: en la D el servidor ya borró esa cuenta, pero en la C sigue viva, y el cierre local purga el outbox y el
+    /// arranque se lleva el store. Lo de grupos es de más gente, así que aquí se para ANTES de tocar iCloud, como el «Cerrar
+    /// sesión» de esta celda (`captureGroupsBeforeCountingThem` + `blockIfGroupsCannotUpload`). Sin oferta de perderlos: la
+    /// salida es volver a entrar, que los sube.
+    ///
+    /// Mismo atajo que ese cierre: sin filas en el outbox, sin grupos del canal backend y sin entradas del espejo, no hay nada
+    /// que subir y no se espera ni se guarda nada. Sin quiescencia no se captura (un `save()` a medio import es el trap de
+    /// SwiftData) y bloquea: reintentar es el gesto entero. Una captura que no termina y deja cambios fuera también bloquea.
+    func iCloudAccountDeletionBlock(
+        context: ModelContext, witness: GroupsExitWitness = .live
+    ) async -> CloudSignOutFlowLogic.BlockReason? {
+        let reading = migrationRestReadingOverride?() ?? MigrationRestReading.live
+        if let reason = CloudSignOutFlowLogic.migrationBlockReason(kind: .privateOnly, reading: reading) { return reason }
+        let scope = GroupsSyncClient.MirrorPendingScope.sessionOwnerOrEveryoneWhenSignedOut
+        guard Self.liveGroupsPendingCount(context: context) > 0 || Self.hasBackendGroupRows(context: context)
+                || witness.mirrorPending(context, scope) > 0 else { return nil }
+        guard await Self.awaitPersonalQuiescenceForGroupsSignOut() else { return .sessionExpired }
+        // Con sus reintentos, como toda captura de una salida (`captureGroupsForExit`).
+        let capture = await captureGroupsForExit(context: context, witness: witness)
+        let verdict = CloudSignOutFlowLogic.groupsCaptureVerdict(
+            captureCompleted: capture == .completed,
+            livePendingCount: Self.liveGroupsPendingCount(context: context),
+            unrehydratedMirrorCount: witness.mirrorPending(context, scope))
+        return verdict == .drained ? nil : .sessionExpired
+    }
+
+    private func wipeICloudForAccountDeletion() async -> Bool {
         guard let failure = await ICloudPersonalCorpusProbe.wipe() else { return true }
         if Self.accountDeletionProceedsWithoutICloud(failure) {
             MetricsService.canary(.freshStartWipeFailed, detail: "accountDeletePrivateNoICloud:\(failure)")
@@ -2706,6 +2743,9 @@ final class CloudSessionSignOut {
     ///
     /// **Desde la quiescencia hasta el borrado no hay ni un `await`** (review adversarial): un `save()` a medio import es
     /// el trap no atrapable de SwiftData, y una espera entre la medida y el borrado la dejaría caducar.
+    ///
+    /// **Desde el 2026-11-19 lo usa también «Eliminar mi cuenta» en iCloud privado sin cuenta de Yala (C)**: allí no hay
+    /// servidor, y `AccountDeletionService` llega aquí tras `wipeICloudBeforeAccountDeletion`. El resto es idéntico.
     func closeLocalAfterAccountDeletionPrivate(context: ModelContext) async -> Bool {
         phase = .working
         CloudSyncBreadcrumb.signOutStarted(path: "account-delete-private")

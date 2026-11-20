@@ -74,6 +74,9 @@ final class AccountDeletionService {
         case delete         // POST /account/delete falló
         case personalWipe   // D: el borrado de la zona de iCloud no llegó; el servidor no se tocó
         case localClose     // la quiescencia del cierre local no llegó
+        /// C (iCloud privado sin cuenta de Yala): algo lo para antes de tocar nada —una migración a medias o cambios de
+        /// grupos sin subir—. El motivo, en `iCloudPrivateBlockReason`.
+        case iCloudPrivateBlocked
     }
 
     enum Phase: Equatable {
@@ -87,6 +90,9 @@ final class AccountDeletionService {
     }
 
     private(set) var phase: Phase = .idle
+
+    /// Por qué paró «Eliminar mi cuenta» en iCloud privado (`.failed(.iCloudPrivateBlocked)`): elige el texto del aviso.
+    private(set) var iCloudPrivateBlockReason: CloudSignOutFlowLogic.BlockReason?
 
     /// Encargo S27i (review adversarial): el servidor ya borró la cuenta en ESTE intento y lo que falló fue el cierre local.
     /// El reintento salta los pasos de servidor: repetirlos con la cuenta ya borrada dura lo que el JWT —el borrado se lleva
@@ -116,6 +122,8 @@ final class AccountDeletionService {
         /// y el reintento entero sigue siendo posible. Las filas de este dispositivo van en el cierre, sin red.
         var wipePrivateICloud: @MainActor () async -> Bool
         var closeLocalPrivate: @MainActor (ModelContext) async -> Bool
+        /// C: lo que para el borrado antes de tocar nada (`CloudSessionSignOut.iCloudAccountDeletionBlock`); `nil` = sigue.
+        var iCloudDeletionBlock: @MainActor (ModelContext) async -> CloudSignOutFlowLogic.BlockReason?
         /// D7 (§3.3.4.2): higiene post-delete BEST-EFFORT. `clearCloudBeacon` no lanza (KV removeObject);
         /// `deleteCloudKitMarker` sí (fetch/save) y el flujo lo TRAGA — jamás condición del cierre.
         var clearCloudBeacon: @MainActor () -> Void
@@ -165,6 +173,7 @@ final class AccountDeletionService {
             closeLocalCloud: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionCloud() },
             wipePrivateICloud: { await CloudSessionSignOut.shared.wipeICloudBeforeAccountDeletion() },
             closeLocalPrivate: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionPrivate(context: $0) },
+            iCloudDeletionBlock: { await CloudSessionSignOut.shared.iCloudAccountDeletionBlock(context: $0) },
             clearCloudBeacon: {
                 CloudBeacon().clearCloudAccountLinked()
                 CloudSyncBreadcrumb.accountDeletionBeaconCleared()
@@ -250,7 +259,11 @@ final class AccountDeletionService {
         // La marca de OTRA cuenta no cuenta: borrar la cuenta viva va entero, servidor incluido.
         let pendingPrivateClose = deps.pendingPrivateClose() && !deps.pendingCloseIsForAnotherLiveSession()
         let serverAlreadyDeleted = serverSideDeleted || pendingPrivateClose
-        guard serverAlreadyDeleted || deps.canDelete() else { return }
+        // iCloud privado SIN cuenta de Yala (C), decisión de Jürgen del 2026-11-19: también tiene «Eliminar mi cuenta». No
+        // hay servidor que borrar: se va la zona de Yala de su iCloud y, después, lo de este teléfono.
+        let iCloudOnly = !serverAlreadyDeleted && !deps.canDelete()
+            && !deps.storageModeIsCloud() && deps.hasPrivateSession()
+        guard serverAlreadyDeleted || deps.canDelete() || iCloudOnly else { return }
 
         // El cierre local llega tras varias llamadas de red: la ventana que lo pidió se anota ya (varias ventanas).
         SceneRegistry.shared.noteSignOutRequested()
@@ -262,6 +275,26 @@ final class AccountDeletionService {
 
         if serverAlreadyDeleted {
             await closeLocally(context: context, privateCell: privateCell)
+            return
+        }
+
+        // C: el mismo orden que la D sin los pasos del servidor. La zona de iCloud primero —es lo que puede fallar por algo
+        // que la persona no controla—, y con ella fallida no se toca nada de este teléfono: «Reintentar» repite el gesto.
+        if iCloudOnly {
+            // Los frenos del «Cerrar sesión» de esta celda: una migración a medias, o cambios de grupos sin subir (lo de grupos
+            // es de más gente). Paran antes de tocar iCloud.
+            if let reason = await deps.iCloudDeletionBlock(context) {
+                iCloudPrivateBlockReason = reason
+                MetricsService.accountDeletionFailed(step: Step.iCloudPrivateBlocked.rawValue)
+                phase = .failed(step: .iCloudPrivateBlocked)
+                return
+            }
+            guard await deps.wipePrivateICloud() else {
+                MetricsService.accountDeletionFailed(step: Step.personalWipe.rawValue)
+                phase = .failed(step: .personalWipe)
+                return
+            }
+            await closeLocally(context: context, privateCell: true, completedStep: "icloudPrivate")
             return
         }
 
@@ -341,7 +374,7 @@ final class AccountDeletionService {
 
     /// 4c) El cierre local por celda. Lo llama también el reintento cuando el servidor ya se borró (`serverSideDeleted` o la
     /// marca durable de la D).
-    private func closeLocally(context: ModelContext, privateCell: Bool) async {
+    private func closeLocally(context: ModelContext, privateCell: Bool, completedStep: String = "groupsOnly") async {
         // 4c) Cierre LOCAL por celda, reusando la red terminal de CloudSessionSignOut. El solo-grupos sin sesión
         // privada (F) cierra como la nube: su dispositivo no guarda nada privado que conservar, y el cierre de
         // solo-grupos lo dejaría en una shell de grupos sin sesión ni cuenta (paso 9 del rediseño).
@@ -359,7 +392,7 @@ final class AccountDeletionService {
             // cierran grupos y sesión y se arma el relanzamiento al Welcome. Lo único que puede pararlo es la quiescencia.
             // El paso conserva su nombre en la serie de métricas.
             if await deps.closeLocalPrivate(context) {
-                MetricsService.accountDeletionCompleted(step: "groupsOnly")
+                MetricsService.accountDeletionCompleted(step: completedStep)
                 serverSideDeleted = false
                 // El borrado ya está armado: lo que falte lo hace el arranque. Un kill entre el arm y esta línea lo cubre el
                 // boot-wipe, que retira también la marca (`performSignOutWipeIfArmed`).

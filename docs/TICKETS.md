@@ -52,6 +52,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-19-panel-progresivo-primeros-pasos | done | tickets/done/2026-11-19-panel-progresivo-primeros-pasos.md |
 | 2026-11-20-oferta-de-un-mes-se-cae-en-silencio | backlog | tickets/backlog/2026-11-20-oferta-de-un-mes-se-cae-en-silencio.md |
 | 2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3 | backlog | tickets/backlog/2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3.md |
+| 2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios | done | tickets/done/2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios.md |
+| 2026-11-19-icloud-privado-eliminar-mi-cuenta | qa | tickets/qa/2026-11-19-icloud-privado-eliminar-mi-cuenta.md |
 | 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |
 | 2026-11-19-nuevo-registro-limpio-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-limpio-maquetas.md |
 | 2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1 | done | tickets/done/2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1.md |

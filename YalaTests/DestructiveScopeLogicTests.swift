@@ -36,10 +36,13 @@ struct DestructiveScopeLogicTests {
     @Test func cloudLabelForOperation_accountOperationsAlwaysNameTheAccount() {
         let alwaysAccount: Set<String> = ["deleteAccountCloud", "deleteAccountGroupsOnly",
                                           "deleteAccountGroupsOnlyNoPrivate", "signOutGroupsOnly"]
+        // Sin cuenta de Yala (2026-11-19) lo que se borra en la nube es su iCloud, en cualquier modo.
+        let alwaysICloud: Set<String> = ["deleteAccountICloud", "deleteAccountICloudWithGroups"]
         for op in Op.allCases {
             for mode in [StorageMode.icloud, .cloud] {
                 let expected: DestructiveScopeLogic.CloudLabel = alwaysAccount.contains("\(op)")
-                    ? .cloudAccount : DestructiveScopeLogic.cloudLabel(storageMode: mode)
+                    ? .cloudAccount
+                    : alwaysICloud.contains("\(op)") ? .icloud : DestructiveScopeLogic.cloudLabel(storageMode: mode)
                 #expect(DestructiveScopeLogic.cloudLabel(for: op, storageMode: mode) == expected, "\(op) \(mode)")
             }
         }
@@ -70,6 +73,8 @@ struct DestructiveScopeLogicTests {
             case .deleteAccountCloud:             return ([.destructive, .destructive, .neutral], false, [.crossRefer, .frozenICloud])
             case .deleteAccountGroupsOnly:        return ([.destructive, .destructive, .neutral], false, [.crossRefer])
             case .deleteAccountGroupsOnlyNoPrivate: return ([.destructive, .destructive, .neutral], false, [.crossRefer])
+            case .deleteAccountICloud:            return ([.destructive, .destructive, .preserved], false, [])
+            case .deleteAccountICloudWithGroups:  return ([.destructive, .destructive, .neutral], false, [])
             case .signOutPrivate:                 return ([.neutral, .preserved, .preserved], true, [])
             case .signOutPrivateNoCopy:           return ([.destructive, .destructive, .preserved], false, [.noICloudCopy])
             case .signOutPrivateWithGroups:       return ([.neutral, .preserved, .neutral], true, [])
@@ -112,6 +117,9 @@ struct DestructiveScopeLogicTests {
                                       return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
             case .deleteAccountGroupsOnlyNoPrivate:
                                       return debt ? [.viewGroups] : []
+            // iCloud privado sin cuenta de Yala (2026-11-19): lo personal se va para siempre; sin cuenta, sin deudas que ver.
+            case .deleteAccountICloud, .deleteAccountICloudWithGroups:
+                                      return [.exportBefore]
             case .signOutPrivateNoCopy, .signOutPrivateWithGroupsNoCopy:
                                       return [.exportBefore]
             default:                  return []
@@ -130,8 +138,8 @@ struct DestructiveScopeLogicTests {
         let offering = Op.allCases.filter {
             DestructiveScopeLogic.model(operation: $0, cloudLabel: .icloud).secondaryActions.contains(.exportBefore)
         }
-        #expect(Set(offering) == [.wipeDataFull, .deleteAccountCloud, .deleteAccountGroupsOnly, .signOutPrivateNoCopy,
-                                  .signOutPrivateWithGroupsNoCopy])
+        #expect(Set(offering) == [.wipeDataFull, .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountICloud,
+                                  .deleteAccountICloudWithGroups, .signOutPrivateNoCopy, .signOutPrivateWithGroupsNoCopy])
     }
 
     @Test func wipeDataFull_cloud_addsMultiDeviceResidual() {
@@ -209,11 +217,15 @@ struct DestructiveScopeLogicTests {
     }
 
     @Test func deleteAccountOperation_perCell() {
-        #expect(DestructiveScopeLogic.deleteAccountOperation(storageMode: .cloud, hasPrivateSession: true) == .deleteAccountCloud)
-        #expect(DestructiveScopeLogic.deleteAccountOperation(storageMode: .cloud, hasPrivateSession: false) == .deleteAccountCloud)
-        #expect(DestructiveScopeLogic.deleteAccountOperation(storageMode: .icloud, hasPrivateSession: true) == .deleteAccountGroupsOnly)
-        #expect(DestructiveScopeLogic.deleteAccountOperation(storageMode: .icloud, hasPrivateSession: false)
-                == .deleteAccountGroupsOnlyNoPrivate)
+        // Con cuenta de Yala; sin ella (celda C) lo fija `EliminarCuentaICloudLogicTests`.
+        func op(_ mode: StorageMode, _ privateSession: Bool) -> Op {
+            DestructiveScopeLogic.deleteAccountOperation(storageMode: mode, hasPrivateSession: privateSession,
+                                                         hasYalaAccount: true, deviceHasGroupRows: false)
+        }
+        #expect(op(.cloud, true) == .deleteAccountCloud)
+        #expect(op(.cloud, false) == .deleteAccountCloud)
+        #expect(op(.icloud, true) == .deleteAccountGroupsOnly)
+        #expect(op(.icloud, false) == .deleteAccountGroupsOnlyNoPrivate)
     }
 
     @Test func requiresNoCopyConfirmation_onlyTheTwoNoCopySignOuts() {
@@ -332,12 +344,12 @@ struct SignOutRowIdentifiersTests {
         }
     }
 
-    @Test("la hoja destructiva nombra su escenario, y las once operaciones dan ids únicos")
+    @Test("la hoja destructiva nombra su escenario, y las trece operaciones dan ids únicos")
     func destructiveSheet_namesItsScenario() {
         let ids = DestructiveScopeLogic.Operation.allCases.map {
             DestructiveScopeSheet.Config.scenarioIdentifier(for: $0)
         }
-        #expect(ids.count == 11)
+        #expect(ids.count == 13)  // + las dos de «Eliminar mi cuenta» en iCloud privado (2026-11-19)
         #expect(Set(ids).count == ids.count, "Dos operaciones comparten identifier de escenario: \(ids.sorted()).")
         #expect(ids.allSatisfy { $0.hasPrefix("destructive_scope_sheet_") })
     }

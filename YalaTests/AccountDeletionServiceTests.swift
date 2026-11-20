@@ -62,6 +62,7 @@ struct AccountDeletionServiceTests {
             closeLocalCloud: { c.events.append("closeCloud"); return c.closedInPlace },
             wipePrivateICloud: { c.events.append("wipeICloud"); return c.wipeICloudResult },
             closeLocalPrivate: { _ in c.events.append("closePrivate"); return c.closePrivateResult },
+            iCloudDeletionBlock: { _ in c.events.append("groupsCheck"); return nil },
             clearCloudBeacon: { c.events.append("clearBeacon") },
             deleteCloudKitMarker: { _ in
                 c.events.append("deleteMarker")
