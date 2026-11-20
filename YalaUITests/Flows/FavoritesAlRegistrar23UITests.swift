@@ -89,7 +89,7 @@ final class FavoritesAlRegistrar23UITests: XCTestCase {
         XCTAssertTrue(app.buttons["new_transaction_favorite_chip_Café"].waitForExistence(timeout: 5),
                       "En «Gasto» sale el favorito de gasto.")
 
-        app.buttons["new_transaction_type_income"].tap()
+        app.chooseNewTransactionType("income")
         XCTAssertTrue(app.buttons["new_transaction_favorite_chip_Sueldo"].waitForExistence(timeout: 5),
                       "En «Ingreso» sale el favorito de ingreso.")
         capture(app, "69-ingreso-solo-favoritos-de-ingreso")

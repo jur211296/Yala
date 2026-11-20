@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "New expense";
+"nr.title.newIncome" = "New income";
+"nr.title.newTransfer" = "New transfer";
+"nr.title.editExpense" = "Edit expense";
+"nr.title.editIncome" = "Edit income";
+"nr.title.editTransfer" = "Edit transfer";
+"nr.title.duplicateExpense" = "Duplicate expense";
+"nr.title.duplicateIncome" = "Duplicate income";
+"nr.title.duplicateTransfer" = "Duplicate transfer";
+"nr.title.a11yChangeType" = "Change type";
+"nr.favorites.label" = "Favourites";
+"nr.favorites.seeAll" = "See all";
+"nr.currency.accountsCount.one" = "1 account";
+"nr.currency.accountsCount.other" = "%d accounts";
+"nr.currency.a11y" = "Amount currency";
+"nr.more.a11y" = "More options";
+"nr.more.splitState.all" = "It’s all yours";
+"nr.more.splitState.mine" = "Your share: %@";
+"nr.more.favorite" = "Save as favourite";
+"nr.more.recurring" = "Make recurring";
+"nr.more.recurringState.once" = "Just once";
+"nr.save.withAmount" = "Save %@";
+"nr.addAnother" = "Add another";
+"nr.saved.toast.expense" = "Expense saved";
+"nr.saved.toast.income" = "Income saved";
+"nr.saved.toast.transfer" = "Transfer saved";
+"nr.success.saved.expense" = "Expense saved";
+"nr.success.saved.income" = "Income saved";
+"nr.success.saved.transfer" = "Transfer saved";
+"nr.success.favorite" = "Favourite";
+"nr.success.favorited" = "In favourites";
+"nr.success.recurring" = "Recurring";
+"nr.tags.a11yNone" = "Tags, none added";
+"nr.tags.a11yCount" = "Tags, %d added: %@";
+"nr.need.a11yChange" = "Change need";

@@ -83,7 +83,8 @@ final class RecordsDetailSheetUITests: XCTestCase {
         XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle (transaction_detail_edit).")
         editButton.tap()
 
-        let delete = app.buttons["new_transaction_delete_action"]
+        // Desde la hoja B1, Eliminar vive en «···».
+        let delete = app.openNewTransactionMoreAction("new_transaction_delete_action")
         XCTAssertTrue(delete.waitForExistence(timeout: 5), "El editor de un registro guardado no ofreció Eliminar.")
         delete.tap()
 
@@ -135,16 +136,22 @@ final class RecordsDetailSheetUITests: XCTestCase {
         XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle.")
         editButton.tap()
 
-        let duplicate = app.buttons["new_transaction_duplicate_action"]
-        let delete = app.buttons["new_transaction_delete_action"]
+        // Desde la hoja B1, Duplicar y Eliminar viven en «···».
+        let duplicate = app.openNewTransactionMoreAction("new_transaction_duplicate_action")
+        let delete = app.buttons["new_transaction_delete_action"].firstMatch
         XCTAssertTrue(duplicate.waitForExistence(timeout: 5), "El editor de un registro guardado no ofreció Duplicar.")
         XCTAssertTrue(delete.exists, "El editor de un registro guardado no ofreció Eliminar.")
 
         duplicate.tap()
+        XCTAssertTrue(duplicate.waitForNonExistence(timeout: 5), "El menú «···» no se cerró tras Duplicar.")
 
-        XCTAssertTrue(delete.waitForNonExistence(timeout: 5),
-                      "Tras Duplicar, Eliminar sigue ahí: borraría el original, no la copia sin guardar.")
-        XCTAssertFalse(duplicate.exists, "Tras Duplicar, Duplicar sigue ahí.")
+        // Tras Duplicar, el menú ya no ofrece ninguno de los dos.
+        let favorite = app.openNewTransactionMoreAction("new_transaction_favorite_action")
+        XCTAssertTrue(favorite.waitForExistence(timeout: 5), "No se abrió «···» en la copia.")
+        XCTAssertFalse(app.buttons["new_transaction_delete_action"].exists,
+                       "Tras Duplicar, Eliminar sigue ahí: borraría el original, no la copia sin guardar.")
+        XCTAssertFalse(app.buttons["new_transaction_duplicate_action"].exists, "Tras Duplicar, Duplicar sigue ahí.")
+        app.dismissNewTransactionMoreMenu()
 
         // Cerrar sin guardar la copia: el editor se va (con una hoja arriba, el fondo sigue en el árbol, así que se mira
         // que el editor desaparezca, no que exista la lista).

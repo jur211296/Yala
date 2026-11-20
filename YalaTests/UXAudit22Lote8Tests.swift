@@ -116,10 +116,12 @@ struct UXAudit22Lote8WiringTests {
 
     @Test func groupRecord_editorHidesDuplicateDeleteAndRecurring() throws {
         let code = try Self.code("Yala/App/Views/Transactions/NewTransactionView.swift")
-        let bar = try #require(code.components(separatedBy: "private var quickActionsBar: some View {").dropFirst().first)
-        let body = bar.components(separatedBy: "private func quickActionButton(").first ?? ""
-        #expect(body.components(separatedBy: "if isEditingSavedRecord && !isBridgedReadOnly {").count == 3,
+        // Desde la hoja B1 (2026-11-20) las acciones viven en el menú «···»: Duplicar y Eliminar en un solo bloque.
+        let bar = try #require(code.components(separatedBy: "private var moreOptionsMenu: some View {").dropFirst().first)
+        let body = bar.components(separatedBy: "private var moreSplitState: String {").first ?? ""
+        #expect(body.components(separatedBy: "if isEditingSavedRecord && !isBridgedReadOnly {").count == 2,
                 "Duplicar y Eliminar tienen que esconderse en lo que viene de un grupo")
+        #expect(body.contains("new_transaction_duplicate_action") && body.contains("new_transaction_delete_action"))
         #expect(body.contains("if !viewModel.isTransfer && !isBridgedReadOnly {"),
                 "Recurrente tiene que esconderse en lo que viene de un grupo")
         #expect(!body.contains(".disabled(isBridgedCasoA)"), "vuelven los botones grises que no responden")

@@ -106,7 +106,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
     func test_missingLine_inATransfer_staysUntilBothAccountsAreChosen() {
         let app = launch() // dos cuentas y ninguna usada: origen y destino vacíos (L2-1)
         openForm(app)
-        app.buttons["new_transaction_type_transfer"].tap()
+        app.chooseNewTransactionType("transfer")
         typeAmount(app, "10")
         dismissKeyboard(app)
         let line = element(app, "new_transaction_missing_line")
@@ -265,8 +265,11 @@ final class TransactionFormDecided02UITests: XCTestCase {
         // «Editar» no abre nada mientras el formulario aún se cierra (el ancla no está libre).
         XCTAssertTrue(formIsGone(app))
         edit.tap()
-        XCTAssertTrue(app.buttons["new_transaction_delete_action"].waitForExistence(timeout: 8),
+        // Desde la hoja B1, Eliminar vive en «···»: que lo ofrezca dice que es la edición del guardado.
+        XCTAssertTrue(app.buttons["new_transaction_more"].waitForExistence(timeout: 8), "«Editar» no abrió el formulario.")
+        XCTAssertTrue(app.openNewTransactionMoreAction("new_transaction_delete_action").waitForExistence(timeout: 5),
                       "«Editar» debía abrir el registro guardado en edición.")
+        app.dismissNewTransactionMoreMenu()
     }
 
     // MARK: - L2-6 · Transferencia con una sola cuenta
@@ -274,7 +277,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
     func test_transferWithOneAccount_createAnother_comesBackAsDestination() {
         let app = launch(seed: "una-cuenta")
         openForm(app)
-        app.buttons["new_transaction_type_transfer"].tap()
+        app.chooseNewTransactionType("transfer")
 
         let destination = app.buttons["new_transaction_destination_chip"]
         XCTAssertTrue(destination.waitForExistence(timeout: 5))
@@ -322,7 +325,8 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         let chip = app.buttons["new_transaction_date_chip"]
         XCTAssertTrue(chip.waitForExistence(timeout: 5))
-        let today = chip.label
+        // Desde la hoja B1 el chip se lee «Fecha» y su valor es el día («Hoy»).
+        let today = chip.value as? String
         chip.tap()
 
         let yesterday = app.buttons["date_quick_yesterday"]
@@ -330,7 +334,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         yesterday.tap()
 
         XCTAssertTrue(yesterday.waitForNonExistence(timeout: 5), "Un toque en un atajo aplica y cierra la hoja.")
-        XCTAssertNotEqual(chip.label, today, "La fecha debía pasar a ayer.")
+        XCTAssertNotEqual(chip.value as? String, today, "La fecha debía pasar a ayer.")
     }
 
     func test_date_scheduledPaymentsLink_opensOnTop_andKeepsTheForm() {
@@ -378,6 +382,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
 
         let save = app.buttons["new_transaction_save"]
         XCTAssertTrue(save.isEnabled, "Con el favorito puesto, «Guardar» debía estar activo.")
+        // El favorito abre el teclado en el importe y, desde la hoja B1, los favoritos se pliegan: se toca quieto.
+        _ = app.keyboards.firstMatch.waitForExistence(timeout: 2)
+        XCTAssertTrue(app.waitForSettledLayout(of: save), "«Guardar» no dejó de moverse.")
         save.tap()
         app.dismissTransactionSuccess()
     }
@@ -396,16 +403,14 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         // Desde la decisión 69 de 2.3 la fila de favoritos solo enseña los del tipo elegido: en «Gasto», que es como abre
         // el formulario, «Ahorro del mes» no sale (lo fija `FavoritesAlRegistrar23UITests`). Se entra por «Transferencia».
-        let transfer = app.buttons["new_transaction_type_transfer"]
-        XCTAssertTrue(transfer.waitForExistence(timeout: 5))
-        transfer.tap()
+        app.chooseNewTransactionType("transfer")
         XCTAssertTrue(element(app, "new_transaction_missing_line").waitForExistence(timeout: 5),
                       "Control: en «Transferencia» sin favorito faltan origen, destino o monto.")
         let saving = app.buttons["new_transaction_favorite_chip_Ahorro del mes"]
         XCTAssertTrue(saving.waitForExistence(timeout: 5), "En «Transferencia» debía salir el favorito «Ahorro del mes».")
         saving.tap()
 
-        XCTAssertTrue(transfer.isSelected, "Debía quedarse en Transferencia.")
+        XCTAssertTrue(app.buttons["new_transaction_source_chip"].exists, "Debía quedarse en Transferencia.")
         XCTAssertTrue(element(app, "new_transaction_missing_line").waitForNonExistence(timeout: 5),
                       "Con origen, destino y monto no debía faltar nada.")
         XCTAssertTrue(app.buttons["new_transaction_save"].isEnabled)
@@ -420,7 +425,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         typeAmount(app, "40")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_recurring_action"].tap()
+        app.tapNewTransactionMoreAction("new_transaction_recurring_action")
 
         for id in ["recurring_quick_weekly", "recurring_quick_monthly", "recurring_quick_yearly", "recurring_quick_more"] {
             XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5), "Falta la fila \(id) en «Hacer recurrente».")
@@ -447,7 +452,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         note.typeText("Gimnasio")
         typeAmount(app, "120")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_recurring_action"].tap()
+        app.tapNewTransactionMoreAction("new_transaction_recurring_action")
 
         let more = app.buttons["recurring_quick_more"]
         XCTAssertTrue(more.waitForExistence(timeout: 5))

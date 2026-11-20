@@ -35,6 +35,11 @@ struct TransactionSuccessData {
 
 // MARK: - Transaction Success View
 
+/// La pantalla de éxito minimalista (elegida por Jürgen el 2026-11-20 sobre la ronda 2 de Nuevo registro): «Editar»
+/// arriba, un check pequeño en el color del tipo junto a «Gasto guardado», el monto grande con la descripción suelta encima
+/// y una tarjeta sin rótulos con los datos por importancia (`TransactionSuccessFieldOrder`: fecha, cuenta, subcategoría,
+/// naturaleza y etiquetas si tiene). Debajo, «Favorito» y «Recurrente» (en una transferencia solo «Favorito») y, al
+/// pie, «Registrar otro» y «Aceptar» lado a lado. Los rótulos que no se ven, VoiceOver los lee.
 struct TransactionSuccessView: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -43,41 +48,37 @@ struct TransactionSuccessView: View {
         return f
     }()
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
-
     let data: TransactionSuccessData
+    /// Ya está en favoritos: el botón lo dice y no se vuelve a abrir.
+    var isFavorited: Bool = false
     let onAccept: () -> Void
     let onCreateAnother: () -> Void
     let onEdit: () -> Void
+    var onFavorite: (() -> Void)? = nil
+    var onRecurring: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @State private var showHero = false
-    @State private var showCheckmark = false
-    @State private var showAmount = false
     @State private var showDetails = false
     @State private var showActions = false
 
     private var typeColor: Color { data.transactionType.color }
 
+    private var savedTitle: String {
+        switch data.transactionType {
+        case .expense: return NuevoRegistroB1Text.string("success.saved.expense")
+        case .income: return NuevoRegistroB1Text.string("success.saved.income")
+        case .transfer: return NuevoRegistroB1Text.string("success.saved.transfer")
+        }
+    }
+
     var body: some View {
         ZStack {
             theme.background.ignoresSafeArea()
 
-            // Subtle background glow
-            RadialGradient(
-                colors: [typeColor.opacity(0.06), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 200
-            )
-            .frame(height: 300)
-            .blur(radius: 40)
-            .offset(y: -60)
-
             VStack(spacing: DS.Spacing.none) {
-                // Edit button at top right - native iOS style (inverted)
                 HStack {
                     Spacer()
                     Button(L10n.Action.edit, action: onEdit)
@@ -87,112 +88,24 @@ struct TransactionSuccessView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.lg)
 
-                // El centro reparte su alto con `Spacer`s y no tenía scroll: en un iPhone SE no cabía ni a tamaño
-                // normal, y «¡Listo!» y «Editar» se salían por arriba y «Registrar otro» por abajo (medido el
-                // 2026-09-28). Ahora solo el centro se desplaza, y solo si no cabe (`.basedOnSize`); con el alto
-                // mínimo del hueco, los `Spacer`s reparten igual que antes cuando cabe. Es el molde de
-                // `GroupExpenseSuccessView`: «Editar» arriba y los botones abajo quedan siempre a la vista.
+                // Solo el centro se desplaza, y solo si no cabe (molde de `GroupExpenseSuccessView`): «Editar» arriba y
+                // los botones abajo quedan siempre a la vista, también en un iPhone SE.
                 GeometryReader { proxy in
                     ScrollView {
                         VStack(spacing: DS.Spacing.none) {
                             Spacer()
-
-                            // Hero area
-                            VStack(spacing: DS.Spacing.lg) {
-                                // Title above circle
-                                Text(L10n.Transaction.successTitle)
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(.secondary)
-                                    .opacity(showHero ? 1.0 : 0.0)
-
-                                // Layered circle
-                                ZStack {
-                                    // Radiant glow
-                                    RadialGradient(
-                                        colors: [typeColor.opacity(0.25), .clear],
-                                        center: .center,
-                                        startRadius: 20,
-                                        endRadius: 90
-                                    )
-                                    .frame(width: 180, height: 180)
-                                    .blur(radius: 12)
-                                    .opacity(showHero ? 1.0 : 0.0)
-
-                                    // Main gradient circle
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [typeColor, typeColor.opacity(0.7)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .frame(width: 100, height: 100)
-                                        .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
-                                        .scaleEffect(showHero ? 1.0 : 0.3)
-                                        .opacity(showHero ? 1.0 : 0.0)
-
-                                    // Glass overlay
-                                    Circle()
-                                        .fill(Color.white.opacity(0.1))
-                                        .frame(width: 100, height: 100)
-                                        .mask(
-                                            LinearGradient(
-                                                colors: [.white, .clear],
-                                                startPoint: .top,
-                                                endPoint: .center
-                                            )
-                                        )
-                                        .opacity(showHero ? 1.0 : 0.0)
-
-                                    // White checkmark
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: heroIconSize, weight: .semibold))
-                                        .foregroundStyle(.white)
-                                        .scaleEffect(showCheckmark ? 1.0 : 0.0)
-                                        .opacity(showCheckmark ? 1.0 : 0.0)
-                                        .accessibilityHidden(true)
-                                }
-
-                                // Promoted amount
-                                if data.isTransfer,
-                                   let destAmount = data.destinationAmount,
-                                   let destCurrency = data.destinationCurrencyCode,
-                                   destCurrency != data.currencyCode
-                                {
-                                    Text(
-                                        appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
-                                            currencyCode: data.currencyCode,
-                                            forceFullPrecision: true)
-                                        + " → "
-                                        + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
-                                            currencyCode: destCurrency,
-                                            forceFullPrecision: true)
-                                    )
-                                    .font(DS.Typography.title2)
-                                    .foregroundStyle(typeColor)
-                                    .scaleEffect(showAmount ? 1.0 : 0.8)
-                                    .opacity(showAmount ? 1.0 : 0.0)
-                                } else {
-                                    AmountText(
-                                        value: Double(truncating: data.amount as NSDecimalNumber),
-                                        currencyCode: data.currencyCode,
-                                        font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
-                                        tint: .color(typeColor),
-                                        forceFullPrecision: true
-                                    )
-                                    .scaleEffect(showAmount ? 1.0 : 0.8)
-                                    .opacity(showAmount ? 1.0 : 0.0)
-                                }
-                            }
-                            .padding(.bottom, DS.Spacing.xxxl)
-
-                            // Transaction details
+                            hero
+                                .padding(.bottom, DS.Spacing.xl)
                             detailsSection
                                 .padding(.horizontal, DS.Spacing.xl)
                                 .opacity(showDetails ? 1.0 : 0.0)
                                 .offset(y: showDetails ? 0 : 15)
-
+                            if onFavorite != nil || onRecurring != nil {
+                                offersRow
+                                    .padding(.horizontal, DS.Spacing.xl)
+                                    .padding(.top, DS.Spacing.lg)
+                                    .opacity(showDetails ? 1.0 : 0.0)
+                            }
                             Spacer()
                         }
                         .frame(minHeight: proxy.size.height)
@@ -201,21 +114,21 @@ struct TransactionSuccessView: View {
                     .scrollIndicators(.hidden)
                 }
 
-                // Action buttons - native iOS style
-                VStack(spacing: DS.Spacing.md) {
-                    // Primary: Accept
-                    YalaPrimaryButton(L10n.Common.accept, action: onAccept)
-                        .accessibilityIdentifier("transaction_success_accept")
-
-                    // Secondary: Create another
+                // Lado a lado, nunca uno debajo del otro (B1).
+                HStack(spacing: DS.Spacing.sm) {
                     Button(action: onCreateAnother) {
                         Text(L10n.Transaction.createAnother)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
                     // Para que los tests lo toquen sin depender del texto (decisión 83 de la revisión 2.3).
                     .accessibilityIdentifier("transaction_success_create_another")
+
+                    YalaPrimaryButton(L10n.Common.accept, action: onAccept)
+                        .accessibilityIdentifier("transaction_success_accept")
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
@@ -228,362 +141,232 @@ struct TransactionSuccessView: View {
             TrialOfferMoments.noteRecordSaved()
             if reduceMotion {
                 showHero = true
-                showCheckmark = true
-                showAmount = true
                 showDetails = true
                 showActions = true
             } else {
-                Task {
-                    // 0ms — hero circle + glow
-                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
-                        showHero = true
-                    }
-
-                    // 150ms — checkmark
-                    try? await Task.sleep(for: .milliseconds(150))
-                    withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
-                        showCheckmark = true
-                    }
-
-                    // 300ms — amount
-                    try? await Task.sleep(for: .milliseconds(150))
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        showAmount = true
-                    }
-
-                    // 500ms — details card
-                    try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.easeOut(duration: 0.35)) {
-                        showDetails = true
-                    }
-
-                    // 700ms — action buttons
-                    try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showActions = true
-                    }
-                }
+                withAnimation(DS.Animation.appear) { showHero = true }
+                withAnimation(DS.Animation.appear.delay(0.15)) { showDetails = true }
+                withAnimation(DS.Animation.appear.delay(0.3)) { showActions = true }
             }
         }
     }
 
-    // MARK: - Details Section
+    // MARK: - Hero
+
+    private var hero: some View {
+        VStack(spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(typeColor)
+                    .symbolEffect(.bounce, value: reduceMotion ? false : showHero)
+                    .accessibilityHidden(true)
+                Text(savedTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("transaction_success_title")
+
+            // La descripción va suelta, sobre el monto (ajuste 3 de Jürgen; sobre y no bajo, 2026-11-20).
+            if !data.note.isEmpty {
+                Text(data.note)
+                    .font(DS.Typography.bodyLarge)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("transaction_success_description")
+            }
+
+            amount
+                .scaleEffect(showHero ? 1.0 : 0.9)
+                .opacity(showHero ? 1.0 : 0.0)
+
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private var amount: some View {
+        if data.isTransfer,
+           let destAmount = data.destinationAmount,
+           let destCurrency = data.destinationCurrencyCode,
+           destCurrency != data.currencyCode {
+            Text(
+                appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
+                                        currencyCode: data.currencyCode, forceFullPrecision: true)
+                + " → "
+                + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
+                                          currencyCode: destCurrency, forceFullPrecision: true)
+            )
+            .font(DS.Typography.title2)
+            .foregroundStyle(typeColor)
+            .multilineTextAlignment(.center)
+        } else {
+            AmountText(
+                value: Double(truncating: data.amount as NSDecimalNumber),
+                currencyCode: data.currencyCode,
+                font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                tint: .color(typeColor),
+                forceFullPrecision: true
+            )
+        }
+    }
+
+    // MARK: - Details
+
+    private var fields: [TransactionSuccessFieldOrder.Field] {
+        TransactionSuccessFieldOrder.fields(
+            isTransfer: data.isTransfer,
+            hasSubcategory: data.subcategoryName != nil,
+            hasNeed: data.need != nil,
+            hasTags: !data.tags.isEmpty
+        )
+    }
 
     private var detailsSection: some View {
         VStack(spacing: DS.Spacing.none) {
-            // Transaction type
-            typeRow
-
-            // Date
-            detailRow(
-                icon: "calendar",
-                label: L10n.Transaction.date,
-                value: formattedDate,
-                valueIdentifier: "transaction_success_date"
-            )
-
-            // Account(s)
-            if data.isTransfer {
-                transferAccountsRow
-            } else {
-                accountRow
-            }
-
-            // Subcategory & Category (only for non-transfers)
-            if !data.isTransfer {
-                if data.subcategoryName != nil || data.categoryName != nil {
-                    categoryRow
-                }
-
-                // Nature (only for non-transfers)
-                if let need = data.need {
-                    needRow(need: need)
-                }
-            }
-
-            // «Descripción», como en el formulario (UX 2.2 · L2-5): antes decía «Nota».
-            if !data.note.isEmpty {
-                detailRow(
-                    icon: "text.alignleft",
-                    label: L10n.Transaction.description,
-                    value: data.note,
-                    valueIdentifier: "transaction_success_description"
-                )
-            }
-
-            // Tags
-            if !data.tags.isEmpty {
-                tagsRow
+            ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
+                row(for: field)
             }
         }
-        .padding(.vertical, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
     }
 
-    // MARK: - Row Components
-
-    private var typeRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: data.transactionType.iconName)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(data.transactionType.color)
-                .frame(width: DS.Icon.sizeLarge)
-                .accessibilityHidden(true)
-
-            Text(L10n.Transaction.type)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text(data.transactionType.displayName)
-                .font(DS.Typography.label)
-                .foregroundStyle(data.transactionType.color)
+    @ViewBuilder
+    private func row(for field: TransactionSuccessFieldOrder.Field) -> some View {
+        switch field {
+        case .date:
+            detailRow(icon: "calendar", label: L10n.Transaction.date, spoken: Self.dateFormatter.string(from: data.date), identifier: "transaction_success_date") {
+                Text(Self.dateFormatter.string(from: data.date))
+            }
+        case .account:
+            detailRow(icon: "creditcard", label: L10n.Transaction.account, spoken: data.accountName, identifier: "transaction_success_account") {
+                dotted(data.accountName, colorHex: data.accountColorHex)
+            }
+        case .transferAccounts:
+            detailRow(icon: "arrow.up.circle", label: L10n.Transaction.origin, spoken: data.accountName,
+                      identifier: "transaction_success_source") {
+                dotted(data.accountName, colorHex: data.accountColorHex)
+            }
+            if let destName = data.destinationAccountName, let destColor = data.destinationAccountColorHex {
+                detailRow(icon: "arrow.down.circle", label: L10n.Transaction.destination, spoken: destName,
+                          identifier: "transaction_success_destination") {
+                    dotted(destName, colorHex: destColor)
+                }
+            }
+        case .subcategory:
+            detailRow(icon: "tag", label: L10n.Transaction.category, spoken: [data.subcategoryName, data.categoryName].compactMap { $0 }.joined(separator: ", "), identifier: "transaction_success_category") {
+                HStack(spacing: DS.Spacing.xs) {
+                    dotted(data.subcategoryName ?? "",
+                           colorHex: data.subcategoryColorHex ?? data.categoryColorHex ?? AppConstants.defaultColorHex)
+                    if let categoryName = data.categoryName {
+                        Text(verbatim: "·")
+                            .foregroundStyle(.secondary)
+                        Text(categoryName)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        case .need:
+            if let need = data.need {
+                detailRow(icon: "leaf", label: L10n.Category.need, spoken: need.displayName, identifier: "transaction_success_need") {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Circle().fill(need.color).frame(width: 8, height: 8)
+                        Text(need.displayName)
+                    }
+                }
+            }
+        case .tags:
+            detailRow(icon: "number", label: L10n.Transaction.tags, spoken: data.tags.map(\.name).joined(separator: ", "), identifier: "transaction_success_tags") {
+                Text(data.tags.map(\.name).joined(separator: ", "))
+            }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private var formattedDate: String {
-        Self.dateFormatter.string(from: data.date)
+    private func dotted(_ text: String, colorHex: String) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Circle()
+                .fill(Color(hex: colorHex))
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
+            Text(text)
+        }
     }
 
-    private func detailRow(icon: String, label: String, value: String, valueIdentifier: String) -> some View {
+    /// Una fila sin rótulo a la vista: icono y valor. El rótulo lo lee VoiceOver.
+    private func detailRow<Value: View>(
+        icon: String, label: String, spoken: String, identifier: String, @ViewBuilder value: () -> Value
+    ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
                 .accessibilityHidden(true)
-
-            Text(label)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            // Una descripción larga ocupa hasta dos líneas y después corta (decisión 65 de la revisión 2.3).
-            Text(value)
+            value()
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
                 .lineLimit(2)
-                .multilineTextAlignment(.trailing)
-                .accessibilityIdentifier(valueIdentifier)
+                // `.combine` y no `.ignore`: así el valor sigue siendo un texto para VoiceOver y para las pruebas.
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(label)
+                .accessibilityValue(spoken)
+                .accessibilityIdentifier(identifier)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private var accountRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "creditcard")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
+    // MARK: - Favorito y Recurrente
 
-            Text(L10n.Transaction.account)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xs) {
-                Circle()
-                    .fill(Color(hex: data.accountColorHex))
-                    .frame(width: 8, height: 8)
-                Text(data.accountName)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
+    /// Dos botones iguales en una fila: abren las hojas de siempre. En una transferencia, solo «Favorito».
+    private var offersRow: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            if let onFavorite {
+                offerButton(
+                    title: NuevoRegistroB1Text.string(isFavorited ? "success.favorited" : "success.favorite"),
+                    icon: isFavorited ? "star.fill" : "star",
+                    isDone: isFavorited,
+                    action: onFavorite
+                )
+                .disabled(isFavorited)
+                .accessibilityIdentifier("transaction_success_favorite")
             }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
-
-    private var transferAccountsRow: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Source account
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "arrow.up.circle")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(Color.hotPink)
-                    .frame(width: 20)
-                    .accessibilityHidden(true)
-
-                Text(L10n.Transaction.origin)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                HStack(spacing: DS.Spacing.xs) {
-                    Circle()
-                        .fill(Color(hex: data.accountColorHex))
-                        .frame(width: 8, height: 8)
-                    Text(data.accountName)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
-
-            // Destination account
-            if let destName = data.destinationAccountName,
-                let destColor = data.destinationAccountColorHex
-            {
-                HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "arrow.down.circle")
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thAccentText)
-                        .frame(width: 20)
-                        .accessibilityHidden(true)
-
-                    Text(L10n.Transaction.destination)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(Color(hex: destColor))
-                            .frame(width: 8, height: 8)
-                        Text(destName)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-
-                        if let destAmount = data.destinationAmount,
-                            let destCurrency = data.destinationCurrencyCode,
-                            destCurrency != data.currencyCode
-                        {
-                            Text(
-                                "(\(appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
-                            )
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
+            if let onRecurring, !data.isTransfer {
+                offerButton(
+                    title: NuevoRegistroB1Text.string("success.recurring"),
+                    icon: "repeat",
+                    isDone: false,
+                    action: onRecurring
+                )
+                .accessibilityIdentifier("transaction_success_recurring")
             }
         }
     }
 
-    private var categoryRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "tag")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(L10n.Transaction.category)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                if let subcatName = data.subcategoryName {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(
-                                Color(
-                                    hex: data.subcategoryColorHex ?? data.categoryColorHex
-                                        ?? AppConstants.defaultColorHex)
-                            )
-                            .frame(width: 8, height: 8)
-                        Text(subcatName)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                    }
-                }
-                if let catName = data.categoryName {
-                    Text(catName)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+    private func offerButton(title: String, icon: String, isDone: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .font(DS.Typography.label)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(isDone ? AnyShapeStyle(Color.white) : AnyShapeStyle(.primary))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(
+                    Capsule().fill(isDone ? AnyShapeStyle(Color.selectedFill(theme.accent)) : AnyShapeStyle(.thCard))
+                )
+                .contentShape(Capsule())
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
-
-    private func needRow(need: SubcategoryNeed) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "leaf")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(L10n.Category.need)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xs) {
-                Circle()
-                    .fill(need.color)
-                    .frame(width: 6, height: 6)
-
-                Text(need.displayName)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xs)
-            .background(
-                Capsule().fill(need.color.opacity(0.1))
-            )
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
-
-    private var tagsRow: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
-            Image(systemName: "number")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(L10n.Transaction.tags)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            // Tags as chips - right aligned
-            HStack(spacing: DS.Spacing.xs) {
-                ForEach(data.tags, id: \.name) { tag in
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(Color(hex: tag.colorHex))
-                            .frame(width: 6, height: 6)
-                        Text(tag.name)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(
-                        Capsule()
-                            .fill(Color.primary.opacity(0.08))
-                    )
-                }
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
+        .buttonStyle(.plain)
     }
 }
 
@@ -614,6 +397,8 @@ struct TransactionSuccessView: View {
         ),
         onAccept: {},
         onCreateAnother: {},
-        onEdit: {}
+        onEdit: {},
+        onFavorite: {},
+        onRecurring: {}
     )
 }

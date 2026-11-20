@@ -1,13 +1,15 @@
 ---
 id: 2026-11-19-nuevo-registro-b-realista-maquetas
-status: backlog
+status: done
 area: transactions
 created: 2026-11-19
-updated: 2026-11-19
+updated: 2026-11-20
 source: ajustes de Jürgen a la variante B (2026-11-19, 18:11 Lima) y sesión de maquetas realistas del mismo día
 ---
 
 # Nuevo registro, B ajustada: hoja y pantalla de éxito
+
+> **Implementado el 2026-11-20** (encargo `2026-11-20-nuevo-registro-b1-implementacion`): Jürgen eligió **B1** y la pantalla de éxito **minimalista** (06:14 Lima), con cuatro ajustes que mandan sobre lo de abajo: la fila de abajo SIEMPRE en una línea (etiquetas «#2», trunca la cuenta), en transferencia la fecha bajo el monto y la fila solo con las dos cuentas, éxito con la descripción suelta y los datos en orden fecha · cuenta · subcategoría · naturaleza · etiqueta, y las sugerencias de descripción que también ponen cuenta, subcategoría y etiquetas cuando los registros anteriores coinciden. El detalle de lo decidido va en el cuerpo del PR.
 
 Segunda ronda de `2026-11-19-nuevo-registro-limpio-maquetas`. Jürgen eligió la **B** como base. Los cinco puntos de su
 idea (título-menú, favoritos de icono, fila con Hoy, moneda junto al monto, «···») siguen vigentes; esta ficha recoge sus

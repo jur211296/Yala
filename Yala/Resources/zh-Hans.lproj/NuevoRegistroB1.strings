@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "新支出";
+"nr.title.newIncome" = "新收入";
+"nr.title.newTransfer" = "新转账";
+"nr.title.editExpense" = "编辑支出";
+"nr.title.editIncome" = "编辑收入";
+"nr.title.editTransfer" = "编辑转账";
+"nr.title.duplicateExpense" = "复制支出";
+"nr.title.duplicateIncome" = "复制收入";
+"nr.title.duplicateTransfer" = "复制转账";
+"nr.title.a11yChangeType" = "更改类型";
+"nr.favorites.label" = "收藏";
+"nr.favorites.seeAll" = "查看全部";
+"nr.currency.accountsCount.one" = "1 个账户";
+"nr.currency.accountsCount.other" = "%d 个账户";
+"nr.currency.a11y" = "金额币种";
+"nr.more.a11y" = "更多选项";
+"nr.more.splitState.all" = "全部归你";
+"nr.more.splitState.mine" = "你的部分：%@";
+"nr.more.favorite" = "保存为收藏";
+"nr.more.recurring" = "设为定期";
+"nr.more.recurringState.once" = "仅一次";
+"nr.save.withAmount" = "保存 %@";
+"nr.addAnother" = "再添加一笔";
+"nr.saved.toast.expense" = "支出已保存";
+"nr.saved.toast.income" = "收入已保存";
+"nr.saved.toast.transfer" = "转账已保存";
+"nr.success.saved.expense" = "支出已保存";
+"nr.success.saved.income" = "收入已保存";
+"nr.success.saved.transfer" = "转账已保存";
+"nr.success.favorite" = "收藏";
+"nr.success.favorited" = "已收藏";
+"nr.success.recurring" = "定期";
+"nr.tags.a11yNone" = "标签，无";
+"nr.tags.a11yCount" = "标签，已添加 %d 个：%@";
+"nr.need.a11yChange" = "更改需求";

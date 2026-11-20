@@ -56,9 +56,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios | done | tickets/done/2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios.md |
 | 2026-11-19-icloud-privado-eliminar-mi-cuenta | qa | tickets/qa/2026-11-19-icloud-privado-eliminar-mi-cuenta.md |
 | 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |
-| 2026-11-19-nuevo-registro-limpio-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-limpio-maquetas.md |
+| 2026-11-19-nuevo-registro-limpio-maquetas | done | tickets/done/2026-11-19-nuevo-registro-limpio-maquetas.md |
 | 2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1 | done | tickets/done/2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1.md |
-| 2026-11-19-nuevo-registro-b-realista-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-b-realista-maquetas.md |
+| 2026-11-19-nuevo-registro-b-realista-maquetas | done | tickets/done/2026-11-19-nuevo-registro-b-realista-maquetas.md |
 | 2026-11-17-pagos-que-se-repiten-banner-y-hoja | done | tickets/done/2026-11-17-pagos-que-se-repiten-banner-y-hoja.md |
 | 2026-11-17-verificacion-revisor-checklist | done | tickets/done/2026-11-17-verificacion-revisor-checklist.md |
 | 2026-11-17-banco-de-la-checklist-fuera-del-ci | backlog | tickets/backlog/2026-11-17-banco-de-la-checklist-fuera-del-ci.md |

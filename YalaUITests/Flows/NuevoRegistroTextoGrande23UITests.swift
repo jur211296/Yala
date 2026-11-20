@@ -51,14 +51,18 @@ final class NuevoRegistroTextoGrande23UITests: XCTestCase {
         add(attachment)
     }
 
-    /// Los tres botones del selector de tipo, con el formulario ya quieto.
-    private func typeButtons(_ app: XCUIApplication) -> (expense: XCUIElement, income: XCUIElement, transfer: XCUIElement) {
-        let expense = app.buttons["new_transaction_type_expense"]
-        let income = app.buttons["new_transaction_type_income"]
-        let transfer = app.buttons["new_transaction_type_transfer"]
-        XCTAssertTrue(transfer.waitForExistence(timeout: 5), "No está el selector de tipo en el formulario.")
-        _ = app.waitForSettledLayout(of: transfer)
-        return (expense, income, transfer)
+    /// La fila de abajo de la hoja B1 (Hoy · Cuenta · #), con el formulario ya quieto y sin teclado.
+    private func bottomRow(_ app: XCUIApplication) -> (date: XCUIElement, account: XCUIElement, tags: XCUIElement) {
+        if app.keyboards.count > 0 {
+            app.staticTexts["new_transaction_amount_question"].tap()
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "El teclado no se cerró.")
+        }
+        let date = app.buttons["new_transaction_date_chip"]
+        let account = app.buttons["new_transaction_account_chip"]
+        let tags = app.buttons["new_transaction_tags_chip"]
+        XCTAssertTrue(tags.waitForExistence(timeout: 5), "No está la fila de abajo del formulario.")
+        _ = app.waitForSettledLayout(of: tags)
+        return (date, account, tags)
     }
 
     // MARK: - 63 · El importe de un favorito no se parte
@@ -96,40 +100,39 @@ final class NuevoRegistroTextoGrande23UITests: XCTestCase {
                              "A tamaño normal el importe va a la derecha del nombre, como siempre.")
     }
 
-    // MARK: - 64 · «Transferencia» no se parte en el selector de tipo
+    // MARK: - Hoja B1 · el tipo en el título-menú y la fila de abajo en una sola línea (2026-11-20)
 
-    func test_64_ax3_typeSelector_stacks_andEachTypeReadsInOneLine() {
+    /// El segmentado de tipo ya no está en Nuevo registro (decisión 64 de 2.3 vive en el flujo de caja): con texto grande
+    /// el título-menú sigue eligiendo el tipo.
+    func test_b1_ax3_titleMenu_choosesTheType() {
         let app = launch(largeText: true)
         openForm(app)
-        let (expense, income, transfer) = typeButtons(app)
-        capture(app, "64-ax3-selector-de-tipo")
-
-        XCTAssertLessThan(transfer.frame.height, expense.frame.height * 1.5,
-                          "A AX3 «Transferencia» ocupa más de una línea (\(transfer.frame.height) pt frente a \(expense.frame.height) de «Gasto»).")
-        XCTAssertGreaterThanOrEqual(income.frame.minY, expense.frame.maxY - 1, "A AX3 «Ingreso» va debajo de «Gasto».")
-        XCTAssertGreaterThanOrEqual(transfer.frame.minY, income.frame.maxY - 1, "A AX3 «Transferencia» va debajo de «Ingreso».")
-
-        // La cápsula sigue funcionando apilada: elegir «Transferencia» la marca y cambia el formulario.
-        transfer.tap()
-        XCTAssertTrue(transfer.waitForSelected(timeout: 3), "Tocar «Transferencia» apilada no la elige.")
+        app.chooseNewTransactionType("transfer")
+        XCTAssertTrue(app.buttons["new_transaction_source_chip"].waitForExistence(timeout: 5),
+                      "A AX3, elegir «Transferencia» en el título-menú no cambió el formulario.")
+        capture(app, "b1-ax3-transferencia")
     }
 
-    func test_64_normalSize_typeSelector_staysInOneRow() {
+    /// Ajuste 1 de Jürgen: la fila de abajo NUNCA baja a otra línea, tampoco con texto grande.
+    func test_b1_ax3_bottomRow_staysInOneLine() {
+        let app = launch(largeText: true)
+        openForm(app)
+        let (date, account, tags) = bottomRow(app)
+        capture(app, "b1-ax3-fila-de-abajo")
+        XCTAssertEqual(date.frame.midY, account.frame.midY, accuracy: 2, "A AX3 la cuenta bajó a otra línea.")
+        XCTAssertEqual(tags.frame.midY, account.frame.midY, accuracy: 2, "A AX3 «#» bajó a otra línea.")
+        XCTAssertLessThan(date.frame.maxX, account.frame.minX + 1, "Hoy va primero.")
+        XCTAssertLessThan(account.frame.maxX, tags.frame.minX + 1, "«#» va al final.")
+        let window = app.windows.firstMatch.frame
+        XCTAssertLessThanOrEqual(tags.frame.maxX, window.maxX, "La fila se sale por la derecha.")
+    }
+
+    func test_b1_normalSize_bottomRow_staysInOneLine() {
         let app = launch(largeText: false)
         openForm(app)
-        let (expense, income, transfer) = typeButtons(app)
-        capture(app, "64-normal-selector-de-tipo")
-
-        XCTAssertEqual(expense.frame.midY, transfer.frame.midY, accuracy: 1, "A tamaño normal los tres tipos van en una fila.")
-        XCTAssertEqual(income.frame.midY, transfer.frame.midY, accuracy: 1, "A tamaño normal los tres tipos van en una fila.")
-        XCTAssertLessThan(expense.frame.maxX, income.frame.minX + 1)
-        XCTAssertLessThan(income.frame.maxX, transfer.frame.minX + 1)
-    }
-}
-
-private extension XCUIElement {
-    func waitForSelected(timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate(format: "isSelected == true")
-        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
+        let (date, account, tags) = bottomRow(app)
+        capture(app, "b1-normal-fila-de-abajo")
+        XCTAssertEqual(date.frame.midY, account.frame.midY, accuracy: 2)
+        XCTAssertEqual(tags.frame.midY, account.frame.midY, accuracy: 2)
     }
 }

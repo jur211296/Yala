@@ -54,10 +54,8 @@ final class NuevoRegistroSinSugerenciasUITests: XCTestCase {
         capture(app, "nuevo-registro-normal")
         assertNoSuggestedCategories(app)
 
-        // Con el teclado del importe abierto, el chip vive en la barra de encima del teclado; si no, en el formulario.
-        let barChip = app.buttons["new_transaction_keyboard_category_chip"]
-        let formChip = app.buttons["new_transaction_subcategory_chip"]
-        let chip = barChip.waitForExistence(timeout: 3) && barChip.isHittable ? barChip : formChip
+        // Desde la hoja B1 el chip de categoría vive bajo el importe, con teclado y sin él.
+        let chip = app.buttons["new_transaction_subcategory_chip"]
         XCTAssertTrue(chip.waitForExistence(timeout: 5), "Falta el chip de categoría.")
         XCTAssertFalse(chip.isSelected, "La categoría no debía venir puesta en un registro nuevo.")
         chip.tap()
@@ -71,8 +69,7 @@ final class NuevoRegistroSinSugerenciasUITests: XCTestCase {
         restaurants.tap()
 
         let chosen = app.buttons.matching(NSPredicate(
-            format: "identifier IN %@ AND label == 'Restaurantes'",
-            ["new_transaction_keyboard_category_chip", "new_transaction_subcategory_chip"]
+            format: "identifier == 'new_transaction_subcategory_chip' AND label == 'Restaurantes'"
         )).firstMatch
         XCTAssertTrue(chosen.waitForExistence(timeout: 5), "Elegir en la hoja debía dejar Restaurantes en el chip.")
     }
