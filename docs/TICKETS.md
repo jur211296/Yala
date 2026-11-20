@@ -43,9 +43,11 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1421)
+## Index (1423)
 
 | id | status | path |
+| 2026-11-20-captura-cuenta-automatica-y-reglas | backlog | tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas.md |
+| 2026-11-20-captura-cuenta-automatica-y-reglas-maquetas | done | tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas-maquetas.md |
 | 2026-11-20-oferta-pro-primeros-pasos-mas-beneficios | backlog | tickets/backlog/2026-11-20-oferta-pro-primeros-pasos-mas-beneficios.md |
 | 2026-11-20-oferta-pro-primeros-pasos-mas-beneficios-maquetas | done | tickets/done/2026-11-20-oferta-pro-primeros-pasos-mas-beneficios-maquetas.md |
 | 2026-11-20-web-promete-beneficios-pro-que-la-app-no-tiene | backlog | tickets/backlog/2026-11-20-web-promete-beneficios-pro-que-la-app-no-tiene.md |
