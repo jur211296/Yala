@@ -34,9 +34,6 @@ struct RecordsTabView: View {
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
-    /// Cambió lo escrito en «Buscar en Registros»: solo filtra esta lista (en Estadísticas no recalcula las demás
-    /// pestañas por cada tecla).
-    var onListSearchChange: () -> Void
     /// La última lectura de los movimientos falló (decisión 78 de 2.3): con la lista vacía se enseña el error, no
     /// «Sin registros». Lo da `DetailContainerViewModel.transactionsLoadFailed`.
     var loadFailed: Bool = false
@@ -55,9 +52,6 @@ struct RecordsTabView: View {
         ScrollView {
             ScrollViewReader { scrollProxy in
                 VStack(spacing: DS.Spacing.md) {
-                    // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar. Lo ofrece `RecordsSharedList`, así que
-                    // sale en Registros y en Estadísticas › Registros (17-nov).
-                    RecordsListSearchSlot(viewModel: viewModel)
                     StatsGuideSlot()
                     // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
                     // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
@@ -134,7 +128,6 @@ struct RecordsTabView: View {
                 .padding(.top, DS.Spacing.sm)
                 .modifier(RecordsCalendarReadableWidth(
                     isActive: keepsCalendarAtReadableWidth && viewModel.recordsViewMode == .calendar))
-                .recordsListSearchContainer(viewModel, onQueryChange: onListSearchChange)
                 // C2: con el mes plegado a la semana, la semana sube arriba y la lista del día queda a la vista
                 // debajo, también con texto grande.
                 .onChange(of: viewModel.selectedCalendarDay) { _, day in
@@ -144,7 +137,6 @@ struct RecordsTabView: View {
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
-        .revealsRecordsListSearchOnPull(viewModel)
         // El nombre del grupo en las filas que vienen de un gasto de grupo (L8-5).
         .providesGroupNames()
         .sheet(isPresented: $showCustomPeriodPicker) {
@@ -886,10 +878,6 @@ struct RecordsTabView: View {
         } else if viewModel.duplicateModeActive {
             // Modo duplicados sin resultados: el encabezado de arriba sigue visible para desactivar.
             duplicatesEmptyState
-        } else if viewModel.isSearchingList {
-            // Lo escrito en «Buscar en Registros» no casa con nada de lo que se ve: el vacío de Buscar.
-            YalaEmptyState.noResults()
-                .accessibilityIdentifier("records_list_search_empty")
         } else {
             YalaEmptyState(
                 icon: "list.bullet.rectangle",

@@ -78,17 +78,12 @@ struct RegistrosEstadisticasIgualesTests {
         let text = try Self.code(Self.tab)
         #expect(!text.contains("showsQuickFilters"), "Los chips rápidos vuelven a depender de quién monta la lista.")
         #expect(text.contains("RecordsQuickFilterBar("))
-        // Lo escrito en el buscador va por su propio aviso, no por el de los filtros.
-        #expect(text.contains("recordsListSearchContainer(viewModel, onQueryChange: onListSearchChange)"))
     }
 
-    @Test("El buscador se ofrece desde la pieza compartida, no desde un anfitrión")
-    func searchIsOfferedByTheSharedPiece() throws {
-        #expect(try Self.code(Self.shared).contains(".environment(\\.offersRecordsListSearch, true)"))
-        // Y el tinte de la pestaña Registros: Estadísticas pinta su pantalla en `.primary`.
+    @Test("El tinte de la pestaña Registros lo pone la pieza compartida")
+    func tintIsSetByTheSharedPiece() throws {
+        // Estadísticas pinta su pantalla en `.primary`.
         #expect(try Self.code(Self.shared).contains(".tint(theme.accentText)"))
-        #expect(!(try Self.code(Self.standalone)).contains("offersRecordsListSearch"))
-        #expect(!(try Self.code(Self.stats)).contains("offersRecordsListSearch"))
     }
 
     @Test("La barra de arriba sale de la misma pieza en las dos pantallas")
@@ -103,13 +98,6 @@ struct RegistrosEstadisticasIgualesTests {
             #expect(!text.contains("RecordsOverflowMenu("), "\(host) monta su propio menú «···».")
             #expect(!text.contains("RecordsSelectAllButton("), "\(host) monta su propio «Seleccionar todo».")
         }
-    }
-
-    @Test("En Estadísticas, buscar solo recalcula la lista")
-    func statsSearchRecalculatesOnlyTheList() throws {
-        let text = try Self.code(Self.stats)
-        #expect(text.contains("onListSearchChange: { recalculateRecordsList() }"))
-        #expect(text.contains("private func recalculateRecordsList()"))
     }
 
     @Test("Estadísticas decide su panel con la página, como Registros (calendario en ancho = una columna)")

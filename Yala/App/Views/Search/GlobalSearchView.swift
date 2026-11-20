@@ -111,37 +111,45 @@ struct SearchContentView: View {
 
     // MARK: - Filtered Results
 
-    private func matchesSearch(_ transaction: TransactionItem, lowercasedSearch: String, filter: SearchFilter) -> Bool {
+    /// «Todo» busca con la regla de `RecordsListSearchLogic`: nota, categoría, subcategoría, cuenta, etiquetas e importe,
+    /// sin mayúsculas ni tildes. Es la que tenía «Buscar en Registros», la barra de la lista que se quitó el 20-nov-2026
+    /// porque esta pestaña cumple esa función: lo que aquélla encontraba (un «45,90», «alimentacion»), lo encuentra Buscar.
+    /// Los chips de un solo campo comparan igual, sin mayúsculas ni tildes.
+    private func matchesSearch(
+        _ transaction: TransactionItem, query: RecordsListSearchLogic.Query, filter: SearchFilter
+    ) -> Bool {
+        let text = query.text
+        func casa(_ value: String?) -> Bool { value?.localizedStandardContains(text) ?? false }
         switch filter {
         case .all:
-            let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-            let categoryMatch = transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-            let subcategoryMatch = transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
-            let accountMatch = transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            let tagMatch = matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
-            return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
+            let fields = RecordsListSearchLogic.Fields(
+                note: transaction.note,
+                category: transaction.category?.name,
+                subcategory: transaction.subcategory?.name,
+                account: transaction.account?.name,
+                tags: tagNames(transaction),
+                signedAmount: transaction.amount
+            )
+            return RecordsListSearchLogic.matches(fields, query: query)
         case .note:
-            return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
+            return casa(transaction.note)
         case .category:
-            return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
+            return casa(transaction.category?.name)
         case .subcategory:
-            return transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
+            return casa(transaction.subcategory?.name)
         case .account:
-            return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
+            return casa(transaction.account?.name)
         case .need:
-            return transaction.subcategory?.need.displayName.lowercased().contains(lowercasedSearch) ?? false
+            return casa(transaction.subcategory?.need.displayName)
         case .tag:
-            return matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
+            return tagNames(transaction).contains { $0.localizedStandardContains(text) }
         }
     }
 
-    /// CSV-mirror SSOT: resuelve UUIDs vía catalog → Tag.name lowercased contains query.
-    /// Sobrevive lazy hydration de la M2M `tx.tags` durante cold launch.
-    private func matchesTagName(transaction: TransactionItem, lowercasedSearch: String) -> Bool {
-        let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-        return txTagIDs.contains { uuid in
-            tagCatalog[uuid]?.name.lowercased().contains(lowercasedSearch) ?? false
-        }
+    /// CSV-mirror SSOT: los nombres de sus etiquetas por el catálogo, no por la M2M `tx.tags`, que puede no estar
+    /// hidratada en el arranque en frío.
+    private func tagNames(_ transaction: TransactionItem) -> [String] {
+        (transaction.resolvedTagIDs(scheduleBackfill: true) ?? []).compactMap { tagCatalog[$0]?.name }
     }
 
     private var baseTransactions: [TransactionItem] {
@@ -151,9 +159,9 @@ struct SearchContentView: View {
     }
 
     private var matchingTransactions: [TransactionItem] {
-        guard !searchText.isEmpty else { return baseTransactions }
-        let lowercased = searchText.lowercased()
-        return baseTransactions.filter { matchesSearch($0, lowercasedSearch: lowercased, filter: selectedFilter) }
+        let query = RecordsListSearchLogic.query(searchText)
+        guard !query.isEmpty else { return baseTransactions }
+        return baseTransactions.filter { matchesSearch($0, query: query, filter: selectedFilter) }
     }
 
     private var filteredResults: [TransactionItem] {

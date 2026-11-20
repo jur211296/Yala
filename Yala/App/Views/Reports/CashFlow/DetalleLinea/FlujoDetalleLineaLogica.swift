@@ -246,10 +246,7 @@ enum FlujoDetalleLineaLogica {
             historia, currencyCode: currencyCode, adjustment: adjustment, converter: converter,
             startOfTomorrow: startOfTomorrow, calendar: calendar
         ).movimientos
-        var index = TransactionIndex(
-            transactions: historia.filter { $0.balanceAdjustmentType == nil },
-            currencyCode: currencyCode, adjustment: adjustment, converter: converter, calendar: calendar
-        )
+        var index = TransactionIndex(movimientos: movHistoria, calendar: calendar)
         index.byLineMonth = FlujoMotorMes.importesPorLinea(movHistoria, lineas: lineas).mapValues { byMonth in
             Dictionary(byMonth.map { (CashFlowProjectionCalculator.monthKey(for: $0.key, calendar: calendar), $0.value) },
                        uniquingKeysWith: +)

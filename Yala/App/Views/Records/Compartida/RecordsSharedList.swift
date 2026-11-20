@@ -28,9 +28,6 @@ struct RecordsSharedList: View {
     let defaultCurrencyCode: String
     /// Un filtro cambió: el anfitrión recalcula lo que dependa de él.
     var onFilterChange: () -> Void
-    /// Cambió lo escrito en «Buscar en Registros». Solo filtra esta lista: en Estadísticas no recalcula Tendencias ni
-    /// el Resumen por cada tecla.
-    var onListSearchChange: () -> Void
     var loadFailed: Bool
     var onRetryLoad: () -> Void
     /// La página va a una columna con la vista calendario (decisión 66 de 2.3): el calendario, a ancho legible.
@@ -46,13 +43,10 @@ struct RecordsSharedList: View {
             transactionDateRange: transactionDateRange,
             defaultCurrencyCode: defaultCurrencyCode,
             onFilterChange: onFilterChange,
-            onListSearchChange: onListSearchChange,
             loadFailed: loadFailed,
             onRetryLoad: onRetryLoad,
             keepsCalendarAtReadableWidth: keepsCalendarAtReadableWidth
         )
-        // «Buscar en Registros» (decisión 14 de 2.3): el campo que asoma al tirar de la lista, en las dos pantallas.
-        .environment(\.offersRecordsListSearch, true)
         // El tinte de la pestaña Registros (el de la barra de pestañas, card 1c9w). Estadísticas pinta su pantalla con
         // `.tint(.primary)`, y sin esto el mes del calendario y lo tintado de la lista salían en negro solo allí.
         .tint(theme.accentText)

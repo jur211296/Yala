@@ -430,9 +430,10 @@ paths:
   2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
   **Un buscador que tenga que «asomar al tirar» en una página de pestaña va DENTRO del scroll** (decisión 14 de 2.3,
   Registros, 2026-11-11): campo propio encima de la cabecera, oculto en reposo, que enciende un
-  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. Molde:
-  `RecordsListSearchField` (`RecordsListSearchSlot` + `revealsRecordsListSearchOnPull`); pin
-  `RecordsListSearchUITests`.
+  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. **Registros lo tuvo y
+  se quitó el 20-nov-2026** (Jürgen: la pestaña Buscar cumple esa función; su regla de importe y sin tildes pasó a
+  «Todo» de Buscar). Si vuelve a hacer falta, el molde está en el git de `RecordsListSearchField.swift` antes de esa
+  fecha; pin de que no vuelva a Registros: `BuscarSinBarraEnRegistrosTests`.
 
 - **`ScrollViewProxy.scrollTo` hacia algo lejano de un `LazyVStack` se queda corto (medido el 2026-11-12, iOS 27.2,
   separador de mes de Registros).** Calcula con alturas estimadas de lo que aún no se pintó: «diciembre de 2025»
@@ -1038,11 +1039,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   columna, el calendario a ancho legible y lo abierto se cierra sin sacar hoja (`RecordsOpenRecordOnNarrowing`).
 - **Estadísticas › Registros es IDÉNTICA a la pestaña Registros (Jürgen, 2026-11-17).** Las dos montan
   `RecordsSharedList` (`Views/Records/Compartida/`), la única entrada a `RecordsTabView`: chips rápidos con
-  Lista/Calendario, «Buscar en Registros», filas, agrupación, calendario, selección, «···» y tinte. Sustituye a «Estadísticas
+  Lista/Calendario, filas, agrupación, calendario, selección, «···» y tinte (sin buscador desde el 20-nov). Sustituye a «Estadísticas
   no lleva chips rápidos» (decisión 15 de 2.3, F2) y a «el buscador solo en Registros» (decisión 14). ⇒ **algo nuevo de la
   lista va en la pieza compartida, no en un anfitrión, y no se le añaden llaves por pantalla**: así divergieron. Cada
-  anfitrión decide solo lo de alrededor (columna o panel, avatar, «Seleccionar» con icono en la columna del iPad). En
-  Estadísticas, lo escrito en el buscador recalcula solo la lista (`recalculateRecordsList`), no la pasada entera. Pin:
+  anfitrión decide solo lo de alrededor (columna o panel, avatar, «Seleccionar» con icono en la columna del iPad). Pin:
   `YalaTests/RegistrosEstadisticasIguales/`, `YalaUITests/RegistrosEstadisticasIguales/RegistrosEstadisticasIgualesUITests`.
 
 ## iPhone Duo (SDK 27.1, medido el 2026-10-24 en el simulador)

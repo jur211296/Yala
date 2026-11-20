@@ -3,9 +3,9 @@
 //  YalaUITests
 //
 //  Decisión de Jürgen del 17-nov: Estadísticas › Registros es idéntica a la pestaña Registros. Cae con el código de
-//  antes: allí no estaban los chips rápidos (Cuenta · Categoría · Más filtros, con Lista/Calendario en su fila) ni
-//  «Buscar en Registros» al tirar de la lista. Fixture `-uitest-seed-records-search`: un «Almuerzo de trabajo» de 45,90
-//  de hoy, cuya nota no tiene cifras (solo lo encuentra el importe). Seed `minimal`, scheme Yala Dev.
+//  antes: allí no estaban los chips rápidos (Cuenta · Categoría · Más filtros, con Lista/Calendario en su fila). Desde el
+//  20-nov ninguna de las dos lleva «Buscar en Registros» (la búsqueda es la pestaña Buscar). Seed `minimal`, scheme
+//  Yala Dev.
 //
 
 import XCTest
@@ -42,7 +42,7 @@ final class RegistrosEstadisticasIgualesUITests: XCTestCase {
                       "El chip Registros no montó su página.")
     }
 
-    func test_statsRecords_hasTheQuickFilters_andTheSearchFindsByAmount() {
+    func test_statsRecords_hasTheQuickFilters_andNoListSearch() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", deeplink: "statistics", extraArguments: ["-uitest-seed-records-search"])
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
@@ -55,22 +55,10 @@ final class RegistrosEstadisticasIgualesUITests: XCTestCase {
                           "Estadísticas › Registros no tiene «\(id)», que sí tiene la pestaña Registros.")
         }
 
-        // «Buscar en Registros»: asoma al tirar y el importe deja solo su registro.
-        let field = app.textFields["records_list_search_field"]
-        XCTAssertFalse(field.exists, "El campo salió sin tirar de la lista.")
+        // Sin «Buscar en Registros» (20-nov): tirar de la lista no saca ningún campo, como en la pestaña Registros.
         let list = app.scrollViews.containing(.button, identifier: "record_row").firstMatch
         list.swipeDown()
-        XCTAssertTrue(field.waitForExistence(timeout: 5),
-                      "Tirar de la lista de Estadísticas › Registros no hizo asomar «Buscar en Registros».")
-        field.tap()
-        field.typeText("45,90")
-        XCTAssertTrue(waitUntil { self.rows(app).count == 1 },
-                      "Buscar «45,90» en Estadísticas no dejó una sola fila (hay \(rows(app).count)).")
-        XCTAssertTrue(rows(app).firstMatch.label.contains("Almuerzo de trabajo"),
-                      "La fila que quedó no es la del importe buscado: \(rows(app).firstMatch.label)")
-
-        // La X lo vacía y la lista vuelve entera.
-        app.buttons["records_list_search_clear"].tap()
-        XCTAssertTrue(waitUntil { self.rows(app).count > 1 }, "La lista no volvió entera tras borrar la búsqueda.")
+        XCTAssertFalse(app.textFields["records_list_search_field"].waitForExistence(timeout: 3),
+                       "Estadísticas › Registros vuelve a sacar «Buscar en Registros» al tirar de la lista.")
     }
 }

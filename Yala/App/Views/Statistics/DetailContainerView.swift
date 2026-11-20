@@ -81,8 +81,6 @@ struct DetailContainerView: View {
     @State private var liveCalculationID: UUID?
     /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
     @State private var recordsWidth: CGFloat = 0
-    /// El filtrado pedido por «Buscar en Registros»: solo la lista, con su propia espera (`recalculateRecordsList`).
-    @State private var recordsListSearchTask: Task<Void, Never>?
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -599,7 +597,7 @@ struct DetailContainerView: View {
         let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Spacing.none)) : AnyLayout(ZStackLayout())
         return layout {
             // La misma lista que la pestaña Registros (`Records/Compartida/`, decisión de Jürgen del 17-nov): chips
-            // rápidos, «Buscar en Registros», lista y calendario.
+            // rápidos, lista y calendario.
             RecordsSharedList(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
@@ -609,7 +607,6 @@ struct DetailContainerView: View {
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
-                onListSearchChange: { recalculateRecordsList() },
                 loadFailed: dataViewModel.transactionsLoadFailed,
                 onRetryLoad: { reloadAndRecalculate() },
                 keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
@@ -747,26 +744,6 @@ struct DetailContainerView: View {
     /// Filter changes — recalculate from cache, NO DB fetch
     private func recalculateData() {
         scheduleRecalculation(reload: false)
-    }
-
-    /// «Buscar en Registros» (17-nov): lo escrito solo filtra la lista, así que solo se recalcula la lista, con la misma
-    /// espera de 150 ms que la pestaña Registros. La pasada entera (Tendencias, Resumen) tarda segundos con años de
-    /// datos (decisión 28 de 2.3) y no depende del texto. Lee lo ya cargado: sin pasada previa no hay nada que filtrar,
-    /// y la primera ya lee el texto que haya.
-    private func recalculateRecordsList() {
-        recordsListSearchTask?.cancel()
-        recordsListSearchTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled, hasCalculatedOnce, !dataViewModel.isDetachedFromMountedStore else { return }
-            recordsViewModel.applyFilters(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags,
-                context: modelContext,
-                currencyCode: appPreferences.defaultCurrencyCode.rawValue
-            )
-        }
     }
 
     /// Data mutations (dataVersion, sheet dismiss) — reload DB + recalculate

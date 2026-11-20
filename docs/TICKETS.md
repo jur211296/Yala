@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1420)
+## Index (1421)
 
 | id | status | path |
 | 2026-11-20-oferta-pro-primeros-pasos-mas-beneficios | backlog | tickets/backlog/2026-11-20-oferta-pro-primeros-pasos-mas-beneficios.md |
@@ -58,6 +58,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-20-primeros-pasos-paso-7-implementacion | qa | tickets/qa/2026-11-20-primeros-pasos-paso-7-implementacion.md |
 | 2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3 | backlog | tickets/backlog/2026-11-20-pie-de-ajustes-dice-planificacion-con-la-barra-de-2-3.md |
 | 2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios | done | tickets/done/2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios.md |
+| 2026-11-20-registros-fluidez | done | tickets/done/2026-11-20-registros-fluidez.md |
 | 2026-11-19-icloud-privado-eliminar-mi-cuenta | qa | tickets/qa/2026-11-19-icloud-privado-eliminar-mi-cuenta.md |
 | 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |
 | 2026-11-19-nuevo-registro-limpio-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-limpio-maquetas.md |
