@@ -1,10 +1,10 @@
 ---
 id: welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe
-status: backlog
+status: done
 priority: low
 area: "onboarding, groups, l10n"
 created: 2026-10-01
-updated: 2026-10-08
+updated: 2026-11-19
 source: "review adversarial de `groups-purge-save-crosses-two-stores-without-atomicity` (lente de consumidores); anterior a ese cambio"
 ---
 
@@ -36,3 +36,11 @@ separar el texto por dónde falló. Los 16 idiomas y `BRAND-VOICE.md`.
 - Se queda en `low`: hace falta que el segundo borrado lance después del primero (un fallo de guardado), y lo que el aviso dice que sigue es lo que la persona pidió borrar.
 
 Triage 2026-10-08: abierto · low → low · el texto sigue siendo falso en ese fallo, pero requiere que el segundo borrado lance tras el primero.
+
+## Cerrado (2026-11-19, lote del Welcome)
+
+Seguía vigente en `2.3`: `performFreshStartWipe` borra lo personal y después los grupos, y su `catch` genérico abría el
+aviso con «Tus datos siguen aquí». Ahora el borrado apunta si lo personal ya se fue y, en ese caso, el aviso dice lo
+mismo que la puerta del teléfono (`welcome.privateICloud.wipeDeviceFailedBody`: «Puede que parte de tus datos ya no esté
+y el resto siga aquí»), que ya existe en los 16 idiomas. Sin fallo a medias, el texto de siempre. Lo decide
+`FreshStartWipeFailureCopy`. Pin: `YalaTests/WelcomeCarruselBarrasYToque` (`WelcomeEmpezarDeCeroTests`).
