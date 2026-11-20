@@ -9,6 +9,12 @@ source: idea de Jürgen del 2026-11-19 (13:03 Lima) y sesión de maquetas del mi
 
 # Nuevo registro más limpio: título-menú, favoritos de icono, una fila y «···»
 
+> **Ronda 2 (2026-11-19, 18:11 Lima): Jürgen eligió la B como base**, con seis ajustes (aire con teclado, chips sin
+> recortar, subcategoría bajo el monto con categoría y necesidad como texto, Hoy siempre primero, estimado en soles al
+> lado del monto y pantalla de éxito de la C o minimalista). La especificación vigente está en
+> `tickets/backlog/2026-11-19-nuevo-registro-b-realista-maquetas.md`. Lo de abajo es la ronda 1: vale para lo que esa
+> ficha no cambia.
+
 ## Qué pide Jürgen
 
 Hoy la hoja «Nuevo registro» enseña seis capas con el mismo peso antes de guardar. Su idea, base de todo lo de abajo:
