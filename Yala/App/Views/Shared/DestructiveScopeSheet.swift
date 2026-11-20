@@ -311,7 +311,8 @@ extension DestructiveScopeSheet.Config {
     /// Vaciar usa `wipe_view_groups` (contexto distinto).
     private static func viewGroupsIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
         switch operation {
-        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups:
             return "delete_account_view_groups"
         default: return "wipe_view_groups"
         }
@@ -321,7 +322,8 @@ extension DestructiveScopeSheet.Config {
     /// cuenta (L20-8), el suyo: la misma etiqueta abre cosas distintas (el asistente / el archivo de todo).
     private static func exportBeforeIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
         switch operation {
-        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups:
             return "delete_account_export_before"
         case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
              .signOutCloud, .signOutGroupsOnly:
@@ -401,6 +403,15 @@ extension DestructiveScopeSheet.Config {
             case .cloud:  return L10n.Settings.deleteAccountScopeCloudGroupsOnly
             case .groups: return L10n.Settings.deleteAccountScopeGroups
             }
+        case .deleteAccountICloud, .deleteAccountICloudWithGroups:
+            // iCloud privado sin cuenta de Yala (2026-11-19): los textos que ya dicen lo que pasa, sin copy nuevo. La fila
+            // ☁️ es la de «Vaciar datos» en privada, que acota a quién alcanza el borrado de iCloud.
+            switch location {
+            case .device: return L10n.Settings.deleteAccountScopeDeviceCloud
+            case .cloud:  return L10n.Settings.wipeScopeCloudICloudPersonal
+            case .groups: return operation == .deleteAccountICloudWithGroups
+                ? L10n.Settings.scopeForgetGroups : L10n.Settings.scopeUntouchedShort
+            }
         case .signOutPrivate:
             switch location {
             case .device: return L10n.Settings.signOutScopeDevicePrivate
@@ -446,7 +457,8 @@ extension DestructiveScopeSheet.Config {
         switch operation {
         case .wipeDataFull, .wipeDataGroupsOnly:
             return L10n.Settings.deleteDataConfirmation
-        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups:
             return L10n.Settings.deleteAccountConfirmTitle
         case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
              .signOutCloud, .signOutGroupsOnly:
@@ -458,7 +470,8 @@ extension DestructiveScopeSheet.Config {
         switch operation {
         case .wipeDataFull, .wipeDataGroupsOnly:
             return L10n.Settings.deleteAllDataAction
-        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups:
             return L10n.Settings.deleteAccountContinue
         case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
              .signOutCloud, .signOutGroupsOnly:
@@ -477,6 +490,8 @@ extension DestructiveScopeSheet.Config {
         case .deleteAccountCloud: suffix = "delete_account_cloud"
         case .deleteAccountGroupsOnly: suffix = "delete_account_groups_only"
         case .deleteAccountGroupsOnlyNoPrivate: suffix = "delete_account_groups_only_no_private"
+        case .deleteAccountICloud: suffix = "delete_account_icloud"
+        case .deleteAccountICloudWithGroups: suffix = "delete_account_icloud_with_groups"
         case .signOutPrivate: suffix = "signout_private"
         case .signOutPrivateNoCopy: suffix = "signout_private_no_copy"
         case .signOutPrivateWithGroups: suffix = "signout_private_with_groups"
@@ -490,7 +505,8 @@ extension DestructiveScopeSheet.Config {
     /// Preserva los identifiers que `DeleteAccountDialogUITests` asserta; el resto usa el genérico.
     private static func confirmIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
         switch operation {
-        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups:
             return "delete_account_continue"
         default: return "destructive_scope_confirm"
         }
@@ -507,6 +523,7 @@ extension DestructiveScopeSheet.Config {
         // Operaciones sin nota de conservación (`hasConservationNote == false`): nunca se llama. Los cierres
         // sin copia no prometen vuelta atrás porque no la hay.
         case .wipeDataGroupsOnly, .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups,
              .signOutPrivateNoCopy, .signOutPrivateWithGroupsNoCopy:
             return ""
         }

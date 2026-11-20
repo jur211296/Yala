@@ -43,9 +43,11 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1394)
+## Index (1396)
 
 | id | status | path |
+| 2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios | done | tickets/done/2026-11-19-cerrar-sesion-cuenta-vacia-893-cambios.md |
+| 2026-11-19-icloud-privado-eliminar-mi-cuenta | qa | tickets/qa/2026-11-19-icloud-privado-eliminar-mi-cuenta.md |
 | 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |
 | 2026-11-19-nuevo-registro-limpio-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-limpio-maquetas.md |
 | 2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1 | done | tickets/done/2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1.md |

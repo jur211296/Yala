@@ -657,10 +657,42 @@ struct ProfileView: View {
     }
 
     /// L20-6: la tarjeta suelta del final, sin cabecera (ninguna decidida), con el mismo bloque que las secciones.
+    /// Desde el 2026-11-19 lleva también «Eliminar mi cuenta» en iCloud privado sin cuenta de Yala, debajo de
+    /// «Cerrar sesión» y separada por la línea de siempre: dos filas de la misma tarjeta, como en «Tu cuenta».
     private var removeDeviceDataSection: some View {
-        signOutRow
-            .solidCard()
-            .padding(.horizontal, DS.Spacing.lg)
+        VStack(spacing: DS.Spacing.none) {
+            signOutRow
+            if offersICloudAccountDeletion {
+                SubsectionDivider()
+                deleteICloudAccountRow
+            }
+        }
+        .solidCard()
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// Card «iCloud privado no tiene “Eliminar mi cuenta”» (Jürgen, 2026-11-19): la cuenta de iCloud privado lo tiene, igual
+    /// que las otras. Con cuenta de Yala la fila sigue dentro de «Tu cuenta de Yala»; aquí no hay esa pantalla.
+    private var offersICloudAccountDeletion: Bool {
+        DestructiveScopeLogic.offersICloudAccountDeletion(
+            path: signOutRowPath, hasYalaAccount: deleteAccountRowHasSession)
+    }
+
+    /// El mismo toque que «Eliminar mi cuenta» de «Tu cuenta de Yala»: la hoja de alcance, la alerta final y el servicio.
+    private var deleteICloudAccountRow: some View {
+        Button {
+            guard deletionService.phase != .working, deleteAccountScope == nil else { return }
+            deleteAccountScope = DeleteAccountScope(summary: GroupService.shared.accountDeletionGroupsSummary())
+        } label: {
+            settingsRowContent(
+                icon: "trash",
+                title: L10n.Settings.deleteAccount,
+                iconColor: .red,
+                showSpinner: deletionService.phase == .working)
+        }
+        .buttonStyle(.plain)
+        .disabled(signOutCoordinator.phase != .idle || deletionService.phase == .working)
+        .accessibilityIdentifier("profile_delete_account_icloud")
     }
 
     /// La alerta final de «Eliminar mi cuenta». Desde el 2026-10-29 es la misma en las tres celdas: también en la cuenta de
@@ -684,7 +716,9 @@ struct ProfileView: View {
     private var deleteAccountScopeOperation: DestructiveScopeLogic.Operation {
         DestructiveScopeLogic.deleteAccountOperation(
             storageMode: CloudSyncFlags.storageMode,
-            hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+            hasPrivateSession: PrivateSessionMark.hasPrivateSession(),
+            hasYalaAccount: deleteAccountRowHasSession,
+            deviceHasGroupRows: CloudSessionSignOut.hasAnyGroupRows(context: modelContext))
     }
 
     private func syncDeletionUI(from phase: AccountDeletionService.Phase) {
@@ -1228,9 +1262,11 @@ struct ProfileView: View {
                 dismiss()
             }
         }) { scope in
+            let operation = deleteAccountScopeOperation
             DestructiveScopeSheet(config: .make(
-                operation: deleteAccountScopeOperation,
-                cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
+                operation: operation,
+                // La cuenta de Yala en las celdas con cuenta; sin ella (iCloud privado), su iCloud.
+                cloudLabel: DestructiveScopeLogic.cloudLabel(for: operation, storageMode: CloudSyncFlags.storageMode),
                 hasOutstandingDebt: scope.summary.hasOutstandingDebt,
                 hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
                 onConfirm: { pendingDeleteAccountFinal = true },
@@ -1255,7 +1291,15 @@ struct ProfileView: View {
                 AccountDeletionService.shared.acknowledgeFailure()
             }
         } message: {
-            Text(L10n.Settings.deleteAccountErrorMessage)
+            // iCloud privado (2026-11-19): si lo paró una migración a medias o unos cambios de grupos sin subir, no se tocó
+            // nada y el texto es el de ese motivo en «Cerrar sesión» (terminar la migración, o volver a entrar). El de
+            // siempre diría «intenta de nuevo en un momento».
+            if deletionService.phase == .failed(step: .iCloudPrivateBlocked),
+               let reason = deletionService.iCloudPrivateBlockReason {
+                Text(SignOutBlockedCopy.message(for: reason))
+            } else {
+                Text(L10n.Settings.deleteAccountErrorMessage)
+            }
         }
     }
 

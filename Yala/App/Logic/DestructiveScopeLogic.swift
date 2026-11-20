@@ -50,6 +50,12 @@ nonisolated enum DestructiveScopeLogic {
         case deleteAccountGroupsOnly
         /// Solo grupos SIN sesión privada (F): la cuenta, y con ella lo que haya en este dispositivo.
         case deleteAccountGroupsOnlyNoPrivate
+        /// iCloud privado SIN cuenta de Yala (C), decisión de Jürgen del 2026-11-19: no hay servidor que borrar; se van los
+        /// datos de Yala de su iCloud y de este dispositivo, y el dispositivo vuelve al Welcome. Sin grupos en el teléfono.
+        case deleteAccountICloud
+        /// La misma celda C con filas de grupos en el teléfono (una sesión de grupos que caducó): el teléfono las olvida y
+        /// siguen en esa cuenta, igual que en su «Cerrar sesión» (`signOutPrivateWithGroups`).
+        case deleteAccountICloudWithGroups
 
         // MARK: Cerrar sesión — el mismo verbo en las cuatro celdas
         /// Privada (C) con copia en iCloud: se borra de este dispositivo tras subir lo pendiente.
@@ -131,6 +137,9 @@ nonisolated enum DestructiveScopeLogic {
         case .wipeDataFull, .wipeDataGroupsOnly, .signOutPrivate, .signOutPrivateNoCopy,
              .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy, .signOutCloud:
             return cloudLabel(storageMode: storageMode)
+        // Sin cuenta de Yala lo que se borra en la nube es la copia de su iCloud.
+        case .deleteAccountICloud, .deleteAccountICloudWithGroups:
+            return .icloud
         }
     }
 
@@ -180,6 +189,7 @@ nonisolated enum DestructiveScopeLogic {
         case .wipeDataGroupsOnly:
             return .profileAndPreferences
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .deleteAccountICloud, .deleteAccountICloudWithGroups,
              .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups,
              .signOutPrivateWithGroupsNoCopy, .signOutCloud, .signOutGroupsOnly:
             return nil
@@ -296,9 +306,24 @@ nonisolated enum DestructiveScopeLogic {
     /// privada (D; desde el encargo S27i se lleva también lo personal, de este dispositivo y de su iCloud) o la de un
     /// solo-grupos sin sesión privada (F, se va también lo local). Misma decisión que el cierre local de
     /// `AccountDeletionService`.
-    static func deleteAccountOperation(storageMode: StorageMode, hasPrivateSession: Bool) -> Operation {
+    ///
+    /// **Sin cuenta de Yala (C, iCloud privado) desde el 2026-11-19**: `hasYalaAccount == false` en `.icloud` con sesión
+    /// privada es la celda C, que no tiene servidor que borrar. `deviceHasGroupRows` elige su fila 👥, como
+    /// `forgetsBackendGroups` en su cierre de sesión. Sin valores por defecto: la vista tiene que preguntarlo.
+    static func deleteAccountOperation(storageMode: StorageMode, hasPrivateSession: Bool,
+                                       hasYalaAccount: Bool, deviceHasGroupRows: Bool) -> Operation {
         if storageMode == .cloud { return .deleteAccountCloud }
+        if !hasYalaAccount && hasPrivateSession {
+            return deviceHasGroupRows ? .deleteAccountICloudWithGroups : .deleteAccountICloud
+        }
         return hasPrivateSession ? .deleteAccountGroupsOnly : .deleteAccountGroupsOnlyNoPrivate
+    }
+
+    /// ¿Ajustes ofrece «Eliminar mi cuenta» en la tarjeta del final, junto a «Cerrar sesión»? Solo en la celda C (iCloud
+    /// privado sin cuenta de Yala), la de esa tarjeta (`signOutRemovesDeviceData`). Con cuenta de Yala la fila vive
+    /// dentro de «Tu cuenta de Yala», a dos toques (App Store 5.1.1(v)).
+    static func offersICloudAccountDeletion(path: CloudSignOutFlowLogic.Path, hasYalaAccount: Bool) -> Bool {
+        !hasYalaAccount && signOutRemovesDeviceData(path: path)
     }
 
     /// UX 2.2 · L20-6 (decisión de Jürgen, 2026-10-18): **sin cuenta de Yala, la salida se llama por lo que hace.** En la
@@ -415,6 +440,20 @@ nonisolated enum DestructiveScopeLogic {
                     let export: [SecondaryKind] = operation == .deleteAccountGroupsOnlyNoPrivate ? [] : [.exportBefore]
                     return (hasOutstandingDebt ? [.viewGroups] : []) + export
                 }())
+
+        case .deleteAccountICloud, .deleteAccountICloudWithGroups:
+            // C: 📱 y ☁️ (su iCloud) se borran para siempre. 👥: sin grupos en el teléfono no se tocan; con filas de una
+            // sesión de grupos que caducó, el teléfono las olvida y siguen en esa cuenta (neutral). Sin cuenta de Yala no
+            // hay líneas de deudas ni de copia congelada. «Exportar antes»: lo personal se pierde para siempre (L20-8).
+            return Model(
+                rows: [.init(location: .device, tone: .destructive),
+                       .init(location: .cloud, tone: .destructive),
+                       .init(location: .groups,
+                             tone: operation == .deleteAccountICloudWithGroups ? .neutral : .preserved)],
+                cloudLabel: cloudLabel,
+                hasConservationNote: false,
+                extraLines: [],
+                secondaryActions: [.exportBefore])
 
         case .signOutPrivate:
             // Se borra de este dispositivo (📱 neutral: cambia, pero sin pérdida — antes se sube lo pendiente);

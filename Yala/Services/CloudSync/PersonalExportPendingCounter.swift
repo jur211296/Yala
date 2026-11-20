@@ -26,6 +26,18 @@
 //  Solo lee: ningún `save()`, así que puede correr con un import en marcha sin tocar el invariante de
 //  quiescencia del contexto compartido.
 //
+//  **Lo que la app escribe sola no es un cambio tuyo** (card «Cerrar sesión en una cuenta vacía dice “Cambios por
+//  subir: 893”», 2026-11-19). Medido en el simulador: una cuenta nueva en iCloud privado, sin tocar nada, deja 80
+//  objetos en el historial (11 categorías, 62 subcategorías y 7 avisos de serie); en un iPhone se suma un año de tipos
+//  de cambio, una fila por día. Con un ancla anterior al alta —el ancla sobrevive al borrado del cierre— todo eso salía
+//  como «Cambios por subir» y el cierre esperaba su subida. No cuentan:
+//   - **los tipos de cambio** (`rebuildableEntityNames`), en cualquier cambio: son una caché que la app vuelve a bajar;
+//     cada movimiento guarda su propia tasa e importe convertido;
+//   - **lo que la app creó sola y nadie tocó después** (`untouchedAppDefaults`): solo con un ALTA tras el ancla y ningún
+//     cambio ni borrado posterior, y solo si sigue siendo lo que la app vuelve a crear al entrar (categoría o
+//     subcategoría de serie o de sistema; aviso de serie con sus valores de serie). Si la persona lo editó, cuenta.
+//  Un borrado cuenta siempre (salvo de tipos de cambio): no se sabe si lo borrado estaba ya en iCloud.
+//
 
 import Foundation
 import SwiftData
@@ -66,6 +78,8 @@ enum PersonalExportPendingCounter {
             return nil
         }
 
+        // Altas y el resto por separado: una alta sin nada después puede ser algo que la app creó sola.
+        var inserted: Set<PersistentIdentifier> = []
         var touched: Set<PersistentIdentifier> = []
         for transaction in transactions where PrivateSignOutExportGateLogic.isPendingLocalWrite(
             timestamp: transaction.timestamp,
@@ -74,24 +88,91 @@ enum PersonalExportPendingCounter {
         ) {
             for change in transaction.changes {
                 let identifier = change.changedPersistentIdentifier
-                guard CloudSyncEngine.personalStoreEntityNames.contains(identifier.entityName) else { continue }
+                guard CloudSyncEngine.personalStoreEntityNames.contains(identifier.entityName),
+                      !rebuildableEntityNames.contains(identifier.entityName) else { continue }
                 switch change {
-                case .insert, .delete:
+                case .insert:
+                    inserted.insert(identifier)
+                case .delete:
                     touched.insert(identifier)
                 case .update(let update):
-                    if updatedAttributeCount(update) > 0 { touched.insert(identifier) }
+                    if personUpdatedAttributeCount(update) > 0 { touched.insert(identifier) }
                 @unknown default:
                     touched.insert(identifier)  // un cambio que no sabemos leer cuenta: el lado seguro
                 }
             }
         }
-        let pending = touched.count
+        let onlyInserted = inserted.subtracting(touched)
+        let appDefaults = untouchedAppDefaults(among: onlyInserted, context: context)
+        let pending = inserted.union(touched).subtracting(appDefaults).count
         if confirmedExportStart == nil { return pending == 0 ? 0 : nil }
         return pending
     }
 
-    /// Abre el existencial del update para leer sus atributos (el tipo del modelo es su `associatedtype`).
-    private static func updatedAttributeCount<U: HistoryUpdate>(_ update: U) -> Int {
-        update.updatedAttributes.count
+    /// Entidades del store personal que la app reconstruye sola y que nunca son un cambio de la persona: los tipos de
+    /// cambio vienen de la API y se vuelven a bajar al entrar (`ExchangeRateService.preloadHistoricalIfNeeded`).
+    static let rebuildableEntityNames: Set<String> = ["ExchangeRate"]
+
+    /// De las altas sin nada posterior, las que la app vuelve a crear igual al entrar: categorías y subcategorías de
+    /// serie o de sistema, y avisos de serie que siguen con sus valores de serie. Un fallo al leer devuelve `[]`: entonces
+    /// todo cuenta, que es el lado seguro (esperar de más, nunca borrar algo de la persona sin subirlo).
+    static func untouchedAppDefaults(
+        among candidates: Set<PersistentIdentifier>, context: ModelContext
+    ) -> Set<PersistentIdentifier> {
+        guard !candidates.isEmpty else { return [] }
+        do {
+            if _testThrowOnDefaultsFetch { throw CocoaError(.fileReadUnknown) }
+            var defaults: Set<PersistentIdentifier> = []
+            for category in try context.fetch(FetchDescriptor<Category>(
+                predicate: #Predicate { $0.isDefaultSeed || $0.isSystem })) {
+                defaults.insert(category.persistentModelID)
+            }
+            for subcategory in try context.fetch(FetchDescriptor<Subcategory>(
+                predicate: #Predicate { $0.isDefaultSeed || $0.isSystem })) {
+                defaults.insert(subcategory.persistentModelID)
+            }
+            let serie = Dictionary(
+                NotificationItem.createDefaults().map { ($0.typeRaw, NotificationDefaultShape($0)) },
+                uniquingKeysWith: { first, _ in first })
+            for notification in try context.fetch(FetchDescriptor<NotificationItem>())
+            where serie[notification.typeRaw] == NotificationDefaultShape(notification) {
+                defaults.insert(notification.persistentModelID)
+            }
+            return candidates.intersection(defaults)
+        } catch {
+            #if DEBUG
+            print("PersonalExportPendingCounter: Error leyendo lo creado por la app: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// Seam de test: hace fallar la lectura de lo creado por la app DENTRO del `do`, para fijar que un fallo cuenta todo.
+    /// Estático: resetéalo en `defer`.
+    static var _testThrowOnDefaultsFetch = false
+
+    /// Lo que la persona puede cambiar de un aviso. Igual al de serie ⇒ entrar en Yala lo vuelve a crear idéntico.
+    ///
+    /// La configuración de los informes se compara DECODIDA: es un JSON cuyo orden de claves cambia de una codificación a
+    /// otra (medido en la suite, 2026-11-19: dos avisos de serie salían «distintos» unas corridas sí y otras no).
+    private struct NotificationDefaultShape: Equatable {
+        let name: String, text: String, hour: Int, minute: Int, isActive: Bool
+        let iconName: String, colorHex: String, report: ReportConfig?, weekdaysRaw: String?
+        init(_ item: NotificationItem) {
+            name = item.name; text = item.text; hour = item.hour; minute = item.minute; isActive = item.isActive
+            iconName = item.iconName; colorHex = item.colorHex; weekdaysRaw = item.weekdaysRaw
+            report = item.configurationData.flatMap { ReportConfig.fromData($0) }
+        }
+    }
+
+    /// Atributos que solo escribe la app, y que cualquier teléfono vuelve a calcular igual al arrancar. Medido en el
+    /// simulador (2026-11-19): el segundo arranque de una cuenta nueva escribe el papel de sistema de tres subcategorías de
+    /// serie (`SubcategorySystemRoleBackfill`, en cada arranque), y sin esto salían como «3 cambios por subir».
+    static let appMaintainedAttributes: Set<AnyKeyPath> = [\Subcategory.systemRoleRaw]
+
+    /// Abre el existencial del update para contar sus atributos (el tipo del modelo es su `associatedtype`), sin los que
+    /// solo escribe la app (`appMaintainedAttributes`).
+    private static func personUpdatedAttributeCount<U: HistoryUpdate>(_ update: U) -> Int {
+        update.updatedAttributes.filter { !appMaintainedAttributes.contains($0) }.count
     }
 }

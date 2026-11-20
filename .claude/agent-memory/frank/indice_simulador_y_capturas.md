@@ -113,3 +113,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Capturas del flujo de caja con axe](reference_capturas_del_flujo_de_caja_con_axe.md) — plan que no persiste, barra plegada en SE, gestos en iPad, hojas fuera del árbol.
 - [Conductor de barrido por secciones](feedback_conductor_de_barrido_por_secciones.md) — 30 min = 17 Pro ×2 + SE + iPad + Duo parcial; SE y Duo esconden pestañas.
 - [SE e iPad temporales en la Max](reference_simulador_temporal_se_e_ipad_en_la_max.md) — runtime iOS-27-2 (no el del Duo); `panel_action_new` vale en iPad; artifact sin enlace público.
+- [Reproducir el cierre privado en el simulador](reference_reproducir_el_cierre_privado_en_el_simulador.md) — ancla a mano en defaults para ver «Cambios por subir»; contar el historial con sqlite.
