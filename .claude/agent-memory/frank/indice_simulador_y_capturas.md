@@ -116,3 +116,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Reproducir el cierre privado en el simulador](reference_reproducir_el_cierre_privado_en_el_simulador.md) — ancla a mano en defaults para ver «Cambios por subir»; contar el historial con sqlite.
 - [Capturar lo que -uitest calla](reference_tours_de_ajustes_y_pro_no_se_capturan.md) — bienvenida real sin iCloud: iCloud privado → «Seguir así» → relanzar; erase antes de XCUITest.
 - [Galería del sistema: solo XCUITest](reference_galeria_del_sistema_solo_con_xcuitest.md) — PhotosPicker fuera del árbol; axe no elige foto; toque por coordenadas; recordVideo «ocupado» → record_sim_video.
+- [Antes/después con un XCUITest de capturas](reference_antes_con_un_xcuitest_de_capturas.md) — escrito antes de editar, corrido en la base, endurecido luego; a mano, axe no teclea montos.
