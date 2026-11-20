@@ -117,23 +117,15 @@ struct RecordTutorialView: View {
             part: $introPart,
             onBack: { closeWithoutFinishing() },
             content: { index in introPart(index) },
+            // Sin «Omitir este paso» (encargo del 2026-11-20): la intro es una historia con su botón de acción. Se sale con
+            // el «‹» de arriba, y cada manera se puede omitir dentro del tutorial.
             footer: {
-                VStack(spacing: DS.Spacing.xs) {
-                    YalaPrimaryButton(T.startManual) {
-                        showsIntro = false
-                        start(.manual)
-                    }
-                    .accessibilityIdentifier("record_tutorial_start_manual")
-                    .primerosPasosButtonText()
-                    Button(T.skipStep) {
-                        session.skipAll()
-                        onClose(true)
-                    }
-                    .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(.thAccentText)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .accessibilityIdentifier("record_tutorial_skip_step")
+                YalaPrimaryButton(T.startManual) {
+                    showsIntro = false
+                    start(.manual)
                 }
+                .accessibilityIdentifier("record_tutorial_start_manual")
+                .primerosPasosButtonText()
             }
         )
     }

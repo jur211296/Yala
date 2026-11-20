@@ -36,8 +36,8 @@ struct FirstAccountFlowView: View {
     @State private var lastCreatedCurrencies: [String] = []
     @State private var saveFailed = false
 
-    // Lo que se escribe en cada pregunta.
-    @State private var editsName = false
+    // Lo que se escribe en cada pregunta. Al volver a una pregunta se rellena con lo que ya se contestó (encargo del
+    // 2026-11-20: volver un paso no limpia nada).
     @State private var nameText = ""
     @State private var amountText = ""
     @State private var isNegative = false
@@ -163,7 +163,7 @@ struct FirstAccountFlowView: View {
 
     /// Cambia con la pregunta y con el saldo de cada moneda: la pregunta nueva se funde.
     private var questionIdentity: String {
-        "\(step)-\(editsName)-\(showsHelper)"
+        "\(step)-\(showsHelper)"
     }
 
     // MARK: Textos de la pregunta
@@ -190,10 +190,7 @@ struct FirstAccountFlowView: View {
         switch step {
         case .kind: return T.kindQuestion
         case .currencies: return isCard ? T.currencyQuestionCard : T.currencyQuestion
-        case .name:
-            if editsName { return T.nameEditQuestion }
-            if draft.kind?.writesOwnName == true { return T.nameQuestion }
-            return T.nameSuggestQuestion(suggestedName)
+        case .name: return T.nameQuestion
         case .balance(let index):
             if showsHelper { return helperTitle }
             let two = draft.currencies.count > 1
@@ -212,8 +209,7 @@ struct FirstAccountFlowView: View {
         switch step {
         case .kind: return T.kindSubtitle
         case .currencies: return isCard ? T.currencySubtitleCard : T.currencySubtitle
-        case .name:
-            return draft.kind?.writesOwnName == true && !editsName ? T.nameSubtitleOwn : T.nameSubtitle
+        case .name: return T.nameSubtitle
         case .balance:
             if showsHelper { return helperIntro }
             return isCard ? T.balanceSubtitleCard : T.balanceSubtitle
@@ -349,33 +345,39 @@ struct FirstAccountFlowView: View {
         }
     }
 
-    @ViewBuilder
+    /// El nombre llega escrito con el del tipo («Efectivo», «Tarjeta de crédito»…) y se puede cambiar ahí mismo (encargo
+    /// del 2026-11-20; antes, «Sí, así está bien» / «Ponerle otro nombre», y la tarjeta y los bancos llegaban vacíos).
     private var nameDock: some View {
-        if draft.kind?.writesOwnName == true || editsName {
-            textEntry(
-                text: $nameText, prompt: editsName ? T.namePlaceholder : T.nameExample(nameExample),
-                field: .name, canSend: !nameText.trimmingCharacters(in: .whitespaces).isEmpty
-            ) {
-                draft.name = nameText.trimmingCharacters(in: .whitespacesAndNewlines)
-                editsName = false
-                advance()
-            }
-        } else {
-            VStack(spacing: DS.Spacing.sm) {
-                optionButton(title: T.nameKeep, highlighted: true, id: "first_account_name_keep") {
-                    draft.name = suggestedName
-                    advance()
-                }
-                optionButton(title: T.nameChange, id: "first_account_name_change") {
-                    nameText = ""
-                    editsName = true
-                    focusSoon(.name)
-                }
-            }
+        textEntry(
+            text: $nameText, prompt: T.namePlaceholder,
+            field: .name, canSend: !nameText.trimmingCharacters(in: .whitespaces).isEmpty
+        ) {
+            draft.name = nameText.trimmingCharacters(in: .whitespacesAndNewlines)
+            advance()
         }
     }
 
-    private var nameExample: String { Self.nameExample(for: draft.kind) }
+    /// Lo que trae el campo del nombre al llegar a la pregunta: lo que ya se escribió, salvo que fuera solo el nombre de
+    /// otro tipo (se volvió atrás y se cambió el tipo); si no, el nombre del tipo.
+    static func prefilledName(current: String, kind: Logic.Kind?) -> String {
+        let typed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        let typeNames = Set(Logic.Kind.allCases.map { suggestedName(for: $0) })
+        if typed.isEmpty || typeNames.contains(typed) { return suggestedName(for: kind) }
+        return typed
+    }
+
+    /// Un saldo ya contestado, como se vuelve a escribir: la magnitud, sin separador de miles y con el decimal del idioma
+    /// (el que entiende `parsed`). Cero vale vacío: «Empieza en 0» no es algo que la persona haya escrito.
+    static func editableAmount(_ value: Double?, locale: Locale = .current) -> String {
+        guard let value, value != 0 else { return "" }
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: abs(value))) ?? ""
+    }
 
     /// El ejemplo del nombre de una cuenta que la persona escribe. Lo reusan los guiados de Yala IA.
     static func nameExample(for kind: Logic.Kind?) -> String {
@@ -426,12 +428,14 @@ struct FirstAccountFlowView: View {
     }
 
     private func amountField(code: String) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
+        // El símbolo y el número en la misma línea base y la misma letra, con aire entre ellos (encargo del 2026-11-20).
+        HStack(alignment: .firstTextBaseline, spacing: YalaFieldPrefix.spacing) {
             Text(CurrencyCode(rawValue: code)?.symbol ?? code)
-                .font(DS.Typography.headline)
+                .font(YalaFieldPrefix.font)
                 .foregroundStyle(.secondary)
-            TextField("", text: $amountText, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
-                .font(DS.Typography.title3.weight(.semibold))
+            TextField("", text: $amountText, prompt: Text(verbatim: "0.00").yalaFieldPrompt())
+                .font(YalaFieldPrefix.font)
+                .yalaFieldText()
                 .amountKeyboard()
                 .focused($focusedField, equals: .amount)
                 .accessibilityLabel(L10n.PrimerosPasos23.Account.balanceFieldLabel)
@@ -498,8 +502,9 @@ struct FirstAccountFlowView: View {
                             }
                         }
                         Spacer(minLength: DS.Spacing.sm)
-                        TextField("", text: $helperValues[row], prompt: Text(verbatim: "0").foregroundStyle(.tertiary))
+                        TextField("", text: $helperValues[row], prompt: Text(verbatim: "0").yalaFieldPrompt())
                             .font(DS.Typography.body.weight(.semibold))
+                            .yalaFieldText()
                             .multilineTextAlignment(.trailing)
                             .amountKeyboard()
                             .focused($focusedField, equals: .helper(row))
@@ -576,10 +581,13 @@ struct FirstAccountFlowView: View {
         let day = Int(dayText)
         return VStack(spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(T.dayPrefix).font(DS.Typography.headline).foregroundStyle(.secondary)
-                    TextField("", text: $dayText, prompt: Text(T.dayPlaceholder).foregroundStyle(.tertiary))
-                        .font(DS.Typography.title3.weight(.semibold))
+                // «Día» y el número en la misma línea base y la misma letra, con aire entre ellos (encargo del
+                // 2026-11-20: antes iban en dos tamaños y casi pegados).
+                HStack(alignment: .firstTextBaseline, spacing: YalaFieldPrefix.spacing) {
+                    Text(T.dayPrefix).font(YalaFieldPrefix.font).foregroundStyle(.secondary)
+                    TextField("", text: $dayText, prompt: Text(T.dayPlaceholder).yalaFieldPrompt())
+                        .font(YalaFieldPrefix.font)
+                        .yalaFieldText()
                         .keyboardType(.numberPad)
                         .focused($focusedField, equals: .day)
                         .accessibilityLabel(T.dayFieldLabel)
@@ -594,18 +602,22 @@ struct FirstAccountFlowView: View {
                 }
             }
             if focusedField != .day {
+                // Lado a lado miden lo mismo aunque una ocupe dos líneas («Prefiero no decirlo»).
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Spacing.sm) { dayNoButtons }
-                    VStack(spacing: DS.Spacing.sm) { dayNoButtons }
+                    HStack(spacing: DS.Spacing.sm) { dayNoButtons(fillsRow: true) }
+                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: DS.Spacing.sm) { dayNoButtons(fillsRow: false) }
                 }
             }
         }
     }
 
     @ViewBuilder
-    private var dayNoButtons: some View {
-        optionButton(title: L10n.PrimerosPasos23.Account.dontKnow, id: "first_account_day_unknown") { answerDay(.unknown) }
-        optionButton(title: L10n.PrimerosPasos23.Account.preferNotToSay, id: "first_account_day_private") {
+    private func dayNoButtons(fillsRow: Bool) -> some View {
+        optionButton(title: L10n.PrimerosPasos23.Account.dontKnow, fillsHeight: fillsRow,
+                     id: "first_account_day_unknown") { answerDay(.unknown) }
+        optionButton(title: L10n.PrimerosPasos23.Account.preferNotToSay, fillsHeight: fillsRow,
+                     id: "first_account_day_private") {
             answerDay(.preferNotToSay)
         }
     }
@@ -661,9 +673,10 @@ struct FirstAccountFlowView: View {
 
     // MARK: - Piezas
 
+    /// `fillsHeight`: en una fila con otra opción al lado, ocupa el alto de la fila (las dos miden lo mismo).
     private func optionButton(
         title: String, subtitle: String? = nil, icon: String? = nil, tint: Color? = nil,
-        highlighted: Bool = false, id: String, action: @escaping () -> Void
+        highlighted: Bool = false, fillsHeight: Bool = false, id: String, action: @escaping () -> Void
     ) -> some View {
         Button {
             DS.Haptic.selection()
@@ -687,7 +700,7 @@ struct FirstAccountFlowView: View {
                 Image(systemName: "chevron.right").font(DS.Typography.caption).foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -706,8 +719,9 @@ struct FirstAccountFlowView: View {
         text: Binding<String>, prompt: String, field: Field, canSend: Bool, send: @escaping () -> Void
     ) -> some View {
         HStack(spacing: DS.Spacing.sm) {
-            TextField("", text: text, prompt: Text(prompt).foregroundStyle(.tertiary))
+            TextField("", text: text, prompt: Text(prompt).yalaFieldPrompt())
                 .font(DS.Typography.body)
+                .yalaFieldText()
                 .focused($focusedField, equals: field)
                 .submitLabel(.done)
                 .onSubmit { if canSend { send() } }
@@ -772,14 +786,16 @@ struct FirstAccountFlowView: View {
         focusedField = nil
         showsHelper = false
         switch next {
-        case .balance:
-            amountText = ""
-            isNegative = false
-        case .statementDay, .paymentDay:
-            dayText = ""
+        case .balance(let index):
+            let stored = draft.currencies[safe: index].flatMap { draft.balances[$0] }
+            amountText = Self.editableAmount(stored)
+            isNegative = !isCard && (stored ?? 0) < 0
+        case .statementDay:
+            dayText = draft.statementDay?.day.map(String.init) ?? ""
+        case .paymentDay:
+            dayText = draft.paymentDay?.day.map(String.init) ?? ""
         case .name:
-            nameText = ""
-            editsName = false
+            nameText = Self.prefilledName(current: draft.name, kind: draft.kind)
         default:
             break
         }
@@ -789,10 +805,6 @@ struct FirstAccountFlowView: View {
         if showsHelper {
             showsHelper = false
             focusedField = nil
-            return
-        }
-        if editsName {
-            editsName = false
             return
         }
         guard step != .done, let previous = history.popLast() else {
@@ -888,13 +900,6 @@ struct FirstAccountFlowView: View {
             codes.append(code)
         }
         draft.currencies = Logic.normalizedCurrencies(codes)
-    }
-
-    private func focusSoon(_ field: Field) {
-        Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            focusedField = field
-        }
     }
 
     // MARK: - Ayudantes

@@ -48,19 +48,12 @@ enum PlaceGuide: String, CaseIterable, Equatable {
                     message: L10n.PlaceGuide.chartsTabMessageLater,
                     advance: .tapTab,
                     showsSkip: true),
-                Self.chartsInMore,
+                Self.chartsInMore(eyebrow: L10n.Tab.more),
             ]
         case .chartsStep:
-            return [
-                PlaceGuideStage(
-                    target: .moreTab,
-                    eyebrow: L10n.PlaceGuide.stepOf(6, 7),
-                    title: L10n.PlaceGuide.chartsTabTitle,
-                    message: L10n.PlaceGuide.chartsTabMessageStep,
-                    advance: .tapTab,
-                    showsSkip: true),
-                Self.chartsInMore,
-            ]
+            // Pulido del 2026-11-20: el paso 6 abre «Más» solo (`PanelView.startChartsStepGuide`) y enseña lo que hay ahí,
+            // con «Entendido». Ya no pide tocar la pestaña ni lleva «Omitir».
+            return [Self.chartsInMore(eyebrow: L10n.PlaceGuide.stepOf(6, 7))]
         case .budgets:
             return [
                 PlaceGuideStage(
@@ -69,7 +62,8 @@ enum PlaceGuide: String, CaseIterable, Equatable {
                     title: L10n.PlaceGuide.budgetsTabTitle,
                     message: L10n.PlaceGuide.budgetsTabMessage,
                     advance: .tapTab,
-                    showsSkip: true),
+                    showsSkip: false,
+                    closeLabel: L10n.Common.understood),
                 PlaceGuideStage(
                     target: .moreItems(["budgets"]),
                     eyebrow: L10n.Tab.more,
@@ -86,7 +80,8 @@ enum PlaceGuide: String, CaseIterable, Equatable {
                     title: L10n.PlaceGuide.paymentsTabTitle,
                     message: L10n.PlaceGuide.paymentsTabMessage,
                     advance: .tapTab,
-                    showsSkip: true),
+                    showsSkip: false,
+                    closeLabel: L10n.Common.understood),
                 PlaceGuideStage(
                     target: .moreItems(["scheduledPayments"]),
                     eyebrow: L10n.Tab.more,
@@ -119,10 +114,10 @@ enum PlaceGuide: String, CaseIterable, Equatable {
     }
 
     /// Lo último de las dos de gráficas: Más con el foco en las tres de Estadísticas.
-    private static var chartsInMore: PlaceGuideStage {
+    private static func chartsInMore(eyebrow: String) -> PlaceGuideStage {
         PlaceGuideStage(
             target: .moreItems(["insights", "trends", "categories"]),
-            eyebrow: L10n.Tab.more,
+            eyebrow: eyebrow,
             title: L10n.PlaceGuide.chartsMoreTitle,
             message: L10n.PlaceGuide.chartsMoreMessage,
             advance: .button(L10n.Common.understood),
@@ -167,6 +162,9 @@ struct PlaceGuideStage: Equatable {
     let message: String
     let advance: Advance
     let showsSkip: Bool
+    /// Un botón que la cierra sin omitir nada. Lo lleva la tarjeta de un solo momento a la vista (sin contador «1 de 2»):
+    /// ahí «Omitir» no tenía sentido (encargo del 2026-11-20, «cuando es un solo paso, el botón dice Entendido»).
+    var closeLabel: String? = nil
 }
 
 /// La guía en curso. Del proceso, como el tour Pro (`ProTourManager`): es una por teléfono, no por ventana.

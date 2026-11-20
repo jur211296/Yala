@@ -45,14 +45,20 @@ final class Bienvenida23FinalUITests: XCTestCase {
         add(shot)
     }
 
-    /// Y23-14: «Omitir» en «Tus gráficas viven en Más» pasa el mazo al paso 7 (antes se quedaba en el 6).
-    func test_step6_skippingTheGuide_movesTheDeckToStep7() {
+    /// Y23-14 y pulido del 2026-11-20: el paso 6 abre «Más» solo, la guía enseña Estadísticas con «Entendido» y el mazo
+    /// pasa al paso 7.
+    func test_step6_opensMore_understood_movesTheDeckToStep7() {
         let app = launch(atStep: 6)
         let deck = app.buttons["setup_deck_current"]
         XCTAssertTrue(deck.waitForExistence(timeout: 10))
         XCTAssertTrue(deck.label.contains("6 de 7"), "El mazo empieza en el paso 6: «\(deck.label)».")
         tapWhenSettled(app, "setup_deck_current")
-        tapWhenSettled(app, "place_guide_skip")
+        // El paso 6 abre «Más» solo.
+        expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: app.tabBars.buttons["Más"])
+        waitForExpectations(timeout: 10)
+        XCTAssertFalse(element(app, "place_guide_skip").exists, "Sin «Omitir».")
+        tapWhenSettled(app, "place_guide_advance")
+        app.tabBars.buttons["Panel"].tap()
         expectation(for: NSPredicate(format: "label CONTAINS %@", "7 de 7"), evaluatedWith: deck)
         waitForExpectations(timeout: 10)
     }

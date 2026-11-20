@@ -3,33 +3,25 @@
 //  Yala
 //
 //  Las páginas cortas (patrón E2 del prototipo oficial v35) de los pasos 3 y 4 de Primeros pasos 2.3: tres partes que
-//  avanzan solas cada 3,4 s (quietas con Reducir movimiento o VoiceOver), con el botón para empezar y «Omitir este paso»
-//  siempre a la vista. Los importes y nombres son de ejemplo (la ficha: los datos del prototipo son solo para mostrar) y
-//  van en la moneda de la persona.
+//  avanzan solas cada 3,4 s (quietas con Reducir movimiento o VoiceOver), con el botón para empezar siempre a la vista.
+//  Desde el pulido del 2026-11-20 no llevan «Omitir este paso», como una historia: la salida sin crear nada es «No deseo
+//  crear…» en la primera pregunta. Los importes y nombres son de ejemplo (la ficha: los datos del prototipo son solo para
+//  mostrar) y van en la moneda de la persona.
 //
 
 import SwiftData
 import SwiftUI
 
-/// Pie común: el botón de empezar y «Omitir este paso».
+/// Pie común: solo el botón de empezar (encargo del 2026-11-20: las intros no llevan «Omitir»).
 private struct PlanningIntroFooter: View {
     let start: String
     let startID: String
-    let skipID: String
     let onStart: () -> Void
-    let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: DS.Spacing.xs) {
-            YalaPrimaryButton(start, action: onStart)
-                .accessibilityIdentifier(startID)
-                .primerosPasosButtonText()
-            Button(L10n.PrimerosPasos23.Record.skipStep, action: onSkip)
-                .font(DS.Typography.body.weight(.semibold))
-                .foregroundStyle(.thAccentText)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .accessibilityIdentifier(skipID)
-        }
+        YalaPrimaryButton(start, action: onStart)
+            .accessibilityIdentifier(startID)
+            .primerosPasosButtonText()
     }
 }
 
@@ -89,7 +81,6 @@ struct FirstBudgetIntroPage: View {
     let currencyCode: String
     let onBack: () -> Void
     let onStart: () -> Void
-    let onSkip: () -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
@@ -105,8 +96,7 @@ struct FirstBudgetIntroPage: View {
             content: { index in partView(index) },
             footer: {
                 PlanningIntroFooter(
-                    start: T.introCta, startID: "first_budget_start", skipID: "first_budget_skip_step",
-                    onStart: onStart, onSkip: onSkip)
+                    start: T.introCta, startID: "first_budget_start", onStart: onStart)
             }
         )
     }
@@ -186,7 +176,6 @@ struct FirstScheduledPaymentIntroPage: View {
     let currencyCode: String
     let onBack: () -> Void
     let onStart: () -> Void
-    let onSkip: () -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
@@ -202,8 +191,7 @@ struct FirstScheduledPaymentIntroPage: View {
             content: { index in partView(index) },
             footer: {
                 PlanningIntroFooter(
-                    start: T.introCta, startID: "first_payment_start", skipID: "first_payment_skip_step",
-                    onStart: onStart, onSkip: onSkip)
+                    start: T.introCta, startID: "first_payment_start", onStart: onStart)
             }
         )
     }

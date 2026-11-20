@@ -200,7 +200,9 @@ struct StepSevenAndTutorialDotsTests {
         let flow = try Source.code("Yala/App/Views/Onboarding/PrimerosPasos/HomeScreenTutorialFlowView.swift")
         #expect(flow.contains("partDuration: TutorialStoryLogic.slowPartDuration"))
         let page = try Source.code("Yala/App/Views/Onboarding/PrimerosPasos/TutorialStoryPage.swift")
-        #expect(page.contains("try await Task.sleep(for: partDuration)"))
+        // Desde el pulido del 2026-11-20 el reloj es el de las historias (con pausa): cuenta lo que dura la parte.
+        #expect(page.contains("private var dwell: TimeInterval { TutorialStoryLogic.seconds(partDuration) }"))
+        #expect(page.contains("clock.remaining(at: .now, dwell: dwell)"))
         #expect(!page.contains(".linear(duration: 3.4)"))
     }
 

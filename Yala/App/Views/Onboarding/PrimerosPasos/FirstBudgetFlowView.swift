@@ -17,7 +17,7 @@ import SwiftUI
 enum PrimerosPasosPlanningResult: Equatable {
     /// Se guardó al menos uno.
     case created
-    /// «Omitir este paso».
+    /// «No deseo crear…» en la primera pregunta (antes, «Omitir este paso» de la intro).
     case skipped
     /// Se cerró sin guardar ni omitir: el mazo sigue en el paso.
     case closed
@@ -70,8 +70,7 @@ struct FirstBudgetFlowView: View {
                     examples: categories,
                     currencyCode: draft.currencyCode,
                     onBack: { onClose(.closed) },
-                    onStart: startQuestions,
-                    onSkip: { onClose(.skipped) }
+                    onStart: startQuestions
                 )
                 .transition(.opacity)
             } else {
@@ -163,7 +162,12 @@ struct FirstBudgetFlowView: View {
     private var dock: some View {
         switch step {
         case .scope:
-            VStack(spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // La salida sin crear nada va arriba de las respuestas, nunca debajo de otro botón (encargo del
+                // 2026-11-20). Da el paso por omitido, como antes «Omitir este paso» de la intro.
+                PrimerosPasosDeclineLink(title: PrimerosPasosPulidoText.budgetNoneOption, id: "first_budget_none") {
+                    onClose(created ? .created : .skipped)
+                }
                 TutorialOptionButton(title: T.scopeAll, subtitle: T.scopeAllHint, icon: "chart.pie.fill",
                                      id: "first_budget_scope_all") { chooseScope(.all) }
                 TutorialOptionButton(title: T.scopeCategories, subtitle: T.scopeCategoriesHint, icon: "square.grid.2x2.fill",
@@ -191,9 +195,15 @@ struct FirstBudgetFlowView: View {
                 }
             }
         case .done:
-            YalaPrimaryButton(P.seePanel) { onClose(created ? .created : .closed) }
-                .accessibilityIdentifier("first_budget_done")
-                .primerosPasosButtonText()
+            PrimerosPasosPlanningDoneDock(
+                freeNote: PrimerosPasosPulidoText.budgetDoneFreeLimit(Self.freeBudgetLimit),
+                anotherTitle: canCreateAnother ? PrimerosPasosPulidoText.budgetCreateAnother : nil,
+                anotherID: "first_budget_another",
+                doneTitle: P.seePanel,
+                doneID: "first_budget_done",
+                onAnother: startAnother,
+                onDone: { onClose(created ? .created : .closed) }
+            )
         }
     }
 
@@ -322,8 +332,9 @@ struct FirstBudgetFlowView: View {
         if editsName {
             let trimmed = nameText.trimmingCharacters(in: .whitespacesAndNewlines)
             HStack(spacing: DS.Spacing.sm) {
-                TextField("", text: $nameText, prompt: Text(T.namePlaceholder).foregroundStyle(.tertiary))
+                TextField("", text: $nameText, prompt: Text(T.namePlaceholder).yalaFieldPrompt())
                     .font(DS.Typography.body)
+                    .yalaFieldText()
                     .focused($nameFocused)
                     .submitLabel(.done)
                     .onSubmit { if !trimmed.isEmpty { chooseName(trimmed) } }
@@ -592,6 +603,42 @@ struct FirstBudgetFlowView: View {
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
             apply()
         }
+    }
+
+    // MARK: - Otro presupuesto
+
+    /// Los presupuestos que caben en el plan gratis, leído del código (`ProFeature.budgets.freeLimit`): el texto del final
+    /// dice el número real.
+    static var freeBudgetLimit: Int { ProFeature.budgets.freeLimit ?? 0 }
+
+    /// Cabe otro presupuesto activo (el mismo límite que el editor). Sin él, el final solo ofrece ver el Panel.
+    private var canCreateAnother: Bool {
+        do {
+            let active = try modelContext.fetch(FetchDescriptor<Budget>()).count(where: \.isActive)
+            return FeatureGateService.shared.canCreate(.budgets, currentCount: active)
+        } catch {
+            #if DEBUG
+            print("FirstBudgetFlowView: Error: counting the budgets: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    /// «Crear otro»: las preguntas desde el principio con un borrador nuevo. Lo guardado sigue contando como hecho.
+    private func startAnother() {
+        DS.Haptic.selection()
+        let currency = draft.currencyCode
+        draft = FirstBudgetDraft(currencyCode: currency)
+        let calendar = Calendar.current
+        draft.endDate = calendar.date(byAdding: .day, value: 14, to: calendar.startOfDay(for: .now)) ?? .now
+        chosenCategories = []
+        removedSubcategories = []
+        limitText = ""
+        nameText = ""
+        editsName = false
+        enablesBudgetAlerts = false
+        history = []
+        step = .scope
     }
 }
 

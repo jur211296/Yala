@@ -165,8 +165,9 @@ struct AsistenteCuentaView: View {
     private var nombre: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             AsistenteTarjeta {
-                TextField("", text: $estado.nombre, prompt: Text(T.namePlaceholder).foregroundStyle(.tertiary))
+                TextField("", text: $estado.nombre, prompt: Text(T.namePlaceholder).yalaFieldPrompt())
                     .font(DS.Typography.title3)
+                    .yalaFieldText()
                     .focused($campo, equals: .nombre)
                     .submitLabel(.next)
                     .onSubmit { if estado.puedeSeguir { seguir() } }
@@ -211,8 +212,9 @@ struct AsistenteCuentaView: View {
                     .font(DS.Typography.title2)
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                TextField("", text: $estado.saldoTexto, prompt: Text(verbatim: "0").foregroundStyle(.tertiary))
+                TextField("", text: $estado.saldoTexto, prompt: Text(verbatim: "0").yalaFieldPrompt())
                     .font(DS.Typography.largeTitle.weight(.bold))
+                    .yalaFieldText()
                     .amountKeyboard()
                     .focused($campo, equals: .saldo)
                     .onChange(of: estado.saldoTexto) { _, nuevo in filtrarSaldo(nuevo) }

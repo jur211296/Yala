@@ -61,18 +61,22 @@ final class Bienvenida23PlanificacionUITests: XCTestCase {
         XCTAssertTrue(deck.label.contains(title), "El mazo pasa al paso \(position): «\(deck.label)».", file: file, line: line)
     }
 
-    /// Cierra la guía «dónde vive cada cosa» si sale.
+    /// Cierra la guía «dónde vive cada cosa» si sale. Desde el pulido del 2026-11-20 su tarjeta de un solo momento lleva
+    /// «Entendido» (`place_guide_close`) en vez de «Omitir».
     private func dismissPlaceGuideIfShown(_ app: XCUIApplication) {
-        let skip = element(app, "place_guide_skip")
-        if skip.waitForExistence(timeout: 4) {
-            _ = app.waitForSettledLayout(of: skip)
-            skip.tap()
+        let close = element(app, "place_guide_close")
+        if close.waitForExistence(timeout: 4) {
+            _ = app.waitForSettledLayout(of: close)
+            close.tap()
         }
     }
 
-    private func skipStepFromDeck(_ app: XCUIApplication, skipID: String) {
+    /// Omite un paso: la intro ya no lleva «Omitir» (pulido del 2026-11-20); la salida es «No deseo crear…» en la primera
+    /// pregunta.
+    private func skipStepFromDeck(_ app: XCUIApplication, startID: String, noneID: String) {
         tapWhenSettled(app, "setup_deck_current")
-        tapWhenSettled(app, skipID)
+        tapWhenSettled(app, startID)
+        tapWhenSettled(app, noneID)
     }
 
     /// Y23-11: solo algunas categorías, quitando una subcategoría, mensual, tope, nombre propuesto, avisos al 75 % y al
@@ -128,7 +132,7 @@ final class Bienvenida23PlanificacionUITests: XCTestCase {
     /// el Panel. El resumen del editor sale en la tarjeta y el mazo pasa al paso 5.
     func test_step4_paymentUtilities_monthly_reminder_thenDeckMovesToStep5() {
         let app = launchAtStep3()
-        skipStepFromDeck(app, skipID: "first_budget_skip_step")
+        skipStepFromDeck(app, startID: "first_budget_start", noneID: "first_budget_none")
         expectDeck(app, at: 4, title: "pagos fijos")
         tapWhenSettled(app, "setup_deck_current")
 
@@ -180,9 +184,9 @@ final class Bienvenida23PlanificacionUITests: XCTestCase {
     /// sale: el onboarding quedó marcado.
     func test_step5_groupsTutorial_acceptThenNotNow_thenDeckMovesToStep6() {
         let app = launchAtStep3()
-        skipStepFromDeck(app, skipID: "first_budget_skip_step")
+        skipStepFromDeck(app, startID: "first_budget_start", noneID: "first_budget_none")
         expectDeck(app, at: 4, title: "pagos fijos")
-        skipStepFromDeck(app, skipID: "first_payment_skip_step")
+        skipStepFromDeck(app, startID: "first_payment_start", noneID: "first_payment_none")
         expectDeck(app, at: 5, title: "grupo")
         tapWhenSettled(app, "setup_deck_current")
 

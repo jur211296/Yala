@@ -194,9 +194,10 @@ struct PanelView: View {
         }
     }
 
-    /// Paso 6 (Y23-14): la guía «Tus gráficas viven en Más». Terminada, el paso queda hecho; con «Omitir», omitido (el
-    /// mazo pasa al 7 en los dos casos). Irse a otra pestaña la cierra sin tocar el mazo. Sin «Más» en la barra (iPad a pantalla completa), las
-    /// gráficas están en su propia pestaña: se abren y el paso queda hecho.
+    /// Paso 6 (Y23-14): abre «Más» solo y la guía enseña ahí dónde viven las gráficas, con «Entendido» (pulido del
+    /// 2026-11-20; antes pedía tocar la pestaña y llevaba «Omitir»). Terminada, el paso queda hecho y el mazo pasa al 7.
+    /// Irse a otra pestaña la cierra sin tocar el mazo. Sin «Más» en la barra (iPad a pantalla completa), las gráficas
+    /// están en su propia pestaña: se abren y el paso queda hecho.
     private func startChartsStepGuide() {
         let markDone = { SetupChecklistManager.shared.markCompleted(.whereMoneyGoes) }
         guard sizeClass != .regular else {
@@ -204,8 +205,10 @@ struct PanelView: View {
             markDone()
             return
         }
-        PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone,
-                                      onSkip: { SetupChecklistManager.shared.markSkipped(.whereMoneyGoes) })
+        guard PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone,
+                                            onSkip: { SetupChecklistManager.shared.markSkipped(.whereMoneyGoes) })
+        else { return }
+        navigation.selectMainTab(.more)
     }
 
     /// Lo que abre cada paso del mazo (Y23-05): los pasos 1 a 5 y el 7, su flujo guiado (Y23-07 a Y23-13 y Y23-16); el 6,

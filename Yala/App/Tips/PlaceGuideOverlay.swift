@@ -169,6 +169,11 @@ private struct PlaceGuidePanelHost: ViewModifier {
 private struct PanelPlaceGuideLayer: View {
     private var center: PlaceGuideCenter { .shared }
 
+    /// Dónde está la pestaña señalada, medido hasta que la barra se queda quieta. Medida una sola vez al pintar, en el
+    /// iPhone caía mientras la barra aún se recolocaba tras cerrar el paso y la flecha quedaba corrida (encargo del
+    /// 2026-11-20).
+    @State private var tabFrame: CGRect?
+
     var body: some View {
         if let stage = center.stage, stage.target.tab == .panel {
             ZStack {
@@ -179,6 +184,28 @@ private struct PanelPlaceGuideLayer: View {
                 }
             }
             .transition(.opacity)
+            .task(id: stage.target) { await followTab(of: stage.target) }
+        }
+    }
+
+    /// Vuelve a medir la pestaña unas veces, hasta que dos medidas seguidas coinciden.
+    private func followTab(of target: PlaceGuideStage.Target) async {
+        guard let label = Self.tabLabel(for: target) else { return }
+        tabFrame = TabBarItemLocator.frame(ofTabLabeled: label)
+        for delay in PlaceGuideTabTracking.remeasureDelays {
+            do { try await Task.sleep(for: delay) } catch { return }
+            let next = TabBarItemLocator.frame(ofTabLabeled: label)
+            let settled = PlaceGuideTabTracking.isSettled(previous: tabFrame, next: next)
+            tabFrame = next
+            if settled { return }
+        }
+    }
+
+    static func tabLabel(for target: PlaceGuideStage.Target) -> String? {
+        switch target {
+        case .moreTab: return L10n.Tab.more
+        case .groupsTab: return L10n.Tab.groups
+        case .panelConfigure, .panelInbox, .moreItems: return nil
         }
     }
 
@@ -197,7 +224,7 @@ private struct PanelPlaceGuideLayer: View {
             .padding(.top, Self.topBarHeight + DS.Spacing.md)
         default:
             let label = stage.target == .groupsTab ? L10n.Tab.groups : L10n.Tab.more
-            let tab = TabBarItemLocator.frame(ofTabLabeled: label)
+            let tab = tabFrame ?? TabBarItemLocator.frame(ofTabLabeled: label)
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 PlaceGuideCard(stage: stage, pointer: tab.map { .down(x: $0.midX) })
@@ -225,6 +252,18 @@ private struct PanelPlaceGuideLayer: View {
             return frame.midX
         }
         return page.maxX - 92
+    }
+}
+
+/// Cuándo dejar de medir la pestaña que señala la guía del Panel.
+nonisolated enum PlaceGuideTabTracking {
+    /// Las esperas entre una medida y la siguiente: cubren el cierre de una pantalla completa y el reacomodo de la barra.
+    static let remeasureDelays: [Duration] = [.milliseconds(150), .milliseconds(300), .milliseconds(500), .milliseconds(900)]
+
+    /// Dos medidas seguidas iguales (a medio punto): la barra está quieta.
+    static func isSettled(previous: CGRect?, next: CGRect?) -> Bool {
+        guard let previous, let next else { return false }
+        return abs(previous.midX - next.midX) < 0.5 && abs(previous.midY - next.midY) < 0.5
     }
 }
 
@@ -353,7 +392,7 @@ struct PlaceGuideCard: View {
                     .scrollBounceBehavior(.basedOnSize)
             }
 
-            if stage.showsSkip || stage.advance != .tapTab {
+            if stage.showsSkip || stage.advance != .tapTab || stage.closeLabel != nil {
                 HStack {
                     if stage.showsSkip {
                         Button {
@@ -369,6 +408,21 @@ struct PlaceGuideCard: View {
                         .accessibilityIdentifier("place_guide_skip")
                     }
                     Spacer()
+                    if let closeLabel = stage.closeLabel {
+                        Button {
+                            center.dismiss()
+                        } label: {
+                            Text(closeLabel)
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(theme.onAccent)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .frame(minHeight: DS.Button.actionSize)
+                                .background(Capsule().fill(theme.accent))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("place_guide_close")
+                    }
                     if case .button(let label) = stage.advance {
                         Button {
                             center.advance()
