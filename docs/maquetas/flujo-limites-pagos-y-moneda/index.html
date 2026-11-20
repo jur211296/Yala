@@ -1,0 +1,679 @@
+<title>Límites con pagos y monedas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una columna de lectura; los teléfonos se reparten en rejilla y bajan a una columna en el móvil. */
+:root {
+  --bg: #F4F4F6; --surface: #FFFFFF; --fg: #17172A; --muted: #5E5E74; --line: #E2E2EA;
+  --accent: #5B5EE4; --accent-soft: #ECECFD; --ok: #0F7A62; --ok-soft: #E3F4EE; --warn: #A15C00; --warn-soft: #FFF2DE;
+  --display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --phone: -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E0E16; --surface: #1A1A26; --fg: #EDEDF5; --muted: #A2A2B8; --line: #2C2C3C;
+  --accent: #8F92FF; --accent-soft: #24244A; --ok: #4FD1A5; --ok-soft: #13332A; --warn: #F2B35B; --warn-soft: #3A2A12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E0E16; --surface: #1A1A26; --fg: #EDEDF5; --muted: #A2A2B8; --line: #2C2C3C;
+  --accent: #8F92FF; --accent-soft: #24244A; --ok: #4FD1A5; --ok-soft: #13332A; --warn: #F2B35B; --warn-soft: #3A2A12; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 72px; display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 800; }
+h2 { font-size: 23px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; max-width: 70ch; }
+ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 76ch; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-size: 16px; max-width: 72ch; }
+.rec { background: var(--accent-soft); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.rec b { color: var(--accent); }
+.note { background: var(--warn-soft); border-radius: 14px; padding: 12px 16px; font-size: 14px; max-width: 84ch; }
+.note b { color: var(--warn); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .grid3 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tag { align-self: flex-start; font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; background: var(--line); color: var(--muted); }
+.tag.rec-tag { background: var(--accent); color: #fff; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 13.5px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+code { font: 12.5px ui-monospace, "SF Mono", Menlo, monospace; background: var(--line); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { font: 600 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 7px 13px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px 18px; align-items: start; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+figcaption { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+figcaption b { color: var(--fg); font-size: 14px; }
+.shot { width: 100%; max-width: 300px; border-radius: 26px; border: 1px solid var(--line); display: block; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.q .opts { display: flex; flex-direction: column; gap: 6px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; background: transparent; color: var(--fg); font: inherit; text-align: left; width: 100%; }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt[disabled] { cursor: default; }
+.opt .dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); margin-top: 2px; }
+.opt[aria-pressed="true"] .dot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 45%, transparent 50%); }
+.q textarea { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--bg); color: var(--fg); box-sizing: border-box; }
+.status { font-size: 13px; color: var(--muted); }
+.qnum { font: 700 12px var(--display); color: var(--accent); letter-spacing: .04em; }
+
+/* ---------- Teléfonos: piezas de Yala (hoja «Cálculo del monto», detalle de línea, mes del flujo) ---------- */
+.phone { --s-bg: #F4F4F6; --s-card: #FFFFFF; --s-fg: #111118; --s-muted: #6E6E7A; --s-ter: #B4B4BE; --s-line: #E4E4EA; --s-chip: #ECECF1;
+  --s-accent: #5B5EE4; --s-accent-text: #5B5EE4; --s-soft: #EAEBFF; --s-warn-bg: #FFF1E2; --s-warn-fg: #B45309;
+  --s-over: #C81E5B; --s-ok: #0F7A80; --s-bar: #DADAE2;
+  font-family: var(--phone); color: var(--s-fg); background: #D6D6DE; border-radius: 38px; padding: 9px; aspect-ratio: 9 / 19.5;
+  max-width: 300px; width: 100%; box-sizing: border-box; position: relative; overflow: hidden; }
+.phone.dark { --s-bg: #000000; --s-card: #1C1C1E; --s-fg: #F4F4F7; --s-muted: #9D9DA8; --s-ter: #5A5A63; --s-line: #2E2E33; --s-chip: #2C2C30;
+  --s-accent: #6366F1; --s-accent-text: #818CF8; --s-soft: rgba(99,102,241,.22); --s-warn-bg: rgba(245,158,11,.16); --s-warn-fg: #FDBA74;
+  --s-over: #FF4DA6; --s-ok: #00C2CB; --s-bar: #2E2E33; background: #050507; }
+.screen { position: absolute; inset: 9px; border-radius: 30px; overflow: hidden; background: var(--s-bg); display: flex; flex-direction: column; }
+.screen.dimmed { background: rgba(0,0,0,.35); }
+.sb { height: 30px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 4px 24px 0; font-size: 11.5px; font-weight: 600; }
+.sb .bat { width: 20px; height: 9px; border-radius: 3px; border: 1px solid currentColor; opacity: .8; box-sizing: border-box; background: linear-gradient(90deg, currentColor 70%, transparent 70%); }
+.sb .isl { width: 72px; height: 20px; background: #000; border-radius: 12px; }
+.sheet { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--s-bg); }
+.sheet.raised { margin-top: 10px; border-radius: 18px 18px 0 0; }
+.nav { display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; padding: 6px 12px 4px; gap: 6px; flex: none; }
+.nav .t { text-align: center; font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.round { width: 28px; height: 28px; border-radius: 50%; background: var(--s-card); display: grid; place-items: center; font-size: 12px; color: var(--s-fg); box-shadow: 0 0 0 .5px var(--s-line), 0 1px 3px rgba(0,0,0,.06); }
+.body { flex: 1; overflow: hidden; padding: 6px 12px 0; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.big-title { font-weight: 700; font-size: 22px; letter-spacing: -.01em; padding: 0 2px; }
+.card-s { background: var(--s-card); border-radius: 14px; box-shadow: 0 0 0 .5px var(--s-line); padding: 10px 11px; display: flex; flex-direction: column; gap: 3px; }
+.card-s.flush { padding: 0; gap: 0; overflow: hidden; }
+.lbl { font-size: 10px; color: var(--s-muted); }
+.name { font-size: 10.5px; color: var(--s-muted); }
+.hero { font-weight: 700; font-size: 25px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.hero .cur, .amt .cur { opacity: .6; font-weight: 600; }
+.hero .dec, .amt .dec { opacity: .6; }
+.how { font-size: 9.5px; color: var(--s-muted); line-height: 1.35; }
+.how b { color: var(--s-fg); font-weight: 600; }
+.sec { font-size: 11px; font-weight: 600; padding: 2px 2px 0; }
+.row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 10px; border-bottom: .5px solid var(--s-line); }
+.row:last-child { border-bottom: 0; }
+.row > span { min-width: 0; }
+.row .rt, .row .rs { display: block; }
+.row .rt { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .rs { font-size: 9px; color: var(--s-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .ra { font-size: 11px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row .ra small { display: block; font-size: 9px; font-weight: 500; color: var(--s-muted); }
+.row.plain { grid-template-columns: minmax(0, 1fr) auto; }
+.row.radio { grid-template-columns: 16px minmax(0, 1fr) auto; }
+.logo { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700; }
+.logo.c { border-radius: 50%; }
+.rd { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--s-ter); box-sizing: border-box; }
+.rd.on { border: 0; background: var(--s-accent-text); position: relative; }
+.rd.on::after { content: "✓"; color: #fff; font-size: 8px; font-weight: 800; position: absolute; inset: 0; display: grid; place-items: center; }
+.chk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--s-ter); box-sizing: border-box; }
+.chk.on { border: 0; background: var(--s-accent); position: relative; }
+.chk.on::after { content: "✓"; color: #fff; font-size: 9px; font-weight: 800; position: absolute; inset: 0; display: grid; place-items: center; }
+.add { color: var(--s-accent-text); font-size: 11px; font-weight: 600; }
+.plus { width: 24px; height: 24px; border-radius: 50%; background: var(--s-soft); color: var(--s-accent-text); display: grid; place-items: center; font-size: 14px; font-weight: 600; }
+.tog { width: 30px; height: 18px; border-radius: 9px; background: var(--s-bar); position: relative; }
+.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.tog.on { background: #34C759; }
+.tog.on::after { left: 14px; }
+.field { background: var(--s-card); border-radius: 14px; box-shadow: 0 0 0 .5px var(--s-line); padding: 11px 12px; display: flex; align-items: baseline; gap: 8px; }
+.field .curbtn { font-size: 15px; font-weight: 600; color: var(--s-accent-text); background: var(--s-soft); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.field .val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.field .val.ph { color: var(--s-ter); }
+.conv { font-size: 9.5px; color: var(--s-muted); padding: 0 2px; line-height: 1.35; }
+.conv b { color: var(--s-fg); font-weight: 600; }
+.pill-fx { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 9.5px; font-weight: 600; color: var(--s-accent-text); background: var(--s-soft); border-radius: 999px; padding: 3px 8px; }
+.savebar { flex: none; padding: 8px 12px 14px; }
+.btn-p { background: var(--s-accent); color: #fff; text-align: center; font-weight: 600; font-size: 12px; padding: 10px; border-radius: 999px; }
+.foot { font-size: 9px; color: var(--s-muted); padding: 0 2px; line-height: 1.35; }
+.bar { height: 6px; border-radius: 3px; background: var(--s-bar); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--s-accent); border-radius: 3px; }
+.bar.over i { background: var(--s-over); }
+.warnbox { background: var(--s-warn-bg); color: var(--s-warn-fg); border-radius: 12px; padding: 8px 10px; font-size: 9.5px; line-height: 1.35; }
+.warnbox b { font-weight: 700; }
+.infobox { background: var(--s-soft); border-radius: 12px; padding: 8px 10px; font-size: 9.5px; line-height: 1.35; }
+.infobox b { color: var(--s-accent-text); }
+.mini-tag { font-size: 8.5px; font-weight: 600; color: var(--s-muted); background: var(--s-chip); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
+.mini-tag.acc { color: var(--s-accent-text); background: var(--s-soft); }
+.mini-tag.warn { color: var(--s-warn-fg); background: var(--s-warn-bg); }
+.fxsub { white-space: nowrap; font-size: 9px; color: var(--s-accent-text); font-weight: 600; display: inline-flex; gap: 3px; align-items: center; }
+.months { display: flex; gap: 5px; overflow: hidden; padding: 0 2px; }
+.months span { font-size: 9.5px; padding: 4px 8px; border-radius: 999px; background: var(--s-card); box-shadow: 0 0 0 .5px var(--s-line); white-space: nowrap; }
+.months span.on { background: var(--s-accent); color: #fff; box-shadow: none; font-weight: 600; }
+.chart { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; align-items: end; height: 70px; padding: 4px 4px 0; position: relative; }
+.chart div { background: var(--s-accent); opacity: .85; border-radius: 3px 3px 0 0; }
+.chart div.fut { opacity: .3; }
+.chart .lim { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--s-muted); }
+.chart-x { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 0 4px; font-size: 8.5px; color: var(--s-muted); text-align: center; }
+.chart-x b { color: var(--s-fg); }
+.fxrow { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 7px 10px; border-bottom: .5px solid var(--s-line); font-size: 10.5px; align-items: center; }
+.fxrow:last-child { border-bottom: 0; }
+.fxrow .k { font-size: 8.5px; color: var(--s-muted); display: block; }
+.fxrow .r { font-variant-numeric: tabular-nums; color: var(--s-muted); }
+.fxrow .v { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.grab { width: 34px; height: 4px; border-radius: 2px; background: var(--s-ter); align-self: center; margin: 6px 0 2px; flex: none; }
+.search { background: var(--s-chip); border-radius: 10px; padding: 6px 9px; font-size: 10.5px; color: var(--s-muted); }
+/* El mes y el detalle de línea, como en la app: grupos por categoría y una tarjeta por línea con su barra. */
+.phone.dark .screen.indigo, .phone.dark .screen.dimmed { background: linear-gradient(#2E2C86 0%, #15143F 38%, #08080F 75%); }
+.phone:not(.dark) .screen.indigo { background: var(--s-bg); }
+.phone:not(.dark) .screen.dimmed { background: #C9C9D2; }
+.phone.dark .sheet { --s-bg: #0B0B12; --s-card: #15151E; }
+.phone.dark .screen.indigo .sheet { background: transparent; }
+.phone.dark .screen.indigo { --s-card: rgba(20,20,40,.72); --s-line: rgba(255,255,255,.10); }
+.grp { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; padding: 0 2px; }
+.grp .gi { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 10px; }
+.grp .gn { font-size: 12px; font-weight: 600; }
+.grp .gt { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.grp .gt .cur, .grp .gt .dec { opacity: .6; font-weight: 500; font-size: 10px; }
+.sect { display: flex; justify-content: space-between; align-items: baseline; padding: 0 2px; }
+.sect b { font-size: 17px; }
+.sect span { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lcard { background: var(--s-card); border-radius: 14px; box-shadow: 0 0 0 .5px var(--s-line); padding: 9px 10px 10px; margin-left: 10px; display: flex; flex-direction: column; gap: 7px; }
+.lc-top > span { min-width: 0; }
+.lc-top { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.lc-top .li { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; }
+.lc-top .ln { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-top .ls { font-size: 9px; color: var(--s-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-top .rl { font-size: 8.5px; color: var(--s-muted); text-align: right; white-space: nowrap; }
+.lc-top .rv { font-size: 12px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prog { height: 5px; border-radius: 3px; background: var(--s-bar); overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--s-accent); border-radius: 3px; }
+.dhead { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; }
+.dhead .li { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; }
+.mnav { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; padding: 2px 6px 6px; border-bottom: .5px solid var(--s-line); }
+.mnav span:first-child, .mnav span:last-child { color: var(--s-accent-text); }
+.limrow { display: flex; justify-content: space-between; align-items: baseline; }
+.limrow .ch { font-size: 10.5px; color: var(--s-accent-text); font-weight: 600; }
+.mock-crop { aspect-ratio: auto; max-width: 300px; }
+.mock-crop .screen { position: relative; inset: auto; min-height: 0; }
+.mock-crop.phone { padding: 9px; border-radius: 26px; }
+.mock-crop .screen { border-radius: 20px; padding-bottom: 10px; }
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <span class="eyebrow">Yala · Flujo de caja · maquetas para decidir</span>
+  <h1>Límites con pagos y monedas</h1>
+  <p class="quote">«Que la línea Renta dependa del pago planificado Renta, o Suscripciones de varios pagos a la vez, y que el
+  límite se recalcule solo cuando cambia un pago. Y poder poner el límite en dólares: 500 USD que un mes son 1.850 soles y
+  otro 1.900, avisando que se convierte y con qué tipo de cambio.» <span class="muted small">Pedido de Jürgen, 20-nov, resumido.</span></p>
+  <div class="rec">
+    <span><b>Lo recomendado, en una frase:</b> en «Cálculo del monto», el método «Pago planificado» pasa a
+    <b>«Pagos planificados»</b> (uno o varios, más un monto extra opcional), y «Monto fijo» acepta <b>otra moneda</b>.
+    Todo se convierte al <b>tipo de cambio promedio del mes</b> y la línea enseña el original debajo de la cifra en soles.</span>
+    <span class="small muted">Las ocho preguntas, con su recomendación, están al final. Tocar una opción la guarda; nada se construye hasta que elijas.</span>
+  </div>
+</header>
+
+<section aria-labelledby="h-hoy">
+  <span class="eyebrow">Hoy, en 2.3</span>
+  <h2 id="h-hoy">Lo que ya existe y en qué se queda corto</h2>
+  <ul>
+    <li>Una línea ya puede atarse a <b>un</b> pago planificado (método «Pago planificado»). No a varios.</li>
+    <li>Si ese pago está en dólares, el flujo ya lo convierte a soles, pero con la <b>última tasa</b> de hoy: un mes cerrado cambia su límite cada día que cambia el dólar.</li>
+    <li>El «Monto fijo» solo se escribe en la moneda del flujo. Una renta de 500 USD hay que pasarla a soles a mano cada vez que el dólar se mueve.</li>
+    <li>Si el pago de una línea se borra, la línea se queda en <b>S/ 0</b> sin avisar.</li>
+    <li>El motor del mes ya reparte cada registro por su pago: una línea con pago recibe solo los registros de ese pago. Un pago en dos líneas no funciona hoy (la segunda queda repetida).</li>
+  </ul>
+  <div class="phones" id="antes">
+    <figure><img class="shot" alt="Hoy: el mes del flujo de caja, con sus líneas por categoría" src="antes-0-mes.jpg"><figcaption><b>El mes</b>Una tarjeta por línea: lo que llevas de su límite y su barra.</figcaption></figure>
+    <figure><img class="shot" alt="Hoy: el detalle de una línea del flujo de caja" src="antes-1-linea-como-se-creo.jpg"><figcaption><b>Detalle de una línea</b>Límite del mes, lo que llevas y «Cambiar».</figcaption></figure>
+    <figure><img class="shot" alt="Hoy: la hoja Cálculo del monto" src="antes-2-calculo-del-monto.jpg"><figcaption><b>Cálculo del monto</b>La única entrada al límite. «Pago planificado» sale solo si la línea nació de un pago.</figcaption></figure>
+    <figure><img class="shot" alt="Hoy: Monto fijo, solo en soles" src="antes-4-calculo-monto-fijo.jpg"><figcaption><b>Monto fijo</b>El campo va en la moneda del flujo, sin otra opción.</figcaption></figure>
+  </div>
+</section>
+
+<section aria-labelledby="h-rec">
+  <span class="eyebrow">Recorrido recomendado</span>
+  <h2 id="h-rec">Crear el límite, editarlo y ver meses con otro dólar</h2>
+  <div class="controls">
+    <span class="small muted">Teléfonos en</span>
+    <div class="seg" role="group" aria-label="Tema de los teléfonos">
+      <button type="button" class="ph-theme" data-t="light" aria-pressed="false">Claro</button>
+      <button type="button" class="ph-theme" data-t="dark" aria-pressed="true">Índigo (oscuro)</button>
+    </div>
+  </div>
+
+  <h3>1 · Suscripciones: varios pagos y un extra</h3>
+  <div class="phones">
+    <figure>
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet">
+            <div class="nav"><span class="round">✕</span><span class="t">Cálculo del monto</span><span></span></div>
+            <div class="body">
+              <div class="card-s">
+                <span class="name">Suscripciones</span>
+                <span class="lbl">Límite de cada mes</span>
+                <span class="hero"><span class="cur">S/</span> 181<span class="dec">.86</span></span>
+                <span class="how">Suma de <b>4 pagos</b> + <b>S/ 30.00</b> extra. Se actualiza solo cuando cambias un pago.</span>
+              </div>
+              <span class="sec">Pagos de esta línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#E50914">N</span><span><span class="rt">Netflix</span><span class="rs">Mensual · día 12</span></span><span class="ra">S/ 44.90</span></div>
+                <div class="row"><span class="logo c" style="background:#1DB954">♫</span><span><span class="rt">Spotify</span><span class="rs">Mensual · día 3</span></span><span class="ra">S/ 21.90</span></div>
+                <div class="row"><span class="logo" style="background:#3693F3"></span><span><span class="rt">iCloud+</span><span class="rs">Mensual · día 18</span></span><span class="ra">2.99 USD<small>≈ S/ 11.06</small></span></div>
+                <div class="row"><span class="logo" style="background:#10A37F">✦</span><span><span class="rt">ChatGPT Plus</span><span class="rs">Mensual · día 25</span></span><span class="ra">20.00 USD<small>≈ S/ 74.00</small></span></div>
+                <div class="row"><span class="plus">+</span><span class="add">Agregar pago</span><span></span></div>
+              </div>
+              <div class="card-s flush">
+                <div class="row plain"><span class="rt">Sumar un monto extra</span><span class="tog on"></span></div>
+                <div class="row plain"><span class="rs" style="font-size:10px">Extra cada mes</span><span class="ra">S/ 30.00</span></div>
+              </div>
+              <span class="sec">Cómo calcularlo</span>
+              <div class="card-s flush">
+                <div class="row radio"><span class="rd on"></span><span><span class="rt" style="font-weight:600">Pagos planificados</span><span class="rs">Tus pagos de esta línea, al dólar del mes</span></span><span class="ra">S/ 151.86</span></div>
+                <div class="row radio"><span class="rd"></span><span><span class="rt">Promedio 6 meses</span><span class="rs">Sin julio (monto aislado)</span></span><span class="ra">S/ 163.20</span></div>
+              </div>
+            </div>
+            <div class="savebar"><div class="btn-p">✓ Guardar</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Crear: elegir «Pagos planificados»</b>Arriba, el límite que resulta y cómo sale. Cada pago en su moneda; los de dólares, con su equivalente.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen dimmed">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet raised">
+            <div class="grab"></div>
+            <div class="nav"><span class="round">✕</span><span class="t">Elige los pagos</span><span class="round" style="background:var(--s-accent);color:#fff;box-shadow:none">✓</span></div>
+            <div class="body">
+              <div class="search">⌕ Buscar un pago</div>
+              <span class="sec">Sin línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#E50914">N</span><span><span class="rt">Netflix</span><span class="rs">S/ 44.90 · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo c" style="background:#1DB954">♫</span><span><span class="rt">Spotify</span><span class="rs">S/ 21.90 · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo" style="background:#3693F3"></span><span><span class="rt">iCloud+</span><span class="rs">2.99 USD · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo" style="background:#10A37F">✦</span><span><span class="rt">ChatGPT Plus</span><span class="rs">20.00 USD · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo" style="background:#FF9900">a</span><span><span class="rt">Amazon Prime</span><span class="rs">14.99 USD · anual · marzo</span></span><span class="chk"></span></div>
+              </div>
+              <span class="sec">En otra línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#7C3AED">Y</span><span><span class="rt">YouTube Premium <span class="mini-tag">En Servicios</span></span><span class="rs">S/ 23.90 · mensual</span></span><span class="chk"></span></div>
+                <div class="row"><span class="logo" style="background:#475569">⌂</span><span><span class="rt">Renta <span class="mini-tag">En Renta</span></span><span class="rs">500.00 USD · mensual</span></span><span class="chk"></span></div>
+              </div>
+              <span class="foot">Un pago cuenta en una sola línea. Si marcas uno de otra línea, se mueve aquí.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>«Agregar pago»: varios a la vez</b>Casillas. Los que ya están en otra línea salen aparte y con su nombre.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen dimmed">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet raised">
+            <div class="grab"></div>
+            <div class="nav"><span class="round">✕</span><span class="t">Elige los pagos</span><span class="round" style="background:var(--s-accent);color:#fff;box-shadow:none">✓</span></div>
+            <div class="body">
+              <div class="search">⌕ Buscar un pago</div>
+              <span class="sec">Sin línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#E50914">N</span><span><span class="rt">Netflix</span><span class="rs">S/ 44.90 · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo c" style="background:#1DB954">♫</span><span><span class="rt">Spotify</span><span class="rs">S/ 21.90 · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo" style="background:#3693F3"></span><span><span class="rt">iCloud+</span><span class="rs">2.99 USD · mensual</span></span><span class="chk on"></span></div>
+                <div class="row"><span class="logo" style="background:#10A37F">✦</span><span><span class="rt">ChatGPT Plus</span><span class="rs">20.00 USD · mensual</span></span><span class="chk on"></span></div>
+              </div>
+              <span class="sec">En otra línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#7C3AED">Y</span><span><span class="rt">YouTube Premium <span class="mini-tag acc">Se moverá aquí</span></span><span class="rs">S/ 23.90 · mensual</span></span><span class="chk on"></span></div>
+              </div>
+              <div class="infobox"><b>YouTube Premium deja Servicios.</b> El límite de Servicios baja S/ 23.90 y el de Suscripciones sube lo mismo.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Marcar uno de otra línea</b>Se avisa antes de guardar, con lo que cambia en las dos líneas.</figcaption>
+    </figure>
+  </div>
+
+  <h3>2 · Renta: monto fijo en dólares</h3>
+  <div class="phones">
+    <figure>
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet">
+            <div class="nav"><span class="round">✕</span><span class="t">Cálculo del monto</span><span></span></div>
+            <div class="body">
+              <div class="card-s">
+                <span class="name">Renta</span>
+                <span class="lbl">Límite de cada mes</span>
+                <span class="hero">500<span class="dec">.00</span> <span class="cur">USD</span></span>
+                <span class="how">≈ <b>S/ 1,850.00</b> en noviembre, al tipo de cambio promedio del mes (3.70). Cada mes se convierte con su promedio.</span>
+              </div>
+              <span class="sec">Monto de cada mes</span>
+              <div class="field"><span class="curbtn">USD ▾</span><span class="val">500</span></div>
+              <span class="conv">En otra moneda el monto vale para <b>todos los meses</b>.</span>
+              <span class="sec">Cómo calcularlo</span>
+              <div class="card-s flush">
+                <div class="row radio"><span class="rd"></span><span><span class="rt">Pagos planificados</span><span class="rs">Tus pagos de esta línea</span></span><span class="ra"></span></div>
+                <div class="row radio"><span class="rd"></span><span><span class="rt">Promedio 6 meses</span><span class="rs">Con tus registros</span></span><span class="ra">S/ 1,872.40</span></div>
+                <div class="row radio"><span class="rd"></span><span><span class="rt">Último mes</span><span class="rs">Octubre</span></span><span class="ra">S/ 1,890.00</span></div>
+                <div class="row radio"><span class="rd on"></span><span><span class="rt" style="font-weight:600">Monto fijo</span><span class="rs">El mismo número cada mes</span></span><span class="ra"></span></div>
+              </div>
+            </div>
+            <div class="savebar"><div class="btn-p">✓ Guardar</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Crear: el símbolo es un botón</b>«USD ▾» abre las monedas (las de tus cuentas primero). La cifra grande es la original; debajo, cuánto vale este mes.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen indigo">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet">
+            <div class="body" style="padding-top:4px">
+              <div class="sect"><b>Gastos</b><span>S/ 4,585.70</span></div>
+              <div class="grp"><span class="gi" style="background:#64748B">⌂</span><span class="gn">Hogar</span><span class="gt"><span class="cur">S/</span> 1,850<span class="dec">.00</span></span></div>
+              <div class="lcard">
+                <div class="lc-top"><span class="li" style="background:#475569">⚿</span><span><span class="ln" style="display:block">Renta</span><span class="ls" style="display:block">S/ 0 de S/ 1,850 · 11 días</span><span class="fxsub">⇄ 500 USD</span></span><span><span class="rl" style="display:block">Estimado que falta</span><span class="rv">S/ 1,850.00</span></span></div>
+                <div class="prog"><i style="width:0%"></i></div>
+              </div>
+              <div class="grp"><span class="gi" style="background:#5B5EE4">▶</span><span class="gn">Entretenimiento</span><span class="gt"><span class="cur">S/</span> 181<span class="dec">.86</span></span></div>
+              <div class="lcard">
+                <div class="lc-top"><span class="li" style="background:#6366F1">▶</span><span><span class="ln" style="display:block">Suscripciones</span><span class="ls" style="display:block">S/ 66 de S/ 182 · 11 días</span><span class="fxsub">4 pagos + extra</span></span><span><span class="rl" style="display:block">Estimado que falta</span><span class="rv">S/ 115.86</span></span></div>
+                <div class="prog"><i style="width:36%"></i></div>
+              </div>
+              <div class="grp"><span class="gi" style="background:#22C55E">S</span><span class="gn">Alimentación</span><span class="gt"><span class="cur">S/</span> 1,120<span class="dec">.00</span></span></div>
+              <span class="foot">⇄ Incluye 2 límites en dólares, convertidos al promedio de noviembre (3.70). En los meses que vienen se usa el último tipo de cambio conocido.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>El mes: soles arriba, el original debajo</b>La cifra que suma sigue en soles. La nota del final dice cuántos límites se convirtieron y a qué tasa.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen dimmed">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet raised">
+            <div class="nav"><span class="round">✕</span><span class="t">Renta</span><span></span></div>
+            <div class="body">
+              <div class="card-s" style="gap:6px">
+                <div class="dhead"><span class="li" style="background:#475569">⚿</span><span><span class="name" style="display:block">Hogar</span><span style="font-weight:700;font-size:13px">Renta</span></span></div>
+                <div class="mnav"><span>‹</span><span>noviembre de 2026</span><span>›</span></div>
+                <div class="limrow"><span class="lbl" style="font-size:11px">Límite de noviembre</span><span class="ch">✎ Cambiar</span></div>
+                <span class="hero"><span class="cur">S/</span> 1,850<span class="dec">.00</span></span>
+                <span class="pill-fx">⇄ 500 USD · promedio de nov. 3.70 ›</span>
+                <span style="font-size:12px;font-variant-numeric:tabular-nums"><span class="lbl" style="font-size:12px">Llevas</span> <b>S/ 1,862.00</b> <span class="lbl" style="font-size:12px">de S/ 1,850.00</span></span>
+                <div class="prog"><i style="width:100%"></i></div>
+                <span class="how">Pagaste <b>500 USD</b>: justo el límite. Los S/ 12 de más son del tipo de cambio del día del pago (3.724).</span>
+                <div class="limrow" style="border-top:.5px solid var(--s-line);padding-top:6px"><span class="lbl" style="font-size:11px">Cómo se calcula</span><span style="font-size:11px;font-weight:600">Monto fijo en USD</span></div>
+              </div>
+              <div class="card-s">
+                <span style="font-weight:700;font-size:12px">Últimos 6 meses</span>
+                <div class="chart">
+                  <div style="height:88%"></div><div style="height:90%"></div><div style="height:89%"></div><div style="height:92%"></div><div style="height:91%"></div><div style="height:89%"></div>
+                  <span class="lim" style="bottom:62px"></span>
+                </div>
+                <div class="chart-x"><span>Jun.<br>3.76</span><span>Jul.<br>3.79</span><span>Ago.<br>3.77</span><span>Set.<br>3.81</span><span>Oct.<br>3.78</span><span><b>Nov.<br>3.70</b></span></div>
+                <span class="how" style="margin-top:4px">El límite es 500 USD todos los meses; en soles sube y baja con el dólar.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Detalle de la línea</b>La cápsula dice el original y la tasa; tocarla abre «Cómo se convierte». Si pagaste en dólares, la diferencia por tipo de cambio no cuenta como «te pasaste».</figcaption>
+    </figure>
+  </div>
+
+  <h3>3 · Un mes con otro dólar, y qué pasa si un pago se va</h3>
+  <div class="phones">
+    <figure>
+      <div class="phone">
+        <div class="screen dimmed">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet raised">
+            <div class="grab"></div>
+            <div class="nav"><span class="round">‹</span><span class="t">Cómo se convierte</span><span></span></div>
+            <div class="body">
+              <div class="card-s">
+                <span class="lbl">Límite de Renta</span>
+                <span class="hero">500<span class="dec">.00</span> <span class="cur">USD</span></span>
+                <span class="how">Cada mes se pasa a soles con el <b>promedio del tipo de cambio de ese mes</b>.</span>
+              </div>
+              <div class="card-s flush">
+                <div class="fxrow"><span>Septiembre<span class="k">Cerrado</span></span><span class="r">3.81</span><span class="v">S/ 1,905.00</span></div>
+                <div class="fxrow"><span>Octubre<span class="k">Cerrado</span></span><span class="r">3.78</span><span class="v">S/ 1,890.00</span></div>
+                <div class="fxrow"><span><b>Noviembre</b><span class="k">En curso · 20 días</span></span><span class="r">3.70</span><span class="v">S/ 1,850.00</span></div>
+                <div class="fxrow"><span>Diciembre<span class="k">Estimado</span></span><span class="r">≈ 3.71</span><span class="v">≈ S/ 1,855.00</span></div>
+                <div class="fxrow"><span>Enero<span class="k">Estimado</span></span><span class="r">≈ 3.71</span><span class="v">≈ S/ 1,855.00</span></div>
+              </div>
+              <span class="foot">Un mes cerrado ya no cambia. El mes en curso usa los días que van y se mueve un poco cada día. Los meses que vienen usan el último tipo de cambio conocido (hoy, 3.71).</span>
+              <span class="foot">Los tipos de cambio son los que Yala guarda cada día para convertir tus registros.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>«Cómo se convierte»</b>La misma línea en meses con distinto dólar: cerrado, en curso y estimado, cada uno con su tasa.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen indigo">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet">
+            <div class="body" style="padding-top:4px">
+              <div class="sect"><b>Gastos</b><span>S/ 4,813.90</span></div>
+              <div class="grp"><span class="gi" style="background:#64748B">⌂</span><span class="gn">Hogar</span><span class="gt"><span class="cur">S/</span> 1,890<span class="dec">.00</span></span></div>
+              <div class="lcard">
+                <div class="lc-top"><span class="li" style="background:#475569">⚿</span><span><span class="ln" style="display:block">Renta</span><span class="ls" style="display:block">S/ 1,890 de S/ 1,890 · cerrado</span><span class="fxsub">⇄ 500 USD a 3.78</span></span><span><span class="rl" style="display:block">Real</span><span class="rv">S/ 1,890.00</span></span></div>
+                <div class="prog"><i style="width:100%"></i></div>
+              </div>
+              <div class="grp"><span class="gi" style="background:#5B5EE4">▶</span><span class="gn">Entretenimiento</span><span class="gt"><span class="cur">S/</span> 176<span class="dec">.20</span></span></div>
+              <div class="lcard">
+                <div class="lc-top"><span class="li" style="background:#6366F1">▶</span><span><span class="ln" style="display:block">Suscripciones</span><span class="ls" style="display:block">S/ 176 de S/ 183 · cerrado</span><span class="fxsub">4 pagos + extra</span></span><span><span class="rl" style="display:block">Real</span><span class="rv">S/ 176.20</span></span></div>
+                <div class="prog"><i style="width:96%"></i></div>
+              </div>
+              <div class="grp"><span class="gi" style="background:#22C55E">S</span><span class="gn">Alimentación</span><span class="gt"><span class="cur">S/</span> 1,120<span class="dec">.00</span></span></div>
+              <span class="foot">⇄ En octubre, 2 límites en dólares convertidos al promedio de octubre (3.78).</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Un mes cerrado</b>Renta vale S/ 1,890 en octubre y S/ 1,850 en noviembre: el mismo límite de 500 USD con el dólar de cada mes.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="screen dimmed">
+          <div class="sb"><span>9:41</span><span class="isl"></span><span class="bat"></span></div>
+          <div class="sheet raised">
+            <div class="grab"></div>
+            <div class="nav"><span class="round">✕</span><span class="t">Suscripciones</span><span></span></div>
+            <div class="body">
+              <div class="warnbox"><b>Se borró el pago Spotify.</b> Ya no suma en esta línea: el límite bajó a S/ 159.96.</div>
+              <div class="card-s">
+                <span class="lbl">Límite de noviembre</span>
+                <span class="hero"><span class="cur">S/</span> 159<span class="dec">.96</span></span>
+                <span class="how">Suma de 3 pagos + S/ 30.00 extra.</span>
+              </div>
+              <span class="sec">Pagos de esta línea</span>
+              <div class="card-s flush">
+                <div class="row"><span class="logo" style="background:#E50914">N</span><span><span class="rt">Netflix</span><span class="rs">Mensual · día 12</span></span><span class="ra">S/ 44.90</span></div>
+                <div class="row"><span class="logo" style="background:#3693F3"></span><span><span class="rt">iCloud+</span><span class="rs" style="color:var(--s-warn-fg);font-weight:600">Pausado · no suma</span></span><span class="ra" style="color:var(--s-muted)">2.99 USD</span></div>
+                <div class="row"><span class="logo" style="background:#10A37F">✦</span><span><span class="rt">ChatGPT Plus</span><span class="rs">Mensual · día 25</span></span><span class="ra">20.00 USD<small>≈ S/ 74.00</small></span></div>
+                <div class="row"><span class="logo" style="background:#FF9900">a</span><span><span class="rt">Amazon Prime</span><span class="rs">Anual · solo en marzo</span></span><span class="ra" style="color:var(--s-muted)">S/ 0.00</span></div>
+              </div>
+              <span class="foot">Si una línea se queda sin pagos ni extra, pasa a monto fijo con su último límite y te lo dice aquí.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Pago borrado, pausado o que no cae este mes</b>El aviso sale una vez. Lo pausado se ve pero no suma; un pago anual suma solo en su mes.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section aria-labelledby="h-op">
+  <span class="eyebrow">Las opciones que se comparan</span>
+  <h2 id="h-op">Dónde se elige el límite, y cómo se ve en la fila</h2>
+  <div class="grid3">
+    <div class="card"><span class="tag rec-tag">A · recomendada</span><h3>Un método más en la lista</h3>
+      <p class="small">«Pagos planificados» al lado de Promedio, Último mes y Monto fijo. Al elegirlo, debajo salen sus pagos y el extra. Es la hoja de hoy con una opción que crece.</p>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px">
+        <span class="sec">Cómo calcularlo</span>
+        <div class="card-s flush">
+          <div class="row radio"><span class="rd on"></span><span class="rt" style="font-weight:600">Pagos planificados</span><span class="ra">S/ 151.86</span></div>
+          <div class="row radio"><span class="rd"></span><span class="rt">Promedio 6 meses</span><span class="ra">S/ 163.20</span></div>
+          <div class="row radio"><span class="rd"></span><span class="rt">Monto fijo</span><span class="ra"></span></div>
+        </div></div></div></div>
+    </div>
+    <div class="card"><span class="tag">B</span><h3>Tres modos arriba</h3>
+      <p class="small">Un selector «Fijo · Pagos · Tus registros» encima, y debajo lo de cada modo. Más claro de entrada; rehace la hoja que se rediseñó el 19-nov.</p>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);background:var(--s-chip);border-radius:10px;padding:2px;gap:2px;font-size:10px;text-align:center">
+          <span style="padding:5px 2px">Fijo</span><span style="padding:5px 2px;background:var(--s-card);border-radius:8px;font-weight:600">Pagos</span><span style="padding:5px 2px">Tus registros</span></div>
+        <div class="card-s flush">
+          <div class="row"><span class="logo" style="background:#E50914">N</span><span class="rt">Netflix</span><span class="ra">S/ 44.90</span></div>
+          <div class="row"><span class="plus">+</span><span class="add">Agregar pago</span><span></span></div>
+        </div></div></div></div>
+    </div>
+    <div class="card"><span class="tag">C</span><h3>Dos métodos separados</h3>
+      <p class="small">«Pagos planificados» y «Pagos planificados + extra» como opciones distintas. Simple de construir; la lista se alarga y el extra parece otra cosa.</p>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px">
+        <div class="card-s flush">
+          <div class="row radio"><span class="rd on"></span><span class="rt" style="font-weight:600">Pagos planificados</span><span class="ra">S/ 151.86</span></div>
+          <div class="row radio"><span class="rd"></span><span class="rt">Pagos planificados + extra</span><span class="ra">S/ 181.86</span></div>
+          <div class="row radio"><span class="rd"></span><span class="rt">Monto fijo</span><span class="ra"></span></div>
+        </div></div></div></div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="card"><span class="tag rec-tag">A · recomendada</span><h3>Fila: soles y el original debajo</h3>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px"><div class="card-s flush">
+        <div class="row"><span class="logo c" style="background:#475569">⌂</span><span><span class="rt">Renta</span><span class="fxsub">⇄ 500 USD</span></span><span class="ra">S/ 1,850.00</span></div>
+      </div></div></div></div>
+      <p class="small">La cifra cuadra con el total; el original se lee sin abrir nada.</p></div>
+    <div class="card"><span class="tag">B</span><h3>Solo «≈»</h3>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px"><div class="card-s flush">
+        <div class="row"><span class="logo c" style="background:#475569">⌂</span><span><span class="rt">Renta</span><span class="rs">Monto fijo</span></span><span class="ra">≈ S/ 1,850.00</span></div>
+      </div></div></div></div>
+      <p class="small">Más limpio, pero no dice que son dólares ni cuántos. Jürgen pidió verlo.</p></div>
+    <div class="card"><span class="tag">C</span><h3>El original como cifra grande</h3>
+      <div class="phone mock-crop"><div class="screen"><div class="body" style="padding-top:10px"><div class="card-s flush">
+        <div class="row"><span class="logo c" style="background:#475569">⌂</span><span><span class="rt">Renta</span><span class="rs">≈ S/ 1,850.00</span></span><span class="ra">500.00 USD</span></div>
+      </div></div></div></div>
+      <p class="small">Se lee la renta real, pero la columna deja de sumar el total del mes.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-datos">
+  <span class="eyebrow">Por dentro</span>
+  <h2 id="h-datos">Qué se guarda y cómo viaja</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Dato nuevo de la línea</th><th>Qué guarda</th><th>iCloud</th><th>Modo Nube</th></tr></thead>
+    <tbody>
+      <tr><td>Pagos de la línea</td><td>los pagos elegidos, en orden</td><td>campo de texto nuevo</td><td>columna nueva (versión 8)</td></tr>
+      <tr><td>Monto extra</td><td>el extra, en la moneda del flujo</td><td>campo de número nuevo</td><td>columna nueva (versión 8)</td></tr>
+      <tr><td>Moneda del límite</td><td>la moneda del monto fijo; vacía = la del flujo</td><td>campo de texto nuevo</td><td>columna nueva (versión 8)</td></tr>
+      <tr><td>Monto en esa moneda</td><td>los 500 de «500 USD»</td><td>campo de número nuevo</td><td>columna nueva (versión 8)</td></tr>
+    </tbody></table></div>
+  <ul>
+    <li><b>Una versión anterior de Yala</b> sigue abriendo el plan: ve la línea con su primer pago, y el monto fijo en soles convertido el día que se guardó.</li>
+    <li><b>iCloud:</b> los cuatro campos se crean en el esquema de producción <b>antes</b> de subir el build; si no, iCloud rechaza la línea sin avisar.</li>
+    <li><b>Riesgo conocido:</b> si dos teléfonos cambian la lista de pagos a la vez sin conexión, gana el último. Ya pasa igual con los cambios «desde este mes».</li>
+    <li><b>Tipo de cambio:</b> sale de las tasas que Yala ya guarda cada día; no hay fuente nueva.</li>
+  </ul>
+  <div class="note"><b>Queda fuera de la primera versión:</b> escribir un tipo de cambio a mano; «solo este mes / desde este mes» para un monto en otra moneda; un extra en otra moneda; pagos de grupo dentro de una línea.</div>
+</section>
+
+<section aria-labelledby="h-q">
+  <span class="eyebrow">Tu turno</span>
+  <h2 id="h-q">Ocho preguntas, con lo recomendado primero</h2>
+  <p class="status" id="db-status" role="status">Conectando…</p>
+  <div class="grid2" id="qs"></div>
+</section>
+
+<footer class="small muted">Sesión de diseño del 20-nov-2026 sobre 2.3. Ticket de implementación: <code>tickets/backlog/2026-11-20-flujo-limites-pagos-planificados-y-moneda.md</code>. Cifras de ejemplo, no son tus datos.</footer>
+</div>
+
+<script>
+(() => {
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  let phoneDark = true;
+  try { phoneDark = localStorage.getItem("ph-theme") !== "light"; } catch (e) {}
+  if (location.hash === "#claro") phoneDark = false;
+  function applyTheme() {
+    document.querySelectorAll(".phone").forEach((p) => p.classList.toggle("dark", phoneDark));
+    document.querySelectorAll(".ph-theme").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.t === "dark") === phoneDark)));
+  }
+  document.querySelectorAll(".ph-theme").forEach((b) => b.addEventListener("click", () => {
+    phoneDark = b.dataset.t === "dark"; applyTheme();
+    try { localStorage.setItem("ph-theme", phoneDark ? "dark" : "light"); } catch (e) {}
+  }));
+  applyTheme();
+
+  const QS = [
+    { id: "metodo", t: "Dónde se elige «monto fijo / pagos / pagos + extra»", o: [["A", "A · Un método «Pagos planificados» con el extra dentro (recomendada)", "La hoja de hoy con una opción que crece."], ["B", "B · Tres modos arriba", "Más claro de entrada; rehace la hoja del 19-nov."], ["C", "C · Dos métodos separados", "Pagos, y pagos + extra, como opciones distintas."]] },
+    { id: "seleccion", t: "Cómo se eligen varios pagos", o: [["B", "Casillas; uno de otra línea se mueve aquí, avisando (recomendada)", "Nunca queda en dos líneas, y no obliga a ir a la otra."], ["A", "Casillas; los de otra línea salen bloqueados", "Hay que quitarlo antes en su línea."], ["C", "Un pago puede estar en varias líneas", "Su gasto contaría dos veces: no lo recomiendo."]] },
+    { id: "borrado", t: "Si un pago se borra, se pausa o termina", o: [["A", "Deja de sumar; sin nada, monto fijo con el último límite y un aviso (recomendada)", "La cifra no salta y sabes por qué cambió."], ["B", "Sin nada, la línea pasa a Promedio 6 meses", "Sigue viva, pero la cifra cambia de golpe."], ["C", "Sin nada, queda en S/ 0 con un aviso", "Lo de hoy, con aviso."]] },
+    { id: "mezcla", t: "Pagos en distintas monedas en una línea", o: [["A", "Cada uno se convierte y se suman; el original sale si comparten moneda (recomendada)", "Funciona con cualquier mezcla."], ["B", "La línea toma la moneda de sus pagos", "Solo sirve si todos están en la misma."], ["C", "Solo pagos en la moneda del flujo", "Deja fuera la renta en dólares."]] },
+    { id: "fijo", t: "Monto fijo en otra moneda", o: [["A", "La moneda del campo se puede cambiar; en otra moneda vale para todos los meses (recomendada)", "Lo que pediste, en el mismo sitio."], ["B", "Un ajuste aparte «Moneda del límite» en la línea", "Lejos del monto que se escribe."], ["C", "Solo a través de un pago planificado", "Obliga a crear un pago para la renta."]] },
+    { id: "tasa", t: "Qué tipo de cambio", o: [["A", "Promedio del mes: cerrado fijo, en curso lo que va, futuro el último con «≈» (recomendada)", "Tu propuesta; una sola regla."], ["B", "La tasa del día de cada pago; promedio para el monto fijo", "Más exacto con pagos; dos reglas que explicar."], ["C", "La última tasa conocida para todo", "Lo de hoy: los meses cerrados cambian cada día."]] },
+    { id: "fila", t: "Cómo se ve en la fila del mes", o: [["A", "Soles arriba y «⇄ 500 USD» debajo (recomendada)", "Cuadra con el total y se ve el original."], ["B", "Solo «≈ S/ 1,850.00»", "No dice que son dólares."], ["C", "«500.00 USD» como cifra y los soles debajo", "La columna deja de sumar el total."]] },
+    { id: "sync", t: "Cómo se guarda y sincroniza", o: [["A", "Cuatro datos nuevos en la línea, compatibles con versiones viejas (recomendada)", "El mismo camino que los cambios «desde este mes»."], ["B", "Un registro aparte por cada pago de la línea", "Mejor con dos teléfonos a la vez; otro tipo de registro en iCloud y otra tabla."]] },
+  ];
+  const state = {};
+  let db = null, canWrite = false;
+  const qsEl = document.getElementById("qs");
+  const statusEl = document.getElementById("db-status");
+  function renderQs() {
+    qsEl.innerHTML = QS.map((q, i) => {
+      const cur = state[q.id] || {};
+      return '<div class="q"><span class="qnum">PREGUNTA ' + (i + 1) + '</span><h3>' + esc(q.t) + '</h3><div class="opts">' + q.o.map((o) =>
+        '<button type="button" class="opt" data-q="' + q.id + '" data-v="' + o[0] + '" aria-pressed="' + (cur.valor === o[0]) + '"' + (canWrite ? "" : " disabled") + '><span class="dot" aria-hidden="true"></span><span><b>' + esc(o[1]) + '</b><br><span class="small muted">' + esc(o[2]) + "</span></span></button>").join("") +
+        '</div><textarea id="nota-' + q.id + '" data-q="' + q.id + '" aria-label="Nota sobre la pregunta ' + (i + 1) + '" placeholder="Nota (opcional)"' + (canWrite ? "" : " disabled") + ">" + esc(cur.nota || "") + "</textarea></div>";
+    }).join("");
+    qsEl.querySelectorAll(".opt").forEach((b) => b.addEventListener("click", () => save(b.dataset.q, { valor: b.dataset.v })));
+    qsEl.querySelectorAll("textarea").forEach((t) => t.addEventListener("change", () => save(t.dataset.q, { nota: t.value.slice(0, 600) })));
+  }
+  const busy = {};
+  async function save(id, patch) {
+    if (!db || !canWrite || busy[id]) return;
+    busy[id] = true;
+    const next = Object.assign({}, state[id] || {}, patch);
+    try {
+      await db.collection("decisiones").doc(id).set({ valor: next.valor || "", nota: next.nota || "" });
+      state[id] = next; statusEl.textContent = "Guardado.";
+    } catch (e) { statusEl.textContent = "No se pudo guardar: " + (e && e.code ? e.code : "error") + ". Vuelve a intentarlo."; }
+    busy[id] = false; renderQs();
+  }
+  renderQs();
+  (async () => {
+    const timer = setTimeout(() => { statusEl.textContent = "Sin conexión con la base: las opciones se ven, pero no se guardan."; }, 10000);
+    try {
+      if (!window.claude || !window.claude.use) { clearTimeout(timer); statusEl.textContent = "Las respuestas se guardan desde claude.ai."; return; }
+      db = await claude.use("db");
+      const user = await claude.use("user");
+      canWrite = user ? await user.isOwner() : false;
+      if (!db) { clearTimeout(timer); statusEl.textContent = "Las respuestas solo se guardan con sesión iniciada."; renderQs(); return; }
+      db.collection("decisiones").onSnapshot((snap) => {
+        clearTimeout(timer);
+        snap.docs.forEach((d) => { const v = d.data(); if (v) state[d.id] = { valor: v.valor, nota: v.nota }; });
+        statusEl.textContent = canWrite ? "Elige una opción por pregunta; se guarda al tocarla." : "Solo lectura: las respuestas las marca Jürgen.";
+        renderQs();
+      }, () => { clearTimeout(timer); statusEl.textContent = "No pude leer las respuestas guardadas."; });
+    } catch (e) { clearTimeout(timer); statusEl.textContent = "Las respuestas no se pueden guardar en esta vista."; }
+  })();
+})();
+</script>
