@@ -43,9 +43,10 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1393)
+## Index (1394)
 
 | id | status | path |
+| 2026-11-19-cambiar-tema-ajustes-no-se-repinta | done | tickets/done/2026-11-19-cambiar-tema-ajustes-no-se-repinta.md |
 | 2026-11-19-nuevo-registro-limpio-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-limpio-maquetas.md |
 | 2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1 | done | tickets/done/2026-11-19-flujo-sincronizar-futuro-limpiar-cambiar-limite-panel-dia-1.md |
 | 2026-11-19-nuevo-registro-b-realista-maquetas | backlog | tickets/backlog/2026-11-19-nuevo-registro-b-realista-maquetas.md |
@@ -403,7 +404,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge | backlog | tickets/backlog/confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge.md |
 | connection-errors-put-the-fix-on-the-user | backlog | tickets/backlog/connection-errors-put-the-fix-on-the-user.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
-| contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
+| contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | done | tickets/done/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
 | convert-personal-expense-to-group-from-the-editor | done | tickets/done/convert-personal-expense-to-group-from-the-editor.md |
 | convert-to-group-fails-generically-with-an-income-homonym-category | backlog | tickets/backlog/convert-to-group-fails-generically-with-an-income-homonym-category.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
@@ -735,7 +736,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | done | tickets/done/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
-| hot-pink-fills-with-white-text-are-below-aa | backlog | tickets/backlog/hot-pink-fills-with-white-text-are-below-aa.md |
+| hot-pink-fills-with-white-text-are-below-aa | done | tickets/done/hot-pink-fills-with-white-text-are-below-aa.md |
 | icloud-drive-off-before-launch-starts-empty-and-silent | done | tickets/done/icloud-drive-off-before-launch-starts-empty-and-silent.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
@@ -786,7 +787,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | indigo-accent-as-small-text-on-dark-themes-is-below-aa | done | tickets/done/indigo-accent-as-small-text-on-dark-themes-is-below-aa.md |
-| indigo-small-text-on-the-light-background-is-4-46 | backlog | tickets/backlog/indigo-small-text-on-the-light-background-is-4-46.md |
+| indigo-small-text-on-the-light-background-is-4-46 | done | tickets/done/indigo-small-text-on-the-light-background-is-4-46.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
 | insights-ant-expenses-ai-version-for-pro | qa | tickets/qa/insights-ant-expenses-ai-version-for-pro.md |

@@ -702,10 +702,22 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   TEXTO o icono sobre el fondo y las tarjetas: en los temas oscuros es más claro (#818CF8 índigo, #FF4DA6 rosa), porque
   `electricIndigo` da 3,2–4,5 sobre las superficies oscuras y no puede aclararse sin romper el blanco de los botones.
   `theme.onAccent` / `.thOnAccent` es lo que va ENCIMA del relleno: blanco en los índigo, **negro** en Teal, Rosa y
-  Minimalista. ⇒ **nunca `.white` a mano sobre el acento**, ni `Color.contrastingText(for: theme.accent)` (su fórmula no
-  es la de WCAG y daba blanco sobre el turquesa, 2,19:1): sobre un relleno cualquiera, `theme.onFill(color)`. Y el
+  Minimalista. ⇒ **nunca `.white` a mano sobre el acento**, ni `Color.contrastingText(for: theme.accent)`: sobre el
+  acento, `onAccent`, decidido por tema; sobre un relleno cualquiera, `theme.onFill(color)`. Y el
   acento como texto nunca con `.foregroundStyle(.tint)`: el tinte global sigue siendo el relleno. Lo fija
   `ThemeTokenContrastTests` en los diez temas.
+- **`Color.contrastingText(for:)` mide con WCAG desde el 2026-11-19**: blanco si llega a 4,5:1 o si queda a menos de
+  medio punto del negro (empate práctico: el índigo por defecto de las cuentas, #6366F1, da 4,47 / 4,70 y conserva su
+  blanco); si no, negro. Antes usaba la fórmula de vídeo y daba blanco sobre el turquesa (2,19:1) o un naranja (2,8).
+  Un relleno rosa con texto blanco es `Color.emphasisPinkFill` (5,16), nunca `hotPink` (3,77). Y el `accentText` del
+  Claro sube un punto con «Aumentar contraste» (#5053D9 sobre #EAEAEE). Pin: `ContrastingTextWCAGTests`.
+- **El claro u oscuro del tema va también en la ventana y en lo presentado (2026-11-19).** `preferredColorScheme` en la
+  raíz no alcanza a una hoja YA abierta: SwiftUI le fija el modo al presentarla, y con Ajustes › Temas abierto el texto
+  de `Color.primary` se quedaba del modo anterior (gris oscuro sobre negro). Ni con el modo solo en la `UIWindow` bastó.
+  Lo hace `appliesThemeStyleToWindow` (`Theme/ThemeWindowStyle.swift`), colgado en `YalaApp.rootView`: pone el modo en
+  la ventana y, al CAMBIAR de tema, en cada controlador presentado. ⇒ una escena nueva pasa por `rootView`, y una hoja
+  que fuerce su propio modo con `preferredColorScheme` lo pierde si el tema cambia con ella abierta. Pin:
+  `ThemeWindowStyleTests` y `TemasRepintadoUITests` (mide los píxeles del texto).
 - **`Color.incomeAmount` es adaptativo desde el 2026-10-25**: #0F7A80 en claro y el turquesa de marca (#00C2CB) en
   oscuro, donde el fijo daba 3,3:1. Como RELLENO con texto blanco encima, `Color.incomeFill` (fijo, 5,1:1): el
   adaptativo se aclara en oscuro y el blanco encima dejaría de leerse.

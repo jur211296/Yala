@@ -320,7 +320,7 @@ struct SplitCalculatorSheet: View {
                         .background(
                             Capsule().fill(
                                 fieldState.percentageText == "\(value)"
-                                    ? Color.hotPink
+                                    ? Color.emphasisPinkFill  // con blanco encima: 5,16:1 (hotPink daba 3,77)
                                     : Color.secondary.opacity(0.1)
                             )
                         )

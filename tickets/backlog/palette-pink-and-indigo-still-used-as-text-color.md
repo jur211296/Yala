@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "design-system, accesibilidad"
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-19
 source: "lote 08 de las necesarias 2.3 (Flujo de caja), al buscar todas las instancias del índigo y el rosa como texto"
 ---
 
@@ -23,3 +23,7 @@ Quedan, medidos en `origin/2.3` el 2026-11-12:
 - `CashFlowLineConfigSheet.swift:193`: la tendencia (hoja inalcanzable hoy, ver la ficha de la zona 36).
 
 Molde: los tokens de texto que mide `ThemeTokenContrastTests` en los diez temas.
+
+Revisado el 2026-11-19 en el lote de temas: no es el mismo arreglo que los tokens de contraste (aquí son vistas que pintan
+TEXTO con la paleta, y `VariationChip` es decisión de diseño), así que sigue en backlog. Ese lote cerró el índigo con
+«Aumentar contraste», los rellenos rosa con blanco y `contrastingText` con WCAG.

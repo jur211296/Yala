@@ -145,6 +145,10 @@ struct YalaApp: App {
             // El pliegue del iPhone Duo abierto, para las rejillas en dos columnas (`readsVerticalFold(_:)`).
             .publishesVerticalFold()
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
+            // Y en la ventana y lo presentado: sin esto, una hoja abierta (Ajustes › Temas) se quedaba con el modo de antes.
+            .appliesThemeStyleToWindow(
+                ThemeWindowStyleLogic.style(for: themeManager.userChoice, resolved: themeManager.resolved)
+            )
             .tint(themeManager.resolved.accent)
             .environment(\.yalaTheme, themeManager.resolved)
             .saturation(themeManager.resolved.mapsColorsToGrayscale ? 0 : 1)
