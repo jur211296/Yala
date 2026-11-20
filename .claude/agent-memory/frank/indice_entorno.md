@@ -50,3 +50,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Disco justo: esquema Yala a ExtDev con paquetes locales](reference_disco_justo_esquema_yala_a_extdev_con_paquetes_locales.md) — `-clonedSourcePackagesDirPath` local evita el cuelgue; Yala Dev en local.
 - [Artifact público: a veces sí, a veces no](reference_artifacts_no_se_pueden_hacer_publicos.md) — el 19-nov salió desactivado y luego pasó; siempre un intento entero.
 - [Desplegar el Worker sin arrastrar shared-core](reference_desplegar_el_gateway_desde_la_mini.md) — 20-nov: el wrangler de `~/.wrangler` es la cuenta personal; el de Yala, `~/Library/Preferences/.wrangler` con token renovado.
+- [Decisión de un artifact de otra org](reference_decision_de_artifact_de_otra_org.md) — 20-nov: ArtifactData no lee la base de un artifact de otra organización; manda el encargo.
