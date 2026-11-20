@@ -132,6 +132,10 @@ struct PhotoIntakeTests {
             ("Yala/App/Views/Groups/Captura/GroupPhotoCaptureView.swift", 0),
             ("Yala/App/Views/Profile/PersonalDetailsView.swift", 1),
             ("Yala/App/Commands/RootCommandsModifier.swift", 0),
+            // Logo propio de un pago planificado (2026-11-20): el selector y la foto ya guardada.
+            ("Yala/App/Views/Planning/MerchantLogoPicker.swift", 0),
+            ("Yala/App/Views/Planning/LogoPropio/PagoLogoPropio.swift", 0),
+            ("Yala/App/Views/Planning/ScheduledPaymentEditorView.swift", 0),
         ]
         for file in files {
             let code = try Self.codeOnly(String(contentsOf: root.appendingPathComponent(file.path), encoding: .utf8))

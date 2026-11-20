@@ -20,4 +20,12 @@ Medido el 2026-11-14 (lote 1 de bugs de entrada, gateway en paralelo).
 - Luego `patch -p1` con solo tu diff, `npm run deploy:staging` / `deploy:production`, humo (`/config` 200, rutas sin JWT →
   401 `yala_attest_required`) y vuelve a bajar el script para comprobar que es el verificado.
 
+- **Repetido el 2026-11-20 (g32_01, manifest v7)**: los dos Workers corrían `e4d8752701` y `2.3` traía `shared-core` sin
+  desplegar. `git archive e4d8752701 gateway mcp shared-core <manifests>` en el scratchpad + `npm ci` en `gateway/` y
+  `shared-core/` + copiar SOLO el manifest nuevo: diff del bundle 8 líneas. Ahí el `npx wrangler` del `npm ci` sí arrancó
+  con Node 26. **`wrangler` sin variables usa `~/.wrangler/config` (la cuenta personal) y da «Authentication error
+  10000»**: delante, `CLOUDFLARE_API_TOKEN` (renovado desde `~/Library/Preferences/.wrangler/config/default.toml`, receta en
+  [[secretos-de-staging-en-la-mini]]) y `CLOUDFLARE_ACCOUNT_ID=86c270…`. El token caduca en una hora: renuévalo antes de
+  cada paso largo y bórralo al acabar.
+
 Relacionado: [[feedback-verificar-prod-del-gateway-con-token-acunado]].

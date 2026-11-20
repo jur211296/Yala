@@ -282,6 +282,9 @@ enum EntityEmissionMap {
             ColumnEmitter("split_type", group: "split") { m, _ in Emit.text(m.splitType) },
             ColumnEmitter("split_participant_ids_raw", group: "split") { m, _ in Emit.text(m.splitParticipantIDsRaw) },
             ColumnEmitter("split_values_raw", group: "split") { m, _ in Emit.text(m.splitValuesRaw) },
+            // Logo propio (2026-11-20): la referencia de la foto en Storage, nunca la foto. Columna posterior al
+            // lanzamiento: no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("custom_logo_ref", since: SyncCapability.customLogoSince) { m, _ in Emit.text(m.customLogoRef) },
         ],
         columnKeyPaths: [
             \ScheduledPayment.name: ["name"],
@@ -316,6 +319,7 @@ enum EntityEmissionMap {
             \ScheduledPayment.splitType: ["split_type"],
             \ScheduledPayment.splitParticipantIDsRaw: ["split_participant_ids_raw"],
             \ScheduledPayment.splitValuesRaw: ["split_values_raw"],
+            \ScheduledPayment.customLogoRef: ["custom_logo_ref"],
         ]
     )
 

@@ -53,6 +53,17 @@ enum PullApplyOutcome: Equatable {
     /// dejó leer) → reintentar con backoff. Que lo local caiga aquí es el ticket
     /// `a-local-read-failure-in-the-migration-apply-reads-as-network`.
     case transient(pagesApplied: Int)
+
+    /// Tope de páginas por ciclo de `pullAndApplyOnce` por defecto.
+    nonisolated static let defaultMaxPages = 50
+
+    /// La cola se vació de verdad: `.completed` sale también al llegar al tope de páginas con la cola a medias, y quien
+    /// decide algo por lo que NO bajó (el borrado de fotos de logos propios, 2026-11-20) necesita saberlo. Con el tope
+    /// justo alcanzado no se sabe, y se lee como «no».
+    func drainedTheQueue(maxPages: Int = PullApplyOutcome.defaultMaxPages) -> Bool {
+        if case .completed(let pages) = self { return pages < maxPages }
+        return false
+    }
 }
 
 /// Error del seam de test `_testThrowOnApplySave` (simula un crash antes del commit de una página).
@@ -103,7 +114,7 @@ extension CloudSyncEngine {
         context: ModelContext,
         now: Date = .now,
         pageLimit: Int = 500,
-        maxPages: Int = 50,
+        maxPages: Int = PullApplyOutcome.defaultMaxPages,
         beforeDrain: (@MainActor () throws -> Void)? = nil
     ) async -> PullApplyOutcome {
         // D-2: nunca aplicar con un drain en curso. Defensivo (F-10): `drainOnce` es síncrono bajo

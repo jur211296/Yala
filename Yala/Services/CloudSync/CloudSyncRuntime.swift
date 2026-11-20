@@ -785,6 +785,12 @@ final class CloudSyncRuntime {
         await syncPrefsOnce(epoch: epoch)
         guard epoch == sessionEpoch else { return .coalesced }
 
+        // 5.55) Fotos de los logos propios de pagos planificados (2026-11-20): sube lo elegido aquí, baja lo elegido en
+        //       otro teléfono y borra lo que ya nadie nombra, solo con la cola del pull vaciada de verdad (no con el
+        //       `.completed` del tope de páginas: lo que no bajó no se nombra y se borraría). Nunca falla el ciclo.
+        await PagoLogoPropioSync.shared.runIfDue(context: context, pullComplete: pullOutcome.drainedTheQueue())
+        guard epoch == sessionEpoch else { return .coalesced }
+
         // 5.6) Grupos piggyback (B2 [R3]): con el canal de Grupos encendido, su ciclo corre AQUÍ (misma
         //      cadencia que el dominio) y `GroupsSyncClient.startIfEligible` se ABSTIENE de su loop propio
         //      (guard espejo: syncRuntimeEnabled && canRunDomain()) — un solo loop cadenciado, sin dos

@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (40 entradas)
+## Índice (47 entradas)
 
-> **No hace falta leer este fichero entero** — son 156 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 175 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,11 +28,13 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
-- `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-teléfono-que-no-lo-conoce-2026-11-03)
-- `2026-11-02` [g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)](#g2901--quién-creó-o-editó-un-gasto-y-quién-registró-una-liquidación-viajan-por-el-canal-2026-11-02)
+- `2026-11-20` [g32_01 — `scheduled_payments.custom_logo_ref` y el bucket de logos propios (2026-11-20)](#g3201--scheduledpaymentscustomlogoref-y-el-bucket-de-logos-propios-2026-11-20)
+- `2026-11-16` [g31_01 — volver a pasar a la nube con la cuenta que volvió a iCloud (2026-11-16)](#g3101--volver-a-pasar-a-la-nube-con-la-cuenta-que-volvi-a-icloud-2026-11-16)
+- `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-telfono-que-no-lo-conoce-2026-11-03)
+- `2026-11-02` [g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-0](#g2901--quin-cre-o-edit-un-gasto-y-quin-registr-una-liquidacin-viajan-por-el-canal-2026-11-02)
 - `2026-11-01` [g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)](#g2801--txitemssplitlinesraw-las-lneas-de-tu-parte-de-un-gasto-de-grupo-2026-11-01)
-- `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
-- `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
+- `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la t](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
+- `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (20](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
 - `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
 - `2026-10-21` [g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)](#g2201--setmemberrole-hacer-o-quitar-administrador-en-un-grupo-de-la-nube-2026-10-21)
 - `2026-10-18` [g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)](#g1801--accountsparentaccountid-la-tarjeta-con-varias-divisas-2026-10-18)
@@ -2321,3 +2323,27 @@ mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila e
 staging el 2026-09-24, tras aplicar g16_01:** 34/35 en verde, con el 1, el de g3_02 y el 28 dentro. El único
 rojo es el 20, el timeout de 5010 ms que ya lleva `account-goldens-freeze-read-test-times-out`. Antes de correrlos
 hubo que borrar las filas de `profiles` de A, B y C, con el `delete` de la sección de I7a ampliado a C.
+
+## g32_01 — `scheduled_payments.custom_logo_ref` y el bucket de logos propios (2026-11-20)
+
+**APLICADA EN STAGING Y EN PRODUCCIÓN el 2026-11-20**, en ese orden (encargo `2026-11-20-pago-planificado-logo-propio-foto`,
+producción autorizada por Jürgen el 19-nov 21:28). Qué añade: la columna `custom_logo_ref text` (nullable, sin CHECK) en
+`scheduled_payments`, el bucket PRIVADO `scheduled-payment-logos` (solo `image/jpeg`, hasta 100 KB) y cuatro políticas sobre
+`storage.objects`, una por verbo, que dejan a cada usuario solo su carpeta (`(storage.foldername(name))[1] = auth.uid()`).
+Nada más: `apply_delta` escribe con `jsonb_populate_record` y los grants son de tabla.
+
+**Worker v7** (manifest con `custom_logo_ref`, `since: 7`) desplegado en los dos entornos **sobre el código que ya corría**
+(`e4d8752701`, verificado byte a byte contra el script bajado de Cloudflare: 0 líneas de diferencia) más solo el manifest:
+el diff del bundle fueron 8 líneas, todas del manifest. `2.3` llevaba cambios de `shared-core` sin desplegar y no se
+subieron. Versiones: staging `e2d9183c-5303-42e1-a6eb-0bc11c54aaba` (vuelta atrás: `wrangler rollback
+b72a9045-177a-4893-812a-b75fca208c21`), producción `6cc9618b-d708-4760-a92e-93dc71b24c63` (vuelta atrás: `wrangler rollback
+37d6972b-9636-4b4a-b40b-beb31b2ad776 --env production`). Tras el despliegue: `/config` con `manifestVersion: 7`,
+`/sync/pull` y `/sync/merkle` sin sesión 401, y el script bajado de nuevo idéntico al verificado.
+
+**Marcha atrás**: primero el Worker (rollback de arriba), después `g32_01_rollback.sql`, que solo retira algo si ningún pago
+tiene foto y el bucket está vacío. Conductor: `bash qa/cloud/g32_01-remote.sh <staging|production> <state|apply|rollback>`.
+
+**Sonda** (`bash qa/cloud/g32_01-staging-probe.sh`, usuarios de test A y B de staging): 26/26 — ida y vuelta de la
+referencia entre dos nodos con v7 y su ausencia con v6, la foto byte a byte por Storage, aislamiento (B no lista, no baja,
+no sube ni borra en la carpeta de A; sin sesión tampoco; el bucket no es público), solo JPEG, Merkle v7/v6 200, cambiar y
+quitar la foto, y limpieza.

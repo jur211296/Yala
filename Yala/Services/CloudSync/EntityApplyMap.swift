@@ -522,6 +522,14 @@ enum EntityApplyMap {
             "split_type": Apply.textOpt(\.splitType),
             "split_participant_ids_raw": Apply.textOpt(\.splitParticipantIDsRaw),
             "split_values_raw": Apply.textOpt(\.splitValuesRaw),
+            // Logo propio (2026-11-20): una referencia NUEVA suelta la foto que había, y `PagoLogoPropioSync` baja la
+            // nueva. La misma (el eco de lo que este teléfono subió) no toca nada.
+            "custom_logo_ref": ColumnApplier { m, v, _ in
+                let ref = WireValueDecoder.string(v)
+                guard ref != m.customLogoRef else { return }
+                m.customLogoRef = ref
+                m.customLogoData = nil
+            },
         ]
     )
 

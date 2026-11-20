@@ -105,6 +105,18 @@ final class ScheduledPayment {
     /// o el id del servicio elegido a mano. Opcional: los pagos de antes quedan en automático sin migrar nada.
     var brandLogoID: String?
 
+    // MARK: - Logo propio con una foto (2.3; CloudKit: opcionales)
+
+    /// La foto que la persona eligió como logo, ya recortada y reducida (`PagoLogoPropioFoto`: 256 × 256 px, JPEG).
+    /// Con foto se pinta la foto y `brandLogoID` queda en `"none"`, así una versión vieja enseña el icono por defecto.
+    /// En iCloud viaja como asset del registro (`.externalStorage`). En el Modo Nube no viaja: viaja `customLogoRef`.
+    @Attribute(.externalStorage) var customLogoData: Data?
+
+    /// Modo Nube: el nombre del archivo de la foto en Supabase Storage (`<uuid>.jpg`, dentro de la carpeta del usuario
+    /// en el bucket `scheduled-payment-logos`). `nil` = sin foto. Cambia con cada foto nueva, así el otro teléfono sabe
+    /// que tiene que bajarla. Lo sube y lo baja `PagoLogoPropioSync`.
+    var customLogoRef: String?
+
     // MARK: - Notifications (CloudKit: defaults required)
 
     /// Whether to notify on due date
