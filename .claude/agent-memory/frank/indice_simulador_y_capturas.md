@@ -25,6 +25,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Prefs del simulador y NavigationLink](reference_simulador_prefs_y_navigationlink.md) — plist con el simulador apagado; axe no abre un link en hoja.
 - [axe no ve las hojas](feedback_axe_no_ve_las_hojas.md) — árbol de debajo; filas de List con el tap de MCP.
 - [Arnés de maquetas dentro de la app](reference_arnes_de_maquetas_dentro_de_la_app.md) — `-mockupNR`: hoja real + variantes con piezas reales; parche, no rama; tap de MCP.
+- [Medir qué cabe sobre un botón fijo](reference_medir_que_cabe_sobre_un_boton_fijo.md) — frame `.global` contra el `minY` del botón; `ScrollGeometry` no casa con la pantalla.
 - [La telemetría de la card puede ser de otro aparato](feedback_la_telemetria_de_la_card_puede_ser_de_otro_aparato.md) — filtra por instalación; el 401 «medido» era del iPad.
 - [Un seam que deja algo pendiente contamina el test siguiente](feedback_un_seam_que_deja_algo_pendiente_contamina_al_siguiente_test.md) — `SessionState` lee antes del reset; lee la debug description.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.

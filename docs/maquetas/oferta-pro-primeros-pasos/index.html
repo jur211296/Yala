@@ -1,0 +1,285 @@
+<title>Oferta Pro: más beneficios</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna de lectura; el comparador de teléfonos rompe a 4 columnas en ancho y a 2 en el móvil. */
+:root {
+  --bg: #F4F4F6; --surface: #FFFFFF; --fg: #17172A; --muted: #5E5E74; --line: #E2E2EA;
+  --accent: #5B5EE4; --accent-soft: #ECECFD; --pink: #D61F75; --ok: #0F7A62; --warn: #A15C00; --bad: #B4233C;
+  --display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E0E16; --surface: #1A1A26; --fg: #EDEDF5; --muted: #A2A2B8; --line: #2C2C3C;
+  --accent: #8F92FF; --accent-soft: #24244A; --pink: #FF6FB0; --ok: #4FD1A5; --warn: #F2B35B; --bad: #FF7A8E; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E0E16; --surface: #1A1A26; --fg: #EDEDF5; --muted: #A2A2B8; --line: #2C2C3C;
+  --accent: #8F92FF; --accent-soft: #24244A; --pink: #FF6FB0; --ok: #4FD1A5; --warn: #F2B35B; --bad: #FF7A8E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 800; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.quote { border-left: 3px solid var(--pink); padding: 4px 0 4px 14px; font-size: 17px; }
+.rec { background: var(--accent-soft); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.rec b { color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { font: 600 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.seg button:focus-visible, .choice:focus-within, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.phones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .phones { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+figure img { width: 100%; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); display: block; }
+figcaption { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+figcaption .name { font-weight: 700; font-size: 14px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tag { font: 600 11px var(--body); border-radius: 999px; padding: 2px 8px; background: var(--accent); color: #fff; }
+.fit { display: flex; flex-wrap: wrap; gap: 4px; }
+.pill { font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 2px 8px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.part { color: var(--warn); } .pill.no { color: var(--bad); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+.cols2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
+.duo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .duo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.copy td:first-child { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.decide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .decide { grid-template-columns: minmax(0, 1fr); } }
+.choice { position: relative; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 14px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.choice input { position: absolute; opacity: 0; }
+.choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.choice:has(input:disabled) { cursor: default; }
+textarea { font: 14px var(--body); width: 100%; box-sizing: border-box; min-height: 72px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 10px 12px; }
+.save { font: 600 14px var(--body); background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; align-self: flex-start; }
+.save:disabled { opacity: .5; cursor: default; }
+.status { font-size: 13px; color: var(--muted); }
+code { font-size: 12.5px; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:12px">
+    <span class="eyebrow">Yala · Primeros pasos · maquetas del 20 de noviembre</span>
+    <h1>Oferta Pro: más beneficios</h1>
+    <p class="quote">«La nueva vista simplificada para invitar a PRO la siento muy pobre. Pocos beneficios. Y no hay algo para ir a ver todos los beneficios.»</p>
+    <p class="muted">Tres maneras de enseñar los ocho beneficios reales de Pro sin perder «Empezar mi mes gratis», con un enlace a una página que compara Gratis y Pro. Las capturas son de la app real en el simulador (iOS 27.2), con las piezas de verdad: planes, línea de tiempo, botón fijo y temas. Los precios son los de prueba ($29.99 y $4.99).</p>
+    <div class="rec">
+      <span class="eyebrow">Recomendación</span>
+      <p><b>Opción A, cuatro bloques en una tarjeta.</b> Nombra los ocho beneficios agrupados en cuatro ideas, añade «Ver todos los beneficios ›» y, aun así, en el iPhone SE se ven los dos planes sin bajar, igual que hoy. B y C se ven más ricas, pero en el SE dejan el plan anual a medias y el mensual fuera.</p>
+    </div>
+  </header>
+
+  <section aria-labelledby="comp">
+    <h2 id="comp">Las cuatro, lado a lado</h2>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="iPhone">
+        <button id="dev-se" data-dev="se" aria-pressed="false">iPhone SE</button>
+        <button id="dev-pro" data-dev="pro" aria-pressed="true">iPhone 17 Pro</button>
+        <button id="dev-promax" data-dev="promax" aria-pressed="false">17 Pro Max</button>
+      </div>
+      <div class="seg" role="group" aria-label="Tema">
+        <button id="th-claro" data-th="claro" aria-pressed="true">Claro</button>
+        <button id="th-oscuro" data-th="oscuro" aria-pressed="false">Oscuro</button>
+      </div>
+    </div>
+    <p class="muted" id="devnote"></p>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section aria-labelledby="medidas">
+    <h2 id="medidas">Qué se ve sin bajar</h2>
+    <p class="muted">Medido en la app: dónde acaba cada pieza en la pantalla frente a dónde empieza el botón fijo. Texto a tamaño normal. El botón «Empezar mi mes gratis» se ve siempre en todas, porque va fijo abajo (lo que exige el test de la oferta).</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Opción</th><th>Beneficios Pro nombrados</th><th>iPhone SE (667 pt)</th><th>iPhone 17 Pro (874 pt)</th><th>17 Pro Max (956 pt)</th></tr></thead>
+        <tbody id="mtable"></tbody>
+      </table>
+    </div>
+    <p class="muted">Con texto de accesibilidad grande (AX3) la opción A se desplaza y no corta nada; el botón sigue fijo. En la implementación, a esos tamaños el icono de cada bloque pasa encima del texto.</p>
+  </section>
+
+  <section aria-labelledby="destino">
+    <h2 id="destino">A dónde lleva «Ver todos los beneficios»</h2>
+    <div class="cols2">
+      <div class="card">
+        <h3>Una página nueva dentro de la misma hoja</h3>
+        <ul>
+          <li>Se empuja encima de la oferta: «Qué incluye Yala Pro», con Gratis frente a Pro por grupos.</li>
+          <li>«‹» vuelve a la oferta con el plan que la persona ya eligió.</li>
+          <li>Lleva el mismo «Empezar mi mes gratis» fijo abajo: se puede empezar desde ahí sin volver.</li>
+          <li>Las cifras de Gratis salen del código (4 cuentas, 3 presupuestos, 4 temas, 1 icono), no del texto.</li>
+        </ul>
+        <h3 style="margin-top:6px">Por qué no la pantalla Pro de Ajustes</h3>
+        <p class="muted">Esa pantalla es el paywall completo: repite los planes, la línea de tiempo y su propio botón de compra. Abrirla desde la oferta apila dos hojas de pago, y la persona no sabe en cuál está eligiendo.</p>
+      </div>
+      <div class="duo" id="allphones" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="reales">
+    <h2 id="reales">Los ocho beneficios que existen hoy</h2>
+    <p class="muted">Sacados de las puertas Pro de la app (lo que de verdad se bloquea en Gratis). Nada fuera de esta lista entra en la oferta.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Beneficio</th><th>Gratis</th><th>Pro</th><th>Bloque en A</th></tr></thead>
+        <tbody>
+          <tr><td>Dictar un gasto</td><td>—</td><td>Sí</td><td>Anota sin teclear</td></tr>
+          <tr><td>Foto, captura o PDF (también lo que llega por Compartir)</td><td>—</td><td>Sí</td><td>Anota sin teclear</td></tr>
+          <tr><td>Pregúntale a Yala IA</td><td>—</td><td>Sí</td><td>Yala IA</td></tr>
+          <tr><td>Resúmenes con IA en Estadísticas y Flujo de caja</td><td>—</td><td>Sí</td><td>Yala IA</td></tr>
+          <tr><td>Cuentas</td><td>4</td><td>Sin límite</td><td>Sin límites</td></tr>
+          <tr><td>Presupuestos</td><td>3</td><td>Sin límite</td><td>Sin límites</td></tr>
+          <tr><td>Temas</td><td>4</td><td>9 (Índigo, Rosa, Turquesa, Minimalista, Translúcido)</td><td>A tu estilo</td></tr>
+          <tr><td>Iconos de la app</td><td>1</td><td>4 (Oscuro, Claro, Neón)</td><td>A tu estilo</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Lo que no se promete</h3>
+      <p class="muted">La web anuncia en Pro «Reportes avanzados», «Acceso adelantado a nuevas funciones» y «soporte prioritario», y la app no tiene ninguno como beneficio. Quedan fuera de la oferta y van a un ticket aparte. Grupos tampoco entra: sigue gratis.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="textos">
+    <h2 id="textos">Textos propuestos (español neutro)</h2>
+    <div class="table-wrap">
+      <table class="copy">
+        <tbody>
+          <tr><td>Título</td><td>Prueba Yala Pro 1 mes gratis <span class="muted">(se queda como hoy)</span></td></tr>
+          <tr><td>Línea bajo el título</td><td>Todo lo de Yala, más rápido y sin límites. <span class="muted">(si probó voz, foto o IA en el paso 2, sigue la línea de hoy: «Dictaste un gasto y Yala lo anotó. Con Pro lo haces siempre.»)</span></td></tr>
+          <tr><td>Bloque 1</td><td><b>Anota sin teclear</b> · Dictando, o con una foto, captura o PDF</td></tr>
+          <tr><td>Bloque 2</td><td><b>Yala IA</b> · Pregúntale cómo vas y te resume tus gastos</td></tr>
+          <tr><td>Bloque 3</td><td><b>Sin límites</b> · Todas tus cuentas y presupuestos</td></tr>
+          <tr><td>Bloque 4</td><td><b>A tu estilo</b> · 5 temas y 3 iconos exclusivos</td></tr>
+          <tr><td>Enlace</td><td>Ver todos los beneficios</td></tr>
+          <tr><td>Página</td><td>Qué incluye Yala Pro · columnas Gratis / Pro · grupos Anotar, Yala IA, Organizar, A tu estilo · «Sin límite»</td></tr>
+          <tr><td>Pie de la página</td><td>Tus registros, tus estadísticas y Grupos siguen gratis, como siempre.</td></tr>
+          <tr><td>Botón</td><td>Empezar mi mes gratis <span class="muted">(como hoy)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="eleccion">
+    <h2 id="eleccion">Tu elección</h2>
+    <p class="muted" id="decide-help">Elige una y, si quieres, deja una nota. Se guarda aquí y la siguiente sesión la lee para construirla.</p>
+    <div class="decide" role="radiogroup" aria-label="Opción">
+      <label class="choice"><input type="radio" name="opcion" id="op-A" value="A"><h3>A · Cuatro bloques</h3><span class="muted">Recomendada. Ocho beneficios en cuatro ideas, dos planes a la vista en el SE.</span></label>
+      <label class="choice"><input type="radio" name="opcion" id="op-B" value="B"><h3>B · Rejilla de ocho</h3><span class="muted">La más llamativa. En el SE el plan anual queda a medias.</span></label>
+      <label class="choice"><input type="radio" name="opcion" id="op-C" value="C"><h3>C · Lo probado y además</h3><span class="muted">Sigue la historia del paso 2. En el SE el plan anual queda a medias.</span></label>
+    </div>
+    <label for="nota" class="eyebrow">Nota (opcional)</label>
+    <textarea id="nota" placeholder="Por ejemplo: A, pero con el icono de Yala IA más grande"></textarea>
+    <button class="save" id="guardar" disabled>Guardar elección</button>
+    <span class="status" id="estado" role="status">Cargando…</span>
+  </section>
+
+  <footer class="muted" style="font-size:13px">
+    Maquetas hechas dentro de la app con un arnés que no entra en el código (viaja como parche). Precios de prueba. Medidas en puntos de pantalla, iOS 27.2.
+  </footer>
+</div>
+
+<script>
+const VARIANTS = [
+  { id: "0", name: "Hoy", desc: "Tres funciones, sin enlace." },
+  { id: "A", name: "A · Cuatro bloques", desc: "Ocho beneficios en cuatro ideas y «Ver todos».", rec: true },
+  { id: "B", name: "B · Rejilla de ocho", desc: "Ocho fichas de cristal y «Compara Gratis y Pro»." },
+  { id: "C", name: "C · Lo probado y además", desc: "Las tres que probó, más cuatro chips." },
+];
+const DEVICES = {
+  se: { name: "iPhone SE", note: "375 × 667 pt, el iPhone más bajo que soporta Yala." },
+  pro: { name: "iPhone 17 Pro", note: "402 × 874 pt, el más parecido al iPhone 14 de pruebas." },
+  promax: { name: "iPhone 17 Pro Max", note: "440 × 956 pt." },
+};
+// Medido en la app: el borde de abajo de cada pieza y el de arriba del botón fijo (pt de pantalla).
+const M = {
+  se:     { cta: 605, "0": [417, 602, 636], A: [419, 600, 630], B: [523, 708, 742], C: [540, 726, 760] },
+  pro:    { cta: 778, "0": [435, 620, 654], A: [459, 640, 670], B: [555, 740, 774], C: [558, 743, 777] },
+  promax: { cta: 860, "0": [439, 624, 658], A: [463, 644, 674], B: [554, 739, 773], C: [562, 747, 781] },
+};
+const MONTHLY = 80; // alto del plan mensual + su separación
+const COUNT = { "0": "3 de 8", A: "8 de 8", B: "8 de 8", C: "8 de 8" };
+
+function fits(dev, v) {
+  const m = M[dev], [feat, plans, time] = m[v];
+  return [
+    ["Beneficios", feat <= m.cta ? "ok" : "no"],
+    ["Plan anual", plans - MONTHLY <= m.cta ? "ok" : (plans - MONTHLY - 90 < m.cta ? "part" : "no")],
+    ["Plan mensual", plans <= m.cta ? "ok" : (plans - MONTHLY <= m.cta ? "part" : "no")],
+    ["Fechas de cobro", time <= m.cta ? "ok" : "no"],
+  ];
+}
+function pills(dev, v) {
+  return fits(dev, v).map(([k, s]) => `<span class="pill ${s}">${s === "ok" ? "✓" : s === "part" ? "½" : "✕"} ${k}</span>`).join("");
+}
+
+let dev = "pro", th = "claro";
+function render() {
+  document.querySelectorAll("[data-dev]").forEach(b => b.setAttribute("aria-pressed", b.dataset.dev === dev));
+  document.querySelectorAll("[data-th]").forEach(b => b.setAttribute("aria-pressed", b.dataset.th === th));
+  document.getElementById("devnote").textContent = DEVICES[dev].name + " · " + DEVICES[dev].note;
+  document.getElementById("phones").innerHTML = VARIANTS.map(v => `
+    <figure>
+      <img src="img/${dev}-${v.id}-${th}.jpg" alt="${v.name} en ${DEVICES[dev].name}, tema ${th}" loading="lazy">
+      <figcaption>
+        <span class="name">${v.name}${v.rec ? ' <span class="tag">Recomendada</span>' : ""}</span>
+        <span class="muted">${v.desc}</span>
+        <span class="fit">${pills(dev, v.id)}</span>
+      </figcaption>
+    </figure>`).join("");
+  document.getElementById("allphones").innerHTML = ["se", "pro"].map(d => `
+    <figure><img src="img/${d}-A-all-${th}.jpg" alt="Qué incluye Yala Pro en ${DEVICES[d].name}" loading="lazy">
+    <figcaption><span class="name">${DEVICES[d].name}</span></figcaption></figure>`).join("");
+}
+document.querySelectorAll("[data-dev]").forEach(b => b.addEventListener("click", () => { dev = b.dataset.dev; render(); }));
+document.querySelectorAll("[data-th]").forEach(b => b.addEventListener("click", () => { th = b.dataset.th; render(); }));
+document.getElementById("mtable").innerHTML = VARIANTS.map(v => `
+  <tr><td><b>${v.name}</b></td><td>${COUNT[v.id]}</td>${["se", "pro", "promax"].map(d => `<td><span class="fit">${pills(d, v.id)}</span></td>`).join("")}</tr>`).join("");
+render();
+
+// Elección guardada en la base del artifact (solo la escribe el dueño).
+(async () => {
+  const estado = document.getElementById("estado"), guardar = document.getElementById("guardar");
+  const nota = document.getElementById("nota"), radios = [...document.querySelectorAll('input[name="opcion"]')];
+  const timer = setTimeout(() => { estado.textContent = "No se pudo cargar la elección guardada."; }, 10000);
+  let db = null, user = null;
+  try { db = await window.claude?.use?.("db"); user = await window.claude?.use?.("user"); } catch (e) { db = null; }
+  if (!db) { clearTimeout(timer); estado.textContent = "La elección solo se guarda con la sesión iniciada en claude.ai."; radios.forEach(r => r.disabled = true); nota.disabled = true; return; }
+  const owner = user?.isOwner?.() ?? false;
+  if (!owner) { radios.forEach(r => r.disabled = true); nota.disabled = true; }
+  const ref = db.doc("decisiones/opcion");
+  let saved = null;
+  ref.onSnapshot(snap => {
+    clearTimeout(timer);
+    saved = snap.exists ? snap.data() : null;
+    if (saved) {
+      radios.forEach(r => r.checked = r.value === saved.opcion);
+      if (document.activeElement !== nota) nota.value = saved.nota || "";
+      estado.textContent = "Guardado: opción " + saved.opcion + (saved.fecha ? " · " + new Date(saved.fecha).toLocaleString("es") : "");
+    } else {
+      estado.textContent = owner ? "Aún no hay elección guardada." : "Jürgen aún no ha elegido.";
+    }
+    guardar.disabled = true;
+  }, () => { clearTimeout(timer); estado.textContent = "No se pudo leer la elección guardada."; });
+  const dirty = () => { if (owner) guardar.disabled = !radios.some(r => r.checked); };
+  radios.forEach(r => r.addEventListener("change", dirty)); nota.addEventListener("input", dirty);
+  guardar.addEventListener("click", async () => {
+    const opcion = radios.find(r => r.checked)?.value; if (!opcion) return;
+    guardar.disabled = true; estado.textContent = "Guardando…";
+    try { await ref.set({ opcion, nota: nota.value.trim(), fecha: new Date().toISOString() }); }
+    catch (e) { estado.textContent = "No se guardó: " + (e?.message || "error"); guardar.disabled = false; }
+  });
+})();
+</script>
