@@ -73,7 +73,6 @@ struct SubscriptionView: View {
         // «Comenzar» cierra la bienvenida y también esta pantalla: tras comprar no queda nada de Pro por cerrar
         // (UX 2.2 · L17-9). Desde una hoja, `dismiss` la cierra; desde Ajustes, vuelve a la lista.
         .fullScreenCover(isPresented: $showSuccessView, onDismiss: {
-            ProTourManager.shared.triggerIfEligible()
             dismiss()
         }) {
             SubscriptionSuccessView()

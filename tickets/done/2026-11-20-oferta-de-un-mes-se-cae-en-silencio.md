@@ -1,6 +1,6 @@
 ---
 id: 2026-11-20-oferta-de-un-mes-se-cae-en-silencio
-status: backlog
+status: done
 priority: medium
 area: "pro, primeros-pasos, storekit"
 created: 2026-11-20
@@ -26,3 +26,11 @@ iPhone 14 con la consola de Xcode al terminar el paso 7. Ninguno deja rastro en 
 
 Lo que decida Jürgen en el tema 4 del artifact (momento de la oferta) está implementado, y cada corte deja una línea en
 Console (`#if DEBUG`) o un evento de telemetría que diga por qué no salió.
+
+## Cerrado (2026-11-20)
+
+Jürgen eligió la B: la oferta sale al terminar «Aprender a registrar» (encargo
+`2026-11-20-primeros-pasos-paso-7-hoja-coach-tips-y-oferta-pro`). El corte 1 deja de importar: ya no hace falta llegar
+al final del paso 7. Los cortes 3, 4 y 5 dejan una línea en Console (`#if DEBUG`): `TrialOfferMoments.note` («ya es
+Pro»), y el drenaje de `ContentView` («la cuenta ya usó su prueba», «precios sin cargar»). El 2 sigue igual a propósito:
+sin mazo sale la oferta de 2.2.

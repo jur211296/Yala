@@ -58,21 +58,8 @@ struct InsightsTabView: View {
     @State private var budgetsExpandedChoice: Bool?
     @State private var isNeedSectionExpanded: Bool = false
 
-    // Coach mark: Pro tour (Phase 3)
-    @State private var showProInsightsTour = false
-    @State private var proInsightsTourIndex = 0
-
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
-    }
-
-    /// All conditions for Phase 3 tour: phase + anchor exists + tour not done.
-    private var insightsTourReady: Bool {
-        !ProTourManager.shared.hasCompleted
-        && ProTourManager.shared.currentPhase == .insights
-        && viewModel.insightData?.periodSummary.transactionCount ?? 0 > 0
-        && isProUser
-        && !viewModel.aiActivated
     }
 
     // MARK: - Body
@@ -176,29 +163,6 @@ struct InsightsTabView: View {
         }
         .insightsConsentAlert(isPresented: $showAntAIConsentAlert) {
             Task { await viewModel.triggerAntAI() }
-        }
-        .coachMarkOverlay(
-            steps: ProTourSteps.insightsSteps,
-            isPresented: $showProInsightsTour,
-            currentIndex: $proInsightsTourIndex,
-            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
-            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
-            onSkip: { ProTourManager.shared.skipTour() },
-            onComplete: {
-                ProTourManager.shared.advancePhase()
-            }
-        )
-        .task(id: insightsTourReady) {
-            guard insightsTourReady else { return }
-            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard insightsTourReady, !showProInsightsTour else { return }
-            showProInsightsTour = true
-        }
-        .onChange(of: insightsTourReady) { _, ready in
-            if !ready && showProInsightsTour {
-                showProInsightsTour = false
-                proInsightsTourIndex = 0
-            }
         }
         .onChange(of: viewModel.insightData?.periodSummary.transactionCount) { _, newCount in
             // Reset defensivo: con < 5 tx no se monta el pill ni la rama Observaciones;
@@ -488,7 +452,6 @@ struct InsightsTabView: View {
         }
         .buttonStyle(.plain)
         .panelCard()
-        .coachMarkAnchor("proAiSummary")
     }
 
     // MARK: - Pro Observations Section

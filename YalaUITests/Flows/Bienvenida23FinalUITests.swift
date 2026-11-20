@@ -2,8 +2,8 @@
 //  Bienvenida23FinalUITests.swift
 //  YalaUITests
 //
-//  Lote 05 de la bienvenida 2.3 (docs/onboarding-2-3/SPEC.md): el paso 6 (Y23-14), el paso 7 (Y23-16) y el final con la
-//  oferta de Pro (Y23-18), recorridos de punta a punta. El mazo arranca en el paso que toca con `-uitest-setup-deck-at`
+//  Lote 05 de la bienvenida 2.3 (docs/onboarding-2-3/SPEC.md): el paso 6 (Y23-14), el paso 7 (Y23-16, como historias
+//  desde el 20-nov-2026) y el final con la oferta de Pro (Y23-18), recorridos de punta a punta. El mazo arranca en el paso que toca con `-uitest-setup-deck-at`
 //  (los anteriores omitidos) y los precios son los de mentira de `-uitest-fake-prices` (StoreKit no contesta en XCUITest).
 //
 
@@ -38,6 +38,16 @@ final class Bienvenida23FinalUITests: XCTestCase {
         target.tap()
     }
 
+    /// La historia a la vista, por su rótulo «Tutorial · N de M · Nombre»: el escenario de la página de historias pisa
+    /// los ids de su contenido (medido con axe el 2026-11-20), así que el rótulo, que va fuera, es lo que la distingue.
+    private func waitForStory(_ app: XCUIApplication, _ position: Int, of count: Int, _ name: String,
+                              timeout: TimeInterval = 10) -> Bool {
+        let eyebrow = element(app, "tutorial_story_eyebrow")
+        let predicate = NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "\(position) de \(count)", name)
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: eyebrow)],
+                                timeout: timeout) == .completed
+    }
+
     private func attach(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
@@ -63,78 +73,79 @@ final class Bienvenida23FinalUITests: XCTestCase {
         waitForExpectations(timeout: 10)
     }
 
-    /// Y23-16: cuatro maneras (sin el correo), cada una omitible, con la pantalla de entre medias; al terminar con alguna
-    /// vista, el mazo se completa y queda «¡Primeros pasos completos!» (Y23-18).
-    func test_step7_fourWays_doneAndSkipped_thenTheDeckCompletes() {
+    /// Y23-16, opción B de Jürgen (20-nov-2026): cuatro historias (sin el correo), cada una con su ejemplo y «Enséñame
+    /// cómo». Terminar un mini tutorial pasa a la siguiente historia; tocar a la derecha pasa sin verlo; «Terminar» en la
+    /// última cierra el paso, que queda hecho (se vio uno) y el mazo se completa (Y23-18).
+    func test_step7_fourStories_howToAndTapThrough_thenTheDeckCompletes() {
         let app = launch(atStep: 7)
         tapWhenSettled(app, "setup_deck_current")
-        XCTAssertTrue(element(app, "home_tutorial_skip_step").waitForExistence(timeout: 10))
-        attach(app, "paso7-pagina-corta")
-        tapWhenSettled(app, "home_tutorial_start")
+        XCTAssertTrue(waitForStory(app, 1, of: 4, "Widget"), "La primera historia: el widget, «Tutorial · 1 de 4».")
+        XCTAssertFalse(element(app, "home_tutorial_skip_step").exists, "Sin «Omitir este paso».")
+        attach(app, "paso7-historia-widget")
 
-        // 1 de 4 · Widget: hecho.
+        // «Enséñame cómo» abre el mini tutorial del widget; «Listo» lo da por hecho y pasa a Apple Pay.
+        tapWhenSettled(app, "home_tutorial_how_to")
         XCTAssertTrue(element(app, "home_tutorial_step_4").waitForExistence(timeout: 10), "El widget va en 4 pasos.")
         tapWhenSettled(app, "home_tutorial_method_done")
-        // Entre medias: «¡Van 1 de 4!» y la que sigue.
-        let between = element(app, "home_tutorial_between_title")
-        XCTAssertTrue(between.waitForExistence(timeout: 10))
-        XCTAssertTrue(between.label.contains("1") && between.label.contains("4"), "«\(between.label)»")
-        // 2 de 4 · Apple Pay: omitida desde su mini tutorial.
-        tapWhenSettled(app, "home_tutorial_next")
-        tapWhenSettled(app, "home_tutorial_method_skip")
-        // 3 de 4 · Compartir: omitida desde la pantalla de entre medias.
-        tapWhenSettled(app, "home_tutorial_next_skip")
-        // 4 de 4 · Siri: hecho. Es la última: no hay pantalla de entre medias y se cierra el paso.
-        tapWhenSettled(app, "home_tutorial_next")
-        XCTAssertTrue(element(app, "home_tutorial_method_title").waitForExistence(timeout: 10))
-        tapWhenSettled(app, "home_tutorial_method_done")
+        XCTAssertTrue(waitForStory(app, 2, of: 4, "Apple Pay"), "Sigue Apple Pay.")
+        attach(app, "paso7-historia-apple-pay")
 
+        // Tocar a la derecha pasa sin abrir el mini tutorial: Compartir y luego Siri.
+        _ = app.waitForSettledLayout(of: element(app, "tutorial_story_stage"))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
+        XCTAssertTrue(waitForStory(app, 3, of: 4, "Compartir"), "Sigue Compartir.")
+        attach(app, "paso7-historia-compartir")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
+        XCTAssertTrue(waitForStory(app, 4, of: 4, "Siri"), "Sigue Siri.")
+        attach(app, "paso7-historia-siri")
+
+        tapWhenSettled(app, "tutorial_story_finish")
         XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10),
                       "Con el paso 7 resuelto, el mazo desaparece y queda «¡Primeros pasos completos!».")
         attach(app, "final-tarjeta")
     }
 
-    /// Y23-19: con los datos en la cuenta de Yala (aquí, la dirección fingida de `-uitest-bank-email`) el paso enseña cinco
-    /// maneras y la cuarta es el correo: «Tu dirección de Yala» con la dirección real, «Copiar», los tres pasos del filtro y
-    /// «Pronto: …». Después del correo viene Siri, y al terminar el mazo se completa igual.
-    func test_step7_withTheYalaAccount_teachesTheMailAsTheFourthOfFive() {
+    /// La ✕ cierra el paso 7 sin tocar el mazo, y al volver sigue en la misma historia.
+    func test_step7_close_keepsTheDeckAndTheStory() {
+        let app = launch(atStep: 7)
+        tapWhenSettled(app, "setup_deck_current")
+        let stage = element(app, "tutorial_story_stage")
+        XCTAssertTrue(stage.waitForExistence(timeout: 10))
+        _ = app.waitForSettledLayout(of: stage)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
+        XCTAssertTrue(waitForStory(app, 2, of: 4, "Apple Pay"))
+        tapWhenSettled(app, "tutorial_story_back")
+
+        let deck = app.buttons["setup_deck_current"]
+        XCTAssertTrue(deck.waitForExistence(timeout: 10))
+        XCTAssertTrue(deck.label.contains("7 de 7"), "La ✕ no resuelve el paso: «\(deck.label)».")
+        tapWhenSettled(app, "setup_deck_current")
+        XCTAssertTrue(waitForStory(app, 2, of: 4, "Apple Pay"), "Al volver, sigue en la historia donde se cerró.")
+    }
+
+    /// Y23-19: con los datos en la cuenta de Yala (la dirección fingida de `-uitest-bank-email`) hay cinco historias y la
+    /// cuarta es el correo; su mini tutorial enseña «Tu dirección de Yala» con «Copiar» y los tres pasos del filtro.
+    func test_step7_withTheYalaAccount_theMailIsTheFourthOfFiveStories() {
         let app = launch(atStep: 7, extra: ["-uitest-bank-email"])
         tapWhenSettled(app, "setup_deck_current")
-        XCTAssertTrue(element(app, "home_tutorial_skip_step").waitForExistence(timeout: 10))
-        tapWhenSettled(app, "home_tutorial_start")
-
-        // 1 de 5 · Widget: hecho. Entre medias: «¡Van 1 de 5!».
-        tapWhenSettled(app, "home_tutorial_method_done")
-        let between = element(app, "home_tutorial_between_title")
-        XCTAssertTrue(between.waitForExistence(timeout: 10))
-        XCTAssertTrue(between.label.contains("1") && between.label.contains("5"), "Cinco maneras: «\(between.label)».")
-        // 2 de 5 · Apple Pay y 3 de 5 · Compartir: omitidas desde la pantalla de entre medias.
-        tapWhenSettled(app, "home_tutorial_next_skip")
-        tapWhenSettled(app, "home_tutorial_next_skip")
-
-        // 4 de 5 · Correo: la dirección real de la cuenta, con «Copiar».
-        tapWhenSettled(app, "home_tutorial_next")
+        let stage = element(app, "tutorial_story_stage")
+        XCTAssertTrue(waitForStory(app, 1, of: 5, "Widget"), "Cinco historias.")
+        for _ in 0..<3 {
+            _ = app.waitForSettledLayout(of: stage)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
+        }
+        XCTAssertTrue(waitForStory(app, 4, of: 5, "Correo"), "La cuarta es el correo.")
+        tapWhenSettled(app, "home_tutorial_how_to")
         let address = element(app, "home_tutorial_mail_address")
         XCTAssertTrue(address.waitForExistence(timeout: 10), "El mini tutorial del correo enseña la dirección.")
         XCTAssertEqual(address.label, "auto+k7m2xq9wpb@yalainbox.com")
         XCTAssertTrue(element(app, "home_tutorial_step_3").exists, "Los tres pasos del filtro.")
-        XCTAssertFalse(element(app, "home_tutorial_step_4").exists, "Son tres, no cuatro.")
-        XCTAssertTrue(element(app, "home_tutorial_mail_soon").exists, "«Pronto: conectar Gmail y Outlook…».")
+        XCTAssertTrue(element(app, "home_tutorial_mail_copy").exists, "«Copiar».")
         attach(app, "paso7-correo")
-        let copy = element(app, "home_tutorial_mail_copy")
-        let before = copy.label
-        tapWhenSettled(app, "home_tutorial_mail_copy")
-        expectation(for: NSPredicate(format: "label != %@", before), evaluatedWith: copy)
-        waitForExpectations(timeout: 5)
         tapWhenSettled(app, "home_tutorial_method_done")
-
-        // 5 de 5 · Siri: el que cierra el paso.
-        XCTAssertTrue(between.waitForExistence(timeout: 10))
-        XCTAssertTrue(between.label.contains("2") && between.label.contains("5"), "«\(between.label)»")
-        tapWhenSettled(app, "home_tutorial_next")
-        tapWhenSettled(app, "home_tutorial_method_done")
-        XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10),
-                      "Con el correo y Siri resueltos, el mazo se completa.")
+        XCTAssertTrue(waitForStory(app, 5, of: 5, "Siri"), "Después del correo, Siri.")
+        tapWhenSettled(app, "tutorial_story_finish")
+        XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10))
     }
 
     /// Y23-18: la oferta sube sola tras el final con el anual preseleccionado y la línea de tiempo; «Seguir con la versión
@@ -145,11 +156,13 @@ final class Bienvenida23FinalUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 15), "La oferta del final sube sola.")
         XCTAssertTrue(title.label.contains("1"), "La prueba de un mes se anuncia como «1 mes»: «\(title.label)».")
         XCTAssertTrue(element(app, "setup_offer_plans").exists)
+        // El botón de empezar, solo y fijo abajo, a la vista sin desplazar (opción B del 20-nov-2026).
+        XCTAssertTrue(element(app, "setup_offer_cta").isHittable, "«Empezar mi mes gratis» se ve sin bajar.")
         attach(app, "oferta")
         app.swipeUp()
         XCTAssertTrue(element(app, "setup_offer_timeline").waitForExistence(timeout: 5))
-        tapWhenSettled(app, "setup_offer_keep_free")
-        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "«Seguir con la versión gratis» cierra la oferta.")
+        tapWhenSettled(app, "setup_offer_close")
+        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "«Ahora no» cierra la oferta.")
         XCTAssertFalse(element(app, "setup_offer_success_title").exists, "Sin confirmar en la hoja de pago no hay Pro.")
         XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 5))
     }
@@ -163,6 +176,10 @@ final class Bienvenida23FinalUITests: XCTestCase {
         tapWhenSettled(app, "setup_offer_cta")
         XCTAssertTrue(element(app, "setup_offer_success_title").waitForExistence(timeout: 10))
         XCTAssertTrue(element(app, "setup_offer_success_line").exists, "Dice hasta cuándo va la prueba y cuándo avisamos.")
+        // Sin tour Pro: «Pruébalo ahora» con los tres accesos (opción B del 20-nov-2026).
+        XCTAssertTrue(element(app, "pro_try_now_voice").exists, "«Dicta un gasto».")
+        XCTAssertTrue(element(app, "pro_try_now_photo").exists, "«Lee un recibo».")
+        XCTAssertTrue(element(app, "pro_try_now_yalaAI").exists, "«Pregúntale a Yala IA».")
         attach(app, "listo-tienes-pro")
         tapWhenSettled(app, "setup_offer_start_using")
         XCTAssertTrue(element(app, "setup_offer_success_title").waitForNonExistence(timeout: 10))

@@ -10,68 +10,75 @@
 
 import SwiftUI
 
-// MARK: - Una parte de la página corta
+// MARK: - Una historia
 
-struct HomeScreenIntroPart: View {
+/// Una historia del paso 7 (opción B de Jürgen, 20-nov-2026): el ejemplo de cómo se ve en el centro y el beneficio en
+/// grande abajo, en tono de invitación. Compartir y Siri se ven distintos: un recibo que llega por chat y una
+/// conversación con Siri.
+struct HomeScreenStoryPart: View {
     let method: HomeScreenTutorialLogic.Method
 
+    private typealias S = PrimerosPasosPaso7Text.Story
     private typealias T = L10n.PrimerosPasos23.Home
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            HomeScreenMethodTile(method: method)
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            example
+                .frame(maxWidth: .infinity)
+                .padding(.top, DS.Spacing.md)
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(title)
-                    .font(DS.Typography.welcomeHeadline)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(title)
+                        .font(DS.Typography.welcomeHeadline)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    if method.isPro { ProBadge(size: .small) }
+                }
                 Text(message)
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            illustration
-                .frame(maxWidth: .infinity)
         }
-        .padding(.top, DS.Spacing.md)
     }
 
     private var title: String {
         switch method {
-        case .widget: T.widgetPartTitle
-        case .applePay: T.applePayPartTitle
-        case .share: T.sharePartTitle
-        case .mail: T.mailPartTitle
-        case .siri: T.siriPartTitle
+        case .widget: S.widgetTitle
+        case .applePay: S.applePayTitle
+        case .share: S.shareTitle
+        case .mail: S.mailTitle
+        case .siri: S.siriTitle
         }
     }
 
     private var message: String {
         switch method {
-        case .widget: T.widgetPartMessage
-        case .applePay: T.applePayPartMessage
-        case .share: T.sharePartMessage
+        case .widget: S.widgetMessage
+        case .applePay: S.applePayMessage
+        case .share: S.shareMessage
         case .mail: T.mailPartMessage
-        case .siri: T.siriPartMessage
+        case .siri: S.siriMessage
         }
     }
 
     @ViewBuilder
-    private var illustration: some View {
+    private var example: some View {
         switch method {
         case .widget: HomeScreenWidgetIllustration()
-        case .applePay: HomeScreenApplePayIllustration()
-        case .share: HomeScreenShareIllustration()
+        case .applePay: HomeScreenApplePayStory()
+        case .share: HomeScreenShareStory()
         case .mail: HomeScreenMailIllustration()
-        case .siri: HomeScreenSiriIllustration()
+        case .siri: HomeScreenSiriStory()
         }
     }
 }
 
 // MARK: - Ilustraciones
 
-/// Una pantalla de inicio con iconos de apps y el widget «Nuevo registro».
+/// Una pantalla de inicio con iconos de apps, el widget «Nuevo registro» y el de gastos del mes.
 private struct HomeScreenWidgetIllustration: View {
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
@@ -106,10 +113,28 @@ private struct HomeScreenWidgetIllustration: View {
             .padding(DS.Spacing.md)
             .frame(maxWidth: 260)
             .background(RoundedRectangle(cornerRadius: DS.Radius.xl).fill(theme.card))
+            // El otro uso: cuánto llevas gastado, sin abrir la app (la maqueta del tema 1).
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(PrimerosPasosPaso7Text.Story.widgetSpent)
+                    .font(DS.Typography.captionSmall.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(verbatim: spent)
+                    .font(DS.Typography.title3.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: 260, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.xl).fill(theme.card))
         }
         .padding(DS.Spacing.lg)
         .background(RoundedRectangle(cornerRadius: DS.Radius.xl).fill(Color.primary.opacity(0.05)))
         .accessibilityHidden(true)
+    }
+
+    /// Importe de ejemplo, en la moneda de la persona.
+    private var spent: String {
+        appPreferences.currency(1240.5, currencyCode: appPreferences.defaultCurrencyCode.rawValue)
     }
 }
 
@@ -264,27 +289,117 @@ struct HomeScreenShareIllustration: View {
     }
 }
 
-/// «Oye Siri, anota un gasto en Yala» y la respuesta.
-private struct HomeScreenSiriIllustration: View {
+/// Apple Pay de punta a punta: el pago, el aviso de Yala y la fila que espera en la Bandeja con «Aprobar».
+private struct HomeScreenApplePayStory: View {
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
+
+    private var amount: String {
+        appPreferences.currency(18.5, currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            HomeScreenApplePayIllustration()
+            Image(systemName: "arrow.down")
+                .font(DS.Typography.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: DS.Spacing.md) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(PrimerosPasosPaso7Text.Story.applePayMerchant)
+                        .font(DS.Typography.subheadline.weight(.semibold))
+                    Text(PrimerosPasosPaso7Text.Story.applePayInboxDetail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Text(verbatim: amount)
+                    .font(DS.Typography.subheadline.weight(.semibold))
+                Text(PrimerosPasosPaso7Text.Story.applePayApprove)
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(theme.onAccent)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(Capsule().fill(theme.accent))
+            }
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Compartir: el recibo llega por un chat, se comparte con Yala y queda leído, por revisar.
+private struct HomeScreenShareStory: View {
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.yalaTheme) private var theme
+
+    private var amount: String {
+        appPreferences.currency(74.5, currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Label(PrimerosPasosPaso7Text.Story.shareSentBy, systemImage: "bubble.left.fill")
+                    .font(DS.Typography.captionSmall.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                HomeScreenShareIllustration()
+            }
+            Image(systemName: "arrow.down")
+                .font(DS.Typography.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "doc.text.viewfinder")
+                    .font(DS.Typography.body.weight(.semibold))
+                    .foregroundStyle(Color.teal)
+                    .frame(width: 32, height: 32)
+                    .background(RoundedRectangle(cornerRadius: DS.Radius.sm).fill(Color.teal.opacity(0.18)))
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(PrimerosPasosPaso7Text.Story.shareMerchant)
+                        .font(DS.Typography.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(PrimerosPasosPaso7Text.Story.shareRead)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Text(verbatim: amount)
+                    .font(DS.Typography.subheadline.weight(.semibold))
+            }
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Siri: dos frases de verdad («Nuevo registro en Yala», «Cuánto gasté en Yala») y lo que pasa con la primera.
+private struct HomeScreenSiriStory: View {
+    @Environment(\.yalaTheme) private var theme
+
+    private func app(_ key: String) -> String { L10n.PrimerosPasos23.appText(key) }
+    private func quoted(_ phrase: String) -> String { String(format: app("siriShortcuts.quotedPhrase"), phrase) }
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(AngularGradient(colors: [.purple, .hotPink, .teal, .electricIndigo, .purple], center: .center))
                 .frame(width: 56, height: 56)
-            Text(L10n.PrimerosPasos23.Home.siriPartAsk)
-                .font(DS.Typography.subheadline.weight(.semibold))
-                .padding(DS.Spacing.md)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.accent.opacity(0.25)))
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            Text(L10n.PrimerosPasos23.Home.siriPartAnswer)
-                .font(DS.Typography.subheadline)
-                .padding(DS.Spacing.md)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            bubble(quoted(L10n.PrimerosPasos23.Home.siriNewRecordPhrase), mine: true)
+            bubble(PrimerosPasosPaso7Text.Story.siriNewRecordAnswer, mine: false)
+            bubble(quoted(app("siriShortcuts.phrase.spending")), mine: true)
         }
         .accessibilityHidden(true)
+    }
+
+    private func bubble(_ text: String, mine: Bool) -> some View {
+        Text(text)
+            .font(DS.Typography.subheadline.weight(mine ? .semibold : .regular))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(mine ? theme.accent.opacity(0.25) : theme.card))
+            .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
     }
 }
 
@@ -294,13 +409,13 @@ struct HomeScreenMethodPage: View {
     let method: HomeScreenTutorialLogic.Method
     let methods: [HomeScreenTutorialLogic.Method]
     let onDone: () -> Void
-    let onSkip: () -> Void
+    /// «‹»: vuelve a su historia sin darla por hecha (desde el 20-nov-2026 omitir es pasar la historia).
+    let onBack: () -> Void
 
     private typealias T = L10n.PrimerosPasos23.Home
 
     @Environment(\.openURL) private var openURL
     @Environment(\.yalaTheme) private var theme
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
@@ -334,30 +449,20 @@ struct HomeScreenMethodPage: View {
         }
     }
 
-    /// X para omitir, «2 de 4 · Apple Pay» y «Omitir» (el prototipo). Con texto de accesibilidad «Omitir» se va (la X hace
-    /// lo mismo) y el rótulo usa ese sitio; sin él, la X no se lee aparte: serían dos «Omitir» seguidos.
+    /// «‹» para volver a la historia y «Tutorial · 2 de 4 · Apple Pay».
     private var header: some View {
         HStack {
-            YalaToolbarButton(systemName: "xmark", label: L10n.PrimerosPasos23.Record.skip, action: onSkip)
-                .accessibilityIdentifier("home_tutorial_method_close")
-                .accessibilityHidden(!dynamicTypeSize.isAccessibilitySize)
+            YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back, action: onBack)
+                .accessibilityIdentifier("home_tutorial_method_back")
             Spacer()
-            Text(T.methodEyebrow(HomeScreenTutorialLogic.position(of: method, in: methods), methods.count,
-                                 HomeScreenMethodText.name(method)))
+            Text(PrimerosPasosPaso7Text.Story.eyebrow(HomeScreenTutorialLogic.position(of: method, in: methods),
+                                                      methods.count, HomeScreenMethodText.name(method)))
                 .font(DS.Typography.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
-            if dynamicTypeSize.isAccessibilitySize {
-                Color.clear.frame(width: 44, height: 44)
-            } else {
-                Button(L10n.PrimerosPasos23.Record.skip, action: onSkip)
-                    .font(DS.Typography.subheadline.weight(.semibold))
-                    .foregroundStyle(.thAccentText)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .accessibilityIdentifier("home_tutorial_method_skip")
-            }
+            Color.clear.frame(width: 44, height: 44)
         }
     }
 
@@ -391,6 +496,12 @@ struct HomeScreenMethodPage: View {
                 HomeScreenNumberedSteps.Step(title: step.title, detail: step.description)
             })
             guarantee(L10n.Tutorials.applePayGuarantee)
+            // En el contenido y no abajo: abajo va un solo botón (nunca uno debajo de otro).
+            YalaSecondaryButton(L10n.Tutorials.applePayOpenShortcuts, icon: "arrow.up.forward.app") {
+                if let url = URL(string: "shortcuts://") { openURL(url) }
+            }
+            .accessibilityIdentifier("home_tutorial_open_shortcuts")
+            .primerosPasosButtonText()
         case .share:
             HomeScreenShareIllustration()
             HomeScreenNumberedSteps(steps: [T.shareStep1, T.shareStep2, T.shareStep3])
@@ -414,6 +525,14 @@ struct HomeScreenMethodPage: View {
             .accessibilityIdentifier("home_tutorial_mail_soon")
         case .siri:
             HomeScreenSiriPhrases()
+            // El botón de Yala se ve; el toque lo recibe el de Apple, encima y transparente (como en «Siri y Atajos»).
+            YalaSecondaryButton(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"), icon: "square.on.square") {}
+                .primerosPasosButtonText()
+                .allowsHitTesting(false)
+                .overlay { ShortcutsPageButtonOverlay() }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"))
+                .accessibilityAddTraits(.isButton)
         }
     }
 
@@ -427,34 +546,14 @@ struct HomeScreenMethodPage: View {
         .foregroundStyle(.secondary)
     }
 
+    /// Un solo botón abajo: el que da la manera por hecha y pasa a la siguiente historia.
     @ViewBuilder
     private var footer: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            switch method {
-            case .widget:
-                doneButton(T.widgetDone)
-            case .applePay:
-                YalaSecondaryButton(L10n.Tutorials.applePayOpenShortcuts, icon: "arrow.up.forward.app") {
-                    if let url = URL(string: "shortcuts://") { openURL(url) }
-                }
-                .accessibilityIdentifier("home_tutorial_open_shortcuts")
-                .primerosPasosButtonText()
-                doneButton(T.applePayDone)
-            case .share:
-                doneButton(L10n.Common.understood)
-            case .mail:
-                doneButton(L10n.Action.done)
-            case .siri:
-                // El botón de Yala se ve; el toque lo recibe el de Apple, encima y transparente (como en «Siri y Atajos»).
-                YalaSecondaryButton(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"), icon: "square.on.square") {}
-                    .primerosPasosButtonText()
-                    .allowsHitTesting(false)
-                    .overlay { ShortcutsPageButtonOverlay() }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"))
-                    .accessibilityAddTraits(.isButton)
-                doneButton(L10n.Action.done)
-            }
+        switch method {
+        case .widget: doneButton(T.widgetDone)
+        case .applePay: doneButton(T.applePayDone)
+        case .share: doneButton(L10n.Common.understood)
+        case .mail, .siri: doneButton(L10n.Action.done)
         }
     }
 

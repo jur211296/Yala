@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "教程 · 第 %1$d/%2$d 个 · %3$@";
+"primerosPasosPaso7.story.howTo" = "教我怎么做";
+"primerosPasosPaso7.story.finish" = "完成";
+"primerosPasosPaso7.story.widget.title" = "在主屏幕上轻点一下就能记账";
+"primerosPasosPaso7.story.widget.message" = "不打开 App 也能看到本月花了多少。挑选适合你的小组件。";
+"primerosPasosPaso7.story.widget.spent" = "支出 · 本月";
+"primerosPasosPaso7.story.applePay.title" = "用 iPhone 付款，支出就已经在 Yala 里了";
+"primerosPasosPaso7.story.applePay.message" = "无需输入：你只需在收件箱里确认。";
+"primerosPasosPaso7.story.applePay.merchant" = "超市";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "今天 · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "确认";
+"primerosPasosPaso7.story.share.title" = "别人发给你的收据，不用输入就记好了";
+"primerosPasosPaso7.story.share.message" = "来自照片、WhatsApp 或你的银行。Yala 会读取金额、商家和日期。";
+"primerosPasosPaso7.story.share.sentBy" = "通过 WhatsApp 收到";
+"primerosPasosPaso7.story.share.merchant" = "好味道餐厅";
+"primerosPasosPaso7.story.share.read" = "从照片读取 · 待确认";
+"primerosPasosPaso7.story.mail.title" = "银行的通知会自动进入 Yala";
+"primerosPasosPaso7.story.siri.title" = "腾不出手？告诉 Siri";
+"primerosPasosPaso7.story.siri.message" = "无需任何设置。试试说“嘿 Siri”。";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala 会打开“新记录”，随时可以记账。";
+"primerosPasosPaso7.story.siri.allPhrases" = "查看所有指令";
+"primerosPasosPaso7.deck.step.firstAccount" = "账户";
+"primerosPasosPaso7.deck.step.firstExpense" = "记账";
+"primerosPasosPaso7.deck.step.firstBudget" = "预算";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "付款";
+"primerosPasosPaso7.deck.step.groups" = "群组";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "图表";
+"primerosPasosPaso7.deck.step.homeScreen" = "主屏幕";
+"primerosPasosPaso7.deck.summary" = "已完成：%1$d · 稍后：%2$d · 轻点某一步即可打开";
+"primerosPasosPaso7.deck.value.done" = "已完成";
+"primerosPasosPaso7.deck.value.current" = "当前";
+"primerosPasosPaso7.deck.value.pending" = "待完成";
+"primerosPasosPaso7.deck.doneWithLater" = "留到稍后的：%@。轻点下方任意一步即可现在完成。";
+"primerosPasosPaso7.tryNow.header" = "现在试试";
+"primerosPasosPaso7.tryNow.voice.title" = "语音记一笔";
+"primerosPasosPaso7.tryNow.voice.detail" = "“午饭，刷卡 18”";
+"primerosPasosPaso7.tryNow.photo.title" = "读取收据";
+"primerosPasosPaso7.tryNow.photo.detail" = "照片、截图或 PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "问问 Yala AI";
+"primerosPasosPaso7.tryNow.ai.detail" = "“这个月我哪方面花得最多？”";
+"primerosPasosPaso7.tryNow.extras" = "另外：设置中有专属主题和图标。";
+"primerosPasosPaso7.offer.notNow" = "以后再说";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "你刚刚体验的功能，免费一个月";
+"primerosPasosPaso7.offer.triedTitleDays" = "你刚刚体验的功能，免费 %d 天";
+"primerosPasosPaso7.offer.tried.voice" = "你用语音记了一笔，Yala 已记下。有了 Pro，随时都能这样做。";
+"primerosPasosPaso7.offer.tried.photo" = "Yala 读取了你的收据并记下。有了 Pro，随时都能这样做。";
+"primerosPasosPaso7.offer.tried.ai" = "Yala AI 替你记下了这笔支出。有了 Pro，随时都能这样做。";
+"primerosPasosPaso7.offer.feature.voice" = "语音记录支出";
+"primerosPasosPaso7.offer.feature.photo" = "读取收据和 PDF";
+"primerosPasosPaso7.offer.feature.ai" = "问问 Yala AI";
+"primerosPasosPaso7.offer.timelineWithReminder" = "今天无需付款 · %1$@ 提醒你 · %2$@ 扣费";
+"primerosPasosPaso7.offer.timelineCharge" = "今天无需付款 · %@ 扣费";

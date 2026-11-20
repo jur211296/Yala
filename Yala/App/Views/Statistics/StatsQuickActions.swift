@@ -79,8 +79,7 @@ struct StatsQuickActionsSlot: View {
                 onVoiceTap: actions.onVoiceTap,
                 onImageTap: actions.onImageTap,
                 onChatTap: actions.onChatTap,
-                identifierPrefix: "stats",
-                marksTourAnchors: false
+                identifierPrefix: "stats"
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .revealsFloatingActionWhenScrolledAway(actions.showsFloating)

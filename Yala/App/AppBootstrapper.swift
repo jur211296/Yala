@@ -920,6 +920,8 @@ final class AppBootstrapper {
             // Y23-18: qué oferta se pidió y el aviso prometido tampoco viajan de una corrida a otra.
             UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
             UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.offeredAfterRecordStepKey)
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.triedMethodsKey)
             if UITestHooks.showsSetupDeck { SetupChecklistManager.shared.markAsNewInstall() }
             if UITestHooks.showsSetupDeck, let position = UITestHooks.setupDeckPosition {
                 for step in SetupStepID.deck.prefix(max(0, position - 1)) { SetupChecklistManager.shared.markSkipped(step) }
@@ -2715,6 +2717,12 @@ final class AppBootstrapper {
             print("AppBootstrapper: Unknown Control Center action: \(action)")
             #endif
         }
+    }
+
+    /// «Pruébalo ahora» de «¡Listo! Tienes Pro» (opción B de Jürgen, 20-nov-2026): abre voz o foto por la misma puerta
+    /// que el Centro de Control y Siri, con su consentimiento y su paso al Panel.
+    func performPanelAction(_ action: PanelAction) {
+        executeAction(action)
     }
 
     /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.

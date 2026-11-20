@@ -81,6 +81,45 @@ nonisolated enum SetupCompleteTrialOfferLogic {
         return pending
     }
 
+    // MARK: - El momento del paso 2 (opción B de Jürgen, 20-nov-2026)
+
+    /// La oferta ya se pidió al terminar «Aprender a registrar». Si la persona la cierra, el final de Primeros pasos no
+    /// la repite (la maqueta: «si la cierra, no vuelve a salir en Primeros pasos»).
+    static let offeredAfterRecordStepKey = "onboarding23.offeredAfterRecordStep"
+
+    /// Lo que la persona probó gratis en el paso 2 (voz, foto, Yala IA), para que la hoja lo nombre. Persistido porque la
+    /// oferta puede quedar retenida al arranque siguiente (sin precios).
+    static let triedMethodsKey = "onboarding23.offerTriedMethods"
+
+    /// Al completar Primeros pasos, si la oferta sale ahí. Con el mazo, solo si el paso 2 no la pidió ya: es la red de
+    /// quien resolvió el paso 2 sin su tutorial.
+    static func offersAtCompletion(offeredAfterRecordStep: Bool) -> Bool {
+        !offeredAfterRecordStep
+    }
+
+    /// Las maneras de Pro probadas, en el orden del tutorial (voz, foto, Yala IA), como se guardan.
+    static func storedTriedMethods(_ methods: [RecordTutorialLogic.Method]) -> [String] {
+        RecordTutorialLogic.Method.allCases.filter { $0.isCourtesyTrial && methods.contains($0) }.map(\.rawValue)
+    }
+
+    /// Lo guardado, de vuelta: lo que no se reconoce se ignora.
+    static func triedMethods(stored: [String]?) -> [RecordTutorialLogic.Method] {
+        (stored ?? []).compactMap { RecordTutorialLogic.Method(rawValue: $0) }.filter(\.isCourtesyTrial)
+    }
+
+    /// Lo que nombra la hoja: la primera manera de Pro probada (voz, luego foto, luego Yala IA), o `nil` si no probó
+    /// ninguna (entonces el título y la línea son los generales).
+    static func headlineMethod(_ tried: [RecordTutorialLogic.Method]) -> RecordTutorialLogic.Method? {
+        RecordTutorialLogic.Method.allCases.first { $0.isCourtesyTrial && tried.contains($0) }
+    }
+
+    /// Consume lo probado al presentar (se lee una vez, con la oferta del paso 2).
+    static func takeTriedMethods(defaults: UserDefaults = .standard) -> [RecordTutorialLogic.Method] {
+        let tried = triedMethods(stored: defaults.stringArray(forKey: triedMethodsKey))
+        defaults.removeObject(forKey: triedMethodsKey)
+        return tried
+    }
+
     // MARK: - El aviso que se debe
 
     /// La compra confirmada en esta oferta deja apuntado que se prometió el aviso; la app lo repone si un borrado o un

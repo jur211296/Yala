@@ -164,6 +164,12 @@ paths:
   o un `Tip` nuevos pasan por esa puerta**: un `PanelNotice` nuevo entra en `allows(_:)`, un `Tip` lleva la regla de
   `PrimerosPasosTipGate`, y un coach mark que SEA parte de un paso lleva `partOfPrimerosPasos: true`. Pin:
   `YalaTests/PanelProgresivo/`, `YalaTests/SoloGastosPrimerosPasos/`.
+  **La oferta del mes de Pro tampoco sale a mitad (opción B de Jürgen, 20-nov-2026):** con el mazo, su momento es el
+  final del paso 2 (`TrialOfferMoments.noteRecordStepFinished`, tras «¿Borramos los de prueba?» y la guía de la
+  Bandeja); guardar un registro no la pide (`TrialOfferMomentLogic.isHeldByPrimerosPasos`) y el final del paso 7 solo
+  la pide si aquella no salió. **Y no hay tour de Ajustes ni tour Pro**: lo de Pro se enseña en «¡Listo! Tienes Pro»
+  con `ProTryNowSection`, que abre la función al cerrarse la hoja. Un momento nuevo de oferta pasa por esa puerta; un
+  tour nuevo de Pro, no: se suma a «Pruébalo ahora». Pin: `YalaTests/PrimerosPasosPaso7/`.
 
 - **Una foto que la persona elige entra por `PhotoIntake`, nunca por `UIImage(data:)` (medido el 2026-11-12, YALA-IOS-B).**
   `Image(uiImage:)` decodifica la foto a tamaño completo al pintarla, también en una miniatura, y la copia vive mientras

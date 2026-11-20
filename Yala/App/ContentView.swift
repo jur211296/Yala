@@ -126,6 +126,10 @@ struct ContentView: View {
     @State private var showProTrialOffer: Bool = false
     /// Y23-18: la oferta presentada es la del final de Primeros pasos (la apunta quien la pidió, no el estado del mazo).
     @State private var trialOfferIsSetupCompletion = false
+    /// Lo que la persona probó gratis en el paso 2, para que la oferta lo nombre (opción B de Jürgen, 20-nov-2026).
+    @State private var trialOfferTriedMethods: [RecordTutorialLogic.Method] = []
+    /// «Pruébalo ahora» de «¡Listo! Tienes Pro»: la función que se abre cuando la hoja termina de cerrarse.
+    @State private var pendingProTryNow: ProTryNowAction?
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
@@ -799,13 +803,13 @@ struct ContentView: View {
             ProfileView(initialDestination: .iCloudSync)
                 .environment(SessionState.shared)
         }
-        .sheet(isPresented: $showProTrialOffer, onDismiss: {
-        }) {
-            // Y23-18: la oferta que pidió el final de Primeros pasos, la suya; la de tras guardar un registro, la de siempre.
+        .sheet(isPresented: $showProTrialOffer, onDismiss: openPendingProTryNow) {
+            // Y23-18: la oferta que pidió Primeros pasos, la suya; la de tras guardar un registro, la de siempre.
             if trialOfferIsSetupCompletion {
-                SetupCompleteTrialOfferSheet { showProTrialOffer = false }
+                SetupCompleteTrialOfferSheet(triedMethods: trialOfferTriedMethods,
+                                             onTryNow: { pendingProTryNow = $0 }) { showProTrialOffer = false }
             } else {
-                ProTrialOfferSheet {
+                ProTrialOfferSheet(onTryNow: { pendingProTryNow = $0 }) {
                     showProTrialOffer = false
                 }
             }
@@ -1545,8 +1549,15 @@ struct ContentView: View {
             case .present:
                 showProTrialOffer = true
             case .dropForever:
-                break
+                // Corte silencioso 4 del ticket `oferta-de-un-mes-se-cae-en-silencio`: Apple dice que no tiene derecho.
+                #if DEBUG
+                print("ContentView: oferta de prueba descartada: la cuenta ya usó su prueba")
+                #endif
             case .holdForLater:
+                // Corte 5: sin precios de la App Store no se sabe; se queda armada para el arranque siguiente.
+                #if DEBUG
+                print("ContentView: oferta de prueba retenida: precios sin cargar")
+                #endif
                 return
             }
             // Drain == presentación real (mismo nodo que ancla el sheet, y con la
@@ -1556,6 +1567,7 @@ struct ContentView: View {
             SessionState.shared.trialOfferMomentReached = false
             // Y23-18: qué oferta se pidió se consume aquí, con la presentación o con la que ya no saldrá.
             trialOfferIsSetupCompletion = SetupCompleteTrialOfferLogic.takePendingOffer()
+            trialOfferTriedMethods = SetupCompleteTrialOfferLogic.takeTriedMethods()
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
@@ -5273,4 +5285,16 @@ enum AppTab: Hashable {
                 Budget.self,
                 ExchangeRate.self,
             ], inMemory: true)
+}
+
+// MARK: - «Pruébalo ahora» tras la oferta
+
+extension ContentView {
+    /// La hoja de la oferta terminó de cerrarse: si en «¡Listo! Tienes Pro» se tocó un acceso, se abre esa función
+    /// (opción B de Jürgen, 20-nov-2026; sustituye al tour Pro).
+    fileprivate func openPendingProTryNow() {
+        guard let action = pendingProTryNow else { return }
+        pendingProTryNow = nil
+        ProTryNow.open(action)
+    }
 }
