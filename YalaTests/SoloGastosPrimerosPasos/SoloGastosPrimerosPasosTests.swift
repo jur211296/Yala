@@ -31,17 +31,17 @@ struct SoloGastosPrimerosPasosTests {
                                      .whereMoneyGoes, .homeScreen])
     }
 
-    /// En «Ver los 7 pasos» la línea del paso 1 dice a qué cuenta van los gastos; los demás pasos no cambian.
+    /// Bajo la fila de pasos del mazo, la línea del paso 1 dice a qué cuenta van los gastos; los demás pasos no cambian.
     @Test func stepsList_firstStepNamesTheExpensesAccount() {
-        let detail = SetupStepsListLogic.detail(for: .firstAccount, expensesAccountName: "Gastos Soles")
+        let detail = SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: "Gastos Soles")
         #expect(detail == L10n.SetupChecklist.Deck.firstExpenseNote("Gastos Soles"))
         #expect(detail?.contains("Gastos Soles") == true)
         for step in SetupStepID.deck where step != .firstAccount {
-            #expect(SetupStepsListLogic.detail(for: step, expensesAccountName: "Gastos Soles") == nil)
+            #expect(SetupDeckProgressLogic.detail(for: step, expensesAccountName: "Gastos Soles") == nil)
         }
         // «Ingresos y gastos» (sin cuenta de gastos) o sin nombre: la línea de siempre.
-        #expect(SetupStepsListLogic.detail(for: .firstAccount, expensesAccountName: nil) == nil)
-        #expect(SetupStepsListLogic.detail(for: .firstAccount, expensesAccountName: "") == nil)
+        #expect(SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: nil) == nil)
+        #expect(SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: "") == nil)
     }
 }
 
@@ -94,8 +94,8 @@ struct SoloGastosPrimerosPasosWiringTests {
         #expect(!panel.contains("SetupFirstExpenseAction"))
         #expect(!panel.contains("if isQuietArrival && sessionState.isExpensesOnlyMode"))
         #expect(panel.contains("private var setupDeckSlot: some View {\nSetupChecklistCard("))
-        let sheet = try Self.code("Yala/App/Views/Panel/SetupStepsListSheet.swift")
-        #expect(!sheet.contains("struct SetupFirstExpenseAction"))
+        let progress = try Self.code("Yala/App/Views/Panel/SetupDeckProgress.swift")
+        #expect(!progress.contains("struct SetupFirstExpenseAction"))
     }
 
     /// La lista recibe la cuenta de gastos solo en «Solo gastos».
@@ -103,7 +103,7 @@ struct SoloGastosPrimerosPasosWiringTests {
         let panel = try Self.code("Yala/App/Views/Panel/PanelView.swift")
         #expect(panel.contains("expensesAccountName: sessionState.isExpensesOnlyMode"))
         let card = try Self.code("Yala/App/Views/Panel/SetupChecklistCard.swift")
-        #expect(card.contains("expensesAccountName: expensesAccountName)"))
+        #expect(card.contains("SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: expensesAccountName)"))
     }
 
     /// Ningún coach mark sale con Primeros pasos a medias, salvo la guía del paso 2.

@@ -61,9 +61,6 @@ struct PanelView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
 
-    /// Coach mark: Pro tour (Phase 2)
-    @State private var showProFabTour = false
-    @State private var proFabTourIndex = 0
     @State private var showTodayFXCoachMark = false
     @State private var todayFXCoachMarkIndex = 0
 
@@ -103,8 +100,7 @@ struct PanelView: View {
     }
 
     /// Gate del coach mark "Today FX": primera vez en multi-currency con la
-    /// métrica balance cubriendo hoy. Bloqueado mientras el Pro Tour esté
-    /// activo para evitar overlays simultáneos. Vive en PanelView para que
+    /// métrica balance cubriendo hoy. Vive en PanelView para que
     /// el spotlight no se clipe al frame del card de Tendencias.
     private var shouldShowTodayFXCoachMark: Bool {
         guard !UITestHooks.isActive else { return false }
@@ -114,9 +110,7 @@ struct PanelView: View {
         guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
         // Panel progresivo: ningún coach mark con Primeros pasos a medias (acuerdo del 19-nov-2026).
         guard panelGate.allowsCoachMarks else { return false }
-        let proTourActive = ProTourManager.shared.triggered
-            && !ProTourManager.shared.hasCompleted
-        return !proTourActive
+        return true
     }
 
     // MARK: - Setup Checklist Navigation
@@ -426,30 +420,6 @@ struct PanelView: View {
                         sheets.isPresentingSettings = true
                     }
                 }
-        }
-        .coachMarkOverlay(
-            steps: ProTourSteps.panelSteps(includesAssistant: appPreferences.chatFABVisible),
-            isPresented: $showProFabTour,
-            currentIndex: $proFabTourIndex,
-            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
-            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
-            onSkip: { ProTourManager.shared.skipTour() },
-            onComplete: {
-                ProTourManager.shared.advancePhase()
-            }
-        )
-        .task(id: ProTourPanelKey(phase: ProTourManager.shared.currentPhase, allowed: panelGate.allowsCoachMarks)) {
-            // `-uitest-pro-tour-panel` saca esta fase en el simulador para grabarla (card v84b).
-            let forcedForUITest = UITestHooks.showsProTourPanel
-            guard !UITestHooks.isActive || forcedForUITest else { return }
-            // Panel progresivo: el tour espera a que termine Primeros pasos (la clave de la tarea lo vuelve a pedir).
-            guard panelGate.allowsCoachMarks else { return }
-            guard !ProTourManager.shared.hasCompleted,
-                  ProTourManager.shared.currentPhase == .panel || forcedForUITest else { return }
-            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard ProTourManager.shared.currentPhase == .panel || forcedForUITest,
-                  !showProFabTour else { return }
-            showProFabTour = true
         }
         .coachMarkOverlay(
             steps: ProTourSteps.todayFXSteps,
@@ -817,10 +787,6 @@ struct PanelView: View {
                             onChatTap: { startChat() }
                         )
                         .headerBandColumn(.leading)
-                        // El tour Pro señala esta fila (UX 2.2 · L5-12): si el Panel no está arriba, sube hasta ella.
-                        .onChange(of: showProFabTour) { _, showing in
-                            if showing { scrollToProTourRow(scrollProxy) }
-                        }
                         }
 
                         // Primeros pasos (Y23-05): el mazo, debajo de las acciones; en la llegada, la única acción.
@@ -1007,13 +973,6 @@ struct PanelView: View {
         // Los flotantes entran y salen fundiéndose al desplazar, y el título pequeño también. Implícita: el
         // `withAnimation` del scroll no anima dentro de una pestaña (card 8atf).
         .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
-    }
-
-    private func scrollToProTourRow(_ proxy: ScrollViewProxy) {
-        // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
-            proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
-        }
     }
 
     private func scrollToTodayFXHint(_ proxy: ScrollViewProxy) {

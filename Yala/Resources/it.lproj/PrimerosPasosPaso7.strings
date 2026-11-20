@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "Tutorial · %1$d di %2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "Mostrami come";
+"primerosPasosPaso7.story.finish" = "Fine";
+"primerosPasosPaso7.story.widget.title" = "Registra con un tocco, dalla schermata Home";
+"primerosPasosPaso7.story.widget.message" = "E guarda quanto hai speso senza aprire l’app. Scegli i widget che ti servono.";
+"primerosPasosPaso7.story.widget.spent" = "Spese · questo mese";
+"primerosPasosPaso7.story.applePay.title" = "Paghi con l’iPhone e la spesa è già in Yala";
+"primerosPasosPaso7.story.applePay.message" = "Senza digitare nulla: la approvi soltanto nella tua Posta in arrivo.";
+"primerosPasosPaso7.story.applePay.merchant" = "Supermercato";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "Oggi · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "Approva";
+"primerosPasosPaso7.story.share.title" = "La ricevuta che ti hanno mandato, registrata senza digitare";
+"primerosPasosPaso7.story.share.message" = "Da Foto, WhatsApp o dalla tua banca. Yala legge importo, esercente e data.";
+"primerosPasosPaso7.story.share.sentBy" = "Ricevuta su WhatsApp";
+"primerosPasosPaso7.story.share.merchant" = "Ristorante Il Buon Gusto";
+"primerosPasosPaso7.story.share.read" = "Letto dalla foto · da controllare";
+"primerosPasosPaso7.story.mail.title" = "Gli avvisi della tua banca arrivano da soli in Yala";
+"primerosPasosPaso7.story.siri.title" = "Mani occupate? Dillo a Siri";
+"primerosPasosPaso7.story.siri.message" = "Funziona senza configurare nulla. Prova: di’ “Ehi Siri”.";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala si apre su Nuova registrazione, pronta per registrare.";
+"primerosPasosPaso7.story.siri.allPhrases" = "Vedi tutte le frasi";
+"primerosPasosPaso7.deck.step.firstAccount" = "Conto";
+"primerosPasosPaso7.deck.step.firstExpense" = "Registra";
+"primerosPasosPaso7.deck.step.firstBudget" = "Budget";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "Pagamenti";
+"primerosPasosPaso7.deck.step.groups" = "Gruppi";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "Grafici";
+"primerosPasosPaso7.deck.step.homeScreen" = "Home";
+"primerosPasosPaso7.deck.summary" = "Fatti: %1$d · Per dopo: %2$d · Tocca un passaggio per aprirlo";
+"primerosPasosPaso7.deck.value.done" = "fatto";
+"primerosPasosPaso7.deck.value.current" = "attuale";
+"primerosPasosPaso7.deck.value.pending" = "da fare";
+"primerosPasosPaso7.deck.doneWithLater" = "Lasciati per dopo: %@. Toccane uno qui sotto per farlo ora.";
+"primerosPasosPaso7.tryNow.header" = "Provalo ora";
+"primerosPasosPaso7.tryNow.voice.title" = "Detta una spesa";
+"primerosPasosPaso7.tryNow.voice.detail" = "«Pranzo, 18 con carta»";
+"primerosPasosPaso7.tryNow.photo.title" = "Leggi una ricevuta";
+"primerosPasosPaso7.tryNow.photo.detail" = "Foto, screenshot o PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "Chiedi a Yala IA";
+"primerosPasosPaso7.tryNow.ai.detail" = "«In cosa ho speso di più questo mese?»";
+"primerosPasosPaso7.tryNow.extras" = "In più: temi e icone esclusivi in Impostazioni.";
+"primerosPasosPaso7.offer.notNow" = "Non ora";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "Quello che hai appena provato, un mese gratis";
+"primerosPasosPaso7.offer.triedTitleDays" = "Quello che hai appena provato, %d giorni gratis";
+"primerosPasosPaso7.offer.tried.voice" = "Hai dettato una spesa e Yala l’ha registrata. Con Pro lo fai sempre.";
+"primerosPasosPaso7.offer.tried.photo" = "Yala ha letto la tua ricevuta e l’ha registrata. Con Pro lo fai sempre.";
+"primerosPasosPaso7.offer.tried.ai" = "Yala IA ha registrato la spesa per te. Con Pro lo fai sempre.";
+"primerosPasosPaso7.offer.feature.voice" = "Detta le tue spese";
+"primerosPasosPaso7.offer.feature.photo" = "Leggi ricevute e PDF";
+"primerosPasosPaso7.offer.feature.ai" = "Chiedi a Yala IA";
+"primerosPasosPaso7.offer.timelineWithReminder" = "Oggi non paghi · ti avvisiamo il %1$@ · addebito il %2$@";
+"primerosPasosPaso7.offer.timelineCharge" = "Oggi non paghi · addebito il %@";

@@ -11,14 +11,32 @@
 //  La duración se dice como la da la App Store: «1 mes» si la oferta es de un mes (decisión D21 de Jürgen), con las
 //  fechas reales. La otra oferta de la app (tras guardar un registro) sigue en `ProTrialOfferSheet`.
 //
+//  Opción B de Jürgen (20-nov-2026, tema 4 de las maquetas): sale al terminar «Aprender a registrar» y vende lo que la
+//  persona acaba de probar. Tres funciones en vez de seis, la línea de tiempo en una línea, el botón de empezar fijo
+//  abajo y solo, y «Ahora no» en la barra (nunca un botón debajo de otro). «¡Listo! Tienes Pro» enseña «Pruébalo ahora»
+//  en lugar del tour Pro (tema 3).
+//
 
 import StoreKit
 import SwiftUI
 
 struct SetupCompleteTrialOfferSheet: View {
     private typealias T = L10n.PrimerosPasos23.Final
+    private typealias P = PrimerosPasosPaso7Text.Offer
 
+    /// Lo que la persona probó gratis en el paso 2 (voz, foto, Yala IA): el título y la línea lo nombran.
+    let triedMethods: [RecordTutorialLogic.Method]
+    /// Un acceso de «Pruébalo ahora»: quien presenta la hoja abre la función cuando termina de cerrarse.
+    let onTryNow: (ProTryNowAction) -> Void
     let onDismiss: () -> Void
+
+    init(triedMethods: [RecordTutorialLogic.Method] = [],
+         onTryNow: @escaping (ProTryNowAction) -> Void = { _ in },
+         onDismiss: @escaping () -> Void) {
+        self.triedMethods = triedMethods
+        self.onTryNow = onTryNow
+        self.onDismiss = onDismiss
+    }
 
     private let store = StoreKitManager.shared
 
@@ -61,13 +79,17 @@ struct SetupCompleteTrialOfferSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !showsSuccess {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                            if !store.isPurchasing { onDismiss() }
-                        }
-                        .accessibilityIdentifier("setup_offer_close")
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(P.notNow) { if !store.isPurchasing { onDismiss() } }
+                            .accessibilityIdentifier("setup_offer_close")
                     }
                 }
+            }
+            // El botón de empezar, solo y fijo abajo (la maqueta: antes quedaba debajo de seis funciones y dos planes).
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
+                bottomButton
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
             }
             .yalaScreenBackground(.subtle)
             .overlay {
@@ -110,11 +132,12 @@ struct SetupCompleteTrialOfferSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("setup_offer_title")
-                Text(T.offerSubtitle)
+                Text(subtitle)
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("setup_offer_subtitle")
             }
             .frame(maxWidth: .infinity)
             .padding(.top, DS.Spacing.md)
@@ -149,34 +172,52 @@ struct SetupCompleteTrialOfferSheet: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
 
-            VStack(spacing: DS.Spacing.md) {
-                YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
-                    Task { await purchaseSelected() }
-                }
-                .accessibilityIdentifier("setup_offer_cta")
-                .primerosPasosButtonText()
-                Button(T.keepFree) { if !store.isPurchasing { onDismiss() } }
-                    .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(.thAccentText)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .accessibilityIdentifier("setup_offer_keep_free")
-                Button(L10n.Subscription.restore) {
-                    purchaseInFlight = false
-                    Task { await store.restorePurchases() }
-                }
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.thSecondaryText)
-                    .accessibilityIdentifier("subscription_restore")
+            // «Restaurar compras» y lo legal, al final del contenido: el botón de empezar va solo, abajo.
+            Button(L10n.Subscription.restore) {
+                purchaseInFlight = false
+                Task { await store.restorePurchases() }
             }
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.thSecondaryText)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .accessibilityIdentifier("subscription_restore")
 
             ProLegalFooter()
-                .padding(.top, DS.Spacing.sm)
+        }
+    }
+
+    /// Abajo, fijo: «Empezar mi mes gratis» en la oferta y «Empezar a usarlo» en «¡Listo! Tienes Pro».
+    @ViewBuilder
+    private var bottomButton: some View {
+        if showsSuccess {
+            YalaPrimaryButton(T.startUsing) { onDismiss() }
+                .accessibilityIdentifier("setup_offer_start_using")
+                .primerosPasosButtonText()
+        } else {
+            YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
+                Task { await purchaseSelected() }
+            }
+            .accessibilityIdentifier("setup_offer_cta")
+            .primerosPasosButtonText()
+        }
+    }
+
+    /// Lo que probó en el paso 2, o la línea general si no probó ninguna manera de Pro.
+    private var subtitle: String {
+        switch SetupCompleteTrialOfferLogic.headlineMethod(triedMethods) {
+        case .voice: P.triedVoice
+        case .photo: P.triedPhoto
+        case .ai: P.triedAI
+        case .manual, nil: T.offerSubtitle
         }
     }
 
     /// La duración que da la App Store; sin prueba en el plan elegido, no se promete ninguna.
     private var title: String {
         guard let offer = selectedOffer, let days = offer.trialDays else { return L10n.Subscription.title }
+        if SetupCompleteTrialOfferLogic.headlineMethod(triedMethods) != nil {
+            return offer.trialIsOneMonth ? P.triedTitleOneMonth : P.triedTitleDays(days)
+        }
         return offer.trialIsOneMonth ? T.offerTitleOneMonth : T.offerTitleDays(days)
     }
 
@@ -210,13 +251,11 @@ struct SetupCompleteTrialOfferSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("setup_offer_success_line")
             }
-            SetupOfferFeatures()
-            YalaPrimaryButton(T.startUsing) {
-                ProTourManager.shared.triggerIfEligible()
+            // Lo que mostraba el tour Pro, aquí y con un toque para probarlo (opción B de Jürgen, 20-nov-2026).
+            ProTryNowSection { action in
+                onTryNow(action)
                 onDismiss()
             }
-            .accessibilityIdentifier("setup_offer_start_using")
-            .primerosPasosButtonText()
         }
         .frame(maxWidth: .infinity)
     }
@@ -277,108 +316,70 @@ struct SetupCompleteTrialOfferSheet: View {
 
 // MARK: - Piezas
 
-/// Los seis beneficios de Pro: los títulos de la app (`uxpro.feature.*`) con su línea del prototipo.
+/// Las tres funciones que se acaban de probar en el paso 2 (la maqueta del tema 4: antes eran seis).
 private struct SetupOfferFeatures: View {
-    private typealias T = L10n.PrimerosPasos23.Final
+    private typealias P = PrimerosPasosPaso7Text.Offer
 
     @Environment(\.yalaTheme) private var theme
 
-    private var items: [(icon: String, color: Color, title: String, detail: String)] {
+    private var items: [(icon: String, color: Color, title: String)] {
         [
-            ("waveform", .hotPink, L10n.UXPro.featureVoice, T.voiceDetail),
-            ("camera.fill", .teal, L10n.UXPro.featurePhoto, T.photoDetail),
-            ("sparkles", .electricIndigo, L10n.UXPro.featureAI, T.aiDetail),
-            ("building.columns.fill", .blue, L10n.UXPro.featureAccounts, T.accountsDetail),
-            ("chart.pie.fill", .purple, L10n.UXPro.featureBudgets, T.budgetsDetail),
-            ("paintpalette.fill", .orange, L10n.UXPro.featureLooks, T.looksDetail),
+            ("waveform", .hotPink, P.featureVoice),
+            ("doc.text.viewfinder", .teal, P.featurePhoto),
+            ("sparkles", .electricIndigo, P.featureAI),
         ]
     }
 
     var body: some View {
-        PairedFeatureGrid(items: items.map { item in
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                Image(systemName: item.icon)
-                    .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(item.color)
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(item.title).font(DS.Typography.subheadline.weight(.semibold))
-                    Text(item.detail)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            ForEach(items, id: \.title) { item in
+                HStack(spacing: DS.Spacing.md) {
+                    Image(systemName: item.icon)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .foregroundStyle(item.color)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    Text(item.title)
+                        .font(DS.Typography.body.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
-            .padding(DS.Spacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.md).fill(theme.card))
-            .accessibilityElement(children: .combine)
-        })
-    }
-}
-
-/// Dos columnas a tamaño normal; una sola con texto de accesibilidad (el texto grande no corta).
-private struct PairedFeatureGrid<Item: View>: View {
-    let items: [Item]
-
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    var body: some View {
-        let columns = dynamicTypeSize.isAccessibilitySize
-            ? [GridItem(.flexible())]
-            : [GridItem(.flexible(), alignment: .top), GridItem(.flexible(), alignment: .top)]
-        LazyVGrid(columns: columns, spacing: DS.Spacing.sm) {
-            ForEach(items.indices, id: \.self) { index in items[index] }
         }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("setup_offer_features")
     }
 }
 
-/// «Hoy · <aviso> · <cobro>» con las fechas reales (el prototipo decía «Día 28 · Día 30»). Sin permiso de avisos, sin el
-/// paso del aviso: no se promete lo que no puede salir (decisión de Jürgen, 12-nov, opción A).
+/// «Hoy no pagas · te avisamos el … · cobro el …» en una sola línea, con las fechas reales (la maqueta del tema 4: antes
+/// era una lista de tres pasos). Sin permiso de avisos, sin el aviso: no se promete lo que no puede salir (decisión de
+/// Jürgen, 12-nov, opción A).
 private struct SetupOfferTimeline: View {
     let chargeDate: Date
     let showsReminder: Bool
-
-    @Environment(\.yalaTheme) private var theme
 
     private var reminderDate: Date? {
         SetupCompleteTrialOfferLogic.reminderDate(chargeDate: chargeDate, calendar: .current)
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            row(1, when: L10n.UXPro.trialTodayTitle, what: L10n.UXPro.trialTodayBody)
-            if showsReminder, let reminderDate {
-                row(2, when: ProPresentation.longDate(reminderDate), what: L10n.PrimerosPasos23.Final.reminderBody)
-            }
-            row(showsReminder && reminderDate != nil ? 3 : 2, when: ProPresentation.longDate(chargeDate),
-                what: L10n.PrimerosPasos23.Final.chargeBody)
+    private var text: String {
+        let charge = ProPresentation.longDate(chargeDate)
+        if showsReminder, let reminderDate {
+            return PrimerosPasosPaso7Text.Offer.timelineWithReminder(ProPresentation.longDate(reminderDate), charge)
         }
-        .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("setup_offer_timeline")
+        return PrimerosPasosPaso7Text.Offer.timelineCharge(charge)
     }
 
-    private func row(_ number: Int, when: String, what: String) -> some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
-            Text(verbatim: "\(number)")
-                .font(DS.Typography.subheadline.weight(.bold))
-                .foregroundStyle(theme.onAccent)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(theme.accent))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(when).font(DS.Typography.subheadline.weight(.semibold))
-                Text(what)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .accessibilityElement(children: .combine)
+    var body: some View {
+        Text(text)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("setup_offer_timeline")
     }
 }

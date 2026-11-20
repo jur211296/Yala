@@ -49,18 +49,16 @@ final class Bienvenida23BaseUITests: XCTestCase {
         XCTAssertFalse(app.buttons["panel_action_new"].exists, "En la llegada, el mazo es la única acción.")
         attach(app, "llegada-mazo")
 
-        app.buttons["setup_checklist_toggle_steps"].tap()
-        let resume = app.buttons["setup_steps_resume"]
-        XCTAssertTrue(resume.waitForExistence(timeout: 5), "«Ver los 7 pasos» no abrió la lista.")
-        XCTAssertTrue(app.staticTexts["Yala en tu pantalla de inicio"].exists, "La lista trae los siete pasos.")
-        attach(app, "lista-7-pasos")
-        resume.tap()
-        XCTAssertTrue(resume.waitForNonExistence(timeout: 5), "«Seguir donde iba» cierra la lista.")
+        // Desde el 20-nov-2026 (opción B de Jürgen) no hay hoja «Ver los 7 pasos»: el progreso va en el mazo.
+        XCTAssertFalse(app.buttons["setup_checklist_toggle_steps"].exists, "Ya no hay «Ver los 7 pasos».")
+        XCTAssertTrue(app.descendants(matching: .any)["setup_deck_progress"].exists, "La fila de los siete pasos va en el mazo.")
+        XCTAssertTrue(app.descendants(matching: .any)["setup_deck_step_homeScreen"].exists, "La fila trae los siete pasos.")
+        attach(app, "mazo-con-progreso")
     }
 
-    /// E14 del recorrido del 13-nov (decisión de Jürgen): en «Ver los 7 pasos» se abre cualquier paso tocándolo, aunque no
-    /// sea el siguiente. Con el mazo en el paso 1, tocar el 3 abre «Crea tu primer presupuesto». El control es la propia
-    /// condición: sin el arreglo, la fila no era un botón y la lista seguía arriba.
+    /// E14 del recorrido del 13-nov (decisión de Jürgen): se abre cualquier paso tocándolo, aunque no sea el siguiente.
+    /// Desde el 20-nov-2026 se toca en la fila de pasos del mazo (sin la hoja). Con el mazo en el paso 1, tocar el 3 abre
+    /// «Crea tu primer presupuesto».
     func test_stepsList_opensAStepThatIsNotTheNextOne() {
         let app = XCUIApplication()
         app.launchForUITest(seed: nil, extraArguments: ["-uitest-fresh-install", "-uitest-show-setup-deck"])
@@ -69,18 +67,14 @@ final class Bienvenida23BaseUITests: XCTestCase {
         let deck = app.buttons["setup_deck_current"]
         XCTAssertTrue(deck.waitForExistence(timeout: 10), "No salió el mazo de Primeros pasos.")
         XCTAssertTrue(deck.label.contains("1 de 7"), "El mazo empieza en el paso 1: «\(deck.label)».")
-        app.buttons["setup_checklist_toggle_steps"].tap()
-
-        let budgetRow = app.buttons["setup_steps_row_firstBudget"]
-        XCTAssertTrue(budgetRow.waitForExistence(timeout: 5), "El paso 3 no se puede tocar en la lista.")
-        // Abre grande: los siete a la vista sin desplazar, también el último.
-        XCTAssertTrue(app.buttons["setup_steps_row_homeScreen"].isHittable, "El paso 7 no se ve entero al abrir la lista.")
-        attach(app, "lista-7-pasos-grande")
+        let budgetRow = app.buttons["setup_deck_step_firstBudget"]
+        XCTAssertTrue(budgetRow.waitForExistence(timeout: 5), "El paso 3 no se puede tocar en la fila del mazo.")
+        XCTAssertTrue(app.buttons["setup_deck_step_homeScreen"].exists, "El paso 7 está en la fila.")
+        attach(app, "fila-7-pasos")
         budgetRow.tap()
 
         XCTAssertTrue(app.buttons["first_budget_start"].waitForExistence(timeout: 10),
                       "Tocar el paso 3 no abrió «Crea tu primer presupuesto».")
-        XCTAssertFalse(app.buttons["setup_steps_resume"].exists, "La lista siguió abierta encima del paso.")
     }
 
     /// Y23-15: con registros en varios días, la guía sale sola: «Arma tu Panel» → «Tus gráficas viven en Más» →

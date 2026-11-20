@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "チュートリアル · %1$d/%2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "やり方を見る";
+"primerosPasosPaso7.story.finish" = "終了";
+"primerosPasosPaso7.story.widget.title" = "ホーム画面からワンタップで記録";
+"primerosPasosPaso7.story.widget.message" = "アプリを開かずに今月の支出も確認できます。使いやすいウィジェットを選びましょう。";
+"primerosPasosPaso7.story.widget.spent" = "支出 · 今月";
+"primerosPasosPaso7.story.applePay.title" = "iPhoneで支払うと、支出はもうYalaに";
+"primerosPasosPaso7.story.applePay.message" = "入力は不要。受信トレイで承認するだけです。";
+"primerosPasosPaso7.story.applePay.merchant" = "スーパー";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "今日 · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "承認";
+"primerosPasosPaso7.story.share.title" = "送られてきたレシートを、入力せずに記録";
+"primerosPasosPaso7.story.share.message" = "写真、WhatsApp、銀行アプリから。Yalaが金額、店名、日付を読み取ります。";
+"primerosPasosPaso7.story.share.sentBy" = "WhatsAppで届いたもの";
+"primerosPasosPaso7.story.share.merchant" = "レストラン グッドテイスト";
+"primerosPasosPaso7.story.share.read" = "写真から読み取り · 要確認";
+"primerosPasosPaso7.story.mail.title" = "銀行からの通知が自動でYalaに届きます";
+"primerosPasosPaso7.story.siri.title" = "手がふさがっていたら、Siriに";
+"primerosPasosPaso7.story.siri.message" = "設定は不要です。試しに「Hey Siri」と話しかけてみて。";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yalaが新規記録で開き、すぐに記録できます。";
+"primerosPasosPaso7.story.siri.allPhrases" = "すべてのフレーズを見る";
+"primerosPasosPaso7.deck.step.firstAccount" = "口座";
+"primerosPasosPaso7.deck.step.firstExpense" = "記録";
+"primerosPasosPaso7.deck.step.firstBudget" = "予算";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "支払い";
+"primerosPasosPaso7.deck.step.groups" = "グループ";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "グラフ";
+"primerosPasosPaso7.deck.step.homeScreen" = "ホーム";
+"primerosPasosPaso7.deck.summary" = "完了: %1$d · 後で: %2$d · ステップをタップして開く";
+"primerosPasosPaso7.deck.value.done" = "完了";
+"primerosPasosPaso7.deck.value.current" = "現在";
+"primerosPasosPaso7.deck.value.pending" = "未完了";
+"primerosPasosPaso7.deck.doneWithLater" = "後回しにしたもの: %@。下のステップをタップすると今すぐできます。";
+"primerosPasosPaso7.tryNow.header" = "今すぐ試す";
+"primerosPasosPaso7.tryNow.voice.title" = "支出を音声で入力";
+"primerosPasosPaso7.tryNow.voice.detail" = "「ランチ、カードで18」";
+"primerosPasosPaso7.tryNow.photo.title" = "レシートを読み取る";
+"primerosPasosPaso7.tryNow.photo.detail" = "写真、スクリーンショット、PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "Yala AIに聞く";
+"primerosPasosPaso7.tryNow.ai.detail" = "「今月いちばん使ったのは？」";
+"primerosPasosPaso7.tryNow.extras" = "さらに：設定で限定テーマとアイコン。";
+"primerosPasosPaso7.offer.notNow" = "今はしない";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "いま試した機能を、1か月無料で";
+"primerosPasosPaso7.offer.triedTitleDays" = "いま試した機能を、%d日間無料で";
+"primerosPasosPaso7.offer.tried.voice" = "音声で入力した支出をYalaが記録しました。Proならいつでもできます。";
+"primerosPasosPaso7.offer.tried.photo" = "Yalaがレシートを読み取って記録しました。Proならいつでもできます。";
+"primerosPasosPaso7.offer.tried.ai" = "Yala AIが支出を記録しました。Proならいつでもできます。";
+"primerosPasosPaso7.offer.feature.voice" = "支出を音声で入力";
+"primerosPasosPaso7.offer.feature.photo" = "レシートとPDFを読み取る";
+"primerosPasosPaso7.offer.feature.ai" = "Yala AIに聞く";
+"primerosPasosPaso7.offer.timelineWithReminder" = "今日のお支払いはなし · %1$@にお知らせ · %2$@に請求";
+"primerosPasosPaso7.offer.timelineCharge" = "今日のお支払いはなし · %@に請求";

@@ -110,6 +110,16 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
     @Binding var part: Int
     /// Lo que dura cada parte antes de pasar sola a la siguiente.
     var partDuration: Duration = TutorialStoryLogic.partDuration
+    /// `false`: solo avanza al tocar (el paso 7, opción B de Jürgen del 20-nov-2026: «la historia no puede avanzar sola
+    /// mientras se mira el ejemplo»). La de ahora se ve llena.
+    var autoAdvances: Bool = true
+    /// El botón de arriba a la izquierda: «‹» (Atrás) en las intros; «✕» (Cerrar) en las historias del paso 7.
+    var backSystemImage: String = "chevron.left"
+    var backLabel: String = L10n.Action.back
+    /// Tocar a la derecha (o «Siguiente» de VoiceOver) en la última parte. `nil`: no hace nada, como hasta ahora.
+    var onAdvancePastLast: (() -> Void)?
+    /// Un botón de texto arriba a la derecha en la última parte («Terminar»), para quien no adivina el toque.
+    var lastPartTrailingTitle: String?
     let onBack: () -> Void
     @ViewBuilder let content: (Int) -> Part
     @ViewBuilder let footer: () -> Footer
@@ -131,26 +141,39 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
     /// El ancho de la zona que se toca, para saber en qué mitad cayó el dedo.
     @State private var stageWidth: CGFloat = 0
 
-    private var canRun: Bool { !reduceMotion && !voiceOver }
+    private var canRun: Bool { autoAdvances && !reduceMotion && !voiceOver }
 
     private var runs: Bool {
-        TutorialStoryLogic.advancesAutomatically(part: part, count: count, reduceMotion: reduceMotion,
-                                                 voiceOver: voiceOver, paused: paused)
+        autoAdvances && TutorialStoryLogic.advancesAutomatically(part: part, count: count, reduceMotion: reduceMotion,
+                                                                 voiceOver: voiceOver, paused: paused)
     }
+
+    private var isLastPart: Bool { part >= count - 1 }
 
     private var dwell: TimeInterval { TutorialStoryLogic.seconds(partDuration) }
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
             HStack {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back, action: onBack)
+                YalaToolbarButton(systemName: backSystemImage, label: backLabel, action: onBack)
                     .accessibilityIdentifier("tutorial_story_back")
                 Spacer()
                 Text(eyebrow)
                     .font(DS.Typography.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("tutorial_story_eyebrow")
                 Spacer()
-                Color.clear.frame(width: 44, height: 44)
+                if let lastPartTrailingTitle, isLastPart, let onAdvancePastLast {
+                    Button(lastPartTrailingTitle, action: onAdvancePastLast)
+                        .font(DS.Typography.subheadline.weight(.semibold))
+                        .foregroundStyle(.thAccentText)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("tutorial_story_finish")
+                } else {
+                    Color.clear.frame(width: 44, height: 44)
+                }
             }
             TutorialStorySegments(
                 count: count,
@@ -177,6 +200,10 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                         guard !held else { return }
                         let step = WelcomeShowcaseLogic.tapStep(
                             atX: location.x, width: stageWidth, rightToLeft: layoutDirection == .rightToLeft)
+                        if step > 0, isLastPart, let onAdvancePastLast {
+                            onAdvancePastLast()
+                            return
+                        }
                         move(to: TutorialStoryLogic.stepped(part: part, by: step, count: count))
                     }
                     // Duración infinita: el gesto nunca se completa y avisa al levantar el dedo. Con una duración
@@ -188,7 +215,11 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                                             paused = pressing
                                         })
                     .accessibilityAction(named: L10n.TipKit.next) {
-                        move(to: TutorialStoryLogic.tapped(part: part, count: count))
+                        if isLastPart, let onAdvancePastLast {
+                            onAdvancePastLast()
+                        } else {
+                            move(to: TutorialStoryLogic.tapped(part: part, count: count))
+                        }
                     }
                     .accessibilityIdentifier("tutorial_story_stage")
             }

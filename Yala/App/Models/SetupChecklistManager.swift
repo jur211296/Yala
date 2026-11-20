@@ -198,9 +198,19 @@ final class SetupChecklistManager {
     ///
     /// Y23-18: con el mazo, la oferta sube un momento después de la tarjeta «¡Primeros pasos completos!» (1,6 s; 0,2 s
     /// con Reducir movimiento), como en el prototipo.
+    ///
+    /// Desde la opción B de Jürgen (20-nov-2026) la oferta del mazo sale al terminar el paso 2
+    /// (`TrialOfferMoments.noteRecordStepFinished`); aquí solo si aquella no se pidió nunca.
     var onAllStepsCompleted: () -> Void = {
         guard SetupChecklistManager.shared.showsDeck else {
             TrialOfferMoments.note(.setupChecklistCompleted)
+            return
+        }
+        guard SetupCompleteTrialOfferLogic.offersAtCompletion(offeredAfterRecordStep: UserDefaults.standard.bool(
+            forKey: SetupCompleteTrialOfferLogic.offeredAfterRecordStepKey)) else {
+            #if DEBUG
+            print("SetupChecklist: sin oferta al completar: ya salió al terminar el paso 2")
+            #endif
             return
         }
         UserDefaults.standard.set(true, forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)

@@ -21,30 +21,6 @@ extension View {
     }
 }
 
-// MARK: - Grupo D: Tour de Settings
-
-/// UX 2.2 · L5-9 (opción A): tres pasos, lo que una persona nueva necesita saber dónde está —dónde se corrige el
-/// saldo, dónde se personaliza y dónde están los tutoriales—. Antes eran nueve que leían el nombre de cada fila.
-enum SettingsTourSteps {
-    static let steps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "settingsAccounts",
-            title: L10n.TipKit.settingsAccounts,
-            message: L10n.TipKit.settingsAccountsMessage
-        ),
-        CoachMarkStep(
-            id: "settingsPersonalization",
-            title: L10n.TipKit.settingsPersonalization,
-            message: L10n.TipKit.settingsPersonalizationMessage
-        ),
-        CoachMarkStep(
-            id: "settingsTutorials",
-            title: L10n.TipKit.settingsTutorials,
-            message: L10n.TipKit.settingsTutorialsMessage
-        )
-    ]
-}
-
 // MARK: - Grupo E: Cash Flow Setup Tour
 
 enum CashFlowSetupTourSteps {
@@ -94,66 +70,17 @@ enum CashFlowTableTourSteps {
     ]
 }
 
-// MARK: - Grupo G: Pro Tour (post-subscription)
+// MARK: - Grupo G: «Hoy» del tipo de cambio
 
+/// Quedó solo la guía de «Hoy ⓘ»: el tour Pro (fases de Ajustes, Panel y Estadísticas) se retiró con la opción B de
+/// Jürgen del 20-nov-2026; lo de Pro se enseña en «¡Listo! Tienes Pro» (`ProTryNowSection`).
 enum ProTourSteps {
-    /// Phase 1: ProfileView — icons, themes. (Exportar salió del tour el 2026-10-12: ya no es Pro.)
-    static let profileSteps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "settingsAppIcon",
-            title: L10n.TipKit.proPremiumIconsTitle,
-            message: L10n.TipKit.proPremiumIconsMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "settingsTheme",
-            title: L10n.TipKit.proProThemesTitle,
-            message: L10n.TipKit.proProThemesMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-    ]
-
-    /// Phase 2: PanelView — la fila de acciones de arriba (UX 2.2 · L5-12, opción A): un paso sobre «Voz» y «Foto» y
-    /// otro sobre «IA». Antes señalaba un «+» flotante que solo salía durante el tour y que el Panel de verdad no tiene
-    /// arriba. Sin la píldora de IA (el usuario la escondió), su paso no se monta: apuntaría a una vista que no existe.
-    static func panelSteps(includesAssistant: Bool) -> [CoachMarkStep] {
-        var steps = [
-            CoachMarkStep(
-                id: panelVoiceImageAnchor,
-                title: L10n.TipKit.proQuickEntryTitle,
-                message: L10n.TipKit.proQuickEntryMessage
-            ),
-        ]
-        if includesAssistant {
-            steps.append(CoachMarkStep(
-                id: panelAssistantAnchor,
-                title: L10n.TipKit.proChatFabTitle,
-                message: L10n.TipKit.proQuickAIMessage
-            ))
-        }
-        return steps
-    }
-
-    /// Los anclas de la fila de acciones del Panel (`PanelQuickActionsRow`).
-    static let panelVoiceImageAnchor = "proQuickVoiceImage"
-    static let panelAssistantAnchor = "proQuickAI"
-
-    /// Phase 3: InsightsTabView — AI summary button
-    static let insightsSteps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "proAiSummary",
-            title: L10n.TipKit.proAiSummaryTitle,
-            message: L10n.TipKit.proAiSummaryMessage
-        ),
-    ]
-
     /// Standalone (not Pro Tour): TrendChartView — "Today FX" hint.
     /// 1 step independiente, mostrado primera vez en multi-currency.
     /// El ancla de la píldora «Hoy ⓘ» de la tendencia (`TrendChartView`). El Panel sube hasta ella al sacar la guía
     /// (card 3f57: tras reabrir quedaba bajo la barra de pestañas y la guía se pintaba encima de la barra).
     static let todayFXAnchor = "todayFXHint"
-    /// La persistencia vive en `AppPreferences.hasSeenTodayFXCoachMark`,
-    /// no en `ProTourManager`. El enum se reutiliza por convención visual.
+    /// La persistencia vive en `AppPreferences.hasSeenTodayFXCoachMark`.
     static let todayFXSteps: [CoachMarkStep] = [
         CoachMarkStep(
             id: todayFXAnchor,

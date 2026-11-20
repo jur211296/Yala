@@ -57,7 +57,7 @@
 //  su valor al App Group de los widgets también al cargar (S35f1), así que registrarla aquí la dejaría escrita
 //  ahí. Lo que sigue habiendo que
 //  comprobar es que el lector nuevo no sea OTRO mirror con `didSet` fuera de `AppPreferences`
-//  —`SessionState`, `ThemeManager` y `ProTourManager` re-escriben lo que se les asigna— porque a
+//  —`SessionState` y `ThemeManager` re-escriben lo que se les asigna— porque a
 //  ésos el mecanismo no los cubre.
 //
 //  DÓNDE VA EL GUARD. Ninguna función de aquí comprueba `UITestHooks.isActive`, igual que

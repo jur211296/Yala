@@ -43,11 +43,16 @@ struct PrimerosPasosHomeScreenPresentation: ViewModifier {
     private func afterTutorial() {
         let result = exit
         exit = .closed
-        progress.reset()
+        // Con la ✕ (sin resolver) el paso se retoma en la misma historia (opción B de Jürgen, 20-nov-2026).
         switch HomeScreenTutorialLogic.resolution(of: result) {
-        case .completed: SetupChecklistManager.shared.markCompleted(.homeScreen)
-        case .skipped: SetupChecklistManager.shared.markSkipped(.homeScreen)
-        case nil: break
+        case .completed:
+            progress.reset()
+            SetupChecklistManager.shared.markCompleted(.homeScreen)
+        case .skipped:
+            progress.reset()
+            SetupChecklistManager.shared.markSkipped(.homeScreen)
+        case nil:
+            progress.phase = .story
         }
     }
 }
