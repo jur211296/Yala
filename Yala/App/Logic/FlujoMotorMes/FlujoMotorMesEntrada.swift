@@ -25,31 +25,38 @@ enum FlujoMotorMesEntrada {
         var result: [FlujoMotorMes.Movimiento] = []
         result.reserveCapacity(transactions.count)
         var aproximado = false
+        // YALA-IOS-12 / -Q (build 2.3 (4)): este bucle corre en el hilo principal sobre toda la historia, varias veces
+        // por cálculo. Cada propiedad de un `@Model` cuesta lo suyo al leerla, así que cada una se lee una vez, y el mes
+        // sale de la caché de intervalos (`MonthBucketer`), no de una pregunta al calendario por movimiento.
+        var buckets = MonthBucketer(calendar: calendar)
         for tx in transactions {
             // Los ajustes de saldo y las transferencias no son ingreso ni gasto; la pata de préstamo de un gasto de
             // grupo, tampoco (el mismo filtro que el ritmo y lo fechado de `ProjectedFlowBuilder`).
-            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx),
-                  let mes = calendar.dateInterval(of: .month, for: tx.date)?.start else { continue }
+            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx) else { continue }
+            let date = tx.date
+            guard let mes = buckets.monthStart(of: date) else { continue }
             let resolved = CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             )
             if resolved.approximateMagnitude > 0 { aproximado = true }
             let esIngreso = TransactionClassificationLogic.isIncome(tx)
+            let categoria = tx.category
+            let subcategoria = tx.subcategory
             var movimiento = FlujoMotorMes.Movimiento(
                 mes: mes,
                 importe: esIngreso ? resolved.value : -resolved.value,
                 esIngreso: esIngreso,
-                categoriaID: tx.category?.persistentModelID,
-                subcategoriaID: tx.subcategory?.persistentModelID,
-                categoria: tx.category,
+                categoriaID: categoria?.persistentModelID,
+                subcategoriaID: subcategoria?.persistentModelID,
+                categoria: categoria,
                 pagoID: tx.scheduledPaymentID.flatMap(UUID.init(uuidString:)),
-                esFechado: tx.date >= startOfTomorrow
+                esFechado: date >= startOfTomorrow
             )
-            movimiento.dia = calendar.component(.day, from: tx.date)
+            movimiento.dia = calendar.component(.day, from: date)
             // El comercio sale de la nota, como en la memoria de comercios (se canoniza solo donde se mira: la ventana).
             movimiento.nota = tx.note
-            movimiento.subcategoriaNombre = tx.subcategory?.name
-            movimiento.subcategoria = tx.subcategory
+            movimiento.subcategoriaNombre = subcategoria?.name
+            movimiento.subcategoria = subcategoria
             result.append(movimiento)
         }
         return (result, aproximado)

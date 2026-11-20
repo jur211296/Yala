@@ -244,12 +244,17 @@ struct TransactionIndex {
     init(transactions: [TransactionItem], currencyCode: String, adjustment: GroupBridgeStatsAdjustment = .none, converter: CurrencyConverting, calendar: Calendar) {
         var catMonth: [PersistentIdentifier: [String: Double]] = [:]
         var subMonth: [PersistentIdentifier: [String: Double]] = [:]
+        #if DEBUG
+        Self._testModelPasses += 1
+        #endif
+        // El mes de cada movimiento sin preguntar al calendario por cada uno (YALA-IOS-P).
+        var buckets = MonthBucketer(calendar: calendar)
 
         for tx in transactions {
             guard let catID = tx.category?.persistentModelID else { continue }
             // Suprime la pata de préstamo derivada (bridge): no es gasto/ingreso propio.
             if adjustment.isSuppressed(tx) { continue }
-            let key = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
+            let key = buckets.monthKey(of: tx.date)
 
             // `adjustment` proyecta el gasto de grupo Caso A a "mi parte" (neto).
             let value = CashFlowCalculator.resolvedAmount(
@@ -267,6 +272,38 @@ struct TransactionIndex {
         self.byCategoryMonth = catMonth
         self.bySubcategoryMonth = subMonth
     }
+
+    /// El mismo índice desde los movimientos que el motor del mes ya resolvió (`FlujoMotorMesEntrada.movimientos`), sin
+    /// volver a leer cada movimiento de SwiftData (YALA-IOS-P: el cálculo del plan leía la historia dos veces). Mismas
+    /// puertas —sin ajustes de saldo ni transferencias, sin la pata de préstamo— y el mismo signo; quien no tiene
+    /// categoría no entra, como en `init(transactions:)`.
+    init(movimientos: [FlujoMotorMes.Movimiento], calendar: Calendar) {
+        var catMonth: [PersistentIdentifier: [String: Double]] = [:]
+        var subMonth: [PersistentIdentifier: [String: Double]] = [:]
+        var keys: [Date: String] = [:]
+        for movimiento in movimientos {
+            guard let catID = movimiento.categoriaID else { continue }
+            let key: String
+            if let known = keys[movimiento.mes] {
+                key = known
+            } else {
+                key = CashFlowProjectionCalculator.monthKey(for: movimiento.mes, calendar: calendar)
+                keys[movimiento.mes] = key
+            }
+            catMonth[catID, default: [:]][key, default: 0] += movimiento.importe
+            if let subID = movimiento.subcategoriaID {
+                subMonth[subID, default: [:]][key, default: 0] += movimiento.importe
+            }
+        }
+        self.byCategoryMonth = catMonth
+        self.bySubcategoryMonth = subMonth
+    }
+
+    #if DEBUG
+    /// Cuántas veces se armó el índice leyendo los movimientos de SwiftData (`init(transactions:)`). Testigo de
+    /// `YalaTests/RegistrosFluidez`: el cálculo del plan lo arma desde lo que el motor ya leyó. Solo lo leen los tests.
+    nonisolated(unsafe) static var _testModelPasses = 0
+    #endif
 
     func total(for categoryID: PersistentIdentifier, monthKey: String) -> Double {
         byCategoryMonth[categoryID]?[monthKey] ?? 0
@@ -351,10 +388,7 @@ struct CashFlowProjectionCalculator {
         ).movimientos
 
         // Índice para las estimaciones de cada línea (promedios de meses completos), con lo que el motor da a cada línea.
-        var index = TransactionIndex(
-            transactions: history.filter { $0.balanceAdjustmentType == nil },
-            currencyCode: currencyCode, adjustment: adjustment, converter: converter, calendar: calendar
-        )
+        var index = TransactionIndex(movimientos: historia, calendar: calendar)
         index.byLineMonth = FlujoMotorMes.importesPorLinea(historia, lineas: motorLines).mapValues { byMonth in
             Dictionary(byMonth.map { (Self.monthKey(for: $0.key, calendar: calendar), $0.value) },
                        uniquingKeysWith: +)
@@ -673,9 +707,10 @@ struct CashFlowProjectionCalculator {
         }
     }
 
+    /// «AAAA-MM». Sin `String(format:)`: con miles de movimientos su coste se veía en los cuelgues (YALA-IOS-P).
     static func monthKey(for date: Date, calendar: Calendar) -> String {
         let c = calendar.dateComponents([.year, .month], from: date)
-        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+        return MonthKeyText.make(year: c.year ?? 0, month: c.month ?? 0)
     }
 
     // MARK: - Line Result

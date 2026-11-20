@@ -116,6 +116,12 @@ o «otros») y el promedio de una línea sale de ese mismo reparto: si añades u
 vez. Lo fijan `FlujoMotorMesTests` (un caso por hallazgo del ticket `2026-11-17-flujo-de-caja-replanteo`, paridad con
 `MonthEndBalanceLogic` incluida).
 
+**El motor corre en el hilo principal sobre toda la historia, varias veces por cálculo (YALA-IOS-12, -Q y -P, 20-nov-2026).**
+`FlujoMotorMesEntrada.movimientos` lee cada propiedad del `@Model` una vez y saca el mes de `MonthBucketer` (no pregunta al
+calendario por movimiento), y el índice de las líneas se arma desde esos movimientos (`TransactionIndex(movimientos:)`),
+no con otra pasada por SwiftData. Una pasada nueva sobre la historia hace lo mismo; los testigos
+`TransactionIndex._testModelPasses` y `MonthBucketer._testCalendarLookups` lo fijan en `YalaTests/RegistrosFluidez/`.
+
 **Sin plan, o con filtros de sesión, el mismo motor sin líneas (S6, 18-nov-2026).** `ProjectedFlowBuilder.othersRemaining`
 pide al motor «otros» (la proyección inteligente, abajo); ya no hay ritmo de 90 días. Sin filtros, la mediana sale de todos los movimientos, como con plan; con filtros, de los filtrados. Sin un mes
 completo de historia no hay mediana: solo pagos planificados y lo fechado. Panel, Tendencias y el widget de Saldo
