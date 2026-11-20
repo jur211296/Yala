@@ -127,6 +127,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-14-qa-ui-tandas-rojas | done | tickets/done/2026-11-14-qa-ui-tandas-rojas.md |
 | 2026-11-17-verificacion-cuarentena-y-sello | done | tickets/done/2026-11-17-verificacion-cuarentena-y-sello.md |
 | 2026-11-16-yala-web-produccion-subir | done | tickets/done/2026-11-16-yala-web-produccion-subir.md |
+| 2026-11-19-welcome-carrusel-barras-y-toque | done | tickets/done/2026-11-19-welcome-carrusel-barras-y-toque.md |
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
 | a-local-read-failure-in-the-migration-apply-reads-as-network | backlog | tickets/backlog/a-local-read-failure-in-the-migration-apply-reads-as-network.md |
 | a-malformed-ref-leaves-a-stale-dangler | backlog | tickets/backlog/a-malformed-ref-leaves-a-stale-dangler.md |
@@ -1382,11 +1383,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-cloud-back-leaves-chooser-marked-seen | done | tickets/done/welcome-cloud-back-leaves-chooser-marked-seen.md |
 | welcome-cloud-replay-marks-born-cloud-without-the-guard | backlog | tickets/backlog/welcome-cloud-replay-marks-born-cloud-without-the-guard.md |
 | welcome-copy-blames-owner | discarded | tickets/discarded/welcome-copy-blames-owner.md |
-| welcome-destructive-buttons-are-plain-text-taps | backlog | tickets/backlog/welcome-destructive-buttons-are-plain-text-taps.md |
+| welcome-destructive-buttons-are-plain-text-taps | done | tickets/done/welcome-destructive-buttons-are-plain-text-taps.md |
 | welcome-discard-gate-says-carry-on-right-after-asking-to-wipe | backlog | tickets/backlog/welcome-discard-gate-says-carry-on-right-after-asking-to-wipe.md |
 | welcome-fresh-install-neutral-mount-lasts-one-launch | done | tickets/done/welcome-fresh-install-neutral-mount-lasts-one-launch.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
-| welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
+| welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | done | tickets/done/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
 | welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive | backlog | tickets/backlog/welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive.md |
 | welcome-groups-back-forgets-first-time-after-invite-screen | done | tickets/done/welcome-groups-back-forgets-first-time-after-invite-screen.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | done | tickets/done/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |

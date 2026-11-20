@@ -35,6 +35,10 @@ struct WelcomeShowcaseView: View {
     /// Sube en cada función nueva: reinicia su temporizador y su animación de entrada.
     @State private var turn = 0
     @State private var hasTappedAccess = false
+    /// El reloj de la función en pantalla: de él salen la barra que avanza y el tiempo que le queda.
+    @State private var clock = WelcomeShowcaseLogic.StoryClock()
+    /// El ancho de la vitrina, para saber en qué mitad cayó un toque.
+    @State private var stageWidth: CGFloat = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -80,15 +84,21 @@ struct WelcomeShowcaseView: View {
         .welcomeBackButton(tint: .white, action: door == .groups ? { switchDoor(to: .finances) } : nil)
         .extendsUnderVerticalBar()
         // El temporizador de la función en pantalla: se rehace con cada función, puerta o pausa.
+        // Con pausa no se reinicia: sigue con lo que le quedaba a la función (el reloj guarda lo que ya corrió).
         .task(id: TimerKey(door: door, index: index, turn: turn, rotates: rotates)) {
             guard rotates else { return }
+            if !clock.isRunning { clock.resume(at: .now) }
             do {
-                try await Task.sleep(for: WelcomeShowcaseLogic.dwell)
+                try await Task.sleep(for: .seconds(clock.remaining(at: .now)))
             } catch {
                 return  // la función cambió o la vista se fue: el temporizador se rehace con la siguiente
             }
             move(to: WelcomeShowcaseLogic.next(after: index, count: demos.count))
         }
+        .onChange(of: rotates) { _, nowRotates in
+            if nowRotates { clock.resume(at: .now) } else { clock.pause(at: .now) }
+        }
+        .onAppear { clock = .started(at: .now, running: rotates) }
     }
 
     private struct TimerKey: Equatable {
@@ -194,6 +204,16 @@ struct WelcomeShowcaseView: View {
             .accessibilityLabel(L10n.Showcase.position(name(for: current), index + 1, demos.count)
                                 + (current.isPro ? ", PRO" : ""))
             .accessibilityIdentifier("welcome_showcase_current")
+            // VoiceOver: deslizar arriba o abajo cambia de función, y el rotor de acciones dice «Siguiente» y «Anterior».
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: step(by: 1)
+                case .decrement: step(by: -1)
+                @unknown default: break
+                }
+            }
+            .accessibilityAction(named: WelcomeCarruselTexto.next) { step(by: 1) }
+            .accessibilityAction(named: WelcomeCarruselTexto.previous) { step(by: -1) }
 
             WelcomeShowcaseDemoView(demo: current, turn: turn, reduceMotion: reduceMotion)
                 .frame(maxWidth: .infinity, minHeight: stageDemoHeight, alignment: .center)
@@ -221,17 +241,19 @@ struct WelcomeShowcaseView: View {
                 )
         }
         .contentShape(Rectangle())
-        // Pausa al tocar la vitrina (si rota) y desliza entre funciones, como el prototipo. El deslizamiento es el de
-        // UIKit (`HorizontalSwipeGesture`): un `DragGesture` dentro del scroll vertical le quitaba el arrastre a la
-        // página (regla de `swiftui-ds.md`, review adversarial).
-        .onTapGesture {
-            guard canRotate else { return }
-            DS.Haptic.selection()
-            paused.toggle()
-        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stageWidth = $0 }
+        // El deslizamiento es el de UIKit (`HorizontalSwipeGesture`): un `DragGesture` dentro del scroll vertical le
+        // quitaba el arrastre a la página (regla de `swiftui-ds.md`).
         .gesture(HorizontalSwipeGesture(minimumDistance: WelcomeShowcaseLogic.swipeThreshold) { towardsNext in
             step(by: towardsNext ? 1 : -1)
         })
+        // Como las historias (encargo del 19-nov): tocar la mitad del final pasa a la siguiente función y la del
+        // principio vuelve a la anterior. La pausa es solo su botón, y las barras y el botón son `Button` hijos: su
+        // toque gana a este y no lo dispara (lo fija `WelcomeCarruselToqueUITests`). Los toques de `axe` y de
+        // XcodeBuildMCP no llegan a este gesto en el simulador; los de XCUITest sí (medido el 2026-11-19).
+        .onTapGesture(coordinateSpace: .local) { location in
+            step(by: WelcomeShowcaseLogic.tapStep(atX: location.x, width: stageWidth))
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome_showcase_stage")
     }
@@ -241,24 +263,33 @@ struct WelcomeShowcaseView: View {
         let index: Int
     }
 
+    /// Las barras salen del reloj en cada fotograma, sin animación propia: con una animación por barra, la anterior
+    /// seguía llenándose al pasar a la siguiente. Sin rotación (Reducir movimiento o VoiceOver) la actual va llena y
+    /// atenuada, como antes.
     private var segments: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array(demos.enumerated()), id: \.offset) { offset, demo in
-                Button {
-                    DS.Haptic.selection()
-                    move(to: offset)
-                } label: {
-                    ShowcaseSegment(state: offset < index ? .done : (offset == index ? .now : .ahead),
-                                    animates: rotates, turn: turn)
-                        .frame(height: 24)
-                        .contentShape(Rectangle())
+        TimelineView(.animation(minimumInterval: nil, paused: !rotates)) { context in
+            let progress = canRotate ? clock.progress(at: context.date) : 1
+            HStack(spacing: DS.Spacing.xs) {
+                ForEach(Array(demos.enumerated()), id: \.offset) { offset, demo in
+                    Button {
+                        DS.Haptic.selection()
+                        move(to: offset)
+                    } label: {
+                        ShowcaseSegment(fill: WelcomeShowcaseLogic.segmentFill(at: offset, current: index,
+                                                                                 progress: progress),
+                                        dimmed: offset == index && !canRotate)
+                            .frame(height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(name(for: demo))
+                    .accessibilityAddTraits(offset == index ? .isSelected : [])
+                    .accessibilityIdentifier("welcome_showcase_segment_\(demo.rawValue)")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(name(for: demo))
-                .accessibilityAddTraits(offset == index ? .isSelected : [])
-                .accessibilityIdentifier("welcome_showcase_segment_\(demo.rawValue)")
             }
         }
+        // El fundido de cambiar de función no llega a las barras: llena la anterior y vacía las siguientes en el acto.
+        .transaction { $0.animation = nil }
     }
 
     // MARK: - Accesos
@@ -340,6 +371,7 @@ struct WelcomeShowcaseView: View {
             index = 0
             turn += 1
         }
+        clock = .started(at: .now, running: rotates)
         onDoorChange(newDoor)
     }
 
@@ -357,6 +389,7 @@ struct WelcomeShowcaseView: View {
             index = WelcomeShowcaseLogic.clamped(target, count: demos.count)
             turn += 1
         }
+        clock = .started(at: .now, running: rotates)
     }
 
     // MARK: - Textos por función
@@ -401,12 +434,10 @@ struct WelcomeShowcaseView: View {
 // MARK: - Segmento de progreso
 
 private struct ShowcaseSegment: View {
-    enum State { case done, now, ahead }
-    let state: State
-    let animates: Bool
-    let turn: Int
-
-    @SwiftUI.State private var fill: CGFloat = 0
+    /// De 0 a 1: lo llena quien la pinta, desde el reloj de la vitrina.
+    let fill: Double
+    /// La actual sin rotación: llena y atenuada.
+    let dimmed: Bool
 
     var body: some View {
         Capsule()
@@ -415,29 +446,12 @@ private struct ShowcaseSegment: View {
             .overlay(alignment: .leading) {
                 GeometryReader { geo in
                     Capsule()
-                        .fill(.white.opacity(state == .now && !animates ? 0.6 : 1))
-                        .frame(width: geo.size.width * width)
+                        .fill(.white.opacity(dimmed ? 0.6 : 1))
+                        .frame(width: geo.size.width * fill)
                 }
             }
             .clipShape(Capsule())
             .frame(maxHeight: .infinity)
-            .onAppear(perform: restart)
-            .onChange(of: turn) { _, _ in restart() }
-            .onChange(of: animates) { _, _ in restart() }
-    }
-
-    private var width: CGFloat {
-        switch state {
-        case .done: 1
-        case .ahead: 0
-        case .now: animates ? fill : 1
-        }
-    }
-
-    private func restart() {
-        fill = 0
-        guard state == .now, animates else { return }
-        withAnimation(.linear(duration: 5)) { fill = 1 }
     }
 }
 
