@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (117)
 
-> Este fichero son **323 KB en 117 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **325 KB en 117 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -165,7 +165,7 @@ paths:
 | `L1935` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
 | `L1953` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
 | `L1973` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 5.9 KB |
-| `L2029` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | 2.1 KB |
+| `L2029` | El apply de una página busca por LOTE, no fila a fila: corre en el hilo principal (2026-11-13, YALA-IOS-J). | 3.4 KB |
 
 <!-- INDICE:fin -->
 
@@ -2044,3 +2044,15 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
   propagación del borrado solo la ve un `fetch` del contexto, y la caché devolvería la fila condenada. Un `@Model` nuevo con
   `deleteRule: .cascade` saca a sus hijos de `prepareLookups`. Lo fija `YalaTests/SentryHangs2026Nov/ApplyPageBatchLookupTests`
   (testigo `EntityApplyMap._testSingleRowFetches` y la coherencia de lo que la página escribe).
+  **Y el pase final de refs colgadas también (2026-11-20, YALA-IOS-13).** `reresolveDanglingRefs` corre al final de CADA
+  ciclo —también el que sigue a guardar un movimiento— y hacía dos `find*` sueltos por dangler: 800 sobre 4.000
+  movimientos, 3,5 s de app congelada en el simulador. Ahora pone la misma caché con `prepareDanglerLookups` (filas
+  origen por `IN`, destinos de tablas grandes por `IN`, y enteras solo las tablas pequeñas que algún dangler consulta).
+  Un caso nuevo de `reresolveDanglerReadingStrictly` se añade a sus dos espejos, `danglerTargetRowTable` (destino en
+  otra tabla grande) y `danglerWholeTables` (cuenta, categoría o subcategoría), o esa búsqueda sigue yendo fila a fila. **Y la trampa que destapó al medir: asignar una relación a-uno cuya inversa a-muchos es
+  grande cuesta ms POR asignación** (`tx.category = c` con 3.200 movimientos en `c`: ~3 ms; SwiftData reescribe la
+  lista inversa cada vez). Con la caché puesta el pase seguía en 1 s; asignando desde la lista
+  (`c.transactions = (c.transactions ?? []) + filas`, `DanglerRelationshipBatch`), 0,23 s. Un bucle nuevo en el hilo
+  principal que asigne cientos de filas a la misma categoría o cuenta lo hace en bloque. Lo fija
+  `YalaTests/CuelguesSincronizacion/DanglerPassBatchLookupTests` (testigos `_testSingleRowFetches` y
+  `DanglerRelationshipBatch._testBulkAssigned`).

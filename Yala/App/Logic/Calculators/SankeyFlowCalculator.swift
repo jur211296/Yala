@@ -23,10 +23,11 @@ struct SankeyFlowCalculator {
     private static let deficitColor = "#9CA3AF"         // neutral gray for "Otros fondos"
 
     private static var expensesLabel: String { L10n.Statistics.Sankey.expenses }
-    /// El sobrante (lo que entró menos lo que salió y lo planificado) con la palabra del Panel: «Te queda» en un período
-    /// en curso, «Te quedó» en uno cerrado (decisión 8 de 2.3; antes, «Disponible»).
+    /// El sobrante (lo que entró menos lo que salió y lo planificado): «Diferencia» (decisión de Jürgen del 20-nov-2026).
+    /// Hasta entonces «Te queda / Te quedó» (y antes, «Disponible»): un tercer número que parecía dinero que tienes y no
+    /// lo es. El dinero que tienes es «Tu dinero hoy», en el hero. Igual en un período en curso y en uno cerrado.
     static func leftoverLabel(periodIsClosed: Bool) -> String {
-        periodIsClosed ? L10n.Panel.Hero.leftPast : L10n.Panel.Hero.leftNow
+        HeroEstadisticasText.difference
     }
     private static var otrosLabel: String { L10n.Statistics.Sankey.others }
     private static var plannedLabel: String { L10n.Statistics.Sankey.planned }

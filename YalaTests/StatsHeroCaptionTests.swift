@@ -22,11 +22,11 @@ struct StatsHeroCaptionTests {
 
     // MARK: - Distribución
 
-    @Test("Distribución en modo Balance rotula un saldo de cuentas")
+    @Test("Distribución en modo Balance rotula «Tu dinero hoy»")
     func distributionBalanceModeIsStock() {
-        #expect(StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: []) == .accountsBalance)
-        // El modo manda sobre los chips: con los DOS marcados sigue siendo saldo.
-        #expect(StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: [.income, .expense]) == .accountsBalance)
+        #expect(StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: []) == .moneyToday)
+        // El modo manda sobre los chips: con los DOS marcados sigue siendo el dinero de hoy.
+        #expect(StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: [.income, .expense]) == .moneyToday)
     }
 
     @Test("Distribución sin chips y fuera de modo Balance rotula GASTOS, no un saldo")
@@ -52,9 +52,9 @@ struct StatsHeroCaptionTests {
 
     // MARK: - Tendencias
 
-    @Test("Tendencias rotula según la métrica, no siempre el neto")
+    @Test("Tendencias rotula según la métrica")
     func trendsFollowsMetric() {
-        #expect(StatsHeroCaptionLogic.trends(metric: .balance) == .netPeriod)
+        #expect(StatsHeroCaptionLogic.trends(metric: .balance) == .moneyToday)
         #expect(StatsHeroCaptionLogic.trends(metric: .income) == .incomePeriod)
         #expect(StatsHeroCaptionLogic.trends(metric: .expense) == .expensePeriod)
     }
@@ -72,19 +72,18 @@ struct StatsHeroCaptionTests {
 
     // MARK: - Insights
 
-    @Test("Insights siempre rotula el neto del período")
+    @Test("Resumen rotula «Tu dinero hoy»")
     func insightsIsAlwaysNet() {
-        #expect(StatsHeroCaptionLogic.insights == .netPeriod)
+        #expect(StatsHeroCaptionLogic.insights == .moneyToday)
     }
 
     // MARK: - Registros
 
-    @Test("Registros sin filtro de naturaleza rotula el neto")
+    @Test("Registros sin filtro de naturaleza rotula «Tu dinero hoy»")
     func recordsWithoutNatureFilterIsNet() {
-        #expect(StatsHeroCaptionLogic.records(natures: []) == .netPeriod)
-        // Las dos marcadas no filtran nada (`FilterService` solo aplica con una),
-        // así que la cifra sigue siendo un neto de verdad.
-        #expect(StatsHeroCaptionLogic.records(natures: [.income, .expense]) == .netPeriod)
+        #expect(StatsHeroCaptionLogic.records(natures: []) == .moneyToday)
+        // Las dos marcadas no filtran nada (`FilterService` solo aplica con una).
+        #expect(StatsHeroCaptionLogic.records(natures: [.income, .expense]) == .moneyToday)
     }
 
     @Test("Registros con un chip activo deja de ser un neto y el rótulo lo dice")
@@ -97,7 +96,7 @@ struct StatsHeroCaptionTests {
 
     // MARK: - Contrato del enum
 
-    @Test("Los cinco rótulos resuelven a texto no vacío y distinto entre sí, en curso y cerrados")
+    @Test("Los cuatro rótulos resuelven a texto no vacío y distinto entre sí, en curso y cerrados")
     func everyCaptionHasDistinctText() {
         for isClosed in [false, true] {
             let texts = StatsHeroCaption.allCases.map { $0.text(isClosed: isClosed) }
@@ -106,6 +105,7 @@ struct StatsHeroCaptionTests {
                 // Si la key faltara en el bundle, `ls()` devuelve la key cruda.
                 #expect(!text.hasPrefix("stats.hero."))
                 #expect(!text.hasPrefix("panel.hero."))
+                #expect(!text.hasPrefix("heroEstadisticas."))
             }
             #expect(Set(texts).count == StatsHeroCaption.allCases.count)
         }

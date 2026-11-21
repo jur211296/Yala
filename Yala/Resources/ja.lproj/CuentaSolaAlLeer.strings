@@ -1,0 +1,32 @@
+/*
+  CuentaSolaAlLeer.strings
+  Yala
+
+  La cuenta se elige sola al leer una captura (parte 1, 2026-11-20): chip con estrella, línea de «por qué», selector
+  con «Coinciden con…», ayuda del número de cuenta y el paso de la tarjeta de Apple Pay. Tabla propia, leída con el
+  idioma de la app (`L10n.CuentaSolaAlLeer`). Los dos `applePay.param.card*` los lee la acción de Atajos.
+*/
+
+"cuentaSola.chip.chosen" = "✦ %@";
+"cuentaSola.chip.suggested" = "%@ · 提案";
+"cuentaSola.chip.choose" = "口座を選択";
+"cuentaSola.chip.chooseMatching" = "口座を選択 · %d件が一致";
+"cuentaSola.why.image" = "画像に書かれているので%@を選びました。口座をタップすると変更できます。";
+"cuentaSola.why.last4" = "%1$@を選びました：口座番号と同じく%2$@で終わります。";
+"cuentaSola.why.suggested" = "Yala AIの提案です。保存する前に%@で正しいか確認してください。";
+"cuentaSola.a11y.chosen" = "口座：%@。画像に表示された名前で選びました。タップで変更できます。";
+"cuentaSola.a11y.chosenLast4" = "口座：%1$@。%2$@で終わるため選びました。タップで変更できます。";
+"cuentaSola.a11y.suggested" = "口座：%@。Yala AIの提案です。タップで変更できます。";
+"cuentaSola.a11y.chooseMatching" = "口座を選択。画像の内容に一致する口座が%d件あります。";
+"cuentaSola.selector.matches" = "「%@」に一致";
+"cuentaSola.selector.matchesNoWords" = "画像の内容に一致";
+"cuentaSola.selector.conflict" = "画像とYala AIの結果が一致しません";
+"cuentaSola.selector.others" = "その他の口座";
+"cuentaSola.selector.reasonImage" = "画像に記載";
+"cuentaSola.selector.reasonAI" = "Yala AIの提案";
+"cuentaSola.account.numberHelp" = "下4桁があれば、スクリーンショットや通知からもカードを見分けます。";
+"cuentaSola.applePay.cardStep.title" = "カードを接続（任意）";
+"cuentaSola.applePay.cardStep.detail" = "Yalaのアクションで「詳細を表示」をタップし、「カード」で変数「カード」を選びます。これで、オフラインでもどの口座で払ったか分かります。";
+"cuentaSola.applePay.updateShortcut" = "どのカードで払ったか分かるよう、ショートカットを更新してください。";
+"cuentaSola.applePay.param.card" = "カード";
+"cuentaSola.applePay.param.card.description" = "支払いに使ったカード";

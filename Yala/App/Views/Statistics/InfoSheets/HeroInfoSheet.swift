@@ -14,7 +14,7 @@ import SwiftUI
 
 struct HeroInfoSheet: View {
     let topic: HeroClaroLogic.Topic
-    /// El rótulo que la persona acaba de leer junto a la cifra («Te queda», «Al 30 de noviembre tendrías»…): la primera
+    /// El rótulo que la persona acaba de leer junto a la cifra («Tu dinero hoy», «Al 30 de noviembre tendrías»…): la primera
     /// tarjeta lo repite tal cual, para que se reconozca.
     let figureLabel: String
     let currencyCode: String
@@ -78,11 +78,10 @@ struct HeroInfoSheet: View {
 
     private var title: String {
         switch topic {
-        case .net: L10n.HeroClaro.Net.title
+        case .moneyToday: HeroEstadisticasText.Info.title
         case .expense: L10n.HeroClaro.Expense.title
         case .income: L10n.HeroClaro.Income.title
         case .total: L10n.HeroClaro.Total.title
-        case .accountsBalance: L10n.HeroClaro.Balance.title
         case .cashFlowMonthEnd: L10n.HeroClaro.CashFlowEnd.title
         case .cashFlowMonth: L10n.HeroClaro.CashFlowMonth.title
         }
@@ -90,9 +89,10 @@ struct HeroInfoSheet: View {
 
     private var cards: [Card] {
         switch topic {
-        case .net:
+        case .moneyToday:
+            // Lo que se ve en el hero: la cifra y, debajo, ingresos y gastos del período con sus flechas.
             return [
-                Card(systemName: "equal.circle.fill", title: figureLabel, body: L10n.HeroClaro.Net.body),
+                Card(systemName: "wallet.bifold.fill", title: figureLabel, body: HeroEstadisticasText.Info.body),
                 Card(systemName: "arrow.up.right", title: L10n.CashFlow.income, body: L10n.HeroClaro.incomeBody),
                 Card(systemName: "arrow.down.right", title: L10n.CashFlow.expense, body: L10n.HeroClaro.expenseBody),
             ]
@@ -102,8 +102,6 @@ struct HeroInfoSheet: View {
             return [Card(systemName: "arrow.up.right", title: figureLabel, body: L10n.HeroClaro.Income.body)]
         case .total:
             return [Card(systemName: "plus.forwardslash.minus", title: figureLabel, body: L10n.HeroClaro.Total.body)]
-        case .accountsBalance:
-            return [Card(systemName: "building.columns.fill", title: figureLabel, body: L10n.HeroClaro.Balance.body)]
         case .cashFlowMonthEnd:
             return [Card(systemName: "calendar", title: figureLabel, body: L10n.HeroClaro.CashFlowEnd.body)]
         case .cashFlowMonth:
@@ -113,12 +111,11 @@ struct HeroInfoSheet: View {
 
     private var notes: [String] {
         switch topic {
-        case .net:
-            return [L10n.HeroClaro.Net.notBalance, L10n.HeroClaro.filtersNote]
+        case .moneyToday:
+            // Los filtros cambian ingresos y gastos, no la cifra: el dinero de hoy es el de las cuentas.
+            return isClosedPeriod ? [HeroEstadisticasText.Info.closedNote] : []
         case .expense, .income, .total:
             return [L10n.HeroClaro.filtersNote]
-        case .accountsBalance:
-            return isClosedPeriod ? [L10n.HeroClaro.Balance.closedNote] : []
         case .cashFlowMonthEnd:
             return [L10n.HeroClaro.CashFlowEnd.netNote, L10n.HeroClaro.cashFlowProjectedNote]
         case .cashFlowMonth:
@@ -127,11 +124,13 @@ struct HeroInfoSheet: View {
     }
 
     /// Transferencias y ajustes de saldo no son ingresos ni gastos (`CashFlowCalculator`): lo dice cada cifra que suma
-    /// ingresos o gastos. El saldo sí los cuenta, y el flujo de caja planifica líneas, no movimientos sueltos.
+    /// ingresos o gastos. «Tu dinero hoy» sí los cuenta, y el flujo de caja planifica líneas, no movimientos sueltos.
     private var showsNotCounted: Bool {
         switch topic {
-        case .net, .expense, .income, .total: true
-        case .accountsBalance, .cashFlowMonthEnd, .cashFlowMonth: false
+        case .expense, .income, .total: true
+        // «Tu dinero hoy» sí cuenta las transferencias y los ajustes (mueven el dinero de cuenta): la tarjeta diría lo
+        // contrario de la cifra grande.
+        case .moneyToday, .cashFlowMonthEnd, .cashFlowMonth: false
         }
     }
 
@@ -206,7 +205,6 @@ struct HeroInfoSheet: View {
         switch label {
         case .income: L10n.CashFlow.income
         case .expense: L10n.CashFlow.expense
-        case .net: L10n.Panel.Hero.leftNow
         case .netShortfall: L10n.HeroClaro.Example.shortfall
         case .total: L10n.HeroClaro.Example.total
         case .balanceToday: L10n.Panel.Hero.haveToday
@@ -214,7 +212,8 @@ struct HeroInfoSheet: View {
         case .leftToGoOut: L10n.ProjectedFlow.leftToGoOut
         case .monthEnd: L10n.HeroClaro.Example.monthEnd
         case .savings: L10n.SaldoPanel.Info.exampleSavings
-        case .card: L10n.SaldoPanel.Info.exampleCard
+        case .cash: HeroEstadisticasText.exampleCash
+        case .moneyToday: L10n.SaldoPanel.moneyToday
         case .refund: L10n.HeroClaro.Example.refund
         case .salary: L10n.HeroClaro.Example.salary
         case .sale: L10n.HeroClaro.Example.sale

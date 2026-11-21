@@ -36,22 +36,30 @@ import SwiftData
         rawText: String?,
         context: ModelContext
     ) -> [InboxDraft] {
+        makeDraftsWithAccountChoice(from: response, rawText: rawText, context: context).map(\.draft)
+    }
+
+    /// Lo mismo, con la elección de cuenta de cada borrador (`CuentaSolaAlLeer`): la hoja de la foto la usa para el chip
+    /// con estrella, la línea de «por qué» y el selector con «Coinciden con…».
+    static func makeDraftsWithAccountChoice(
+        from response: VisionResponse,
+        rawText: String?,
+        context: ModelContext
+    ) -> [(draft: InboxDraft, eleccion: CuentaSolaAlLeer.Eleccion)] {
         let sourceType = mapImageTypeToSource(response.imageType)
+        // Un solo fetch para todos los movimientos de la foto.
+        let accounts = DraftBuilder.fetchActiveAccounts(context: context)
 
-        var drafts: [InboxDraft] = []
-
-        for transaction in response.transactions {
-            let draft = createDraft(
+        return response.transactions.map { transaction in
+            createDraft(
                 from: transaction,
                 sourceType: sourceType,
                 rawText: rawText,
                 confidence: response.confidence,
+                accounts: accounts,
                 context: context
             )
-            drafts.append(draft)
         }
-
-        return drafts
     }
 
     // MARK: - Private Methods
@@ -61,18 +69,26 @@ import SwiftData
         sourceType: DraftSourceType,
         rawText: String?,
         confidence: VisionConfidence,
+        accounts: [Account],
         context: ModelContext
-    ) -> InboxDraft {
+    ) -> (draft: InboxDraft, eleccion: CuentaSolaAlLeer.Eleccion) {
         // Parse date from YYYY-MM-DD string
         let parsedDate = parseDate(transaction.date)
 
         // Build note from merchant and/or note
         let note = buildNote(merchant: transaction.merchant, note: transaction.note)
 
-        // Account inference (delegated to DraftBuilder for chat reuse)
-        let matchedAccount: Account? = transaction.currency.flatMap {
-            DraftBuilder.findAccount(byCurrency: $0, context: context)
-        }
+        // La cuenta: la escalera común con el medio de pago leído y, en la nube, la cuenta que propone la IA; sin nada que
+        // decida, la única cuenta en la moneda, como antes (`DraftBuilder.chooseAccount`).
+        let payment = transaction.payment?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let choice = DraftBuilder.chooseAccount(
+            mention: payment?.isEmpty == false ? payment : nil,
+            last4: nil,
+            aiAccount: transaction.account,
+            currency: transaction.currency,
+            in: accounts
+        )
+        let matchedAccount = choice.account
 
         // Naturaleza de la transacción. Aquí no hay un `isExpense` que el parser haya resuelto: el
         // prompt de visión pide el monto YA FIRMADO («expenses are NEGATIVE, income is POSITIVE»,
@@ -118,7 +134,8 @@ import SwiftData
             draft.account = account
         }
 
-        return draft
+        let eleccion = CuentaSolaAlLeer.Eleccion(resultado: choice.resultado, mention: payment, last4: nil)
+        return (draft, eleccion)
     }
 
     static func mapImageTypeToSource(_ imageType: String) -> DraftSourceType {

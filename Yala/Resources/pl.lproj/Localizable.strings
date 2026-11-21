@@ -4181,11 +4181,7 @@
 
 // MARK: - Stats Records polish
 
-"stats.records.motivationalOne" = "1 wpis · Dobry początek";
-"stats.records.motivationalMany %d" = "%d wpisów · Tak trzymaj";
 
-"stats.insights.motivationalOne" = "1 wpis · Dobry początek";
-"stats.insights.motivationalMany %d" = "%d wpisów · Tak trzymaj";
 "stats.insights.detailHeader" = "Twoje liczby";
 "stats.insights.aiCardTitle" = "Podsumowanie AI";
 "stats.insights.aiCardSubtitle" = "Wygeneruj z AI";
@@ -4204,14 +4200,7 @@
 "stats.trends.generateAI" = "Wygeneruj z AI";
 "stats.trends.regenerate" = "Odśwież";
 "stats.trends.aiFootnote" = "Podsumowanie AI";
-"stats.trends.heroOnset" = "Twój pierwszy okres z Yala";
-"stats.trends.heroStable" = "Twoje saldo pozostaje stabilne";
-"stats.trends.heroVarUp %d %@" = "%d%% powyżej vs %@ · Tak trzymaj";
-"stats.trends.heroVarDown %d %@" = "%d%% poniżej vs %@ · Trzymaj się, krok po kroku";
 // MARK: Distribution
-"stats.distribution.heroSubtitle1 %d" = "%d kategorii";
-"stats.distribution.heroSubtitle2 %d %d" = "%d kategorii · %d podkategorii";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d kategorii · %d podkategorii · %d tagów";
 "stats.distribution.insightTitleFree %@" = "Twój %@ w skrócie";
 "stats.distribution.insightTitlePro" = "Rozkład w okresie";
 "stats.distribution.aiFootnote" = "Podsumowanie AI";
@@ -8921,7 +8910,6 @@
 "panel.hero.leftNow" = "Zostaje ci";
 "panel.hero.leftPast" = "Zostało ci";
 "panel.hero.leftInMonth" = "W miesiącu %@ zostało ci";
-"stats.hero.captionAccountsBalanceClosed" = "Twoje saldo na koniec";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Jeszcze bez oceny: pojawi się, gdy dwie z trzech części będą miały dane.";
@@ -9991,18 +9979,12 @@
 "heroClaro.filtersNote" = "Jeśli masz włączone filtry, kwota liczy tylko to, co widzisz.";
 "heroClaro.incomeBody" = "Wszystko, co zapisałeś jako przychód: pensja, sprzedaż, wpływy.";
 "heroClaro.expenseBody" = "Wszystko, co zapisałeś jako wydatek. Zwrot odejmuje się od wydatków.";
-"heroClaro.net.title" = "Co ci zostaje";
-"heroClaro.net.body" = "To, co wpłynęło, minus to, co wyszło w wybranym okresie. Jeśli jest ujemna, wyszło więcej, niż wpłynęło.";
-"heroClaro.net.notBalance" = "To nie jest to, co masz na kontach: to jest „Twoje saldo dziś” w Panelu.";
 "heroClaro.expense.title" = "Ile wydałeś";
 "heroClaro.expense.body" = "To suma twoich wydatków w wybranym okresie. Zwrot odejmuje się od wydatków.";
 "heroClaro.income.title" = "Co wpłynęło";
 "heroClaro.income.body" = "To suma twoich przychodów w wybranym okresie.";
 "heroClaro.total.title" = "Przychody i wydatki razem";
 "heroClaro.total.body" = "Gdy wybrane są jednocześnie przychody i wydatki, kwota je sumuje bez odejmowania: tyle pieniędzy poruszyło to, co przefiltrowałeś.";
-"heroClaro.balance.title" = "Twoje saldo";
-"heroClaro.balance.body" = "To, co masz na kontach: wszystkich, łącznie z kartami, ze znakiem. To ta sama kwota co „Twoje saldo dziś” w Panelu.";
-"heroClaro.balance.closedNote" = "Dla zakończonego okresu to, co miałeś na jego koniec.";
 "heroClaro.cashFlowEnd.title" = "Ile miałbyś na koniec miesiąca";
 "heroClaro.cashFlowEnd.body" = "To twoje dzisiejsze saldo plus to, co jeszcze wpłynie w tym miesiącu, minus to, co jeszcze wyjdzie. Poniżej widzisz każdą część i skąd pochodzi szacunek.";
 "heroClaro.cashFlowEnd.netNote" = "„W tym miesiącu zostałoby ci” to coś innego: to, co wpływa, minus to, co wychodzi w całym miesiącu, bez tego, co już miałeś.";

@@ -73,10 +73,9 @@ struct FluidezWiringTests {
     static let rollingHeroes: [(path: String, count: Int)] = [
         ("Yala/App/Views/Panel/HeroMonthView.swift", 3),
         ("Yala/App/Views/Groups/GroupBalanceHero.swift", 1),
-        ("Yala/App/Views/Statistics/CategoriesTabView.swift", 1),
-        ("Yala/App/Views/Statistics/TrendsTabView.swift", 1),
-        ("Yala/App/Views/Statistics/InsightsTabView.swift", 1),
-        ("Yala/App/Views/Statistics/RecordsTabView.swift", 3),
+        // Las cuatro pestañas de Estadísticas y Registros, por el hero compartido (20-nov-2026): la cifra grande y la de
+        // cada flecha (un mismo `AmountText` para ingresos y gastos).
+        ("Yala/App/Views/Statistics/StatsHeroView.swift", 2),
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift", 1),
     ]
 

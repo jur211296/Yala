@@ -12,7 +12,8 @@
 //  - Origen: `.automation` con el banco en la evidencia (`BankNoticeBank.brandName`); la Bandeja lo enseña como «Aviso de
 //    BCP». Un caso propio en `DraftSourceType` lo leería como `.voice` un build anterior que reciba el borrador por iCloud.
 //
-//  La cuenta por los últimos cuatro dígitos queda para B2: `Account` no guarda esos dígitos y añadirlos es esquema.
+//  La cuenta (2026-11-20, `CuentaSolaAlLeer`): los últimos cuatro dígitos del aviso contra los del «Número de cuenta»
+//  de cada cuenta y el nombre del banco contra el nombre de las cuentas, sin conexión. Si no deciden, la regla de siempre.
 //
 
 import Foundation
@@ -108,7 +109,8 @@ enum BankNoticeDraftService {
                 lastUsedShortcutID: LastUsedAccountStore.read(),
                 in: accounts
             )
-            let account = ApplePayDraftService.matchedAccount(currency: currency, cardAccount: cardAccount, in: accounts)
+            let account = accountFromNotice(bank: entry.bank, last4: movement.cardLast4, currency: currency, in: accounts)
+                ?? ApplePayDraftService.matchedAccount(currency: currency, cardAccount: cardAccount, in: accounts)
             let counterparty = movement.counterparty ?? ""
             var subcategory: Subcategory?
             var subcategoryConfidence: Double?
@@ -143,6 +145,14 @@ enum BankNoticeDraftService {
                     hasAmount: true, hasAccount: account != nil, hasSubcategory: subcategory != nil)
             )
         }
+    }
+
+    /// La cuenta que dicen los últimos 4 del aviso o el nombre de su banco (`CuentaSolaAlLeer`), o `nil` si no deciden.
+    static func accountFromNotice(bank: BankNoticeBank?, last4: String?, currency: String?, in accounts: [Account]) -> Account? {
+        let mention = bank.flatMap { $0 == .other ? nil : $0.brandName }
+        guard mention != nil || last4 != nil else { return nil }
+        let choice = DraftBuilder.chooseAccount(mention: mention, last4: last4, currency: currency, in: accounts)
+        return choice.resultado.cuentaPuesta == nil ? nil : choice.account
     }
 
     /// La descripción de un borrador que no se entendió: el aviso en una línea, recortado.

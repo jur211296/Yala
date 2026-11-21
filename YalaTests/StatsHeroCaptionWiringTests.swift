@@ -46,11 +46,16 @@ struct StatsHeroCaptionWiringTests {
             #expect(src.contains("StatsHeroCaptionLogic."), """
                 \(path) no usa `StatsHeroCaptionLogic`: su hero volvió a ser un número sin decir qué es.
                 """)
-            #expect(src.contains("\"stats_hero_caption\""), """
-                \(path) perdió el identificador de accesibilidad del rótulo, con el que el device-QA
-                lo localiza en las cuatro pestañas.
-                """)
+            // El rótulo lo pinta el hero compartido (`StatsHeroView`, 20-nov-2026), con su identificador.
+            #expect(src.contains("StatsHeroView("), "\(path) no monta el hero compartido.")
         }
+    }
+
+    @Test("El hero compartido pinta el rótulo con su identificador")
+    func sharedHeroRendersTheCaption() throws {
+        let src = try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(src.contains("HeroHeaderLabel(text: caption.text(isClosed: isClosed))"))
+        #expect(src.contains("\"stats_hero_caption\""))
     }
 
     /// El caso que motivó el ticket: aquí es donde un rótulo fijo mentía.

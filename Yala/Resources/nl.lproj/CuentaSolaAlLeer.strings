@@ -1,0 +1,32 @@
+/*
+  CuentaSolaAlLeer.strings
+  Yala
+
+  La cuenta se elige sola al leer una captura (parte 1, 2026-11-20): chip con estrella, línea de «por qué», selector
+  con «Coinciden con…», ayuda del número de cuenta y el paso de la tarjeta de Apple Pay. Tabla propia, leída con el
+  idioma de la app (`L10n.CuentaSolaAlLeer`). Los dos `applePay.param.card*` los lee la acción de Atajos.
+*/
+
+"cuentaSola.chip.chosen" = "✦ %@";
+"cuentaSola.chip.suggested" = "%@ · voorgesteld";
+"cuentaSola.chip.choose" = "Kies rekening";
+"cuentaSola.chip.chooseMatching" = "Kies rekening · %d passen";
+"cuentaSola.why.image" = "Ik koos %@ omdat het in de afbeelding staat. Tik op de rekening om die te wijzigen.";
+"cuentaSola.why.last4" = "Ik koos %1$@: die eindigt op %2$@, net als het rekeningnummer.";
+"cuentaSola.why.suggested" = "Voorgesteld door Yala AI. Controleer of het %@ is voordat je bewaart.";
+"cuentaSola.a11y.chosen" = "Rekening: %@, gekozen op de naam in de afbeelding. Tik om te wijzigen.";
+"cuentaSola.a11y.chosenLast4" = "Rekening: %1$@, gekozen omdat die eindigt op %2$@. Tik om te wijzigen.";
+"cuentaSola.a11y.suggested" = "Rekening: %@, voorgesteld door Yala AI. Tik om te wijzigen.";
+"cuentaSola.a11y.chooseMatching" = "Kies rekening. %d rekeningen passen bij wat de afbeelding zegt.";
+"cuentaSola.selector.matches" = "Passend bij ‘%@’";
+"cuentaSola.selector.matchesNoWords" = "Passend bij wat de afbeelding zegt";
+"cuentaSola.selector.conflict" = "De afbeelding en Yala AI zijn het niet eens";
+"cuentaSola.selector.others" = "Andere rekeningen";
+"cuentaSola.selector.reasonImage" = "Staat in de afbeelding";
+"cuentaSola.selector.reasonAI" = "Voorgesteld door Yala AI";
+"cuentaSola.account.numberHelp" = "Met de laatste 4 cijfers herken ik je kaart ook in screenshots en bankmeldingen.";
+"cuentaSola.applePay.cardStep.title" = "Koppel de kaart (optioneel)";
+"cuentaSola.applePay.cardStep.detail" = "Tik in de Yala-actie op ‘Toon meer’ en kies bij ‘Kaart’ de variabele Kaart. Zo weet ik met welke rekening je betaalde, ook offline.";
+"cuentaSola.applePay.updateShortcut" = "Werk je opdracht bij zodat die weet met welke kaart je betaalde.";
+"cuentaSola.applePay.param.card" = "Kaart";
+"cuentaSola.applePay.param.card.description" = "De kaart waarmee je betaalde";

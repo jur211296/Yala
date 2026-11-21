@@ -263,6 +263,8 @@ private struct MultiDraftReviewRow: View {
     @Query private var allTags: [Tag]
 
     @State private var activeField: ChatDraftField?
+    /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`), para el chip y el selector.
+    @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
     @State private var isEditingNote = false
 
     private var isSaved: Bool { draft.status == .approved }
@@ -314,6 +316,8 @@ private struct MultiDraftReviewRow: View {
                     context: modelContext
                 )
             )
+            .environment(
+                \.cuentaSolaAlLeerSelector, CuentaSolaAlLeerSelectorPista.pista(for: cuentaSolaHoja.eleccion(for: draft)))
         }
     }
 
@@ -415,7 +419,10 @@ private struct MultiDraftReviewRow: View {
                     missingChip(.subcategory, title: L10n.Chat.Draft.selectSubcategory)
                 }
                 if draft.account == nil {
-                    missingChip(.account, title: L10n.Chat.Draft.selectAccount)
+                    // «Elige cuenta · 2 coinciden» si varias casan con lo leído (`CuentaSolaAlLeer`).
+                    missingChip(.account, title: CuentaSolaAlLeerChipPresentacion.make(
+                        eleccion: cuentaSolaHoja.eleccion(for: draft), currentAccountID: nil, accountName: nil,
+                        muestraPorque: false, selectAccount: L10n.Chat.Draft.selectAccount).titulo)
                 }
             }
         } else {

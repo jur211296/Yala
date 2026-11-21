@@ -2954,9 +2954,6 @@
 "statistics.vsPreviousPeriod" = "vs Período anterior";
 "statistics.vsPreviousYear" = "vs Año anterior";
 "stats.distribution.aiFootnote" = "Resumen con IA";
-"stats.distribution.heroSubtitle1 %d" = "%d categorías";
-"stats.distribution.heroSubtitle2 %d %d" = "%d categorías · %d subcategorías";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorías · %d subcategorías · %d etiquetas";
 "stats.distribution.insight.balanced %d" = "Tu gasto se reparte: ninguna categoría supera el %d%%. Distribución equilibrada.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% de tu gasto se concentra en %@. ¿Te alinea con tus prioridades?";
 "stats.distribution.empty.noTagMovementsTitle" = "Sin movimientos con etiqueta en este período";
@@ -2975,18 +2972,10 @@
 "stats.insights.dailyAvgIn %@" = "por día en %@";
 "stats.insights.detailHeader" = "Tus cifras";
 "stats.insights.modeDetail" = "Detalle";
-"stats.insights.motivationalMany %d" = "%d registros · Sigue así";
-"stats.insights.motivationalOne" = "1 registro · Buen comienzo";
 "stats.insights.need.dailyFormat %@" = "≈ %@/día";
-"stats.records.motivationalMany %d" = "%d registros · Sigue así";
-"stats.records.motivationalOne" = "1 registro · Buen comienzo";
 "stats.trends.aiFootnote" = "Resumen con IA";
 "stats.trends.comparisonTitle" = "Comparativa";
 "stats.trends.generateAI" = "Generar con IA";
-"stats.trends.heroOnset" = "Tu primer período con Yala";
-"stats.trends.heroStable" = "Lo que te queda se mantiene estable";
-"stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
-"stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
 "stats.trends.insight.onsetNoPrevious" = "Aún no hay un período anterior con el que comparar.";
 "stats.trends.insight.stableBalance" = "Tu saldo se mantiene estable.";
 "stats.trends.insight.sustainedUpExpense %@" = "Tu gasto viene subiendo desde hace %@.";
@@ -8162,7 +8151,6 @@
 "panel.hero.leftNow" = "Te queda";
 "panel.hero.leftPast" = "Te quedó";
 "panel.hero.leftInMonth" = "En %@ te quedó";
-"stats.hero.captionAccountsBalanceClosed" = "Tu saldo al cierre";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Aún sin nota: sale cuando dos de las tres partes tengan datos.";
@@ -9232,18 +9220,12 @@
 "heroClaro.filtersNote" = "Si tenés filtros puestos, la cifra cuenta solo lo que ves.";
 "heroClaro.incomeBody" = "Todo lo que registraste como ingreso: sueldo, ventas, cobros.";
 "heroClaro.expenseBody" = "Todo lo que registraste como gasto. Una devolución resta de tus gastos.";
-"heroClaro.net.title" = "Lo que te queda";
-"heroClaro.net.body" = "Es lo que entró menos lo que salió en el período que elegiste. Si sale en negativo, salió más de lo que entró.";
-"heroClaro.net.notBalance" = "No es lo que tenés en tus cuentas: eso es «Tu saldo hoy», en el Panel.";
 "heroClaro.expense.title" = "Lo que gastaste";
 "heroClaro.expense.body" = "Es la suma de tus gastos en el período que elegiste. Una devolución resta de tus gastos.";
 "heroClaro.income.title" = "Lo que entró";
 "heroClaro.income.body" = "Es la suma de tus ingresos en el período que elegiste.";
 "heroClaro.total.title" = "Ingresos y gastos juntos";
 "heroClaro.total.body" = "Con ingresos y gastos elegidos a la vez, la cifra los suma sin restar: es cuánto dinero movió lo que filtraste.";
-"heroClaro.balance.title" = "Tu saldo";
-"heroClaro.balance.body" = "Es lo que hay en tus cuentas: todas, tarjetas incluidas, con su signo. Es la misma cifra que «Tu saldo hoy» del Panel.";
-"heroClaro.balance.closedNote" = "Con un período que ya terminó, es lo que tenías al cierre.";
 "heroClaro.cashFlowEnd.title" = "Lo que tendrías a fin de mes";
 "heroClaro.cashFlowEnd.body" = "Es tu saldo de hoy, más lo que falta entrar este mes, menos lo que falta salir. Debajo ves cada parte y de dónde sale lo estimado.";
 "heroClaro.cashFlowEnd.netNote" = "«Este mes te quedaría» es otra cosa: lo que entra menos lo que sale en todo el mes, sin contar lo que ya tenías.";
