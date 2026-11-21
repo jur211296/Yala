@@ -92,8 +92,11 @@ struct ApplePayDraftService {
                 in: realAccounts
             )
 
-            // Cuenta por divisa (único match entre cuentas reales; nil si 0 ó 2+ → user elige). La de la tarjeta, si la hay.
-            let matchedAccount = Self.matchedAccount(currency: currency, cardAccount: cardAccount, in: realAccounts)
+            // La tarjeta de Wallet, si el atajo la pasa: la escalera común (últimos 4, nombre, palabras, clase) la cruza con
+            // las cuentas, sin conexión. Si no decide, la regla de siempre: cuenta por divisa (único match entre cuentas
+            // reales; nil si 0 ó 2+ → user elige) o la de la tarjeta de la última cuenta usada.
+            let matchedAccount = Self.accountFromCard(payload.card, currency: currency, in: realAccounts)
+                ?? Self.matchedAccount(currency: currency, cardAccount: cardAccount, in: realAccounts)
 
             // Subcategoría por merchant (MerchantMemory) — preserva el routing de confianza del
             // intent viejo (autoAssign → 0.95, suggest → 0.8).
@@ -195,6 +198,14 @@ struct ApplePayDraftService {
     /// aprueba). Mientras no tenga cuenta, la Bandeja lo enseña en la moneda por defecto.
     static func matchedAccount(currency: String?, cardAccount: Account?, in accounts: [Account]) -> Account? {
         cardAccount ?? currency.flatMap { DraftBuilder.findAccount(byCurrency: $0, in: accounts) }
+    }
+
+    /// La cuenta que dice la tarjeta de Wallet (`CuentaSolaAlLeer`), o `nil` si la tarjeta no decide ninguna.
+    static func accountFromCard(_ card: String?, currency: String?, in accounts: [Account]) -> Account? {
+        let trimmed = card?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        let choice = DraftBuilder.chooseAccount(mention: trimmed, last4: nil, currency: currency, in: accounts)
+        return choice.resultado.cuentaPuesta == nil ? nil : choice.account
     }
 
     /// La pista que lee la notificación del atajo (`ApplePayCurrencyHint`, L15-8): la moneda en que la Bandeja va a

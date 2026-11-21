@@ -89,7 +89,16 @@ struct PaymentMethodAccountLogicTests {
     @Test("Una mención que casa con dos cuentas no elige ninguna (ni sigue a la clase)")
     func twoByNameIsNone() {
         let yapeBCP = Logic.Candidate(id: UUID(), name: "Yape BCP", kind: .bank)
-        #expect(Logic.account(for: answered("yape", in: "25 almuerzo yape"), among: [yape, yapeBCP]) == nil)
+        let yapeIBK = Logic.Candidate(id: UUID(), name: "Yape Interbank", kind: .bank)
+        #expect(Logic.account(for: answered("yape", in: "25 almuerzo yape"), among: [yapeBCP, yapeIBK]) == nil)
+    }
+
+    /// Desde la escalera común (`CuentaSolaAlLeer`, 2026-11-20): el nombre ENTERO escrito gana a las cuentas que solo
+    /// comparten la palabra («Zip» → Zip, no Zip Visa). Antes, «yape» con «Yape» y «Yape BCP» no elegía.
+    @Test("El nombre entero escrito gana a la que solo comparte la palabra")
+    func wholeNameBeatsSharedWord() {
+        let yapeBCP = Logic.Candidate(id: UUID(), name: "Yape BCP", kind: .bank)
+        #expect(Logic.account(for: answered("yape", in: "25 almuerzo yape"), among: [yape, yapeBCP]) == yape.id)
     }
 
     @Test("Un medio de pago que el usuario no tiene como cuenta no elige ninguna")

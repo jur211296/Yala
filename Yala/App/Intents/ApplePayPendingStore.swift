@@ -34,6 +34,9 @@ nonisolated struct ApplePayPendingExpense: Codable, Equatable {
     let merchant: String?
     /// Momento del pago (segundos desde 1970). Es la fecha del gasto en el borrador.
     let savedAt: Double
+    /// La tarjeta con la que se pagó, tal como la pasa la automatización de Wallet («Interbank Visa»), si el atajo la
+    /// conecta (dato opcional desde el 2026-11-20). Un pago encolado por un atajo viejo no la trae: decodifica `nil`.
+    var card: String? = nil
 }
 
 /// Cola en App Group UserDefaults, una key por pago. `nonisolated` — se escribe desde el proceso

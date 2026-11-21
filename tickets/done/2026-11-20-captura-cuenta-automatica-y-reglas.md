@@ -1,12 +1,48 @@
 ---
 id: 2026-11-20-captura-cuenta-automatica-y-reglas
-status: backlog
+status: done
 priority: medium
 area: "captura, cuentas, foto, apple-pay, avisos-del-banco, ia"
 created: 2026-11-20
 updated: 2026-11-20
 source: "encargo 2026-11-20-captura-cuenta-automatica-y-reglas-maquetas"
 ---
+
+## Hecho: parte 1 (encargo 2026-11-20-captura-cuenta-automatica-parte-1-implementar)
+
+**Decisión de Jürgen (20-nov, 17:00): A + B.** «No depender solo del teléfono, sino que la IA también sea una capa de
+seguridad.» Sustituye a «Fuera de alcance: mandar nombres de cuentas a la IA (opción B)» de abajo, que queda como
+historia. La parte 2 sigue en `tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas-parte-2.md`.
+
+- **Escalera común** en `Yala/App/Logic/CuentaSolaAlLeer/CuentaSolaAlLeer.swift` (pasos 2–5: últimos 4 contra el
+  «Número de cuenta», nombre entero con el más largo ganando, palabras, clase) y `DraftBuilder.chooseAccount` (paso 6,
+  moneda, sin estrella). La usan foto, Apple Pay (dato «Tarjeta»), avisos del banco (`cardLast4` y el nombre del banco),
+  correo (`accountLast4`), voz, Siri y chat (estos tres y el correo por `findAccount(paymentMention:)`). Con varias que
+  casan, la moneda leída desempata si solo una la tiene.
+- **Capa B (foto)**: con la cuenta en la nube, la petición lleva nombre, clase y moneda de cada cuenta
+  (`CuentaSolaAlLeerPeticion`) y la IA devuelve `account`. Coinciden → sola con «✦»; solo la IA y la cuenta existe y
+  está escrita en el medio de pago → «sugerida»; discrepan → no elige y el selector enseña las dos con su motivo. En
+  iCloud privado no viaja nada nuevo (el permiso de foto solo promete la foto).
+- **Foto**: `VisionTransaction.payment` y `.account`, tolerantes (si no vienen o no son texto, la foto sigue como antes).
+  `PHOTO_SCHEMA` del gateway con los dos campos (desplegado a staging; producción no lo necesita con la fila de OpenAI,
+  que va con `json_object`).
+- **Vista**: chip «✦ Cuenta», «Cuenta · sugerida» y «Elige cuenta · 2 coinciden»; línea de «por qué» las tres primeras
+  veces (`AppPreferences.cuentaSolaPorqueVeces`); selector con «Coinciden con «Visa»» o «La imagen y Yala IA no
+  coinciden» arriba y «Otras cuentas» debajo. Ayuda bajo «Número de cuenta». Paso «Conecta la tarjeta (opcional)» y
+  aviso en la guía de Apple Pay. Textos en `CuentaSolaAlLeer.strings` (16 idiomas).
+- **Pruebas**: `YalaTests/CuentaSolaAlLeer/` (escalera, combinación teléfono + IA, cuerpo de la petición, decodificación,
+  foto, Apple Pay y aviso con «****4417» sin conexión), `gateway/test/ai.photo-cuenta.test.ts` y
+  `YalaUITests/CuentaSolaAlLeer/CuentaSolaAlLeerUITests` (5 casos, perfiles `cuenta-sola*` sin el relleno a mano).
+- **Device-QA pendiente (iPhone 14, necesita una tarjeta y un banco reales)**:
+  1. Ajustes › Tutoriales › «Registrar con Apple Pay»: el paso 5 «Conecta la tarjeta (opcional)». En Atajos, en la
+     acción de Yala, «Mostrar más» y en «Tarjeta» la variable Tarjeta.
+  2. En Yala, una cuenta que se llame como la tarjeta de Wallet (o con sus últimos 4 en «Número de cuenta»).
+  3. Pagar con esa tarjeta, sin conexión si se puede. Esperado: el borrador de la Bandeja sale con esa cuenta.
+  4. Un aviso del banco con «****NNNN» por el Atajo del banco, con esos 4 dígitos en «Número de cuenta». Esperado: igual.
+  5. Anotar qué texto llega en «Tarjeta» (lo necesita la parte 2).
+- **Fuera de esta parte**: el chip y la línea en la Bandeja para Apple Pay y avisos (eligen la cuenta, sin chip nuevo);
+  el chat con capa B; reglas (parte 2).
+
 
 # La cuenta se elige sola al leer una captura, y reglas de cuenta
 

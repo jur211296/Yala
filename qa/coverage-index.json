@@ -4490,6 +4490,25 @@
       "coverage": "xcuitest:YalaUITests/PrimerosPasosPaso7/PrimerosPasosPaso7UITests#test_step2_finishedByItsTutorial_offersTheMonthOfPro | xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests#test_step7_fourStories_howToAndTapThrough_thenTheDeckCompletes | 2026-11-20 (opción B de Jürgen en los cuatro temas de las maquetas de Primeros pasos): paso 7 como historias con ejemplo y beneficio (sin avance solo, «Enséñame cómo», terminar al pasar la última, la ✕ conserva la historia); sin la hoja «Ver los 7 pasos»: segmentos y fila de pasos en el mazo (hecho / para después / ahora / pendiente); sin tour de Ajustes ni tour Pro, «Pruébalo ahora» en «¡Listo! Tienes Pro»; oferta del mes de Pro al terminar el paso 2, con el botón de empezar solo y fijo abajo. unit:YalaTests/PrimerosPasosPaso7/PrimerosPasosPaso7Tests · xcuitest:YalaUITests/PrimerosPasosPaso7/PrimerosPasosPaso7UITests#test_step2_finishedByItsTutorial_offersTheMonthOfPro · xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests (paso 7 y oferta) · xcuitest:YalaUITests/Flows/Bienvenida23BaseUITests#test_stepsList_opensAStepThatIsNotTheNextOne.",
       "owner": "frank",
       "lastVerified": "2026-11-20"
+    },
+    {
+      "area": "cuenta-sola-al-leer",
+      "codeGlobs": [
+        "Yala/App/Logic/CuentaSolaAlLeer/*.swift",
+        "Yala/App/Views/Image/CuentaSolaAlLeer/*.swift",
+        "Yala/App/Logic/PaymentMethodAccountLogic.swift",
+        "Yala/App/Services/DraftBuilder.swift",
+        "Yala/App/Services/ImageVision/*.swift",
+        "Yala/App/Services/ApplePayDraftService.swift",
+        "Yala/App/Logic/AtajoBanco/BankNoticeDraftService.swift",
+        "Yala/Utils/L10n+CuentaSolaAlLeer.swift",
+        "Yala/Resources/*.lproj/CuentaSolaAlLeer.strings"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CuentaSolaAlLeer/CuentaSolaAlLeerUITests#test_paymentNamesAnAccount_choosesIt_withTheWhyLine | xcuitest:YalaUITests/CuentaSolaAlLeer/CuentaSolaAlLeerUITests#test_twoAccountsMatch_asksAndListsThemFirst | xcuitest:YalaUITests/CuentaSolaAlLeer/CuentaSolaAlLeerUITests#test_imageAndAIDisagree_asksWithBothReasons | xcuitest:YalaUITests/CuentaSolaAlLeer/CuentaSolaAlLeerUITests#test_onlyTheAISuggests_preselectsItAsSuggested | unit:YalaTests/CuentaSolaAlLeer (escalera, teléfono + IA, cuerpo de la petición sin números, Apple Pay y aviso «****4417» sin conexión) | gateway:test/ai.photo-cuenta.test.ts | 2026-11-20 (parte 1 del ticket 2026-11-20-captura-cuenta-automatica-y-reglas, decisión A + B de Jürgen): la cuenta se elige sola al leer foto, Apple Pay, aviso, correo, voz, Siri y chat; en la foto con la cuenta en la nube la IA es la segunda capa. Device-QA pendiente: Apple Pay con el dato «Tarjeta» y un aviso del banco reales en el iPhone 14.",
+      "owner": "frank",
+      "lastVerified": "2026-11-20"
     }
   ]
 }

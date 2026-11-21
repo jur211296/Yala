@@ -10,8 +10,14 @@
 //  1. **Nunca se inventa.** La mención tiene que estar ESCRITA en la frase del usuario: la palabra que devuelve el modelo
 //     (`paymentHint`) se descarta si no aparece en el texto. Y una mención que casa con dos cuentas no elige ninguna:
 //     el borrador sale sin cuenta, como antes, y la persona la elige.
-//  2. **El modelo solo copia palabras; la cuenta la decide Swift**, contra las cuentas del usuario. Así el prompt no
-//     lleva los nombres de las cuentas (ni más tokens ni más datos fuera del teléfono).
+//  2. **La cuenta la decide primero Swift**, contra las cuentas del usuario, con la escalera común de todas las capturas
+//     (`CuentaSolaAlLeer`, desde el 2026-11-20: últimos 4, nombre entero, palabras, clase, moneda).
+//
+//  **Qué sale del teléfono (decisión A + B de Jürgen, 2026-11-20, sustituye a «los nombres no salen»):** en la FOTO, con
+//  la cuenta en la nube, la IA recibe además los nombres de las cuentas con su clase y su moneda, y devuelve la que cree
+//  como segunda capa (`CuentaSolaAlLeer.combinar`). Nunca viajan saldos, números de cuenta ni últimos 4, ni reglas. En
+//  iCloud privado no viaja nada nuevo: el permiso de foto solo promete la foto. El chat lo hará en la parte 2 del ticket
+//  (`2026-11-20-captura-cuenta-automatica-y-reglas`); voz y Siri siguen sin mandar nombres.
 //
 
 import Foundation
@@ -107,45 +113,22 @@ nonisolated enum PaymentMethodAccountLogic {
 
     // MARK: - Cuenta
 
-    /// La cuenta que nombra `mention`, o `nil` si no nombra ninguna o nombra más de una.
+    /// La cuenta que nombra `mention`, o `nil` si no nombra ninguna o nombra más de una. Es la escalera común
+    /// (`CuentaSolaAlLeer.leer`) sin moneda ni últimos 4 guardados:
     ///
-    /// 1. Por el NOMBRE de la cuenta: todas las palabras de la mención (sin las de relleno) están en el nombre
-    ///    («yape» → «Yape BCP»), o el nombre entero está en la mención («con mi BCP Soles» → «BCP Soles»).
-    ///    Dos cuentas que casan = ninguna: no se sigue a la clase, porque la persona nombró algo concreto.
-    /// 2. Si ninguna cuenta se llama así, por la CLASE de medio de pago y el tipo de cuenta: efectivo → la única cuenta de
+    /// 1. El nombre ENTERO de la cuenta escrito en la mención («con mi BCP Soles» → «BCP Soles»); con varios, el más largo
+    ///    («Zip Visa» frente a «Zip»), y con dos igual de largos, ninguna.
+    /// 2. Todas las palabras de la mención (sin las de relleno) están en el nombre («yape» → «Yape BCP»). Dos cuentas que
+    ///    casan = ninguna: no se sigue a la clase, porque la persona nombró algo concreto.
+    /// 3. Si ninguna cuenta se llama así, por la CLASE de medio de pago y el tipo de cuenta: efectivo → la única cuenta de
     ///    efectivo; crédito → la única tarjeta de crédito; débito → la única cuenta corriente o de ahorros; «tarjeta» → la
     ///    única entre las tres. Las cuentas «General» no entran: son la cuenta de todo, no un medio de pago.
     static func account(for mention: String?, among candidates: [Candidate]) -> UUID? {
-        guard let mention else { return nil }
-        let mentionText = fold(mention)
-        guard !mentionText.isEmpty else { return nil }
-        let mentionTokens = tokens(mentionText).map(canonicalWallet)
-        let meaningful = mentionTokens.filter { !fillerWords.contains($0) }
-
-        let byName = candidates.filter { candidate in
-            let nameText = fold(candidate.name)
-            guard !nameText.isEmpty else { return false }
-            if containsUnspacedScript(nameText) || containsUnspacedScript(mentionText) {
-                return mentionText.contains(nameText) || nameText.contains(mentionText)
-            }
-            let nameTokens = tokens(nameText).map(canonicalWallet)
-            guard !nameTokens.isEmpty else { return false }
-            if isRun(nameTokens, in: mentionTokens) { return true }
-            return !meaningful.isEmpty && Set(meaningful).isSubset(of: Set(nameTokens))
+        let accounts = candidates.map {
+            CuentaSolaAlLeer.Cuenta(id: $0.id, name: $0.name, kind: $0.kind, currencyCode: "", accountNumber: nil)
         }
-        if byName.count == 1 { return byName[0].id }
-        if byName.count > 1 { return nil }
-
-        guard let kind = kind(of: mention) else { return nil }
-        let allowed: Set<AccountKind>
-        switch kind {
-        case .cash: allowed = [.cash]
-        case .creditCard: allowed = [.creditCard]
-        case .debitCard: allowed = [.bank]
-        case .card: allowed = [.creditCard, .bank]
-        }
-        let byType = candidates.filter { allowed.contains($0.kind) }
-        return byType.count == 1 ? byType[0].id : nil
+        if case .elegida(let id, _) = CuentaSolaAlLeer.leer(mention: mention, last4: nil, among: accounts) { return id }
+        return nil
     }
 
     /// La clase que dice la mención, de la más concreta a la más general (crédito y débito antes que «tarjeta»).

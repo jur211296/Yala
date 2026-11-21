@@ -63,6 +63,10 @@ struct ImageSelectionView: View {
     @State private var pdfPassword = ""
     @State private var readTask: Task<Void, Never>?
     @State private var drafts: [InboxDraft] = []
+    /// La cuenta elegida sola al leer (`CuentaSolaAlLeer`): lo que se enseña de cada borrador, y lo que dejó la última
+    /// lectura antes de saber qué borradores se enseñan.
+    @State private var cuentaSola = CuentaSolaAlLeerHoja()
+    @State private var cuentaSolaLeidas: [ObjectIdentifier: CuentaSolaAlLeer.Eleccion] = [:]
     @State private var detailDraft: InboxDraft?
     /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
     @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
@@ -320,6 +324,7 @@ struct ImageSelectionView: View {
             readingContent
         case .review:
             reviewContent
+                .environment(\.cuentaSolaAlLeerHoja, cuentaSola)
         case .failure(let failure):
             failureContent(failure)
         }
@@ -1422,6 +1427,7 @@ struct ImageSelectionView: View {
             let combined = appending ? drafts + shown : shown
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja.
             drafts = isSetupTrial ? Array(combined.prefix(1)) : combined
+            applyCuentaSola(appending: appending)
             if isSetupTrial, combined.count > 1 { onCourtesyExtraDrafts?(combined.dropFirst().map(\.persistentModelID)) }
             failedImages = failed
             failedReasons = reasons
@@ -1464,9 +1470,48 @@ struct ImageSelectionView: View {
             return try await uiTestDrafts(profile, index: index)
         }
         #endif
-        let response = try await imageVisionService.analyze(image: image, currency: visionCurrencyContext())
+        let response = try await imageVisionService.analyze(
+            image: image, currency: visionCurrencyContext(), accounts: accountsForVision())
         guard !response.transactions.isEmpty, response.imageType != "unknown" else { return [] }
-        return VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+        return remember(VisionDraftFactory.makeDraftsWithAccountChoice(from: response, rawText: nil, context: modelContext))
+    }
+
+    /// Las cuentas que la IA de la foto puede proponer: solo con la cuenta en la nube (`CuentaSolaAlLeerPeticion`).
+    private func accountsForVision() -> [CuentaSolaAlLeerPeticion.Cuenta] {
+        let isCloud = CloudSyncFlags.storageMode == .cloud
+        guard isCloud else { return [] }
+        let candidates = DraftBuilder.cuentaSolaCandidates(in: DraftBuilder.fetchActiveAccounts(context: modelContext))
+        return CuentaSolaAlLeerPeticion.cuentas(from: candidates, isCloud: isCloud)
+    }
+
+    /// Guarda la elección de cuenta de cada borrador leído hasta saber cuáles se enseñan.
+    private func remember(_ made: [(draft: InboxDraft, eleccion: CuentaSolaAlLeer.Eleccion)]) -> [InboxDraft] {
+        for item in made { cuentaSolaLeidas[ObjectIdentifier(item.draft)] = item.eleccion }
+        return made.map(\.draft)
+    }
+
+    /// Pasa a la hoja la elección de los borradores que se enseñan. La línea de «por qué» sale en los elegidos solos
+    /// mientras la persona no la haya visto tres veces (`AppPreferences.cuentaSolaPorqueVeces`). Una lectura nueva que
+    /// no se añade empieza de cero: un borrador soltado puede dejar su identidad a otro.
+    private func applyCuentaSola(appending: Bool) {
+        let shown = Set(drafts.map { ObjectIdentifier($0) })
+        var hoja = CuentaSolaAlLeerHoja()
+        if appending {
+            hoja.elecciones = cuentaSola.elecciones.filter { shown.contains($0.key) }
+            hoja.conPorque = cuentaSola.conPorque.intersection(shown)
+        }
+        for draft in drafts {
+            let id = ObjectIdentifier(draft)
+            guard hoja.elecciones[id] == nil, let eleccion = cuentaSolaLeidas[id] else { continue }
+            hoja.elecciones[id] = eleccion
+            if case .sola = eleccion.resultado,
+               CuentaSolaAlLeer.muestraPorque(vecesMostrada: appPreferences.cuentaSolaPorqueVeces) {
+                hoja.conPorque.insert(id)
+                appPreferences.cuentaSolaPorqueVeces += 1
+            }
+        }
+        cuentaSolaLeidas = [:]
+        cuentaSola = hoja
     }
 
     /// Las divisas del usuario para la lectura: la principal (decide qué es un «$» a secas) y las de sus cuentas activas.
@@ -1708,6 +1753,9 @@ struct ImageSelectionView: View {
         if profile == "many" {
             return uiTestManyDrafts(formatter: formatter)
         }
+        if CuentaSolaAlLeerUITestPerfil.handles(profile) {
+            return uiTestCuentaSolaDrafts(profile, today: today)
+        }
         let isFirst = index == 0
         // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
         let perPage = profile.hasPrefix("pages")
@@ -1742,6 +1790,24 @@ struct ImageSelectionView: View {
                 draft.subcategory = subcategory
                 draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
             }
+        }
+        return made
+    }
+
+    /// `cuenta-sola*`: un recibo con medio de pago (y la cuenta que diría la IA). La cuenta la elige la escalera real; la
+    /// subcategoría se rellena como en el perfil de siempre.
+    private func uiTestCuentaSolaDrafts(_ profile: String, today: String) -> [InboxDraft] {
+        let lectura = CuentaSolaAlLeerUITestPerfil.lectura(profile, context: modelContext)
+        let transaction = VisionTransaction(
+            amount: -L10n.UITestDemo.Photo.receiptTotal, date: today, merchant: L10n.UITestDemo.Photo.merchant, note: nil,
+            currency: uiTestAccountCurrency(), payment: lectura.payment, account: lectura.account)
+        let response = VisionResponse(
+            imageType: "receipt", transactions: [transaction], confidence: VisionConfidence(overall: 1, imageType: 1))
+        let made = remember(VisionDraftFactory.makeDraftsWithAccountChoice(from: response, rawText: nil, context: modelContext))
+        let subcategory = uiTestExpenseSubcategory(isTaxi: false)
+        for draft in made where draft.subcategory == nil {
+            draft.subcategory = subcategory
+            draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
         }
         return made
     }

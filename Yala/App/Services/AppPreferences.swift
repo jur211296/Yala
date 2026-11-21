@@ -298,6 +298,15 @@ final class AppPreferences {
         }
     }
 
+    /// Cuántas veces salió la línea de «por qué» de una cuenta elegida sola al leer una captura
+    /// (`CuentaSolaAlLeer.muestraPorque`): tres por persona y luego solo la estrella. De este aparato, sin sincronizar.
+    var cuentaSolaPorqueVeces: Int = 0 {
+        didSet {
+            guard oldValue != cuentaSolaPorqueVeces else { return }
+            persistInt(cuentaSolaPorqueVeces, forKey: Keys.cuentaSolaPorqueVeces, synced: false)
+        }
+    }
+
     /// El permiso de Estadísticas aceptado con el texto vigente.
     var hasCurrentAIInsightsConsent: Bool {
         aiInsightsConsentAccepted && aiInsightsConsentVersion >= AIConsentRevision.insights
@@ -1235,6 +1244,7 @@ final class AppPreferences {
         aiDataConsentAccepted = defaults.bool(forKey: Keys.aiDataConsentAccepted)
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
         aiInsightsConsentVersion = defaults.integer(forKey: Keys.aiInsightsConsentVersion)
+        cuentaSolaPorqueVeces = defaults.integer(forKey: Keys.cuentaSolaPorqueVeces)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
         aiCloudExploreConsent = YalaIACloudExploreConsentStore.read(defaults)
@@ -1535,6 +1545,7 @@ final class AppPreferences {
         static let aiDataConsentAccepted = "aiDataConsentAccepted"
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
         static let aiInsightsConsentVersion = "aiInsightsConsentVersion"
+        static let cuentaSolaPorqueVeces = "cuentaSola.porqueVeces"
         static let aiInsightsEnabled = "aiInsightsEnabled"
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"

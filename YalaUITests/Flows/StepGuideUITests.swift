@@ -29,13 +29,14 @@ final class StepGuideUITests: XCTestCase {
             app.descendants(matching: .any)["applepay_guide_root"].waitForExistence(timeout: 5),
             "«Registrar con Apple Pay» no abrió la guía por pasos (seguía el carrusel)."
         )
-        assertProgress("Paso 1 de 4", in: app)
-        assertSingleActiveStep(0, of: 4, in: app)
+        // Cinco pasos desde el 2026-11-20: el último conecta la tarjeta (opcional, `CuentaSolaAlLeer`).
+        assertProgress("Paso 1 de 5", in: app)
+        assertSingleActiveStep(0, of: 5, in: app)
         XCTAssertTrue(app.descendants(matching: .any)["step_guide_guarantee"].exists, "Falta la línea de garantía.")
         XCTAssertTrue(app.descendants(matching: .any)["step_guide_preview"].exists, "Falta «Lo que vas a ver».")
         XCTAssertTrue(app.buttons["step_guide_stuck"].exists, "Falta la salida «Me atasqué».")
         // Sin «Listo» hasta el último paso: el pie dice cuánto falta (auditoría UX 2.2, L15-10).
-        assertRemaining("Te faltan 4 pasos", in: app)
+        assertRemaining("Te faltan 5 pasos", in: app)
         XCTAssertFalse(app.buttons["primary_button"].exists, "«Listo» deja terminar sin hacer los pasos.")
     }
 

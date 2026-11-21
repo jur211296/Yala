@@ -569,7 +569,20 @@ struct AccountFormView: View {
                         .keyboardType(.numbersAndPunctuation)
                         .focused($focusedField, equals: .accountNumber)
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top)
+                .padding(.bottom, DS.Spacing.xs)
+
+                // Para qué sirve el número aquí: sus últimos 4 eligen la cuenta al leer capturas y avisos
+                // (`CuentaSolaAlLeer`, 2026-11-20).
+                Text(L10n.CuentaSolaAlLeer.Account.numberHelp)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                    .accessibilityIdentifier("account_number_help")
             }
         }
     }

@@ -116,13 +116,18 @@ const PHOTO_SCHEMA = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["amount", "date", "merchant", "note", "currency"],
+          required: ["amount", "date", "merchant", "note", "currency", "payment", "account"],
           properties: {
             amount: { type: ["number", "null"] },
             date: { type: ["string", "null"] },
             merchant: { type: ["string", "null"] },
             note: { type: ["string", "null"] },
             currency: { type: ["string", "null"] },
+            // La cuenta sola al leer (2026-11-20): el medio de pago tal como sale en la imagen, y la cuenta que la IA
+            // cree, copiada de la lista que manda la app (solo con la cuenta en la nube). La app decide primero con su
+            // escalera y descarta un nombre que no exista. Una app que no los pide recibe null.
+            payment: { type: ["string", "null"] },
+            account: { type: ["string", "null"] },
           },
         },
       },
