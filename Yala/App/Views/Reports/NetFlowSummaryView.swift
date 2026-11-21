@@ -26,7 +26,6 @@ struct NetFlowSummaryView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private var showVariations: Bool { appPreferences.showVariations }
 
     private var caption: String {
         guard showsComparison, let previousAmount, !previousPeriodName.isEmpty else { return L10n.UXL18.netCaption }
@@ -107,7 +106,9 @@ struct NetFlowSummaryView: View {
 
     @ViewBuilder
     private var chip: some View {
-        if showVariations && showsComparison {
+        // En la Comparativa la marca sale siempre, con o sin «Mostrar variaciones» (Jürgen, 20-nov-2026): comparar es
+        // lo que hace esta pantalla.
+        if showsComparison {
             ComparisonChangeBadge(
                 change: change,
                 spokenText: change.accessibilityText(
