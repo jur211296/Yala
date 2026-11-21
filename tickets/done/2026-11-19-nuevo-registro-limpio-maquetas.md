@@ -1,13 +1,15 @@
 ---
 id: 2026-11-19-nuevo-registro-limpio-maquetas
-status: backlog
+status: done
 area: transactions
 created: 2026-11-19
-updated: 2026-11-19
+updated: 2026-11-20
 source: idea de Jürgen del 2026-11-19 (13:03 Lima) y sesión de maquetas del mismo día
 ---
 
 # Nuevo registro más limpio: título-menú, favoritos de icono, una fila y «···»
+
+> **Cerrada el 2026-11-20**: la implementación siguió la ronda 2 (B1), ver `tickets/done/2026-11-19-nuevo-registro-b-realista-maquetas.md`.
 
 > **Ronda 2 (2026-11-19, 18:11 Lima): Jürgen eligió la B como base**, con seis ajustes (aire con teclado, chips sin
 > recortar, subcategoría bajo el monto con categoría y necesidad como texto, Hoy siempre primero, estimado en soles al

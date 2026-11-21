@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "新しい支出";
+"nr.title.newIncome" = "新しい収入";
+"nr.title.newTransfer" = "新しい振替";
+"nr.title.editExpense" = "支出を編集";
+"nr.title.editIncome" = "収入を編集";
+"nr.title.editTransfer" = "振替を編集";
+"nr.title.duplicateExpense" = "支出を複製";
+"nr.title.duplicateIncome" = "収入を複製";
+"nr.title.duplicateTransfer" = "振替を複製";
+"nr.title.a11yChangeType" = "種類を変更";
+"nr.favorites.label" = "お気に入り";
+"nr.favorites.seeAll" = "すべて見る";
+"nr.currency.accountsCount.one" = "1件の口座";
+"nr.currency.accountsCount.other" = "%d件の口座";
+"nr.currency.a11y" = "金額の通貨";
+"nr.more.a11y" = "その他のオプション";
+"nr.more.splitState.all" = "すべてあなたの分";
+"nr.more.splitState.mine" = "あなたの分: %@";
+"nr.more.favorite" = "お気に入りに保存";
+"nr.more.recurring" = "繰り返しにする";
+"nr.more.recurringState.once" = "1回のみ";
+"nr.save.withAmount" = "%@を保存";
+"nr.addAnother" = "続けて追加";
+"nr.saved.toast.expense" = "支出を保存しました";
+"nr.saved.toast.income" = "収入を保存しました";
+"nr.saved.toast.transfer" = "振替を保存しました";
+"nr.success.saved.expense" = "支出を保存しました";
+"nr.success.saved.income" = "収入を保存しました";
+"nr.success.saved.transfer" = "振替を保存しました";
+"nr.success.favorite" = "お気に入り";
+"nr.success.favorited" = "お気に入り済み";
+"nr.success.recurring" = "繰り返し";
+"nr.tags.a11yNone" = "タグ、なし";
+"nr.tags.a11yCount" = "タグ、%d件: %@";
+"nr.need.a11yChange" = "必要度を変更";

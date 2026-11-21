@@ -74,6 +74,8 @@ final class EdgeCasesUITests: XCTestCase {
         let saveButton = app.buttons["new_transaction_save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció new_transaction_save.")
         XCTAssertTrue(saveButton.isEnabled, "El botón guardar está deshabilitado con monto 0.01.")
+        // Desde la hoja B1, al volver del selector «Guardar» sube con el teclado a su barra: se toca quieto.
+        XCTAssertTrue(app.waitForSettledLayout(of: saveButton), "«Guardar» no dejó de moverse.")
         saveButton.tap()
 
         // El monto mínimo se guarda y el flujo vuelve al Panel sin romperse.

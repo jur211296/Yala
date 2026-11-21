@@ -67,15 +67,18 @@ final class FormClarity23UITests: XCTestCase {
     }
 
     /// Fuera el teclado: un toque en la pregunta del monto, que no es un control. En iPad el teclado numérico sale en un
-    /// globo ENCIMA de la pregunta y ese toque no llega: ahí se toca el tipo ya elegido, que no cambia nada.
+    /// globo ENCIMA de la pregunta y ese toque no llega: ahí se toca el título de la barra (desde la hoja B1, el
+    /// título-menú), que tampoco cambia nada si se cierra el menú sin elegir.
     private func dismissKeyboard(_ app: XCUIApplication) {
         let question = element(app, "new_transaction_amount_question")
         XCTAssertTrue(question.waitForExistence(timeout: 5), "Falta la pregunta del monto.")
         question.tap()
         guard app.keyboards.firstMatch.waitForNonExistence(timeout: 2) == false else { return }
-        let selectedType = app.buttons.matching(NSPredicate(
-            format: "identifier BEGINSWITH 'new_transaction_type_' AND selected == true")).firstMatch
-        if selectedType.exists { selectedType.tap() }
+        let title = app.buttons["new_transaction_type_menu"]
+        if title.exists {
+            title.tap()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+        }
         _ = app.keyboards.firstMatch.waitForNonExistence(timeout: 3)
     }
 
@@ -146,7 +149,7 @@ final class FormClarity23UITests: XCTestCase {
 
     private func openCrossCurrencyTransfer(_ app: XCUIApplication) {
         openForm(app)
-        app.buttons["new_transaction_type_transfer"].tap()
+        app.chooseNewTransactionType("transfer")
         dismissKeyboard(app)
         app.chooseFirstSelectorRow(chip: "new_transaction_source_chip", rowPrefix: "account_selector_row_Cuenta")
         app.chooseFirstSelectorRow(chip: "new_transaction_destination_chip", rowPrefix: "account_selector_row_Ahorros")

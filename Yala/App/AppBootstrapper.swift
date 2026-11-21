@@ -1376,6 +1376,12 @@ final class AppBootstrapper {
         if let iso = UITestHooks.groupBridgeFXCurrency {
             DevSeedService().seedGroupBridgeFXLegs(currencyCode: iso, in: context)
         }
+        // Nombres largos y etiquetas para la fila de abajo de Nuevo registro (hoja B1). Aditivo.
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest-seed-long-names"), UITestHooks.isActive {
+            DevSeedLongNames.create(in: context)
+        }
+        #endif
         // Un gasto fechado mañana: el saldo de hoy lo deja fuera hasta su fecha (UX 2.2 · saldo de hoy).
         #if DEBUG
         if UITestHooks.seedFutureMovement {

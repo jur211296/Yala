@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "Nouvelle dépense";
+"nr.title.newIncome" = "Nouveau revenu";
+"nr.title.newTransfer" = "Nouveau virement";
+"nr.title.editExpense" = "Modifier la dépense";
+"nr.title.editIncome" = "Modifier le revenu";
+"nr.title.editTransfer" = "Modifier le virement";
+"nr.title.duplicateExpense" = "Dupliquer la dépense";
+"nr.title.duplicateIncome" = "Dupliquer le revenu";
+"nr.title.duplicateTransfer" = "Dupliquer le virement";
+"nr.title.a11yChangeType" = "Changer de type";
+"nr.favorites.label" = "Favoris";
+"nr.favorites.seeAll" = "Tout voir";
+"nr.currency.accountsCount.one" = "1 compte";
+"nr.currency.accountsCount.other" = "%d comptes";
+"nr.currency.a11y" = "Devise du montant";
+"nr.more.a11y" = "Plus d’options";
+"nr.more.splitState.all" = "Tout est à toi";
+"nr.more.splitState.mine" = "Ta part : %@";
+"nr.more.favorite" = "Enregistrer en favori";
+"nr.more.recurring" = "Rendre récurrent";
+"nr.more.recurringState.once" = "Une seule fois";
+"nr.save.withAmount" = "Enregistrer %@";
+"nr.addAnother" = "Ajouter un autre";
+"nr.saved.toast.expense" = "Dépense enregistrée";
+"nr.saved.toast.income" = "Revenu enregistré";
+"nr.saved.toast.transfer" = "Virement enregistré";
+"nr.success.saved.expense" = "Dépense enregistrée";
+"nr.success.saved.income" = "Revenu enregistré";
+"nr.success.saved.transfer" = "Virement enregistré";
+"nr.success.favorite" = "Favori";
+"nr.success.favorited" = "Dans les favoris";
+"nr.success.recurring" = "Récurrent";
+"nr.tags.a11yNone" = "Étiquettes, aucune";
+"nr.tags.a11yCount" = "Étiquettes, %d ajoutées : %@";
+"nr.need.a11yChange" = "Changer le besoin";

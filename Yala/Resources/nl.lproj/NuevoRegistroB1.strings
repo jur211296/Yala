@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "Nieuwe uitgave";
+"nr.title.newIncome" = "Nieuwe inkomst";
+"nr.title.newTransfer" = "Nieuwe overboeking";
+"nr.title.editExpense" = "Uitgave bewerken";
+"nr.title.editIncome" = "Inkomst bewerken";
+"nr.title.editTransfer" = "Overboeking bewerken";
+"nr.title.duplicateExpense" = "Uitgave dupliceren";
+"nr.title.duplicateIncome" = "Inkomst dupliceren";
+"nr.title.duplicateTransfer" = "Overboeking dupliceren";
+"nr.title.a11yChangeType" = "Type wijzigen";
+"nr.favorites.label" = "Favorieten";
+"nr.favorites.seeAll" = "Alles bekijken";
+"nr.currency.accountsCount.one" = "1 rekening";
+"nr.currency.accountsCount.other" = "%d rekeningen";
+"nr.currency.a11y" = "Valuta van het bedrag";
+"nr.more.a11y" = "Meer opties";
+"nr.more.splitState.all" = "Alles is van jou";
+"nr.more.splitState.mine" = "Jouw deel: %@";
+"nr.more.favorite" = "Bewaren als favoriet";
+"nr.more.recurring" = "Terugkerend maken";
+"nr.more.recurringState.once" = "Eenmalig";
+"nr.save.withAmount" = "%@ bewaren";
+"nr.addAnother" = "Nog een toevoegen";
+"nr.saved.toast.expense" = "Uitgave bewaard";
+"nr.saved.toast.income" = "Inkomst bewaard";
+"nr.saved.toast.transfer" = "Overboeking bewaard";
+"nr.success.saved.expense" = "Uitgave bewaard";
+"nr.success.saved.income" = "Inkomst bewaard";
+"nr.success.saved.transfer" = "Overboeking bewaard";
+"nr.success.favorite" = "Favoriet";
+"nr.success.favorited" = "In favorieten";
+"nr.success.recurring" = "Terugkerend";
+"nr.tags.a11yNone" = "Labels, geen";
+"nr.tags.a11yCount" = "Labels, %d toegevoegd: %@";
+"nr.need.a11yChange" = "Behoefte wijzigen";

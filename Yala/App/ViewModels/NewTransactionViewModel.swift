@@ -93,10 +93,87 @@ final class NewTransactionViewModel {
             for: note, isIncome: transactionType == .income, in: descriptionSuggestionIndex)
     }
 
-    /// Completa la descripción con el texto exacto de la sugerencia.
-    func applyDescriptionSuggestion(_ text: String) {
+    /// Lo que los registros anteriores con cada descripción tienen en común (ajuste 4 de la hoja B1). Se arma con el
+    /// mismo fetch que las sugerencias.
+    private(set) var descriptionAutofillIndex: [String: DescriptionAutofillConsensus<PersistentIdentifier>] = [:]
+    /// Lo que puso el último autocompletado: si sigue igual, otra sugerencia puede cambiarlo.
+    private var lastDescriptionAutofill: DescriptionAutofillConsensus<PersistentIdentifier> = .none
+
+    /// Completa la descripción con el texto exacto de la sugerencia y, en un registro nuevo, la cuenta, la subcategoría y
+    /// las etiquetas en las que coinciden todos los registros anteriores con ese texto (ajuste 4 de Jürgen sobre la
+    /// hoja B1). Lo que la persona eligió en este registro no se pisa: la cuenta, si ya no es la precargada al abrir
+    /// (`baselineAccount`); la subcategoría y las etiquetas, si ya hay alguna puesta.
+    func applyDescriptionSuggestion(_ text: String, baselineAccount: PersistentIdentifier? = nil, autofills: Bool = false) {
         pickedDescriptionSuggestion = text
         note = text
+        guard autofills, !isTransfer,
+              let consensus = descriptionAutofillIndex[
+                DescriptionAutofillLogic.key(note: text, isIncome: transactionType == .income)]
+        else { return }
+        let current = DescriptionAutofillCurrent(
+            account: selectedAccount?.persistentModelID,
+            baselineAccount: baselineAccount,
+            subcategory: selectedSubcategory?.persistentModelID,
+            tags: Set(selectedTags.map(\.id)),
+            lastAutofill: lastDescriptionAutofill
+        )
+        let plan = DescriptionAutofillLogic.plan(consensus, current: current)
+        var applied = DescriptionAutofillConsensus<PersistentIdentifier>.none
+        if let id = plan.account,
+           let account = accounts.first(where: { $0.persistentModelID == id && !$0.isArchived }) {
+            selectedAccount = account
+            currencyCode = account.currencyCode
+            applied.account = id
+        }
+        if let id = plan.subcategory,
+           let subcategory = subcategories.first(where: { $0.persistentModelID == id }),
+           ManualSubcategoryPickerLogic.isPickable(subcategory, for: transactionType) {
+            selectedSubcategory = subcategory
+            applied.subcategory = id
+        }
+        if let ids = plan.tags {
+            let lookup = Tag.byIDLookup(tags)
+            let found = ids.compactMap { lookup[$0] }.filter(\.isActive).sorted { $0.name < $1.name }
+            // Solo si siguen existiendo todas: media lista de etiquetas no es lo que tenían los anteriores.
+            if found.count == ids.count {
+                selectedTags = found
+                applied.tags = ids
+            }
+        }
+        lastDescriptionAutofill = DescriptionAutofillConsensus(
+            account: applied.account ?? lastDescriptionAutofill.account,
+            subcategory: applied.subcategory ?? lastDescriptionAutofill.subcategory,
+            tags: applied.tags ?? lastDescriptionAutofill.tags
+        )
+    }
+
+    // MARK: - La cápsula de moneda «S/ ▾» (hoja B1)
+
+    /// Las cuentas que la cápsula de moneda tiene en cuenta: activas y de la persona.
+    private var currencyMenuAccounts: [AmountCurrencyAccount<PersistentIdentifier>] {
+        accounts.filter { !$0.isArchived && !$0.isSystemAccount }.map { account in
+            AmountCurrencyAccount(
+                id: account.persistentModelID,
+                currencyCode: normalizeCurrencyCode(account.currencyCode),
+                cardMembers: cardMembers(of: account).map(\.persistentModelID)
+            )
+        }
+    }
+
+    /// Las monedas que ofrece la cápsula. Con una sola, la cápsula no abre nada.
+    var amountCurrencyOptions: [AmountCurrencyOption] {
+        AmountCurrencyMenuLogic.options(accounts: currencyMenuAccounts, current: amountCurrencyCode)
+    }
+
+    /// Elegir una moneda es elegir la cuenta que la tiene: la línea de la tarjeta en esa moneda o la primera cuenta en
+    /// ella. El monto escrito no se convierte (L2-16).
+    func chooseAmountCurrency(_ code: String) {
+        guard let id = AmountCurrencyMenuLogic.target(
+            for: code, selected: selectedAccount?.persistentModelID, accounts: currencyMenuAccounts),
+              let account = accounts.first(where: { $0.persistentModelID == id }) else { return }
+        amountCurrencyOverride = nil
+        selectedAccount = account
+        currencyCode = account.currencyCode
     }
 
     /// Código de divisa para el registro
@@ -353,12 +430,29 @@ final class NewTransactionViewModel {
         )
         notesDescriptor.fetchLimit = 1000
         do {
-            descriptionSuggestionIndex = DescriptionSuggestionLogic.buildIndex(from: try context.fetch(notesDescriptor))
+            let withNotes = try context.fetch(notesDescriptor)
+            descriptionSuggestionIndex = DescriptionSuggestionLogic.buildIndex(from: withNotes)
+            descriptionAutofillIndex = Self.buildDescriptionAutofillIndex(from: withNotes)
         } catch {
             #if DEBUG
             print("NewTransactionViewModel: Error loading description suggestions: \(error)")
             #endif
         }
+    }
+
+    /// El acuerdo por descripción de los registros ya leídos (sin transferencias ni ajustes, como las sugerencias).
+    static func buildDescriptionAutofillIndex(
+        from transactions: [TransactionItem]
+    ) -> [String: DescriptionAutofillConsensus<PersistentIdentifier>] {
+        DescriptionAutofillLogic.index(rows: transactions.compactMap { tx in
+            guard tx.balanceAdjustmentType == nil, let note = tx.note else { return nil }
+            let sample = DescriptionAutofillSample(
+                account: tx.account?.persistentModelID,
+                subcategory: tx.subcategory?.persistentModelID,
+                tags: tx.resolvedTagIDs() ?? []
+            )
+            return (note, TransactionClassificationLogic.isIncome(tx), sample)
+        })
     }
 
     // MARK: - Validation

@@ -94,14 +94,19 @@ final class KeyboardSaveBar23UITests: XCTestCase {
                                  "«Guardar» va encima del teclado (\(save.frame.maxY) > \(keyboardTop)).")
         XCTAssertFalse(save.isEnabled, "Sin categoría, «Guardar» sigue apagado.")
 
-        let category = app.buttons["new_transaction_keyboard_category_chip"]
-        XCTAssertTrue(category.exists, "La barra dice que falta la categoría.")
-        XCTAssertTrue(category.isHittable, "La categoría de la barra se puede tocar con el teclado abierto.")
-        XCTAssertLessThanOrEqual(category.frame.maxY, keyboardTop + 1, "La categoría de la barra va encima del teclado.")
-        XCTAssertTrue(app.buttons["new_transaction_keyboard_account_chip"].exists, "Y la cuenta, a su lado.")
+        // Hoja B1: la barra lleva la fila Hoy · Cuenta · # y, debajo, «Agregar otro» y «Guardar». La categoría vive bajo
+        // el monto y se ve con el teclado abierto, por encima de la barra.
+        let account = app.buttons["new_transaction_account_chip"]
+        XCTAssertTrue(account.exists && account.isHittable, "La cuenta va en la barra y se puede tocar con el teclado abierto.")
+        XCTAssertLessThanOrEqual(account.frame.maxY, save.frame.minY + 1, "La fila de la barra va encima de «Guardar».")
+        XCTAssertTrue(app.buttons["new_transaction_tags_chip"].isHittable, "Y «#», en la misma fila.")
+        let category = app.buttons["new_transaction_subcategory_chip"]
+        XCTAssertTrue(category.exists && category.isHittable, "La categoría se puede tocar con el teclado abierto.")
+        XCTAssertLessThanOrEqual(category.frame.maxY, account.frame.minY + 1, "La categoría queda por encima de la barra.")
     }
 
-    /// Elige desde una pastilla de la barra la primera fila de su hoja, y comprueba que se vuelve con el teclado.
+    /// Elige desde una pastilla (de la barra o la categoría bajo el monto) la primera fila de su hoja, y comprueba que se
+    /// vuelve con el teclado.
     private func chooseFromBar(_ app: XCUIApplication, chip chipID: String, rowPrefix: String, what: String) {
         let chip = app.buttons[chipID]
         XCTAssertTrue(chip.waitForExistence(timeout: 5), "Falta \(what) en la barra.")
@@ -124,11 +129,11 @@ final class KeyboardSaveBar23UITests: XCTestCase {
         waitForKeyboardAndBar(app)
 
         // La semilla `minimal` no deja cuenta precargada; si algún día la deja, ya está elegida (pastilla seleccionada).
-        if !app.buttons["new_transaction_keyboard_account_chip"].isSelected {
-            chooseFromBar(app, chip: "new_transaction_keyboard_account_chip", rowPrefix: "account_selector_row_",
+        if !app.buttons["new_transaction_account_chip"].isSelected {
+            chooseFromBar(app, chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_",
                           what: "la cuenta")
         }
-        chooseFromBar(app, chip: "new_transaction_keyboard_category_chip", rowPrefix: "subcategory_selector_row_",
+        chooseFromBar(app, chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_",
                       what: "la categoría")
         let save = app.buttons["new_transaction_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "Y con la barra.")
@@ -145,13 +150,16 @@ final class KeyboardSaveBar23UITests: XCTestCase {
     func test_g1_transfer_barAsksForTheTwoAccounts() {
         let app = launch()
         openForm(app)
-        app.buttons["new_transaction_type_transfer"].tap()
+        app.chooseNewTransactionType("transfer")
         typeAmount(app, "100")
         waitForKeyboardAndBar(app)
         capture(app, "g1-barra-transferencia")
-        XCTAssertTrue(app.buttons["new_transaction_keyboard_source_chip"].exists, "La barra pide la cuenta de origen.")
-        XCTAssertTrue(app.buttons["new_transaction_keyboard_destination_chip"].exists, "Y la de destino.")
-        XCTAssertFalse(app.buttons["new_transaction_keyboard_category_chip"].exists, "Una transferencia no lleva categoría.")
+        let source = app.buttons["new_transaction_source_chip"]
+        let destination = app.buttons["new_transaction_destination_chip"]
+        XCTAssertTrue(source.exists, "La barra pide la cuenta de origen.")
+        XCTAssertTrue(destination.exists, "Y la de destino.")
+        XCTAssertEqual(source.frame.midY, destination.frame.midY, accuracy: 2, "Origen y destino, en una sola fila.")
+        XCTAssertFalse(app.buttons["new_transaction_subcategory_chip"].exists, "Una transferencia no lleva categoría.")
         XCTAssertTrue(app.buttons["new_transaction_save"].exists, "Y «Guardar».")
     }
 
@@ -232,19 +240,16 @@ final class KeyboardSaveBar23UITests: XCTestCase {
         XCTAssertTrue(reached, "Al bajar del todo, «Etiquetas» tiene que quedar por encima de «Para guardar, falta…».")
     }
 
-    /// Con el teclado abierto la barra va encima del teclado: al bajar el formulario, «Etiquetas» (que no está en la
-    /// barra) tiene que poder quedar por encima de ella, no escondida debajo.
-    func test_withTheKeyboardOpen_theTagsChipCanScrollAboveTheBar() {
+    /// Hoja B1: con el teclado abierto «#» va en la barra, encima del teclado, y se puede tocar sin bajar nada.
+    func test_withTheKeyboardOpen_theTagsChipIsInTheBar() {
         let app = launch()
         openForm(app)
         typeAmount(app, "4.50")
         waitForKeyboardAndBar(app)
-        let save = app.buttons["new_transaction_save"]
-        let barTop = { min(save.frame.minY, app.buttons["new_transaction_keyboard_account_chip"].frame.minY) }
-        let reached = scrollTagsChip(app, above: barTop)
-        capture(app, "g1-etiquetas-sobre-la-barra")
-        XCTAssertTrue(app.keyboards.firstMatch.exists, "Bajar el formulario no cierra el teclado.")
-        XCTAssertTrue(reached, "Con el teclado abierto, «Etiquetas» tiene que poder quedar por encima de la barra.")
+        let tags = app.buttons["new_transaction_tags_chip"]
+        capture(app, "b1-etiquetas-en-la-barra")
+        XCTAssertTrue(tags.exists && tags.isHittable, "«#» va en la barra y se puede tocar.")
+        XCTAssertLessThanOrEqual(tags.frame.maxY, app.keyboards.firstMatch.frame.minY + 1, "Y encima del teclado.")
     }
 
     /// Con el teclado abierto lo que falta lo dice la barra: la línea del formulario no está, así que no puede quedar

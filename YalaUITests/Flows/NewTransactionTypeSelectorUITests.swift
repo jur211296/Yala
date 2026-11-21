@@ -50,9 +50,8 @@ final class NewTransactionTypeSelectorUITests: XCTestCase {
         let saveButton = app.buttons["new_transaction_save"]
         XCTAssertTrue(saveButton.isEnabled, "Con monto, cuenta y subcategoría, «Guardar» debía estar activo.")
 
-        let expense = app.buttons["new_transaction_type_expense"]
-        XCTAssertTrue(expense.waitForExistence(timeout: 5), "No apareció el selector de tipo (Gasto).")
-        expense.tap()
+        // Desde la hoja B1 el tipo se elige en el título-menú; el ya elegido sigue siendo una fila más del menú.
+        app.chooseNewTransactionType("expense")
 
         XCTAssertEqual(subcategoryChip.label, chosenLabel, "Tocar el tipo ya elegido borró la subcategoría (B2).")
         XCTAssertTrue(saveButton.isEnabled, "Tocar el tipo ya elegido apagó «Guardar» (B2).")
@@ -63,17 +62,17 @@ final class NewTransactionTypeSelectorUITests: XCTestCase {
         let app = XCUIApplication()
         openNewTransaction(app)
 
-        let recurring = app.buttons["new_transaction_recurring_action"]
+        // Desde la hoja B1 las acciones viven en «···».
+        let recurring = app.openNewTransactionMoreAction("new_transaction_recurring_action")
         XCTAssertTrue(recurring.waitForExistence(timeout: 5), "En un gasto, «Recurrente» debía estar: control del caso.")
+        app.dismissNewTransactionMoreMenu()
 
-        let transfer = app.buttons["new_transaction_type_transfer"]
-        XCTAssertTrue(transfer.waitForExistence(timeout: 5), "No apareció el selector de tipo (Transferencia).")
-        transfer.tap()
+        app.chooseNewTransactionType("transfer")
 
-        XCTAssertTrue(
-            app.buttons["new_transaction_favorite_action"].waitForExistence(timeout: 5),
-            "No se pintó la fila de acciones de la transferencia."
-        )
-        XCTAssertFalse(recurring.exists, "Una transferencia no puede ser un pago planificado: «Recurrente» sobra (B7).")
+        let favorite = app.openNewTransactionMoreAction("new_transaction_favorite_action")
+        XCTAssertTrue(favorite.waitForExistence(timeout: 5), "No se abrió «···» en la transferencia.")
+        XCTAssertFalse(app.buttons["new_transaction_recurring_action"].exists,
+                       "Una transferencia no puede ser un pago planificado: «Recurrente» sobra (B7).")
+        app.dismissNewTransactionMoreMenu()
     }
 }
