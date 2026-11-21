@@ -8907,6 +8907,8 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "今日の残高";
 "panel.hero.oweToday" = "今日の不足額";
+"panel.hero.leftNow" = "残り";
+"panel.hero.leftPast" = "残った額";
 "panel.hero.leftInMonth" = "%@に残った額";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */

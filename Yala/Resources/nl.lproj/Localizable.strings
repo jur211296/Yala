@@ -8907,6 +8907,8 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "Je saldo vandaag";
 "panel.hero.oweToday" = "Je staat vandaag rood";
+"panel.hero.leftNow" = "Je houdt over";
+"panel.hero.leftPast" = "Je hield over";
 "panel.hero.leftInMonth" = "In %@ hield je over";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */

@@ -8907,6 +8907,8 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "Twoje saldo dziś";
 "panel.hero.oweToday" = "Dziś na minusie";
+"panel.hero.leftNow" = "Zostaje ci";
+"panel.hero.leftPast" = "Zostało ci";
 "panel.hero.leftInMonth" = "W miesiącu %@ zostało ci";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */

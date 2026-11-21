@@ -322,7 +322,8 @@ struct HeroEstadisticasLimpioWiringTests {
     func retiredKeys_areGone(_ locale: String) throws {
         let strings = try Self.table("Localizable", locale)
         let retired = [
-            "panel.hero.leftNow", "panel.hero.leftPast", "stats.hero.captionAccountsBalanceClosed",
+            // `panel.hero.leftNow` / `leftPast` se quedan: los lee Yala web (`webapp/test/lote4.test.ts`).
+            "stats.hero.captionAccountsBalanceClosed",
             "stats.insights.motivationalOne", "stats.insights.motivationalMany %d",
             "stats.records.motivationalOne", "stats.records.motivationalMany %d",
             "stats.trends.heroOnset", "stats.trends.heroStable", "stats.trends.heroVarUp %d %@", "stats.trends.heroVarDown %d %@",

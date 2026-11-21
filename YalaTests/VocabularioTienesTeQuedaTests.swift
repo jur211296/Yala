@@ -107,9 +107,10 @@ struct VocabularioTienesTeQuedaTests {
             }
         }
         let es = try Self.catalog("Yala/Resources/es.lproj/Localizable.strings")
-        // «Te queda / Te quedó» salió del hero de Estadísticas, del Sankey y de la voz (20-nov-2026): sin claves.
-        #expect(es["panel.hero.leftNow"] == nil)
-        #expect(es["panel.hero.leftPast"] == nil)
+        // «Te queda / Te quedó» salió de la app el 20-nov-2026 (hero de Estadísticas, Sankey y voz), pero Yala web los
+        // sigue enseñando y lee estas claves de aquí (`webapp/test/lote4.test.ts`): se quedan.
+        #expect(es["panel.hero.leftNow"] == "Te queda")
+        #expect(es["panel.hero.leftPast"] == "Te quedó")
         #expect(es["panel.hero.leftInMonth"] == "En %@ te quedó")
         for (key, value) in es where key.hasPrefix("panel.hero.") {
             #expect(!value.lowercased().contains("sobr"), "\(key) dice «sobra/sobró»: la decisión pide «te queda».")
@@ -121,7 +122,8 @@ struct VocabularioTienesTeQuedaTests {
     @Test("Los textos nuevos existen en los 16 idiomas")
     func newKeys_inAllSixteenLanguages() throws {
         let keys = [
-            "panel.hero.haveToday", "panel.hero.oweToday", "panel.hero.leftInMonth",
+            "panel.hero.haveToday", "panel.hero.oweToday", "panel.hero.leftNow", "panel.hero.leftPast",
+            "panel.hero.leftInMonth",
             "panel.saldo.moneyToday", "panel.saldo.infoButton", "panel.saldo.info.title", "panel.saldo.info.balanceBody",
             "panel.saldo.info.moneyBody", "panel.saldo.info.exampleTitle", "panel.saldo.info.exampleSavings",
             "panel.saldo.info.exampleCard", "panel.saldo.info.exampleNote", "panel.saldo.info.chooseAccounts",

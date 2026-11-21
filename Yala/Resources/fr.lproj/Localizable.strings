@@ -8896,6 +8896,8 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "Ton solde aujourd'hui";
 "panel.hero.oweToday" = "Tu dois aujourd'hui";
+"panel.hero.leftNow" = "Il te reste";
+"panel.hero.leftPast" = "Il t'est resté";
 "panel.hero.leftInMonth" = "En %@, il t'est resté";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
