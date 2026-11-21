@@ -545,6 +545,12 @@ final class ScheduledPaymentsViewModel {
 
     /// Determine display icon and color for a payment
     func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
+        Self.paymentDisplayProperties(for: payment)
+    }
+
+    /// El icono y el color de un pago sin logo: los de su subcategoría (o su categoría), o el de siempre según el tipo.
+    /// Criterio común: lo usan la lista de Pagos planificados y el Flujo de caja (`FlujoPagoIcono`).
+    static func paymentDisplayProperties(for payment: ScheduledPayment) -> (icon: String, color: String) {
         // If has subcategory, use its icon/color
         if let subcategory = payment.subcategory {
             let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "creditcard.fill"

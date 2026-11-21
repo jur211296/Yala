@@ -88,8 +88,8 @@ struct FlujoPagosDeLineaCard: View {
 
     @ViewBuilder
     private func icono(_ pago: ScheduledPayment?) -> some View {
-        if let pago, let logo = PagoLogoComercio.logo(for: pago) {
-            SubscriptionBrandBadge(logo: logo, diameter: DS.Icon.badgeSmall, isDecorative: true)
+        if let pago {
+            FlujoPagoIconoView(pago: pago)
         } else {
             ZStack {
                 Circle().fill(Color.secondary.opacity(0.18))
