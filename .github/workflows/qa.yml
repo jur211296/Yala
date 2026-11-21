@@ -825,6 +825,17 @@ jobs:
         run: bash qa/scripts/ci-xcode.sh
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # El reparto se calcula ANTES de arrancar el simulador. Medido en el primer run (21-nov): con el
+      # simulador recién arrancado el runner va tan cargado que el script, 1 s en local, tardó 1,5-3 min.
+      # Si falla, el paso falla aquí: nunca arranca `xcodebuild` sin selección.
+      - name: Reparto de la tanda (ci-unit-tandas.sh)
+        env:
+          TANDA: ${{ matrix.tanda }}
+          TOTAL: ${{ strategy.job-total }}
+        run: |
+          set -euo pipefail
+          bash qa/scripts/ci-unit-tandas.sh "$TANDA" "$TOTAL" > "$RUNNER_TEMP/seleccion-pure.txt"
+          bash qa/scripts/ci-unit-tandas.sh contexto > "$RUNNER_TEMP/seleccion-contexto.txt"
       # Prepara y ARRANCA el simulador en segundo plano mientras se baja el build (2026-11-21): el
       # primer `xcodebuild test` ya no paga el arranque del device. Si arrancarlo falla, lo arranca el
       # test, como antes.
@@ -891,13 +902,10 @@ jobs:
         # 40 desde el 2026-11-21: la tanda corre un tercio de lo que tenía 55 de tope entero (máximo
         # verde 36,9 el 19-nov), más holgura para el arranque y las vueltas de un flaky rescatado.
         timeout-minutes: 40
-        env:
-          TANDA: ${{ matrix.tanda }}
-          TOTAL: ${{ strategy.job-total }}
         run: |
           set -euo pipefail
-          # Si el reparto falla, el paso falla aquí: nunca arranca `xcodebuild` sin selección.
-          seleccion=$(bash qa/scripts/ci-unit-tandas.sh "$TANDA" "$TOTAL")
+          seleccion=$(cat "$RUNNER_TEMP/seleccion-pure.txt")
+          [ -n "$seleccion" ] || { echo "::error title=Reparto::La selección de esta tanda llegó vacía."; exit 1; }
           # Un argumento por línea y sin espacios (nombres de tipo): el troceo es el buscado.
           # shellcheck disable=SC2086
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
@@ -928,7 +936,8 @@ jobs:
         timeout-minutes: 10
         run: |
           set -euo pipefail
-          seleccion=$(bash qa/scripts/ci-unit-tandas.sh contexto)
+          seleccion=$(cat "$RUNNER_TEMP/seleccion-contexto.txt")
+          [ -n "$seleccion" ] || { echo "::error title=Reparto::La selección de context-based llegó vacía."; exit 1; }
           # shellcheck disable=SC2086
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
             --dir "$RUNNER_TEMP/reintentar-rojos-context" \
