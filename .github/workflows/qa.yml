@@ -679,7 +679,15 @@ jobs:
       #
       # EN SEGUNDO PLANO DESDE EL 2026-11-21 (`ci-simulador-fondo.sh`): se lanza aquí y se recoge
       # justo antes del build, mientras se restaura la caché. Tardaba de segundos a más de 2 min.
+      #
+      # SU VALIDACIÓN USA OTRO DERIVEDDATA (`SIM_DERIVED`), NUNCA `.ddp`. `xcodebuild
+      # -showdestinations` resuelve los paquetes en `<DerivedData>/SourcePackages`, y con `.ddp`
+      # lo hacía a la vez que el restore extraía la caché en esa misma carpeta: en el run
+      # 44924790889 del PR 1105 `tar` acabó con exit 2 (`Cannot utime: No such file or directory`
+      # en `.ddp/SourcePackages/checkouts/*/.swiftpm`) y la acción dio la caché por no encontrada.
       - name: Simulador del runner, en segundo plano
+        env:
+          SIM_DERIVED: ${{ runner.temp }}/dd-simulador
         run: bash qa/scripts/ci-simulador-fondo.sh lanzar
       # CACHÉ DE COMPILACIÓN (2026-11-21). Hasta ese día cada run compilaba desde cero (~27 min en el
       # p50). Se guarda el DerivedData de CI (`.ddp`) menos el índice y los logs, con la caché de

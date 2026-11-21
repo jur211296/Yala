@@ -36,6 +36,9 @@ Auditoría de tiempos del CI (`docs/auditorias/2026-11-21-ci-tiempos.md`). Un PR
   compilación de Xcode sola, sin el resto del DerivedData, no gana nada (218 s).
   Guarda el push a 2.3/1.0 y la nocturna; un PR solo si no encontró nada. Un fallo de caché nunca
   rompe el run (`continue-on-error`): compila desde cero.
+  **Nada escribe en `.ddp` mientras se restaura**: el simulador en segundo plano valida con su propio
+  DerivedData (`SIM_DERIVED`). Con `.ddp`, su `-showdestinations` resolvía paquetes en
+  `.ddp/SourcePackages` a la vez que `tar` extraía ahí, y la caché salía «no encontrada» (run 44924790889).
 - **`unit`** es una matriz de 3 tandas. El reparto lo hace `qa/scripts/ci-unit-tandas.sh` por los
   tiempos de `qa/ci-unit-tiempos.json`; la última tanda corre «todo menos lo de las otras», así que
   una suite nueva nunca se queda fuera. Context-based corre en la tanda 1, a la vez que las otras.
