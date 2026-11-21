@@ -108,6 +108,25 @@ jobs:
         run: false
 YAML
 
+caso "if: \${{ !cancelled() }} sí se replica (en local ya corre todo)" 1 "✓ 2/2 echo espero" <<'YAML'
+jobs:
+  ci:
+    steps:
+      - run: false
+      - name: Esperar
+        if: ${{ !cancelled() }}
+        run: echo espero
+YAML
+
+caso "if: always() sigue sin replicarse: exit 2" 2 "no replica" <<'YAML'
+jobs:
+  ci:
+    steps:
+      - name: Siempre
+        if: always()
+        run: true
+YAML
+
 caso "un env: en el job no se salta: exit 2" 2 "no replica" <<'YAML'
 jobs:
   ci:

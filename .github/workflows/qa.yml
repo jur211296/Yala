@@ -42,8 +42,14 @@ on:
   # repo pasa **60 dias sin actividad**. Con la cadencia de hoy no va a ocurrir, pero si
   # algun dia esta corrida deja de aparecer sin que nadie la haya tocado, mirar ahi antes
   # que en el YAML: se reactiva desde Actions, o con `gh workflow enable qa.yml`.
+  #
+  # HORA FIJA DESDE EL 2026-11-21 (auditoría de tiempos del CI). Del 12-oct al 20-nov GitHub la servía
+  # entre las 09:00 y las 13:47 de Lima, y la nocturna (7,5-9 h) ocupaba los macOS en plena jornada.
+  # Ahora la lanza `nocturna-vigilante.yml` en cuanto pasa esta hora: 02:17 UTC = 21:17 en Lima, para
+  # que acabe hacia las 05:00-06:30. Este cron queda de RESPALDO: cuando GitHub lo sirve (horas
+  # después), el job `changes` mira si la nocturna del día ya nació y, si sí, no corre nada.
   schedule:
-    - cron: '17 8 * * *'
+    - cron: '17 2 * * *'
   # Para poder lanzar la nocturna a mano sin esperar a la noche — que es como se verifica
   # que funciona. Un dispatch manual corre EXACTAMENTE lo mismo que la nocturna, UI
   # incluida: si lo que quieres es repetir el CI normal de un commit, `gh run rerun`
@@ -72,6 +78,9 @@ jobs:
   # Corre en Linux (solo necesita python3). Bloquea merge si el index regresa.
   coverage-index:
     runs-on: ubuntu-latest
+    # 10 min (2026-11-21): heredaba los 360 de GitHub. Tarda ~2 (3,7 hasta ese día, ver los bancos
+    # en segundo plano de abajo).
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validar coverage-index (ratchet anti-drift)
@@ -98,6 +107,16 @@ jobs:
       # Jürgen el 2026-10-08 (ticket `rebase-and-cherry-pick-skip-the-attribution-hook`).
       - name: Candado anti-atribución sobre los commits del PR o del push
         run: bash qa/scripts/ci-atribucion-commits.sh
+      # El selector de pruebas de interfaz del paso 3 de `/gate` (solo local: el CI del PR no corre
+      # interfaz, decisión de Jürgen del 17-nov por el coste del runner macOS). El banco trae por su
+      # cuenta (`git fetch --depth=2`) el merge del PR de categorías a un toque, su caso real; si no
+      # puede, falla en vez de saltarlo.
+      #
+      # EN SEGUNDO PLANO desde el 2026-11-21: ~100 s, casi todo el `fetch`. Va justo después del otro
+      # paso que hace `fetch` en el repo (dos a la vez chocan en los candados de `.git`) y lo espera el
+      # último paso del job. `--nuevo`: es el primer lanzamiento del job.
+      - name: Interfaz de lo tocado (interfaz-de-lo-tocado.py), en segundo plano
+        run: bash qa/scripts/bancos-en-fondo.sh lanzar --nuevo qa/scripts/interfaz-de-lo-tocado-test.sh
       - name: Candado sobre los commits, su banco (ci-atribucion-commits-test.sh)
         run: bash qa/scripts/ci-atribucion-commits-test.sh
       # El sello que deja `/gate` y que recalcula el pre-commit. Nació de un fallo real (bloqueaba
@@ -109,6 +128,22 @@ jobs:
       # más no da error, sale verde sin probar nada. El banco extrae el `case` de este fichero.
       - name: Allowlist del job changes (ci-allowlist-test.sh)
         run: bash qa/scripts/ci-allowlist-test.sh
+      # El comprobador de las tandas de QA. Contra el guion real NO corre aquí (cada PR que mueve un
+      # ticket a `qa/` saldría rojo); corre su banco, con repos y tablero de juguete.
+      - name: Comprobador de la tanda de QA (guion-tanda-check.py)
+        run: bash qa/scripts/guion-tanda-check-test.sh
+      # El paso «Simulador del runner» del job `unit` solo se ejerce de verdad cuando
+      # CoreSimulator falla (8 de los 33 rojos de QA entre el 2026-08-18 y el 2026-10-02). Su banco simula esos
+      # casos con un `xcrun` falso, sin tocar ningún simulador.
+      - name: Simulador del runner (ci-simulador.sh)
+        run: bash qa/scripts/ci-simulador-test.sh
+      # El paso pure-logic del job `unit` repite SOLO sus rojos con este script. Lo que decide
+      # si un rojo se da por rescatado, que un `.xcresult` raro nunca acabe repitiendo la suite
+      # entera y que un arranque fallido del simulador la relance (y no repita el texto del error
+      # como si fuera un test) solo se ejerce cuando algo falla; su banco lo simula con
+      # `xcodebuild` y `xcrun` falsos.
+      - name: Reintento de rojos (ci-reintentar-rojos.sh)
+        run: bash qa/scripts/ci-reintentar-rojos-test.sh
       # La cola del simulador (`sim-lock.sh`) y su centinela (`sim-libre.sh`). Mismo
       # argumento que el candado de arriba, y aquí pesa más: un lock roto NO da error — deja
       # correr dos sesiones a la vez y el daño sale tres horas después disfrazado de test en
@@ -116,24 +151,12 @@ jobs:
       # mentira y, para sus casos, un lockfile propio bajo TMPDIR. Lo que sí pide es el turno
       # REAL mientras dura, porque esos procesos se llaman `xcodebuild` y el centinela de otra
       # sesión los vería; aquí el lock está siempre libre y no cuesta nada.
-      - name: Cola del simulador (sim-lock.sh + sim-libre.sh)
-        run: bash qa/scripts/sim-lock-test.sh
-      # El comprobador de las tandas de QA. Contra el guion real NO corre aquí (cada PR que mueve un
-      # ticket a `qa/` saldría rojo); corre su banco, con repos y tablero de juguete.
-      - name: Comprobador de la tanda de QA (guion-tanda-check.py)
-        run: bash qa/scripts/guion-tanda-check-test.sh
-      # El paso «Simulador del runner» del job `tests` solo se ejerce de verdad cuando
-      # CoreSimulator falla (8 de los 33 rojos de QA entre el 2026-08-18 y el 2026-10-02). Su banco simula esos
-      # casos con un `xcrun` falso, sin tocar ningún simulador.
-      - name: Simulador del runner (ci-simulador.sh)
-        run: bash qa/scripts/ci-simulador-test.sh
-      # El paso pure-logic del job `tests` repite SOLO sus rojos con este script. Lo que decide
-      # si un rojo se da por rescatado, que un `.xcresult` raro nunca acabe repitiendo la suite
-      # entera y que un arranque fallido del simulador la relance (y no repita el texto del error
-      # como si fuera un test) solo se ejerce cuando algo falla; su banco lo simula con
-      # `xcodebuild` y `xcrun` falsos.
-      - name: Reintento de rojos (ci-reintentar-rojos.sh)
-        run: bash qa/scripts/ci-reintentar-rojos-test.sh
+      #
+      # EN SEGUNDO PLANO desde el 2026-11-21: son ~82 s de siestas. Va aquí, y no antes, porque cuenta
+      # los procesos `xcodebuild` y los dos bancos de justo encima crean uno de mentira. Lo espera el
+      # último paso del job. Ver la cabecera de `bancos-en-fondo.sh`.
+      - name: Cola del simulador (sim-lock.sh + sim-libre.sh), en segundo plano
+        run: bash qa/scripts/bancos-en-fondo.sh lanzar qa/scripts/sim-lock-test.sh
       # La cuarentena de pruebas inestables (2026-11-17). El job `tests` la lee de 2.3: si entrara
       # rota, la lista quedaría vacía para todos los PR. Valida la del árbol y el lector.
       - name: Cuarentena de pruebas inestables (cuarentena-test.sh)
@@ -153,6 +176,17 @@ jobs:
       # sigue verde, que es justo el fallo—, asi que este banco lo vigila sobre el propio qa.yml.
       - name: Los unit bloquean (ci-unit-bloqueante-test.sh)
         run: bash qa/scripts/ci-unit-bloqueante-test.sh
+      # Los unit en tandas (2026-11-21). El veredicto del check `tests`: si se rompiera hacia el verde,
+      # el auto-merge mergearía con unit en rojo o sin correr.
+      - name: Veredicto de los unit (ci-unit-resultado.sh)
+        run: bash qa/scripts/ci-unit-resultado-test.sh
+      # El reparto de pure-logic en tandas y su tabla de tiempos. Si se rompe no da error: deja suites
+      # sin correr en el PR, o las corre dos veces. El banco lo comprueba sobre el árbol real.
+      - name: Reparto de los unit en tandas (ci-unit-tandas.sh + ci-unit-tiempos.py)
+        run: bash qa/scripts/ci-unit-tandas-test.sh
+      # El simulador preparado en segundo plano (`build` y `unit`). Un `xcrun` falso, sin simulador.
+      - name: Simulador en segundo plano (ci-simulador-fondo.sh)
+        run: bash qa/scripts/ci-simulador-fondo-test.sh
       # El vigilante de la nocturna decide con una API que omite runs (medido el 2026-10-06: 22 de
       # 22 lanzamientos suyos sobraban). Lo que decide si lanza solo se ejerce el dia que algo va
       # mal; su banco lo simula con un `gh` falso que miente a proposito.
@@ -189,12 +223,15 @@ jobs:
       # equivoca, una suite no corre y el conteo cuadra igual.
       - name: Suites de un fichero de test (suites-de-fichero.py)
         run: bash qa/scripts/suites-de-fichero-test.sh
-      # El selector de pruebas de interfaz del paso 3 de `/gate` (solo local: el CI del PR no corre
-      # interfaz, decisión de Jürgen del 17-nov por el coste del runner macOS). El banco trae por su
-      # cuenta (`git fetch --depth=2`) el merge del PR de categorías a un toque, su caso real; si no
-      # puede, falla en vez de saltarlo.
-      - name: Interfaz de lo tocado (interfaz-de-lo-tocado.py)
-        run: bash qa/scripts/interfaz-de-lo-tocado-test.sh
+      # El banco del lanzador de abajo: si se rompe, el job deja de enterarse de los bancos de fondo.
+      - name: Bancos en segundo plano, su banco (bancos-en-fondo-test.sh)
+        run: bash qa/scripts/bancos-en-fondo-test.sh
+      # El final de los dos bancos en segundo plano (2026-11-21). `!cancelled()`: corre aunque un paso
+      # de arriba haya salido en rojo, para que su resultado se vea igual (el gate local lo replica:
+      # allí ya corre todo). Falla cerrado si no se lanzó nada o uno murió sin código de salida.
+      - name: Esperar a los bancos en segundo plano (bancos-en-fondo.sh)
+        if: ${{ !cancelled() }}
+        run: bash qa/scripts/bancos-en-fondo.sh esperar --tope 300
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
@@ -310,12 +347,22 @@ jobs:
   #   grep -cE "path = qa|qa/" Yala.xcodeproj/project.pbxproj  → 0
   changes:
     runs-on: ubuntu-latest
+    # 10 min (2026-11-21): heredaba los 360 de GitHub. Tarda segundos.
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
+      # Leer los runs de `qa.yml` para el respaldo de la nocturna (abajo).
+      actions: read
     outputs:
       run_tests: ${{ steps.decide.outputs.run_tests }}
+      # `false` solo cuando este run es el `schedule` de respaldo y la nocturna del día ya nació (la
+      # lanzó el vigilante). Lo leen `ui-build` y, a través de él, `ui`. Vacío = corre (falla cerrado).
+      nocturna: ${{ steps.decide.outputs.nocturna }}
     steps:
+      # Solo para el respaldo de la nocturna: trae `ci-vigilante-nocturna.sh` y el cron de este fichero.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ github.event_name == 'schedule' }}
       - name: ¿El diff toca app, tests, proyecto o CI?
         id: decide
         shell: bash
@@ -349,6 +396,26 @@ jobs:
               changed=$(gh api "repos/$GITHUB_REPOSITORY/compare/$PUSH_BASE...$GITHUB_SHA" --jq '.files[]?.filename') \
                 || run_suite "la API compare no respondió"
               cap=300
+              ;;
+            schedule)
+              # RESPALDO DE LA NOCTURNA (2026-11-21). La lanza el vigilante a su hora; este cron llega
+              # horas después. Si la del día ya nació (sin contar este run), no se corre nada. Si no
+              # se puede saber, corre: una nocturna de más cuesta runner; una de menos, la cobertura.
+              decision=""
+              if out=$(EXCLUIR_RUN="$GITHUB_RUN_ID" PLAZO_HORAS=0 REPO="$GITHUB_REPOSITORY" RAMA="$GITHUB_REF_NAME" \
+                         SALIDA=/dev/null bash qa/scripts/ci-vigilante-nocturna.sh decidir 2>&1); then
+                printf '%s\n' "$out"
+                decision=$(printf '%s\n' "$out" | sed -n 's/^  → decision=//p' | tail -1)
+              else
+                printf '%s\n' "$out"
+              fi
+              if [ "$decision" = cubierta ]; then
+                echo "run_tests=false" >> "$GITHUB_OUTPUT"
+                echo "nocturna=false" >> "$GITHUB_OUTPUT"
+                echo "::notice title=Nocturna::SE SALTA — la de hoy ya la lanzó el vigilante a su hora; este cron es el respaldo."
+                exit 0
+              fi
+              run_suite "respaldo de la nocturna: la de hoy no ha nacido (o no se pudo comprobar)"
               ;;
             *)
               run_suite "evento $GITHUB_EVENT_NAME sin lista de ficheros fiable"
@@ -424,7 +491,20 @@ jobs:
   # lo cubre el reintento acotado de `ci-reintentar-rojos.sh`: repite SOLO los rojos, hasta 3
   # vueltas, y no toca nada en un PR verde. Su banco, y el de que esto siga bloqueando
   # (`ci-unit-bloqueante-test.sh`), corren en `coverage-index`.
-  tests:
+  #
+  # EN TRES JOBS DESDE EL 2026-11-21 (auditoría de tiempos del CI, `docs/auditorias/2026-11-21-ci-tiempos.md`).
+  # Hasta ese día un solo job lo hacía todo en un runner: build (~27 min de mediana, siempre desde
+  # cero), pure-logic (~23) y context-based (~4) en serie, ~66 min por PR en el p50. Ahora:
+  #   · `build` compila UNA vez reusando la caché del último build de 2.3 y sube los productos;
+  #   · `unit` (matriz de 3 tandas) baja los productos y corre su parte de pure-logic, repartida por
+  #     tiempos (`ci-unit-tandas.sh`); la tanda 1 corre además context-based, a la vez que las otras;
+  #   · `tests` (este nombre lo exige el ruleset de 2.3: NO se cambia) junta los resultados en un
+  #     Ubuntu y solo sale en verde si el build y las tres tandas corrieron y salieron en verde
+  #     (`ci-unit-resultado.sh`). Deja al aviso las mismas salidas de siempre.
+  # Ocupa 3 de los 5 macOS de la cuenta mientras corren las tandas: por eso la nocturna se lanza a
+  # una hora fija fuera de la jornada (ver `nocturna-vigilante.yml`).
+  build:
+    name: Unit tests (build)
     needs: changes
     # Fail closed también aquí: si `changes` peta, su output llega vacío y '' != 'false',
     # así que la suite corre igual. Solo un 'false' explícito la salta.
@@ -542,61 +622,13 @@ jobs:
     # nocturna 60); si vuelven a divergir, `timeout-minutes` la admite (comprobado con actionlint
     # 1.7.12, que rechaza el texto plano con «expecting a single ${{...}} expression or float
     # number literal»). Desde el 2026-11-19, 110: ver «RE-MEDIDA DEL 2026-11-19».
-    timeout-minutes: 110
-    # Los tests de intervalos construyen sus expectativas con un calendario fijado a
-    # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
-    # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
-    # dos mitades coinciden y salen verdes; bajo otra zona no coinciden y salen CUATRO rojos
-    # DETERMINISTAS —no flaky—. Llevaban asi desde el 2026-08-17.
     #
-    # `TEST_RUNNER_` es el prefijo que `xcodebuild` retira al propagar la variable al proceso
-    # de test, asi que el proceso recibe `TZ=America/Lima`. Medido el 2026-09-03 en la Mac del
-    # owner con el mecanismo EXACTO de aqui —la variable en el ENTORNO del proceso xcodebuild,
-    # que es como la entrega el `env:` de Actions, no en la linea de comandos—: con `UTC`,
-    # `✘ Test run with 10 tests in 1 suite failed ... with 10 issues`; con `America/Lima`,
-    # `✔ Test run with 10 tests in 1 suite passed`. Mismo binario, misma maquina, solo cambia
-    # la variable. El conteo `10 tests` es el control de que la suite corrio y no cero tests.
-    #
-    # Sustituye a `sudo systemsetup -settimezone`, que estuvo aqui del 2026-09-02 al -09-03 y
-    # se retiro por NO FIABLE: aplico la zona en 3 de 9 runs medidos, con la misma imagen de
-    # runner y el mismo sudo. El `### Error:-99` de `InternetServices.m` que imprimia NO era la
-    # causa —sale identico en los runs que SI aplicaron— y la causa ultima quedo sin cerrar.
-    # Como el paso no era `continue-on-error`, cada fallo tumbaba el job entero y dejaba el CI
-    # ejecutando CERO tests: cuatro commits de codigo entraron en 2.1 sin una sola corrida.
-    # Va a nivel de JOB, no de paso, para que un paso de test nuevo lo herede — olvidarse de
-    # aplicarlo es exactamente el modo de fallo que este bloque arregla.
-    # Lo que el job del aviso necesita para leer que paso de verdad. `outcome` guarda lo
-    # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde (en
-    # los unit ya coinciden: desde el 2026-10-10 no llevan `continue-on-error`).
-    outputs:
-      unit_pure: ${{ steps.unit_pure.outcome }}
-      # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
-      unit_pure_rojos: ${{ steps.unit_pure.outputs.rojos }}
-      unit_context: ${{ steps.unit_context.outcome }}
-      unit_context_rojos: ${{ steps.unit_context.outputs.rojos }}
-      ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
-    env:
-      TEST_RUNNER_TZ: America/Lima
-      # Unica fuente de «esta corrida lleva UI» para el JOB `aviso` de mas abajo, que la lee
-      # para no confundir «saltado a proposito» con «no llego a correr» — dos cosas que en
-      # `needs.<job>.outputs` llegan IGUAL: vacias.
-      # La condicion aparece DOS veces en el fichero: aqui y en el `if:` del job `ui` (un `if:`
-      # de job no ve el `env` de otro job). Si cambia una, cambian las dos. (Hasta el 2026-10-24
-      # habia una tercera en `timeout-minutes` de este job; ver «TOPES DE TIEMPO».)
-      UI_TOCABA: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    # EN TRES JOBS (2026-11-21). La tabla de arriba es del job único, cuando build y unit iban en
+    # serie. Este job ya solo compila: simulador hasta 25 (en paralelo con la caché) + caché ~3 +
+    # build 50 + subir ~1. Tope 80. Las tandas (`unit`) llevan el suyo. Re-medido con los runs del
+    # PR que lo partió: ver la auditoría.
+    timeout-minutes: 80
     steps:
-      # `UI_TOCABA` sale por un paso, y no como `outputs: ui_tocaba: ${{ env.UI_TOCABA }}`,
-      # porque el output de un paso es el camino sin ambiguedad: `steps.<id>.outputs` esta
-      # disponible en `jobs.<id>.outputs` sin discusion. Lo medido con actionlint 1.7.12 es
-      # que `env` SI se rechaza en `jobs.<id>.env` («context "env" is not allowed here») y
-      # NO se queja en `jobs.<id>.outputs` — que no es lo mismo que saber que funciona en
-      # ejecucion, y aqui un vacio haria que el aviso gritara «la suite no corrio» en cada
-      # PR. Una linea de mas cuesta menos que averiguarlo en produccion.
-      #
-      # Lo que evita: que la condicion de UI_TOCABA se escriba una CUARTA vez en el fichero.
-      - name: Exponer si a la UI le tocaba correr
-        id: contexto
-        run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # XCODE 27.1 FIJO DESDE LA RAMA 2.2 (2026-10-18; sigue en 2.3). 2.2 usa APIs que solo existen en el SDK de
       # iOS 27 (el «Abrir cuenta» de Siri, PR #552) y con el 26.6 de `macos-26` no compilaba:
@@ -644,22 +676,169 @@ jobs:
       # medido en este runner —, y es el paso mas largo del job. El UDID ya lo resuelve.
       #
       # Tope de 25: el camino normal tarda segundos; la holgura es para la descarga.
+      #
+      # EN SEGUNDO PLANO DESDE EL 2026-11-21 (`ci-simulador-fondo.sh`): se lanza aquí y se recoge
+      # justo antes del build, mientras se restaura la caché. Tardaba de segundos a más de 2 min.
+      - name: Simulador del runner, en segundo plano
+        run: bash qa/scripts/ci-simulador-fondo.sh lanzar
+      # CACHÉ DE COMPILACIÓN (2026-11-21). Hasta ese día cada run compilaba desde cero (~27 min en el
+      # p50). Se guarda el DerivedData de CI (`.ddp`) menos el índice y los logs, con la caché de
+      # compilación de Xcode encendida (`COMPILATION_CACHE_ENABLE_CACHING`). Medido en la Max con
+      # Xcode 27.2: build en frío 214 s; checkout nuevo con la caché restaurada en la MISMA ruta, 23 s.
+      # La ruta importa: copiada a otra, recompila entero (medido: 241 s). El runner usa siempre la
+      # misma (`/Users/runner/work/Yala/Yala/.ddp`).
+      #
+      # La clave lleva el Xcode exacto (su build) y el `Package.resolved`; el commit la hace única.
+      # Se restaura la más reciente con el mismo Xcode y paquetes o, si no hay, con el mismo Xcode.
+      # Guarda el push a 2.3 o 1.0 y la nocturna; un PR solo si no encontró nada (si guardaran todos,
+      # llenarían los 10 GB del repo y echarían la de 2.3, que es la que sirve a los demás). Un PR lee
+      # las cachés de su rama base.
+      #
+      # UNA CACHÉ ROTA NUNCA ROMPE EL RUN: restaurar y guardar llevan `continue-on-error` y, sin
+      # caché, el build compila desde cero como antes.
+      - name: Clave de la caché de compilación
+        id: clave
+        env:
+          PAQUETES: ${{ hashFiles('Yala.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+        run: |
+          xcode=$(xcodebuild -version | tr -s ' \n' '-' | sed 's/-$//')
+          {
+            echo "prefijo=ddp-v1-$xcode-"
+            echo "paquetes=ddp-v1-$xcode-$PAQUETES-"
+            echo "clave=ddp-v1-$xcode-$PAQUETES-$GITHUB_SHA"
+          } >> "$GITHUB_OUTPUT"
+      - name: Restaurar la caché de compilación
+        id: cache
+        continue-on-error: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .ddp
+            !.ddp/Index.noindex
+            !.ddp/Logs
+          key: ${{ steps.clave.outputs.clave }}
+          restore-keys: |
+            ${{ steps.clave.outputs.paquetes }}
+            ${{ steps.clave.outputs.prefijo }}
+      # Tope de 25, el mismo que tenía el paso cuando corría en primer plano.
       - name: Simulador del runner
         id: sim
         timeout-minutes: 25
-        run: bash qa/scripts/ci-simulador.sh
+        run: bash qa/scripts/ci-simulador-fondo.sh esperar
       - name: Build for testing
         id: build
         # 50 desde el 2026-11-19 (era 40 y el maximo verde llego a 33,4; 30 hasta el 26-oct, 25 hasta
-        # el 24-oct). Ver «TOPES DE TIEMPO».
+        # el 24-oct). Ver «TOPES DE TIEMPO». Con la caché caliente baja a minutos; el tope sigue
+        # pensado para un build en frío (caché caducada o un Xcode nuevo).
         timeout-minutes: 50
+        # `COMPILER_INDEX_STORE_ENABLE=NO`: el índice solo sirve al editor; ni se cachea ni se usa.
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
-            -quiet
+            -quiet \
+            COMPILATION_CACHE_ENABLE_CACHING=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO
+      # En tar: el zip del artefacto no conserva los permisos de ejecución de los binarios (como
+      # `ui-build`). Lo bajan las tres tandas de `unit`.
+      - name: Empaquetar el build
+        run: tar -C .ddp/Build -cf unit-build.tar Products && ls -lh unit-build.tar
+      - name: Subir el build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unit-build
+          path: unit-build.tar
+          retention-days: 1
+          compression-level: 1
+          # Un re-run del job vuelve a subirlo con el mismo nombre.
+          overwrite: true
+      - name: Guardar la caché de compilación
+        if: >-
+          ${{ !cancelled() && steps.build.outcome == 'success' && steps.cache.outputs.cache-hit != 'true'
+          && (github.event_name != 'pull_request' || steps.cache.outputs.cache-matched-key == '') }}
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .ddp
+            !.ddp/Index.noindex
+            !.ddp/Logs
+          key: ${{ steps.clave.outputs.clave }}
+
+  unit:
+    name: Unit tests (tanda ${{ matrix.tanda }})
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: xcode-27
+    # Simulador hasta 25 (en segundo plano, a la vez que la descarga) + pure-logic 40 + context-based
+    # 10. Con un tercio de la suite, cada tanda corre ~8-10 min de tests (pure-logic entero: 23 de
+    # mediana el 21-nov).
+    timeout-minutes: 75
+    strategy:
+      # Una tanda que falla no cancela las otras: sus rojos también tienen que salir.
+      fail-fast: false
+      # El número de tandas lo decide SOLO esta matriz: el reparto lee `strategy.job-total`. Al
+      # cambiarlo, cambian las salidas `pure_N`/`rojos_N` de abajo y `TANDAS` del job `tests`
+      # (`ci-unit-bloqueante-test.sh` falla si no cuadran).
+      matrix:
+        tanda: [1, 2, 3]
+    # Los tests de intervalos construyen sus expectativas con un calendario fijado a
+    # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
+    # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
+    # dos mitades coinciden y salen verdes; bajo otra zona no coinciden y salen CUATRO rojos
+    # DETERMINISTAS —no flaky—. Llevaban asi desde el 2026-08-17.
+    #
+    # `TEST_RUNNER_` es el prefijo que `xcodebuild` retira al propagar la variable al proceso
+    # de test, asi que el proceso recibe `TZ=America/Lima`. Medido el 2026-09-03 en la Mac del
+    # owner con el mecanismo EXACTO de aqui —la variable en el ENTORNO del proceso xcodebuild,
+    # que es como la entrega el `env:` de Actions, no en la linea de comandos—: con `UTC`,
+    # `✘ Test run with 10 tests in 1 suite failed ... with 10 issues`; con `America/Lima`,
+    # `✔ Test run with 10 tests in 1 suite passed`. Mismo binario, misma maquina, solo cambia
+    # la variable. El conteo `10 tests` es el control de que la suite corrio y no cero tests.
+    #
+    # Sustituye a `sudo systemsetup -settimezone`, que estuvo aqui del 2026-09-02 al -09-03 y
+    # se retiro por NO FIABLE: aplico la zona en 3 de 9 runs medidos, con la misma imagen de
+    # runner y el mismo sudo. El `### Error:-99` de `InternetServices.m` que imprimia NO era la
+    # causa —sale identico en los runs que SI aplicaron— y la causa ultima quedo sin cerrar.
+    # Como el paso no era `continue-on-error`, cada fallo tumbaba el job entero y dejaba el CI
+    # ejecutando CERO tests: cuatro commits de codigo entraron en 2.1 sin una sola corrida.
+    # Va a nivel de JOB, no de paso, para que un paso de test nuevo lo herede — olvidarse de
+    # aplicarlo es exactamente el modo de fallo que este bloque arregla.
+    # Una salida por tanda, con nombre fijo: en una matriz, si dos patas escriben la MISMA salida gana
+    # la última en acabar. Las junta el job `tests`.
+    outputs:
+      pure_1: ${{ steps.salida.outputs.pure_1 }}
+      pure_2: ${{ steps.salida.outputs.pure_2 }}
+      pure_3: ${{ steps.salida.outputs.pure_3 }}
+      rojos_1: ${{ steps.salida.outputs.rojos_1 }}
+      rojos_2: ${{ steps.salida.outputs.rojos_2 }}
+      rojos_3: ${{ steps.salida.outputs.rojos_3 }}
+      contexto: ${{ steps.salida.outputs.contexto }}
+      contexto_rojos: ${{ steps.salida.outputs.contexto_rojos }}
+    env:
+      TEST_RUNNER_TZ: America/Lima
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Seleccionar Xcode 27.1
+        run: bash qa/scripts/ci-xcode.sh
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # Prepara y ARRANCA el simulador en segundo plano mientras se baja el build (2026-11-21): el
+      # primer `xcodebuild test` ya no paga el arranque del device. Si arrancarlo falla, lo arranca el
+      # test, como antes.
+      - name: Simulador del runner, en segundo plano
+        run: bash qa/scripts/ci-simulador-fondo.sh lanzar --arrancar
+      - name: Bajar el build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unit-build
+      # Donde lo habría dejado el build local: `test-without-building` lo busca en `.ddp/Build/Products`.
+      - name: Desempaquetar el build
+        id: desempaquetar
+        timeout-minutes: 10
+        run: mkdir -p .ddp/Build && tar -C .ddp/Build -xf unit-build.tar && rm unit-build.tar
       # CUARENTENA (2026-11-17, propuesta P1 de verificación). Un rescate de los dos pasos de unit
       # solo vale si la prueba está en `qa/cuarentena.json`, y esa lista se lee de `origin/2.3`,
       # NUNCA del PR: un PR no puede meterse en cuarentena a sí mismo. Si 2.3 aún no la tiene, el
@@ -680,6 +859,10 @@ jobs:
             printf 'ILEGIBLE: git fetch origin 2.3 falló\n' > "$dest"
           fi
           bash qa/scripts/ci-reintentar-rojos.sh --informe-cuarentena "$dest" || true
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 25
+        run: bash qa/scripts/ci-simulador-fondo.sh esperar
       # YalaTests SALVO las 7 clases que crean un ModelContext (van en el paso siguiente).
       # BLOQUEANTE desde el 2026-10-10: sin `continue-on-error`, un rojo que siga rojo tras sus
       # reintentos pone `tests` en rojo y el auto-merge no mergea (ver «LOS UNIT BLOQUEAN» arriba
@@ -699,12 +882,24 @@ jobs:
       # repetición de 4 tests que corren en 0,03 s. En los logs del runner (Xcode 26) no sale,
       # pero si una imagen lo trae, tres vueltas volverían a rozar el tope. Nadie sube esos
       # diagnósticos: el `.xcresult` y el log bastan.
+      #
+      # EN TANDAS DESDE EL 2026-11-21: la selección sale de `ci-unit-tandas.sh` (una parte de
+      # pure-logic, por tiempos; la última tanda corre «todo menos lo de las otras»). La lista de las
+      # 7 clases context-based vive allí.
       - name: Unit tests (YalaTests pure-logic)
         id: unit_pure
-        # 55 desde el 2026-11-19 (era 45 y el maximo verde llego a 36,9; 35 hasta el 26-oct, 30
-        # hasta el 24-oct). Holgura para las vueltas de un flaky rescatado. Ver «TOPES DE TIEMPO».
-        timeout-minutes: 55
+        # 40 desde el 2026-11-21: la tanda corre un tercio de lo que tenía 55 de tope entero (máximo
+        # verde 36,9 el 19-nov), más holgura para el arranque y las vueltas de un flaky rescatado.
+        timeout-minutes: 40
+        env:
+          TANDA: ${{ matrix.tanda }}
+          TOTAL: ${{ strategy.job-total }}
         run: |
+          set -euo pipefail
+          # Si el reparto falla, el paso falla aquí: nunca arranca `xcodebuild` sin selección.
+          seleccion=$(bash qa/scripts/ci-unit-tandas.sh "$TANDA" "$TOTAL")
+          # Un argumento por línea y sin espacios (nombres de tipo): el troceo es el buscado.
+          # shellcheck disable=SC2086
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
             --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" -- \
             test-without-building \
@@ -715,14 +910,7 @@ jobs:
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never \
             --- \
-            -only-testing:YalaTests \
-            -skip-testing:YalaTests/BudgetFilterRegressionTests \
-            -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
-            -skip-testing:YalaTests/ChatAssistantViewModelTests \
-            -skip-testing:YalaTests/CurrencyConverterCacheTests \
-            -skip-testing:YalaTests/ICloudAccountSummaryTests \
-            -skip-testing:YalaTests/InitialBalanceServiceTests \
-            -skip-testing:YalaTests/UserSegmentServiceTests
+            $seleccion
       # Las 7 clases context-based (crean ModelContext in-memory). BLOQUEANTE desde el 2026-10-10,
       # como pure-logic y con el mismo reintento acotado: hasta entonces usaba
       # `-retry-tests-on-failure`, que con Swift Testing repite la seleccion entera.
@@ -731,11 +919,17 @@ jobs:
       # salio: sin el no hay nada que probar. Lo primero hace falta para el aviso: un `skipped`
       # aqui se leeria como «la suite no llego a correr» en vez de como el rojo de pure-logic que
       # es. Y solo cuesta minutos en corridas que ya estan en rojo.
+      #
+      # SOLO EN LA TANDA 1 DESDE EL 2026-11-21, a la vez que pure-logic corre en las tandas 2 y 3. Corre
+      # aunque pure-logic de esta tanda salga en rojo; no si falta el build o el simulador.
       - name: Unit tests (YalaTests context-based)
         id: unit_context
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && matrix.tanda == 1 && steps.desempaquetar.outcome == 'success' && steps.sim.outcome == 'success' }}
         timeout-minutes: 10
         run: |
+          set -euo pipefail
+          seleccion=$(bash qa/scripts/ci-unit-tandas.sh contexto)
+          # shellcheck disable=SC2086
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
             --dir "$RUNNER_TEMP/reintentar-rojos-context" \
             --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" -- \
@@ -747,13 +941,102 @@ jobs:
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never \
             --- \
-            -only-testing:YalaTests/BudgetFilterRegressionTests \
-            -only-testing:YalaTests/CategoryDeduplicationServiceTests \
-            -only-testing:YalaTests/ChatAssistantViewModelTests \
-            -only-testing:YalaTests/CurrencyConverterCacheTests \
-            -only-testing:YalaTests/ICloudAccountSummaryTests \
-            -only-testing:YalaTests/InitialBalanceServiceTests \
-            -only-testing:YalaTests/UserSegmentServiceTests
+            $seleccion
+      # Lo que tardó cada suite de esta tanda, sacado del `.xcresult` de la primera vuelta. Con estos
+      # ficheros se regenera la tabla del reparto (`ci-unit-tiempos.py generar <run>`). Advisory: si
+      # falla, la tanda no se entera.
+      - name: Tiempos por suite
+        if: ${{ !cancelled() && steps.unit_pure.outcome != 'skipped' }}
+        continue-on-error: true
+        env:
+          TANDA: ${{ matrix.tanda }}
+        run: python3 qa/scripts/ci-unit-tiempos.py extraer "$RUNNER_TEMP/reintentar-rojos/vuelta-1.xcresult" "unit-tiempos-$TANDA.json"
+      - name: Subir los tiempos por suite
+        if: ${{ !cancelled() && steps.unit_pure.outcome != 'skipped' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unit-tiempos-${{ matrix.tanda }}
+          path: unit-tiempos-${{ matrix.tanda }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+          overwrite: true
+      - name: Resultado de la tanda
+        id: salida
+        if: ${{ always() }}
+        env:
+          TANDA: ${{ matrix.tanda }}
+          PURE: ${{ steps.unit_pure.outcome }}
+          ROJOS: ${{ steps.unit_pure.outputs.rojos }}
+          CONTEXTO: ${{ steps.unit_context.outcome }}
+          CONTEXTO_ROJOS: ${{ steps.unit_context.outputs.rojos }}
+        run: |
+          {
+            echo "pure_$TANDA=$PURE"
+            echo "rojos_$TANDA=$ROJOS"
+            if [ "$TANDA" = 1 ]; then
+              echo "contexto=$CONTEXTO"
+              echo "contexto_rojos=$CONTEXTO_ROJOS"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+  # El check que exige el ruleset de 2.3 (NO cambiar el nombre). Ver «EN TRES JOBS» arriba de `build`.
+  # Ubuntu: solo junta resultados. Corre aunque `build` o una tanda fallen (`!cancelled()`), para dar el
+  # rojo con su motivo; si el diff es solo docs se salta, como antes, y el ruleset lo da por bueno.
+  tests:
+    needs: [changes, build, unit]
+    if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Lo que el job del aviso necesita para leer que paso de verdad. `outcome` guarda lo
+    # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde (en
+    # los unit ya coinciden: desde el 2026-10-10 no llevan `continue-on-error`).
+    outputs:
+      unit_pure: ${{ steps.veredicto.outputs.unit_pure }}
+      # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
+      unit_pure_rojos: ${{ steps.veredicto.outputs.unit_pure_rojos }}
+      unit_context: ${{ steps.veredicto.outputs.unit_context }}
+      unit_context_rojos: ${{ steps.veredicto.outputs.unit_context_rojos }}
+      ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
+    env:
+      # Unica fuente de «esta corrida lleva UI» para el JOB `aviso` de mas abajo, que la lee
+      # para no confundir «saltado a proposito» con «no llego a correr» — dos cosas que en
+      # `needs.<job>.outputs` llegan IGUAL: vacias.
+      # La condicion aparece DOS veces en el fichero: aqui y en el `if:` del job `ui` (un `if:`
+      # de job no ve el `env` de otro job). Si cambia una, cambian las dos. (Hasta el 2026-10-24
+      # habia una tercera en `timeout-minutes` de este job; ver «TOPES DE TIEMPO».)
+      UI_TOCABA: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      # `UI_TOCABA` sale por un paso, y no como `outputs: ui_tocaba: ${{ env.UI_TOCABA }}`,
+      # porque el output de un paso es el camino sin ambiguedad: `steps.<id>.outputs` esta
+      # disponible en `jobs.<id>.outputs` sin discusion. Lo medido con actionlint 1.7.12 es
+      # que `env` SI se rechaza en `jobs.<id>.env` («context "env" is not allowed here») y
+      # NO se queja en `jobs.<id>.outputs` — que no es lo mismo que saber que funciona en
+      # ejecucion, y aqui un vacio haria que el aviso gritara «la suite no corrio» en cada
+      # PR. Una linea de mas cuesta menos que averiguarlo en produccion.
+      #
+      # Lo que evita: que la condicion de UI_TOCABA se escriba una CUARTA vez en el fichero.
+      - name: Exponer si a la UI le tocaba correr
+        id: contexto
+        run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Falla cerrado: rojo si el build o cualquier tanda no corrió o no salió en verde. Banco:
+      # `ci-unit-resultado-test.sh`; `ci-unit-bloqueante-test.sh` vigila que este paso siga aquí.
+      - name: Veredicto de los unit (ci-unit-resultado.sh)
+        id: veredicto
+        env:
+          TANDAS: "1 2 3"
+          BUILD: ${{ needs.build.result }}
+          UNIT: ${{ needs.unit.result }}
+          PURE_1: ${{ needs.unit.outputs.pure_1 }}
+          PURE_2: ${{ needs.unit.outputs.pure_2 }}
+          PURE_3: ${{ needs.unit.outputs.pure_3 }}
+          ROJOS_1: ${{ needs.unit.outputs.rojos_1 }}
+          ROJOS_2: ${{ needs.unit.outputs.rojos_2 }}
+          ROJOS_3: ${{ needs.unit.outputs.rojos_3 }}
+          CONTEXTO: ${{ needs.unit.outputs.contexto }}
+          CONTEXTO_ROJOS: ${{ needs.unit.outputs.contexto_rojos }}
+        run: bash qa/scripts/ci-unit-resultado.sh
 
   # --------------------------------------------------------------------------------
   # SUITE DE UI, SOLO EN LA NOCTURNA, PARTIDA EN TANDAS PARALELAS  (2026-10-09)
@@ -879,12 +1162,16 @@ jobs:
   # cada noche del 23 al 29-oct, el de la tanda 2 (`AccountCardPickersUITests`) cuatro de seis, y
   # los dos con `Timed out while evaluating UI query` esperando `uitest_ready`, a 130-290 s por
   # intento. El paso «Calentar el simulador» lo arranca y abre la app una vez antes de los tests.
-  # Ver «UN SOLO BUILD PARA TODAS LAS TANDAS». Sin `needs`: arranca a la vez que `tests`. Tercera
+  # Ver «UN SOLO BUILD PARA TODAS LAS TANDAS». Solo espera a `changes` (segundos; desde el 2026-11-21, por el respaldo de la nocturna) y arranca a la vez que `build`. Tercera
   # aparicion de la condicion de UI_TOCABA (ver el `env:` del job `tests`); la cuarta es la del job
   # `ui`, que depende de este.
   ui-build:
     name: UI tests (build compartido)
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    # `changes` dice si este run es un respaldo de la nocturna que sobra (2026-11-21, ver el cron).
+    needs: changes
+    if: >-
+      ${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+      && needs.changes.outputs.nocturna != 'false' }}
     runs-on: xcode-27
     timeout-minutes: 75
     steps:

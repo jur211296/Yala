@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "runs": [],
+    "como": "python3 qa/scripts/ci-unit-tiempos.py generar <run-id> [<run-id> …]; segundos por suite = suma de sus casos + por_caso_s por caso, mediana entre runs",
+    "por_caso_s": 0.05,
+    "contexto_s": 240
+  },
+  "suites": {}
+}

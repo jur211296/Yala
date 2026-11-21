@@ -16,20 +16,35 @@ name: Vigilante de la nocturna
 #     una corrida de UI en las 26 h previas. La API de runs filtrada por evento devuelve
 #     subconjuntos distintos llamada a llamada, y él hacía una sola lectura en cada push.
 #
-# Ahora pregunta «¿ha nacido la corrida de HOY?», con «hoy» anclado al cron de `qa.yml`; lee de
-# dos fuentes en varias rondas; y no actúa nunca antes de un plazo de 12 h desde el cron.
+# Pregunta «¿ha nacido la corrida de HOY?», con «hoy» anclado al cron de `qa.yml`, y lee de dos
+# fuentes en varias rondas. Hasta el 2026-11-21 no actuaba antes de 12 h desde el cron; desde
+# ese día lanza en cuanto pasa la hora (ver «DESDE EL 2026-11-21»).
 #
 # DOS RELOJES, porque fallan de forma distinta:
 #
-#   · `schedule` — puesto DESPUÉS del plazo (20:17 UTC con el cron de hoy de qa.yml), para que
-#     cuando despierte ya pueda decidir algo. Llega con horas de retraso, como el de la
-#     nocturna; mientras nazca antes de las 08:17 UTC del día siguiente, mira el día correcto.
-#     Son dos por redundancia: cuestan segundos de Linux.
-#   · `push` a la rama de trabajo (hoy `2.3`) — no depende del cron. Antes del plazo cada push lee una vez y no hace
-#     nada; después, el primero que llegue lanza si falta. Es la red si el cron muere.
+#   · `schedule` — cada hora desde el 2026-11-21 (hasta entonces, dos al día puestos tras un plazo de
+#     12 h). Llega con horas de retraso, como todos los cron de GitHub; con uno por hora, alguno
+#     despierta poco después de la hora de la nocturna.
+#   · `push` a la rama de trabajo (hoy `2.3`) — no depende del cron. Cada push lee y, si ya pasó la
+#     hora y la nocturna del día no ha nacido, la lanza. Es la red si el cron muere.
 #
-# SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él, pero sus
-# propios crons de aquí abajo están puestos a mano tras el plazo. Muévelos también.
+# SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él.
+#
+# DESDE EL 2026-11-21 ES QUIEN LANZA LA NOCTURNA, A HORA FIJA (auditoría de tiempos del CI). El cron
+# de `qa.yml` nacía con 6-10 h de retraso (medido del 12-oct al 20-nov: entre las 09:00 y las 13:47
+# de Lima) y la nocturna, que dura 7,5-9 h, ocupaba los macOS de la cuenta en plena jornada: los PR
+# hacían cola detrás. Ahora el «día» empieza a la hora del cron de `qa.yml` (02:17 UTC = 21:17 en
+# Lima) y el vigilante la lanza en cuanto despierta después de esa hora (`PLAZO_HORAS=0`), sin
+# aviso: es lo normal (motivo `hora`). Si la lanza más de 6 h tarde (`VENTANA_HORAS`), avisa.
+#
+# Para despertar cerca de esa hora sin nada fuera del repo (0 USD, sin runner propio): un cron CADA
+# HORA y cada push a la rama de trabajo. Cada cron llega tarde, pero con uno por hora alguno cae poco
+# después de la hora fijada, y los pushes de la noche lo adelantan. Lo exacto al minuto pediría un
+# disparador fuera del repo (un launchd en la Mini con `gh workflow run qa.yml --ref 2.3`): queda
+# propuesto en `docs/auditorias/2026-11-21-ci-tiempos.md`, no hecho.
+#
+# El cron de `qa.yml` se queda como RESPALDO: cuando GitHub lo sirve (horas después), su job
+# `changes` pregunta a este mismo script si la nocturna del día ya nació; si sí, no corre nada.
 #
 # LA UI EN TANDAS (2026-10-09) NO LE CAMBIA NADA: las tandas son jobs del MISMO run de `qa.yml`,
 # y el vigilante cuenta runs (`schedule`/`workflow_dispatch`), no jobs. Si algún día las tandas se
@@ -38,8 +53,8 @@ name: Vigilante de la nocturna
 
 on:
   schedule:
-    - cron: '47 20 * * *'
-    - cron: '47 23 * * *'
+    # Cada hora (2026-11-21): ver «DESDE EL 2026-11-21» arriba. Cuesta segundos de Linux por run.
+    - cron: '47 * * * *'
   push:
     # La rama de trabajo, a mano: GitHub no admite expresiones en este filtro. Al publicar una
     # version y cambiar la rama por defecto, cambia este valor y el de `on.push` de `qa.yml`.
@@ -93,6 +108,10 @@ jobs:
           # Por `env:` y no interpolados con `${{ }}` dentro del `run:`: son texto libre de quien
           # lanza el dispatch, y dentro de comillas dobles de bash se ejecutaría.
           AHORA: ${{ github.event.inputs.ahora }}
+          # Hora fija (2026-11-21): lanza en cuanto pasa la hora del cron de `qa.yml`, y solo avisa si
+          # lo hace más de 6 h tarde. Ver la cabecera.
+          PLAZO_HORAS: 0
+          VENTANA_HORAS: 6
           FORZAR: ${{ github.event.inputs.forzar || 'no' }}
         run: bash qa/scripts/ci-vigilante-nocturna.sh decidir
 
@@ -109,7 +128,8 @@ jobs:
         # el vigilante no ha podido ni decidir: callar en ese caso sería fallar abierto.
         if: >-
           ${{ always() && (
-            (steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.motivo != 'forzada')
+            (steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.motivo != 'forzada'
+             && steps.decidir.outputs.motivo != 'hora')
             || steps.decidir.outcome == 'failure') }}
         env:
           RAMA: ${{ steps.decidir.outputs.rama }}

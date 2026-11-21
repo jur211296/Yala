@@ -30,7 +30,7 @@
 #    noticia (ticket `vigilante-calla-si-no-puede-comprobar-la-nocturna`).
 #
 # Entorno: REPO (obligatorio) · RAMA (vacía ⇒ la rama por defecto) · QA_YML · AHORA (ISO-8601 UTC;
-# si viene, es un ENSAYO y nunca se lanza nada) · FORZAR (si|no) · PLAZO_HORAS · RONDAS · PAUSA ·
+# si viene, es un ENSAYO y nunca se lanza nada) · FORZAR (si|no) · PLAZO_HORAS · VENTANA_HORAS · EXCLUIR_RUN · RONDAS · PAUSA ·
 # PAUSA_VERIF · GH (el binario de gh; el banco pone uno falso) · SALIDA (por defecto $GITHUB_OUTPUT).
 set -uo pipefail
 
@@ -43,6 +43,15 @@ FORZAR="${FORZAR:-no}"
 # 12 h: el retraso máximo medido en 29 días fue 8,9 h. Tres horas de margen; y cada hora de más es
 # una hora más que tarda en llegar el aviso el día que el fallo es real.
 PLAZO_HORAS="${PLAZO_HORAS:-12}"
+# HORA FIJA (2026-11-21, auditoría de tiempos del CI). El workflow ya no espera al cron de GitHub,
+# que servía la nocturna con 6-10 h de retraso y la metía en la jornada de Lima: la lanza él en
+# cuanto pasa la hora del cron (`PLAZO_HORAS=0`). `VENTANA_HORAS` distingue ese lanzamiento normal
+# (motivo `hora`, sin aviso) del que llega tarde (motivo `falta`, con aviso). 0 = sin ventana: todo
+# lanzamiento es `falta`, como antes.
+VENTANA_HORAS="${VENTANA_HORAS:-0}"
+# El run que pregunta no cuenta como corrida del día: el respaldo de `qa.yml` (su `schedule`)
+# pregunta desde dentro de su propio run, que ya existe.
+EXCLUIR_RUN="${EXCLUIR_RUN:-}"
 RONDAS="${RONDAS:-3}"
 PAUSA="${PAUSA:-20}"
 PAUSA_VERIF="${PAUSA_VERIF:-5}"
@@ -64,7 +73,8 @@ error() { echo "::error title=Vigilante de la nocturna::$1"; }
 # No se filtra por conclusión: una corrida en vuelo cuenta, o el siguiente push lanzaría otra encima.
 FILTRO='.workflow_runs[]
   | select((.event == "schedule" or .event == "workflow_dispatch")
-           and .head_branch == $rama and .created_at >= $desde and .created_at <= $hasta)
+           and .head_branch == $rama and .created_at >= $desde and .created_at <= $hasta
+           and (.id | tostring) != $excluir)
   | "\(.id) \(.event) \(.created_at)"'
 leer_ronda() {
   local ev j page viejo
@@ -73,7 +83,7 @@ leer_ronda() {
     if j=$("$GH" api "repos/$REPO/actions/workflows/$WF/runs?event=$ev&branch=$RAMA&per_page=100") \
        && jq -e '.workflow_runs | type == "array"' >/dev/null 2>&1 <<<"$j"; then
       VALIDAS=$((VALIDAS + 1))
-      jq -r --arg rama "$RAMA" --arg desde "$DESDE" --arg hasta "$HASTA" "$FILTRO" <<<"$j" >> "$VISTAS"
+      jq -r --arg rama "$RAMA" --arg desde "$DESDE" --arg hasta "$HASTA" --arg excluir "$EXCLUIR_RUN" "$FILTRO" <<<"$j" >> "$VISTAS"
     else
       echo "  (fuente event=$ev sin respuesta legible)" >&2
     fi
@@ -86,7 +96,7 @@ leer_ronda() {
     jq -e '.workflow_runs | type == "array" and length > 0' >/dev/null 2>&1 <<<"$j" || {
       echo "  (fuente sin filtro, página $page, vacía o ilegible)" >&2; break; }
     [ "$page" = 1 ] && VALIDAS=$((VALIDAS + 1))
-    jq -r --arg rama "$RAMA" --arg desde "$DESDE" --arg hasta "$HASTA" "$FILTRO" <<<"$j" >> "$VISTAS"
+    jq -r --arg rama "$RAMA" --arg desde "$DESDE" --arg hasta "$HASTA" --arg excluir "$EXCLUIR_RUN" "$FILTRO" <<<"$j" >> "$VISTAS"
     viejo=$(jq -r '.workflow_runs[-1].created_at' <<<"$j")
     [[ "$viejo" < "$DESDE" ]] && break
   done
@@ -147,6 +157,7 @@ decidir() {
   elif [ "$ahora_s" -lt "$limite_s" ]; then
     decision=esperando; [ "$VALIDAS" -eq 0 ] && motivo=sin_lectura || motivo=aun_no_nacio
   elif [ "$VALIDAS" -eq 0 ]; then decision=lanzar; motivo=sin_lectura
+  elif [ "$ahora_s" -lt $(( slot_s + VENTANA_HORAS * 3600 )) ]; then decision=lanzar; motivo=hora
   else decision=lanzar; motivo=falta
   fi
 
@@ -157,6 +168,7 @@ decidir() {
     esperando/sin_lectura) echo "::warning title=No he podido leer los runs::Aún dentro del plazo; no hago nada." ;;
     esperando/*) echo "::notice title=Esperando a la nocturna::Aún no ha nacido; el plazo acaba $(iso "$limite_s")." ;;
     lanzar/forzada) echo "::notice title=Lanzamiento forzado::Se lanza para verificar el mecanismo." ;;
+    lanzar/hora)  echo "::notice title=Hora de la nocturna::Ha pasado su hora ($DESDE) y aún no ha nacido: se lanza." ;;
     lanzar/sin_lectura) echo "::warning title=No he podido comprobar la nocturna::Plazo vencido y ninguna fuente legible: se lanza por si acaso." ;;
     lanzar/*)    echo "::warning title=La nocturna de hoy no ha nacido::Plazo vencido ($(iso "$limite_s")): se lanza desde aquí." ;;
   esac
