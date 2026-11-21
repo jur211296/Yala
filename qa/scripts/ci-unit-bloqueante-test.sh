@@ -10,7 +10,11 @@
 # PR en cola entraba con un unit en rojo. Volver a ponerlo no da ningún error —el CI sigue verde—,
 # y por eso lo vigila este banco. Ticket: `ci-warns-but-does-not-block`.
 #
-# Lo que comprueba, sobre el job `tests`:
+# DESDE EL 2026-11-21 los unit corren en el job `unit` (matriz de tandas) y el check `tests` es un
+# job aparte que junta sus resultados (`ci-unit-resultado.sh`). Las reglas 1-4 miran los pasos del
+# job `unit`; la 5, que `tests` siga siendo el veredicto de verdad.
+#
+# Lo que comprueba:
 #   1. Ningún paso que corra tests (`test-without-building` o `ci-reintentar-rojos.sh`) lleva
 #      `continue-on-error`, en ninguna de sus formas (`true`, una expresión `${{ }}`…). Solo
 #      `false` explícito pasa.
@@ -22,6 +26,9 @@
 #   4. Ningún paso de test repite la suite entera con `-retry-tests-on-failure`. Con Swift Testing
 #      ese flag repite TODA la selección hasta 3 veces (ver `ci-reintentar-rojos.sh`), y un rojo
 #      triplicado se come el tope del job.
+#   5. El job `tests` existe, espera a `build` y a `unit`, corre `ci-unit-resultado.sh` sin
+#      `continue-on-error`, y su `TANDAS` es exactamente la lista de la matriz de `unit`, con una salida
+#      `pure_N` en `unit` por cada tanda. Si no cuadran, una tanda podría quedar sin mirar.
 set -uo pipefail
 
 AQUI="$(cd "$(dirname "$0")" && pwd)"
@@ -42,23 +49,35 @@ import re, sys
 
 lineas = open(sys.argv[1], encoding="utf-8").read().splitlines()
 
-# Bloque del job `tests`: desde `  tests:` hasta la siguiente clave de job (sangría 2).
-ini = next((i for i, l in enumerate(lineas) if l == "  tests:"), None)
-if ini is None:
+def bloque(nombre):
+    """Líneas del job `nombre`: desde `  nombre:` hasta la siguiente clave de job (sangría 2)."""
+    ini = next((i for i, l in enumerate(lineas) if l == f"  {nombre}:"), None)
+    if ini is None:
+        return None
+    fin = next((i for i in range(ini + 1, len(lineas))
+                if re.match(r"^  [A-Za-z0-9_-]+:\s*$", lineas[i])), len(lineas))
+    return lineas[ini:fin]
+
+job = bloque("unit")
+final = bloque("tests")
+if job is None:
+    print("no hay job `unit`"); sys.exit(1)
+if final is None:
     print("no hay job `tests`"); sys.exit(1)
-fin = next((i for i in range(ini + 1, len(lineas))
-            if re.match(r"^  [A-Za-z0-9_-]+:\s*$", lineas[i])), len(lineas))
-job = lineas[ini:fin]
 
 # Pasos: cada `      - ` (sangría 6) abre uno; sigue mientras haya sangría 8 o líneas vacías.
-pasos, actual = [], None
-for l in job:
-    if re.match(r"^      - ", l):
-        actual = [l]; pasos.append(actual)
-    elif actual is not None and (l.startswith("        ") or l.strip() == ""):
-        actual.append(l)
-    elif not l.lstrip().startswith("#"):
-        actual = None
+def pasos_de(job):
+    pasos, actual = [], None
+    for l in job:
+        if re.match(r"^      - ", l):
+            actual = [l]; pasos.append(actual)
+        elif actual is not None and (l.startswith("        ") or l.strip() == ""):
+            actual.append(l)
+        elif not l.lstrip().startswith("#"):
+            actual = None
+    return pasos
+
+pasos = pasos_de(job)
 
 def campo(paso, nombre):
     for l in paso:
@@ -75,7 +94,7 @@ def cuerpo(paso):
 motivos = []
 de_test = [p for p in pasos if re.search(r"test-without-building|ci-reintentar-rojos\.sh", cuerpo(p))]
 if len(de_test) < 2:
-    motivos.append(f"solo {len(de_test)} paso(s) de test en el job `tests` (se esperan al menos 2)")
+    motivos.append(f"solo {len(de_test)} paso(s) de test en el job `unit` (se esperan al menos 2)")
 
 for p in de_test:
     nombre = campo(p, "id") or campo(p, "name") or "?"
@@ -96,6 +115,38 @@ if "unit_context" in ids:
     cond = (campo(ids["unit_context"], "if") or "").replace(" ", "")
     if "!cancelled()" not in cond:
         motivos.append("`unit_context` no lleva `if:` con !cancelled(): un rojo de pure-logic lo saltaría")
+
+# 5. El veredicto.
+def clave_job(job, nombre):
+    for l in job:
+        m = re.match(r"^    " + re.escape(nombre) + r":\s*(.*)$", l)
+        if m:
+            return m.group(1).strip()
+    return None
+
+needs = clave_job(final, "needs") or ""
+for requerido in ("build", "unit"):
+    if not re.search(r"\b" + requerido + r"\b", needs):
+        motivos.append(f"el job `tests` no espera a `{requerido}` (needs: {needs or 'nada'})")
+# Por el `run:`, no por el nombre del paso: el nombre también cita el script.
+veredicto = [p for p in pasos_de(final) if re.search(r"ci-unit-resultado\.sh", campo(p, "run") or "")]
+if not veredicto:
+    motivos.append("el job `tests` ya no corre `ci-unit-resultado.sh`: su verde no diría nada")
+for p in veredicto:
+    coe = campo(p, "continue-on-error")
+    if coe is not None and coe.lower() != "false":
+        motivos.append(f"el veredicto lleva continue-on-error: {coe}")
+m = re.search(r"^\s*tanda:\s*\[([^\]]*)\]", "\n".join(job), re.M)
+matriz = [x.strip() for x in m.group(1).split(",")] if m else []
+if not matriz:
+    motivos.append("no encuentro la matriz `tanda: [...]` del job `unit`")
+t = re.search(r'^\s*TANDAS:\s*"([^"]*)"', "\n".join(final), re.M)
+tandas = t.group(1).split() if t else []
+if tandas != matriz:
+    motivos.append(f"TANDAS del job `tests` ({tandas}) no es la matriz de `unit` ({matriz})")
+for k in matriz:
+    if not re.search(rf"^\s*pure_{k}:", "\n".join(job), re.M):
+        motivos.append(f"el job `unit` no expone `pure_{k}`: la tanda {k} no llegaría al veredicto")
 
 for m in motivos:
     print(m)
@@ -141,7 +192,7 @@ PY
 }
 
 echo "qa.yml real"
-pasa "$REAL" "los pasos de unit del job tests bloquean"
+pasa "$REAL" "los pasos de unit bloquean y tests es su veredicto"
 
 echo "mutantes"
 caso() {  # caso <etiqueta> <motivo esperado | PASA> <args de mutar…>
@@ -159,11 +210,20 @@ caso "continue-on-error como expresión"   'continue-on-error: ${{' \
 caso "continue-on-error: false explícito sigue valiendo" PASA \
   tras '^        id: unit_pure$' '        continue-on-error: false'
 caso "context-based sin if: !cancelled()" 'no lleva `if:` con !cancelled()' \
-  borra '^        if: .*steps\.build\.outcome'
+  borra '^        if: .*matrix\.tanda == 1'
 caso "-retry-tests-on-failure en un paso de test" "-retry-tests-on-failure" \
   tras '^            -collect-test-diagnostics never \\$' '            -retry-tests-on-failure \\'
 caso "renombrar el id de context-based"   'falta el paso `id: unit_context`' \
   cambia '^        id: unit_context$' '        id: unit_otro'
+
+caso "continue-on-error en el veredicto"    "el veredicto lleva continue-on-error" \
+  tras '^        id: veredicto$' '        continue-on-error: true'
+caso "el veredicto ya no corre el script"   "ya no corre" \
+  cambia '^        run: bash qa/scripts/ci-unit-resultado\.sh$' '        run: echo verde'
+caso "tests deja de esperar a unit"         'no espera a `unit`' \
+  cambia '^    needs: \[changes, build, unit\]$' '    needs: [changes, build]'
+caso "una tanda más en la matriz y no en TANDAS" "no es la matriz" \
+  cambia '^        tanda: \[1, 2, 3\]$' '        tanda: [1, 2, 3, 4]'
 
 echo
 if [ "$fallos" -eq 0 ]; then
