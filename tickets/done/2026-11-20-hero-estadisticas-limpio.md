@@ -34,7 +34,8 @@ flechas.
   las que cuentan como dinero). Con un período cerrado, el mismo cálculo con el corte en el último día del período.
 - `StatsHeroCaption`: `.netPeriod` y `.accountsBalance` pasan a `.moneyToday`. `HeroClaroLogic` y la hoja del «?» igual.
 - Sankey y voz: «Diferencia».
-- Fuera: `RecordsMotivationalLogic`, `HeroFlowAmountCaption` y 20 claves de texto en los 16 idiomas.
+- Fuera: `RecordsMotivationalLogic`, `HeroFlowAmountCaption` y 18 claves de texto en los 16 idiomas. «Te queda» y
+  «Te quedó» (`panel.hero.leftNow`/`leftPast`) se quedan: Yala web los enseña y los lee de los textos de la app.
 - Distribución pinta sus flechas con el resumen del período de Resumen y Tendencias.
 
 Decisiones menores tomadas sin consultar (en el Paso 0 del encargo): la cifra se ve aunque el período no tenga
