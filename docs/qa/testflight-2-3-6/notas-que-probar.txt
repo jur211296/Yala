@@ -1,0 +1,21 @@
+Novedades desde la build 2.3 (5):
+• Nuevo registro rediseñado: el tipo se elige en el título («Nuevo gasto ▾»), la moneda en una cápsula junto al monto, la subcategoría bajo el monto y Hoy · Cuenta · # en una sola línea. «···» trae Mi parte, favorito, recurrente, duplicar y eliminar. «Agregar otro» guarda y deja la hoja lista para el siguiente.
+• Al elegir una descripción sugerida, también se ponen la cuenta, la subcategoría y las etiquetas en las que coinciden tus registros anteriores.
+• Pantalla de éxito más simple, con «Registrar otro» y «Aceptar».
+• El mismo diseño llega a aprobar borradores de la Bandeja, gastos y borradores de Grupos, saldar y editar favoritos.
+• La cuenta se elige sola al leer una foto, Apple Pay, avisos del banco o un correo (por nombre o por los últimos 4 dígitos).
+• Foto a gasto compartido: lo que pasa a un grupo queda marcado como guardado y ya no se puede registrar dos veces.
+• Flujo de caja: el límite de una línea puede sumar varios pagos planificados y un monto extra; el «Monto fijo» puede ir en otra moneda y se convierte con el promedio del tipo de cambio de cada mes.
+• Flujo de caja y Comparativa: sin rebote al desplazar y más rápidos al volver; la flecha de cambio sale siempre.
+• Salud financiera: la hoja va en tres secciones (Presupuestos, Compromisos y Ritmo), con consejos de qué hacer.
+• Estadísticas: las cuatro pestañas muestran «Tu dinero hoy», la misma cifra del Panel, con un encabezado más limpio.
+• Primeros pasos: las intros y el paso 7 se leen como historias, el progreso va en el mazo, «No deseo crear» en presupuestos y pagos, y los campos se leen bien en cualquier tema. «Solo gastos» también tiene Primeros pasos y el Panel crece con cada paso.
+• Oferta de Yala Pro al terminar Primeros pasos: los ocho beneficios y «Ver todos los beneficios».
+• Pagos planificados: logo propio con una foto, que viaja a tus otros dispositivos.
+• Bienvenida: la vitrina avanza como historias; toca a la derecha o a la izquierda para cambiar de función.
+• Cerrar sesión en una cuenta vacía ya no dice que hay cambios por subir, y iCloud privado tiene «Eliminar mi cuenta».
+• Temas: cambiar de tema con Ajustes abierto se repinta al instante, y mejor contraste en índigo, rosa y colores de cuentas.
+• Registros: sin la barra de búsqueda; la pestaña Buscar ahora encuentra por importe y sin tildes.
+• Arreglados varios cuelgues: el Flujo de caja con historiales grandes y la primera bajada de datos de la nube.
+
+Qué probar: registrar un gasto y un ingreso con la hoja nueva (cápsula de moneda, «···», «Agregar otro»), aprobar un borrador de la Bandeja, leer una foto con el nombre de una tarjeta, el Flujo de caja con una línea de varios pagos o en dólares, la hoja de Salud financiera y Primeros pasos desde cero. Si algo falla, envía una captura desde TestFlight.
