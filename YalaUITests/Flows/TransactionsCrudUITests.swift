@@ -70,6 +70,8 @@ final class TransactionsCrudUITests: XCTestCase {
         let saveButton = app.buttons["new_transaction_save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció new_transaction_save.")
         XCTAssertTrue(saveButton.isEnabled, "El botón guardar está deshabilitado (canSave=false: monto/cuenta/subcategoría).")
+        // Desde la hoja B1, al volver del selector «Guardar» sube con el teclado a su barra: se toca quieto.
+        XCTAssertTrue(app.waitForSettledLayout(of: saveButton), "«Guardar» no dejó de moverse.")
         saveButton.tap()
 
         // Tras guardar, el flujo confirma con la pantalla de éxito. NO es transitoria:

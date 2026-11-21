@@ -222,21 +222,42 @@ struct RegistroUnificadoWiringTests {
     private static let groups = "Yala/App/Views/Groups/GroupExpenseFormView.swift"
 
     @Test func lasTres_usanLaPastillaDeFecha_laDescripcion_yLosSelectoresCompartidos() throws {
-        for path in [Self.newRecord, Self.approval, Self.groups] {
+        // Nuevo registro sale de esta pareja desde la hoja B1 (Jürgen, 2026-11-20): su fecha va en la fila de abajo y la
+        // fila va siempre en una línea (`b1_nuevoRegistro_filaDeUnaLinea_conFechaCuentaYNumeroDeEtiquetas`).
+        for path in [Self.approval, Self.groups] {
             let code = try Self.source(path)
             #expect(code.contains("RecordPillButton(icon: \"calendar\", text: dateChipText)"), "\(path): fecha")
             #expect(code.contains(".recordDescriptionStyle()"), "\(path): descripción")
             #expect(code.contains("RecordSelectorChips(spacing: DS.Spacing.sm)"), "\(path): selectores")
-            #expect(code.contains("Color.recordFormAmount(isIncome:") || path == Self.newRecord, "\(path): monto")
+            #expect(code.contains("Color.recordFormAmount(isIncome:"), "\(path): monto")
         }
+        #expect(try Self.source(Self.newRecord).contains(".recordDescriptionStyle()"), "Nuevo registro: descripción")
+    }
+
+    /// Hoja B1: Hoy · Cuenta · # en `OneLineChipRow` (nunca otra fila), la fecha como valor puesto, la cuenta como lo que
+    /// encoge, las etiquetas como «#2» y la categoría con su necesidad como texto bajo la subcategoría.
+    @Test func b1_nuevoRegistro_filaDeUnaLinea_conFechaCuentaYNumeroDeEtiquetas() throws {
+        let code = try Self.source(Self.newRecord)
+        let chips = try Self.section(code, from: "private var bottomChips: some View {", to: "private static let shortDateFormatter")
+        #expect(chips.contains("OneLineChipRow(spacing: DS.Spacing.sm)"))
+        #expect(!chips.contains("RecordSelectorChips"))
+        #expect(chips.contains("RecordDateValueChip(text: dateChipText)"))
+        #expect(chips.contains("TagCountChip(tags: viewModel.selectedTags)"))
+        #expect(!chips.contains("SelectedTagChip("))
+        #expect(chips.components(separatedBy: ".shrinksInChipRow()").count == 4, "cuenta, origen y destino encogen")
+        // Hoy, antes que la cuenta.
+        let date = try #require(chips.range(of: "RecordDateValueChip("))
+        let account = try #require(chips.range(of: "new_transaction_account_chip"))
+        #expect(date.lowerBound < account.lowerBound)
+        #expect(code.contains("CategoryNeedLine("))
+        #expect(!code.contains("new_transaction_card_currency_"), "las pastillas PEN/USD las reemplaza la cápsula")
     }
 
     @Test func nuevoRegistroYAprobacion_compartenLosChipsBajoElMonto_yLaEtiquetaPuesta() throws {
-        for path in [Self.newRecord, Self.approval] {
-            let code = try Self.source(path)
-            #expect(code.contains("RecordCategoryChips("), "\(path)")
-            #expect(code.contains("SelectedTagChip("), "\(path)")
-        }
+        // Nuevo registro los cambia por la línea con puntito y el «#2» de la hoja B1 (2026-11-20).
+        let code = try Self.source(Self.approval)
+        #expect(code.contains("RecordCategoryChips("))
+        #expect(code.contains("SelectedTagChip("))
     }
 
     /// La aprobación ya no pone los selectores en una fila con desplazamiento lateral, y marca lo que falta.
@@ -298,9 +319,8 @@ struct RegistroUnificadoWiringTests {
 
     /// La última línea de una tarjeta cierra su fila en los dos sitios que pintan líneas.
     @Test func laUltimaLinea_cierraLaFila_enNuevoRegistroYEnLaAprobacion() throws {
-        let newRecord = try Self.source(Self.newRecord)
+        // Nuevo registro ya no pinta líneas desde la hoja B1: la cápsula de moneda elige la línea.
         let cardChips = try Self.source("Yala/App/Views/Transactions/Components/AccountCardChips.swift")
-        #expect(newRecord.contains(".endsSelectorRow(member.persistentModelID == cardMembers.last?.persistentModelID)"))
         #expect(cardChips.contains(".endsSelectorRow(member.persistentModelID == members.last?.persistentModelID)"))
     }
 }

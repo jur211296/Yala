@@ -244,11 +244,12 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         pause(1.5)
         mark("start")
         pause(0.6)
-        tap(app.buttons["new_transaction_type_income"], "Ingreso")
+        // Hoja B1: el tipo se elige en el título-menú.
+        app.chooseNewTransactionType("income")
         pause(1.2)
-        tap(app.buttons["new_transaction_type_transfer"], "Transferencia")
+        app.chooseNewTransactionType("transfer")
         pause(1.2)
-        tap(app.buttons["new_transaction_type_expense"], "Gasto")
+        app.chooseNewTransactionType("expense")
         pause(1.2)
         mark("end")
     }
@@ -509,7 +510,8 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         pause(1.5)
         mark("start")
         pause(0.6)
-        tap(app.buttons["new_transaction_favorite_action"], "la estrella")
+        // Hoja B1: «Guardar como favorito» vive en «···».
+        app.tapNewTransactionMoreAction("new_transaction_favorite_action")
         pause(1.5)
         let add = app.buttons["favorites_add_button"]
         if add.waitForExistence(timeout: 5) { add.tap() }

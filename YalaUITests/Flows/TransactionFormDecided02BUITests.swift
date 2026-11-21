@@ -135,9 +135,8 @@ final class TransactionFormDecided02BUITests: XCTestCase {
     func test_mySplit_opensInEqualParts_theFirstTime() {
         let app = launch()
         openForm(app)
-        let split = app.buttons["new_transaction_split_action"]
-        XCTAssertTrue(split.waitForExistence(timeout: 5))
-        split.tap()
+        // Desde la hoja B1, «Mi parte» vive en «···».
+        app.tapNewTransactionMoreAction("new_transaction_split_action")
         let picker = app.segmentedControls.firstMatch
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         XCTAssertTrue(picker.buttons.element(boundBy: 0).isSelected, "La primera vez, «Iguales» (el primer segmento).")

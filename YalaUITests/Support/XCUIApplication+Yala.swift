@@ -656,6 +656,69 @@ extension XCUIApplication {
         if discard.waitForExistence(timeout: 2) { discard.tap() }
     }
 
+    // MARK: - Hoja B1: tipo por el título-menú y acciones en «···» (2026-11-20)
+
+    /// Cambia el tipo de «Nuevo registro» por el título-menú de la barra (`new_transaction_type_menu`): el segmentado
+    /// Gasto · Ingreso · Transferencia ya no está. `raw` es `expense`, `income` o `transfer`.
+    func chooseNewTransactionType(_ raw: String, timeout: TimeInterval = 5, file: StaticString = #filePath,
+                                  line: UInt = #line) {
+        let menu = buttons["new_transaction_type_menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: timeout), "Falta el título-menú de Nuevo registro.",
+                      file: file, line: line)
+        menu.tap()
+        let item = buttons["new_transaction_type_\(raw)"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: timeout), "El menú no ofreció new_transaction_type_\(raw).",
+                      file: file, line: line)
+        item.tap()
+        XCTAssertTrue(item.waitForNonExistence(timeout: timeout), "El menú de tipo no se cerró.", file: file, line: line)
+    }
+
+    /// Abre «···» de «Nuevo registro» (`new_transaction_more`) y devuelve la acción `id` (Mi parte, favorito, recurrente,
+    /// Duplicar, Eliminar), sin tocarla. Para comprobar que una acción NO se ofrece, `waitForExistence` sobre lo devuelto
+    /// tiene que dar `false`; cierra el menú después con `dismissNewTransactionMoreMenu()`.
+    @discardableResult
+    func openNewTransactionMoreAction(_ id: String, timeout: TimeInterval = 5, file: StaticString = #filePath,
+                                      line: UInt = #line) -> XCUIElement {
+        let more = buttons["new_transaction_more"]
+        XCTAssertTrue(more.waitForExistence(timeout: timeout), "Falta «···» en Nuevo registro.", file: file, line: line)
+        more.tap()
+        return buttons[id].firstMatch
+    }
+
+    /// Toca una acción de «···».
+    func tapNewTransactionMoreAction(_ id: String, timeout: TimeInterval = 5, file: StaticString = #filePath,
+                                     line: UInt = #line) {
+        let action = openNewTransactionMoreAction(id, timeout: timeout, file: file, line: line)
+        XCTAssertTrue(action.waitForExistence(timeout: timeout), "«···» no ofreció \(id).", file: file, line: line)
+        action.tap()
+    }
+
+    /// Elige la moneda del monto con la cápsula «S/ ▾» (`new_transaction_currency_capsule`) y espera a que la cápsula la
+    /// diga. Sustituye a las pastillas PEN · USD de una tarjeta con varias monedas.
+    func chooseNewTransactionCurrency(_ code: String, timeout: TimeInterval = 5, file: StaticString = #filePath,
+                                      line: UInt = #line) {
+        let capsule = buttons["new_transaction_currency_capsule"]
+        XCTAssertTrue(capsule.waitForExistence(timeout: timeout), "Falta la cápsula de moneda.", file: file, line: line)
+        capsule.tap()
+        let option = buttons["new_transaction_currency_option_\(code)"].firstMatch
+        XCTAssertTrue(option.waitForExistence(timeout: timeout), "La cápsula no ofreció \(code).", file: file, line: line)
+        option.tap()
+        let chosen = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", code), object: capsule)
+        XCTAssertEqual(XCTWaiter().wait(for: [chosen], timeout: timeout), .completed,
+                       "La cápsula no pasó a \(code).", file: file, line: line)
+    }
+
+    /// La moneda que dice la cápsula del monto.
+    var newTransactionCurrency: String? {
+        buttons["new_transaction_currency_capsule"].value as? String
+            ?? descendants(matching: .any)["new_transaction_currency_capsule"].firstMatch.value as? String
+    }
+
+    /// Cierra el menú «···» sin elegir nada (toque fuera, arriba a la izquierda del contenido).
+    func dismissNewTransactionMoreMenu() {
+        coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+    }
+
     // MARK: - Selectores (cuenta, subcategoría, etiquetas)
 
     /// Abre un selector desde su chip (o fila) y devuelve su primera fila, sin tocarla.
@@ -756,18 +819,22 @@ extension XCUIApplication {
     }
 
     /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo
-    /// registro» (sin teclado, su línea de lo que falta y el botón; con teclado, la barra de encima del teclado, con
-    /// «Guardar» en la misma fila que sus pastillas). `nil` si nada lo pisa.
+    /// registro» (sin teclado, su línea de lo que falta y el botón; con teclado, desde la hoja B1, la barra de encima del
+    /// teclado entera: la fila Hoy · Cuenta · # y, debajo, «Agregar otro» y «Guardar»). `nil` si nada lo pisa. Un chip
+    /// que vive DENTRO de la barra (cuenta, «#») no lo tapa ella.
     private func selectorChipCoverTop(over chip: XCUIElement) -> CGFloat? {
         let chipFrame = chip.frame
+        let keyboardBar = descendants(matching: .any)["new_transaction_keyboard_bar"].firstMatch
         let covers = [
             keyboards.firstMatch,
             descendants(matching: .any)["new_transaction_missing_line"].firstMatch,
             buttons["new_transaction_save"].firstMatch,
+            keyboardBar,
         ]
         let tops = covers.compactMap { cover -> CGFloat? in
             guard cover.exists else { return nil }
             let frame = cover.frame
+            if cover == keyboardBar, frame.contains(CGPoint(x: chipFrame.midX, y: chipFrame.midY)) { return nil }
             // Pisa si su borde de arriba queda por encima del de abajo del chip, también con el chip ENTERO por debajo:
             // la barra y el teclado llegan hasta el borde de la pantalla. Con la fila de categorías a un toque (decisión 21
             // de 2.3) y una cuenta en dólares, el chip de categoría quedaba bajo «Guardar», sin solaparse con el botón, y

@@ -60,14 +60,12 @@ final class AccountCardPickersUITests: XCTestCase {
         let accountChip = app.buttons["new_transaction_account_chip"]
         XCTAssertTrue(accountChip.waitForExistence(timeout: 5))
         XCTAssertEqual(accountChip.label, card, "La pastilla de cuenta no dice la tarjeta.")
-        let usdPill = app.buttons["new_transaction_card_currency_USD"]
-        let penPill = app.buttons["new_transaction_card_currency_PEN"]
-        XCTAssertTrue(usdPill.waitForExistence(timeout: 5), "No salieron las pastillas de divisa de la tarjeta.")
-        XCTAssertTrue(penPill.isSelected, "Con el importe en soles, elegir la tarjeta tiene que dejar la principal.")
+        // Hoja B1: la cápsula de moneda del monto sustituye a las pastillas PEN · USD de la tarjeta.
+        XCTAssertTrue(app.buttons["new_transaction_currency_capsule"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.newTransactionCurrency, "PEN",
+                       "Con el importe en soles, elegir la tarjeta tiene que dejar la principal.")
 
-        usdPill.tap()
-        XCTAssertTrue(usdPill.waitForSelected(), "La pastilla de dólares no quedó elegida.")
-        XCTAssertFalse(penPill.isSelected)
+        app.chooseNewTransactionCurrency("USD")
         XCTAssertEqual(accountChip.label, card, "Elegir la divisa no puede cambiar el nombre de la tarjeta.")
     }
 
@@ -81,11 +79,7 @@ final class AccountCardPickersUITests: XCTestCase {
         XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "No está la fila de la tarjeta.")
         cardRow.tap()
 
-        let usdPill = app.buttons["new_transaction_card_currency_USD"]
-        let penPill = app.buttons["new_transaction_card_currency_PEN"]
-        XCTAssertTrue(usdPill.waitForExistence(timeout: 5), "No salieron las pastillas de divisa de la tarjeta.")
-        usdPill.tap()
-        XCTAssertTrue(usdPill.waitForSelected(), "La pastilla de dólares no quedó elegida.")
+        app.chooseNewTransactionCurrency("USD")
 
         // En dólares sale la fila del tipo de cambio, que baja la pastilla de cuenta hasta debajo de la barra de «Guardar»:
         // un toque directo cae en la barra. El ayudante la desplaza a la vista antes de tocarla.
@@ -93,8 +87,10 @@ final class AccountCardPickersUITests: XCTestCase {
         XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "El selector no volvió a abrir con la tarjeta.")
         cardRow.tap()
         XCTAssertTrue(cardRow.waitForNonExistence(timeout: 5), "El selector no se cerró al tocar la tarjeta.")
-        XCTAssertTrue(penPill.waitForSelected(), "Tocar la tarjeta desde su línea en dólares no volvió a la principal.")
-        XCTAssertFalse(usdPill.isSelected)
+        let backToPEN = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == 'PEN'"), object: app.buttons["new_transaction_currency_capsule"])
+        XCTAssertEqual(XCTWaiter().wait(for: [backToPEN], timeout: 5), .completed,
+                       "Tocar la tarjeta desde su línea en dólares no volvió a la principal.")
     }
 
     // MARK: - Filtro

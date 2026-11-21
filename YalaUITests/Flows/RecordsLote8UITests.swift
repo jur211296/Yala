@@ -96,11 +96,14 @@ final class RecordsLote8UITests: XCTestCase {
         duplicate.tap()
 
         XCTAssertTrue(app.buttons["new_transaction_save"].waitForExistence(timeout: 10), "Duplicar no abrió el editor.")
-        XCTAssertTrue(
-            app.navigationBars["Duplicar registro"].waitForExistence(timeout: 5),
-            "La copia no se titula «Duplicar registro».")
+        // Desde la hoja B1 el título dice el tipo: «Duplicar gasto», «Duplicar ingreso»…
+        let title = app.descendants(matching: .any)["new_transaction_title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "Falta el título de la copia.")
+        XCTAssertTrue(title.label.hasPrefix("Duplicar"), "La copia no se titula «Duplicar …» (\(title.label)).")
+        XCTAssertTrue(app.openNewTransactionMoreAction("new_transaction_favorite_action").waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["new_transaction_delete_action"].exists,
                        "La copia sin guardar no puede ofrecer Eliminar (borraría el original).")
+        app.dismissNewTransactionMoreMenu()
     }
 
     // MARK: - L8-7 desde el menú de la fila

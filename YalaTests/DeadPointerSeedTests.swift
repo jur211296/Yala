@@ -161,9 +161,10 @@ struct DeadPointerSeedWiringTests {
     @Test func identifiersSitOnTheDuplicateAndDeleteButtons() throws {
         let src = try Self.source("Yala/App/Views/Transactions/NewTransactionView.swift")
         let bar = try #require(
-            src.components(separatedBy: "private var quickActionsBar: some View {").dropFirst().first,
-            "`quickActionsBar` cambió de nombre; este scan dejó de medir nada.")
-        let body = bar.components(separatedBy: "\n    private func quickActionButton(").first ?? ""
+            src.components(separatedBy: "private var moreOptionsMenu: some View {").dropFirst().first,
+            "`moreOptionsMenu` cambió de nombre; este scan dejó de medir nada.")
+        // Desde la hoja B1 (2026-11-20) Duplicar y Borrar viven en el menú «···», no en la barra de círculos.
+        let body = bar.components(separatedBy: "\n    private var moreSplitState: String {").first ?? ""
         #expect(body.contains("L10n.Action.duplicate"),
                 "El ancla de Duplicar desapareció del quick-actions bar.")
         #expect(body.contains("L10n.Action.delete"),

@@ -42,9 +42,8 @@ final class SplitCalculatorUITests: XCTestCase {
 
         // Acción rápida "Dividir" (solo en gastos) → abre SplitCalculatorSheet con el
         // total prefilado (100).
-        let splitAction = app.buttons["new_transaction_split_action"]
-        XCTAssertTrue(splitAction.waitForExistence(timeout: 5), "No apareció la acción de dividir.")
-        splitAction.tap()
+        // Desde la hoja B1, «Mi parte» vive en «···».
+        app.tapNewTransactionMoreAction("new_transaction_split_action")
 
         // La primera vez abre en «Iguales» (UX 2.2 · L2-12): se pasa a porcentaje (segundo segmento) + preset 50%.
         let picker = app.segmentedControls.firstMatch

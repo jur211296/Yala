@@ -1,0 +1,43 @@
+/*
+  NuevoRegistroB1.strings
+  Yala
+
+  Nuevo registro, hoja B1 y éxito minimalista (encargo del 2026-11-20). Tabla propia, leída con el idioma de
+  la app (`NuevoRegistroB1Text`).
+*/
+
+"nr.title.newExpense" = "Neue Ausgabe";
+"nr.title.newIncome" = "Neue Einnahme";
+"nr.title.newTransfer" = "Neue Überweisung";
+"nr.title.editExpense" = "Ausgabe bearbeiten";
+"nr.title.editIncome" = "Einnahme bearbeiten";
+"nr.title.editTransfer" = "Überweisung bearbeiten";
+"nr.title.duplicateExpense" = "Ausgabe duplizieren";
+"nr.title.duplicateIncome" = "Einnahme duplizieren";
+"nr.title.duplicateTransfer" = "Überweisung duplizieren";
+"nr.title.a11yChangeType" = "Typ ändern";
+"nr.favorites.label" = "Favoriten";
+"nr.favorites.seeAll" = "Alle ansehen";
+"nr.currency.accountsCount.one" = "1 Konto";
+"nr.currency.accountsCount.other" = "%d Konten";
+"nr.currency.a11y" = "Währung des Betrags";
+"nr.more.a11y" = "Weitere Optionen";
+"nr.more.splitState.all" = "Alles gehört dir";
+"nr.more.splitState.mine" = "Dein Anteil: %@";
+"nr.more.favorite" = "Als Favorit sichern";
+"nr.more.recurring" = "Wiederkehrend machen";
+"nr.more.recurringState.once" = "Nur einmal";
+"nr.save.withAmount" = "%@ sichern";
+"nr.addAnother" = "Weitere hinzufügen";
+"nr.saved.toast.expense" = "Ausgabe gesichert";
+"nr.saved.toast.income" = "Einnahme gesichert";
+"nr.saved.toast.transfer" = "Überweisung gesichert";
+"nr.success.saved.expense" = "Ausgabe gesichert";
+"nr.success.saved.income" = "Einnahme gesichert";
+"nr.success.saved.transfer" = "Überweisung gesichert";
+"nr.success.favorite" = "Favorit";
+"nr.success.favorited" = "In Favoriten";
+"nr.success.recurring" = "Wiederkehrend";
+"nr.tags.a11yNone" = "Tags, keine";
+"nr.tags.a11yCount" = "Tags, %d gesetzt: %@";
+"nr.need.a11yChange" = "Bedarf ändern";

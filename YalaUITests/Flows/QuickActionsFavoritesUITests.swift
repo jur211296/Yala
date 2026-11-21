@@ -34,10 +34,8 @@ final class QuickActionsFavoritesUITests: XCTestCase {
             "No se montó NewTransactionView (new_transaction_amount)."
         )
 
-        // El quick action "Favorito" vive en la quickActionsBar (dentro del ScrollView).
-        let favoriteAction = app.buttons["new_transaction_favorite_action"]
-        XCTAssertTrue(favoriteAction.waitForExistence(timeout: 5), "No apareció el quick action de favorito.")
-        favoriteAction.tap()
+        // «Guardar como favorito» vive en el menú «···» desde la hoja B1 (2026-11-20).
+        app.tapNewTransactionMoreAction("new_transaction_favorite_action")
 
         XCTAssertTrue(
             app.textFields["save_favorite_name_field"].waitForExistence(timeout: 5),
@@ -75,10 +73,8 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         )
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
 
-        // Guardar como favorito vía el quick action.
-        let favoriteAction = app.buttons["new_transaction_favorite_action"]
-        XCTAssertTrue(favoriteAction.waitForExistence(timeout: 5), "No apareció el quick action de favorito.")
-        favoriteAction.tap()
+        // Guardar como favorito desde «···» (hoja B1).
+        app.tapNewTransactionMoreAction("new_transaction_favorite_action")
 
         let nameField = app.textFields["save_favorite_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No se montó SaveAsFavoriteSheet (save_favorite_name_field).")

@@ -73,9 +73,8 @@ final class RecordsLote8BUITests: XCTestCase {
         let editButton = app.buttons["transaction_detail_edit"]
         XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle.")
         editButton.tap()
-        let duplicate = app.buttons["new_transaction_duplicate_action"]
-        XCTAssertTrue(duplicate.waitForExistence(timeout: 5), "El editor no ofreció Duplicar.")
-        duplicate.tap()
+        // Desde la hoja B1, Duplicar vive en «···».
+        app.tapNewTransactionMoreAction("new_transaction_duplicate_action")
         let dateChip = app.buttons["new_transaction_date_chip"]
         XCTAssertTrue(dateChip.waitForExistence(timeout: 5), "La copia no ofreció cambiar la fecha.")
         dateChip.tap()

@@ -57,8 +57,9 @@ final class RegistroUnificadoUITests: XCTestCase {
 
     // MARK: - Nuevo registro
 
-    /// Tarjeta con su línea en dólares: «Visa QA · PEN · USD» en una fila y la categoría empieza la siguiente.
-    func test_nuevoRegistro_tarjetaConDosLineas_categoriaEnLaFilaDeDebajo() {
+    /// Hoja B1 (2026-11-20): la tarjeta con su línea en dólares ya no pinta las pastillas PEN · USD junto a la cuenta.
+    /// El chip dice la tarjeta y la cápsula de moneda del monto elige la línea.
+    func test_nuevoRegistro_tarjetaConDosLineas_laCapsulaDeMonedaEligeLaLinea() {
         let app = launchWithCard()
         app.buttons["panel_action_new"].tap()
         _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
@@ -67,19 +68,20 @@ final class RegistroUnificadoUITests: XCTestCase {
         cardRow.tap()
 
         let account = app.buttons["new_transaction_account_chip"]
-        let pen = app.buttons["new_transaction_card_currency_PEN"]
-        let usd = app.buttons["new_transaction_card_currency_USD"]
-        let category = app.buttons["new_transaction_subcategory_chip"]
-        XCTAssertTrue(usd.waitForExistence(timeout: 5), "No salieron las líneas de la tarjeta.")
-        XCTAssertTrue(app.waitForSettledLayout(of: usd))
-        assertSameRow(account, pen, "La línea en soles no va junto a su tarjeta.")
-        assertSameRow(account, usd, "La línea en dólares no va junto a su tarjeta.")
-        assertBelow(category, usd, "La categoría tiene que empezar la fila de debajo de las líneas.")
-        XCTAssertTrue(pen.isSelected, "Con el importe en soles, la línea elegida es la principal.")
+        XCTAssertTrue(account.waitForExistence(timeout: 5))
+        XCTAssertEqual(account.label, card, "La pastilla de cuenta no dice la tarjeta.")
+        XCTAssertFalse(app.buttons["new_transaction_card_currency_USD"].exists, "Vuelven las pastillas de moneda.")
 
+        let capsule = app.buttons["new_transaction_currency_capsule"]
+        XCTAssertTrue(capsule.waitForExistence(timeout: 5), "Falta la cápsula de moneda junto al monto.")
+        XCTAssertEqual(capsule.value as? String, "PEN", "Con el importe en soles, la línea elegida es la principal.")
+        capsule.tap()
+        let usd = app.buttons["new_transaction_currency_option_USD"].firstMatch
+        XCTAssertTrue(usd.waitForExistence(timeout: 5), "La cápsula no ofreció dólares.")
         usd.tap()
-        XCTAssertTrue(waitForSelected(usd), "Tocar la línea en dólares no la eligió.")
-        XCTAssertFalse(pen.isSelected)
+        expectation(for: NSPredicate(format: "value == 'USD'"), evaluatedWith: capsule)
+        waitForExpectations(timeout: 5)
+        XCTAssertEqual(account.label, card, "Elegir dólares deja la tarjeta en el chip: cambia su línea.")
     }
 
     // MARK: - Aprobación de la Bandeja
