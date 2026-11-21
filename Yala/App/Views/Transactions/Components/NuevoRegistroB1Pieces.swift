@@ -360,11 +360,13 @@ extension CategoryNeedLine where Trailing == EmptyView {
     }
 }
 
-// MARK: - Favoritos de solo icono
+// MARK: - Favoritos
 
-/// La fila de favoritos de la hoja B1: rótulo «Favoritos», un chip de 40 pt por favorito con el icono y el color de su
-/// categoría (en una transferencia, los de su cuenta de destino) y «Ver todos ›». Al tocar uno se estira con su nombre y
-/// los demás bajan; con texto de accesibilidad, todos enseñan su nombre. Solo los del tipo elegido.
+/// La fila de favoritos de la hoja B1: arriba, el rótulo «Favoritos» y, en su misma línea a la derecha, «Ver todos ›».
+/// Debajo, centrados, los favoritos del tipo elegido como chips completos (icono y nombre) mientras quepan todos; si no,
+/// como bolitas de 40 pt con el icono y el color de su categoría (en una transferencia, los de su cuenta de destino), y
+/// si ni así caben, con scroll lateral desde el margen. Tocar una bolita la estira con su nombre y los demás bajan; con
+/// texto de accesibilidad, todos enseñan su nombre (Jürgen, 21-nov-2026, sustituye a la fila de solo icono del 20-nov).
 struct IconFavoritesRow: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -377,6 +379,8 @@ struct IconFavoritesRow: View {
     let onSeeAll: () -> Void
 
     @State private var chosen: PersistentIdentifier?
+    /// Ancho visible del scroll de bolitas: su contenido lo usa como mínimo para quedar centrado mientras quepa.
+    @State private var iconRowWidth: CGFloat = 0
 
     private var shown: [FavoritePayment] {
         FavoritesVisibility.shown(favorites, isExpensesOnlyMode: sessionState.isExpensesOnlyMode, type: transactionType)
@@ -385,25 +389,14 @@ struct IconFavoritesRow: View {
     var body: some View {
         if !shown.isEmpty {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(NuevoRegistroB1Text.string("favorites.label"))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .accessibilityAddTraits(.isHeader)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        ForEach(shown, id: \.persistentModelID) { favorite in
-                            chip(for: favorite)
-                        }
-                        seeAllChip
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.vertical, DS.Spacing.xxs)
+                header
+                // Chips completos si caben todos; si no, bolitas (que hacen scroll si tampoco caben). Lo decide el
+                // ancho ideal de cada forma, sin anchos fijos.
+                ViewThatFits(in: .horizontal) {
+                    namedChips
+                    iconChips
                 }
-                // Un scroll lateral también se estira en vertical: sin esto se quedaba un tercio del alto libre y la
-                // descripción bajaba (medido en el 17 Pro, 2026-11-20).
-                .fixedSize(horizontal: false, vertical: true)
-                .fadesTowardVerticalBar()
+                .frame(maxWidth: .infinity)
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("new_transaction_favorites_row")
@@ -411,10 +404,52 @@ struct IconFavoritesRow: View {
         }
     }
 
-    private func chip(for favorite: FavoritePayment) -> some View {
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Text(NuevoRegistroB1Text.string("favorites.label"))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("new_transaction_favorites_label")
+            Spacer(minLength: DS.Spacing.sm)
+            seeAllButton
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+    }
+
+    private var namedChips: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            ForEach(shown, id: \.persistentModelID) { favorite in
+                chip(for: favorite, alwaysNamed: true)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.vertical, DS.Spacing.xxs)
+    }
+
+    private var iconChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(shown, id: \.persistentModelID) { favorite in
+                    chip(for: favorite, alwaysNamed: false)
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.vertical, DS.Spacing.xxs)
+            .frame(minWidth: iconRowWidth)
+        }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { iconRowWidth = $0 }
+        // Un scroll lateral también se estira en vertical: sin esto se quedaba un tercio del alto libre y la
+        // descripción bajaba (medido en el 17 Pro, 2026-11-20).
+        .fixedSize(horizontal: false, vertical: true)
+        .fadesTowardVerticalBar()
+    }
+
+    private func chip(for favorite: FavoritePayment, alwaysNamed: Bool) -> some View {
         let style = IconFavoriteStyle(favorite: favorite)
         let isChosen = chosen == favorite.persistentModelID
-        let showsName = isChosen || dynamicTypeSize.isAccessibilitySize
+        let showsName = alwaysNamed || isChosen || dynamicTypeSize.isAccessibilitySize
         return Button {
             DS.Haptic.selection()
             dsWithAnimation(reduceMotion) { chosen = favorite.persistentModelID }
@@ -444,21 +479,25 @@ struct IconFavoritesRow: View {
         .accessibilityIdentifier("new_transaction_favorite_chip_\(favorite.name)")
     }
 
-    private var seeAllChip: some View {
+    /// «Ver todos ›» en la línea del rótulo. Su zona de toque mide 44 pt de alto, como cuando iba en la fila de chips,
+    /// y el relleno negativo de fuera le quita a la línea esos 28 pt de más (2 × 14): la línea mide lo que el rótulo y
+    /// la fila no baja.
+    private var seeAllButton: some View {
         Button(action: onSeeAll) {
-            HStack(spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xxs) {
                 Text(NuevoRegistroB1Text.string("favorites.seeAll"))
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.caption)
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.labelTiny)
                     .accessibilityHidden(true)
             }
             .foregroundStyle(.secondary)
-            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.leading, DS.Spacing.sm)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .padding(.vertical, -(DS.Spacing.md + DS.Spacing.xxs))
         .accessibilityIdentifier("new_transaction_favorites_see_all")
     }
 }
