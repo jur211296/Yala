@@ -15,6 +15,11 @@
 //
 //  La abre crear el plan (sobre una sugerencia, que aún no es una línea) y el detalle de una línea.
 //
+//  Límites con pagos y monedas (encargo del 2026-11-20, las ocho recomendadas de Jürgen): en una línea creada,
+//  «Pagos planificados» admite uno o varios pagos (tarjeta «Pagos de esta línea», hoja «Elige los pagos») y un monto
+//  extra; y «Monto fijo» acepta otra moneda (el símbolo es un botón), que vale para todos los meses y se convierte con el
+//  promedio del tipo de cambio de cada mes.
+//
 
 import SwiftData
 import SwiftUI
@@ -40,6 +45,19 @@ struct FlujoCalculoMontoSheet: View {
     @State private var alcance: FlujoCambiarLimiteLogica.Alcance = .porDefecto
     @FocusState private var campoConFoco: Bool
 
+    /// «Pagos planificados» de una línea creada: los pagos elegidos (en orden) y el extra.
+    @State private var pagosElegidos: [UUID]
+    @State private var conExtra: Bool
+    @State private var extraTexto: String
+    @State private var eligiendoPagos = false
+    /// La moneda del monto fijo (la del flujo, u otra).
+    @State private var moneda: CurrencyCode
+    @State private var eligiendoMoneda = false
+    /// Los promedios del mes que se ve, por moneda (se leen al abrir y al cambiar de pagos o de moneda).
+    @State private var tasas: [String: FlujoTasaDelMes.Tasa] = [:]
+
+    @Query private var pagosGuardados: [ScheduledPayment]
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -51,6 +69,9 @@ struct FlujoCalculoMontoSheet: View {
     private let tienePago: Bool
     private let metodoInicial: EstimationMethod
     private let montoInicial: Double
+    /// La línea creada y las otras del plan, leídas al abrir.
+    private let lineID: UUID?
+    private let otrasLineas: [UUID: String]
 
     init(origen: Origen, currencyCode: String, viewModel: CashFlowPlanViewModel, onSaved: @escaping () -> Void = {}) {
         self.origen = origen
@@ -59,6 +80,11 @@ struct FlujoCalculoMontoSheet: View {
         self.onSaved = onSaved
         let inicial: EstimationMethod
         let monto: Double
+        var ids: [UUID] = []
+        var extra: Double?
+        var monedaFija = CurrencyCode(rawValue: currencyCode) ?? .usd
+        var textoFijo: String?
+        var otras: [UUID: String] = [:]
         switch origen {
         case .sugerencia(let linea):
             nombre = linea.name
@@ -66,6 +92,7 @@ struct FlujoCalculoMontoSheet: View {
             tienePago = linea.scheduledPayment != nil
             inicial = linea.estimationMethod
             monto = linea.suggestedAmount
+            lineID = nil
         case .linea(let line, let monthKey, _, let actual):
             nombre = line.name
             esIngreso = line.isIncome
@@ -75,18 +102,39 @@ struct FlujoCalculoMontoSheet: View {
                 || line.monthOverride(for: monthKey) != nil
             inicial = escrito ? .manual : line.method
             monto = actual
+            lineID = line.id
+            ids = line.method == .scheduled ? line.scheduledPaymentIDs : []
+            extra = line.method == .scheduled ? line.limitExtraAmount : nil
+            if !escrito, let fijo = line.foreignFixedLimit(planCurrency: currencyCode),
+               let codigo = CurrencyCode(rawValue: fijo.currencyCode) {
+                monedaFija = codigo
+                textoFijo = CashFlowStartingBalanceSheet.editableText(fijo.amount)
+            }
+            for (pagoID, otra) in FlujoPagosDeLineaLogica.dueños(de: line.plan?.lines ?? [], excepto: line.id) {
+                otras[pagoID] = otra.name
+            }
         }
         metodoInicial = inicial
         montoInicial = monto
+        otrasLineas = otras
         _metodo = State(initialValue: inicial)
-        _texto = State(initialValue: inicial == .manual ? CashFlowStartingBalanceSheet.editableText(monto) : "")
+        _texto = State(initialValue: inicial == .manual ? (textoFijo ?? CashFlowStartingBalanceSheet.editableText(monto)) : "")
+        _pagosElegidos = State(initialValue: ids)
+        _conExtra = State(initialValue: (extra ?? 0) > 0)
+        _extraTexto = State(initialValue: (extra ?? 0) > 0 ? CashFlowStartingBalanceSheet.editableText(extra ?? 0) : "")
+        _moneda = State(initialValue: monedaFija)
     }
 
     // MARK: - Datos
 
     private var metodos: [EstimationMethod] {
         var lista: [EstimationMethod] = [.average6m, .average3m, .lastMonth, .manual]
-        if tienePago { lista.insert(.scheduled, at: 0) }
+        // En una línea creada, «Pagos planificados» sale si hay algún pago activo de su lado (o ya lo usa).
+        let ofrecePagos = esLineaCreada
+            ? FlujoPagosDeLineaLogica.ofreceMetodo(lineaUsaPagos: metodoInicial == .scheduled, pagos: pagosVisibles,
+                                                   esIngreso: esIngreso)
+            : tienePago
+        if ofrecePagos { lista.insert(.scheduled, at: 0) }
         // Una línea con un método que esta lista ya no ofrece lo conserva a la vista, elegido.
         if !lista.contains(metodoInicial) { lista.insert(metodoInicial, at: 0) }
         return lista
@@ -99,6 +147,10 @@ struct FlujoCalculoMontoSheet: View {
 
     /// Lo que daría un método con tus registros, y cómo sale. `nil` en monto fijo.
     private func estimacion(_ metodo: EstimationMethod) -> CashFlowProjectionCalculator.LimitEstimate? {
+        if metodo == .scheduled, esLineaCreada {
+            guard let pagos = resultadoPagos, !pagos.sinNada else { return nil }
+            return .init(method: .scheduled, amount: pagos.monto, usedMonths: [], isolatedMonths: [])
+        }
         switch origen {
         case .sugerencia(let linea):
             guard metodo != .manual else { return nil }
@@ -117,13 +169,73 @@ struct FlujoCalculoMontoSheet: View {
 
     private var montoEscrito: Double? { FlujoCambiarLimiteLogica.montoEscrito(texto) }
 
-    /// El monto que resulta del método elegido, el de arriba.
+    // MARK: - Pagos y moneda
+
+    private var pagosVisibles: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(pagosGuardados) }
+
+    private var pagosPorID: [UUID: ScheduledPayment] {
+        Dictionary(pagosVisibles.map { ($0.id, $0) }, uniquingKeysWith: { primero, _ in primero })
+    }
+
+    /// El primer día del mes que se ve (o el en curso, en una sugerencia).
+    private var mesDelCalculo: Date {
+        if case .linea(_, let monthKey, _, _) = origen, let fecha = CashFlowDetailLineRow.monthDate(monthKey) {
+            return fecha
+        }
+        return Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    }
+
+    private var extraValor: Double? {
+        guard conExtra, let valor = FlujoCambiarLimiteLogica.montoEscrito(extraTexto), valor > 0 else { return nil }
+        return valor
+    }
+
+    private func tasa(_ codigo: String) -> FlujoTasaDelMes.Tasa {
+        codigo == currencyCode ? .identidad : (tasas[codigo] ?? .identidad)
+    }
+
+    /// Los pagos elegidos en el mes que se ve, con el extra.
+    private var resultadoPagos: FlujoLimiteEnMoneda.Resultado? {
+        guard esLineaCreada else { return nil }
+        return FlujoLimiteEnMoneda.pagosDelMes(
+            ids: pagosElegidos, pagosPorID: pagosPorID, extra: extraValor, mes: mesDelCalculo, monedaPlan: currencyCode,
+            tasa: { codigo, _ in tasa(codigo) }, calendar: .current
+        )
+    }
+
+    /// El monto fijo está en otra moneda.
+    private var fijoEnOtraMoneda: Bool { esLineaCreada && moneda.rawValue != currencyCode }
+
+    /// El monto fijo pasado a la moneda del flujo en el mes que se ve.
+    private var fijoConvertido: Double? {
+        guard fijoEnOtraMoneda, let monto = montoEscrito else { return nil }
+        return monto * tasa(moneda.rawValue).factor
+    }
+
+    /// Lee los promedios del mes de las monedas que pide la hoja.
+    private func refrescarTasas() {
+        var codigos = Set(pagosElegidos.compactMap { pagosPorID[$0]?.currencyCode })
+        codigos.insert(moneda.rawValue)
+        codigos.remove(currencyCode)
+        let faltan = codigos.filter { tasas[$0] == nil }
+        guard !faltan.isEmpty else { return }
+        let tabla = FlujoTasaDelMes.tabla(
+            codigos: Set(faltan), meses: [mesDelCalculo], a: currencyCode, hoy: .now,
+            converter: CurrencyConverter.shared, calendar: .current
+        )
+        for codigo in faltan { tasas[codigo] = tabla.tasa(codigo, mes: mesDelCalculo) }
+    }
+
+    /// El monto que resulta del método elegido, el de arriba (en la moneda del flujo).
     private var resultado: Double? {
-        metodo == .manual ? montoEscrito : estimacion(metodo)?.amount
+        // En otra moneda, la cifra grande es el original («500 USD»); debajo, cuánto vale ese mes.
+        if metodo == .manual { return montoEscrito }
+        return estimacion(metodo)?.amount
     }
 
     private var puedeGuardar: Bool {
         if metodo == .manual { return montoEscrito != nil }
+        if metodo == .scheduled, esLineaCreada { return !pagosElegidos.isEmpty || extraValor != nil }
         return true
     }
 
@@ -145,10 +257,31 @@ struct FlujoCalculoMontoSheet: View {
                 ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                         resultadoCard
+                        if metodo == .scheduled, esLineaCreada {
+                            FlujoPagosDeLineaCard(
+                                pagos: resultadoPagos?.pagos ?? [], pagosPorID: pagosPorID, monedaPlan: currencyCode,
+                                mes: mesDelCalculo, conExtra: $conExtra, extraTexto: $extraTexto,
+                                onAgregar: { eligiendoPagos = true },
+                                onQuitar: { id in
+                                    DS.Haptic.selection()
+                                    pagosElegidos.removeAll { $0 == id }
+                                }
+                            )
+                        }
                         if metodo == .manual {
                             fijoCard
                                 .id("fijo")
-                            if esLineaCreada { alcanceCard }
+                            if esLineaCreada {
+                                if fijoEnOtraMoneda {
+                                    Text(L10n.FlujoCambiarLimite.todosLosMesesEnMoneda)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("cashflow_method_foreign_all_months")
+                                } else {
+                                    alcanceCard
+                                }
+                            }
                         }
                         metodosCard
                         Text(L10n.FlujoDetalleLinea.limitesMoviles)
@@ -163,6 +296,10 @@ struct FlujoCalculoMontoSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: metodo) { anterior, nuevo in
+                    // «Pagos planificados» sin ninguno elegido abre la hoja para elegirlos.
+                    if nuevo == .scheduled, esLineaCreada, pagosElegidos.isEmpty, !conExtra {
+                        eligiendoPagos = true
+                    }
                     guard nuevo == .manual else { campoConFoco = false; return }
                     // Parte del monto que se veía: se ajusta en vez de escribirlo desde cero.
                     if texto.isEmpty, let base = estimacion(anterior)?.amount ?? (montoInicial > 0 ? montoInicial : nil) {
@@ -176,6 +313,21 @@ struct FlujoCalculoMontoSheet: View {
                 }
             }
             .accessibilityIdentifier("cashflow_method_sheet")
+            .onAppear { refrescarTasas() }
+            .onChange(of: pagosElegidos) { refrescarTasas() }
+            .onChange(of: moneda) { refrescarTasas() }
+            .sheet(isPresented: $eligiendoPagos) {
+                FlujoElegirPagosSheet(
+                    pagos: pagosVisibles, esIngreso: esIngreso, monedaPlan: currencyCode, enOtraLinea: otrasLineas,
+                    elegidos: pagosElegidos, onListo: { pagosElegidos = $0 }
+                )
+            }
+            .sheet(isPresented: $eligiendoMoneda) {
+                NavigationStack {
+                    CurrencySelectorView(selectedCurrency: $moneda)
+                }
+                .presentationDetents([.large])
+            }
             .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -214,8 +366,9 @@ struct FlujoCalculoMontoSheet: View {
                 .foregroundStyle(.secondary)
             AmountText(
                 value: resultado ?? 0,
-                currencyCode: currencyCode,
+                currencyCode: metodo == .manual && fijoEnOtraMoneda ? moneda.rawValue : currencyCode,
                 font: DS.Typography.panelHeroAmount,
+                isEstimate: metodo == .scheduled && (resultadoPagos?.esAproximado ?? false),
                 animatesValue: true
             )
             .opacity(resultado == nil ? 0.4 : 1)
@@ -235,11 +388,28 @@ struct FlujoCalculoMontoSheet: View {
                 .fill(theme.card)
         )
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_method_result_card")
     }
 
     /// Cómo sale el monto elegido: el método, su ventana y lo que dejó fuera; o, con monto fijo, que no cambia.
     private var explicacionDelElegido: String? {
+        if metodo == .manual, fijoEnOtraMoneda {
+            guard let convertido = fijoConvertido else { return L10n.FlujoCambiarLimite.todosLosMesesEnMoneda }
+            let tasaMes = tasa(moneda.rawValue)
+            return L10n.FlujoCambiarLimite.convertidoEnMes(
+                appPreferences.currency(convertido, currencyCode: currencyCode, isEstimate: tasaMes.esAproximada),
+                mes: CashFlowMonthSummaryLogic.monthInSentence(mesDelCalculo),
+                tasa: FlujoMonedaTexto.tasa(tasaMes),
+                estimado: tasaMes.estado == .estimado
+            )
+        }
         if metodo == .manual { return L10n.FlujoDetalleLinea.comoFijo }
+        if metodo == .scheduled, esLineaCreada {
+            let cuantos = resultadoPagos?.pagos.filter { $0.estado != .noEsta }.count ?? 0
+            let extra = extraValor.map { appPreferences.currency($0, currencyCode: currencyCode) }
+            let suma = L10n.FlujoDetalleLinea.calculoSumaPagos(cuantos, extra: extra)
+            return cuantos > 0 || extra != nil ? "\(suma) \(L10n.FlujoDetalleLinea.calculoSeActualiza)" : suma
+        }
         guard let estimate = estimacion(metodo), esLineaCreada else { return metodo.descriptionText }
         let aislados = L10n.FlujoDetalleLinea.listaDeMeses(estimate.isolatedMonths)
         switch metodo {
@@ -262,10 +432,30 @@ struct FlujoCalculoMontoSheet: View {
                 .font(DS.Typography.subheadlineEmphasized)
                 .accessibilityHidden(true)
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                Text(appPreferences.currencyIdentifier(for: currencyCode))
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
+                if esLineaCreada {
+                    Button {
+                        campoConFoco = false
+                        eligiendoMoneda = true
+                    } label: {
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(appPreferences.currencyIdentifier(for: moneda.rawValue))
+                                .font(DS.Typography.title)
+                            Image(systemName: "chevron.down")
+                                .font(DS.Typography.caption.weight(.bold))
+                        }
+                        .foregroundStyle(theme.accentText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.FlujoCambiarLimite.monedaAccesible(moneda.rawValue))
+                    .accessibilityIdentifier("cashflow_method_currency")
+                } else {
+                    Text(appPreferences.currencyIdentifier(for: currencyCode))
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
                 TextField(
                     L10n.FlujoDetalleLinea.calculoCampoFijo,
                     text: $texto,
@@ -425,7 +615,37 @@ struct FlujoCalculoMontoSheet: View {
         case .linea(let line, let monthKey, _, _):
             guard !line.isDeleted, line.modelContext != nil else { dismiss(); return }
             let ok: Bool
-            if metodo == .manual {
+            if metodo == .scheduled {
+                do {
+                    try FlujoPagosDeLineaLogica.guardarPagos(
+                        line: line, ids: pagosElegidos, extra: extraValor, monthKey: monthKey, mes: mesDelCalculo,
+                        monedaPlan: currencyCode, converter: CurrencyConverter.shared
+                    )
+                    ok = true
+                } catch {
+                    #if DEBUG
+                    print("FlujoCalculoMontoSheet: Error guardando los pagos: \(error)")
+                    #endif
+                    ok = false
+                }
+            } else if metodo == .manual, fijoEnOtraMoneda {
+                guard let monto = montoEscrito else {
+                    DS.Haptic.error()
+                    return
+                }
+                do {
+                    try FlujoPagosDeLineaLogica.guardarFijoEnMoneda(
+                        line: line, monto: monto, moneda: moneda.rawValue, mes: mesDelCalculo, monedaPlan: currencyCode,
+                        converter: CurrencyConverter.shared
+                    )
+                    ok = true
+                } catch {
+                    #if DEBUG
+                    print("FlujoCalculoMontoSheet: Error guardando el monto en otra moneda: \(error)")
+                    #endif
+                    ok = false
+                }
+            } else if metodo == .manual {
                 guard let monto = montoEscrito else {
                     DS.Haptic.error()
                     return
@@ -462,12 +682,16 @@ extension CashFlowPlanViewModel {
         // Ajustes de ese mes: también los del legado (`overrides`) que aún no migraron.
         let ajustesDelMes = ((line.monthOverrides ?? []) + (line.overrides ?? [])).filter { $0.monthKey == monthKey }
         let mismo = line.estimationMethod == metodo.rawValue && (line.amountChangesRaw ?? "").isEmpty
-            && ajustesDelMes.isEmpty
+            && ajustesDelMes.isEmpty && line.limitCurrencyCode == nil
         guard !mismo else { return true }
         ajustesDelMes.forEach { ctx.delete($0) }
         line.estimationMethod = metodo.rawValue
         line.manualAmount = nil
         line.amountChangesRaw = nil
+        // Un método que mira tus registros no tiene moneda propia (encargo del 2026-11-20). Los pagos de la línea se
+        // quedan apuntados por si vuelve a «Pagos planificados»: solo cuentan con ese método.
+        line.limitCurrencyCode = nil
+        line.limitForeignAmount = nil
         do {
             try ctx.save()
             Self.announcePlanChange(ctx)

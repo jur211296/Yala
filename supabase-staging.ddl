@@ -82,6 +82,10 @@ CREATE TABLE cashflow_lines (
   manual_amount NUMERIC(18,4),
   custom_months_raw TEXT[],
   amount_changes_raw TEXT,  -- g21_01 (2026-10-21): cambios de monto «desde este mes» (UX 2.2 · L18-8); aplicada con el Worker v5 según la card nmtk
+  scheduled_payment_ids_raw TEXT,  -- g33_01 (2026-11-20): los pagos planificados de la línea, en orden (manifest v8). SIN APLICAR: qa/cloud/g33_01_*
+  limit_extra_amount NUMERIC(18,4),  -- g33_01: el extra en la moneda del flujo
+  limit_currency_code TEXT,  -- g33_01: la moneda del monto fijo (NULL = la del flujo)
+  limit_foreign_amount NUMERIC(18,4),  -- g33_01: el monto fijo en esa moneda
   category_ref UUID,
   subcategory_ref UUID,
   scheduled_payment_ref UUID,

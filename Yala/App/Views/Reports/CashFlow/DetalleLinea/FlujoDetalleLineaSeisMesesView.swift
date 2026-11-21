@@ -220,6 +220,12 @@ struct FlujoDetalleLineaSeisMesesView: View {
                 Text(L10n.FlujoDetalleLinea.tooltipAislado)
                     .foregroundStyle(.secondary)
             }
+            // La tasa del mes con que se convirtió el límite (encargo del 2026-11-20).
+            if let tasa = mes.tasa {
+                Label("\(tasa.moneda) \(FlujoMonedaTexto.tasa(tasa.tasa))", systemImage: "arrow.left.arrow.right")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("cashflow_line_history_tooltip_rate")
+            }
         }
         .font(DS.Typography.captionSmall)
         .monospacedDigit()

@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-11-21` [g33_01 — las cuatro columnas de los límites del flujo de caja con pagos y en otra moneda (2026-11-21)](#g3301--las-cuatro-columnas-de-los-límites-del-flujo-de-caja-con-pagos-y-en-otra-moneda-2026-11-21)
 - `2026-11-20` [g32_01 — `scheduled_payments.custom_logo_ref` y el bucket de logos propios (2026-11-20)](#g3201--scheduledpaymentscustomlogoref-y-el-bucket-de-logos-propios-2026-11-20)
 - `2026-11-16` [g31_01 — volver a pasar a la nube con la cuenta que volvió a iCloud (2026-11-16)](#g3101--volver-a-pasar-a-la-nube-con-la-cuenta-que-volvi-a-icloud-2026-11-16)
 - `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-telfono-que-no-lo-conoce-2026-11-03)
@@ -2323,6 +2324,23 @@ mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila e
 staging el 2026-09-24, tras aplicar g16_01:** 34/35 en verde, con el 1, el de g3_02 y el 28 dentro. El único
 rojo es el 20, el timeout de 5010 ms que ya lleva `account-goldens-freeze-read-test-times-out`. Antes de correrlos
 hubo que borrar las filas de `profiles` de A, B y C, con el `delete` de la sección de I7a ampliado a C.
+
+## g33_01 — las cuatro columnas de los límites del flujo de caja con pagos y en otra moneda (2026-11-21)
+
+**SIN APLICAR en ningún entorno.** La sesión que la escribió (encargo `2026-11-20-flujo-limites-pagos-planificados-y-moneda-implementar`)
+corría en la Max, sin `~/Secrets/yala-supabase-mgmt/pat`. Qué añade: `cashflow_lines.scheduled_payment_ids_raw text`,
+`limit_extra_amount numeric(18,4)`, `limit_currency_code text` y `limit_foreign_amount numeric(18,4)`, todas nullable y sin
+CHECK; nada más (`apply_delta` escribe con `jsonb_populate_record` y los grants son de tabla). El manifest del repo ya va por
+`manifest_version: 8` con las cuatro en `since: 8`.
+
+**Orden**, como g32_01: (1) esta migración en staging (`bash qa/cloud/g33_01-remote.sh staging apply`, luego `state`);
+(2) el Worker de staging con el manifest v8 (solo el manifest sobre el código que ya corre); (3) lo mismo en producción
+cuando Jürgen lo autorice. La app ya declara la menor versión entre la suya (8) y la que anuncia el Worker: con un Worker v7
+no emite ni hashea las cuatro columnas, apunta lo que la persona cambia en ellas y lo reemite al pasar a v8
+(`CashFlowLimitesPagosYMonedaSyncTests`).
+
+**Marcha atrás**: primero el Worker, después `g33_01_rollback.sql`, que solo retira algo si ninguna línea tiene valor en las
+cuatro columnas.
 
 ## g32_01 — `scheduled_payments.custom_logo_ref` y el bucket de logos propios (2026-11-20)
 

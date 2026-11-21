@@ -54,6 +54,8 @@ struct CashFlowMonthDetailView: View {
 
             expenseSection
 
+            convertedLimitsNote
+
             cardPayments
         }
         // Plegar Ingresos o Gastos recoge sus filas. Implícita: el `withAnimation` del rótulo no anima dentro de una
@@ -273,6 +275,43 @@ struct CashFlowMonthDetailView: View {
                 addLineButton(isIncome: false)
                     .coachMarkAnchor("cfTableAdd")
             }
+        }
+    }
+
+    // MARK: - Límites en otra moneda (encargo del 2026-11-20)
+
+    /// «Incluye 2 límites en USD convertidos al promedio de noviembre (3.70).» bajo las líneas del mes.
+    @ViewBuilder
+    private var convertedLimitsNote: some View {
+        let convertidas = (month.incomeLines + month.expenseLines).compactMap { $0.limitBreakdown }
+            .filter { !$0.monedasExtranjeras.isEmpty }
+        if !convertidas.isEmpty {
+            let monedas = convertidas.reduce(into: Set<String>()) { $0.formUnion($1.monedasExtranjeras) }
+            let unica = monedas.count == 1 ? monedas.first : nil
+            // Con una sola moneda, su tasa del mes (todas las líneas usan la misma).
+            let tasa = unica != nil ? convertidas.lazy.compactMap(\.tasa).first : nil
+            let futuro = !month.isPast && !month.isCurrent
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.FlujoDetalleLinea.resumenConvertidos(
+                    cuantos: convertidas.count, moneda: unica,
+                    mes: CashFlowMonthSummaryLogic.monthInSentence(month.date),
+                    tasa: tasa.map { FlujoMonedaTexto.tasa($0) }, futuro: futuro
+                ))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(Color.secondary.opacity(0.1))
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("cashflow_month_converted_note")
         }
     }
 

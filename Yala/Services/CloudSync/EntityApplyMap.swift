@@ -699,6 +699,10 @@ enum EntityApplyMap {
             "manual_amount": Apply.moneyOpt(\.manualAmount),
             "custom_months_raw": Apply.csvOpt(\.customMonthsRaw),
             "amount_changes_raw": Apply.textOpt(\.amountChangesRaw),
+            "scheduled_payment_ids_raw": Apply.textOpt(\.scheduledPaymentIDsRaw),
+            "limit_extra_amount": Apply.moneyOpt(\.limitExtraAmount),
+            "limit_currency_code": Apply.textOpt(\.limitCurrencyCode),
+            "limit_foreign_amount": Apply.moneyOpt(\.limitForeignAmount),
             "category_ref": ColumnApplier { m, v, ctx in
                 m.category = try resolveRef(v, entity: "cashflow_lines", column: "category_ref",
                                         rowSyncID: m.id, context: ctx) {

@@ -127,9 +127,39 @@ enum FlujoDetalleLineaLogica {
         let esActual: Bool
         /// El mes quedó fuera del límite del mes que se ve por aislado (19-nov-2026).
         var esAislado: Bool = false
+        /// La moneda del límite y su tasa del mes, si el límite se convierte (encargo del 2026-11-20): el globo de la
+        /// barra la dice.
+        var tasa: TasaDelMes?
         var id: String { monthKey }
         /// Lo real menos el límite: en un gasto, positivo es pasarse.
         var diferencia: Double { real - limite }
+    }
+
+    /// La tasa con que se convirtió el límite de un mes.
+    struct TasaDelMes: Equatable {
+        let moneda: String
+        let tasa: FlujoTasaDelMes.Tasa
+    }
+
+    /// Lo pagado en la moneda del límite (con signo del lado), si TODO lo registrado del mes en la línea está en esa
+    /// moneda. `nil` si no hay nada o algo está en otra moneda: entonces no se puede comparar en el original.
+    static func pagadoEnMoneda(_ moneda: String, registros: [Registro]) -> Double? {
+        let reales = registros.filter { !$0.esFechado }
+        guard !reales.isEmpty, reales.allSatisfy({ $0.transaction.currencyCode == moneda }) else { return nil }
+        return reales.reduce(0) { total, registro in
+            let nativo = abs(registro.transaction.amount)
+            return total + (registro.importe >= 0 ? nativo : -nativo)
+        }
+    }
+
+    /// Lo que se pasó del límite solo por el tipo de cambio: lo pagado en la moneda del límite no pasa del original, pero
+    /// convertido sí. `nil` si no es el caso (no hay original, no se pasó, o se pasó también en el original).
+    static func excesoPorTipoDeCambio(
+        real: Double, limite: Double, original: FlujoLimiteEnMoneda.Original?, pagadoEnOriginal: Double?
+    ) -> (exceso: Double, justo: Bool)? {
+        guard let original, let pagado = pagadoEnOriginal, real - limite >= 0.005,
+              pagado <= original.monto + 0.005 else { return nil }
+        return (real - limite, abs(pagado - original.monto) < 0.005)
     }
 
     /// Los seis meses y cómo sale el límite del mes que se ve.
@@ -230,6 +260,23 @@ enum FlujoDetalleLineaLogica {
         return line.method == .manual ? L10n.FlujoDetalleLinea.comoFijo : nil
     }
 
+    /// «Cómo se calcula» de un límite que no sale de tus registros (encargo del 2026-11-20): «Suma de 4 pagos + S/ 30
+    /// extra. Se actualiza solo cuando cambias un pago.» o «Monto fijo de 500.00 USD cada mes. En PEN sube y baja con el
+    /// tipo de cambio.». `nil` si el límite no sale de ahí.
+    static func comoSeCalcula(
+        desglose: FlujoLimiteEnMoneda.Resultado?, monedaPlan: String, formato: (Double) -> String
+    ) -> String? {
+        guard let desglose else { return nil }
+        if desglose.pagos.isEmpty, desglose.extra == nil, let original = desglose.original {
+            return L10n.FlujoDetalleLinea.comoFijoEnMoneda(
+                FlujoMonedaTexto.original(original.monto, moneda: original.moneda), monedaPlan: monedaPlan
+            )
+        }
+        let cuantos = desglose.pagos.filter { $0.estado != .noEsta }.count
+        let suma = L10n.FlujoDetalleLinea.calculoSumaPagos(cuantos, extra: desglose.extra.map(formato))
+        return "\(suma) \(L10n.FlujoDetalleLinea.calculoSeActualiza)"
+    }
+
     /// El índice con que el motor calcula los límites (`CashFlowProjectionCalculator.calculate`): por categoría y
     /// subcategoría, y lo que el reparto de dueños da a cada línea.
     static func indiceDelLimite(
@@ -289,14 +336,29 @@ enum FlujoDetalleLineaLogica {
             converter: converter, now: now, calendar: calendar
         )
 
+        // Los pagos y las tasas de los seis meses, leídos una vez (encargo del 2026-11-20).
+        let usaFuentes = CashFlowProjectionCalculator.needsLimitSources(line, currencyCode: currencyCode)
+        let fuentes = usaFuentes ? FlujoLimiteEnMoneda.Fuentes.deLinea(
+            line, meses: meses, monedaPlan: currencyCode, converter: converter, hoy: now, calendar: calendar
+        ) : nil
+
         return meses.map { mes in
             let key = CashFlowProjectionCalculator.monthKey(for: mes, calendar: calendar)
-            let limite = CashFlowProjectionCalculator.resolvePlanned(
+            let resuelto = CashFlowProjectionCalculator.resolvePlanned(
                 line: line, monthKey: key, monthDate: mes, currentMonthStart: actual, index: index,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            ).amount
+                currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
+            )
+            var tasa: TasaDelMes?
+            if let fuentes, !resuelto.isOverride, resuelto.changeFromMonthKey == nil,
+               let desglose = FlujoLimiteEnMoneda.resultado(
+                line: line, mes: mes, monedaPlan: currencyCode, fuentes: fuentes, calendar: calendar
+               ), !desglose.sinNada, desglose.monedasExtranjeras.count == 1,
+               let moneda = desglose.monedasExtranjeras.first, let tasaMes = desglose.tasa {
+                tasa = TasaDelMes(moneda: moneda, tasa: tasaMes)
+            }
             return MesHistoria(
-                mes: mes, monthKey: key, real: realPorMes[mes] ?? 0, limite: limite, esActual: mes == actual
+                mes: mes, monthKey: key, real: realPorMes[mes] ?? 0, limite: resuelto.amount, esActual: mes == actual,
+                tasa: tasa
             )
         }
     }

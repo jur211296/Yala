@@ -119,6 +119,33 @@ En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgensc
 Planificación → Pagos planificados → un pago → Editar → «Logo» → «Usar una foto» → elige una → Guardar; en B, al rato, el
 mismo pago enseña esa foto en la lista.
 
+## Añadido el 2026-11-21: límites del flujo de caja con pagos y en otra moneda (2.3)
+
+Cuatro campos en `CD_CashFlowLine`, sin índices: los pagos planificados de una línea, el extra que se suma, y la moneda y el
+monto de un monto fijo en otra moneda. La build de 2.3 los escribe al guardar una línea con «Pagos planificados» o con un
+«Monto fijo» en otra moneda. **Sin ellos en Production, iCloud rechaza sin avisar la línea que los lleve** (las demás
+siguen viajando: un campo vacío no se manda). **Tampoco están en Development**: la sesión que los añadió no tenía token de
+`cktool`, así que van los dos entornos a mano.
+
+| Record type | Campo | Tipo | Índices |
+|---|---|---|---|
+| `CD_CashFlowLine` | `CD_scheduledPaymentIDsRaw` | String | ninguno |
+| `CD_CashFlowLine` | `CD_limitExtraAmount` | Double | ninguno |
+| `CD_CashFlowLine` | `CD_limitCurrencyCode` | String | ninguno |
+| `CD_CashFlowLine` | `CD_limitForeignAmount` | Double | ninguno |
+
+En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgenschmidt.yala.dev`):
+
+1. Selector de entorno en **Development**. **Schema → Record Types → `CD_CashFlowLine`**.
+2. Si falta alguno de los cuatro, **+** con su nombre y su tipo de la tabla, **Save**. No marques ningún índice.
+3. **Schema → Deploy Schema Changes…** La lista trae solo altas, y entre ellas estas cuatro. Con un «Remove» o «Change»,
+   **Cancel** y avisa a Frank.
+4. **Deploy**. Cambia a **Production**, abre `CD_CashFlowLine` y comprueba los cuatro campos con su tipo.
+
+**Antes de subir a TestFlight cualquier build de 2.3 con este cambio.** Cómo se comprueba con dos iPhone en iCloud: en A,
+Reportes → Flujo de caja → una línea → «Cambiar» → «Monto fijo» → toca «S/ ▾» → USD → 500 → Guardar; en B, al rato, la
+misma línea enseña «500.00 USD» bajo su nombre.
+
 ## Cuando acabes
 
 17. Dile a Frank «CloudKit hecho». Él mueve las cards y deja los `.ckdb` del repo iguales al export.

@@ -20,7 +20,10 @@
  * Desde el 2026-11-01 (Grupos B, card 1) hay una v6: `tx_items.split_lines_raw`, la receta de tu parte de un gasto de
  * grupo en líneas. `v5` es todo menos esa columna.
  * Desde el 2026-11-20 hay una v7: `scheduled_payments.custom_logo_ref`, la referencia de la foto del logo propio de un
- * pago planificado. `v6` es todo menos esa columna, y `v7` el set completo.
+ * pago planificado. `v6` es todo menos esa columna.
+ * Desde el 2026-11-20 (tarde) hay una v8: las cuatro columnas de los límites del flujo de caja atados a varios pagos
+ * planificados y en otra moneda (`cashflow_lines.scheduled_payment_ids_raw`, `limit_extra_amount`, `limit_currency_code`,
+ * `limit_foreign_amount`). `v7` es todo menos esas cuatro, y `v8` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -69,8 +72,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 7, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(7);
+  it("el Worker anuncia la versión 8, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(8);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -78,7 +81,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6) y el logo propio (7)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7) y los límites del flujo de caja (8)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -90,6 +93,10 @@ describe("capability-set por versión del manifest", () => {
       "accounts.credit_card_statement_day@5",
       "accounts.parent_account_id@2",
       "cashflow_lines.amount_changes_raw@3",
+      "cashflow_lines.limit_currency_code@8",
+      "cashflow_lines.limit_extra_amount@8",
+      "cashflow_lines.limit_foreign_amount@8",
+      "cashflow_lines.scheduled_payment_ids_raw@8",
       "favorite_payments.destination_account_ref@4",
       "scheduled_payments.custom_logo_ref@7",
       "tx_items.split_lines_raw@6",
@@ -117,8 +124,10 @@ describe("capability-set por versión del manifest", () => {
     expect([...(cap.columns!.accounts ?? [])]).toContain("parent_account_id");
     const lines = [...(cap.columns!.cashflow_lines ?? [])];
     expect(lines).not.toContain("amount_changes_raw");
+    // Sin amount_changes_raw (v3) ni las cuatro de los límites (v8): solo las columnas de la v1 y la v2.
     expect(lines.sort()).toEqual(
-      Object.keys(manifest.entities.cashflow_lines.columns).filter((c) => c !== "amount_changes_raw").sort(),
+      (Object.entries(manifest.entities.cashflow_lines.columns) as Array<[string, { since?: number }]>)
+        .filter(([, c]) => (c.since ?? 1) <= 2).map(([col]) => col).sort(),
     );
   });
 
@@ -195,8 +204,63 @@ describe("capability-set por versión del manifest", () => {
     expect(validateUpsertShape("scheduled_payments", { custom_logo_ref: null }, { custom_logo_ref: HLC })).toBeNull();
   });
 
-  it("v7, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v7", "v99", "full", null]) {
+  it("v7 = todo menos las cuatro de los límites del flujo de caja: el logo propio sí", () => {
+    const cap = resolveCapabilitySet("v7");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.scheduled_payments ?? [])]).toContain("custom_logo_ref");
+    const lines = [...(cap.columns!.cashflow_lines ?? [])];
+    const v8 = ["scheduled_payment_ids_raw", "limit_extra_amount", "limit_currency_code", "limit_foreign_amount"];
+    for (const col of v8) expect(lines).not.toContain(col);
+    expect(lines).toContain("amount_changes_raw");
+    expect(lines.sort()).toEqual(
+      Object.keys(manifest.entities.cashflow_lines.columns).filter((c) => !v8.includes(c)).sort(),
+    );
+  });
+
+  it("el pull de v7 no baja los pagos, el extra ni la moneda del límite; el de v8 sí", () => {
+    const ids = "0a1b2c3d-1111-4222-8333-944455556666,1b2c3d4e-2222-4333-8444-a55566667777";
+    const row = {
+      sync_id: "7c3d4e5f-3333-4444-8555-b66677778888", name: "Suscripciones", scheduled_payment_ids_raw: ids,
+      limit_extra_amount: "30.0000", limit_currency_code: "USD", limit_foreign_amount: "500.0000",
+    };
+    const stored = {
+      name: HLC, scheduled_payment_ids_raw: HLC, limit_extra_amount: HLC, limit_currency_code: HLC,
+      limit_foreign_amount: HLC,
+    };
+    const v7 = projectRowToDelta("cashflow_lines", row, stored, resolveCapabilitySet("v7"));
+    for (const col of ["scheduled_payment_ids_raw", "limit_extra_amount", "limit_currency_code", "limit_foreign_amount"]) {
+      expect(v7.fields).not.toHaveProperty(col);
+      expect(v7.field_hlcs).not.toHaveProperty(col);
+    }
+    expect(v7.fields.name).toBe("Suscripciones");
+    const v8 = projectRowToDelta("cashflow_lines", row, stored, resolveCapabilitySet("v8"));
+    expect(v8.fields.scheduled_payment_ids_raw).toBe(ids);
+    expect(v8.fields.limit_currency_code).toBe("USD");
+    expect(v8.field_hlcs.limit_foreign_amount).toBe(HLC);
+  });
+
+  it("el Merkle de v7 no hashea las cuatro columnas; el de v8 sí (como null en una línea sin ellas)", () => {
+    const row = {
+      sync_id: "7c3d4e5f-3333-4444-8555-b66677778888", name: "Renta", scheduled_payment_ids_raw: null,
+      limit_extra_amount: null, limit_currency_code: null, limit_foreign_amount: null,
+    };
+    const v7 = merkleColumns("cashflow_lines", resolveCapabilitySet("v7"));
+    expect(v7).not.toContain("limit_currency_code");
+    expect(canonRowC1("cashflow_lines", row, v7)).not.toContain("scheduled_payment_ids_raw");
+    const v8 = merkleColumns("cashflow_lines", resolveCapabilitySet("v8"));
+    expect(v8).toContain("limit_foreign_amount");
+    expect(canonRowC1("cashflow_lines", row, v8)).toContain('"scheduled_payment_ids_raw":null');
+  });
+
+  it("un push con las cuatro columnas tiene forma válida (columnas safe, cada una su unidad), también al vaciarlas", () => {
+    expect(validateUpsertShape("cashflow_lines", { limit_currency_code: "USD", limit_foreign_amount: "500.0000" },
+      { limit_currency_code: HLC, limit_foreign_amount: HLC })).toBeNull();
+    expect(validateUpsertShape("cashflow_lines", { scheduled_payment_ids_raw: null, limit_extra_amount: null },
+      { scheduled_payment_ids_raw: HLC, limit_extra_amount: HLC })).toBeNull();
+  });
+
+  it("v8, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v8", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
   });

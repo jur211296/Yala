@@ -12,3 +12,9 @@
 "flujoCambiarLimite.scope.all" = "Alle maanden";
 "flujoCambiarLimite.invalid" = "Vul een bedrag van 0 of meer in.";
 "flujoCambiarLimite.save" = "Bewaar";
+
+/* Monto fijo en otra moneda (encargo del 2026-11-20) */
+"flujoCambiarLimite.currency.a11y" = "Valuta van het bedrag: %@. Tik om te wijzigen";
+"flujoCambiarLimite.foreign.converted" = "%1$@ in %2$@, tegen de gemiddelde wisselkoers van de maand (%3$@). Elke maand wordt met zijn eigen gemiddelde omgerekend.";
+"flujoCambiarLimite.foreign.converted.estimated" = "%1$@ in %2$@, tegen de laatst bekende wisselkoers (%3$@). Elke maand wordt met zijn eigen gemiddelde omgerekend.";
+"flujoCambiarLimite.foreign.allMonths" = "In een andere valuta geldt het bedrag voor alle maanden.";

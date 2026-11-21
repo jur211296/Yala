@@ -25,6 +25,8 @@
 //  `accounts.credit_card_reminder_days_before`).
 //  Y desde la v6 (Grupos B, card 1), con la receta de líneas de tu parte de un gasto de grupo (`tx_items.split_lines_raw`).
 //  Y desde la v7 (2026-11-20), con el logo propio de un pago planificado (`scheduled_payments.custom_logo_ref`).
+//  Y desde la v8 (2026-11-20), con los límites del flujo de caja con pagos y en otra moneda (las cuatro columnas de
+//  `SyncCapability.cashFlowLimitColumns`), por columna como la v5.
 //
 //  Por qué no «reemitir toda cuenta con enlace»: subiría con un HLC fresco copias de lo que bajó antes de que otro
 //  teléfono lo cambiara, y le ganaría por LWW a ese cambio más nuevo (lo cazó la review).
@@ -228,6 +230,34 @@ extension CloudSyncEngine {
             reemitted += inputs.count
         }
 
+        // Los límites del flujo de caja con pagos y en otra moneda (v8, 2026-11-20), por columna como la v5.
+        let pendingLimits = level >= SyncCapability.cashFlowLimitsSince ? SyncCapability.suppressedCashFlowLimits : [:]
+        if !pendingLimits.isEmpty {
+            let lines = try context.fetch(FetchDescriptor<CashFlowLine>()).filter { pendingLimits[$0.id] != nil }
+            let emission = EntityEmissionMap.cashFlowLine
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs = lines.map { line in
+                SnapshotRowInput(syncID: line.id, entityType: SyncEntityType.cashFlowLine) { hlc in
+                    let result = DeltaEmitter.emit(model: line, emission: emission,
+                                                   changedColumns: pendingLimits[line.id] ?? [], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó la línea: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.cashFlowLine,
+                                                           reason: "cashFlowLimitsReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         let cursor = try loadOrCreateCursor(context)
         if cursor.serverSeqCursor != 0 {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -241,6 +271,7 @@ extension CloudSyncEngine {
         SyncCapability.clearSuppressedCreditCardCycles(pendingCycles)
         SyncCapability.clearSuppressedSplitLines(pendingSplitLines)
         SyncCapability.clearSuppressedCustomLogos(pendingCustomLogos)
+        SyncCapability.clearSuppressedCashFlowLimits(pendingLimits)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

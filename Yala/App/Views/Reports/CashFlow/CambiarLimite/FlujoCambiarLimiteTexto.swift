@@ -42,8 +42,19 @@ extension L10n {
         static var montoInvalido: String { s("invalid") }
         static var guardar: String { s("save") }
 
+        /// «Moneda del monto: USD. Toca para cambiarla», lo que lee VoiceOver del botón de la moneda.
+        static func monedaAccesible(_ moneda: String) -> String { f("currency.a11y", moneda) }
+        /// «S/ 1,850.00 en noviembre, al tipo de cambio promedio del mes (3.70). Cada mes se convierte con su promedio.»
+        static func convertidoEnMes(_ monto: String, mes: String, tasa: String, estimado: Bool) -> String {
+            f(estimado ? "foreign.converted.estimated" : "foreign.converted", monto, mes, tasa)
+        }
+        /// «En otra moneda, el monto vale para todos los meses.»
+        static var todosLosMesesEnMoneda: String { s("foreign.allMonths") }
+
         /// Las claves que «Cálculo del monto» usa, para la prueba de que existen en los 16 idiomas.
-        static let claves: [String] = ["scope.only", "scope.from", "scope.all", "invalid", "save"]
+        static let claves: [String] = ["scope.only", "scope.from", "scope.all", "invalid", "save",
+                                       "currency.a11y", "foreign.converted", "foreign.converted.estimated",
+                                       "foreign.allMonths"]
             .map { "flujoCambiarLimite.\($0)" }
     }
 }

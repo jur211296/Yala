@@ -267,6 +267,10 @@ final class EntityDeletionService {
             #endif
         }
 
+        // 3b. Sale de las líneas del flujo de caja que lo tenían; una que se queda sin nada pasa a monto fijo con su
+        //     límite del mes (`FlujoPagosDeLineaLogica.alBorrarPago`, encargo del 2026-11-20).
+        try FlujoPagosDeLineaLogica.alBorrarPago(payment, context: context)
+
         // 4. Delete payment
         try delete(payment)
 

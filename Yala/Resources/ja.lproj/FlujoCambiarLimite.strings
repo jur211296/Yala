@@ -12,3 +12,9 @@
 "flujoCambiarLimite.scope.all" = "すべての月";
 "flujoCambiarLimite.invalid" = "0以上の金額を入力してください。";
 "flujoCambiarLimite.save" = "保存";
+
+/* Monto fijo en otra moneda (encargo del 2026-11-20) */
+"flujoCambiarLimite.currency.a11y" = "金額の通貨：%@。タップして変更";
+"flujoCambiarLimite.foreign.converted" = "%2$@は%1$@（その月の平均為替レート %3$@）。毎月、その月の平均で換算します。";
+"flujoCambiarLimite.foreign.converted.estimated" = "%2$@は%1$@（最新の為替レート %3$@）。毎月、その月の平均で換算します。";
+"flujoCambiarLimite.foreign.allMonths" = "ほかの通貨では、金額はすべての月に適用されます。";

@@ -12,3 +12,9 @@
 "flujoCambiarLimite.scope.all" = "所有月份";
 "flujoCambiarLimite.invalid" = "请输入 0 或更大的金额。";
 "flujoCambiarLimite.save" = "保存";
+
+/* Monto fijo en otra moneda (encargo del 2026-11-20) */
+"flujoCambiarLimite.currency.a11y" = "金额货币：%@。轻点以更改";
+"flujoCambiarLimite.foreign.converted" = "%2$@为%1$@（当月平均汇率 %3$@）。每个月按各自的平均汇率换算。";
+"flujoCambiarLimite.foreign.converted.estimated" = "%2$@为%1$@（最新已知汇率 %3$@）。每个月按各自的平均汇率换算。";
+"flujoCambiarLimite.foreign.allMonths" = "使用其他货币时，金额适用于所有月份。";

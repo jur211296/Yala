@@ -77,7 +77,9 @@ struct CashFlowScheduledCurrencyTests {
         )
         // Con el bug: 100 (los dólares contados como soles).
         #expect(abs(result.plannedAmount - 375) < 0.001)
-        #expect(result.isPlannedApproximate == false)
+        // Desde el 2026-11-20 (decisión `tasa` de Jürgen) un mes que viene se convierte con la última tasa y lleva «≈»
+        // aunque esa tasa sea exacta: el tipo de cambio de ese mes todavía no existe.
+        #expect(result.isPlannedApproximate == true)
     }
 
     @Test func paymentInPlanCurrency_isUnchanged() {

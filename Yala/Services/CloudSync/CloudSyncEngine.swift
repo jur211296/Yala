@@ -3169,6 +3169,12 @@ final class CloudSyncEngine {
                let item = model as? TransactionItem, let itemSyncID = item.syncID {
                 SyncCapability.noteSuppressedSplitLines(itemSyncID)
             }
+            // Y con los límites del flujo de caja con pagos y en otra moneda (v8), también cuando se vacían.
+            if level < SyncCapability.cashFlowLimitsSince,
+               !changedColumns.isDisjoint(with: SyncCapability.cashFlowLimitColumns),
+               let line = model as? CashFlowLine {
+                SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: changedColumns)
+            }
             // Y con el logo propio de un pago planificado (v7), también cuando se quita.
             if level < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
                let payment = model as? ScheduledPayment {
