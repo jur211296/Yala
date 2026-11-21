@@ -933,6 +933,8 @@ struct NewTransactionView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            // En la barra, un `Menu` toma el tinte del tema (índigo) aunque su etiqueta diga `.primary` (Jürgen, 20-nov).
+            .tint(Color.primary)
             .accessibilityLabel(NuevoRegistroB1Text.string("title.a11yChangeType"))
             .accessibilityValue(formTitle)
             .accessibilityIdentifier("new_transaction_type_menu")
@@ -1007,6 +1009,8 @@ struct NewTransactionView: View {
                     }
                 }
         }
+        // «···» en primary, como el título: con el tinte del tema salía índigo (Jürgen, 20-nov).
+        .tint(Color.primary)
         .disabled(isBridgedReadOnly)
         .accessibilityLabel(NuevoRegistroB1Text.string("more.a11y"))
         .accessibilityIdentifier("new_transaction_more")
@@ -1129,12 +1133,12 @@ struct NewTransactionView: View {
                 } else {
                     amountDisplay
                 }
-                amountCurrencyNoticeLine
+                // Sin la línea «Ahora en dólares (USD)…» (Jürgen, 20-nov): la cápsula «$» y el «≈ S/ …» ya lo dicen. A
+                // VoiceOver se le sigue anunciando el cambio (`amountCurrencyChanged`).
                 if viewModel.showsForeignEquivalence, viewModel.exchangeRate != 1.0 {
                     foreignRateCapsule
                 }
             }
-            .animation(reduceMotion ? nil : DS.Animation.appear, value: showsAmountCurrencyNotice)
             .onChange(of: amountCurrencySnapshot) { old, new in amountCurrencyChanged(from: old, to: new) }
             .disabled(isBridgedReadOnly)
             .opacity(isBridgedReadOnly ? 0.5 : 1.0)
@@ -1358,28 +1362,6 @@ struct NewTransactionView: View {
     /// La moneda del importe que se ve y el número escrito: lo que mira el aviso para saber si una cifra cambió de moneda.
     private var amountCurrencySnapshot: AmountCurrencySnapshot {
         AmountCurrencySnapshot(currencyCode: displayCurrencyCode, amount: viewModel.amount)
-    }
-
-    private var showsAmountCurrencyNotice: Bool {
-        AmountCurrencyNoticeLogic.isShown(
-            amountCurrencyNotice, currencyCode: displayCurrencyCode, amount: viewModel.amount,
-            isTransfer: viewModel.isTransfer)
-    }
-
-    /// Bajo el importe, con palabras: el número se queda y la moneda cambia (no se convierte nada, L2-16).
-    @ViewBuilder
-    private var amountCurrencyNoticeLine: some View {
-        if showsAmountCurrencyNotice, let notice = amountCurrencyNotice {
-            Label(AmountCurrencyNoticeLogic.text(for: notice), systemImage: "arrow.left.arrow.right")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, DS.Spacing.lg)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("new_transaction_currency_notice")
-                .transition(.opacity)
-        }
     }
 
     private func amountCurrencyChanged(from old: AmountCurrencySnapshot, to new: AmountCurrencySnapshot) {

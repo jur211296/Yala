@@ -3858,7 +3858,6 @@
         "Yala/App/Views/Panel/PanelAccountChipsRow.swift",
         "Yala/App/Views/Panel/Sheets/AccountDetailSheet.swift",
         "Yala/App/ViewModels/AccountSelectorViewModel.swift",
-        "Yala/App/Views/Transactions/Components/AccountCardChips.swift",
         "Yala/App/Logic/Helpers/FilterChipHelper.swift",
         "Yala/App/Services/DraftBuilder.swift",
         "Yala/App/ViewModels/RecordsFiltersViewModel.swift",
@@ -4003,7 +4002,6 @@
       "area": "registro-unificado",
       "codeGlobs": [
         "Yala/App/Views/Transactions/Components/RecordFormPieces.swift",
-        "Yala/App/Views/Transactions/Components/AccountCardChips.swift",
         "Yala/App/Views/Transactions/Components/SelectionChip.swift",
         "Yala/App/Logic/GroupExpenseOutflowLineLogic.swift",
         "Yala/Seed/DevSeedRecordForms.swift",
@@ -4012,12 +4010,19 @@
         "Yala/App/Views/Groups/GroupExpenseFormView.swift",
         "Yala/App/Views/Favorites/FavoriteEditorView.swift",
         "Yala/App/Views/Inbox/GroupDraftFinalizationScaffold.swift",
-        "Yala/App/Views/Transactions/SubcategorySelectorSheet.swift"
+        "Yala/App/Views/Transactions/SubcategorySelectorSheet.swift",
+        "Yala/App/Views/Groups/SettlementFormView.swift",
+        "Yala/App/Views/Inbox/GroupExpenseDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupSettlementDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupSettlementAmountChangeSheet.swift",
+        "Yala/App/Views/Transactions/Components/ExchangeRateCapsule.swift"
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
-      "coverage": "xcuitest:RegistroUnificadoUITests#test_nuevoRegistro_tarjetaConDosLineas_categoriaEnLaFilaDeDebajo, RegistroUnificadoUITests#test_aprobacion_mismasDosFilasQueNuevoRegistro_yLaEtiquetaALaVista, RegistroUnificadoUITests#test_grupos_cuentaJuntoALaCategoria_grupoEncimaDeLaFecha_yLaLineaDeLoQueSale + YalaTests/RegistroUnificadoTests (filas de los selectores, línea de Grupos, color del monto, cableado). Opción A de Jürgen, 2026-10-31; encargo registro-unificado-implementar. | 2026-11-02 (Grupos B · card 7): xcuitest:GroupSaleUITests#test_altaDeUnaVenta_sinCuenta_yLaFraseDeLoPorCobrar (con categoría de gasto, la cuenta y «Salen …» de siempre; con una de ingreso, sin cuenta y «Te deben … Cuenta como ingreso cuando te paguen.») + YalaTests/GroupSaleLogicTests (GroupSaleFormTests). | 2026-11-06 (lote productividad 2.3): Nuevo registro suma la fila de sugerencias de descripción; RegistroUnificadoUITests en verde en el gate. | 2026-11-11 (2.3, decisión 21): `SelectionChip` admite un relleno lateral propio (`horizontalPadding`, por defecto el de siempre) para la fila de categorías a un toque; RegistroUnificadoUITests verde. | 2026-11-20 (hoja B1): Nuevo registro sale de la pastilla de fecha y de RecordSelectorChips (fila Hoy · Cuenta · # en una línea, OneLineChipRow); la tarjeta con varias monedas elige línea con la cápsula de moneda. unit:RegistroUnificadoTests#b1_nuevoRegistro_filaDeUnaLinea_conFechaCuentaYNumeroDeEtiquetas; xcuitest:RegistroUnificadoUITests y AccountCardPickersUITests migrados.",
-      "lastVerified": "2026-11-20"
+      "coverage": "xcuitest:RegistroUnificadoUITests#test_aprobacion_filaDeAbajoEnUnaLinea_yLaCapsulaEligeLaLinea, #test_aprobacion_elTituloCambiaElTipo, #test_grupos_hoyYCuentaEnUnaFila_subcategoriaBajoElMonto_yLaLineaDeLoQueSale + xcuitest:YalaUITests/NuevoRegistroB1/RegistroB1OtrasPantallasUITests (favorito, pago, borrador de grupo) + xcuitest:FormClarity23UITests#test_m1_choosingADollarAccount_withTheAmountWritten_theCapsuleAndTheEstimateSayIt + unit:YalaTests/NuevoRegistroB1/RegistroB1PantallasWiringTests + unit:YalaTests/RegistroUnificadoTests — 2026-11-20 (hoja B1 en todas las pantallas de registro): la aprobación de la Bandeja, Nuevo gasto de Grupos, las hojas de borradores de grupo, Pago entre miembros y el editor de favorito llevan la fila de abajo en una línea (OneLineChipRow), la cápsula de moneda, la subcategoría bajo el monto con su línea de categoría y los colores de la B1; en la aprobación el título cambia el tipo y la cápsula elige la línea de la tarjeta. Ajustes de Jürgen: sin «Ahora en…», tipo de cambio en cápsula glass, título y «···» en primary. | xcuitest:RegistroUnificadoUITests#test_nuevoRegistro_tarjetaConDosLineas_categoriaEnLaFilaDeDebajo, RegistroUnificadoUITests#test_aprobacion_mismasDosFilasQueNuevoRegistro_yLaEtiquetaALaVista, RegistroUnificadoUITests#test_grupos_cuentaJuntoALaCategoria_grupoEncimaDeLaFecha_yLaLineaDeLoQueSale + YalaTests/RegistroUnificadoTests (filas de los selectores, línea de Grupos, color del monto, cableado). Opción A de Jürgen, 2026-10-31; encargo registro-unificado-implementar. | 2026-11-02 (Grupos B · card 7): xcuitest:GroupSaleUITests#test_altaDeUnaVenta_sinCuenta_yLaFraseDeLoPorCobrar (con categoría de gasto, la cuenta y «Salen …» de siempre; con una de ingreso, sin cuenta y «Te deben … Cuenta como ingreso cuando te paguen.») + YalaTests/GroupSaleLogicTests (GroupSaleFormTests). | 2026-11-06 (lote productividad 2.3): Nuevo registro suma la fila de sugerencias de descripción; RegistroUnificadoUITests en verde en el gate. | 2026-11-11 (2.3, decisión 21): `SelectionChip` admite un relleno lateral propio (`horizontalPadding`, por defecto el de siempre) para la fila de categorías a un toque; RegistroUnificadoUITests verde. | 2026-11-20 (hoja B1): Nuevo registro sale de la pastilla de fecha y de RecordSelectorChips (fila Hoy · Cuenta · # en una línea, OneLineChipRow); la tarjeta con varias monedas elige línea con la cápsula de moneda. unit:RegistroUnificadoTests#b1_nuevoRegistro_filaDeUnaLinea_conFechaCuentaYNumeroDeEtiquetas; xcuitest:RegistroUnificadoUITests y AccountCardPickersUITests migrados.",
+      "lastVerified": "2026-11-21"
     },
     {
       "area": "bank-email-forwarding",

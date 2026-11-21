@@ -54,6 +54,10 @@ struct InboxDraftEditSheet: View {
     // Raw text expansion
     @State private var showRawText = false
 
+    /// La tarjeta de la cuenta elegida, con sus líneas (la principal primero). Vacía si no tiene líneas. La cápsula de
+    /// moneda las ofrece: elegir una moneda es elegir su línea (hoja B1; antes, las pastillas PEN · USD).
+    @State private var cardMembers: [Account] = []
+
     // Alert states
     @State private var showApproveError = false
     @State private var approveErrorMessage = ""
@@ -233,9 +237,10 @@ struct InboxDraftEditSheet: View {
     private var mainNavigationStack: some View {
         NavigationStack {
             mainContent
-                .navigationTitle(payNowTitle ?? L10n.Inbox.editDraft)
+                .navigationTitle(formTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
+                .task(id: selectedAccount?.persistentModelID) { loadCardMembers() }
                 .sheet(isPresented: $showAccountSelector) { accountSheet }
                 .sheet(isPresented: $showSubcategorySelector) { subcategorySheet }
                 .sheet(isPresented: $showTagSelector) { tagSheet }
@@ -303,12 +308,7 @@ struct InboxDraftEditSheet: View {
         GeometryReader { proxy in
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
-                    // Transaction type selector (full width, at top)
-                    if !sessionState.isExpensesOnlyMode {
-                        transactionTypeSelector
-                            .padding(.top, DS.Spacing.sm)
-                    }
-
+                    // Sin el segmentado Gasto | Ingreso: el tipo se cambia en el título, como en Nuevo registro (B1).
                     Spacer()
                     centralContent
                     Spacer()
@@ -329,49 +329,74 @@ struct InboxDraftEditSheet: View {
         .yalaScreenBackground(.subtle)
     }
 
-    // MARK: - Transaction Type Selector
+    // MARK: - Título con el tipo (hoja B1)
 
-    private var transactionTypeSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
-            // Expense button
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    isExpense = true
-                    selectedSubcategory = nil
-                }
-            } label: {
-                Text(L10n.Transaction.expense)
-                    .font(.subheadline.weight(isExpense ? .semibold : .regular))
-                    .foregroundStyle(isExpense ? .white : .secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Chip.paddingH)
-                    .background(
-                        Capsule()
-                            .fill(isExpense ? Color.hotPink : Color.clear)
-                    )
-            }
+    /// «Editar gasto» / «Editar ingreso»; desde «Pagar ahora», el título de esa fecha.
+    private var formTitle: String {
+        payNowTitle ?? NewRecordTitleLogic.title(type: isExpense ? .expense : .income, mode: .edit)
+    }
 
-            // Income button
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    isExpense = false
-                    selectedSubcategory = nil
-                }
-            } label: {
-                Text(L10n.Transaction.income)
-                    .font(.subheadline.weight(!isExpense ? .semibold : .regular))
-                    .foregroundStyle(!isExpense ? .white : .secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Chip.paddingH)
-                    .background(
-                        Capsule()
-                            .fill(!isExpense ? Color.electricIndigo : Color.clear)
-                    )
+    /// El título abre el menú Gasto | Ingreso, como en Nuevo registro: no en «solo gastos» ni desde «Pagar ahora».
+    private var opensTypeMenu: Bool {
+        payNowTitle == nil && !sessionState.isExpensesOnlyMode
+    }
+
+    @ViewBuilder
+    private var typeTitle: some View {
+        let label = HStack(spacing: DS.Spacing.xs) {
+            Text(formTitle)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if opensTypeMenu {
+                Image(systemName: "chevron.down")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
         }
-        .padding(DS.Spacing.xs)
-        .background(Capsule().fill(.thCard))
-        .padding(.horizontal, DS.Spacing.lg)
+        if opensTypeMenu {
+            Menu {
+                ForEach([TransactionType.expense, .income], id: \.self) { type in
+                    Button {
+                        chooseType(type)
+                    } label: {
+                        if (type == .expense) == isExpense {
+                            Label(type.displayName, systemImage: "checkmark")
+                        } else {
+                            Label(type.displayName, systemImage: type.iconName)
+                        }
+                    }
+                    .accessibilityIdentifier("draft_editor_type_\(type.rawValue)")
+                }
+            } label: {
+                label
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // En la barra un `Menu` toma el tinte índigo del tema: primary, como en Nuevo registro (Jürgen, 20-nov).
+            .tint(Color.primary)
+            .accessibilityLabel(NuevoRegistroB1Text.string("title.a11yChangeType"))
+            .accessibilityValue(formTitle)
+            .accessibilityIdentifier("draft_editor_type_menu")
+        } else {
+            label
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    /// Lo que hacía el segmentado: otro tipo vacía la subcategoría (la de un gasto no vale para un ingreso).
+    private func chooseType(_ type: TransactionType) {
+        let wantsExpense = type == .expense
+        guard wantsExpense != isExpense else { return }
+        DS.Haptic.selection()
+        dsWithAnimation(reduceMotion) {
+            isExpense = wantsExpense
+            selectedSubcategory = nil
+        }
     }
 
     @ToolbarContentBuilder
@@ -384,6 +409,9 @@ struct InboxDraftEditSheet: View {
                     dismiss()
                 }
             }
+        }
+        ToolbarItem(placement: .principal) {
+            typeTitle
         }
         ToolbarItem(placement: .topBarTrailing) {
             if initialStatus == .rejected {
@@ -418,6 +446,8 @@ struct InboxDraftEditSheet: View {
                 } label: {
                     Image(systemName: "ellipsis")
                 }
+                // «···» en primary, como en Nuevo registro (Jürgen, 20-nov).
+                .tint(Color.primary)
                 .accessibilityLabel(L10n.Common.moreOptions)
                 .accessibilityIdentifier("draft_editor_more")
             }
@@ -474,47 +504,99 @@ struct InboxDraftEditSheet: View {
 
     // MARK: - Central Content
 
+    /// Como la hoja B1 de Nuevo registro: la descripción, el monto con la cápsula de moneda a su izquierda, la subcategoría
+    /// bajo el monto con «● Categoría · ● Necesidad ▾» y, debajo, de dónde viene el borrador. La fecha baja a la fila de
+    /// abajo, con la cuenta y el «#».
     private var centralContent: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            // Fecha y descripción, con las piezas y el tamaño de Nuevo registro (registro unificado). La descripción iba
-            // en `headline`, más pequeña.
-            RecordPillButton(icon: "calendar", text: dateChipText) {
-                showDatePicker = true
-            }
-            .accessibilityIdentifier("draft_editor_date_chip")
-
+        VStack(spacing: DS.Spacing.xl) {
             TextField(L10n.Transaction.description, text: $note)
                 .recordDescriptionStyle()
                 .autocorrectionDisabled(false)
                 .focused($isNoteFieldFocused)
                 .accessibilityIdentifier("draft_editor_note")
 
-            // Amount display
             amountDisplay
+                .padding(.horizontal, DS.Spacing.lg)
 
-            // Categoría y necesidad: el mismo componente y tamaño que Nuevo registro, con la necesidad rellena
-            // (registro unificado). Antes iba solo teñida y se leía más pequeña.
-            if let subcategory = selectedSubcategory {
-                RecordCategoryChips(
-                    category: subcategory.safeCategory,
-                    need: isExpense ? (selectedNeed ?? subcategory.need) : nil,
-                    onNeedTap: { showNeedSelector = true }
-                )
-            }
+            subcategoryBlock
 
             // Source indicator
             sourceIndicator
         }
     }
 
-    private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            if let symbol = currencySymbol {
-                Text(symbol)
-                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
-                    .foregroundStyle(amountColor.opacity(0.7))
-                    .contentTransition(.numericText())
+    /// La subcategoría rellena de su color y, elegida, su categoría y su necesidad (en un gasto) con puntito (B1).
+    private var subcategoryBlock: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                isMissing: amount != nil && selectedSubcategory == nil,
+                fillsWhenSelected: true
+            ) {
+                dismissKeyboard()
+                showSubcategorySelector = true
             }
+            .padding(.horizontal, DS.Spacing.xl)
+            .accessibilityIdentifier("draft_editor_subcategory_chip")
+
+            if let subcategory = selectedSubcategory {
+                CategoryNeedLine(
+                    category: subcategory.safeCategory,
+                    need: isExpense ? (selectedNeed ?? subcategory.need) : nil,
+                    onNeedTap: { showNeedSelector = true }
+                )
+                .padding(.horizontal, DS.Spacing.xl)
+            }
+        }
+    }
+
+    /// La moneda del borrador es la de su cuenta (o la principal, sin cuenta). Con una tarjeta de varias monedas, la cápsula
+    /// abre sus líneas; si no, no abre nada.
+    private var displayCurrencyCode: String {
+        selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
+    }
+
+    private var currencyOptions: [AmountCurrencyOption] {
+        cardMembers.map { AmountCurrencyOption(currencyCode: $0.currencyCode.uppercased(), accountCount: 1) }
+    }
+
+    private func chooseCardLine(_ code: String) {
+        guard let member = cardMembers.first(where: { $0.currencyCode.uppercased() == code.uppercased() }) else { return }
+        DS.Haptic.selection()
+        selectedAccount = member
+    }
+
+    private func loadCardMembers() {
+        guard let account = selectedAccount else {
+            cardMembers = []
+            return
+        }
+        do {
+            let all = try modelContext.fetch(FetchDescriptor<Account>())
+            let card = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: all.map { AccountLineNode($0) })
+            cardMembers = card.count > 1
+                ? card.compactMap { node in all.first { $0.shortcutID == node.id } }
+                : []
+        } catch {
+            #if DEBUG
+            print("InboxDraftEditSheet: Error: fetch de cuentas de la tarjeta: \(error)")
+            #endif
+            cardMembers = []
+        }
+    }
+
+    private var amountDisplay: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            AmountCurrencyCapsule(
+                label: appPreferences.currencyIdentifier(for: displayCurrencyCode),
+                options: currencyOptions,
+                current: displayCurrencyCode.uppercased(),
+                identifierPrefix: "draft_editor",
+                onChoose: chooseCardLine
+            )
 
             TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
@@ -523,6 +605,7 @@ struct InboxDraftEditSheet: View {
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
                 .fixedSize(horizontal: true, vertical: false)
+                .accessibilityIdentifier("draft_editor_amount")
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     if isFocused && (amountString == "0" || amountString == "0.00" || amountString == "0,00") {
                         amountString = ""
@@ -597,66 +680,41 @@ struct InboxDraftEditSheet: View {
 
     // MARK: - Bottom Chips
 
-    /// Los selectores como en Nuevo registro (registro unificado, opción A): en filas que bajan cuando no caben, en vez
-    /// de una sola fila con desplazamiento lateral donde la etiqueta se salía por la derecha. Con una tarjeta con varias
-    /// divisas, la tarjeta y sus divisas van en una fila (entrega 3, decisión D6: elegir la divisa elige la línea en la que
-    /// se aprueba) y la categoría y las etiquetas en otra. Lo elegido, relleno; lo que falta para aprobar, marcado.
+    /// La fila de abajo de la hoja B1, siempre en una línea: Hoy · Cuenta · #. Si no cabe, encoge la cuenta y trunca su
+    /// nombre. Una tarjeta con varias monedas dice la tarjeta; su línea la elige la cápsula de moneda. Lo que falta para
+    /// aprobar, con el borde de acento.
     private var bottomChips: some View {
-        RecordSelectorChips(spacing: DS.Spacing.sm) {
-            AccountCardChips(
-                selectedAccount: $selectedAccount,
-                isMissing: amount != nil && selectedAccount == nil,
-                accountIdentifier: "draft_editor_account_chip"
+        OneLineChipRow(spacing: DS.Spacing.sm) {
+            RecordDateValueChip(text: dateChipText) {
+                dismissKeyboard()
+                showDatePicker = true
+            }
+            .accessibilityIdentifier("draft_editor_date_chip")
+
+            RecordValueChip(
+                icon: "creditcard",
+                iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
+                text: cardMembers.first?.name ?? selectedAccount?.name ?? L10n.Transaction.account,
+                isSet: selectedAccount != nil,
+                isMissing: amount != nil && selectedAccount == nil
             ) {
                 dismissKeyboard()
                 showAccountSelector = true
             }
+            .accessibilityIdentifier("draft_editor_account_chip")
+            .shrinksInChipRow()
 
-            SelectionChip(
-                icon: "tag",
-                text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                isSelected: selectedSubcategory != nil,
-                color: subcategoryChipColor,
-                isMissing: amount != nil && selectedSubcategory == nil
+            // «#» con su número; un punto si Yala IA creó alguna de sus etiquetas («Nueva»).
+            TagCountChip(
+                tags: selectedTags,
+                marksNew: selectedTags.contains { draft.newlyCreatedTagNames.contains($0.name) }
             ) {
                 dismissKeyboard()
-                showSubcategorySelector = true
+                showTagSelector = true
             }
-            .accessibilityIdentifier("draft_editor_subcategory_chip")
-
-            if selectedTags.isEmpty {
-                SelectionChip(
-                    icon: "number",
-                    text: L10n.Transaction.tags,
-                    isSelected: false,
-                    color: nil
-                ) {
-                    dismissKeyboard()
-                    showTagSelector = true
-                }
-                .accessibilityIdentifier("draft_editor_tags_chip")
-            } else {
-                ForEach(selectedTags, id: \.persistentModelID) { tag in
-                    SelectedTagChip(
-                        tag: tag,
-                        // La etiqueta que acaba de crear Yala IA lleva su marca «Nueva».
-                        badge: draft.newlyCreatedTagNames.contains(tag.name) ? L10n.Inbox.newTag : nil,
-                        onOpen: {
-                            dismissKeyboard()
-                            showTagSelector = true
-                        },
-                        onRemove: {
-                            dsWithAnimation(reduceMotion) {
-                                selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
-                            }
-                        }
-                    )
-                }
-            }
+            .accessibilityIdentifier("draft_editor_tags_chip")
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .animation(reduceMotion ? .easeInOut(duration: DS.Animation.fast) : .spring(response: 0.3, dampingFraction: 0.75),
-                   value: selectedTags.map(\.persistentModelID))
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var subcategoryChipColor: Color? {

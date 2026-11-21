@@ -5,8 +5,9 @@
 //  Mejoras necesarias 2.3 · Formulario: monedas claras y salida manual disponible (revisión por vistas 2.3 de Nuevo
 //  registro, `docs/ux/revision-vistas-2.3/32-nuevo-registro/`). Tres correcciones mínimas:
 //
-//  - M1: al elegir una cuenta en otra moneda con el importe ya escrito, el formulario dice con palabras en qué moneda
-//    queda ese importe. Control: con la cuenta elegida antes de escribir no hay nada que avisar.
+//  - M1: al elegir una cuenta en otra moneda con el importe ya escrito, el formulario dice en qué moneda queda ese
+//    importe. Desde la hoja B1 (Jürgen, 20-nov) lo dicen la cápsula de moneda y el «≈ S/ …», sin línea de texto.
+//    Control: con la cuenta elegida antes de escribir no hay nada que avisar.
 //  - T1: en una transferencia entre monedas, cada importe dice de qué cuenta sale y a cuál llega, también para
 //    VoiceOver.
 //  - V3: el muro de Pro de voz y foto, que dice «Apuntar a mano sigue gratis», trae el botón que lo hace.
@@ -99,16 +100,21 @@ final class FormClarity23UITests: XCTestCase {
 
     // MARK: - M1 · El cambio de moneda se dice con palabras
 
-    func test_m1_choosingADollarAccount_withTheAmountWritten_saysTheCurrencyInWords() {
+    /// Hoja B1 (Jürgen, 20-nov): el cambio de moneda ya no se escribe en una línea bajo el importe («Ahora en dólares
+    /// (USD)…»): lo dicen la cápsula «$» y el «≈ S/ …» al lado del monto.
+    func test_m1_choosingADollarAccount_withTheAmountWritten_theCapsuleAndTheEstimateSayIt() {
         let app = launch()
         typeThenChooseDollarAccount(app)
 
-        let notice = element(app, "new_transaction_currency_notice")
-        let shown = notice.waitForExistence(timeout: 8)
+        let capsule = app.buttons["new_transaction_currency_capsule"]
+        XCTAssertTrue(capsule.waitForExistence(timeout: 8), "Falta la cápsula de moneda junto al monto.")
+        expectation(for: NSPredicate(format: "value == 'USD'"), evaluatedWith: capsule)
+        waitForExpectations(timeout: 8)
+        XCTAssertTrue(element(app, "new_transaction_equivalence").waitForExistence(timeout: 8),
+                      "En dólares, el estimado «≈ S/ …» va junto al monto.")
         capture(app, "m1-moneda-del-importe")
-        XCTAssertTrue(shown, "Con 45 escrito y la cuenta en dólares, el formulario tenía que decir que el importe es en dólares.")
-        XCTAssertTrue(notice.label.contains("USD"), "El aviso dice la moneda con su código: «\(notice.label)».")
-        XCTAssertTrue(notice.label.contains("Ahorros"), "Y la cuenta que la trae: «\(notice.label)».")
+        XCTAssertFalse(element(app, "new_transaction_currency_notice").exists,
+                       "Vuelve la línea «Ahora en…», que Jürgen quitó el 20-nov.")
     }
 
     /// Control: si la cuenta se elige ANTES de escribir, el importe nace en dólares y no cambia nada que avisar.
@@ -124,25 +130,6 @@ final class FormClarity23UITests: XCTestCase {
                       "El escenario tiene que ser el de la cuenta en dólares (sale «≈ S/ …»).")
         XCTAssertFalse(element(app, "new_transaction_currency_notice").exists,
                        "Con la cuenta elegida antes de escribir, no hay cambio de moneda que avisar.")
-    }
-
-    func test_m1_withTheKeyboardOpen_theNoticeIsInView() {
-        let app = launch()
-        typeThenChooseDollarAccount(app)
-        app.textFields["new_transaction_amount"].tap()
-        let notice = element(app, "new_transaction_currency_notice")
-        let shown = notice.waitForExistence(timeout: 8)
-        capture(app, "m1-moneda-del-importe-teclado")
-        XCTAssertTrue(shown, "Con el teclado abierto el aviso tiene que seguir ahí.")
-    }
-
-    func test_m1_largeText_theNoticeIsShown() {
-        let app = launch(largeText: true)
-        typeThenChooseDollarAccount(app)
-        let notice = element(app, "new_transaction_currency_notice")
-        let shown = notice.waitForExistence(timeout: 8)
-        capture(app, "m1-moneda-del-importe-texto-grande")
-        XCTAssertTrue(shown, "Con texto grande el aviso también sale.")
     }
 
     // MARK: - T1 · Cada importe de la transferencia dice su cuenta

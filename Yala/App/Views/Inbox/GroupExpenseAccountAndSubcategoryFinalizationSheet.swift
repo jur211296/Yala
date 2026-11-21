@@ -59,6 +59,26 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     /// Bug del 2026-11-09: la limpieza tras una sincronización puede retirar este borrador con la hoja abierta (ya lo
     /// tenía la de iCloud). Leer un `InboxDraft` borrado aborta en el iPhone (regla de filas montadas de `swiftui-ds.md`):
     /// sin borrador, la hoja no pinta nada y se cierra.
+
+    /// La subcategoría bajo el monto (hoja B1): el chip relleno de su color y, elegida, «● Categoría».
+    private var subcategoryChip: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                isSelected: selectedSubcategory != nil,
+                color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) },
+                fillsWhenSelected: true
+            ) {
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("group_draft_subcategory_chip")
+            if let subcategory = selectedSubcategory {
+                CategoryNeedLine(category: subcategory.safeCategory, need: nil, onNeedTap: {})
+            }
+        }
+    }
+
     var body: some View {
         if draft.isDeleted || draft.modelContext == nil {
             Color.clear.onAppear { dismiss() }
@@ -84,28 +104,23 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                     ? AnyView(GroupDraftSplitCard(state: split, sourceAccount: selectedAccount))
                     : linkCandidates.isEmpty ? nil : AnyView(
                         GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
-                    )
+                    ),
+                // La subcategoría por elegir sube bajo el monto, como en la hoja B1.
+                categorySelector: split.isSplitting ? nil : AnyView(subcategoryChip)
             ) {
-                SelectionChip(
+                // La cuenta, neutra con su icono de color, en la fila de una línea (hoja B1).
+                RecordValueChip(
                     icon: "creditcard",
+                    iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
                     text: selectedAccount?.name ?? L10n.Inbox.GroupExpenseAccountDraft.assignAccount,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
+                    isSet: selectedAccount != nil
                 ) {
                     showAccountSelector = true
                 }
-                if !split.isSplitting {
-                    SelectionChip(
-                        icon: "tag",
-                        text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
-                        isSelected: selectedSubcategory != nil,
-                        color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
-                    ) {
-                        showSubcategorySelector = true
-                    }
-                    if split.offersSplit {
-                        GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
-                    }
+                .accessibilityIdentifier("group_draft_account_chip")
+                .shrinksInChipRow()
+                if !split.isSplitting && split.offersSplit {
+                    GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseAccountSubcategoryDraft.title)

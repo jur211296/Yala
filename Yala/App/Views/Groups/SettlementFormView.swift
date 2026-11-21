@@ -69,6 +69,9 @@ struct SettlementFormView: View {
     /// Lote 12.3 (card rhgi, molde de L13-9): «Apuntar pago» siempre activo; tocarlo sin importe marca el campo y lo dice.
     @State private var showsMissingAmount = false
     @FocusState private var amountFocused: Bool
+    /// La hoja de fecha de Nuevo registro (Hoy / Ayer / Anteayer y el calendario), desde «Hoy» de la fila de abajo (B1).
+    @State private var showDatePicker = false
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 56 // A11Y-DT: @ScaledMetric
 
     /// Decisión 39 de 2.3 (F1): lo que la persona puede cambiar aquí. El importe llega precargado con la deuda, así que
     /// solo pregunta si se cambió algo respecto a lo de partida.
@@ -172,6 +175,9 @@ struct SettlementFormView: View {
                     // Header: who pays whom
                     paymentHeader
 
+                    // La nota, con el tamaño y el sitio de la descripción de la hoja B1 (antes, en una caja con la fecha).
+                    noteField
+
                     // Segmented currency picker (solo si hay suggested amount real)
                     currencySegmentedControl
 
@@ -184,11 +190,8 @@ struct SettlementFormView: View {
                     // C2: lo que queda, o el aviso de pagar de más
                     amountOutcomeHint
 
-                    // A0-Bridge: cuenta de origen (oculto en una sesión solo-grupos)
-                    accountSection
-
-                    // Details
-                    detailsSection
+                    // La fila de abajo de la hoja B1, en una línea: Hoy · Cuenta (la cuenta, solo cuando la pides tú, A0-Bridge).
+                    bottomRow
 
                     // Submit button
                     VStack(spacing: DS.Spacing.sm) {
@@ -239,6 +242,9 @@ struct SettlementFormView: View {
             .sheet(item: $optInDraftToComplete, onDismiss: finishOptIn) { draft in
                 GroupSettlementDraftFinalizationSheet(draft: draft, onApproved: {})
                     .onAppear { optInSheetAppeared = true }
+            }
+            .sheet(isPresented: $showDatePicker) {
+                DatePickerSheet(selectedDate: $date, quickPick: true)
             }
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
@@ -292,41 +298,45 @@ struct SettlementFormView: View {
         BridgeModeResolver.shared.isBridgeEnabled(for: group, context: modelContext)
     }
 
-    // MARK: - Account Section (A0-Bridge Caso C proactivo)
+    // MARK: - Fila de abajo (A0-Bridge Caso C proactivo)
 
-    @ViewBuilder
-    private var accountSection: some View {
-        if sessionState.hasPrivateSession && bridgeEnabled
+    /// La cuenta de origen solo la pide quien paga, con sesión privada y el puente activo (A0-Bridge Caso C proactivo).
+    private var asksForAccount: Bool {
+        sessionState.hasPrivateSession && bridgeEnabled
             && SettlementFormAccountLogic.asksForAccount(
-                currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID) {
-            SectionBox(title: L10n.Groups.Settlement.fromAccount) {
-                Button {
-                    showAccountSelector = true
-                } label: {
-                    HStack(spacing: DS.Spacing.md) {
-                        if let account = selectedAccount {
-                            Circle()
-                                .fill(Color(hex: account.colorHex))
-                                .frame(width: 24, height: 24) // A11Y-DT: row icon decorative
-                            Text(account.name).font(DS.Typography.body).foregroundStyle(.primary)
-                        } else {
-                            Text(L10n.Groups.Settlement.fromAccountNone)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .contentShape(Rectangle())
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                }
-                .buttonStyle(.plain)
+                currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID)
+    }
+
+    /// «Hoy · Cuenta» como la fila de abajo de la hoja B1: siempre en una línea; si no cabe, se trunca la cuenta.
+    private var bottomRow: some View {
+        OneLineChipRow(spacing: DS.Spacing.sm) {
+            RecordDateValueChip(text: dateChipText) {
+                amountFocused = false
+                showDatePicker = true
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .accessibilityIdentifier("settlement_form_date_chip")
+
+            if asksForAccount {
+                RecordValueChip(
+                    icon: "creditcard",
+                    iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
+                    text: selectedAccount?.name ?? L10n.Groups.Settlement.fromAccount,
+                    isSet: selectedAccount != nil
+                ) {
+                    amountFocused = false
+                    showAccountSelector = true
+                }
+                .accessibilityIdentifier("settlement_form_account_chip")
+                .shrinksInChipRow()
+            }
         }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var dateChipText: String {
+        if Calendar.current.isDateInToday(date) { return L10n.Date.today }
+        if Calendar.current.isDateInYesterday(date) { return L10n.Date.yesterday }
+        return date.formatted(.dateTime.day().month(.abbreviated))
     }
 
     // MARK: - Payment Header
@@ -388,17 +398,23 @@ struct SettlementFormView: View {
 
     private var amountSection: some View {
         VStack(spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                // La cápsula de moneda de la hoja B1, sin menú: la moneda la eligen el saldo y el segmentado de arriba.
                 // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
-                Text(appPreferences.currencyDisplayFormat.label(for: effectiveCurrency))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thAccentText)
+                AmountCurrencyCapsule(
+                    label: appPreferences.currencyDisplayFormat.label(for: effectiveCurrency),
+                    options: [],
+                    current: effectiveCurrency,
+                    identifierPrefix: "settlement_form",
+                    onChoose: { _ in }
+                )
 
-                TextField("0.00", text: $amountString)
-                    .font(.system(size: 36, weight: .bold, design: .rounded)) // A11Y-DT: amount display
+                TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
+                    .font(.system(size: baseAmountSize, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
+                    .fixedSize(horizontal: true, vertical: false)
                     .focused($amountFocused)
                     // Lote 06 de mejoras 2.3: sin nombre, VoiceOver leía el ejemplo «0.00».
                     .accessibilityLabel(L10n.GroupsNecesarias06.settlementAmountA11y)
@@ -464,23 +480,12 @@ struct SettlementFormView: View {
 
     // MARK: - Details Section
 
-    private var detailsSection: some View {
-        SectionBox(title: L10n.Groups.Expense.noteLabel) {
-            VStack(spacing: DS.Spacing.none) {
-                TextField(L10n.Groups.Expense.notePlaceholder, text: $note)
-                    .font(DS.Typography.body)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-
-                Divider().padding(.leading, DS.FormRow.paddingH)
-
-                DatePicker(L10n.Groups.Expense.date, selection: $date, displayedComponents: .date)
-                    .font(DS.Typography.body)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
+    private var noteField: some View {
+        TextField(L10n.Groups.Expense.notePlaceholder, text: $note)
+            .recordDescriptionStyle()
+            .accessibilityLabel(L10n.Groups.Expense.noteLabel)
+            .accessibilityIdentifier("settlement_form_note")
+            .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Actions

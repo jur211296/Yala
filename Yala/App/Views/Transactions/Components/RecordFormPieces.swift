@@ -14,8 +14,8 @@ import SwiftUI
 
 // MARK: - Pastilla grande (fecha y grupo)
 
-/// La pastilla grande de lo que da contexto al registro: la fecha en las tres pantallas y, en Grupos, el grupo. Mismo
-/// tamaño y relleno en todas; antes Grupos pintaba grupo y fecha en letra pequeña.
+/// La pastilla grande con el grupo arriba de Nuevo gasto de Grupos. Desde la hoja B1 (2026-11-20) la fecha ya no la usa:
+/// va como valor puesto en la fila de abajo (`RecordDateValueChip`).
 struct RecordPillLabel: View {
     let icon: String
     /// Color del icono (el del grupo). Sin él, el del texto.
@@ -51,22 +51,6 @@ struct RecordPillLabel: View {
     }
 }
 
-/// `RecordPillLabel` como botón.
-struct RecordPillButton: View {
-    let icon: String
-    var iconColor: Color? = nil
-    let text: String
-    var showsChevron: Bool = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            RecordPillLabel(icon: icon, iconColor: iconColor, text: text, showsChevron: showsChevron)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Descripción
 
 extension View {
@@ -80,103 +64,6 @@ extension View {
             .textContentType(.none)
             .frame(maxWidth: 280)
             .tint(Color.primary)
-    }
-}
-
-// MARK: - Chips bajo el monto (categoría y necesidad)
-
-/// La categoría de la subcategoría elegida (solo lectura) y su necesidad (rellena, se toca para cambiarla), bajo el
-/// monto. El mismo componente y tamaño en Nuevo registro y en la aprobación: en la aprobación la necesidad iba solo
-/// teñida y se leía más pequeña.
-struct RecordCategoryChips<Trailing: View>: View {
-    let category: Category
-    /// La necesidad a enseñar. `nil` en un ingreso: no lleva.
-    let need: SubcategoryNeed?
-    let onNeedTap: () -> Void
-    /// Lo que la pantalla añade a la derecha (el aviso de recurrente al editar un registro guardado).
-    @ViewBuilder var trailing: () -> Trailing
-
-    var body: some View {
-        let categoryColor = Color(hex: category.colorHex)
-        HStack(spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: category.iconName ?? "folder")
-                    .font(DS.Typography.labelTiny)
-                    .accessibilityHidden(true)
-                Text(category.name)
-                    .font(DS.Typography.labelTiny)
-            }
-            .foregroundStyle(categoryColor)
-            .padding(.horizontal, DS.Chip.paddingH)
-            .padding(.vertical, DS.Chip.paddingV)
-            .background(Capsule().fill(categoryColor.opacity(0.12)))
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("record_category_chip")
-
-            if let need {
-                NeedEditChip(need: need, filled: true, onTap: onNeedTap)
-            }
-
-            trailing()
-        }
-        .padding(.top, DS.Spacing.sm)
-    }
-}
-
-extension RecordCategoryChips where Trailing == EmptyView {
-    init(category: Category, need: SubcategoryNeed?, onNeedTap: @escaping () -> Void) {
-        self.init(category: category, need: need, onNeedTap: onNeedTap, trailing: { EmptyView() })
-    }
-}
-
-// MARK: - Etiqueta puesta
-
-/// Una etiqueta puesta, rellena con su color y texto blanco, con su ✕ para quitarla (UX 2.2 · L2-19). Tocar el nombre abre
-/// el selector. Mismo tamaño que `SelectionChip`.
-struct SelectedTagChip: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let tag: Tag
-    /// Marca a la derecha del nombre («Nueva», en una etiqueta que acaba de crear Yala IA).
-    var badge: String? = nil
-    let onOpen: () -> Void
-    let onRemove: () -> Void
-
-    var body: some View {
-        let fill = Color.selectedFill(hex: tag.colorHex)
-        HStack(spacing: DS.Spacing.sm) {
-            Button(action: onOpen) {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: tag.iconName)
-                        .font(DS.Typography.labelSmall)
-                        .accessibilityHidden(true)
-                    Text(tag.name)
-                        .font(DS.Typography.label)
-                        .lineLimit(1)
-                    if let badge {
-                        Text(badge)
-                            .font(DS.Typography.badgeLabel)
-                            .foregroundStyle(fill)
-                            .padding(.horizontal, DS.Spacing.xs)
-                            .padding(.vertical, DS.Spacing.xxs)
-                            .background(Capsule().fill(Color.white))
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("record_tag_chip_\(tag.name)")
-
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(DS.Typography.label)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.deleteTag)
-        }
-        .foregroundStyle(Color.white)
-        .padding(.horizontal, DS.FormRow.paddingV)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(Capsule().fill(fill))
-        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
     }
 }
 

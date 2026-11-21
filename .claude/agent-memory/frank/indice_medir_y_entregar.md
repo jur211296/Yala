@@ -122,3 +122,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [El título de Sentry no es la pantalla](feedback_el_titulo_de_sentry_no_es_la_pantalla.md) — 20-nov: lee la pila del evento antes de aceptar el área; el enlazador fusiona funciones gemelas.
 - [Síntoma visual: pregunta pronto con opciones](feedback_un_sintoma_visual_se_pregunta_con_opciones_pronto.md) — 20-nov: el rebote era un gesto que no medía; contestó en minutos.
 - [No editar con `xcodebuild test` compilando](feedback_no_editar_con_xcodebuild_test_compilando.md) — gate UI: build-for-testing + test-without-building; reinicia el sim tras YalaTests.
+- [Gate apilado sobre un PR abierto](feedback_gate_apilado_sobre_un_pr_abierto.md) — 21-nov: `--base <cabeza del PR de abajo>` en interfaz-de-lo-tocado y checklist; si no, 230 clases ajenas.

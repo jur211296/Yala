@@ -221,14 +221,14 @@ struct RegistroUnificadoWiringTests {
     private static let approval = "Yala/App/Views/Inbox/InboxDraftEditSheet.swift"
     private static let groups = "Yala/App/Views/Groups/GroupExpenseFormView.swift"
 
-    @Test func lasTres_usanLaPastillaDeFecha_laDescripcion_yLosSelectoresCompartidos() throws {
-        // Nuevo registro sale de esta pareja desde la hoja B1 (Jürgen, 2026-11-20): su fecha va en la fila de abajo y la
-        // fila va siempre en una línea (`b1_nuevoRegistro_filaDeUnaLinea_conFechaCuentaYNumeroDeEtiquetas`).
+    /// Desde el 20-nov las tres llevan la hoja B1: la fecha como valor puesto en la fila de abajo de una línea, la
+    /// descripción y el color del monto de siempre.
+    @Test func lasTres_usanLaFechaDeLaFilaDeAbajo_laDescripcion_yLaFilaDeUnaLinea() throws {
         for path in [Self.approval, Self.groups] {
             let code = try Self.source(path)
-            #expect(code.contains("RecordPillButton(icon: \"calendar\", text: dateChipText)"), "\(path): fecha")
+            #expect(code.contains("RecordDateValueChip(text: dateChipText)"), "\(path): fecha")
             #expect(code.contains(".recordDescriptionStyle()"), "\(path): descripción")
-            #expect(code.contains("RecordSelectorChips(spacing: DS.Spacing.sm)"), "\(path): selectores")
+            #expect(code.contains("OneLineChipRow(spacing: DS.Spacing.sm)"), "\(path): fila de una línea")
             #expect(code.contains("Color.recordFormAmount(isIncome:"), "\(path): monto")
         }
         #expect(try Self.source(Self.newRecord).contains(".recordDescriptionStyle()"), "Nuevo registro: descripción")
@@ -253,11 +253,13 @@ struct RegistroUnificadoWiringTests {
         #expect(!code.contains("new_transaction_card_currency_"), "las pastillas PEN/USD las reemplaza la cápsula")
     }
 
-    @Test func nuevoRegistroYAprobacion_compartenLosChipsBajoElMonto_yLaEtiquetaPuesta() throws {
-        // Nuevo registro los cambia por la línea con puntito y el «#2» de la hoja B1 (2026-11-20).
+    /// La aprobación, como Nuevo registro: «● Categoría · ● Necesidad ▾» bajo la subcategoría y el «#2», que marca la
+    /// etiqueta que acaba de crear Yala IA.
+    @Test func nuevoRegistroYAprobacion_compartenLaLineaDeCategoria_yElNumeroDeEtiquetas() throws {
         let code = try Self.source(Self.approval)
-        #expect(code.contains("RecordCategoryChips("))
-        #expect(code.contains("SelectedTagChip("))
+        #expect(code.contains("CategoryNeedLine("))
+        #expect(code.contains("TagCountChip("))
+        #expect(code.contains("marksNew: selectedTags.contains { draft.newlyCreatedTagNames.contains($0.name) }"))
     }
 
     /// La aprobación ya no pone los selectores en una fila con desplazamiento lateral, y marca lo que falta.
@@ -266,22 +268,23 @@ struct RegistroUnificadoWiringTests {
         let chips = try Self.section(code, from: "private var bottomChips: some View {", to: "private var subcategoryChipColor")
         #expect(!chips.contains("ScrollView(.horizontal"))
         #expect(chips.contains("isMissing: amount != nil && selectedAccount == nil"))
-        #expect(chips.contains("isMissing: amount != nil && selectedSubcategory == nil"))
+        // La subcategoría subió bajo el monto (B1) y conserva su marca.
+        #expect(code.contains("isMissing: amount != nil && selectedSubcategory == nil"))
         #expect(code.contains("DatePickerSheet(selectedDate: $transactionDate, quickPick: true)"))
     }
 
-    /// Grupos: la cuenta es una pastilla de abajo (con el identificador de la fila que sustituye), el grupo va arriba en
-    /// el sitio del segmentado y la fecha encabeza el bloque central.
+    /// Grupos: la cuenta va en la fila de abajo junto a la fecha (con el identificador de la fila que sustituye), el grupo
+    /// arriba y la subcategoría bajo el monto (hoja B1, 20-nov).
     @Test func grupos_cuentaComoPastilla_grupoArriba_fechaEnElBloqueCentral() throws {
         let code = try Self.source(Self.groups)
         #expect(!code.contains("private var accountRow"))
         let chips = try Self.section(code, from: "private var bottomChips: some View {", to: "private var outflowLine")
         #expect(chips.contains(".accessibilityIdentifier(\"group_expense_account_row\")"))
         #expect(chips.contains("isMissing: markedMissingField == .account"))
-        let central = try Self.section(code, from: "private var centralContent: some View {", to: "private var dateChip")
-        // «Desde un recibo» salió de aquí el 2026-11-14 (Voz, Foto y Yala IA de Grupos): la fecha vuelve a ir sola y
-        // encabeza el bloque.
-        #expect(central.contains("dateChip\n            descriptionField\n            amountDisplay"))
+        #expect(chips.contains("dateChip"), "la fecha va en la fila de abajo")
+        let central = try Self.section(code, from: "private var centralContent: some View {", to: "private var subcategoryBlock")
+        #expect(central.contains("descriptionField\n            amountDisplay\n            subcategoryBlock\n            whoPaysCard"))
+        #expect(!central.contains("dateChip"), "la fecha ya no encabeza el bloque central")
         #expect(!central.contains("groupContextChip"), "el grupo va arriba, no junto a la fecha")
         #expect(code.contains("groupContextChip\n                            .padding(.top, DS.Spacing.sm)"))
     }
@@ -298,15 +301,16 @@ struct RegistroUnificadoWiringTests {
         #expect(outflow.contains("L10n.Groups.Expense.outflowLine(\n                    paidOut,"))
     }
 
-    /// Las pastillas van rellenas por defecto, también en el editor de favoritos y en las hojas de grupo de la Bandeja,
-    /// que comparten el componente y el contenedor.
+    /// Las pastillas van rellenas por defecto, y el editor de favoritos y las hojas de grupo de la Bandeja llevan la fila
+    /// de una línea de la hoja B1.
     @Test func pastillasRellenasPorDefecto_yFavoritosYHojasDeGrupoConElMismoContenedor() throws {
         let chip = try Self.source("Yala/App/Views/Transactions/Components/SelectionChip.swift")
         #expect(chip.contains("var fillsWhenSelected: Bool = true"))
         let favorites = try Self.source("Yala/App/Views/Favorites/FavoriteEditorView.swift")
         let scaffold = try Self.source("Yala/App/Views/Inbox/GroupDraftFinalizationScaffold.swift")
-        #expect(favorites.contains("RecordSelectorChips(spacing: DS.Spacing.sm)"))
-        #expect(scaffold.contains("RecordSelectorChips(spacing: DS.Spacing.sm, alignment: .center) { selector() }"))
+        #expect(favorites.contains("OneLineChipRow(spacing: DS.Spacing.sm)"))
+        #expect(scaffold.contains("OneLineChipRow(spacing: DS.Spacing.sm)"))
+        #expect(scaffold.contains("selector()"))
         let appRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Yala")
         let files = FileManager.default.enumerator(at: appRoot, includingPropertiesForKeys: nil)?
@@ -317,10 +321,14 @@ struct RegistroUnificadoWiringTests {
         }
     }
 
-    /// La última línea de una tarjeta cierra su fila en los dos sitios que pintan líneas.
-    @Test func laUltimaLinea_cierraLaFila_enNuevoRegistroYEnLaAprobacion() throws {
-        // Nuevo registro ya no pinta líneas desde la hoja B1: la cápsula de moneda elige la línea.
-        let cardChips = try Self.source("Yala/App/Views/Transactions/Components/AccountCardChips.swift")
-        #expect(cardChips.contains(".endsSelectorRow(member.persistentModelID == members.last?.persistentModelID)"))
+    /// Una tarjeta con varias monedas: la cápsula de moneda de la aprobación ofrece sus líneas y elegir una elige la
+    /// línea (lo que hacían las pastillas PEN · USD hasta la hoja B1).
+    @Test func aprobacion_laCapsulaDeMonedaEligeLaLineaDeLaTarjeta() throws {
+        let code = try Self.source(Self.approval)
+        #expect(code.contains("identifierPrefix: \"draft_editor\""))
+        #expect(code.contains("onChoose: chooseCardLine"))
+        #expect(code.contains("AccountCardLogic.liveMembers(of: account.shortcutID"))
+        let choose = try Self.section(code, from: "private func chooseCardLine(", to: "private func loadCardMembers")
+        #expect(choose.contains("selectedAccount = member"))
     }
 }

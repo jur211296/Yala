@@ -5,9 +5,9 @@
 //  Cuerpo compartido de los 3 sheets de finalización de drafts de grupo
 //  (GroupExpenseAccountFinalizationSheet, GroupExpenseDraftFinalizationSheet,
 //  GroupSettlementDraftFinalizationSheet). Replica el lenguaje visual del editor
-//  normal (InboxDraftEditSheet): banner explicativo arriba, monto grande centrado,
-//  nota y fecha read-only, y un único selector interactivo abajo para la pieza que
-//  falta (cuenta o subcategoría). Todo lo que viene del grupo es read-only — el
+//  normal (InboxDraftEditSheet, hoja B1 desde el 2026-11-20): banner explicativo arriba,
+//  nota y monto read-only con la cápsula de moneda, la subcategoría por elegir bajo el
+//  monto, y abajo una fila de una línea con la fecha y la cuenta que falta. Todo lo que viene del grupo es read-only — el
 //  bridge gobierna monto/fecha vía delete+recreate al sincronizar.
 //
 
@@ -37,6 +37,8 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     var secondaryAction: (title: String, action: () -> Void)? = nil
     /// Bloque opcional sobre el selector: «¿Ya lo apuntaste?» con los movimientos parecidos (UX 2.2 · L13-15).
     var accessory: AnyView? = nil
+    /// La subcategoría por elegir, bajo el monto como en la hoja B1 de Nuevo registro (el chip relleno de su color).
+    var categorySelector: AnyView? = nil
     /// Frase opcional bajo el selector: qué ingreso cobra este pago (Grupos B · card 10).
     var footnote: String? = nil
     /// Selector interactivo de la pieza que falta (un `SelectionChip`).
@@ -68,12 +70,16 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                             .padding(.bottom, DS.Spacing.lg)
                     }
 
-                    // El contenedor de los formularios de registro (registro unificado, 2026-10-31): filas que bajan
-                    // cuando no caben, con las pastillas rellenas; antes, una fila fija que se cortaba con nombres largos.
-                    // Centrado, como el monto de encima.
-                    RecordSelectorChips(spacing: DS.Spacing.sm, alignment: .center) { selector() }
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.lg)
+                    // La fila de abajo de la hoja B1, siempre en una línea: la fecha (la gestiona el grupo, no se toca)
+                    // y la pieza que falta. Si no cabe, encoge la cuenta y trunca su nombre.
+                    OneLineChipRow(spacing: DS.Spacing.sm) {
+                        RecordDateValueChip(text: dateChipText) {}
+                            .allowsHitTesting(false)
+                            .accessibilityIdentifier("group_draft_date_chip")
+                        selector()
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.lg)
 
                     if let footnote {
                         Label(footnote, systemImage: "arrow.down.left.circle")
@@ -144,37 +150,26 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
 
     // MARK: - Central content (read-only)
 
+    /// Como la hoja B1: la descripción, el monto con su cápsula de moneda (sin menú: la moneda la pone el grupo), la
+    /// categoría que ya trae con su puntito o la subcategoría por elegir. La fecha va en la fila de abajo.
     private var centralContent: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            dateChip
+        VStack(spacing: DS.Spacing.xl) {
             noteText
             amountDisplay
             if let category = categoryReadOnly {
-                categoryChip(category)
+                categoryLine(category)
+            }
+            if let categorySelector {
+                categorySelector
+                    .padding(.horizontal, DS.Spacing.lg)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private var dateChip: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "calendar")
-                .font(DS.Typography.label)
-            Text(dateChipText)
-                .font(DS.Typography.label)
-        }
-        .foregroundStyle(.primary)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
-        .background(Capsule().fill(Color.primary.opacity(0.08)))
-    }
-
     private var noteText: some View {
         Text(note.isEmpty ? "—" : note)
-            .font(DS.Typography.headline)
-            .foregroundStyle(.primary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: 280)
+            .recordDescriptionStyle()
     }
 
     @ViewBuilder
@@ -183,10 +178,14 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
             // Formatea una sola vez por render (el font-size deriva de su longitud).
             let formatted = YalaFormatterStatic.number(value: abs(amount))
             let fontSize = amountFontSize(forLength: formatted.count)
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                Text(YalaFormatterStatic.currencyIdentifier(for: currencyCode))
-                    .font(.system(size: fontSize * 0.44, weight: .medium, design: .rounded))
-                    .foregroundStyle(amountColor.opacity(0.7))
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                AmountCurrencyCapsule(
+                    label: YalaFormatterStatic.currencyIdentifier(for: currencyCode),
+                    options: [],
+                    current: currencyCode,
+                    identifierPrefix: "group_draft",
+                    onChoose: { _ in }
+                )
                 Text(formatted)
                     .font(.system(size: fontSize, weight: .bold, design: .rounded))
                     .foregroundStyle(amountColor)
@@ -194,18 +193,19 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
         }
     }
 
-    private func categoryChip(_ category: (name: String, iconName: String, colorHex: String)) -> some View {
-        let color = Color(hex: category.colorHex)
-        return HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: category.iconName)
-                .font(DS.Typography.labelTiny)
+    /// «● Categoría» de la hoja B1: el puntito de su color y el nombre, en `subheadline` secundario.
+    private func categoryLine(_ category: (name: String, iconName: String, colorHex: String)) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Circle()
+                .fill(Color(hex: category.colorHex))
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
             Text(category.name)
-                .font(DS.Typography.labelTiny)
+                .lineLimit(1)
         }
-        .foregroundStyle(color)
-        .padding(.horizontal, DS.Chip.paddingH)
-        .padding(.vertical, DS.Chip.paddingV)
-        .background(Capsule().fill(color.opacity(0.12)))
+        .font(DS.Typography.subheadline)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Hint (warning)
