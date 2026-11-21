@@ -3409,6 +3409,15 @@ final class PanelViewModel {
         if newData != periodComparisonWidget { periodComparisonWidget = newData }
     }
 
+    /// Las preferencias de «Tu dinero hoy» que lee la cobertura de la nota: las de `appPreferences` si las hay.
+    private var healthCoverageScope: FinancialScoreCalculator.CoverageScope {
+        guard let appPreferences else { return .fromDefaults() }
+        return FinancialScoreCalculator.CoverageScope(
+            includeGroupsInTotal: appPreferences.includeGroupsInPanelTotal,
+            moneyOverrides: PanelMoneyScopeLogic.decode(appPreferences.panelMoneyAccountOverrides)
+        )
+    }
+
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
     /// Called from `performCalculation()` only when `.health` section is visible.
     /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
@@ -3424,7 +3433,10 @@ final class PanelViewModel {
             customRange: customDateRange,
             preferredCurrencyCode: defaultCurrencyCode,
             includeBridgedGroupTx: includeBridgedGroupTx,
-            adjustment: statsAdjustment
+            adjustment: statsAdjustment,
+            // La cobertura de Compromisos parte de «Tu dinero hoy» (sin tarjetas de crédito), la cifra que enseña la
+            // hoja de Salud financiera (20-nov-2026).
+            coverageAccounts: FinancialScoreCalculator.coverageAccounts(accounts, scope: healthCoverageScope)
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }

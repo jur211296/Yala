@@ -43,14 +43,18 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1429)
+## Index (1433)
 
 | id | status | path |
 | 2026-11-20-cuelgues-sincronizacion | done | tickets/done/2026-11-20-cuelgues-sincronizacion.md |
 | 2026-11-20-captura-convertir-a-grupo-marca-registrado | done | tickets/done/2026-11-20-captura-convertir-a-grupo-marca-registrado.md |
 | 2026-11-20-flujo-limites-pagos-planificados-y-moneda | backlog | tickets/backlog/2026-11-20-flujo-limites-pagos-planificados-y-moneda.md |
 | 2026-11-20-flujo-limites-pagos-planificados-y-moneda-maquetas | done | tickets/done/2026-11-20-flujo-limites-pagos-planificados-y-moneda-maquetas.md |
-| 2026-11-20-salud-financiera-tres-secciones | backlog | tickets/backlog/2026-11-20-salud-financiera-tres-secciones.md |
+| 2026-11-20-salud-financiera-tres-secciones | done | tickets/done/2026-11-20-salud-financiera-tres-secciones.md |
+| 2026-11-20-editor-presupuesto-limite-propuesto | backlog | tickets/backlog/2026-11-20-editor-presupuesto-limite-propuesto.md |
+| 2026-11-20-lo-que-te-falta-pagar-cuenta-ingresos-y-saltados | backlog | tickets/backlog/2026-11-20-lo-que-te-falta-pagar-cuenta-ingresos-y-saltados.md |
+| 2026-11-20-nota-no-recalcula-al-cambiar-tu-dinero-hoy | backlog | tickets/backlog/2026-11-20-nota-no-recalcula-al-cambiar-tu-dinero-hoy.md |
+| 2026-11-20-hoja-y-nota-difieren-con-pagos-apuntados-a-futuro | backlog | tickets/backlog/2026-11-20-hoja-y-nota-difieren-con-pagos-apuntados-a-futuro.md |
 | 2026-11-20-salud-financiera-tres-secciones-maquetas | done | tickets/done/2026-11-20-salud-financiera-tres-secciones-maquetas.md |
 | 2026-11-20-captura-cuenta-automatica-y-reglas | backlog | tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas.md |
 | 2026-11-20-captura-cuenta-automatica-y-reglas-maquetas | done | tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas-maquetas.md |

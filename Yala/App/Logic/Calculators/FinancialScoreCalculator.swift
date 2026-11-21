@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import SwiftData
 
 struct FinancialScore: Equatable {
     /// Composite score (0–100) o `nil` cuando todos los sub-scores son `nil`.
@@ -120,7 +121,8 @@ enum FinancialScoreCalculator {
         now: Date = .now,
         calendar: Calendar = .current,
         includeBridgedGroupTx: Bool = true,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        coverageAccounts: [Account]? = nil
     ) -> FinancialScore {
         let interval = period.dateInterval(customRange: customRange, now: now)
         let intervalTransactions = transactions.filter {
@@ -156,7 +158,7 @@ enum FinancialScoreCalculator {
             scheduledPayments: scheduledPayments,
             paidAmounts: paidAmounts,
             transactions: transactions,
-            accounts: accounts,
+            accounts: coverageAccounts ?? Self.coverageAccounts(accounts, scope: .fromDefaults()),
             interval: interval,
             period: period,
             preferredCurrencyCode: preferredCurrencyCode,
@@ -486,6 +488,7 @@ enum FinancialScoreCalculator {
             converter: converter,
             calendar: calendar
         )
+        // `accounts` llega ya recortado a «Tu dinero hoy» (`coverageAccounts`): sin tarjetas de crédito, como la hoja.
         // La cobertura cuenta TODO lo apuntado, también lo fechado en el futuro, y no el saldo de hoy de la pantalla
         // (`LiveBalanceCalculator.TodayCutoff`). Lo pendiente descuenta lo ya pagado con un movimiento enlazado aunque
         // su fecha sea futura: el alquiler apuntado hoy para el día 25 no está ni en el saldo de hoy ni en lo pendiente,
@@ -581,7 +584,6 @@ enum FinancialScoreCalculator {
     }
 
     /// Suma pagos pendientes (no pagados, no skipped) en `interval`, convertidos a moneda preferida.
-    /// Itera mes por mes dentro del intervalo (el `ScheduledPaymentDateCalculator` solo soporta month).
     private static func sumPendingPayments(
         active: [ScheduledPayment],
         paidAmounts: [String: [PaidOccurrenceInfo]],
@@ -590,29 +592,77 @@ enum FinancialScoreCalculator {
         converter: CurrencyConverting,
         calendar: Calendar
     ) -> Double {
-        var total: Double = 0
+        pendingOccurrences(active: active, paidAmounts: paidAmounts, interval: interval, calendar: calendar)
+            .reduce(0) { total, occurrence in
+                let converted = converter.convertWithLatestRate(
+                    Decimal(abs(occurrence.payment.amount)),
+                    from: occurrence.payment.currencyCode,
+                    to: preferredCurrencyCode
+                )
+                return total + NSDecimalNumber(decimal: converted).doubleValue
+            }
+    }
 
+    /// Las ocurrencias que faltan pagar en `interval`: ni saltadas ni pagadas con un movimiento enlazado (lo pagado
+    /// descuenta las primeras ocurrencias del pago). Itera mes por mes (el `ScheduledPaymentDateCalculator` solo soporta
+    /// month). La usan la nota (`sumPendingPayments`) y la hoja de Salud financiera («Te falta pagar este mes»), para que
+    /// las dos digan lo mismo.
+    static func pendingOccurrences(
+        active: [ScheduledPayment],
+        paidAmounts: [String: [PaidOccurrenceInfo]],
+        interval: DateInterval,
+        calendar: Calendar
+    ) -> [(payment: ScheduledPayment, date: Date)] {
+        var result: [(payment: ScheduledPayment, date: Date)] = []
         for payment in active {
             var paidRemaining = paidAmounts[payment.id.uuidString]?.count ?? 0
-            let occurrences = enumerateOccurrences(
-                payment: payment, interval: interval, calendar: calendar
-            )
-
-            for date in occurrences {
+            for date in enumerateOccurrences(payment: payment, interval: interval, calendar: calendar) {
                 if payment.isDateSkipped(date) { continue }
                 if paidRemaining > 0 {
                     paidRemaining -= 1
                     continue
                 }
-                let converted = converter.convertWithLatestRate(
-                    Decimal(abs(payment.amount)),
-                    from: payment.currencyCode,
-                    to: preferredCurrencyCode
-                )
-                total += NSDecimalNumber(decimal: converted).doubleValue
+                result.append((payment: payment, date: date))
             }
         }
-        return total
+        return result
+    }
+
+    // MARK: - «Tu dinero hoy» de la cobertura
+
+    /// Qué cuentas suman en «Tu dinero hoy»: el interruptor de Grupos del saldo y lo que la persona cambió por cuenta.
+    struct CoverageScope: Equatable {
+        var includeGroupsInTotal: Bool
+        var moneyOverrides: [UUID: Bool]
+
+        /// Lo que guarda la app. La usan la nota de Estadísticas (que no conoce `AppPreferences`) y la hoja.
+        static func fromDefaults(_ defaults: UserDefaults = .standard) -> CoverageScope {
+            CoverageScope(
+                includeGroupsInTotal: (defaults.object(forKey: AppPreferences.Keys.includeGroupsInPanelTotal) as? Bool)
+                    ?? true,
+                moneyOverrides: PanelMoneyScopeLogic.decode(
+                    defaults.string(forKey: AppPreferences.Keys.panelMoneyAccountOverrides) ?? ""
+                )
+            )
+        }
+    }
+
+    /// Las cuentas de «Tu dinero hoy» del hero del Panel sin filtro de sesión: las del saldo (con el interruptor de
+    /// Grupos) que cuentan como dinero para usar (`PanelMoneyScopeLogic`, sin tarjetas de crédito por defecto). La
+    /// cobertura de Compromisos y la hoja de Salud financiera parten de aquí (pregunta 3 del 20-nov-2026): con todas las
+    /// cuentas, una tarjeta con deuda alta hundía la cobertura aunque el dinero cubriera los pagos.
+    static func coverageAccounts(_ accounts: [Account], scope: CoverageScope) -> [Account] {
+        PanelMoneyScopeLogic.moneyAccounts(
+            accounts, totalAccountIDs: totalAccountIDs(accounts, scope: scope), overrides: scope.moneyOverrides
+        )
+    }
+
+    /// Las cuentas del saldo grande del Panel sin filtro de sesión (`panelTotalAccountIDs` sin chip de cuentas).
+    static func totalAccountIDs(_ accounts: [Account], scope: CoverageScope) -> Set<PersistentIdentifier> {
+        let total = PanelTotalAccountsLogic.accountsForTotal(
+            accounts, includeGroups: scope.includeGroupsInTotal, hasSelectedAccount: false
+        )
+        return Set(total.filter(\.sumsInBalance).map(\.persistentModelID))
     }
 
     /// Suma ingresos del período (excluye balance adjustments). Income-aware: suprime las patas

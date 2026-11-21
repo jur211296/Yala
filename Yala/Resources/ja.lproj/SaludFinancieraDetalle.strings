@@ -2,61 +2,106 @@
   SaludFinancieraDetalle.strings
   Yala
 
-  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
-  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+  Presupuestos, Compromisos y Ritmo, cada una con su estado, lo suyo y qué hacer. Tabla propia, leída con el idioma de la
+  app (`L10n.SaludFinancieraDetalle`).
 */
 
-"saludDetalle.section.alerts" = "確認すること";
+"saludDetalle.loading" = "読み込み中…";
 "saludDetalle.section.budgets" = "予算";
-"saludDetalle.section.payments" = "今後の支払い";
-"saludDetalle.section.streak" = "連続記録";
-"saludDetalle.section.improve" = "スコアを上げるには";
+"saludDetalle.section.commitments" = "支払い負担";
+"saludDetalle.section.rhythm" = "リズム";
 "saludDetalle.section.howItWorks" = "計算方法";
-"saludDetalle.alerts.none.title" = "今日確認することはありません";
-"saludDetalle.alerts.none.detail" = "予算・支払い・口座は順調です。";
-"saludDetalle.alert.overBudget.title" = "%@が上限を超えました";
-"saludDetalle.alert.overBudget.detail" = "タップして内訳を確認。";
-"saludDetalle.alert.atLimit.title" = "%@が上限に近づいています";
-"saludDetalle.alert.atLimit.detail" = "設定額の%d %%まで使いました。";
-"saludDetalle.alert.negativeAccount.title" = "%@がマイナスです";
-"saludDetalle.alert.negativeAccount.detail" = "残高を確認するか、足りない記録を追加しましょう。";
-"saludDetalle.alert.overdue.title" = "%@の期限が過ぎています";
-"saludDetalle.alert.overdue.detail" = "支払い済みにするかスキップしましょう。";
-"saludDetalle.alert.notCovered.title" = "今月の支払いがまかなえません";
-"saludDetalle.alert.notCovered.detail" = "手持ちとこれからの入出金で、月末には:";
-"saludDetalle.budgets.empty.title" = "予算はまだありません";
-"saludDetalle.budgets.empty.detail" = "よく使う項目に上限を設定すると、超える前にYalaがお知らせします。";
-"saludDetalle.budgets.empty.cta" = "予算を作成";
+"saludDetalle.section.weight" = "スコアの%d %%を占めます";
+"saludDetalle.status.good" = "良好";
+"saludDetalle.status.review" = "要確認";
+"saludDetalle.status.noData" = "データなし";
+
+"saludDetalle.capsule.createOne" = "作成する";
+"saludDetalle.capsule.since" = "%@から";
+"saludDetalle.capsule.addPayments" = "支払いを追加";
+"saludDetalle.capsule.recordToday" = "今日記録する";
+"saludDetalle.capsule.noData" = "データなし";
+"saludDetalle.capsule.hint" = "セクションへ移動";
+
+"saludDetalle.advice.notEnough" = "今あるお金では、%@までに支払う予定のぶんをすべてまかなえません。下に、ずらせる支払いがあります。";
+"saludDetalle.advice.overBudget" = "%@は今期、上限を超えました。下で上限内に戻す方法を確認できます。";
+"saludDetalle.advice.overMany" = "%d件の予算が今期、上限を超えました。下で上限内に戻す方法を確認できます。";
+"saludDetalle.advice.overdue" = "%@はすでに期日を過ぎています。支払い済みなら、支払い済みにしておきましょう。";
+"saludDetalle.advice.createBudget" = "予算があるとスコアが完成します。いちばん比重の大きい部分です。";
+"saludDetalle.advice.budgetStarts" = "予算は%@からスコアに反映されます。";
+"saludDetalle.advice.addPayments" = "支払いを追加すると、今月をやりくりできるかわかります。";
+"saludDetalle.advice.rhythm" = "いまスコアをいちばん動かすのは、こまめに記録することです。";
+"saludDetalle.advice.allGood" = "予算は上限内で、今月これから払うぶんもまかなえています。";
+
+"saludDetalle.budgets.oneWithin" = "%@は上限内です。";
+"saludDetalle.budgets.allWithin" = "%d件の予算はすべて上限内です。";
+"saludDetalle.budgets.allWithinLeft" = "%d件の予算はすべて上限内です。合計で%@残っています。";
+"saludDetalle.budgets.onlyOver" = "%@は%@超えました。";
+"saludDetalle.budgets.overOneOther" = "%@は%@超えました。もう1件の予算は上限内です。";
+"saludDetalle.budgets.overOthers" = "%@は%@超えました。ほかの%d件の予算は上限内です。";
+"saludDetalle.budgets.manyOver" = "%d件の予算が上限を超えました。下で上限内に戻す方法を確認できます。";
+"saludDetalle.budgets.startsLater" = "%@は%@からスコアに反映されます。状況は今から確認できます。";
 "saludDetalle.budgets.seeAll" = "すべて表示（%d）";
 "saludDetalle.budgets.left" = "残り";
 "saludDetalle.budgets.over" = "超過";
+"saludDetalle.budgets.empty.lead" = "まだ予算がありません。この部分はスコアの%d %%を占めますが、今は反映されません。";
+"saludDetalle.budgets.empty.tipTitle" = "まずはここから";
+"saludDetalle.budgets.empty.tip" = "%@はいちばん支出が多い項目で、月平均%@です。ここに上限を設けておくと、超える前に知らせてくれます。";
+"saludDetalle.budgets.empty.cta" = "予算を作成";
+
+"saludDetalle.improve.title" = "この部分を良くするには";
+"saludDetalle.improve.nothing" = "今のところ調整するものはありません。";
+"saludDetalle.improve.adjust.title" = "上限を実際の支出に合わせる";
+"saludDetalle.improve.adjust.detail" = "%1$@は直近%3$d期間のうち%2$d期間で上限を超え、平均%4$@の超過でした。それが普段の支出なら、上限を%5$@にすると早めに気づけます。";
+"saludDetalle.improve.adjust.cta" = "上限を調整";
+"saludDetalle.improve.cut.title" = "または、いちばん大きい支出を減らす";
+"saludDetalle.improve.cut.titleAlone" = "いちばん大きい支出を減らす";
+"saludDetalle.improve.cut.detail" = "今期、%@の内訳：%@。";
+"saludDetalle.improve.cut.cta" = "記録で見る";
+"saludDetalle.improve.ai.label" = "Yala AI · 今月のまとめ";
+"saludDetalle.improve.ai.cta" = "まとめを見る";
+"saludDetalle.improve.ai.none.title" = "AIによるまとめ";
+"saludDetalle.improve.ai.none.detail" = "統計で、今月お金が何に使われたかを確認できます。";
+"saludDetalle.improve.pro" = "Yala Proなら、AIのまとめでお金が何に使われたかがわかります。";
+"saludDetalle.improve.pro.cta" = "Proを見る";
+
+"saludDetalle.commit.lead" = "今月の未払いは%@で、今あるお金は%@です。";
+"saludDetalle.commit.leadExpensesOnly" = "今月の未払いは%@です。";
+"saludDetalle.commit.enough" = "足りています。%@残る見込みです。";
+"saludDetalle.commit.notEnough" = "支払いのひとつを%@にずらすか、もう不要なものがないか見直してみましょう。";
+"saludDetalle.commit.toPay" = "今月の未払い";
+"saludDetalle.commit.moneyToday" = "今あるお金";
+"saludDetalle.commit.short" = "すべてまかなうには%@足りません。";
+"saludDetalle.commit.income" = "ほかに、%3$@に%2$@から%1$@の入金を予定しています。";
+"saludDetalle.commit.incomeMoreOne" = "ほかに、%3$@に%2$@から%1$@の入金を予定していて、さらに収入が1件あります。";
+"saludDetalle.commit.incomeMoreOther" = "ほかに、%3$@に%2$@から%1$@の入金を予定していて、さらに収入が%4$d件あります。";
+"saludDetalle.commit.overdueYesterday" = "%@は昨日が期日でした。支払い済みなら、支払い済みにしておきましょう。";
+"saludDetalle.commit.overdueDate" = "%@は%@が期日でした。支払い済みなら、支払い済みにしておきましょう。";
+"saludDetalle.commit.negativeAccount" = "%@の口座がマイナスです。ほかの口座からお金を移せます。";
+"saludDetalle.commit.pendingOne" = "%@までの未払い1件";
+"saludDetalle.commit.pendingOther" = "未払い%d件（%@まで）";
+"saludDetalle.commit.review" = "支払いを確認・移動";
+"saludDetalle.commit.seeAll" = "予定支払いを見る";
+"saludDetalle.commit.allPaid" = "%@の予定はすべて支払い済みです。";
+"saludDetalle.commit.next" = "次の支払いは%@、%@です。";
+"saludDetalle.commit.empty.lead" = "まだ予定支払いがありません。登録すると、今あるお金（%@）で月末まで足りるかをお伝えします。";
+"saludDetalle.commit.empty.leadNoMoney" = "まだ予定支払いがありません。登録すると、月末まで足りるかをお伝えします。";
+"saludDetalle.commit.recurring.title" = "繰り返し発生する支払いを見つけました";
+"saludDetalle.commit.recurring.one" = "%@が、記録に毎月出ています。";
+"saludDetalle.commit.recurring.other" = "%@が、記録に毎月出ています。";
+"saludDetalle.commit.recurring.cta" = "確認する";
+"saludDetalle.commit.empty.cta" = "支払いを追加";
+
 "saludDetalle.payments.today" = "今日";
 "saludDetalle.payments.tomorrow" = "明日";
 "saludDetalle.payments.inDays" = "%d日後";
-"saludDetalle.payments.overdue" = "期限切れ";
-"saludDetalle.payments.none" = "今後2週間の支払いはありません。";
-"saludDetalle.payments.empty.title" = "予定された支払いはまだありません";
-"saludDetalle.payments.empty.detail" = "家賃、電気、サブスク：期限前にYalaがお知らせします。";
-"saludDetalle.payments.empty.cta" = "支払いを追加";
-"saludDetalle.payments.seeAll" = "すべて表示";
-"saludDetalle.payments.covered" = "今月の支払いはまかなえます。";
-"saludDetalle.payments.notCovered" = "今月の支払いにはたりません。";
+"saludDetalle.payments.overdue" = "期日超過";
+
 "saludDetalle.streak.days.one" = "%d日連続";
 "saludDetalle.streak.days.other" = "%d日連続";
-"saludDetalle.streak.today" = "今日はもう記録しました。その調子！";
-"saludDetalle.streak.keep" = "今日も記録して連続を守りましょう。";
-"saludDetalle.streak.start" = "今日記録して連続記録を始めましょう。";
+"saludDetalle.streak.today" = "今日はもう記録しました。この調子です！";
+"saludDetalle.streak.keep" = "今日はまだ記録していません。日付が変わる前に何か記録すれば、連続記録が続きます。";
+"saludDetalle.streak.start" = "今日1件記録して、連続記録を始めましょう。";
 "saludDetalle.streak.cta" = "記録する";
-"saludDetalle.streak.caption" = "過去%d日";
-"saludDetalle.streak.dayRecorded" = "記録あり";
-"saludDetalle.streak.dayEmpty" = "記録なし";
-"saludDetalle.improve.crearPresupuesto" = "最初の予算を作成";
-"saludDetalle.improve.registrarHoy" = "今日1件記録する";
-"saludDetalle.improve.agregarPagos" = "固定の支払いを追加";
-"saludDetalle.improve.revisarPresupuestos" = "超過した予算を確認";
-"saludDetalle.improve.revisarRitmo" = "もっとこまめに記録";
-"saludDetalle.improve.revisarPagos" = "今月の支払いを確認";
-"saludDetalle.improve.weight" = "%@はスコアの%d %%";
-"saludDetalle.loading" = "読み込み中…";
-"saludDetalle.alert.reachedLimit.title" = "%@が上限に達しました";
-"saludDetalle.alert.atLimitMany.title" = "上限に近い予算：%d件";
+"saludDetalle.streak.caption" = "直近%d日";

@@ -2,17 +2,19 @@
 //  SaludFinancieraDetalleLogica.swift
 //  Yala
 //
-//  La hoja de la nota de salud, visual y accionable (pedido de Jürgen del 17-nov-2026: «pésimo, nada de valor añadido,
-//  puro texto que nadie leerá»). Aquí vive lo que no es pantalla: qué alertas salen y en qué orden, cómo va cada
-//  presupuesto, qué pagos vienen y si el saldo los cubre, la racha de días registrando y qué hacer para subir la nota.
+//  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+//  una sección por cada parte (Presupuestos, Compromisos, Ritmo) que dice cómo va, enseña lo suyo y propone qué hacer.
+//  Aquí vive lo que no es pantalla: el estado de cada sección, el texto de cada cápsula, la comparación de tu dinero con
+//  tus pagos, la propuesta de límite, el recorte y la tarjeta de IA guardada.
 //
 //  No hay cálculos nuevos de dinero: lo gastado de un presupuesto es el de Planificación
-//  (`BudgetsViewModel.calculateSpending` en `BudgetPeriodInterval.current`), su estado el de `BudgetStatusCounter`, y la
-//  cobertura de los pagos es «Al 30 tendrías» del Panel (`MonthEndBalanceLogic`). La nota no se recalcula: la hoja
-//  recibe la del Panel.
+//  (`BudgetsViewModel.calculateSpending`), «Tu dinero hoy» el del hero del Panel (`PanelMoneyScopeLogic`) y lo que falta
+//  pagar lo mismo que cuenta la nota (`FinancialScoreCalculator.pendingOccurrences`). Nunca «Al 30 tendrías»
+//  (`MonthEndBalanceLogic`): parte del saldo con tarjetas y suma gasto estimado. La nota no se recalcula: llega del Panel.
 //
 
 import Foundation
+import SwiftData
 
 enum SaludFinancieraDetalleLogica {
 
@@ -28,33 +30,91 @@ enum SaludFinancieraDetalleLogica {
         let gastado: Double
         let limite: Double
         let moneda: String
+        /// Lo gastado en los períodos completos anteriores, del más reciente al más antiguo (hasta 4).
+        var historial: [Double] = []
+        /// Lo que más pesa dentro del presupuesto en el período en curso, de más a menos (hasta 3).
+        var dondeMasPesa: [Recorte] = []
+        /// El presupuesto aún no cuenta en la nota: este es el primer día del período en que cuenta.
+        var cuentaDesde: Date?
 
         var porcentaje: Double { limite > 0 ? gastado / limite * 100 : 0 }
         var estado: BudgetCounterStatus { BudgetStatusCounter.classify(spent: gastado, limit: limite) }
         /// Lo que queda (negativo: lo que se pasó), con la regla de «Te quedan / Te pasaste por».
         var restante: Double { BudgetRemainingLogic.remaining(limit: limite, spent: gastado) }
+        var sePaso: Bool { estado == .overLimit }
     }
 
-    /// Un pago planificado que viene.
+    /// Una subcategoría o categoría con su gasto dentro de un presupuesto.
+    struct Recorte: Equatable, Identifiable {
+        enum Filtro: Equatable, Hashable {
+            case subcategoria(PersistentIdentifier)
+            case categoria(PersistentIdentifier)
+            /// «Sin categoría»: no se puede filtrar por ella, abre Registros sin filtro de categoría.
+            case ninguno
+        }
+        let nombre: String
+        let monto: Double
+        let filtro: Filtro
+        var id: String { "\(nombre)-\(filtro)" }
+    }
+
+    /// Lo que la persona podría poner como límite si se pasa casi siempre.
+    struct PropuestaDeLimite: Equatable {
+        let vecesPasado: Int
+        let periodos: Int
+        let promedio: Double
+        let limite: Double
+    }
+
+    /// Un pago que falta este mes.
     struct Pago: Equatable, Identifiable {
         let id: UUID
         let nombre: String
         let fecha: Date
         /// Días de calendario desde hoy: 0 hoy, 1 mañana, negativo si ya venció.
         let dias: Int
+        /// En la moneda del pago.
+        let monto: Double
+        let moneda: String
+        /// En la moneda de la app, con el tipo de cambio de hoy.
+        let montoConvertido: Double
+        let esAproximado: Bool
+
+        var vencido: Bool { dias < 0 }
+    }
+
+    /// Un ingreso planificado que llega antes de fin de mes. Se nombra, no se suma.
+    struct IngresoEsperado: Equatable {
+        let nombre: String
+        let fecha: Date
         let monto: Double
         let moneda: String
     }
 
-    /// «Al 30 de noviembre tendrías»: lo que dice el Panel, para saber si el saldo cubre lo que falta pagar.
-    struct Cobertura: Equatable {
-        let alCierre: Double
-        let faltaSalir: Double
-        let fechaCierre: Date
+    /// «Te falta pagar este mes» frente a «Tu dinero hoy». La marca «≈» de cada cifra sigue el umbral de la app
+    /// (`ApproximateMarkThreshold`): lo convertido con una tasa dudosa, en magnitudes, sobre el número que se pinta.
+    struct Comparacion: Equatable {
+        let dineroHoy: Double
+        /// Lo convertido con una tasa que no era la de hoy dentro de «Tu dinero hoy» (magnitud).
+        let dineroDudoso: Double
+        let faltaPagar: Double
+        /// Lo convertido con una tasa dudosa dentro de lo que falta pagar (magnitud).
+        let faltaDudosa: Double
         let moneda: String
-        let esAproximada: Bool
 
-        var cubre: Bool { alCierre >= 0 || CurrencyFormattingHelper.isShownAsZero(alCierre) }
+        /// Lo que queda tras pagar todo (negativo: lo que falta para cubrirlo).
+        var diferencia: Double { dineroHoy - faltaPagar }
+        var dineroEsAproximado: Bool { ApproximateMarkThreshold.marks(approximate: dineroDudoso, total: abs(dineroHoy)) }
+        var faltaEsAproximado: Bool { ApproximateMarkThreshold.marks(approximate: faltaDudosa, total: abs(faltaPagar)) }
+        /// La diferencia es una resta: su incertidumbre es la de las dos, sobre lo que se pinta (`|diferencia|`).
+        var diferenciaEsAproximada: Bool {
+            ApproximateMarkThreshold.marks(approximate: dineroDudoso + faltaDudosa, total: abs(diferencia))
+        }
+        var alcanza: Bool { diferencia >= 0 || CurrencyFormattingHelper.isShownAsZero(diferencia) }
+        /// Proporción de cada barra sobre la mayor de las dos (misma escala). Un dinero negativo pinta la barra vacía.
+        var barraFalta: Double { escala > 0 ? max(0, faltaPagar) / escala : 0 }
+        var barraDinero: Double { escala > 0 ? max(0, dineroHoy) / escala : 0 }
+        private var escala: Double { max(max(0, faltaPagar), max(0, dineroHoy)) }
     }
 
     /// Días seguidos registrando y la tira de los últimos días.
@@ -66,66 +126,74 @@ enum SaludFinancieraDetalleLogica {
         let registroHoy: Bool
     }
 
-    enum Alerta: Equatable, Identifiable {
-        case presupuestoPasado(Presupuesto)
-        case presupuestoAlLimite(Presupuesto)
-        /// Dos o más al límite van en una sola fila: la lista de presupuestos de abajo ya dice cuáles.
-        case presupuestosAlLimite([Presupuesto])
-        case cuentaEnRojo(nombre: String, cuentaID: UUID?)
-        case pagoVencido(Pago)
-        case pagosSinCubrir(Cobertura)
+    /// La tarjeta del resumen con IA de Estadísticas ya guardada (solo Pro). Nunca se pide una nueva.
+    struct TarjetaIA: Equatable {
+        let texto: String
+        let consejo: String
+    }
 
-        var id: String {
+    /// Las tres secciones, en el orden de las cápsulas.
+    enum Seccion: String, CaseIterable, Identifiable {
+        case presupuestos, compromisos, ritmo
+        var id: String { rawValue }
+
+        var parte: FinancialScoreDetailKind {
             switch self {
-            case .presupuestoPasado(let p): "pasado-\(p.id)"
-            case .presupuestoAlLimite(let p): "limite-\(p.id)"
-            case .presupuestosAlLimite: "limites"
-            case .cuentaEnRojo(let nombre, let id): "cuenta-\(id?.uuidString ?? nombre)"
-            case .pagoVencido(let p): "vencido-\(p.id)"
-            case .pagosSinCubrir: "cobertura"
+            case .presupuestos: .budget
+            case .compromisos: .bills
+            case .ritmo: .activity
             }
         }
 
-        /// Pasarse o no llegar a fin de mes pesa más que acercarse al límite.
-        var esGrave: Bool {
+        var peso: Double {
             switch self {
-            case .presupuestoAlLimite, .presupuestosAlLimite: false
-            default: true
+            case .presupuestos: FinancialScoreCalculator.weightBudget
+            case .compromisos: FinancialScoreCalculator.weightCommitments
+            case .ritmo: FinancialScoreCalculator.weightRhythm
             }
         }
     }
 
-    /// Un paso para subir la nota.
-    enum Paso: String, Equatable, Identifiable {
-        case crearPresupuesto
-        case registrarHoy
-        case agregarPagos
-        case revisarPresupuestos
-        case revisarRitmo
-        case revisarPagos
+    /// La palabra de estado de cada sección.
+    enum Estado: Equatable {
+        case bien, paraRevisar, sinDatos
+    }
 
-        var id: String { rawValue }
+    /// Lo que dice una cápsula cuando su parte no tiene número.
+    enum MotivoSinNota: Equatable {
+        case creaUno
+        case desde(Date)
+        case agregaPagos
+        case registraHoy
+        case sinDatos
+    }
 
-        /// La parte de la nota que mueve, para decir cuánto pesa.
-        var parte: FinancialScoreDetailKind {
-            switch self {
-            case .crearPresupuesto, .revisarPresupuestos: .budget
-            case .registrarHoy, .revisarRitmo: .activity
-            case .agregarPagos, .revisarPagos: .bills
-            }
-        }
+    /// La frase de consejero bajo la nota: qué mueve más la nota este mes.
+    enum Consejo: Equatable {
+        case noAlcanza(finDeMes: Date)
+        case presupuestoPasado(nombre: String)
+        case variosPasados(Int)
+        case pagoVencido(nombre: String)
+        case creaPresupuesto
+        case presupuestoEmpiezaACuenta(Date)
+        case agregaPagos
+        case registraMasSeguido
+        case todoBien
     }
 
     // MARK: - Constantes
 
     /// Los días que pinta la tira de la racha.
     static let diasEnTira = 14
-    /// Hasta cuántos días por delante salen los próximos pagos.
-    static let horizontePagos = 14
-    /// Cuántos pagos y presupuestos se enseñan antes de «Ver todos».
-    static let maximoPagos = 3
+    /// Cuántos presupuestos se enseñan antes de «Ver todos».
     static let maximoPresupuestos = 4
-    static let maximoPasos = 2
+    /// Cuántos pagos pendientes se enseñan antes de «Ver todos».
+    static let maximoPagos = 5
+    /// Períodos completos que mira la propuesta de límite, y en cuántos tiene que haberse pasado.
+    static let periodosDeHistorial = 4
+    static let vecesPasadoParaProponer = 3
+    /// Cuántas filas de «recorta donde más pesa».
+    static let maximoRecortes = 3
 
     // MARK: - Presupuestos
 
@@ -148,33 +216,97 @@ enum SaludFinancieraDetalleLogica {
         }
     }
 
-    // MARK: - Pagos
+    /// Si se pasó en al menos 3 de los últimos 4 períodos completos, el promedio de esos 4 y un límite redondeado hacia
+    /// arriba. Con menos de 4 períodos de historia no propone nada: no hay base.
+    static func propuestaDeLimite(historial: [Double], limite: Double) -> PropuestaDeLimite? {
+        let periodos = Array(historial.prefix(periodosDeHistorial))
+        guard limite > 0, periodos.count == periodosDeHistorial else { return nil }
+        let veces = periodos.filter { $0 > limite && !CurrencyFormattingHelper.isShownAsZero($0 - limite) }.count
+        guard veces >= vecesPasadoParaProponer else { return nil }
+        let promedio = periodos.reduce(0, +) / Double(periodos.count)
+        let propuesto = redondearHaciaArriba(promedio)
+        guard propuesto > limite else { return nil }
+        return PropuestaDeLimite(vecesPasado: veces, periodos: periodos.count, promedio: promedio, limite: propuesto)
+    }
 
-    /// Los pagos de gasto activos que vencieron o vencen en los próximos `horizontePagos` días, del más cercano al más
-    /// lejano. Se cuenta la fecha que el pago tiene pendiente (`nextDueDate`), salvo que la persona la haya saltado.
-    static func proximosPagos(
-        _ pagos: [(id: UUID, nombre: String, fecha: Date, monto: Double, moneda: String, esGasto: Bool, activo: Bool,
-                   saltado: Bool)],
+    /// Un monto «redondo»: de 10 en 10 hasta 500, de 50 en 50 hasta 5.000 y de 100 en 100 por encima.
+    static func redondearHaciaArriba(_ monto: Double) -> Double {
+        guard monto > 0 else { return 0 }
+        let paso: Double = monto < 500 ? 10 : (monto < 5_000 ? 50 : 100)
+        return (monto / paso).rounded(.up) * paso
+    }
+
+    /// Las `maximoRecortes` con más gasto, de más a menos. Sin categoría no se puede filtrar, pero cuenta.
+    static func dondeMasPesa(_ recortes: [Recorte]) -> [Recorte] {
+        Array(recortes.filter { $0.monto > 0 }.sorted { a, b in
+            if a.monto != b.monto { return a.monto > b.monto }
+            return a.nombre.localizedStandardCompare(b.nombre) == .orderedAscending
+        }.prefix(maximoRecortes))
+    }
+
+    static func estadoPresupuestos(_ presupuestos: [Presupuesto]) -> Estado {
+        guard !presupuestos.isEmpty else { return .sinDatos }
+        return presupuestos.contains { $0.sePaso || $0.estado == .reachedLimit } ? .paraRevisar : .bien
+    }
+
+    /// El primero que se pasó: es el que recibe los consejos de «Para mejorar esta parte».
+    static func presupuestoAMejorar(_ presupuestos: [Presupuesto]) -> Presupuesto? {
+        ordenar(presupuestos).first(where: \.sePaso)
+    }
+
+    /// Lo que queda entre todos, solo si se puede sumar (misma moneda) y todos van dentro del límite.
+    static func quedaEntreTodos(_ presupuestos: [Presupuesto]) -> (monto: Double, moneda: String)? {
+        guard presupuestos.count > 1, let moneda = presupuestos.first?.moneda,
+              presupuestos.allSatisfy({ $0.moneda == moneda && !$0.sePaso }) else { return nil }
+        return (presupuestos.reduce(0) { $0 + max(0, $1.restante) }, moneda)
+    }
+
+    /// El presupuesto que aún no cuenta en la nota, si la nota de Presupuestos no tiene número por eso.
+    static func presupuestoQueAunNoCuenta(_ presupuestos: [Presupuesto], score: FinancialScore) -> Presupuesto? {
+        guard score.budget == nil else { return nil }
+        return presupuestos.filter { $0.cuentaDesde != nil }
+            .min { ($0.cuentaDesde ?? .distantFuture) < ($1.cuentaDesde ?? .distantFuture) }
+    }
+
+    // MARK: - Compromisos
+
+    /// Los pagos que faltan este mes, convertidos y ordenados: los vencidos primero, luego por fecha.
+    static func pagosPendientes(
+        _ ocurrencias: [(id: UUID, nombre: String, fecha: Date, monto: Double, moneda: String, convertido: Double,
+                         aproximado: Bool)],
         now: Date,
         calendar: Calendar
     ) -> [Pago] {
         let hoy = calendar.startOfDay(for: now)
-        return pagos
-            .filter { $0.activo && $0.esGasto && !$0.saltado }
-            .compactMap { pago -> Pago? in
-                let dia = calendar.startOfDay(for: pago.fecha)
-                guard let dias = calendar.dateComponents([.day], from: hoy, to: dia).day,
-                      dias <= horizontePagos else { return nil }
-                return Pago(id: pago.id, nombre: pago.nombre, fecha: pago.fecha, dias: dias, monto: pago.monto,
-                            moneda: pago.moneda)
-            }
-            .sorted { a, b in
-                if a.fecha != b.fecha { return a.fecha < b.fecha }
-                return a.nombre.localizedStandardCompare(b.nombre) == .orderedAscending
-            }
+        return ocurrencias.map { o in
+            let dias = calendar.dateComponents([.day], from: hoy, to: calendar.startOfDay(for: o.fecha)).day ?? 0
+            return Pago(id: o.id, nombre: o.nombre, fecha: o.fecha, dias: dias, monto: abs(o.monto), moneda: o.moneda,
+                        montoConvertido: abs(o.convertido), esAproximado: o.aproximado)
+        }
+        .sorted { a, b in
+            if a.fecha != b.fecha { return a.fecha < b.fecha }
+            return a.nombre.localizedStandardCompare(b.nombre) == .orderedAscending
+        }
     }
 
-    // MARK: - Racha
+    static func comparacion(pagos: [Pago], dineroHoy: Double, dineroDudoso: Double = 0, moneda: String) -> Comparacion {
+        Comparacion(
+            dineroHoy: dineroHoy,
+            dineroDudoso: dineroDudoso,
+            faltaPagar: pagos.reduce(0) { $0 + $1.montoConvertido },
+            faltaDudosa: pagos.filter(\.esAproximado).reduce(0) { $0 + abs($1.montoConvertido) },
+            moneda: moneda
+        )
+    }
+
+    static func estadoCompromisos(tienePagos: Bool, pagos: [Pago], comparacion: Comparacion?) -> Estado {
+        guard tienePagos else { return .sinDatos }
+        if pagos.contains(where: \.vencido) { return .paraRevisar }
+        if let comparacion, !comparacion.alcanza { return .paraRevisar }
+        return .bien
+    }
+
+    // MARK: - Ritmo
 
     /// La racha a partir de los días con algún movimiento. Si hoy aún no hay, cuenta desde ayer: la racha sigue viva
     /// hasta que termina el día.
@@ -197,58 +329,89 @@ enum SaludFinancieraDetalleLogica {
         return Racha(dias: cuenta, tira: tira, registroHoy: registroHoy)
     }
 
-    // MARK: - Alertas
-
-    /// Lo que hay que mirar hoy, lo grave primero: pasarse de un presupuesto, no llegar a fin de mes con los pagos,
-    /// un pago vencido y una cuenta en negativo; después, los presupuestos al límite (en una sola fila si son varios). En «Solo gastos» no hay saldos
-    /// que valgan: ni cuentas en rojo ni cobertura.
-    static func alertas(
-        presupuestos: [Presupuesto],
-        pagos: [Pago],
-        cobertura: Cobertura?,
-        cuentasEnRojo: [(nombre: String, id: UUID?)],
-        isExpensesOnlyMode: Bool
-    ) -> [Alerta] {
-        let ordenados = ordenar(presupuestos)
-        let pasados = ordenados.filter { $0.estado == .overLimit }.map(Alerta.presupuestoPasado)
-        let enElLimite = ordenados.filter { $0.estado == .atLimit || $0.estado == .reachedLimit }
-        let alLimite: [Alerta] = switch enElLimite.count {
-        case 0: []
-        case 1: [.presupuestoAlLimite(enElLimite[0])]
-        default: [.presupuestosAlLimite(enElLimite)]
-        }
-        let vencidos = pagos.filter { $0.dias < 0 }.map(Alerta.pagoVencido)
-        let sinCubrir: [Alerta] = {
-            guard !isExpensesOnlyMode, let cobertura, cobertura.faltaSalir > 0, !cobertura.cubre else { return [] }
-            return [.pagosSinCubrir(cobertura)]
-        }()
-        let cuentas: [Alerta] = isExpensesOnlyMode
-            ? []
-            : cuentasEnRojo.map { Alerta.cuentaEnRojo(nombre: $0.nombre, cuentaID: $0.id) }
-        return pasados + sinCubrir + vencidos + cuentas + alLimite
+    static func estadoRitmo(score: FinancialScore) -> Estado {
+        guard let activity = score.activity else { return .sinDatos }
+        return activity >= 70 ? .bien : .paraRevisar
     }
 
-    // MARK: - Para subir la nota
+    // MARK: - Nota
 
-    /// Hasta `maximoPasos` cosas concretas, la que más mueve la nota primero. Lo que falta para tener nota va antes que
-    /// lo que la mejora: sin presupuestos o sin pagos, esa parte no cuenta.
-    static func pasos(
+    /// Lo que dice la cápsula de una parte sin número. `nil` si la parte tiene nota.
+    static func motivoSinNota(
+        _ seccion: Seccion,
         score: FinancialScore,
-        tienePresupuestos: Bool,
-        tienePagos: Bool,
-        racha: Racha
-    ) -> [Paso] {
-        var pasos: [Paso] = []
-        if score.budget == nil && !tienePresupuestos { pasos.append(.crearPresupuesto) }
-        if !racha.registroHoy && (score.activity ?? 0) < 100 { pasos.append(.registrarHoy) }
-        if score.bills == nil && !tienePagos { pasos.append(.agregarPagos) }
-
-        switch FinancialScoreCalculator.weakestPart(of: score) {
-        case .budget: pasos.append(.revisarPresupuestos)
-        case .activity: if !pasos.contains(.registrarHoy) { pasos.append(.revisarRitmo) }
-        case .bills: pasos.append(.revisarPagos)
-        case .total, nil: break
+        presupuestos: [Presupuesto],
+        tienePagos: Bool
+    ) -> MotivoSinNota? {
+        switch seccion {
+        case .presupuestos:
+            guard score.budget == nil else { return nil }
+            if presupuestos.isEmpty { return .creaUno }
+            if let desde = presupuestoQueAunNoCuenta(presupuestos, score: score)?.cuentaDesde { return .desde(desde) }
+            return .sinDatos
+        case .compromisos:
+            guard score.bills == nil else { return nil }
+            return tienePagos ? .sinDatos : .agregaPagos
+        case .ritmo:
+            guard score.activity == nil else { return nil }
+            return .registraHoy
         }
-        return Array(pasos.prefix(maximoPasos))
+    }
+
+    /// La frase bajo la nota, lo que más la mueve primero: no llegar con los pagos, pasarse de un presupuesto, un pago
+    /// vencido; después, la parte que falta (la que más pesa primero) y el ritmo bajo. Si nada, que va en orden.
+    static func consejo(
+        score: FinancialScore,
+        presupuestos: [Presupuesto],
+        pagos: [Pago],
+        comparacion: Comparacion?,
+        tienePagos: Bool,
+        isExpensesOnlyMode: Bool,
+        finDeMes: Date
+    ) -> Consejo {
+        if !isExpensesOnlyMode, let comparacion, comparacion.faltaPagar > 0, !comparacion.alcanza {
+            return .noAlcanza(finDeMes: finDeMes)
+        }
+        let pasados = ordenar(presupuestos).filter(\.sePaso)
+        if pasados.count == 1, let primero = pasados.first { return .presupuestoPasado(nombre: primero.nombre) }
+        if pasados.count > 1 { return .variosPasados(pasados.count) }
+        if let vencido = pagos.first(where: \.vencido) { return .pagoVencido(nombre: vencido.nombre) }
+        if score.budget == nil {
+            if presupuestos.isEmpty { return .creaPresupuesto }
+            if let desde = presupuestoQueAunNoCuenta(presupuestos, score: score)?.cuentaDesde {
+                return .presupuestoEmpiezaACuenta(desde)
+            }
+        }
+        if !tienePagos { return .agregaPagos }
+        if let activity = score.activity, activity < 70 { return .registraMasSeguido }
+        if score.activity == nil { return .registraMasSeguido }
+        return .todoBien
+    }
+
+    // MARK: - Tarjeta de IA
+
+    /// La primera tarjeta del resumen guardado que pide atención y trae un consejo. Nada si no hay resumen.
+    static func tarjetaIA(_ respuesta: LLMInsightResponse?) -> TarjetaIA? {
+        guard let respuesta else { return nil }
+        for card in respuesta.cards where card.sentiment == "attention" {
+            let consejo = (card.tip ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let texto = card.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !consejo.isEmpty, !texto.isEmpty else { continue }
+            return TarjetaIA(texto: texto, consejo: consejo)
+        }
+        return nil
+    }
+
+    /// De los resúmenes guardados, el último del mes natural de `now`. Sin ranura de «Este mes» que se pueda leer desde
+    /// fuera de Estadísticas, «del mes» es «guardado este mes».
+    static func resumenDelMes(
+        _ guardados: [(guardado: Date, respuesta: LLMInsightResponse)],
+        now: Date,
+        calendar: Calendar
+    ) -> LLMInsightResponse? {
+        guardados
+            .filter { calendar.isDate($0.guardado, equalTo: now, toGranularity: .month) && $0.guardado <= now }
+            .max { $0.guardado < $1.guardado }?
+            .respuesta
     }
 }

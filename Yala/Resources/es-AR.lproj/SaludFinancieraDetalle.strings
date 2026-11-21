@@ -2,61 +2,106 @@
   SaludFinancieraDetalle.strings
   Yala
 
-  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
-  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+  Presupuestos, Compromisos y Ritmo, cada una con su estado, lo suyo y qué hacer. Tabla propia, leída con el idioma de la
+  app (`L10n.SaludFinancieraDetalle`).
 */
 
-"saludDetalle.section.alerts" = "Para revisar";
-"saludDetalle.section.budgets" = "Tus presupuestos";
-"saludDetalle.section.payments" = "Próximos pagos";
-"saludDetalle.section.streak" = "Tu racha";
-"saludDetalle.section.improve" = "Para subir tu nota";
+"saludDetalle.loading" = "Cargando…";
+"saludDetalle.section.budgets" = "Presupuestos";
+"saludDetalle.section.commitments" = "Compromisos";
+"saludDetalle.section.rhythm" = "Ritmo";
 "saludDetalle.section.howItWorks" = "¿Cómo se calcula?";
-"saludDetalle.alerts.none.title" = "Nada que revisar hoy";
-"saludDetalle.alerts.none.detail" = "Tus presupuestos, pagos y cuentas van en orden.";
-"saludDetalle.alert.overBudget.title" = "Te pasaste en %@";
-"saludDetalle.alert.overBudget.detail" = "Tocá para ver en qué se fue.";
-"saludDetalle.alert.atLimit.title" = "%@ está cerca del límite";
-"saludDetalle.alert.atLimit.detail" = "Vas por el %d %% de lo que te pusiste.";
-"saludDetalle.alert.negativeAccount.title" = "%@ está en negativo";
-"saludDetalle.alert.negativeAccount.detail" = "Revisá su saldo o registrá lo que falta.";
-"saludDetalle.alert.overdue.title" = "%@ ya venció";
-"saludDetalle.alert.overdue.detail" = "Marcalo como pagado o salteálo.";
-"saludDetalle.alert.notCovered.title" = "Tus pagos del mes no están cubiertos";
-"saludDetalle.alert.notCovered.detail" = "Con lo que tenés y lo que falta, al cierre tendrías:";
-"saludDetalle.budgets.empty.title" = "Todavía no tenés presupuestos";
-"saludDetalle.budgets.empty.detail" = "Ponele un límite a lo que más gastás y Yala te avisa antes de pasarte.";
-"saludDetalle.budgets.empty.cta" = "Crear presupuesto";
+"saludDetalle.section.weight" = "Pesa el %d %% de tu nota";
+"saludDetalle.status.good" = "Bien";
+"saludDetalle.status.review" = "Para revisar";
+"saludDetalle.status.noData" = "Sin datos";
+
+"saludDetalle.capsule.createOne" = "Creá uno";
+"saludDetalle.capsule.since" = "Desde el %@";
+"saludDetalle.capsule.addPayments" = "Agregá pagos";
+"saludDetalle.capsule.recordToday" = "Registrá hoy";
+"saludDetalle.capsule.noData" = "Sin datos";
+"saludDetalle.capsule.hint" = "Bajá a su sección";
+
+"saludDetalle.advice.notEnough" = "Tu plata de hoy no cubre todo lo que planificaste pagar hasta el %@. Abajo están los pagos que podrías mover.";
+"saludDetalle.advice.overBudget" = "%@ se pasó este período. Abajo tenés cómo volver a tu límite.";
+"saludDetalle.advice.overMany" = "%d presupuestos se pasaron este período. Abajo tenés cómo volver a tu límite.";
+"saludDetalle.advice.overdue" = "%@ ya venció. Si ya lo pagaste, marcalo como pagado.";
+"saludDetalle.advice.createBudget" = "Con un presupuesto tu nota estaría completa: es la parte que más pesa.";
+"saludDetalle.advice.budgetStarts" = "Tu presupuesto empieza a contar en tu nota el %@.";
+"saludDetalle.advice.addPayments" = "Agregá tus pagos para saber si te alcanza el mes.";
+"saludDetalle.advice.rhythm" = "Lo que más mueve tu nota ahora es registrar más seguido.";
+"saludDetalle.advice.allGood" = "Tus presupuestos van dentro del límite y lo que te falta pagar este mes está cubierto.";
+
+"saludDetalle.budgets.oneWithin" = "%@ va dentro del límite.";
+"saludDetalle.budgets.allWithin" = "Tus %d presupuestos van dentro del límite.";
+"saludDetalle.budgets.allWithinLeft" = "Tus %d presupuestos van dentro del límite. Entre todos te quedan %@.";
+"saludDetalle.budgets.onlyOver" = "%@ se pasó por %@.";
+"saludDetalle.budgets.overOneOther" = "%@ se pasó por %@. Tu otro presupuesto va dentro del límite.";
+"saludDetalle.budgets.overOthers" = "%@ se pasó por %@. Tus otros %d presupuestos van dentro del límite.";
+"saludDetalle.budgets.manyOver" = "%d presupuestos se pasaron. Abajo tenés cómo volver a tu límite.";
+"saludDetalle.budgets.startsLater" = "%@ empieza a contar en tu nota el %@. Desde ya podés ver cómo va.";
 "saludDetalle.budgets.seeAll" = "Ver todos (%d)";
 "saludDetalle.budgets.left" = "Te quedan";
 "saludDetalle.budgets.over" = "Te pasaste por";
+"saludDetalle.budgets.empty.lead" = "Todavía no tenés presupuestos. Esta parte pesa el %d %% de tu nota y hoy no cuenta.";
+"saludDetalle.budgets.empty.tipTitle" = "Por dónde empezar";
+"saludDetalle.budgets.empty.tip" = "%@ es donde más gastás: %@ al mes en promedio. Un límite ahí te avisa antes de pasarte.";
+"saludDetalle.budgets.empty.cta" = "Crear un presupuesto";
+
+"saludDetalle.improve.title" = "Para mejorar esta parte";
+"saludDetalle.improve.nothing" = "Nada que ajustar por ahora.";
+"saludDetalle.improve.adjust.title" = "Ajustá el límite a lo real";
+"saludDetalle.improve.adjust.detail" = "%1$@ se pasó en %2$d de los últimos %3$d períodos, en promedio %4$@. Si ese es tu gasto normal, un límite de %5$@ te avisa a tiempo.";
+"saludDetalle.improve.adjust.cta" = "Ajustar límite";
+"saludDetalle.improve.cut.title" = "O recortá donde más pesa";
+"saludDetalle.improve.cut.titleAlone" = "Recortá donde más pesa";
+"saludDetalle.improve.cut.detail" = "Este período, dentro de %@: %@.";
+"saludDetalle.improve.cut.cta" = "Ver en Registros";
+"saludDetalle.improve.ai.label" = "Yala IA · Tu resumen de este mes";
+"saludDetalle.improve.ai.cta" = "Ver tu resumen";
+"saludDetalle.improve.ai.none.title" = "Tu resumen con IA";
+"saludDetalle.improve.ai.none.detail" = "En Estadísticas te dice en qué se fue la plata este mes.";
+"saludDetalle.improve.pro" = "Con Yala Pro, tu resumen con IA te dice en qué se fue la plata.";
+"saludDetalle.improve.pro.cta" = "Ver Pro";
+
+"saludDetalle.commit.lead" = "Te falta pagar %@ este mes y hoy tenés %@.";
+"saludDetalle.commit.leadExpensesOnly" = "Te falta pagar %@ este mes.";
+"saludDetalle.commit.enough" = "Te alcanza, y te quedarían %@.";
+"saludDetalle.commit.notEnough" = "Podrías mover algún pago a %@ o revisar si alguno ya no corresponde.";
+"saludDetalle.commit.toPay" = "Te falta pagar este mes";
+"saludDetalle.commit.moneyToday" = "Tu plata hoy";
+"saludDetalle.commit.short" = "Te faltarían %@ para cubrirlo todo.";
+"saludDetalle.commit.income" = "Además esperás %1$@ de %2$@ el %3$@.";
+"saludDetalle.commit.incomeMoreOne" = "Además esperás %1$@ de %2$@ el %3$@, y un ingreso más.";
+"saludDetalle.commit.incomeMoreOther" = "Además esperás %1$@ de %2$@ el %3$@, y %4$d ingresos más.";
+"saludDetalle.commit.overdueYesterday" = "%@ venció ayer. Si ya lo pagaste, marcalo como pagado.";
+"saludDetalle.commit.overdueDate" = "%@ venció el %@. Si ya lo pagaste, marcalo como pagado.";
+"saludDetalle.commit.negativeAccount" = "Tu cuenta %@ está en negativo. Podrías pasarle plata desde otra cuenta.";
+"saludDetalle.commit.pendingOne" = "1 pago pendiente hasta el %@";
+"saludDetalle.commit.pendingOther" = "%d pagos pendientes hasta el %@";
+"saludDetalle.commit.review" = "Revisar o mover pagos";
+"saludDetalle.commit.seeAll" = "Ver tus pagos planificados";
+"saludDetalle.commit.allPaid" = "Ya pagaste todo lo planificado de %@.";
+"saludDetalle.commit.next" = "Tu próximo pago es %@, el %@.";
+"saludDetalle.commit.empty.lead" = "Todavía no tenés pagos planificados. Con ellos te digo si tu plata de hoy (%@) alcanza hasta fin de mes.";
+"saludDetalle.commit.empty.leadNoMoney" = "Todavía no tenés pagos planificados. Con ellos te digo si te alcanza hasta fin de mes.";
+"saludDetalle.commit.recurring.title" = "Encontré cobros que se repiten";
+"saludDetalle.commit.recurring.one" = "%@ sale todos los meses en tus registros.";
+"saludDetalle.commit.recurring.other" = "%@ salen todos los meses en tus registros.";
+"saludDetalle.commit.recurring.cta" = "Revisarlos";
+"saludDetalle.commit.empty.cta" = "Agregar un pago";
+
 "saludDetalle.payments.today" = "Hoy";
 "saludDetalle.payments.tomorrow" = "Mañana";
 "saludDetalle.payments.inDays" = "En %d días";
 "saludDetalle.payments.overdue" = "Venció";
-"saludDetalle.payments.none" = "Ningún pago en las próximas dos semanas.";
-"saludDetalle.payments.empty.title" = "Todavía no tenés pagos planificados";
-"saludDetalle.payments.empty.detail" = "Alquiler, luz, suscripciones: Yala te recuerda cada uno antes de que venza.";
-"saludDetalle.payments.empty.cta" = "Agregar pago";
-"saludDetalle.payments.seeAll" = "Ver todos";
-"saludDetalle.payments.covered" = "Alcanza para tus pagos del mes.";
-"saludDetalle.payments.notCovered" = "No alcanza para tus pagos del mes.";
+
 "saludDetalle.streak.days.one" = "%d día seguido";
 "saludDetalle.streak.days.other" = "%d días seguidos";
-"saludDetalle.streak.today" = "Ya registraste hoy. ¡Sigue así!";
-"saludDetalle.streak.keep" = "Registrá algo hoy para no perderla.";
+"saludDetalle.streak.today" = "Ya registraste hoy. ¡Seguí así!";
+"saludDetalle.streak.keep" = "Todavía no registraste hoy. Si registrás algo antes de la medianoche, seguís con tu racha.";
 "saludDetalle.streak.start" = "Registrá un movimiento hoy para empezarla.";
 "saludDetalle.streak.cta" = "Registrar";
 "saludDetalle.streak.caption" = "Últimos %d días";
-"saludDetalle.streak.dayRecorded" = "Con registros";
-"saludDetalle.streak.dayEmpty" = "Sin registros";
-"saludDetalle.improve.crearPresupuesto" = "Creá tu primer presupuesto";
-"saludDetalle.improve.registrarHoy" = "Registrá un movimiento hoy";
-"saludDetalle.improve.agregarPagos" = "Agregá tus pagos fijos";
-"saludDetalle.improve.revisarPresupuestos" = "Revisá los presupuestos que se pasan";
-"saludDetalle.improve.revisarRitmo" = "Registrá más seguido";
-"saludDetalle.improve.revisarPagos" = "Revisá tus pagos del mes";
-"saludDetalle.improve.weight" = "%@ pesa el %d %% de tu nota";
-"saludDetalle.loading" = "Cargando…";
-"saludDetalle.alert.reachedLimit.title" = "%@ llegó a su límite";
-"saludDetalle.alert.atLimitMany.title" = "%d presupuestos cerca del límite";

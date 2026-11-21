@@ -2,61 +2,106 @@
   SaludFinancieraDetalle.strings
   Yala
 
-  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
-  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+  Presupuestos, Compromisos y Ritmo, cada una con su estado, lo suyo y qué hacer. Tabla propia, leída con el idioma de la
+  app (`L10n.SaludFinancieraDetalle`).
 */
 
-"saludDetalle.section.alerts" = "To review";
-"saludDetalle.section.budgets" = "Your budgets";
-"saludDetalle.section.payments" = "Upcoming payments";
-"saludDetalle.section.streak" = "Your streak";
-"saludDetalle.section.improve" = "To raise your score";
+"saludDetalle.loading" = "Loading…";
+"saludDetalle.section.budgets" = "Budgets";
+"saludDetalle.section.commitments" = "Commitments";
+"saludDetalle.section.rhythm" = "Rhythm";
 "saludDetalle.section.howItWorks" = "How is it calculated?";
-"saludDetalle.alerts.none.title" = "Nothing to review today";
-"saludDetalle.alerts.none.detail" = "Your budgets, payments and accounts are in order.";
-"saludDetalle.alert.overBudget.title" = "You went over on %@";
-"saludDetalle.alert.overBudget.detail" = "Tap to see where it went.";
-"saludDetalle.alert.atLimit.title" = "%@ is close to its limit";
-"saludDetalle.alert.atLimit.detail" = "You’re at %d %% of what you set.";
-"saludDetalle.alert.negativeAccount.title" = "%@ is negative";
-"saludDetalle.alert.negativeAccount.detail" = "Check its balance or log what’s missing.";
-"saludDetalle.alert.overdue.title" = "%@ is overdue";
-"saludDetalle.alert.overdue.detail" = "Mark it as paid or skip it.";
-"saludDetalle.alert.notCovered.title" = "This month’s payments aren’t covered";
-"saludDetalle.alert.notCovered.detail" = "With what you have and what’s left, at month end you’d have:";
-"saludDetalle.budgets.empty.title" = "No budgets yet";
-"saludDetalle.budgets.empty.detail" = "Set a limit on what you spend most on and Yala warns you before you go over.";
-"saludDetalle.budgets.empty.cta" = "Create budget";
+"saludDetalle.section.weight" = "Makes up %d %% of your score";
+"saludDetalle.status.good" = "Good";
+"saludDetalle.status.review" = "Worth a look";
+"saludDetalle.status.noData" = "No data";
+
+"saludDetalle.capsule.createOne" = "Create one";
+"saludDetalle.capsule.since" = "Since %@";
+"saludDetalle.capsule.addPayments" = "Add payments";
+"saludDetalle.capsule.recordToday" = "Log today";
+"saludDetalle.capsule.noData" = "No data";
+"saludDetalle.capsule.hint" = "Jump to its section";
+
+"saludDetalle.advice.notEnough" = "Your money today doesn’t cover everything you planned to pay through %@. Below are the payments you could move.";
+"saludDetalle.advice.overBudget" = "%@ went over this period. Below is how to get back to your limit.";
+"saludDetalle.advice.overMany" = "%d budgets went over this period. Below is how to get back to your limit.";
+"saludDetalle.advice.overdue" = "%@ is past due. If you already paid it, mark it as paid.";
+"saludDetalle.advice.createBudget" = "With a budget your score would be complete: it’s the part that counts most.";
+"saludDetalle.advice.budgetStarts" = "Your budget starts counting toward your score on %@.";
+"saludDetalle.advice.addPayments" = "Add your payments to see whether the month adds up.";
+"saludDetalle.advice.rhythm" = "What moves your score most right now is logging more often.";
+"saludDetalle.advice.allGood" = "Your budgets are within their limits and what’s left to pay this month is covered.";
+
+"saludDetalle.budgets.oneWithin" = "%@ is within its limit.";
+"saludDetalle.budgets.allWithin" = "Your %d budgets are within their limits.";
+"saludDetalle.budgets.allWithinLeft" = "Your %d budgets are within their limits. Together you have %@ left.";
+"saludDetalle.budgets.onlyOver" = "%@ went over by %@.";
+"saludDetalle.budgets.overOneOther" = "%@ went over by %@. Your other budget is within its limit.";
+"saludDetalle.budgets.overOthers" = "%@ went over by %@. Your other %d budgets are within their limits.";
+"saludDetalle.budgets.manyOver" = "%d budgets went over. Below is how to get back to your limit.";
+"saludDetalle.budgets.startsLater" = "%@ starts counting toward your score on %@. You can already see how it’s going.";
 "saludDetalle.budgets.seeAll" = "See all (%d)";
-"saludDetalle.budgets.left" = "Left";
-"saludDetalle.budgets.over" = "Over by";
+"saludDetalle.budgets.left" = "You have left";
+"saludDetalle.budgets.over" = "You went over by";
+"saludDetalle.budgets.empty.lead" = "You don’t have any budgets yet. This part makes up %d %% of your score and doesn’t count today.";
+"saludDetalle.budgets.empty.tipTitle" = "Where to start";
+"saludDetalle.budgets.empty.tip" = "%@ is where you spend the most: %@ a month on average. A limit there warns you before you go over.";
+"saludDetalle.budgets.empty.cta" = "Create a budget";
+
+"saludDetalle.improve.title" = "To improve this part";
+"saludDetalle.improve.nothing" = "Nothing to adjust for now.";
+"saludDetalle.improve.adjust.title" = "Set the limit to match reality";
+"saludDetalle.improve.adjust.detail" = "%1$@ went over in %2$d of the last %3$d periods, by %4$@ on average. If that’s your normal spending, a limit of %5$@ will warn you in time.";
+"saludDetalle.improve.adjust.cta" = "Adjust limit";
+"saludDetalle.improve.cut.title" = "Or cut back where it weighs most";
+"saludDetalle.improve.cut.titleAlone" = "Cut back where it weighs most";
+"saludDetalle.improve.cut.detail" = "This period, within %@: %@.";
+"saludDetalle.improve.cut.cta" = "See in Records";
+"saludDetalle.improve.ai.label" = "Yala AI · Your summary for this month";
+"saludDetalle.improve.ai.cta" = "See your summary";
+"saludDetalle.improve.ai.none.title" = "Your summary with AI";
+"saludDetalle.improve.ai.none.detail" = "In Statistics it tells you where your spending went this month.";
+"saludDetalle.improve.pro" = "With Yala Pro, your AI summary tells you where your spending went.";
+"saludDetalle.improve.pro.cta" = "See Pro";
+
+"saludDetalle.commit.lead" = "You still have %@ to pay this month and today you have %@.";
+"saludDetalle.commit.leadExpensesOnly" = "You still have %@ to pay this month.";
+"saludDetalle.commit.enough" = "You’re covered, with %@ left over.";
+"saludDetalle.commit.notEnough" = "You could move a payment to %@ or check whether one no longer applies.";
+"saludDetalle.commit.toPay" = "Still to pay this month";
+"saludDetalle.commit.moneyToday" = "Your money today";
+"saludDetalle.commit.short" = "You’d be %@ short of covering everything.";
+"saludDetalle.commit.income" = "You also expect %1$@ from %2$@ on %3$@.";
+"saludDetalle.commit.incomeMoreOne" = "You also expect %1$@ from %2$@ on %3$@, and one more income.";
+"saludDetalle.commit.incomeMoreOther" = "You also expect %1$@ from %2$@ on %3$@, and %4$d more incomes.";
+"saludDetalle.commit.overdueYesterday" = "%@ was due yesterday. If you already paid it, mark it as paid.";
+"saludDetalle.commit.overdueDate" = "%@ was due on %@. If you already paid it, mark it as paid.";
+"saludDetalle.commit.negativeAccount" = "Your %@ account is in the red. You could move money into it from another account.";
+"saludDetalle.commit.pendingOne" = "1 pending payment through %@";
+"saludDetalle.commit.pendingOther" = "%d pending payments through %@";
+"saludDetalle.commit.review" = "Review or move payments";
+"saludDetalle.commit.seeAll" = "See your scheduled payments";
+"saludDetalle.commit.allPaid" = "You’ve paid everything scheduled for %@.";
+"saludDetalle.commit.next" = "Your next payment is %@, on %@.";
+"saludDetalle.commit.empty.lead" = "You don’t have any scheduled payments yet. With them I can tell you whether your money today (%@) lasts until the end of the month.";
+"saludDetalle.commit.empty.leadNoMoney" = "You don’t have any scheduled payments yet. With them I can tell you whether you’ll make it to the end of the month.";
+"saludDetalle.commit.recurring.title" = "I found charges that repeat";
+"saludDetalle.commit.recurring.one" = "%@ comes out every month in your records.";
+"saludDetalle.commit.recurring.other" = "%@ come out every month in your records.";
+"saludDetalle.commit.recurring.cta" = "Review them";
+"saludDetalle.commit.empty.cta" = "Add a payment";
+
 "saludDetalle.payments.today" = "Today";
 "saludDetalle.payments.tomorrow" = "Tomorrow";
 "saludDetalle.payments.inDays" = "In %d days";
 "saludDetalle.payments.overdue" = "Overdue";
-"saludDetalle.payments.none" = "No payments in the next two weeks.";
-"saludDetalle.payments.empty.title" = "No planned payments yet";
-"saludDetalle.payments.empty.detail" = "Rent, power, subscriptions: Yala reminds you of each one before it’s due.";
-"saludDetalle.payments.empty.cta" = "Add payment";
-"saludDetalle.payments.seeAll" = "See all";
-"saludDetalle.payments.covered" = "Enough for this month’s payments.";
-"saludDetalle.payments.notCovered" = "Not enough for this month’s payments.";
+
 "saludDetalle.streak.days.one" = "%d day in a row";
 "saludDetalle.streak.days.other" = "%d days in a row";
 "saludDetalle.streak.today" = "You’ve logged today. Keep it up!";
-"saludDetalle.streak.keep" = "Log something today to keep it going.";
+"saludDetalle.streak.keep" = "You haven’t logged yet today. Log something before midnight and your streak continues.";
 "saludDetalle.streak.start" = "Log a transaction today to start one.";
 "saludDetalle.streak.cta" = "Log";
 "saludDetalle.streak.caption" = "Last %d days";
-"saludDetalle.streak.dayRecorded" = "Logged";
-"saludDetalle.streak.dayEmpty" = "Nothing logged";
-"saludDetalle.improve.crearPresupuesto" = "Create your first budget";
-"saludDetalle.improve.registrarHoy" = "Log a transaction today";
-"saludDetalle.improve.agregarPagos" = "Add your regular payments";
-"saludDetalle.improve.revisarPresupuestos" = "Check the budgets that went over";
-"saludDetalle.improve.revisarRitmo" = "Log more often";
-"saludDetalle.improve.revisarPagos" = "Check this month’s payments";
-"saludDetalle.improve.weight" = "%@ is %d %% of your score";
-"saludDetalle.loading" = "Loading…";
-"saludDetalle.alert.reachedLimit.title" = "%@ hit its limit";
-"saludDetalle.alert.atLimitMany.title" = "%d budgets close to their limit";

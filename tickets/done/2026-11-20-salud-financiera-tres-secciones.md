@@ -1,6 +1,6 @@
 ---
 id: 2026-11-20-salud-financiera-tres-secciones
-status: backlog
+status: done
 priority: medium
 area: "panel, salud-financiera"
 created: 2026-11-20
@@ -107,3 +107,27 @@ cada estado, en el artifact (español neutro, tuteo).
   alcanza» sin cifra negativa; acción «Revisar o mover pagos» abre Pagos planificados. Capturas de los seis estados con
   el seam de capturas que ya existe (`SaludFinancieraDetalleCapturasUITests`).
 - Device-QA en el iPhone 14: el caso de la captura de Jürgen con sus datos dev.
+
+## Resultado (20-nov-2026, sesión nocturna)
+
+Construida la opción A con las siete respuestas recomendadas (decisión de Jürgen del 20-nov, 17:02).
+
+- **Hoja**: la nota con su titular, una frase de consejero (`SaludFinancieraDetalleLogica.consejo`) y las tres cápsulas
+  como índice (tocar una baja a su sección; sin nota dicen por qué: «Crea uno», «Desde el 1 dic», «Agrega pagos»).
+  Secciones Presupuestos, Compromisos y Ritmo con «Pesa N % de tu nota» y su estado (Bien, Para revisar, Sin datos);
+  «¿Cómo se calcula?» plegado al final. Se fueron «Para revisar» y «Para subir tu nota».
+- **Presupuestos**: barras con «Te pasaste por» en ámbar; «Para mejorar esta parte» con la tarjeta de IA guardada (solo
+  Pro, sin llamada de red: `StatsAIAutoRefreshStore`, `.summary`, guardado este mes, solo `attention` con consejo),
+  «Ajusta el límite a lo real» (3 de 4 períodos pasados → promedio redondeado hacia arriba), «Recorta donde más pesa»
+  (top 3 dentro del presupuesto → Registros filtrado) y, sin Pro, la línea discreta hacia Pro.
+- **Compromisos**: «Tu dinero hoy» (`PanelMoneyScopeLogic`, sin tarjetas) frente a «Te falta pagar este mes»
+  (`FinancialScoreCalculator.pendingOccurrences`, la misma cuenta que la nota), dos barras a la misma escala, «Te
+  faltarían S/ X» en ámbar, pagos vencidos primero y sin rojo, ingresos del mes nombrados sin sumarlos, la lista del mes
+  y «Revisar o mover pagos». Sin pagos: «Encontré cobros que se repiten» (`RecurringProposalsSource`) y «Agregar un pago».
+- **La nota** (pregunta 3): la cobertura de Compromisos usa las cuentas de «Tu dinero hoy» (`coverageAccounts`), así que
+  una tarjeta con deuda alta ya no la hunde.
+
+Fuera, con ticket: el límite propuesto no queda escrito en el editor
+(`2026-11-20-editor-presupuesto-limite-propuesto`), «Lo que te falta pagar» de Estadísticas cuenta ingresos y saltados
+(`2026-11-20-lo-que-te-falta-pagar-cuenta-ingresos-y-saltados`) y la nota no se recalcula al cambiar qué cuentas son
+«Tu dinero hoy» (`2026-11-20-nota-no-recalcula-al-cambiar-tu-dinero-hoy`).
