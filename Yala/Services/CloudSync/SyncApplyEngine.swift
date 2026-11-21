@@ -579,11 +579,18 @@ extension CloudSyncEngine {
             return
         }
         guard !danglers.isEmpty else { return }
+        // YALA-IOS-13: lo que el bucle va a buscar de dos en dos por dangler se lee ANTES por lote; sin esto cada dangler
+        // recorría tablas enteras y el pase congelaba la app al final de un ciclo. Solo dentro de este pase.
+        EntityApplyMap.pageLookups = EntityApplyMap.prepareDanglerLookups(for: danglers, context: context)
+        defer { EntityApplyMap.pageLookups = nil }
+        // Y las refs de movimientos se asignan en bloque al final: una a una, cada asignación reescribe la lista inversa
+        // de la categoría o la cuenta, que con miles de movimientos cuesta milisegundos por fila.
+        let batch = DanglerRelationshipBatch()
         var unreadable = 0
         do {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for dangler in danglers {
-                    switch EntityApplyMap.reresolveDangler(dangler, context: context) {
+                    switch EntityApplyMap.reresolveDangler(dangler, context: context, batch: batch) {
                     case .resolved, .rowGone:
                         context.delete(dangler)
                     case .targetMissing:
@@ -594,6 +601,7 @@ extension CloudSyncEngine {
                         unreadable += 1
                     }
                 }
+                batch.flush()
             }
             if unreadable > 0 {
                 CloudSyncBreadcrumb.danglersUnreadable(count: unreadable)
