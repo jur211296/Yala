@@ -1407,6 +1407,10 @@ final class AppBootstrapper {
         if UITestHooks.seedBudgetStates {
             DevSeedBudgetStates.create(in: context)
         }
+        // Un presupuesto pasado en 3 de los 4 meses anteriores: «Ajusta el límite a lo real» en la hoja de Salud.
+        if UITestHooks.seedBudgetOverLimitHistory {
+            DevSeedBudgetOverLimitHistory.create(in: context)
+        }
         // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
         if UITestHooks.seedUncategorizedExpense {
             DevSeedUncategorizedExpense.create(in: context)
