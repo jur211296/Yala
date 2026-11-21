@@ -20,6 +20,8 @@
 # del Llavero (servicio `sentry-yala`, cuenta `jur`). NUNCA se escribe en el repo ni se pasa por
 # argumento (se vería en `ps`): viaja por el entorno de sentry-cli.
 #
+# Además asocia a la release los commits del git local (`set-commits --local`), si hay archivado.
+#
 # Requiere sentry-cli (`brew install getsentry/tools/sentry-cli`).
 #
 # Códigos de salida: 0 = subido (o saltado en modo post-action) · 1 = falló a mano · 2 = uso.
@@ -83,4 +85,37 @@ if sentry-cli debug-files upload \
   echo "✅ dSYM subidos a Sentry."
 else
   fallar "sentry-cli devolvió error (mira arriba)."
+fi
+
+# Commits de la release (desde el 2026-11-21). Solo con un archivado: de él salen el bundle id, la versión y el build,
+# que forman el nombre con el que el SDK etiqueta los avisos (`com.jurgenschmidt.yala@2.3+5`). `--local` lee el git de
+# este repo y no pide ninguna credencial nueva. Para el «commit sospechoso» de cada aviso Sentry necesita además el
+# repositorio de GitHub conectado en su integración; sin ella la release lista los commits y nada más.
+# Un fallo aquí avisa y no deshace la subida de los dSYM.
+archivo="${ARCHIVE_PATH:-}"
+if [[ -z "$archivo" && "$modo" == "manual" && "$1" == *.xcarchive ]]; then
+  archivo="${1%/}"
+fi
+plist="$archivo/Products/Applications/Yala.app/Info.plist"
+if [[ -n "$archivo" && -f "$plist" ]]; then
+  bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null)"
+  version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null)"
+  build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null)"
+  if [[ -n "$bundle" && -n "$version" && -n "$build" ]]; then
+    release="$bundle@$version+$build"
+    repo="$(cd "$(dirname "$0")/.." && pwd)"
+    echo "🔗 Asociando commits a la release $release"
+    if (cd "$repo" && sentry-cli releases --org "$SENTRY_ORG_SLUG" --project "$SENTRY_PROJECT_SLUG" \
+          new "$release" >/dev/null 2>&1; \
+        sentry-cli releases --org "$SENTRY_ORG_SLUG" --project "$SENTRY_PROJECT_SLUG" \
+          set-commits "$release" --local --initial-depth 20); then
+      echo "✅ Commits asociados a $release."
+    else
+      echo "⚠️  Commits NO asociados a $release (mira arriba). Los dSYM sí se subieron." >&2
+    fi
+  else
+    echo "⚠️  Sin bundle id, versión o build en $plist: no se asocian commits." >&2
+  fi
+else
+  echo "ℹ️  Sin archivado (.xcarchive): no se asocian commits a ninguna release."
 fi

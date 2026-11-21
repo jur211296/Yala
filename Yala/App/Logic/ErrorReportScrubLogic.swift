@@ -27,8 +27,10 @@ nonisolated enum ErrorReportScrubLogic {
         (#"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}"#, "[email]"),
         // Un símbolo o código de divisa pegado a una cifra («S/ 12», «$9», «PEN 120»).
         (#"(?:[$€£¥₹]|S/\.?|\b[A-Z]{3}\s?)\s?-?\d[\d.,]*"#, "[monto]"),
-        // Una cifra con decimales («12.50», «1,234.5»).
-        (#"-?\b\d{1,3}(?:[.,]\d{3})*[.,]\d{1,2}\b"#, "[monto]"),
+        // Una cifra con decimales («12.50», «1,234.5»), salvo la duración de un cuelgue: el SDK titula los App Hang
+        // «App hanging between 2.0 and 3.0 seconds.» y esos segundos son justo lo que se quiere leer. Solo se libra
+        // la cifra a la que siguen «seconds» o «and <cifra> seconds»; un importe suelto se sigue tapando.
+        (#"-?\b\d{1,3}(?:[.,]\d{3})*[.,]\d{1,2}\b(?!\s+(?:and\s+\d+(?:\.\d+)?\s+)?seconds?\b)"#, "[monto]"),
     ]
 
     private static let expressions: [(NSRegularExpression, String)] = replacements.compactMap { item in

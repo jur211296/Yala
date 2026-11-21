@@ -32,6 +32,24 @@ struct ErrorReportScrubLogicTests {
         #expect(ErrorReportScrubLogic.scrubText(text) == text)
     }
 
+    @Test("deja ver los segundos de un cuelgue")
+    func keepsHangDurations() {
+        let title = "App hanging between 2.0 and 3.0 seconds."
+        #expect(ErrorReportScrubLogic.scrubText(title) == title)
+        #expect(ErrorReportScrubLogic.scrubText("App hanging for 12.5 seconds.") == "App hanging for 12.5 seconds.")
+        #expect(ErrorReportScrubLogic.scrubText("App hanging for 1 second") == "App hanging for 1 second")
+    }
+
+    @Test("un importe junto a la duración de un cuelgue se sigue tapando")
+    func stillScrubsAmountsNextToDurations() {
+        let out = ErrorReportScrubLogic.scrubText("pagó 123.45 y la app colgó between 2.0 and 3.0 seconds; S/ 9.90 seconds")
+        #expect(!out.contains("123.45"), "se coló el importe en «\(out)»")
+        #expect(!out.contains("9.90"), "se coló el importe con símbolo en «\(out)»")
+        #expect(out.contains("between 2.0 and 3.0 seconds"))
+        // Una cifra seguida de otra palabra no es una duración.
+        #expect(ErrorReportScrubLogic.scrubText("between 2.0 and 3.0 soles") == "between [monto] and [monto] soles")
+    }
+
     @Test("la URL pierde query y fragmento")
     func stripsQuery() {
         #expect(ErrorReportScrubLogic.stripQuery("https://gw.example/rates/live?base=PEN#x") == "https://gw.example/rates/live")
