@@ -95,7 +95,7 @@ struct ApproximateMarkWiringTests {
     func trendsHeroPicksTheMetricMark() throws {
         let src = try Self.source("Yala/App/Views/Statistics/TrendsTabView.swift")
 
-        #expect(src.contains("isEstimate: heroKPIIsApproximate(for: summary)"), """
+        #expect(src.contains("isApproximate: heroKPIIsApproximate(for: $0)"), """
             Con `summary.amountsAreApproximate` a secas, un gasto mal convertido le pone «≈» al total
             de INGRESOS, donde no hubo ninguna conversión.
             """)
@@ -110,10 +110,13 @@ struct ApproximateMarkWiringTests {
         let src = try Self.source("Yala/App/Views/Statistics/InsightsTabView.swift")
         // Desde el 2026-10-26 la cifra es el gasto en «Solo gastos» (auditoría, decisión A): la marca sigue al número
         // en los dos modos, emparejada con él.
-        #expect(src.contains("value: expensesOnly ? summary.totalExpense : summary.netBalance"))
-        #expect(src.contains("isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate"), """
-            Pinta `summary.netBalance`, que agrega los dos lados (o el gasto en «Solo gastos»).
-            """)
+        // Desde el 20-nov-2026 la cifra de siempre es «Tu dinero hoy» (`StatsHeroView`), con la marca de su cálculo; en
+        // «Solo gastos», el gasto con la suya.
+        #expect(src.contains("StatsMoneyTodayLogic.Figure(value: summary.totalExpense, isApproximate: summary.expenseAmountsAreApproximate)"))
+        let hero = try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(hero.contains("isEstimate: figure.isApproximate"), "La cifra del hero no lleva su marca.")
+        let money = try Self.source("Yala/App/Logic/StatsMoneyTodayLogic.swift")
+        #expect(money.contains("isApproximate: money.amountsAreApproximate"), "«Tu dinero hoy» se declara exacto.")
     }
 
     /// Y el productor del glifo, que es el eslabón que ningún test de la app ejercitaba: vaciar el
@@ -264,10 +267,13 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
     @Test("El KPI de Distribución pasa la marca del régimen vivo")
     func distributionKPIPassesTheMark() throws {
+        // Desde el 20-nov-2026 el hero de Distribución enseña «Tu dinero hoy» por el hero compartido, con su marca; la suma
+        // de la tarta (fuera del modo saldo) no acumula calidad de conversión.
         let view = try Self.source("Yala/App/Views/Statistics/CategoriesTabView.swift")
-        #expect(view.contains("isEstimate: isBalanceMode ? (balanceKPI?.isApproximate ?? false) : false"), """
-            La marca sigue al número, que cambia de fuente con el modo.
-            """)
+        #expect(view.contains("isApproximate: StatsMoneyTodayLogic.sideMark("),
+                "La suma de la tarta perdió la marca de su flecha cuando dicen el mismo importe.")
+        let hero = try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(hero.contains("isEstimate: figure.isApproximate"))
 
         let calc = try Self.source("Yala/App/Logic/Calculators/BalanceKPICalculator.swift")
         #expect(calc.contains("isApproximate: info.amountsAreApproximate"), """
@@ -280,34 +286,40 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     func recordsPassesTheMark() throws {
         let src = try Self.code("Yala/App/Views/Statistics/RecordsTabView.swift")
         // La cifra grande es el gasto en «Solo gastos» (2026-10-26): la marca sigue al número, emparejada con él.
-        #expect(src.contains("value: expensesOnly ? recordsSummary.expense : recordsSummary.balance"))
-        #expect(src.contains("isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate"))
-        #expect(src.contains("isEstimate: recordsSummary.incomeIsApproximate"))
-        #expect(src.contains("isEstimate: recordsSummary.expenseIsApproximate"))
+        // Desde el 20-nov-2026 por el hero compartido: un lado con su marca, y las flechas con la suya.
+        #expect(src.contains("case .incomePeriod: .init(value: recordsSummary.income, isApproximate: recordsSummary.incomeIsApproximate)"))
+        #expect(src.contains("case .expensePeriod: .init(value: recordsSummary.expense, isApproximate: recordsSummary.expenseIsApproximate)"))
+        #expect(src.contains("incomeIsApproximate: recordsSummary.incomeIsApproximate"))
+        #expect(src.contains("expenseIsApproximate: recordsSummary.expenseIsApproximate"))
 
-        // Los dos chips van dentro de un `Button` cuyo `accessibilityLabel` TAPA la etiqueta que
+        // Las flechas de Registros van dentro de un `Button` cuyo `accessibilityLabel` TAPA la etiqueta que
         // `AmountText` se pone a sí mismo. Sin el `accessibilityValue`, VoiceOver no lee el número.
-        let value = src.components(separatedBy: ".accessibilityValue(appPreferences.currency(").count - 1
-        #expect(value == 2, "se esperaban 2 y hay \(value)")
+        let hero = try Self.code("Yala/App/Views/Statistics/StatsHeroView.swift")
+        let value = hero.components(separatedBy: ".accessibilityValue(spoken)").count - 1
+        #expect(value == 1, "el botón de Registros; se esperaba 1 y hay \(value)")
+        // Fuera del botón, la cifra dice su lado y su importe con la marca en la etiqueta.
+        #expect(hero.contains(".accessibilityLabel(\"\\(label), \\(spoken)\")"))
+        #expect(hero.contains("let spoken = appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate)"))
     }
 
     @Test("Estadísticas pasa la marca en los chips y en el promedio diario")
     func insightsSecondarySurfacesPassTheMark() throws {
         let src = try Self.code("Yala/App/Views/Statistics/InsightsTabView.swift")
-        let income = src.components(separatedBy: "isEstimate: summary.incomeAmountsAreApproximate").count - 1
+        // Los chips de ingresos y gastos los pinta el hero compartido desde el resumen (`StatsHeroFlow.init`).
+        let hero = try Self.code("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(hero.contains("incomeIsApproximate: summary.incomeAmountsAreApproximate"))
+        #expect(hero.contains("expenseIsApproximate: summary.expenseAmountsAreApproximate"))
+        #expect(src.contains("StatsHeroFlow(summary)"))
         let expense = src.components(separatedBy: "isEstimate: summary.expenseAmountsAreApproximate").count - 1
-        #expect(income == 1, "el chip de ingresos; hay \(income)")
-        #expect(expense == 2, """
-            El chip de gastos y el promedio diario, que es `totalExpense` dividido entre un entero
-            exacto. Hay \(expense).
+        #expect(expense == 1, """
+            El promedio diario, que es `totalExpense` dividido entre un entero exacto. Hay \(expense).
             """)
     }
 
     @Test("Tendencias marca también sus chips, y el hero del Panel ya no tiene")
     func heroChipsPassTheMark() throws {
         let trends = try Self.source("Yala/App/Views/Statistics/TrendsTabView.swift")
-        #expect(trends.contains("isEstimate: summary.incomeAmountsAreApproximate"))
-        #expect(trends.contains("isEstimate: summary.expenseAmountsAreApproximate"))
+        #expect(trends.contains("flow: summary.map { StatsHeroFlow($0) }"), "Tendencias no pasa ingresos y gastos al hero.")
 
         // El hero del Panel ya no tiene chips (2026-11-16): el gasto del período solo sale en «Solo gastos», con la marca
         // del gasto en la cifra y en lo que oye VoiceOver. Es el MISMO número en los dos sitios.

@@ -111,25 +111,10 @@ struct CategoriesTabView: View {
     @State private var contentMode: DistributionContentMode = .details
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
-    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-    @State private var heroInfo: HeroInfoRequest?
 
     /// Total agregado del período (cache de `categorySpending.reduce`).
     /// Se actualiza en `calculateData()` para evitar O(N) por render del hero.
     @State private var totalAmount: Double = 0
-
-    /// Saldo del período con la MISMA semántica que el KPI de Balance del Panel
-    /// (stock vivo al TC actual, o saldo histórico si el período está cerrado).
-    /// Solo alimenta el hero cuando `isBalanceMode`; en Ingresos/Gastos el hero
-    /// sigue mostrando el flujo del período (`totalAmount`).
-    ///
-    /// **Opcional a propósito.** `nil` = todavía no se ha calculado, y hay que
-    /// distinguirlo de un saldo de 0: la vista se destruye al cambiar de pestaña
-    /// (`DetailContainerView` es un `switch` en un ViewBuilder), así que el body
-    /// se evalúa una vez antes de `onAppear`. Con un `Double` a 0 el hero pintaba
-    /// «0» y luego rodaba los dígitos hasta el valor real por el
-    /// `contentTransition(.numericText())`.
-    @State private var balanceKPI: BalanceKPICalculator.Result?
 
     /// Métrica Balance, derivada con la MISMA regla que el Panel
     /// (`PanelViewModel.enforceTrendLock`): sin chips de naturaleza y sin el modo
@@ -369,101 +354,44 @@ struct CategoriesTabView: View {
         return (start, end)
     }
 
-    // MARK: - Hero Summary (el del Panel: `HeroHeader`, compartido con las otras pestañas)
+    // MARK: - Hero Summary (el compartido de Estadísticas: `StatsHeroView`)
     //
     // Uno solo para todas las subvistas de Distribución —el carrusel categoría / subcategoría / etiquetas y el modo
     // Gráficas / Detalle—: va encima de las dos ramas de `populatedScrollContent`, y ninguna lo sustituye ni lo oculta.
+    // Desde el 20-nov-2026 es el mismo que el de las otras pestañas (Jürgen: «igualarlo al resto, con sus flechas de
+    // ingresos y gastos y todo»): «Tu dinero hoy» y debajo ingresos y gastos del período, los del resumen de Resumen.
 
-    @ViewBuilder
     private var heroSummary: some View {
-        // El subtítulo describe el pie (categorías/subcategorías/etiquetas), así
-        // que sigue atado al flujo del período aunque el monto pase a ser saldo.
+        // Fuera de `isBalanceMode` (filtro de categoría, «Solo gastos», un chip) la cifra es la suma de la tarta.
         let hasRecords = totalAmount > 0
-        // En Balance NO vale `> 0`: un saldo negativo o de cero es un dato válido y
-        // condicionarlo escondería el hero justo cuando el usuario está en rojo. Pero
-        // tampoco vale "siempre": sin movimientos en el período el KPI es 0 por
-        // construcción —igual en el Panel— y pintarlo le diría "0" a alguien que
-        // tiene saldo, solo por abrir un mes vacío. Se muestra cuando hay algo que
-        // enseñar, que es lo que el Panel decide con su propio `hasNoTrendData`.
-        let showsAmount = isBalanceMode ? (balanceKPI?.hasDataInPeriod ?? false) : hasRecords
-
-        // El hero claro (2026-11-16): la cifra pegada al rótulo, con su «?», y la píldora del período a su lado.
-        HeroClaroHeader {
-            // Qué es la cifra. NO es fijo: fuera de `isBalanceMode` este hero
-            // vuelve al flujo del período (decisión del owner 2026-08-26), así
-            // que un rótulo fijo "Saldo de cuentas" mentiría en esos estados.
-            if showsAmount {
-                let caption = StatsHeroCaptionLogic.distribution(
-                    isBalanceMode: isBalanceMode,
-                    natures: viewModel.selectedTransactionNatures
-                )
-                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
-                HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                    .accessibilityIdentifier("stats_hero_caption")
-                HeroInfoButton(identifier: "stats_hero_info") {
-                    heroInfo = HeroInfoRequest(
-                        topic: HeroClaroLogic.topic(for: caption),
-                        figureLabel: caption.text(isClosed: isClosed),
-                        isClosedPeriod: isClosed
-                    )
-                }
-            }
-        } period: {
+        let summary = insightsViewModel.insightData?.periodSummary
+        let caption = StatsHeroCaptionLogic.distribution(
+            isBalanceMode: isBalanceMode,
+            natures: viewModel.selectedTransactionNatures
+        )
+        return StatsHeroView(
+            caption: caption,
+            // La suma de las tajadas (`TopSpendingCategoriesCalculator`), que no acumula calidad de conversión
+            // (`fx-category-totals-unmarked`). Cuando es el MISMO importe que la flecha de su lado, lleva su marca: si no,
+            // la misma cifra salía con «≈» en la flecha y sin él arriba (revisor del 20-nov-2026).
+            sideFigure: hasRecords
+                ? StatsMoneyTodayLogic.Figure(
+                    value: totalAmount,
+                    isApproximate: StatsMoneyTodayLogic.sideMark(
+                        caption: caption, shown: totalAmount, flow: summary.map { StatsHeroFlow($0) }))
+                : nil,
+            flow: summary.map { StatsHeroFlow($0) },
+            // En «Solo gastos», la variación sale del mismo total anterior que enseña la tarjeta de la tarta.
+            expensesOnlyVariation: sessionState.isExpensesOnlyMode && hasRecords
+                ? .some(previousCategoryTotal.flatMap {
+                    PreviousPeriodHelper.calculateVariation(currentAmount: totalAmount, previousAmount: $0)
+                })
+                : nil,
+            money: StatsHeroMoneySource(accounts: accounts, transactions: allTransactions, dataGeneration: dataGeneration),
+            currencyCode: defaultCurrencyCode,
+            verticalPadding: summaryVerticalPadding
+        ) {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
-        } figure: {
-            if showsAmount {
-                AmountText(
-                    value: isBalanceMode ? (balanceKPI?.value ?? 0) : totalAmount,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    // La marca sigue al número, que cambia de fuente con el modo. Fuera de Balance
-                    // el hero es la suma de las tajadas del pie (`TopSpendingCategoriesCalculator`),
-                    // que no acumula calidad de conversión: `fx-category-totals-unmarked`.
-                    isEstimate: isBalanceMode ? (balanceKPI?.isApproximate ?? false) : false,
-                    animatesValue: true
-                )
-                // Lo lee el XCUITest que comprueba que la cifra sigue a un alta (`StatisticsHeroLikePanelUITests`).
-                .accessibilityIdentifier("stats_hero_amount")
-            }
-        } detail: {
-            if showsAmount {
-                // En «Solo gastos» la cabecera es la del Panel: cifra y su variación (decisión A de Jürgen del
-                // 2026-10-26). La variación sale del mismo total anterior que enseña la tarjeta de la tarta.
-                if sessionState.isExpensesOnlyMode {
-                    ExpensesOnlyHeroVariation(variation: previousCategoryTotal.flatMap {
-                        PreviousPeriodHelper.calculateVariation(currentAmount: totalAmount, previousAmount: $0)
-                    })
-                }
-            }
-
-            if hasRecords, let subtitle = heroDimensionalSubtitle() {
-                Text(subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
-        .heroVerticalPadding(summaryVerticalPadding)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
-    }
-
-    /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
-    private func heroDimensionalSubtitle() -> String? {
-        // El mismo recuento que la tarta le da a VoiceOver (`DistributionCountLogic`): categorías y subcategorías
-        // REALES con importe en el período. Ni «Sin categoría» ni «Sin subcategoría» ni las de importe cero.
-        let catCount = DistributionCountLogic.categoryCount(categorySpending)
-        let subCount = DistributionCountLogic.subcategoryCount(subcategorySpending)
-        let tagCount = tagSpending.count
-        let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
-        switch activeDims {
-        case 3: return L10n.Stats.Distribution.heroSubtitle3(catCount, subCount, tagCount)
-        case 2 where catCount > 0 && subCount > 0:
-            return L10n.Stats.Distribution.heroSubtitle2(catCount, subCount)
-        case 1 where catCount > 0:
-            return L10n.Stats.Distribution.heroSubtitle1(catCount)
-        default: return nil
         }
     }
 
@@ -1532,24 +1460,6 @@ struct CategoriesTabView: View {
         detailSource.adjustment = adjustment
         let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
         if newTotal != totalAmount { totalAmount = newTotal }
-
-        // KPI de Balance: el hero deja de mostrar el gasto del período y pasa a
-        // mostrar el mismo saldo que el Panel. Solo se calcula en modo Balance —
-        // en Ingresos/Gastos el hero sigue siendo flujo y esta pasada sobra.
-        //
-        // Coste medido (5.475 transacciones, 3 años): ~15 ms. NO corre por tecla: el
-        // buscador de esta pantalla escribe en un `@State` local de
-        // `RecordsFiltersView` y solo se vuelca al ViewModel al pulsar "Aplicar".
-        if isBalanceMode {
-            let newBalanceKPI = viewModel.balanceKPI(
-                accounts: accounts,
-                transactions: allTransactions,
-                allTags: allTags,
-                defaultCurrencyCode: defaultCurrencyCode,
-                adjustment: adjustment
-            )
-            if newBalanceKPI != balanceKPI { balanceKPI = newBalanceKPI }
-        }
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]

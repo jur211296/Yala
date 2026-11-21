@@ -4149,11 +4149,7 @@
 
 // MARK: - Stats Records polish
 
-"stats.records.motivationalOne" = "1 registro · Bom começo";
-"stats.records.motivationalMany %d" = "%d registros · Continue assim";
 
-"stats.insights.motivationalOne" = "1 registro · Bom começo";
-"stats.insights.motivationalMany %d" = "%d registros · Continue assim";
 "stats.insights.detailHeader" = "Seus números";
 "stats.insights.aiCardTitle" = "Resumo com IA";
 "stats.insights.aiCardSubtitle" = "Gerar com IA";
@@ -4172,14 +4168,7 @@
 "stats.trends.generateAI" = "Gerar com IA";
 "stats.trends.regenerate" = "Atualizar";
 "stats.trends.aiFootnote" = "Resumo com IA";
-"stats.trends.heroOnset" = "Seu primeiro período com Yala";
-"stats.trends.heroStable" = "Seu saldo se mantém estável";
-"stats.trends.heroVarUp %d %@" = "%d%% acima vs %@ · Continue assim";
-"stats.trends.heroVarDown %d %@" = "%d%% abaixo vs %@ · Força, passo a passo";
 // MARK: Distribution
-"stats.distribution.heroSubtitle1 %d" = "%d categorias";
-"stats.distribution.heroSubtitle2 %d %d" = "%d categorias · %d subcategorias";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorias · %d subcategorias · %d etiquetas";
 "stats.distribution.insightTitleFree %@" = "Seu %@ de relance";
 "stats.distribution.insightTitlePro" = "Distribuição do período";
 "stats.distribution.aiFootnote" = "Resumo com IA";
@@ -8906,10 +8895,7 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "Seu saldo hoje";
 "panel.hero.oweToday" = "Você deve hoje";
-"panel.hero.leftNow" = "Resta";
-"panel.hero.leftPast" = "Restou";
 "panel.hero.leftInMonth" = "Em %@ restou";
-"stats.hero.captionAccountsBalanceClosed" = "Seu saldo no fechamento";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Ainda sem nota: ela aparece quando duas das três partes tiverem dados.";
@@ -9979,18 +9965,12 @@
 "heroClaro.filtersNote" = "Se você tem filtros ativos, o valor conta só o que você vê.";
 "heroClaro.incomeBody" = "Tudo o que você registrou como receita: salário, vendas, recebimentos.";
 "heroClaro.expenseBody" = "Tudo o que você registrou como gasto. Um reembolso é descontado dos seus gastos.";
-"heroClaro.net.title" = "O que te resta";
-"heroClaro.net.body" = "É o que entrou menos o que saiu no período que você escolheu. Se for negativo, saiu mais do que entrou.";
-"heroClaro.net.notBalance" = "Não é o que você tem nas suas contas: isso é «Seu saldo hoje», no Painel.";
 "heroClaro.expense.title" = "O que você gastou";
 "heroClaro.expense.body" = "É a soma dos seus gastos no período que você escolheu. Um reembolso é descontado dos seus gastos.";
 "heroClaro.income.title" = "O que entrou";
 "heroClaro.income.body" = "É a soma das suas receitas no período que você escolheu.";
 "heroClaro.total.title" = "Receitas e gastos juntos";
 "heroClaro.total.body" = "Com receitas e gastos selecionados ao mesmo tempo, o valor soma os dois sem subtrair: é quanto dinheiro movimentou o que você filtrou.";
-"heroClaro.balance.title" = "Seu saldo";
-"heroClaro.balance.body" = "É o que há nas suas contas: todas, cartões incluídos, com o sinal. É o mesmo valor de «Seu saldo hoje» no Painel.";
-"heroClaro.balance.closedNote" = "Num período que já terminou, é o que você tinha no fechamento.";
 "heroClaro.cashFlowEnd.title" = "O que você teria no fim do mês";
 "heroClaro.cashFlowEnd.body" = "É seu saldo de hoje, mais o que falta entrar este mês, menos o que falta sair. Abaixo você vê cada parte e de onde vem a estimativa.";
 "heroClaro.cashFlowEnd.netNote" = "«Este mês restaria» é outra coisa: o que entra menos o que sai no mês inteiro, sem contar o que você já tinha.";

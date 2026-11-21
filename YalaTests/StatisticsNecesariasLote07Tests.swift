@@ -259,23 +259,12 @@ struct DistributionCountsAgreeTests {
     /// 26 de la revisión 2.3 (V1) dicen el total y las partes (`Estadisticas23GraficasVoiceOverTests`), así que no
     /// pueden contradecir a la cabecera.
     @Test func cabeceraYTartasUsanElMismoRecuento() throws {
+        // Desde el 20-nov-2026 el hero ya no dice el recuento («X categorías»): no hay cabecera que contradecir.
         let header = try Lote07Source.code("Yala/App/Views/Statistics/CategoriesTabView.swift")
-        #expect(header.contains("DistributionCountLogic.categoryCount(categorySpending)"))
-        #expect(header.contains("DistributionCountLogic.subcategoryCount(subcategorySpending)"))
+        #expect(!header.contains("heroSubtitle"))
         let pie = try Lote07Source.code("Yala/App/Views/Panel/CategoriesPieWidget.swift")
         #expect(!pie.contains("categoriesCount("))
         let subPie = try Lote07Source.code("Yala/App/Views/Panel/SubcategoriesPieWidget.swift")
         #expect(!subPie.contains("subcategoriesCount("))
-    }
-
-    /// «11696 registros» salía sin separador junto a importes que sí lo llevan. Ahora el número lleva el del formato
-    /// de los importes (el locale del sistema).
-    @Test func losRegistrosLlevanSeparadorDeMiles() throws {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let grouped = try #require(formatter.string(from: NSNumber(value: 11696)))
-        #expect(grouped != "11696", "el locale del test no agrupa: el caso no discrimina")
-        #expect(L10n.Stats.Insights.motivationalMany(11696).contains(grouped))
-        #expect(L10n.Stats.Records.motivationalMany(11696).contains(grouped))
     }
 }

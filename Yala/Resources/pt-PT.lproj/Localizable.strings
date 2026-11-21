@@ -2928,9 +2928,6 @@
 "statistics.vsPreviousPeriod" = "vs Período anterior";
 "statistics.vsPreviousYear" = "vs Ano anterior";
 "stats.distribution.aiFootnote" = "Resumo com IA";
-"stats.distribution.heroSubtitle1 %d" = "%d categorias";
-"stats.distribution.heroSubtitle2 %d %d" = "%d categorias · %d subcategorias";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorias · %d subcategorias · %d etiquetas";
 "stats.distribution.insight.balanced %d" = "Os teus gastos repartem-se: nenhuma categoria ultrapassa %d%%. Distribuição equilibrada.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% dos teus gastos concentram-se em %@. Combina com as tuas prioridades?";
 "stats.distribution.empty.noTagMovementsTitle" = "Sem movimentos com etiqueta neste período";
@@ -2949,18 +2946,10 @@
 "stats.insights.dailyAvgIn %@" = "por dia em %@";
 "stats.insights.detailHeader" = "Os teus números";
 "stats.insights.modeDetail" = "Detalhe";
-"stats.insights.motivationalMany %d" = "%d registos · Continua assim";
-"stats.insights.motivationalOne" = "1 registo · Bom começo";
 "stats.insights.need.dailyFormat %@" = "≈ %@/dia";
-"stats.records.motivationalMany %d" = "%d registos · Continua assim";
-"stats.records.motivationalOne" = "1 registo · Bom começo";
 "stats.trends.aiFootnote" = "Resumo com IA";
 "stats.trends.comparisonTitle" = "Comparação";
 "stats.trends.generateAI" = "Gerar com IA";
-"stats.trends.heroOnset" = "O teu primeiro período com o Yala";
-"stats.trends.heroStable" = "O teu saldo mantém-se estável";
-"stats.trends.heroVarDown %d %@" = "%d%% abaixo vs %@ · Força, passo a passo";
-"stats.trends.heroVarUp %d %@" = "%d%% acima vs %@ · Continua assim";
 "stats.trends.insight.onsetNoPrevious" = "Ainda não há um período anterior para comparar.";
 "stats.trends.insight.stableBalance" = "O teu saldo mantém-se estável.";
 "stats.trends.insight.sustainedUpExpense %@" = "As tuas despesas vêm a subir há %@.";
@@ -8155,10 +8144,7 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "O teu saldo hoje";
 "panel.hero.oweToday" = "Deves hoje";
-"panel.hero.leftNow" = "Resta";
-"panel.hero.leftPast" = "Restou";
 "panel.hero.leftInMonth" = "Em %@ restou";
-"stats.hero.captionAccountsBalanceClosed" = "O teu saldo no fecho";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Ainda sem nota: aparece quando duas das três partes tiverem dados.";
@@ -9228,18 +9214,12 @@
 "heroClaro.filtersNote" = "Se tens filtros ativos, o valor conta só o que vês.";
 "heroClaro.incomeBody" = "Tudo o que registaste como receita: ordenado, vendas, recebimentos.";
 "heroClaro.expenseBody" = "Tudo o que registaste como despesa. Um reembolso é descontado das tuas despesas.";
-"heroClaro.net.title" = "O que te resta";
-"heroClaro.net.body" = "É o que entrou menos o que saiu no período que escolheste. Se for negativo, saiu mais do que entrou.";
-"heroClaro.net.notBalance" = "Não é o que tens nas tuas contas: isso é «O teu saldo hoje», no Painel.";
 "heroClaro.expense.title" = "O que gastaste";
 "heroClaro.expense.body" = "É a soma das tuas despesas no período que escolheste. Um reembolso é descontado das tuas despesas.";
 "heroClaro.income.title" = "O que entrou";
 "heroClaro.income.body" = "É a soma das tuas receitas no período que escolheste.";
 "heroClaro.total.title" = "Receitas e despesas juntas";
 "heroClaro.total.body" = "Com receitas e despesas selecionadas ao mesmo tempo, o valor soma as duas sem subtrair: é quanto dinheiro movimentou o que filtraste.";
-"heroClaro.balance.title" = "O teu saldo";
-"heroClaro.balance.body" = "É o que há nas tuas contas: todas, cartões incluídos, com o sinal. É o mesmo valor de «O teu saldo hoje» no Painel.";
-"heroClaro.balance.closedNote" = "Num período que já terminou, é o que tinhas no fecho.";
 "heroClaro.cashFlowEnd.title" = "O que terias no fim do mês";
 "heroClaro.cashFlowEnd.body" = "É o teu saldo de hoje, mais o que falta entrar este mês, menos o que falta sair. Por baixo vês cada parte e de onde vem a estimativa.";
 "heroClaro.cashFlowEnd.netNote" = "«Este mês restaria» é outra coisa: o que entra menos o que sai no mês inteiro, sem contar o que já tinhas.";

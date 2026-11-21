@@ -107,13 +107,14 @@ struct Estadisticas23GraficasVoiceOverTests {
         #expect(spoken.contains(L10n.Accessibility.Chart.rest("").trimmingCharacters(in: .whitespaces)), "\(spoken)")
     }
 
-    @Test func entradasYSalidas_diceLoQueQueda_enSuTiempo() {
+    /// «Diferencia» y no «Te queda» (decisión de Jürgen del 20-nov-2026), igual en curso y cerrado.
+    @Test func entradasYSalidas_diceLaDiferencia() {
         let now = ChartSpokenSummary.cashFlow(income: "S/ 5,000", expense: "S/ 3,500", net: 1_500, isClosed: false,
                                               format: Self.soles)
-        #expect(now.contains(L10n.Panel.Hero.leftNow) && now.contains("S/ 1,500"), "\(now)")
+        #expect(now.contains(HeroEstadisticasText.difference) && now.contains("S/ 1,500"), "\(now)")
         let past = ChartSpokenSummary.cashFlow(income: "S/ 5,000", expense: "S/ 3,500", net: 1_500, isClosed: true,
                                                format: Self.soles)
-        #expect(past.contains(L10n.Panel.Hero.leftPast), "\(past)")
+        #expect(past.contains(HeroEstadisticasText.difference), "\(past)")
         let onlyExpenses = ChartSpokenSummary.cashFlow(income: "S/ 0", expense: "S/ 3,500", net: nil, isClosed: false,
                                                        format: Self.soles)
         #expect(onlyExpenses == L10n.Accessibility.cashFlowSummary(income: "S/ 0", expense: "S/ 3,500"))

@@ -35,12 +35,6 @@ extension L10n {
         static var incomeBody: String { heroClaroString("heroClaro.incomeBody") }
         static var expenseBody: String { heroClaroString("heroClaro.expenseBody") }
 
-        enum Net {
-            static var title: String { heroClaroString("heroClaro.net.title") }
-            static var body: String { heroClaroString("heroClaro.net.body") }
-            static var notBalance: String { heroClaroString("heroClaro.net.notBalance") }
-        }
-
         enum Expense {
             static var title: String { heroClaroString("heroClaro.expense.title") }
             static var body: String { heroClaroString("heroClaro.expense.body") }
@@ -54,12 +48,6 @@ extension L10n {
         enum Total {
             static var title: String { heroClaroString("heroClaro.total.title") }
             static var body: String { heroClaroString("heroClaro.total.body") }
-        }
-
-        enum Balance {
-            static var title: String { heroClaroString("heroClaro.balance.title") }
-            static var body: String { heroClaroString("heroClaro.balance.body") }
-            static var closedNote: String { heroClaroString("heroClaro.balance.closedNote") }
         }
 
         enum CashFlowEnd {

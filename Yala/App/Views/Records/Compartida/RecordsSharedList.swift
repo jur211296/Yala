@@ -26,6 +26,9 @@ struct RecordsSharedList: View {
     let subcategories: [Subcategory]
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
+    /// Todos los movimientos y las recargas del contenedor: «Tu dinero hoy» del hero sale de ahí.
+    let allTransactions: [TransactionItem]
+    let dataGeneration: Int
     /// Un filtro cambió: el anfitrión recalcula lo que dependa de él.
     var onFilterChange: () -> Void
     var loadFailed: Bool
@@ -42,6 +45,8 @@ struct RecordsSharedList: View {
             subcategories: subcategories,
             transactionDateRange: transactionDateRange,
             defaultCurrencyCode: defaultCurrencyCode,
+            allTransactions: allTransactions,
+            dataGeneration: dataGeneration,
             onFilterChange: onFilterChange,
             loadFailed: loadFailed,
             onRetryLoad: onRetryLoad,

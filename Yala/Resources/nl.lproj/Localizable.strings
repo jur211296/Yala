@@ -4181,11 +4181,7 @@
 
 // MARK: - Stats Records polish
 
-"stats.records.motivationalOne" = "1 boeking · Goede start";
-"stats.records.motivationalMany %d" = "%d boekingen · Ga zo door";
 
-"stats.insights.motivationalOne" = "1 boeking · Goede start";
-"stats.insights.motivationalMany %d" = "%d boekingen · Ga zo door";
 "stats.insights.detailHeader" = "Jouw cijfers";
 "stats.insights.aiCardTitle" = "AI-samenvatting";
 "stats.insights.aiCardSubtitle" = "Maken met AI";
@@ -4204,14 +4200,7 @@
 "stats.trends.generateAI" = "Maken met AI";
 "stats.trends.regenerate" = "Bijwerken";
 "stats.trends.aiFootnote" = "AI-samenvatting";
-"stats.trends.heroOnset" = "Jouw eerste periode met Yala";
-"stats.trends.heroStable" = "Je saldo blijft stabiel";
-"stats.trends.heroVarUp %d %@" = "%d%% boven vs %@ · Ga zo door";
-"stats.trends.heroVarDown %d %@" = "%d%% onder vs %@ · Houd vol, stap voor stap";
 // MARK: Distribution
-"stats.distribution.heroSubtitle1 %d" = "%d categorieën";
-"stats.distribution.heroSubtitle2 %d %d" = "%d categorieën · %d subcategorieën";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorieën · %d subcategorieën · %d tags";
 "stats.distribution.insightTitleFree %@" = "Jouw %@ in één oogopslag";
 "stats.distribution.insightTitlePro" = "Verdeling van deze periode";
 "stats.distribution.aiFootnote" = "AI-samenvatting";
@@ -8918,10 +8907,7 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "Je saldo vandaag";
 "panel.hero.oweToday" = "Je staat vandaag rood";
-"panel.hero.leftNow" = "Je houdt over";
-"panel.hero.leftPast" = "Je hield over";
 "panel.hero.leftInMonth" = "In %@ hield je over";
-"stats.hero.captionAccountsBalanceClosed" = "Je saldo aan het einde";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "Nog geen score: die verschijnt zodra twee van de drie delen gegevens hebben.";
@@ -9991,18 +9977,12 @@
 "heroClaro.filtersNote" = "Als je filters aan hebt, telt het bedrag alleen wat je ziet.";
 "heroClaro.incomeBody" = "Alles wat je als inkomsten hebt vastgelegd: salaris, verkopen, ontvangen betalingen.";
 "heroClaro.expenseBody" = "Alles wat je als uitgave hebt vastgelegd. Een terugbetaling gaat van je uitgaven af.";
-"heroClaro.net.title" = "Wat je overhoudt";
-"heroClaro.net.body" = "Het is wat er in de gekozen periode binnenkwam min wat er uitging. Is het negatief, dan ging er meer uit dan er binnenkwam.";
-"heroClaro.net.notBalance" = "Het is niet wat er op je rekeningen staat: dat is „Je saldo vandaag”, in het Panel.";
 "heroClaro.expense.title" = "Wat je hebt uitgegeven";
 "heroClaro.expense.body" = "Het is de som van je uitgaven in de gekozen periode. Een terugbetaling gaat van je uitgaven af.";
 "heroClaro.income.title" = "Wat er binnenkwam";
 "heroClaro.income.body" = "Het is de som van je inkomsten in de gekozen periode.";
 "heroClaro.total.title" = "Inkomsten en uitgaven samen";
 "heroClaro.total.body" = "Met inkomsten en uitgaven allebei gekozen, telt het bedrag ze op zonder af te trekken: zoveel geld bewoog wat je hebt gefilterd.";
-"heroClaro.balance.title" = "Je saldo";
-"heroClaro.balance.body" = "Het is wat er op je rekeningen staat: alle, kaarten inbegrepen, met hun teken. Het is hetzelfde bedrag als „Je saldo vandaag” in het Panel.";
-"heroClaro.balance.closedNote" = "Bij een afgelopen periode is het wat je bij de afsluiting had.";
 "heroClaro.cashFlowEnd.title" = "Wat je aan het eind van de maand zou hebben";
 "heroClaro.cashFlowEnd.body" = "Het is je saldo vandaag, plus wat er deze maand nog binnenkomt, min wat er nog uitgaat. Daaronder zie je elk deel en waar de schatting vandaan komt.";
 "heroClaro.cashFlowEnd.netNote" = "„Deze maand hou je naar verwachting over” is iets anders: wat er de hele maand binnenkomt min wat er uitgaat, zonder wat je al had.";

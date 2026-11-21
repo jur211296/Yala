@@ -4181,11 +4181,7 @@
 
 // MARK: - Stats Records polish
 
-"stats.records.motivationalOne" = "1件の記録 · 良いスタートです";
-"stats.records.motivationalMany %d" = "%d件の記録 · その調子です";
 
-"stats.insights.motivationalOne" = "1件の記録 · 良いスタートです";
-"stats.insights.motivationalMany %d" = "%d件の記録 · その調子です";
 "stats.insights.detailHeader" = "あなたの数字";
 "stats.insights.aiCardTitle" = "AIサマリー";
 "stats.insights.aiCardSubtitle" = "AIで作成";
@@ -4204,14 +4200,7 @@
 "stats.trends.generateAI" = "AIで作成";
 "stats.trends.regenerate" = "更新";
 "stats.trends.aiFootnote" = "AIサマリー";
-"stats.trends.heroOnset" = "Yalaを始めて最初の期間";
-"stats.trends.heroStable" = "残高は安定しています";
-"stats.trends.heroVarUp %d %@" = "%2$@より%1$d%%上 · この調子で";
-"stats.trends.heroVarDown %d %@" = "%2$@より%1$d%%下 · 頑張って、一歩ずつ";
 // MARK: Distribution
-"stats.distribution.heroSubtitle1 %d" = "%d件のカテゴリ";
-"stats.distribution.heroSubtitle2 %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ · %d件のタグ";
 "stats.distribution.insightTitleFree %@" = "あなたの%@をひと目で";
 "stats.distribution.insightTitlePro" = "期間内の分布";
 "stats.distribution.aiFootnote" = "AIサマリー";
@@ -8918,10 +8907,7 @@
 /* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
 "panel.hero.haveToday" = "今日の残高";
 "panel.hero.oweToday" = "今日の不足額";
-"panel.hero.leftNow" = "残り";
-"panel.hero.leftPast" = "残った額";
 "panel.hero.leftInMonth" = "%@に残った額";
-"stats.hero.captionAccountsBalanceClosed" = "期末残高";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "まだスコアはありません。3つのうち2つの要素にデータがそろうと表示されます。";
@@ -9991,18 +9977,12 @@
 "heroClaro.filtersNote" = "フィルターを使っている場合、表示されている分だけを数えます。";
 "heroClaro.incomeBody" = "収入として記録したものすべて：給料、売上、入金。";
 "heroClaro.expenseBody" = "支出として記録したものすべて。返金は支出から差し引かれます。";
-"heroClaro.net.title" = "残っている額";
-"heroClaro.net.body" = "選んだ期間に入ったお金から出ていったお金を引いた額です。マイナスなら、入った額より出た額のほうが多かったということです。";
-"heroClaro.net.notBalance" = "口座にある金額ではありません。それはパネルの「今日の残高」です。";
 "heroClaro.expense.title" = "使った額";
 "heroClaro.expense.body" = "選んだ期間の支出の合計です。返金は支出から差し引かれます。";
 "heroClaro.income.title" = "入った額";
 "heroClaro.income.body" = "選んだ期間の収入の合計です。";
 "heroClaro.total.title" = "収入と支出の合計";
 "heroClaro.total.body" = "収入と支出を同時に選ぶと、引き算せずに足し合わせます。フィルターした分でどれだけのお金が動いたかを示します。";
-"heroClaro.balance.title" = "残高";
-"heroClaro.balance.body" = "口座にある金額です。カードを含むすべての口座を、符号付きで合計します。パネルの「今日の残高」と同じ金額です。";
-"heroClaro.balance.closedNote" = "終わった期間では、その終了時点の残高です。";
 "heroClaro.cashFlowEnd.title" = "月末の見込み額";
 "heroClaro.cashFlowEnd.body" = "今日の残高に、今月これから入る額を足し、これから出る額を引いたものです。下に各内訳と見込みの根拠が表示されます。";
 "heroClaro.cashFlowEnd.netNote" = "「今月残る見込み」は別のものです。すでにあったお金は含めず、月全体で入る額から出る額を引いたものです。";
