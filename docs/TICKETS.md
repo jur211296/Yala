@@ -43,9 +43,10 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1433)
+## Index (1440)
 
 | id | status | path |
+| 2026-11-20-sentry-avisos-afinar | done | tickets/done/2026-11-20-sentry-avisos-afinar.md |
 | se-favorite-tap-does-not-select-the-amount | backlog | tickets/backlog/se-favorite-tap-does-not-select-the-amount.md |
 | 2026-11-20-nuevo-registro-b1-en-bandeja-y-grupos | done | tickets/done/2026-11-20-nuevo-registro-b1-en-bandeja-y-grupos.md |
 | 2026-11-20-flujo-de-caja-fluidez | done | tickets/done/2026-11-20-flujo-de-caja-fluidez.md |
@@ -1248,7 +1249,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-visit-data-lost-on-signout-unannounced | discarded | tickets/discarded/secondary-visit-data-lost-on-signout-unannounced.md |
 | secondary-visitor-writes-owner-domain | discarded | tickets/discarded/secondary-visitor-writes-owner-domain.md |
 | seeds-de-grupos-no-escriben-userid-ni-memberkey | done | tickets/done/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
-| sentry-scrub-turns-hang-durations-into-amounts | backlog | tickets/backlog/sentry-scrub-turns-hang-durations-into-amounts.md |
+| sentry-scrub-turns-hang-durations-into-amounts | done | tickets/done/sentry-scrub-turns-hang-durations-into-amounts.md |
 | session-exits-one-verb-per-session | done | tickets/done/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | done | tickets/done/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | done | tickets/done/session-redesign-web-and-store-copy.md |

@@ -26,6 +26,7 @@ nonisolated enum ErrorReportingService {
             Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String
         ) else { return }
 
+        let environment = currentEnvironment
         SentrySDK.start { options in
             options.dsn = dsn
             options.environment = environment
@@ -45,13 +46,16 @@ nonisolated enum ErrorReportingService {
             // Un fallo HTTP no es una caída; y su captura llevaría la petición.
             options.enableCaptureFailedRequests = false
             options.enableLogs = false
-            // Memoria agotada y cuelgues: solo en producción (ver `tracksHangsAndWatchdog`).
-            let tracksHangs = tracksHangsAndWatchdog(environment: environment)
+            // Memoria agotada y cuelgues: App Store y TestFlight (ver `ErrorReportContextLogic.tracksHangsAndWatchdog`).
+            let tracksHangs = ErrorReportContextLogic.tracksHangsAndWatchdog(environment: environment)
+                || forcesHangTrackingForTest
             options.enableWatchdogTerminationTracking = tracksHangs
             options.enableAppHangTracking = tracksHangs
             options.beforeSend = { event in scrub(event) }
             options.beforeBreadcrumb = { crumb in scrub(crumb) }
         }
+        // «Usuarios afectados»: un id aleatorio de esta instalación, nada de la persona (ver `installID`).
+        SentrySDK.setUser(User(userId: anonymousInstallID))
         // Memoria, avisos de memoria baja y pestaña: lo que un cierre por memoria necesita traer (YALA-IOS-B).
         Task { @MainActor in MemoryDiagnostics.shared.start() }
 
@@ -70,6 +74,35 @@ nonisolated enum ErrorReportingService {
                 NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
             }
         }
+        // `-sentry-test-hang`: bloquea el hilo principal 4 s a los 5 s del arranque, con el seguimiento de cuelgues
+        // encendido, para comprobar en Sentry el título con los segundos, el usuario, el entorno y la huella.
+        if forcesHangTrackingForTest {
+            Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .seconds(5))
+                } catch {
+                    return
+                }
+                blockMainThreadForSentryTest()
+            }
+        }
+        #endif
+    }
+
+    #if DEV_BUILD
+    /// Un cuelgue de verdad: el hilo principal no atiende nada durante 4 s. Lleva nombre propio para que la regla de
+    /// huella del proyecto lo agrupe aparte («prueba de Sentry»).
+    @MainActor
+    private static func blockMainThreadForSentryTest() {
+        Thread.sleep(forTimeInterval: 4)
+    }
+    #endif
+
+    private static var forcesHangTrackingForTest: Bool {
+        #if DEV_BUILD
+        return ProcessInfo.processInfo.arguments.contains("-sentry-test-hang")
+        #else
+        return false
         #endif
     }
 
@@ -79,15 +112,6 @@ nonisolated enum ErrorReportingService {
     static func shouldStart(isRunningTests: Bool, isUITest: Bool, environment: [String: String]) -> Bool {
         guard !isRunningTests, !isUITest else { return false }
         return environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
-    }
-
-    /// El aviso de «el sistema la mató por memoria» (WatchdogTermination) y los cuelgues solo salen de la app de
-    /// producción. En las builds de desarrollo eran ruido de las pruebas en el iPhone de QA (YALA-IOS-B y YALA-IOS-D,
-    /// 2026-11-05/06): Sentry da por muerte por RAM cualquier cierre en primer plano sin crash, y cada
-    /// `devicectl … --terminate-existing` de una sesión lo era (app en ~80 MB); los cuelgues caían mientras Device MCP
-    /// leía la pantalla por accesibilidad. Los crashes de desarrollo siguen llegando (así salieron YALA-IOS-C y E).
-    static func tracksHangsAndWatchdog(environment: String) -> Bool {
-        environment == "production"
     }
 
     /// Error de prueba (Ajustes › Almacenamiento › panel de Modo Nube, o `-sentry-test-error`; solo DEV_BUILD). El mensaje lleva un correo y un importe FALSOS: en
@@ -103,20 +127,36 @@ nonisolated enum ErrorReportingService {
         return true
     }
 
-    private static var environment: String {
+    private static var currentEnvironment: String {
         #if DEV_BUILD
-        return "development"
+        let flavor = ErrorReportContextLogic.BuildFlavor.development
         #elseif DEBUG
-        return "debug"
+        let flavor = ErrorReportContextLogic.BuildFlavor.debug
         #else
-        return "production"
+        let flavor = ErrorReportContextLogic.BuildFlavor.release
         #endif
+        return ErrorReportContextLogic.environment(
+            flavor: flavor,
+            receiptFileName: (Bundle.main as AppStoreReceiptLocating).appStoreReceiptURL?.lastPathComponent
+        )
+    }
+
+    /// El id anónimo de esta instalación, creado la primera vez que hace falta.
+    private static var anonymousInstallID: String {
+        let defaults = UserDefaults.standard
+        let resolved = ErrorReportContextLogic.installID(
+            stored: defaults.string(forKey: ErrorReportContextLogic.installIDKey)
+        )
+        if resolved.isNew { defaults.set(resolved.id, forKey: ErrorReportContextLogic.installIDKey) }
+        return resolved.id
     }
 
     // MARK: - Limpieza
 
     private static func scrub(_ event: Event) -> Event? {
-        event.user = nil
+        // Del usuario solo viaja el id anónimo de la instalación: ni IP, ni correo, ni nombre, ni geolocalización.
+        let installID = event.user?.userId
+        event.user = installID.map { User(userId: $0) }
         event.request = nil
         event.extra = nil
         event.serverName = nil
@@ -158,3 +198,12 @@ nonisolated enum ErrorReportingService {
         return crumb
     }
 }
+
+/// `Bundle.appStoreReceiptURL` está obsoleto desde iOS 18 pero sigue siendo la única forma síncrona de saber si la app
+/// viene de TestFlight, y el propio SDK de Sentry la usa para su `build_type`. Leída a través de este requisito no
+/// suma un warning de API obsoleta en cada build.
+nonisolated private protocol AppStoreReceiptLocating {
+    var appStoreReceiptURL: URL? { get }
+}
+
+nonisolated extension Bundle: AppStoreReceiptLocating {}
