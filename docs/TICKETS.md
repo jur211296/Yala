@@ -47,6 +47,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 
 | id | status | path |
 | 2026-11-21-ci-yala-mas-rapido | done | tickets/done/2026-11-21-ci-yala-mas-rapido.md |
+| 2026-11-21-flujo-elige-pagos-icono-subcategoria | done | tickets/done/2026-11-21-flujo-elige-pagos-icono-subcategoria.md |
 | 2026-11-21-medir-ci-yala-tiempos | done | tickets/done/2026-11-21-medir-ci-yala-tiempos.md |
 | 2026-11-20-sentry-avisos-afinar | done | tickets/done/2026-11-20-sentry-avisos-afinar.md |
 | 2026-11-21-favoritos-fila-ver-todos-arriba | done | tickets/done/2026-11-21-favoritos-fila-ver-todos-arriba.md |

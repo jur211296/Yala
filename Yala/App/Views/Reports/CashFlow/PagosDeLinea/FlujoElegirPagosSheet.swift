@@ -122,7 +122,8 @@ struct FlujoElegirPagosSheet: View {
                 .accessibilityAddTraits(.isHeader)
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(lista.enumerated()), id: \.element.id) { indice, pago in
-                    if indice > 0 { Divider().padding(.leading, DS.Spacing.lg + DS.Icon.badgeSmall + DS.Spacing.md) }
+                    // Arranca donde arranca el texto: marca e icono miden `badgeSmall` cada uno.
+                    if indice > 0 { Divider().padding(.leading, DS.Spacing.lg + 2 * (DS.Icon.badgeSmall + DS.Spacing.md)) }
                     fila(pago)
                 }
             }
@@ -141,10 +142,9 @@ struct FlujoElegirPagosSheet: View {
                 Image(systemName: marcado ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.headline)
                     .foregroundStyle(marcado ? theme.accentText : Color(uiColor: .tertiaryLabel))
+                    .frame(width: DS.Icon.badgeSmall)
                     .accessibilityHidden(true)
-                if let logo = PagoLogoComercio.logo(for: pago) {
-                    SubscriptionBrandBadge(logo: logo, diameter: DS.Icon.badgeSmall, isDecorative: true)
-                }
+                FlujoPagoIconoView(pago: pago)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(pago.name)
                         .font(DS.Typography.body.weight(marcado ? .semibold : .regular))
