@@ -4524,14 +4524,15 @@
         "Yala/App/Views/Transactions/NewTransactionView.swift",
         "Yala/App/Views/Transactions/TransactionSuccessView.swift",
         "Yala/Resources/*.lproj/NuevoRegistroB1.strings",
-        "Yala/Seed/DevSeedLongNames.swift"
+        "Yala/Seed/DevSeedLongNames.swift",
+        "Yala/Seed/DevSeedExtraFavorites.swift"
       ],
       "scenarioIDs": [
         "F-TX-01"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/Flows/NuevoRegistroTextoGrande23UITests#test_b1_ax3_bottomRow_staysInOneLine | xcuitest:NuevoRegistroTextoGrande23UITests#test_b1_ax3_titleMenu_choosesTheType | xcuitest:KeyboardSaveBar23UITests (fila y botones sobre el teclado) | unit:YalaTests/NuevoRegistroB1/NuevoRegistroB1LogicTests (fila en una línea, cápsula de moneda, estimado, títulos, «#2», orden del éxito, tabla en 16 idiomas) | 2026-11-20: hoja B1 de Nuevo registro y éxito minimalista (Jürgen, 06:14). Capturas antes/después en el 17 Pro y el SE, claro y oscuro, en el artifact del cierre.",
-      "lastVerified": "2026-11-20"
+      "coverage": "xcuitest:YalaUITests/FavoritosFilaB1/FavoritosFilaUITests (fila de Favoritos: «Ver todos» en la línea del rótulo, chips completos y centrados mientras quepan, bolitas centradas, scroll desde el margen) — 2026-11-21 (Jürgen): «Ver todos ›» junto al rótulo, chips completos mientras quepan, fila centrada; fixture -uitest-seed-extra-favorites. | xcuitest:YalaUITests/Flows/NuevoRegistroTextoGrande23UITests#test_b1_ax3_bottomRow_staysInOneLine | xcuitest:NuevoRegistroTextoGrande23UITests#test_b1_ax3_titleMenu_choosesTheType | xcuitest:KeyboardSaveBar23UITests (fila y botones sobre el teclado) | unit:YalaTests/NuevoRegistroB1/NuevoRegistroB1LogicTests (fila en una línea, cápsula de moneda, estimado, títulos, «#2», orden del éxito, tabla en 16 idiomas) | 2026-11-20: hoja B1 de Nuevo registro y éxito minimalista (Jürgen, 06:14). Capturas antes/después en el 17 Pro y el SE, claro y oscuro, en el artifact del cierre.",
+      "lastVerified": "2026-11-21"
     }
   ]
 }

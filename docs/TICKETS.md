@@ -48,6 +48,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | id | status | path |
 | 2026-11-21-medir-ci-yala-tiempos | done | tickets/done/2026-11-21-medir-ci-yala-tiempos.md |
 | 2026-11-20-sentry-avisos-afinar | done | tickets/done/2026-11-20-sentry-avisos-afinar.md |
+| 2026-11-21-favoritos-fila-ver-todos-arriba | done | tickets/done/2026-11-21-favoritos-fila-ver-todos-arriba.md |
 | se-favorite-tap-does-not-select-the-amount | backlog | tickets/backlog/se-favorite-tap-does-not-select-the-amount.md |
 | 2026-11-20-nuevo-registro-b1-en-bandeja-y-grupos | done | tickets/done/2026-11-20-nuevo-registro-b1-en-bandeja-y-grupos.md |
 | 2026-11-20-flujo-de-caja-fluidez | done | tickets/done/2026-11-20-flujo-de-caja-fluidez.md |

@@ -1381,6 +1381,10 @@ final class AppBootstrapper {
         if ProcessInfo.processInfo.arguments.contains("-uitest-seed-long-names"), UITestHooks.isActive {
             DevSeedLongNames.create(in: context)
         }
+        // Favoritos de gasto de más, para medir la fila de Favoritos con 3, 5 o 10. Aditivo.
+        if let count = DevSeedExtraFavorites.requestedCount, UITestHooks.isActive {
+            DevSeedExtraFavorites.create(count: count, in: context)
+        }
         #endif
         // Un gasto fechado mañana: el saldo de hoy lo deja fuera hasta su fecha (UX 2.2 · saldo de hoy).
         #if DEBUG
