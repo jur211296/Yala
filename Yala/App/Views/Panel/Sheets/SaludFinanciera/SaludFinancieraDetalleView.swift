@@ -29,8 +29,10 @@ struct SaludFinancieraDetalleView: View {
 
     @State private var cargador = SaludFinancieraDetalleCargador()
     @State private var muestraComoSeCalcula = false
-    /// El presupuesto cuyo límite se ajusta, con el editor encima de la hoja.
-    @State private var presupuestoAEditar: Budget?
+    /// El presupuesto cuyo límite se ajusta y el límite propuesto, con el editor encima de la hoja. Van juntos en el
+    /// `item` para que la hoja no lea el límite de otro `@State` (`swiftui-ds.md`, «`.sheet` con el contenido de OTRO
+    /// `@State`»).
+    @State private var presupuestoAEditar: AjusteDeLimite?
 
     // A11Y-DT: el anillo crece con el tamaño del texto.
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 84
@@ -82,8 +84,8 @@ struct SaludFinancieraDetalleView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .task { await cargar() }
-        .sheet(item: $presupuestoAEditar) { budget in
-            BudgetEditorView(budget: budget)
+        .sheet(item: $presupuestoAEditar) { ajuste in
+            BudgetEditorView(budget: ajuste.budget, proposedLimit: ajuste.limite)
         }
     }
 
@@ -466,7 +468,7 @@ struct SaludFinancieraDetalleView: View {
                                              promedio: monto(propuesta.promedio, peor.moneda),
                                              limite: monto(propuesta.limite, peor.moneda)),
                 enlace: Texto.ajustarBoton, id: "health_improve_adjust_limit"
-            ) { abrirEditor(peor.id) }))
+            ) { abrirEditor(peor.id, limite: propuesta.limite) }))
         }
         if !peor.dondeMasPesa.isEmpty {
             let lista = peor.dondeMasPesa.map { "\($0.nombre) \(monto($0.monto, peor.moneda))" }
@@ -510,11 +512,12 @@ struct SaludFinancieraDetalleView: View {
         .accessibilityIdentifier("health_improve_pro_line")
     }
 
-    private func abrirEditor(_ id: UUID) {
+    /// Abre el editor del presupuesto con el límite propuesto ya escrito; la persona lo confirma con Guardar.
+    private func abrirEditor(_ id: UUID, limite: Double) {
         var descriptor = FetchDescriptor<Budget>(predicate: #Predicate<Budget> { $0.id == id })
         descriptor.fetchLimit = 1
         do {
-            presupuestoAEditar = try modelContext.fetch(descriptor).first
+            presupuestoAEditar = try modelContext.fetch(descriptor).first.map { AjusteDeLimite(budget: $0, limite: limite) }
         } catch {
             #if DEBUG
             print("SaludFinancieraDetalleView: Error: \(error)")
@@ -998,6 +1001,13 @@ struct SaludFinancieraDetalleView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(id)
     }
+}
+
+/// «Ajusta el límite a lo real»: el presupuesto que se abre en su editor y el límite que llega escrito.
+struct AjusteDeLimite: Identifiable {
+    let budget: Budget
+    let limite: Double
+    var id: PersistentIdentifier { budget.persistentModelID }
 }
 
 /// A dónde lleva cada toque de la hoja.

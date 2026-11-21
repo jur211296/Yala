@@ -109,7 +109,63 @@ final class SaludFinancieraDetalleUITests: XCTestCase {
         XCTAssertTrue(chip.isSelected, "La invitación no deja Presupuestos elegido.")
     }
 
+    /// «Ajusta el límite a lo real» (Jürgen, 21-nov-2026): abre el editor del presupuesto con el límite propuesto ya
+    /// escrito, y cerrarlo sin Guardar no cambia nada (la propuesta sigue en la hoja, que solo sale con el límite bajo).
+    /// Con `TEST_RUNNER_CAPTURA_DIR` guarda la hoja y el editor (`TEST_RUNNER_CAPTURA_PREFIJO`, `…_TEMA=claro`).
+    func test_ajustaLimite_abreElEditorConElLimitePropuesto_yNadaSeGuardaSinConfirmar() throws {
+        let env = ProcessInfo.processInfo.environment
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "minimal",
+                            extraArguments: ["-uitest-seed-budget-over-history"]
+                                + (env["CAPTURA_TEMA"] == "claro" ? ["-userTheme", "1"] : []))
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        abrirHoja(app)
+
+        let ajustar = app.buttons["health_improve_adjust_limit"]
+        XCTAssertTrue(ajustar.waitForExistence(timeout: 15), "«QA historial» (pasado 3 de 4 meses) no lleva a proponer un límite.")
+        bajarHasta(ajustar, en: app)
+        let propuesto = try XCTUnwrap(Self.ultimoMonto(ajustar.label), "La fila no dice el límite propuesto.")
+        capturar(app, "1-hoja")
+        ajustar.tap()
+
+        let monto = app.textFields["budget_amount_field"]
+        XCTAssertTrue(monto.waitForExistence(timeout: 10), "«Ajusta el límite» no abre el editor del presupuesto.")
+        capturar(app, "2-editor")
+        let escrito = Self.ultimoMonto(monto.value as? String ?? "")
+        XCTAssertEqual(escrito, propuesto, "El editor no llega con el límite propuesto escrito: \(monto.value ?? "")")
+        XCTAssertTrue(app.buttons["toolbar_save_button"].isEnabled, "Con el límite propuesto no se puede guardar.")
+
+        // Cerrar sin Guardar: el presupuesto conserva su límite, así que la hoja sigue proponiendo el ajuste.
+        // La hoja de Salud sigue en el árbol debajo del editor: su X va antes, la del editor es la última.
+        let cerrar = app.navigationBars.buttons.matching(identifier: "xmark").allElementsBoundByIndex.last
+        XCTAssertNotNil(cerrar, "El editor no tiene X.")
+        cerrar?.tap()
+        XCTAssertTrue(esperar(!monto.exists, timeout: 5), "La X no cierra el editor.")
+        XCTAssertTrue(ajustar.waitForExistence(timeout: 5), "Cerrar sin guardar cambió el presupuesto.")
+        app.terminate()
+    }
+
     // MARK: - Ayudas
+
+    /// El último importe de un texto, solo su parte entera y sin separadores («… de S/ 1,200.» → "1200").
+    private static func ultimoMonto(_ texto: String) -> String? {
+        guard let ultimo = texto.matches(of: /\d[\d.,\u{00A0} ]*\d|\d/).last else { return nil }
+        let crudo = String(ultimo.output).replacing(/[.,]\d{2}$/, with: "")
+        return crudo.filter(\.isNumber)
+    }
+
+    private func capturar(_ app: XCUIApplication, _ nombre: String) {
+        let env = ProcessInfo.processInfo.environment
+        guard let carpeta = env["CAPTURA_DIR"] else { return }
+        let prefijo = env["CAPTURA_PREFIJO"] ?? "despues"
+        let url = URL(fileURLWithPath: carpeta).appendingPathComponent("\(prefijo)-\(nombre).png")
+        do {
+            try FileManager.default.createDirectory(atPath: carpeta, withIntermediateDirectories: true)
+            try app.screenshot().pngRepresentation.write(to: url)
+        } catch {
+            XCTFail("No se pudo guardar \(nombre): \(error)")
+        }
+    }
 
     private func abrirHoja(_ app: XCUIApplication) {
         let card = app.buttons["panel_health_compact"]

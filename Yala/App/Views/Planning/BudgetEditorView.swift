@@ -29,6 +29,9 @@ struct BudgetEditorView: View {
     /// arranca relleno y la X o el gesto de bajar preguntan antes de tirarlo.
     var prefill: BudgetEditorPrefill? = nil
     @State private var showDiscardPrefill = false
+    /// El límite con el que se abre un presupuesto QUE YA EXISTE: el que propone «Ajusta el límite a lo real» en la hoja
+    /// de Salud financiera (Jürgen, 21-nov). Solo se escribe en el campo: nada se guarda hasta tocar Guardar.
+    var proposedLimit: Double? = nil
 
     // Error state
     @State private var showSaveError = false
@@ -939,7 +942,9 @@ struct BudgetEditorView: View {
 
         name = budget.name
         currencyCode = budget.currencyCode
-        limitAmount = AmountInputHelper.formatWithGrouping(budget.limitAmount)
+        limitAmount = AmountInputHelper.formatWithGrouping(
+            BudgetEditorInitialLimit.value(saved: budget.limitAmount, proposed: proposedLimit)
+        )
         selectedPeriodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
         isActive = budget.isActive
 
@@ -1162,6 +1167,16 @@ struct BudgetEditorView: View {
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
         }
+    }
+}
+
+// MARK: - El límite propuesto
+
+/// Qué límite enseña el editor al abrir un presupuesto que ya existe: el propuesto si llega uno válido, si no el guardado.
+nonisolated enum BudgetEditorInitialLimit {
+    static func value(saved: Double, proposed: Double?) -> Double {
+        guard let proposed, proposed.isFinite, proposed > 0 else { return saved }
+        return proposed
     }
 }
 

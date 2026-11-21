@@ -161,6 +161,11 @@ final class UITestHooks {
     /// de `-uitest-seed`.
     nonisolated static var seedBudgetStates: Bool { hasArg("-uitest-seed-budget-states") }
 
+    /// `-uitest-seed-budget-over-history`: añade un presupuesto pasado este mes y en 3 de los 4 meses anteriores, para que
+    /// la hoja de Salud financiera proponga «Ajusta el límite a lo real» (`DevSeedBudgetOverLimitHistory`). Aditivo al
+    /// perfil de `-uitest-seed`.
+    nonisolated static var seedBudgetOverLimitHistory: Bool { hasArg("-uitest-seed-budget-over-history") }
+
     /// `-uitest-seed-uncategorized-expense`: añade un gasto de 40 SIN categoría en la cuenta principal
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedUncategorizedExpense: Bool { hasArg("-uitest-seed-uncategorized-expense") }
