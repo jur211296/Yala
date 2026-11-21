@@ -19,4 +19,5 @@ source: "encargo 2026-11-21 · Subir a TestFlight la build 6 de 2.3 con todo lo 
 - Notas en español neutro (es-MX), sacadas de los PRs mergeados desde la build 5, sin ids.
 
 ## Resultado
-- Notas «Qué probar» (es-MX): `docs/qa/testflight-2-3-6/notas-que-probar.txt`.
+- Notas «Qué probar» (es-MX): `docs/qa/testflight-2-3-6/notas-que-probar.txt`, cargadas en App Store Connect.
+- 2.3 (6) subida el 21-nov a las 03:27 Lima: upload COMPLETE, build VALID, interno IN_BETA_TESTING. dSYM (3) en Sentry.
