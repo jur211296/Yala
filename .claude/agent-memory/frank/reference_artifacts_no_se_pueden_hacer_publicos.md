@@ -15,4 +15,6 @@ atascados quedó público (`artifact-publico comprobar` → `publico`). El ajust
 haz siempre el intento entero (Compartir → «Cualquier persona con el enlace» → «Compartir públicamente», todo
 con `find`) y anota solo lo que salga ese día.
 
-**20-nov (00:30, Max):** otra vez gris con el mismo aviso. Van dos de tres intentos fallidos.
+**20-nov (00:30, Max):** otra vez gris con el mismo aviso.
+
+**21-nov (06:40, Max, semi):** pasó entero, con base de datos incluida: find + clic por ref y `comprobar` → `publico`. Van dos fallidos de cuatro.
