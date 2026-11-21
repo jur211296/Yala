@@ -28,13 +28,149 @@ enum RecurringFromRecordService {
         return RecurringFromRecordLogic.offersMakeRecurring(facts(of: record))
     }
 
+    // MARK: - Gastos de grupo en «Reusar» (encargo del 21-nov)
+
+    static func groupFacts(of record: TransactionItem) -> RecurringFromRecordLogic.GroupLegFacts {
+        let shape = RecordContextActionLogic.Shape(record: record)
+        return RecurringFromRecordLogic.GroupLegFacts(
+            hasSplitExpenseID: shape.hasSplitExpenseID,
+            hasSplitSettlementID: shape.hasSplitSettlementID,
+            isSplitLineLeg: shape.isSplitLineLeg,
+            hasBalanceAdjustmentType: shape.hasBalanceAdjustmentType,
+            isLinkedToScheduledPayment: record.scheduledPaymentID != nil,
+            amount: record.amount,
+            subcategoryIsBridgeSystem: record.subcategory?.isSystem ?? false)
+    }
+
+    /// La fila con el gasto de un grupo, la que «Reusar» ofrece (`RecurringFromRecordLogic.isReusableGroupExpense`).
+    static func isReusableGroupExpense(_ record: TransactionItem) -> Bool {
+        guard !record.isDeleted, record.modelContext != nil else { return false }
+        return RecurringFromRecordLogic.isReusableGroupExpense(groupFacts(of: record))
+    }
+
+    /// Lo que lista «Elige un registro»: lo propio que se puede hacer recurrente y el gasto de cada grupo, uno por
+    /// gasto (la primera fila que llegue de cada `splitExpenseID`).
+    static func reusableRecords(_ records: [TransactionItem]) -> [TransactionItem] {
+        var seenExpenses: Set<String> = []
+        return records.filter { record in
+            if offersMakeRecurring(record) { return true }
+            guard isReusableGroupExpense(record), let expenseID = record.splitExpenseID else { return false }
+            return seenExpenses.insert(expenseID).inserted
+        }
+    }
+
+    /// Si se puede reusar el gasto de grupo de cada zona, leído una vez por zona. La clave vacía es la fila sin zona.
+    static func groupAvailabilities(
+        for records: [TransactionItem], in context: ModelContext
+    ) -> [String: RecurringFromRecordLogic.GroupAvailability] {
+        var result: [String: RecurringFromRecordLogic.GroupAvailability] = [:]
+        for record in records where record.splitExpenseID != nil {
+            let zone = record.splitGroupZoneID ?? ""
+            guard result[zone] == nil else { continue }
+            result[zone] = groupAvailability(zone: zone, in: context)
+        }
+        return result
+    }
+
+    static func groupAvailability(zone: String, in context: ModelContext) -> RecurringFromRecordLogic.GroupAvailability {
+        guard !zone.isEmpty else { return .groupGone }
+        let group = fetchGroup(zone: zone, in: context)
+        let memberActive: Bool
+        do {
+            memberActive = try GroupExpenseService.resolveCurrentUserMember(inZone: zone, context: context)?.isActive
+                ?? false
+        } catch {
+            #if DEBUG
+            print("RecurringFromRecordService: Error resolving current member: \(error)")
+            #endif
+            memberActive = false
+        }
+        return RecurringFromRecordLogic.groupAvailability(
+            groupExists: group != nil, isHiddenForAll: group?.isHiddenForAll ?? false,
+            isArchived: group?.isArchived ?? false, currentMemberIsActive: memberActive)
+    }
+
+    /// El pago compartido que repite el gasto del registro: grupo, moneda, total y reparto entre quienes siguen activos.
+    /// `nil` si el gasto ya no está en el teléfono o no queda nadie con parte.
+    static func groupPrefill(from record: TransactionItem, in context: ModelContext) -> ScheduledPaymentGroupPrefill? {
+        guard let rawID = record.splitExpenseID, let expenseID = UUID(uuidString: rawID) else { return nil }
+        var descriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == expenseID })
+        descriptor.fetchLimit = 1
+        do {
+            guard let expense = try context.fetch(descriptor).first, !expense.isDeleted else { return nil }
+            let zone = expense.groupZoneID
+            let shares = try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.expenseID == expenseID }))
+            let members = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zone }, sortBy: [SortDescriptor(\.joinedAt)]))
+            let active = Set(members.filter(\.isActive).map(\.id))
+            // En el orden del grupo (quien entró antes, primero): el del selector de división.
+            let position = Dictionary(members.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let pairs = shares
+                .compactMap { share in UUID(uuidString: share.memberID).map { (memberID: $0, amount: share.amount) } }
+                .sorted { (position[$0.memberID] ?? Int.max) < (position[$1.memberID] ?? Int.max) }
+            guard let split = RecurringFromRecordLogic.groupSplit(
+                splitType: expense.splitType, total: expense.amount, shares: pairs, activeMemberIDs: active)
+            else { return nil }
+            return ScheduledPaymentGroupPrefill(
+                groupZoneID: zone, currencyCode: expense.currencyCode, totalAmount: expense.amount,
+                splitType: split.splitType, participantIDs: split.participantIDs, values: split.values)
+        } catch {
+            #if DEBUG
+            print("RecurringFromRecordService: Error reading the group expense: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    private static func fetchGroup(zone: String, in context: ModelContext) -> SplitGroup? {
+        var descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("RecurringFromRecordService: Error fetching group: \(error)")
+            #endif
+            return nil
+        }
+    }
+
     static func transactionType(of record: TransactionItem) -> TransactionType {
         TransactionClassificationLogic.isIncome(record) ? .income : .expense
     }
 
     /// El editor de recurrentes prellenado con el registro: monto, moneda, categoría, cuenta, etiquetas, nota y el día
-    /// del registro como día de cobro. La frecuencia es la del editor por defecto: mensual.
+    /// del registro como día de cobro. La frecuencia es la del editor por defecto: mensual. De un gasto de grupo, además,
+    /// el grupo y su reparto (`groupPrefill`): el monto pasa a ser el total, sin etiquetas (un pago compartido no las
+    /// lleva) y sin la cuenta de sistema «Grupos», que no se puede elegir.
     static func prefill(from record: TransactionItem) -> ScheduledPaymentPrefill {
+        let base = personalPrefill(from: record)
+        guard isReusableGroupExpense(record), let context = record.modelContext,
+              let group = groupPrefill(from: record, in: context) else { return base }
+        let account = selectableAccount(of: record)
+        var shared = ScheduledPaymentPrefill(
+            transactionType: TransactionType.expense.rawValue,
+            amount: AmountInputHelper.formatWithGrouping(group.totalAmount),
+            note: base.note,
+            account: account,
+            subcategory: base.subcategory,
+            tagIDs: [],
+            needOverride: base.needOverride,
+            currencyCode: group.currencyCode,
+            transactionDate: base.transactionDate,
+            name: base.name)
+        shared.group = group
+        return shared
+    }
+
+    /// La cuenta del registro, si el formulario la puede ofrecer: ni archivada ni la de sistema «Grupos». Un recurrente en
+    /// una cuenta archivada dejaría sus borradores en ella (21-nov): sin cuenta, el formulario pide elegir una.
+    private static func selectableAccount(of record: TransactionItem) -> Account? {
+        guard let account = record.account, !account.isArchived, !account.isSystemAccount else { return nil }
+        return account
+    }
+
+    private static func personalPrefill(from record: TransactionItem) -> ScheduledPaymentPrefill {
         let tagIDs: Set<PersistentIdentifier>
         if let context = record.modelContext {
             let ids = record.resolvedTagIDs(scheduleBackfill: false) ?? []
@@ -47,7 +183,7 @@ enum RecurringFromRecordService {
             transactionType: transactionType(of: record).rawValue,
             amount: AmountInputHelper.formatWithGrouping(abs(record.amount)),
             note: record.note ?? "",
-            account: record.account,
+            account: selectableAccount(of: record),
             subcategory: record.subcategory,
             tagIDs: tagIDs,
             needOverride: record.needOverride.flatMap { SubcategoryNeed(rawValue: $0) },

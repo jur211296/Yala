@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "フィルターをクリア";
 "reusarRegistro.noMatches" = "このフィルターに一致する記録はありません";
 "reusarRegistro.noMatchesHint" = "別のフィルターを試すか、クリアしてください。";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "このグループはもう Yala にありません。";
+"reusarRegistro.groupArchived" = "このグループはアーカイブされています。";
+"reusarRegistro.groupLeft" = "あなたはもうこのグループのメンバーではありません。";
+"reusarRegistro.footer" = "過去6か月の記録です。グループの支出からは、そのグループの共有の支払いが作られます。振替、メンバー間の支払い、すでに定期支払いに含まれる記録は表示されません。";

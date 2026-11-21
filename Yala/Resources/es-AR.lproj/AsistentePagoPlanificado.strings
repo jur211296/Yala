@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "Cuándo";
 "asistentePago.summary.reminder" = "Aviso";
 "asistentePago.reminder.none" = "Sin aviso";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "¿Es un gasto compartido?";
+"asistentePago.shared.detail" = "Si lo pagan entre varios, Yala lo registra en el grupo y cuenta solo tu parte.";
+"asistentePago.shared.no" = "No, es solo mío";
+"asistentePago.shared.noHint" = "Lo pagás vos y es todo tuyo.";
+"asistentePago.shared.groupHint" = "Miembros: %d · %@";
+"asistentePago.split.question" = "¿Cómo lo dividen?";
+"asistentePago.split.detail" = "Quién paga lo elegís cada vez que lo registrás desde tu Bandeja.";
+"asistentePago.split.currency" = "Moneda";
+"asistentePago.split.division" = "División";
+"asistentePago.split.change" = "Cambiar la división";
+"asistentePago.extra.question" = "¿Algo más?";
+"asistentePago.extra.detail" = "Ya está todo listo. Cambiá lo que quieras o seguí.";
+"asistentePago.extra.account" = "Cuenta";
+"asistentePago.extra.note" = "Descripción (opcional)";
+"asistentePago.extra.tags" = "Etiquetas";
+"asistentePago.extra.ends" = "Tiene fecha de fin";
+"asistentePago.extra.endDate" = "Último pago";
+"asistentePago.summary.shared" = "Compartido";
+"asistentePago.summary.split" = "División";
+"asistentePago.summary.account" = "Cuenta";
+"asistentePago.summary.note" = "Descripción";
+"asistentePago.summary.tags" = "Etiquetas";
+"asistentePago.summary.ends" = "Termina";
+"asistentePago.summary.status" = "Estado";
+"asistentePago.summary.paused" = "Pausado";
+"asistentePago.missing.group" = "Elegí con qué grupo lo compartís.";
+"asistentePago.missing.division" = "Elegí cómo se divide.";

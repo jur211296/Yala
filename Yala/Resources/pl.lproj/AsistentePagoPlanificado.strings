@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "Kiedy";
 "asistentePago.summary.reminder" = "Przypomnienie";
 "asistentePago.reminder.none" = "Bez przypomnienia";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "Czy to wspólny wydatek?";
+"asistentePago.shared.detail" = "Jeśli płaci kilka osób, Yala zapisze go w grupie i policzy tylko twoją część.";
+"asistentePago.shared.no" = "Nie, tylko mój";
+"asistentePago.shared.noHint" = "Płacisz ty i jest w całości twój.";
+"asistentePago.shared.groupHint" = "Członkowie: %d · %@";
+"asistentePago.split.question" = "Jak go dzielicie?";
+"asistentePago.split.detail" = "Kto płaci, wybierasz za każdym razem, gdy zapisujesz go ze Skrzynki.";
+"asistentePago.split.currency" = "Waluta";
+"asistentePago.split.division" = "Podział";
+"asistentePago.split.change" = "Zmień podział";
+"asistentePago.extra.question" = "Coś jeszcze?";
+"asistentePago.extra.detail" = "Wszystko gotowe. Zmień, co chcesz, albo kontynuuj.";
+"asistentePago.extra.account" = "Konto";
+"asistentePago.extra.note" = "Opis (opcjonalnie)";
+"asistentePago.extra.tags" = "Tagi";
+"asistentePago.extra.ends" = "Ma datę końcową";
+"asistentePago.extra.endDate" = "Ostatnia płatność";
+"asistentePago.summary.shared" = "Wspólny";
+"asistentePago.summary.split" = "Podział";
+"asistentePago.summary.account" = "Konto";
+"asistentePago.summary.note" = "Opis";
+"asistentePago.summary.tags" = "Tagi";
+"asistentePago.summary.ends" = "Kończy się";
+"asistentePago.summary.status" = "Stan";
+"asistentePago.summary.paused" = "Wstrzymany";
+"asistentePago.missing.group" = "Wybierz grupę, z którą go dzielisz.";
+"asistentePago.missing.division" = "Wybierz, jak go podzielić.";

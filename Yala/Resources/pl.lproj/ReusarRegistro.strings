@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "Wyczyść filtry";
 "reusarRegistro.noMatches" = "Żadna transakcja nie pasuje do tych filtrów";
 "reusarRegistro.noMatchesHint" = "Spróbuj innych filtrów lub je wyczyść.";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "Tej grupy nie ma już w Yala.";
+"reusarRegistro.groupArchived" = "Ta grupa jest zarchiwizowana.";
+"reusarRegistro.groupLeft" = "Nie należysz już do tej grupy.";
+"reusarRegistro.footer" = "Wpisy z ostatnich 6 miesięcy. Wydatek grupy tworzy wspólną płatność tej grupy. Nie ma tu przelewów, płatności między członkami ani wpisów, które już należą do płatności cyklicznej.";

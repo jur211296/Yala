@@ -77,5 +77,36 @@ extension L10n {
         static var resumenCuando: String { s("summary.when") }
         static var resumenAviso: String { s("summary.reminder") }
         static var sinAviso: String { s("reminder.none") }
+
+        // Lo compartido y «¿Algo más?» (encargo del 21-nov).
+        static var compartidoPregunta: String { s("shared.question") }
+        static var compartidoDetalle: String { s("shared.detail") }
+        static var soloMio: String { s("shared.no") }
+        static var soloMioPista: String { s("shared.noHint") }
+        /// «3 miembros · PEN».
+        static func grupoPista(_ miembros: Int, _ moneda: String) -> String { f("shared.groupHint", miembros, moneda) }
+        static var repartoPregunta: String { s("split.question") }
+        static var repartoDetalle: String { s("split.detail") }
+        static var repartoMoneda: String { s("split.currency") }
+        static var repartoDivision: String { s("split.division") }
+        static var repartoCambiar: String { s("split.change") }
+        static var algoMasPregunta: String { s("extra.question") }
+        static var algoMasDetalle: String { s("extra.detail") }
+        static var algoMasCuenta: String { s("extra.account") }
+        static var algoMasNota: String { s("extra.note") }
+        static var algoMasEtiquetas: String { s("extra.tags") }
+        static var algoMasTermina: String { s("extra.ends") }
+        static var algoMasUltimoPago: String { s("extra.endDate") }
+        static var resumenCompartido: String { s("summary.shared") }
+        static var resumenDivision: String { s("summary.split") }
+        static var resumenCuenta: String { s("summary.account") }
+        static var resumenNota: String { s("summary.note") }
+        static var resumenEtiquetas: String { s("summary.tags") }
+        static var resumenTermina: String { s("summary.ends") }
+        static var resumenEstado: String { s("summary.status") }
+        static var pausado: String { s("summary.paused") }
+        /// En el formulario, bajo la fila que falta tras tocar ✓.
+        static var faltaGrupo: String { s("missing.group") }
+        static var faltaDivision: String { s("missing.division") }
     }
 }

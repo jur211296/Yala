@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "When";
 "asistentePago.summary.reminder" = "Reminder";
 "asistentePago.reminder.none" = "No reminder";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "Is it a shared expense?";
+"asistentePago.shared.detail" = "If several people pay it, Yala records it in the group and counts only your share.";
+"asistentePago.shared.no" = "No, it’s just mine";
+"asistentePago.shared.noHint" = "You pay it and it’s all yours.";
+"asistentePago.shared.groupHint" = "Members: %d · %@";
+"asistentePago.split.question" = "How do you split it?";
+"asistentePago.split.detail" = "You choose who pays each time you record it from your Inbox.";
+"asistentePago.split.currency" = "Currency";
+"asistentePago.split.division" = "Split";
+"asistentePago.split.change" = "Change the split";
+"asistentePago.extra.question" = "Anything else?";
+"asistentePago.extra.detail" = "Everything’s set. Change whatever you like or continue.";
+"asistentePago.extra.account" = "Account";
+"asistentePago.extra.note" = "Description (optional)";
+"asistentePago.extra.tags" = "Tags";
+"asistentePago.extra.ends" = "Has an end date";
+"asistentePago.extra.endDate" = "Last payment";
+"asistentePago.summary.shared" = "Shared";
+"asistentePago.summary.split" = "Split";
+"asistentePago.summary.account" = "Account";
+"asistentePago.summary.note" = "Description";
+"asistentePago.summary.tags" = "Tags";
+"asistentePago.summary.ends" = "Ends";
+"asistentePago.summary.status" = "Status";
+"asistentePago.summary.paused" = "Paused";
+"asistentePago.missing.group" = "Choose which group you share it with.";
+"asistentePago.missing.division" = "Choose how it’s split.";

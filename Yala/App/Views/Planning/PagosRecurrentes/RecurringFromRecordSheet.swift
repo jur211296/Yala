@@ -61,8 +61,12 @@ struct RecurringFromRecordSheet: View {
         }
     }
 
+    /// Un gasto de grupo va directo al editor compartido: los recurrentes parecidos que se buscan son personales
+    /// (`similarPayment` deja fuera los de grupo).
     private func decide() {
-        if let similar = RecurringFromRecordService.similarPayment(for: record, in: modelContext) {
+        if RecurringFromRecordService.isReusableGroupExpense(record) {
+            phase = .editor(RecurringFromRecordService.prefill(from: record))
+        } else if let similar = RecurringFromRecordService.similarPayment(for: record, in: modelContext) {
             phase = .choice(similar)
         } else {
             phase = .editor(RecurringFromRecordService.prefill(from: record))
@@ -163,7 +167,8 @@ struct RecurringFromRecordSheet: View {
 
 /// Los registros recientes que se pueden hacer recurrentes, como en Registros (encargo del 17-nov): el buscador, los
 /// filtros rápidos (Cuenta · Categoría · Más filtros) y las mismas filas agrupadas por día. Al elegir uno sigue el mismo
-/// flujo que el menú de un registro, en la misma hoja.
+/// flujo que el menú de un registro, en la misma hoja. Desde el 21-nov también el gasto de cada grupo, con su chip, que
+/// crea un pago compartido de ese grupo; si el grupo ya no se puede usar, sale apagado con el motivo.
 ///
 /// Los filtros son de la hoja (`ReusarRegistroFilters`), no de la sesión: elegir una cuenta para encontrar el registro no
 /// deja filtrados Registros, el Panel ni Estadísticas.
@@ -179,6 +184,8 @@ struct RecurringRecordPickerSheet: View {
     @State private var categories: [Category] = []
     @State private var subcategories: [Subcategory] = []
     @State private var tags: [Tag] = []
+    /// Si el gasto de cada grupo se puede reusar, por zona (`RecurringFromRecordService.groupAvailabilities`).
+    @State private var groupAvailability: [String: RecurringFromRecordLogic.GroupAvailability] = [:]
     @State private var filters = ReusarRegistroFilters()
     @State private var query = ""
     @State private var chosen: TransactionItem?
@@ -287,22 +294,61 @@ struct RecurringRecordPickerSheet: View {
                         showsWeekday: true
                     )
                     ForEach(day.records, id: \.persistentModelID) { record in
-                        RecordRowView(
-                            record: record,
-                            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                            isSelectionMode: false,
-                            isSelected: false,
-                            onTap: { choose(record) },
-                            onToggleSelection: {}
-                        )
+                        row(record)
                     }
                 }
-                Text(L10n.RecurringFromRecord.pickerFooter)
+                Text(ReusarRegistroText.footer)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, DS.Spacing.md)
             }
+        }
+    }
+
+    /// Un gasto de grupo que ya no se puede reusar sale apagado, con una línea que dice por qué.
+    @ViewBuilder
+    private func row(_ record: TransactionItem) -> some View {
+        let unavailable = unavailableReason(record)
+        if let unavailable {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                RecordRowView(
+                    record: record,
+                    currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                    isSelectionMode: false,
+                    isSelected: false,
+                    onTap: {},
+                    onToggleSelection: {}
+                )
+                .disabled(true)
+                .opacity(0.45)
+                Label(unavailable, systemImage: "info.circle")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .accessibilityIdentifier("recurring_record_picker_unavailable_reason")
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("recurring_record_picker_unavailable")
+        } else {
+            RecordRowView(
+                record: record,
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                isSelectionMode: false,
+                isSelected: false,
+                onTap: { choose(record) },
+                onToggleSelection: {}
+            )
+        }
+    }
+
+    private func unavailableReason(_ record: TransactionItem) -> String? {
+        guard record.splitExpenseID != nil else { return nil }
+        switch groupAvailability[record.splitGroupZoneID ?? ""] ?? .available {
+        case .available: return nil
+        case .groupGone: return ReusarRegistroText.groupGone
+        case .archived: return ReusarRegistroText.groupArchived
+        case .notMember: return ReusarRegistroText.groupLeft
         }
     }
 
@@ -341,7 +387,8 @@ struct RecurringRecordPickerSheet: View {
             sortBy: [SortDescriptor(\.date, order: .reverse)])
         descriptor.fetchLimit = Self.fetchLimit
         do {
-            records = try modelContext.fetch(descriptor).filter(RecurringFromRecordService.offersMakeRecurring)
+            records = RecurringFromRecordService.reusableRecords(try modelContext.fetch(descriptor))
+            groupAvailability = RecurringFromRecordService.groupAvailabilities(for: records, in: modelContext)
             accounts = try modelContext.fetch(FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)]))
             categories = try modelContext.fetch(FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)]))
             subcategories = try modelContext.fetch(FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)]))
@@ -446,4 +493,11 @@ enum ReusarRegistroText {
     static var clearFilters: String { string("clearFilters") }
     static var noMatches: String { string("noMatches") }
     static var noMatchesHint: String { string("noMatchesHint") }
+    /// Un gasto de grupo que ya no se puede repetir (encargo del 21-nov).
+    static var groupGone: String { string("groupGone") }
+    static var groupArchived: String { string("groupArchived") }
+    static var groupLeft: String { string("groupLeft") }
+    /// El pie de la lista: de dónde salen los registros. Desde el 21-nov dice que un gasto de grupo sí entra (el texto
+    /// de antes, `rfr.picker.footer`, decía que no).
+    static var footer: String { string("footer") }
 }

@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (133 entradas)
+## Índice (134 entradas)
 
 > **No hace falta leer este fichero entero** — son 339 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-21` [Pago planificado compartido: quién paga se elige al registrar, no se guarda](#2026-11-21-pago-planificado-compartido-quin-paga-se-elige-al-registrar-no-se-guarda)
 - `2026-11-21` [Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, a](#2026-11-21-lote-del-21-nov-maana-ci-ms-rpido-logos-en-elige-los-pagos-reusar-con-gastos-de-grupo-asistente-de-pago-planificado-completo-auditora-de-decisiones-y-consolas-resueltas)
 - `2026-11-21` [Lote del 21-nov (madrugada): favoritos de Nuevo registro, auditoría de decisiones, iCloud del flujo ](#2026-11-21-lote-del-21-nov-madrugada-favoritos-de-nuevo-registro-auditora-de-decisiones-icloud-del-flujo-de-caja-privacidad-web-con-sentry-github-en-sentry-nombres-de-cuentas-a-yala-ia-y-salud-financiera)
 - `2026-11-20` [Lote del 20-nov (día): bug de Grupos desde una foto, pulido de Nuevo registro y oferta Pro de Primer](#2026-11-20-lote-del-20-nov-da-bug-de-grupos-desde-una-foto-pulido-de-nuevo-registro-y-oferta-pro-de-primeros-pasos)
@@ -159,6 +160,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-21] Pago planificado compartido: quién paga se elige al registrar, no se guarda
+**Contexto:** El encargo de «Reusar» con gastos de grupo y el asistente completo pedía copiar y preguntar «quién paga». Un pago planificado compartido guarda grupo, moneda y reparto, pero no tiene campo de pagador: al registrarlo desde la Bandeja se abre el gasto de grupo con «Pagado por: tú».
+**Decisión:** Opción A de Jürgen (21-nov, t1872u): no se añade el campo. «Reusar» y el asistente copian o preguntan grupo, moneda y reparto; quién paga se sigue eligiendo al registrar cada pago desde la Bandeja (tú por defecto). En el formulario, «¿Es un gasto compartido?» sale de «Más opciones» a su propia caja con Grupo, Moneda y División debajo; el asistente pregunta lo compartido tras el monto y añade «¿Algo más?» antes del resumen.
+**Razones:** Un campo nuevo exigía desplegar el esquema de iCloud en los dos contenedores y una migración de Supabase antes de publicar; sin ese despliegue, la subida de pagos planificados a iCloud fallaría en producción.
+**Consecuencias:** Implementado en el PR del encargo (`tickets/done/2026-11-21-reusar-registro-gastos-de-grupo.md`). Si un día se quiere guardar el pagador, es un campo nuevo del contenedor personal (`swiftdata-cloudkit.md`, «Schema del container PERSONAL») y una columna con `since` en el manifest.
+**Estado:** Activa
 
 ### [2026-11-21] Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, asistente de pago planificado completo, auditoría de decisiones y consolas resueltas
 **Contexto:** Seis decisiones de Jürgen en el chat del 21-nov (07:13 a 08:41, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del CI más rápido; solo ejecuta la (4), que es su encargo. Tres llegaron cortadas en la captura; se copian tal como llegaron.

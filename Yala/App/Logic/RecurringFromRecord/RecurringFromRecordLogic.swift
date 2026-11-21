@@ -46,6 +46,103 @@ enum RecurringFromRecordLogic {
         }
     }
 
+    // MARK: - Gastos de grupo en «Reusar» (encargo del 21-nov)
+
+    /// Lo que hace falta saber de una fila de grupo para ofrecerla en «Elige un registro».
+    struct GroupLegFacts: Equatable {
+        let hasSplitExpenseID: Bool
+        let hasSplitSettlementID: Bool
+        /// Pata derivada de una receta en líneas o pata de venta escrita por el puente (`RecordContextActionLogic.Shape`).
+        let isSplitLineLeg: Bool
+        let hasBalanceAdjustmentType: Bool
+        let isLinkedToScheduledPayment: Bool
+        let amount: Double
+        /// Subcategoría de sistema del puente («Préstamo a grupos», liquidaciones, saldo inicial).
+        let subcategoryIsBridgeSystem: Bool
+    }
+
+    /// La fila con el gasto del grupo, la que Registros enseña como «Luz Del Sur · Servicios del hogar · Jurpi»: el total
+    /// que pagaste tú (pata real) o tu parte si pagó otro. Fuera la pata de «Préstamo a grupos» (positiva y de sistema),
+    /// las liquidaciones, las ventas y las patas derivadas de una receta: no son un gasto que se repita.
+    static func isReusableGroupExpense(_ facts: GroupLegFacts) -> Bool {
+        facts.hasSplitExpenseID && !facts.hasSplitSettlementID && !facts.isSplitLineLeg
+            && !facts.hasBalanceAdjustmentType && !facts.isLinkedToScheduledPayment
+            && facts.amount < 0 && !facts.subcategoryIsBridgeSystem
+    }
+
+    /// Si el gasto de grupo se puede reusar, o por qué no.
+    enum GroupAvailability: Equatable {
+        case available
+        /// El grupo no está en este teléfono, está oculto para todos o la fila no lleva grupo.
+        case groupGone
+        case archived
+        /// Tu miembro del grupo ya no está activo (saliste o te quitaron).
+        case notMember
+    }
+
+    /// El editor solo ofrece grupos vivos y no archivados (`loadAvailableGroups`), y un pago de grupo genera su borrador
+    /// solo con tu miembro activo (`ScheduledPaymentDraftService.groupGateDecision`).
+    static func groupAvailability(
+        groupExists: Bool, isHiddenForAll: Bool, isArchived: Bool, currentMemberIsActive: Bool
+    ) -> GroupAvailability {
+        if !groupExists || isHiddenForAll { return .groupGone }
+        if isArchived { return .archived }
+        if !currentMemberIsActive { return .notMember }
+        return .available
+    }
+
+    /// El reparto del pago compartido, como lo guarda `ScheduledPayment` (valor crudo por participante según el modo).
+    struct GroupSplit: Equatable {
+        let splitType: SplitType
+        let participantIDs: [UUID]
+        let values: [UUID: Double]
+    }
+
+    /// El reparto del gasto, para repetirlo. Participa quien tenía parte (> 0) y sigue activo. Valores: exacto, los
+    /// montos; porcentaje, la parte de cada uno sobre el total; partes, la proporción entera si cuadra (si no, exacto).
+    /// Si se quitó a alguien y no era a partes iguales, pasa a partes iguales entre los que quedan: sus valores ya no
+    /// suman el total. `nil` si no queda nadie.
+    static func groupSplit(
+        splitType raw: String?, total: Double, shares: [(memberID: UUID, amount: Double)], activeMemberIDs: Set<UUID>
+    ) -> GroupSplit? {
+        let withShare = shares.filter { $0.amount > 0.0001 }
+        let kept = withShare.filter { activeMemberIDs.contains($0.memberID) }
+        guard !kept.isEmpty else { return nil }
+        var type = SplitType(rawValue: raw ?? "") ?? .equal
+        if kept.count < withShare.count && type != .equal { type = .equal }
+        let ids = kept.map(\.memberID)
+        switch type {
+        case .equal:
+            return GroupSplit(splitType: .equal, participantIDs: ids, values: [:])
+        case .exact:
+            return GroupSplit(splitType: .exact, participantIDs: ids, values: amounts(kept))
+        case .percentage:
+            let base = total > 0 ? total : kept.reduce(0) { $0 + $1.amount }
+            var values: [UUID: Double] = [:]
+            for share in kept { values[share.memberID] = (share.amount / base * 10_000).rounded() / 100 }
+            return GroupSplit(splitType: .percentage, participantIDs: ids, values: values)
+        case .shares:
+            guard let smallest = kept.map(\.amount).min(), smallest > 0 else {
+                return GroupSplit(splitType: .exact, participantIDs: ids, values: amounts(kept))
+            }
+            var counts: [UUID: Double] = [:]
+            for share in kept {
+                let ratio = share.amount / smallest
+                guard abs(ratio - ratio.rounded()) < 0.02, ratio.rounded() <= 100 else {
+                    return GroupSplit(splitType: .exact, participantIDs: ids, values: amounts(kept))
+                }
+                counts[share.memberID] = ratio.rounded()
+            }
+            return GroupSplit(splitType: .shares, participantIDs: ids, values: counts)
+        }
+    }
+
+    private static func amounts(_ shares: [(memberID: UUID, amount: Double)]) -> [UUID: Double] {
+        var values: [UUID: Double] = [:]
+        for share in shares { values[share.memberID] = share.amount }
+        return values
+    }
+
     // MARK: - Prellenado
 
     /// El nombre del recurrente: la descripción del registro y, sin ella, su subcategoría («Cloudflare», o «Hosting» si

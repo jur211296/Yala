@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "Limpar filtros";
 "reusarRegistro.noMatches" = "Nenhum registo corresponde a estes filtros";
 "reusarRegistro.noMatchesHint" = "Experimente outros filtros ou limpe-os.";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "Este grupo já não está no Yala.";
+"reusarRegistro.groupArchived" = "Este grupo está arquivado.";
+"reusarRegistro.groupLeft" = "Já não estás neste grupo.";
+"reusarRegistro.footer" = "Registos dos últimos 6 meses. Uma despesa de grupo cria um pagamento partilhado desse grupo. Não aparecem transferências, pagamentos entre membros nem os que já pertencem a um recorrente.";

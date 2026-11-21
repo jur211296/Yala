@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "Filter löschen";
 "reusarRegistro.noMatches" = "Keine Einträge passen zu diesen Filtern";
 "reusarRegistro.noMatchesHint" = "Versuche andere Filter oder lösche sie.";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "Diese Gruppe ist nicht mehr in Yala.";
+"reusarRegistro.groupArchived" = "Diese Gruppe ist archiviert.";
+"reusarRegistro.groupLeft" = "Du bist nicht mehr in dieser Gruppe.";
+"reusarRegistro.footer" = "Einträge der letzten 6 Monate. Eine Gruppenausgabe erstellt eine geteilte Zahlung dieser Gruppe. Überweisungen, Zahlungen zwischen Mitgliedern und Einträge, die schon zu einer wiederkehrenden Zahlung gehören, erscheinen nicht.";

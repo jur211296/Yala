@@ -39,8 +39,10 @@ struct AsistentePagoPlanificadoLogicaTests {
         Logica.puedeSeguir(en: paso, r, hoy: Self.hoy, calendar: calendar)
     }
 
-    @Test func sietePreguntas_enOrden_terminandoEnElResumen() {
-        #expect(Logica.pasos == [.tipo, .nombre, .monto, .frecuencia, .dia, .aviso, .resumen])
+    /// Sin grupos: ocho preguntas, con «¿Algo más?» antes del resumen (21-nov). Las de lo compartido, en
+    /// `AsistentePagoCompartidoTests`.
+    @Test func ochoPreguntasSinGrupos_enOrden_terminandoEnElResumen() {
+        #expect(Logica.pasos == [.tipo, .nombre, .monto, .frecuencia, .dia, .aviso, .algoMas, .resumen])
     }
 
     @Test func tipo_pideElegirUno_noLlegaElegido() {
@@ -114,9 +116,9 @@ struct AsistentePagoPlanificadoNavegadorTests {
         #expect(nav.indice(en: pasos) == 0)
         while nav.avanzar(en: pasos) {}
         #expect(nav.actual == .resumen)
-        #expect(nav.indice(en: pasos) == 6)
+        #expect(nav.indice(en: pasos) == 7)
         nav.retroceder(en: pasos)
-        #expect(nav.actual == .aviso)
+        #expect(nav.actual == .algoMas)
     }
 
     @Test func cambiarElMontoDesdeElResumen_siguienteVuelveAlResumen() {
@@ -313,7 +315,7 @@ struct AsistentePagoPlanificadoStringsTests {
         for texto in leidas {
             #expect(!texto.hasPrefix("asistentePago."), "Clave sin texto: \(texto)")
         }
-        #expect(es.count == 29)
+        #expect(es.count == 56, "29 del 17-nov y 27 de lo compartido y «¿Algo más?» del 21-nov.")
     }
 
     @Test func elEspanol_diceLoQueSePidio() throws {

@@ -24,18 +24,37 @@ enum AsistentePagoPlanificadoLogica {
         case nombre
         /// ¿Cuánto pagas cada vez? y «Cambia cada vez».
         case monto
+        /// ¿Es un gasto compartido? (No, solo mío / un grupo). Solo con algún grupo activo (encargo del 21-nov).
+        case compartido
+        /// ¿Cómo lo dividen? (moneda y división). Solo si se eligió un grupo.
+        case reparto
         /// ¿Cada cuánto toca pagar?
         case frecuencia
         /// ¿Qué día? (del mes, de la semana, la fecha del año o la del único pago).
         case dia
         /// ¿Te avisamos antes de que toque pagar?
         case aviso
+        /// ¿Algo más? (cuenta, descripción, etiquetas, fecha de fin, activo), con todo ya puesto: «Siguiente» siempre.
+        case algoMas
         /// ¿Lo creamos así? (el resumen, que crea).
         case resumen
     }
 
-    /// Las preguntas, en orden. Ninguna aparece ni desaparece: «¿Qué día?» cambia de forma con la frecuencia.
-    static let pasos: [Paso] = Paso.allCases
+    /// Las preguntas, en orden. «¿Es un gasto compartido?» solo aparece con algún grupo activo y «¿Cómo lo dividen?»
+    /// solo con un grupo elegido; «¿Qué día?» cambia de forma con la frecuencia. Lo compartido va tras el monto porque
+    /// el monto es el total que se divide.
+    static func pasos(tieneGrupos: Bool, conGrupo: Bool) -> [Paso] {
+        Paso.allCases.filter { paso in
+            switch paso {
+            case .compartido: return tieneGrupos
+            case .reparto: return tieneGrupos && conGrupo
+            default: return true
+            }
+        }
+    }
+
+    /// Sin grupos: lo que ve quien no comparte gastos.
+    static var pasos: [Paso] { pasos(tieneGrupos: false, conGrupo: false) }
 
     /// Lo contestado, para decidir si «Siguiente» se enciende.
     struct Respuestas: Equatable {
@@ -45,6 +64,12 @@ enum AsistentePagoPlanificadoLogica {
         var frecuencia: Frecuencia = .monthly
         var diaDelMes = 1
         var fecha: Date = .now
+        /// Se eligió un grupo en «¿Es un gasto compartido?».
+        var conGrupo = false
+        /// Con grupo: la división está elegida y cuadra.
+        var repartoListo = false
+        /// «Termina» encendido, con su fecha.
+        var fin: Date?
     }
 
     static func puedeSeguir(en paso: Paso, _ r: Respuestas, hoy: Date = .now, calendar: Calendar = .current) -> Bool {
@@ -55,15 +80,26 @@ enum AsistentePagoPlanificadoLogica {
             return !nombreLimpio(r.nombre).isEmpty
         case .monto:
             return montoValido(r.monto)
-        case .frecuencia, .aviso:
+        case .frecuencia, .aviso, .compartido:
             return true
+        case .reparto:
+            return !r.conGrupo || r.repartoListo
+        case .algoMas:
+            return finValido(r, hoy: hoy, calendar: calendar)
         case .dia:
             return diaValido(r, hoy: hoy, calendar: calendar)
         case .resumen:
             // Todo lo obligatorio, por si algo se vació al volver atrás.
             return r.tieneTipo && !nombreLimpio(r.nombre).isEmpty && montoValido(r.monto)
-                && diaValido(r, hoy: hoy, calendar: calendar)
+                && diaValido(r, hoy: hoy, calendar: calendar) && (!r.conGrupo || r.repartoListo)
+                && finValido(r, hoy: hoy, calendar: calendar)
         }
+    }
+
+    /// La fecha de fin, si se puso, desde hoy en adelante (como el formulario).
+    static func finValido(_ r: Respuestas, hoy: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard let fin = r.fin else { return true }
+        return calendar.startOfDay(for: fin) >= calendar.startOfDay(for: hoy)
     }
 
     static func nombreLimpio(_ nombre: String) -> String {
@@ -119,6 +155,8 @@ enum AsistentePagoPlanificadoLogica {
         _ draft: FirstScheduledPaymentDraft,
         monto: Double?,
         respondidos: Set<Paso>,
+        compartido: ScheduledPaymentGroupPrefill? = nil,
+        extras: ScheduledPaymentWizardExtras = ScheduledPaymentWizardExtras(),
         calendar: Calendar = .current
     ) -> ScheduledPaymentWizardPrefill {
         let aviso: Aviso? = respondidos.contains(.aviso) ? (draft.reminder ?? Aviso.none) : nil
@@ -134,7 +172,22 @@ enum AsistentePagoPlanificadoLogica {
             weekday: draft.weekday,
             date: calendar.startOfDay(for: draft.date),
             notifyOnDueDate: aviso?.notifyOnDueDate,
-            notifyDaysBefore: aviso?.notifyDaysBefore
+            notifyDaysBefore: aviso?.notifyDaysBefore,
+            group: compartido,
+            extras: extras
         )
+    }
+
+    // MARK: - Lo compartido
+
+    /// El pago compartido que se guarda, con lo elegido en «¿Cómo lo dividen?». `nil` sin grupo, sin monto o con la
+    /// división sin elegir.
+    static func compartido(
+        _ reparto: AsistentePagoPlanificadoReparto, monto: Double?
+    ) -> ScheduledPaymentGroupPrefill? {
+        guard let zona = reparto.grupoZona, let monto, montoValido(monto), reparto.listo else { return nil }
+        return ScheduledPaymentGroupPrefill(
+            groupZoneID: zona, currencyCode: reparto.moneda, totalAmount: monto, splitType: reparto.tipo,
+            participantIDs: reparto.participantes, values: reparto.valores)
     }
 }
