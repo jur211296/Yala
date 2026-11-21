@@ -99,7 +99,6 @@ struct VocabularioTienesTeQuedaTests {
             let entries = try Self.catalog("Yala/Resources/\(language).lproj/Localizable.strings")
             #expect(entries["panel.hero.haveToday"] == "Tu saldo hoy", "\(language)")
             #expect(entries["panel.saldo.moneyToday"] == "Tu dinero hoy", "\(language)")
-            #expect(entries["stats.hero.captionAccountsBalanceClosed"] == "Tu saldo al cierre", "\(language)")
             for (key, value) in entries where key.hasPrefix("panel.saldo.") || key == "panel.hero.haveToday" {
                 #expect(!value.contains("Debes") && !value.contains("debes"), "\(key) dice «debes» (§8).")
                 #expect(!value.lowercased().contains("disponible"), "\(key) dice «disponible».")
@@ -108,6 +107,8 @@ struct VocabularioTienesTeQuedaTests {
             }
         }
         let es = try Self.catalog("Yala/Resources/es.lproj/Localizable.strings")
+        // «Te queda / Te quedó» salió de la app el 20-nov-2026 (hero de Estadísticas, Sankey y voz), pero Yala web los
+        // sigue enseñando y lee estas claves de aquí (`webapp/test/lote4.test.ts`): se quedan.
         #expect(es["panel.hero.leftNow"] == "Te queda")
         #expect(es["panel.hero.leftPast"] == "Te quedó")
         #expect(es["panel.hero.leftInMonth"] == "En %@ te quedó")
@@ -122,7 +123,7 @@ struct VocabularioTienesTeQuedaTests {
     func newKeys_inAllSixteenLanguages() throws {
         let keys = [
             "panel.hero.haveToday", "panel.hero.oweToday", "panel.hero.leftNow", "panel.hero.leftPast",
-            "panel.hero.leftInMonth", "stats.hero.captionAccountsBalanceClosed",
+            "panel.hero.leftInMonth",
             "panel.saldo.moneyToday", "panel.saldo.infoButton", "panel.saldo.info.title", "panel.saldo.info.balanceBody",
             "panel.saldo.info.moneyBody", "panel.saldo.info.exampleTitle", "panel.saldo.info.exampleSavings",
             "panel.saldo.info.exampleCard", "panel.saldo.info.exampleNote", "panel.saldo.info.chooseAccounts",
@@ -156,26 +157,27 @@ struct VocabularioTienesTeQuedaTests {
         #expect(!closed(.custom, nil))
     }
 
-    @Test("Estadísticas usa las palabras del Panel: «Te queda / Te quedó» y «Tienes hoy / Tenías al cierre»")
+    @Test("Estadísticas usa la palabra del Panel: «Tu dinero hoy», y «Tu dinero al cierre» con un período cerrado")
     func statisticsCaptions_useThePanelWords() {
-        #expect(StatsHeroCaption.netPeriod.text(isClosed: false) == L10n.Panel.Hero.leftNow)
-        #expect(StatsHeroCaption.netPeriod.text(isClosed: true) == L10n.Panel.Hero.leftPast)
-        #expect(StatsHeroCaption.accountsBalance.text(isClosed: false) == L10n.Panel.Hero.haveToday)
-        #expect(StatsHeroCaption.accountsBalance.text(isClosed: true) == L10n.Stats.Hero.captionAccountsBalanceClosed)
+        #expect(StatsHeroCaption.moneyToday.text(isClosed: false) == L10n.SaldoPanel.moneyToday)
+        #expect(StatsHeroCaption.moneyToday.text(isClosed: true) == HeroEstadisticasText.moneyAtClose)
         // Los lados sueltos no cambian de nombre con el tiempo.
         #expect(StatsHeroCaption.expensePeriod.text(isClosed: true) == StatsHeroCaption.expensePeriod.text(isClosed: false))
-        // El sobrante del flujo de Distribución, igual.
-        #expect(SankeyFlowCalculator.leftoverLabel(periodIsClosed: false) == L10n.Panel.Hero.leftNow)
-        #expect(SankeyFlowCalculator.leftoverLabel(periodIsClosed: true) == L10n.Panel.Hero.leftPast)
+        // El sobrante del flujo de Distribución es «Diferencia», en curso y cerrado (20-nov-2026).
+        #expect(SankeyFlowCalculator.leftoverLabel(periodIsClosed: false) == HeroEstadisticasText.difference)
+        #expect(SankeyFlowCalculator.leftoverLabel(periodIsClosed: true) == HeroEstadisticasText.difference)
     }
 
     @Test("Las cuatro pestañas pasan el tiempo del período al rótulo")
     func statisticsTabs_passTheTense() throws {
         for tab in ["CategoriesTabView", "TrendsTabView", "InsightsTabView", "RecordsTabView"] {
             let src = try Self.repoFile("Yala/App/Views/Statistics/\(tab).swift")
-            #expect(src.contains(".text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange))"),
-                    "\(tab) pinta el rótulo sin saber si el período terminó.")
+            #expect(src.contains("StatsHeroView("), "\(tab) no monta el hero compartido.")
         }
+        let hero = try Self.repoFile("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(hero.contains("PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)"),
+                "El hero pinta el rótulo sin saber si el período terminó.")
+        #expect(hero.contains("caption.text(isClosed: isClosed)"))
         let viewModel = try Self.repoFile("Yala/App/ViewModels/StatisticsViewModel.swift")
         #expect(viewModel.contains("periodIsClosed: PeriodTenseLogic.isClosed(period: detailPeriod, customRange: customDateRange)"))
     }
@@ -190,7 +192,7 @@ struct VocabularioTienesTeQuedaTests {
             // El botón de la gráfica de saldo decía «Saldo» en pantalla y «Balance» a VoiceOver.
             #expect(entries["accessibility.metricBalance"] == entries["trendType.balance"])
             #expect(entries["accessibility.metricBalance"] == "Saldo")
-            #expect(entries["stats.trends.heroStable"]?.contains("balance") == false)
+            #expect(entries["stats.trends.heroStable"] == nil)
         }
     }
 

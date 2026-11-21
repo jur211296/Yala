@@ -1,0 +1,15 @@
+/*
+  HeroEstadisticas.strings
+  Yala
+
+  Hero de Estadísticas limpio (decisión de Jürgen del 20-nov-2026): «Tu dinero hoy» en las cuatro pestañas, su hoja
+  del «?» y la palabra que sustituye a «Te queda» en el Sankey y en el resumen en voz alta. Tabla propia, leída con el
+  idioma de la app (`HeroEstadisticasText`).
+*/
+
+"heroEstadisticas.moneyAtClose" = "Your money at close";
+"heroEstadisticas.info.title" = "Your money";
+"heroEstadisticas.info.body" = "It's the money you have to use: what's in your accounts, without credit cards. It's the same figure as “Your money today” on the Panel.";
+"heroEstadisticas.info.closedNote" = "For a period that has already ended, it's what you had when it closed.";
+"heroEstadisticas.example.cash" = "In cash";
+"heroEstadisticas.flow.difference" = "Difference";

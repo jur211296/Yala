@@ -18,10 +18,10 @@ struct ExpensesOnlyAuditLogicTests {
     @Test("Resumen y Registros rotulan el gasto en «Solo gastos» y su neto de siempre fuera")
     func captionsFollowTheMode() {
         #expect(StatsHeroCaptionLogic.insights(expensesOnly: true) == .expensePeriod)
-        #expect(StatsHeroCaptionLogic.insights(expensesOnly: false) == .netPeriod)
+        #expect(StatsHeroCaptionLogic.insights(expensesOnly: false) == .moneyToday)
         #expect(StatsHeroCaptionLogic.records(natures: [.expense], expensesOnly: true) == .expensePeriod)
         // Fuera del modo manda el filtro de naturaleza, como antes.
-        #expect(StatsHeroCaptionLogic.records(natures: [], expensesOnly: false) == .netPeriod)
+        #expect(StatsHeroCaptionLogic.records(natures: [], expensesOnly: false) == .moneyToday)
         #expect(StatsHeroCaptionLogic.records(natures: [.income], expensesOnly: false) == .incomePeriod)
     }
 
@@ -69,21 +69,24 @@ struct ExpensesOnlyAuditWiringTests {
         let insights = try Self.source("Yala/App/Views/Statistics/InsightsTabView.swift")
         #expect(!insights.contains("!sessionState.isExpensesOnlyMode && hasRecords"),
                 "Resumen vuelve a esconder la cifra en «Solo gastos».")
-        #expect(insights.contains("value: expensesOnly ? summary.totalExpense : summary.netBalance"))
-        #expect(insights.contains("ExpensesOnlyHeroVariation(variation: summary.expenseVariation)"))
+        #expect(insights.contains("StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly)"))
+        #expect(insights.contains("StatsMoneyTodayLogic.Figure(value: summary.totalExpense"))
+        #expect(insights.contains("expensesOnlyVariation: expensesOnly && summary.transactionCount > 0 ? .some(summary.expenseVariation)"))
+        let hero = try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift")
+        #expect(hero.contains("ExpensesOnlyHeroVariation(variation: variation)"))
 
         let records = try Self.source("Yala/App/Views/Statistics/RecordsTabView.swift")
         #expect(!records.contains("!sessionState.isExpensesOnlyMode && hasRecords"),
                 "Registros vuelve a esconder la cifra en «Solo gastos».")
-        #expect(records.contains("value: expensesOnly ? recordsSummary.expense : recordsSummary.balance"))
+        #expect(records.contains("case .expensePeriod: .init(value: recordsSummary.expense"))
     }
 
-    @Test("Tendencias no pinta la frase del balance en «Solo gastos» y lleva la variación del gasto")
+    @Test("Tendencias ya no pinta la frase del balance y lleva la variación del gasto en «Solo gastos»")
     func trendsDropsTheBalanceLine() throws {
         let trends = try Self.source("Yala/App/Views/Statistics/TrendsTabView.swift")
-        #expect(trends.contains("if !sessionState.isExpensesOnlyMode, let summary, let text = heroVariationSubtitle(for: summary)"),
-                "La frase del balance volvió a «Solo gastos»: gastar más se lee «por debajo · Ánimo».")
-        #expect(trends.contains("ExpensesOnlyHeroVariation(variation: summary.expenseVariation)"))
+        // Hero limpio (20-nov-2026): la frase de la variación del neto salió del hero en todos los modos.
+        #expect(!trends.contains("heroVariationSubtitle"), "La frase del balance volvió al hero.")
+        #expect(trends.contains("expensesOnlyVariation: expensesOnly && hasRecords ? .some(summary?.expenseVariation)"))
     }
 
     @Test("Distribución lleva la variación del gasto en «Solo gastos»")

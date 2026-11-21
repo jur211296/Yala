@@ -17,13 +17,12 @@ struct HeroClaroLogicTests {
 
     // MARK: - Qué explica el «?»
 
-    /// La explicación sigue a la MISMA magnitud que el rótulo: si Distribución enseña el saldo, la hoja habla del saldo.
+    /// La explicación sigue a la MISMA magnitud que el rótulo: si el hero enseña «Tu dinero hoy», la hoja habla de eso.
     @Test func eachCaption_opensTheExplanationOfItsOwnFigure() {
-        #expect(HeroClaroLogic.topic(for: .netPeriod) == .net)
+        #expect(HeroClaroLogic.topic(for: .moneyToday) == .moneyToday)
         #expect(HeroClaroLogic.topic(for: .expensePeriod) == .expense)
         #expect(HeroClaroLogic.topic(for: .incomePeriod) == .income)
         #expect(HeroClaroLogic.topic(for: .totalPeriod) == .total)
-        #expect(HeroClaroLogic.topic(for: .accountsBalance) == .accountsBalance)
     }
 
     /// Ningún rótulo de Estadísticas se queda sin hoja, y dos rótulos distintos no comparten explicación.
@@ -34,15 +33,15 @@ struct HeroClaroLogicTests {
 
     /// Las cuatro pestañas, por el mismo camino que eligen su rótulo.
     @Test func statisticsTabs_pickTheTopicOfWhatTheyShow() {
-        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.insights(expensesOnly: false)) == .net)
+        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.insights(expensesOnly: false)) == .moneyToday)
         #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.insights(expensesOnly: true)) == .expense)
         #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.trends(metric: .income)) == .income)
-        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: [])) == .accountsBalance)
+        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.distribution(isBalanceMode: true, natures: [])) == .moneyToday)
         #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.distribution(isBalanceMode: false, natures: [])) == .expense)
         #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.distribution(
             isBalanceMode: false, natures: [.income, .expense])) == .total)
         #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.records(natures: [.income], expensesOnly: false)) == .income)
-        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.records(natures: [], expensesOnly: false)) == .net)
+        #expect(HeroClaroLogic.topic(for: StatsHeroCaptionLogic.records(natures: [], expensesOnly: false)) == .moneyToday)
     }
 
     /// «Al 30 tendrías» solo en el mes en curso y con cuentas que sumen; si no, el rótulo es lo que queda del mes.
@@ -73,9 +72,7 @@ struct HeroClaroLogicTests {
         let parts = rows.dropLast().map(\.value)
         let expected: Double
         switch topic {
-        case .net:
-            expected = parts[0] - parts[1]                 // ingresos − gastos
-        case .expense, .income, .accountsBalance:
+        case .expense, .income, .moneyToday:
             expected = parts.reduce(0, +)                  // suma con signo (la devolución resta)
         case .total:
             expected = parts.map(abs).reduce(0, +)         // ingresos y gastos sumados, sin restar
@@ -125,41 +122,29 @@ struct HeroClaroWiringTests {
         "Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
     ]
 
-    /// Cada hero lleva su «?» y cuelga la hoja que lo explica.
+    /// Cada hero lleva su «?» y cuelga la hoja que lo explica. Las cuatro pestañas de Estadísticas lo hacen por el hero
+    /// compartido (`StatsHeroView`, 20-nov-2026), que es lo que montan.
     @Test(arguments: heroes)
     func eachHero_hasItsHelpButton_andPresentsTheSheet(_ path: String) throws {
-        let code = try Self.source(path)
+        var code = try Self.source(path)
+        if path.contains("/Statistics/") {
+            #expect(code.contains("StatsHeroView("), "\(path) no monta el hero compartido.")
+            code = try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift")
+        }
         #expect(code.contains("HeroInfoButton("), "\(path) no monta el «?».")
         #expect(code.contains(".heroInfoSheet($heroInfo"), "\(path) no presenta la hoja del «?».")
     }
 
-    /// Sin el hueco: la cifra va pegada al rótulo (`HeroClaroHeader`). `SummaryHeaderStack` lo pone a Resumen y a
-    /// Registros; las otras tres lo montan ellas. Volver a `HeroHeader {` devolvería el hueco.
+    /// Sin el hueco: la cifra va pegada al rótulo (`HeroClaroHeader`). `SummaryHeaderStack` lo pone al hero compartido
+    /// de Estadísticas y al flujo de caja lo monta él. Volver a `HeroHeader {` devolvería el hueco.
     @Test func noGapBeforeTheFigure() throws {
         let summary = try Self.source("Yala/App/Views/Shared/SummaryHeaderStack.swift")
         #expect(summary.contains("HeroClaroHeader {"))
         #expect(!summary.contains("HeroHeader {"))
-        for path in [
-            "Yala/App/Views/Statistics/TrendsTabView.swift",
-            "Yala/App/Views/Statistics/CategoriesTabView.swift",
-            "Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift",
-        ] {
-            let code = try Self.source(path)
-            #expect(code.contains("HeroClaroHeader {"), "\(path) no usa el hero claro.")
-            #expect(!code.contains("HeroHeader {"), "\(path) sigue con el hero del hueco.")
-        }
-    }
-
-    /// Ingresos y gastos rotulados en las tres pestañas que los enseñan bajo la cifra.
-    @Test(arguments: [
-        "Yala/App/Views/Statistics/InsightsTabView.swift",
-        "Yala/App/Views/Statistics/TrendsTabView.swift",
-        "Yala/App/Views/Statistics/RecordsTabView.swift",
-    ])
-    func incomeAndExpense_areLabelled(_ path: String) throws {
-        let code = try Self.source(path)
-        #expect(code.contains("HeroFlowAmountCaption(text: L10n.CashFlow.income)"), "\(path): ingresos sin rótulo.")
-        #expect(code.contains("HeroFlowAmountCaption(text: L10n.CashFlow.expense)"), "\(path): gastos sin rótulo.")
+        #expect(try Self.source("Yala/App/Views/Statistics/StatsHeroView.swift").contains("SummaryHeaderStack("))
+        let cashFlow = try Self.source("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift")
+        #expect(cashFlow.contains("HeroClaroHeader {"))
+        #expect(!cashFlow.contains("HeroHeader {"))
     }
 
     /// El análisis de cuenta reutiliza la tarjeta de «Últimos registros» del Panel en sus dos listas, no una copia.
@@ -189,7 +174,7 @@ struct HeroClaroStringsTests {
     func everyLocale_hasEveryKey(_ locale: String) throws {
         let reference = try Self.keys(in: "es-419")
         let here = try Self.keys(in: locale)
-        #expect(reference.count == 30)
+        #expect(reference.count == 24)
         #expect(Set(here.keys) == Set(reference.keys), "\(locale) no tiene las mismas claves que es-419.")
         for (key, value) in here {
             #expect(!value.isEmpty && value != key, "\(locale): \(key) sin traducir.")

@@ -4181,11 +4181,7 @@
 
 // MARK: - Stats Records polish
 
-"stats.records.motivationalOne" = "1 条记录 · 好的开始";
-"stats.records.motivationalMany %d" = "%d 条记录 · 继续保持";
 
-"stats.insights.motivationalOne" = "1 条记录 · 好的开始";
-"stats.insights.motivationalMany %d" = "%d 条记录 · 继续保持";
 "stats.insights.detailHeader" = "你的数据";
 "stats.insights.aiCardTitle" = "AI 总结";
 "stats.insights.aiCardSubtitle" = "用 AI 生成";
@@ -4204,14 +4200,7 @@
 "stats.trends.generateAI" = "用 AI 生成";
 "stats.trends.regenerate" = "更新";
 "stats.trends.aiFootnote" = "AI 总结";
-"stats.trends.heroOnset" = "你与 Yala 的第一个周期";
-"stats.trends.heroStable" = "你的余额保持稳定";
-"stats.trends.heroVarUp %d %@" = "比%2$@高出%1$d%% · 继续保持";
-"stats.trends.heroVarDown %d %@" = "比%2$@低%1$d%% · 加油，一步一步来";
 // MARK: Distribution
-"stats.distribution.heroSubtitle1 %d" = "%d 个分类";
-"stats.distribution.heroSubtitle2 %d %d" = "%d 个分类 · %d 个子分类";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d 个分类 · %d 个子分类 · %d 个标签";
 "stats.distribution.insightTitleFree %@" = "一目了然你的 %@";
 "stats.distribution.insightTitlePro" = "本期分布";
 "stats.distribution.aiFootnote" = "AI 总结";
@@ -8921,7 +8910,6 @@
 "panel.hero.leftNow" = "剩余";
 "panel.hero.leftPast" = "结余";
 "panel.hero.leftInMonth" = "%@结余";
-"stats.hero.captionAccountsBalanceClosed" = "期末余额";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "暂无评分：三部分中有两部分有数据后才会显示。";
@@ -9991,18 +9979,12 @@
 "heroClaro.filtersNote" = "如果你设置了筛选，金额只计算你看到的部分。";
 "heroClaro.incomeBody" = "你记为收入的所有款项：工资、销售、收款。";
 "heroClaro.expenseBody" = "你记为支出的所有款项。退款会从支出中扣除。";
-"heroClaro.net.title" = "剩下的钱";
-"heroClaro.net.body" = "这是你所选期间内流入的钱减去流出的钱。如果是负数，说明流出的比流入的多。";
-"heroClaro.net.notBalance" = "这不是你账户里的钱：那是面板上的“今日余额”。";
 "heroClaro.expense.title" = "你花了多少";
 "heroClaro.expense.body" = "这是你所选期间内支出的总和。退款会从支出中扣除。";
 "heroClaro.income.title" = "流入了多少";
 "heroClaro.income.body" = "这是你所选期间内收入的总和。";
 "heroClaro.total.title" = "收入和支出合计";
 "heroClaro.total.body" = "同时选中收入和支出时，金额会把两者相加而不相减：表示你筛选的内容流动了多少钱。";
-"heroClaro.balance.title" = "你的余额";
-"heroClaro.balance.body" = "这是你账户里的钱：所有账户，包括卡，按正负号计算。与面板上的“今日余额”是同一个金额。";
-"heroClaro.balance.closedNote" = "对于已经结束的期间，是期末时你拥有的金额。";
 "heroClaro.cashFlowEnd.title" = "月底你会有多少";
 "heroClaro.cashFlowEnd.body" = "这是你今天的余额，加上本月还要流入的，减去还要流出的。下面可以看到每一部分以及预估的来源。";
 "heroClaro.cashFlowEnd.netNote" = "“本月预计结余”是另一回事：整个月流入减去流出，不算你原本已有的钱。";

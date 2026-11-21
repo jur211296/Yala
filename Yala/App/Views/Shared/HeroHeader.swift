@@ -253,20 +253,3 @@ struct HeroInfoButton: View {
         }
     }
 }
-
-/// «Ingresos» o «Gastos» en chico, encima de su monto con la flecha: antes las flechas iban sin rótulo y había que
-/// adivinar cuál era cuál. Encima y no al lado, para que en un iPhone SE quepan los dos con sus chips de variación.
-struct HeroFlowAmountCaption<Content: View>: View {
-    let text: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            Text(text)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            content
-        }
-    }
-}

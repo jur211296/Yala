@@ -1014,10 +1014,14 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   de Jürgen del 2026-11-16: «el hero del Panel es el estándar»). Lo usan las cuatro pestañas de Estadísticas, Registros
   (por `SummaryHeaderStack`) y el mes del Flujo de caja. Con `HeroHeader`, la fila de arriba medía lo que la columna del
   período (flechas, píldora y días: ~55 pt) y la cifra quedaba ~40 pt por debajo del rótulo; `HeroClaroRows` alinea el
-  rótulo con el texto de la píldora y pone la cifra pegada al rótulo, al lado del período si cabe. Ingresos y gastos
-  bajo la cifra van rotulados (`HeroFlowAmountCaption`). El «?» sale solo con «Mostrar ayudas», como el del Panel, y su
-  hoja explica la MISMA magnitud que el rótulo (`HeroClaroLogic.topic(for:)`). Pin: `HeroClaroLogicTests` (lógica,
-  cableado y los 16 idiomas). El Panel sigue con `HeroMonthView`, sin tocar.
+  rótulo con el texto de la píldora y pone la cifra pegada al rótulo, al lado del período si cabe. El «?» sale solo con
+  «Mostrar ayudas», como el del Panel, y su hoja explica la MISMA magnitud que el rótulo (`HeroClaroLogic.topic(for:)`).
+  Pin: `HeroClaroLogicTests` (lógica, cableado y los 16 idiomas). El Panel sigue con `HeroMonthView`, sin tocar.
+  **Desde el 20-nov-2026 (hero limpio, decisión de Jürgen) las cuatro pestañas de Estadísticas y Registros montan UN
+  hero, `StatsHeroView`**: rótulo con «?», cifra, e ingresos y gastos con sus flechas, sin escribir «Ingresos»/«Gastos»
+  encima y sin línea debajo (recuento, «Sigue así», variación). La cifra es «Tu dinero hoy» (`StatsMoneyTodayLogic`, las
+  piezas del Panel) salvo en los estados de un lado. ⇒ algo nuevo del hero de Estadísticas va en `StatsHeroView`, no en
+  una pestaña, y una línea más bajo la cifra se pregunta: Jürgen las quitó. Pin: `YalaTests/HeroEstadisticasLimpio/`.
 - **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:caption:figure:detail:)`**
   (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
   Estadísticas › Resumen. Con alto suficiente pinta el `HeroHeader` (desde el 2026-10-04; antes, una pila centrada);

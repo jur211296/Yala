@@ -153,13 +153,15 @@ enum ChartSpokenSummary {
 
     // MARK: - Entradas y salidas
 
-    /// «Ingresos S/ 5,000, Gastos S/ 3,500. Te queda S/ 1,500.» Con solo uno de los dos lados a la vista no se resta.
+    /// «Ingresos S/ 5,000, Gastos S/ 3,500. Diferencia S/ 1,500.» Con solo uno de los dos lados a la vista no se resta.
+    /// «Diferencia» y no «Te queda» (decisión de Jürgen del 20-nov-2026): lo que entró menos lo que salió no es dinero que
+    /// tengas. `isClosed` se queda en la firma: la palabra ya no cambia con el tiempo.
     static func cashFlow(
         income: String, expense: String, net: Double?, isClosed: Bool, format: ChartAmountFormat
     ) -> String {
         let totals = L10n.Accessibility.cashFlowSummary(income: income, expense: expense)
         guard let net else { return totals }
-        let label = isClosed ? L10n.Panel.Hero.leftPast : L10n.Panel.Hero.leftNow
+        let label = HeroEstadisticasText.difference
         return L10n.Accessibility.Chart.cashFlowNet(totals, label, format.spoken(net))
     }
 

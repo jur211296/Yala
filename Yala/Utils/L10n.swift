@@ -983,12 +983,6 @@ enum L10n {
             static var oweToday: String {
                 ls("panel.hero.oweToday", comment: "Panel hero label of the big figure when the accounts add up to a debt. The figure is shown without sign")
             }
-            static var leftNow: String {
-                ls("panel.hero.leftNow", comment: "Label before the amount of income minus expenses for a period still in progress (\"what you have left\"). Never \"surplus\"")
-            }
-            static var leftPast: String {
-                ls("panel.hero.leftPast", comment: "Label before the amount of income minus expenses for a period that already ended (\"what you had left\")")
-            }
             static func leftInMonth(_ month: String) -> String {
                 String(format: ls("panel.hero.leftInMonth", comment: "Label before the amount of income minus expenses of last month, with its name (\"In October you had left\"). %@ = month name"), month)
             }
@@ -9453,24 +9447,7 @@ enum L10n {
     // MARK: - Stats Records polish (stats-polish-panel-alignment)
 
     enum Stats {
-        // `locale: .current` pone el separador de miles con el formato de los importes de al lado
-        // (`CurrencyFormattingHelper`, `NumberFormatter` con el locale del sistema): sin él salía «11696 registros»
-        // junto a «S/ 1,359,134» (lote 07 de mejoras necesarias 2.3).
-        enum Records {
-            static var motivationalOne: String {
-                ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
-            }
-            static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), locale: .current, count)
-            }
-        }
         enum Insights {
-            static var motivationalOne: String {
-                ls("stats.insights.motivationalOne", comment: "Insights hero motivational subtitle when transactionCount == 1")
-            }
-            static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), locale: .current, count)
-            }
             static var detailHeader: String {
                 ls("stats.insights.detailHeader", comment: "Detail mode section header — generic 'Your numbers' (period shown as subtitle)")
             }
@@ -9511,18 +9488,6 @@ enum L10n {
             }
             static var aiFootnote: String {
                 ls("stats.trends.aiFootnote", comment: "Footer label in Pro post-AI trend insight card balancing the Regenerate chip — identitarian tag")
-            }
-            static var heroOnset: String {
-                ls("stats.trends.heroOnset", comment: "Hero subtitle when no previous period comparable (first month / .allTime)")
-            }
-            static var heroStable: String {
-                ls("stats.trends.heroStable", comment: "Hero subtitle when |balance variation| < 5% (no significant change)")
-            }
-            static func heroVarUp(_ percent: Int, _ previousPeriod: String) -> String {
-                String(format: ls("stats.trends.heroVarUp %d %@", comment: "Hero subtitle when balance variation positive ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
-            }
-            static func heroVarDown(_ percent: Int, _ previousPeriod: String) -> String {
-                String(format: ls("stats.trends.heroVarDown %d %@", comment: "Hero subtitle when balance variation negative ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
             }
             enum Insight {
                 /// Sin período anterior con datos. No lleva el nombre del período: «Este mes» es un rótulo y dentro de
@@ -9602,15 +9567,6 @@ enum L10n {
             }
         }
         enum Distribution {
-            static func heroSubtitle1(_ count: Int) -> String {
-                String(format: ls("stats.distribution.heroSubtitle1 %d", comment: "Hero subtitle 1 dimension active (only categories)"), count)
-            }
-            static func heroSubtitle2(_ cats: Int, _ subs: Int) -> String {
-                String(format: ls("stats.distribution.heroSubtitle2 %d %d", comment: "Hero subtitle 2 dimensions (categories + subcategories)"), cats, subs)
-            }
-            static func heroSubtitle3(_ cats: Int, _ subs: Int, _ tags: Int) -> String {
-                String(format: ls("stats.distribution.heroSubtitle3 %d %d %d", comment: "Hero subtitle 3 dimensions (categories + subcategories + tags)"), cats, subs, tags)
-            }
             // Vacíos de las tarjetas de Distribución cuando el período no trae movimientos de esa dimensión. Antes decían
             // «Aún no tienes categorías / subcategorías / etiquetas» aunque existieran (lote 07 de mejoras necesarias 2.3).
             static var emptyNoMovementsTitle: String {
@@ -9671,9 +9627,6 @@ enum L10n {
         enum Hero {
             /// El saldo de las cuentas al cierre de un período que ya terminó. En curso, «Tienes hoy»
             /// (`L10n.Panel.Hero.haveToday`), y el neto, «Te queda» / «Te quedó»: las palabras del Panel.
-            static var captionAccountsBalanceClosed: String {
-                ls("stats.hero.captionAccountsBalanceClosed", comment: "Stats hero caption: the figure is what the accounts had at the end of a period that already ended (\"You had at the close\")")
-            }
             static var captionIncomePeriod: String {
                 ls("stats.hero.captionIncomePeriod", comment: "Stats hero caption: the figure is only the income side for the period")
             }

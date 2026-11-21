@@ -23,8 +23,6 @@ struct RecordsTabView: View {
     @Environment(\.modelContext) private var modelContext
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
-    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-    @State private var heroInfo: HeroInfoRequest?
 
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
@@ -33,6 +31,9 @@ struct RecordsTabView: View {
     let subcategories: [Subcategory]
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
+    /// Todos los movimientos y las recargas del contenedor: de ahí sale «Tu dinero hoy» del hero.
+    let allTransactions: [TransactionItem]
+    let dataGeneration: Int
     var onFilterChange: () -> Void
     /// La última lectura de los movimientos falló (decisión 78 de 2.3): con la lista vacía se enseña el error, no
     /// «Sin registros». Lo da `DetailContainerViewModel.transactionsLoadFailed`.
@@ -312,170 +313,53 @@ struct RecordsTabView: View {
 
     // MARK: - Hero Summary
 
+    /// El hero compartido de Estadísticas (`StatsHeroView`): «Tu dinero hoy», o el lado que deja un chip de naturaleza
+    /// (el gasto en «Solo gastos»). Debajo, ingresos y gastos de lo filtrado; tocar uno deja solo ese lado.
     private var heroSummary: some View {
+        let caption = StatsHeroCaptionLogic.records(
+            natures: viewModel.selectedTransactionNatures,
+            expensesOnly: sessionState.isExpensesOnlyMode
+        )
         let hasRecords = viewModel.filteredCount > 0
-
-        // En «Solo gastos» la cifra es lo gastado, como en el Panel (decisión A de Jürgen del 2026-10-26): el neto de
-        // siempre, sin ingresos, no diría nada. Antes el hero se quedaba sin cifra y la pantalla, coja.
-        let expensesOnly = sessionState.isExpensesOnlyMode
-        let showsFigure = hasRecords
-
-        // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
-        // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
-        return SummaryHeaderStack(
+        let side: StatsMoneyTodayLogic.Figure? = switch caption {
+        case .incomePeriod: .init(value: recordsSummary.income, isApproximate: recordsSummary.incomeIsApproximate)
+        case .expensePeriod: .init(value: recordsSummary.expense, isApproximate: recordsSummary.expenseIsApproximate)
+        case .moneyToday, .totalPeriod: nil
+        }
+        return StatsHeroView(
+            caption: caption,
+            sideFigure: hasRecords ? side : nil,
+            flow: StatsHeroFlow(
+                income: recordsSummary.income,
+                expense: recordsSummary.expense,
+                incomeIsApproximate: recordsSummary.incomeIsApproximate,
+                expenseIsApproximate: recordsSummary.expenseIsApproximate
+            ),
+            money: StatsHeroMoneySource(accounts: accounts, transactions: allTransactions, dataGeneration: dataGeneration),
+            currencyCode: defaultCurrencyCode,
+            natureFilter: StatsHeroNatureFilter(
+                selected: viewModel.selectedTransactionNatures,
+                toggle: toggleNature
+            ),
             isShort: isShortContainer,
-            verticalPadding: summaryVerticalPadding
+            verticalPadding: summaryVerticalPadding,
+            figureIdentifier: "records_summary_balance",
+            incomeIdentifier: "records_summary_income",
+            expenseIdentifier: "records_summary_expense"
         ) {
             periodSelector
-        } caption: {
-            // Qué es la cifra. Con un chip de naturaleza activo el otro lado es
-            // 0 y `recordsSummary.balance` deja de ser un neto, así que el
-            // rótulo sigue al filtro; en «Solo gastos», siempre el gasto.
-            if showsFigure {
-                let caption = StatsHeroCaptionLogic.records(
-                    natures: viewModel.selectedTransactionNatures,
-                    expensesOnly: expensesOnly
-                )
-                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
-                HStack(spacing: DS.Spacing.xs) {
-                    HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                        .accessibilityIdentifier("stats_hero_caption")
-                    // El «?» del Panel: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-                    HeroInfoButton(identifier: "stats_hero_info") {
-                        heroInfo = HeroInfoRequest(
-                            topic: HeroClaroLogic.topic(for: caption),
-                            figureLabel: caption.text(isClosed: isClosed),
-                            isClosedPeriod: isClosed
-                        )
-                    }
-                }
-            }
-        } figure: {
-            if showsFigure {
-                AmountText(
-                    value: expensesOnly ? recordsSummary.expense : recordsSummary.balance,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate,
-                    animatesValue: true
-                )
-                .accessibilityIdentifier("records_summary_balance")
-            }
-        } detail: {
-            // En «Solo gastos» la fila de entradas y salidas sería solo el gasto, que ya es la cifra grande.
-            if !expensesOnly {
-                incomeExpenseChips
-            }
-
-            if let subtitle = RecordsMotivationalLogic.subtitle(forCount: viewModel.filteredCount) {
-                Text(localizedMotivational(subtitle))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
-    }
-
-    private func localizedMotivational(_ subtitle: RecordsHeroSubtitle) -> String {
-        switch subtitle {
-        case .one: return L10n.Stats.Records.motivationalOne
-        case .many(let n): return L10n.Stats.Records.motivationalMany(n)
         }
     }
 
-    // MARK: - Income / Expense Chips (tap-to-filter)
-
-    private var incomeExpenseChips: some View {
-        let isIncomeFiltered = viewModel.selectedTransactionNatures == [.income]
-        let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
-        let hasNeedFilter = isIncomeFiltered || isExpenseFiltered
-
-        // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
-        // cabían y se cortaban por el medio («S/1,…10»).
-        return AdaptiveRowStack(stackedAlignment: .center, spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
-            if !sessionState.isExpensesOnlyMode {
-                Button {
-                    if isIncomeFiltered {
-                        viewModel.selectedTransactionNatures.removeAll()
-                    } else {
-                        viewModel.selectedTransactionNatures = [.income]
-                    }
-                    onFilterChange()
-                } label: {
-                    // «Ingresos» en chico encima del monto (hero claro, 2026-11-16): antes la flecha iba sola.
-                    HeroFlowAmountCaption(text: L10n.CashFlow.income) {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "arrow.up.right")
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.incomeGraph)
-                                .accessibilityHidden(true)
-                            AmountText(
-                                value: recordsSummary.income,
-                                currencyCode: defaultCurrencyCode,
-                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                                tint: .secondary,
-                                isEstimate: recordsSummary.incomeIsApproximate,
-                                animatesValue: true
-                            )
-                            .accessibilityIdentifier("records_summary_income")
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.metricIncome)
-                // El `accessibilityLabel` del Button TAPA la etiqueta que `AmountText` se pone a sí
-                // mismo, así que sin este `accessibilityValue` VoiceOver no lee el número —ni el
-                // «≈»— en un control que existe para enseñarlo.
-                .accessibilityValue(appPreferences.currency(
-                    recordsSummary.income, currencyCode: defaultCurrencyCode,
-                    isEstimate: recordsSummary.incomeIsApproximate
-                ))
-            }
-
-            Button {
-                if isExpenseFiltered {
-                    if !sessionState.isExpensesOnlyMode {
-                        viewModel.selectedTransactionNatures.removeAll()
-                    }
-                } else {
-                    viewModel.selectedTransactionNatures = [.expense]
-                }
-                onFilterChange()
-            } label: {
-                // «Gastos» en chico encima del monto (hero claro, 2026-11-16).
-                HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.down.right")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.expenseGraph)
-                            .accessibilityHidden(true)
-                        AmountText(
-                            value: recordsSummary.expense,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary,
-                            isEstimate: recordsSummary.expenseIsApproximate,
-                            animatesValue: true
-                        )
-                        .accessibilityIdentifier("records_summary_expense")
-                    }
-                }
-                .contentShape(Rectangle())
-                .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.metricExpense)
-            .accessibilityValue(appPreferences.currency(
-                recordsSummary.expense, currencyCode: defaultCurrencyCode,
-                isEstimate: recordsSummary.expenseIsApproximate
-            ))
+    /// Tocar ingresos o gastos deja solo ese lado; tocarlo otra vez lo quita. En «Solo gastos» el gasto no se suelta.
+    private func toggleNature(_ nature: TransactionNature) {
+        if viewModel.selectedTransactionNatures == [nature] {
+            guard !(nature == .expense && sessionState.isExpensesOnlyMode) else { return }
+            viewModel.selectedTransactionNatures.removeAll()
+        } else {
+            viewModel.selectedTransactionNatures = [nature]
         }
-        // El importe que no filtra se atenúa animado (card C2). Implícita: en una pestaña un `withAnimation` no anima.
-        .dsAnimation(DS.Animation.selection, value: viewModel.selectedTransactionNatures, reduceMotion: reduceMotion)
+        onFilterChange()
     }
 
     private var recordsSummary: RecordsViewModel.RecordsSummary {
