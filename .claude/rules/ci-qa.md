@@ -18,11 +18,61 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
 
 | Qué | ¿Frena el merge? | Dónde |
 |---|---|---|
-| Unit pure-logic y context-based | **Sí**, desde el 2026-10-10 | job `tests` |
+| Unit pure-logic y context-based | **Sí**, desde el 2026-10-10 | jobs `build` → `unit` (3 tandas) → `tests` |
 | UI (XCUITest) | No: advisory y solo en la nocturna | job `ui` |
 | UI de lo tocado | No corre en el CI: solo en el paso 3 de `/gate`, en local | `qa/scripts/interfaz-de-lo-tocado.py` |
 | Revisor con checklist | No corre en el CI: paso 4 bis de `/gate`, en local y en observar | `qa/scripts/checklist-elegir.py` (de 2.3) |
 | El aviso a Grok | No, salvo que no quede ningún canal | job `aviso` |
+
+## Los unit van en tres jobs, y `tests` es solo su veredicto (2026-11-21)
+
+Auditoría de tiempos del CI (`docs/auditorias/2026-11-21-ci-tiempos.md`). Un PR que compilaba tardaba
+~66 min en el p50: build desde cero (~27), pure-logic (~23) y context-based (~4) en serie en un runner.
+
+- **`build`** compila una vez y sube los productos. **Reusa el DerivedData del último build de 2.3**
+  (`actions/cache`, clave = Xcode + `Package.resolved` + commit). Medido en la Max: frío 214 s; mismo
+  checkout 23 s; cambio dentro de una vista 47 s; solo un test 65 s; cambio de interfaz en un fichero
+  central 192 s. **La ruta tiene que ser la misma** (copiado a otra, recompila entero) y la caché de
+  compilación de Xcode sola, sin el resto del DerivedData, no gana nada (218 s).
+  Guarda el push a 2.3/1.0 y la nocturna; un PR solo si no encontró nada. Un fallo de caché nunca
+  rompe el run (`continue-on-error`): compila desde cero.
+- **`unit`** es una matriz de 3 tandas. El reparto lo hace `qa/scripts/ci-unit-tandas.sh` por los
+  tiempos de `qa/ci-unit-tiempos.json`; la última tanda corre «todo menos lo de las otras», así que
+  una suite nueva nunca se queda fuera. Context-based corre en la tanda 1, a la vez que las otras.
+  La lista de sus 7 clases vive en ese script, en un solo sitio.
+- **`tests`** (Ubuntu) junta resultados con `ci-unit-resultado.sh` y **falla cerrado**: rojo si el
+  build o cualquier tanda no corrió o no salió en verde. Es el check que exige el ruleset: **no se
+  renombra**, y nunca se le pone `continue-on-error`. `ci-unit-bloqueante-test.sh` lo vigila, junto con
+  que `TANDAS` cuadre con la matriz.
+- **Tabla de tiempos.** Cada tanda sube `unit-tiempos-N` (segundos por suite, del `.xcresult`). Cuando
+  las tandas se descompensen, `python3 qa/scripts/ci-unit-tiempos.py generar <run> <run> <run>`.
+- **Cambiar el número de tandas** toca la matriz, las salidas `pure_N`/`rojos_N` de `unit` y `TANDAS`
+  de `tests`. Ocupan 3 de los 5 macOS de la cuenta: por eso la nocturna va de noche.
+
+## La nocturna la lanza el vigilante a hora fija (2026-11-21)
+
+GitHub servía el cron de `qa.yml` con 6-10 h de retraso (entre las 09:00 y las 13:47 de Lima, del
+12-oct al 20-nov), y la nocturna, que dura 7,5-9 h, ocupaba los macOS en plena jornada.
+
+- **`nocturna-vigilante.yml` despierta cada hora y en cada push a la rama de trabajo**, y la lanza en
+  cuanto pasa la hora del cron de `qa.yml` (02:17 UTC = 21:17 Lima) si la del día no ha nacido
+  (`PLAZO_HORAS=0`). Sin aviso: es lo normal. Avisa solo si la lanza más de 6 h tarde.
+- **El cron de `qa.yml` es el respaldo**: cuando GitHub lo sirve, el job `changes` pregunta al mismo
+  script si la del día ya nació (excluyendo su propio run) y, si sí, no corre nada. Si no puede
+  saberlo, corre.
+- **Mover la hora es cambiar ese cron**; el vigilante la lee de ahí. A las 21:17 acaba hacia las
+  05:00-06:30. Al minuto exacto solo lo daría un disparador fuera del repo (launchd en la Mini):
+  propuesto, no hecho.
+
+## `coverage-index` corre dos bancos en segundo plano (2026-11-21)
+
+`interfaz-de-lo-tocado-test.sh` (~100 s) y `sim-lock-test.sh` (~82 s) se lanzan con
+`qa/scripts/bancos-en-fondo.sh lanzar` y un último paso (`if: !cancelled()`) los espera. **El sitio en
+el job importa**: `sim-lock-test` cuenta procesos `xcodebuild` y va después de los bancos que crean uno
+de mentira; `interfaz-de-lo-tocado-test` hace `git fetch` y va después del otro paso que lo hace. Un
+banco nuevo en segundo plano tiene que pasar esas dos preguntas. `gate-ci-checks.sh` replica
+`if: ${{ !cancelled() }}` (en local ya corre todo) y ninguna otra condición. `changes` y
+`coverage-index` tienen tope de 10 min.
 
 ## La interfaz de lo tocado corre en el gate local, no en el CI del PR
 
@@ -70,7 +120,7 @@ rescates en 47 de 338 corridas, todos de la familia `CurrencyConverter*`: un roj
 mergeaba en verde y nadie se enteraba.
 
 - **La lista es `qa/cuarentena.json`, y el CI la lee de `origin/2.3`, nunca del PR** (paso
-  «Cuarentena de pruebas inestables» del job `tests`). Apuntar una prueba es un PR propio a 2.3, con
+  «Cuarentena de pruebas inestables» de cada tanda del job `unit`). Apuntar una prueba es un PR propio a 2.3, con
   dueño, ticket, fecha de entrada y motivo; no viaja dentro del PR que la rescata.
 - `ci-reintentar-rojos.sh --cuarentena` juzga cada rescate: en la lista, aviso con dueño y días;
   fuera, aviso «Rescate fuera de cuarentena» en el PR (anotación) y en el resumen del job. Los

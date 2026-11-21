@@ -192,6 +192,32 @@ echo ERROR > "$E/sched"; echo ERROR > "$E/disp"; runs "${RUIDO[@]}" > "$E/unf1"
 correr decidir AHORA=$TARDE
 espera "si una fuente responde y no la ve, es falta, no sin_lectura" motivo falta
 
+echo "decidir — hora fija (2026-11-21: PLAZO_HORAS=0, VENTANA_HORAS=6)"
+
+nuevo hora-fija
+runs > "$E/sched"; runs > "$E/disp"; runs "${RUIDO[@]}" > "$E/unf1"
+correr decidir AHORA=2026-10-06T08:17:00Z PLAZO_HORAS=0 VENTANA_HORAS=6
+espera "en la hora del cron y sin corrida ⇒ lanza" decision lanzar
+espera "… como lanzamiento normal, sin aviso" motivo hora
+correr decidir AHORA=2026-10-06T14:16:59Z PLAZO_HORAS=0 VENTANA_HORAS=6
+espera "aún dentro de la ventana ⇒ hora" motivo hora
+correr decidir AHORA=2026-10-06T14:17:00Z PLAZO_HORAS=0 VENTANA_HORAS=6
+espera "pasada la ventana ⇒ falta (llega tarde: avisa)" motivo falta
+correr decidir AHORA=2026-10-06T08:16:59Z PLAZO_HORAS=0 VENTANA_HORAS=6
+espera "un segundo antes de la hora mira el día de ayer" desde 2026-10-05T08:17:00Z
+
+nuevo hora-fija-cubierta
+runs > "$E/sched"; runs "510 workflow_dispatch 2.1 2026-10-06T08:20:00Z" > "$E/disp"; runs "${RUIDO[@]}" > "$E/unf1"
+correr decidir AHORA=2026-10-06T09:00:00Z PLAZO_HORAS=0 VENTANA_HORAS=6
+espera "con la del día ya lanzada ⇒ cubierta, no lanza otra" decision cubierta
+
+nuevo excluir-propio
+runs "520 schedule 2.1 2026-10-06T15:00:00Z" > "$E/sched"; runs > "$E/disp"; runs "${RUIDO[@]}" > "$E/unf1"
+correr decidir AHORA=2026-10-06T15:01:00Z PLAZO_HORAS=0 EXCLUIR_RUN=520
+espera "el run que pregunta no cuenta como corrida del día (respaldo de qa.yml)" decision lanzar
+correr decidir AHORA=2026-10-06T15:01:00Z PLAZO_HORAS=0 EXCLUIR_RUN=999
+espera "… pero otro run sí" decision cubierta
+
 echo "decidir — entradas"
 
 nuevo forzar

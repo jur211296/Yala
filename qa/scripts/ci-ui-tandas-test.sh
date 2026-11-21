@@ -62,7 +62,9 @@ reparto "$REAL" 3 "real en 3"
 # escriben a mano (qa.yml, «CUANTAS TANDAS»). Si divergen, una tanda corre y nadie lee su resultado, o
 # el aviso espera una que no existe y grita «no llegó a correr» cada noche.
 QA_YML="$AQUI/../../.github/workflows/qa.yml"
-n_matriz=$(sed -nE 's/^ +tanda: \[([0-9, ]+)\]$/\1/p' "$QA_YML" | tr ',' '\n' | grep -c '[0-9]')
+# Solo la matriz del job `ui`: desde el 2026-11-21 el job `unit` tiene la suya (tandas de unit).
+n_matriz=$(awk '/^  ui:$/{d=1; next} d && /^  [A-Za-z0-9_-]+:$/{d=0} d' "$QA_YML" \
+  | sed -nE 's/^ +tanda: \[([0-9, ]+)\]$/\1/p' | tr ',' '\n' | grep -c '[0-9]')
 n_salidas=$(grep -cE '^ +ui_[0-9]+: \$\{\{ steps\.salida\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
 n_lectura=$(grep -cE '^ +R_UI_[0-9]+: \$\{\{ needs\.ui\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
 lista=$(sed -nE 's/^ +UI_TANDAS="([0-9 ]+)"$/\1/p' "$QA_YML")

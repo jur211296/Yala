@@ -71,6 +71,11 @@ for l in bloque:
     if not m:
         continue
     clave, valor = m.group(1), m.group(2)
+    # `if: ${{ !cancelled() }}` es la única condición que se replica: en local ya corre cada paso
+    # aunque uno anterior salga en rojo, que es lo mismo que pide (el paso que espera a los
+    # bancos en segundo plano, `bancos-en-fondo.sh esperar`). Cualquier otra sigue parando.
+    if clave == 'if' and valor.replace(' ', '') in ('${{!cancelled()}}', '!cancelled()'):
+        continue
     if clave in ('if', 'env', 'working-directory', 'shell', 'continue-on-error'):
         print(f'!ERROR un paso del job «{job}» lleva «{s}», que este script no replica'); sys.exit()
     if clave == 'run':
