@@ -30,6 +30,8 @@ struct VoiceDraftReviewCard: View {
     @State private var activeField: ChatDraftField?
     @State private var isEditingNote = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`): sin ella, el chip de siempre.
+    @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
 
     private var isSaved: Bool { draft.status == .approved }
 
@@ -74,6 +76,7 @@ struct VoiceDraftReviewCard: View {
                 date: draft.effectiveDate,
                 editing: editing
             )
+            .environment(\.cuentaSolaAlLeerSelector, CuentaSolaAlLeerSelectorPista.pista(for: cuentaSolaEleccion))
         }
     }
 
@@ -205,16 +208,13 @@ struct VoiceDraftReviewCard: View {
 
     // MARK: - Píldoras
 
+    @ViewBuilder
     private var chipsRow: some View {
         FlowLayout(spacing: DS.Spacing.sm) {
             if draft.subcategory == nil {
                 chip(.subcategory, title: L10n.Chat.Draft.selectSubcategory, isMissing: true)
             }
-            chip(
-                .account,
-                title: draft.account?.name ?? L10n.Chat.Draft.selectAccount,
-                isMissing: draft.account == nil
-            )
+            accountChip
             chip(.date, title: ChatDraftFormatting.dateLabel(draft.effectiveDate), isMissing: false)
             chip(
                 .tags,
@@ -226,10 +226,41 @@ struct VoiceDraftReviewCard: View {
         }
         .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
         .padding(.trailing, DS.ListRow.paddingH)
-        .padding(.bottom, DS.Spacing.md)
+        .padding(.bottom, accountChipPresentation.porque == nil ? DS.Spacing.md : DS.Spacing.sm)
+
+        if let porque = accountChipPresentation.porque {
+            CuentaSolaAlLeerPorqueLine(text: porque)
+                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
+                .padding(.trailing, DS.ListRow.paddingH)
+                .padding(.bottom, DS.Spacing.md)
+        }
     }
 
-    private func chip(_ field: ChatDraftField, title: String, isMissing: Bool) -> some View {
+    // MARK: - Cuenta sola al leer
+
+    private var cuentaSolaEleccion: CuentaSolaAlLeer.Eleccion? { cuentaSolaHoja.eleccion(for: draft) }
+
+    private var accountChipPresentation: CuentaSolaAlLeerChipPresentacion {
+        CuentaSolaAlLeerChipPresentacion.make(
+            eleccion: cuentaSolaEleccion,
+            currentAccountID: draft.account?.shortcutID,
+            accountName: draft.account?.name,
+            muestraPorque: cuentaSolaHoja.muestraPorque(draft),
+            selectAccount: L10n.Chat.Draft.selectAccount)
+    }
+
+    /// El chip de cuenta: el de siempre, «✦ Cuenta» si se eligió sola, «Cuenta · sugerida» si la propone Yala IA o
+    /// «Elige cuenta · 2 coinciden».
+    private var accountChip: some View {
+        let presentation = accountChipPresentation
+        return chip(
+            .account, title: presentation.titulo, isMissing: presentation.estilo == .falta,
+            isSuggested: presentation.estilo == .sugerida
+        )
+        .accessibilityLabel(presentation.accessibilityLabel.map { Text($0) } ?? Text(presentation.titulo))
+    }
+
+    private func chip(_ field: ChatDraftField, title: String, isMissing: Bool, isSuggested: Bool = false) -> some View {
         Button {
             activeField = field
         } label: {
@@ -239,9 +270,13 @@ struct VoiceDraftReviewCard: View {
                 .foregroundStyle(isMissing ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.primary))
                 .padding(.horizontal, DS.Chip.paddingH)
                 .padding(.vertical, DS.Chip.paddingV)
-                .background(
-                    Capsule().fill(isMissing ? AnyShapeStyle(DS.Semantic.warningBackground) : AnyShapeStyle(.quaternary))
-                )
+                .background {
+                    if isSuggested {
+                        CuentaSolaAlLeerSugeridaFondo()
+                    } else {
+                        Capsule().fill(isMissing ? AnyShapeStyle(DS.Semantic.warningBackground) : AnyShapeStyle(.quaternary))
+                    }
+                }
                 .overlay {
                     if isMissing {
                         Capsule().strokeBorder(DS.Semantic.warningForeground, lineWidth: 1)

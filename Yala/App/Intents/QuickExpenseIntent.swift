@@ -103,6 +103,15 @@ struct ApplePayTransactionIntent: AppIntent {
     )
     var merchant: String?
 
+    /// La tarjeta con la que se pagó (dato «Tarjeta» de la automatización de Wallet). Opcional y fuera del resumen de la
+    /// acción: sale en «Mostrar más» y la guía de Apple Pay explica cómo conectarla. Con ella, la app elige la cuenta que
+    /// se llama así sin conexión (`CuentaSolaAlLeer`, 2026-11-20). Un atajo armado antes no la pasa y todo sigue igual.
+    @Parameter(
+        title: LocalizedStringResource("cuentaSola.applePay.param.card", table: "CuentaSolaAlLeer"),
+        description: LocalizedStringResource("cuentaSola.applePay.param.card.description", table: "CuentaSolaAlLeer")
+    )
+    var card: String?
+
     // MARK: - Perform
 
     @MainActor
@@ -136,6 +145,7 @@ struct ApplePayTransactionIntent: AppIntent {
         }
 
         let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let cardText = card?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         // Telemetría propia: «usó Siri y Atajos» (la automatización de Apple Pay corre en Atajos). Uno al día.
         MetricsService.used(.siriAtajos)
@@ -144,7 +154,8 @@ struct ApplePayTransactionIntent: AppIntent {
             ApplePayPendingExpense(
                 rawAmount: amountString,
                 merchant: merchantText.isEmpty ? nil : merchantText,
-                savedAt: Date.now.timeIntervalSince1970
+                savedAt: Date.now.timeIntervalSince1970,
+                card: cardText.isEmpty ? nil : cardText
             )
         )
         IntentSignalBreadcrumb.set("applePay")

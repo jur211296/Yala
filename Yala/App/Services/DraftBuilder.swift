@@ -96,17 +96,78 @@ struct DraftBuilder {
 
     /// La cuenta que el usuario nombró como medio de pago («25 almuerzo yape» → su cuenta Yape), o `nil`.
     ///
+    /// Pasa por la escalera común (`CuentaSolaAlLeer`, pasos 2 a 5): últimos 4 (`last4`, o los que traiga la mención),
+    /// nombre entero, palabras y clase. Si varias cuentas casan, la divisa dicha desempata; si no, `nil`.
+    ///
     /// Sin divisa dicha, la cuenta nombrada vale tal cual (y su divisa pasa a ser la del borrador). Con divisa dicha, la
     /// tarjeta con varias divisas va a su línea en esa divisa (`AccountCardLogic.route`); si la cuenta no tiene esa divisa,
     /// `nil`: no se fuerza una cuenta en otra divisa y quien llama vuelve a la regla de siempre, por divisa.
-    static func findAccount(paymentMention mention: String?, dictatedCurrency: String?, in accounts: [Account]) -> Account? {
-        guard let mention else { return nil }
+    static func findAccount(
+        paymentMention mention: String?, last4: String? = nil, dictatedCurrency: String?, in accounts: [Account]
+    ) -> Account? {
+        guard mention != nil || last4 != nil else { return nil }
         let live = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
-        guard let chosenID = PaymentMethodAccountLogic.account(for: mention, among: paymentCandidates(in: live)),
-              let chosen = live.first(where: { $0.shortcutID == chosenID }) else { return nil }
-        let dictated = dictatedCurrency?.uppercased().trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !dictated.isEmpty else { return chosen }
-        guard let route = AccountCardLogic.route(chosenID: chosenID, currencyCode: dictated, nodes: live.map { AccountLineNode($0) }),
+        let lectura = CuentaSolaAlLeer.leer(mention: mention, last4: last4, among: cuentaSolaCandidates(in: live))
+        return chosenAccount(for: CuentaSolaAlLeer.combinar(lectura, iaAccountID: nil), currency: dictatedCurrency, in: live)
+            .account
+    }
+
+    // MARK: - La cuenta sola al leer (escalera común + IA)
+
+    /// Las cuentas de la escalera: las de `paymentCandidates`, con su moneda y los últimos 4 de su número de cuenta.
+    static func cuentaSolaCandidates(in accounts: [Account]) -> [CuentaSolaAlLeer.Cuenta] {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return accounts
+            .filter { !$0.isArchived && !$0.isSystemAccount && !(roles[$0.shortcutID]?.isLine ?? false) }
+            .map {
+                CuentaSolaAlLeer.Cuenta(
+                    id: $0.shortcutID, name: $0.name, kind: paymentKind(of: $0), currencyCode: $0.currencyCode,
+                    accountNumber: $0.accountNumber)
+            }
+    }
+
+    /// La cuenta de una captura y por qué: la escalera común con lo leído y, si la hay, la cuenta que propone la IA
+    /// (`aiAccount`, foto con la cuenta en la nube). Sin nada que decida por lo leído, la única cuenta en la moneda, como
+    /// siempre (sin estrella). Lo usan foto, Apple Pay y avisos del banco.
+    static func chooseAccount(
+        mention: String?, last4: String?, aiAccount: String? = nil, currency: String?, in accounts: [Account]
+    ) -> (account: Account?, resultado: CuentaSolaAlLeer.Resultado) {
+        let live = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
+        let candidates = cuentaSolaCandidates(in: live)
+        let lectura = CuentaSolaAlLeer.leer(mention: mention, last4: last4, among: candidates)
+        let ia = CuentaSolaAlLeer.cuentaDeIA(aiAccount, payment: mention, among: candidates)
+        let chosen = chosenAccount(for: CuentaSolaAlLeer.combinar(lectura, iaAccountID: ia), currency: currency, in: live)
+        if chosen.account != nil || chosen.resultado != .ninguna { return chosen }
+        return (currency.flatMap { findAccount(byCurrency: $0, in: live) }, .ninguna)
+    }
+
+    /// La cuenta que pone un resultado de la escalera, enrutada por la divisa leída. Una cuenta que no tiene esa divisa no
+    /// se fuerza: el resultado pasa a `.ninguna` y quien llama sigue con la regla por divisa. Con varias que casan, la
+    /// divisa desempata si solo una de ellas la tiene.
+    private static func chosenAccount(
+        for resultado: CuentaSolaAlLeer.Resultado, currency: String?, in live: [Account]
+    ) -> (account: Account?, resultado: CuentaSolaAlLeer.Resultado) {
+        let code = currency?.uppercased().trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        switch resultado {
+        case .varias(let ids):
+            guard !code.isEmpty else { return (nil, resultado) }
+            let inCurrency = ids.filter { id in live.first { $0.shortcutID == id }?.currencyCode.uppercased() == code }
+            guard inCurrency.count == 1, let id = inCurrency.first,
+                  let account = routed(id, currencyCode: code, in: live) else { return (nil, resultado) }
+            return (account, .sola(id, .palabras))
+        case .sola(let id, _), .sugerida(let id):
+            guard let account = routed(id, currencyCode: code, in: live) else { return (nil, .ninguna) }
+            return (account, resultado)
+        case .choque, .ninguna:
+            return (nil, resultado)
+        }
+    }
+
+    /// La cuenta elegida, o su línea en la divisa (tarjeta con varias divisas). `nil` si no tiene esa divisa.
+    private static func routed(_ id: UUID, currencyCode code: String, in live: [Account]) -> Account? {
+        guard let chosen = live.first(where: { $0.shortcutID == id }) else { return nil }
+        guard !code.isEmpty else { return chosen }
+        guard let route = AccountCardLogic.route(chosenID: id, currencyCode: code, nodes: live.map { AccountLineNode($0) }),
               !route.isFallback else { return nil }
         return live.first { $0.shortcutID == route.accountID }
     }

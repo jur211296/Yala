@@ -147,13 +147,31 @@ su permiso.
 ## El medio de pago de una frase (`paymentHint`, card v466, 2026-11-04)
 
 - **El modelo solo COPIA las palabras; la cuenta la elige Swift** (`PaymentMethodAccountLogic`, contra las cuentas del
-  usuario). El prompt no lleva los nombres de las cuentas: no sube el coste y no sale nada nuevo del teléfono.
+  usuario). El prompt de la FRASE no lleva los nombres de las cuentas. La foto sí, desde el 2026-11-20: sección siguiente.
 - **La palabra solo vale si está escrita en la frase**: es la red contra la invención, y la replica el banco
   (`acceptedPaymentHint`). Una mención que casa con dos cuentas no elige ninguna.
 - **«El campo no vino» no es «el modelo dijo null»** (`paymentHintAnswered`): sin el campo (gateway sin desplegar, Siri en el
   dispositivo) la app busca una palabra del léxico en la frase, solo con un movimiento. Con el campo, manda el modelo.
 - Lo usan las tres capturas que leen una frase: chat, nota de voz y Siri. Una cuarta que llame a `parseMultiple` pasa la
   frase a `PaymentMethodAccountLogic.mention`, o el mismo dictado elige cuenta en un sitio y no en otro.
+
+## La cuenta sola al leer una foto (`payment` y `account`, 2026-11-20, decisión A + B de Jürgen)
+
+- **Decide primero el teléfono** con la escalera común (`CuentaSolaAlLeer`: últimos 4, nombre entero, palabras, clase,
+  moneda), que usan foto, Apple Pay, avisos del banco, correo, voz, Siri y chat. **La IA es la segunda capa, solo en la
+  foto**: con la cuenta en la nube (`CloudSyncFlags.storageMode == .cloud`) la petición lleva los NOMBRES de las cuentas
+  con su clase y su moneda (`CuentaSolaAlLeerPeticion`), y la IA devuelve `account`. **Nunca saldos, números de cuenta ni
+  últimos 4**: el tipo no tiene sitio para ellos y lo fija `CuentaSolaAlLeerPeticionTests` sobre el cuerpo JSON.
+- **En iCloud privado no viaja nada nuevo**: el permiso de voz y foto solo promete la foto. Mandar los nombres también ahí
+  necesita versionar ese permiso (regla «Modo nube» de arriba) y es decisión de Jürgen.
+- **La cuenta de la IA vale solo si existe y una palabra de su nombre está escrita en `payment`**
+  (`CuentaSolaAlLeer.cuentaDeIA`). Coinciden → sola con «✦»; solo la IA → «sugerida»; discrepan → no elige y el selector
+  enseña las dos con su motivo (`CuentaSolaAlLeer.combinar`).
+- **`photo.read` va con `json_object` en OpenAI**: el esquema (`PHOTO_SCHEMA`, con los dos campos) solo lo imponen
+  Anthropic y Gemini. La app tolera que no vengan o que no sean texto (`VisionTransaction`). El ejemplo del prompt los deja
+  en `null`: uno con valor enseña a inventar.
+- **El chat todavía no manda nombres** (su petición se arma en `ChatAssistantService`): parte 2 del ticket
+  `2026-11-20-captura-cuenta-automatica-y-reglas`, junto con las reglas de cuenta, que también viajarán como texto.
 
 ## El idioma de la respuesta (2026-10-07)
 

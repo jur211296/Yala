@@ -1,0 +1,65 @@
+//
+//  CuentaSolaAlLeerUITestPerfil.swift
+//  Yala
+//
+//  Perfiles de `-uitest-image-result` para la cuenta elegida sola al leer una foto. Devuelven SOLO lo que diría la IA
+//  (medio de pago y, con la capa B, la cuenta que cree): la cuenta la elige la escalera de producción
+//  (`VisionDraftFactory` → `DraftBuilder.chooseAccount`). No pasan por `UITestDemoAccountLogic`, que rellena la cuenta a
+//  mano: con él la prueba saldría verde sin la escalera.
+//
+//  - `cuenta-sola`: el medio de pago es el nombre de la tarjeta de crédito de la semilla → «✦» y la línea de «por qué».
+//  - `cuenta-sola-varias`: «Visa» con dos cuentas que lo llevan (las crea el perfil) → «Elige cuenta · 2 coinciden».
+//  - `cuenta-sola-sugerida`: lo mismo y la IA propone una de las dos → «sugerida».
+//  - `cuenta-sola-choque`: la imagen nombra la tarjeta y la IA otra cuenta escrita en el mismo medio de pago → choque.
+//
+
+#if DEBUG
+import Foundation
+import SwiftData
+
+@MainActor
+enum CuentaSolaAlLeerUITestPerfil {
+
+    static func handles(_ perfil: String) -> Bool { perfil.hasPrefix("cuenta-sola") }
+
+    /// Las dos cuentas que llevan «Visa». Nombres de marca: iguales en todos los idiomas.
+    static let visaNames = ["BCP Visa", "Interbank Visa"]
+
+    /// Lo que la IA devolvería para el perfil: el medio de pago y la cuenta que cree.
+    static func lectura(_ perfil: String, context: ModelContext) -> (payment: String?, account: String?) {
+        let accounts = DraftBuilder.fetchActiveAccounts(context: context).filter { !$0.isSystemAccount }
+        let credit = accounts.first { $0.type == AccountType.creditCard.rawValue }?.name
+        let checking = accounts.first { $0.type == AccountType.checking.rawValue }?.name
+        switch perfil {
+        case "cuenta-sola-varias":
+            ensureVisaAccounts(context: context, existing: accounts)
+            return ("Visa", nil)
+        case "cuenta-sola-sugerida":
+            ensureVisaAccounts(context: context, existing: accounts)
+            return ("Visa", visaNames[1])
+        case "cuenta-sola-choque":
+            // Con los dos nombres escritos, el teléfono elige el más largo; la IA dice el otro.
+            let both = [credit, checking].compactMap { $0 }
+            let shorter = both.min { $0.count < $1.count }
+            return (both.joined(separator: " · "), shorter)
+        default:
+            return (credit, nil)
+        }
+    }
+
+    /// Crea las dos cuentas «Visa» en la divisa principal de la semilla si no están.
+    private static func ensureVisaAccounts(context: ModelContext, existing: [Account]) {
+        let currency = existing.first { $0.type == AccountType.checking.rawValue }?.currencyCode ?? "PEN"
+        for name in visaNames where !existing.contains(where: { $0.name == name }) {
+            context.insert(Account(
+                name: name, currencyCode: currency, colorHex: "#1F3A93", iconName: "creditcard.fill",
+                type: AccountType.creditCard.rawValue))
+        }
+        do {
+            try context.save()
+        } catch {
+            print("CuentaSolaAlLeerUITestPerfil: Error: \(error)")
+        }
+    }
+}
+#endif

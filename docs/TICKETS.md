@@ -52,7 +52,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-20-flujo-limites-pagos-planificados-y-moneda-maquetas | done | tickets/done/2026-11-20-flujo-limites-pagos-planificados-y-moneda-maquetas.md |
 | 2026-11-20-salud-financiera-tres-secciones | backlog | tickets/backlog/2026-11-20-salud-financiera-tres-secciones.md |
 | 2026-11-20-salud-financiera-tres-secciones-maquetas | done | tickets/done/2026-11-20-salud-financiera-tres-secciones-maquetas.md |
-| 2026-11-20-captura-cuenta-automatica-y-reglas | backlog | tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas.md |
+| 2026-11-20-captura-cuenta-automatica-y-reglas | done | tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas.md |
+| 2026-11-20-captura-cuenta-automatica-y-reglas-parte-2 | backlog | tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas-parte-2.md |
+| widget-staged-snapshot-tests-fail-only-in-the-full-suite | backlog | tickets/backlog/widget-staged-snapshot-tests-fail-only-in-the-full-suite.md |
 | 2026-11-20-captura-cuenta-automatica-y-reglas-maquetas | done | tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas-maquetas.md |
 | 2026-11-20-oferta-pro-primeros-pasos-mas-beneficios | done | tickets/done/2026-11-20-oferta-pro-primeros-pasos-mas-beneficios.md |
 | 2026-11-20-oferta-pro-primeros-pasos-mas-beneficios-maquetas | done | tickets/done/2026-11-20-oferta-pro-primeros-pasos-mas-beneficios-maquetas.md |

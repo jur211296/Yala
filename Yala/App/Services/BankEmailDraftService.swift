@@ -126,7 +126,9 @@ enum BankEmailDraftService {
             let fromWeb = WebDraftLogic.isWeb(source: dto.source)
             let chosenAccount = fromWeb ? WebDraftLogic.account(ref: dto.accountRef, in: accounts, id: \.shortcutID) : nil
             let account = chosenAccount
-                ?? DraftBuilder.findAccount(paymentMention: fields.accountMention, dictatedCurrency: fields.currencyCode, in: accounts)
+                ?? DraftBuilder.findAccount(
+                    paymentMention: fields.accountMention, last4: dto.accountLast4, dictatedCurrency: fields.currencyCode,
+                    in: accounts)
                 ?? fields.currencyCode.flatMap { DraftBuilder.findAccount(byCurrency: $0, in: accounts) }
 
             var subcategory: Subcategory?

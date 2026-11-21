@@ -1,0 +1,32 @@
+/*
+  CuentaSolaAlLeer.strings
+  Yala
+
+  La cuenta se elige sola al leer una captura (parte 1, 2026-11-20): chip con estrella, línea de «por qué», selector
+  con «Coinciden con…», ayuda del número de cuenta y el paso de la tarjeta de Apple Pay. Tabla propia, leída con el
+  idioma de la app (`L10n.CuentaSolaAlLeer`). Los dos `applePay.param.card*` los lee la acción de Atajos.
+*/
+
+"cuentaSola.chip.chosen" = "✦ %@";
+"cuentaSola.chip.suggested" = "%@ · sugerowane";
+"cuentaSola.chip.choose" = "Wybierz konto";
+"cuentaSola.chip.chooseMatching" = "Wybierz konto · pasujące: %d";
+"cuentaSola.why.image" = "Wybrałem %@, bo tak jest na obrazie. Dotknij konta, żeby je zmienić.";
+"cuentaSola.why.last4" = "Wybrałem %1$@: kończy się na %2$@, jak jego numer konta.";
+"cuentaSola.why.suggested" = "Sugestia Yala AI. Sprawdź, czy to %@, zanim zapiszesz.";
+"cuentaSola.a11y.chosen" = "Konto: %@, wybrane po nazwie z obrazu. Dotknij, żeby zmienić.";
+"cuentaSola.a11y.chosenLast4" = "Konto: %1$@, wybrane, bo kończy się na %2$@. Dotknij, żeby zmienić.";
+"cuentaSola.a11y.suggested" = "Konto: %@, sugestia Yala AI. Dotknij, żeby zmienić.";
+"cuentaSola.a11y.chooseMatching" = "Wybierz konto. Liczba kont pasujących do obrazu: %d.";
+"cuentaSola.selector.matches" = "Pasują do „%@”";
+"cuentaSola.selector.matchesNoWords" = "Pasują do tego, co jest na obrazie";
+"cuentaSola.selector.conflict" = "Obraz i Yala AI się nie zgadzają";
+"cuentaSola.selector.others" = "Inne konta";
+"cuentaSola.selector.reasonImage" = "Tak jest na obrazie";
+"cuentaSola.selector.reasonAI" = "Sugestia Yala AI";
+"cuentaSola.account.numberHelp" = "Po ostatnich 4 cyfrach rozpoznaję też Twoją kartę na zrzutach ekranu i w powiadomieniach.";
+"cuentaSola.applePay.cardStep.title" = "Połącz kartę (opcjonalnie)";
+"cuentaSola.applePay.cardStep.detail" = "W akcji Yala dotknij „Pokaż więcej” i w polu „Karta” wybierz zmienną Karta. Dzięki temu wiem, którym kontem zapłaciłeś, także offline.";
+"cuentaSola.applePay.updateShortcut" = "Zaktualizuj skrót, żeby wiedział, którą kartą zapłaciłeś.";
+"cuentaSola.applePay.param.card" = "Karta";
+"cuentaSola.applePay.param.card.description" = "Karta, którą zapłaciłeś";

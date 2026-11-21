@@ -21,6 +21,42 @@ struct VisionTransaction: Codable {
     let merchant: String?
     let note: String?
     let currency: String?    // "USD", "EUR", "PEN", etc.
+    /// El medio de pago tal como sale en la imagen («Tarjeta de crédito», «Zip Visa ••4417»), o `nil`. La cuenta la
+    /// decide la escalera del teléfono (`CuentaSolaAlLeer`). Un gateway o una respuesta sin el campo, `nil`: como antes.
+    var payment: String? = nil
+    /// La cuenta que la IA cree, copiada de la lista que recibió (solo con la cuenta en la nube), o `nil`. Es la segunda
+    /// capa: solo vale si existe y sus palabras están en `payment` (`CuentaSolaAlLeer.cuentaDeIA`).
+    var account: String? = nil
+}
+
+extension VisionTransaction {
+    private enum CodingKeys: String, CodingKey {
+        case amount, date, merchant, note, currency, payment, account
+    }
+
+    /// Los cinco campos de siempre como antes; `payment` y `account`, si traen otra cosa que un texto, se leen como `nil`
+    /// en vez de tumbar la lectura entera: son una ayuda para elegir la cuenta, no el movimiento.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        amount = try container.decodeIfPresent(Double.self, forKey: .amount)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        merchant = try container.decodeIfPresent(String.self, forKey: .merchant)
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+        currency = try container.decodeIfPresent(String.self, forKey: .currency)
+        payment = Self.lenientText(container, .payment)
+        account = Self.lenientText(container, .account)
+    }
+
+    private static func lenientText(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
+        do {
+            return try container.decodeIfPresent(String.self, forKey: key)
+        } catch {
+            #if DEBUG
+            print("VisionTransaction: \(key.stringValue) ilegible: \(error)")
+            #endif
+            return nil
+        }
+    }
 }
 
 /// Confidence scores for the vision extraction
@@ -136,6 +172,10 @@ final class ImageVisionService {
         - Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE
         - Dates: ALWAYS convert to YYYY-MM-DD format
         - Currency: Extract from symbols or explicit mentions
+        - Payment: the words that say how it was paid, copied exactly as printed (card or account name, wallet, "cash",
+          masked digits like "••4417"). null if the image does not say it. Never guess it from the bank's logo alone.
+        - Account: only if the user's accounts are listed in the message, the name of the one account that the payment
+          words point to, copied exactly from that list. null if none clearly matches or there is no list. Never invent one.
 
         Currency extraction rules (always answer an ISO 4217 code or null):
         - "US$" → "USD"
@@ -177,7 +217,7 @@ final class ImageVisionService {
         Respond ONLY with valid JSON (no markdown, no explanation):
         {
           "imageType": "single",
-          "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD"}],
+          "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD", "payment": null, "account": null}],
           "confidence": {"overall": 0.95, "imageType": 0.90}
         }
         """
@@ -189,7 +229,11 @@ final class ImageVisionService {
     /// - Parameter image: UIImage to analyze
     /// - Returns: VisionResponse with extracted transactions
     /// - Throws: VisionError if analysis fails
-    func analyze(image: UIImage, currency: VisionCurrencyContext = .unknown) async throws -> VisionResponse {
+    /// - Parameter accounts: las cuentas que la IA puede proponer (`CuentaSolaAlLeerPeticion.cuentas`): vacío en iCloud
+    ///   privado, y entonces la petición sale como antes.
+    func analyze(
+        image: UIImage, currency: VisionCurrencyContext = .unknown, accounts: [CuentaSolaAlLeerPeticion.Cuenta] = []
+    ) async throws -> VisionResponse {
         let client: OpenAI
         do {
             client = try await ProxyClientFactory.makeOpenAI(task: .photoRead)
@@ -203,23 +247,7 @@ final class ImageVisionService {
             throw VisionError.imageEncodingFailed
         }
 
-        // Build content parts for multimodal message
-        let textPart = ChatQuery.ChatCompletionMessageParam.ContentPartTextParam(
-            text: "Extract transactions from this image. Today is \(currentDayAndDateString())."
-        )
-        let imagePart = ChatQuery.ChatCompletionMessageParam.ContentPartImageParam(
-            imageUrl: .init(imageData: imageData, detail: .auto)
-        )
-
-        // Build the chat request with vision
-        let query = ChatQuery(
-            messages: [
-                .system(.init(content: .textContent(systemPrompt(currency: currency)))),
-                .user(.init(content: .contentParts([.text(textPart), .image(imagePart)])))
-            ],
-            model: .gpt4_1_nano,
-            responseFormat: .jsonObject
-        )
+        let query = makeQuery(imageData: imageData, currency: currency, accounts: accounts, today: currentDayAndDateString())
 
         do {
             let result = try await client.chats(query: query)
@@ -243,6 +271,29 @@ final class ImageVisionService {
         } catch {
             throw VisionError.networkError(error)
         }
+    }
+
+    /// La petición de la foto. Aparte para poder comprobar su cuerpo: con cuentas lleva sus nombres, su clase y su
+    /// moneda, y nada más de ellas (ni saldos, ni números de cuenta, ni últimos 4).
+    func makeQuery(
+        imageData: Data, currency: VisionCurrencyContext, accounts: [CuentaSolaAlLeerPeticion.Cuenta], today: String
+    ) -> ChatQuery {
+        var text = "Extract transactions from this image. Today is \(today)."
+        if let list = CuentaSolaAlLeerPeticion.texto(accounts) {
+            text += "\n\n" + list
+        }
+        let textPart = ChatQuery.ChatCompletionMessageParam.ContentPartTextParam(text: text)
+        let imagePart = ChatQuery.ChatCompletionMessageParam.ContentPartImageParam(
+            imageUrl: .init(imageData: imageData, detail: .auto)
+        )
+        return ChatQuery(
+            messages: [
+                .system(.init(content: .textContent(systemPrompt(currency: currency)))),
+                .user(.init(content: .contentParts([.text(textPart), .image(imagePart)])))
+            ],
+            model: .gpt4_1_nano,
+            responseFormat: .jsonObject
+        )
     }
 
     // MARK: - Private Methods

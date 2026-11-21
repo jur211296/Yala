@@ -1,0 +1,32 @@
+/*
+  CuentaSolaAlLeer.strings
+  Yala
+
+  La cuenta se elige sola al leer una captura (parte 1, 2026-11-20): chip con estrella, línea de «por qué», selector
+  con «Coinciden con…», ayuda del número de cuenta y el paso de la tarjeta de Apple Pay. Tabla propia, leída con el
+  idioma de la app (`L10n.CuentaSolaAlLeer`). Los dos `applePay.param.card*` los lee la acción de Atajos.
+*/
+
+"cuentaSola.chip.chosen" = "✦ %@";
+"cuentaSola.chip.suggested" = "%@ · vorgeschlagen";
+"cuentaSola.chip.choose" = "Konto wählen";
+"cuentaSola.chip.chooseMatching" = "Konto wählen · %d passen";
+"cuentaSola.why.image" = "Ich habe %@ gewählt, weil es im Bild steht. Tippe auf das Konto, um es zu ändern.";
+"cuentaSola.why.last4" = "Ich habe %1$@ gewählt: Es endet auf %2$@, wie seine Kontonummer.";
+"cuentaSola.why.suggested" = "Von Yala AI vorgeschlagen. Prüfe vor dem Speichern, ob es %@ ist.";
+"cuentaSola.a11y.chosen" = "Konto: %@, gewählt nach dem Namen im Bild. Tippe, um es zu ändern.";
+"cuentaSola.a11y.chosenLast4" = "Konto: %1$@, gewählt, weil es auf %2$@ endet. Tippe, um es zu ändern.";
+"cuentaSola.a11y.suggested" = "Konto: %@, von Yala AI vorgeschlagen. Tippe, um es zu ändern.";
+"cuentaSola.a11y.chooseMatching" = "Konto wählen. %d Konten passen zu dem, was im Bild steht.";
+"cuentaSola.selector.matches" = "Passend zu „%@“";
+"cuentaSola.selector.matchesNoWords" = "Passend zu dem, was im Bild steht";
+"cuentaSola.selector.conflict" = "Bild und Yala AI sind sich nicht einig";
+"cuentaSola.selector.others" = "Andere Konten";
+"cuentaSola.selector.reasonImage" = "Steht im Bild";
+"cuentaSola.selector.reasonAI" = "Von Yala AI vorgeschlagen";
+"cuentaSola.account.numberHelp" = "Mit den letzten 4 Ziffern erkenne ich deine Karte auch in Screenshots und Bankmitteilungen.";
+"cuentaSola.applePay.cardStep.title" = "Karte verbinden (optional)";
+"cuentaSola.applePay.cardStep.detail" = "Tippe in der Yala-Aktion auf „Mehr anzeigen“ und wähle bei „Karte“ die Variable Karte. So weiß ich, mit welchem Konto du bezahlt hast, auch offline.";
+"cuentaSola.applePay.updateShortcut" = "Aktualisiere deinen Kurzbefehl, damit er weiß, mit welcher Karte du bezahlt hast.";
+"cuentaSola.applePay.param.card" = "Karte";
+"cuentaSola.applePay.param.card.description" = "Die Karte, mit der du bezahlt hast";
