@@ -1429,6 +1429,10 @@ final class AppBootstrapper {
         if UITestHooks.seedGroupSplitLines {
             DevSeedGroupSplitLines.create(in: context)
         }
+        // «Reusar» con gastos de grupo (encargo del 21-nov).
+        if UITestHooks.seedReusarGrupo {
+            DevSeedReusarGrupo.create(in: context)
+        }
         #endif
         // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
         // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.

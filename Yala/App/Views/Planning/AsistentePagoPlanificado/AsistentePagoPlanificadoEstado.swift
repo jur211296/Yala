@@ -30,6 +30,13 @@ final class AsistentePagoPlanificadoEstado {
     var montoTexto = ""
     /// La persona escribió el nombre: deja de seguir al propuesto cuando cambia el tipo.
     var nombreEditado = false
+    /// Lo compartido: grupo, moneda y división (encargo del 21-nov). Sin grupo, el pago es solo tuyo.
+    var reparto = AsistentePagoPlanificadoReparto()
+    /// «¿Algo más?»: cuenta, descripción, etiquetas, fecha de fin y activo, con lo de un pago nuevo ya puesto.
+    var extras = ScheduledPaymentWizardExtras()
+    /// La persona tiene algún grupo activo: solo entonces se pregunta si es compartido. Lo lee la vista al cargar (no
+    /// es una respuesta, y por eso empezar de nuevo no lo toca).
+    var tieneGrupos = false
     /// Ya se preparó para esta apertura de la hoja: un contenido rehecho no vuelve a empezar.
     private(set) var preparado = false
 
@@ -42,6 +49,8 @@ final class AsistentePagoPlanificadoEstado {
         draft = Logica.borradorInicial(esSuscripcion: esSuscripcion, hoy: hoy, calendar: calendar)
         montoTexto = ""
         nombreEditado = false
+        reparto = AsistentePagoPlanificadoReparto()
+        extras = ScheduledPaymentWizardExtras()
         preparado = true
     }
 
@@ -65,16 +74,41 @@ final class AsistentePagoPlanificadoEstado {
 
     var respuestas: Logica.Respuestas {
         Logica.Respuestas(tieneTipo: draft.subcategoryID != nil, nombre: draft.name, monto: monto,
-                          frecuencia: draft.frequency, diaDelMes: draft.dayOfMonth, fecha: draft.date)
+                          frecuencia: draft.frequency, diaDelMes: draft.dayOfMonth, fecha: draft.date,
+                          conGrupo: reparto.grupoZona != nil, repartoListo: reparto.listo, fin: extras.endDate)
+    }
+
+    /// Las preguntas que tocan con lo respondido (lo compartido aparece y desaparece).
+    var pasos: [Logica.Paso] {
+        Logica.pasos(tieneGrupos: tieneGrupos, conGrupo: reparto.grupoZona != nil)
     }
 
     var puedeSeguir: Bool { Logica.puedeSeguir(en: navegador.actual, respuestas) }
 
+    /// El pago compartido que se guarda, o `nil` si es solo tuyo.
+    var compartido: ScheduledPaymentGroupPrefill? { Logica.compartido(reparto, monto: monto) }
+
     /// «Usar formulario»: con algo respondido pasa lo respondido; sin nada, el formulario vacío de siempre.
     func usarFormulario() {
         let prefill = navegador.tieneRespuestas
-            ? Logica.alFormulario(draft, monto: monto, respondidos: navegador.respondidos)
+            ? Logica.alFormulario(draft, monto: monto, respondidos: navegador.respondidos,
+                                  compartido: compartido, extras: extras)
             : nil
         modo = .formulario(prefill)
     }
+}
+
+/// Lo elegido en «¿Es un gasto compartido?» y «¿Cómo lo dividen?»: el grupo, la moneda y la división tal como la guarda
+/// `ScheduledPayment` (valor crudo por participante según el modo), y la parte propia que sale de ella. Quién paga no
+/// se pregunta: se elige al registrar cada pago desde la Bandeja (decisión de Jürgen del 21-nov, opción A).
+struct AsistentePagoPlanificadoReparto: Equatable {
+    /// `nil`: es solo tuyo.
+    var grupoZona: String?
+    var moneda = ""
+    var tipo: SplitType = .equal
+    var participantes: [UUID] = []
+    var valores: [UUID: Double] = [:]
+    var miParte: Double = 0
+    /// La división cuadra y te incluye (lo mismo que exige el formulario para guardar).
+    var listo = false
 }

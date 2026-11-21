@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "Wanneer";
 "asistentePago.summary.reminder" = "Herinnering";
 "asistentePago.reminder.none" = "Geen herinnering";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "Is het een gedeelde uitgave?";
+"asistentePago.shared.detail" = "Als meerdere mensen betalen, zet Yala het in de groep en telt alleen jouw deel.";
+"asistentePago.shared.no" = "Nee, alleen van mij";
+"asistentePago.shared.noHint" = "Jij betaalt en het is helemaal van jou.";
+"asistentePago.shared.groupHint" = "Leden: %d · %@";
+"asistentePago.split.question" = "Hoe verdelen jullie het?";
+"asistentePago.split.detail" = "Wie betaalt, kies je elke keer dat je het vanuit je inbox vastlegt.";
+"asistentePago.split.currency" = "Valuta";
+"asistentePago.split.division" = "Verdeling";
+"asistentePago.split.change" = "Verdeling wijzigen";
+"asistentePago.extra.question" = "Nog iets?";
+"asistentePago.extra.detail" = "Alles staat klaar. Wijzig wat je wilt of ga verder.";
+"asistentePago.extra.account" = "Rekening";
+"asistentePago.extra.note" = "Beschrijving (optioneel)";
+"asistentePago.extra.tags" = "Tags";
+"asistentePago.extra.ends" = "Heeft een einddatum";
+"asistentePago.extra.endDate" = "Laatste betaling";
+"asistentePago.summary.shared" = "Gedeeld";
+"asistentePago.summary.split" = "Verdeling";
+"asistentePago.summary.account" = "Rekening";
+"asistentePago.summary.note" = "Beschrijving";
+"asistentePago.summary.tags" = "Tags";
+"asistentePago.summary.ends" = "Eindigt";
+"asistentePago.summary.status" = "Status";
+"asistentePago.summary.paused" = "Gepauzeerd";
+"asistentePago.missing.group" = "Kies met welke groep je het deelt.";
+"asistentePago.missing.division" = "Kies hoe het verdeeld wordt.";

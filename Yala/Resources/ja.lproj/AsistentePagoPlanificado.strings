@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "いつ";
 "asistentePago.summary.reminder" = "通知";
 "asistentePago.reminder.none" = "通知なし";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "共有の支出ですか？";
+"asistentePago.shared.detail" = "複数人で支払う場合、Yala はグループに記録し、あなたの分だけを数えます。";
+"asistentePago.shared.no" = "いいえ、自分だけ";
+"asistentePago.shared.noHint" = "あなたが支払い、すべてあなたの分です。";
+"asistentePago.shared.groupHint" = "メンバー：%d · %@";
+"asistentePago.split.question" = "どう分けますか？";
+"asistentePago.split.detail" = "誰が払うかは、受信トレイから記録するたびに選べます。";
+"asistentePago.split.currency" = "通貨";
+"asistentePago.split.division" = "分け方";
+"asistentePago.split.change" = "分け方を変更";
+"asistentePago.extra.question" = "ほかに何かありますか？";
+"asistentePago.extra.detail" = "準備はできています。必要なら変更するか、そのまま進んでください。";
+"asistentePago.extra.account" = "口座";
+"asistentePago.extra.note" = "説明（任意）";
+"asistentePago.extra.tags" = "タグ";
+"asistentePago.extra.ends" = "終了日あり";
+"asistentePago.extra.endDate" = "最後の支払い";
+"asistentePago.summary.shared" = "共有";
+"asistentePago.summary.split" = "分け方";
+"asistentePago.summary.account" = "口座";
+"asistentePago.summary.note" = "説明";
+"asistentePago.summary.tags" = "タグ";
+"asistentePago.summary.ends" = "終了";
+"asistentePago.summary.status" = "状態";
+"asistentePago.summary.paused" = "一時停止中";
+"asistentePago.missing.group" = "共有するグループを選んでください。";
+"asistentePago.missing.division" = "分け方を選んでください。";

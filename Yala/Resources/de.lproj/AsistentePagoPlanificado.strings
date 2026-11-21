@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "Wann";
 "asistentePago.summary.reminder" = "Erinnerung";
 "asistentePago.reminder.none" = "Keine Erinnerung";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "Ist es eine geteilte Ausgabe?";
+"asistentePago.shared.detail" = "Wenn mehrere zahlen, erfasst Yala sie in der Gruppe und zählt nur deinen Anteil.";
+"asistentePago.shared.no" = "Nein, nur meine";
+"asistentePago.shared.noHint" = "Du zahlst sie und sie gehört ganz dir.";
+"asistentePago.shared.groupHint" = "Mitglieder: %d · %@";
+"asistentePago.split.question" = "Wie teilt ihr sie auf?";
+"asistentePago.split.detail" = "Wer zahlt, wählst du jedes Mal, wenn du sie in deinem Posteingang erfasst.";
+"asistentePago.split.currency" = "Währung";
+"asistentePago.split.division" = "Aufteilung";
+"asistentePago.split.change" = "Aufteilung ändern";
+"asistentePago.extra.question" = "Noch etwas?";
+"asistentePago.extra.detail" = "Alles ist bereit. Ändere, was du möchtest, oder mach weiter.";
+"asistentePago.extra.account" = "Konto";
+"asistentePago.extra.note" = "Beschreibung (optional)";
+"asistentePago.extra.tags" = "Tags";
+"asistentePago.extra.ends" = "Hat ein Enddatum";
+"asistentePago.extra.endDate" = "Letzte Zahlung";
+"asistentePago.summary.shared" = "Geteilt";
+"asistentePago.summary.split" = "Aufteilung";
+"asistentePago.summary.account" = "Konto";
+"asistentePago.summary.note" = "Beschreibung";
+"asistentePago.summary.tags" = "Tags";
+"asistentePago.summary.ends" = "Endet";
+"asistentePago.summary.status" = "Status";
+"asistentePago.summary.paused" = "Pausiert";
+"asistentePago.missing.group" = "Wähle, mit welcher Gruppe du sie teilst.";
+"asistentePago.missing.division" = "Wähle, wie sie aufgeteilt wird.";

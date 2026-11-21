@@ -5,9 +5,10 @@
 //  «Nuevo pago planificado» por pasos (encargo del 17-nov): una pregunta por pantalla con lo sugerido ya elegido,
 //  «Usar formulario» arriba y, al final, el resumen con «Crear pago». Segundo asistente sobre `AsistenteCreacionView`
 //  (molde: `AsistentePresupuestoView`). Las respuestas de tipo, día y aviso son las de Primeros pasos
-//  (`FirstScheduledPaymentFlowView`), y se guarda por el mismo camino (`PrimerosPasosPlanningCreator`). Lo que no
-//  pregunta (cobro en vez de pago, cuenta, etiquetas, nota, gasto compartido, «Cada N», fecha de fin) queda como en el
-//  formulario recién abierto: la cuenta, la última usada.
+//  (`FirstScheduledPaymentFlowView`). Desde el 21-nov pregunta también si es un gasto compartido (solo con algún grupo
+//  activo: grupo, moneda y división) y «¿Algo más?» (cuenta, descripción, etiquetas, fecha de fin y activo, ya puestos),
+//  en `AsistentePagoCompartidoPasos`, y guarda con `AsistentePagoPlanificadoCreador`. Lo que no pregunta (cobro en vez
+//  de pago, «Cada N») queda como en el formulario recién abierto.
 //
 
 import SwiftData
@@ -43,6 +44,12 @@ struct AsistentePagoPlanificadoView: View {
     @State private var creando = false
     @State private var fallo = false
     @State private var muestraPermiso = false
+    /// Los grupos activos (no archivados ni ocultos), las cuentas y las etiquetas: datos, no respuestas.
+    @State private var grupos: [SplitGroup] = []
+    @State private var miembrosPorZona: [String: Int] = [:]
+    @State private var cuentas: [Account] = []
+    @State private var etiquetas: [Tag] = []
+    @State private var cuentaPorDefecto: Account?
     @FocusState private var nombreEnfocado: Bool
     @FocusState private var montoEnfocado: Bool
 
@@ -57,8 +64,8 @@ struct AsistentePagoPlanificadoView: View {
             titulo: A.titulo,
             pregunta: pregunta,
             detalle: detalle,
-            indice: estado.navegador.indice(en: Logica.pasos),
-            total: Logica.pasos.count,
+            indice: estado.navegador.indice(en: estado.pasos),
+            total: estado.pasos.count,
             identidad: paso.rawValue,
             tituloPrincipal: paso == .resumen ? tituloCrear : L10n.Action.next,
             puedeSeguir: estado.puedeSeguir && !creando,
@@ -67,7 +74,7 @@ struct AsistentePagoPlanificadoView: View {
             tituloDescartar: A.descartarTitulo,
             ocupado: creando,
             alSeguir: seguir,
-            alRetroceder: { estado.navegador.retroceder(en: Logica.pasos) },
+            alRetroceder: { estado.navegador.retroceder(en: estado.pasos) },
             alUsarFormulario: { estado.usarFormulario() },
             alCerrar: alCerrar
         ) {
@@ -88,9 +95,12 @@ struct AsistentePagoPlanificadoView: View {
         case .tipo: return T.kindQuestion
         case .nombre: return A.nombrePregunta
         case .monto: return A.montoPregunta
+        case .compartido: return A.compartidoPregunta
+        case .reparto: return A.repartoPregunta
         case .frecuencia: return A.frecuenciaPregunta
         case .dia: return A.diaPregunta(draft.frequency)
         case .aviso: return T.reminderQuestion
+        case .algoMas: return A.algoMasPregunta
         case .resumen: return A.resumenPregunta
         }
     }
@@ -100,9 +110,12 @@ struct AsistentePagoPlanificadoView: View {
         case .tipo: return T.kindSubtitle
         case .nombre: return A.nombreDetalle
         case .monto: return A.montoDetalle
+        case .compartido: return A.compartidoDetalle
+        case .reparto: return A.repartoDetalle
         case .frecuencia: return A.frecuenciaDetalle
         case .dia: return A.diaDetalle
         case .aviso: return T.reminderSubtitle
+        case .algoMas: return A.algoMasDetalle
         case .resumen: return A.resumenDetalle
         }
     }
@@ -115,9 +128,16 @@ struct AsistentePagoPlanificadoView: View {
         case .tipo: tipo
         case .nombre: nombre
         case .monto: monto
+        case .compartido:
+            AsistentePasoCompartido(estado: estado, grupos: grupos,
+                                    miembrosActivos: { miembrosPorZona[$0.cloudKitZoneID] ?? 0 })
+        case .reparto: AsistentePasoReparto(estado: estado, grupos: grupos)
         case .frecuencia: frecuencia
         case .dia: dia
         case .aviso: aviso
+        case .algoMas:
+            AsistentePasoAlgoMas(estado: estado, cuentas: cuentas, etiquetas: etiquetas,
+                                 cuentaPorDefecto: cuentaPorDefectoActual)
         case .resumen: resumen
         }
     }
@@ -306,10 +326,11 @@ struct AsistentePagoPlanificadoView: View {
                 look: aspecto,
                 due: primerPago.map { TutorialPlanningMath.dueInText($0) },
                 // La tarjeta pone ella el «≈» y el signo (como en Primeros pasos): el monto va sin marca.
-                amount: estado.monto.map { appPreferences.currency($0, currencyCode: moneda) },
+                // Compartido, tu parte: es lo que la lista enseñará del pago (el total va en la frase y en «Monto»).
+                amount: montoDeLaTarjeta.map { appPreferences.currency($0, currencyCode: monedaVisible) },
                 isEstimate: draft.isVariableAmount,
                 subcategoryName: subcategoriaElegida?.name,
-                accountName: cuentaNombre,
+                accountName: cuentaPorDefectoActual?.name ?? cuentaNombre,
                 isSubscription: draft.isSubscription,
                 summary: frase
             )
@@ -325,8 +346,66 @@ struct AsistentePagoPlanificadoView: View {
                 fila(.dia, A.resumenCuando, valorCuando)
                 Divider().padding(.leading, DS.Spacing.lg)
                 fila(.aviso, A.resumenAviso, valorAviso)
+                if estado.tieneGrupos {
+                    Divider().padding(.leading, DS.Spacing.lg)
+                    fila(.compartido, A.resumenCompartido, valorCompartido)
+                    if estado.reparto.grupoZona != nil {
+                        Divider().padding(.leading, DS.Spacing.lg)
+                        fila(.reparto, A.resumenDivision, valorDivision)
+                    }
+                }
+            }
+            AsistenteTarjeta {
+                fila(.algoMas, A.resumenCuenta, cuentaPorDefectoActual?.name ?? "—")
+                if !Logica.nombreLimpio(estado.extras.note).isEmpty {
+                    Divider().padding(.leading, DS.Spacing.lg)
+                    fila(.algoMas, A.resumenNota, Logica.nombreLimpio(estado.extras.note))
+                }
+                if estado.reparto.grupoZona == nil && !estado.extras.tagIDs.isEmpty {
+                    Divider().padding(.leading, DS.Spacing.lg)
+                    fila(.algoMas, A.resumenEtiquetas, valorEtiquetas)
+                }
+                if let fin = estado.extras.endDate, draft.frequency.isRecurring {
+                    Divider().padding(.leading, DS.Spacing.lg)
+                    fila(.algoMas, A.resumenTermina, ScheduledPaymentDateText.dayMonthLong(fin))
+                }
+                Divider().padding(.leading, DS.Spacing.lg)
+                fila(.algoMas, A.resumenEstado, estado.extras.isActive ? L10n.Scheduled.Editor.active : A.pausado)
             }
         }
+    }
+
+    /// «No, es solo mío» o el nombre del grupo.
+    private var valorCompartido: String {
+        guard let zona = estado.reparto.grupoZona else { return A.soloMio }
+        return grupos.first { $0.cloudKitZoneID == zona }?.name ?? "—"
+    }
+
+    /// «Entre 2 · Partes iguales · Tu parte S/ 60.00».
+    private var valorDivision: String {
+        guard estado.reparto.listo else { return NSLocalizedString("common.select", comment: "") }
+        let parte = appPreferences.currency(estado.reparto.miParte, currencyCode: estado.reparto.moneda,
+                                            isEstimate: draft.isVariableAmount)
+        return L10n.Scheduled.GroupExpense.splitSummary(estado.reparto.participantes.count,
+                                                        estado.reparto.tipo.shortName, parte)
+    }
+
+    private var valorEtiquetas: String {
+        etiquetas.filter { estado.extras.tagIDs.contains($0.persistentModelID) }.map(\.name)
+            .formatted(.list(type: .and).locale(AppLocale.current))
+    }
+
+    /// La cuenta con la que se guardará: la elegida en «¿Algo más?» o la última usada (de la moneda del gasto, si es
+    /// compartido).
+    private var cuentaPorDefectoActual: Account? {
+        let moneda = estado.reparto.grupoZona == nil ? nil : estado.reparto.moneda
+        if let id = estado.extras.accountID, let elegida = cuentas.first(where: { $0.persistentModelID == id }),
+           moneda == nil || elegida.currencyCode == moneda {
+            return elegida
+        }
+        guard let moneda else { return cuentaPorDefecto }
+        if cuentaPorDefecto?.currencyCode == moneda { return cuentaPorDefecto }
+        return cuentas.first { $0.currencyCode == moneda }
     }
 
     private func fila(_ destino: Logica.Paso, _ etiqueta: String, _ valor: String) -> some View {
@@ -382,14 +461,24 @@ struct AsistentePagoPlanificadoView: View {
     /// «≈ S/ 80.00 cada mes, el día 1. Primer pago: 1 de diciembre.» (la línea del formulario).
     private var frase: String? {
         guard let monto = estado.monto, let primer = primerPago else { return nil }
-        let texto = appPreferences.currency(monto, currencyCode: moneda, forceFullPrecision: true,
+        let texto = appPreferences.currency(monto, currencyCode: monedaVisible, forceFullPrecision: true,
                                             isEstimate: draft.isVariableAmount)
         return TutorialPlanningMath.paymentSummary(
             amountText: texto, frequency: draft.frequency, dayOfMonth: draft.dayOfMonth, date: draft.date, due: primer)
     }
 
+    private var montoDeLaTarjeta: Double? {
+        estado.compartido == nil ? estado.monto : estado.reparto.miParte
+    }
+
+    /// La moneda en que se enseñan los montos: la del gasto compartido, o la de la cuenta.
+    private var monedaVisible: String {
+        estado.reparto.grupoZona == nil ? moneda : estado.reparto.moneda
+    }
+
     private func dinero(_ valor: Double) -> String {
-        appPreferences.currency(valor, currencyCode: moneda, forceFullPrecision: true, isEstimate: draft.isVariableAmount)
+        appPreferences.currency(valor, currencyCode: monedaVisible, forceFullPrecision: true,
+                                isEstimate: draft.isVariableAmount)
     }
 
     // MARK: - Avance
@@ -401,8 +490,39 @@ struct AsistentePagoPlanificadoView: View {
         viewModel.setContext(modelContext, deletionService: EntityDeletionService.shared)
         let cuenta = viewModel.lastUsedAccount() ?? viewModel.activeAccounts.first
         cuentaNombre = cuenta?.name ?? ""
+        cuentaPorDefecto = cuenta
         moneda = cuenta?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
+        cuentas = viewModel.activeAccounts
+        etiquetas = viewModel.activeTags
         subcategoriasPorTipo = Flujo.kindSubcategories(in: modelContext)
+        cargarGrupos()
+    }
+
+    /// Los grupos activos: ni archivados ni ocultos para todos, y en los que sigues como miembro activo; con cuántos
+    /// miembros activos tiene cada uno. Sin ninguno, no se pregunta si es compartido.
+    private func cargarGrupos() {
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { !$0.isArchived && !$0.isHiddenForAll }, sortBy: [SortDescriptor(\.name)])
+        do {
+            grupos = try modelContext.fetch(descriptor)
+                .filter { AsistenteRepartoPuente.soyMiembroActivo(de: $0, in: modelContext) }
+            var conteo: [String: Int] = [:]
+            for grupo in grupos {
+                conteo[grupo.cloudKitZoneID] = AsistenteRepartoPuente.miembros(de: grupo, in: modelContext)
+                    .filter(\.isActive).count
+            }
+            miembrosPorZona = conteo
+        } catch {
+            #if DEBUG
+            print("AsistentePagoPlanificadoView: Error fetching groups: \(error)")
+            #endif
+            grupos = []
+        }
+        estado.tieneGrupos = !grupos.isEmpty
+        // Un grupo elegido que dejó de estar disponible no se guarda.
+        if let zona = estado.reparto.grupoZona, !grupos.contains(where: { $0.cloudKitZoneID == zona }) {
+            estado.reparto = AsistentePagoPlanificadoReparto()
+        }
     }
 
     private func elegir(_ tipo: Logica.Tipo) {
@@ -436,6 +556,11 @@ struct AsistentePagoPlanificadoView: View {
     private func alEntrar(en paso: Logica.Paso) {
         nombreEnfocado = false
         montoEnfocado = false
+        // La parte propia sigue al monto de ahora (se puede volver atrás a cambiarlo).
+        if paso == .reparto || paso == .resumen, estado.reparto.grupoZona != nil {
+            estado.reparto = AsistenteRepartoPuente.recalcular(estado.reparto, grupos: grupos, monto: estado.monto,
+                                                               in: modelContext)
+        }
         if paso == .nombre, !estado.nombreEditado || Logica.nombreLimpio(draft.name).isEmpty {
             estado.draft.name = nombrePropuesto
             estado.nombreEditado = false
@@ -452,23 +577,29 @@ struct AsistentePagoPlanificadoView: View {
         if paso == .resumen {
             crear()
         } else {
-            estado.navegador.avanzar(en: Logica.pasos)
+            estado.navegador.avanzar(en: estado.pasos)
         }
     }
 
-    /// Guarda por el camino de Primeros pasos (el ViewModel del formulario) y apunta lo mismo que el formulario: el
-    /// primer pago de Primeros pasos y el aviso «Primer pago: …». Con aviso elegido, la hoja del permiso de
-    /// notificaciones, como el formulario al guardar un pago nuevo.
+    /// Guarda con el ViewModel del formulario (`AsistentePagoPlanificadoCreador`, con lo compartido y «¿Algo más?») y
+    /// apunta lo mismo que el formulario: el primer pago de Primeros pasos y el aviso «Primer pago: …». Con aviso
+    /// elegido, la hoja del permiso de notificaciones, como el formulario al guardar un pago nuevo.
     private func crear() {
         guard !creando, let valor = estado.monto else { return }
         creando = true
         var borrador = estado.draft
         borrador.name = Logica.nombreLimpio(borrador.name)
         borrador.amount = valor
+        if estado.reparto.grupoZona != nil {
+            estado.reparto = AsistenteRepartoPuente.recalcular(estado.reparto, grupos: grupos, monto: valor,
+                                                               in: modelContext)
+        }
         let pago: ScheduledPayment
         do {
-            pago = try PrimerosPasosPlanningCreator.createScheduledPayment(
-                borrador, defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue, in: modelContext)
+            pago = try AsistentePagoPlanificadoCreador.crear(
+                borrador, monto: valor, compartido: estado.compartido, miParte: estado.reparto.miParte,
+                extras: estado.extras, defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                in: modelContext)
         } catch {
             #if DEBUG
             print("AsistentePagoPlanificadoView: Error: creating the payment: \(error)")

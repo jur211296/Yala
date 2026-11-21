@@ -36,3 +36,32 @@
 "asistentePago.summary.when" = "何时";
 "asistentePago.summary.reminder" = "提醒";
 "asistentePago.reminder.none" = "不提醒";
+
+/* Lo compartido, «¿Algo más?» y lo que falta en el formulario (encargo del 21-nov). */
+"asistentePago.shared.question" = "这是共同支出吗？";
+"asistentePago.shared.detail" = "如果由多人支付，Yala 会把它记在群组里，只计算你的那部分。";
+"asistentePago.shared.no" = "不，只是我的";
+"asistentePago.shared.noHint" = "由你支付，全部属于你。";
+"asistentePago.shared.groupHint" = "成员：%d · %@";
+"asistentePago.split.question" = "你们怎么分摊？";
+"asistentePago.split.detail" = "每次从收件箱记录时，再选择由谁支付。";
+"asistentePago.split.currency" = "货币";
+"asistentePago.split.division" = "分摊方式";
+"asistentePago.split.change" = "更改分摊方式";
+"asistentePago.extra.question" = "还有其他吗？";
+"asistentePago.extra.detail" = "一切就绪。可以修改任何内容，或直接继续。";
+"asistentePago.extra.account" = "账户";
+"asistentePago.extra.note" = "描述（可选）";
+"asistentePago.extra.tags" = "标签";
+"asistentePago.extra.ends" = "有结束日期";
+"asistentePago.extra.endDate" = "最后一次付款";
+"asistentePago.summary.shared" = "共同";
+"asistentePago.summary.split" = "分摊方式";
+"asistentePago.summary.account" = "账户";
+"asistentePago.summary.note" = "描述";
+"asistentePago.summary.tags" = "标签";
+"asistentePago.summary.ends" = "结束";
+"asistentePago.summary.status" = "状态";
+"asistentePago.summary.paused" = "已暂停";
+"asistentePago.missing.group" = "选择与你共同承担的群组。";
+"asistentePago.missing.division" = "选择分摊方式。";

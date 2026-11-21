@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "Clear filters";
 "reusarRegistro.noMatches" = "No records match these filters";
 "reusarRegistro.noMatchesHint" = "Try other filters or clear them.";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "This group is no longer in Yala.";
+"reusarRegistro.groupArchived" = "This group is archived.";
+"reusarRegistro.groupLeft" = "You’re no longer in this group.";
+"reusarRegistro.footer" = "Records from the last 6 months. A group expense creates a shared payment for that group. Transfers, payments between members and records that already belong to a recurring payment don’t appear.";

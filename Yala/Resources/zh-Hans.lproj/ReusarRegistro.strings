@@ -12,3 +12,9 @@
 "reusarRegistro.clearFilters" = "清除筛选";
 "reusarRegistro.noMatches" = "没有符合这些筛选条件的记录";
 "reusarRegistro.noMatchesHint" = "试试其他筛选条件，或将其清除。";
+
+/* Un gasto de grupo que ya no se puede repetir (encargo del 21-nov). */
+"reusarRegistro.groupGone" = "这个群组已不在 Yala 中。";
+"reusarRegistro.groupArchived" = "这个群组已归档。";
+"reusarRegistro.groupLeft" = "你已不在这个群组中。";
+"reusarRegistro.footer" = "过去 6 个月的记录。群组支出会创建该群组的共同付款。不显示转账、成员之间的付款，以及已属于定期付款的记录。";

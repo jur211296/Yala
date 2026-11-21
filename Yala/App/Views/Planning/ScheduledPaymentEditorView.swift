@@ -28,6 +28,20 @@ struct ScheduledPaymentPrefill {
     var dayOfMonth: Int? = nil
     var isSubscription: Bool = false
     var isVariableAmount: Bool = false
+    /// Desde un gasto de grupo («Reusar», encargo del 21-nov): el pago nace compartido con ese grupo y su reparto.
+    var group: ScheduledPaymentGroupPrefill? = nil
+}
+
+/// Un pago compartido ya decidido: el grupo, la moneda, el TOTAL de la factura y el reparto, tal como lo guarda
+/// `ScheduledPayment` (valor crudo por participante según el modo). Quién paga no se guarda: se elige al registrar cada
+/// pago desde la Bandeja (decisión de Jürgen del 21-nov, opción A).
+struct ScheduledPaymentGroupPrefill: Equatable {
+    let groupZoneID: String
+    let currencyCode: String
+    let totalAmount: Double
+    let splitType: SplitType
+    let participantIDs: [UUID]
+    let values: [UUID: Double]
 }
 
 struct ScheduledPaymentEditorView: View {
@@ -120,6 +134,9 @@ struct ScheduledPaymentEditorView: View {
     /// Toggle "¿Es un gasto compartido?". Al ON, el pago genera un gasto de grupo (no una TX personal).
     @State private var isGroupExpense: Bool = false
     @State private var availableGroups: [SplitGroup] = []
+    /// Los que se pueden ELEGIR: los disponibles en los que sigues activo (21-nov). `availableGroups` sigue siendo el
+    /// que casa la zona de un pago ya guardado, para no perder el grupo al editarlo.
+    @State private var selectableGroups: [SplitGroup] = []
     @State private var selectedGroup: SplitGroup?
     @State private var groupMembers: [SplitMember] = []
     /// VM transitorio del gasto de grupo — SOLO alimenta `GroupSplitSelectorView`.
@@ -183,7 +200,7 @@ struct ScheduledPaymentEditorView: View {
                     selectedSubcategory: $selectedSubcategory,
                     transactionType: transactionType,
                     showGroupPicker: $showGroupPicker,
-                    availableGroups: availableGroups,
+                    availableGroups: selectableGroups,
                     selectedGroupID: selectedGroup?.id ?? UUID(),
                     memberCount: { activeMemberCount(for: $0) },
                     onSelectGroup: { selectGroup($0) },
@@ -276,6 +293,7 @@ struct ScheduledPaymentEditorView: View {
 
     private func handleOnAppear() {
         viewModel.setContext(modelContext, deletionService: deletionService)
+        loadAvailableGroups()
         loadPaymentData()
         applyNewPaymentDefaults()
         if sessionState.isExpensesOnlyMode {
@@ -301,7 +319,7 @@ struct ScheduledPaymentEditorView: View {
             // Sin banner «¿Qué es un pago planificado?» (UX 2.2 · L5-6, opción A): Planificación ya lo explica.
             basicInfoSection
             classificationSection
-            if isGroupExpense {
+            if showsGroupExpenseSection {
                 groupExpenseConfigSection
             }
             recurrenceSection
@@ -413,8 +431,9 @@ struct ScheduledPaymentEditorView: View {
 
     // MARK: - Más opciones (L10-4)
 
-    /// Lo que no define el pago, plegado: monto estimado, nota, etiquetas, suscripción, gasto compartido, avisos, fecha
-    /// de fin y «Activo». Antes iba entre el nombre y la cuenta, y lo obligatorio quedaba fuera de pantalla.
+    /// Lo que no define el pago, plegado: monto estimado, nota, etiquetas, suscripción, avisos, fecha de fin y «Activo».
+    /// Antes iba entre el nombre y la cuenta, y lo obligatorio quedaba fuera de pantalla. «¿Es un gasto compartido?» salió
+    /// de aquí el 21-nov: encendido abajo, sus campos obligatorios aparecían arriba sin que se notara.
     private var moreOptionsSection: some View {
         VStack(spacing: DS.Spacing.none) {
             Button {
@@ -452,8 +471,6 @@ struct ScheduledPaymentEditorView: View {
                 }
                 SubsectionDivider()
                 subscriptionToggle
-                SubsectionDivider()
-                groupExpenseToggle
                 SubsectionDivider()
                 notificationRows
                 if isRecurring {
@@ -613,18 +630,43 @@ struct ScheduledPaymentEditorView: View {
 
     // MARK: - Group Shared Expense Config Section (F3)
 
-    /// Filas de configuración del gasto compartido (Grupo → Moneda → División).
-    /// Visible solo cuando `isGroupExpense`. Reusa GroupPickerSheet / CurrencyPickerSheet /
-    /// GroupSplitSelectorView sin modificarlas.
+    /// «¿Es un gasto compartido?» y, encendido, sus filas justo debajo (Grupo → Moneda → División), en la misma caja
+    /// (encargo del 21-nov). Sale si tienes algún grupo activo o si el pago ya es compartido: sin grupos no hay nada que
+    /// elegir. Reusa GroupPickerSheet / CurrencyPickerSheet / GroupSplitSelectorView sin modificarlas.
     private var groupExpenseConfigSection: some View {
         SectionBox(title: L10n.Scheduled.GroupExpense.sectionTitle) {
             VStack(spacing: DS.Spacing.none) {
-                groupRow
-                SubsectionDivider()
-                splitCurrencyRow
-                SubsectionDivider()
-                splitDivisionRow
+                groupExpenseToggle
+                if isGroupExpense {
+                    SubsectionDivider()
+                    groupRow
+                    missingLine(selectedGroup == nil, L10n.AsistentePagoPlanificado.faltaGrupo)
+                    SubsectionDivider()
+                    splitCurrencyRow
+                    SubsectionDivider()
+                    splitDivisionRow
+                    missingLine(selectedGroup != nil && (!splitConfigured || splitParticipantIDs.isEmpty),
+                                L10n.AsistentePagoPlanificado.faltaDivision)
+                }
             }
+        }
+    }
+
+    private var showsGroupExpenseSection: Bool {
+        isGroupExpense || !selectableGroups.isEmpty
+    }
+
+    /// Tras tocar ✓ con algo pendiente, lo que falta en esa fila, dicho debajo de ella.
+    @ViewBuilder
+    private func missingLine(_ isMissing: Bool, _ text: String) -> some View {
+        if highlightMissing && isMissing {
+            Label(text, systemImage: "exclamationmark.circle")
+                .font(DS.Typography.caption)
+                .foregroundStyle(Color.hotPink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.bottom, DS.Spacing.sm)
+                .accessibilityIdentifier("scheduled_missing_line")
         }
     }
 
@@ -656,6 +698,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(missingRowTint(selectedGroup == nil))
         .id(EditorField.group)
         .accessibilityIdentifier("scheduled_group_row")
     }
@@ -714,6 +757,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .buttonStyle(.plain)
         .disabled(selectedGroup == nil)
+        .background(missingRowTint(selectedGroup != nil && (!splitConfigured || splitParticipantIDs.isEmpty)))
         .id(EditorField.division)
         .accessibilityIdentifier("scheduled_split_division_row")
     }
@@ -722,7 +766,9 @@ struct ScheduledPaymentEditorView: View {
     private var splitSummaryText: String {
         let count = splitParticipantIDs.count
         let mode = splitConfigType.shortName
-        let share = appPreferences.currency(splitMyShare, currencyCode: splitCurrency.rawValue)
+        // Con «Monto estimado», «≈» también en tu parte: es el mismo número que la frase de abajo marca.
+        let share = appPreferences.currency(splitMyShare, currencyCode: splitCurrency.rawValue,
+                                            isEstimate: isVariableAmount)
         return L10n.Scheduled.GroupExpense.splitSummary(count, mode, share)
     }
 
@@ -1377,6 +1423,8 @@ struct ScheduledPaymentEditorView: View {
             #endif
             availableGroups = []
         }
+        // En un grupo del que saliste el pago no genera su borrador (`groupGateDecision`): no se ofrece.
+        selectableGroups = availableGroups.filter { AsistenteRepartoPuente.soyMiembroActivo(de: $0, in: modelContext) }
     }
 
     /// Conteo de miembros activos de un grupo (subtítulo del picker).
@@ -1403,6 +1451,30 @@ struct ScheduledPaymentEditorView: View {
         splitCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .usd
         buildTransientVM()
         // Cuenta prefill incompatible con la moneda del grupo → limpiar.
+        if let account = selectedAccount, account.currencyCode != splitCurrency.rawValue {
+            selectedAccount = nil
+        }
+    }
+
+    /// Un pago compartido ya decidido (desde un gasto de grupo, o desde el asistente): grupo, moneda, total y reparto. La
+    /// división se recalcula con el VM transitorio, así la parte propia sale del mismo cálculo que el selector. Un grupo
+    /// que ya no está entre los disponibles deja el interruptor encendido y la fila «Grupo» por elegir.
+    private func applyGroupPrefill(_ group: ScheduledPaymentGroupPrefill) {
+        isGroupExpense = true
+        transactionType = TransactionType.expense.rawValue
+        selectedTags = []
+        amount = AmountInputHelper.formatWithGrouping(group.totalAmount)
+        splitCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .usd
+        if availableGroups.isEmpty { loadAvailableGroups() }
+        guard let match = availableGroups.first(where: { $0.cloudKitZoneID == group.groupZoneID }) else { return }
+        selectedGroup = match
+        loadGroupMembers(for: match)
+        splitConfigType = group.splitType
+        splitParticipantIDs = group.participantIDs
+        splitValues = group.values
+        buildTransientVM()
+        applyStoredConfigToVM()
+        extractSplitConfigFromVM()
         if let account = selectedAccount, account.currencyCode != splitCurrency.rawValue {
             selectedAccount = nil
         }
@@ -1621,7 +1693,11 @@ struct ScheduledPaymentEditorView: View {
             yearlyDay = calendar.component(.day, from: now)
         }
         if selectedAccount == nil {
-            selectedAccount = viewModel.lastUsedAccount()
+            let last = viewModel.lastUsedAccount()
+            // En un pago compartido, solo si es de la moneda del gasto (como al elegir el grupo).
+            if !isGroupExpense || last?.currencyCode == splitCurrency.rawValue {
+                selectedAccount = last
+            }
         }
     }
 
@@ -1704,6 +1780,7 @@ struct ScheduledPaymentEditorView: View {
                 paymentCategory = .subscription
             }
             isVariableAmount = prefill.isVariableAmount
+            if let group = prefill.group { applyGroupPrefill(group) }
             return
         }
 
@@ -1903,6 +1980,15 @@ struct ScheduledPaymentEditorView: View {
         yearlyDay = calendar.component(.day, from: wizard.date)
         if let onDueDate = wizard.notifyOnDueDate { notifyOnDueDate = onDueDate }
         if let daysBefore = wizard.notifyDaysBefore { notifyDaysBefore = daysBefore }
+        note = wizard.extras.note
+        selectedTags = wizard.extras.tagIDs
+        if let id = wizard.extras.accountID { selectedAccount = modelContext.model(for: id) as? Account }
+        if let end = wizard.extras.endDate {
+            hasEndDate = true
+            endDate = end
+        }
+        isActive = wizard.extras.isActive
+        if let group = wizard.group { applyGroupPrefill(group) }
     }
 
     /// Un pago NUEVO es el momento de pedir las notificaciones (UX 2.2 · L5-14): la hoja sale sobre el editor y, al
@@ -2107,6 +2193,21 @@ struct ScheduledPaymentWizardPrefill: Equatable {
     /// El aviso, solo si se contestó en el asistente.
     var notifyOnDueDate: Bool?
     var notifyDaysBefore: Int?
+    /// Lo compartido elegido en el asistente (encargo del 21-nov).
+    var group: ScheduledPaymentGroupPrefill? = nil
+    /// «¿Algo más?».
+    var extras = ScheduledPaymentWizardExtras()
+}
+
+/// «¿Algo más?» del asistente: lo que el formulario guarda en «Más opciones» y en la cuenta. Por defecto, lo de un pago
+/// nuevo: la última cuenta usada, sin descripción ni etiquetas, sin fecha de fin y activo.
+struct ScheduledPaymentWizardExtras: Equatable {
+    /// `nil`: la última cuenta usada.
+    var accountID: PersistentIdentifier?
+    var note = ""
+    var tagIDs: Set<PersistentIdentifier> = []
+    var endDate: Date?
+    var isActive = true
 }
 
 /// Con lo respondido en el asistente, ni la X ni el gesto de bajar la hoja tiran nada sin preguntar (los mismos textos

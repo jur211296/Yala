@@ -1324,6 +1324,10 @@ final class UITestHooks {
     /// la categoría. Con la cuenta Sip para partirlo en recarga 500 + comisión 10.
     nonisolated static var seedGroupSplitLines: Bool { hasArg("-uitest-seed-group-split-lines") }
 
+    /// `-uitest-seed-reusar-grupo`: gastos de grupo en Registros para «Reusar» (`DevSeedReusarGrupo`): «Jurpi» con uno que
+    /// pagaste tú y otro que pagó Pía, más uno de un grupo archivado y otro de un grupo del que saliste.
+    nonisolated static var seedReusarGrupo: Bool { hasArg("-uitest-seed-reusar-grupo") }
+
     /// `-uitest-group-created-sheet`: al cargar la pestaña Grupos, abre la hoja «está listo» (UX 2.2 · L12-10) del primer
     /// grupo, como si acabara de crearse. Crear un grupo exige el backend y el simulador no tiene sesión real; el
     /// cableado del formulario con la hoja lo fija `UXAudit22Lote12y13WiringTests`.

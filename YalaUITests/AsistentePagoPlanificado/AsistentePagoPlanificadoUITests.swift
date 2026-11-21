@@ -56,6 +56,10 @@ final class AsistentePagoPlanificadoUITests: XCTestCase {
         app.buttons["asistente_pago_aviso_oneDayBefore"].tap()
         siguiente(app)
 
+        // «¿Algo más?» (21-nov): todo ya puesto, «Siguiente» encendido sin tocar nada.
+        pregunta(app, es: "¿Algo más?")
+        siguiente(app)
+
         pregunta(app, es: "¿Lo creamos así?")
         XCTAssertTrue(app.buttons["asistente_pago_resumen_nombre"].label.contains("Luz QA"))
         XCTAssertTrue(app.buttons["asistente_pago_resumen_aviso"].label.contains("1 día"))
@@ -197,6 +201,8 @@ final class AsistentePagoPlanificadoUITests: XCTestCase {
         adjuntar(app, "\(prefijo)-5-dia")
         siguiente(app)
         adjuntar(app, "\(prefijo)-6-aviso")
+        siguiente(app)
+        adjuntar(app, "\(prefijo)-6b-algo-mas")
         siguiente(app)
         adjuntar(app, "\(prefijo)-7-resumen")
         app.buttons["asistente_use_form"].tap()
