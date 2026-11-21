@@ -18,6 +18,9 @@ struct SubscriptionSuccessView: View {
     /// La función de la que venía la compra (UX 2.2 · L17-9): el subtítulo dice «Ya puedes…» con ella, y al tocar
     /// «Comenzar» quien abrió la compra la abre. `nil` desde el paywall.
     var feature: ProFeature?
+    /// «Pruébalo ahora» (opción B de Jürgen, 20-nov-2026, en lugar del tour Pro): sin función de origen y con quien sepa
+    /// abrir la función al cerrarse esta pantalla, los tres accesos sustituyen a las fichas. `nil`: las fichas de siempre.
+    var onTryNow: ((ProTryNowAction) -> Void)?
 
     // MARK: - State
 
@@ -103,9 +106,18 @@ struct SubscriptionSuccessView: View {
 
     /// Decisión B de Jürgen (2026-10-21): las mismas fichas de «Qué incluye Pro» que el paywall (`ProIncludedGrid`). La
     /// lista de antes tenía los nombres viejos («Registro por voz ilimitado»…) y decía lo mismo con otras palabras.
+    @ViewBuilder
     private var unlockedFeaturesList: some View {
-        ProIncludedGrid()
+        if feature == nil, let onTryNow {
+            ProTryNowSection { action in
+                onTryNow(action)
+                dismiss()
+            }
             .padding(.horizontal, DS.Spacing.lg)
+        } else {
+            ProIncludedGrid()
+                .padding(.horizontal, DS.Spacing.lg)
+        }
     }
 
     // MARK: - Animation

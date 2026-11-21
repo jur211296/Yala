@@ -4,8 +4,11 @@
 //
 //  «Primeros pasos» en el Panel. Mientras quedan pasos, es el MAZO (Y23-05, bienvenida 2.3): el paso actual adelante,
 //  en el color de la app, con «Primeros pasos · N de 7», y los dos siguientes asomando detrás («Después: …», «Luego:
-//  …»). «Ver los 7 pasos» abre la lista con los hechos marcados. Al resolver el séptimo, el mazo desaparece y queda la
-//  tarjeta de fin (la reharán en Y23-18).
+//  …»). Al resolver el séptimo, el mazo desaparece y queda la tarjeta de fin.
+//
+//  Opción B de Jürgen (20-nov-2026, tema 2): sin la hoja «Ver los 7 pasos». El progreso va en el mazo: siete segmentos en
+//  la carta de adelante, «Seguir donde iba» junto al paso, y debajo la fila de los siete con su estado
+//  (`SetupDeckProgress`); tocar uno lo abre. El final dice qué quedó para después y deja la fila para hacerlos.
 //
 
 import SwiftData
@@ -23,15 +26,12 @@ struct SetupChecklistCard: View {
 
     let manager: SetupChecklistManager
     let onStepTapped: (SetupStepID) -> Void
-    /// «Solo gastos»: la cuenta que Yala creó sola, para la línea del paso 1 en «Ver los 7 pasos».
+    /// «Solo gastos»: la cuenta que Yala creó sola, para la línea del paso 1 bajo la fila de pasos.
     var expensesAccountName: String? = nil
 
     // MARK: - State
 
     @State private var showCelebration = false
-    @State private var showsAllSteps = false
-    /// El paso tocado en «Ver los 7 pasos», que se abre cuando la hoja termina de cerrarse.
-    @State private var stepOpenedFromList: SetupStepID?
     @Environment(\.self) private var environment
 
     /// Si el texto sobre el acento es claro (blanco en los temas índigo) u oscuro (negro en Teal, Rosa y Minimalista).
@@ -70,18 +70,12 @@ struct SetupChecklistCard: View {
                     DS.Haptic.success()
                 }
             }
-            .sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList) {
-                SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 },
-                                    expensesAccountName: expensesAccountName)
-            }
         }
     }
 
-    /// Abre el paso tocado en la lista, ya con la hoja cerrada (el paso puede presentar su propia pantalla).
-    private func openStepTappedInList() {
-        guard let step = stepOpenedFromList else { return }
-        stepOpenedFromList = nil
-        onStepTapped(step)
+    /// La línea del paso 1 en «Solo gastos», solo mientras ese paso está hecho por Yala.
+    private var stepsNote: String? {
+        SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: expensesAccountName)
     }
 
     // MARK: - Deck
@@ -91,10 +85,21 @@ struct SetupChecklistCard: View {
             Button {
                 onStepTapped(deck.current)
             } label: {
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.SetupChecklist.Deck.counter(deck.position, deck.total).uppercased())
-                        .font(DS.Typography.badgeLabel)
-                        .tracking(0.6) // A11Y-DT: espaciado del rótulo en mayúsculas del prototipo; no cambia el tamaño
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    SetupDeckSegments(steps: manager.steps, current: deck.current, ink: theme.onAccent)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(L10n.SetupChecklist.Deck.counter(deck.position, deck.total).uppercased())
+                            .font(DS.Typography.badgeLabel)
+                            .tracking(0.6) // A11Y-DT: espaciado del rótulo en mayúsculas del prototipo; no cambia el tamaño
+                        Spacer(minLength: DS.Spacing.sm)
+                        // «Seguir donde iba», junto al paso: la carta entera lo abre.
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(L10n.SetupChecklist.Deck.resume)
+                            Image(systemName: "chevron.right").accessibilityHidden(true)
+                        }
+                        .font(DS.Typography.labelSmall.weight(.semibold))
+                        .accessibilityIdentifier("setup_deck_resume")
+                    }
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "plus")
                             .font(DS.Typography.headline)
@@ -124,25 +129,15 @@ struct SetupChecklistCard: View {
                 peekingCard(step, index: index)
             }
 
-            Button {
-                showsAllSteps = true
-            } label: {
-                Text(L10n.SetupChecklist.showAllSteps(deck.total))
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(theme.accentText)
-                    .frame(minHeight: DS.Button.actionSize)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, DS.Spacing.xxs)
-            .accessibilityIdentifier("setup_checklist_toggle_steps")
+            SetupDeckStepsRow(steps: manager.steps, current: deck.current, note: stepsNote, onOpen: onStepTapped)
+                .padding(.top, DS.Spacing.sm)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("setup_deck")
     }
 
     /// Una carta que asoma detrás: más estrecha y más oscura cuanto más atrás. Solo se ve; VoiceOver la salta, como en
-    /// el prototipo (el paso que sigue lo cuenta «Ver los 7 pasos»).
+    /// el prototipo (el paso que sigue lo cuenta la fila de pasos de debajo).
     private func peekingCard(_ step: SetupStepID, index: Int) -> some View {
         let text = index == 0
             ? L10n.SetupChecklist.Deck.after(step.localizedTitle)
@@ -199,11 +194,17 @@ struct SetupChecklistCard: View {
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("setup_deck_done_title")
-            Text(L10n.PrimerosPasos23.Final.doneMessage)
+            Text(doneMessage)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("setup_deck_done_message")
+            // Lo que quedó para después se hace desde aquí (la maqueta decía «Ajustes › Tutoriales», que no los tiene
+            // todos: no tiene grupos ni gráficas).
+            if !laterSteps.isEmpty {
+                SetupDeckStepsRow(steps: manager.steps, current: nil, caption: "", onOpen: onStepTapped)
+            }
             Button(L10n.Action.close) { manager.dismissCompleted() }
                 .font(DS.Typography.body.weight(.semibold))
                 .foregroundStyle(.thAccentText)
@@ -215,6 +216,15 @@ struct SetupChecklistCard: View {
         .background(DS.Semantic.infoBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .accessibilityElement(children: .contain)
+    }
+
+    private var laterSteps: [SetupStepID] { SetupDeckProgressLogic.later(manager.steps) }
+
+    /// Con pasos para después, los nombra; si no, el mensaje de siempre.
+    private var doneMessage: String {
+        guard !laterSteps.isEmpty else { return L10n.PrimerosPasos23.Final.doneMessage }
+        let names = laterSteps.map { PrimerosPasosPaso7Text.Deck.shortName($0) }
+        return PrimerosPasosPaso7Text.Deck.doneWithLater(names.formatted(.list(type: .and).locale(LanguageManager.resolved.locale)))
     }
 
     private var legacyCompletedView: some View {

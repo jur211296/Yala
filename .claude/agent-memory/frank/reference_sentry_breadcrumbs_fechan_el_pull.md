@@ -12,3 +12,8 @@ uno una página aplicada en el hilo principal, y el `POST /account/claim` de ant
 propio, «regresión» de la foto de perfil) era la misma carga que J. Antes de culpar al stack, mira la línea de tiempo.
 
 Relacionado: [[reference-sentry-tokens-y-api]], [[sentry-vacio-no-descarta-un-crash]].
+
+**Lee la RUTA entera, no el último segmento** (20-nov, YALA-IOS-A en 2.3): `pull` sale de `/sync/pull`, `/prefs/pull` y
+`/groups/pull`, y `merkle` de los dos canales. Cortando por el último segmento, tres canales parecían tres páginas del
+pull personal. Con la ruta se vio el ciclo que sigue a guardar: `push` → `/sync/pull` → `/prefs/pull` → `/groups/pull`.
+Y en un «Non Fully Blocked» la pila es el runloop libre (`mach_msg`): la causa sale de la línea de tiempo, no de la pila.

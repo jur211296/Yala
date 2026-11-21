@@ -96,21 +96,6 @@ struct UXAudit22Lote5LogicTests {
         #expect(!message.isEmpty && message != "tipkit.comparison.message", "la clave no resuelve")
     }
 
-    // MARK: - L5-12 · el tour Pro señala la fila de arriba
-
-    @Test func proTourPanelSteps_pointAtTheQuickActionsRow() {
-        let withAI = ProTourSteps.panelSteps(includesAssistant: true).map(\.id)
-        #expect(withAI == [ProTourSteps.panelVoiceImageAnchor, ProTourSteps.panelAssistantAnchor])
-        // Sin la píldora de IA, su paso no se monta (apuntaría a una vista que no existe).
-        #expect(ProTourSteps.panelSteps(includesAssistant: false).map(\.id) == [ProTourSteps.panelVoiceImageAnchor])
-    }
-
-    // MARK: - L5-9 · la guía de Ajustes son tres pasos
-
-    @Test func settingsTour_isThreeSteps() {
-        #expect(SettingsTourSteps.steps.map(\.id) == ["settingsAccounts", "settingsPersonalization", "settingsTutorials"])
-    }
-
     // MARK: - Cableado (source-scan)
 
     private static func source(_ relative: String) throws -> String {

@@ -12,11 +12,14 @@ struct ProTrialOfferSheet: View {
 
     // MARK: - Properties
 
+    /// Un acceso de «Pruébalo ahora» en la bienvenida a Pro: quien presenta la hoja abre la función al cerrarse.
+    let onTryNow: (ProTryNowAction) -> Void
     let onDismiss: () -> Void
 
     private let store = StoreKitManager.shared
 
-    init(onDismiss: @escaping () -> Void) {
+    init(onTryNow: @escaping (ProTryNowAction) -> Void = { _ in }, onDismiss: @escaping () -> Void) {
+        self.onTryNow = onTryNow
         self.onDismiss = onDismiss
     }
 
@@ -87,10 +90,10 @@ struct ProTrialOfferSheet: View {
             store.didJustSubscribe = false
         }
         .fullScreenCover(isPresented: $showSuccess, onDismiss: {
-            ProTourManager.shared.triggerIfEligible()
             onDismiss()
         }) {
-            SubscriptionSuccessView()
+            // Sin tour Pro (opción B de Jürgen, 20-nov-2026): la bienvenida trae «Pruébalo ahora».
+            SubscriptionSuccessView(onTryNow: onTryNow)
         }
     }
 

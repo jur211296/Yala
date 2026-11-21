@@ -167,7 +167,7 @@ struct PlaceGuideStage: Equatable {
     var closeLabel: String? = nil
 }
 
-/// La guía en curso. Del proceso, como el tour Pro (`ProTourManager`): es una por teléfono, no por ventana.
+/// La guía en curso. Del proceso: es una por teléfono, no por ventana.
 @MainActor
 @Observable
 final class PlaceGuideCenter {

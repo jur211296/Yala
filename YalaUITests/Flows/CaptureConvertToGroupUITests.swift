@@ -11,6 +11,10 @@
 //  que XCUITest no toca de forma estable; ver `InboxConvertToGroupUITests`). Los seams de voz e imagen dan un gasto fijo
 //  sin red. Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev, targetear por identifier).
 //
+//  Bug de Jürgen del 2026-11-20: guardado el gasto de grupo, la fila seguía en lo leído sin marcarse. Ahora sale como
+//  guardada (`draft_registered_in_group_row`) y, en la foto, la hoja se cierra sola si era la única; cancelar el
+//  formulario la deja pendiente.
+//
 
 import XCTest
 
@@ -31,8 +35,8 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         return app
     }
 
-    /// Desde la fila de lo entendido: abre su hoja, toca «Convertir a gasto compartido» y guarda el gasto de grupo.
-    private func convertTheDraft(in app: XCUIApplication) {
+    /// Desde la fila de lo entendido: abre su hoja y toca «Convertir a gasto compartido» hasta que sale el formulario.
+    private func openTheGroupForm(in app: XCUIApplication) {
         let row = app.buttons["voice_draft_row"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No apareció el registro entendido (voice_draft_row).")
         // El importe, a la derecha: en la hoja de foto la descripción se edita al tocarla (encargo del 2026-11-17).
@@ -47,6 +51,11 @@ final class CaptureConvertToGroupUITests: XCTestCase {
             app.textFields["group_expense_amount"].waitForExistence(timeout: 15),
             "«Convertir a gasto compartido» no abrió el formulario de gasto de grupo."
         )
+    }
+
+    /// Abre el formulario de grupo desde la fila y guarda el gasto.
+    private func convertTheDraft(in app: XCUIApplication) {
+        openTheGroupForm(in: app)
         let save = app.buttons["group_expense_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció Guardar del gasto de grupo.")
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: save)
@@ -73,10 +82,18 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["voice_review_title"].waitForExistence(timeout: 15), "No apareció lo entendido.")
 
         convertTheDraft(in: app)
+
+        // El bug del 2026-11-20: la fila seguía sin marcar. En la voz, como al guardar el último: «Guardado» y «Listo».
+        XCTAssertTrue(
+            app.descendants(matching: .any)["draft_registered_in_group_row"].waitForExistence(timeout: 10),
+            "Lo convertido no salió marcado como registrado en lo entendido."
+        )
+        XCTAssertFalse(app.buttons["voice_save"].exists, "Tras registrarlo en el grupo, aún se ofrecía guardarlo como personal.")
+        XCTAssertTrue(app.buttons["voice_finish"].waitForExistence(timeout: 5), "La hoja no pasó a «Listo» con todo registrado.")
     }
 
-    func test_imageDraft_convertsToAGroupExpense() {
-        let app = launch(["-uitest-image-result", "one"])
+    /// Abre la hoja de foto con un registro leído.
+    private func openImageReview(in app: XCUIApplication) {
         app.revealPanelFAB().tap()
         let image = app.buttons["fab_image"]
         XCTAssertTrue(image.waitForExistence(timeout: 5), "El menú del FAB no ofreció imagen (fab_image).")
@@ -85,7 +102,47 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         XCTAssertTrue(photos.waitForExistence(timeout: 15), "La hoja no abrió eligiendo (image_source_photos).")
         photos.tap()
         XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 15), "No apareció lo leído.")
+    }
+
+    func test_imageDraft_convertsToAGroupExpense() {
+        // El cierre solo se alarga para poder ver la fila marcada antes de que la hoja se vaya.
+        let app = launch(["-uitest-image-result", "one", "-uitest-image-autoclose-seconds", "4"])
+        openImageReview(in: app)
 
         convertTheDraft(in: app)
+
+        // El bug del 2026-11-20: la fila seguía sin marcar y la hoja abierta.
+        XCTAssertTrue(
+            app.descendants(matching: .any)["draft_registered_in_group_row"].waitForExistence(timeout: 10),
+            "Lo convertido no salió marcado como registrado en lo leído."
+        )
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "image_registered_in_group"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertFalse(app.buttons["image_save"].exists, "Tras registrarlo en el grupo, aún se ofrecía guardarlo como personal.")
+        // Era el único: la hoja se cierra sola, como al guardar el último.
+        XCTAssertTrue(
+            app.staticTexts["image_review_title"].waitForNonExistence(timeout: 15),
+            "La hoja de lo leído no se cerró sola con su único registro ya en el grupo."
+        )
+    }
+
+    func test_imageDraft_cancellingTheGroupForm_leavesItPending() {
+        let app = launch(["-uitest-image-result", "one"])
+        openImageReview(in: app)
+        openTheGroupForm(in: app)
+
+        app.buttons["group_expense_close"].tap()
+        let discard = app.buttons["group_form_discard_confirm"]
+        if discard.waitForExistence(timeout: 2) { discard.tap() }
+        XCTAssertTrue(app.textFields["group_expense_amount"].waitForNonExistence(timeout: 10), "El formulario de grupo no se cerró.")
+
+        XCTAssertTrue(app.buttons["voice_draft_row"].firstMatch.waitForExistence(timeout: 10), "Al cancelar desapareció el registro.")
+        XCTAssertFalse(
+            app.descendants(matching: .any)["draft_registered_in_group_row"].exists,
+            "Cancelar el formulario de grupo marcó el registro como guardado."
+        )
+        XCTAssertTrue(app.staticTexts["image_review_title"].exists, "Cancelar el formulario cerró la hoja de lo leído.")
     }
 }

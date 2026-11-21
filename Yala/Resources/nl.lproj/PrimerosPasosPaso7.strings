@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "Tutorial · %1$d van %2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "Laat me zien hoe";
+"primerosPasosPaso7.story.finish" = "Klaar";
+"primerosPasosPaso7.story.widget.title" = "Noteer met één tik, vanaf je beginscherm";
+"primerosPasosPaso7.story.widget.message" = "En zie hoeveel je hebt uitgegeven zonder de app te openen. Kies de widgets die je helpen.";
+"primerosPasosPaso7.story.widget.spent" = "Uitgaven · deze maand";
+"primerosPasosPaso7.story.applePay.title" = "Betaal met je iPhone en de uitgave staat al in Yala";
+"primerosPasosPaso7.story.applePay.message" = "Zonder typen: je keurt hem alleen goed in je Inbox.";
+"primerosPasosPaso7.story.applePay.merchant" = "Supermarkt";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "Vandaag · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "Goedkeuren";
+"primerosPasosPaso7.story.share.title" = "Het bonnetje dat je kreeg, genoteerd zonder typen";
+"primerosPasosPaso7.story.share.message" = "Vanuit Foto’s, WhatsApp of je bank. Yala leest het bedrag, de winkel en de datum.";
+"primerosPasosPaso7.story.share.sentBy" = "Via WhatsApp gestuurd";
+"primerosPasosPaso7.story.share.merchant" = "Restaurant De Goede Smaak";
+"primerosPasosPaso7.story.share.read" = "Gelezen van de foto · te controleren";
+"primerosPasosPaso7.story.mail.title" = "De meldingen van je bank komen vanzelf in Yala";
+"primerosPasosPaso7.story.siri.title" = "Handen vol? Zeg het tegen Siri";
+"primerosPasosPaso7.story.siri.message" = "Werkt zonder instellen. Probeer het: zeg ‘Hé Siri’.";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala opent op Nieuwe invoer, klaar om te noteren.";
+"primerosPasosPaso7.story.siri.allPhrases" = "Bekijk alle zinnen";
+"primerosPasosPaso7.deck.step.firstAccount" = "Rekening";
+"primerosPasosPaso7.deck.step.firstExpense" = "Noteren";
+"primerosPasosPaso7.deck.step.firstBudget" = "Budget";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "Betalingen";
+"primerosPasosPaso7.deck.step.groups" = "Groepen";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "Grafieken";
+"primerosPasosPaso7.deck.step.homeScreen" = "Begin";
+"primerosPasosPaso7.deck.summary" = "Gedaan: %1$d · Voor later: %2$d · Tik op een stap om hem te openen";
+"primerosPasosPaso7.deck.value.done" = "gedaan";
+"primerosPasosPaso7.deck.value.current" = "nu";
+"primerosPasosPaso7.deck.value.pending" = "open";
+"primerosPasosPaso7.deck.doneWithLater" = "Voor later gelaten: %@. Tik hieronder op een stap om hem nu te doen.";
+"primerosPasosPaso7.tryNow.header" = "Probeer het nu";
+"primerosPasosPaso7.tryNow.voice.title" = "Dicteer een uitgave";
+"primerosPasosPaso7.tryNow.voice.detail" = "‘Lunch, 18 met pinpas’";
+"primerosPasosPaso7.tryNow.photo.title" = "Lees een bonnetje";
+"primerosPasosPaso7.tryNow.photo.detail" = "Foto, schermafbeelding of pdf";
+"primerosPasosPaso7.tryNow.ai.title" = "Vraag het Yala AI";
+"primerosPasosPaso7.tryNow.ai.detail" = "‘Waar gaf ik deze maand het meest aan uit?’";
+"primerosPasosPaso7.tryNow.extras" = "Plus: exclusieve thema’s en iconen in Instellingen.";
+"primerosPasosPaso7.offer.notNow" = "Niet nu";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "Wat je net hebt geprobeerd, een maand gratis";
+"primerosPasosPaso7.offer.triedTitleDays" = "Wat je net hebt geprobeerd, %d dagen gratis";
+"primerosPasosPaso7.offer.tried.voice" = "Je dicteerde een uitgave en Yala noteerde hem. Met Pro kan dat altijd.";
+"primerosPasosPaso7.offer.tried.photo" = "Yala las je bonnetje en noteerde het. Met Pro kan dat altijd.";
+"primerosPasosPaso7.offer.tried.ai" = "Yala AI noteerde je uitgave voor je. Met Pro kan dat altijd.";
+"primerosPasosPaso7.offer.feature.voice" = "Dicteer je uitgaven";
+"primerosPasosPaso7.offer.feature.photo" = "Lees bonnetjes en pdf’s";
+"primerosPasosPaso7.offer.feature.ai" = "Vraag het Yala AI";
+"primerosPasosPaso7.offer.timelineWithReminder" = "Vandaag betaal je niets · we herinneren je op %1$@ · afschrijving op %2$@";
+"primerosPasosPaso7.offer.timelineCharge" = "Vandaag betaal je niets · afschrijving op %@";

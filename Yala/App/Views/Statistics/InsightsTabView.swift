@@ -27,6 +27,9 @@ struct InsightsTabView: View {
     let allSubcategories: [Subcategory]
     let tags: [Tag]
     let allTransactions: [TransactionItem]
+    /// Recargas del store hechas por el contenedor (`DetailContainerViewModel.dataGeneration`): «Tu dinero hoy» del hero
+    /// se recalcula con ellas.
+    let dataGeneration: Int
     let budgets: [Budget]
     let scheduledPayments: [ScheduledPayment]
     let defaultCurrencyCode: String
@@ -45,8 +48,6 @@ struct InsightsTabView: View {
     @State private var showAntAIConsentAlert = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
-    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-    @State private var heroInfo: HeroInfoRequest?
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
     @State private var isShortContainer = false
 
@@ -58,21 +59,8 @@ struct InsightsTabView: View {
     @State private var budgetsExpandedChoice: Bool?
     @State private var isNeedSectionExpanded: Bool = false
 
-    // Coach mark: Pro tour (Phase 3)
-    @State private var showProInsightsTour = false
-    @State private var proInsightsTourIndex = 0
-
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
-    }
-
-    /// All conditions for Phase 3 tour: phase + anchor exists + tour not done.
-    private var insightsTourReady: Bool {
-        !ProTourManager.shared.hasCompleted
-        && ProTourManager.shared.currentPhase == .insights
-        && viewModel.insightData?.periodSummary.transactionCount ?? 0 > 0
-        && isProUser
-        && !viewModel.aiActivated
     }
 
     // MARK: - Body
@@ -177,29 +165,6 @@ struct InsightsTabView: View {
         .insightsConsentAlert(isPresented: $showAntAIConsentAlert) {
             Task { await viewModel.triggerAntAI() }
         }
-        .coachMarkOverlay(
-            steps: ProTourSteps.insightsSteps,
-            isPresented: $showProInsightsTour,
-            currentIndex: $proInsightsTourIndex,
-            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
-            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
-            onSkip: { ProTourManager.shared.skipTour() },
-            onComplete: {
-                ProTourManager.shared.advancePhase()
-            }
-        )
-        .task(id: insightsTourReady) {
-            guard insightsTourReady else { return }
-            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard insightsTourReady, !showProInsightsTour else { return }
-            showProInsightsTour = true
-        }
-        .onChange(of: insightsTourReady) { _, ready in
-            if !ready && showProInsightsTour {
-                showProInsightsTour = false
-                proInsightsTourIndex = 0
-            }
-        }
         .onChange(of: viewModel.insightData?.periodSummary.transactionCount) { _, newCount in
             // Reset defensivo: con < 5 tx no se monta el pill ni la rama Observaciones;
             // forzar Detalle para que al volver a >= 5 el bento sea visible de inmediato.
@@ -234,128 +199,23 @@ struct InsightsTabView: View {
 
     // MARK: - Hero Summary
 
-    @ViewBuilder
+    /// El hero compartido de Estadísticas (`StatsHeroView`): «Tu dinero hoy», o el gasto en «Solo gastos», con ingresos y
+    /// gastos del período debajo. Con poco alto (iPhone girado) va en banda.
     private func heroSummary(_ summary: PeriodSummary) -> some View {
-        let hasRecords = summary.transactionCount > 0
-
-        // En «Solo gastos» la cifra es lo gastado, con su variación, como en el Panel (decisión A de Jürgen del
-        // 2026-10-26): el neto, sin ingresos, no diría nada. Antes el hero se quedaba sin cifra.
         let expensesOnly = sessionState.isExpensesOnlyMode
-        let showsFigure = hasRecords
-
-        // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
-        // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
-        SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
+        return StatsHeroView(
+            caption: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly),
+            sideFigure: summary.transactionCount > 0
+                ? StatsMoneyTodayLogic.Figure(value: summary.totalExpense, isApproximate: summary.expenseAmountsAreApproximate)
+                : nil,
+            flow: StatsHeroFlow(summary),
+            expensesOnlyVariation: expensesOnly && summary.transactionCount > 0 ? .some(summary.expenseVariation) : nil,
+            money: StatsHeroMoneySource(accounts: accounts, transactions: allTransactions, dataGeneration: dataGeneration),
+            currencyCode: defaultCurrencyCode,
+            isShort: isShortContainer,
+            verticalPadding: summaryVerticalPadding
+        ) {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
-        } caption: {
-            // Qué es la cifra: el neto, o el gasto en «Solo gastos».
-            if showsFigure {
-                let caption = StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly)
-                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
-                HStack(spacing: DS.Spacing.xs) {
-                    HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                        .accessibilityIdentifier("stats_hero_caption")
-                    // El «?» del Panel: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-                    HeroInfoButton(identifier: "stats_hero_info") {
-                        heroInfo = HeroInfoRequest(
-                            topic: HeroClaroLogic.topic(for: caption),
-                            figureLabel: caption.text(isClosed: isClosed),
-                            isClosedPeriod: isClosed
-                        )
-                    }
-                }
-            }
-        } figure: {
-            if showsFigure {
-                AmountText(
-                    value: expensesOnly ? summary.totalExpense : summary.netBalance,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate,
-                    animatesValue: true
-                )
-            }
-        } detail: {
-            // En «Solo gastos» la fila de entradas y salidas sería solo el gasto, que ya es la cifra grande: queda su
-            // variación, con la lectura del Panel.
-            if expensesOnly {
-                if hasRecords {
-                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
-                }
-            } else {
-                incomeExpenseChips(summary)
-            }
-
-            if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
-                Text(localizedMotivational(sub))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
-    }
-
-    private func localizedMotivational(_ sub: RecordsHeroSubtitle) -> String {
-        switch sub {
-        case .one: return L10n.Stats.Insights.motivationalOne
-        case .many(let n): return L10n.Stats.Insights.motivationalMany(n)
-        }
-    }
-
-    @ViewBuilder
-    private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
-        // Con texto de accesibilidad entradas y salidas van en dos líneas (decisión A de Jürgen del
-        // 2026-10-12, `stats-hero-detail-row-truncates-at-accessibility-text`): en una sola, la cifra
-        // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
-        // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
-        // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
-        // «Ingresos» y «Gastos» en chico encima de cada monto (hero claro, 2026-11-16): antes las flechas iban solas.
-        AdaptiveRowStack(spacing: DS.Spacing.lg, stackedSpacing: DS.Spacing.xs) {
-            if !sessionState.isExpensesOnlyMode {
-                HeroFlowAmountCaption(text: L10n.CashFlow.income) {
-                    AmountWithChipStack {
-                        Image(systemName: "arrow.up.right")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.incomeGraph)
-                            .accessibilityHidden(true)
-                        AmountText(
-                            value: summary.totalIncome,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary,
-                            isEstimate: summary.incomeAmountsAreApproximate
-                        )
-                        .accessibilityIdentifier("stats_kpi_income")
-                    } chip: {
-                        if appPreferences.showVariations {
-                            VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
-                        }
-                    }
-                }
-            }
-
-            HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
-                AmountWithChipStack {
-                    Image(systemName: "arrow.down.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.expenseGraph)
-                        .accessibilityHidden(true)
-                    AmountText(
-                        value: summary.totalExpense,
-                        currencyCode: defaultCurrencyCode,
-                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary,
-                        isEstimate: summary.expenseAmountsAreApproximate
-                    )
-                    .accessibilityIdentifier("stats_kpi_expense")
-                } chip: {
-                    if appPreferences.showVariations {
-                        VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
-                    }
-                }
-            }
         }
     }
 
@@ -488,7 +348,6 @@ struct InsightsTabView: View {
         }
         .buttonStyle(.plain)
         .panelCard()
-        .coachMarkAnchor("proAiSummary")
     }
 
     // MARK: - Pro Observations Section

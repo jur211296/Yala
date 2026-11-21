@@ -16,16 +16,14 @@ nonisolated enum HeroClaroLogic {
 
     /// La explicación que abre el «?» de una cifra.
     enum Topic: Equatable, CaseIterable {
-        /// «Te queda» / «Te quedó»: ingresos − gastos del período.
-        case net
+        /// «Tu dinero hoy» / «Tu dinero al cierre»: la cifra del Panel, con ingresos y gastos del período debajo.
+        case moneyToday
         /// «Gastos de …»: lo gastado en el período.
         case expense
         /// «Ingresos de …»: lo que entró en el período.
         case income
         /// Distribución con los dos chips y un filtro: ingresos y gastos sumados, sin restar.
         case total
-        /// Distribución en saldo: lo que hay en las cuentas («Tu saldo hoy» / «Tenías al cierre»).
-        case accountsBalance
         /// Flujo de caja, mes en curso: «Al 30 de noviembre tendrías».
         case cashFlowMonthEnd
         /// Flujo de caja, otro mes: lo que entra menos lo que sale de ese mes según el plan.
@@ -36,11 +34,10 @@ nonisolated enum HeroClaroLogic {
     /// (`StatsHeroCaption`), así que nunca puede explicar otra cosa que la que enseña.
     static func topic(for caption: StatsHeroCaption) -> Topic {
         switch caption {
-        case .netPeriod: return .net
+        case .moneyToday: return .moneyToday
         case .expensePeriod: return .expense
         case .incomePeriod: return .income
         case .totalPeriod: return .total
-        case .accountsBalance: return .accountsBalance
         }
     }
 
@@ -60,8 +57,8 @@ nonisolated enum HeroClaroLogic {
     /// Una fila del ejemplo: qué es y cuánto. `isResult` es la fila de la cifra (en negrita).
     struct ExampleRow: Equatable {
         enum Label: Equatable {
-            case income, expense, net, netShortfall, total, balanceToday, leftToComeIn, leftToGoOut, monthEnd
-            case savings, card, refund, salary, sale
+            case income, expense, netShortfall, total, balanceToday, leftToComeIn, leftToGoOut, monthEnd
+            case savings, refund, salary, sale, cash, moneyToday
         }
         let label: Label
         let value: Double
@@ -72,11 +69,11 @@ nonisolated enum HeroClaroLogic {
     /// cuenta de las filas de encima (lo fija `HeroClaroLogicTests`).
     static func example(for topic: Topic) -> [ExampleRow] {
         switch topic {
-        case .net:
+        case .moneyToday:
             return [
-                .init(label: .income, value: 3_000, isResult: false),
-                .init(label: .expense, value: 2_200, isResult: false),
-                .init(label: .net, value: 3_000 - 2_200, isResult: true),
+                .init(label: .savings, value: 1_000, isResult: false),
+                .init(label: .cash, value: 150, isResult: false),
+                .init(label: .moneyToday, value: 1_000 + 150, isResult: true),
             ]
         case .expense:
             return [
@@ -95,12 +92,6 @@ nonisolated enum HeroClaroLogic {
                 .init(label: .income, value: 400, isResult: false),
                 .init(label: .expense, value: 1_100, isResult: false),
                 .init(label: .total, value: 400 + 1_100, isResult: true),
-            ]
-        case .accountsBalance:
-            return [
-                .init(label: .savings, value: 1_000, isResult: false),
-                .init(label: .card, value: -300, isResult: false),
-                .init(label: .balanceToday, value: 1_000 - 300, isResult: true),
             ]
         case .cashFlowMonthEnd:
             return [

@@ -117,8 +117,6 @@ struct TrendsTabView: View {
     @State private var trendsAIContextVersion = 0
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
-    /// La hoja del «?» del hero: qué es la cifra y cómo se calcula (hero claro, 2026-11-16).
-    @State private var heroInfo: HeroInfoRequest?
 
     // MARK: - Cash Flow View Type
 
@@ -245,155 +243,25 @@ struct TrendsTabView: View {
         return (start, end)
     }
 
-    // MARK: - Hero Summary (el del Panel: `HeroHeader`, compartido con las otras pestañas)
+    // MARK: - Hero Summary (el compartido de Estadísticas: `StatsHeroView`)
 
-    @ViewBuilder
+    /// «Tu dinero hoy» con la métrica Saldo; con Ingresos o Gastos, ese lado del período. Debajo, ingresos y gastos.
     private var heroSummary: some View {
         let summary = insightsViewModel.insightData?.periodSummary
-        let txCount = summary?.transactionCount ?? 0
-        let hasRecords = txCount > 0
-
-        // El hero claro (2026-11-16): la cifra pegada al rótulo, con su «?», y la píldora del período a su lado.
-        HeroClaroHeader {
-            // Qué es la cifra. Sigue a la métrica: `heroKPIValue` devuelve uno
-            // de tres números, así que el rótulo no puede ser fijo.
-            if hasRecords, summary != nil {
-                let caption = StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric)
-                let isClosed = PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
-                HeroHeaderLabel(text: caption.text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
-                    .accessibilityIdentifier("stats_hero_caption")
-                HeroInfoButton(identifier: "stats_hero_info") {
-                    heroInfo = HeroInfoRequest(
-                        topic: HeroClaroLogic.topic(for: caption),
-                        figureLabel: caption.text(isClosed: isClosed),
-                        isClosedPeriod: isClosed
-                    )
-                }
-            }
-        } period: {
+        let hasRecords = (summary?.transactionCount ?? 0) > 0
+        let expensesOnly = sessionState.isExpensesOnlyMode
+        return StatsHeroView(
+            caption: StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric),
+            sideFigure: hasRecords ? summary.map {
+                StatsMoneyTodayLogic.Figure(value: heroKPIValue(for: $0), isApproximate: heroKPIIsApproximate(for: $0))
+            } : nil,
+            flow: summary.map { StatsHeroFlow($0) },
+            expensesOnlyVariation: expensesOnly && hasRecords ? .some(summary?.expenseVariation) : nil,
+            money: StatsHeroMoneySource(accounts: accounts, transactions: allTransactions, dataGeneration: dataGeneration),
+            currencyCode: defaultCurrencyCode,
+            verticalPadding: summaryVerticalPadding
+        ) {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
-        } figure: {
-            if hasRecords, let summary {
-                // KPI period-specific (matches Insights hero). Card interno + chart
-                // preservan running balance — el hero refleja el agregado del período.
-                AmountText(
-                    value: heroKPIValue(for: summary),
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: heroKPIIsApproximate(for: summary),
-                    animatesValue: true
-                )
-            }
-        } detail: {
-            if hasRecords, let summary {
-                // En «Solo gastos» la fila de entradas y salidas repetía la cifra grande: queda su variación, con la
-                // lectura del Panel (decisión A de Jürgen del 2026-10-26).
-                if sessionState.isExpensesOnlyMode {
-                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
-                } else {
-                    incomeExpenseChips(summary)
-                }
-            }
-
-            // La frase compara el BALANCE. En «Solo gastos» es el gasto en negativo y gastar más se leía «por debajo ·
-            // Ánimo»: fuera (decisión A de Jürgen del 2026-10-26); la variación ya la dice el chip.
-            if !sessionState.isExpensesOnlyMode, let summary, let text = heroVariationSubtitle(for: summary) {
-                Text(text)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
-        .heroVerticalPadding(summaryVerticalPadding)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-        .heroInfoSheet($heroInfo, currencyCode: defaultCurrencyCode)
-    }
-
-    /// Subtitle motivacional específico de Trends — describe la variación del
-    /// balance del período (no del metric activo). 4 ramas: onset / stable /
-    /// up / down. `previousPeriodLabel` viene con prefix "vs " hardcoded en
-    /// `PreviousPeriodHelper.formatComparisonText`; lo strippeamos porque las
-    /// keys L10n ya incluyen "vs %@" en su forma natural por idioma.
-    private func heroVariationSubtitle(for summary: PeriodSummary) -> String? {
-        guard summary.transactionCount > 0 else { return nil }
-
-        let prev = strippedComparisonLabel(summary.previousPeriodLabel)
-
-        guard let variation = summary.balanceVariation else {
-            // «Todo el tiempo» no tiene con qué compararse y tampoco es «tu primer período»: lleva la línea del Resumen,
-            // el recuento de movimientos (auditoría UX 2.2 · lote 11 · B1).
-            if trendsViewModel.detailPeriod == .allTime {
-                switch RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
-                case .one: return L10n.Stats.Insights.motivationalOne
-                case .many(let n): return L10n.Stats.Insights.motivationalMany(n)
-                case nil: return nil
-                }
-            }
-            // Sin período previo comparable (primer mes, etc.).
-            return L10n.Stats.Trends.heroOnset
-        }
-
-        if abs(variation) < 5 {
-            return L10n.Stats.Trends.heroStable
-        }
-
-        let percent = Int(abs(variation).rounded())
-        return variation > 0
-            ? L10n.Stats.Trends.heroVarUp(percent, prev)
-            : L10n.Stats.Trends.heroVarDown(percent, prev)
-    }
-
-    @ViewBuilder
-    private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
-        // Con texto de accesibilidad entradas y salidas van en dos líneas (decisión A de Jürgen del
-        // 2026-10-12, `stats-hero-detail-row-truncates-at-accessibility-text`): en una sola, la cifra
-        // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
-        // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
-        // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
-        // «Ingresos» y «Gastos» en chico encima de cada monto (hero claro, 2026-11-16): antes las flechas iban solas.
-        AdaptiveRowStack(spacing: DS.Spacing.lg, stackedSpacing: DS.Spacing.xs) {
-            if !sessionState.isExpensesOnlyMode {
-                HeroFlowAmountCaption(text: L10n.CashFlow.income) {
-                    AmountWithChipStack {
-                        Image(systemName: "arrow.up.right")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.incomeGraph)
-                            .accessibilityHidden(true)
-                        AmountText(
-                            value: summary.totalIncome,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary,
-                            isEstimate: summary.incomeAmountsAreApproximate
-                        )
-                    } chip: {
-                        if appPreferences.showVariations {
-                            VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
-                        }
-                    }
-                }
-            }
-
-            HeroFlowAmountCaption(text: L10n.CashFlow.expense) {
-                AmountWithChipStack {
-                    Image(systemName: "arrow.down.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.expenseGraph)
-                        .accessibilityHidden(true)
-                    AmountText(
-                        value: summary.totalExpense,
-                        currencyCode: defaultCurrencyCode,
-                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary,
-                        isEstimate: summary.expenseAmountsAreApproximate
-                    )
-                } chip: {
-                    if appPreferences.showVariations {
-                        VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
-                    }
-                }
-            }
         }
     }
 
@@ -1477,6 +1345,7 @@ struct TrendsTabView: View {
     /// distinta, **rotulada** — el rótulo lo deriva `StatsHeroCaptionLogic`.
     private func heroKPIValue(for summary: PeriodSummary) -> Double {
         switch trendsViewModel.selectedMetric {
+        // Con Saldo el hero enseña «Tu dinero hoy» (`StatsHeroView`) y no lee este valor.
         case .balance: return summary.netBalance
         case .income:  return summary.totalIncome
         case .expense: return summary.totalExpense

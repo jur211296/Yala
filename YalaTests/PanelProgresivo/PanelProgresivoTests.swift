@@ -192,7 +192,8 @@ struct PanelProgresivoWiringTests {
         #expect(panel.contains("showsFilterBar: panelGate.showsFilterBar"))
         #expect(panel.contains("if panelGate.showsExchangeResultCard {"))
         #expect(panel.contains("guard panelGate.allowsCoachMarks else { return false }"))
-        #expect(panel.contains("guard panelGate.allowsCoachMarks else { return }"))
+        // El segundo guard era el de la fase del Panel del tour Pro, retirado el 20-nov-2026 (opción B de Jürgen).
+        #expect(!panel.contains("ProTourManager"))
         let observer = try Self.code("Yala/App/Views/Panel/PrimerosPasosPanelPresentations.swift")
         #expect(observer.contains("newGate.hiddenSections(PanelView.parseHiddenSections("))
         #expect(observer.contains("PrimerosPasosTipGate.update(primerosPasosShown: gate.isActive)"))

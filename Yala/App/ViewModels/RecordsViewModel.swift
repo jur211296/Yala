@@ -131,16 +131,6 @@ final class RecordsViewModel: Filterable {
     /// Whether search bar is expanded
     var isSearchExpanded: Bool = false
 
-    /// «Buscar en Registros» (decisión 14 de 2.3): lo escrito en el campo de la lista. Es de esta pantalla, no de la
-    /// sesión: se aplica encima del período y los filtros, y no filtra el Panel ni Estadísticas (`RecordsListSearchLogic`).
-    var listSearchText: String = ""
-
-    /// El campo asomó al tirar de la lista hacia abajo; se esconde al vaciarlo con su X.
-    var isListSearchRevealed: Bool = false
-
-    /// Hay una búsqueda de la lista en curso: el vacío dice «Sin resultados» y no «Sin registros».
-    var isSearchingList: Bool { !RecordsListSearchLogic.query(listSearchText).isEmpty }
-
     /// Whether selection mode is active
     var isSelectionMode: Bool = false
 
@@ -395,8 +385,6 @@ final class RecordsViewModel: Filterable {
             transactions: eligibleTransactions,
             criteria: criteria
         )
-        // «Buscar en Registros»: dentro de lo que ya dejan el período y los filtros (decisión 14 de 2.3).
-        groupedRecords = Self.applyingListSearch(listSearchText, to: groupedRecords, tags: tags)
 
         // DIAG (caso "registro de grupo desaparece al clasificar"): cuántas TX bridgeadas
         // quedan visibles en el feed tras este refresh. Sin PII. Quitar tras QA.

@@ -594,7 +594,7 @@ extension SwiftDataConfiguration {
     /// y sin `UNUserNotificationCenter`; el wrapper de producción mantiene los guards de test/uitest).
     ///
     /// `resetPrefs` es un seam OBLIGATORIO, no cosmético: `DataWipeService.resetForSignOutWipe()` toca
-    /// `ProfileImageStorage`/`AppRouter`/`ProTourManager`/`SetupChecklistManager`/`WidgetDataCache`/
+    /// `ProfileImageStorage`/`AppRouter`/`SetupChecklistManager`/`WidgetDataCache`/
     /// `Tips` y barre `UserDefaults.standard` — ejecutarlo bajo el runner destrozaría el estado del host.
     /// `clearGroupsConsent` lo es por lo mismo: `PreferenceSyncService` cablea `UserDefaults.standard` y
     /// `NSUbiquitousKeyValueStore.default` e ignoraría el `defaults` inyectado.

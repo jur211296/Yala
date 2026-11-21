@@ -1176,7 +1176,6 @@ final class DataWipeService {
         // reducida sobre el onboarding personal hasta el siguiente arranque. Solo re-lee; no persiste nada.
         SessionState.shared.refreshPrivateSessionMirror()
 
-        ProTourManager.shared.reset()                                // Re-show pro tour
 
         // --- Setup Checklist ---
         SetupChecklistManager.shared.resetAll()
@@ -1451,6 +1450,9 @@ final class DataWipeService {
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
         defaults.removeObject(forKey: "needsPostOnboardingTrial") // One-shot del trial post-onboarding
+        // La oferta del paso 2 de Primeros pasos (opción B, 20-nov-2026): tras vaciar, Primeros pasos vuelve a empezar.
+        defaults.removeObject(forKey: SetupCompleteTrialOfferLogic.offeredAfterRecordStepKey)
+        defaults.removeObject(forKey: SetupCompleteTrialOfferLogic.triedMethodsKey)
         defaults.removeObject(forKey: "trialOfferMomentReached")  // Su momento ya llegó (red del arranque, L1-12)
 
         // --- Cross-device wipe coordination ---

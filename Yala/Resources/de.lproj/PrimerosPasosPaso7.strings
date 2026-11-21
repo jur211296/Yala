@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "Tutorial · %1$d von %2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "Zeig mir, wie";
+"primerosPasosPaso7.story.finish" = "Fertig";
+"primerosPasosPaso7.story.widget.title" = "Mit einem Tipp erfassen, direkt vom Home-Bildschirm";
+"primerosPasosPaso7.story.widget.message" = "Und sieh, wie viel du ausgegeben hast, ohne die App zu öffnen. Wähle die Widgets, die dir helfen.";
+"primerosPasosPaso7.story.widget.spent" = "Ausgaben · diesen Monat";
+"primerosPasosPaso7.story.applePay.title" = "Mit dem iPhone bezahlen – und die Ausgabe ist schon in Yala";
+"primerosPasosPaso7.story.applePay.message" = "Ohne Tippen: Du bestätigst sie nur in deinem Posteingang.";
+"primerosPasosPaso7.story.applePay.merchant" = "Supermarkt";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "Heute · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "Bestätigen";
+"primerosPasosPaso7.story.share.title" = "Der Beleg, den man dir geschickt hat, ohne Tippen erfasst";
+"primerosPasosPaso7.story.share.message" = "Aus Fotos, WhatsApp oder deiner Bank. Yala liest Betrag, Händler und Datum.";
+"primerosPasosPaso7.story.share.sentBy" = "Per WhatsApp an dich geschickt";
+"primerosPasosPaso7.story.share.merchant" = "Restaurant Zum Guten Geschmack";
+"primerosPasosPaso7.story.share.read" = "Aus dem Foto gelesen · zu prüfen";
+"primerosPasosPaso7.story.mail.title" = "Die Mitteilungen deiner Bank kommen von selbst in Yala an";
+"primerosPasosPaso7.story.siri.title" = "Hände voll? Sag es Siri";
+"primerosPasosPaso7.story.siri.message" = "Funktioniert ohne Einrichtung. Probier es: Sag „Hey Siri“.";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala öffnet sich bei Neuer Eintrag, bereit zum Erfassen.";
+"primerosPasosPaso7.story.siri.allPhrases" = "Alle Sätze ansehen";
+"primerosPasosPaso7.deck.step.firstAccount" = "Konto";
+"primerosPasosPaso7.deck.step.firstExpense" = "Erfassen";
+"primerosPasosPaso7.deck.step.firstBudget" = "Budget";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "Zahlungen";
+"primerosPasosPaso7.deck.step.groups" = "Gruppen";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "Diagramme";
+"primerosPasosPaso7.deck.step.homeScreen" = "Home";
+"primerosPasosPaso7.deck.summary" = "Erledigt: %1$d · Für später: %2$d · Tippe auf einen Schritt, um ihn zu öffnen";
+"primerosPasosPaso7.deck.value.done" = "erledigt";
+"primerosPasosPaso7.deck.value.current" = "aktuell";
+"primerosPasosPaso7.deck.value.pending" = "offen";
+"primerosPasosPaso7.deck.doneWithLater" = "Für später gelassen: %@. Tippe unten auf einen, um ihn jetzt zu machen.";
+"primerosPasosPaso7.tryNow.header" = "Jetzt ausprobieren";
+"primerosPasosPaso7.tryNow.voice.title" = "Diktiere eine Ausgabe";
+"primerosPasosPaso7.tryNow.voice.detail" = "„Mittagessen, 18 mit Karte“";
+"primerosPasosPaso7.tryNow.photo.title" = "Lies einen Beleg";
+"primerosPasosPaso7.tryNow.photo.detail" = "Foto, Screenshot oder PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "Frag Yala KI";
+"primerosPasosPaso7.tryNow.ai.detail" = "„Wofür habe ich diesen Monat am meisten ausgegeben?“";
+"primerosPasosPaso7.tryNow.extras" = "Außerdem: exklusive Designs und Icons in den Einstellungen.";
+"primerosPasosPaso7.offer.notNow" = "Jetzt nicht";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "Was du gerade ausprobiert hast – einen Monat gratis";
+"primerosPasosPaso7.offer.triedTitleDays" = "Was du gerade ausprobiert hast – %d Tage gratis";
+"primerosPasosPaso7.offer.tried.voice" = "Du hast eine Ausgabe diktiert und Yala hat sie erfasst. Mit Pro geht das immer.";
+"primerosPasosPaso7.offer.tried.photo" = "Yala hat deinen Beleg gelesen und erfasst. Mit Pro geht das immer.";
+"primerosPasosPaso7.offer.tried.ai" = "Yala KI hat deine Ausgabe für dich erfasst. Mit Pro geht das immer.";
+"primerosPasosPaso7.offer.feature.voice" = "Diktiere deine Ausgaben";
+"primerosPasosPaso7.offer.feature.photo" = "Lies Belege und PDFs";
+"primerosPasosPaso7.offer.feature.ai" = "Frag Yala KI";
+"primerosPasosPaso7.offer.timelineWithReminder" = "Heute zahlst du nichts · wir erinnern dich am %1$@ · Abbuchung am %2$@";
+"primerosPasosPaso7.offer.timelineCharge" = "Heute zahlst du nichts · Abbuchung am %@";

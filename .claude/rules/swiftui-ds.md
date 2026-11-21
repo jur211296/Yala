@@ -164,6 +164,12 @@ paths:
   o un `Tip` nuevos pasan por esa puerta**: un `PanelNotice` nuevo entra en `allows(_:)`, un `Tip` lleva la regla de
   `PrimerosPasosTipGate`, y un coach mark que SEA parte de un paso lleva `partOfPrimerosPasos: true`. Pin:
   `YalaTests/PanelProgresivo/`, `YalaTests/SoloGastosPrimerosPasos/`.
+  **La oferta del mes de Pro tampoco sale a mitad (opción B de Jürgen, 20-nov-2026):** con el mazo, su momento es el
+  final del paso 2 (`TrialOfferMoments.noteRecordStepFinished`, tras «¿Borramos los de prueba?» y la guía de la
+  Bandeja); guardar un registro no la pide (`TrialOfferMomentLogic.isHeldByPrimerosPasos`) y el final del paso 7 solo
+  la pide si aquella no salió. **Y no hay tour de Ajustes ni tour Pro**: lo de Pro se enseña en «¡Listo! Tienes Pro»
+  con `ProTryNowSection`, que abre la función al cerrarse la hoja. Un momento nuevo de oferta pasa por esa puerta; un
+  tour nuevo de Pro, no: se suma a «Pruébalo ahora». Pin: `YalaTests/PrimerosPasosPaso7/`.
 
 - **Una foto que la persona elige entra por `PhotoIntake`, nunca por `UIImage(data:)` (medido el 2026-11-12, YALA-IOS-B).**
   `Image(uiImage:)` decodifica la foto a tamaño completo al pintarla, también en una miniatura, y la copia vive mientras
@@ -424,9 +430,10 @@ paths:
   2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
   **Un buscador que tenga que «asomar al tirar» en una página de pestaña va DENTRO del scroll** (decisión 14 de 2.3,
   Registros, 2026-11-11): campo propio encima de la cabecera, oculto en reposo, que enciende un
-  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. Molde:
-  `RecordsListSearchField` (`RecordsListSearchSlot` + `revealsRecordsListSearchOnPull`); pin
-  `RecordsListSearchUITests`.
+  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. **Registros lo tuvo y
+  se quitó el 20-nov-2026** (Jürgen: la pestaña Buscar cumple esa función; su regla de importe y sin tildes pasó a
+  «Todo» de Buscar). Si vuelve a hacer falta, el molde está en el git de `RecordsListSearchField.swift` antes de esa
+  fecha; pin de que no vuelva a Registros: `BuscarSinBarraEnRegistrosTests`.
 
 - **`ScrollViewProxy.scrollTo` hacia algo lejano de un `LazyVStack` se queda corto (medido el 2026-11-12, iOS 27.2,
   separador de mes de Registros).** Calcula con alturas estimadas de lo que aún no se pintó: «diciembre de 2025»
@@ -1007,10 +1014,14 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   de Jürgen del 2026-11-16: «el hero del Panel es el estándar»). Lo usan las cuatro pestañas de Estadísticas, Registros
   (por `SummaryHeaderStack`) y el mes del Flujo de caja. Con `HeroHeader`, la fila de arriba medía lo que la columna del
   período (flechas, píldora y días: ~55 pt) y la cifra quedaba ~40 pt por debajo del rótulo; `HeroClaroRows` alinea el
-  rótulo con el texto de la píldora y pone la cifra pegada al rótulo, al lado del período si cabe. Ingresos y gastos
-  bajo la cifra van rotulados (`HeroFlowAmountCaption`). El «?» sale solo con «Mostrar ayudas», como el del Panel, y su
-  hoja explica la MISMA magnitud que el rótulo (`HeroClaroLogic.topic(for:)`). Pin: `HeroClaroLogicTests` (lógica,
-  cableado y los 16 idiomas). El Panel sigue con `HeroMonthView`, sin tocar.
+  rótulo con el texto de la píldora y pone la cifra pegada al rótulo, al lado del período si cabe. El «?» sale solo con
+  «Mostrar ayudas», como el del Panel, y su hoja explica la MISMA magnitud que el rótulo (`HeroClaroLogic.topic(for:)`).
+  Pin: `HeroClaroLogicTests` (lógica, cableado y los 16 idiomas). El Panel sigue con `HeroMonthView`, sin tocar.
+  **Desde el 20-nov-2026 (hero limpio, decisión de Jürgen) las cuatro pestañas de Estadísticas y Registros montan UN
+  hero, `StatsHeroView`**: rótulo con «?», cifra, e ingresos y gastos con sus flechas, sin escribir «Ingresos»/«Gastos»
+  encima y sin línea debajo (recuento, «Sigue así», variación). La cifra es «Tu dinero hoy» (`StatsMoneyTodayLogic`, las
+  piezas del Panel) salvo en los estados de un lado. ⇒ algo nuevo del hero de Estadísticas va en `StatsHeroView`, no en
+  una pestaña, y una línea más bajo la cifra se pregunta: Jürgen las quitó. Pin: `YalaTests/HeroEstadisticasLimpio/`.
 - **Con poco ALTO, la cabecera de resumen se compacta: `SummaryHeaderStack(period:caption:figure:detail:)`**
   (`Views/Shared/SummaryHeaderStack.swift`, 2026-10-01). La usan Registros (y con ella Estadísticas › Registros) y
   Estadísticas › Resumen. Con alto suficiente pinta el `HeroHeader` (desde el 2026-10-04; antes, una pila centrada);
@@ -1032,11 +1043,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   columna, el calendario a ancho legible y lo abierto se cierra sin sacar hoja (`RecordsOpenRecordOnNarrowing`).
 - **Estadísticas › Registros es IDÉNTICA a la pestaña Registros (Jürgen, 2026-11-17).** Las dos montan
   `RecordsSharedList` (`Views/Records/Compartida/`), la única entrada a `RecordsTabView`: chips rápidos con
-  Lista/Calendario, «Buscar en Registros», filas, agrupación, calendario, selección, «···» y tinte. Sustituye a «Estadísticas
+  Lista/Calendario, filas, agrupación, calendario, selección, «···» y tinte (sin buscador desde el 20-nov). Sustituye a «Estadísticas
   no lleva chips rápidos» (decisión 15 de 2.3, F2) y a «el buscador solo en Registros» (decisión 14). ⇒ **algo nuevo de la
   lista va en la pieza compartida, no en un anfitrión, y no se le añaden llaves por pantalla**: así divergieron. Cada
-  anfitrión decide solo lo de alrededor (columna o panel, avatar, «Seleccionar» con icono en la columna del iPad). En
-  Estadísticas, lo escrito en el buscador recalcula solo la lista (`recalculateRecordsList`), no la pasada entera. Pin:
+  anfitrión decide solo lo de alrededor (columna o panel, avatar, «Seleccionar» con icono en la columna del iPad). Pin:
   `YalaTests/RegistrosEstadisticasIguales/`, `YalaUITests/RegistrosEstadisticasIguales/RegistrosEstadisticasIgualesUITests`.
 
 ## iPhone Duo (SDK 27.1, medido el 2026-10-24 en el simulador)

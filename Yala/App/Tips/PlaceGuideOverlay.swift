@@ -123,13 +123,12 @@ private struct PlaceGuidePanelHost: ViewModifier {
         // Quien volvió por «Ya tengo una cuenta» con datos da por vistas las guías de principiante (esta incluida).
         ReturningUserBeginnerTips.settleIfPending(context: modelContext)
         let center = PlaceGuideCenter.shared
-        let proTourOnScreen = ProTourManager.shared.triggered && !ProTourManager.shared.hasCompleted
         let inputs = LaterChartsGuideLogic.Inputs(
             isFreshInstall: TabBarDefaultsMigration.isFreshInstall(),
             alreadyShown: LaterChartsGuideLogic.wasShown(),
             statisticsInBar: TabBarConfiguration.loadFromStandardDefaults().activeTabs.contains(.statistics),
             hasMoreTab: sizeClass != .regular,
-            guideOnScreen: center.isActive || proTourOnScreen,
+            guideOnScreen: center.isActive,
             stepSixResolved: SetupChecklistManager.shared.isResolved(.whereMoneyGoes),
             silencedForUITest: UITestHooks.isActive && !UITestHooks.showsLaterChartsGuide,
             primerosPasosShown: SetupChecklistManager.shared.isPrimerosPasosShown)

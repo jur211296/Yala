@@ -1,0 +1,40 @@
+/*
+  OfertaProBeneficios.strings
+  Yala
+
+  Oferta Pro de Primeros pasos con todos los beneficios (opción A de Jürgen, 20-nov-2026): los cuatro bloques, «Ver
+  todos los beneficios» y la página «Qué incluye Yala Pro». Tabla propia, leída con el idioma de la app
+  (`OfertaProBeneficiosText`). Las cifras no van aquí: las pone el código.
+*/
+
+"ofertaProBeneficios.subtitle" = "Yala 的全部功能，更快、无限制。";
+"ofertaProBeneficios.block.capture.title" = "无需打字即可记账";
+"ofertaProBeneficios.block.capture.detail" = "语音，或用照片、截图或 PDF";
+"ofertaProBeneficios.block.ai.title" = "Yala AI";
+"ofertaProBeneficios.block.ai.detail" = "问问你的收支情况，并获取支出总结";
+"ofertaProBeneficios.block.limits.title" = "无限制";
+"ofertaProBeneficios.block.limits.detail" = "所有账户和预算";
+"ofertaProBeneficios.block.style.title" = "你的风格";
+"ofertaProBeneficios.block.style.detail" = "%1$d 款专属主题和 %2$d 款专属图标";
+"ofertaProBeneficios.seeAll" = "查看全部权益";
+"ofertaProBeneficios.page.title" = "Yala Pro 包含什么";
+"ofertaProBeneficios.page.free" = "免费";
+"ofertaProBeneficios.page.pro" = "Pro";
+"ofertaProBeneficios.page.unlimited" = "无限制";
+"ofertaProBeneficios.page.footer" = "你的记录、统计和群组照旧免费。";
+"ofertaProBeneficios.group.capture" = "记账";
+"ofertaProBeneficios.group.ai" = "Yala AI";
+"ofertaProBeneficios.group.organize" = "整理";
+"ofertaProBeneficios.group.style" = "你的风格";
+"ofertaProBeneficios.row.manual" = "手动";
+"ofertaProBeneficios.row.voice" = "语音";
+"ofertaProBeneficios.row.image" = "照片、截图或 PDF";
+"ofertaProBeneficios.row.ask" = "问问收支情况";
+"ofertaProBeneficios.row.summaries" = "统计中的 AI 总结";
+"ofertaProBeneficios.row.accounts" = "账户";
+"ofertaProBeneficios.row.budgets" = "预算";
+"ofertaProBeneficios.row.themes" = "主题";
+"ofertaProBeneficios.row.icons" = "App 图标";
+"ofertaProBeneficios.a11y.included" = "有";
+"ofertaProBeneficios.a11y.notIncluded" = "无";
+"ofertaProBeneficios.a11y.row" = "%1$@：免费 %2$@，Pro %3$@";

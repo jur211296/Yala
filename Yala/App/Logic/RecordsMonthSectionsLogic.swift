@@ -77,7 +77,6 @@ enum RecordsMonthSectionsLogic {
 
     /// Clave estable del mes para los ids de XCUITest (`records_month_2026-10`), sin depender del idioma.
     static func monthKey(_ date: Date, calendar: Calendar = .current) -> String {
-        let c = calendar.dateComponents([.year, .month], from: date)
-        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+        CashFlowProjectionCalculator.monthKey(for: date, calendar: calendar)
     }
 }

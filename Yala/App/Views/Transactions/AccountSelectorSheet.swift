@@ -37,6 +37,9 @@ struct AccountSelectorSheet: View {
     @State private var selectedDetent: PresentationDetent = .medium
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Las cuentas que casan con lo leído en una foto (`CuentaSolaAlLeer`): van arriba con su motivo, y el resto debajo en
+    /// «Otras cuentas». Sin pista, la lista de siempre.
+    @Environment(\.cuentaSolaAlLeerSelector) private var cuentaSolaPista
 
     private var sheetBackground: YalaBackgroundVariant {
         guard sizing == .mediumFirst else { return .subtle }
@@ -101,31 +104,56 @@ struct AccountSelectorSheet: View {
                         // Cada fila dice una sola divisa, la suya; la principal de una tarjeta con líneas la lleva además
                         // en el nombre («Sapphire · PEN»), como la línea de debajo (Jürgen, 6-nov).
                         let headsWithLines = viewModel.headsWithLines
-                        SectionBox(title: "") {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(
-                                    Array(cards.enumerated()),
-                                    id: \.element.head.persistentModelID
-                                ) { index, card in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
-
-                                    AccountSelectorRow(
-                                        account: card.head,
-                                        displayName: viewModel.rowName(for: card.head, headsWithLines: headsWithLines),
-                                        isSelected: isSelected(card.head)
-                                    ) {
-                                        choose(card.head)
-                                    }
-
-                                    ForEach(card.lines, id: \.persistentModelID) { line in
+                        let pinned = pinnedRows(among: filteredAccounts)
+                        let otherCards = cards.filter { card in
+                            !pinned.contains { $0.account.persistentModelID == card.head.persistentModelID }
+                        }
+                        if let pista = cuentaSolaPista, !pinned.isEmpty {
+                            SectionBox(title: pista.titulo) {
+                                VStack(spacing: DS.Spacing.none) {
+                                    ForEach(Array(pinned.enumerated()), id: \.element.account.persistentModelID) { index, row in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
                                         AccountSelectorRow(
-                                            account: line,
-                                            isSelected: isSelected(line),
-                                            isNestedLine: true
+                                            account: row.account,
+                                            displayName: viewModel.rowName(for: row.account, headsWithLines: headsWithLines),
+                                            isSelected: isSelected(row.account),
+                                            caption: row.motivo.map { "\(row.account.currencyCode) · \($0)" }
                                         ) {
-                                            choose(line)
+                                            choose(row.account)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if !otherCards.isEmpty {
+                            SectionBox(title: pinned.isEmpty ? "" : L10n.CuentaSolaAlLeer.Selector.others) {
+                                VStack(spacing: DS.Spacing.none) {
+                                    ForEach(
+                                        Array(otherCards.enumerated()),
+                                        id: \.element.head.persistentModelID
+                                    ) { index, card in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
+
+                                        AccountSelectorRow(
+                                            account: card.head,
+                                            displayName: viewModel.rowName(for: card.head, headsWithLines: headsWithLines),
+                                            isSelected: isSelected(card.head)
+                                        ) {
+                                            choose(card.head)
+                                        }
+
+                                        ForEach(card.lines, id: \.persistentModelID) { line in
+                                            AccountSelectorRow(
+                                                account: line,
+                                                isSelected: isSelected(line),
+                                                isNestedLine: true
+                                            ) {
+                                                choose(line)
+                                            }
                                         }
                                     }
                                 }
@@ -192,6 +220,14 @@ struct AccountSelectorSheet: View {
         dismiss()
     }
 
+    /// Las filas de arriba (pista de `CuentaSolaAlLeer`), en su orden y entre las cuentas que la hoja enseña.
+    private func pinnedRows(among accounts: [Account]) -> [(account: Account, motivo: String?)] {
+        guard let pista = cuentaSolaPista else { return [] }
+        return pista.filas.compactMap { fila in
+            accounts.first { $0.shortcutID == fila.accountID }.map { ($0, fila.motivo) }
+        }
+    }
+
     private func isSelected(_ account: Account) -> Bool {
         guard let selected = selectedAccount else { return false }
         return selected.persistentModelID == account.persistentModelID
@@ -208,6 +244,8 @@ struct AccountSelectorRow: View {
     let isSelected: Bool
     /// Una línea de la tarjeta de arriba: va sangrada y con el icono más pequeño.
     var isNestedLine: Bool = false
+    /// La línea de debajo del nombre; sin ella, la divisa. «PEN · Lo dice la imagen» en las filas de `CuentaSolaAlLeer`.
+    var caption: String? = nil
     let action: () -> Void
 
     @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 36
@@ -233,7 +271,7 @@ struct AccountSelectorRow: View {
                         .font(isNestedLine ? DS.Typography.subheadline : DS.Typography.body)
                         .foregroundStyle(.primary)
 
-                    Text(account.currencyCode)
+                    Text(caption ?? account.currencyCode)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }

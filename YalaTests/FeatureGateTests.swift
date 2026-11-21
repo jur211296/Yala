@@ -45,12 +45,6 @@ struct FeatureGateTests {
         #expect(exportFeatures.isEmpty, "La exportación volvió a tener puerta Pro: \(exportFeatures)")
     }
 
-    /// El tour que se enseña al pasar a Pro no puede venderla como ventaja de Pro.
-    @Test func proTourDoesNotSellExport() {
-        let ids = ProTourSteps.profileSteps.map(\.id)
-        #expect(!ids.contains { $0.localizedCaseInsensitiveContains("export") }, "El tour Pro aún anuncia exportar: \(ids)")
-        #expect(ids == ["settingsAppIcon", "settingsTheme"])
-    }
 
     // MARK: - Setup Trial Bypass
 

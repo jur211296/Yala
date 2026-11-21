@@ -48,7 +48,11 @@ struct ApplePayAutomationGuideView: View {
                 title: tutorial.title,
                 lines: [tutorial.introDescription] + ApplePayGuideStatusLogic.lines(
                     lastArrival: applePayDrafts.first?.createdAt,
-                    pendingCount: applePayDrafts.count(where: { $0.status == .pending }))),
+                    pendingCount: applePayDrafts.count(where: { $0.status == .pending }))
+                    + ApplePayGuideStatusLogic.cardUpdateLines(
+                        hasPayments: !applePayDrafts.isEmpty,
+                        completedSteps: StepGuideProgressStore.load(StepGuideProgressStore.applePay, total: steps.count).completed,
+                        totalSteps: steps.count)),
             steps: steps,
             guarantee: L10n.Tutorials.applePayGuarantee,
             successTitle: L10n.Action.done,
@@ -61,9 +65,10 @@ struct ApplePayAutomationGuideView: View {
     }
 
     /// Los pasos del tutorial. El primero lleva su acción: abrir Atajos ES el paso, así que queda hecho si iOS
-    /// abrió la app (sin Atajos instalada, `openURL` contesta que no y el paso sigue activo).
+    /// abrió la app (sin Atajos instalada, `openURL` contesta que no y el paso sigue activo). El último (2026-11-20)
+    /// conecta la tarjeta, opcional: quien ya tenía la guía hecha lo ve como el siguiente paso pendiente.
     private var steps: [StepGuideStep] {
-        tutorial.steps.map { step in
+        let tutorialSteps = tutorial.steps.map { step in
             var guideStep = StepGuideStep(id: step.id, title: step.title, detail: step.description)
             if step.id == 0 {
                 guideStep.action = StepGuideStep.Action(
@@ -73,6 +78,11 @@ struct ApplePayAutomationGuideView: View {
             }
             return guideStep
         }
+        let cardStep = StepGuideStep(
+            id: (tutorial.steps.map(\.id).max() ?? 0) + 1,
+            title: L10n.CuentaSolaAlLeer.ApplePay.cardStepTitle,
+            detail: L10n.CuentaSolaAlLeer.ApplePay.cardStepDetail)
+        return tutorialSteps + [cardStep]
     }
 
     private func openShortcuts(then markDone: @escaping () -> Void) {
@@ -120,5 +130,10 @@ enum ApplePayGuideStatusLogic {
         var lines = [L10n.Tutorials.applePayLastPayment(day)]
         if pendingCount > 0 { lines.append(L10n.Tutorials.applePayPendingDrafts(pendingCount)) }
         return lines
+    }
+
+    /// El aviso suave para quien ya tiene pagos de Apple Pay (atajo armado) y no ha hecho el paso de la tarjeta.
+    static func cardUpdateLines(hasPayments: Bool, completedSteps: Int, totalSteps: Int) -> [String] {
+        hasPayments && completedSteps < totalSteps ? [L10n.CuentaSolaAlLeer.ApplePay.updateShortcut] : []
     }
 }

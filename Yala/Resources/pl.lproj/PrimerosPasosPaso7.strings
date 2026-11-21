@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "Samouczek · %1$d z %2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "Pokaż mi jak";
+"primerosPasosPaso7.story.finish" = "Zakończ";
+"primerosPasosPaso7.story.widget.title" = "Zapisuj jednym dotknięciem, z ekranu głównego";
+"primerosPasosPaso7.story.widget.message" = "I sprawdzaj, ile wydajesz, bez otwierania aplikacji. Wybierz widżety, które ci pasują.";
+"primerosPasosPaso7.story.widget.spent" = "Wydatki · ten miesiąc";
+"primerosPasosPaso7.story.applePay.title" = "Płacisz iPhone’em, a wydatek jest już w Yala";
+"primerosPasosPaso7.story.applePay.message" = "Bez wpisywania: tylko go zatwierdzasz w Skrzynce.";
+"primerosPasosPaso7.story.applePay.merchant" = "Supermarket";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "Dziś · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "Zatwierdź";
+"primerosPasosPaso7.story.share.title" = "Paragon, który ktoś ci wysłał, zapisany bez wpisywania";
+"primerosPasosPaso7.story.share.message" = "Ze Zdjęć, WhatsAppa lub banku. Yala odczytuje kwotę, sprzedawcę i datę.";
+"primerosPasosPaso7.story.share.sentBy" = "Wysłane przez WhatsApp";
+"primerosPasosPaso7.story.share.merchant" = "Restauracja Dobry Smak";
+"primerosPasosPaso7.story.share.read" = "Odczytane ze zdjęcia · do sprawdzenia";
+"primerosPasosPaso7.story.mail.title" = "Powiadomienia z banku same trafiają do Yala";
+"primerosPasosPaso7.story.siri.title" = "Zajęte ręce? Powiedz Siri";
+"primerosPasosPaso7.story.siri.message" = "Działa bez konfiguracji. Spróbuj: powiedz „Hej Siri”.";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala otwiera się na Nowym wpisie, gotowa do zapisu.";
+"primerosPasosPaso7.story.siri.allPhrases" = "Zobacz wszystkie frazy";
+"primerosPasosPaso7.deck.step.firstAccount" = "Konto";
+"primerosPasosPaso7.deck.step.firstExpense" = "Zapisz";
+"primerosPasosPaso7.deck.step.firstBudget" = "Budżet";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "Płatności";
+"primerosPasosPaso7.deck.step.groups" = "Grupy";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "Wykresy";
+"primerosPasosPaso7.deck.step.homeScreen" = "Ekran";
+"primerosPasosPaso7.deck.summary" = "Zrobione: %1$d · Na później: %2$d · Dotknij kroku, aby go otworzyć";
+"primerosPasosPaso7.deck.value.done" = "zrobione";
+"primerosPasosPaso7.deck.value.current" = "bieżący";
+"primerosPasosPaso7.deck.value.pending" = "do zrobienia";
+"primerosPasosPaso7.deck.doneWithLater" = "Na później zostawiono: %@. Dotknij jednego poniżej, aby zrobić to teraz.";
+"primerosPasosPaso7.tryNow.header" = "Wypróbuj teraz";
+"primerosPasosPaso7.tryNow.voice.title" = "Podyktuj wydatek";
+"primerosPasosPaso7.tryNow.voice.detail" = "„Obiad, 18 kartą”";
+"primerosPasosPaso7.tryNow.photo.title" = "Odczytaj paragon";
+"primerosPasosPaso7.tryNow.photo.detail" = "Zdjęcie, zrzut ekranu lub PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "Zapytaj Yala AI";
+"primerosPasosPaso7.tryNow.ai.detail" = "„Na co wydałem najwięcej w tym miesiącu?”";
+"primerosPasosPaso7.tryNow.extras" = "Do tego: wyjątkowe motywy i ikony w Ustawieniach.";
+"primerosPasosPaso7.offer.notNow" = "Nie teraz";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "To, co właśnie wypróbowałeś, przez miesiąc za darmo";
+"primerosPasosPaso7.offer.triedTitleDays" = "To, co właśnie wypróbowałeś, przez %d dni za darmo";
+"primerosPasosPaso7.offer.tried.voice" = "Podyktowałeś wydatek, a Yala go zapisała. Z Pro zawsze tak możesz.";
+"primerosPasosPaso7.offer.tried.photo" = "Yala odczytała paragon i go zapisała. Z Pro zawsze tak możesz.";
+"primerosPasosPaso7.offer.tried.ai" = "Yala AI zapisała wydatek za ciebie. Z Pro zawsze tak możesz.";
+"primerosPasosPaso7.offer.feature.voice" = "Dyktuj wydatki";
+"primerosPasosPaso7.offer.feature.photo" = "Odczytuj paragony i PDF";
+"primerosPasosPaso7.offer.feature.ai" = "Zapytaj Yala AI";
+"primerosPasosPaso7.offer.timelineWithReminder" = "Dziś nic nie płacisz · przypomnimy %1$@ · pobranie opłaty %2$@";
+"primerosPasosPaso7.offer.timelineCharge" = "Dziś nic nie płacisz · pobranie opłaty %@";

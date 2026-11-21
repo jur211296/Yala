@@ -1,0 +1,40 @@
+/*
+  OfertaProBeneficios.strings
+  Yala
+
+  Oferta Pro de Primeros pasos con todos los beneficios (opción A de Jürgen, 20-nov-2026): los cuatro bloques, «Ver
+  todos los beneficios» y la página «Qué incluye Yala Pro». Tabla propia, leída con el idioma de la app
+  (`OfertaProBeneficiosText`). Las cifras no van aquí: las pone el código.
+*/
+
+"ofertaProBeneficios.subtitle" = "Alles van Yala, sneller en zonder limieten.";
+"ofertaProBeneficios.block.capture.title" = "Noteer zonder typen";
+"ofertaProBeneficios.block.capture.detail" = "Door te dicteren, of met een foto, screenshot of pdf";
+"ofertaProBeneficios.block.ai.title" = "Yala AI";
+"ofertaProBeneficios.block.ai.detail" = "Vraag hoe je ervoor staat en krijg een overzicht van je uitgaven";
+"ofertaProBeneficios.block.limits.title" = "Zonder limieten";
+"ofertaProBeneficios.block.limits.detail" = "Al je rekeningen en budgetten";
+"ofertaProBeneficios.block.style.title" = "Jouw stijl";
+"ofertaProBeneficios.block.style.detail" = "%1$d thema's en %2$d exclusieve iconen";
+"ofertaProBeneficios.seeAll" = "Alle voordelen bekijken";
+"ofertaProBeneficios.page.title" = "Wat Yala Pro bevat";
+"ofertaProBeneficios.page.free" = "Gratis";
+"ofertaProBeneficios.page.pro" = "Pro";
+"ofertaProBeneficios.page.unlimited" = "Onbeperkt";
+"ofertaProBeneficios.page.footer" = "Je registraties, je statistieken en Groepen blijven gratis, zoals altijd.";
+"ofertaProBeneficios.group.capture" = "Noteren";
+"ofertaProBeneficios.group.ai" = "Yala AI";
+"ofertaProBeneficios.group.organize" = "Organiseren";
+"ofertaProBeneficios.group.style" = "Jouw stijl";
+"ofertaProBeneficios.row.manual" = "Met de hand";
+"ofertaProBeneficios.row.voice" = "Dicteren";
+"ofertaProBeneficios.row.image" = "Met een foto, screenshot of pdf";
+"ofertaProBeneficios.row.ask" = "Vraag hoe je ervoor staat";
+"ofertaProBeneficios.row.summaries" = "AI-samenvattingen in Statistieken";
+"ofertaProBeneficios.row.accounts" = "Rekeningen";
+"ofertaProBeneficios.row.budgets" = "Budgetten";
+"ofertaProBeneficios.row.themes" = "Thema's";
+"ofertaProBeneficios.row.icons" = "App-iconen";
+"ofertaProBeneficios.a11y.included" = "ja";
+"ofertaProBeneficios.a11y.notIncluded" = "nee";
+"ofertaProBeneficios.a11y.row" = "%1$@: gratis %2$@, Pro %3$@";

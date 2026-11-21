@@ -68,15 +68,6 @@ struct ProfileView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
 
-    // Coach mark: Settings tour
-    @State private var showSettingsTour = false
-    @State private var settingsTourIndex = 0
-    @State private var settingsScrollProxy: ScrollViewProxy?
-
-    // Coach mark: Pro tour (Phase 1)
-    @State private var showProTour = false
-    @State private var proTourIndex = 0
-
     #if DEBUG
     @State private var seedService = DevSeedService()
     @State private var showSeedConfirmation = false
@@ -931,7 +922,6 @@ struct ProfileView: View {
                     }
                     .scrollDisabled(false)
                     .onAppear {
-                        settingsScrollProxy = scrollProxy
                         LoadTimeMarks.ready(.settings)
                     }
                     // iPhone Duo cerrado: la lista ocupa también la columna de la barra vertical y la cabecera se centra en
@@ -1318,50 +1308,12 @@ struct ProfileView: View {
             settingsContainer
                 // UX 2.2 · L16-16: «Hacerlo ahora» del cierre de un tutorial, que vive dentro de esta pila.
                 .environment(\.tutorialDoItNow, TutorialDoItNowAction { doTutorialNow($0) }))))
-        .coachMarkOverlay(
-            steps: SettingsTourSteps.steps,
-            isPresented: $showSettingsTour,
-            currentIndex: $settingsTourIndex,
-            scrollProxy: settingsScrollProxy,
-            onComplete: { appPreferences.hasSeenSettingsTour = true }
-        )
-        .coachMarkOverlay(
-            steps: ProTourSteps.profileSteps,
-            isPresented: $showProTour,
-            currentIndex: $proTourIndex,
-            scrollProxy: settingsScrollProxy,
-            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
-            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
-            onSkip: { ProTourManager.shared.skipTour() },
-            onComplete: {
-                ProTourManager.shared.advancePhase()
-            }
-        )
+        // Sin tour de Ajustes ni tour Pro (opción B de Jürgen, 20-nov-2026): lo de Pro se enseña en «¡Listo! Tienes Pro».
         .task {
-            // El coach mark monta un overlay-spotlight que intercepta taps; en uitest
-            // bloquearía la navegación de Settings. Suprimido como el resto de overlays
-            // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
-            // filas (Cuentas, Categorías…) ocultas en ese modo.
+            // Como antes, ni en uitest ni en solo grupos.
             guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
-            // Quien volvió por «Ya tengo una cuenta» con sus datos no ve el tour de principiante.
+            // Quien volvió por «Ya tengo una cuenta» con sus datos no ve los consejos de principiante.
             ReturningUserBeginnerTips.settleIfPending(context: modelContext)
-            if !appPreferences.hasSeenSettingsTour {
-                do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-                if !appPreferences.hasSeenSettingsTour {
-                    showSettingsTour = true
-                }
-            }
-        }
-        .task(id: appPreferences.hasSeenSettingsTour) {
-            guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
-            guard appPreferences.hasSeenSettingsTour else { return }
-            // Re-check eligibility (covers race: subscribed before tours completed)
-            ProTourManager.shared.triggerIfEligible()
-            guard ProTourManager.shared.currentPhase == .profile else { return }
-            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard ProTourManager.shared.currentPhase == .profile,
-                  !showSettingsTour else { return }
-            showProTour = true
         }
         // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
         // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
@@ -1629,19 +1581,16 @@ struct ProfileView: View {
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
                     .accessibilityIdentifier("profile_accounts")
-                    .coachMarkAnchor("settingsAccounts")
                 SubsectionDivider()
                 profileRow(
                     icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
                     .accessibilityIdentifier("profile_categories")
-                    .coachMarkAnchor("settingsCategories")
                 SubsectionDivider()
                 profileRow(
                     icon: "number", title: L10n.Settings.tags, iconColor: .purple,
                     destination: .tags)
                     .accessibilityIdentifier("profile_tags")
-                    .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
                     icon: "star.fill", title: L10n.Lote23Chico.favoriteRecords, iconColor: .yellow,
@@ -1684,7 +1633,6 @@ struct ProfileView: View {
                         icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                         iconColor: .indigo, destination: .personalization)
                     .accessibilityIdentifier("profile_personalization")
-                    .coachMarkAnchor("settingsPersonalization")
                     SubsectionDivider()
                 }
                 // Notificaciones: universal (los grupos generan avisos).
@@ -1706,14 +1654,12 @@ struct ProfileView: View {
                         icon: "app.fill", title: L10n.Settings.appIcon,
                         iconColor: .blue, destination: .appIcon)
                     .accessibilityIdentifier("profile_app_icon")
-                    .coachMarkAnchor("settingsAppIcon")
                 }
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
                 .accessibilityIdentifier("profile_theme")
-                .coachMarkAnchor("settingsTheme")
                 // D23: «Siri y Atajos» es una preferencia de cómo registras, no seguridad. Registra gastos personales: fuera
                 // de alcance en solo-grupos.
                 if !isGroupsOnlyShell {
@@ -1764,7 +1710,6 @@ struct ProfileView: View {
                 }
                 .disabled(!isExportEnabled)
                 .buttonStyle(.plain)
-                .coachMarkAnchor("proExportExtended")
 
                 // Importar opera sobre transacciones personales: oculto en solo-grupos.
                 if !isGroupsOnlyShell {
@@ -2045,7 +1990,6 @@ struct ProfileView: View {
                         icon: "book.fill", title: L10n.Settings.tutorials,
                         iconColor: .electricIndigo, destination: .tips)
                     .accessibilityIdentifier("profile_help_tutorials")
-                    .coachMarkAnchor("settingsTutorials")
                     SubsectionDivider()
                 }
                 profileRow(

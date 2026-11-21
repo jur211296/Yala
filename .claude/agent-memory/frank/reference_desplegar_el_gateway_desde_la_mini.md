@@ -28,4 +28,10 @@ Medido el 2026-11-14 (lote 1 de bugs de entrada, gateway en paralelo).
   [[secretos-de-staging-en-la-mini]]) y `CLOUDFLARE_ACCOUNT_ID=86c270…`. El token caduca en una hora: renuévalo antes de
   cada paso largo y bórralo al acabar.
 
+- **Repetido el 2026-11-20 (cuenta sola al leer, staging)**: base `e4d8752701` + `capability_manifest.json` de 2.3 dio 0
+  líneas de diff. Para sacar `worker.js` del multipart, **parte por el boundary de la primera línea**: una regex que corte
+  en `\n--` se para en el `-----END CERTIFICATE-----` que lleva el bundle (sale 1,2 MB de 1,6 y miles de líneas de diff
+  falsas). Saber qué base corre: `GET …/workers/scripts/<worker>/deployments` ordenado por `created_on` (no viene
+  ordenado) y su `workers/message`, si quien desplegó lo anotó: anótalo tú con `--message`.
+
 Relacionado: [[feedback-verificar-prod-del-gateway-con-token-acunado]].

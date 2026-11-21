@@ -1,0 +1,61 @@
+/*
+  PrimerosPasosPaso7.strings
+  Yala
+
+  Primeros pasos, encargo del 2026-11-20: el paso 7 como historias, el progreso en el mazo, «Pruébalo ahora» de
+  «¡Listo! Tienes Pro» y la oferta del mes de Pro tras el paso 2. Tabla propia, leída con el idioma de la app
+  (`PrimerosPasosPaso7Text`).
+*/
+
+"primerosPasosPaso7.story.eyebrow" = "Tutorial · %1$d of %2$d · %3$@";
+"primerosPasosPaso7.story.howTo" = "Show me how";
+"primerosPasosPaso7.story.finish" = "Finish";
+"primerosPasosPaso7.story.widget.title" = "Log it in one tap, from your Home Screen";
+"primerosPasosPaso7.story.widget.message" = "And see how much you’ve spent without opening the app. Pick the widgets that work for you.";
+"primerosPasosPaso7.story.widget.spent" = "Expenses · this month";
+"primerosPasosPaso7.story.applePay.title" = "Pay with your iPhone and the expense is already in Yala";
+"primerosPasosPaso7.story.applePay.message" = "No typing: you just approve it in your Inbox.";
+"primerosPasosPaso7.story.applePay.merchant" = "Supermarket";
+"primerosPasosPaso7.story.applePay.inboxDetail" = "Today · Apple Pay";
+"primerosPasosPaso7.story.applePay.approve" = "Approve";
+"primerosPasosPaso7.story.share.title" = "The receipt someone sent you, logged without typing";
+"primerosPasosPaso7.story.share.message" = "From Photos, WhatsApp or your bank. Yala reads the amount, the merchant and the date.";
+"primerosPasosPaso7.story.share.sentBy" = "Sent to you on WhatsApp";
+"primerosPasosPaso7.story.share.merchant" = "The Good Taste Restaurant";
+"primerosPasosPaso7.story.share.read" = "Read from the photo · to review";
+"primerosPasosPaso7.story.mail.title" = "Your bank’s alerts reach Yala on their own";
+"primerosPasosPaso7.story.siri.title" = "Hands full? Tell Siri";
+"primerosPasosPaso7.story.siri.message" = "Works with no setup. Try it: say “Hey Siri”.";
+"primerosPasosPaso7.story.siri.newRecordAnswer" = "Yala opens on New entry, ready to log.";
+"primerosPasosPaso7.story.siri.allPhrases" = "See all phrases";
+"primerosPasosPaso7.deck.step.firstAccount" = "Account";
+"primerosPasosPaso7.deck.step.firstExpense" = "Log";
+"primerosPasosPaso7.deck.step.firstBudget" = "Budget";
+"primerosPasosPaso7.deck.step.scheduledPayment" = "Payments";
+"primerosPasosPaso7.deck.step.groups" = "Groups";
+"primerosPasosPaso7.deck.step.whereMoneyGoes" = "Charts";
+"primerosPasosPaso7.deck.step.homeScreen" = "Home";
+"primerosPasosPaso7.deck.summary" = "Done: %1$d · For later: %2$d · Tap a step to open it";
+"primerosPasosPaso7.deck.value.done" = "done";
+"primerosPasosPaso7.deck.value.current" = "current";
+"primerosPasosPaso7.deck.value.pending" = "pending";
+"primerosPasosPaso7.deck.doneWithLater" = "You left for later: %@. Tap one below to do it now.";
+"primerosPasosPaso7.tryNow.header" = "Try it now";
+"primerosPasosPaso7.tryNow.voice.title" = "Dictate an expense";
+"primerosPasosPaso7.tryNow.voice.detail" = "“Lunch, 18 by card”";
+"primerosPasosPaso7.tryNow.photo.title" = "Read a receipt";
+"primerosPasosPaso7.tryNow.photo.detail" = "Photo, screenshot or PDF";
+"primerosPasosPaso7.tryNow.ai.title" = "Ask Yala AI";
+"primerosPasosPaso7.tryNow.ai.detail" = "“What did I spend the most on this month?”";
+"primerosPasosPaso7.tryNow.extras" = "Plus: exclusive themes and icons in Settings.";
+"primerosPasosPaso7.offer.notNow" = "Not now";
+"primerosPasosPaso7.offer.triedTitleOneMonth" = "What you just tried, one month free";
+"primerosPasosPaso7.offer.triedTitleDays" = "What you just tried, %d days free";
+"primerosPasosPaso7.offer.tried.voice" = "You dictated an expense and Yala logged it. With Pro you can always do it.";
+"primerosPasosPaso7.offer.tried.photo" = "Yala read your receipt and logged it. With Pro you can always do it.";
+"primerosPasosPaso7.offer.tried.ai" = "Yala AI logged your expense for you. With Pro you can always do it.";
+"primerosPasosPaso7.offer.feature.voice" = "Dictate your expenses";
+"primerosPasosPaso7.offer.feature.photo" = "Read receipts and PDFs";
+"primerosPasosPaso7.offer.feature.ai" = "Ask Yala AI";
+"primerosPasosPaso7.offer.timelineWithReminder" = "Nothing to pay today · we’ll remind you on %1$@ · charged on %2$@";
+"primerosPasosPaso7.offer.timelineCharge" = "Nothing to pay today · charged on %@";

@@ -129,30 +129,21 @@ struct ConversationAsksEverythingTests {
 
 // MARK: - E14 · Primeros pasos en el iPhone 14
 
-@Suite("E14 · «Ver los 7 pasos»")
+@Suite("E14 · los pasos se abren desde el mazo (sin la hoja «Ver los 7 pasos» desde el 20-nov-2026)")
 struct SetupStepsListTests {
-
-    @Test("abre grande, para que se vean los siete en un iPhone 14")
-    func opensLarge() {
-        #expect(SetupStepsListLogic.initialDetent == .large)
-    }
 
     @Test("se abre cualquier paso sin hacer, también omitido o no siguiente; uno hecho, no")
     func opensAnyStepNotDone() {
-        #expect(SetupStepsListLogic.opens(SetupStep(id: .firstBudget, isCompleted: false)))
-        #expect(SetupStepsListLogic.opens(SetupStep(id: .homeScreen, isCompleted: false, isSkipped: true)))
-        #expect(!SetupStepsListLogic.opens(SetupStep(id: .firstAccount, isCompleted: true)))
+        #expect(SetupDeckProgressLogic.opens(SetupStep(id: .firstBudget, isCompleted: false)))
+        #expect(SetupDeckProgressLogic.opens(SetupStep(id: .homeScreen, isCompleted: false, isSkipped: true)))
+        #expect(!SetupDeckProgressLogic.opens(SetupStep(id: .firstAccount, isCompleted: true)))
     }
 
-    @Test("el paso tocado se abre al terminar de cerrarse la hoja, por el mismo camino que el mazo")
-    func tappedStepOpensAfterTheSheetCloses() throws {
+    @Test("el paso tocado en la fila se abre por el mismo camino que la carta del mazo")
+    func tappedStepOpensLikeTheDeck() throws {
         let card = try Source.code("Yala/App/Views/Panel/SetupChecklistCard.swift")
-        #expect(card.contains(".sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList)"))
-        // Desde el 20-nov la hoja recibe además la cuenta de «Solo gastos» (línea del paso 1): el mismo camino.
-        #expect(card.contains("SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 },"))
-        let open = try Source.body(of: "private func openStepTappedInList() {", in: card)
-        #expect(open.contains("onStepTapped(step)"))
-        #expect(open.contains("stepOpenedFromList = nil"))
+        #expect(!card.contains("SetupStepsListSheet"))
+        #expect(card.contains("SetupDeckStepsRow(steps: manager.steps, current: deck.current, note: stepsNote, onOpen: onStepTapped)"))
     }
 }
 
@@ -197,8 +188,9 @@ struct StepSevenAndTutorialDotsTests {
     func stepSevenIsSlower() throws {
         #expect(TutorialStoryLogic.slowPartDuration > TutorialStoryLogic.partDuration)
         #expect(TutorialStoryLogic.slowPartDuration >= .seconds(6))
+        // Desde la opción B de Jürgen (20-nov-2026) el paso 7 no avanza solo: se toca para pasar de historia.
         let flow = try Source.code("Yala/App/Views/Onboarding/PrimerosPasos/HomeScreenTutorialFlowView.swift")
-        #expect(flow.contains("partDuration: TutorialStoryLogic.slowPartDuration"))
+        #expect(flow.contains("autoAdvances: false"))
         let page = try Source.code("Yala/App/Views/Onboarding/PrimerosPasos/TutorialStoryPage.swift")
         // Desde el pulido del 2026-11-20 el reloj es el de las historias (con pausa): cuenta lo que dura la parte.
         #expect(page.contains("private var dwell: TimeInterval { TutorialStoryLogic.seconds(partDuration) }"))

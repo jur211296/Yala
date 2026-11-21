@@ -2947,9 +2947,6 @@
 "statistics.vsPreviousPeriod" = "vs Previous period";
 "statistics.vsPreviousYear" = "vs Previous year";
 "stats.distribution.aiFootnote" = "AI summary";
-"stats.distribution.heroSubtitle1 %d" = "%d categories";
-"stats.distribution.heroSubtitle2 %d %d" = "%d categories · %d subcategories";
-"stats.distribution.heroSubtitle3 %d %d %d" = "%d categories · %d subcategories · %d tags";
 "stats.distribution.insight.balanced %d" = "Your spending is spread out: no category exceeds %d%%. Balanced distribution.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% of your spending sits in %@. Does that match your priorities?";
 "stats.distribution.empty.noTagMovementsTitle" = "No tagged transactions in this period";
@@ -2968,18 +2965,10 @@
 "stats.insights.dailyAvgIn %@" = "per day in %@";
 "stats.insights.detailHeader" = "Your numbers";
 "stats.insights.modeDetail" = "Detail";
-"stats.insights.motivationalMany %d" = "%d records · Keep it up";
-"stats.insights.motivationalOne" = "1 record · Great start";
 "stats.insights.need.dailyFormat %@" = "≈ %@/day";
-"stats.records.motivationalMany %d" = "%d records · Keep it up";
-"stats.records.motivationalOne" = "1 record · Great start";
 "stats.trends.aiFootnote" = "AI summary";
 "stats.trends.comparisonTitle" = "Comparison";
 "stats.trends.generateAI" = "Generate with AI";
-"stats.trends.heroOnset" = "Your first period with Yala";
-"stats.trends.heroStable" = "Your balance holds steady";
-"stats.trends.heroVarDown %d %@" = "%d%% below vs %@ · Hang in there, step by step";
-"stats.trends.heroVarUp %d %@" = "%d%% above vs %@ · Keep it up";
 "stats.trends.insight.onsetNoPrevious" = "There's no previous period to compare with yet.";
 "stats.trends.insight.stableBalance" = "Your balance stays steady.";
 "stats.trends.insight.sustainedUpExpense %@" = "Your expenses have been rising for %@.";
@@ -8153,7 +8142,6 @@
 "panel.hero.leftNow" = "Remaining";
 "panel.hero.leftPast" = "Was left";
 "panel.hero.leftInMonth" = "Left in %@";
-"stats.hero.captionAccountsBalanceClosed" = "Your balance at close";
 
 /* Health card without a score and no part with data: the score needs data in two of the three parts */
 "panel.health.missing.all" = "No score yet: it shows once two of the three parts have data.";
@@ -9223,18 +9211,12 @@
 "heroClaro.filtersNote" = "If you have filters on, the figure only counts what you see.";
 "heroClaro.incomeBody" = "Everything you recorded as income: salary, sales, payments you received.";
 "heroClaro.expenseBody" = "Everything you recorded as an expense. A refund is subtracted from your expenses.";
-"heroClaro.net.title" = "What you have left";
-"heroClaro.net.body" = "It's what came in minus what went out in the period you chose. If it's negative, more went out than came in.";
-"heroClaro.net.notBalance" = "It isn't what you have in your accounts: that's “Your balance today”, on the Panel.";
 "heroClaro.expense.title" = "What you spent";
 "heroClaro.expense.body" = "It's the sum of your expenses in the period you chose. A refund is subtracted from your expenses.";
 "heroClaro.income.title" = "What came in";
 "heroClaro.income.body" = "It's the sum of your income in the period you chose.";
 "heroClaro.total.title" = "Income and expenses together";
 "heroClaro.total.body" = "With income and expenses both selected, the figure adds them up without subtracting: it's how much money what you filtered moved.";
-"heroClaro.balance.title" = "Your balance";
-"heroClaro.balance.body" = "It's what's in your accounts: all of them, cards included, with their sign. It's the same figure as “Your balance today” on the Panel.";
-"heroClaro.balance.closedNote" = "For a period that has already ended, it's what you had when it closed.";
 "heroClaro.cashFlowEnd.title" = "What you'd have at the end of the month";
 "heroClaro.cashFlowEnd.body" = "It's your balance today, plus what's still to come in this month, minus what's still to go out. Below you can see each part and where the estimate comes from.";
 "heroClaro.cashFlowEnd.netNote" = "“This month you'd have left” is something else: what comes in minus what goes out over the whole month, not counting what you already had.";

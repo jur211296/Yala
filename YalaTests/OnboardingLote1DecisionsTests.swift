@@ -130,7 +130,8 @@ struct TrialOfferMomentLogicTests {
         #expect(!content.contains(".onChange(of: showOnboarding)"),
                 "volvió el disparo de la oferta al cerrar el onboarding (UX 2.2 · L1-12)")
         let drain = try #require(content.range(of: "case .presentTrialOffer:"))
-        let tramo = String(content[drain.upperBound...].prefix(600))
+        // 1.200 desde el 20-nov-2026: el drenaje ganó las líneas de consola de los cortes de la oferta.
+        let tramo = String(content[drain.upperBound...].prefix(1200))
         #expect(tramo.contains("needsPostOnboardingTrial = false"))
         #expect(tramo.contains("trialOfferMomentReached = false"))
         #expect(content.contains("TrialOfferMoments.note(.launch)"))

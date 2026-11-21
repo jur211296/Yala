@@ -16,3 +16,6 @@ Y antes de volver a XCUITest tras teclear con axe o MCP, `simctl erase` (regla d
 simulador. El `tap` de XcodeBuildMCP sobre la ref de `snapshot_ui` abrió y cambió todo a la primera. Para capturar
 estados de una hoja: MCP para tocar, `simctl io screenshot` para la foto. El tema oscuro de la app es el de fábrica
 de `-uitest`; claro, `-userTheme 1` (la apariencia del simulador no lo cambia).
+**2026-11-20 (oferta Pro):** `axe tap -x -y` sobre un `Button(.plain)` dentro de la hoja de la oferta SÍ empujó la página
+(6 de 6, tres modelos). Y `device-mcp-cli tap` no sirve con un simulador si el espejo de Device MCP Free está en el
+iPhone físico: contesta «mirrors one device at a time» y no toca. Coordenadas medidas en la captura (píxeles ÷ escala).

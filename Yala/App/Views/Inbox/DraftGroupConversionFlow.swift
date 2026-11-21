@@ -10,6 +10,11 @@
 //  puede convertir a gasto compartido»). Este modificador es ese flujo para quien presenta la hoja fuera de la Bandeja, y
 //  el contexto del formulario (`DraftGroupConversion.context`) es el mismo para los tres.
 //
+//  Bug de Jürgen del 2026-11-20: guardado el gasto de grupo, la fila seguía en lo leído sin marcarse. El borrador se
+//  borra al convertirse, y la pantalla lo buscaba con `isDeleted`, que tras el guardado vuelve a `false`. Ahora el flujo
+//  devuelve una copia de lo registrado (`DraftRegisteredInGroup`) y la pantalla la enseña como guardada, sin volver a
+//  leer el borrador borrado (`DraftRegisteredInGroupRow`).
+//
 
 import SwiftData
 import SwiftUI
@@ -19,6 +24,24 @@ struct DraftGroupConversionRequest: Identifiable {
     let id = UUID()
     let draft: InboxDraft
     let groups: [SplitGroup]
+}
+
+/// Un borrador de foto o voz que terminó como gasto de grupo. El borrador ya no existe, así que la pantalla de lo leído
+/// lo pinta con esta copia, tomada antes de borrarlo.
+struct DraftRegisteredInGroup: Identifiable, Equatable {
+    let id: PersistentIdentifier
+    let title: String
+    let subcategory: Subcategory?
+    /// En positivo: lo que se apuntó en el grupo.
+    let amount: Double
+    let currencyCode: String
+    let groupName: String
+}
+
+/// Lo que devuelve el flujo cuando el gasto de grupo se guardó. `nil` si se canceló.
+struct DraftGroupConversionOutcome {
+    let group: SplitGroup
+    let registered: DraftRegisteredInGroup
 }
 
 enum DraftGroupConversion {
@@ -72,6 +95,43 @@ enum DraftGroupConversion {
         return FormContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
     }
 
+    /// La copia de lo registrado, leída ANTES de borrar el borrador. Lo que el formulario guardó manda (descripción,
+    /// importe y moneda del gasto); si el gasto no se encuentra, lo del borrador.
+    @MainActor
+    static func registered(draft: InboxDraft, group: SplitGroup, expenseID: String) -> DraftRegisteredInGroup {
+        let expense = createdExpense(expenseID, in: group)
+        let description = expense?.expenseDescription ?? ""
+        let title: String
+        if !description.isEmpty {
+            title = description
+        } else if !draft.note.isEmpty {
+            title = draft.note
+        } else {
+            title = draft.subcategory?.name ?? L10n.Common.uncategorized
+        }
+        return DraftRegisteredInGroup(
+            id: draft.persistentModelID,
+            title: title,
+            subcategory: draft.subcategory,
+            amount: abs(expense?.amount ?? draft.amount ?? 0),
+            currencyCode: expense?.currencyCode ?? group.currencyCode,
+            groupName: group.name
+        )
+    }
+
+    @MainActor
+    private static func createdExpense(_ expenseID: String, in group: SplitGroup) -> SplitExpense? {
+        guard let id = UUID(uuidString: expenseID) else { return nil }
+        do {
+            return try GroupExpenseService.shared.fetchExpenses(for: group).first { $0.id == id }
+        } catch {
+            #if DEBUG
+            print("DraftGroupConversion: Error: fetching the created expense: \(error)")
+            #endif
+            return nil
+        }
+    }
+
     /// UX 2.2 · L13-11: el aviso de adónde fue el borrador, con «Ver» que lleva al grupo (el mismo de la Bandeja).
     /// `dismissHost` cierra la pantalla que presentó la hoja antes de ir al grupo.
     @MainActor
@@ -110,15 +170,15 @@ enum DraftGroupConversion {
 }
 
 /// El flujo entero, para una pantalla que presenta `InboxDraftEditSheet` fuera de la Bandeja. `request` lo pone el
-/// `onConvertToGroupExpense` de la hoja; al terminar (guardado o no) llama a `onFinished` con el grupo si se guardó.
+/// `onConvertToGroupExpense` de la hoja; al terminar (guardado o no) llama a `onFinished` con lo registrado si se guardó.
 struct DraftGroupConversionFlow: ViewModifier {
     @Binding var request: DraftGroupConversionRequest?
-    let onFinished: (SplitGroup?) -> Void
+    let onFinished: (DraftGroupConversionOutcome?) -> Void
 
     @Environment(\.modelContext) private var modelContext
     @State private var picker: DraftGroupConversion.PickerData?
     @State private var form: DraftGroupConversion.FormContext?
-    @State private var convertedTo: SplitGroup?
+    @State private var outcome: DraftGroupConversionOutcome?
 
     func body(content: Content) -> some View {
         content
@@ -167,26 +227,104 @@ struct DraftGroupConversionFlow: ViewModifier {
             groupChip: .readOnly,
             initialTemplate: ctx.template,
             onSave: {},
-            onExpenseCreated: { _ in
+            onExpenseCreated: { expenseID in
+                // La copia antes del borrado: leer el borrador después aborta en el teléfono.
+                let registered = DraftGroupConversion.registered(draft: ctx.draft, group: ctx.group, expenseID: expenseID)
                 DraftService.shared.handleDraftConvertedToGroupExpense(ctx.draft, context: modelContext)
-                convertedTo = ctx.group
+                outcome = DraftGroupConversionOutcome(group: ctx.group, registered: registered)
             },
             presentsSuccessScreen: false
         )
     }
 
     private func finish() {
-        let group = convertedTo
-        convertedTo = nil
-        onFinished(group)
+        let finished = outcome
+        outcome = nil
+        onFinished(finished)
     }
 }
 
 extension View {
     /// «Convertir a gasto compartido» para una hoja de borrador presentada fuera de la Bandeja.
     func draftGroupConversionFlow(
-        _ request: Binding<DraftGroupConversionRequest?>, onFinished: @escaping (SplitGroup?) -> Void
+        _ request: Binding<DraftGroupConversionRequest?>, onFinished: @escaping (DraftGroupConversionOutcome?) -> Void
     ) -> some View {
         modifier(DraftGroupConversionFlow(request: request, onFinished: onFinished))
+    }
+}
+
+/// La fila de lo leído que pasó a un gasto de grupo: la misma fila guardada de `VoiceDraftReviewCard` (icono, título,
+/// importe y «Guardado»), con el grupo donde quedó como subtítulo. No abre nada: ya no hay borrador que editar, y así no
+/// se puede guardar otra vez como personal.
+struct DraftRegisteredInGroupRow: View {
+    let entry: DraftRegisteredInGroup
+
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        content
+            .padding(.vertical, DS.ListRow.paddingV)
+            .padding(.horizontal, DS.ListRow.paddingH)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                    .fill(.thCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("draft_registered_in_group_row")
+    }
+
+    /// Con texto de accesibilidad el importe baja a su línea, como en la fila del borrador.
+    @ViewBuilder
+    private var content: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.ListRow.spacing) {
+                    ChatDraftCategoryIcon(subcategory: entry.subcategory)
+                    texts
+                }
+                amountColumn(alignment: .leading)
+            }
+        } else {
+            HStack(spacing: DS.ListRow.spacing) {
+                ChatDraftCategoryIcon(subcategory: entry.subcategory)
+                texts
+                Spacer(minLength: DS.Spacing.sm)
+                amountColumn(alignment: .trailing)
+            }
+        }
+    }
+
+    private var texts: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(entry.title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Label(entry.groupName, systemImage: "person.2")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func amountColumn(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: DS.Spacing.xs) {
+            Text(appPreferences.currency(entry.amount, currencyCode: entry.currencyCode, forceFullPrecision: true))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(DS.Semantic.successForeground)
+                Text(L10n.Chat.Draft.savedBadge)
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("draft_registered_in_group_saved")
+        }
     }
 }

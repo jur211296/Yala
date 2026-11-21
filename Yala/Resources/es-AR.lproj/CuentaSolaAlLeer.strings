@@ -1,0 +1,32 @@
+/*
+  CuentaSolaAlLeer.strings
+  Yala
+
+  La cuenta se elige sola al leer una captura (parte 1, 2026-11-20): chip con estrella, línea de «por qué», selector
+  con «Coinciden con…», ayuda del número de cuenta y el paso de la tarjeta de Apple Pay. Tabla propia, leída con el
+  idioma de la app (`L10n.CuentaSolaAlLeer`). Los dos `applePay.param.card*` los lee la acción de Atajos.
+*/
+
+"cuentaSola.chip.chosen" = "✦ %@";
+"cuentaSola.chip.suggested" = "%@ · sugerida";
+"cuentaSola.chip.choose" = "Elegí cuenta";
+"cuentaSola.chip.chooseMatching" = "Elegí cuenta · %d coinciden";
+"cuentaSola.why.image" = "Elegí %@ porque la imagen lo dice. Tocá la cuenta para cambiarla.";
+"cuentaSola.why.last4" = "Elegí %1$@: termina en %2$@, como su número de cuenta.";
+"cuentaSola.why.suggested" = "Lo sugiere Yala IA. Revisá que sea %@ antes de guardar.";
+"cuentaSola.a11y.chosen" = "Cuenta: %@, elegida por el nombre que sale en la imagen. Tocá para cambiarla.";
+"cuentaSola.a11y.chosenLast4" = "Cuenta: %1$@, elegida porque termina en %2$@. Tocá para cambiarla.";
+"cuentaSola.a11y.suggested" = "Cuenta: %@, sugerida por Yala IA. Tocá para cambiarla.";
+"cuentaSola.a11y.chooseMatching" = "Elegí cuenta. %d cuentas coinciden con lo que dice la imagen.";
+"cuentaSola.selector.matches" = "Coinciden con «%@»";
+"cuentaSola.selector.matchesNoWords" = "Coinciden con lo que dice la imagen";
+"cuentaSola.selector.conflict" = "La imagen y Yala IA no coinciden";
+"cuentaSola.selector.others" = "Otras cuentas";
+"cuentaSola.selector.reasonImage" = "Lo dice la imagen";
+"cuentaSola.selector.reasonAI" = "Lo sugiere Yala IA";
+"cuentaSola.account.numberHelp" = "Con los últimos 4 dígitos también reconozco tu tarjeta en capturas y avisos.";
+"cuentaSola.applePay.cardStep.title" = "Conectá la tarjeta (opcional)";
+"cuentaSola.applePay.cardStep.detail" = "En la acción de Yala, tocá «Mostrar más» y en «Tarjeta» elegí la variable Tarjeta. Así sé con qué cuenta pagaste, también sin conexión.";
+"cuentaSola.applePay.updateShortcut" = "Actualizá tu atajo para que sepa con qué tarjeta pagaste.";
+"cuentaSola.applePay.param.card" = "Tarjeta";
+"cuentaSola.applePay.param.card.description" = "La tarjeta con la que pagaste";

@@ -63,6 +63,10 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
         // Telemetría del usuario nuevo (card 4b7h): si tras la hoja no queda ningún registro propio, el primero no ha
         // pasado todavía. Va antes de `finish()`, que cierra el paso y emitiría lo que esperaba.
         NewUserMetrics.recordTutorialFinished(keptARecord: hasAnyUserRecord())
+        // Lo que probó gratis (voz, foto, Yala IA), leído antes de que `finish()` vacíe la sesión: la oferta lo nombra.
+        let tried = RecordTutorialLogic.Method.allCases.filter {
+            $0.isCourtesyTrial && RecordTutorialSession.shared.state(of: $0) == .done
+        }
         RecordTutorialSession.shared.finish()
         cleanupRecords = []
         // Debajo de la cuenta, solo «Últimos registros» (Y23-10): las gráficas se suman después desde «Configurar
@@ -75,8 +79,12 @@ struct PrimerosPasosPanelPresentations: ViewModifier {
         // Con algo anotado que se queda, Más lleva su punto de «algo nuevo».
         if keptAny { MoreTabNews.shared.markPending() }
         // El aviso de lo borrado sale al cerrar la guía de la Bandeja, como en el prototipo: a la vez, la guía lo tapaba.
+        // Y después, la oferta del mes de Pro (opción B de Jürgen, 20-nov-2026): va tras «¿Borramos los de prueba?» y tras
+        // la guía, para no taparlas. La pide el router, que espera a que el Panel quede libre.
         let notice: () -> Void = {
             if deleted > 0 { SavedRecordNotice.showInfo(message: L10n.PrimerosPasos23.Record.cleanupDone(deleted)) }
+            TrialOfferMoments.noteRecordStepFinished(
+                triedMethods: tried, submitDelay: deleted > 0 ? DraftDiscardUndoNotice.visibleDuration : nil)
         }
         Task { @MainActor in
             // Que la hoja termine de cerrarse y el Panel se asiente antes de oscurecerlo.
@@ -144,9 +152,3 @@ struct PrimerosPasosPanelGateObserver: ViewModifier {
     }
 }
 
-/// La clave de la tarea del tour Pro del Panel: la fase y si el Panel lo deja salir. Al terminar Primeros pasos la tarea
-/// vuelve a correr y el tour sale si estaba pendiente.
-struct ProTourPanelKey: Equatable {
-    let phase: ProTourManager.Phase
-    let allowed: Bool
-}

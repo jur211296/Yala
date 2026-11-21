@@ -1,0 +1,506 @@
+diff --git a/Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift b/Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift
+index 2d38aa266..c1716724d 100644
+--- a/Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift
++++ b/Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift
+@@ -54,6 +54,9 @@ struct SetupCompleteTrialOfferSheet: View {
+ 
+     @Environment(\.yalaTheme) private var theme
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    #if DEBUG
++    @State private var mockShowsAll = OfferMock.startsOnAll
++    #endif
+ 
+     private var selectedOffer: ProPlanOffer? {
+         store.planOffers.first { $0.id == selectedPlan } ?? store.planOffers.first
+@@ -69,13 +72,17 @@ struct SetupCompleteTrialOfferSheet: View {
+                     if showsSuccess {
+                         success.transition(.opacity)
+                     } else {
+-                        offer.transition(.opacity)
++                        offerOrMock.transition(.opacity)
+                     }
+                 }
+                 .padding(.horizontal, DS.Spacing.lg)
+                 .padding(.bottom, DS.Spacing.xxl)
+             }
+             .scrollBounceBehavior(.basedOnSize)
++            #if DEBUG
++            .mockMeasureScroll()
++            .navigationDestination(isPresented: $mockShowsAll) { MockAllBenefitsPage() }
++            #endif
+             .navigationBarTitleDisplayMode(.inline)
+             .toolbar {
+                 if !showsSuccess {
+@@ -121,6 +128,64 @@ struct SetupCompleteTrialOfferSheet: View {
+ 
+     // MARK: - La oferta
+ 
++    @ViewBuilder
++    private var offerOrMock: some View {
++        #if DEBUG
++        if let variant = OfferMock.variant, variant != "0" { mockOffer(variant) } else { offer }
++        #else
++        offer
++        #endif
++    }
++
++    #if DEBUG
++    /// MAQUETA: las tres opciones con las piezas reales de planes, línea de tiempo y pie.
++    @ViewBuilder
++    private func mockOffer(_ variant: String) -> some View {
++        VStack(alignment: .leading, spacing: variant == "A" ? DS.Spacing.md : DS.Spacing.lg) {
++            if variant == "A" {
++                MockCompactHeader(title: title, subtitle: "Todo lo de Yala, más rápido y sin límites.")
++            } else {
++                VStack(spacing: DS.Spacing.md) {
++                    YalaSpark(size: .large, animated: false, solid: true)
++                    Text(title).font(DS.Typography.welcomeHeadline).multilineTextAlignment(.center)
++                        .fixedSize(horizontal: false, vertical: true)
++                    Text(variant == "C" ? subtitle : "Anota en segundos, sin límites y a tu estilo.")
++                        .font(DS.Typography.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
++                        .fixedSize(horizontal: false, vertical: true)
++                }
++                .frame(maxWidth: .infinity)
++                .padding(.top, DS.Spacing.md)
++            }
++            Group {
++                switch variant {
++                case "A": MockFeaturesGrouped { mockShowsAll = true }
++                case "B": MockFeaturesGrid { mockShowsAll = true }
++                default: MockFeaturesTriedPlus { mockShowsAll = true }
++                }
++            }
++            .mockMeasureBottom("featuresBottom")
++            VStack(spacing: DS.Spacing.sm) {
++                ForEach(store.planOffers) { plan in
++                    ProPlanCard(offer: plan, isSelected: plan.id == selectedOffer?.id,
++                                badgeOverride: plan.isYearly ? T.mostChosen : nil,
++                                secondaryLineOverride: plan.isYearly ? T.cheaperPerMonth : nil,
++                                onSelect: { selectedPlan = plan.id })
++                }
++            }
++            .mockMeasureBottom("plansBottom")
++            if let selectedOffer, let charge = selectedOffer.firstChargeDate {
++                SetupOfferTimeline(chargeDate: charge, showsReminder: canRemind)
++                    .mockMeasureBottom("timelineBottom")
++            }
++            Button(L10n.Subscription.restore) {}
++                .font(DS.Typography.subheadline)
++                .foregroundStyle(.thSecondaryText)
++                .frame(maxWidth: .infinity, minHeight: 44)
++            ProLegalFooter()
++        }
++    }
++    #endif
++
+     private var offer: some View {
+         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+             VStack(spacing: DS.Spacing.md) {
+@@ -143,6 +208,9 @@ struct SetupCompleteTrialOfferSheet: View {
+             .padding(.top, DS.Spacing.md)
+ 
+             SetupOfferFeatures()
++                #if DEBUG
++                .mockMeasureBottom("featuresBottom")
++                #endif
+ 
+             if !store.planOffers.isEmpty {
+                 VStack(spacing: DS.Spacing.sm) {
+@@ -160,8 +228,14 @@ struct SetupCompleteTrialOfferSheet: View {
+                 }
+                 .accessibilityElement(children: .contain)
+                 .accessibilityIdentifier("setup_offer_plans")
++                #if DEBUG
++                .mockMeasureBottom("plansBottom")
++                #endif
+                 if let selectedOffer, let charge = selectedOffer.firstChargeDate {
+                     SetupOfferTimeline(chargeDate: charge, showsReminder: canRemind)
++                        #if DEBUG
++                        .mockMeasureBottom("timelineBottom")
++                        #endif
+                 }
+             } else if productLoadFailed {
+                 ProPricesUnavailable {
+@@ -199,6 +273,9 @@ struct SetupCompleteTrialOfferSheet: View {
+             }
+             .accessibilityIdentifier("setup_offer_cta")
+             .primerosPasosButtonText()
++            #if DEBUG
++            .mockMeasureTop("ctaTop")
++            #endif
+         }
+     }
+ 
+diff --git a/Yala/App/Views/Subscription/SetupOfferMockups.swift b/Yala/App/Views/Subscription/SetupOfferMockups.swift
+new file mode 100644
+index 000000000..1783c6662
+--- /dev/null
++++ b/Yala/App/Views/Subscription/SetupOfferMockups.swift
+@@ -0,0 +1,367 @@
++//
++//  SetupOfferMockups.swift
++//  Yala
++//
++//  MAQUETA DESCARTABLE (sesión de diseño del 2026-11-20, oferta Pro al final de Primeros pasos). No se commitea:
++//  viaja como parche en ~/Claude/entregas. `-mockOffer A|B|C` cambia el cuerpo de la oferta y `-mockOfferAll` abre
++//  «Qué incluye Yala Pro» empujada. Los textos van literales a propósito: son propuesta, no producto.
++//
++
++#if DEBUG
++import SwiftUI
++
++enum OfferMock {
++    static var variant: String? {
++        let args = ProcessInfo.processInfo.arguments
++        guard let i = args.firstIndex(of: "-mockOffer"), i + 1 < args.count else { return nil }
++        return args[i + 1]
++    }
++    static var startsOnAll: Bool { ProcessInfo.processInfo.arguments.contains("-mockOfferAll") }
++
++    /// Lo que mide la maqueta, a un fichero que se lee con `simctl get_app_container`.
++    @MainActor static var measures: [String: CGFloat] = [:]
++    @MainActor static func record(_ key: String, _ value: CGFloat) {
++        measures[key] = value
++        let text = measures.sorted { $0.key < $1.key }.map { "\($0.key)=\(Int($0.value.rounded()))" }.joined(separator: "\n")
++        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
++            .appendingPathComponent("offer-measure.txt")
++        do { try text.write(to: url, atomically: true, encoding: .utf8) } catch { print("OfferMock: \(error)") }
++    }
++}
++
++extension View {
++    /// Apunta dónde acaba esta pieza dentro del scroll (el borde de abajo, en puntos desde arriba del contenido).
++    func mockMeasureBottom(_ key: String) -> some View {
++        onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { OfferMock.record(key, $0) }
++    }
++    /// Dónde empieza el botón fijo, en la pantalla.
++    func mockMeasureTop(_ key: String) -> some View {
++        onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { OfferMock.record(key, $0) }
++    }
++}
++
++extension View {
++    /// Alto visible del scroll (sin barras) y alto del contenido.
++    func mockMeasureScroll() -> some View {
++        onScrollGeometryChange(for: [CGFloat].self) { geo in
++            [geo.containerSize.height, geo.contentInsets.top, geo.contentInsets.bottom, geo.contentSize.height,
++             geo.contentOffset.y]
++        } action: { _, v in
++            OfferMock.record("containerH", v[0])
++            OfferMock.record("insetTop", v[1])
++            OfferMock.record("insetBottom", v[2])
++            OfferMock.record("contentHeight", v[3])
++            OfferMock.record("offsetY", v[4])
++        }
++    }
++}
++
++// MARK: - Piezas comunes
++
++private struct MockIconTile: View {
++    let icon: String
++    let color: Color
++    var size: CGFloat = 28
++    var body: some View {
++        Image(systemName: icon)
++            .font(DS.Typography.caption.weight(.semibold))
++            .foregroundStyle(.white)
++            .frame(width: size, height: size)
++            .background(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(color))
++            .accessibilityHidden(true)
++    }
++}
++
++struct MockSeeAllLink: View {
++    @Environment(\.yalaTheme) private var theme
++    let title: String
++    let action: () -> Void
++    var body: some View {
++        Button(action: action) {
++            HStack(spacing: DS.Spacing.xs) {
++                Text(title)
++                Image(systemName: "chevron.right").font(DS.Typography.caption.weight(.semibold))
++            }
++            .font(DS.Typography.subheadlineEmphasized)
++            .foregroundStyle(theme.accentText)
++            .frame(maxWidth: .infinity, minHeight: 44)
++            .contentShape(Rectangle())
++        }
++        .buttonStyle(.plain)
++    }
++}
++
++/// Cabecera compacta: estrella mediana y título de `title`, para que los planes suban.
++struct MockCompactHeader: View {
++    let title: String
++    let subtitle: String
++    var body: some View {
++        VStack(spacing: DS.Spacing.xs) {
++            YalaSpark(size: .large, animated: false, solid: true).accessibilityHidden(true)
++            Text(title)
++                .font(DS.Typography.title)
++                .multilineTextAlignment(.center)
++                .fixedSize(horizontal: false, vertical: true)
++            Text(subtitle)
++                .font(DS.Typography.subheadline)
++                .foregroundStyle(.secondary)
++                .multilineTextAlignment(.center)
++                .fixedSize(horizontal: false, vertical: true)
++        }
++        .frame(maxWidth: .infinity)
++        .padding(.top, DS.Spacing.xs)
++    }
++}
++
++// MARK: - A · Cuatro bloques en una tarjeta
++
++struct MockFeaturesGrouped: View {
++    @Environment(\.yalaTheme) private var theme
++    let onSeeAll: () -> Void
++
++    private let rows: [(icon: String, color: Color, title: String, detail: String)] = [
++        ("waveform", .hotPink, "Anota sin teclear", "Dictando, o con una foto, captura o PDF"),
++        ("sparkles", .electricIndigo, "Yala IA", "Pregúntale cómo vas y te resume tus gastos"),
++        ("infinity", .blue, "Sin límites", "Todas tus cuentas y presupuestos"),
++        ("paintpalette.fill", .orange, "A tu estilo", "5 temas y 3 iconos exclusivos"),
++    ]
++
++    var body: some View {
++        VStack(alignment: .leading, spacing: 0) {
++            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
++                HStack(spacing: DS.Spacing.md) {
++                    MockIconTile(icon: row.icon, color: row.color, size: 32)
++                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
++                        Text(row.title).font(DS.Typography.subheadlineEmphasized)
++                        Text(row.detail).font(DS.Typography.caption).foregroundStyle(.secondary)
++                            .fixedSize(horizontal: false, vertical: true)
++                    }
++                    Spacer(minLength: 0)
++                }
++                .padding(.vertical, DS.Spacing.xs + DS.Spacing.xxs)
++                if index < rows.count - 1 { Divider().padding(.leading, 44) }
++            }
++            Divider()
++            MockSeeAllLink(title: "Ver todos los beneficios", action: onSeeAll)
++        }
++        .padding(.horizontal, DS.Spacing.md)
++        .padding(.top, DS.Spacing.xs)
++        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
++    }
++}
++
++// MARK: - B · Rejilla de ocho
++
++struct MockFeaturesGrid: View {
++    let onSeeAll: () -> Void
++    private let columns = [GridItem(.flexible(), spacing: DS.Spacing.sm), GridItem(.flexible(), spacing: DS.Spacing.sm)]
++    private let items: [(icon: String, color: Color, text: String)] = [
++        ("waveform", .hotPink, "Dicta tus gastos"),
++        ("doc.text.viewfinder", .teal, "Lee recibos y PDF"),
++        ("sparkles", .electricIndigo, "Pregúntale a Yala IA"),
++        ("text.bubble.fill", .indigo, "Resúmenes con IA"),
++        ("building.columns.fill", .blue, "Cuentas sin límite"),
++        ("chart.pie.fill", .purple, "Presupuestos sin límite"),
++        ("paintpalette.fill", .orange, "5 temas exclusivos"),
++        ("app.fill", .pink, "3 iconos de la app"),
++    ]
++
++    var body: some View {
++        VStack(spacing: DS.Spacing.xs) {
++            LazyVGrid(columns: columns, spacing: DS.Spacing.sm) {
++                ForEach(items, id: \.text) { item in
++                    HStack(spacing: DS.Spacing.sm) {
++                        MockIconTile(icon: item.icon, color: item.color, size: 26)
++                        Text(item.text)
++                            .font(DS.Typography.caption.weight(.semibold))
++                            .lineLimit(2)
++                            .fixedSize(horizontal: false, vertical: true)
++                        Spacer(minLength: 0)
++                    }
++                    .padding(.horizontal, DS.Spacing.sm)
++                    .padding(.vertical, DS.Spacing.sm)
++                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
++                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
++                }
++            }
++            MockSeeAllLink(title: "Compara Gratis y Pro", action: onSeeAll)
++        }
++    }
++}
++
++// MARK: - C · Lo que probaste, y además
++
++struct MockFeaturesTriedPlus: View {
++    @Environment(\.yalaTheme) private var theme
++    let onSeeAll: () -> Void
++
++    private let main: [(icon: String, color: Color, title: String)] = [
++        ("waveform", .hotPink, "Dicta tus gastos"),
++        ("doc.text.viewfinder", .teal, "Lee recibos, capturas y PDF"),
++        ("sparkles", .electricIndigo, "Pregúntale a Yala IA"),
++    ]
++    private let extras = ["Resúmenes con IA", "Cuentas sin límite", "Presupuestos sin límite", "Temas e iconos"]
++
++    var body: some View {
++        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
++            ForEach(main, id: \.title) { item in
++                HStack(spacing: DS.Spacing.md) {
++                    Image(systemName: item.icon)
++                        .font(DS.Typography.body.weight(.semibold))
++                        .foregroundStyle(item.color)
++                        .frame(width: 28)
++                    Text(item.title).font(DS.Typography.body.weight(.semibold))
++                    Spacer(minLength: 0)
++                }
++            }
++            Text("Y además")
++                .font(DS.Typography.caption.weight(.semibold))
++                .foregroundStyle(.secondary)
++                .padding(.top, DS.Spacing.xs)
++            MockFlow(spacing: DS.Spacing.xs) {
++                ForEach(extras, id: \.self) { extra in
++                    HStack(spacing: DS.Spacing.xxs) {
++                        Image(systemName: "checkmark").font(DS.Typography.labelTiny)
++                        Text(extra).font(DS.Typography.labelSmall)
++                    }
++                    .padding(.horizontal, DS.Spacing.sm)
++                    .padding(.vertical, DS.Spacing.xs)
++                    .glassEffect(.regular, in: Capsule())
++                }
++            }
++            MockSeeAllLink(title: "Ver todos los beneficios", action: onSeeAll)
++        }
++        .padding(.horizontal, DS.Spacing.md)
++        .padding(.top, DS.Spacing.md)
++        .frame(maxWidth: .infinity, alignment: .leading)
++        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
++    }
++}
++
++/// Fila que salta de línea cuando no cabe (solo para la maqueta).
++struct MockFlow: Layout {
++    var spacing: CGFloat
++    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
++        let width = proposal.width ?? .infinity
++        var x: CGFloat = 0, y: CGFloat = 0, line: CGFloat = 0, maxX: CGFloat = 0
++        for view in subviews {
++            let size = view.sizeThatFits(.unspecified)
++            if x > 0, x + size.width > width { x = 0; y += line + spacing; line = 0 }
++            x += size.width + spacing; line = max(line, size.height); maxX = max(maxX, x)
++        }
++        return CGSize(width: min(maxX, width), height: y + line)
++    }
++    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
++        var x = bounds.minX, y = bounds.minY, line: CGFloat = 0
++        for view in subviews {
++            let size = view.sizeThatFits(.unspecified)
++            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += line + spacing; line = 0 }
++            view.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
++            x += size.width + spacing; line = max(line, size.height)
++        }
++    }
++}
++
++// MARK: - Destino: «Qué incluye Yala Pro» (Gratis y Pro)
++
++struct MockAllBenefitsPage: View {
++    @Environment(\.yalaTheme) private var theme
++
++    private enum Mark { case yes, no, text(String) }
++    private struct Row { let title: String; let free: Mark; let pro: Mark }
++    private struct Section { let title: String; let rows: [Row] }
++
++    private let sections: [Section] = [
++        Section(title: "Anotar", rows: [
++            Row(title: "A mano", free: .yes, pro: .yes),
++            Row(title: "Dictando", free: .no, pro: .yes),
++            Row(title: "Con una foto, captura o PDF", free: .no, pro: .yes),
++        ]),
++        Section(title: "Yala IA", rows: [
++            Row(title: "Pregúntale cómo vas", free: .no, pro: .yes),
++            Row(title: "Resúmenes con IA en Estadísticas", free: .no, pro: .yes),
++        ]),
++        Section(title: "Organizar", rows: [
++            Row(title: "Cuentas", free: .text("4"), pro: .text("Sin límite")),
++            Row(title: "Presupuestos", free: .text("3"), pro: .text("Sin límite")),
++        ]),
++        Section(title: "A tu estilo", rows: [
++            Row(title: "Temas", free: .text("4"), pro: .text("9")),
++            Row(title: "Iconos de la app", free: .text("1"), pro: .text("4")),
++        ]),
++    ]
++
++    var body: some View {
++        ScrollView {
++            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
++                HStack {
++                    Spacer()
++                    Text("Gratis").frame(width: 64)
++                    Text("Pro").frame(width: 76).foregroundStyle(theme.accentText)
++                }
++                .font(DS.Typography.labelSmall)
++                .foregroundStyle(.secondary)
++                .padding(.horizontal, DS.Spacing.md)
++                .padding(.bottom, -DS.Spacing.sm)
++
++                ForEach(sections, id: \.title) { section in
++                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
++                        Text(section.title)
++                            .font(DS.Typography.subheadlineEmphasized)
++                            .foregroundStyle(.secondary)
++                            .padding(.leading, DS.Spacing.md)
++                        VStack(spacing: 0) {
++                            ForEach(Array(section.rows.enumerated()), id: \.offset) { index, row in
++                                HStack {
++                                    Text(row.title).font(DS.Typography.subheadline)
++                                        .fixedSize(horizontal: false, vertical: true)
++                                    Spacer(minLength: DS.Spacing.sm)
++                                    mark(row.free, pro: false).frame(width: 64)
++                                    mark(row.pro, pro: true).frame(width: 76)
++                                }
++                                .padding(.vertical, DS.Spacing.md)
++                                .padding(.horizontal, DS.Spacing.md)
++                                if index < section.rows.count - 1 { Divider().padding(.leading, DS.Spacing.md) }
++                            }
++                        }
++                        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
++                    }
++                }
++                Text("Tus registros, tus estadísticas y Grupos siguen gratis, como siempre.")
++                    .font(DS.Typography.caption)
++                    .foregroundStyle(.secondary)
++                    .frame(maxWidth: .infinity)
++                    .multilineTextAlignment(.center)
++                    .mockMeasureBottom("allBottom")
++            }
++            .padding(.horizontal, DS.Spacing.lg)
++            .padding(.bottom, DS.Spacing.xxl)
++        }
++        .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
++            YalaPrimaryButton(L10n.PrimerosPasos23.Final.ctaOneMonth) {}
++                .primerosPasosButtonText()
++                .mockMeasureTop("allCtaTop")
++                .padding(.horizontal, DS.Spacing.lg)
++                .padding(.bottom, DS.Spacing.md)
++        }
++        .navigationTitle("Qué incluye Yala Pro")
++        .navigationBarTitleDisplayMode(.inline)
++        .yalaScreenBackground(.subtle)
++    }
++
++    @ViewBuilder private func mark(_ mark: Mark, pro: Bool) -> some View {
++        switch mark {
++        case .yes:
++            Image(systemName: "checkmark.circle.fill")
++                .foregroundStyle(pro ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.secondary))
++        case .no:
++            Image(systemName: "minus").foregroundStyle(.tertiary)
++        case .text(let text):
++            Text(text)
++                .font(pro ? DS.Typography.labelSmall.weight(.semibold) : DS.Typography.labelSmall)
++                .foregroundStyle(pro ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.secondary))
++                .multilineTextAlignment(.center)
++        }
++    }
++}
++#endif

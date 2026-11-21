@@ -281,8 +281,9 @@ struct RecordsStandaloneView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                allTransactions: dataViewModel.allTransactions,
+                dataGeneration: dataViewModel.dataGeneration,
                 onFilterChange: { recalculateData() },
-                onListSearchChange: { recalculateData() },
                 loadFailed: dataViewModel.transactionsLoadFailed,
                 onRetryLoad: { reloadAndRecalculate() },
                 keepsCalendarAtReadableWidth: horizontalSizeClass == .regular

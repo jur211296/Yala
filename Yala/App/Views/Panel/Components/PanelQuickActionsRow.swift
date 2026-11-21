@@ -50,8 +50,6 @@ struct PanelQuickActionsRow: View {
     /// Prefijo de los ids de XCUITest. La misma fila va bajo el hero de Estadísticas (`stats`, card kzhe): con las seis
     /// páginas montadas a la vez, dos `panel_action_new` en el árbol harían ambiguo el toque.
     var identifierPrefix: String = "panel"
-    /// El tour Pro señala la fila del Panel; en otra página sus anclas competirían con las del Panel.
-    var marksTourAnchors: Bool = true
 
     @Environment(\.yalaTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -224,7 +222,6 @@ struct PanelQuickActionsRow: View {
                 action: onImageTap
             )
         }
-        .tourAnchor(ProTourSteps.panelVoiceImageAnchor, isEnabled: marksTourAnchors)
     }
 
     @ViewBuilder
@@ -243,7 +240,6 @@ struct PanelQuickActionsRow: View {
                 identifier: "\(identifierPrefix)_action_ai",
                 action: onChatTap
             )
-            .tourAnchor(ProTourSteps.panelAssistantAnchor, isEnabled: marksTourAnchors)
         }
     }
 
@@ -355,18 +351,6 @@ struct PanelQuickActionsRow: View {
         if isPrimary { return AnyShapeStyle(theme.onAccent) }
         if usaDorado { return AnyShapeStyle(Color.proGoldOnCard) }
         return AnyShapeStyle(Color.primary)
-    }
-}
-
-private extension View {
-    /// `coachMarkAnchor` solo donde la fila es la del Panel: fuera de él, un ancla con el mismo id sobraría.
-    @ViewBuilder
-    func tourAnchor(_ id: String, isEnabled: Bool) -> some View {
-        if isEnabled {
-            coachMarkAnchor(id)
-        } else {
-            self
-        }
     }
 }
 
