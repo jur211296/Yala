@@ -131,18 +131,34 @@ struct CashFlowTableView: View {
 
     // MARK: - Recalculate
 
+    /// Recalcula solo si cambió algo de lo que lee la proyección (`FlujoRecalculoFirma`): volver a la pestaña, cerrar la
+    /// hoja de una línea que solo se miró o volver de Registros ya no repiten el cálculo entero (encargo de fluidez del
+    /// 20-nov-2026). Un cambio del plan sube `planRevision` o guarda, y los dos entran en la firma.
     private func recalculate() {
-        let expenseCategories = categories.filter { !$0.isIncome }
-        let incomeCategories = categories.filter { $0.isIncome }
-        viewModel.recalculate(
-            transactions: transactions,
-            allExpenseCategories: expenseCategories,
-            allIncomeCategories: incomeCategories,
-            scheduledPayments: scheduledPayments,
+        let firma = FlujoRecalculoFirma(
+            planRevision: viewModel.planRevision,
+            dataVersion: SessionState.shared.dataVersion,
+            storeSaves: StoreSaveCounter.shared.count,
+            transacciones: transactions.count,
+            pagosProgramados: scheduledPayments.count,
+            cuentas: accounts.count,
+            categorias: categories.count,
             currencyCode: currencyCode,
-            converter: CurrencyConverter.shared,
-            accounts: accounts,
-            includeGroups: appPreferences.includeGroupsInPanelTotal
+            includeGroups: appPreferences.includeGroupsInPanelTotal,
+            dia: Calendar.current.startOfDay(for: .now)
         )
+        FlujoFluidezMedida.medir(.flujoRecalcular) {
+            viewModel.recalculate(
+                transactions: transactions,
+                allExpenseCategories: categories.filter { !$0.isIncome },
+                allIncomeCategories: categories.filter { $0.isIncome },
+                scheduledPayments: scheduledPayments,
+                currencyCode: currencyCode,
+                converter: CurrencyConverter.shared,
+                accounts: accounts,
+                includeGroups: appPreferences.includeGroupsInPanelTotal,
+                firma: firma
+            )
+        }
     }
 }

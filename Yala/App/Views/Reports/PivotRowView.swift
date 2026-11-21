@@ -48,7 +48,6 @@ struct PivotRowView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private var showVariations: Bool { appPreferences.showVariations }
 
     /// Currency to use for formatting this node
     private var displayCurrency: String {
@@ -191,7 +190,9 @@ struct PivotRowView: View {
     /// `minWidth`: la columna «Cambio» en la tabla; apilada, sin columna.
     @ViewBuilder
     private func changeBadge(minWidth: CGFloat?) -> some View {
-        if showsComparison && showVariations {
+        // Siempre que se compara, con o sin «Mostrar variaciones» (Jürgen, 20-nov-2026): en la Comparativa la marca de
+        // cambio es lo que se viene a ver.
+        if showsComparison {
             ComparisonChangeBadge(change: change)
                 .frame(minWidth: minWidth, alignment: .trailing)
         }
@@ -203,10 +204,6 @@ struct PivotRowView: View {
         guard showsComparison else { return "\(node.label), \(current)" }
         let previous = shownPrevious.map {
             appPreferences.currency($0, currencyCode: displayCurrency, isEstimate: node.previousIsApproximate)
-        }
-        guard showVariations else {
-            return [node.label, L10n.UXL18.rowAmountsA11y(current, currentPeriodName, previous ?? "—", previousPeriodName)]
-                .joined(separator: ", ")
         }
         var parts = [node.label, current]
         let versus = ComparativaSimpleText.versus(previousPeriodName, isDayRange: previousIsDayRange)
@@ -258,7 +255,6 @@ struct PivotHeaderRow: View {
     let widths: PivotColumnWidths
     var showsPreviousColumn: Bool = false
 
-    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -277,11 +273,9 @@ struct PivotHeaderRow: View {
                 .font(DS.Typography.captionSmall.weight(.semibold))
                 .foregroundStyle(.primary)
             Spacer(minLength: DS.Spacing.sm)
-            if appPreferences.showVariations {
-                Text(L10n.UXL18.columnChange)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
+            Text(L10n.UXL18.columnChange)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
@@ -304,14 +298,12 @@ struct PivotHeaderRow: View {
                 }
                 .frame(minWidth: widths.current, alignment: .trailing)
             }
-            if appPreferences.showVariations {
-                Text(L10n.UXL18.columnChange)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .frame(minWidth: widths.change, alignment: .trailing)
-            }
+            Text(L10n.UXL18.columnChange)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(minWidth: widths.change, alignment: .trailing)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)

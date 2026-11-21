@@ -7,6 +7,7 @@
 > **No hace falta leer este fichero entero** — son 330 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-20` [Lote del 20-nov (día): bug de Grupos desde una foto, pulido de Nuevo registro y oferta Pro de Primer](#2026-11-20-lote-del-20-nov-da-bug-de-grupos-desde-una-foto-pulido-de-nuevo-registro-y-oferta-pro-de-primeros-pasos)
 - `2026-11-20` [Lote del 20-nov (mañana): Primeros pasos, Nuevo registro, Registros, flujo de caja, Comparativa y Es](#2026-11-20-lote-del-20-nov-maana-primeros-pasos-nuevo-registro-registros-flujo-de-caja-comparativa-y-estadsticas)
 - `2026-11-19` [Flujo de caja: aislados en las líneas por promedio, límites móviles y solo fijos en los meses que vi](#2026-11-19-flujo-de-caja-aislados-en-las-lneas-por-promedio-lmites-mviles-y-solo-fijos-en-los-meses-que-vienen)
 - `2026-11-19` [Flujo de caja: proyección inteligente, con ingresos recurrentes y sin outliers (corrige P6)](#2026-11-19-flujo-de-caja-proyeccin-inteligente-con-ingresos-recurrentes-y-sin-outliers-corrige-p6)
@@ -155,6 +156,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-20] Lote del 20-nov (día): bug de Grupos desde una foto, pulido de Nuevo registro y oferta Pro de Primeros pasos
+**Contexto:** Seis decisiones de Jürgen en el chat del 20-nov (09:43 a 13:25, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de fluidez de Flujo de caja y Comparativa; no las ejecuta, porque no son de su encargo.
+**Decisión:** (1) 09:43 · **Bug:** al convertir a gasto compartido una transacción leída de una imagen y registrarla en Grupos, queda marcada como registrada en la pantalla de lo leído, y esa pantalla se cierra sola si era la única. La semana 6 de marketing se queda en su puesto; Jürgen la prioriza si ve riesgo. (2) 09:53 · **Pulido del Nuevo registro B1:** sin el texto «Ahora en dólares…» bajo el monto, el tipo de cambio en cápsula de cristal, y el título «Nuevo gasto» y el botón «…» en `primary`, no en índigo; va en un lote aparte de la sesión de B1. (3) 09:55 · **Favoritos del Nuevo registro:** «Ver todos» en la misma línea que el rótulo Favoritos; con pocos favoritos se muestran ampliados hasta llenar la fila; si se llena, pasan a bolitas, posiblemente centradas; va en el mismo lote de pulido. (4) 12:28 · La hoja de oferta de prueba Pro al final de Primeros pasos (`SetupCompleteTrialOfferSheet`) se siente pobre: debe mostrar más beneficios de Pro y un enlace para verlos todos. (5) 12:30 · Esa oferta va primero con maquetas (primera en la cola, por ser maqueta) y luego se implementa la opción elegida. (6) 13:25 · De las maquetas «Oferta Pro: más beneficios», Jürgen eligió la opción A recomendada: cuatro bloques de beneficios y la página «Qué incluye Yala Pro» dentro de la hoja.
+**Razones:** Las da Jürgen en el chat.
+**Consecuencias:** (1) necesita su encargo de bug. (2) y (3) van juntas en el lote de pulido del Nuevo registro. (4) a (6): la implementación de la opción A de la oferta Pro necesita su encargo.
+**Estado:** Activa
 
 ### [2026-11-20] Lote del 20-nov (mañana): Primeros pasos, Nuevo registro, Registros, flujo de caja, Comparativa y Estadísticas
 **Contexto:** Trece decisiones que Jürgen tomó en el chat el 20-nov (06:05 a 06:55, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del pulido de Primeros pasos; no las ejecuta, porque no son de su encargo.

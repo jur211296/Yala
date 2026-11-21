@@ -46,6 +46,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (1433)
 
 | id | status | path |
+| 2026-11-20-flujo-de-caja-fluidez | done | tickets/done/2026-11-20-flujo-de-caja-fluidez.md |
+| leaving-a-temporary-tab-shows-a-stray-back-chevron | backlog | tickets/backlog/leaving-a-temporary-tab-shows-a-stray-back-chevron.md |
 | 2026-11-20-cuelgues-sincronizacion | done | tickets/done/2026-11-20-cuelgues-sincronizacion.md |
 | 2026-11-20-captura-convertir-a-grupo-marca-registrado | done | tickets/done/2026-11-20-captura-convertir-a-grupo-marca-registrado.md |
 | 2026-11-20-flujo-limites-pagos-planificados-y-moneda | done | tickets/done/2026-11-20-flujo-limites-pagos-planificados-y-moneda.md |

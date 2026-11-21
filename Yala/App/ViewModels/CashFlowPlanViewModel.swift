@@ -614,6 +614,13 @@ final class CashFlowPlanViewModel {
 
     // MARK: - Recalculate
 
+    /// Con qué se calculó la última proyección (encargo de fluidez del 20-nov-2026): con la misma firma, el mismo plan y
+    /// nada sin guardar, `recalculate(firma:)` no repite el cálculo. `nil` hasta el primero.
+    private var ultimaFirma: FlujoRecalculoFirma?
+    private var ultimoPlanID: PersistentIdentifier?
+    /// Cuántas proyecciones se calcularon de verdad. Lo leen los tests de `FlujoDeCajaFluidez`.
+    private(set) var proyeccionesCalculadas = 0
+
     func recalculate(
         transactions: [TransactionItem],
         allExpenseCategories: [Category],
@@ -622,13 +629,36 @@ final class CashFlowPlanViewModel {
         currencyCode: String,
         converter: CurrencyConverting,
         accounts: [Account] = [],
-        includeGroups: Bool = true
+        includeGroups: Bool = true,
+        firma: FlujoRecalculoFirma? = nil
     ) {
         guard let plan else {
             projection = nil
             monthEnd = nil
+            ultimaFirma = nil
+            ultimoPlanID = nil
             return
         }
+
+        // Sin firma (quien llama quiere el cálculo sí o sí), se calcula. Con firma, solo si cambió algo de lo que lee.
+        if let firma {
+            let mismoPlan = ultimoPlanID == plan.persistentModelID
+            let debe = FlujoFluidezLogica.flujoDebeRecalcular(
+                ultima: mismoPlan ? ultimaFirma : nil,
+                actual: firma,
+                hayProyeccion: projection != nil,
+                hayCambiosSinGuardar: modelContext?.hasChanges ?? false
+            )
+            guard debe else {
+                // La proyección que se ve ya es la buena: la pantalla está lista (cierra la marca del chip).
+                LoadTimeMarks.ready(.cashFlow)
+                return
+            }
+        }
+        ultimaFirma = firma
+        ultimoPlanID = plan.persistentModelID
+        proyeccionesCalculadas += 1
+        let guardadosAlEmpezar = StoreSaveCounter.shared.count
 
         // Límites móviles (19-nov-2026): las líneas que el P4 guardó como monto fijo vuelven a su promedio, una vez.
         migrarLimitesSembradosSiHaceFalta(transactions: transactions, currencyCode: currencyCode)
@@ -701,6 +731,12 @@ final class CashFlowPlanViewModel {
             now: now,
             calendar: calendar
         )
+        // Lo que el propio cálculo guardó (la migración de una vez de los límites, al abrir el plan) no cuenta como un
+        // cambio de fuera: sin esto, la siguiente aparición repetía el cálculo entero (medido: 838 ms al volver de
+        // Registros la primera vez).
+        if let firma {
+            ultimaFirma = firma.conGuardados(firma.storeSaves + StoreSaveCounter.shared.count - guardadosAlEmpezar)
+        }
         LoadTimeMarks.ready(.cashFlow)
     }
 
