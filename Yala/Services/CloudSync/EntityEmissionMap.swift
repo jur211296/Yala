@@ -748,6 +748,19 @@ enum EntityEmissionMap {
             ColumnEmitter("amount_changes_raw", since: SyncCapability.cashFlowAmountChangesSince) { m, _ in
                 Emit.text(m.amountChangesRaw)
             },
+            // Encargo del 2026-11-20: los pagos de la línea, el extra y el monto fijo en otra moneda (v8).
+            ColumnEmitter("scheduled_payment_ids_raw", since: SyncCapability.cashFlowLimitsSince) { m, _ in
+                Emit.text(m.scheduledPaymentIDsRaw)
+            },
+            ColumnEmitter("limit_extra_amount", since: SyncCapability.cashFlowLimitsSince) { m, _ in
+                Emit.money(m.limitExtraAmount)
+            },
+            ColumnEmitter("limit_currency_code", since: SyncCapability.cashFlowLimitsSince) { m, _ in
+                Emit.text(m.limitCurrencyCode)
+            },
+            ColumnEmitter("limit_foreign_amount", since: SyncCapability.cashFlowLimitsSince) { m, _ in
+                Emit.money(m.limitForeignAmount)
+            },
             ColumnEmitter("category_ref") { m, _ in Emit.ref(m.category?.syncID) },
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("scheduled_payment_ref") { m, _ in Emit.ref(m.scheduledPayment?.id) },
@@ -762,6 +775,10 @@ enum EntityEmissionMap {
             \CashFlowLine.manualAmount: ["manual_amount"],
             \CashFlowLine.customMonthsRaw: ["custom_months_raw"],
             \CashFlowLine.amountChangesRaw: ["amount_changes_raw"],
+            \CashFlowLine.scheduledPaymentIDsRaw: ["scheduled_payment_ids_raw"],
+            \CashFlowLine.limitExtraAmount: ["limit_extra_amount"],
+            \CashFlowLine.limitCurrencyCode: ["limit_currency_code"],
+            \CashFlowLine.limitForeignAmount: ["limit_foreign_amount"],
             \CashFlowLine.category: ["category_ref"],
             \CashFlowLine.subcategory: ["subcategory_ref"],
             \CashFlowLine.scheduledPayment: ["scheduled_payment_ref"],

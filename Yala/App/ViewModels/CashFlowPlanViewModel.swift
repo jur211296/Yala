@@ -763,11 +763,10 @@ final class CashFlowPlanViewModel {
 
     func checkNewScheduledPayments(payments: [ScheduledPayment]) -> [ScheduledPayment] {
         guard let plan else { return [] }
-        let linkedPaymentIDs = Set(
-            (plan.lines ?? []).compactMap { $0.scheduledPayment?.persistentModelID }
-        )
+        // Todos los pagos de cada línea, no solo el de la relación (encargo del 2026-11-20).
+        let linkedPaymentIDs = Set((plan.lines ?? []).filter { !$0.isDeleted }.flatMap(\.scheduledPaymentIDs))
         return payments.filter { payment in
-            payment.isActive && !linkedPaymentIDs.contains(payment.persistentModelID)
+            payment.isActive && !linkedPaymentIDs.contains(payment.id)
         }
     }
 

@@ -147,6 +147,24 @@ distintas, y lo que solo él tenía se queda en la divisa vieja. Sumadas en crud
 - **No re-expreses las filas en el receptor**: no distingue las que el emisor ya convirtió de las que no conocía, y
   escribir emite con HLC fresco. Lo fija `CloudSync/AccountCurrencyReceiverTests`.
 
+## Un límite del flujo de caja en otra moneda se convierte con el promedio del mes (2026-11-21)
+
+Decisión `tasa` de Jürgen (encargo `2026-11-20-flujo-limites-pagos-planificados-y-moneda`): los pagos planificados de una
+línea y su monto fijo en otra moneda se pasan a la moneda del plan con `FlujoTasaDelMes` — mes cerrado, el promedio de sus
+días con tasa EXACTA; mes en curso, el de los días que van; mes que viene, la última tasa, siempre con «≈». Sin días
+exactos, el promedio de lo arrastrado (≈) y si no, la última (≈). Ya no con la última tasa a secas
+(`ScheduledPaymentAmountConversion`, que sigue para lo demás): un mes cerrado cambiaba de límite cada día que se movía el
+dólar.
+
+- **Una sola fuente para todas las pantallas**: `FlujoLimiteEnMoneda` (con sus `Fuentes`, que leen las tasas en bloque una
+  vez por cálculo con `rateFactors`). El plan, «Cálculo del monto», el detalle, «Cómo se convierte» y el resumen del mes
+  salen de ahí; un consumidor nuevo del límite de una línea no convierte por su cuenta.
+- **Los pendientes del motor siguen con la última tasa** (`FlujoMotorMesEntrada.ocurrencias`): con el límite al promedio,
+  lo que falta de una línea en dólares puede quedar algo por encima o por debajo (la diferencia entre las dos tasas). Aceptado; si molesta, la
+  ocurrencia pendiente se convierte con la misma tabla.
+- Lo fijan `FlujoLimitesPagosYMonedaTests` (con un conversor cuya última tasa ≠ el promedio: con la regla vieja los casos
+  de mes cerrado caen) y `CashFlowScheduledCurrencyTests`.
+
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 
 `isExchangeRateProvisional = true` parece una marca inocente —«que la mire otro»— y no lo es:

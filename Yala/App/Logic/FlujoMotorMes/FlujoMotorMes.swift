@@ -66,8 +66,25 @@ enum FlujoMotorMes {
         let esIngreso: Bool
         let categoriaID: PersistentIdentifier?
         let subcategoriaID: PersistentIdentifier?
-        /// Línea de método «pago programado»: lo que le falta son los pagos pendientes de ese pago.
-        let pagoID: UUID?
+        /// Línea de método «Pagos planificados»: recibe los movimientos de sus pagos, y lo que le falta descuenta los
+        /// pendientes de todos (encargo del 2026-11-20: uno o varios).
+        let pagoIDs: [UUID]
+
+        init(id: UUID, esIngreso: Bool, categoriaID: PersistentIdentifier?, subcategoriaID: PersistentIdentifier?,
+             pagoIDs: [UUID]) {
+            self.id = id
+            self.esIngreso = esIngreso
+            self.categoriaID = categoriaID
+            self.subcategoriaID = subcategoriaID
+            self.pagoIDs = pagoIDs
+        }
+
+        /// Una línea con un pago o ninguno, la forma de antes.
+        init(id: UUID, esIngreso: Bool, categoriaID: PersistentIdentifier?, subcategoriaID: PersistentIdentifier?,
+             pagoID: UUID?) {
+            self.init(id: id, esIngreso: esIngreso, categoriaID: categoriaID, subcategoriaID: subcategoriaID,
+                      pagoIDs: pagoID.map { [$0] } ?? [])
+        }
     }
 
     /// Un pago programado pendiente en el mes en que se proyecta.
@@ -372,7 +389,7 @@ enum FlujoMotorMes {
             let sinSub = porDueño[.sinSubcategoria(categoriaID)] ?? Suma()
             // Lo ANOTADO (real y fechado): un pago pendiente aún no lo está y se suma aparte, como en «otros».
             let absorbe = sinSub.real + sinSub.fechado
-            let conSub = ids.filter { dueños.esPorSubcategoria($0) && dueños.pagoDe($0) == nil }
+            let conSub = ids.filter { dueños.esPorSubcategoria($0) && dueños.pagoDe($0).isEmpty }
             let faltaTotal = conSub.reduce(0.0) { $0 + (lineas[$1]?.falta ?? 0) }
             if absorbe > 0, faltaTotal > 0 {
                 let factor = max(faltaTotal - absorbe, 0) / faltaTotal
@@ -570,14 +587,21 @@ enum FlujoMotorMes {
         private var conLineasPorSub: [Bool: Set<PersistentIdentifier>] = [:]
         private var grupos: [Bool: [(PersistentIdentifier, [UUID])]] = [:]
         private var subcategoriaDe: Set<UUID> = []
-        private var pagos: [UUID: UUID] = [:]
+        private var pagos: [UUID: Set<UUID>] = [:]
 
         init(lineas: [Linea]) {
             for linea in lineas {
                 let lado = linea.esIngreso
-                if let pago = linea.pagoID {
-                    if porPago[lado]?[pago] == nil { porPago[lado, default: [:]][pago] = linea.id } else { repetidas.insert(linea.id) }
-                    pagos[linea.id] = pago
+                if !linea.pagoIDs.isEmpty {
+                    // Cada pago apunta a su línea. Un pago no puede estar en dos (la app lo mueve), pero si llega así
+                    // de dos teléfonos gana la primera del plan; una línea que no se queda con ninguno queda repetida.
+                    var propios = Set<UUID>()
+                    for pago in linea.pagoIDs where porPago[lado]?[pago] == nil {
+                        porPago[lado, default: [:]][pago] = linea.id
+                        propios.insert(pago)
+                    }
+                    if propios.isEmpty { repetidas.insert(linea.id) }
+                    pagos[linea.id] = propios
                     continue
                 }
                 if let sub = linea.subcategoriaID {
@@ -624,7 +648,8 @@ enum FlujoMotorMes {
 
         func lineasPorCategoria(esIngreso: Bool) -> [(PersistentIdentifier, [UUID])] { grupos[esIngreso] ?? [] }
         func esPorSubcategoria(_ id: UUID) -> Bool { subcategoriaDe.contains(id) }
-        func pagoDe(_ id: UUID) -> UUID? { pagos[id] }
+        /// Los pagos que esta línea se quedó en el reparto (vacío si no es de pagos).
+        func pagoDe(_ id: UUID) -> Set<UUID> { pagos[id] ?? [] }
         func esRepetida(_ id: UUID) -> Bool { repetidas.contains(id) }
         /// Las líneas libres: sin categoría, subcategoría ni pago.
         func libres(esIngreso: Bool) -> [UUID] { sinDueño[esIngreso] ?? [] }

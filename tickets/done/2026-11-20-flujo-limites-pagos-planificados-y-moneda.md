@@ -1,14 +1,43 @@
 ---
 id: 2026-11-20-flujo-limites-pagos-planificados-y-moneda
-status: backlog
+status: done
 priority: medium
 area: "cashflow, planificacion, currency, fx, sync"
 created: 2026-11-20
-updated: 2026-11-20
+updated: 2026-11-21
 source: "encargo 2026-11-20-flujo-de-caja-limites-por-pagos-planificados-y-moneda-maquetas"
 ---
 
 # Límites de Flujo de caja atados a pagos planificados y en otra moneda
+
+## Hecho (2026-11-21)
+
+Implementado con las ocho recomendadas que eligió Jürgen el 20-nov (17:06). Lo que quedó distinto o fuera:
+
+- **Crear el plan** sigue con un pago por línea; la tarjeta de varios pagos y el extra salen en una línea ya creada.
+- **Pago borrado**: lo resuelve el borrado deliberado (`EntityDeletionService` → `FlujoPagosDeLineaLogica.alBorrarPago`).
+  Un pago que no se encuentra al leer (borrado en otro teléfono, o aún sin llegar por iCloud) suma 0, y sin nada más la
+  línea cae a su `manualAmount` (el límite guardado la última vez); leer nunca escribe. El aviso de una vez es local.
+- **Selector de moneda**: el de siempre (`CurrencySelectorView`: la de tu región, USD, EUR y GBP primero), no «las de tus
+  cuentas primero».
+- **En la fila** la moneda se escribe con su código («500.00 USD»), no con su nombre: el plural no cabe bien en 16 idiomas.
+- **Despliegues pendientes** (no se podían hacer desde la Max): schema de iCloud en Development y Production
+  (`docs/despliegue-cloudkit-2-2.md`, sección del 2026-11-21), migración `qa/cloud/g33_01_*` y Worker v8 en staging y
+  producción. Hasta el Worker v8 la app no manda las cuatro columnas (declara v7) y las reemite al subir.
+- **Device-QA en el iPhone 14: sin hacer** (lo usaba otra sesión). Guion abajo.
+
+### Device-QA pendiente (iPhone 14, Yala Dev)
+
+1. Planificación → Pagos planificados: crea «Renta» de 500 USD mensual y «Netflix», «Spotify» e «iCloud+» en soles.
+2. Reportes → Flujo de caja → crea el plan si no hay. Abre una línea de gasto → «Cambiar» → «Monto fijo» → toca «S/ ▾» →
+   USD → 500 → Guardar. Esperado: bajo el límite, la cápsula «500.00 USD · promedio de nov. X»; tócala: «Cómo se
+   convierte» con cerrados, en curso y estimados (≈). En la lista del mes, bajo el nombre, «⇄ 500.00 USD», y al final la
+   nota «Incluye 1 límite en USD…».
+3. Otra línea → «Cambiar» → «Pagos planificados» → marca Netflix, Spotify e iCloud+ → Listo → «Sumar un monto extra» 30 →
+   Guardar. Esperado: el límite es la suma de los que caen este mes + 30, y la fila dice «3 pagos + extra».
+4. Edita el importe de Netflix en Pagos planificados. Esperado: el límite de la línea cambia sin tocar la línea.
+5. Borra Spotify. Esperado: al abrir la línea, una vez, «Se borró el pago Spotify. Ya no suma en esta línea.»; si borras
+   todos y no hay extra, la línea pasa a «Monto fijo» con su último límite y lo dice una vez.
 
 Jürgen (20-nov), resumido: (1) «esta línea depende de este pago planificado», o de varios a la vez (Suscripciones =
 un pago por suscripción, elegidos de una lista), con la opción de sumar «algo más» fijo; el límite se recalcula solo

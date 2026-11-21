@@ -12,3 +12,9 @@
 "flujoCambiarLimite.scope.all" = "Alle Monate";
 "flujoCambiarLimite.invalid" = "Gib einen Betrag von 0 oder mehr ein.";
 "flujoCambiarLimite.save" = "Sichern";
+
+/* Monto fijo en otra moneda (encargo del 2026-11-20) */
+"flujoCambiarLimite.currency.a11y" = "Währung des Betrags: %@. Tippe zum Ändern";
+"flujoCambiarLimite.foreign.converted" = "%1$@ im %2$@, zum durchschnittlichen Wechselkurs des Monats (%3$@). Jeder Monat wird mit seinem Durchschnitt umgerechnet.";
+"flujoCambiarLimite.foreign.converted.estimated" = "%1$@ im %2$@, zum letzten bekannten Wechselkurs (%3$@). Jeder Monat wird mit seinem Durchschnitt umgerechnet.";
+"flujoCambiarLimite.foreign.allMonths" = "In einer anderen Währung gilt der Betrag für alle Monate.";

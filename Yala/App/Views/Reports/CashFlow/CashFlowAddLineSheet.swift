@@ -186,9 +186,10 @@ struct CashFlowAddLineSheet: View {
     }
 
     private var availableScheduledPayments: [ScheduledPayment] {
-        let linkedIDs = Set((viewModel.plan?.lines ?? []).compactMap { $0.scheduledPayment?.persistentModelID })
+        // Todos los pagos de cada línea, no solo el de la relación (una línea puede tener varios, encargo del 2026-11-20).
+        let linkedIDs = Set((viewModel.plan?.lines ?? []).filter { !$0.isDeleted }.flatMap(\.scheduledPaymentIDs))
         return scheduledPayments.filter {
-            !linkedIDs.contains($0.persistentModelID)
+            !linkedIDs.contains($0.id)
                 && CashFlowLineSideLogic.scheduledPaymentMatchesSide(transactionType: $0.transactionType, isIncome: isIncome)
         }
     }

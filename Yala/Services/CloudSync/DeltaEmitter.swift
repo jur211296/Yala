@@ -84,6 +84,18 @@ enum DeltaEmitter {
            let item = model as? TransactionItem, item.splitLinesRaw != nil, let syncID = item.syncID {
             SyncCapability.noteSuppressedSplitLines(syncID)
         }
+        // Y con los límites del flujo de caja con pagos y en otra moneda (v8, 2026-11-20): solo las columnas con valor,
+        // que es el NULL con el que nacen en el servidor.
+        if capabilityLevel < SyncCapability.cashFlowLimitsSince,
+           !changedColumns.isDisjoint(with: SyncCapability.cashFlowLimitColumns),
+           let line = model as? CashFlowLine {
+            var withValue: Set<String> = []
+            if line.scheduledPaymentIDsRaw != nil { withValue.insert("scheduled_payment_ids_raw") }
+            if line.limitExtraAmount != nil { withValue.insert("limit_extra_amount") }
+            if line.limitCurrencyCode != nil { withValue.insert("limit_currency_code") }
+            if line.limitForeignAmount != nil { withValue.insert("limit_foreign_amount") }
+            SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: withValue.intersection(changedColumns))
+        }
         // Y con el logo propio de un pago planificado (v7, 2026-11-20).
         if capabilityLevel < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
            let payment = model as? ScheduledPayment, payment.customLogoRef != nil {

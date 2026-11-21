@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 7
+    static let clientManifestVersion = 8
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -67,6 +67,16 @@ nonisolated enum SyncCapability {
     /// foto, encargo del 2026-11-20).
     static let customLogoSince = 7
 
+    /// Versión del manifest que estrena las cuatro columnas de los límites del flujo de caja con varios pagos y en otra
+    /// moneda (encargo del 2026-11-20): `cashflow_lines.scheduled_payment_ids_raw`, `limit_extra_amount`,
+    /// `limit_currency_code` y `limit_foreign_amount`.
+    static let cashFlowLimitsSince = 8
+
+    /// Las cuatro columnas de la v8, juntas: se apuntan y se reemiten POR COLUMNA (molde de la v5).
+    static let cashFlowLimitColumns: Set<String> = [
+        "scheduled_payment_ids_raw", "limit_extra_amount", "limit_currency_code", "limit_foreign_amount",
+    ]
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -76,6 +86,7 @@ nonisolated enum SyncCapability {
     static let suppressedCreditCardCyclesKey = "cloudSync.creditCardCyclesSuppressed"
     static let suppressedSplitLinesKey = "cloudSync.splitLinesSuppressed"
     static let suppressedCustomLogosKey = "cloudSync.customLogosSuppressed"
+    static let suppressedCashFlowLimitsKey = "cloudSync.cashFlowLimitsSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -247,6 +258,49 @@ nonisolated enum SyncCapability {
             current[id] = remaining.isEmpty ? nil : remaining
         }
         storeSuppressedCreditCardCycles(current)
+    }
+
+    // MARK: - Límites del flujo de caja con pagos y en otra moneda que no subieron (v8)
+
+    /// Las columnas de la v8 que este teléfono cambió o subió, por línea (`id`), mientras hablaba una versión que no las
+    /// conoce. POR COLUMNA, como la v5: reemitir las cuatro con HLC fresco pisaría por LWW la que cambió otro teléfono.
+    static var suppressedCashFlowLimits: [UUID: Set<String>] {
+        var result: [UUID: Set<String>] = [:]
+        for entry in defaults.stringArray(forKey: suppressedCashFlowLimitsKey) ?? [] {
+            let parts = entry.split(separator: "|", maxSplits: 1).map(String.init)
+            guard parts.count == 2, let id = UUID(uuidString: parts[0]), cashFlowLimitColumns.contains(parts[1])
+            else { continue }
+            result[id, default: []].insert(parts[1])
+        }
+        return result
+    }
+
+    private static func storeSuppressedCashFlowLimits(_ value: [UUID: Set<String>]) {
+        let entries = value.flatMap { id, columns in columns.map { "\(id.uuidString)|\($0)" } }.sorted()
+        if entries.isEmpty { defaults.removeObject(forKey: suppressedCashFlowLimitsKey) }
+        else { defaults.set(entries, forKey: suppressedCashFlowLimitsKey) }
+    }
+
+    /// Lo llama quien filtró las columnas por la versión, con las que filtró. Apuntar de más es inocuo: la reemisión sube
+    /// el valor de ese momento.
+    static func noteSuppressedCashFlowLimits(_ lineID: UUID, columns: Set<String>) {
+        let columns = columns.intersection(cashFlowLimitColumns)
+        guard !columns.isEmpty else { return }
+        var current = suppressedCashFlowLimits
+        let before = current[lineID] ?? []
+        guard !columns.isSubset(of: before) else { return }
+        current[lineID] = before.union(columns)
+        storeSuppressedCashFlowLimits(current)
+    }
+
+    /// Retira las que ya se encolaron. Solo esas: una que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCashFlowLimits(_ done: [UUID: Set<String>]) {
+        var current = suppressedCashFlowLimits
+        for (id, columns) in done {
+            let remaining = (current[id] ?? []).subtracting(columns)
+            current[id] = remaining.isEmpty ? nil : remaining
+        }
+        storeSuppressedCashFlowLimits(current)
     }
 
     // MARK: - Logos propios de pagos planificados que no subieron (v7)

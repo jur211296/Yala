@@ -59,6 +59,9 @@ extension CashFlowPlanViewModel {
             line.estimationMethod = EstimationMethod.manual.rawValue
             line.manualAmount = fijo
         }
+        // Un monto escrito en la moneda del flujo deja de ser «en otra moneda» (encargo del 2026-11-20).
+        if line.limitCurrencyCode != nil { line.limitCurrencyCode = nil }
+        if line.limitForeignAmount != nil { line.limitForeignAmount = nil }
 
         do {
             try ctx.save()

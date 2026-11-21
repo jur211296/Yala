@@ -81,8 +81,8 @@ struct CashFlowLineResult {
     /// En una línea por categoría, lo real de cada subcategoría (y «sin subcategoría»): el detalle llega siempre a
     /// subcategoría.
     let subcategoryBreakdown: [SubcategoryLineResult]?
-    /// `plannedAmount` salió de convertir un pago programado con una tasa no exacta: se pinta «≈».
-    /// Solo lo enciende una línea `.scheduled` sin override (`ScheduledPaymentAmountConversion`).
+    /// `plannedAmount` salió de convertir con una tasa no exacta (un mes que viene, o sin tasas guardadas): se pinta «≈».
+    /// Solo lo enciende una línea de pagos o de monto fijo en otra moneda, sin override (`FlujoLimiteEnMoneda`).
     var isPlannedApproximate: Bool = false
     /// El mes desde el que vale el monto de este mes (UX 2.2 · L18-8): un cambio «este mes y los siguientes» hecho
     /// en `amountChangeFromMonthKey`. `nil` si el monto sale del método de la línea o de un ajuste de un solo mes.
@@ -95,6 +95,10 @@ struct CashFlowLineResult {
     var leftAmount: Double = 0
     /// Lo real y lo fechado pasan del límite: cuenta lo que hay y no proyecta más.
     var isExceeded: Bool = false
+    /// Cómo sale el límite cuando no sale de tus registros (encargo del 2026-11-20): los pagos de la línea, el extra, el
+    /// original en otra moneda y su tasa del mes. `nil` si sale de un método que mira la historia, de un ajuste de un mes
+    /// o de un cambio «desde».
+    var limitBreakdown: FlujoLimiteEnMoneda.Resultado? = nil
 
     /// Lo que la línea suma al mes: real + fechado + pendiente + lo que falta.
     var expectedAmount: Double { (realAmount ?? 0) + datedAmount + pendingAmount + leftAmount }
@@ -395,15 +399,20 @@ struct CashFlowProjectionCalculator {
         }
 
         let currentMKey = Self.monthKey(for: currentMonthStart, calendar: calendar)
+        // Los pagos de las líneas y las tasas de cada mes, leídos una vez (encargo del 2026-11-20).
+        let fuentes = FlujoLimiteEnMoneda.Fuentes.construir(
+            lines: enabled, scheduledPayments: scheduledPayments, meses: months, monedaPlan: currencyCode,
+            converter: converter, hoy: now, calendar: calendar
+        )
         let incomeLines = sortLinesByAmountGrouped(
             enabled.filter(\.isIncome), monthKey: currentMKey, monthDate: currentMonthStart,
             currentMonthStart: currentMonthStart, index: index,
-            currencyCode: currencyCode, converter: converter, calendar: calendar
+            currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
         )
         let expenseLines = sortLinesByAmountGrouped(
             enabled.filter { !$0.isIncome }, monthKey: currentMKey, monthDate: currentMonthStart,
             currentMonthStart: currentMonthStart, index: index,
-            currencyCode: currencyCode, converter: converter, calendar: calendar
+            currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
         )
         let orderedLines = incomeLines + expenseLines
 
@@ -414,8 +423,20 @@ struct CashFlowProjectionCalculator {
                 planned[line.id, default: [:]][month] = resolvePlanned(
                     line: line, monthKey: Self.monthKey(for: month, calendar: calendar), monthDate: month,
                     currentMonthStart: currentMonthStart, index: index,
-                    currencyCode: currencyCode, converter: converter, calendar: calendar
+                    currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
                 )
+            }
+        }
+
+        // El desglose del límite que no sale de tus registros, para la fila, el detalle y el resumen del mes.
+        var breakdowns: [UUID: [Date: FlujoLimiteEnMoneda.Resultado]] = [:]
+        for line in orderedLines where needsLimitSources(line, currencyCode: currencyCode) {
+            for month in months {
+                guard let resolved = planned[line.id]?[month], !resolved.isOverride, resolved.changeFromMonthKey == nil,
+                      let resultado = FlujoLimiteEnMoneda.resultado(
+                        line: line, mes: month, monedaPlan: currencyCode, fuentes: fuentes, calendar: calendar
+                      ), !resultado.sinNada else { continue }
+                breakdowns[line.id, default: [:]][month] = resultado
             }
         }
 
@@ -482,12 +503,14 @@ struct CashFlowProjectionCalculator {
             }
             let lineResults: (CashFlowLine) -> CashFlowLineResult = { line in
                 let side = line.isIncome ? result.ingresos : result.gastos
-                return lineResult(
+                var lineRes = lineResult(
                     line: line, month: result, side: side,
                     planned: planned[line.id]?[month] ?? (0, false, false, nil),
                     breakdownSource: includesSubcategoryBreakdown
                         ? (movimientosPorMes[month] ?? [], ownership) : nil
                 )
+                lineRes.limitBreakdown = breakdowns[line.id]?[month]
+                return lineRes
             }
             let incomeResults = incomeLines.map(lineResults)
             let expenseResults = expenseLines.map(lineResults)
@@ -794,6 +817,7 @@ struct CashFlowProjectionCalculator {
         currentMonthStart: Date,
         index: TransactionIndex,
         currencyCode: String, converter: any CurrencyConverting,
+        fuentes: FlujoLimiteEnMoneda.Fuentes? = nil,
         calendar: Calendar
     ) -> (amount: Double, isApproximate: Bool, isOverride: Bool, changeFromMonthKey: String?) {
         if let override = line.monthOverride(for: monthKey) {
@@ -804,7 +828,7 @@ struct CashFlowProjectionCalculator {
         }
         let estimate = estimatePlanned(
             line: line, monthDate: monthDate, historyReference: min(monthDate, currentMonthStart), index: index,
-            currencyCode: currencyCode, converter: converter, calendar: calendar
+            currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
         )
         return (estimate.amount, estimate.isApproximate, false, nil)
     }
@@ -825,20 +849,27 @@ struct CashFlowProjectionCalculator {
 
     // MARK: - Estimation Methods
 
-    /// Importe planificado + si salió de una tasa aproximada. Solo la rama `.scheduled` convierte:
-    /// las demás leen el `TransactionIndex`, que ya está en `currencyCode`.
+    /// Importe planificado + si salió de una tasa aproximada. Convierten «Pagos planificados» (cada pago con el promedio
+    /// del mes de su moneda, más el extra) y un monto fijo en otra moneda (`FlujoLimiteEnMoneda`, encargo del
+    /// 2026-11-20); las demás leen el `TransactionIndex`, que ya está en `currencyCode`.
     private static func estimatePlanned(
         line: CashFlowLine, monthDate: Date, historyReference: Date,
         index: TransactionIndex,
         currencyCode: String, converter: any CurrencyConverting,
+        fuentes: FlujoLimiteEnMoneda.Fuentes?,
         calendar: Calendar
     ) -> (amount: Double, isApproximate: Bool) {
-        if line.method == .scheduled, let payment = line.scheduledPayment {
-            let estimate = estimateScheduled(
-                payment: payment, monthDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
+        if needsLimitSources(line, currencyCode: currencyCode) {
+            let sources = fuentes ?? .deLinea(
+                line, meses: [monthDate], monedaPlan: currencyCode, converter: converter, hoy: .now, calendar: calendar
             )
-            return (estimate.amount, estimate.isApproximate)
+            if let resultado = FlujoLimiteEnMoneda.resultado(
+                line: line, mes: monthDate, monedaPlan: currencyCode, fuentes: sources, calendar: calendar
+            ) {
+                // Sin pagos encontrados ni extra (se borraron, o aún no llegan por iCloud): el último límite guardado.
+                if resultado.sinNada { return (line.manualAmount ?? 0, false) }
+                return (resultado.monto, resultado.esAproximado)
+            }
         }
         return (
             estimatePlannedAmount(line: line, monthDate: historyReference, index: index, calendar: calendar),
@@ -846,7 +877,16 @@ struct CashFlowProjectionCalculator {
         )
     }
 
-    /// Rama sin conversión. `.scheduled` con pago vivo NO llega aquí: lo resuelve `estimatePlanned`.
+    /// Si el límite de la línea sale de `FlujoLimiteEnMoneda` (pagos o monto fijo en otra moneda).
+    static func needsLimitSources(_ line: CashFlowLine, currencyCode: String) -> Bool {
+        switch line.method {
+        case .scheduled: return !line.scheduledPaymentIDs.isEmpty || (line.limitExtraAmount ?? 0) > 0
+        case .manual: return line.limitCurrencyCode != nil && line.limitForeignAmount != nil
+        default: return false
+        }
+    }
+
+    /// Rama sin conversión. `.scheduled` con pagos NO llega aquí: lo resuelve `estimatePlanned`.
     private static func estimatePlannedAmount(
         line: CashFlowLine, monthDate: Date,
         index: TransactionIndex, calendar: Calendar
@@ -863,7 +903,7 @@ struct CashFlowProjectionCalculator {
         case .manual:
             return line.manualAmount ?? 0
         case .scheduled:
-            // Con pago, `estimatePlanned` ya salió antes por la ruta que convierte.
+            // Con pagos o extra, `estimatePlanned` ya salió antes por la ruta que convierte.
             return line.manualAmount ?? 0
         case .trend:
             return estimateTrend(line: line, referenceDate: monthDate, index: index, calendar: calendar)
@@ -1056,13 +1096,14 @@ struct CashFlowProjectionCalculator {
         monthKey: String, monthDate: Date, currentMonthStart: Date,
         index: TransactionIndex,
         currencyCode: String, converter: any CurrencyConverting,
+        fuentes: FlujoLimiteEnMoneda.Fuentes,
         calendar: Calendar
     ) -> [CashFlowLine] {
         // Pre-compute amounts once per line (O(n)) to avoid redundant calls during sort
         let amounts: [UUID: Double] = Dictionary(uniqueKeysWithValues: lines.map { line in
             let amt = resolvePlanned(
                 line: line, monthKey: monthKey, monthDate: monthDate, currentMonthStart: currentMonthStart, index: index,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
+                currencyCode: currencyCode, converter: converter, fuentes: fuentes, calendar: calendar
             ).amount
             return (line.id, amt)
         })

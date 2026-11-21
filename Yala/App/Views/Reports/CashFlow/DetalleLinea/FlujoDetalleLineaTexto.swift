@@ -83,6 +83,78 @@ extension L10n {
             "flujoDetalleLinea.others.add.a11y",
             "flujoDetalleLinea.others.parent",
             "flujoDetalleLinea.others.notConsidered",
+        ] + clavesPagosYMoneda
+
+        /// Las claves de los límites con pagos planificados y en otra moneda (encargo del 2026-11-20).
+        static let clavesPagosYMoneda: [String] = [
+            "flujoDetalleLinea.method.payments",
+            "flujoDetalleLinea.method.payments.desc",
+            "flujoDetalleLinea.pay.title",
+            "flujoDetalleLinea.pay.add",
+            "flujoDetalleLinea.pay.remove",
+            "flujoDetalleLinea.pay.remove.a11y",
+            "flujoDetalleLinea.pay.paused",
+            "flujoDetalleLinea.pay.ended",
+            "flujoDetalleLinea.pay.notThisMonth",
+            "flujoDetalleLinea.pay.variable",
+            "flujoDetalleLinea.pay.missing",
+            "flujoDetalleLinea.pay.next",
+            "flujoDetalleLinea.extra.toggle",
+            "flujoDetalleLinea.extra.field",
+            "flujoDetalleLinea.calc.sum.one",
+            "flujoDetalleLinea.calc.sum.other",
+            "flujoDetalleLinea.calc.sumExtra.one",
+            "flujoDetalleLinea.calc.sumExtra.other",
+            "flujoDetalleLinea.calc.onlyExtra",
+            "flujoDetalleLinea.calc.updates",
+            "flujoDetalleLinea.calc.empty",
+            "flujoDetalleLinea.pick.title",
+            "flujoDetalleLinea.pick.search",
+            "flujoDetalleLinea.pick.free",
+            "flujoDetalleLinea.pick.taken",
+            "flujoDetalleLinea.pick.inLine",
+            "flujoDetalleLinea.pick.willMove",
+            "flujoDetalleLinea.pick.moveNotice",
+            "flujoDetalleLinea.pick.footer",
+            "flujoDetalleLinea.pick.empty.expense",
+            "flujoDetalleLinea.pick.empty.income",
+            "flujoDetalleLinea.pick.done",
+            "flujoDetalleLinea.row.pay.one",
+            "flujoDetalleLinea.row.pay.other",
+            "flujoDetalleLinea.row.payExtra.one",
+            "flujoDetalleLinea.row.payExtra.other",
+            "flujoDetalleLinea.row.a11y.expense",
+            "flujoDetalleLinea.row.a11y.income",
+            "flujoDetalleLinea.capsule",
+            "flujoDetalleLinea.capsule.estimated",
+            "flujoDetalleLinea.convert.title",
+            "flujoDetalleLinea.convert.limitOf.expense",
+            "flujoDetalleLinea.convert.limitOf.income",
+            "flujoDetalleLinea.convert.explain",
+            "flujoDetalleLinea.convert.closed",
+            "flujoDetalleLinea.convert.current.one",
+            "flujoDetalleLinea.convert.current.other",
+            "flujoDetalleLinea.convert.estimated",
+            "flujoDetalleLinea.convert.foot",
+            "flujoDetalleLinea.convert.source",
+            "flujoDetalleLinea.convert.approx",
+            "flujoDetalleLinea.convert.month.a11y",
+            "flujoDetalleLinea.notice.deleted.fixed",
+            "flujoDetalleLinea.notice.deleted",
+            "flujoDetalleLinea.notice.moved.fixed",
+            "flujoDetalleLinea.notice.moved",
+            "flujoDetalleLinea.notice.unnamed.fixed",
+            "flujoDetalleLinea.notice.unnamed",
+            "flujoDetalleLinea.fx.exact",
+            "flujoDetalleLinea.fx.within",
+            "flujoDetalleLinea.how.fixedForeign",
+            "flujoDetalleLinea.method.fixedIn",
+            "flujoDetalleLinea.summary.one",
+            "flujoDetalleLinea.summary.other",
+            "flujoDetalleLinea.summary.future.one",
+            "flujoDetalleLinea.summary.future.other",
+            "flujoDetalleLinea.summary.many",
+            "flujoDetalleLinea.summary.many.future",
         ]
 
         static func string(_ key: String, resolution: LocaleResolution = LanguageManager.resolved) -> String {
@@ -234,6 +306,111 @@ extension L10n {
         static func otrosMadre(_ categoria: String) -> String { f("others.parent", categoria) }
         /// «No se cuenta a futuro».
         static var otrosNoConsiderado: String { s("others.notConsidered") }
+
+        // MARK: Pagos planificados y otra moneda (encargo del 2026-11-20)
+
+        /// «Pagos planificados» y su descripción, el método.
+        static var metodoPagos: String { s("method.payments") }
+        static var metodoPagosDesc: String { s("method.payments.desc") }
+        /// «Monto fijo en USD».
+        static func metodoFijoEn(_ moneda: String) -> String { f("method.fixedIn", moneda) }
+        /// «Pagos de esta línea».
+        static var pagosTitulo: String { s("pay.title") }
+        static var agregarPago: String { s("pay.add") }
+        static var quitarPago: String { s("pay.remove") }
+        static func quitarPagoAccesible(_ nombre: String) -> String { f("pay.remove.a11y", nombre) }
+        static var pagoPausado: String { s("pay.paused") }
+        static func pagoTermino(_ mes: String) -> String { f("pay.ended", mes) }
+        static func pagoNoCae(_ mes: String) -> String { f("pay.notThisMonth", mes) }
+        static var pagoVariable: String { s("pay.variable") }
+        static var pagoNoEsta: String { s("pay.missing") }
+        /// «Mensual · próximo: 12 dic.».
+        static func pagoProximo(_ frecuencia: String, _ fecha: String) -> String { f("pay.next", frecuencia, fecha) }
+        static var extraInterruptor: String { s("extra.toggle") }
+        static var extraCampo: String { s("extra.field") }
+        /// «Suma de 4 pagos + S/ 30.00 extra.», «Suma de 1 pago.» o «Solo el monto extra: S/ 30.00.».
+        static func calculoSumaPagos(_ cuantos: Int, extra: String?) -> String {
+            guard cuantos > 0 else { return extra.map { f("calc.onlyExtra", $0) } ?? s("calc.empty") }
+            if let extra {
+                return cuantos == 1 ? f("calc.sumExtra.one", extra) : f("calc.sumExtra.other", cuantos, extra)
+            }
+            return cuantos == 1 ? s("calc.sum.one") : f("calc.sum.other", cuantos)
+        }
+        static var calculoSeActualiza: String { s("calc.updates") }
+        static var calculoSinPagos: String { s("calc.empty") }
+        static var elegirTitulo: String { s("pick.title") }
+        static var elegirBuscar: String { s("pick.search") }
+        static var elegirSinLinea: String { s("pick.free") }
+        static var elegirEnOtra: String { s("pick.taken") }
+        static func elegirEnLinea(_ linea: String) -> String { f("pick.inLine", linea) }
+        static var elegirSeMovera: String { s("pick.willMove") }
+        static func elegirAvisoMover(_ pago: String, desde linea: String) -> String { f("pick.moveNotice", pago, linea) }
+        static var elegirPie: String { s("pick.footer") }
+        static func elegirVacio(esIngreso: Bool) -> String { s("pick.empty.\(lado(esIngreso))") }
+        static var elegirListo: String { s("pick.done") }
+        /// «4 pagos» / «4 pagos + extra», bajo el nombre de la fila.
+        static func filaPagos(_ cuantos: Int, conExtra: Bool) -> String {
+            switch (cuantos == 1, conExtra) {
+            case (true, false): s("row.pay.one")
+            case (false, false): f("row.pay.other", cuantos)
+            case (true, true): s("row.payExtra.one")
+            case (false, true): f("row.payExtra.other", cuantos)
+            }
+        }
+        /// «Renta, límite S/ 1,850.00, 500 USD convertidos», lo que lee VoiceOver de la fila.
+        static func filaAccesible(_ nombre: String, limite: String, original: String, esIngreso: Bool) -> String {
+            f("row.a11y.\(lado(esIngreso))", nombre, limite, original)
+        }
+        /// «500 USD · promedio de nov. 3.70» / «500 USD · último tipo de cambio ≈ 3.71».
+        static func capsula(_ original: String, mes: String, tasa: String, estimada: Bool) -> String {
+            estimada ? f("capsule.estimated", original, tasa) : f("capsule", original, mes, tasa)
+        }
+        static var convierteTitulo: String { s("convert.title") }
+        static func convierteLimiteDe(_ nombre: String, esIngreso: Bool) -> String {
+            f("convert.limitOf.\(lado(esIngreso))", nombre)
+        }
+        static func convierteExplica(_ moneda: String) -> String { f("convert.explain", moneda) }
+        static var convierteCerrado: String { s("convert.closed") }
+        static func convierteEnCurso(dias: Int) -> String {
+            dias == 1 ? s("convert.current.one") : f("convert.current.other", dias)
+        }
+        static var convierteEstimado: String { s("convert.estimated") }
+        static var conviertePie: String { s("convert.foot") }
+        static var convierteFuente: String { s("convert.source") }
+        static var convierteAproximado: String { s("convert.approx") }
+        static func convierteMesAccesible(_ mes: String, estado: String, tasa: String, monto: String) -> String {
+            f("convert.month.a11y", mes, estado, tasa, monto)
+        }
+        /// El aviso de una vez cuando un pago deja la línea.
+        static func avisoPagoQuitado(nombre: String, destino: String?, fijoEn: String?) -> String {
+            if let destino, !nombre.isEmpty {
+                return fijoEn.map { f("notice.moved.fixed", nombre, destino, $0) } ?? f("notice.moved", nombre, destino)
+            }
+            if nombre.isEmpty {
+                return fijoEn.map { f("notice.unnamed.fixed", $0) } ?? s("notice.unnamed")
+            }
+            return fijoEn.map { f("notice.deleted.fixed", nombre, $0) } ?? f("notice.deleted", nombre)
+        }
+        /// «Pagaste 500 USD: justo el límite. Los S/ 12 de más son del tipo de cambio del día del pago.»
+        static func pagasteJusto(_ pagado: String, diferencia: String) -> String { f("fx.exact", pagado, diferencia) }
+        /// «Pagaste 450 USD de 500 USD. Los S/ 12 de más son del tipo de cambio del día del pago.»
+        static func pagasteDentro(_ pagado: String, de limite: String, diferencia: String) -> String {
+            f("fx.within", pagado, limite, diferencia)
+        }
+        /// «Monto fijo de 500 USD cada mes. En PEN sube y baja con el tipo de cambio.»
+        static func comoFijoEnMoneda(_ original: String, monedaPlan: String) -> String {
+            f("how.fixedForeign", original, monedaPlan)
+        }
+        /// La nota del resumen del mes con los límites convertidos.
+        static func resumenConvertidos(cuantos: Int, moneda: String?, mes: String, tasa: String?, futuro: Bool) -> String {
+            guard let moneda, let tasa else {
+                return futuro ? f("summary.many.future", cuantos) : f("summary.many", cuantos)
+            }
+            if futuro {
+                return cuantos == 1 ? f("summary.future.one", moneda, tasa) : f("summary.future.other", cuantos, moneda, tasa)
+            }
+            return cuantos == 1 ? f("summary.one", moneda, mes, tasa) : f("summary.other", cuantos, moneda, mes, tasa)
+        }
 
         /// «agosto y octubre», con la conjunción del idioma de la app.
         static func listaDeMeses(_ meses: [Foundation.Date]) -> String? {

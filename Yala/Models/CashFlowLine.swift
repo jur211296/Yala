@@ -22,7 +22,7 @@ enum EstimationMethod: String, CaseIterable {
         case .average12m: L10n.CashFlowPlan.average12m
         case .lastMonth: L10n.CashFlowPlan.lastMonth
         case .manual: L10n.CashFlowPlan.manual
-        case .scheduled: L10n.CashFlowPlan.scheduled
+        case .scheduled: L10n.FlujoDetalleLinea.metodoPagos
         case .trend: L10n.CashFlowPlan.trend
         case .custom: L10n.CashFlowPlan.custom
         }
@@ -35,7 +35,7 @@ enum EstimationMethod: String, CaseIterable {
         case .average12m: L10n.CashFlowPlan.average12mDesc
         case .lastMonth: L10n.CashFlowPlan.lastMonthDesc
         case .manual: L10n.CashFlowPlan.manualDesc
-        case .scheduled: L10n.CashFlowPlan.scheduledDesc
+        case .scheduled: L10n.FlujoDetalleLinea.metodoPagosDesc
         case .trend: L10n.CashFlowPlan.trendDesc
         case .custom: L10n.CashFlowPlan.customDesc
         }
@@ -65,6 +65,25 @@ final class CashFlowLine {
     /// `cashflow_lines.amount_changes_raw` con `since: 3`. Una versión anterior de la app no lo conoce: en los meses
     /// siguientes ve el método de la línea, sin tocar nada.
     var amountChangesRaw: String?
+
+    /// Los pagos planificados de una línea «Pagos planificados» (encargo del 2026-11-20): sus `ScheduledPayment.id`
+    /// separados por coma, en orden. `nil` = el pago de `scheduledPayment` (líneas de antes y versiones viejas), que
+    /// guarda siempre el primero. Campo de iCloud `CD_scheduledPaymentIDsRaw` (STRING) y columna del Modo Nube
+    /// `cashflow_lines.scheduled_payment_ids_raw` con `since: 8`.
+    var scheduledPaymentIDsRaw: String?
+
+    /// Lo que se suma cada mes a los pagos de la línea, en la moneda del flujo. `nil` = sin extra.
+    /// `CD_limitExtraAmount` (DOUBLE) · `limit_extra_amount` (`since: 8`).
+    var limitExtraAmount: Double?
+
+    /// La moneda del monto fijo cuando no es la del flujo (`limitForeignAmount` va en ella). `nil` = la del flujo, y
+    /// entonces el monto fijo es `manualAmount`. `CD_limitCurrencyCode` (STRING) · `limit_currency_code` (`since: 8`).
+    var limitCurrencyCode: String?
+
+    /// El monto fijo en `limitCurrencyCode`; vale para todos los meses y cada mes se convierte con el promedio del tipo
+    /// de cambio de ese mes (`FlujoTasaDelMes`). `manualAmount` guarda el convertido al guardar, para una versión vieja.
+    /// `CD_limitForeignAmount` (DOUBLE) · `limit_foreign_amount` (`since: 8`).
+    var limitForeignAmount: Double?
 
     // MARK: - Relationships
 
@@ -119,6 +138,20 @@ final class CashFlowLine {
     /// Los cambios «desde este mes», ordenados por mes.
     var amountChanges: [CashFlowAmountChangeLogic.Change] {
         CashFlowAmountChangeLogic.parse(amountChangesRaw)
+    }
+
+    /// Los ids de los pagos de la línea, en orden: los de `scheduledPaymentIDsRaw` o, sin ellos, el de la relación.
+    var scheduledPaymentIDs: [UUID] {
+        let parsed = FlujoLimiteEnMoneda.parseIDs(scheduledPaymentIDsRaw)
+        if scheduledPaymentIDsRaw != nil { return parsed }
+        return scheduledPayment.map { [$0.id] } ?? []
+    }
+
+    /// El monto fijo en otra moneda: `nil` si no lo hay o es la del flujo.
+    func foreignFixedLimit(planCurrency: String) -> (amount: Double, currencyCode: String)? {
+        guard let code = limitCurrencyCode, !code.isEmpty, code != planCurrency, let amount = limitForeignAmount
+        else { return nil }
+        return (amount, code)
     }
 
     var customMonths: [String] {

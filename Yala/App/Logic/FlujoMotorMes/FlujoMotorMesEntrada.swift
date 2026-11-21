@@ -121,7 +121,7 @@ enum FlujoMotorMesEntrada {
             esIngreso: line.isIncome,
             categoriaID: (line.category ?? line.subcategory?.category)?.persistentModelID,
             subcategoriaID: line.subcategory?.persistentModelID,
-            pagoID: line.method == .scheduled ? line.scheduledPayment?.id : nil
+            pagoIDs: line.method == .scheduled ? line.scheduledPaymentIDs : []
         )
     }
 

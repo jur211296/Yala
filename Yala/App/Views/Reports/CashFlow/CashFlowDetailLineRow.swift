@@ -11,6 +11,10 @@
 //  recibir» y recibir de más no se pinta en rosa (B7). Un mes que viene dice lo planeado y cómo se calcula, en gris: el
 //  método ya no se pinta como un enlace (L18-7).
 //
+//  Límites con pagos y monedas (encargo del 2026-11-20, pregunta `fila`, opción A): la cifra sigue en la moneda del flujo
+//  y, bajo el nombre, el original («⇄ 500.00 USD») y, en una línea de pagos, «4 pagos + extra». VoiceOver lee «Renta,
+//  límite S/ 1,850.00, 500.00 USD convertidos».
+//
 
 import SwiftUI
 
@@ -39,6 +43,7 @@ struct CashFlowDetailLineRow: View {
                             .foregroundStyle(.primary)
                             .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                         subtitle
+                        limitCaption
                     }
                 } trailing: {
                     trailingFigure
@@ -69,6 +74,7 @@ struct CashFlowDetailLineRow: View {
         }
         .buttonStyle(.plain)
         .pointerHighlight(cornerRadius: DS.Radius.md)
+        .modifier(OriginalAccessibility(label: originalAccessibilityLabel))
         .accessibilityIdentifier("cashflow_detail_line")
         .contextMenu {
             // El botón pide el borrado; la confirmación la pinta `CashFlowMonthDetailView`. Antes el botón
@@ -80,6 +86,78 @@ struct CashFlowDetailLineRow: View {
                     Label(L10n.CashFlowPlan.deleteLine, systemImage: "trash")
                 }
                 .accessibilityIdentifier("cashflow_line_delete")
+            }
+        }
+    }
+
+    // MARK: - Pagos y moneda del límite
+
+    /// El original en otra moneda que se enseña bajo el nombre.
+    private var originalText: String? {
+        guard let original = lineResult.limitBreakdown?.original else { return nil }
+        return FlujoMonedaTexto.original(original.monto, moneda: original.moneda)
+    }
+
+    /// «4 pagos + extra» en una línea de pagos.
+    private var paymentsText: String? {
+        guard let desglose = lineResult.limitBreakdown, lineResult.estimationMethod == .scheduled else { return nil }
+        let cuantos = desglose.pagos.filter { $0.estado != .noEsta }.count
+        guard cuantos > 1 || desglose.extra != nil else { return nil }
+        return L10n.FlujoDetalleLinea.filaPagos(cuantos, conExtra: desglose.extra != nil)
+    }
+
+    @ViewBuilder
+    private var limitCaption: some View {
+        if originalText != nil || paymentsText != nil {
+            HStack(spacing: DS.Spacing.sm) {
+                if let originalText {
+                    Label(originalText, systemImage: "arrow.left.arrow.right")
+                        .labelStyle(.titleAndIcon)
+                        .accessibilityIdentifier("cashflow_line_original")
+                }
+                if let paymentsText {
+                    Text(paymentsText)
+                        .accessibilityIdentifier("cashflow_line_payments_count")
+                }
+            }
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.secondary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+        }
+    }
+
+    /// «Renta, límite S/ 1,850.00, 500.00 USD convertidos»: solo con un original en otra moneda.
+    private var originalAccessibilityLabel: String? {
+        guard let originalText else { return nil }
+        let lectura = L10n.FlujoDetalleLinea.filaAccesible(
+            lineResult.name,
+            limite: appPreferences.currency(lineResult.plannedAmount, currencyCode: currencyCode,
+                                            isEstimate: lineResult.isPlannedApproximate),
+            original: originalText, esIngreso: lineResult.isIncome
+        )
+        // Lo que la fila enseña a la derecha («Te pasaste por…», «Estimado que falta…») también se lee.
+        return trailingSummary.map { "\(lectura), \($0)" } ?? lectura
+    }
+
+    /// El rótulo y la cifra de la derecha de un mes con registros, como texto.
+    private var trailingSummary: String? {
+        guard hasRealData, let real = lineResult.realAmount else { return nil }
+        let overBy = lineResult.plannedAmount - real
+        let remaining = month.isCurrent && overBy >= 0 ? lineResult.expectedAmount - real : overBy
+        let isOver = remaining < 0
+        let fullyReceived = (lineResult.isIncome || month.isCurrent) && abs(remaining) < 0.005
+        let label = fullyReceived ? L10n.CashFlowPlan.realIncome : trailingLabel(isOver: isOver)
+        return "\(label), \(appPreferences.currency(fullyReceived ? real : abs(remaining), currencyCode: currencyCode))"
+    }
+
+    /// Pone la lectura de VoiceOver de una fila con original; sin él, deja la de siempre (la de sus textos).
+    private struct OriginalAccessibility: ViewModifier {
+        let label: String?
+        func body(content: Content) -> some View {
+            if let label {
+                content.accessibilityElement(children: .combine).accessibilityLabel(label)
+            } else {
+                content
             }
         }
     }

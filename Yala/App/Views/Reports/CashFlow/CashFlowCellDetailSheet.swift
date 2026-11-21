@@ -21,6 +21,9 @@
 //  - 19-nov-2026 (aislados y límites móviles): un solo «Cambiar», junto al límite, que abre «Cálculo del monto»
 //    (`FlujoCalculoMontoSheet`); «Cómo se calcula» queda como texto, con la ventana y los meses que se dejaron fuera por
 //    aislados. En «Últimos 6 meses», mantener una barra enseña su detalle y tocarla cambia la lista de abajo a ese mes.
+//  - 20-nov-2026 (límites con pagos y monedas): bajo el límite, la cápsula «500 USD · promedio de nov. 3.70» abre
+//    «Cómo se convierte»; un pago que dejó la línea se avisa una vez; y pagar en la moneda del límite justo el límite no
+//    da «Te pasaste» por el tipo de cambio.
 //
 
 import Charts
@@ -58,6 +61,11 @@ struct CashFlowCellDetailSheet: View {
     @State private var calculoMonto: CalculoPeticion?
 
     @State private var showDeleteLineAlert = false
+
+    /// «Se borró el pago Renta…», una vez (`FlujoAvisoPagoQuitado`).
+    @State private var avisoPago: FlujoAvisoPagoQuitado.Aviso?
+    /// «Cómo se convierte», con sus meses leídos al tocar la cápsula.
+    @State private var comoSeConvierte: FlujoComoSeConvierteSheet.Datos?
 
     @State private var detailTransaction: TransactionItem?
     @State private var editingTransaction: TransactionItem?
@@ -156,7 +164,13 @@ struct CashFlowCellDetailSheet: View {
             }
         }
         .presentationDetents([.large])
-        .onAppear { activeMonthKey = month.monthKey }
+        .onAppear {
+            activeMonthKey = month.monthKey
+            if avisoPago == nil { avisoPago = FlujoAvisoPagoQuitado.consumir(lineID: lineResult.lineID) }
+        }
+        .sheet(item: $comoSeConvierte) { datos in
+            FlujoComoSeConvierteSheet(datos: datos)
+        }
         .task(id: dataKey) { loadData() }
         .task(id: listKey) { loadList() }
         .onChange(of: activeMonthKey) { mesDeLaLista = nil }
@@ -285,6 +299,12 @@ struct CashFlowCellDetailSheet: View {
 
     /// Lo que dice el texto de «Cómo se calcula» del mes que se ve.
     private func howText(lr: CashFlowLineResult) -> String {
+        if let texto = FlujoDetalleLineaLogica.comoSeCalcula(
+            desglose: lr.limitBreakdown, monedaPlan: currencyCode,
+            formato: { appPreferences.currency($0, currencyCode: currencyCode) }
+        ) {
+            return texto
+        }
         let cambioDesde = lr.amountChangeFromMonthKey.flatMap { CashFlowDetailLineRow.monthDate($0) }
         if let liveLine = readableLine,
            let texto = FlujoDetalleLineaLogica.comoSeCalcula(
@@ -305,7 +325,12 @@ struct CashFlowCellDetailSheet: View {
 
     private func methodValue(lr: CashFlowLineResult) -> some View {
         // Un monto escrito «desde» un mes es un monto fijo, aunque los meses de antes sigan con su promedio.
-        let name = lr.amountChangeFromMonthKey != nil ? EstimationMethod.manual.displayName : lr.estimationMethod.displayName
+        var name = lr.amountChangeFromMonthKey != nil ? EstimationMethod.manual.displayName : lr.estimationMethod.displayName
+        // «Monto fijo en USD» (encargo del 2026-11-20).
+        if lr.estimationMethod == .manual, let desglose = lr.limitBreakdown, desglose.pagos.isEmpty,
+           let original = desglose.original {
+            name = L10n.FlujoDetalleLinea.metodoFijoEn(original.moneda)
+        }
         return Text(name)
             .font(DS.Typography.label)
             .foregroundStyle(.primary)
@@ -367,7 +392,15 @@ struct CashFlowCellDetailSheet: View {
 
             Divider()
 
+            if let avisoPago {
+                avisoPagoView(avisoPago)
+            }
+
             limitRow(m: m, lr: lr)
+
+            if let capsula = capsulaDeConversion(m: m, lr: lr) {
+                capsula
+            }
 
             if m.isCurrent {
                 currentProgress(m: m, lr: lr)
@@ -475,6 +508,10 @@ struct CashFlowCellDetailSheet: View {
             }
 
             switch ritmo {
+            // Pagado en la moneda del límite sin pasar del original: la diferencia es del tipo de cambio, no un exceso
+            // (encargo del 2026-11-20).
+            case .excedida where excesoPorTipoDeCambio(m: m, lr: lr) != nil:
+                fxSentence(m: m, lr: lr)
             // Justo en el límite (lo gastado es el límite): no hay exceso que contar. Con límites móviles es lo normal en
             // un gasto fijo de cada mes, y «Te pasaste por S/ 0.00» era falso.
             case .excedida(let porCuanto) where porCuanto >= 0.005:
@@ -549,7 +586,9 @@ struct CashFlowCellDetailSheet: View {
                 .font(DS.Typography.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("cashflow_detail_closed")
-                if abs(diff) > 0.005 {
+                if excesoPorTipoDeCambio(m: nil, lr: lr) != nil {
+                    fxSentence(m: nil, lr: lr)
+                } else if abs(diff) > 0.005 {
                     sentence(
                         L10n.FlujoDetalleLinea.diferencia(appPreferences.currency(abs(diff), currencyCode: currencyCode), esMas: diff > 0),
                         icon: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill",
@@ -601,6 +640,105 @@ struct CashFlowCellDetailSheet: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("cashflow_detail_parent_notice")
         )
+    }
+
+    // MARK: - Límites con pagos y monedas (encargo del 2026-11-20)
+
+    /// «Se borró el pago Renta. El límite quedó fijo en S/ 1,850.00.», una vez.
+    private func avisoPagoView(_ aviso: FlujoAvisoPagoQuitado.Aviso) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(theme.accentText)
+                .accessibilityHidden(true)
+            Text(L10n.FlujoDetalleLinea.avisoPagoQuitado(
+                nombre: aviso.nombre, destino: aviso.destino,
+                fijoEn: aviso.fijoEn.map { appPreferences.currency($0, currencyCode: currencyCode) }
+            ))
+            .font(DS.Typography.subheadline)
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                .fill(Color.secondary.opacity(0.1))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_detail_payment_notice")
+    }
+
+    /// «⇄ 500.00 USD · promedio de nov. 3.70 ›»: abre «Cómo se convierte». Solo con una moneda extranjera en el límite.
+    private func capsulaDeConversion(m: CashFlowMonth, lr: CashFlowLineResult) -> AnyView? {
+        guard let desglose = lr.limitBreakdown, desglose.monedasExtranjeras.count == 1,
+              let moneda = desglose.monedasExtranjeras.first, let tasa = desglose.tasa else { return nil }
+        let original = desglose.original ?? FlujoLimiteEnMoneda.Original(
+            monto: desglose.pagos.filter { $0.estado == .suma && $0.moneda == moneda }
+                .reduce(0) { $0 + $1.importe * Double($1.ocurrencias) },
+            moneda: moneda
+        )
+        let texto = L10n.FlujoDetalleLinea.capsula(
+            FlujoMonedaTexto.original(original.monto, moneda: original.moneda),
+            mes: FlujoMonedaTexto.mesCorto(m.date), tasa: FlujoMonedaTexto.tasa(tasa), estimada: tasa.estado == .estimado
+        )
+        return AnyView(
+            Button {
+                guard let line = readableLine else { return }
+                comoSeConvierte = FlujoComoSeConvierteSheet.datos(
+                    line: line, mesQueSeVe: m.date, monedaPlan: currencyCode, converter: CurrencyConverter.shared,
+                    hoy: .now, calendar: .current
+                )
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .accessibilityHidden(true)
+                    Text(texto)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.captionSmall.weight(.bold))
+                        .accessibilityHidden(true)
+                }
+                .font(DS.Typography.caption.weight(.semibold))
+                .foregroundStyle(theme.accentText)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .frame(minHeight: 44)
+                .background(Capsule().fill(theme.accent.opacity(0.14)))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L10n.FlujoDetalleLinea.convierteTitulo)
+            .accessibilityIdentifier("cashflow_detail_conversion_capsule")
+        )
+    }
+
+    /// Lo que se pasó solo por el tipo de cambio en el mes que se ve: lo pagado en la moneda del límite no pasa del
+    /// original. Los registros salen de la lista del mes (`lista`), que es la de ese mes.
+    private func excesoPorTipoDeCambio(m: CashFlowMonth?, lr: CashFlowLineResult) -> (exceso: Double, justo: Bool)? {
+        guard !lr.isIncome, let original = lr.limitBreakdown?.original, let lista,
+              lista.monthKey == activeMonthKey else { return nil }
+        let pagado = FlujoDetalleLineaLogica.pagadoEnMoneda(original.moneda, registros: lista.dias.flatMap(\.registros))
+        return FlujoDetalleLineaLogica.excesoPorTipoDeCambio(
+            real: (lr.realAmount ?? 0) + (m == nil ? 0 : lr.datedAmount), limite: lr.plannedAmount,
+            original: original, pagadoEnOriginal: pagado
+        )
+    }
+
+    @ViewBuilder
+    private func fxSentence(m: CashFlowMonth?, lr: CashFlowLineResult) -> some View {
+        if let exceso = excesoPorTipoDeCambio(m: m, lr: lr), let original = lr.limitBreakdown?.original, let lista {
+            let pagado = FlujoDetalleLineaLogica.pagadoEnMoneda(original.moneda, registros: lista.dias.flatMap(\.registros)) ?? 0
+            let diferencia = appPreferences.currency(exceso.exceso, currencyCode: currencyCode)
+            let pagadoTexto = FlujoMonedaTexto.original(pagado, moneda: original.moneda)
+            sentence(
+                exceso.justo
+                    ? L10n.FlujoDetalleLinea.pagasteJusto(pagadoTexto, diferencia: diferencia)
+                    : L10n.FlujoDetalleLinea.pagasteDentro(
+                        pagadoTexto, de: FlujoMonedaTexto.original(original.monto, moneda: original.moneda),
+                        diferencia: diferencia
+                    ),
+                icon: "arrow.left.arrow.right", tint: .secondary, id: "cashflow_detail_fx_difference"
+            )
+        }
     }
 
     private func sentence(_ text: String, icon: String?, tint: Color, id: String) -> some View {
@@ -688,7 +826,10 @@ struct CashFlowCellDetailSheet: View {
     /// Lo que cambia la gráfica y la explicación del límite: el mes, el plan, los movimientos y la propia línea (su
     /// método, sus cambios «desde» y el límite que da el motor, para que «Cálculo del monto» se vea al guardar).
     private var dataKey: String {
-        let lineKey = readableLine.map { "\($0.estimationMethod)|\($0.amountChangesRaw ?? "")|\($0.manualAmount ?? -1)" } ?? ""
+        let lineKey = readableLine.map {
+            "\($0.estimationMethod)|\($0.amountChangesRaw ?? "")|\($0.manualAmount ?? -1)|\($0.scheduledPaymentIDsRaw ?? "")"
+                + "|\($0.limitExtraAmount ?? -1)|\($0.limitCurrencyCode ?? "")|\($0.limitForeignAmount ?? -1)"
+        } ?? ""
         return "\(activeMonthKey)|\(viewModel.planRevision)|\(transactions.count)|\(viewModel.projection?.months.count ?? 0)"
             + "|\(lineKey)|\(activeLineResult?.plannedAmount ?? 0)"
     }
