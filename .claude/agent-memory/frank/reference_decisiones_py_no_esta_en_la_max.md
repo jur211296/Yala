@@ -14,3 +14,8 @@ cierre que el registro del lote quedó sin hacer, para que lo corra la Mini o el
 
 **How to apply:** en la Max, antes de prometer el registro, `ls ~/.claude/scripts | grep decis`. Si sigue sin estar,
 no inventes otra vía: incorpora en el repo y anótalo en «Necesita de ti».
+
+**Para leer el registro desde la Max (21-nov):** `ssh mini` funciona sin contraseña. `scp mini:Claude/flota/decisiones/decisiones.jsonl`
+y filtrar en Python (tipo `capturada`, proyecto Yala o «yala», quitar los `sustituye` de las filas `sustitucion`). Lo mismo para
+`ssh mini 'python3 ~/.claude/scripts/coordinador.py estado'` y los briefs de `~/Claude/flota/borradores/`. El registro de Yala
+empieza el 7-nov.
