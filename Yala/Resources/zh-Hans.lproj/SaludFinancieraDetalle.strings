@@ -2,61 +2,106 @@
   SaludFinancieraDetalle.strings
   Yala
 
-  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
-  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+  Presupuestos, Compromisos y Ritmo, cada una con su estado, lo suyo y qué hacer. Tabla propia, leída con el idioma de la
+  app (`L10n.SaludFinancieraDetalle`).
 */
 
-"saludDetalle.section.alerts" = "需要留意";
-"saludDetalle.section.budgets" = "你的预算";
-"saludDetalle.section.payments" = "即将付款";
-"saludDetalle.section.streak" = "连续记账";
-"saludDetalle.section.improve" = "提高评分";
+"saludDetalle.loading" = "加载中…";
+"saludDetalle.section.budgets" = "预算";
+"saludDetalle.section.commitments" = "固定支出";
+"saludDetalle.section.rhythm" = "节奏";
 "saludDetalle.section.howItWorks" = "如何计算？";
-"saludDetalle.alerts.none.title" = "今天没有需要留意的";
-"saludDetalle.alerts.none.detail" = "你的预算、付款和账户都很正常。";
-"saludDetalle.alert.overBudget.title" = "%@ 已超支";
-"saludDetalle.alert.overBudget.detail" = "轻点查看花在哪里。";
-"saludDetalle.alert.atLimit.title" = "%@ 接近上限";
-"saludDetalle.alert.atLimit.detail" = "已用到设定的 %d %%。";
-"saludDetalle.alert.negativeAccount.title" = "%@ 为负数";
-"saludDetalle.alert.negativeAccount.detail" = "检查余额或补记缺少的记录。";
-"saludDetalle.alert.overdue.title" = "%@ 已逾期";
-"saludDetalle.alert.overdue.detail" = "标记为已付或跳过。";
-"saludDetalle.alert.notCovered.title" = "本月付款不够支付";
-"saludDetalle.alert.notCovered.detail" = "按现有余额和剩余收支，月底你将有：";
-"saludDetalle.budgets.empty.title" = "还没有预算";
-"saludDetalle.budgets.empty.detail" = "给花得最多的项目设个上限，超支前 Yala 会提醒你。";
-"saludDetalle.budgets.empty.cta" = "创建预算";
+"saludDetalle.section.weight" = "占你评分的 %d %%";
+"saludDetalle.status.good" = "良好";
+"saludDetalle.status.review" = "待查看";
+"saludDetalle.status.noData" = "暂无数据";
+
+"saludDetalle.capsule.createOne" = "去创建";
+"saludDetalle.capsule.since" = "自 %@ 起";
+"saludDetalle.capsule.addPayments" = "添加付款";
+"saludDetalle.capsule.recordToday" = "今天记一笔";
+"saludDetalle.capsule.noData" = "暂无数据";
+"saludDetalle.capsule.hint" = "前往对应部分";
+
+"saludDetalle.advice.notEnough" = "你现有的钱不够支付到 %@ 为止计划要付的全部款项。下面是可以挪后的付款。";
+"saludDetalle.advice.overBudget" = "%@ 在本期超出了限额。下面是回到限额内的办法。";
+"saludDetalle.advice.overMany" = "有 %d 个预算在本期超出了限额。下面是回到限额内的办法。";
+"saludDetalle.advice.overdue" = "%@ 已经到期。如果你已经付过了，把它标记为已付。";
+"saludDetalle.advice.createBudget" = "有了预算，你的评分才算完整：它是占比最大的一部分。";
+"saludDetalle.advice.budgetStarts" = "你的预算将从 %@ 起计入评分。";
+"saludDetalle.advice.addPayments" = "添加你的付款，就能知道这个月够不够用。";
+"saludDetalle.advice.rhythm" = "现在最能提高评分的，是更频繁地记账。";
+"saludDetalle.advice.allGood" = "你的预算都在限额内，本月还没付的款项也有资金覆盖。";
+
+"saludDetalle.budgets.oneWithin" = "%@ 在限额内。";
+"saludDetalle.budgets.allWithin" = "你的 %d 个预算都在限额内。";
+"saludDetalle.budgets.allWithinLeft" = "你的 %d 个预算都在限额内。合计还剩 %@。";
+"saludDetalle.budgets.onlyOver" = "%@ 超出了 %@。";
+"saludDetalle.budgets.overOneOther" = "%@ 超出了 %@。你的另一个预算在限额内。";
+"saludDetalle.budgets.overOthers" = "%@ 超出了 %@。你的其余 %d 个预算都在限额内。";
+"saludDetalle.budgets.manyOver" = "有 %d 个预算超出了限额。下面是回到限额内的办法。";
+"saludDetalle.budgets.startsLater" = "%@ 将从 %@ 起计入评分。你现在就可以看看进展。";
 "saludDetalle.budgets.seeAll" = "查看全部（%d）";
-"saludDetalle.budgets.left" = "剩余";
+"saludDetalle.budgets.left" = "还剩";
 "saludDetalle.budgets.over" = "超出";
+"saludDetalle.budgets.empty.lead" = "你还没有预算。这部分占评分的 %d %%，目前不计入。";
+"saludDetalle.budgets.empty.tipTitle" = "从哪里开始";
+"saludDetalle.budgets.empty.tip" = "%@ 是你花得最多的地方：平均每月 %@。在这里设个限额，超出之前就会提醒你。";
+"saludDetalle.budgets.empty.cta" = "创建预算";
+
+"saludDetalle.improve.title" = "改善这一部分";
+"saludDetalle.improve.nothing" = "目前没有需要调整的地方。";
+"saludDetalle.improve.adjust.title" = "把限额调整到贴近实际";
+"saludDetalle.improve.adjust.detail" = "%1$@ 在最近 %3$d 个周期中有 %2$d 个周期超出限额，平均超出 %4$@。如果这就是你的日常花销，把限额设为 %5$@ 就能及时提醒你。";
+"saludDetalle.improve.adjust.cta" = "调整限额";
+"saludDetalle.improve.cut.title" = "或者在占比最大的地方压缩";
+"saludDetalle.improve.cut.titleAlone" = "在占比最大的地方压缩";
+"saludDetalle.improve.cut.detail" = "本期在 %@ 内：%@。";
+"saludDetalle.improve.cut.cta" = "在记录中查看";
+"saludDetalle.improve.ai.label" = "Yala AI · 你本月的总结";
+"saludDetalle.improve.ai.cta" = "查看你的总结";
+"saludDetalle.improve.ai.none.title" = "你的 AI 总结";
+"saludDetalle.improve.ai.none.detail" = "在统计中，它会告诉你本月的钱花在了哪里。";
+"saludDetalle.improve.pro" = "有了 Yala Pro，你的 AI 总结会告诉你钱花在了哪里。";
+"saludDetalle.improve.pro.cta" = "了解 Pro";
+
+"saludDetalle.commit.lead" = "本月还有 %@ 要付，你现在有 %@。";
+"saludDetalle.commit.leadExpensesOnly" = "本月还有 %@ 要付。";
+"saludDetalle.commit.enough" = "够用，还能剩下 %@。";
+"saludDetalle.commit.notEnough" = "你可以把某笔付款挪到 %@，或者看看有没有已经不需要的。";
+"saludDetalle.commit.toPay" = "本月还要付";
+"saludDetalle.commit.moneyToday" = "你现在的钱";
+"saludDetalle.commit.short" = "要全部覆盖还差 %@。";
+"saludDetalle.commit.income" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@。";
+"saludDetalle.commit.incomeMoreOne" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@，还有一笔收入。";
+"saludDetalle.commit.incomeMoreOther" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@，还有 %4$d 笔收入。";
+"saludDetalle.commit.overdueYesterday" = "%@ 昨天到期。如果你已经付过了，把它标记为已付。";
+"saludDetalle.commit.overdueDate" = "%@ 在 %@ 到期。如果你已经付过了，把它标记为已付。";
+"saludDetalle.commit.negativeAccount" = "你的 %@ 账户余额为负。你可以从其他账户转一些钱过去。";
+"saludDetalle.commit.pendingOne" = "截至 %@ 有 1 笔待付款";
+"saludDetalle.commit.pendingOther" = "有 %d 笔待付款，截至 %@";
+"saludDetalle.commit.review" = "查看或挪动付款";
+"saludDetalle.commit.seeAll" = "查看你的计划付款";
+"saludDetalle.commit.allPaid" = "%@ 计划的款项你都已付清。";
+"saludDetalle.commit.next" = "你的下一笔付款是 %@，在 %@。";
+"saludDetalle.commit.empty.lead" = "你还没有计划付款。有了它们，我就能告诉你现有的钱（%@）够不够撑到月底。";
+"saludDetalle.commit.empty.leadNoMoney" = "你还没有计划付款。有了它们，我就能告诉你够不够撑到月底。";
+"saludDetalle.commit.recurring.title" = "我发现了一些重复的扣款";
+"saludDetalle.commit.recurring.one" = "%@ 每月都出现在你的记录里。";
+"saludDetalle.commit.recurring.other" = "%@ 每月都出现在你的记录里。";
+"saludDetalle.commit.recurring.cta" = "去查看";
+"saludDetalle.commit.empty.cta" = "添加付款";
+
 "saludDetalle.payments.today" = "今天";
 "saludDetalle.payments.tomorrow" = "明天";
 "saludDetalle.payments.inDays" = "%d 天后";
 "saludDetalle.payments.overdue" = "已逾期";
-"saludDetalle.payments.none" = "未来两周没有付款。";
-"saludDetalle.payments.empty.title" = "还没有计划付款";
-"saludDetalle.payments.empty.detail" = "房租、电费、订阅：Yala 会在每笔到期前提醒你。";
-"saludDetalle.payments.empty.cta" = "添加付款";
-"saludDetalle.payments.seeAll" = "查看全部";
-"saludDetalle.payments.covered" = "足够支付本月付款。";
-"saludDetalle.payments.notCovered" = "不够支付本月付款。";
+
 "saludDetalle.streak.days.one" = "连续 %d 天";
 "saludDetalle.streak.days.other" = "连续 %d 天";
-"saludDetalle.streak.today" = "今天已记账，继续保持！";
-"saludDetalle.streak.keep" = "今天记一笔，保持连续。";
-"saludDetalle.streak.start" = "今天记一笔，开始连续记账。";
-"saludDetalle.streak.cta" = "记账";
+"saludDetalle.streak.today" = "今天已经记过了。继续保持！";
+"saludDetalle.streak.keep" = "今天还没记账。在午夜前记一笔，连续记录就不会中断。";
+"saludDetalle.streak.start" = "今天记一笔，开启连续记录。";
+"saludDetalle.streak.cta" = "去记账";
 "saludDetalle.streak.caption" = "最近 %d 天";
-"saludDetalle.streak.dayRecorded" = "有记录";
-"saludDetalle.streak.dayEmpty" = "无记录";
-"saludDetalle.improve.crearPresupuesto" = "创建第一个预算";
-"saludDetalle.improve.registrarHoy" = "今天记一笔";
-"saludDetalle.improve.agregarPagos" = "添加固定付款";
-"saludDetalle.improve.revisarPresupuestos" = "查看超支的预算";
-"saludDetalle.improve.revisarRitmo" = "更频繁地记账";
-"saludDetalle.improve.revisarPagos" = "查看本月付款";
-"saludDetalle.improve.weight" = "%@ 占评分的 %d %%";
-"saludDetalle.loading" = "加载中…";
-"saludDetalle.alert.reachedLimit.title" = "%@ 已达上限";
-"saludDetalle.alert.atLimitMany.title" = "%d 个预算接近上限";

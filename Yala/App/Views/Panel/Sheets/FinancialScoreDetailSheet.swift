@@ -2,9 +2,9 @@
 //  FinancialScoreDetailSheet.swift
 //  Yala
 //
-//  La hoja de la nota de salud. La nota TOTAL (tarjeta del Panel, «?» de Estadísticas) es visual y accionable desde
-//  el 18-nov-2026 (`SaludFinanciera/SaludFinancieraDetalleView`): alertas, presupuestos, pagos, racha y qué hacer para
-//  subirla, cada fila con su toque; abre grande. Las hojas de cada parte siguen igual: anillo, titular, explicación y
+//  La hoja de la nota de salud. La nota TOTAL (tarjeta del Panel, «?» de Estadísticas) va en tres secciones desde el
+//  20-nov-2026 (`SaludFinanciera/SaludFinancieraDetalleView`): Presupuestos, Compromisos y Ritmo, cada una con su
+//  consejo y su toque; abre grande. Las hojas de cada parte siguen igual: anillo, titular, explicación y
 //  el botón a su vista, a media altura.
 //
 //  Uses the app's canonical sheet chrome: NavigationStack + inline title +
@@ -48,6 +48,7 @@ struct FinancialScoreDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// La nota total abre grande: enseña alertas, presupuestos, pagos y racha (18-nov-2026). Las partes, a media altura.
     @State private var selectedDetent: PresentationDetent
@@ -104,14 +105,19 @@ struct FinancialScoreDetailSheet: View {
     private var content: some View {
         if kind == .total, let breakdown {
             // La nota total, visual y accionable (pedido de Jürgen del 17-nov-2026): `SaludFinancieraDetalleView`.
-            ScrollView {
-                SaludFinancieraDetalleView(score: breakdown, hasBudgets: hasBudgets, abrir: abrir)
+            // Las cápsulas de la nota son el índice: tocar una baja a su sección (opción A del 20-nov-2026).
+            ScrollViewReader { proxy in
+                ScrollView {
+                    SaludFinancieraDetalleView(score: breakdown, hasBudgets: hasBudgets, abrir: abrir) { seccion in
+                        dsWithAnimation(reduceMotion) { proxy.scrollTo(seccion, anchor: .top) }
+                    }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.md)
                     .padding(.bottom, DS.Spacing.xl)
                     .readableColumn()
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .scrollBounceBehavior(.basedOnSize)
         } else {
             partContent
         }
@@ -145,6 +151,19 @@ struct FinancialScoreDetailSheet: View {
                 RouterEntryGate.shared.submit(.presentNewTransaction)
             case .registros:
                 sessionState.navigateToRecordsStandalone()
+            case .registrosFiltrados(let filtro):
+                // Lo que más pesa dentro de un presupuesto: Registros con solo eso.
+                sessionState.clearFilters()
+                switch filtro {
+                case .subcategoria(let id): sessionState.selectedSubcategoryIDs = [id]
+                case .categoria(let id): sessionState.selectedCategoryIDs = [id]
+                case .ninguno: break
+                }
+                sessionState.navigateToRecordsStandalone()
+            case .resumenIA:
+                navigation.navigateToDetail(.insights)
+            case .pro:
+                RouterEntryGate.shared.submit(.presentUpgradeSheet(.chat))
             }
         }
     }

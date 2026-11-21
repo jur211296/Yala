@@ -2,8 +2,9 @@
 //  SaludFinancieraDetalleLogicaTests.swift
 //  YalaTests
 //
-//  La hoja de la nota de salud, visual y accionable (18-nov-2026): racha, próximos pagos, orden de presupuestos,
-//  alertas y qué hacer para subir la nota. Y sus textos en los 16 idiomas.
+//  La hoja de la nota de salud en tres secciones (opción A de Jürgen, 20-nov-2026): racha, presupuestos y su propuesta
+//  de límite, la comparación de tu dinero con tus pagos, el estado y la cápsula de cada sección, el consejo bajo la nota
+//  y la tarjeta de IA guardada. Y sus textos en los 16 idiomas.
 //
 
 import Foundation
@@ -16,15 +17,17 @@ struct SaludFinancieraDetalleLogicaTests {
 
     private typealias L = SaludFinancieraDetalleLogica
 
-    /// Mediodía del 18-nov-2026 en Lima: fijo, nunca el reloj.
+    /// Mediodía del 20-nov-2026 en Lima: fijo, nunca el reloj.
     private static let calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)
         c.timeZone = TimeZone(identifier: "America/Lima") ?? .gmt
         return c
     }()
     private static let now: Date = {
-        let comps = DateComponents(year: 2026, month: 11, day: 18, hour: 12)
-        return calendar.date(from: comps) ?? .now
+        calendar.date(from: DateComponents(year: 2026, month: 11, day: 20, hour: 12)) ?? .now
+    }()
+    private static let finDeMes: Date = {
+        calendar.date(from: DateComponents(year: 2026, month: 11, day: 30, hour: 23, minute: 59, second: 59)) ?? .now
     }()
 
     private func dia(_ offset: Int, hora: Int = 9) -> Date {
@@ -33,9 +36,19 @@ struct SaludFinancieraDetalleLogicaTests {
         return Self.calendar.date(byAdding: .hour, value: hora, to: d) ?? d
     }
 
-    private func presupuesto(_ nombre: String, gastado: Double, limite: Double = 100) -> L.Presupuesto {
+    private func presupuesto(_ nombre: String, gastado: Double, limite: Double = 100, moneda: String = "PEN",
+                             cuentaDesde: Date? = nil) -> L.Presupuesto {
         L.Presupuesto(id: UUID(), nombre: nombre, icono: "cart", color: "6366F1", gastado: gastado, limite: limite,
-                      moneda: "PEN")
+                      moneda: moneda, cuentaDesde: cuentaDesde)
+    }
+
+    private func pago(_ nombre: String, dias: Int, monto: Double, aproximado: Bool = false) -> L.Pago {
+        L.Pago(id: UUID(), nombre: nombre, fecha: dia(dias), dias: dias, monto: monto, moneda: "PEN",
+               montoConvertido: monto, esAproximado: aproximado)
+    }
+
+    private func score(budget: Int? = 90, activity: Int? = 90, bills: Int? = 90) -> FinancialScore {
+        FinancialScore(total: 90, budget: budget, activity: activity, bills: bills)
     }
 
     // MARK: Racha
@@ -46,7 +59,6 @@ struct SaludFinancieraDetalleLogicaTests {
         #expect(r.registroHoy)
         #expect(r.tira.count == L.diasEnTira)
         #expect(r.tira.last == true)
-        #expect(r.tira[L.diasEnTira - 4] == false, "El día −3 no tiene registro.")
     }
 
     @Test func racha_sigueViva_siHoyAunNoHay_peroAyerSi() {
@@ -58,151 +70,227 @@ struct SaludFinancieraDetalleLogicaTests {
     @Test func racha_seCorta_siAyerTampocoHay() {
         let r = L.racha(diasConMovimiento: [dia(-2), dia(-3)], now: Self.now, calendar: Self.calendar)
         #expect(r.dias == 0)
-        #expect(r.tira.filter { $0 }.count == 2)
-    }
-
-    @Test func racha_juntaVariosMovimientosDelMismoDia() {
-        let r = L.racha(diasConMovimiento: [dia(0, hora: 1), dia(0, hora: 23)], now: Self.now, calendar: Self.calendar)
-        #expect(r.dias == 1)
-    }
-
-    // MARK: Pagos
-
-    private func pago(_ nombre: String, en offset: Int, esGasto: Bool = true, activo: Bool = true, saltado: Bool = false)
-        -> (id: UUID, nombre: String, fecha: Date, monto: Double, moneda: String, esGasto: Bool, activo: Bool,
-            saltado: Bool) {
-        (id: UUID(), nombre: nombre, fecha: dia(offset), monto: 50, moneda: "PEN", esGasto: esGasto, activo: activo,
-         saltado: saltado)
-    }
-
-    @Test func pagos_soloGastosActivosNoSaltados_dentroDelHorizonte_yEnOrden() {
-        let lista = L.proximosPagos([
-            pago("Lejano", en: L.horizontePagos + 1),
-            pago("Luz", en: 5),
-            pago("Renta", en: 0),
-            pago("Sueldo", en: 2, esGasto: false),
-            pago("Pausado", en: 1, activo: false),
-            pago("Saltado", en: 1, saltado: true),
-            pago("Vencido", en: -3),
-            pago("Borde", en: L.horizontePagos),
-        ], now: Self.now, calendar: Self.calendar)
-        #expect(lista.map(\.nombre) == ["Vencido", "Renta", "Luz", "Borde"])
-        #expect(lista.map(\.dias) == [-3, 0, 5, L.horizontePagos])
     }
 
     // MARK: Presupuestos
 
     @Test func presupuestos_vanPrimeroLosQueVanPeor() {
         let ordenados = L.ordenar([
-            presupuesto("Tranquilo", gastado: 20),
-            presupuesto("Al 90", gastado: 90),
-            presupuesto("Justo", gastado: 100),
-            presupuesto("Pasado", gastado: 130),
-            presupuesto("Al 50", gastado: 50),
+            presupuesto("Bien", gastado: 10), presupuesto("Pasado", gastado: 130), presupuesto("Cerca", gastado: 90),
         ])
-        #expect(ordenados.map(\.nombre) == ["Pasado", "Justo", "Al 90", "Al 50", "Tranquilo"])
+        #expect(ordenados.map(\.nombre) == ["Pasado", "Cerca", "Bien"])
     }
 
-    @Test func presupuesto_restante_esLaReglaDeTeQuedan() {
-        #expect(presupuesto("A", gastado: 30).restante == 70)
-        #expect(presupuesto("B", gastado: 130).restante == -30)
-        #expect(presupuesto("B", gastado: 130).estado == .overLimit)
+    @Test func propuesta_tresDeCuatroPasados_proponeElPromedioRedondeadoHaciaArriba() throws {
+        let p = try #require(L.propuestaDeLimite(historial: [1210, 1185, 980, 1345], limite: 1000))
+        #expect(p.vecesPasado == 3)
+        #expect(p.periodos == 4)
+        #expect(abs(p.promedio - 1180) < 0.001)
+        #expect(p.limite == 1200)
     }
 
-    // MARK: Alertas
-
-    private func cobertura(alCierre: Double, faltaSalir: Double = 500) -> L.Cobertura {
-        L.Cobertura(alCierre: alCierre, faltaSalir: faltaSalir, fechaCierre: dia(12), moneda: "PEN", esAproximada: false)
+    @Test func propuesta_dosDeCuatro_noPropone() {
+        #expect(L.propuestaDeLimite(historial: [1210, 900, 980, 1345], limite: 1000) == nil)
     }
 
-    @Test func alertas_loGravePrimero_yLosDelLimiteAlFinal() {
-        let vencido = L.Pago(id: UUID(), nombre: "Luz", fecha: dia(-2), dias: -2, monto: 80, moneda: "PEN")
-        let alertas = L.alertas(
-            presupuestos: [presupuesto("Al 90", gastado: 90), presupuesto("Pasado", gastado: 130)],
-            pagos: [vencido, L.Pago(id: UUID(), nombre: "Renta", fecha: dia(3), dias: 3, monto: 900, moneda: "PEN")],
-            cobertura: cobertura(alCierre: -200),
-            cuentasEnRojo: [(nombre: "Efectivo", id: nil)],
-            isExpensesOnlyMode: false
-        )
-        let tipos = alertas.map { alerta -> String in
-            switch alerta {
-            case .presupuestoPasado: "pasado"
-            case .pagosSinCubrir: "cobertura"
-            case .pagoVencido: "vencido"
-            case .cuentaEnRojo: "cuenta"
-            case .presupuestoAlLimite: "limite"
-            case .presupuestosAlLimite: "limites"
-            }
+    @Test func propuesta_sinCuatroPeriodosDeHistoria_noPropone() {
+        #expect(L.propuestaDeLimite(historial: [1210, 1185, 1345], limite: 1000) == nil)
+    }
+
+    @Test func redondeo_esUnMontoRedondoHaciaArriba() {
+        #expect(L.redondearHaciaArriba(123) == 130)
+        #expect(L.redondearHaciaArriba(1180) == 1200)
+        #expect(L.redondearHaciaArriba(6020) == 6100)
+    }
+
+    @Test func dondeMasPesa_lasTresConMasGasto_deMasAMenos() {
+        let recortes = [("Cafés", 148.0), ("Delivery", 412.3), ("Bebidas", 20.0), ("Restaurantes", 386.1)]
+            .map { L.Recorte(nombre: $0.0, monto: $0.1, filtro: .ninguno) }
+        #expect(L.dondeMasPesa(recortes).map(\.nombre) == ["Delivery", "Restaurantes", "Cafés"])
+    }
+
+    @Test func estadoPresupuestos_pasadoEsParaRevisar_sinNingunoSinDatos() {
+        #expect(L.estadoPresupuestos([]) == .sinDatos)
+        #expect(L.estadoPresupuestos([presupuesto("A", gastado: 10)]) == .bien)
+        #expect(L.estadoPresupuestos([presupuesto("A", gastado: 10), presupuesto("B", gastado: 120)]) == .paraRevisar)
+    }
+
+    @Test func quedaEntreTodos_soloConLaMismaMonedaYSinPasados() {
+        let dos = [presupuesto("A", gastado: 60), presupuesto("B", gastado: 30)]
+        #expect(L.quedaEntreTodos(dos)?.monto == 110)
+        #expect(L.quedaEntreTodos([presupuesto("A", gastado: 60), presupuesto("B", gastado: 30, moneda: "USD")]) == nil)
+        #expect(L.quedaEntreTodos([presupuesto("A", gastado: 160), presupuesto("B", gastado: 30)]) == nil)
+    }
+
+    // MARK: Compromisos
+
+    @Test func comparacion_alcanza_yLasBarrasVanALaMismaEscala() {
+        let c = L.comparacion(pagos: [pago("Alquiler", dias: 5, monto: 2230), pago("Luz", dias: 6, monto: 170)],
+                              dineroHoy: 4800, moneda: "PEN")
+        #expect(c.faltaPagar == 2400)
+        #expect(c.alcanza)
+        #expect(c.diferencia == 2400)
+        #expect(c.barraDinero == 1)
+        #expect(c.barraFalta == 0.5)
+    }
+
+    @Test func comparacion_noAlcanza_diceCuantoFaltaria() {
+        let c = L.comparacion(pagos: [pago("Tarjeta", dias: 5, monto: 8699.5)], dineroHoy: 7850,
+                              moneda: "PEN")
+        #expect(!c.alcanza)
+        #expect(abs(-c.diferencia - 849.5) < 0.001)
+        #expect(c.barraFalta == 1)
+    }
+
+    @Test func comparacion_dineroNegativo_pintaLaBarraVacia() {
+        let c = L.comparacion(pagos: [pago("Alquiler", dias: 5, monto: 100)], dineroHoy: -50,
+                              moneda: "PEN")
+        #expect(c.barraDinero == 0)
+        #expect(c.barraFalta == 1)
+    }
+
+    /// La marca «≈» sigue el umbral de la app, no un «alguno es aproximado» (revisor con checklist, ronda 1).
+    @Test func comparacion_laMarcaSigueElUmbral_sobreLoQueSePinta() {
+        // Un Spotify de 19 con tasa dudosa entre 2.249: no llega al 5 %, no marca.
+        let poco = L.comparacion(pagos: [pago("Alquiler", dias: 5, monto: 2230), pago("Spotify", dias: 6, monto: 19,
+                                                                                       aproximado: true)],
+                                 dineroHoy: 7850, moneda: "PEN")
+        #expect(!poco.faltaEsAproximado)
+        #expect(!poco.diferenciaEsAproximada)
+        // 300 dudosos en un dinero de 10.000 no marcan el dinero (3 %), pero sí lo que sobra: 300 de 500.
+        let resta = L.comparacion(pagos: [pago("Alquiler", dias: 5, monto: 9500)], dineroHoy: 10_000,
+                                  dineroDudoso: 300, moneda: "PEN")
+        #expect(!resta.dineroEsAproximado)
+        #expect(resta.diferenciaEsAproximada)
+        // Un solo pago, todo con tasa dudosa: marca lo que falta.
+        let todo = L.comparacion(pagos: [pago("Netflix", dias: 2, monto: 40, aproximado: true)], dineroHoy: 100,
+                                 moneda: "PEN")
+        #expect(todo.faltaEsAproximado)
+    }
+
+    @Test func pagosPendientes_ordenadosPorFecha_conLosDiasDesdeHoy() {
+        let pagos = L.pagosPendientes([
+            (id: UUID(), nombre: "Alquiler", fecha: dia(8), monto: -2230, moneda: "PEN", convertido: -2230,
+             aproximado: false),
+            (id: UUID(), nombre: "Luz", fecha: dia(-1), monto: 142.6, moneda: "PEN", convertido: 142.6,
+             aproximado: false),
+        ], now: Self.now, calendar: Self.calendar)
+        #expect(pagos.map(\.nombre) == ["Luz", "Alquiler"])
+        #expect(pagos.map(\.dias) == [-1, 8])
+        #expect(pagos.first?.vencido == true)
+        #expect(pagos.last?.monto == 2230, "El monto se enseña sin signo.")
+    }
+
+    @Test func estadoCompromisos() {
+        let alcanza = L.comparacion(pagos: [pago("A", dias: 3, monto: 10)], dineroHoy: 100, moneda: "PEN")
+        let noAlcanza = L.comparacion(pagos: [pago("A", dias: 3, monto: 1000)], dineroHoy: 100,
+                                      moneda: "PEN")
+        #expect(L.estadoCompromisos(tienePagos: false, pagos: [], comparacion: nil) == .sinDatos)
+        #expect(L.estadoCompromisos(tienePagos: true, pagos: [pago("A", dias: 3, monto: 10)],
+                                    comparacion: alcanza) == .bien)
+        #expect(L.estadoCompromisos(tienePagos: true, pagos: [pago("A", dias: 3, monto: 1000)],
+                                    comparacion: noAlcanza) == .paraRevisar)
+        #expect(L.estadoCompromisos(tienePagos: true, pagos: [pago("A", dias: -1, monto: 10)],
+                                    comparacion: alcanza) == .paraRevisar)
+    }
+
+    // MARK: Nota
+
+    @Test func capsula_sinPresupuestos_diceCreaUno() {
+        #expect(L.motivoSinNota(.presupuestos, score: score(budget: nil), presupuestos: [], tienePagos: true) == .creaUno)
+    }
+
+    @Test func capsula_presupuestoCreadoAMitadDeMes_diceDesdeCuando() {
+        let desde = dia(11, hora: 0)
+        let p = presupuesto("Comidas fuera", gastado: 40, cuentaDesde: desde)
+        #expect(L.motivoSinNota(.presupuestos, score: score(budget: nil), presupuestos: [p], tienePagos: true)
+                == .desde(desde))
+        #expect(L.presupuestoQueAunNoCuenta([p], score: score(budget: nil))?.nombre == "Comidas fuera")
+        #expect(L.presupuestoQueAunNoCuenta([p], score: score(budget: 80)) == nil, "Con nota, ya cuenta alguno.")
+    }
+
+    @Test func capsula_sinPagos_diceAgregaPagos_yConNotaNoDiceNada() {
+        #expect(L.motivoSinNota(.compromisos, score: score(bills: nil), presupuestos: [], tienePagos: false)
+                == .agregaPagos)
+        #expect(L.motivoSinNota(.ritmo, score: score(activity: nil), presupuestos: [], tienePagos: true) == .registraHoy)
+        #expect(L.motivoSinNota(.compromisos, score: score(), presupuestos: [], tienePagos: true) == nil)
+    }
+
+    @Test func consejo_loQueMasMueveLaNotaPrimero() {
+        let noAlcanza = L.comparacion(pagos: [pago("A", dias: 3, monto: 1000)], dineroHoy: 100,
+                                      moneda: "PEN")
+        let alcanza = L.comparacion(pagos: [pago("A", dias: 3, monto: 10)], dineroHoy: 100, moneda: "PEN")
+        let pasado = presupuesto("Comidas", gastado: 120)
+        func consejo(_ presupuestos: [L.Presupuesto], _ c: L.Comparacion?, pagos: [L.Pago] = [],
+                     tienePagos: Bool = true, soloGastos: Bool = false, s: FinancialScore? = nil) -> L.Consejo {
+            L.consejo(score: s ?? score(), presupuestos: presupuestos, pagos: pagos, comparacion: c,
+                      tienePagos: tienePagos, isExpensesOnlyMode: soloGastos, finDeMes: Self.finDeMes)
         }
-        #expect(tipos == ["pasado", "cobertura", "vencido", "cuenta", "limite"])
-        #expect(alertas.filter(\.esGrave).count == 4)
+        #expect(consejo([pasado], noAlcanza) == .noAlcanza(finDeMes: Self.finDeMes))
+        #expect(consejo([pasado], noAlcanza, soloGastos: true) == .presupuestoPasado(nombre: "Comidas"),
+                "En «Solo gastos» no hay saldos que comparar.")
+        #expect(consejo([pasado, presupuesto("Taxi", gastado: 130)], alcanza) == .variosPasados(2))
+        #expect(consejo([presupuesto("A", gastado: 10)], alcanza, pagos: [pago("Luz", dias: -1, monto: 10)])
+                == .pagoVencido(nombre: "Luz"))
+        #expect(consejo([], alcanza, s: score(budget: nil)) == .creaPresupuesto)
+        #expect(consejo([presupuesto("A", gastado: 10)], nil, tienePagos: false) == .agregaPagos)
+        #expect(consejo([presupuesto("A", gastado: 10)], alcanza, s: score(activity: 40)) == .registraMasSeguido)
+        #expect(consejo([presupuesto("A", gastado: 10)], alcanza) == .todoBien)
     }
 
-    @Test func alertas_variosAlLimite_vanEnUnaSolaFila() {
-        let alertas = L.alertas(
-            presupuestos: [presupuesto("A", gastado: 85), presupuesto("B", gastado: 100), presupuesto("C", gastado: 95)],
-            pagos: [], cobertura: nil, cuentasEnRojo: [], isExpensesOnlyMode: false
-        )
-        #expect(alertas.count == 1)
-        guard case .presupuestosAlLimite(let lista) = alertas.first else {
-            Issue.record("Esperaba una sola fila con los tres al límite: \(alertas)")
-            return
-        }
-        #expect(lista.map(\.nombre) == ["B", "C", "A"])
+    // MARK: Tarjeta de IA
+
+    private func respuesta(_ cards: [LLMInsightCard]) -> LLMInsightResponse {
+        LLMInsightResponse(heroText: "Hero", cards: cards, funFact: nil)
     }
 
-    @Test func alertas_soloGastos_sinCuentasNiCobertura() {
-        let alertas = L.alertas(
-            presupuestos: [], pagos: [], cobertura: cobertura(alCierre: -200),
-            cuentasEnRojo: [(nombre: "Efectivo", id: nil)], isExpensesOnlyMode: true
-        )
-        #expect(alertas.isEmpty)
+    @Test func tarjetaIA_soloLaQuePideAtencion_conConsejo() {
+        let r = respuesta([
+            LLMInsightCard(icon: "a", text: "Bien", sentiment: "positive", tip: "Sigue"),
+            LLMInsightCard(icon: "b", text: "Sin consejo", sentiment: "attention", tip: nil),
+            LLMInsightCard(icon: "c", text: "Delivery subió", sentiment: "attention", tip: "Pon un tope"),
+        ])
+        #expect(L.tarjetaIA(r) == L.TarjetaIA(texto: "Delivery subió", consejo: "Pon un tope"))
+        #expect(L.tarjetaIA(nil) == nil)
+        #expect(L.tarjetaIA(respuesta([LLMInsightCard(icon: "a", text: "x", sentiment: "neutral", tip: "y")])) == nil)
     }
 
-    @Test func cobertura_sinPagosQueFaltan_noEsAlerta_aunqueElCierreSeaNegativo() {
-        let alertas = L.alertas(presupuestos: [], pagos: [], cobertura: cobertura(alCierre: -200, faltaSalir: 0),
-                                cuentasEnRojo: [], isExpensesOnlyMode: false)
-        #expect(alertas.isEmpty, "Sin pagos por delante no hay pagos que cubrir.")
+    @Test func resumenDelMes_elUltimoGuardadoEsteMes_nuncaElDelMesPasado() {
+        let pasado = respuesta([LLMInsightCard(icon: "a", text: "octubre", sentiment: "attention", tip: "t")])
+        let viejo = respuesta([LLMInsightCard(icon: "a", text: "1 nov", sentiment: "attention", tip: "t")])
+        let nuevo = respuesta([LLMInsightCard(icon: "a", text: "18 nov", sentiment: "attention", tip: "t")])
+        let elegido = L.resumenDelMes([(dia(-25), pasado), (dia(-19), viejo), (dia(-2), nuevo)],
+                                      now: Self.now, calendar: Self.calendar)
+        #expect(elegido == nuevo)
+        #expect(L.resumenDelMes([(dia(-25), pasado)], now: Self.now, calendar: Self.calendar) == nil)
+        #expect(L.resumenDelMes([], now: Self.now, calendar: Self.calendar) == nil)
     }
 
-    @Test func cobertura_queSeVeComoCero_cubre() {
-        #expect(cobertura(alCierre: -0.001).cubre)
-        #expect(!cobertura(alCierre: -1).cubre)
+    /// La tarjeta sale de lo guardado: leer los resúmenes no llama a nadie (no hay `InsightsLLMService` en el camino).
+    @Test func tarjetaIA_seLeeDeLoGuardado_sinLlamarALaIA() throws {
+        let defaults = makeIsolatedDefaults()
+        let respuesta = respuesta([LLMInsightCard(icon: "a", text: "Delivery", sentiment: "attention", tip: "Tope")])
+        let store = StatsAIAutoRefreshStore(defaults: defaults)
+        store.save(respuesta, page: .summary, slot: "ranura", fingerprint: "f",
+                   snapshot: StatsAIAutoRefreshLogic.Snapshot(transactionCount: 1, totals: [1, 2]), now: dia(-1))
+        let tarjeta = SaludFinancieraDetalleCargador.tarjetaIAGuardada(defaults: defaults, now: Self.now,
+                                                                       calendar: Self.calendar)
+        #expect(tarjeta == L.TarjetaIA(texto: "Delivery", consejo: "Tope"))
+        #expect(SaludFinancieraDetalleCargador.tarjetaIAGuardada(defaults: makeIsolatedDefaults(), now: Self.now,
+                                                                 calendar: Self.calendar) == nil)
+
+        let fuentes = try Self.fuente("Yala/App/Views/Panel/Sheets/SaludFinanciera/SaludFinancieraDetalleCargador.swift")
+            + Self.fuente("Yala/App/Views/Panel/Sheets/SaludFinanciera/SaludFinancieraDetalleView.swift")
+        #expect(!fuentes.contains("InsightsLLMService"), "La hoja no puede pedir un resumen nuevo.")
+        #expect(!fuentes.contains("MonthEndBalanceLogic"), "La hoja no usa «Al 30 tendrías».")
     }
 
-    // MARK: Para subir la nota
-
-    private func racha(hoy: Bool) -> L.Racha { L.Racha(dias: hoy ? 3 : 0, tira: [], registroHoy: hoy) }
-
-    @Test func pasos_sinPresupuestosNiPagos_invitaACrearlos() {
-        let score = FinancialScore(total: nil, budget: nil, activity: 100, bills: nil)
-        let pasos = L.pasos(score: score, tienePresupuestos: false, tienePagos: false, racha: racha(hoy: true))
-        #expect(pasos == [.crearPresupuesto, .agregarPagos])
-    }
-
-    @Test func pasos_conPresupuestosQueAunNoCuentan_noPideCrearOtro() {
-        let score = FinancialScore(total: 100, budget: nil, activity: 100, bills: 100)
-        let pasos = L.pasos(score: score, tienePresupuestos: true, tienePagos: true, racha: racha(hoy: true))
-        #expect(pasos.isEmpty)
-    }
-
-    @Test func pasos_sinRegistroHoy_loPide_yLaParteMasFlojaDespues() {
-        let score = FinancialScore(total: 70, budget: 60, activity: 92, bills: 95)
-        let pasos = L.pasos(score: score, tienePresupuestos: true, tienePagos: true, racha: racha(hoy: false))
-        #expect(pasos == [.registrarHoy, .revisarPresupuestos])
-    }
-
-    @Test func pasos_nuncaMasDeDos() {
-        let score = FinancialScore(total: nil, budget: nil, activity: 40, bills: nil)
-        let pasos = L.pasos(score: score, tienePresupuestos: false, tienePagos: false, racha: racha(hoy: false))
-        #expect(pasos.count == L.maximoPasos)
-        #expect(pasos == [.crearPresupuesto, .registrarHoy])
-    }
-
-    @Test func pasos_cadaUnoMueveSuParte() {
-        #expect(L.Paso.crearPresupuesto.parte == .budget)
-        #expect(L.Paso.registrarHoy.parte == .activity)
-        #expect(L.Paso.revisarPagos.parte == .bills)
+    static func fuente(_ ruta: String, file: StaticString = #filePath) throws -> String {
+        let raiz = URL(fileURLWithPath: "\(file)")
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: raiz.appending(path: ruta), encoding: .utf8)
+            .split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
     }
 }
 
@@ -247,40 +335,57 @@ struct SaludFinancieraDetalleTextosTests {
     }
 
     @Test func variantes_hablanASuManera() throws {
-        #expect(try Self.table("es-AR")["saludDetalle.alert.overBudget.detail"]?.hasPrefix("Tocá") == true)
-        #expect(try Self.table("es-ES")["saludDetalle.payments.empty.detail"]?.hasPrefix("Alquiler") == true)
-        #expect(try Self.table("pt-PT")["saludDetalle.streak.keep"]?.hasPrefix("Registe") == true)
+        #expect(try Self.table("es-AR")["saludDetalle.commit.lead"]?.contains("tenés") == true)
+        #expect(try Self.table("pt-PT")["saludDetalle.commit.lead"] != Self.table("pt-BR")["saludDetalle.commit.lead"])
+    }
+
+    /// Ni rojo alarmista ni «No alcanza» en ningún idioma de la hoja nueva.
+    @Test func elEspanol_aconsejaSinAlarma() throws {
+        let es = try Self.table("es")
+        #expect(!es.values.contains { $0.hasPrefix("No alcanza") })
+        #expect(es["saludDetalle.section.howItWorks"] == "¿Cómo se calcula?")
+        #expect(es["saludDetalle.commit.toPay"] == "Te falta pagar este mes")
+        #expect(es["saludDetalle.commit.moneyToday"] == "Tu dinero hoy")
     }
 
     /// Cada clave que lee la app existe en español (una errata en el código devolvería la clave cruda).
     @Test func cadaClaveDelCodigo_existe() throws {
         typealias T = L10n.SaludFinancieraDetalle
-        let leidas = [
-            T.seccionAlertas, T.seccionPresupuestos, T.seccionPagos, T.seccionRacha, T.seccionSubir,
-            T.seccionComoSeCalcula, T.cargando, T.sinAlertasTitulo, T.sinAlertasDetalle, T.pasadoTitulo("x"),
-            T.pasadoDetalle, T.alLimiteTitulo("x"), T.alLimiteDetalle(porcentaje: 90), T.llegoAlLimiteTitulo("x"),
-            T.variosAlLimiteTitulo(3), T.cuentaEnRojoTitulo("x"), T.cuentaEnRojoDetalle, T.vencidoTitulo("x"),
-            T.vencidoDetalle, T.sinCubrirTitulo, T.sinCubrirDetalle, T.presupuestosVacioTitulo,
-            T.presupuestosVacioDetalle, T.presupuestosVacioBoton, T.verTodosPresupuestos(5), T.teQuedan,
-            T.tePasastePor, T.cuando(dias: -1), T.cuando(dias: 0), T.cuando(dias: 1), T.cuando(dias: 4),
-            T.sinPagosCerca, T.pagosVacioTitulo, T.pagosVacioDetalle, T.pagosVacioBoton, T.verTodosPagos, T.cubre,
-            T.noCubre, T.rachaDias(1), T.rachaDias(5), T.rachaHoy, T.rachaMantener, T.rachaEmpezar, T.rachaBoton,
-            T.rachaTira(14), T.diaConRegistro, T.diaSinRegistro, T.pesoDeLaParte("x", porcentaje: 40),
-        ] + [L.crearPresupuesto, .registrarHoy, .agregarPagos, .revisarPresupuestos, .revisarRitmo, .revisarPagos]
-            .map(T.paso)
+        typealias L = SaludFinancieraDetalleLogica
+        let fecha = Date(timeIntervalSince1970: 1_795_000_000)
+        let pago = L.Pago(id: UUID(), nombre: "x", fecha: fecha, dias: -3, monto: 1, moneda: "PEN", montoConvertido: 1,
+                          esAproximado: false)
+        var leidas = [
+            T.cargando, T.seccionComoSeCalcula, T.peso(40), T.capsulaPista, T.unoDentro("x"), T.todosDentro(3),
+            T.todosDentroQueda(3, monto: "1"), T.soloPasado("x", monto: "1"), T.pasadoYOtros("x", monto: "1", otros: 1),
+            T.pasadoYOtros("x", monto: "1", otros: 2), T.variosPasados(2), T.empiezaDespues("x", fecha: fecha),
+            T.verTodosPresupuestos(5), T.teQuedan, T.tePasastePor, T.sinPresupuestos(peso: 40), T.porDondeEmpezar,
+            T.sugerencia("x", monto: "1"), T.crearPresupuesto, T.paraMejorar, T.nadaQueAjustar, T.ajustarTitulo,
+            T.ajustarDetalle("x", veces: 3, periodos: 4, promedio: "1", limite: "2"), T.ajustarBoton,
+            T.recortarTitulo(solo: true), T.recortarTitulo(solo: false), T.recortarDetalle("x", lista: "y"),
+            T.recortarBoton, T.iaEtiqueta, T.iaBoton, T.iaSinResumenTitulo, T.iaSinResumenDetalle, T.lineaPro,
+            T.lineaProBoton, T.compromisosFrase(falta: "1", dinero: "2"), T.compromisosFraseSoloGastos(falta: "1"),
+            T.alcanza(sobra: "1"), T.noAlcanza(mesSiguiente: "x"), T.teFaltaPagar, T.tuDineroHoy, T.faltarian("1"),
+            T.ingreso("1", de: "x", fecha: fecha, mas: 0), T.ingreso("1", de: "x", fecha: fecha, mas: 1),
+            T.ingreso("1", de: "x", fecha: fecha, mas: 2), T.vencido(pago), T.cuentaEnNegativo("x"),
+            T.pendientes(1, hasta: fecha), T.pendientes(3, hasta: fecha), T.revisarOMover, T.verTusPagos,
+            T.todoPagado(fecha), T.proximoPago("x", fecha: fecha), T.sinPagos(dinero: "1"), T.sinPagosSinDinero,
+            T.cobrosTitulo, T.cobros(["a"]), T.cobros(["a", "b"]), T.cobrosBoton, T.agregarPago, T.cuando(dias: -1),
+            T.cuando(dias: 0), T.cuando(dias: 1), T.cuando(dias: 4), T.rachaDias(1), T.rachaDias(5), T.rachaHoy,
+            T.rachaMantener, T.rachaEmpezar, T.rachaBoton, T.rachaTira(14),
+            T.vencido(L.Pago(id: UUID(), nombre: "x", fecha: fecha, dias: -1, monto: 1, moneda: "PEN",
+                             montoConvertido: 1, esAproximado: false)),
+        ]
+        leidas += L.Seccion.allCases.map(T.seccion)
+        leidas += [L.Estado.bien, .paraRevisar, .sinDatos].map(T.estado)
+        leidas += [L.MotivoSinNota.creaUno, .desde(fecha), .agregaPagos, .registraHoy, .sinDatos].map(T.motivo)
+        leidas += [L.Consejo.noAlcanza(finDeMes: fecha), .presupuestoPasado(nombre: "x"), .variosPasados(2),
+                   .pagoVencido(nombre: "x"), .creaPresupuesto, .presupuestoEmpiezaACuenta(fecha), .agregaPagos,
+                   .registraMasSeguido, .todoBien].map(T.consejo)
         for texto in leidas {
-            #expect(!texto.hasPrefix("saludDetalle."), "Clave sin texto: \(texto)")
+            #expect(!texto.contains("saludDetalle."), "Clave sin texto: \(texto)")
         }
-        #expect(try Self.table("es").count == 54)
-    }
-
-    private typealias L = SaludFinancieraDetalleLogica.Paso
-
-    @Test func elEspanol_diceLoQueSePidio() throws {
-        let es = try Self.table("es")
-        #expect(es["saludDetalle.section.howItWorks"] == "¿Cómo se calcula?")
-        #expect(es["saludDetalle.budgets.empty.cta"] == "Crear presupuesto")
-        #expect(es["saludDetalle.streak.days.one"] == "%d día seguido")
+        #expect(try Self.table("es").count == 91)
     }
 
     @Test(arguments: locales)
@@ -288,7 +393,7 @@ struct SaludFinancieraDetalleTextosTests {
         let path = try #require(Bundle.main.path(forResource: locale, ofType: "lproj"), "\(locale).lproj no está.")
         let bundle = try #require(Bundle(path: path))
         let resolution = LocaleResolution(bundle: bundle, parentBundle: nil, locale: Locale(identifier: locale))
-        let texto = L10n.SaludFinancieraDetalle.string("saludDetalle.section.alerts", resolution: resolution)
-        #expect(texto == (try Self.table(locale)["saludDetalle.section.alerts"]))
+        let texto = L10n.SaludFinancieraDetalle.string("saludDetalle.section.commitments", resolution: resolution)
+        #expect(texto == (try Self.table(locale)["saludDetalle.section.commitments"]))
     }
 }

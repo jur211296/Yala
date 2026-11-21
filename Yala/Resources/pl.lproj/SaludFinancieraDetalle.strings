@@ -2,61 +2,106 @@
   SaludFinancieraDetalle.strings
   Yala
 
-  La hoja de la nota de salud (pedido de Jürgen del 17-nov-2026): alertas, presupuestos, próximos pagos, racha y qué
-  hacer para subir la nota. Tabla propia, leída con el idioma de la app (`L10n.SaludFinancieraDetalle`).
+  La hoja de la nota de salud en tres secciones y en tono de consejero (opción A de Jürgen, 20-nov-2026): la nota, y
+  Presupuestos, Compromisos y Ritmo, cada una con su estado, lo suyo y qué hacer. Tabla propia, leída con el idioma de la
+  app (`L10n.SaludFinancieraDetalle`).
 */
 
-"saludDetalle.section.alerts" = "Do sprawdzenia";
-"saludDetalle.section.budgets" = "Twoje budżety";
-"saludDetalle.section.payments" = "Najbliższe płatności";
-"saludDetalle.section.streak" = "Twoja seria";
-"saludDetalle.section.improve" = "Jak podnieść ocenę";
+"saludDetalle.loading" = "Wczytywanie…";
+"saludDetalle.section.budgets" = "Budżety";
+"saludDetalle.section.commitments" = "Zobowiązania";
+"saludDetalle.section.rhythm" = "Rytm";
 "saludDetalle.section.howItWorks" = "Jak jest liczona?";
-"saludDetalle.alerts.none.title" = "Dziś nie ma nic do sprawdzenia";
-"saludDetalle.alerts.none.detail" = "Budżety, płatności i konta są w porządku.";
-"saludDetalle.alert.overBudget.title" = "Przekroczono %@";
-"saludDetalle.alert.overBudget.detail" = "Dotknij, by zobaczyć, na co poszło.";
-"saludDetalle.alert.atLimit.title" = "%@ jest blisko limitu";
-"saludDetalle.alert.atLimit.detail" = "Masz %d %% ustalonej kwoty.";
-"saludDetalle.alert.negativeAccount.title" = "%@ jest na minusie";
-"saludDetalle.alert.negativeAccount.detail" = "Sprawdź saldo albo zapisz, czego brakuje.";
-"saludDetalle.alert.overdue.title" = "%@ jest po terminie";
-"saludDetalle.alert.overdue.detail" = "Oznacz jako zapłacone lub pomiń.";
-"saludDetalle.alert.notCovered.title" = "Płatności z tego miesiąca nie są pokryte";
-"saludDetalle.alert.notCovered.detail" = "Z tym, co masz, i tym, co zostało, na koniec miesiąca miałbyś:";
-"saludDetalle.budgets.empty.title" = "Nie masz jeszcze budżetów";
-"saludDetalle.budgets.empty.detail" = "Ustal limit na to, na co wydajesz najwięcej, a Yala ostrzeże cię przed przekroczeniem.";
-"saludDetalle.budgets.empty.cta" = "Utwórz budżet";
+"saludDetalle.section.weight" = "Stanowi %d %% twojej oceny";
+"saludDetalle.status.good" = "Dobrze";
+"saludDetalle.status.review" = "Do sprawdzenia";
+"saludDetalle.status.noData" = "Brak danych";
+
+"saludDetalle.capsule.createOne" = "Utwórz";
+"saludDetalle.capsule.since" = "Od %@";
+"saludDetalle.capsule.addPayments" = "Dodaj płatności";
+"saludDetalle.capsule.recordToday" = "Dodaj wpis dziś";
+"saludDetalle.capsule.noData" = "Brak danych";
+"saludDetalle.capsule.hint" = "Przejdź do sekcji";
+
+"saludDetalle.advice.notEnough" = "Twoje dzisiejsze pieniądze nie pokrywają wszystkiego, co zaplanowano do zapłaty do %@. Poniżej są płatności, które możesz przesunąć.";
+"saludDetalle.advice.overBudget" = "%@ został w tym okresie przekroczony. Poniżej zobaczysz, jak wrócić do limitu.";
+"saludDetalle.advice.overMany" = "Liczba przekroczonych w tym okresie budżetów: %d. Poniżej zobaczysz, jak wrócić do limitu.";
+"saludDetalle.advice.overdue" = "Termin płatności %@ już minął. Jeśli już zapłacono, oznacz ją jako opłaconą.";
+"saludDetalle.advice.createBudget" = "Z budżetem twoja ocena byłaby pełna: to część, która waży najwięcej.";
+"saludDetalle.advice.budgetStarts" = "Twój budżet zacznie się liczyć do oceny %@.";
+"saludDetalle.advice.addPayments" = "Dodaj swoje płatności, by wiedzieć, czy starczy do końca miesiąca.";
+"saludDetalle.advice.rhythm" = "Najbardziej podniesie twoją ocenę teraz częstsze dodawanie wpisów.";
+"saludDetalle.advice.allGood" = "Twoje budżety mieszczą się w limicie, a to, co zostało do zapłaty w tym miesiącu, jest pokryte.";
+
+"saludDetalle.budgets.oneWithin" = "%@ mieści się w limicie.";
+"saludDetalle.budgets.allWithin" = "Wszystkie twoje budżety (%d) mieszczą się w limicie.";
+"saludDetalle.budgets.allWithinLeft" = "Wszystkie twoje budżety (%d) mieszczą się w limicie. W sumie zostaje ci %@.";
+"saludDetalle.budgets.onlyOver" = "%@ został przekroczony o %@.";
+"saludDetalle.budgets.overOneOther" = "%@ został przekroczony o %@. Twój drugi budżet mieści się w limicie.";
+"saludDetalle.budgets.overOthers" = "%@ został przekroczony o %@. Pozostałe budżety (%d) mieszczą się w limicie.";
+"saludDetalle.budgets.manyOver" = "Liczba przekroczonych budżetów: %d. Poniżej zobaczysz, jak wrócić do limitu.";
+"saludDetalle.budgets.startsLater" = "%@ zacznie się liczyć do oceny %@. Już teraz możesz zobaczyć, jak idzie.";
 "saludDetalle.budgets.seeAll" = "Zobacz wszystkie (%d)";
-"saludDetalle.budgets.left" = "Zostało";
+"saludDetalle.budgets.left" = "Zostaje ci";
 "saludDetalle.budgets.over" = "Przekroczono o";
+"saludDetalle.budgets.empty.lead" = "Nie masz jeszcze budżetów. Ta część stanowi %d %% twojej oceny i dziś się nie liczy.";
+"saludDetalle.budgets.empty.tipTitle" = "Od czego zacząć";
+"saludDetalle.budgets.empty.tip" = "%@ to kategoria, na którą wydajesz najwięcej: średnio %@ miesięcznie. Limit tam ostrzeże cię, zanim go przekroczysz.";
+"saludDetalle.budgets.empty.cta" = "Utwórz budżet";
+
+"saludDetalle.improve.title" = "Jak poprawić tę część";
+"saludDetalle.improve.nothing" = "Na razie nie ma czego poprawiać.";
+"saludDetalle.improve.adjust.title" = "Dopasuj limit do rzeczywistości";
+"saludDetalle.improve.adjust.detail" = "%1$@ został przekroczony w %2$d z ostatnich %3$d okresów, średnio o %4$@. Jeśli to twoje zwykłe wydatki, limit %5$@ ostrzeże cię na czas.";
+"saludDetalle.improve.adjust.cta" = "Zmień limit";
+"saludDetalle.improve.cut.title" = "Albo ogranicz tam, gdzie waży najwięcej";
+"saludDetalle.improve.cut.titleAlone" = "Ogranicz tam, gdzie waży najwięcej";
+"saludDetalle.improve.cut.detail" = "W tym okresie, w ramach %@: %@.";
+"saludDetalle.improve.cut.cta" = "Zobacz we Wpisach";
+"saludDetalle.improve.ai.label" = "Yala AI · Twoje podsumowanie tego miesiąca";
+"saludDetalle.improve.ai.cta" = "Zobacz podsumowanie";
+"saludDetalle.improve.ai.none.title" = "Twoje podsumowanie z AI";
+"saludDetalle.improve.ai.none.detail" = "W Statystykach dowiesz się, na co poszły pieniądze w tym miesiącu.";
+"saludDetalle.improve.pro" = "Z Yala Pro twoje podsumowanie z AI mówi, na co poszły pieniądze.";
+"saludDetalle.improve.pro.cta" = "Zobacz Pro";
+
+"saludDetalle.commit.lead" = "Do zapłaty w tym miesiącu zostało %@, a dziś masz %@.";
+"saludDetalle.commit.leadExpensesOnly" = "Do zapłaty w tym miesiącu zostało %@.";
+"saludDetalle.commit.enough" = "Starcza, a zostałoby ci %@.";
+"saludDetalle.commit.notEnough" = "Możesz przesunąć jakąś płatność na %@ albo sprawdzić, czy któraś już nie obowiązuje.";
+"saludDetalle.commit.toPay" = "Zostało do zapłaty w tym miesiącu";
+"saludDetalle.commit.moneyToday" = "Twoje pieniądze dziś";
+"saludDetalle.commit.short" = "Zabrakłoby %@, by pokryć wszystko.";
+"saludDetalle.commit.income" = "Oczekujesz też %1$@ od %2$@ dnia %3$@.";
+"saludDetalle.commit.incomeMoreOne" = "Oczekujesz też %1$@ od %2$@ dnia %3$@ oraz jeszcze jednego wpływu.";
+"saludDetalle.commit.incomeMoreOther" = "Oczekujesz też %1$@ od %2$@ dnia %3$@ oraz kolejne wpływy (%4$d).";
+"saludDetalle.commit.overdueYesterday" = "Termin płatności %@ minął wczoraj. Jeśli już zapłacono, oznacz ją jako opłaconą.";
+"saludDetalle.commit.overdueDate" = "Termin płatności %@ minął %@. Jeśli już zapłacono, oznacz ją jako opłaconą.";
+"saludDetalle.commit.negativeAccount" = "Twoje konto %@ jest na minusie. Możesz przelać na nie pieniądze z innego konta.";
+"saludDetalle.commit.pendingOne" = "1 oczekująca płatność do %@";
+"saludDetalle.commit.pendingOther" = "Oczekujące płatności: %d, do %@";
+"saludDetalle.commit.review" = "Sprawdź lub przesuń płatności";
+"saludDetalle.commit.seeAll" = "Zobacz zaplanowane płatności";
+"saludDetalle.commit.allPaid" = "Wszystko, co zaplanowano na %@, jest już opłacone.";
+"saludDetalle.commit.next" = "Twoja następna płatność to %@, dnia %@.";
+"saludDetalle.commit.empty.lead" = "Nie masz jeszcze zaplanowanych płatności. Dzięki nim powiem ci, czy twoich dzisiejszych pieniędzy (%@) starczy do końca miesiąca.";
+"saludDetalle.commit.empty.leadNoMoney" = "Nie masz jeszcze zaplanowanych płatności. Dzięki nim powiem ci, czy starczy do końca miesiąca.";
+"saludDetalle.commit.recurring.title" = "Są obciążenia, które się powtarzają";
+"saludDetalle.commit.recurring.one" = "%@ pojawia się co miesiąc w twoich wpisach.";
+"saludDetalle.commit.recurring.other" = "%@ pojawiają się co miesiąc w twoich wpisach.";
+"saludDetalle.commit.recurring.cta" = "Sprawdź";
+"saludDetalle.commit.empty.cta" = "Dodaj płatność";
+
 "saludDetalle.payments.today" = "Dziś";
 "saludDetalle.payments.tomorrow" = "Jutro";
 "saludDetalle.payments.inDays" = "Za %d dni";
 "saludDetalle.payments.overdue" = "Po terminie";
-"saludDetalle.payments.none" = "Brak płatności w ciągu dwóch tygodni.";
-"saludDetalle.payments.empty.title" = "Nie masz jeszcze planowanych płatności";
-"saludDetalle.payments.empty.detail" = "Czynsz, prąd, subskrypcje: Yala przypomni o każdej przed terminem.";
-"saludDetalle.payments.empty.cta" = "Dodaj płatność";
-"saludDetalle.payments.seeAll" = "Zobacz wszystkie";
-"saludDetalle.payments.covered" = "Wystarczy na płatności w tym miesiącu.";
-"saludDetalle.payments.notCovered" = "Nie wystarczy na płatności w tym miesiącu.";
+
 "saludDetalle.streak.days.one" = "%d dzień z rzędu";
-"saludDetalle.streak.days.other" = "Dni z rzędu: %d";
-"saludDetalle.streak.today" = "Dziś już zapisałeś. Tak trzymaj!";
-"saludDetalle.streak.keep" = "Zapisz coś dziś, by jej nie stracić.";
-"saludDetalle.streak.start" = "Zapisz dziś transakcję, by ją zacząć.";
-"saludDetalle.streak.cta" = "Zapisz";
-"saludDetalle.streak.caption" = "Ostatnie dni: %d";
-"saludDetalle.streak.dayRecorded" = "Z wpisami";
-"saludDetalle.streak.dayEmpty" = "Bez wpisów";
-"saludDetalle.improve.crearPresupuesto" = "Utwórz pierwszy budżet";
-"saludDetalle.improve.registrarHoy" = "Zapisz dziś transakcję";
-"saludDetalle.improve.agregarPagos" = "Dodaj stałe płatności";
-"saludDetalle.improve.revisarPresupuestos" = "Sprawdź przekroczone budżety";
-"saludDetalle.improve.revisarRitmo" = "Zapisuj częściej";
-"saludDetalle.improve.revisarPagos" = "Sprawdź płatności z tego miesiąca";
-"saludDetalle.improve.weight" = "%@ to %d %% oceny";
-"saludDetalle.loading" = "Ładowanie…";
-"saludDetalle.alert.reachedLimit.title" = "%@ osiągnął limit";
-"saludDetalle.alert.atLimitMany.title" = "Budżety blisko limitu: %d";
+"saludDetalle.streak.days.other" = "%d dni z rzędu";
+"saludDetalle.streak.today" = "Masz już dzisiejszy wpis. Tak trzymaj!";
+"saludDetalle.streak.keep" = "Nie masz jeszcze dzisiejszego wpisu. Jeśli dodasz coś przed północą, twoja seria trwa dalej.";
+"saludDetalle.streak.start" = "Dodaj dziś transakcję, aby zacząć serię.";
+"saludDetalle.streak.cta" = "Dodaj wpis";
+"saludDetalle.streak.caption" = "Ostatnie %d dni";
