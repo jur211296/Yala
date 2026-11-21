@@ -330,42 +330,62 @@ struct FavoriteEditorView: View {
                 .padding(.horizontal, DS.Spacing.xxxxl)
                 .tint(Color.primary)
 
-            // Description field
+            // La descripción, con el estilo de la hoja B1 de Nuevo registro.
             TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
-                .font(DS.Typography.title)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 280)
-                .tint(Color.primary)
+                .recordDescriptionStyle()
 
-            // Amount display
+            // El monto con la cápsula de moneda a su izquierda (B1).
             amountDisplay
 
-            // Nature chip (visible when subcategory is selected)
-            if selectedSubcategory != nil, transactionType != .income, !isTransfer {
-                NeedEditChip(
-                    need: selectedNeed ?? selectedSubcategory?.need ?? .unclassified
-                ) {
-                    showNeedSelector = true
-                }
-                .padding(.top, DS.Spacing.sm)
+            // La subcategoría bajo el monto, rellena, con «● Categoría · ● Necesidad ▾» (B1). Una transferencia no lleva.
+            if !isTransfer {
+                subcategoryBlock
             }
         }
     }
 
-    private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            Text(currencySymbol)
-                .font(.system(size: currencySymbolSize, weight: .medium, design: .rounded))
-                .foregroundStyle(amountColor.opacity(0.7))
+    private var subcategoryBlock: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                fillsWhenSelected: true
+            ) {
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("favorite_editor_subcategory_chip")
 
-            TextField("0.00", text: $amountString)
+            if let subcategory = selectedSubcategory {
+                CategoryNeedLine(
+                    category: subcategory.safeCategory,
+                    need: transactionType != .income ? (selectedNeed ?? subcategory.need) : nil,
+                    onNeedTap: { showNeedSelector = true }
+                )
+            }
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+    }
+
+    private var amountDisplay: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            // La moneda es la de la cuenta: la cápsula la dice y no abre nada.
+            AmountCurrencyCapsule(
+                label: currencySymbol,
+                options: [],
+                current: selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode,
+                identifierPrefix: "favorite_editor",
+                onChoose: { _ in }
+            )
+
+            TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
-                .frame(width: 250)
+                .fixedSize(horizontal: true, vertical: false)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     if isFocused && (amountString == "0" || amountString == "0.00" || amountString == "0,00") {
                         amountString = ""
@@ -398,91 +418,51 @@ struct FavoriteEditorView: View {
 
     // MARK: - Bottom Chips
 
-    /// El contenedor de los formularios de registro (registro unificado, 2026-10-31): filas que bajan cuando no caben, en
-    /// vez de una fila con desplazamiento lateral, y lo elegido relleno (`SelectionChip`).
+    /// La fila de abajo de la hoja B1, siempre en una línea: Cuenta · # (sin fecha: un favorito no la tiene). En una
+    /// transferencia, Origen · Destino. Si no cabe, se truncan los nombres de las cuentas.
     private var bottomChips: some View {
-        RecordSelectorChips(spacing: DS.Spacing.sm) {
+        OneLineChipRow(spacing: DS.Spacing.sm) {
             if isTransfer {
-                transferChips
-            } else {
-                expenseIncomeChips
-            }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-    }
-
-    /// Origen y destino, con los mismos colores e iconos que el formulario de registro (`NewTransactionView`). Sin
-    /// categoría ni etiquetas: una transferencia no las lleva.
-    @ViewBuilder
-    private var transferChips: some View {
-        SelectionChip(
-            icon: "arrow.up.circle",
-            text: selectedAccount?.name ?? L10n.Transaction.origin,
-            isSelected: selectedAccount != nil,
-            color: selectedAccount != nil ? Color.hotPink : nil,
-            fillsWhenSelected: true
-        ) {
-            showAccountSelector = true
-        }
-        .accessibilityIdentifier("favorite_editor_source_chip")
-
-        SelectionChip(
-            icon: "arrow.down.circle",
-            text: selectedDestinationAccount?.name ?? L10n.Transaction.destination,
-            isSelected: selectedDestinationAccount != nil,
-            color: selectedDestinationAccount != nil ? Color.electricIndigo : nil,
-            fillsWhenSelected: true
-        ) {
-            showDestinationAccountSelector = true
-        }
-        .accessibilityIdentifier("favorite_editor_destination_chip")
-    }
-
-    @ViewBuilder
-    private var expenseIncomeChips: some View {
-        // Account chip
-        SelectionChip(
-            icon: "creditcard",
-            text: selectedAccount?.name ?? L10n.Transaction.account,
-            isSelected: selectedAccount != nil,
-            color: selectedAccount.map { Color(hex: $0.colorHex) }
-        ) {
-            showAccountSelector = true
-        }
-
-        // Subcategory chip
-        SelectionChip(
-            icon: "tag",
-            text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-            isSelected: selectedSubcategory != nil,
-            color: subcategoryChipColor
-        ) {
-            showSubcategorySelector = true
-        }
-        .accessibilityIdentifier("favorite_editor_subcategory_chip")
-
-        // Tags chips
-        if selectedTags.isEmpty {
-            SelectionChip(
-                icon: "number",
-                text: L10n.Transaction.tags,
-                isSelected: false,
-                color: nil
-            ) {
-                showTagSelector = true
-            }
-        } else {
-            ForEach(selectedTags, id: \.persistentModelID) { tag in
-                SelectionChip(
-                    icon: "number",
-                    text: tag.name,
-                    isSelected: true,
-                    color: theme.tagChip
+                RecordValueChip(
+                    icon: "arrow.up.circle",
+                    iconColor: Color.hotPink,
+                    text: selectedAccount?.name ?? L10n.Transaction.origin,
+                    isSet: selectedAccount != nil
                 ) {
+                    showAccountSelector = true
+                }
+                .accessibilityIdentifier("favorite_editor_source_chip")
+                .shrinksInChipRow()
+
+                RecordValueChip(
+                    icon: "arrow.down.circle",
+                    iconColor: Color.electricIndigo,
+                    text: selectedDestinationAccount?.name ?? L10n.Transaction.destination,
+                    isSet: selectedDestinationAccount != nil
+                ) {
+                    showDestinationAccountSelector = true
+                }
+                .accessibilityIdentifier("favorite_editor_destination_chip")
+                .shrinksInChipRow()
+            } else {
+                RecordValueChip(
+                    icon: "creditcard",
+                    iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
+                    text: selectedAccount?.name ?? L10n.Transaction.account,
+                    isSet: selectedAccount != nil
+                ) {
+                    showAccountSelector = true
+                }
+                .accessibilityIdentifier("favorite_editor_account_chip")
+                .shrinksInChipRow()
+
+                TagCountChip(tags: selectedTags) {
                     showTagSelector = true
                 }
+                .accessibilityIdentifier("favorite_editor_tags_chip")
             }
         }
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var subcategoryChipColor: Color? {

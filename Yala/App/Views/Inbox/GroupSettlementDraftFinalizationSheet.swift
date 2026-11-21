@@ -59,14 +59,17 @@ struct GroupSettlementDraftFinalizationSheet: View {
                 onFinalize: { handleFinalize() },
                 footnote: collectedLine
             ) {
-                SelectionChip(
+                // La cuenta, neutra con su icono de color, en la fila de una línea (hoja B1).
+                RecordValueChip(
                     icon: "creditcard",
+                    iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
                     text: selectedAccount?.name ?? accountLabel,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
+                    isSet: selectedAccount != nil
                 ) {
                     showAccountSelector = true
                 }
+                .accessibilityIdentifier("group_draft_account_chip")
+                .shrinksInChipRow()
             }
             .navigationTitle(L10n.Inbox.GroupSettlementDraft.title)
             .navigationBarTitleDisplayMode(.inline)

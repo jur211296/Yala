@@ -177,7 +177,11 @@ struct RecordDateValueChip: View {
 /// Las etiquetas en la fila de abajo: «#» sin ninguna; con ellas, su número («#2») sobre la cápsula neutra, con la «#» en
 /// el color de la primera. Las pastillas por etiqueta con ✕ viven en la hoja de etiquetas (B1).
 struct TagCountChip: View {
+    @Environment(\.yalaTheme) private var theme
     let tags: [Tag]
+    /// Hay una etiqueta recién creada por Yala IA (aprobación de la Bandeja): un punto de acento sobre el chip y «Nueva»
+    /// para VoiceOver, lo que decía la pastilla de esa etiqueta antes de la B1.
+    var marksNew: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -198,11 +202,20 @@ struct TagCountChip: View {
             .padding(.vertical, DS.Spacing.sm)
             .frame(minWidth: 40)
             .background(.thCard, in: Capsule())
+            .overlay(alignment: .topTrailing) {
+                if marksNew {
+                    Circle()
+                        .fill(theme.accent)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .fixedSize()
         .accessibilityLabel(TagCountChipLogic.accessibilityLabel(names: tags.map(\.name)))
+        .accessibilityValue(marksNew ? L10n.Inbox.newTag : "")
         .accessibilityAddTraits(tags.isEmpty ? [] : .isSelected)
     }
 }
@@ -215,10 +228,24 @@ struct AmountCurrencyCapsule: View {
     let label: String
     let options: [AmountCurrencyOption]
     let current: String
+    /// Prefijo de los identificadores de XCUITest: la cápsula vive también en la aprobación de la Bandeja, en Grupos y en
+    /// el editor de favorito («draft_editor», «group_expense»…). Por defecto, los de Nuevo registro.
+    var identifierPrefix: String = "new_transaction"
+    /// Lo que se pone en «S/ ▾» en vez del menú: una hoja propia (la moneda del gasto de Grupos). Con ella, la flecha sale
+    /// aunque no haya opciones.
+    var onTapInsteadOfMenu: (() -> Void)? = nil
     let onChoose: (String) -> Void
 
     var body: some View {
-        if options.count > 1 {
+        if let onTapInsteadOfMenu {
+            Button(action: onTapInsteadOfMenu) {
+                capsule(showsChevron: true)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(NuevoRegistroB1Text.string("currency.a11y"))
+            .accessibilityValue(current)
+            .accessibilityIdentifier("\(identifierPrefix)_currency_capsule")
+        } else if options.count > 1 {
             Menu {
                 ForEach(options) { option in
                     Button {
@@ -230,7 +257,7 @@ struct AmountCurrencyCapsule: View {
                             Text(menuTitle(option))
                         }
                     }
-                    .accessibilityIdentifier("new_transaction_currency_option_\(option.currencyCode)")
+                    .accessibilityIdentifier("\(identifierPrefix)_currency_option_\(option.currencyCode)")
                 }
             } label: {
                 capsule(showsChevron: true)
@@ -238,13 +265,13 @@ struct AmountCurrencyCapsule: View {
             .buttonStyle(.plain)
             .accessibilityLabel(NuevoRegistroB1Text.string("currency.a11y"))
             .accessibilityValue(current)
-            .accessibilityIdentifier("new_transaction_currency_capsule")
+            .accessibilityIdentifier("\(identifierPrefix)_currency_capsule")
         } else {
             capsule(showsChevron: false)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(NuevoRegistroB1Text.string("currency.a11y"))
                 .accessibilityValue(current)
-                .accessibilityIdentifier("new_transaction_currency_capsule")
+                .accessibilityIdentifier("\(identifierPrefix)_currency_capsule")
         }
     }
 

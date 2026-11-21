@@ -533,12 +533,36 @@ struct GroupExpenseFormView: View {
     // MARK: - Central Content
 
     /// Fecha, descripción y monto en el orden, el tamaño y el aire de Nuevo registro; debajo, quién paga y cómo se reparte.
+    /// Como la hoja B1 de Nuevo registro: la descripción, el monto con la cápsula de moneda, la subcategoría bajo el monto
+    /// con su categoría y, después, lo propio de Grupos (quién pagó y el reparto). La fecha baja a la fila de abajo.
     private var centralContent: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            dateChip
+        VStack(spacing: DS.Spacing.xl) {
             descriptionField
             amountDisplay
+            subcategoryBlock
             whoPaysCard
+        }
+    }
+
+    /// La subcategoría rellena de su color y, elegida, «● Categoría» (B1). Sin necesidad: en Grupos no se elige, como en
+    /// un gasto de grupo abierto desde Nuevo registro.
+    private var subcategoryBlock: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SelectionChip(
+                icon: "tag",
+                text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: viewModel.selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                fillsWhenSelected: true
+            ) {
+                dismissKeyboard()
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("group_expense_subcategory_chip")
+
+            if let subcategory = viewModel.selectedSubcategory {
+                CategoryNeedLine(category: subcategory.safeCategory, need: nil, onNeedTap: {})
+            }
         }
     }
 
@@ -546,7 +570,9 @@ struct GroupExpenseFormView: View {
 
     /// La pastilla de fecha de los tres formularios (registro unificado); antes iba en letra pequeña junto al grupo.
     private var dateChip: some View {
-        RecordPillButton(icon: "calendar", text: dateChipText) {
+        // En la fila de abajo, como «Hoy» de la hoja B1.
+        RecordDateValueChip(text: dateChipText) {
+            dismissKeyboard()
             showDatePicker = true
         }
         // Al pasar un registro, la fecha es la suya: cambiarla aquí cambiaría el registro.
@@ -607,7 +633,7 @@ struct GroupExpenseFormView: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
             currencyChip
 
             // El rosa del gasto de los tres formularios de registro (registro unificado); antes, el acento del tema. Sin
@@ -663,28 +689,21 @@ struct GroupExpenseFormView: View {
         }
     }
 
+    /// La cápsula «S/ ▾» de la hoja B1; en Grupos abre su hoja de monedas (la del grupo y las demás).
     private var currencyChip: some View {
-        Button {
-            dismissKeyboard()
-            showCurrencyPicker = true
-        } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Text(displayedCurrency)
-                    .font(DS.Typography.headline)
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.labelSmall)
-            }
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, DS.FormRow.paddingV)
-            .padding(.vertical, DS.Spacing.sm)
-            .background(Capsule().fill(.thCard))
-        }
-        .buttonStyle(.plain)
+        AmountCurrencyCapsule(
+            label: displayedCurrency,
+            options: [],
+            // Lote 06 de mejoras 2.3: VoiceOver dice cuál, no solo «Moneda».
+            current: AppLocale.current.localizedString(forCurrencyCode: viewModel.currencyCode) ?? viewModel.currencyCode,
+            identifierPrefix: "group_expense",
+            onTapInsteadOfMenu: {
+                dismissKeyboard()
+                showCurrencyPicker = true
+            },
+            onChoose: { _ in }
+        )
         .disabled(viewModel.isConversion)
-        .accessibilityLabel(L10n.Groups.Expense.currency)
-        // Lote 06 de mejoras 2.3: decía «Moneda» sin decir cuál.
-        .accessibilityValue(AppLocale.current.localizedString(forCurrencyCode: viewModel.currencyCode)
-                            ?? viewModel.currencyCode)
     }
 
     /// «S/ 400.00», o «sin importe» con el campo vacío.
@@ -974,20 +993,22 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Bottom Chips
 
-    /// Los selectores de abajo, con las pastillas y el contenedor de Nuevo registro (registro unificado, opción A): la
-    /// cuenta, cuando pagas tú (Caso A con el puente activo), y la subcategoría, que es opcional. Sin líneas de moneda: la
-    /// moneda va en el signo del monto y el selector de cuentas ya se filtra a ella. La cuenta conserva el identificador
-    /// de la fila que sustituye (`group_expense_account_row`) y la marca de las pastillas cuando falta. Debajo, lo que de
-    /// verdad pasa en tus registros cuando pagas tú.
+    /// La fila de abajo, como la hoja B1 de Nuevo registro: la fecha y la cuenta, cuando pagas tú (Caso A con el puente
+    /// activo), en una sola línea; si no cabe, se trunca el nombre de la cuenta. La subcategoría subió bajo el monto. La
+    /// cuenta conserva el identificador de la fila que sustituyó (`group_expense_account_row`) y la marca cuando falta.
+    /// Debajo, lo que de verdad pasa en tus registros cuando pagas tú.
     private var bottomChips: some View {
         VStack(spacing: DS.Spacing.sm) {
-            RecordSelectorChips(spacing: DS.Spacing.sm) {
+            // La fila de abajo de la hoja B1, siempre en una línea: Hoy · Cuenta. Sin «#»: Grupos no lleva etiquetas.
+            OneLineChipRow(spacing: DS.Spacing.sm) {
+                dateChip
+
                 if viewModel.isAccountRequired {
-                    SelectionChip(
+                    RecordValueChip(
                         icon: "creditcard",
+                        iconColor: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
                         text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
-                        isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
+                        isSet: viewModel.selectedAccount != nil,
                         isMissing: markedMissingField == .account
                     ) {
                         dismissKeyboard()
@@ -996,20 +1017,10 @@ struct GroupExpenseFormView: View {
                     // Al pasar un registro, la cuenta es la suya y se queda.
                     .disabled(viewModel.isConversion)
                     .accessibilityIdentifier("group_expense_account_row")
+                    .shrinksInChipRow()
                 }
-
-                SelectionChip(
-                    icon: "tag",
-                    text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                    isSelected: viewModel.selectedSubcategory != nil,
-                    color: subcategoryChipColor
-                ) {
-                    dismissKeyboard()
-                    showSubcategorySelector = true
-                }
-                .accessibilityIdentifier("group_expense_subcategory_chip")
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
 
             outflowLine
         }

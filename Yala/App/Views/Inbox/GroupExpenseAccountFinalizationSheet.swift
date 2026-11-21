@@ -82,14 +82,17 @@ struct GroupExpenseAccountFinalizationSheet: View {
                         GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
                     )
             ) {
-                SelectionChip(
+                // La cuenta, neutra con su icono de color, en la fila de una línea (hoja B1).
+                RecordValueChip(
                     icon: "creditcard",
+                    iconColor: selectedAccount.map { Color(hex: $0.colorHex) },
                     text: selectedAccount?.name ?? L10n.Inbox.GroupExpenseAccountDraft.assignAccount,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
+                    isSet: selectedAccount != nil
                 ) {
                     showAccountSelector = true
                 }
+                .accessibilityIdentifier("group_draft_account_chip")
+                .shrinksInChipRow()
                 if split.offersSplit && !split.isSplitting {
                     GroupDraftSplitChip { split.start(selectedSubcategoryID: nil) }
                 }

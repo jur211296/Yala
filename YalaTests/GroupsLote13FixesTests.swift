@@ -22,8 +22,11 @@ struct GroupsLote13FixesTests {
 
     @Test func settlementForm_accountSectionIsGatedByThePayer() throws {
         let source = try Self.source("Yala/App/Views/Groups/SettlementFormView.swift")
-        #expect(Self.normalized(source).contains(
-            "if sessionState.hasPrivateSession && bridgeEnabled && SettlementFormAccountLogic.asksForAccount( currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID) {"))
+        // Desde la hoja B1 (20-nov) la condición vive en `asksForAccount` y la cuenta es un chip de la fila de abajo.
+        let code = Self.normalized(source)
+        #expect(code.contains(
+            "sessionState.hasPrivateSession && bridgeEnabled && SettlementFormAccountLogic.asksForAccount( currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID)"))
+        #expect(code.contains("if asksForAccount {"))
     }
 
     @Test func settlementForm_withoutIdentity_stillAsks() {

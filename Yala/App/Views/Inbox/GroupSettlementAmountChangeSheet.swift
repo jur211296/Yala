@@ -64,13 +64,15 @@ struct GroupSettlementAmountChangeSheet: View {
                      action: { handleKeep() })
                 }
             ) {
-                SelectionChip(
+                // Solo lectura: la cuenta del pago, neutra con su icono de color (hoja B1).
+                RecordValueChip(
                     icon: "creditcard",
+                    iconColor: target?.accountColorHex.map { Color(hex: $0) },
                     text: target?.accountName ?? draft.displayAccountName ?? "",
-                    isSelected: true,
-                    color: target?.accountColorHex.map { Color(hex: $0) }
+                    isSet: true
                 ) {}
                 .allowsHitTesting(false)
+                .shrinksInChipRow()
             }
             .navigationTitle(L10n.Inbox.GroupSettlementAmountChange.title)
             .navigationBarTitleDisplayMode(.inline)

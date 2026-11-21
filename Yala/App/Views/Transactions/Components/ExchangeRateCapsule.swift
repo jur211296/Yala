@@ -84,8 +84,9 @@ struct ExchangeRateCapsule: View {
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.sm)
-                .background(Capsule().fill(theme.accent.opacity(0.12)))
-                .overlay(Capsule().stroke(theme.accent.opacity(0.35), lineWidth: 1))
+                // Cápsula glass (Jürgen, 20-nov, sobre la B1): antes un relleno de acento con borde, que competía con el
+                // monto. El lápiz sigue en el acento: es lo que dice que se toca.
+                .glassEffect(.regular.interactive(), in: .capsule)
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)

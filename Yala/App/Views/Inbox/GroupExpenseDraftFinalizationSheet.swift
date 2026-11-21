@@ -44,6 +44,26 @@ struct GroupExpenseDraftFinalizationSheet: View {
 
     // MARK: - Body
 
+
+    /// La subcategoría bajo el monto (hoja B1): el chip relleno de su color y, elegida, «● Categoría».
+    private var subcategoryChip: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                isSelected: selectedSubcategory != nil,
+                color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) },
+                fillsWhenSelected: true
+            ) {
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("group_draft_subcategory_chip")
+            if let subcategory = selectedSubcategory {
+                CategoryNeedLine(category: subcategory.safeCategory, need: nil, onNeedTap: {})
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             GroupDraftFinalizationScaffold(
@@ -58,21 +78,12 @@ struct GroupExpenseDraftFinalizationSheet: View {
                     : nil,
                 finalizeDisabled: split.isSplitting ? !split.canApprove(accounts: accounts) : selectedSubcategory == nil,
                 onFinalize: { handleFinalize() },
-                accessory: split.isSplitting ? AnyView(GroupDraftSplitCard(state: split)) : nil
+                accessory: split.isSplitting ? AnyView(GroupDraftSplitCard(state: split)) : nil,
+                // La subcategoría por elegir sube bajo el monto, como en la hoja B1.
+                categorySelector: split.isSplitting ? nil : AnyView(subcategoryChip)
             ) {
-                if !split.isSplitting {
-                    SelectionChip(
-                        icon: "tag",
-                        text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
-                        isSelected: selectedSubcategory != nil,
-                        color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
-                    ) {
-                        showSubcategorySelector = true
-                    }
-                    .accessibilityIdentifier("group_draft_subcategory_chip")
-                    if split.offersSplit {
-                        GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
-                    }
+                if !split.isSplitting && split.offersSplit {
+                    GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseDraft.title)
