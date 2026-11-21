@@ -57,6 +57,8 @@ struct VoiceRecordingView: View {
     @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
     /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
     @State private var conversionRequest: DraftGroupConversionRequest?
+    /// Lo que pasó a un gasto de grupo: su borrador ya no existe y la fila sale de esta copia, guardada.
+    @State private var registeredInGroup: [DraftRegisteredInGroup] = []
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
@@ -353,12 +355,20 @@ struct VoiceRecordingView: View {
         drafts.filter { $0.status == .pending }
     }
 
+    /// Lo pasado a un grupo cuenta como guardado (bug del 2026-11-20).
     private var allSaved: Bool {
-        !drafts.isEmpty && pendingDrafts.isEmpty
+        DraftGroupConversionReviewLogic.allSaved(
+            pending: pendingDrafts.count, drafts: drafts.count, registeredInGroup: registeredInGroup.count)
     }
 
-    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja.
-    private var isMulti: Bool { drafts.count > 1 }
+    /// Las filas que enseña lo entendido: los borradores y lo que ya pasó a un grupo.
+    private var rowCount: Int {
+        DraftGroupConversionReviewLogic.rowCount(drafts: drafts.count, registeredInGroup: registeredInGroup.count)
+    }
+
+    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja. Cuenta también lo que pasó a un
+    /// grupo, para que la hoja no cambie de forma al volver del formulario.
+    private var isMulti: Bool { rowCount > 1 }
 
     private var reviewItems: [MultiDraftReviewLogic.Item<PersistentIdentifier>] {
         MultiDraftReviewLogic.items(for: drafts, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
@@ -378,7 +388,7 @@ struct VoiceRecordingView: View {
 
     /// Sin nada más que hacer en la hoja: todo guardado o, con varios, lo marcado ya guardado.
     private var isFinished: Bool {
-        isMulti ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
+        isMulti && !drafts.isEmpty ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
     }
 
     private var reviewContent: some View {
@@ -404,13 +414,19 @@ struct VoiceRecordingView: View {
                     }
 
                     if isMulti {
-                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                        if !drafts.isEmpty {
+                            MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                        }
                     } else {
                         ForEach(drafts, id: \.persistentModelID) { draft in
                             VoiceDraftReviewCard(draft: draft) {
                                 detailDraft = draft
                             }
                         }
+                    }
+
+                    ForEach(registeredInGroup) { entry in
+                        DraftRegisteredInGroupRow(entry: entry)
                     }
 
                     if let note = inboxNote {
@@ -482,7 +498,7 @@ struct VoiceRecordingView: View {
 
     private var reviewTitle: String {
         if allSaved { return L10n.Chat.Draft.savedBadge }
-        return drafts.count > 1 ? L10n.Voice.reviewTitleMany(drafts.count) : L10n.Voice.reviewTitle
+        return rowCount > 1 ? L10n.Voice.reviewTitleMany(rowCount) : L10n.Voice.reviewTitle
     }
 
     /// Con varios, cuántos marcados y cuánto suman («Guardar 5 · S/ 224.81»); sin cifra si mezclan divisas.
@@ -753,6 +769,7 @@ struct VoiceRecordingView: View {
             }
         }
         drafts = []
+        registeredInGroup = []
         transcription = ""
         pendingAudioData = nil
         Task { await startListening() }
@@ -965,10 +982,15 @@ struct VoiceRecordingView: View {
         }
     }
 
-    /// Tras el formulario de grupo: el borrador convertido ya no está, y el aviso dice adónde fue.
-    private func afterGroupConversion(_ group: SplitGroup?) {
+    /// Tras el formulario de grupo: el borrador convertido sale marcado como guardado (de su copia: el borrador ya no
+    /// está) y el aviso dice adónde fue. Cancelado, nada cambia.
+    private func afterGroupConversion(_ outcome: DraftGroupConversionOutcome?) {
+        if let registered = outcome?.registered {
+            let ids = DraftGroupConversionReviewLogic.registered(registeredInGroup.map(\.id), adding: registered.id)
+            if ids.count > registeredInGroup.count { registeredInGroup.append(registered) }
+        }
         afterDetails()
-        if let group {
+        if let group = outcome?.group {
             DraftGroupConversion.announce(group, navigation: navigation) { dismiss() }
         }
     }
@@ -976,11 +998,13 @@ struct VoiceRecordingView: View {
     /// Al volver del formulario completo: si allí se aprobó, la fila ya sale guardada. Si se rechazó o se borró, sale
     /// de la lista; y si no queda ninguno, la hoja ya no tiene nada que enseñar.
     private func afterDetails() {
-        drafts.removeAll { $0.isDeleted || $0.status == .rejected }
+        // Tras guardar el borrado, `isDeleted` vuelve a `false` y el modelo se queda sin contexto: se miran los dos, y
+        // antes de leer nada más del borrador (leer uno borrado aborta en el teléfono).
+        drafts.removeAll { $0.isDeleted || $0.modelContext == nil || $0.status == .rejected }
         if let approved = drafts.first(where: { $0.status == .approved }), let transaction = approved.approvedTransaction {
             reportTrial(id: transaction.persistentModelID, name: approved.note, kind: .transaction)
         }
-        if drafts.isEmpty {
+        if DraftGroupConversionReviewLogic.closesEmpty(drafts: drafts.count, registeredInGroup: registeredInGroup.count) {
             dismiss()
         }
     }
