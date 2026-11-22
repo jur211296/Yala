@@ -91,7 +91,7 @@ struct RecordsQuickCategorySheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if !expanded.isEmpty {
-                        Button(L10n.Filters.allCategories) {
+                        YalaToolbarTextButton(L10n.Filters.allCategories) {
                             DS.Haptic.selection()
                             write([])
                         }

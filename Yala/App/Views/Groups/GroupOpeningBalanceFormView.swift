@@ -188,7 +188,7 @@ struct GroupOpeningBalanceFormView: View {
                         .accessibilityIdentifier("opening_balance_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.save) { save() }
+                    YalaToolbarTextButton(L10n.Action.save) { save() }
                         .fontWeight(.semibold)
                         .accessibilityIdentifier("opening_balance_save")
                 }

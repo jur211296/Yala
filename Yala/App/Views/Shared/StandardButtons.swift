@@ -33,6 +33,28 @@ struct YalaToolbarButton: View {
     }
 }
 
+/// Botón de TEXTO de la barra de arriba («Editar», «Cancelar», «Listo», «Aplicar»…): el texto en primary, el color de
+/// texto principal del tema, en claro y oscuro (Jürgen, 22-nov-2026). En la barra un `Button` toma el tinte de la app,
+/// que es el acento índigo; este lo fija a primary. Desactivado, el sistema lo pinta en gris como a cualquier botón.
+/// Todo botón de texto dentro de un `ToolbarItem` es este: lo fija `ToolbarTextoPrimaryTests`. Los de solo ícono son
+/// `YalaToolbarButton`, y el ✓ relleno, `YalaSaveButton`.
+struct YalaToolbarTextButton: View {
+    let title: String
+    var role: ButtonRole?
+    let action: () -> Void
+
+    init(_ title: String, role: ButtonRole? = nil, action: @escaping () -> Void) {
+        self.title = title
+        self.role = role
+        self.action = action
+    }
+
+    var body: some View {
+        Button(title, role: role, action: action)
+            .tint(Color.primary)
+    }
+}
+
 /// Botón circular de confirmación (Check)
 /// Diseño: SF Symbol `checkmark.circle.fill` con rendering palette (Blanco + Electric Indigo).
 struct YalaSaveButton: View {

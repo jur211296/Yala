@@ -89,7 +89,7 @@ struct SetupCompleteTrialOfferSheet: View {
             .toolbar {
                 if !showsSuccess {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(P.notNow) { if !store.isPurchasing { onDismiss() } }
+                        YalaToolbarTextButton(P.notNow) { if !store.isPurchasing { onDismiss() } }
                             .accessibilityIdentifier("setup_offer_close")
                     }
                 }

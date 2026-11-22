@@ -156,7 +156,7 @@ struct GroupBridgeLeftoversSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Action.cancel) { dismiss() }
+                    YalaToolbarTextButton(L10n.Action.cancel) { dismiss() }
                         .accessibilityIdentifier("inbox_group_leftovers_cancel")
                 }
             }

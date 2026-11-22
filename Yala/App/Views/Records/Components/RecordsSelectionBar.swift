@@ -164,7 +164,7 @@ struct RecordsSelectAllButton: View {
 
     var body: some View {
         let allSelected = viewModel.allRecordsSelected
-        Button(allSelected ? L10n.Export.deselectAll : L10n.RecordsBulkUndo.selectAll(viewModel.selectableRecordCount)) {
+        YalaToolbarTextButton(allSelected ? L10n.Export.deselectAll : L10n.RecordsBulkUndo.selectAll(viewModel.selectableRecordCount)) {
             if allSelected {
                 viewModel.deselectAll()
             } else {

@@ -393,8 +393,11 @@ struct RecurrenteDesdeRegistroWiringTests {
     /// registro recién creado: no hay otra copia del alta.
     @Test func inbox_approveAndMakeRecurring_handsTheApprovedRecordToTheFlow() throws {
         let sheet = try Self.code("Yala/App/Views/Inbox/InboxDraftEditSheet.swift")
-        #expect(sheet.contains("approvesIntoRecurring = true\n                    approveDraft()"))
-        #expect(sheet.contains("approvesIntoRecurring = false\n                    approveDraft()"))
+        // Sin depender de la sangría: desde el 22-nov-2026 el primero vive en el menú «…» y el segundo en «Guardar».
+        let flat = sheet.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: "\n")
+        #expect(flat.contains("approvesIntoRecurring = true\napproveDraft()"))
+        #expect(flat.contains("approvesIntoRecurring = false\napproveDraft()"))
         #expect(sheet.contains("recurringRecord = transaction"))
         #expect(sheet.contains("RecurringFromRecordSheet(record: recurringRecord)"))
         #expect(sheet.contains("RecurringFromRecordLogic.offersApproveAndMakeRecurring("))

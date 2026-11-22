@@ -113,7 +113,7 @@ struct StorageSignInChooserView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Common.cancel) { dismiss() }
+                    YalaToolbarTextButton(L10n.Common.cancel) { dismiss() }
                         .accessibilityIdentifier("storage_signin_cancel")
                 }
             }

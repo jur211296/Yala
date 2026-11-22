@@ -116,9 +116,10 @@ final class RecurrenteDesdeRegistroUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 5), "La Bandeja no mostró el borrador de la semilla.")
         row.tap()
 
-        let approveAndRecurring = app.buttons["inbox_approve_and_make_recurring_button"]
-        XCTAssertTrue(approveAndRecurring.waitForExistence(timeout: 5), "La hoja del borrador no ofrece «Aprobar y hacer recurrente».")
-        XCTAssertTrue(app.buttons["inbox_approve_button"].exists, "«Aprobar» dejó de salir.")
+        XCTAssertTrue(app.buttons["inbox_approve_button"].waitForExistence(timeout: 5), "«Aprobar» dejó de salir.")
+        // Desde el 22-nov-2026 vive en el menú «…» de arriba.
+        let approveAndRecurring = app.draftApproveAndMakeRecurringItem()
+        XCTAssertTrue(approveAndRecurring.waitForExistence(timeout: 5), "El menú «…» no ofrece «Guardar y hacer recurrente».")
         attachScreenshot("bandeja-aprobar-y-hacer-recurrente", of: app)
         approveAndRecurring.tap()
 

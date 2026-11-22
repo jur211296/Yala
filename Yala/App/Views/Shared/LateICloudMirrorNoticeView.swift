@@ -126,7 +126,7 @@ struct LateICloudMirrorNoticeView: View {
                     // persona vio el aviso y no pidió borrar nada. Tras un fallo o en grupos pendientes es «luego» (abajo).
                     // **Desaparece durante el borrado**, que no admite abandono.
                     if phase != .wiping {
-                        Button(L10n.Action.close) {
+                        YalaToolbarTextButton(L10n.Action.close) {
                             // Desde «faltan cambios de grupos» —y su «¿seguro?»— la barra hace lo mismo que «Dejarlo por
                             // ahora»: desarma y CONSERVA el testigo, para que el aviso vuelva a preguntar. `onKeep` lo
                             // retiraba, y los dos controles salían al mismo sitio con efectos distintos (review del

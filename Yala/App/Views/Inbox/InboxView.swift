@@ -269,7 +269,7 @@ struct InboxView: View {
                 if isSelectionMode {
                     // Selection mode: Cancel left, Select All right
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(L10n.Action.cancel) {
+                        YalaToolbarTextButton(L10n.Action.cancel) {
                             dsWithAnimation(reduceMotion) {
                                 exitSelectionMode()
                             }
@@ -277,7 +277,7 @@ struct InboxView: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         let allSelected = selectedDraftIDs.count == filteredDrafts.count
-                        Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
+                        YalaToolbarTextButton(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
                             dsWithAnimation(reduceMotion) {
                                 if allSelected {
                                     selectedDraftIDs.removeAll()

@@ -758,7 +758,7 @@ private struct LanguagePickerSheet: View {
             .yalaScreenBackground(.partialSheet)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Action.cancel) { dismiss() }
+                    YalaToolbarTextButton(L10n.Action.cancel) { dismiss() }
                 }
             }
         }

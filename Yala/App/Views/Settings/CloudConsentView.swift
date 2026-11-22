@@ -101,7 +101,7 @@ struct CloudConsentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Common.cancel) {
+                    YalaToolbarTextButton(L10n.Common.cancel) {
                         if let onCancel { onCancel() } else { dismiss() }
                     }
                         .accessibilityIdentifier("storage_consent_cancel")

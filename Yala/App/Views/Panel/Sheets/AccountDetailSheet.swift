@@ -153,7 +153,7 @@ struct AccountDetailSheet: View {
                 }
                 if PanelAccountCardLogic.canEdit(isSystemAccount: account.isSystemAccount) {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Action.edit) {
+                        YalaToolbarTextButton(L10n.Action.edit) {
                             isEditing = true
                         }
                         .fontWeight(.semibold)

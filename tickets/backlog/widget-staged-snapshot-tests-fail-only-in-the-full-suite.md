@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "tests, widgets"
 created: 2026-11-20
-updated: 2026-11-20
+updated: 2026-11-22
 source: "gate del encargo 2026-11-20-captura-cuenta-automatica-parte-1-implementar"
 ---
 
@@ -24,3 +24,7 @@ de la carga de la máquina, sin aislar.
 Qué hacer: reproducir con la suite completa (o con las suites que corren antes), mirar qué deja `WidgetDataCache` a
 medias, y aislarlo o pasar la prueba a la cuarentena con dueño. Hermano conocido:
 `groups-no-session-loss-exit-test-fails-in-the-full-suite` (cayó en la misma corrida).
+
+**Otra vez el 2026-11-22 en la Mini** (gate del encargo del chip de grupo, que no toca el widget): `YalaTests` entero
+(15 765 casos) cayó solo en `laFotoPedida_cedeElHiloEntreEtapasYQuedaPublicada` (línea 84, `measured.turns >= 8`). Sola,
+la suite pasó 2 de 2.

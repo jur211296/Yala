@@ -64,7 +64,8 @@ struct RecordsSharedList: View {
 /// después su avatar.
 struct RecordsToolbarItems: ToolbarContent {
     let viewModel: RecordsViewModel
-    /// El tinte de «Seleccionar»: el de la pestaña Registros (Estadísticas pinta su barra con `.tint(.primary)`).
+    /// El tinte de «Seleccionar» con solo ícono (columna del iPad): el de la pestaña Registros. Con texto va en primary,
+    /// como todo botón de texto de la barra (`RecordsSelectToolbarButton`).
     let accent: Color
     /// En la columna de lista del iPad, «Seleccionar» va con su icono: con el texto, el título no cabía (decisión 67).
     var selectIconOnly = false
@@ -72,7 +73,7 @@ struct RecordsToolbarItems: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             RecordsSelectToolbarButton(viewModel: viewModel, iconOnly: selectIconOnly)
-                .tint(accent)
+                .tint(selectIconOnly ? accent : Color.primary)
         }
 
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -90,7 +91,7 @@ struct RecordsSelectionToolbar: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button(L10n.Common.cancel) {
+            YalaToolbarTextButton(L10n.Common.cancel) {
                 viewModel.exitSelectionMode()
             }
         }

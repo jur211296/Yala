@@ -118,7 +118,7 @@ struct AddAccountLineSheet: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.add) { add() }
+                    YalaToolbarTextButton(L10n.Action.add) { add() }
                         .fontWeight(.semibold)
                         .disabled(!canAdd)
                         .accessibilityIdentifier("account_line_add_confirm")

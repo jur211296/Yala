@@ -46,7 +46,7 @@ struct AccountRemovalSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(L10n.Action.cancel) { dismiss() }
+                        YalaToolbarTextButton(L10n.Action.cancel) { dismiss() }
                             .disabled(viewModel.phase == .working)
                             .accessibilityIdentifier("account_removal_cancel")
                     }
@@ -359,7 +359,7 @@ struct AccountRemovalSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Action.cancel) { isPickingDestination = false }
+                    YalaToolbarTextButton(L10n.Action.cancel) { isPickingDestination = false }
                         .accessibilityIdentifier("account_removal_picker_cancel")
                 }
             }

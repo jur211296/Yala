@@ -84,7 +84,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.edit) {
+                    YalaToolbarTextButton(L10n.Action.edit) {
                         onEdit()
                     }
                     .fontWeight(.semibold)

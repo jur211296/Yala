@@ -42,9 +42,8 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         // El importe, a la derecha: en la hoja de foto la descripción se edita al tocarla (encargo del 2026-11-17).
         row.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
 
-        let convert = app.buttons["inbox_convert_to_shared_button"]
-        XCTAssertTrue(convert.waitForExistence(timeout: 10), "La hoja del registro no ofreció «Convertir a gasto compartido».")
-        convert.tap()
+        // Desde el 22-nov-2026 el grupo se elige en el chip de la fila y «Guardar» convierte.
+        app.chooseDraftGroupAndSave("Viaje a Cusco")
 
         // El bug: aquí no se abría nada.
         XCTAssertTrue(

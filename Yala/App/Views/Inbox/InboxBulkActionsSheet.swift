@@ -165,7 +165,7 @@ struct InboxBulkActionsSheet: View {
 
                         if !appliedChanges.isEmpty {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button(L10n.Action.done) {
+                                YalaToolbarTextButton(L10n.Action.done) {
                                     finishEditing()
                                 }
                                 .fontWeight(.semibold)

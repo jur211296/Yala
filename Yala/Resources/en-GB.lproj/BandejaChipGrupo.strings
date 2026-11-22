@@ -1,0 +1,11 @@
+/*
+  BandejaChipGrupo.strings
+  Yala
+
+  El chip de grupo del editor de la Bandeja («Editar gasto»), que reemplaza al enlace «Convertir a gasto compartido»
+  (decisión de Jürgen del 22-nov-2026). Tabla propia, fuera de Localizable.strings.
+*/
+
+"bandejaChipGrupo.chip" = "Group";
+"bandejaChipGrupo.chipHint" = "Choose a group to save it as a shared expense";
+"bandejaChipGrupo.none" = "No group";

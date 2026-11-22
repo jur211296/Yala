@@ -59,10 +59,9 @@ final class InboxConvertToGroupUITests: XCTestCase {
         XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a convertir.")
         rowA.tap()
 
-        // Tocar "Convertir a gasto compartido" (source convertible + hay grupo elegible).
-        let convertButton = app.buttons["inbox_convert_to_shared_button"]
-        XCTAssertTrue(convertButton.waitForExistence(timeout: 5), "No apareció el botón Convertir a gasto compartido.")
-        convertButton.tap()
+        // Elegir el grupo en el chip y «Guardar» (source convertible + hay grupo elegible; desde el 22-nov-2026 es el
+        // chip el que sustituye a «Convertir a gasto compartido»).
+        app.chooseDraftGroupAndSave("Viaje a Cusco")
 
         // Único grupo elegible → el form de grupo abre directo (sin picker), prellenado con
         // monto + cuenta del draft → Guardar se habilita sin interacción extra. Se espera primero
@@ -138,9 +137,7 @@ final class InboxConvertToGroupUITests: XCTestCase {
         XCTAssertTrue(rowB.waitForExistence(timeout: 5), "No apareció el draft con fecha pasada.")
         rowB.tap()
 
-        let convertButton = app.buttons["inbox_convert_to_shared_button"]
-        XCTAssertTrue(convertButton.waitForExistence(timeout: 5), "No apareció el botón Convertir a gasto compartido.")
-        convertButton.tap()
+        app.chooseDraftGroupAndSave("Viaje a Cusco")
 
         XCTAssertTrue(
             app.textFields["group_expense_amount"].waitForExistence(timeout: 15),
