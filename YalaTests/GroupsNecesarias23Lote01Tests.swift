@@ -57,8 +57,13 @@ struct GroupsNecesarias23Lote01Tests {
     @Test("El formulario y quitar un saldo inicial usan el texto nuevo; el formulario pregunta antes de reemplazar")
     func openingBalance_wiring() throws {
         let form = try Self.code("Yala/App/Views/Groups/GroupOpeningBalanceFormView.swift")
-        #expect(form.contains("if expenseToEdit == nil, askBeforeReplacing() { return }"))
+        // Al añadir pregunta si reemplaza; al editar, también (ticket `groups-opening-balance-edit-can-duplicate-a-pair`).
+        #expect(form.contains(
+            "if let edit = expenseToEdit { if askBeforeReplacingOnEdit(edit) { return } } else if askBeforeReplacing() { return }"
+        ))
         #expect(form.contains("openingBalanceThatAddingWouldReplace("))
+        #expect(form.contains("openingBalancesThatEditingWouldReplace("))
+        #expect(form.contains("replacing: editReplacements"))
         #expect(form.contains("Button(L10n.Groups.OpeningBalance.replaceConfirm) { performSave(afterConfirmation: true) }"))
         // El aviso de error tras «Reemplazar» espera a que se cierre el de la pregunta (comparten ancla).
         #expect(form.contains("guard afterConfirmation else { showError = true return }"))
