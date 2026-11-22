@@ -146,9 +146,9 @@ struct AccountLineSyncTests {
     @Test func capability_isCappedByWhatThisBuildUnderstands() {
         let restoreCapability = isolateCapability(backend: nil)
         defer { restoreCapability() }
-        SyncCapability.recordBackendManifestVersion(8)
+        SyncCapability.recordBackendManifestVersion(9)
         #expect(SyncCapability.declaredLevel == SyncCapability.clientManifestVersion)
-        #expect(SyncCapability.declaredLevel == 8, "v8: los límites del flujo de caja con pagos y en otra moneda")
+        #expect(SyncCapability.declaredLevel == 9, "v9: las reglas de captura de una cuenta")
     }
 
     @Test func capability_workerRolledBack_goesBackToV1() {
@@ -193,7 +193,8 @@ struct AccountLineSyncTests {
         }
         #expect(fromManifest == EntityEmissionMap.sinceCatalog)
         #expect(fromManifest == [
-            "accounts": ["parent_account_id": 2, "credit_card_statement_day": 5, "credit_card_reminder_days_before": 5],
+            "accounts": ["parent_account_id": 2, "credit_card_statement_day": 5, "credit_card_reminder_days_before": 5,
+                         "capture_rules_raw": 9],
             "cashflow_lines": ["amount_changes_raw": 3, "scheduled_payment_ids_raw": 8, "limit_extra_amount": 8,
                                "limit_currency_code": 8, "limit_foreign_amount": 8],
             "favorite_payments": ["destination_account_ref": 4],

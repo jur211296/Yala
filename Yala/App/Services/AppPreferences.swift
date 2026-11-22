@@ -281,6 +281,30 @@ final class AppPreferences {
         }
     }
 
+    /// Qué texto del permiso de voz y foto aceptó la persona (`AIConsentRevision.processing`). La versión 1 (21-nov-2026)
+    /// dice que con la foto viajan también los nombres de las cuentas y las reglas de captura; con la 0, en iCloud privado
+    /// la foto no los manda (decisión 1 de Jürgen). Lo escribe quien acepta el permiso.
+    var aiDataConsentVersion: Int = 0 {
+        didSet {
+            guard oldValue != aiDataConsentVersion else { return }
+            persistInt(aiDataConsentVersion, forKey: Keys.aiDataConsentVersion, synced: false)
+        }
+    }
+
+    /// Hasta qué versión del permiso de voz y foto se le volvió a preguntar a quien aceptó una anterior (una vez por
+    /// versión; «Ahora no» también cuenta).
+    var aiDataConsentAskedVersion: Int = 0 {
+        didSet {
+            guard oldValue != aiDataConsentAskedVersion else { return }
+            persistInt(aiDataConsentAskedVersion, forKey: Keys.aiDataConsentAskedVersion, synced: false)
+        }
+    }
+
+    /// El permiso de voz y foto aceptado con el texto vigente.
+    var hasCurrentAIDataConsent: Bool {
+        aiDataConsentAccepted && aiDataConsentVersion >= AIConsentRevision.processing
+    }
+
     var aiInsightsConsentAccepted: Bool = false {
         didSet {
             guard oldValue != aiInsightsConsentAccepted else { return }
@@ -1244,6 +1268,8 @@ final class AppPreferences {
         aiDataConsentAccepted = defaults.bool(forKey: Keys.aiDataConsentAccepted)
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
         aiInsightsConsentVersion = defaults.integer(forKey: Keys.aiInsightsConsentVersion)
+        aiDataConsentVersion = defaults.integer(forKey: Keys.aiDataConsentVersion)
+        aiDataConsentAskedVersion = defaults.integer(forKey: Keys.aiDataConsentAskedVersion)
         cuentaSolaPorqueVeces = defaults.integer(forKey: Keys.cuentaSolaPorqueVeces)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
@@ -1545,6 +1571,8 @@ final class AppPreferences {
         static let aiDataConsentAccepted = "aiDataConsentAccepted"
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
         static let aiInsightsConsentVersion = "aiInsightsConsentVersion"
+        static let aiDataConsentVersion = "aiDataConsentVersion"
+        static let aiDataConsentAskedVersion = "aiDataConsentAskedVersion"
         static let cuentaSolaPorqueVeces = "cuentaSola.porqueVeces"
         static let aiInsightsEnabled = "aiInsightsEnabled"
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
@@ -1712,6 +1740,16 @@ final class AppPreferences {
 enum AIConsentRevision {
     /// 2 = 2026-11-06: nombres de las compras pequeñas que se repiten, y en la nube todo lo que haga falta.
     static let insights = 2
+
+    /// Permiso de voz y foto. 1 = 2026-11-21: con la foto viajan también los nombres de las cuentas y las reglas de
+    /// captura, nunca saldos ni números (parte 2 de la cuenta sola al leer).
+    static let processing = 1
+
+    /// El permiso de voz y foto aceptado con el texto vigente, leído del almacén.
+    static func hasCurrentProcessingConsent(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted)
+            && defaults.integer(forKey: AppPreferences.Keys.aiDataConsentVersion) >= processing
+    }
 
     /// El permiso de Estadísticas aceptado con el texto vigente, leído del almacén (para quien no tiene `AppPreferences`).
     static func hasCurrentInsightsConsent(_ defaults: UserDefaults = .standard) -> Bool {

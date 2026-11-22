@@ -1337,6 +1337,8 @@ final class AppBootstrapper {
             SessionState.shared.needsExchangeRateWidgetRefresh = true
             #if DEBUG
             if UITestHooks.seedAntSpellings { Self.seedAntSpellings(in: context) }
+            // `-uitest-capture-rule "Cuenta|kind|valor"`: una regla de captura en esa cuenta (parte 2).
+            CuentaSolaAlLeerUITestPerfil.applyCaptureRuleArgument(context: context)
             #endif
         }
         // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
@@ -1562,6 +1564,7 @@ final class AppBootstrapper {
         // alert de consentimiento (no graba/transcribe; solo abre la vista).
         if UITestHooks.aiConsent {
             appPreferences.aiDataConsentAccepted = true
+            appPreferences.aiDataConsentVersion = AIConsentRevision.processing
         }
         if UITestHooks.insightsAIConsent {
             appPreferences.aiInsightsConsentAccepted = true

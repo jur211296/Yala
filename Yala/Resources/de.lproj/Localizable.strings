@@ -2844,7 +2844,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala erfasst es für dich";
-"aiConsent.processingMessage" = "Schreib es, sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird dein Text, die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Es wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.processingMessage" = "Schreib es, sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird dein Text, die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Damit das richtige Konto gewählt wird, werden mit dem Foto auch die Namen deiner Konten und deine Erfassungsregeln gesendet, nie Kontostände oder Kontonummern. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "KI-Zusammenfassung";
 "aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets, wiederkehrende Zahlungen und die Namen der kleinen Käufe, die du wiederholst, mit Anzahl und Summe –, nicht dein vollständiger Verlauf an Einträgen. Wenn deine Daten in deinem Yala-Konto liegen, kann sie zusätzlich alles lesen, was für Genauigkeit nötig ist, etwa jeden Kauf mit Datum und Betrag. Sie wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";

@@ -32,6 +32,9 @@ nonisolated struct ParsedTransaction: Codable, Equatable {
     /// gateway sin desplegar, la lectura de Siri en el dispositivo, o un pendiente de Siri guardado por una versión vieja.
     /// Sin respuesta, la app busca el medio de pago en la frase ella misma (`PaymentMethodAccountLogic.mention`).
     var paymentHintAnswered: Bool? = nil
+    /// La cuenta que cree Yala IA, copiada de la lista que manda el chat (capa B, parte 2 de la cuenta sola al leer). Solo
+    /// cuenta si existe y está escrita en el medio de pago (`CuentaSolaAlLeer.cuentaDeIA`), y una regla del usuario le gana.
+    var accountHint: String? = nil
 
     nonisolated struct TransactionConfidence: Codable, Equatable {
         let amount: Double
@@ -90,6 +93,26 @@ private struct LLMTransactionItem: Codable {
 
 private struct LLMMultipleResponse: Codable {
     let transactions: [LLMTransactionItem]
+}
+
+/// El `account` de cada movimiento (capa B del chat), leído aparte y tolerante: si no viene o no es texto, `nil`.
+private struct LLMAccountHints: Decodable {
+    struct Item: Decodable {
+        let account: String?
+
+        private enum CodingKeys: String, CodingKey { case account }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            do {
+                account = try container.decodeIfPresent(String.self, forKey: .account)
+            } catch {
+                account = nil
+            }
+        }
+    }
+
+    let transactions: [Item]
 }
 
 /// El `paymentHint` de cada movimiento, leído aparte para distinguir «el modelo dijo null» de «el campo no vino»
@@ -238,7 +261,7 @@ nonisolated enum TextParseResponseSchema {
     private static func strings(_ values: [String]) -> Node { .array(values.map { .string($0) }) }
 
     static let confidenceFields = ["amount", "date", "merchant", "subcategory", "tags"]
-    static let transactionFields = ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "confidence"]
+    static let transactionFields = ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "account", "confidence"]
 
     static let schema: Node = .object([
         ("type", .string("object")),
@@ -260,6 +283,7 @@ nonisolated enum TextParseResponseSchema {
                         ("tagHints", .object([("type", .string("array")), ("items", type("string"))])),
                         ("currencyHint", nullable("string")),
                         ("paymentHint", nullable("string")),
+                        ("account", nullable("string")),
                         ("confidence", .object([
                             ("type", .string("object")),
                             ("additionalProperties", .bool(false)),
@@ -428,6 +452,10 @@ final class TranscriptionParserService {
         - Si no lo dice → null. Nunca lo deduzcas del comercio, la categoría ni la moneda
         - Con varias transacciones, cada una lleva el suyo; uno dicho una sola vez va solo a la suya, salvo que diga que es para todas
 
+        Reglas de cuenta ("account"):
+        - Solo si al final viene la lista de cuentas del usuario: copia exacto el nombre de la cuenta que nombra el medio de pago, siguiendo sus reglas si las tiene
+        - Sin lista, sin medio de pago o si no estás seguro → null
+
         Reglas de nota (IMPORTANTE):
         - La nota es el comercio o el detalle; NUNCA repite la subcategoría inferida
         - Con comercio: note = el comercio ("almorcé en Pardos" → note "Pardos")
@@ -436,19 +464,19 @@ final class TranscriptionParserService {
 
         Ejemplos:
         Input: "Almorcé en Pardos por 50 soles ayer"
-        Output: {"transactions":[{"amount":50,"date":"\(yesterday)","note":"Pardos","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":"PEN","paymentHint":null,"confidence":{"amount":1.0,"date":1.0,"merchant":0.9,"subcategory":\(restaurantsScore),"tags":0.0}}]}
+        Output: {"transactions":[{"amount":50,"date":"\(yesterday)","note":"Pardos","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":"PEN","paymentHint":null,"account":null,"confidence":{"amount":1.0,"date":1.0,"merchant":0.9,"subcategory":\(restaurantsScore),"tags":0.0}}]}
 
         Input: "I spent 25 euros on lunch"
-        Output: {"transactions":[{"amount":25,"date":"\(today)","note":"lunch","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":"EUR","paymentHint":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}}]}
+        Output: {"transactions":[{"amount":25,"date":"\(today)","note":"lunch","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":"EUR","paymentHint":null,"account":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}}]}
 
         Input: "30 en almuerzo y 15 en estacionamiento"
-        Output: {"transactions":[{"amount":30,"date":"\(today)","note":"almuerzo","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":null,"paymentHint":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}},{"amount":15,"date":"\(today)","note":"estacionamiento","isExpense":true,"subcategoryHint":\(parkingHint),"tagHints":[],"currencyHint":null,"paymentHint":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(parkingScore),"tags":0.0}}]}
+        Output: {"transactions":[{"amount":30,"date":"\(today)","note":"almuerzo","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":null,"paymentHint":null,"account":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}},{"amount":15,"date":"\(today)","note":"estacionamiento","isExpense":true,"subcategoryHint":\(parkingHint),"tagHints":[],"currencyHint":null,"paymentHint":null,"account":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(parkingScore),"tags":0.0}}]}
 
         Input: "25 almuerzo yape"
-        Output: {"transactions":[{"amount":25,"date":"\(today)","note":"almuerzo","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":null,"paymentHint":"yape","confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}}]}
+        Output: {"transactions":[{"amount":25,"date":"\(today)","note":"almuerzo","isExpense":true,"subcategoryHint":\(restaurantsHint),"tagHints":[],"currencyHint":null,"paymentHint":"yape","account":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.5,"subcategory":\(restaurantsScore),"tags":0.0}}]}
 
         Input: "28 euros e 30 no Pingo Doce"
-        Output: {"transactions":[{"amount":28.3,"date":"\(today)","note":"Pingo Doce","isExpense":true,"subcategoryHint":\(supermarketsHint),"tagHints":[],"currencyHint":"EUR","paymentHint":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.9,"subcategory":\(supermarketsScore),"tags":0.0}}]}
+        Output: {"transactions":[{"amount":28.3,"date":"\(today)","note":"Pingo Doce","isExpense":true,"subcategoryHint":\(supermarketsHint),"tagHints":[],"currencyHint":"EUR","paymentHint":null,"account":null,"confidence":{"amount":1.0,"date":0.5,"merchant":0.9,"subcategory":\(supermarketsScore),"tags":0.0}}]}
 
         Esquema (todos los campos siempre presentes):
         {
@@ -462,6 +490,7 @@ final class TranscriptionParserService {
               "tagHints": ["tag1", "tag2"] | [],
               "currencyHint": "código ISO 4217" | null,
               "paymentHint": "palabras de la frase" | null,
+              "account": "nombre exacto de la lista de cuentas" | null,
               "confidence": {
                 "amount": 0.0-1.0,
                 "date": 0.0-1.0,
@@ -513,7 +542,8 @@ final class TranscriptionParserService {
         text: String,
         expenseSubcategories: [String] = [],
         incomeSubcategories: [String] = [],
-        currency: ParserCurrencyContext
+        currency: ParserCurrencyContext,
+        accounts: [CuentaSolaAlLeerPeticion.Cuenta] = []
     ) async throws -> [ParsedTransaction] {
         let client: OpenAI
         do {
@@ -527,11 +557,13 @@ final class TranscriptionParserService {
             throw ParserError.emptyText
         }
 
-        let prompt = buildSystemPrompt(
+        let basePrompt = buildSystemPrompt(
             expenseSubcategories: expenseSubcategories,
             incomeSubcategories: incomeSubcategories,
             currency: currency
         )
+        // Capa B del chat: la lista de cuentas (y en la nube sus reglas) al final, solo si quien llama la manda.
+        let prompt = CuentaSolaAlLeerPeticion.texto(accounts).map { basePrompt + "\n\n" + $0 } ?? basePrompt
 
         let query = Self.makeQuery(prompt: prompt, text: trimmedText)
 
@@ -606,11 +638,24 @@ final class TranscriptionParserService {
             #endif
         }
 
+        // La cuenta de la IA, también aparte y sin tumbar nada.
+        var accountHints: [LLMAccountHints.Item] = []
+        do {
+            accountHints = try decoder.decode(LLMAccountHints.self, from: data).transactions
+        } catch {
+            #if DEBUG
+            print("TranscriptionParserService: account ilegible: \(error)")
+            #endif
+        }
+
         return llmResponse.transactions.enumerated().map { index, item in
             var parsed = convertToParsedTransaction(item)
             if hints.count == llmResponse.transactions.count {
                 parsed.paymentHint = hints[index].hint
                 parsed.paymentHintAnswered = hints[index].answered
+            }
+            if accountHints.count == llmResponse.transactions.count {
+                parsed.accountHint = accountHints[index].account
             }
             return parsed
         }

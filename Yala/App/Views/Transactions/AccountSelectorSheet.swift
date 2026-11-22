@@ -296,7 +296,8 @@ struct AccountSelectorRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("account_selector_row_\(account.name)")
-        .accessibilityLabel(L10n.Accessibility.accountRow(name, account.currencyCode))
+        // Con motivo («PEN · Tu regla «zip»», `CuentaSolaAlLeer`), VoiceOver lo lee entero: sin él solo oía nombre y divisa.
+        .accessibilityLabel(L10n.Accessibility.accountRow(name, caption ?? account.currencyCode))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

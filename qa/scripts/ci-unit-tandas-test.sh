@@ -92,7 +92,7 @@ echo "3. entradas malas"
 for a in "" "0 3" "4 3" "x 3" "1"; do
   # shellcheck disable=SC2086
   salida=$(bash "$TANDAS" $a 2>/dev/null); rc=$?
-  [ "$rc" = 2 ] && [ -z "$salida" ] && ok "«$a» → exit 2 sin argumentos" || mal "«$a» → rc $rc, salida «$salida»"
+  [ "$rc" = 2 ] && [ -z "$salida" ] && ok "«${a}» → exit 2 sin argumentos" || mal "«${a}» → rc $rc, salida «${salida}»"
 done
 mkdir -p "$T/vacio"
 UNIT_TESTS_DIR="$T/vacio" bash "$TANDAS" 1 3 > /dev/null 2>&1; [ $? = 2 ] && ok "sin suites → exit 2" || mal "sin suites no sale 2"

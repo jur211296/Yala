@@ -2848,7 +2848,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala zapisze to za ciebie";
-"aiConsent.processingMessage" = "Wpisz, podyktuj lub wybierz zdjęcie paragonu, a Yala zapisze wydatek. W tym celu tekst, nagranie lub zdjęcie trafia tylko w tej chwili do usługi AI. Gdy Twoje dane są na Twoim koncie Yala, AI może też odczytać wszystkie Twoje dane potrzebne do precyzyjnej i szczegółowej odpowiedzi. Nie służy do trenowania AI.";
+"aiConsent.processingMessage" = "Wpisz, podyktuj lub wybierz zdjęcie paragonu, a Yala zapisze wydatek. W tym celu tekst, nagranie lub zdjęcie trafia tylko w tej chwili do usługi AI. Aby wybrać konto, ze zdjęciem wysyłane są też nazwy Twoich kont i reguły przechwytywania, nigdy salda ani numery kont. Gdy Twoje dane są na Twoim koncie Yala, AI może też odczytać wszystkie Twoje dane potrzebne do precyzyjnej i szczegółowej odpowiedzi. Nie służy do trenowania AI.";
 "aiConsent.insightsTitle" = "Podsumowanie AI";
 "aiConsent.insightsMessage" = "Yala analizuje Twoje finanse i pokazuje, jak Ci idzie. W tym celu wysyła do usługi AI podsumowanie — sumy i trendy według kategorii, budżety, płatności cykliczne oraz nazwy drobnych zakupów, które powtarzasz, z liczbą powtórzeń i sumą — a nie pełną historię wpisów. Gdy Twoje dane są na Twoim koncie Yala, może też odczytać wszystko, czego potrzebuje do precyzji, np. każdy zakup z datą i kwotą. Nie służy ono do trenowania AI.";
 "aiConsent.accept" = "Akceptuj i włącz";

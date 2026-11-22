@@ -587,6 +587,11 @@ enum EntityEmissionMap {
             ColumnEmitter("credit_card_reminder_days_before", since: SyncCapability.creditCardCycleSince) { m, _ in
                 Emit.int(m.creditCardReminderDaysBefore == 0 ? nil : m.creditCardReminderDaysBefore)
             },
+            // Las reglas de captura de la cuenta (JSON de `AccountCaptureRule`, 2026-11-21). `nil` sin reglas: la columna
+            // nace NULL en toda cuenta que el servidor ya tenía, así que no hay valor por defecto que divergir.
+            ColumnEmitter("capture_rules_raw", since: SyncCapability.captureRulesSince) { m, _ in
+                Emit.text(m.captureRulesRaw)
+            },
         ],
         columnKeyPaths: [
             \Account.name: ["name"],
@@ -604,6 +609,7 @@ enum EntityEmissionMap {
             \Account.parentAccountID: ["parent_account_id"],
             \Account.creditCardStatementDay: ["credit_card_statement_day"],
             \Account.creditCardReminderDaysBefore: ["credit_card_reminder_days_before"],
+            \Account.captureRulesRaw: ["capture_rules_raw"],
         ]
     )
 

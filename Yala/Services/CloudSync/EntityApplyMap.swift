@@ -567,6 +567,9 @@ enum EntityApplyMap {
             // NULL es 0: así viaja el «mismo día» (`EntityEmissionMap.account`).
             "credit_card_statement_day": Apply.intOpt(\.creditCardStatementDay),
             "credit_card_reminder_days_before": Apply.intNullAsZero(\.creditCardReminderDaysBefore),
+            // Reglas de captura (`since: 9`): solo llegan si este teléfono pidió `v9`. Con la key presente manda el
+            // servidor, también con NULL (sin reglas).
+            "capture_rules_raw": Apply.textOpt(\.captureRulesRaw),
         ]
     )
 

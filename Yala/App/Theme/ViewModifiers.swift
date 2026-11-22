@@ -365,6 +365,8 @@ struct AIConsentAlertModifier: ViewModifier {
             .alert(L10n.AIConsent.processingTitle, isPresented: $isPresented) {
                 Button(L10n.AIConsent.processingAccept) {
                     aiDataConsentAccepted = true
+                    // El texto vigente (`AIConsentRevision.processing`): lo que la persona acaba de leer.
+                    UserDefaults.standard.set(AIConsentRevision.processing, forKey: AppPreferences.Keys.aiDataConsentVersion)
                     let input = pendingInput
                     Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(500))

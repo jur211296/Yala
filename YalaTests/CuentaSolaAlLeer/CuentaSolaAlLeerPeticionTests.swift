@@ -29,7 +29,7 @@ struct CuentaSolaAlLeerPeticionTests {
 
     @Test("En la nube viajan nombre, clase y moneda; nunca el número de cuenta ni sus últimos 4")
     func nubeLlevaNombresSinNumeros() throws {
-        let cuentas = CuentaSolaAlLeerPeticion.cuentas(from: candidatas, isCloud: true)
+        let cuentas = CuentaSolaAlLeerPeticion.cuentas(from: candidatas, envio: .foto(isCloud: true, hasCurrentProcessingConsent: false))
         let json = try body(accounts: cuentas)
         #expect(json.contains("Zip Visa"))
         #expect(json.contains("credit card"))
@@ -41,9 +41,10 @@ struct CuentaSolaAlLeerPeticionTests {
         #expect(!json.contains("998877"))
     }
 
-    @Test("En iCloud privado no viaja ninguna cuenta: la petición es la de siempre")
+    @Test("En iCloud privado con el permiso anterior no viaja ninguna cuenta: la petición es la de siempre")
     func privadoNoLlevaCuentas() throws {
-        let cuentas = CuentaSolaAlLeerPeticion.cuentas(from: candidatas, isCloud: false)
+        let cuentas = CuentaSolaAlLeerPeticion.cuentas(
+            from: candidatas, envio: .foto(isCloud: false, hasCurrentProcessingConsent: false))
         #expect(cuentas.isEmpty)
         #expect(CuentaSolaAlLeerPeticion.texto(cuentas) == nil)
         let json = try body(accounts: cuentas)
@@ -56,7 +57,7 @@ struct CuentaSolaAlLeerPeticionTests {
         let muchas = (0..<60).map {
             CuentaSolaAlLeer.Cuenta(id: UUID(), name: "Cuenta \($0)", kind: .bank, currencyCode: "PEN", accountNumber: nil)
         }
-        #expect(CuentaSolaAlLeerPeticion.cuentas(from: muchas, isCloud: true).count == CuentaSolaAlLeerPeticion.maxCuentas)
+        #expect(CuentaSolaAlLeerPeticion.cuentas(from: muchas, envio: .nombres).count == CuentaSolaAlLeerPeticion.maxCuentas)
         let texto = CuentaSolaAlLeerPeticion.texto([.init(name: "Zip\nVisa", kind: .creditCard, currencyCode: "PEN")])
         #expect(texto?.contains("- Zip Visa | credit card | PEN") == true)
     }

@@ -109,7 +109,8 @@ enum BankNoticeDraftService {
                 lastUsedShortcutID: LastUsedAccountStore.read(),
                 in: accounts
             )
-            let account = accountFromNotice(bank: entry.bank, last4: movement.cardLast4, currency: currency, in: accounts)
+            let account = accountFromNotice(
+                bank: entry.bank, last4: movement.cardLast4, merchant: movement.counterparty, currency: currency, in: accounts)
                 ?? defaultAccount(for: entry.bank, currency: currency, in: accounts)
                 ?? ApplePayDraftService.matchedAccount(currency: currency, cardAccount: cardAccount, in: accounts)
             let counterparty = movement.counterparty ?? ""
@@ -156,10 +157,15 @@ enum BankNoticeDraftService {
     }
 
     /// La cuenta que dicen los últimos 4 del aviso o el nombre de su banco (`CuentaSolaAlLeer`), o `nil` si no deciden.
-    static func accountFromNotice(bank: BankNoticeBank?, last4: String?, currency: String?, in accounts: [Account]) -> Account? {
+    /// Con `merchant`, las reglas de captura de comercio y de palabras deciden también (parte 2).
+    static func accountFromNotice(
+        bank: BankNoticeBank?, last4: String?, merchant: String? = nil, currency: String?, in accounts: [Account]
+    ) -> Account? {
         let mention = bank.flatMap { $0 == .other ? nil : $0.brandName }
-        guard mention != nil || last4 != nil else { return nil }
-        let choice = DraftBuilder.chooseAccount(mention: mention, last4: last4, currency: currency, in: accounts)
+        let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard mention != nil || last4 != nil || merchantText?.isEmpty == false else { return nil }
+        let choice = DraftBuilder.chooseAccount(
+            mention: mention, last4: last4, merchant: merchantText, currency: currency, in: accounts)
         return choice.resultado.cuentaPuesta == nil ? nil : choice.account
     }
 

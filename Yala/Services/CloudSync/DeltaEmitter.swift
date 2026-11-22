@@ -96,6 +96,11 @@ enum DeltaEmitter {
             if line.limitForeignAmount != nil { withValue.insert("limit_foreign_amount") }
             SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: withValue.intersection(changedColumns))
         }
+        // Y con las reglas de captura de una cuenta (v9, 2026-11-21).
+        if capabilityLevel < SyncCapability.captureRulesSince, changedColumns.contains("capture_rules_raw"),
+           let account = model as? Account, account.captureRulesRaw != nil {
+            SyncCapability.noteSuppressedCaptureRules(account.shortcutID)
+        }
         // Y con el logo propio de un pago planificado (v7, 2026-11-20).
         if capabilityLevel < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
            let payment = model as? ScheduledPayment, payment.customLogoRef != nil {

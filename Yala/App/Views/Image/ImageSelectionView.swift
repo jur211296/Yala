@@ -194,6 +194,8 @@ struct ImageSelectionView: View {
         .onAppear(perform: checkForSharedImage)
         .onDisappear(perform: tearDown)
         .modifier(ImageEntryChoosingPublisher(isChoosing: phase == .choose))
+        // «Recordar» tras corregir la cuenta y el permiso de voz y foto que se vuelve a pedir (parte 2).
+        .cuentaSolaReglasHoja($cuentaSola, isSetupTrial: isSetupTrial)
     }
 
     private var isSetupTrial: Bool { onSetupTrialCompleted != nil }
@@ -1476,12 +1478,15 @@ struct ImageSelectionView: View {
         return remember(VisionDraftFactory.makeDraftsWithAccountChoice(from: response, rawText: nil, context: modelContext))
     }
 
-    /// Las cuentas que la IA de la foto puede proponer: solo con la cuenta en la nube (`CuentaSolaAlLeerPeticion`).
+    /// Las cuentas que la IA de la foto puede proponer, con sus reglas: en la nube, o en iCloud privado con el permiso de
+    /// voz y foto aceptado en su versión que lo dice (`CuentaSolaAlLeerPeticion.Envio.foto`).
     private func accountsForVision() -> [CuentaSolaAlLeerPeticion.Cuenta] {
-        let isCloud = CloudSyncFlags.storageMode == .cloud
-        guard isCloud else { return [] }
+        let envio = CuentaSolaAlLeerPeticion.Envio.foto(
+            isCloud: CloudSyncFlags.storageMode == .cloud,
+            hasCurrentProcessingConsent: appPreferences.hasCurrentAIDataConsent)
+        guard envio != .nada else { return [] }
         let candidates = DraftBuilder.cuentaSolaCandidates(in: DraftBuilder.fetchActiveAccounts(context: modelContext))
-        return CuentaSolaAlLeerPeticion.cuentas(from: candidates, isCloud: isCloud)
+        return CuentaSolaAlLeerPeticion.cuentas(from: candidates, envio: envio)
     }
 
     /// Guarda la elección de cuenta de cada borrador leído hasta saber cuáles se enseñan.
@@ -1499,6 +1504,8 @@ struct ImageSelectionView: View {
         if appending {
             hoja.elecciones = cuentaSola.elecciones.filter { shown.contains($0.key) }
             hoja.conPorque = cuentaSola.conPorque.intersection(shown)
+            hoja.recordadas = cuentaSola.recordadas.filter { shown.contains($0.key) }
+            hoja.descartadas = cuentaSola.descartadas.intersection(shown)
         }
         for draft in drafts {
             let id = ObjectIdentifier(draft)

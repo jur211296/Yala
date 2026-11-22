@@ -20,7 +20,7 @@ export const TEXT_PARSE_SCHEMA = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "confidence"],
+          required: ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "account", "confidence"],
           properties: {
             amount: { type: ["number", "null"] },
             date: { type: ["string", "null"] },
@@ -32,6 +32,9 @@ export const TEXT_PARSE_SCHEMA = {
             // Las palabras del medio de pago que dijo el usuario («yape», «tarjeta»), o null (card v466, 2026-11-04). Las
             // versiones instaladas lo ignoran al decodificar; la app nueva elige la cuenta con él.
             paymentHint: { type: ["string", "null"] },
+            // La cuenta que cree la IA, copiada de la lista que manda el chat (parte 2 de la cuenta sola al leer,
+            // 2026-11-21), o null. Sin lista (voz, Siri, versiones instaladas) el modelo da null y la app lo ignora.
+            account: { type: ["string", "null"] },
             confidence: {
               type: "object",
               additionalProperties: false,

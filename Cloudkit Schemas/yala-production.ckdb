@@ -18,6 +18,7 @@ DEFINE SCHEMA
     RECORD TYPE CD_Account (
         CD_accountNumber             STRING,
         CD_adjustmentMode            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_captureRulesRaw           STRING,
         CD_colorHex                  STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_creditCardPaymentDay      INT64 QUERYABLE SORTABLE,
         CD_creditCardPaymentReminder INT64 QUERYABLE SORTABLE,

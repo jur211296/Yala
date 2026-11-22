@@ -299,7 +299,12 @@ final class ChatAssistantService {
                 currency: ParserCurrencyContext(
                     mainCurrency: currencyCode,
                     accountCurrencies: accounts.filter { !$0.isSystemAccount }.map(\.currencyCode)
-                )
+                ),
+                // Capa B (parte 2 de la cuenta sola al leer): los nombres de las cuentas siempre —el permiso de Yala IA ya
+                // los promete— y sus reglas de captura solo en la nube (`CuentaSolaAlLeerPeticion.Envio.chat`).
+                accounts: CuentaSolaAlLeerPeticion.cuentas(
+                    from: DraftBuilder.cuentaSolaCandidates(in: accounts),
+                    envio: .chat(isCloud: CloudSyncFlags.storageMode == .cloud))
             )
         } catch let parserError as ParserError {
             switch parserError {

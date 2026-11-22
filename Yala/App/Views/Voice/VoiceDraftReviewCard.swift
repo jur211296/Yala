@@ -32,6 +32,8 @@ struct VoiceDraftReviewCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`): sin ella, el chip de siempre.
     @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
+    /// «Recordar» tras corregir la cuenta (parte 2): lo pone la hoja de la foto.
+    @Environment(\.cuentaSolaAlLeerRecordar) private var cuentaSolaRecordar
 
     private var isSaved: Bool { draft.status == .approved }
 
@@ -226,14 +228,39 @@ struct VoiceDraftReviewCard: View {
         }
         .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
         .padding(.trailing, DS.ListRow.paddingH)
-        .padding(.bottom, accountChipPresentation.porque == nil ? DS.Spacing.md : DS.Spacing.sm)
+        .padding(.bottom, hasLineUnderChips ? DS.Spacing.sm : DS.Spacing.md)
 
-        if let porque = accountChipPresentation.porque {
+        if let recordada = cuentaSolaHoja.recordada(draft) {
+            CuentaSolaAlLeerPorqueLine(text: recordada)
+                .accessibilityIdentifier("cuenta_sola_recordada")
+                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
+                .padding(.trailing, DS.ListRow.paddingH)
+                .padding(.bottom, DS.Spacing.md)
+        } else if let oferta = recordarOferta, let acciones = cuentaSolaRecordar {
+            CuentaSolaAlLeerRecordarLine(
+                palabras: AccountCaptureRule.cleaned(oferta.value),
+                onRecordar: { acciones.recordar(draft, oferta) },
+                onDescartar: { acciones.descartar(draft) })
+                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
+                .padding(.trailing, DS.ListRow.paddingH)
+                .padding(.bottom, DS.Spacing.md)
+        } else if let porque = accountChipPresentation.porque {
             CuentaSolaAlLeerPorqueLine(text: porque)
                 .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
                 .padding(.trailing, DS.ListRow.paddingH)
                 .padding(.bottom, DS.Spacing.md)
         }
+    }
+
+    /// La regla que ofrece «Recordar» si la persona cambió la cuenta del borrador.
+    private var recordarOferta: AccountCaptureRule? {
+        guard cuentaSolaRecordar != nil else { return nil }
+        return cuentaSolaHoja.ofertaRecordar(draft, currentAccountID: draft.account?.shortcutID)
+    }
+
+    /// Hay una línea bajo los chips (la de «por qué», la de «Recordar» o la de «Listo»).
+    private var hasLineUnderChips: Bool {
+        cuentaSolaHoja.recordada(draft) != nil || recordarOferta != nil || accountChipPresentation.porque != nil
     }
 
     // MARK: - Cuenta sola al leer

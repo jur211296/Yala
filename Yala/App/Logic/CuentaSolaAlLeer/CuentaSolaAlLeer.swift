@@ -7,7 +7,8 @@
 //  del medio de pago («Tarjeta de crédito», «Zip Visa ••4417», el banco del aviso) contra las cuentas del usuario.
 //
 //  De lo más seguro a lo menos; la primera que decide gana:
-//  1. Reglas del usuario (parte 2, todavía no existen).
+//  1. Reglas del usuario (parte 2, `CuentaSolaAlLeerReglas`): tarjeta de Apple Pay › comercio › palabras juntas ›
+//     varias palabras › una palabra. Una regla cumplida gana también a la IA; empate hacia cuentas distintas → no elige.
 //  2. Últimos 4 dígitos leídos contra los 4 últimos del «Número de cuenta».
 //  3. Nombre ENTERO de la cuenta escrito en el medio de pago; con varias, el nombre más largo (empate → no elige).
 //  4. Palabras del nombre (como voz y chat desde el 4-nov). Dos que casan → no elige.
@@ -36,32 +37,39 @@ nonisolated enum CuentaSolaAlLeer {
         let currencyCode: String
         /// Los 4 últimos dígitos de su «Número de cuenta», si tiene al menos cuatro.
         let last4: String?
+        /// Sus reglas de captura (paso 1).
+        let rules: [AccountCaptureRule]
 
         init(
             id: UUID, name: String, kind: PaymentMethodAccountLogic.AccountKind, currencyCode: String,
-            accountNumber: String?
+            accountNumber: String?, rules: [AccountCaptureRule] = []
         ) {
             self.id = id
             self.name = name
             self.kind = kind
             self.currencyCode = currencyCode
             self.last4 = CuentaSolaAlLeer.last4(ofAccountNumber: accountNumber)
+            self.rules = rules
         }
     }
 
     /// Por qué el teléfono eligió la cuenta.
     enum Motivo: String, Equatable, Sendable {
+        /// Una regla de captura del usuario (paso 1).
+        case regla
         case last4
         case nombre
         case palabras
         case clase
     }
 
-    /// Lo que decide el teléfono con lo leído (pasos 2 a 5).
+    /// Lo que decide el teléfono con lo leído (pasos 1 a 5).
     enum Lectura: Equatable, Sendable {
         case elegida(UUID, Motivo)
         /// Dos o más cuentas casan igual de bien: no elige y las enseña.
         case varias([UUID])
+        /// Reglas igual de concretas hacia cuentas distintas: no elige y el selector las enseña con su regla.
+        case choqueReglas([CuentaSolaAlLeerReglas.Cumplida])
         case ninguna
     }
 
@@ -75,13 +83,15 @@ nonisolated enum CuentaSolaAlLeer {
         case choque(telefono: UUID, ia: UUID)
         /// Varias cuentas casan con lo leído: no elige y el selector las pone arriba.
         case varias([UUID])
+        /// Dos reglas igual de concretas apuntan a cuentas distintas: no elige y el selector enseña cada una con su regla.
+        case choqueReglas([CuentaSolaAlLeerReglas.Cumplida])
         case ninguna
 
         /// La cuenta que el resultado pone en el borrador, si pone alguna.
         var cuentaPuesta: UUID? {
             switch self {
             case .sola(let id, _), .sugerida(let id): return id
-            case .choque, .varias, .ninguna: return nil
+            case .choque, .varias, .choqueReglas, .ninguna: return nil
             }
         }
     }
@@ -94,15 +104,39 @@ nonisolated enum CuentaSolaAlLeer {
         let mention: String?
         /// Los últimos 4 que decidieron, para «termina en 4417».
         let last4: String?
+        /// La regla que decidió, para «por tu regla «zip»».
+        let regla: AccountCaptureRule?
+        /// La cuenta con la que nació el borrador (la de la escalera o la única en la moneda). Si la persona la cambia,
+        /// «Recordar» le ofrece una regla.
+        let cuentaInicial: UUID?
 
-        init(resultado: Resultado, mention: String?, last4: String?) {
+        init(
+            resultado: Resultado, mention: String?, last4: String?, regla: AccountCaptureRule? = nil,
+            cuentaInicial: UUID? = nil
+        ) {
             self.resultado = resultado
             self.mention = mention
             self.last4 = last4 ?? mention.flatMap(CuentaSolaAlLeer.extractLast4(from:))
+            self.regla = regla
+            self.cuentaInicial = cuentaInicial ?? resultado.cuentaPuesta
         }
     }
 
     // MARK: - Escalera del teléfono
+
+    /// Los pasos 1 a 5 con lo leído, y la regla que decidió si decidió una. `merchant` es el comercio leído y
+    /// `applePayCard`, el nombre de la tarjeta si la captura viene de Apple Pay: solo los miran las reglas.
+    static func leerConRegla(
+        mention: String?, last4: String?, merchant: String? = nil, applePayCard: String? = nil, among candidates: [Cuenta]
+    ) -> (lectura: Lectura, regla: AccountCaptureRule?) {
+        // 1. Reglas del usuario.
+        let leido = CuentaSolaAlLeerReglas.Lectura(mention: mention, merchant: merchant, applePayCard: applePayCard)
+        switch CuentaSolaAlLeerReglas.decidir(leido, among: candidates) {
+        case .elegida(let id, let rule): return (.elegida(id, .regla), rule)
+        case .choque(let cumplidas): return (.choqueReglas(cumplidas), nil)
+        case .ninguna: return (leer(mention: mention, last4: last4, among: candidates), nil)
+        }
+    }
 
     /// Los pasos 2 a 5 con lo leído. `mention` es el medio de pago tal como lo dice la captura; `last4`, los dígitos que
     /// la captura trae aparte (aviso del banco, correo). Si no, se buscan en `mention` («••4417», «terminada en 4417»).
@@ -178,6 +212,11 @@ nonisolated enum CuentaSolaAlLeer {
     /// Cruza lo que decidió el teléfono con lo que propone la IA (`iaAccountID`, ya validada con `cuentaDeIA`).
     static func combinar(_ lectura: Lectura, iaAccountID: UUID?) -> Resultado {
         switch lectura {
+        case .elegida(let id, .regla):
+            // Una regla del usuario gana a lo que diga la IA (decisión A + B: la IA es segunda capa).
+            return .sola(id, .regla)
+        case .choqueReglas(let cumplidas):
+            return .choqueReglas(cumplidas)
         case .elegida(let id, let motivo):
             guard let ia = iaAccountID, ia != id else { return .sola(id, motivo) }
             return .choque(telefono: id, ia: ia)
@@ -217,6 +256,8 @@ nonisolated enum CuentaSolaAlLeer {
             return currentAccountID == nil ? .elige(coinciden: 2) : .normal
         case .varias(let ids):
             return currentAccountID == nil ? .elige(coinciden: ids.count) : .normal
+        case .choqueReglas(let cumplidas):
+            return currentAccountID == nil ? .elige(coinciden: cumplidas.count) : .normal
         case .ninguna:
             return .normal
         }
