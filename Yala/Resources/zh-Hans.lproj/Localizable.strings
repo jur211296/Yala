@@ -10316,3 +10316,18 @@
 "nube23media.signOutICloud.conservationWithGroups" = "如需回来，请选择“%@”，然后用你的账户重新登录群组。";
 /* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
 "nube23media.revert.cloudAgainDetail" = "随时可以：你 iCloud 中的数据会替换已保存的内容。";
+
+/* «Esto leí» con la tarjeta B1 (opción A, 2026-11-22) */
+"estoLei.seeAll" = "查看全部";
+"estoLei.seeAllA11y" = "查看完整记录";
+"estoLei.chooseCategory" = "选择类别";
+"estoLei.toComplete" = "还有 %d 条待补充";
+"estoLei.savedIn" = "已保存到 %@";
+"estoLei.again" = "再来一次";
+"estoLei.whatYouSaid" = "你说的话";
+"estoLei.inboxNotice.photo" = "读取的内容已放入收件箱";
+"estoLei.inboxNotice.voice" = "你说的内容已放入收件箱";
+"estoLei.inboxNotice.view" = "查看";
+"estoLei.appendNote.photo" = "读取的内容会加到已有内容里。";
+"estoLei.appendNote.voice" = "你说的内容会加到已有内容里。";
+"estoLei.seePhotos" = "查看照片";

@@ -101,7 +101,8 @@ struct XNativaHojaFotoWiringTests {
 
     @Test func laXConservaSusIdentificadores() throws {
         let personal = Self.codeOnly(try Self.repoFile("Yala/App/Views/Image/ImageSelectionView.swift"))
-        #expect(personal.contains("EntrySheetCloseButton { dismiss() }\n                    .accessibilityIdentifier(\"image_close\")"))
+        // Desde la opción A de «Esto leí» (2026-11-22) la X va a la izquierda, dentro de la fila de la barra: más sangría.
+        #expect(personal.contains("EntrySheetCloseButton { dismiss() }\n                        .accessibilityIdentifier(\"image_close\")"))
         let grupos = Self.codeOnly(try Self.repoFile("Yala/App/Views/Groups/Captura/GroupCaptureChrome.swift"))
         #expect(grupos.contains("EntrySheetCloseButton(action: onClose)\n                    .accessibilityIdentifier(closeIdentifier)"))
     }

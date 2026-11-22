@@ -10314,3 +10314,18 @@
 "nube23media.signOutICloud.conservationWithGroups" = "Per tornare, scegli «%@» e accedi di nuovo a Gruppi con il tuo account.";
 /* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
 "nube23media.revert.cloudAgainDetail" = "Quando vuoi: ciò che hai in iCloud sostituisce quanto conservato.";
+
+/* «Esto leí» con la tarjeta B1 (opción A, 2026-11-22) */
+"estoLei.seeAll" = "Vedi tutto";
+"estoLei.seeAllA11y" = "Vedi il movimento completo";
+"estoLei.chooseCategory" = "Scegli categoria";
+"estoLei.toComplete" = "%d da completare";
+"estoLei.savedIn" = "Salvato in %@";
+"estoLei.again" = "Ancora";
+"estoLei.whatYouSaid" = "Quello che hai detto";
+"estoLei.inboxNotice.photo" = "Quello che ho letto è in Posta in arrivo";
+"estoLei.inboxNotice.voice" = "Quello che hai detto è in Posta in arrivo";
+"estoLei.inboxNotice.view" = "Vedi";
+"estoLei.appendNote.photo" = "Quello che leggi si aggiunge a quello che c’è già.";
+"estoLei.appendNote.voice" = "Quello che dici si aggiunge a quello che c’è già.";
+"estoLei.seePhotos" = "Vedi le foto";

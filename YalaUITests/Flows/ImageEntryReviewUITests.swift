@@ -133,7 +133,8 @@ final class ImageEntryReviewUITests: XCTestCase {
         let app = openAndRead("partial")
         waitForReview(app)
 
-        XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 1, "Solo la foto leída da fila.")
+        XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "voice_draft_card").count, 1,
+                       "Solo la foto leída da tarjeta.")
         XCTAssertTrue(
             app.otherElements["image_failed_photos"].waitForExistence(timeout: 5),
             "La foto que falló tenía que avisarse (image_failed_photos)."
