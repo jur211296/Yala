@@ -111,4 +111,4 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [La ida del 14 no cuadra (17-nov)](project_ida_que_no_cuadra_en_el_iphone_14.md) — test@yala-app.pe tras un reset del espejo: verify>failed ×3; mide antes de repetir la prueba.
 - [Reglas de captura: qué falta](project_cuenta_sola_al_leer_parte_2_espera.md) — 22-nov en PR; CloudKit, Supabase prod + Worker v9 y medir «Tarjeta».
 - [IA ampliada al 100 %; conector espera a Dan](project_ia_ampliada_100_y_conector_espera_a_dan.md) — 22-nov: medición hasta ~6-dic; mcp.yala-app.pe reservado, despliega Dan.
-- [Uso de línea espera decisión](project_uso_de_linea_espera_decision.md) — 22-nov: límite de tarjeta = campo nuevo; card «Espera decisión», PR del lote en borrador.
+- [Uso de línea: A decidida](project_uso_de_linea_espera_decision.md) — 22-nov: línea lista y oculta sin límite; falta el encargo que crea el campo.
