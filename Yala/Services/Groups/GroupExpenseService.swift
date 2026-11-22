@@ -60,6 +60,12 @@ final class GroupExpenseService {
 
     // MARK: - Expense CRUD
 
+    #if DEBUG
+    /// Seam de tests: el próximo guardado de un gasto nuevo falla, para medir que reintentar no deja dos. Se apaga solo
+    /// tras usarse; estático, así que resetéalo en `defer`.
+    static var _testFailNextExpenseSave = false
+    #endif
+
     /// Create an expense with its shares, enqueue sync, and bridge to personal transaction.
     /// M6: `accountForCurrentUser` se pasa al bridge para crear TX cuenta real Caso A.
     @discardableResult
@@ -107,6 +113,7 @@ final class GroupExpenseService {
         context.insert(expense)
 
         // Create shares
+        var insertedShares: [SplitShare] = []
         for share in shares {
             let splitShare = SplitShare(
                 expenseID: expense.id,
@@ -115,11 +122,23 @@ final class GroupExpenseService {
                 groupZoneID: group.cloudKitZoneID
             )
             context.insert(splitShare)
+            insertedShares.append(splitShare)
         }
 
+        // Si el guardado falla, el gasto y sus repartos se retiran del contexto (ticket
+        // `group-expense-retry-after-a-failed-save-duplicates-the-expense`): seguirían pendientes de insertar y el
+        // siguiente guardado —el del reintento del formulario— escribiría los dos gastos. Mismo molde que `createSettlement`.
         do {
+            #if DEBUG
+            if Self._testFailNextExpenseSave {
+                Self._testFailNextExpenseSave = false
+                throw CocoaError(.fileWriteUnknown)
+            }
+            #endif
             try context.save()
         } catch {
+            for share in insertedShares { context.delete(share) }
+            context.delete(expense)
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
@@ -469,6 +488,13 @@ final class GroupExpenseService {
             in: group, memberA: debtorMemberID, memberB: creditorMemberID, currencyCode: currencyCode
         ) {
             do {
+                // Los otros de esa pareja y moneda (datos de antes de la regla) se funden en éste: quien añade pone el
+                // saldo de la pareja, y el formulario ya preguntó si reemplazar (ticket
+                // `groups-opening-balance-edit-can-duplicate-a-pair`, camino 2).
+                let legacyDuplicates = try openingBalancesSharingPair(
+                    with: existing, in: group,
+                    debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID, currencyCode: currencyCode
+                )
                 try updateOpeningBalance(
                     existing,
                     in: group,
@@ -476,7 +502,8 @@ final class GroupExpenseService {
                     creditorMemberID: creditorMemberID,
                     amount: amount,
                     currencyCode: currencyCode,
-                    date: date
+                    date: date,
+                    replacing: legacyDuplicates
                 )
                 return existing
             } catch GroupExpenseServiceError.expenseHasAssociatedSettlements {
@@ -513,6 +540,16 @@ final class GroupExpenseService {
         memberB: String,
         currencyCode: String
     ) throws -> SplitExpense? {
+        let (edges, byID) = try openingBalanceEdges(in: group)
+        return OpeningBalanceEdgeLogic.replaceable(
+            among: edges, memberA: memberA, memberB: memberB, currencyCode: currencyCode
+        ).flatMap { byID[$0.id] }
+    }
+
+    /// Los saldos iniciales del grupo resueltos a sus dos personas, del más antiguo al más nuevo.
+    private func openingBalanceEdges(
+        in group: SplitGroup
+    ) throws -> (edges: [OpeningBalanceEdgeLogic.Edge], byID: [UUID: SplitExpense]) {
         let context = try requireContext()
         let zoneID = group.cloudKitZoneID
         let existing = try context.fetch(FetchDescriptor<SplitExpense>(
@@ -530,9 +567,51 @@ final class GroupExpenseService {
                 currencyCode: expense.currencyCode
             ))
         }
-        return OpeningBalanceEdgeLogic.replaceable(
-            among: edges, memberA: memberA, memberB: memberB, currencyCode: currencyCode
-        ).flatMap { byID[$0.id] }
+        return (edges, byID)
+    }
+
+    /// Los OTROS saldos iniciales de la pareja y moneda en las que quedaría `expense` (en cualquier sentido), sin él.
+    private func openingBalancesSharingPair(
+        with expense: SplitExpense,
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String,
+        currencyCode: String
+    ) throws -> [SplitExpense] {
+        let (edges, byID) = try openingBalanceEdges(in: group)
+        let pair: Set<String> = [debtorMemberID, creditorMemberID]
+        return edges
+            .filter {
+                $0.id != expense.id && $0.currencyCode == currencyCode
+                    && Set([$0.debtorMemberID, $0.creditorMemberID]) == pair
+            }
+            .compactMap { byID[$0.id] }
+    }
+
+    /// Los saldos iniciales que guardar ESTA edición reemplazaría, o `[]` (ticket
+    /// `groups-opening-balance-edit-can-duplicate-a-pair`). Editar un saldo y ponerle una pareja y moneda que ya tienen
+    /// otro dejaba dos que se sumaban; ahora el formulario lo pregunta con la misma pregunta que al añadir, y al confirmar
+    /// `updateOpeningBalance(replacing:)` deja uno solo. Si un pago confirmado no deja editar, `[]`: el guardado dirá eso.
+    /// Solo lee.
+    func openingBalancesThatEditingWouldReplace(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String,
+        currencyCode: String
+    ) throws -> [SplitExpense] {
+        try validateGroupIsWritable(group)
+        try validateCurrentUserCanManageOpeningBalances(in: group)
+        guard debtorMemberID != creditorMemberID else { return [] }
+        let others = try openingBalancesSharingPair(
+            with: expense, in: group,
+            debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID, currencyCode: currencyCode
+        )
+        guard !others.isEmpty else { return [] }
+        let locked = try openingBalanceEditIsLocked(
+            expense, in: group, debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID
+        )
+        return locked ? [] : others
     }
 
     /// El saldo inicial que `setOpeningBalance` con estos datos EDITARÍA en vez de crear otro, o `nil` (lote 2.3 de Grupos,
@@ -587,6 +666,12 @@ final class GroupExpenseService {
     /// Actualiza un saldo inicial existente (el dueño o un admin). Guard targeted: bloquea si una
     /// liquidación confirmada involucra al deudor o al acreedor de esta arista.
     /// `date` es la fecha del saldo (card t3fq): editarlo ya no lo devuelve a `group.createdAt`.
+    ///
+    /// **Uno por pareja y moneda también al editar** (ticket `groups-opening-balance-edit-can-duplicate-a-pair`): si la
+    /// pareja y moneda que quedan ya tienen otro saldo, solo se guarda si quien llama lo pasa en `replacing` (la persona
+    /// confirmó reemplazarlo; `openingBalancesThatEditingWouldReplace` dice cuáles). Entonces se guarda la edición y se
+    /// borran los otros, en ese orden: si el borrado fallara, quedan los dos visibles, no se pierde ninguno. Sin confirmar,
+    /// `openingBalancePairTaken` y no se toca nada.
     func updateOpeningBalance(
         _ expense: SplitExpense,
         in group: SplitGroup,
@@ -594,7 +679,8 @@ final class GroupExpenseService {
         creditorMemberID: String,
         amount: Double,
         currencyCode: String,
-        date: Date
+        date: Date,
+        replacing confirmedReplacements: [SplitExpense] = []
     ) throws {
         // Card jqgy: el freeze antes que el permiso y que el guard de liquidaciones (ver `setOpeningBalance`).
         try validateGroupIsWritable(group)
@@ -607,6 +693,15 @@ final class GroupExpenseService {
             expense, in: group, debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID
         ) else {
             throw GroupExpenseServiceError.expenseHasAssociatedSettlements
+        }
+        // Se relee aquí, no se fía de la lista de quien llama: lo que se borra es lo que hay ahora.
+        let sharingPair = try openingBalancesSharingPair(
+            with: expense, in: group,
+            debtorMemberID: debtorMemberID, creditorMemberID: creditorMemberID, currencyCode: currencyCode
+        )
+        let confirmedIDs = Set(confirmedReplacements.map(\.id))
+        guard sharingPair.allSatisfy({ confirmedIDs.contains($0.id) }) else {
+            throw GroupExpenseServiceError.openingBalancePairTaken
         }
 
         try updateExpense(
@@ -623,6 +718,12 @@ final class GroupExpenseService {
             shares: [(memberID: debtorMemberID, amount: amount)],
             accountForCurrentUser: nil
         )
+
+        guard !sharingPair.isEmpty else { return }
+        let context = try requireContext()
+        for replaced in sharingPair {
+            try performExpenseDeletion(replaced, in: group, context: context)
+        }
     }
 
     /// Elimina un saldo inicial existente (el dueño o un admin). Guard targeted (ver `updateOpeningBalance`).
@@ -678,6 +779,8 @@ final class GroupExpenseService {
     /// Seam de tests: el próximo guardado de un pago nuevo falla, para medir que reintentar no deja dos. Se apaga solo
     /// tras usarse; estático, así que resetéalo en `defer`.
     static var _testFailNextSettlementSave = false
+    /// Seam de tests: el próximo guardado de `confirmSettlement` falla. Se apaga solo tras usarse; resetéalo en `defer`.
+    static var _testFailNextConfirmSave = false
     #endif
 
     /// Create a settlement (payment from one member to another).
@@ -766,11 +869,22 @@ final class GroupExpenseService {
     ) throws {
         let context = try requireContext()
         try validateCurrentUserCanWrite(in: group)
+        let wasConfirmed = settlement.isConfirmed
         settlement.isConfirmed = true
 
+        // Si el guardado falla, la marca vuelve a como estaba (ticket
+        // `confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge`): sin esto, el siguiente guardado
+        // de cualquier otra cosa escribía el pago confirmado sin haber pasado por el puente, y sin su movimiento personal.
         do {
+            #if DEBUG
+            if Self._testFailNextConfirmSave {
+                Self._testFailNextConfirmSave = false
+                throw CocoaError(.fileWriteUnknown)
+            }
+            #endif
             try context.save()
         } catch {
+            settlement.isConfirmed = wasConfirmed
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
@@ -1132,6 +1246,8 @@ enum GroupExpenseServiceError: LocalizedError {
     case groupUnavailable
     /// El puente no puede atender el gasto ahora (Grupos cerrado en este dispositivo, o tu miembro aún sin resolver).
     case bridgeUnavailable
+    /// Editar un saldo inicial lo llevaría a una pareja y moneda que ya tienen otro, y nadie confirmó reemplazarlo.
+    case openingBalancePairTaken
     case saveFailed(Error)
 
     /// Lo que ve la persona. Los casos de programación (contexto, importes, repartos) y el fallo al
@@ -1163,7 +1279,7 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.OpeningBalance.errorSameMember
         case .movedToBackend:
             return L10n.Groups.Errors.movedToBackend
-        case .notConvertible, .groupUnavailable, .bridgeUnavailable:
+        case .notConvertible, .groupUnavailable, .bridgeUnavailable, .openingBalancePairTaken:
             return L10n.Groups.Errors.actionFailed
         case .saveFailed:
             return L10n.Groups.Errors.actionFailed

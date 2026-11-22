@@ -1,10 +1,10 @@
 ---
 id: groups-opening-balance-edit-can-duplicate-a-pair
-status: backlog
+status: done
 priority: low
 area: groups
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-11-22
 source: "hallazgo de la card t3fq (PR #667), review adversarial del 2026-10-28"
 ---
 
@@ -25,3 +25,15 @@ Opciones: (a) en `updateOpeningBalance`, si la pareja y moneda nuevas ya tienen 
 borrar la editada, con el guard de liquidaciones de las dos); (b) avisar en el formulario antes de guardar; (c) una
 pasada que funda los duplicados legacy. (a) y (c) mueven datos sin preguntar: según la regla de cuándo pregunta la app,
 probablemente toca (b) o preguntar.
+
+## Resolución
+
+Hecho el 2026-11-22 (encargo «Grupos: un guardado que falla no duplica gastos…»). Medido antes en `origin/2.3`:
+los dos caminos seguían abiertos. Opción elegida: la (b) con fusión al confirmar, porque mueve datos y la app pregunta.
+1. **Editar hacia una pareja y moneda ocupadas**: el formulario hace la misma pregunta que al añadir («Ya hay un saldo
+   inicial entre X e Y… Reemplazar», sin textos nuevos) con `openingBalancesThatEditingWouldReplace`; al confirmar,
+   `updateOpeningBalance(replacing:)` guarda la edición y borra los otros. Sin confirmación lanza
+   `openingBalancePairTaken` y no toca nada.
+2. **Parejas con dos saldos de antes de la regla**: al añadir y confirmar «Reemplazar», se funden también los duplicados.
+   Residual: el texto de la pregunta del alta enseña solo el más antiguo.
+Lo fijan los cuatro casos de saldo inicial de `YalaTests/GruposGuardadoFallido/GruposGuardadoFallidoTests`.

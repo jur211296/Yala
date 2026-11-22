@@ -246,6 +246,10 @@ final class EntityDeletionService {
         // 3. Clean linked transactions:
         //    - Past (before current month): unlink (clear scheduledPaymentID)
         //    - Current month + future: delete
+        //    - Un registro que es pata de Grupos (`splitExpenseID`/`splitSettlementID`), en cualquier mes: unlink. Es el
+        //      movimiento real de un gasto o pago que sigue vivo en el grupo; borrarlo sin pasar por el puente dejaba
+        //      solo el «Préstamo a grupos» y un borrador «Elige cuenta» en la Bandeja (ticket
+        //      `deleting-a-scheduled-payment-deletes-group-legs-without-unbridging`).
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate<TransactionItem> { $0.scheduledPaymentID == paymentID }
         )
@@ -254,7 +258,7 @@ final class EntityDeletionService {
             if !linkedTransactions.isEmpty {
                 let currentMonthStart = Calendar.current.startOfMonth(for: Date.now)
                 for tx in linkedTransactions {
-                    if tx.date < currentMonthStart {
+                    if tx.date < currentMonthStart || tx.splitExpenseID != nil || tx.splitSettlementID != nil {
                         tx.scheduledPaymentID = nil
                     } else {
                         context.delete(tx)

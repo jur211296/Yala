@@ -46,6 +46,9 @@ struct GroupOpeningBalanceFormView: View {
     @State private var showReplaceConfirmation = false
     @State private var replaceTitle = ""
     @State private var replaceMessage = ""
+    /// Al EDITAR: los saldos de la pareja y moneda nuevas que la persona confirmó reemplazar (ticket
+    /// `groups-opening-balance-edit-can-duplicate-a-pair`).
+    @State private var editReplacements: [SplitExpense] = []
 
     /// Decisión 39 de 2.3 (F1): lo que la persona puede cambiar aquí, para preguntar antes de tirarlo.
     private struct FormSnapshot: Equatable {
@@ -369,8 +372,36 @@ struct GroupOpeningBalanceFormView: View {
             return
         }
         showsMissingField = false
-        if expenseToEdit == nil, askBeforeReplacing() { return }
+        editReplacements = []
+        if let edit = expenseToEdit {
+            if askBeforeReplacingOnEdit(edit) { return }
+        } else if askBeforeReplacing() {
+            return
+        }
         performSave()
+    }
+
+    /// Al editar, si la pareja y moneda que quedan ya tienen otro saldo, la misma pregunta que al añadir. Al confirmar,
+    /// `updateOpeningBalance(replacing:)` deja uno solo.
+    private func askBeforeReplacingOnEdit(_ edit: SplitExpense) -> Bool {
+        let others: [SplitExpense]
+        do {
+            others = try GroupExpenseService.shared.openingBalancesThatEditingWouldReplace(
+                edit,
+                in: group,
+                debtorMemberID: debtorMemberID,
+                creditorMemberID: creditorMemberID,
+                currencyCode: selectedCurrency.rawValue
+            )
+        } catch {
+            errorMessage = OpeningBalanceErrorCopyLogic.message(for: error)
+            showError = true
+            return true
+        }
+        guard !others.isEmpty else { return false }
+        presentReplaceConfirmation(showing: others)
+        editReplacements = others
+        return true
     }
 
     /// Si añadir este saldo reemplazaría el que ya tienen esas dos personas en esa moneda, prepara la pregunta y devuelve
@@ -390,15 +421,20 @@ struct GroupOpeningBalanceFormView: View {
             return true
         }
         guard let existing else { return false }
-        let name = { (id: String) in memberNameLookup[id] ?? "?" }
-        let currentDebtor = GroupExpenseService.shared.openingBalanceDebtorMemberID(of: existing) ?? ""
-        replaceTitle = L10n.Groups.OpeningBalance.replaceTitle(name(debtorMemberID), name(creditorMemberID))
-        replaceMessage = L10n.Groups.OpeningBalance.replaceMessage(
-            L10n.Groups.OpeningBalance.feedRow(name(currentDebtor), name(existing.paidByMemberID))
-                + " · " + appPreferences.currency(existing.amount, currencyCode: existing.currencyCode)
-        )
-        showReplaceConfirmation = true
+        presentReplaceConfirmation(showing: [existing])
         return true
+    }
+
+    private func presentReplaceConfirmation(showing existing: [SplitExpense]) {
+        let name = { (id: String) in memberNameLookup[id] ?? "?" }
+        replaceTitle = L10n.Groups.OpeningBalance.replaceTitle(name(debtorMemberID), name(creditorMemberID))
+        let current = existing.map { balance in
+            let debtor = GroupExpenseService.shared.openingBalanceDebtorMemberID(of: balance) ?? ""
+            return L10n.Groups.OpeningBalance.feedRow(name(debtor), name(balance.paidByMemberID))
+                + " · " + appPreferences.currency(balance.amount, currencyCode: balance.currencyCode)
+        }
+        replaceMessage = L10n.Groups.OpeningBalance.replaceMessage(current.joined(separator: "; "))
+        showReplaceConfirmation = true
     }
 
     private func performSave(afterConfirmation: Bool = false) {
@@ -411,7 +447,8 @@ struct GroupOpeningBalanceFormView: View {
                     creditorMemberID: creditorMemberID,
                     amount: amountValue,
                     currencyCode: selectedCurrency.rawValue,
-                    date: date
+                    date: date,
+                    replacing: editReplacements
                 )
             } else {
                 try GroupExpenseService.shared.setOpeningBalance(

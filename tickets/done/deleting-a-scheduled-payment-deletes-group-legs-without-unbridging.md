@@ -1,10 +1,10 @@
 ---
 id: deleting-a-scheduled-payment-deletes-group-legs-without-unbridging
-status: backlog
+status: done
 priority: medium
 area: "grupos, pagos planificados"
 created: 2026-11-09
-updated: 2026-11-09
+updated: 2026-11-22
 source: "review adversarial de `convert-personal-expense-to-group-from-the-editor` (2026-11-09), lente de invariantes del puente"
 ---
 
@@ -31,3 +31,12 @@ compartido» lo hace alcanzable con cualquier pago planificado personal.
 
 Al borrar, soltar el enlace de grupo del registro (o no borrar los registros que son pata real de un gasto vivo) y
 decidir con Jürgen qué esperar del gasto del grupo.
+
+## Resolución
+
+Hecho el 2026-11-22 (encargo «Grupos: un guardado que falla no duplica gastos…»). Medido antes en `origin/2.3`:
+seguía pasando. Decidido sin consultar (el encargo ya fijaba el resultado): al borrar el pago planificado, un registro
+que es pata de Grupos (`splitExpenseID` o `splitSettlementID`) se DESVINCULA del pago, en cualquier mes, en vez de
+borrarse; el gasto del grupo no se toca. Descartado: borrar el registro y desmontar el puente (el gasto del grupo se
+quedaría sin el dinero que pagaste) y borrar el gasto del grupo (afecta a los demás miembros). Lo fija
+`deletingAScheduledPayment_keepsTheGroupLeg` en `YalaTests/GruposGuardadoFallido/GruposGuardadoFallidoTests`.

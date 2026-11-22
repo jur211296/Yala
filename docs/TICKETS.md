@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (106)
+## Index (107)
 
 | id | status | path |
 | 2026-11-22-cuenta-limite-tarjeta-campo-sincronizado | qa | tickets/qa/2026-11-22-cuenta-limite-tarjeta-campo-sincronizado.md |
@@ -453,7 +453,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | done | tickets/done/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
-| confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge | backlog | tickets/backlog/confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge.md |
+| confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge | done | tickets/done/confirming-a-settlement-whose-save-fails-leaves-it-confirmed-without-bridge.md |
 | connection-errors-put-the-fix-on-the-user | backlog | tickets/backlog/connection-errors-put-the-fix-on-the-user.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | done | tickets/done/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
@@ -483,7 +483,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | done | tickets/done/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
-| deleting-a-scheduled-payment-deletes-group-legs-without-unbridging | backlog | tickets/backlog/deleting-a-scheduled-payment-deletes-group-legs-without-unbridging.md |
+| deleting-a-scheduled-payment-deletes-group-legs-without-unbridging | done | tickets/done/deleting-a-scheduled-payment-deletes-group-legs-without-unbridging.md |
 | deleting-an-account-asks-nothing | done | tickets/done/deleting-an-account-asks-nothing.md |
 | demo-pizza-uitest-misses-the-registered-badge | done | tickets/done/demo-pizza-uitest-misses-the-registered-badge.md |
 | detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
@@ -646,7 +646,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-from-a-receipt-with-ai | qa | tickets/qa/group-expense-from-a-receipt-with-ai.md |
-| group-expense-retry-after-a-failed-save-duplicates-the-expense | backlog | tickets/backlog/group-expense-retry-after-a-failed-save-duplicates-the-expense.md |
+| group-expense-retry-after-a-failed-save-duplicates-the-expense | done | tickets/done/group-expense-retry-after-a-failed-save-duplicates-the-expense.md |
 | group-expense-success-claims-a-bridge-write-that-did-not-happen | done | tickets/done/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
 | group-expense-views-redesign | done | tickets/done/group-expense-views-redesign.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
@@ -742,7 +742,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-second-launch-mounts-icloud-mirror | done | tickets/done/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | done | tickets/done/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
 | groups-only-sign-up-drops-a-language-chosen-just-before-it | backlog | tickets/backlog/groups-only-sign-up-drops-a-language-chosen-just-before-it.md |
-| groups-opening-balance-edit-can-duplicate-a-pair | backlog | tickets/backlog/groups-opening-balance-edit-can-duplicate-a-pair.md |
+| groups-opening-balance-edit-can-duplicate-a-pair | done | tickets/done/groups-opening-balance-edit-can-duplicate-a-pair.md |
 | groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome | backlog | tickets/backlog/groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |

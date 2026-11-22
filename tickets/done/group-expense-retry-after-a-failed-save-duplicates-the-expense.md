@@ -1,10 +1,10 @@
 ---
 id: group-expense-retry-after-a-failed-save-duplicates-the-expense
-status: backlog
+status: done
 priority: high
 area: groups, expense-form
 created: 2026-11-10
-updated: 2026-11-10
+updated: 2026-11-22
 source: lote 01 de las mejoras necesarias 2.3 (Grupos)
 ---
 
@@ -18,3 +18,11 @@ pago» (`createSettlement` retira el pago con `context.delete` si el guardado fa
 
 Cómo verificarlo: un test de servicio con un seam que haga fallar el guardado de `createExpense`, reintentar y contar
 gastos y repartos en disco. Criterio: reintentar deja un gasto.
+
+## Resolución
+
+Hecho el 2026-11-22 (encargo «Grupos: un guardado que falla no duplica gastos…»). Medido antes en `origin/2.3`:
+seguía pasando. `GroupExpenseService.createExpense` retira del contexto el gasto y sus repartos si el guardado falla,
+como `createSettlement`. Seam `_testFailNextExpenseSave`. Lo fijan
+`YalaTests/GruposGuardadoFallido/GruposGuardadoFallidoTests` (`expenseRetryAfterAFailedSave_leavesOneExpense` y
+`expenseFailedSave_leavesNothingForALaterSave`), rojos con el arreglo quitado.
