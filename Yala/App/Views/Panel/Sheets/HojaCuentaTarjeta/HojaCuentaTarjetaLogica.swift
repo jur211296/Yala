@@ -6,7 +6,7 @@
 //  de la tarjeta, la barra de lo que debes (facturado frente a por facturar) y si el bloque de la tarjeta de crédito
 //  ofrece añadir las fechas. Pura, sin vistas, para medirla en `YalaTests/HojaCuentaTarjeta/`.
 //
-//  La barra NO es «% de la línea usado»: Yala no guarda el límite de la tarjeta. Reparte lo que debes entre lo que ya
+//  La barra NO es «% de la línea usado»: Yala aún no guarda el límite de la tarjeta. Reparte lo que debes entre lo que ya
 //  se facturó (lo que pagas en la próxima fecha de pago) y lo que entra en el corte siguiente.
 //
 
@@ -56,6 +56,29 @@ nonisolated enum HojaCuentaTarjetaLogica {
         let porFacturar = max(linea.porFacturar, 0)
         guard facturado + porFacturar > 0 else { return nil }
         return Reparto(facturado: facturado, porFacturar: porFacturar)
+    }
+
+    // MARK: - Uso de línea («16 % usado · 6.752,50 disponible de 8.000,00»)
+
+    /// Cuánto de la línea de crédito usas. Hoy Yala no guarda el límite de la tarjeta (decisión de Jürgen del
+    /// 22-nov-2026: será un campo nuevo, en otro encargo), así que la hoja lo recibe como `nil` y no pinta la línea.
+    struct UsoDeLinea: Equatable {
+        let usado: Double
+        let limite: Double
+
+        /// La parte usada de la línea. Puede pasar de 1 si te pasaste del límite: se dice tal cual.
+        var fraccionUsada: Double { usado / limite }
+        /// Lo que te queda por usar. Nunca negativo.
+        var disponible: Double { max(limite - usado, 0) }
+    }
+
+    /// Solo con un límite de verdad (positivo y finito) y con UNA divisa: sin límite no hay línea (ni texto vacío ni
+    /// «0 %»), y entre divisas no se suma. Lo que debes es facturado + por facturar; un pago de más cuenta como cero.
+    static func usoDeLinea(lineas: [(facturado: Double, porFacturar: Double)], limite: Double?) -> UsoDeLinea? {
+        guard let limite, limite.isFinite, limite > 0 else { return nil }
+        guard lineas.count == 1, let linea = lineas.first else { return nil }
+        let usado = max(linea.facturado, 0) + max(linea.porFacturar, 0)
+        return UsoDeLinea(usado: usado, limite: limite)
     }
 
     // MARK: - Bloque de la tarjeta de crédito

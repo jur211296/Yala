@@ -75,7 +75,9 @@ enum SaludFinancieraDetalleMuestra {
             comparacion: L.comparacion(pagos: pagosBien, dineroHoy: dinero, moneda: "PEN"),
             dineroHoy: dinero, tienePagos: true, racha: racha, esPro: true, finDeMes: finDeMes
         )
-        var score = FinancialScore(total: 91, budget: 92, activity: 100, bills: 84)
+        // Con «Lo que te queda» (lote 2): entró S/ 5,200 y salió S/ 3,950, un 24 % que queda → 100.
+        let queda = SavingsFigures(income: 5200, expense: 3950)
+        var score = FinancialScore(total: 93, budget: 92, activity: 100, bills: 84, savings: 100, savingsFigures: queda)
 
         switch estado {
         case .bien:
@@ -87,23 +89,26 @@ enum SaludFinancieraDetalleMuestra {
                 texto: "Tus pedidos de delivery subieron 38 % frente al mes pasado, sobre todo viernes y sábado.",
                 consejo: "Con un tope de dos pedidos por fin de semana ahorrarías unos S/ 180 al mes."
             ) : nil
-            score = FinancialScore(total: 78, budget: 58, activity: 100, bills: 84)
+            score = FinancialScore(total: 82, budget: 58, activity: 100, bills: 84, savings: 100, savingsFigures: queda)
         case .noalcanza:
             datos.pagos = pagosJustos
             datos.comparacion = L.comparacion(pagos: pagosJustos, dineroHoy: dinero, moneda: "PEN")
             datos.ingresos = [L.IngresoEsperado(nombre: "Sueldo", fecha: dia(enElMes(0.8)), monto: 4500,
                                                 moneda: "PEN")]
             datos.racha = rachaSinHoy
-            score = FinancialScore(total: 66, budget: 92, activity: 85, bills: 22)
+            // Sale un poco más de lo que entra: 4,500 frente a 4,890 → 41.
+            score = FinancialScore(total: 61, budget: 92, activity: 85, bills: 22, savings: 41,
+                                   savingsFigures: SavingsFigures(income: 4500, expense: 4890))
         case .sinpres:
             datos.presupuestos = []
             datos.categoriaSugerida = .init(nombre: "Comidas fuera", promedioMensual: 1050, moneda: "PEN")
-            score = FinancialScore(total: 91, budget: nil, activity: 100, bills: 84)
+            score = FinancialScore(total: 93, budget: nil, activity: 100, bills: 84, savings: 100, savingsFigures: queda)
         case .sinpagos:
             datos.pagos = []
             datos.comparacion = nil
             datos.tienePagos = false
             datos.cobrosQueSeRepiten = ["Spotify", "Netflix", "Gimnasio Smart Fit"]
+            // Sin ingresos este período: «Lo que te queda» no cuenta.
             score = FinancialScore(total: 95, budget: 92, activity: 100, bills: nil)
         }
         return (score, datos)

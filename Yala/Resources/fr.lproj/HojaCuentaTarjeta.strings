@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Ajoute ta date de relevé et de paiement";
 "hojaCuenta.noDates.detail" = "Yala te dira combien payer et avant quand.";
 "hojaCuenta.noDates.action" = "Ajouter les dates";
+"hojaCuenta.lineUsage" = "%1$@ utilisé · %2$@ disponible sur %3$@";

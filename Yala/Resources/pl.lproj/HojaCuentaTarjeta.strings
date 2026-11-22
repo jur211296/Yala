@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Dodaj dzień zestawienia i płatności";
 "hojaCuenta.noDates.detail" = "Yala powie ci, ile zapłacić i do kiedy.";
 "hojaCuenta.noDates.action" = "Dodaj daty";
+"hojaCuenta.lineUsage" = "Wykorzystano %1$@ · dostępne %2$@ z %3$@";

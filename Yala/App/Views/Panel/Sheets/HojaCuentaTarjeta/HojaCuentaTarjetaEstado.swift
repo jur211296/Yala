@@ -8,6 +8,8 @@
 //  ya existían (`L10n.CreditCardStatement`).
 //
 //  Sin límite de la tarjeta en Yala no hay «% usado»: la barra reparte lo que debes (`HojaCuentaTarjetaLogica.reparto`).
+//  La línea «X % usado · disponible de N» ya está lista y sale solo cuando llega `limite` (decisión de Jürgen del
+//  22-nov-2026, opción A: el límite será un campo nuevo de la cuenta, en otro encargo). Mientras sea `nil`, no se pinta.
 //  Con varias divisas no hay barra (no se suman) y cada cifra va en su divisa, apilada.
 //
 
@@ -15,8 +17,12 @@ import SwiftUI
 
 struct HojaCuentaTarjetaEstado: View {
     let card: CreditCardStatementSummary.Card
+    /// El límite de la tarjeta. Hoy siempre `nil`: la cuenta aún no lo guarda.
+    var limite: Double? = nil
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var prefs
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var calendar: Calendar { .current }
@@ -58,6 +64,10 @@ struct HojaCuentaTarjetaEstado: View {
             if let reparto = HojaCuentaTarjetaLogica.reparto(lineas: lineas) {
                 barra(reparto)
             }
+            if let uso = HojaCuentaTarjetaLogica.usoDeLinea(lineas: lineas, limite: limite),
+               let divisa = card.lines.first?.currencyCode {
+                usoDeLinea(uso, divisa: divisa)
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hoja_cuenta_reparto")
@@ -97,6 +107,20 @@ struct HojaCuentaTarjetaEstado: View {
                 }
             }
             .accessibilityHidden(true)
+    }
+
+    /// «16 % usado · 6.752,50 disponible de 8.000,00». Con los montos ocultos, las cifras van tapadas como en el resto.
+    private func usoDeLinea(_ uso: HojaCuentaTarjetaLogica.UsoDeLinea, divisa: String) -> some View {
+        let porcentaje = uso.fraccionUsada.formatted(.percent.precision(.fractionLength(0)).locale(LanguageManager.resolved.locale))
+        let monto: (Double) -> String = { valor in
+            amountsHidden ? L10n.Panel.amountHidden : prefs.currency(valor, currencyCode: divisa)
+        }
+        return Text(L10n.HojaCuentaTarjeta.usoDeLinea(porcentaje: porcentaje, disponible: monto(uso.disponible),
+                                                      limite: monto(uso.limite)))
+            .font(DS.Typography.caption)
+            .foregroundStyle(theme.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("hoja_cuenta_uso_de_linea")
     }
 
     // MARK: - Fecha de pago y próximo corte

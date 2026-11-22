@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Adiciona o dia de fecho e de pagamento";
 "hojaCuenta.noDates.detail" = "Assim a Yala diz-te quanto pagar e até quando.";
 "hojaCuenta.noDates.action" = "Adicionar datas";
+"hojaCuenta.lineUsage" = "%1$@ utilizado · %2$@ disponível de %3$@";

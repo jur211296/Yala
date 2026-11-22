@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Engagements";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Ta santé financière";
-"panel.health.total.sheet.explanation" = "Ta note vient de trois parties. Chacune pèse ce qui est indiqué à côté ; si l’une n’a pas encore de données, les autres se partagent son poids. Avec des données dans moins de deux parties, il n’y a pas encore de note.";
+"panel.health.total.sheet.explanation" = "Ta note vient de plusieurs parties. Chacune pèse ce qui est indiqué à côté ; si l’une n’a pas encore de données, les autres se partagent son poids. Avec des données dans moins de deux parties, il n’y a pas encore de note.";
 "panel.health.total.headline.high" = "Tu assures !";
 "panel.health.total.headline.mid" = "Très bon rythme";
 "panel.health.total.headline.low" = "Petits pas, grands changements";
@@ -8952,12 +8952,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "Planifie un paiement pour voir ta note.";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "Ta note de santé, plus précise";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "Elle compte maintenant les jours depuis ton dernier enregistrement, avec 3 jours de marge, et dépasser un peu un budget ne compte presque pas. Pour la monter, enregistre souvent et surveille tes limites. Tu la trouves dans le Panel, sous Tes finances.";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "Du %1$@ au %2$@";

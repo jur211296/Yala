@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Commitments";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Your financial health";
-"panel.health.total.sheet.explanation" = "Your score comes from three parts. Each weighs what it says next to it; if one has no data yet, the others share its weight. With data in fewer than two, there’s no score yet.";
+"panel.health.total.sheet.explanation" = "Your score comes from several parts. Each weighs what it says next to it; if one has no data yet, the others share its weight. With data in fewer than two, there’s no score yet.";
 "panel.health.total.headline.high" = "You're crushing it!";
 "panel.health.total.headline.mid" = "Great rhythm going";
 "panel.health.total.headline.low" = "Small steps, big changes";
@@ -8957,12 +8957,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "Plan a payment to see your score.";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "A more precise health score";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "It now counts the days since your last record, with 3 days of grace, and going a little over a budget barely counts. To raise it, record often and watch your limits. You'll find it on the Panel, under Your finances.";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "From %1$@ to %2$@";

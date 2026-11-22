@@ -180,14 +180,28 @@ enum WhatsNewConfig {
 
     // MARK: - Version 2.3
 
-    /// La nota de salud, más precisa (lote 1 de la nota de salud, 11-nov-2026).
+    /// Lo nuevo de 2.3 que la app publicada ya hace en producción, con el anuncio del iPhone Duo primero (decisión 118
+    /// de Jürgen, 17-nov-2026; encargo del 22-nov). Fuera, a propósito: Yala web y los navegadores conectados (la fila
+    /// solo existe en Yala Dev), Yala IA ampliada (apagada en producción), el conector de IA (sin desplegar en
+    /// producción) y el correo del banco (sin verificar en producción). Textos en `Novedades23.strings`.
     // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version2_3: [WhatsNewFeature] = [
-        WhatsNewFeature(
-            icon: "heart.text.square",
-            iconColor: .indigo,
-            title: L10n.WhatsNew.v23HealthScoreTitle,
-            description: L10n.WhatsNew.v23HealthScoreDescription
-        ),
+        feature23("duo", icon: "rectangle.split.2x1.fill", color: .indigo),
+        feature23("cards", icon: "creditcard.fill", color: .purple),
+        feature23("groups", icon: "person.3.fill", color: .green),
+        feature23("records", icon: "line.3.horizontal.decrease.circle.fill", color: .orange),
+        feature23("health", icon: "heart.text.square", color: .pink),
+        feature23("planning", icon: "gauge.with.dots.needle.50percent", color: .teal),
+        feature23("ant", icon: "ant.fill", color: .brown),
+        feature23("hide", icon: "eye.slash.fill", color: .blue),
     ]
+
+    private static func feature23(_ clave: String, icon: String, color: Color) -> WhatsNewFeature {
+        WhatsNewFeature(
+            icon: icon,
+            iconColor: color,
+            title: L10n.Novedades23.titulo(clave),
+            description: L10n.Novedades23.descripcion(clave)
+        )
+    }
 }

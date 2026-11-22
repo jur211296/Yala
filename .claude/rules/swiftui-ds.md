@@ -158,7 +158,8 @@ paths:
 - **Con Primeros pasos a medias el Panel es progresivo y nada enseña consejos (acuerdo de Jürgen del 19-nov-2026).** La
   regla vive en `PrimerosPasosPanelGate` (`SetupDeckLogic.swift`): solo las secciones que el mazo ya abrió (la cuenta tras
   el paso 1, o tras el 2 en «Solo gastos»; «Últimos registros» tras el 2; Planificación tras un «Sí» en el 3 o el 4), sin
-  barra de filtros, sin tarjeta de tipo de cambio y solo los avisos de la nube y de versión nueva. Las guías de pantalla
+  barra de filtros, sin tarjeta de tipo de cambio y solo los avisos de la nube y de versión nueva. **El saldo grande
+  tampoco sale antes de la cuenta** (`showsBalanceHero`, decisión 137, 22-nov-2026): al entrar, solo el mazo. Las guías de pantalla
   con X, los coach marks, los consejos de TipKit y la guía de «días después» se callan con
   `SetupChecklistManager.isPrimerosPasosShown` y no se dan por vistos. ⇒ **una sección, un aviso, una guía, un coach mark
   o un `Tip` nuevos pasan por esa puerta**: un `PanelNotice` nuevo entra en `allows(_:)`, un `Tip` lleva la regla de

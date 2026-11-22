@@ -96,7 +96,9 @@ struct NotaDeSaludPerfilesTests {
                    initialBalance: 1500, budgetLimits: [600], budgetsCreatedDay: 15, startsDay: 15),
             Perfil(name: "Recién empieza, sin presupuesto ni pagos", expenseDays: [15, 16, 17], dailyExpense: 20,
                    income: 0, initialBalance: 1500, rent: nil, startsDay: 15),
-            Perfil(name: "Va mal de verdad", expenseDays: Array(1...5), dailyExpense: 200, income: 1500,
+            // Desde el lote 2 («Lo que te queda», 22-nov-2026) ir mal de verdad incluye gastar más de lo que entra:
+            // con 1.500 de ingresos y 1.000 gastados le quedaba un tercio, y esa parte (100) lo subía de 50.
+            Perfil(name: "Va mal de verdad", expenseDays: Array(1...5), dailyExpense: 200, income: 900,
                    budgetLimits: [500, 667]),
         ]
     }
@@ -109,7 +111,8 @@ struct NotaDeSaludPerfilesTests {
             let s = score(perfil, context: context)
             results[perfil.name] = s
             print("PERFIL|\(perfil.name)|B=\(s.budget.map(String.init) ?? "-")|R=\(s.activity.map(String.init) ?? "-")"
-                  + "|C=\(s.bills.map(String.init) ?? "-")|T=\(s.total.map(String.init) ?? "-")"
+                  + "|C=\(s.bills.map(String.init) ?? "-")|Q=\(s.savings.map(String.init) ?? "-")"
+                  + "|T=\(s.total.map(String.init) ?? "-")"
                   + "|\(FinancialScoreCopy.cardMessage(for: s))")
         }
 

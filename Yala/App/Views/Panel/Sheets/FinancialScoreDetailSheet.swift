@@ -19,6 +19,8 @@ enum FinancialScoreDetailKind: String, Identifiable {
     case budget
     case activity
     case bills
+    /// «Lo que te queda» (lote 2 de la nota de salud).
+    case savings
 
     var id: String { rawValue }
 
@@ -30,6 +32,7 @@ enum FinancialScoreDetailKind: String, Identifiable {
         case .budget:   return .purple
         case .activity: return .indigo
         case .bills:    return .blue
+        case .savings:  return .teal
         }
     }
 }
@@ -164,6 +167,8 @@ struct FinancialScoreDetailSheet: View {
                 navigation.navigateToDetail(.insights)
             case .pro:
                 RouterEntryGate.shared.submit(.presentUpgradeSheet(.chat))
+            case .distribucion:
+                navigation.navigateToDetail(.categories)
             }
         }
     }
@@ -270,6 +275,7 @@ struct FinancialScoreDetailSheet: View {
         case .budget:   return L10n.Panel.Health.budgetSheetTitle
         case .activity: return L10n.Panel.Health.activitySheetTitle
         case .bills:    return L10n.Panel.Health.billsSheetTitle
+        case .savings:  return L10n.NotaSaludTeQueda.nombre
         }
     }
 
@@ -284,6 +290,7 @@ struct FinancialScoreDetailSheet: View {
             return sessionState.isExpensesOnlyMode
                 ? L10n.Panel.Health.billsSheetExplanationExpensesOnly
                 : L10n.Panel.Health.billsSheetExplanation
+        case .savings:  return L10n.NotaSaludTeQueda.explicacion
         }
     }
 
@@ -315,6 +322,12 @@ struct FinancialScoreDetailSheet: View {
             if score >= 90 { return L10n.Panel.Health.billsHeadlineHigh }
             if score >= 70 { return L10n.Panel.Health.billsHeadlineMid }
             return L10n.Panel.Health.billsHeadlineLow
+        case .savings:
+            // Amable (lote 2): con 50 o más aún le queda algo; por debajo, sale más de lo que entra.
+            guard let score else { return L10n.NotaSaludTeQueda.titularVacio }
+            if score >= 90 { return L10n.NotaSaludTeQueda.titularAlto }
+            if score >= 50 { return L10n.NotaSaludTeQueda.titularMedio }
+            return L10n.NotaSaludTeQueda.titularBajo
         }
     }
 
@@ -333,6 +346,8 @@ struct FinancialScoreDetailSheet: View {
             return score == nil
                 ? L10n.Panel.Health.billsCTACreate
                 : L10n.Panel.Health.billsCTAView
+        case .savings:
+            return score == nil ? nil : L10n.NotaSaludTeQueda.boton
         }
     }
 

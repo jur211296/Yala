@@ -70,6 +70,41 @@ struct HojaCuentaTarjetaLogicaTests {
         #expect(reparto.facturado == 0)
     }
 
+    // MARK: Uso de línea (opción A del 22-nov: sale solo con límite)
+
+    @Test func usoDeLinea_sinLimite_noHayLinea() {
+        // Hoy la cuenta no guarda el límite: ni texto vacío ni «0 %».
+        #expect(L.usoDeLinea(lineas: [(facturado: 300, porFacturar: 100)], limite: nil) == nil)
+        #expect(L.usoDeLinea(lineas: [(300, 100)], limite: 0) == nil)
+        #expect(L.usoDeLinea(lineas: [(300, 100)], limite: -500) == nil)
+        #expect(L.usoDeLinea(lineas: [(300, 100)], limite: .infinity) == nil)
+        #expect(L.usoDeLinea(lineas: [(300, 100)], limite: .nan) == nil)
+    }
+
+    @Test func usoDeLinea_conLimite_comoLaReferencia() throws {
+        // «16 % usado · 6.752,50 disponible de 8.000,00».
+        let uso = try #require(L.usoDeLinea(lineas: [(facturado: 1_000, porFacturar: 247.50)], limite: 8_000))
+        #expect(uso.usado == 1_247.50)
+        #expect(uso.disponible == 6_752.50)
+        #expect(abs(uso.fraccionUsada - 0.1559) < 0.0001)
+    }
+
+    @Test func usoDeLinea_pasadoDelLimite_disponibleCero() throws {
+        let uso = try #require(L.usoDeLinea(lineas: [(900, 300)], limite: 1_000))
+        #expect(uso.disponible == 0)
+        #expect(uso.fraccionUsada == 1.2)
+    }
+
+    @Test func usoDeLinea_variasDivisas_noHayLinea() {
+        #expect(L.usoDeLinea(lineas: [(100, 10), (20, 5)], limite: 1_000) == nil)
+        #expect(L.usoDeLinea(lineas: [], limite: 1_000) == nil)
+    }
+
+    @Test func usoDeLinea_unPagoDeMas_cuentaComoCero() throws {
+        let uso = try #require(L.usoDeLinea(lineas: [(-40, 60)], limite: 1_000))
+        #expect(uso.usado == 60)
+    }
+
     // MARK: Bloque de la tarjeta de crédito
 
     @Test func bloque_tarjetaConCorte_enseñaElEstadoDeCuenta() {
@@ -151,10 +186,11 @@ struct HojaCuentaTarjetaTextosTests {
 
     @Test func cadaClaveDelCodigo_existe() throws {
         typealias T = L10n.HojaCuentaTarjeta
-        for texto in [T.proximoCorte("15 dic"), T.sinFechasTitulo, T.sinFechasDetalle, T.anadirFechas] {
+        for texto in [T.proximoCorte("15 dic"), T.sinFechasTitulo, T.sinFechasDetalle, T.anadirFechas,
+                      T.usoDeLinea(porcentaje: "16 %", disponible: "6.752,50", limite: "8.000,00")] {
             #expect(!texto.hasPrefix("hojaCuenta."), "Clave sin texto: \(texto)")
         }
-        #expect(try Self.table("es").count == 4)
+        #expect(try Self.table("es").count == 5)
     }
 
     @Test(arguments: locales)
@@ -180,6 +216,8 @@ struct HojaCuentaTarjetaCableadoTests {
         #expect(hoja.contains("HojaCuentaTarjetaCara(account: account"))
         #expect(hoja.contains("HojaCuentaTarjetaEstado(card: statement)"))
         #expect(hoja.contains("HojaCuentaTarjetaSinFechas"))
+        // Opción A del 22-nov: hasta que la cuenta guarde el límite, la hoja no lo pasa y la línea no sale.
+        #expect(!hoja.contains("limite:"), "El límite llega con el campo nuevo, en otro encargo.")
         #expect(!hoja.contains("CreditCardStatementBlock(card:"), "El bloque viejo ya no se pinta en la hoja.")
     }
 

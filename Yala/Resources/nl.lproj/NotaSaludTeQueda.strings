@@ -1,0 +1,21 @@
+/*
+  NotaSaludTeQueda.strings
+  Yala
+
+  La cuarta parte de la nota de salud, «Lo que te queda» (lote 2, decisión de Jürgen del 11-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.NotaSaludTeQueda`).
+*/
+
+"teQueda.name" = "Wat je overhoudt";
+"teQueda.partDetail" = "Hoeveel je overhoudt van wat binnenkwam na je uitgaven. Vanaf 20 % is het 100.";
+"teQueda.sheetExplanation" = "Laat zien hoeveel van wat er deze periode binnenkwam je overhoudt na je uitgaven. Vanaf 20 % is het 100. Gaat er meer uit dan er binnenkomt, dan daalt het rustig, zonder je score te laten kelderen. Zolang er niets binnenkomt, telt dit deel niet mee.";
+"teQueda.headline.high" = "Je houdt een flink deel over van wat binnenkomt. Ga zo door!";
+"teQueda.headline.mid" = "Je houdt iets over van wat binnenkomt. Nog een beetje en je haalt 20 %.";
+"teQueda.headline.low" = "Deze periode gaat er iets meer uit dan er binnenkomt. Een kleine aanpassing maakt het verschil.";
+"teQueda.headline.empty" = "Zodra er deze periode geld binnenkomt, zie je wat je overhoudt.";
+"teQueda.cta" = "Zien waar je geld heen gaat";
+"teQueda.cardStep" = "Om hem te verhogen: probeer iets over te houden van wat binnenkomt.";
+"teQueda.lead.left" = "Binnen: %1$@, uit: %2$@. Je houdt %3$@ over, %4$d %% van wat binnenkwam.";
+"teQueda.lead.over" = "Binnen: %1$@, uit: %2$@. Deze periode ging er %3$@ meer uit dan er binnenkwam.";
+"teQueda.lead.empty" = "Deze periode is er nog geen geld binnengekomen. Dit deel telt zodra er iets binnenkomt.";
+"teQueda.capsule.empty" = "Zodra er iets binnenkomt";

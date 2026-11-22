@@ -64,6 +64,7 @@ enum FinancialScoreCopy {
         case .activity: return L10n.Panel.Health.cardStepActivity
         case .budget: return L10n.Panel.Health.cardStepBudget
         case .bills: return L10n.Panel.Health.cardStepBills
+        case .savings: return L10n.NotaSaludTeQueda.pasoTarjeta
         case .total, nil:
             return score.alerts.hasAlerts(isExpensesOnlyMode: isExpensesOnlyMode)
                 ? L10n.Panel.Health.totalHeadlineHighWithAlerts
@@ -76,6 +77,7 @@ enum FinancialScoreCopy {
         case .budget: return L10n.Panel.Health.subScoreBudget
         case .activity: return L10n.Panel.Health.subScoreActivity
         case .bills: return L10n.Panel.Health.subScoreBills
+        case .savings: return L10n.NotaSaludTeQueda.nombre
         case .total: return L10n.Panel.Health.cardTitle
         }
     }

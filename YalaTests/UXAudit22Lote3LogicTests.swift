@@ -91,8 +91,9 @@ struct UXAudit22Lote3LogicTests {
 
     /// Los pesos que enseña la hoja suman 100 %: si cambian en el cálculo, cambian en pantalla.
     @Test func weights_addUpToOneHundredPercent() {
+        // Cuatro partes desde el lote 2 de la nota de salud («Lo que te queda», 22-nov-2026).
         let sum = FinancialScoreCalculator.weightBudget + FinancialScoreCalculator.weightRhythm
-            + FinancialScoreCalculator.weightCommitments
+            + FinancialScoreCalculator.weightCommitments + FinancialScoreCalculator.weightSavings
         #expect(abs(sum - 1.0) < 0.0001)
     }
 

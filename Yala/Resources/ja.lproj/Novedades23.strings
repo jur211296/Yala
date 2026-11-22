@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "iPhone Duoに対応";
+"novedades23.duo.description" = "開けば大きな画面で、リストと詳細を並べて表示。閉じれば外側の画面に合わせてYalaが表示されます。";
+"novedades23.cards.title" = "口座をカードで表示";
+"novedades23.cards.description" = "テンプレートや色、下4桁で口座ごとのカードをデザイン。パネルでタップすると、残高、請求額、支払日がわかります。";
+"novedades23.groups.title" = "グループがもっと簡単に";
+"novedades23.groups.description" = "写真や音声でレシートを割り勘し、少ない支払いで精算。SplitwiseやTricountのグループも同じ残高のまま移せます。";
+"novedades23.records.title" = "記録がもっとスムーズに";
+"novedades23.records.description" = "口座やカテゴリーでワンタップ絞り込み。カレンダーで月を移動し、どの記録も繰り返しの支払いにできます。";
+"novedades23.health.title" = "健全性スコアがより充実";
+"novedades23.health.description" = "入ったお金のうち手元に残る分も見るようになりました。パネルでタップすると、今月いちばん影響していることがわかります。";
+"novedades23.planning.title" = "今日使える金額";
+"novedades23.planning.description" = "予算ごとに今日使える金額を表示。記録から見つけたサブスクもYalaが提案します。";
+"novedades23.ant.title" = "ちりつもの出費";
+"novedades23.ant.description" = "小さな買い物の合計と、「予測を表示」で今月の着地を確認できます。";
+"novedades23.hide.title" = "金額を隠す";
+"novedades23.hide.description" = "パネルの目のアイコンをタップすると数字が隠れます。誰かに画面を見られるときに便利です。";

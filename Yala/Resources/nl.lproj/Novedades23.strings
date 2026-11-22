@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "Gemaakt voor iPhone Duo";
+"novedades23.duo.description" = "Opengeklapt benut je het grote scherm, met je lijsten en details naast elkaar. Dichtgeklapt past Yala zich aan het buitenscherm aan.";
+"novedades23.cards.title" = "Je rekeningen als kaarten";
+"novedades23.cards.description" = "Ontwerp de kaart van elke rekening met sjablonen, kleuren en je laatste 4 cijfers. Tik erop in het Panel en zie het saldo, wat gefactureerd is en wanneer je betaalt.";
+"novedades23.groups.title" = "Groepen, makkelijker";
+"novedades23.groups.description" = "Verdeel een bon met een foto of je stem, verreken schulden met minder betalingen en haal je groepen uit Splitwise of Tricount met dezelfde saldi.";
+"novedades23.records.title" = "Boekingen, sneller";
+"novedades23.records.description" = "Filter met één tik op rekening of categorie, spring in de kalender tussen maanden en maak van elke boeking een terugkerende betaling.";
+"novedades23.health.title" = "Je gezondheidsscore, vollediger";
+"novedades23.health.description" = "Hij kijkt nu ook hoeveel je overhoudt van wat binnenkomt. Tik erop in het Panel en zie wat hem deze maand het meest beweegt.";
+"novedades23.planning.title" = "Wat je vandaag kunt uitgeven";
+"novedades23.planning.description" = "Elk budget zegt hoeveel je vandaag kunt uitgeven, en Yala stelt de abonnementen voor die het in je boekingen vindt.";
+"novedades23.ant.title" = "Kleine terugkerende uitgaven";
+"novedades23.ant.description" = "Zie wat je kleine aankopen samen kosten en, met ‘Prognose tonen’, hoe je maand kan eindigen.";
+"novedades23.hide.title" = "Verberg je bedragen";
+"novedades23.hide.description" = "Tik op het oog in het Panel en je cijfers verdwijnen: handig als iemand meekijkt.";
