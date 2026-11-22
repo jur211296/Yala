@@ -776,8 +776,11 @@ final class CloudSyncRuntime {
         case .accountUnavailable: return .accountUnavailable
         }
 
-        // 5) Fan-out post-apply (§i.4): solo si llegó algo remoto.
-        if pagesApplied > 0 { fanOutRemoteChangesApplied() }
+        // 5) Fan-out post-apply (§i.4): solo si llegó algo remoto QUE CAMBIE ALGO. El eco de lo que este teléfono acaba de
+        //    subir no cuenta (YALA-IOS-A, 2026-11-21): el servidor lo devuelve en este mismo pull, y avisar por él
+        //    recalculaba todas las pantallas por segunda vez tras cada guardado —el formulario ya subió `dataVersion`—.
+        //    Con un historial grande, ese segundo recálculo congelaba la app unos segundos (`lastPullChangedLocalData`).
+        if pagesApplied > 0, engine.lastPullChangedLocalData { fanOutRemoteChangesApplied() }
 
         // 5.5) Prefs sync (I13): push del outbox de prefs + pull/merge, MISMA cadencia que el dominio
         //      (latencia ≈60s foreground — decisión v1, paridad con la latencia de dominio). Piggyback

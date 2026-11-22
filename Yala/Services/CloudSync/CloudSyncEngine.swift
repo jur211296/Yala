@@ -1815,6 +1815,21 @@ final class CloudSyncEngine {
     /// Lo escribe SOLO `pullAndApplyOnce` (internal para que los tests puedan simular el estado).
     var lastPullCycleCompleted = false
 
+    /// `true` si el ÚLTIMO `pullAndApplyOnce` cambió algo de lo que la app enseña: una fila nueva, una borrada, una parte
+    /// de una fila con otra versión que la de este teléfono, una cuarentena, una ref colgada que se resolvió o un
+    /// reconciliador que guardó. El runtime solo avisa a la app (`fanOutRemoteChangesApplied`) con esto en `true`.
+    ///
+    /// **El eco de lo propio no cuenta** (YALA-IOS-A, 2026-11-21). El servidor devuelve en el pull lo que este teléfono
+    /// acaba de subir (`server_seq > since`, sin filtro de origen), y cada parte de esa fila llega con el MISMO HLC que el
+    /// drain dejó en `SyncUnitClock`. El apply la reescribe igual, sin cambiar nada; pero avisar recalculaba todas las
+    /// pantallas por segunda vez tras cada guardado, y con un historial grande eso congelaba la app unos segundos. Lo
+    /// escribe SOLO `pullAndApplyOnce`; `internal` para que los tests lo lean.
+    var lastPullChangedLocalData = false
+
+    /// Testigo de `applyPage` para el bucle del pull: la página que se acaba de aplicar cambió algo (mismo criterio que
+    /// `lastPullChangedLocalData`). Solo vale justo después de un `applyPage` que devolvió `true`.
+    var lastAppliedPageChangedData = false
+
     // MARK: Gate de quiescencia de reconcilers (I9, §G)
 
     /// Gate opcional para los saves de autor NORMAL de `runPostPullReconcilers` (REQUISITO I9 anotado en

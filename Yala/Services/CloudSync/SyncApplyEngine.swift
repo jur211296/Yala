@@ -117,14 +117,19 @@ extension CloudSyncEngine {
         maxPages: Int = PullApplyOutcome.defaultMaxPages,
         beforeDrain: (@MainActor () throws -> Void)? = nil
     ) async -> PullApplyOutcome {
+        // YALA-IOS-A: el testigo de «este pull cambió algo» es de ESTE ciclo, también si sale en `.busy`.
+        lastPullChangedLocalData = false
         // D-2: nunca aplicar con un drain en curso. Defensivo (F-10): `drainOnce` es síncrono bajo
         // MainActor → esta rama es inalcanzable hoy; queda como red si el drain gana suspensión.
         guard !isDrainInProgress else { return .busy }
         // Drenar al entrar: captura las escrituras locales pendientes ANTES del primer fetch.
         drainOnce(context: context)
 
-        let (outcome, pagesApplied) = await pullLoop(client: client, context: context, now: now,
-                                                     pageLimit: pageLimit, maxPages: maxPages, beforeDrain: beforeDrain)
+        let (outcome, pagesApplied, pagesChangingData) = await pullLoop(
+            client: client, context: context, now: now, pageLimit: pageLimit, maxPages: maxPages, beforeDrain: beforeDrain)
+        // YALA-IOS-A: lo que cambió de verdad (no el eco de lo que este teléfono acaba de subir). Las refs resueltas y los
+        // reconciliadores también cuentan: escriben datos que la app enseña.
+        var changedData = pagesChangingData > 0
         // I8f-3 (guard A-3 del Merkle): registrar si este ciclo AGOTÓ la cola. Un ciclo incompleto
         // (transient/401/403) deja el flag en false → la verificación se salta (divergencia esperada).
         if case .completed = outcome {
@@ -134,7 +139,7 @@ extension CloudSyncEngine {
         }
         // F-2: pase de re-resolución de refs colgadas — corre SIEMPRE al final del ciclo (también en
         // salidas tempranas: lo aplicado hasta aquí es durable y puede haber destapado targets).
-        reresolveDanglingRefs(context: context)
+        if reresolveDanglingRefs(context: context) > 0 { changedData = true }
         // I8f-2 (D-D): reconciliadores cross-fila — SOLO si el ciclo aplicó ≥1 página (un ciclo vacío no
         // pudo introducir divergencia nueva), DESPUÉS de los danglers (una ref recién resuelta completa
         // la clasificación real-vs-virtual del split). Cada uno en su propio save con rollback-on-fail,
@@ -148,27 +153,30 @@ extension CloudSyncEngine {
         let gateOpen = reconcilerQuiescenceGate?() ?? true
         if pagesApplied > 0 {
             if gateOpen {
-                runPostPullReconcilers(context: context)
+                if runPostPullReconcilers(context: context) { changedData = true }
                 pendingReconcile = false
             } else {
                 pendingReconcile = true
             }
         } else if pendingReconcile, gateOpen {
             // Reintento del repair diferido: el ciclo no aplicó páginas nuevas pero el gate ya abrió.
-            runPostPullReconcilers(context: context)
+            if runPostPullReconcilers(context: context) { changedData = true }
             pendingReconcile = false
         }
+        lastPullChangedLocalData = changedData
         return outcome
     }
 
     /// El loop de páginas (separado para que los pases F-2/I8f-2 corran en TODAS las salidas). Devuelve
     /// también `pagesApplied` aparte del outcome (los cases `.sessionExpired`/`.accountUnavailable` no
-    /// lo llevan, pero el gate de los reconcilers necesita saber si HUBO páginas antes de esa salida).
+    /// lo llevan, pero el gate de los reconcilers necesita saber si HUBO páginas antes de esa salida), y cuántas de esas
+    /// páginas cambiaron algo (`lastAppliedPageChangedData`): una página que solo trae el eco de lo propio no cuenta.
     private func pullLoop(
         client: SyncPullClient, context: ModelContext, now: Date, pageLimit: Int, maxPages: Int,
         beforeDrain: (@MainActor () throws -> Void)?
-    ) async -> (PullApplyOutcome, Int) {
+    ) async -> (PullApplyOutcome, Int, Int) {
         var pagesApplied = 0
+        var pagesChangingData = 0
         while pagesApplied < maxPages {
             // `SyncCapability`: la subida de versión se cumple ANTES de pedir la página siguiente (reemitir lo que no
             // subió y volver el cursor a 0). La página que la anunció bajó con la versión vieja: se aplica igual —no
@@ -181,7 +189,7 @@ extension CloudSyncEngine {
                 print("CloudSyncEngine.pullAndApplyOnce: subida de versión falló: \(error)")
                 #endif
                 CloudSyncBreadcrumb.capabilityUpgradeFailed(errorType: String(describing: type(of: error)))
-                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
             }
             let since: Int64
             do {
@@ -190,7 +198,7 @@ extension CloudSyncEngine {
                 #if DEBUG
                 print("CloudSyncEngine.pullAndApplyOnce: loadCursor falló: \(error)")
                 #endif
-                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
             }
 
             let outcome = await client.pull(since: since, limit: pageLimit)
@@ -200,7 +208,7 @@ extension CloudSyncEngine {
                 // haya pedido una subida de versión: el pull no termina con ella pendiente (ver abajo).
                 guard !page.deltas.isEmpty else {
                     if SyncCapability.upgradeDue { continue }
-                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
                 }
                 // F-1: RE-drenar SÍNCRONO inmediatamente antes del apply — sin `await` entre medio.
                 // Cubre toda edición local que aterrizó durante la suspensión del `await pull`: su fila
@@ -212,37 +220,38 @@ extension CloudSyncEngine {
                     do {
                         try beforeDrain()
                     } catch {
-                        return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                        return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
                     }
                 }
                 guard drainOnce(context: context) else {
-                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
                 }
                 guard applyPage(page, context: context, now: now) else {
                     // F-3: la página no se aplicó —falló su save o una lectura de la que depende (guard,
                     // dedupe, búsqueda de fila)— y el rollback ya está hecho → cortar; el cursor NO avanzó,
                     // así que reintentar el mismo `since` en este loop podría girar hasta maxPages.
-                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
                 }
                 pagesApplied += 1
+                if lastAppliedPageChangedData { pagesChangingData += 1 }
                 // Última página (menos deltas que el límite) → agotado. Salvo que esta página haya pedido una subida de
                 // versión (`SyncCapability`): terminar aquí dejaría la re-bajada para el ciclo siguiente, y quien llama
                 // puede comparar el Merkle ahora mismo (la verificación de una migración lo hace) con filas que bajaron
                 // sin la columna nueva y enlaces sin subir. La vuelta siguiente cumple la subida y re-baja desde 0.
                 if page.deltas.count < pageLimit {
                     if SyncCapability.upgradeDue { continue }
-                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
                 }
                 // Página llena → puede haber más: siguiente vuelta con el cursor ya avanzado.
             case .sessionExpired:
-                return (.sessionExpired, pagesApplied)
+                return (.sessionExpired, pagesApplied, pagesChangingData)
             case .accountUnavailable:
-                return (.accountUnavailable, pagesApplied)
+                return (.accountUnavailable, pagesApplied, pagesChangingData)
             case .transient:
-                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                return (.transient(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)
             }
         }
-        return (.completed(pagesApplied: pagesApplied), pagesApplied)  // tope defensivo alcanzado
+        return (.completed(pagesApplied: pagesApplied), pagesApplied, pagesChangingData)  // tope defensivo alcanzado
     }
 
     // MARK: - Reconciliadores post-pull (I8f-2, D-D)
@@ -257,10 +266,15 @@ extension CloudSyncEngine {
     /// import ajeno. NO cablear `isImportQuiescent` aquí: queda `false` durante toda la ventana
     /// markApplyBegan/Ended que envuelve al pull (donde esto corre) → deferral perpetuo en `.cloud`
     /// (SERIO-1 del review de I9).
-    func runPostPullReconcilers(context: ModelContext) {
+    ///
+    /// Devuelve si alguno guardó algo (YALA-IOS-A: entonces el ciclo avisa a la app). `hasChanges` puede decir `true` con
+    /// una reescritura idéntica: avisar de más es el lado seguro.
+    @discardableResult
+    func runPostPullReconcilers(context: ModelContext) -> Bool {
+        var saved = false
         do {
             _ = CloudSyncReconciler.reconcileTransferPairDivergence(context: context)
-            if context.hasChanges { try context.save() }  // autor NORMAL (debe drenar/subir)
+            if context.hasChanges { try context.save(); saved = true }  // autor NORMAL (debe drenar/subir)
         } catch {
             context.rollback()
             CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerTransfer:\(error)")
@@ -270,7 +284,7 @@ extension CloudSyncEngine {
         }
         do {
             _ = CloudSyncReconciler.reconcileSplitRepresentations(context: context)
-            if context.hasChanges { try context.save() }  // autor NORMAL
+            if context.hasChanges { try context.save(); saved = true }  // autor NORMAL
         } catch {
             context.rollback()
             CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSplit:\(error)")
@@ -282,8 +296,10 @@ extension CloudSyncEngine {
         // bajo autor DEFAULT (el CSV-mirror exige el cascade `.nullify` committeado antes del re-encode) →
         // aquí solo se recoge el residual y se loguea un fallo del save final. Un fallo NO impide los otros.
         do {
-            _ = CloudSyncReconciler.reconcileSystemEntities(context: context)
-            if context.hasChanges { try context.save() }
+            // Gestiona sus propios saves internos: lo que cuenta aquí es que encontrara algo que tocar.
+            let stats = CloudSyncReconciler.reconcileSystemEntities(context: context)
+            if stats.accountsMerged > 0 || stats.subcategoriesMerged > 0 { saved = true }
+            if context.hasChanges { try context.save(); saved = true }
         } catch {
             context.rollback()
             CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSystem:\(error)")
@@ -291,6 +307,7 @@ extension CloudSyncEngine {
             print("CloudSyncEngine.runPostPullReconcilers: system save falló: \(error)")
             #endif
         }
+        return saved
     }
 
     /// Aplica UNA página en UN `saveWithAuthor` (D-5, atómico): por cada delta → apply|quarantine +
@@ -305,6 +322,10 @@ extension CloudSyncEngine {
     /// machaca aquí y el próximo drain la relee del modelo vivo bajo un HLC fresco).
     @discardableResult
     func applyPage(_ page: PulledPage, context: ModelContext, now: Date) -> Bool {
+        lastAppliedPageChangedData = false
+        // YALA-IOS-A: si algún delta de la página cambia algo que la app enseña. El eco de lo propio no (ver
+        // `lastPullChangedLocalData`). Se publica solo tras el save: con rollback no cambió nada.
+        var pageChangedData = false
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)  // D-3: reloj desde el estado durable antes de integrar remotos
@@ -355,9 +376,12 @@ extension CloudSyncEngine {
                             if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
                                 newQuarantineCount += 1
                                 nonFiniteQuarantined.append((delta.entityType, delta.serverSeq, columns))
+                                pageChangedData = true
                             }
                         } else {
-                            try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                            if try dispatchApply(delta, guard: guards[delta.syncID], context: context) {
+                                pageChangedData = true
+                            }
                         }
                         // Lo que la cuarentena guardaba de esta fila con un `serverSeq` anterior ya no es su
                         // versión: el drenaje del arranque lo re-aplicaría encima de esta. Se retira.
@@ -371,6 +395,7 @@ extension CloudSyncEngine {
                         // §d.6/D-5: entity_type no materializable → cuarentena (dedup seq).
                         if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
                             newQuarantineCount += 1
+                            pageChangedData = true
                         }
                     }
                 }
@@ -395,6 +420,7 @@ extension CloudSyncEngine {
             for (entity, count) in superseded.sorted(by: { $0.key < $1.key }) {
                 CloudSyncBreadcrumb.quarantineSuperseded(entity: entity, count: count)
             }
+            lastAppliedPageChangedData = pageChangedData || retiredQuarantineCount > 0
             return true
         } catch {
             // F-3: rollback OBLIGATORIO — el contexto tiene el grafo remoto a medias (born-remotes,
@@ -410,42 +436,43 @@ extension CloudSyncEngine {
 
     // MARK: - Dispatch concreto por tabla (nunca genérico por protocolo)
 
-    private func dispatchApply(_ delta: PulledDelta, guard g: PendingGuard?, context: ModelContext) throws {
+    /// Devuelve si el delta cambió algo de lo que la app enseña (ver `applyToEntity`).
+    private func dispatchApply(_ delta: PulledDelta, guard g: PendingGuard?, context: ModelContext) throws -> Bool {
         switch delta.entityType {
         case EntityApplyMap.transactionItem.table:
-            try applyToEntity(delta, EntityApplyMap.transactionItem, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.transactionItem, guard: g, context: context)
         case EntityApplyMap.inboxDraft.table:
-            try applyToEntity(delta, EntityApplyMap.inboxDraft, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.inboxDraft, guard: g, context: context)
         case EntityApplyMap.category.table:
-            try applyToEntity(delta, EntityApplyMap.category, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.category, guard: g, context: context)
         case EntityApplyMap.favoritePayment.table:
-            try applyToEntity(delta, EntityApplyMap.favoritePayment, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.favoritePayment, guard: g, context: context)
         case EntityApplyMap.merchantMemory.table:
-            try applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
         case EntityApplyMap.exchangeRate.table:
-            try applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
         case EntityApplyMap.budget.table:
-            try applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
         case EntityApplyMap.scheduledPayment.table:
-            try applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
         case EntityApplyMap.account.table:
-            try applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
         case EntityApplyMap.subcategory.table:
-            try applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
         case EntityApplyMap.tag.table:
-            try applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
         case EntityApplyMap.notificationItem.table:
-            try applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
         case EntityApplyMap.cashFlowPlan.table:
-            try applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
         case EntityApplyMap.cashFlowLine.table:
-            try applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
         case EntityApplyMap.cashFlowOverride.table:
-            try applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
         case EntityApplyMap.groupBridgePreference.table:
-            try applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
+            return try applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
         default:
-            break  // isWired ya lo filtró; inalcanzable.
+            return false  // isWired ya lo filtró; inalcanzable.
         }
     }
 
@@ -455,23 +482,29 @@ extension CloudSyncEngine {
     /// "resucita" localmente de forma TRANSITORIA — el server arbitra al pushear el tombstone (regla
     /// delete-vs-upsert de §d.4 cat.3) y el próximo pull converge. Parpadeo esperado; la reconciliación
     /// fina cross-fila es I8f-2.
+    ///
+    /// Devuelve si el delta cambió algo de lo que la app enseña (YALA-IOS-A, 2026-11-21): una fila nueva, una borrada, o
+    /// una parte aplicada que trae otra versión que la de este teléfono. **El eco de lo propio devuelve `false`**: cada
+    /// parte llega con el mismo HLC que el drain (o un apply anterior) dejó en `SyncUnitClock`, así que reescribirla no
+    /// cambia nada. Se aplica igual que siempre —el camino de los datos no cambia—; solo no cuenta para avisar a la app.
     private func applyToEntity<M: PersistentModel>(
         _ delta: PulledDelta, _ entry: EntityApply<M>, guard g: PendingGuard?, context: ModelContext
-    ) throws {
+    ) throws -> Bool {
         switch delta.op {
         case .tombstone:
             // F-6d: un `deleted_hlc` malformado (nunca desde nuestro server) → NO borrar (skip; el
             // cursor avanza). Borrar es lo irreversible; el skip es lo conservador.
-            guard let remote = parseHLC(delta.hlc, site: "tombstone.deletedHlc") else { return }
+            guard let remote = parseHLC(delta.hlc, site: "tombstone.deletedHlc") else { return false }
             // D-1/§d.4 cat.3: si un upsert local pendiente es MÁS NUEVO que el deleted_hlc, NO borramos
             // (el server reinstalará nuestra edición; convergencia por la regla delete-vs-upsert).
             if let g, let maxUp = g.maxUpsertHLC, maxUp > remote {
-                return
+                return false
             }
             // D-9: sin fila local → no-op (el cursor avanza igual). Con fila → borrar + matar la identidad.
             // La búsqueda LANZA si no se pudo leer: «no pude buscar» no es «no hay fila», y darlo por
             // no-op avanzaría el cursor con el borrado sin hacer.
-            guard let model = try entry.fetchBySyncID(delta.syncID, context) else { return }
+            // Sin fila es también el eco del borrado propio: aquí ya no estaba, y no cambia nada.
+            guard let model = try entry.fetchBySyncID(delta.syncID, context) else { return false }
             context.delete(model)
             let lookups = EntityApplyMap.pageLookups(for: context)
             lookups?.noteDeleted(model, key: delta.syncID)
@@ -483,6 +516,7 @@ extension CloudSyncEngine {
             // resucita por un upsert posterior, drain/apply lo re-pueblan).
             try SyncUnitClockStore.deleteChecked(syncID: delta.syncID, context: context)
             lookups?.forget(SyncUnitClock.self, key: delta.syncID)
+            return true
 
         case .upsert:
             // D-8: sin fila local → born-remote (crear + fijar syncID para que el sweep del drain no
@@ -508,6 +542,11 @@ extension CloudSyncEngine {
             // local pendiente que el drain ya escribió en el clock) alimentan el `SyncUnitClock` con el
             // HLC remoto de esa unidad, en el MISMO save de página.
             var appliedUnits: [String: String] = [:]
+            // YALA-IOS-A: el reloj por unidad de ESTA fila antes de aplicar (el upsert de abajo lo mueve). Dentro de la
+            // página lo sirve la caché por lote, sin otra lectura. Solo para decidir si avisar: si no se deja leer, no se
+            // aborta nada —la página no depende de esto— y cuenta como cambio, que es el lado seguro.
+            let localUnits = isNew ? [:] : unitClockForEchoCheck(syncID: delta.syncID, context: context)
+            var changed = isNew
             for (column, value) in delta.fields {
                 guard let applier = entry.appliers[column] else { continue }  // p.ej. local_day / no cableada
                 let unit = entry.unit(for: column)
@@ -519,7 +558,10 @@ extension CloudSyncEngine {
                 try applier.apply(model, value, context)
                 if let remoteUnitHLC = delta.fieldHlcs[unit] {
                     appliedUnits[unit] = remoteUnitHLC
+                    if !changed, !Self.isOwnEcho(remote: remoteUnitHLC, local: localUnits?[unit]) { changed = true }
                 }
+                // Una parte SIN HLC remoto no decide: nadie la estampó nunca, así que no puede traer la escritura de otro
+                // aparato (el drain estampa cada parte que emite, y el servidor guarda su HLC).
             }
             if !appliedUnits.isEmpty {
                 try SyncUnitClockStore.upsertChecked(syncID: delta.syncID, entityTable: delta.entityType,
@@ -529,6 +571,32 @@ extension CloudSyncEngine {
             if isNew {
                 try ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)
             }
+            return changed
+        }
+    }
+
+    /// El mapa `{unidad: HLC}` de `SyncUnitClock` para una fila, o `nil` si no se pudo leer. Para decidir si un delta es
+    /// el eco de lo propio (`applyToEntity`); nunca para decidir qué se escribe.
+    private func unitClockForEchoCheck(syncID: UUID, context: ModelContext) -> [String: String]? {
+        do {
+            return SyncUnitClockStore.decodeMap(try SyncUnitClockStore.findRow(syncID: syncID, context: context)?.unitHlcsJSON)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.unitClockForEchoCheck: reloj ilegible, cuenta como cambio: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// `true` si la parte que baja trae EXACTAMENTE la versión que este teléfono ya tiene: mismo HLC (el HLC lleva el
+    /// nodo, así que dos escrituras distintas nunca comparten uno). Un reloj local ilegible o ausente, o un HLC que no
+    /// parsea, no es eco: cuenta como cambio. `internal static` para los tests.
+    static func isOwnEcho(remote: String, local: String?) -> Bool {
+        guard let local else { return false }
+        do {
+            return try HLC.parse(remote) == HLC.parse(local)
+        } catch {
+            return false
         }
     }
 
@@ -568,7 +636,11 @@ extension CloudSyncEngine {
     ///
     /// Un dangler ilegible NO frena a los demás: son independientes (una fila, una columna), así que los que sí se
     /// resuelven entran en este mismo save.
-    func reresolveDanglingRefs(context: ModelContext) {
+    ///
+    /// Devuelve cuántas refs RESOLVIÓ y guardó (YALA-IOS-A: una ref resuelta cambia lo que la app enseña). Un dangler de
+    /// una fila que ya no existe se borra, pero no cambia nada visible, y no cuenta.
+    @discardableResult
+    func reresolveDanglingRefs(context: ModelContext) -> Int {
         let danglers: [SyncDanglingRef]
         do {
             danglers = try context.fetch(FetchDescriptor<SyncDanglingRef>())
@@ -576,9 +648,9 @@ extension CloudSyncEngine {
             #if DEBUG
             print("CloudSyncEngine.reresolveDanglingRefs: fetch falló: \(error)")
             #endif
-            return
+            return 0
         }
-        guard !danglers.isEmpty else { return }
+        guard !danglers.isEmpty else { return 0 }
         // YALA-IOS-13: lo que el bucle va a buscar de dos en dos por dangler se lee ANTES por lote; sin esto cada dangler
         // recorría tablas enteras y el pase congelaba la app al final de un ciclo. Solo dentro de este pase.
         EntityApplyMap.pageLookups = EntityApplyMap.prepareDanglerLookups(for: danglers, context: context)
@@ -587,11 +659,15 @@ extension CloudSyncEngine {
         // de la categoría o la cuenta, que con miles de movimientos cuesta milisegundos por fila.
         let batch = DanglerRelationshipBatch()
         var unreadable = 0
+        var resolved = 0
         do {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for dangler in danglers {
                     switch EntityApplyMap.reresolveDangler(dangler, context: context, batch: batch) {
-                    case .resolved, .rowGone:
+                    case .resolved:
+                        resolved += 1
+                        context.delete(dangler)
+                    case .rowGone:
                         context.delete(dangler)
                     case .targetMissing:
                         break  // se conserva; reintento en el próximo ciclo
@@ -606,6 +682,7 @@ extension CloudSyncEngine {
             if unreadable > 0 {
                 CloudSyncBreadcrumb.danglersUnreadable(count: unreadable)
             }
+            return resolved
         } catch {
             // Sin rollback aquí: los sets de relaciones son idempotentes y el próximo ciclo re-intenta;
             // pero no dejamos el contexto dirty en silencio.
@@ -614,6 +691,7 @@ extension CloudSyncEngine {
             #if DEBUG
             print("CloudSyncEngine.reresolveDanglingRefs: save falló: \(error)")
             #endif
+            return 0
         }
     }
 
@@ -761,7 +839,8 @@ extension CloudSyncEngine {
                     if let remote = parseHLC(delta.hlc, site: "drainQuarantine.rowHlc") {
                         receiveRemoteClock(remote, now: now)
                     }
-                    try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                    // El drenaje del arranque no avisa a la app (lo que pinta se carga después): el «cambió algo» no se usa.
+                    _ = try dispatchApply(delta, guard: guards[delta.syncID], context: context)
                     context.delete(row)
                     consumed += 1
                 }
