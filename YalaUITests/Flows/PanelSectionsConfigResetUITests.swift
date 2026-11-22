@@ -74,7 +74,9 @@ final class PanelSectionsConfigResetUITests: XCTestCase {
         alert.buttons["Restablecer"].firstMatch.tap()
         XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La pregunta no se cerró con «Restablecer».")
         let restored = NSPredicate { _, _ in self.planningIsAboveTrends(app) == false }
-        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 5),
+        // 15 s y no 5: en el runner frío del CI cada lectura de las dos filas cuesta 1-3 s, y con 5 s cabía una sola,
+        // hecha con la lista todavía reordenándose (nocturna del 22-nov, iOS 27.0).
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 15),
                        .completed, "«Restablecer» no devolvió el orden original.")
     }
 
@@ -89,15 +91,22 @@ final class PanelSectionsConfigResetUITests: XCTestCase {
         let window = app.windows.firstMatch
         let cell = app.cells.containing(.any, identifier: "panel_sections_reorder_row_planificacion").firstMatch
         XCTAssertTrue(cell.exists, "No aparece la celda de Planificación en la hoja de ordenar.")
-        let handleX = cell.frame.maxX - 30
         func handle(_ row: XCUIElement, dy: CGFloat) -> XCUICoordinate {
             window.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: handleX, dy: row.frame.minY + row.frame.height * dy))
+                .withOffset(CGVector(dx: cell.frame.maxX - 30, dy: row.frame.minY + row.frame.height * dy))
         }
-        handle(planningRow, dy: 0.5).press(forDuration: 0.8, thenDragTo: handle(trendsRow, dy: -0.4))
+        // Nocturnas del 21 y 22-nov (iOS 27.0, runner del CI): el arrastre rápido y soltado en el acto no movía la fila
+        // 2 de 3 veces. Se arrastra con la hoja ya quieta, despacio, con una pausa antes de soltar para que la lista
+        // registre el hueco, y se repite una vez si no se movió. 15 s de plazo: cada lectura cuesta 1-3 s en el runner.
         let moved = NSPredicate { _, _ in planningRow.frame.minY < trendsRow.frame.minY }
-        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 5),
-                       .completed, "El arrastre no subió Planificación encima de Tendencias.")
+        var result = XCTWaiter.Result.timedOut
+        for _ in 0..<2 where result != .completed {
+            _ = app.waitForSettledLayout(of: planningRow, timeout: 5)
+            handle(planningRow, dy: 0.5).press(forDuration: 1.0, thenDragTo: handle(trendsRow, dy: -0.4),
+                                               withVelocity: .slow, thenHoldForDuration: 0.5)
+            result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 15)
+        }
+        XCTAssertEqual(result, .completed, "El arrastre no subió Planificación encima de Tendencias.")
         let done = app.buttons["panel_sections_reorder_done"].firstMatch
         XCTAssertTrue(done.exists, "Falta el ✓ de la hoja de ordenar.")
         done.tap()

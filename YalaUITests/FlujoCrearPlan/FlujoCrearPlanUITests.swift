@@ -33,19 +33,24 @@ final class FlujoCrearPlanUITests: XCTestCase {
             app.swipeUp(velocity: .slow)
             tries += 1
         }
+        // Nocturna del 22-nov (iOS 27.0, runner del CI): el toque llegaba con la página aún deslizándose y solo la
+        // frenaba, y la cuenta de antes se leía en pleno movimiento. Se cuenta y se toca con la cabecera quieta, y el
+        // plazo es de 15 s porque en el runner cada lectura del árbol cuesta 1-3 s.
+        _ = app.waitForSettledLayout(of: header, timeout: 5)
         let lines = app.descendants(matching: .any).matching(identifier: "cashflow_setup_line")
         let before = lines.count
         XCTAssertGreaterThan(before, 0)
         header.tap()
         let fewer = NSPredicate(format: "count < %d", before)
         XCTAssertEqual(
-            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: fewer, object: lines)], timeout: 5),
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: fewer, object: lines)], timeout: 15),
             .completed, "Plegar la categoría no ocultó sus subcategorías."
         )
+        _ = app.waitForSettledLayout(of: header, timeout: 5)
         header.tap()
         let back = NSPredicate(format: "count == %d", before)
         XCTAssertEqual(
-            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: back, object: lines)], timeout: 5),
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: back, object: lines)], timeout: 15),
             .completed, "Desplegarla no las devolvió."
         )
     }
