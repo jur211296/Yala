@@ -1,0 +1,76 @@
+/*
+  CapturaAtajoParte2.strings
+  Yala
+
+  Avisos del banco (B2), correo de Mail (B3) y avisos de precio y de baja de los pagos planificados (S2), encargo
+  del 22-nov-2026. Tabla propia: la lee `L10n.CapturaAtajoParte2` y la acción de Atajos (`BankNoticeSourceChoice`).
+*/
+
+"atajoParte2.intent.source" = "元";
+"atajoParte2.intent.source.notification" = "通知";
+"atajoParte2.intent.source.mail" = "メール";
+"atajoParte2.bank.row.title" = "銀行の通知";
+"atajoParte2.bank.picker.title" = "どの銀行ですか？";
+"atajoParte2.bank.picker.subtitle" = "購入を知らせてくれるアプリを選んでください。YalaがiPhone上で通知を読み取り、支出を確認待ちとして受信箱に入れます。銀行はあとから追加できます。";
+"atajoParte2.bank.picker.ready" = "対応済み";
+"atajoParte2.bank.picker.other" = "その他の銀行";
+"atajoParte2.bank.picker.otherDetail" = "iPhoneのモデルが読み取ります";
+"atajoParte2.bank.picker.beta" = "ベータ";
+"atajoParte2.bank.picker.activeSection" = "有効";
+"atajoParte2.bank.picker.addSection" = "別の銀行を追加";
+"atajoParte2.bank.privacyFooter" = "無料で、iCloudにデータがあっても使えます。通知の文面はiPhoneの外に出ません。受信箱に保存されるのは支出だけです。";
+"atajoParte2.bank.status.waiting.title" = "最初の通知を待っています";
+"atajoParte2.bank.status.waiting.detail" = "カードで少額の買い物をしてみてください。ここと受信箱に表示されます。";
+"atajoParte2.bank.status.working.title" = "動作中";
+"atajoParte2.bank.status.lastNotice" = "最後の通知：%@";
+"atajoParte2.bank.status.lastNoticeWith" = "最後の通知：%1$@ · %2$@";
+"atajoParte2.bank.status.amountAt" = "%2$@で%1$@";
+"atajoParte2.bank.status.silent.title" = "%d日間、何も届いていません";
+"atajoParte2.bank.status.silent.detail" = "カードを使い続けているなら、ショートカットでオートメーションがオンのままか確認してください。";
+"atajoParte2.bank.status.paused.title" = "一時停止中";
+"atajoParte2.bank.status.paused.detail" = "届いた通知は無視され、保存されません。";
+"atajoParte2.bank.month.section" = "今月";
+"atajoParte2.bank.month.read" = "読み取った通知";
+"atajoParte2.bank.month.notUnderstood" = "読み取れなかった通知";
+"atajoParte2.bank.month.notPurchases" = "購入ではなかった通知";
+"atajoParte2.bank.month.footer" = "「購入ではなかった通知」はコード、キャンペーン、残高のお知らせです。受信箱には何も入りません。";
+"atajoParte2.bank.settings.section" = "設定";
+"atajoParte2.bank.defaultAccount" = "デフォルトの口座";
+"atajoParte2.bank.defaultAccount.none" = "通知の内容に従う";
+"atajoParte2.bank.defaultAccount.footer" = "通知に支払いカードが書かれていないときに使います。下4桁が書かれていれば、その番号の口座が優先されます。";
+"atajoParte2.bank.pause" = "通知を一時停止";
+"atajoParte2.bank.guide.section" = "オンにする方法";
+"atajoParte2.bank.guide.step1.title" = "ショートカットを開いてオートメーションを作成";
+"atajoParte2.bank.guide.step1.detail" = "ショートカットで＋をタップし、オートメーション › 通知を選びます。";
+"atajoParte2.bank.guide.step2.title" = "%@のアプリを選ぶ";
+"atajoParte2.bank.guide.step2.detail" = "Appをタップして%@を探します。フィルタは付けないでください。";
+"atajoParte2.bank.guide.step3.title" = "Yalaのアクションを追加";
+"atajoParte2.bank.guide.step3.detail" = "「テキストから取引を記録」を検索します。テキストには変数「通知」を、銀行には%@を選びます。";
+"atajoParte2.bank.guide.step4.title" = "オートメーションをオンのままにする";
+"atajoParte2.bank.guide.step4.detail" = "これで通知が届くと自動で実行されます。iPhoneがロックされていても動きます。";
+"atajoParte2.bank.guide.preview" = "%1$@の通知は内容を表示する必要があります：設定 › 通知 › %2$@ › プレビューを表示：常に。";
+"atajoParte2.bank.guide.otherNote" = "ルールのない銀行は、iPhoneのモデル（Apple Intelligence）が通知を読み取ります。読み取れない場合は、受信箱に残るので補ってください。";
+"atajoParte2.bank.openShortcuts" = "ショートカットを開く";
+"atajoParte2.bank.addShortcut" = "ショートカットに追加";
+"atajoParte2.bank.mail.section" = "銀行からメールで通知が来る場合";
+"atajoParte2.bank.mail.detail" = "メールアプリで通知を受け取っている場合は、通知の代わりに「メール」でオートメーションを作成し、銀行の差出人を入力します。Yalaのアクションではテキストに「メール › 内容」を、元に「メール」を選びます。";
+"atajoParte2.bank.test.section" = "サンプルの通知で試す";
+"atajoParte2.bank.test.detail" = "%@のサンプル通知を読み取って結果をお見せします。何も保存されません。";
+"atajoParte2.bank.test.button" = "試す";
+"atajoParte2.bank.test.expense" = "%2$@で%1$@の支出";
+"atajoParte2.bank.test.income" = "%2$@から%1$@の収入";
+"atajoParte2.bank.test.amountOnly" = "%@の取引";
+"atajoParte2.bank.test.notUnderstood" = "この通知は読み取れませんでした";
+"atajoParte2.bank.test.notAMovement" = "購入ではありません";
+"atajoParte2.bank.remove.section" = "完全に削除する";
+"atajoParte2.bank.remove.step1" = "ショートカットを開いて%@のオートメーションを探します。";
+"atajoParte2.bank.remove.step2" = "左にスワイプして「削除」をタップします。";
+"atajoParte2.changes.priceUp" = "%1$@が%2$@に値上がりしました";
+"atajoParte2.changes.priceDown" = "%1$@が%2$@に値下がりしました";
+"atajoParte2.changes.priceDetail" = "直近2回の請求は%1$@でした。登録中の支払いは%2$@です。";
+"atajoParte2.changes.update" = "更新";
+"atajoParte2.changes.keep" = "このまま";
+"atajoParte2.changes.stoppedTitle" = "%@の支払いをやめましたか？";
+"atajoParte2.changes.stoppedDetail" = "%@から請求がありません。";
+"atajoParte2.changes.pause" = "支払いを一時停止";
+"atajoParte2.changes.stillActive" = "まだ有効";

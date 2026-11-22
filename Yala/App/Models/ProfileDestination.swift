@@ -30,6 +30,9 @@ enum ProfileDestination: Hashable {
     case siriShortcuts
     /// «Correo del banco» (2.3): la dirección de reenvío y las guías de Gmail, Outlook e iCloud Mail. Solo en la nube.
     case bankEmail
+    /// «Avisos del banco» (2.3, B2 del atajo del banco): la automatización de Atajos con la notificación o el correo del
+    /// banco. Gratis y también con iCloud.
+    case bankNotices
     case aiPrivacy
     /// «Cómo usas Yala» (card p0iu): Yala completo o solo grupos, en las dos direcciones.
     case usageMode

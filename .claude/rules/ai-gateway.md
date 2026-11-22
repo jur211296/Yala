@@ -129,6 +129,13 @@ su permiso.
 
 - **La app reduce la foto al `maxEdge` de la fila `photo.read`**, que el gateway publica en `/config` (`ai.photoMaxEdge`).
   Sin él, 1536 (`PhotoUploadSizing`). Nunca se amplía. Cambiar el modelo de la foto puede cambiar ese número sin release.
+- **El tipo de comercio (`merchantKind`, 2026-11-22, decisión 75) es una palabra de una lista cerrada, y la categoría la
+  elige el teléfono.** La lista es `VisionMerchantKind` y también el `enum` de `PHOTO_SCHEMA`: `ai.photo-comercio.test.ts`
+  lee el Swift y exige el mismo orden; un tipo nuevo va en los dos. El prompt la recibe ya calculada (`\(merchantKinds)`),
+  porque el banco solo interpola identificadores sueltos. **Ninguna categoría del usuario viaja**: por eso vale en iCloud
+  y en la nube sin tocar el permiso. Orden en `VisionDraftFactory`: memoria de comercios › IA › banco de comercios del
+  teléfono (solo sus categorías sin duda, `VisionMerchantKind.fromCatalog`). Medir el acierto con el modelo real pide la
+  clave de OpenAI del banco, que la Max no tiene.
 - **El «$» a secas lo decide la divisa principal del usuario** (`VisionCurrencyContext.dollarAlone`): si no se escribe con
   «$», es `null` y se elige en la revisión. El prompt enseña ¥ (JPY o CNY según el texto), R$, zł y CHF.
 

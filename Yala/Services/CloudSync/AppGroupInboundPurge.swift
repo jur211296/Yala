@@ -60,6 +60,9 @@ enum AppGroupInboundPurge {
         ApplePayPendingStore.remove(keys: ApplePayPendingStore.peekAll().map(\.key))
         SiriPendingStore.remove(keys: SiriPendingStore.peekAll().map(\.key))
         BankNoticePendingStore.remove(keys: BankNoticePendingStore.peekAll().map(\.key))
+        // El estado del atajo del banco (B2): último aviso, contadores, pausa y cuenta por defecto. La cuenta por defecto es
+        // un `shortcutID` de la cuenta anterior, y el resumen del último aviso lleva su importe y su comercio.
+        BankNoticeActivityStore.removeAll()
         let widgetDefaults = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
         ScheduledPaymentWidgetPaidStore.remove(
             keys: ScheduledPaymentWidgetPaidStore.peekAll(defaults: widgetDefaults).map(\.key), defaults: widgetDefaults)

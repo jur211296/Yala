@@ -49,6 +49,9 @@ enum RecurringPaymentDetector {
         let name: String
         /// `ScheduledPayment.brandLogoID` tal como está guardado.
         let storedBrandID: String?
+        /// El monto del pago. Con dos series de una marca (dos cuentas de Netflix), un pago parecido solo tapa la de su
+        /// monto. `nil` = tapa cualquiera, como antes.
+        var amount: Double? = nil
     }
 
     // MARK: - Salida
@@ -114,6 +117,23 @@ enum RecurringPaymentDetector {
         var proposals: [Proposal] = []
         for (key, group) in groups {
             let sorted = group.charges.sorted { $0.date < $1.date }
+            // Dos suscripciones de una marca con montos distintos que se intercalan (YouTube Premium y YouTube Music, dos
+            // cuentas de Netflix) son dos series: juntas, la serie se cortaba en cada cambio de monto (card nk1q, S2).
+            if group.brand != nil, let byAmount = interleavedAmountSeries(sorted) {
+                for subgroup in byAmount {
+                    guard let last = subgroup.last,
+                          daysBetween(last.date, now, calendar: calendar) < maximumDaysSinceLastCharge,
+                          !planned.contains(where: {
+                              $0.matches(name: last.name, brand: group.brand, amount: last.amount)
+                          }),
+                          let series = series(in: subgroup, isSubscriptionBrand: true, calendar: calendar) else { continue }
+                    let subKey = "\(key)|\(Int((last.amount * 100).rounded()))"
+                    proposals.append(makeProposal(
+                        key: subKey, brand: group.brand, series: series, now: now, calendar: calendar,
+                        namesTheCharge: true))
+                }
+                continue
+            }
             guard let last = sorted.last else { continue }
             guard daysBetween(last.date, now, calendar: calendar) < maximumDaysSinceLastCharge else { continue }
             guard !planned.contains(where: { $0.matches(name: last.name, brand: group.brand) }) else { continue }
@@ -125,6 +145,26 @@ enum RecurringPaymentDetector {
         return proposals.sorted {
             $0.nextDueDate != $1.nextDueDate ? $0.nextDueDate < $1.nextDueDate : $0.key < $1.key
         }
+    }
+
+    // MARK: - Dos series de una marca
+
+    /// Los cobros de una marca separados por monto exacto, si hay al menos dos montos con dos cobros cada uno y sus fechas
+    /// se pisan (uno cae entre dos del otro). Una subida de precio no se separa: sus montos van uno detrás del otro, y
+    /// la regla del monto exacto la sigue dejando sin proponer. `nil` = una sola serie, como siempre.
+    static func interleavedAmountSeries(_ sorted: [Charge]) -> [[Charge]]? {
+        var byCents: [Int: [Charge]] = [:]
+        for charge in sorted { byCents[Int((charge.amount * 100).rounded()), default: []].append(charge) }
+        let clusters = byCents.values.filter { $0.count >= 2 }.sorted { ($0.first?.date ?? .distantPast) < ($1.first?.date ?? .distantPast) }
+        guard clusters.count >= 2 else { return nil }
+        for (index, cluster) in clusters.enumerated() {
+            for other in clusters[(index + 1)...] {
+                guard let aStart = cluster.first?.date, let aEnd = cluster.last?.date,
+                      let bStart = other.first?.date, let bEnd = other.last?.date else { continue }
+                if aStart < bEnd && bStart < aEnd { return clusters }
+            }
+        }
+        return nil
     }
 
     // MARK: - Serie
@@ -182,7 +222,8 @@ enum RecurringPaymentDetector {
     // MARK: - Propuesta
 
     private static func makeProposal(
-        key: String, brand: SubscriptionBrand?, series: Series, now: Date, calendar: Calendar
+        key: String, brand: SubscriptionBrand?, series: Series, now: Date, calendar: Calendar,
+        namesTheCharge: Bool = false
     ) -> Proposal {
         let charges = series.charges
         let last = charges[charges.count - 1]
@@ -202,7 +243,8 @@ enum RecurringPaymentDetector {
         let trimmed = last.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return Proposal(
             key: key,
-            displayName: brand?.name ?? trimmed,
+            // Con dos series de una marca, cada una con el nombre que traen sus cobros («YouTube Music»), para distinguirlas.
+            displayName: namesTheCharge && !trimmed.isEmpty ? trimmed : (brand?.name ?? trimmed),
             brandID: brand?.id,
             currencyCode: last.currencyCode.uppercased(),
             cadence: cadence,
@@ -299,15 +341,21 @@ enum RecurringPaymentDetector {
     private struct PlannedIdentity {
         let normalizedName: String
         let brandID: String?
+        let amount: Double?
 
         init(_ payment: PlannedPayment) {
             normalizedName = RecurringPaymentDetector.merchantName(payment.name)
             brandID = SubscriptionBrandCatalog.resolve(storedID: payment.storedBrandID, name: payment.name)?.id
+            amount = payment.amount
         }
 
-        /// Parecido: la misma marca, el mismo nombre, o uno empieza por el otro («Netflix» y «Netflix familiar»).
-        func matches(name: String, brand: SubscriptionBrand?) -> Bool {
-            if let brand, brand.id == brandID { return true }
+        /// Parecido: la misma marca, el mismo nombre, o uno empieza por el otro («Netflix» y «Netflix familiar»). Con
+        /// `amount` (una de dos series de la marca), la marca solo cuenta si el pago es de ese monto.
+        func matches(name: String, brand: SubscriptionBrand?, amount seriesAmount: Double? = nil) -> Bool {
+            if let brand, brand.id == brandID {
+                guard let seriesAmount, let amount else { return true }
+                return RecurringPaymentDetector.amountMatches(seriesAmount, reference: amount, exact: true)
+            }
             let other = RecurringPaymentDetector.merchantName(name)
             guard !other.isEmpty, !normalizedName.isEmpty else { return false }
             return other == normalizedName

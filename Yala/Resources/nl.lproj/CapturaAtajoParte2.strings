@@ -1,0 +1,76 @@
+/*
+  CapturaAtajoParte2.strings
+  Yala
+
+  Avisos del banco (B2), correo de Mail (B3) y avisos de precio y de baja de los pagos planificados (S2), encargo
+  del 22-nov-2026. Tabla propia: la lee `L10n.CapturaAtajoParte2` y la acción de Atajos (`BankNoticeSourceChoice`).
+*/
+
+"atajoParte2.intent.source" = "Bron";
+"atajoParte2.intent.source.notification" = "Melding";
+"atajoParte2.intent.source.mail" = "E-mail";
+"atajoParte2.bank.row.title" = "Bankmeldingen";
+"atajoParte2.bank.picker.title" = "Welke bank?";
+"atajoParte2.bank.picker.subtitle" = "Kies de app die je over je aankopen informeert. Yala leest de melding op je iPhone en zet de uitgave in je Inbox om te bevestigen. Je kunt later meer banken toevoegen.";
+"atajoParte2.bank.picker.ready" = "Klaar";
+"atajoParte2.bank.picker.other" = "Andere bank";
+"atajoParte2.bank.picker.otherDetail" = "Gelezen door het model van de iPhone";
+"atajoParte2.bank.picker.beta" = "Bèta";
+"atajoParte2.bank.picker.activeSection" = "Actief";
+"atajoParte2.bank.picker.addSection" = "Nog een bank toevoegen";
+"atajoParte2.bank.privacyFooter" = "Gratis, en ook met je gegevens in iCloud. De tekst van de melding verlaat je iPhone niet: alleen de uitgave wordt in je Inbox bewaard.";
+"atajoParte2.bank.status.waiting.title" = "Wachten op de eerste melding";
+"atajoParte2.bank.status.waiting.detail" = "Doe een kleine aankoop met je kaart. Je ziet hem hier en in je Inbox.";
+"atajoParte2.bank.status.working.title" = "Werkt";
+"atajoParte2.bank.status.lastNotice" = "Laatste melding: %@";
+"atajoParte2.bank.status.lastNoticeWith" = "Laatste melding: %1$@ · %2$@";
+"atajoParte2.bank.status.amountAt" = "%1$@ bij %2$@";
+"atajoParte2.bank.status.silent.title" = "Al %d dagen komt er niets binnen";
+"atajoParte2.bank.status.silent.detail" = "Gebruik je je kaart nog? Controleer dan in Opdrachten of de automatisering nog aan staat.";
+"atajoParte2.bank.status.paused.title" = "Gepauzeerd";
+"atajoParte2.bank.status.paused.detail" = "Meldingen die binnenkomen worden genegeerd en niet bewaard.";
+"atajoParte2.bank.month.section" = "Deze maand";
+"atajoParte2.bank.month.read" = "Gelezen meldingen";
+"atajoParte2.bank.month.notUnderstood" = "Niet begrepen";
+"atajoParte2.bank.month.notPurchases" = "Geen aankopen";
+"atajoParte2.bank.month.footer" = "‘Geen aankopen’ zijn codes, acties en saldomeldingen: ze laten niets achter in je Inbox.";
+"atajoParte2.bank.settings.section" = "Instellingen";
+"atajoParte2.bank.defaultAccount" = "Standaardrekening";
+"atajoParte2.bank.defaultAccount.none" = "Die uit de melding";
+"atajoParte2.bank.defaultAccount.footer" = "Wordt gebruikt als de melding niet zegt met welke kaart je betaalde. Staan de laatste vier cijfers erin, dan geldt de rekening met die cijfers.";
+"atajoParte2.bank.pause" = "Meldingen pauzeren";
+"atajoParte2.bank.guide.section" = "Zo zet je het aan";
+"atajoParte2.bank.guide.step1.title" = "Open Opdrachten en maak een automatisering";
+"atajoParte2.bank.guide.step1.detail" = "Tik in Opdrachten op + en kies Automatisering › Melding.";
+"atajoParte2.bank.guide.step2.title" = "Kies de app van %@";
+"atajoParte2.bank.guide.step2.detail" = "Tik op App en zoek %@. Zet geen filter.";
+"atajoParte2.bank.guide.step3.title" = "Voeg de actie van Yala toe";
+"atajoParte2.bank.guide.step3.detail" = "Zoek ‘Transactie vastleggen uit tekst’. Kies bij Tekst de variabele Melding en bij Bank %@.";
+"atajoParte2.bank.guide.step4.title" = "Laat de automatisering aan staan";
+"atajoParte2.bank.guide.step4.detail" = "Zo draait ze vanzelf als de melding binnenkomt, ook met je iPhone vergrendeld.";
+"atajoParte2.bank.guide.preview" = "Meldingen van %1$@ moeten hun inhoud tonen: Instellingen › Berichtgeving › %2$@ › Toon voorvertoning: Altijd.";
+"atajoParte2.bank.guide.otherNote" = "Bij een bank zonder regels leest het model van de iPhone (met Apple Intelligence) de melding. Begrijpt het die niet, dan blijft ze in je Inbox om aan te vullen.";
+"atajoParte2.bank.openShortcuts" = "Open Opdrachten";
+"atajoParte2.bank.addShortcut" = "Voeg toe aan Opdrachten";
+"atajoParte2.bank.mail.section" = "Als je bank je per e-mail informeert";
+"atajoParte2.bank.mail.detail" = "Krijg je de meldingen in de app Mail, maak de automatisering dan met E-mail in plaats van Melding en vul de afzender van je bank in. Kies in de actie van Yala E-mail › Inhoud als Tekst, en E-mail als Bron.";
+"atajoParte2.bank.test.section" = "Probeer een voorbeeldmelding";
+"atajoParte2.bank.test.detail" = "Leest een voorbeeldmelding van %@ zodat je het resultaat ziet. Er wordt niets bewaard.";
+"atajoParte2.bank.test.button" = "Probeer";
+"atajoParte2.bank.test.expense" = "Uitgave van %1$@ bij %2$@";
+"atajoParte2.bank.test.income" = "Inkomen van %1$@ van %2$@";
+"atajoParte2.bank.test.amountOnly" = "Transactie van %@";
+"atajoParte2.bank.test.notUnderstood" = "We begrepen deze melding niet";
+"atajoParte2.bank.test.notAMovement" = "Geen aankoop";
+"atajoParte2.bank.remove.section" = "Helemaal verwijderen";
+"atajoParte2.bank.remove.step1" = "Open Opdrachten en zoek de automatisering van %@.";
+"atajoParte2.bank.remove.step2" = "Veeg naar links en tik op Verwijder.";
+"atajoParte2.changes.priceUp" = "%1$@ is gestegen naar %2$@";
+"atajoParte2.changes.priceDown" = "%1$@ is gedaald naar %2$@";
+"atajoParte2.changes.priceDetail" = "De laatste twee afschrijvingen waren %1$@; je betaling zegt %2$@.";
+"atajoParte2.changes.update" = "Bijwerken";
+"atajoParte2.changes.keep" = "Zo laten";
+"atajoParte2.changes.stoppedTitle" = "Betaal je %@ niet meer?";
+"atajoParte2.changes.stoppedDetail" = "Geen afschrijving sinds %@.";
+"atajoParte2.changes.pause" = "Betaling pauzeren";
+"atajoParte2.changes.stillActive" = "Nog actief";

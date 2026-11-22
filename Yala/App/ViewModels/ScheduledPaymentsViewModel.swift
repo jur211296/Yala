@@ -337,6 +337,25 @@ final class ScheduledPaymentsViewModel {
         calculatePaymentData(payments: allPayments)
     }
 
+    // MARK: - Cambio de precio (S2 de pagos recurrentes)
+
+    /// «Actualizar» del aviso «Netflix subió a S/ 49,90»: el pago pasa al precio de los dos últimos cobros. Los registros
+    /// pasados no se tocan.
+    func updateAmount(_ payment: ScheduledPayment, to amount: Double) {
+        guard let context = modelContext, amount > 0, amount.isFinite else { return }
+        payment.amount = amount
+        do {
+            try persistAndRefresh(context: context)
+            DS.Haptic.success()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving amount: \(error)")
+            #endif
+        }
+        loadPayments()
+        calculatePaymentData(payments: allPayments)
+    }
+
     // MARK: - «Ya lo pagué» → «Apuntarlo ahora» (UX 2.2 · L10-9, L10-11)
 
     /// El borrador con el que se apunta una fecha (`ScheduledPaymentPayNow.draftForPaying`, compartido con el widget).

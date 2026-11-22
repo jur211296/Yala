@@ -102,6 +102,14 @@ function miniToday(params: ChatParams): ManagedRoute {
   return { mode: "managed", provider: "openai", model: "gpt-4.1-mini", params, retries: 0 };
 }
 
+/** Los tipos de comercio de la foto, en el orden del `enum VisionMerchantKind` de la app. */
+export const PHOTO_MERCHANT_KINDS = [
+  "supermarket", "restaurant", "delivery", "bar", "nightlife", "pharmacy", "health", "beauty", "personal_care",
+  "clothing", "electronics", "home", "gifts", "fuel", "parking", "vehicle_service", "rideshare", "public_transport",
+  "travel", "streaming", "software", "phone_internet", "utilities", "fitness", "sports", "education", "entertainment",
+  "hobbies", "pet_store", "vet", "insurance", "bank_fee", "taxes", "rent",
+] as const;
+
 // Esquemas de las tres tareas = lo que parsea la app (ver bench/tasks/*.ts, que replica los parsers).
 const PHOTO_SCHEMA = {
   name: "photo_read",
@@ -116,7 +124,7 @@ const PHOTO_SCHEMA = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["amount", "date", "merchant", "note", "currency", "payment", "account"],
+          required: ["amount", "date", "merchant", "note", "currency", "payment", "account", "merchantKind"],
           properties: {
             amount: { type: ["number", "null"] },
             date: { type: ["string", "null"] },
@@ -128,6 +136,10 @@ const PHOTO_SCHEMA = {
             // escalera y descarta un nombre que no exista. Una app que no los pide recibe null.
             payment: { type: ["string", "null"] },
             account: { type: ["string", "null"] },
+            // Captura por foto (decisión 75, 2026-11-22): a qué se dedica el comercio según lo que la IA sabe de él. La
+            // lista es el `enum VisionMerchantKind` de la app (lo fija `test/ai.photo-comercio.test.ts`); el teléfono la
+            // traduce a una subcategoría del usuario. Ninguna categoría del usuario viaja en la petición.
+            merchantKind: { type: ["string", "null"], enum: [...PHOTO_MERCHANT_KINDS, null] },
           },
         },
       },

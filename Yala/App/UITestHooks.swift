@@ -1115,6 +1115,9 @@ final class UITestHooks {
     /// la prueban los unit tests de `BankEmailEntryLogic`, sin el seam. `-uitest-bank-email-gmail-code` añade el código de
     /// Gmail ya recibido. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var bankEmailFake: Bool { hasArg("-uitest-bank-email") }
+    /// `-uitest-seed-s2-changes`: Netflix que subió de precio y Spotify que dejó de cobrarse (lote S2 de pagos
+    /// recurrentes, `DevSeedRecurringChanges`). Aditivo al perfil.
+    nonisolated static var seedRecurringChanges: Bool { hasArg("-uitest-seed-s2-changes") }
     nonisolated static var bankEmailFakeGmailCode: Bool { hasArg("-uitest-bank-email-gmail-code") }
 
     /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que

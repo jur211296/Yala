@@ -110,6 +110,7 @@ enum BankNoticeDraftService {
                 in: accounts
             )
             let account = accountFromNotice(bank: entry.bank, last4: movement.cardLast4, currency: currency, in: accounts)
+                ?? defaultAccount(for: entry.bank, currency: currency, in: accounts)
                 ?? ApplePayDraftService.matchedAccount(currency: currency, cardAccount: cardAccount, in: accounts)
             let counterparty = movement.counterparty ?? ""
             var subcategory: Subcategory?
@@ -123,7 +124,14 @@ enum BankNoticeDraftService {
                     subcategory = sub
                     subcategoryConfidence = 0.8
                 case .none:
-                    break
+                    // Sin recuerdo, el banco de comercios del teléfono: «TAMBO+ MIRAFLORES» es un supermercado. El aviso no
+                    // pasa por la IA; solo cuentan las categorías del banco que no dejan duda (`VisionMerchantKind.fromCatalog`).
+                    if let known = MerchantKindSubcategory.subcategory(
+                        kind: nil, merchant: counterparty, isExpense: movement.isExpense,
+                        in: MerchantKindSubcategory.fetchVisible(context: context)) {
+                        subcategory = known
+                        subcategoryConfidence = 0.6
+                    }
                 }
             }
             let magnitude = NSDecimalNumber(decimal: movement.amount).doubleValue
@@ -153,6 +161,18 @@ enum BankNoticeDraftService {
         guard mention != nil || last4 != nil else { return nil }
         let choice = DraftBuilder.chooseAccount(mention: mention, last4: last4, currency: currency, in: accounts)
         return choice.resultado.cuentaPuesta == nil ? nil : choice.account
+    }
+
+    /// La «Cuenta por defecto» que la persona eligió para ese banco (B2), si sigue viva, sin archivar y en la moneda del
+    /// aviso (o el aviso no dice moneda). Va después de los últimos 4 y el nombre del banco: lo que dice el aviso manda.
+    static func defaultAccount(
+        for bank: BankNoticeBank?, currency: String?, in accounts: [Account],
+        defaults: UserDefaults? = BankNoticeActivityStore.appGroupDefaults
+    ) -> Account? {
+        guard let bank, let id = BankNoticeActivityStore.settings(for: bank, defaults: defaults).defaultAccountShortcutID,
+              let account = accounts.first(where: { $0.shortcutID == id && !$0.isArchived }) else { return nil }
+        guard let currency else { return account }
+        return account.currencyCode.uppercased() == currency.uppercased() ? account : nil
     }
 
     /// La descripción de un borrador que no se entendió: el aviso en una línea, recortado.
