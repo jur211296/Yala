@@ -67,7 +67,13 @@ struct ImageSelectionView: View {
     /// lectura antes de saber qué borradores se enseñan.
     @State private var cuentaSola = CuentaSolaAlLeerHoja()
     @State private var cuentaSolaLeidas: [ObjectIdentifier: CuentaSolaAlLeer.Eleccion] = [:]
-    @State private var detailDraft: InboxDraft?
+    /// El borrador abierto con «Ver todo»: su editor completo va empujado dentro de esta misma hoja (opción A, Jürgen
+    /// 2026-11-22), con ‹ para volver a lo leído.
+    @State private var editingDraft: InboxDraft?
+    /// «Otra foto» con lo leído a la vista: lo que se lea ahora se SUMA a la hoja (recorrido A, paso 4).
+    @State private var appendsNextRead = false
+    /// Las fotos de esta vez a pantalla completa, desde las miniaturas de la barra.
+    @State private var showsPhotos = false
     /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
     @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
     /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
@@ -89,8 +95,6 @@ struct ImageSelectionView: View {
     /// «Apuntarlo a mano» desde el muro de Pro con lo leído a la vista (el aviso de fotos que no entraron): al cerrar el
     /// formulario se vuelve a «Lo leído», no se cierra la hoja (mejoras necesarias 2.3 · V3).
     @State private var manualEntryReturnsToReview = false
-    /// «Otra foto» con lo leído sin guardar pregunta antes de borrarlo (decisión 81 de la revisión 2.3).
-    @State private var showOtherPhotoConfirmation = false
     /// El cierre automático tras guardar todo; se cancela si la hoja se va antes.
     @State private var autoCloseTask: Task<Void, Never>?
     /// La hoja ya se va a cerrar sola: no se ofrece «Listo» durante la confirmación.
@@ -126,13 +130,31 @@ struct ImageSelectionView: View {
     private let maxPhotos = PDFPageImport.maxPagesPerBatch
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            header
-            content
+        ZStack {
+            VStack(spacing: DS.Spacing.none) {
+                header
+                content
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.lg)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Con «Ver todo» abierto, lo leído sigue montado debajo (su estado no se pierde) pero no se ve ni se toca.
+            .opacity(editingDraft == nil ? 1 : 0)
+            .allowsHitTesting(editingDraft == nil)
+            .accessibilityHidden(editingDraft != nil)
+
+            if let editingDraft {
+                InboxDraftEditSheet(
+                    draft: editingDraft,
+                    onConvertToGroupExpense: { converting, groups in
+                        conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
+                    },
+                    onBack: closeEditor
+                )
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
+            }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
         .yalaScreenBackground(
             ImageEntrySheetHeightLogic.background(
@@ -143,17 +165,11 @@ struct ImageSelectionView: View {
         )
         // Con varios leídos, la hoja pasa a grande sola: a media altura enseñaba una fila (decisión 80 de la revisión 2.3).
         .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
-        .onChange(of: showsSeveralToReview) { _, several in growForSeveral(several) }
-        .growsSheetToLarge(when: showsSeveralToReview)
+        .onChange(of: needsLargeSheet) { _, large in growForSeveral(large) }
+        .growsSheetToLarge(when: needsLargeSheet)
         .interactiveDismissDisabled(phase == .reading)
         // Cada fase y cada fallo se anuncia a VoiceOver (decisión 62 de la revisión 2.3).
         .announcesEntryPhase(phaseAnnouncement)
-        .asksBeforeDiscardingEntry(
-            title: L10n.EntryDiscard.photoTitle,
-            message: L10n.EntryDiscard.photoMessage,
-            isPresented: $showOtherPhotoConfirmation,
-            onDiscard: chooseAnother
-        )
         .photosPicker(
             isPresented: $showPhotosPicker,
             selection: $selectedPhotos,
@@ -181,10 +197,8 @@ struct ImageSelectionView: View {
         .sheet(isPresented: $showManualEntry, onDismiss: manualEntryClosed) {
             NewTransactionView()
         }
-        .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
-            InboxDraftEditSheet(draft: draft, onConvertToGroupExpense: { converting, groups in
-                conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
-            })
+        .sheet(isPresented: $showsPhotos) {
+            EstoLeiPhotoViewer(images: images)
         }
         // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
         .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
@@ -205,8 +219,11 @@ struct ImageSelectionView: View {
     /// Lo leído trae más de un registro y la hoja lo está enseñando.
     private var showsSeveralToReview: Bool { phase == .review && isMulti }
 
+    /// Varios que revisar o «Ver todo» abierto: la hoja va a grande.
+    private var needsLargeSheet: Bool { showsSeveralToReview || editingDraft != nil }
+
     private var sheetDetents: Set<PresentationDetent> {
-        ImageEntrySheetHeightLogic.detents(showsSeveralToReview: showsSeveralToReview, dynamicTypeSize: dynamicTypeSize)
+        ImageEntrySheetHeightLogic.detents(showsSeveralToReview: needsLargeSheet, dynamicTypeSize: dynamicTypeSize)
     }
 
     /// SwiftUI no mueve la hoja por sí solo (`ImageEntrySheetHeight.swift`): la sube `growsSheetToLarge`. El elegido se
@@ -252,9 +269,10 @@ struct ImageSelectionView: View {
     // MARK: - Cabecera
 
     /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
-    /// Una sola fila, sin hueco arriba (encargo «X nativa en la hoja de foto», 2026-11-17): el título de la fase —y en
-    /// «Esto leí» y «Guardado», las miniaturas— a la izquierda y la X del sistema a la derecha. Con «Omitir» la fila es
-    /// «Omitir … X» y el título va en el contenido, debajo: tres piezas no caben en una fila sin apretarse.
+    /// Una sola fila, sin hueco arriba, como la barra de B1 (opción A de «Esto leí», 2026-11-22): la X del sistema a la
+    /// izquierda, el título de la fase al centro y, en «Esto leí», las fotos a la derecha para volver a verlas. Eligiendo
+    /// otra foto para sumar, ‹ en vez de la X vuelve a lo leído. Con «Omitir» la fila es «X … Omitir» y el título va en
+    /// el contenido, debajo: tres piezas no caben en una fila sin apretarse.
     @ViewBuilder
     private var header: some View {
         if let courtesyTrialText, let skip = onSetupTrialSkipped {
@@ -264,39 +282,53 @@ struct ImageSelectionView: View {
             }
             .padding(.top, DS.Spacing.md)
         }
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
-            if showsSkip, let skip = onSetupTrialSkipped {
-                Button(L10n.SetupChecklist.skipStep) {
-                    skip()
-                    dismiss()
-                }
-                .font(DS.Typography.label)
-                .frame(minHeight: 44)
-                Spacer()
-            } else if let headerTitle {
+        ZStack {
+            if let headerTitle {
                 Text(headerTitle.text)
                     .font(DS.Typography.title3)
                     .foregroundStyle(.thPrimaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier(headerTitle.identifier)
                     // Un título, una vista: al cambiar de fase no se funde con el anterior.
                     .id(headerTitle.text)
                     .transition(.asymmetric(insertion: .opacity, removal: .identity))
-                if phase == .review {
+            }
+            HStack(alignment: .center, spacing: DS.Spacing.md) {
+                if returnsToReview {
+                    EntrySheetBackButton(action: backToReview)
+                        .accessibilityIdentifier("image_back_to_review")
+                } else if phase != .reading {
+                    EntrySheetCloseButton { dismiss() }
+                        .accessibilityIdentifier("image_close")
+                }
+                Spacer(minLength: DS.Spacing.none)
+                if showsSkip, let skip = onSetupTrialSkipped {
+                    Button(L10n.SetupChecklist.skipStep) {
+                        skip()
+                        dismiss()
+                    }
+                    .font(DS.Typography.label)
+                    .frame(minHeight: 44)
+                } else if phase == .review {
                     thumbnails
                 }
-            } else {
-                Spacer()
-            }
-            if phase != .reading {
-                EntrySheetCloseButton { dismiss() }
-                    .accessibilityIdentifier("image_close")
             }
         }
         .frame(minHeight: 44)
         .padding(.top, DS.Spacing.md)
+    }
+
+    /// Eligiendo otra foto para sumar a lo leído: ‹ vuelve ahí sin leer nada.
+    private var returnsToReview: Bool {
+        guard appendsNextRead, !drafts.isEmpty else { return false }
+        switch phase {
+        case .choose, .password: return true
+        case .reading, .review, .failure: return false
+        }
     }
 
     /// «Ahora no» de la práctica guiada, mientras no haya nada que revisar.
@@ -344,10 +376,11 @@ struct ImageSelectionView: View {
                         .accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("image_choose_title")
                 }
-                Text(L10n.Image.Entry.subtitle)
+                Text(returnsToReview ? L10n.EstoLei.appendNotePhoto : L10n.Image.Entry.subtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(returnsToReview ? "image_append_note" : "image_choose_subtitle")
             }
 
             if courtesyTrialText == nil, let examples = exampleImages, !examples.isEmpty {
@@ -674,21 +707,17 @@ struct ImageSelectionView: View {
         VStack(spacing: DS.Spacing.md) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    if dynamicTypeSize.isAccessibilitySize {
-                        missingHint
-                    }
-
-                    // La descripción se corrige ahí mismo al tocarla; el resto de la fila abre el formulario completo.
+                    // La descripción se corrige ahí mismo al tocarla; «Ver todo» abre el editor completo en la misma hoja.
                     if isMulti {
                         if !drafts.isEmpty {
                             MultiDraftReviewList(drafts: drafts, selection: $selection, editsNoteInPlace: true) {
-                                detailDraft = $0
+                                openEditor($0)
                             }
                         }
                     } else {
                         ForEach(drafts, id: \.persistentModelID) { draft in
                             VoiceDraftReviewCard(draft: draft, editsNoteInPlace: true) {
-                                detailDraft = draft
+                                openEditor(draft)
                             }
                         }
                     }
@@ -720,10 +749,6 @@ struct ImageSelectionView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            if !dynamicTypeSize.isAccessibilitySize {
-                missingHint
-            }
-
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
                     .font(DS.Typography.caption)
@@ -731,7 +756,9 @@ struct ImageSelectionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            actionsLayout {
+            // Siempre en una fila, nunca un botón debajo de otro (opción A): con texto grande «Otra foto» se queda en su
+            // icono y «Guardar» encoge su texto en una línea.
+            HStack(spacing: DS.Spacing.md) {
                 if isClosingAlone {
                     EmptyView()
                 } else if isFinished {
@@ -739,35 +766,15 @@ struct ImageSelectionView: View {
                         dismiss()
                     }
                 } else {
-                    secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: otherPhotoTapped)
-                    primaryButton(saveTitle, isEnabled: canSave, identifier: "image_save", action: saveAll)
+                    compactSecondaryButton(
+                        L10n.Image.Entry.otherPhoto, systemImage: "camera", identifier: "image_other_photo",
+                        action: otherPhotoTapped)
+                    primaryButton(saveTitle, isEnabled: canSave, identifier: "image_save", singleLine: true, action: saveAll)
                 }
             }
         }
         .padding(.top, DS.Spacing.xs)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
-    }
-
-    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
-    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
-    /// scroll, bajo el título.
-    @ViewBuilder
-    private var missingHint: some View {
-        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
-            Text(L10n.Voice.reviewMissingHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.warningForeground)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityIdentifier("multi_review_missing_hint")
-        }
-    }
-
-    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
-    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
-    private var actionsLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
-            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
@@ -778,10 +785,23 @@ struct ImageSelectionView: View {
         return allSaved ? nil : L10n.Voice.reviewInboxNote
     }
 
-    /// Las fotos de esta vez, en pequeño; las que no se leyeron, atenuadas y con aviso.
+    /// Las fotos de esta vez, en pequeño (dos como mucho, para que el título quepa centrado); las que no se leyeron,
+    /// atenuadas. Tocarlas las abre a pantalla completa.
     private var thumbnails: some View {
+        Button {
+            showsPhotos = true
+        } label: {
+            thumbnailStack
+        }
+        .buttonStyle(.plain)
+        .disabled(images.isEmpty)
+        .accessibilityLabel(L10n.EstoLei.seePhotos)
+        .accessibilityIdentifier("image_review_photos")
+    }
+
+    private var thumbnailStack: some View {
         HStack(spacing: -DS.Spacing.md) {
-            ForEach(images.indices.prefix(4), id: \.self) { index in
+            ForEach(images.indices.prefix(2), id: \.self) { index in
                 let image = images[index]
                 let failed = failedImages.contains { $0 === image }
                 Image(uiImage: image)
@@ -797,7 +817,8 @@ struct ImageSelectionView: View {
                     .rotationEffect(.degrees(index.isMultiple(of: 2) ? -4 : 4))
             }
         }
-        .accessibilityHidden(true)
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 
     /// Las fotos o páginas que no se leyeron. Si se acabó el cupo de prueba, reintentar no sirve: ofrece Yala Pro.
@@ -1014,16 +1035,19 @@ struct ImageSelectionView: View {
 
     // MARK: - Botones
 
+    /// `singleLine`: en la fila de «Esto leí» el texto no se parte («Guardar 7 · S/ 248.71»), encoge.
     private func primaryButton(
         _ title: String,
         isEnabled: Bool,
         identifier: String,
+        singleLine: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Text(title)
                 .font(DS.Typography.body.weight(.semibold))
-                .lineLimit(2)
+                .lineLimit(singleLine ? 1 : 2)
+                .minimumScaleFactor(singleLine ? 0.7 : 1)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
                 .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
@@ -1052,6 +1076,34 @@ struct ImageSelectionView: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// El secundario de «Esto leí»: icono y texto a su medida, al lado de «Guardar», que se lleva el resto; con texto de
+    /// accesibilidad, solo el icono (`EstoLeiLogic.secondaryShowsTitle`).
+    private func compactSecondaryButton(
+        _ title: String, systemImage: String, identifier: String, action: @escaping () -> Void
+    ) -> some View {
+        let showsTitle = EstoLeiLogic.secondaryShowsTitle(isAccessibilitySize: dynamicTypeSize.isAccessibilitySize)
+        return Button(action: action) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: systemImage)
+                    .accessibilityHidden(true)
+                if showsTitle {
+                    Text(title)
+                        .lineLimit(1)
+                }
+            }
+            .font(DS.Typography.body.weight(.medium))
+            .foregroundStyle(.thPrimaryText)
+            .frame(minWidth: buttonHeight, minHeight: buttonHeight)
+            .padding(.horizontal, showsTitle ? DS.Spacing.lg : DS.Spacing.sm)
+            .background(Capsule().fill(Color(.tertiarySystemFill)))
+            .contentShape(Capsule())
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
     }
 
@@ -1297,6 +1349,18 @@ struct ImageSelectionView: View {
         sharedPhotosLeftOut sharedLeftOut: Int = 0
     ) {
         guard !batch.isEmpty else { return }
+        if appendsNextRead, !drafts.isEmpty {
+            appendsNextRead = false
+            images += batch
+            documentPages.formUnion(pages)
+            pagesLeftOut += leftOut
+            sharedPhotosLeftOut += sharedLeftOut
+            saveFailed = false
+            // Sin red, la lectura falla foto a foto y vuelve a lo leído con el aviso de las que no se leyeron.
+            beginReading(batch, appending: true)
+            return
+        }
+        appendsNextRead = false
         images = batch
         documentPages = pages
         pagesLeftOut = leftOut
@@ -1426,7 +1490,10 @@ struct ImageSelectionView: View {
                 saveFailed = appending
                 return
             }
-            let combined = appending ? drafts + shown : shown
+            // Al sumar, lo que ya se enseñaba no se repite (la deduplicación puede devolverlo).
+            let combined = appending
+                ? EstoLeiLogic.appended(drafts, shown, id: { $0.persistentModelID })
+                : shown
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja.
             drafts = isSetupTrial ? Array(combined.prefix(1)) : combined
             applyCuentaSola(appending: appending)
@@ -1539,16 +1606,54 @@ struct ImageSelectionView: View {
         }
     }
 
-    /// «Otra foto»: con lo leído a la vista y algo sin guardar, pregunta antes; si no, vuelve a elegir.
+    /// «Otra foto»: con lo leído a la vista, se elige otra y lo que se lea se SUMA a la hoja (recorrido A, paso 4): ya no
+    /// se borra nada, así que no hay que preguntar (sustituye a la decisión 81 de la revisión 2.3 en esta hoja). Desde un
+    /// fallo, sin nada leído, vuelve a elegir como siempre.
     private func otherPhotoTapped() {
-        if EntryPhaseFeedbackLogic.asksBeforeDiscarding(isReviewing: phase == .review, unsavedCount: pendingDrafts.count) {
-            showOtherPhotoConfirmation = true
+        if phase == .review, !drafts.isEmpty {
+            autoCloseTask?.cancel()
+            isClosingAlone = false
+            appendsNextRead = true
+            phase = .choose
         } else {
             chooseAnother()
         }
     }
 
-    /// «Otra foto»: lo pendiente de esta vez se descarta —si se quedara, la Bandeja acabaría con el mismo gasto dos
+    /// ‹ desde «Elegir» con lo leído esperando: vuelve sin leer nada.
+    private func backToReview() {
+        appendsNextRead = false
+        fileBatch = nil
+        pdfPassword = ""
+        phase = .review
+    }
+
+    // MARK: - «Ver todo»
+
+    /// El editor completo del borrador, empujado dentro de esta hoja (opción A).
+    private func openEditor(_ draft: InboxDraft) {
+        autoCloseTask?.cancel()
+        isClosingAlone = false
+        dsWithAnimation(reduceMotion) {
+            editingDraft = draft
+        }
+    }
+
+    /// ‹ del editor (o lo que lo cierra: guardar, descartar, pasar a un grupo). Si el borrador se borró, sin animación:
+    /// el editor saliente no puede volver a pintarse con un modelo borrado (`swiftui-ds.md`, modelos borrados).
+    private func closeEditor() {
+        let deleted = editingDraft.map { $0.isDeleted || $0.modelContext == nil } ?? false
+        if deleted || reduceMotion {
+            editingDraft = nil
+        } else {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                editingDraft = nil
+            }
+        }
+        afterDetails()
+    }
+
+    /// «Otra foto» desde un fallo: lo pendiente de esta vez se descarta —si se quedara, la Bandeja acabaría con el mismo gasto dos
     /// veces— y se vuelve a elegir. Lo ya guardado no se toca.
     private func chooseAnother() {
         let pending = pendingDrafts
@@ -1624,7 +1729,7 @@ struct ImageSelectionView: View {
             } catch {
                 return
             }
-            guard phase == .review, allSaved, detailDraft == nil else {
+            guard phase == .review, allSaved, editingDraft == nil else {
                 isClosingAlone = false
                 return
             }
@@ -1692,6 +1797,10 @@ struct ImageSelectionView: View {
     private func tearDown() {
         autoCloseTask?.cancel()
         autoCloseTask = nil
+        // Cerrar sin guardar: lo leído queda en la Bandeja, y el aviso lo dice con «Ver» (recorrido A, paso 5).
+        if EstoLeiLogic.showsInboxNoticeOnClose(pendingCount: pendingDrafts.count, isSetupTrial: isSetupTrial) {
+            EstoLeiInboxNotice.show(message: L10n.EstoLei.inboxNoticePhoto)
+        }
         readTask?.cancel()
         readTask = nil
         fileBatch = nil

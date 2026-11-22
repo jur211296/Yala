@@ -45,7 +45,9 @@ final class XNativaHojaFotoUITests: XCTestCase {
             abs(titleFrame.midY - closeFrame.midY), closeFrame.height / 2,
             "El título y la X tienen que ir en la misma fila: título \(titleFrame), X \(closeFrame)."
         )
-        XCTAssertLessThan(titleFrame.maxX, closeFrame.minX, "El título no puede montarse sobre la X.")
+        // Desde la opción A de «Esto leí» (2026-11-22) la X de la hoja personal va a la izquierda, como en B1; la de Grupos
+        // sigue a la derecha. Lo que no cambia: no se montan.
+        XCTAssertFalse(titleFrame.intersects(closeFrame), "El título no puede montarse sobre la X: \(titleFrame) \(closeFrame).")
     }
 
     func test_choose_titleAndNativeCloseShareTheRow() {
@@ -87,17 +89,22 @@ final class XNativaHojaFotoUITests: XCTestCase {
         )
     }
 
-    /// Tocar la fila fuera de la descripción sigue abriendo el formulario completo.
-    func test_review_tappingTheRowOutsideTheNote_opensTheFullForm() {
+    /// Desde la opción A (2026-11-22) tocar la tarjeta no abre nada: el formulario completo es «Ver todo», empujado dentro
+    /// de la misma hoja, y ‹ vuelve a lo leído.
+    func test_review_seeAll_opensTheFullFormInTheSameSheet_andBackReturns() {
         let app = openPhotoSheet("one")
         app.buttons["image_source_photos"].tap()
-        let row = app.buttons["voice_draft_row"].firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 20), "Falta la fila leída (voice_draft_row).")
-        // El importe, a la derecha de la fila: fuera de la descripción.
-        row.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertTrue(app.buttons["draft_editor_more"].waitForExistence(timeout: 10),
-                      "Tocar la fila fuera de la descripción tenía que abrir el formulario completo.")
-        XCTAssertFalse(app.textFields["image_draft_note_field"].exists, "Ni abrir la edición en línea.")
+        let seeAll = app.buttons["esto_lei_ver_todo"].firstMatch
+        XCTAssertTrue(seeAll.waitForHittable(timeout: 20), "Falta «Ver todo» en la tarjeta (esto_lei_ver_todo).")
+        seeAll.tap()
+        let back = app.buttons["draft_editor_back"]
+        XCTAssertTrue(back.waitForHittable(timeout: 10), "«Ver todo» tenía que empujar el editor con ‹ (draft_editor_back).")
+        XCTAssertTrue(app.buttons["draft_editor_more"].exists, "El editor completo trae su «···».")
+        XCTAssertFalse(app.buttons["image_close"].isHittable, "Con el editor delante, la X de la hoja no se toca.")
+        back.tap()
+        XCTAssertTrue(app.buttons["esto_lei_ver_todo"].firstMatch.waitForHittable(timeout: 10),
+                      "‹ tenía que volver a la tarjeta, en la misma hoja.")
+        XCTAssertFalse(app.buttons["draft_editor_back"].exists, "Y el editor ya no está.")
     }
 
     /// Con un registro sin guardar (desmarcado en la hoja de varios), guardar no cierra la hoja: queda «Listo».

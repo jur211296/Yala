@@ -7453,6 +7453,27 @@ enum L10n {
 
     // MARK: - Voice Input
 
+    /// «Esto leí» / «Esto entendí» con la tarjeta B1 (opción A, Jürgen 2026-11-22).
+    enum EstoLei {
+        static var seeAll: String { ls("estoLei.seeAll", comment: "Opens the full record editor inside the review sheet") }
+        static var seeAllA11y: String { ls("estoLei.seeAllA11y", comment: "") }
+        static var chooseCategory: String { ls("estoLei.chooseCategory", comment: "Amber chip when the category is missing") }
+        static func toComplete(_ count: Int) -> String {
+            String(format: ls("estoLei.toComplete", comment: "How many marked records still miss something"), count)
+        }
+        static func savedIn(_ account: String) -> String {
+            String(format: ls("estoLei.savedIn", comment: "Saved record line: account name"), account)
+        }
+        static var again: String { ls("estoLei.again", comment: "Record another voice note that adds to the sheet") }
+        static var whatYouSaid: String { ls("estoLei.whatYouSaid", comment: "") }
+        static var inboxNoticePhoto: String { ls("estoLei.inboxNotice.photo", comment: "") }
+        static var inboxNoticeVoice: String { ls("estoLei.inboxNotice.voice", comment: "") }
+        static var inboxNoticeView: String { ls("estoLei.inboxNotice.view", comment: "Opens the Inbox") }
+        static var appendNotePhoto: String { ls("estoLei.appendNote.photo", comment: "") }
+        static var appendNoteVoice: String { ls("estoLei.appendNote.voice", comment: "") }
+        static var seePhotos: String { ls("estoLei.seePhotos", comment: "") }
+    }
+
     enum Voice {
         static var title: String {
             ls("voice.title", comment: "")

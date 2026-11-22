@@ -59,7 +59,9 @@ final class MultiDraftReviewUITests: XCTestCase {
 
         let save = app.buttons["image_save"]
         XCTAssertFalse(save.isEnabled, "Con dos marcados sin categoría no se puede guardar.")
-        XCTAssertTrue(app.staticTexts["multi_review_missing_hint"].exists, "Falta el aviso de qué hacer.")
+        // Opción A (2026-11-22): el recuento dice cuántos faltan y la primera incompleta sale desplegada con «Ver todo».
+        XCTAssertTrue(count.label.contains("2 por completar"), "El recuento tiene que decir cuántos faltan: \(count.label)")
+        XCTAssertTrue(app.buttons["esto_lei_ver_todo"].firstMatch.exists, "La primera incompleta sale desplegada.")
 
         let toggleAll = app.buttons["multi_review_toggle_all"]
         toggleAll.tap()

@@ -2,10 +2,11 @@
 //  VoiceDraftReviewCard.swift
 //  Yala
 //
-//  Un borrador del registro por voz tal como se verá en Registros (propuesta C, 2026-10-04): icono de categoría, nota,
-//  subcategoría e importe, y debajo las píldoras de la card de Yala IA (#348) para corregir lo que más se corrige.
-//  Cada píldora abre el MISMO selector que Nuevo registro (`ChatDraftFieldSheet`); lo que falta va primero y en
-//  ámbar. Tocar la fila abre el formulario completo del borrador (lo decide quien la monta).
+//  Un registro de «Esto leí» (foto) o «Esto entendí» (voz) como una hoja B1 en pequeño (opción A, elegida por Jürgen el
+//  2026-11-22; maqueta en `docs/propuestas/2026-11-22-esto-lei/`): la descripción centrada, la cápsula de moneda con el
+//  monto grande, la categoría bajo el monto (o «● Elige categoría ▾» en ámbar si falta) y la fila Hoy · Cuenta · # con
+//  los chips de Nuevo registro. Cada chip abre el MISMO selector que Nuevo registro (`ChatDraftFieldSheet`). «Ver todo»
+//  abre el editor completo dentro de la misma hoja (lo monta quien la presenta); tocar la tarjeta no abre nada.
 //
 //  Cada cambio se escribe en el `InboxDraft` y se guarda al momento: si el usuario cierra la hoja sin guardar, el
 //  borrador se queda en la Bandeja con lo que corrigió.
@@ -18,6 +19,7 @@ struct VoiceDraftReviewCard: View {
     let draft: InboxDraft
     /// La hoja de foto deja corregir la descripción tocándola (encargo del 2026-11-17); la de voz no lo pide.
     var editsNoteInPlace = false
+    /// «Ver todo»: el editor completo del borrador, dentro de la misma hoja.
     let onOpenDetails: () -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -29,7 +31,8 @@ struct VoiceDraftReviewCard: View {
 
     @State private var activeField: ChatDraftField?
     @State private var isEditingNote = false
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El monto grande de la tarjeta: más pequeño que el de B1 (64), que ocupa la hoja entera.
+    @ScaledMetric(relativeTo: .largeTitle) private var amountSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
     /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`): sin ella, el chip de siempre.
     @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
     /// «Recordar» tras corregir la cuenta (parte 2): lo pone la hoja de la foto.
@@ -38,36 +41,43 @@ struct VoiceDraftReviewCard: View {
     private var isSaved: Bool { draft.status == .approved }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            // Guardada, la fila ya no abre nada; sin `.disabled`, que la atenuaría como si faltara algo.
-            if isSaved {
-                row
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("voice_draft_row")
-            } else {
-                if editsNoteInPlace {
-                    // La descripción es un botón propio: dentro de la etiqueta de la fila se fundiría con ella. El resto de
-                    // la fila abre el formulario con un toque (el botón de la descripción, como hijo, gana el suyo), y el
-                    // botón de fondo solo existe para VoiceOver, que lee la fila entera ahí.
-                    row
-                        .onTapGesture(perform: openDetailsOrConfirmNote)
-                        .background { openDetailsButton }
-                } else {
-                    Button(action: onOpenDetails) {
-                        row
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("voice_draft_row")
-                }
+        // La tarjeta puede volver a pintarse con su borrador ya borrado (desde «Ver todo»): no se lee nada de él.
+        if draft.isDeleted || draft.modelContext == nil {
+            EmptyView()
+        } else {
+            card
+        }
+    }
 
-                chipsRow
+    private var card: some View {
+        VStack(spacing: DS.Spacing.md) {
+            descriptionLine
+            amountLine
+            categoryBlock
+            if isSaved {
+                savedLine
+            } else {
+                bottomRow
+                lineUnderChips
+            }
+        }
+        .padding(.top, isSaved ? DS.Spacing.lg : DS.Spacing.xxxxl)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.lg)
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .topTrailing) {
+            if !isSaved {
+                seeAllButton
+                    .padding(.top, DS.Spacing.xs)
+                    .padding(.trailing, DS.Spacing.sm)
             }
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .fill(.thCard)
         )
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice_draft_card")
         .sheet(item: $activeField) { field in
             ChatDraftFieldSheet(
                 field: field,
@@ -82,173 +92,175 @@ struct VoiceDraftReviewCard: View {
         }
     }
 
-    // MARK: - Fila
+    // MARK: - «Ver todo»
 
-    private var row: some View {
-        rowContent
-            .padding(.top, DS.ListRow.paddingV)
-            .padding(.bottom, isSaved ? DS.ListRow.paddingV : DS.Spacing.sm)
-            .padding(.horizontal, DS.ListRow.paddingH)
-            .contentShape(Rectangle())
-    }
-
-    /// Con la descripción editable en línea, el resto de la fila abre el formulario (y, con la descripción abierta, la
-    /// confirma). VoiceOver lee la fila entera en este botón.
-    private var openDetailsButton: some View {
-        Button(action: openDetailsOrConfirmNote) {
-            Color.clear
-        }
-        .buttonStyle(.plain)
-        // Solo para VoiceOver: el dedo lo recibe el gesto de la fila, encima.
-        .allowsHitTesting(false)
-        .accessibilityLabel(rowAccessibilityLabel)
-        .accessibilityIdentifier("voice_draft_row")
-    }
-
-    /// Con la descripción abierta, tocar el resto de la fila la confirma; si no, abre el formulario completo.
-    private func openDetailsOrConfirmNote() {
-        if isEditingNote {
-            isEditingNote = false
-        } else {
-            onOpenDetails()
-        }
-    }
-
-    private var rowAccessibilityLabel: String {
-        let amount = draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount
-        return [title, subtitle, amount].joined(separator: ", ")
-    }
-
-    /// Las piezas que no se tocan dejan el toque al gesto de la fila cuando la descripción va en línea.
-    private var passesTouches: Bool { editsNoteInPlace && !isSaved }
-
-    /// Con el texto al máximo el importe baja a su propia línea, entero: a su lado se partía en «S/ / 25.0 / 0»
-    /// (barrido final 2.2). A tamaño normal, la fila de siempre, con los mismos hijos en el mismo `HStack`.
-    @ViewBuilder
-    private var rowContent: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.ListRow.spacing) {
-                    ChatDraftCategoryIcon(subcategory: draft.subcategory)
-                        .rowPassesTouches(passesTouches)
-                    rowTexts
-                }
-                amountColumn(alignment: .leading)
-                    .rowPassesTouches(passesTouches)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            HStack(spacing: DS.ListRow.spacing) {
-                ChatDraftCategoryIcon(subcategory: draft.subcategory)
-                    .rowPassesTouches(passesTouches)
-
-                rowTexts
-
-                Spacer(minLength: DS.Spacing.sm)
-
-                amountColumn(alignment: .trailing)
-                    .rowPassesTouches(passesTouches)
-            }
-        }
-    }
-
-    private var rowTexts: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            if editsNoteInPlace, !isSaved {
-                DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote)
-            } else {
-                Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
+    private var seeAllButton: some View {
+        Button(action: onOpenDetails) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(DS.Typography.captionSmall)
+                    .accessibilityHidden(true)
+                Text(L10n.EstoLei.seeAll)
+                    .font(DS.Typography.labelSmall)
                     .lineLimit(1)
             }
-            Text(subtitle)
-                .font(DS.Typography.caption)
-                .foregroundStyle(
-                    draft.subcategory == nil
-                        ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
-                )
-                .lineLimit(1)
-                .rowPassesTouches(passesTouches)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Chip.paddingV)
+            .background(Capsule().fill(.quaternary))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.EstoLei.seeAllA11y)
+        .accessibilityIdentifier("esto_lei_ver_todo")
     }
 
-    private func amountColumn(alignment: HorizontalAlignment) -> some View {
-        VStack(alignment: alignment, spacing: DS.Spacing.xs) {
-            Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
-                .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
-                .foregroundStyle(
-                    draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(amountColor)
-                )
-                .monospacedDigit()
-
-            if isSaved {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(DS.Semantic.successForeground)
-                    Text(L10n.Chat.Draft.savedBadge)
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("voice_draft_saved")
-            }
-        }
-    }
-
-    /// La nota es lo que el usuario dijo («Almuerzo»); sin nota, la subcategoría hace de título.
-    private var title: String {
-        if !draft.note.isEmpty { return draft.note }
-        return draft.subcategory?.name ?? L10n.Common.uncategorized
-    }
-
-    private var subtitle: String {
-        guard let sub = draft.subcategory else { return L10n.Chat.Draft.missingSubcategory }
-        return "\(sub.safeCategory.name) · \(sub.name)"
-    }
-
-    // MARK: - Píldoras
+    // MARK: - Descripción y monto
 
     @ViewBuilder
-    private var chipsRow: some View {
-        FlowLayout(spacing: DS.Spacing.sm) {
-            if draft.subcategory == nil {
-                chip(.subcategory, title: L10n.Chat.Draft.selectSubcategory, isMissing: true)
-            }
-            accountChip
-            chip(.date, title: ChatDraftFormatting.dateLabel(draft.effectiveDate), isMissing: false)
-            chip(
-                .tags,
-                title: currentTags.isEmpty
-                    ? "+ \(L10n.Chat.Draft.addTag)"
-                    : currentTags.map(\.name).sorted().joined(separator: ", "),
-                isMissing: false
-            )
+    private var descriptionLine: some View {
+        if editsNoteInPlace, !isSaved {
+            DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote, isCentered: true)
+        } else {
+            Text(title)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .accessibilityIdentifier("esto_lei_description")
         }
-        .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
-        .padding(.trailing, DS.ListRow.paddingH)
-        .padding(.bottom, hasLineUnderChips ? DS.Spacing.sm : DS.Spacing.md)
+    }
 
+    private var currencyCode: String {
+        draft.account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
+    }
+
+    /// La cápsula de moneda de B1, sin menú: la moneda es la de la cuenta, y se cambia cambiando la cuenta.
+    private var amountLine: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            AmountCurrencyCapsule(
+                label: appPreferences.currencyIdentifier(for: currencyCode),
+                options: [],
+                current: currencyCode.uppercased(),
+                identifierPrefix: "esto_lei",
+                onChoose: { _ in }
+            )
+            Text(amountNumber)
+                .font(.system(size: amountSize, weight: .bold, design: .rounded))
+                .foregroundStyle(draft.amount == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(amountColor))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .accessibilityLabel(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
+                .accessibilityIdentifier("esto_lei_amount")
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Categoría
+
+    /// Elegida, la subcategoría rellena de su color y debajo su categoría y su necesidad, como en B1. Si falta, el chip
+    /// ámbar «● Elige categoría ▾» en su sitio; si falta el monto, el suyo al lado, que abre «Ver todo» (el teclado del
+    /// monto vive en el editor completo).
+    @ViewBuilder
+    private var categoryBlock: some View {
+        if let subcategory = draft.subcategory {
+            VStack(spacing: DS.Spacing.sm) {
+                SelectionChip(
+                    icon: "tag",
+                    text: subcategory.name,
+                    isSelected: true,
+                    color: Color(hex: subcategory.safeCategory.colorHex),
+                    fillsWhenSelected: true
+                ) {
+                    if !isSaved { activeField = .subcategory }
+                }
+                .allowsHitTesting(!isSaved)
+                // Otro id que el de lo que falta: un XCUITest que elige la categoría espera que «falta» se vaya.
+                .accessibilityIdentifier("esto_lei_subcategory")
+
+                CategoryNeedLine(
+                    category: subcategory.safeCategory,
+                    need: isExpense ? subcategory.need : nil,
+                    onNeedTap: onOpenDetails
+                )
+                .allowsHitTesting(!isSaved)
+            }
+        } else if !isSaved {
+            HStack(spacing: DS.Spacing.sm) {
+                if draft.amount == nil {
+                    EstoLeiMissingChip(title: L10n.Chat.Draft.missingAmount, action: onOpenDetails)
+                        .accessibilityIdentifier("esto_lei_missing_amount")
+                }
+                EstoLeiMissingChip(title: L10n.EstoLei.chooseCategory) { activeField = .subcategory }
+                    .accessibilityIdentifier("voice_draft_chip_subcategory")
+            }
+        }
+        if draft.subcategory != nil, draft.amount == nil, !isSaved {
+            EstoLeiMissingChip(title: L10n.Chat.Draft.missingAmount, action: onOpenDetails)
+                .accessibilityIdentifier("esto_lei_missing_amount")
+        }
+    }
+
+    // MARK: - Hoy · Cuenta · #
+
+    private var bottomRow: some View {
+        let presentation = accountChipPresentation
+        return OneLineChipRow(spacing: DS.Spacing.sm) {
+            RecordDateValueChip(text: ChatDraftFormatting.dateLabel(draft.effectiveDate)) {
+                activeField = .date
+            }
+            .accessibilityIdentifier("voice_draft_chip_date")
+
+            RecordValueChip(
+                icon: "creditcard",
+                iconColor: draft.account.map { Color(hex: $0.colorHex) },
+                text: presentation.titulo,
+                isSet: draft.account != nil,
+                isMissing: presentation.estilo == .falta
+            ) {
+                activeField = .account
+            }
+            .accessibilityLabel(presentation.accessibilityLabel ?? presentation.titulo)
+            .accessibilityIdentifier("voice_draft_chip_account")
+            .shrinksInChipRow()
+
+            TagCountChip(tags: currentTags) {
+                activeField = .tags
+            }
+            .accessibilityIdentifier("voice_draft_chip_tags")
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var savedLine: some View {
+        Label {
+            Text(draft.account.map { L10n.EstoLei.savedIn($0.name) } ?? L10n.Chat.Draft.savedBadge)
+                .lineLimit(1)
+        } icon: {
+            Image(systemName: "checkmark.circle.fill")
+        }
+        .font(DS.Typography.label)
+        .foregroundStyle(DS.Semantic.successForeground)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("voice_draft_saved")
+    }
+
+    /// La línea ✦ de la cuenta elegida, en UNA línea (ajuste de Jürgen al elegir A), o la de «Recordar».
+    @ViewBuilder
+    private var lineUnderChips: some View {
         if let recordada = cuentaSolaHoja.recordada(draft) {
-            CuentaSolaAlLeerPorqueLine(text: recordada)
+            EstoLeiWhyLine(text: recordada)
                 .accessibilityIdentifier("cuenta_sola_recordada")
-                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
-                .padding(.trailing, DS.ListRow.paddingH)
-                .padding(.bottom, DS.Spacing.md)
         } else if let oferta = recordarOferta, let acciones = cuentaSolaRecordar {
             CuentaSolaAlLeerRecordarLine(
                 palabras: AccountCaptureRule.cleaned(oferta.value),
                 onRecordar: { acciones.recordar(draft, oferta) },
                 onDescartar: { acciones.descartar(draft) })
-                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
-                .padding(.trailing, DS.ListRow.paddingH)
-                .padding(.bottom, DS.Spacing.md)
         } else if let porque = accountChipPresentation.porque {
-            CuentaSolaAlLeerPorqueLine(text: porque)
-                .padding(.leading, DS.ListRow.paddingH + DS.ListRow.iconSize + DS.ListRow.spacing)
-                .padding(.trailing, DS.ListRow.paddingH)
-                .padding(.bottom, DS.Spacing.md)
+            EstoLeiWhyLine(text: porque)
+                .accessibilityIdentifier("cuenta_sola_porque")
         }
     }
 
@@ -256,11 +268,6 @@ struct VoiceDraftReviewCard: View {
     private var recordarOferta: AccountCaptureRule? {
         guard cuentaSolaRecordar != nil else { return nil }
         return cuentaSolaHoja.ofertaRecordar(draft, currentAccountID: draft.account?.shortcutID)
-    }
-
-    /// Hay una línea bajo los chips (la de «por qué», la de «Recordar» o la de «Listo»).
-    private var hasLineUnderChips: Bool {
-        cuentaSolaHoja.recordada(draft) != nil || recordarOferta != nil || accountChipPresentation.porque != nil
     }
 
     // MARK: - Cuenta sola al leer
@@ -276,45 +283,6 @@ struct VoiceDraftReviewCard: View {
             selectAccount: L10n.Chat.Draft.selectAccount)
     }
 
-    /// El chip de cuenta: el de siempre, «✦ Cuenta» si se eligió sola, «Cuenta · sugerida» si la propone Yala IA o
-    /// «Elige cuenta · 2 coinciden».
-    private var accountChip: some View {
-        let presentation = accountChipPresentation
-        return chip(
-            .account, title: presentation.titulo, isMissing: presentation.estilo == .falta,
-            isSuggested: presentation.estilo == .sugerida
-        )
-        .accessibilityLabel(presentation.accessibilityLabel.map { Text($0) } ?? Text(presentation.titulo))
-    }
-
-    private func chip(_ field: ChatDraftField, title: String, isMissing: Bool, isSuggested: Bool = false) -> some View {
-        Button {
-            activeField = field
-        } label: {
-            Text(title)
-                .font(DS.Typography.labelSmall)
-                .lineLimit(1)
-                .foregroundStyle(isMissing ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.primary))
-                .padding(.horizontal, DS.Chip.paddingH)
-                .padding(.vertical, DS.Chip.paddingV)
-                .background {
-                    if isSuggested {
-                        CuentaSolaAlLeerSugeridaFondo()
-                    } else {
-                        Capsule().fill(isMissing ? AnyShapeStyle(DS.Semantic.warningBackground) : AnyShapeStyle(.quaternary))
-                    }
-                }
-                .overlay {
-                    if isMissing {
-                        Capsule().strokeBorder(DS.Semantic.warningForeground, lineWidth: 1)
-                    }
-                }
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("voice_draft_chip_\(field.rawValue)")
-    }
-
     // MARK: - Edición
 
     private var editing: ChatDraftEditing {
@@ -325,6 +293,12 @@ struct VoiceDraftReviewCard: View {
 
     // MARK: - Datos
 
+    /// La nota es lo que el usuario dijo («Almuerzo»); sin nota, la subcategoría hace de título.
+    private var title: String {
+        if !draft.note.isEmpty { return draft.note }
+        return draft.subcategory?.name ?? L10n.Common.uncategorized
+    }
+
     private var currentTags: [Tag] {
         guard let ids = draft.resolvedTagIDs() else { return [] }
         return allTags.filter { ids.contains($0.id) }
@@ -333,20 +307,86 @@ struct VoiceDraftReviewCard: View {
     /// El borrador guarda el importe con signo: negativo es gasto.
     private var isExpense: Bool { (draft.amount ?? -1) < 0 }
 
-    /// Sin signo, como en 2.1: «S/ -251.81» en «Esto leí» parecía un error de lectura (card ex73, 2026-10-25). Lo que
-    /// dice si es gasto o ingreso es el color: el ingreso va teñido y el gasto en el color del texto. La Bandeja conserva
-    /// el signo (UX 2.2 · L4-14).
+    /// El número sin moneda, que va en la cápsula, y sin signo, como en 2.1 (card ex73): lo que dice si es gasto o
+    /// ingreso es el color. Sin monto, «0.00» en gris, como el campo vacío de B1.
+    private var amountNumber: String {
+        guard let amount = draft.amount else { return AmountInputHelper.formatWithGrouping(0) }
+        return AmountInputHelper.formatWithGrouping(VoiceEntryFlowLogic.reviewDisplayedAmount(amount))
+    }
+
     private var formattedAmount: String {
         guard let amount = draft.amount else { return "–" }
-        let code = draft.account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
         return appPreferences.currency(
-            VoiceEntryFlowLogic.reviewDisplayedAmount(amount), currencyCode: code, forceFullPrecision: true)
+            VoiceEntryFlowLogic.reviewDisplayedAmount(amount), currencyCode: currencyCode, forceFullPrecision: true)
     }
 
     /// Se colorea la excepción, no la norma: el gasto va en el color del texto y el ingreso en el tono oscurecido que
     /// sí se lee sobre la tarjeta (`.claude/rules/swiftui-ds.md`).
     private var amountColor: Color {
         Color.amountTint(isIncome: !isExpense)
+    }
+}
+
+/// Lo que falta, en ámbar y con su flecha: «● Elige categoría ▾». Lo comparten la tarjeta de un registro y la fila
+/// desplegada de la hoja de varios.
+struct EstoLeiMissingChip: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.xs) {
+                Circle()
+                    .fill(DS.Semantic.warningForeground)
+                    .frame(width: 6, height: 6) // A11Y-DT: punto decorativo
+                    .accessibilityHidden(true)
+                Text(title)
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(DS.Typography.captionSmall)
+                    .accessibilityHidden(true)
+            }
+            .font(DS.Typography.labelSmall)
+            .foregroundStyle(DS.Semantic.warningForeground)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(Capsule().fill(DS.Semantic.warningBackground))
+            .overlay(Capsule().strokeBorder(DS.Semantic.warningForeground, lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(L10n.UXL2.missingChipValue)
+    }
+}
+
+/// «✦ Elegí BCP Crédito porque la imagen lo dice…» en UNA línea (ajuste de Jürgen al elegir A). Si la frase entera no
+/// cabe, va su primera oración («Elegí BCP Crédito porque la imagen lo dice.»); si ni esa, se corta. VoiceOver lee la
+/// frase entera.
+struct EstoLeiWhyLine: View {
+    let text: String
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            line(text, fitsWhole: true)
+            line(EstoLeiLogic.firstSentence(text), fitsWhole: true)
+            line(text, fitsWhole: false)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+        .accessibilityAddTraits(.isStaticText)
+    }
+
+    /// Un solo `Text`: la estrella en el acento y la frase en gris. `fitsWhole`: a su ancho entero, para que
+    /// `ViewThatFits` sepa si cabe; la última opción se corta con «…».
+    private func line(_ sentence: String, fitsWhole: Bool) -> some View {
+        let star = Text(verbatim: "✦").foregroundStyle(.thAccentText)
+        let words = Text(sentence).foregroundStyle(.secondary)
+        return Text("\(star) \(words)")
+            .font(DS.Typography.caption)
+            .lineLimit(1)
+            .fixedSize(horizontal: fitsWhole, vertical: false)
     }
 }
 

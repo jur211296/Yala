@@ -109,6 +109,11 @@ struct InboxDraftEditSheet: View {
     /// se paga («Pagar ahora el del 18 de octubre»), y al guardar vuelve al detalle del pago, sin la pantalla de éxito ni
     /// «Aprobar siguiente», que llevaban a otros borradores de la Bandeja.
     var payNowTitle: String?
+    /// Abierto con «Ver todo» desde «Esto leí» (opción A, Jürgen 2026-11-22): va EMPUJADO dentro de la misma hoja de foto o
+    /// de voz, no presentado. Arriba a la izquierda va ‹ (guarda lo editado en el borrador y vuelve a lo leído) en vez de
+    /// la X, no hay «Aprobar luego» (cerrar la hoja ya lo deja en la Bandeja) y todo lo que cerraba el editor vuelve a lo
+    /// leído: `dismiss()` cerraría la hoja entera.
+    var onBack: (() -> Void)?
 
     // MARK: - Computed
 
@@ -417,11 +422,16 @@ struct InboxDraftEditSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                if hasUnsavedChanges() {
-                    showDiscardChangesAlert = true
-                } else {
-                    dismiss()
+            if onBack != nil {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back, action: goBack)
+                    .accessibilityIdentifier("draft_editor_back")
+            } else {
+                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                    if hasUnsavedChanges() {
+                        showDiscardChangesAlert = true
+                    } else {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -872,7 +882,7 @@ struct InboxDraftEditSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 // Save button (secondary) - "Aprobar luego" - only for pending drafts. Desde un pago planificado no: dejaría
                 // en la Bandeja un borrador de una fecha que la persona venía a pagar ahora (L10-11).
-                if initialStatus == .pending && payNowTitle == nil {
+                if initialStatus == .pending && payNowTitle == nil && onBack == nil {
                     Button {
                         saveDraft()
                         dismiss()
@@ -937,7 +947,7 @@ struct InboxDraftEditSheet: View {
     private func convertToGroup(_ group: SplitGroup) {
         saveDraft()
         onConvertToGroupExpense?(draft, [group])
-        dismiss()
+        close()
     }
 
     // MARK: - Helpers
@@ -1215,10 +1225,11 @@ struct InboxDraftEditSheet: View {
                 return
             }
 
-            // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
-            if payNowTitle != nil {
+            // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11). Empujado
+            // desde «Esto leí», tampoco: la tarjeta ya dice «Guardado en …» y la hoja se cierra sola como al guardar ahí.
+            if payNowTitle != nil || onBack != nil {
                 onApproved?()
-                dismiss()
+                close()
                 return
             }
             // Show success view with animation
@@ -1262,7 +1273,7 @@ struct InboxDraftEditSheet: View {
             try draftService.rejectDraft(draft)
             // Descartar desde el editor, una vez hecho (card C4; mapa de `DS.Haptic`).
             DS.Haptic.warning()
-            dismiss()
+            close()
             showDiscardedNotice()
         } catch {
             #if DEBUG
@@ -1309,7 +1320,7 @@ struct InboxDraftEditSheet: View {
         draftService.setContext(modelContext)
         do {
             try draftService.returnToPending(draft)
-            dismiss()
+            close()
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error returning draft to pending: \(error)")
@@ -1317,12 +1328,31 @@ struct InboxDraftEditSheet: View {
         }
     }
 
+    /// Cerrar el editor: empujado desde «Esto leí», volver a lo leído; presentado, cerrar su hoja.
+    private func close() {
+        if let onBack {
+            onBack()
+        } else {
+            dismiss()
+        }
+    }
+
+    /// ‹ de «Ver todo»: lo editado se queda en el borrador (como los chips de la tarjeta, que guardan al momento) y se
+    /// vuelve a lo leído.
+    private func goBack() {
+        dismissKeyboard()
+        if initialStatus == .pending, hasUnsavedChanges() {
+            saveDraft()
+        }
+        close()
+    }
+
     private func deleteDraftPermanently() {
         draftService.setContext(modelContext)
         do {
             try draftService.deleteDraft(draft)
             DS.Haptic.warning()
-            dismiss()
+            close()
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error deleting draft: \(error)")
