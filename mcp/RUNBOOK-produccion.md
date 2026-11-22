@@ -1,38 +1,259 @@
 # Conector de Claude — salida a producción
 
-**Estado (2026-11-22): listo para desplegar en `https://mcp.yala-app.pe`, NO desplegado.** El código, `[env.production]`
-(con el dominio y el KV ya creado), el script de despliegue y los tests están en el repo. Falta lo que solo se puede
-hacer con acceso a Supabase de producción y a sus consolas: los pasos 1 y 3 a 10 de este documento. Lo despliega Dan
-(decisión 64 de la auditoría del 21-nov: «el conector MCP sale a producción en mcp.yala-app.pe; después despliega Dan»).
+**Estado (22-nov-2026, medido en solo lectura): listo para desplegar en `https://mcp.yala-app.pe`, NO desplegado.**
+Lo despliega Dan (autorizado por Jürgen el 22-nov, 08:49 y 08:51 Lima); Jürgen prueba el login con Apple en producción
+al conectarse. Este documento tiene solo lo que falta, en orden, y cada paso lleva su comprobación y su marcha atrás.
 
-**Dominios desde el 22-nov:** `mcp.yala-app.pe` está libre y reservado para producción (hasta ese día era un alias del
-Worker de staging). El conector de pruebas vive en `https://mcp-staging.yala-app.pe` (alias) y en
-`https://yala-mcp-staging.misty-surf-6866.workers.dev` (su URL pública del OAuth, la de siempre).
+Contexto: `README.md` (cómo funciona), el ADR «El conector de Claude emite sus propios tokens» (`docs/DECISIONS.md`) y
+`webapp/README.md`, «Producción» (lo que Yala web dejó hecho el 16-nov).
 
-Contexto: `README.md` (cómo funciona), el ADR «El conector de Claude emite sus propios tokens» (`docs/DECISIONS.md`),
-`docs/exploracion/plugin-claude-mcp.md` §7–§8 y el ticket `claude-mcp-production-auth-hardening`.
+## Qué tiene ya producción y qué le falta
 
-## Antes de empezar: lo que tiene que ser verdad
+Medido el 22-nov con `python3 mcp/scripts/sql-conector-produccion.py estado` (solo lectura, sin secretos):
 
-1. **El login con Apple y Google ya está en el conector y probado en staging** (`claude-mcp-consent-with-apple-and-google`).
-   Sin él nadie puede entrar en producción: el login con contraseña existe **solo** en staging, y el Worker lo niega
-   dos veces fuera de ahí (`authorize.ts` y la lista de salidas de `egress.ts`).
-2. **La nube está estable** — confirmado por Jürgen el 2026-11-04.
-3. **Una ventana sin migraciones de la cola A** para el paso 5.
-4. **La política de privacidad nombra a Anthropic** antes de anunciar el conector (requisito del directorio, §7).
-
-## Lo que falta crear (la lista exacta)
-
-| Qué | Dónde queda | Paso |
+| Pieza | Hoy en producción | Qué falta para el conector |
 |---|---|---|
-| ~~KV `yala-mcp-production-oauth`~~ — **hecho el 2026-11-22** (`3683c133…`, ya en `wrangler.toml`) | `[[env.production.kv_namespaces]]` | 2 |
-| Cliente OAuth **confidencial** del Worker en Supabase producción | su id en `wrangler.toml` (`SUPABASE_OAUTH_CLIENT_ID`) y en el hook (SQL del paso 5) | 3 |
-| Secreto `SUPABASE_OAUTH_CLIENT_SECRET` | `~/Secrets/yala-mcp-production/supabase-oauth-client.json` **y** `wrangler secret --env production`, en el mismo gesto | 4 |
-| Rol `yala_mcp_reader` + hook `yala_mcp_access_token_hook` | Supabase producción (`kefvaiymtgytemwbltlz`), SQL generado | 5 |
-| Configuración de Auth de producción | Management API, `PATCH /v1/projects/kefvaiymtgytemwbltlz/config/auth` | 6 y 8 |
-| Cuenta de prueba de producción para el e2e (y para los revisores del directorio) | `~/Secrets/yala-mcp-production/test-users.env` | 9 |
+| Rol `yala_mcp_reader` y sus permisos de lectura | **Ya está** (`mcp0_01`, aplicado con Yala web el 16-nov). Los mismos 14 permisos que staging | Nada |
+| Hook de token `yala_mcp_access_token_hook` | Encendido, md5 `7a703d85…`: reconoce a Yala web (`yala_web`) y el id del conector es el **uuid nulo** | Poner el id real del conector (`conector01`) |
+| Barrido diario de sesiones del conector | No está. `pg_cron` sí (lo usa el barrido de la web) | `conector02` |
+| Servidor OAuth de Supabase | Encendido, registro abierto apagado, ruta `/oauth/consent`. Un solo cliente: «Yala web» | El cliente confidencial del conector (dashboard) |
+| Apple y Google | Encendidos, con el cliente **web primero** (`pe.yala.app.web`, «Yala Web (MCP)») | Nada |
+| Proveedor de email | **Apagado** | Nada |
+| `site_url` | `http://localhost:3000`: no lo usa ningún flujo de hoy | **`https://mcp.yala-app.pe`**: el conector lo necesita (abajo, paso 5) |
+| KV `yala-mcp-production-oauth` | Creado (`3683c133…`, en `wrangler.toml`) | Nada |
+| Gateway de producción | Corre la versión con «Cuenta sola» + Yala IA ampliada al 100 %. Sin la migración D1 `0004_connector_quota` | La migración y un despliegue desde 2.3 (paso 1) |
+| Worker `yala-mcp-production` y `mcp.yala-app.pe` | No existen (el dominio no resuelve) | Desplegar (paso 6) |
 
-Nada más. Los tres límites de peticiones no se crean: los declara `wrangler.toml` y aparecen al desplegar.
+**Lo que ya NO se hace**, aunque lo decía la versión anterior de este documento:
+- **No se aplican los `mcp0_0*` ni `mcp/scripts/sql-produccion.py`.** Producción ya los tiene; reaplicarlos abortaría por
+  su guarda md5 y, si pasaran, el hook perdería `yala_web`: la web dejaría de entrar.
+- **No se encienden el hook, el servidor OAuth, Apple ni Google, ni se apaga el email**: ya lo hizo Yala web.
+- **No se manda nunca la config de Auth entera** en un `PATCH`: solo la clave que se cambia, o pisaría lo de la web.
+
+## Quién, dónde y con qué
+
+| Qué | Dónde | Con qué |
+|---|---|---|
+| SQL y config de Auth de Supabase | **La Mini**, en `~/Yala` con 2.3 al día | El token de la Management API, `~/Secrets/yala-supabase-mgmt/pat` |
+| Cliente OAuth del conector | Dashboard de Supabase, proyecto `kefvaiymtgytemwbltlz` | La sesión de Jürgen o Dan en supabase.com (no hay API sin la service role key) |
+| `wrangler` de producción (gateway y conector) | **La Max** | La cuenta de Cloudflare de Yala (admin@yala-app.pe): `npx wrangler whoami` tiene que mostrar la cuenta `86c270a7776be98639700bd5959b303b` |
+
+## Las dos variantes, y cuál recomiendo
+
+- **A · Completa (recomendada).** Gateway primero (migración `0004` + despliegue desde 2.3), después el conector con su
+  herramienta de escritura (`apuntar_movimiento`, deja borradores en la Bandeja). **La condición se cumple:** el PR de
+  «Cuenta sola» (#1115) entró en 2.3 el 22-nov (merge `a8f5ae89`), y era lo que impedía desplegar el gateway desde 2.3:
+  producción corría ese código sin commit.
+- **B · Solo lectura primero.** Si el gateway no puede ir hoy, el conector sale sin el bloque `[[env.production.services]]`
+  de `wrangler.toml`: la herramienta de escritura no se ofrece y el conector solo lee. **Coste:** quien conecte su IA
+  durante la variante B no gana la herramienta después; tiene que desconectar y volver a conectar (`GrantProps.drafts`).
+  Pasos al final, «Variante B».
+
+Recomiendo **A**: la dependencia ya está resuelta y B obliga a reconectar a los primeros usuarios. La decisión de sacar
+el conector solo de lectura es de Jürgen; si no dice nada, va A.
+
+## Los pasos (variante A)
+
+### 0 · Comprobar que producción sigue como se midió (Mini, solo lectura)
+
+```bash
+cd ~/Yala && git pull --ff-only          # 2.3 con este runbook y su script
+python3 mcp/scripts/sql-conector-produccion.py --verificar
+python3 mcp/scripts/sql-conector-produccion.py estado produccion | tee ~/Secrets/yala-mcp-production/estado-antes-$(date +%Y%m%d-%H%M).txt
+```
+**Tiene que decir:** `Hook como el 22-nov (conector nulo): SÍ`, los roles `yala_mcp_reader` y `yala_web`, un solo
+cliente («Yala web · confidential»), sin `barrido`, y en Auth `oauth_server_enabled = True` y
+`hook_custom_access_token_enabled = True`. **Si algo no cuadra, se para aquí** y se avisa: alguien tocó producción.
+
+Guardar también la foto completa de Auth (es la marcha atrás de `site_url`; tiene secretos, va solo a `~/Secrets`):
+```bash
+curl -s -H "Authorization: Bearer $(cat ~/Secrets/yala-supabase-mgmt/pat)" \
+  https://api.supabase.com/v1/projects/kefvaiymtgytemwbltlz/config/auth > ~/Secrets/yala-mcp-production/auth-config-antes-$(date +%Y%m%d).json
+```
+
+### 1 · El gateway: migración `0004` y despliegue desde 2.3 (Max)
+
+```bash
+cd ~/Yala && git pull --ff-only && cd gateway && npm ci
+npx wrangler whoami                                              # cuenta 86c270a7…
+npx wrangler deployments list --env production | tail -5         # APUNTA el id de la versión actual: es la marcha atrás
+curl -s https://yala-gateway-production.misty-surf-6866.workers.dev/config > /tmp/gw-config-antes.json
+npx wrangler d1 migrations list yala-gateway-production --env production --remote
+```
+**La lista de migraciones sin aplicar tiene que ser solo `0004_connector_quota.sql`.** Si sale otra, se para: este
+runbook no la cubre.
+```bash
+npm run migrate:production         # crea la tabla connector_quota (techo diario por cuenta). Aditiva
+npm run deploy:production          # el predeploy comprueba que el manifest no sea más viejo que el desplegado
+```
+**Comprobación:**
+- `curl -s …/config | diff /tmp/gw-config-antes.json -` → sin diferencias que no se esperen (Yala IA ampliada sigue en 100);
+- rutas sin token siguen en 401 (`curl -s -o /dev/null -w "%{http_code}" …/sync/pull` y `…/mail/drafts`);
+- la app del iPhone sincroniza y Yala web (`https://app.yala-app.pe`) entra y ve el Panel;
+- `npx wrangler tail --env production` un par de minutos, sin `[gw-err]` nuevos.
+
+**Marcha atrás:** `npx wrangler rollback --env production <versión apuntada>`. La tabla `connector_quota` se queda: no
+la lee nadie más.
+
+### 2 · El cliente OAuth del conector (dashboard de Supabase)
+
+Proyecto `kefvaiymtgytemwbltlz` → *Authentication → OAuth Server* → *Add client* (el servidor ya está encendido):
+- nombre «Yala para Claude», tipo **confidencial** (`client_secret_basic`);
+- una sola vuelta, exacta: `https://mcp.yala-app.pe/oauth/supabase/callback`.
+
+Copiar el `client_id` y el secreto **directo** a `~/Secrets/yala-mcp-production/supabase-oauth-client.json` **en la
+Max** (`{"client_id": "…", "client_secret": "…"}`, permisos 600). El secreto no pasa por el chat ni por pantalla.
+
+Registrarlo no abre nada: con el hook de hoy, un token de ese cliente recibe **403** (el hook solo conoce a la web). Se
+abre en el paso 4.
+
+**Comprobación (Mini):** `python3 mcp/scripts/sql-conector-produccion.py estado produccion` lista dos clientes, el
+nuevo con `confidential` y esa vuelta exacta. **Marcha atrás:** borrarlo desde el dashboard (nadie lo usa todavía).
+
+### 3 · El secreto en el Worker (Max)
+
+```bash
+cd ~/Yala/mcp && npm ci
+python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/Secrets/yala-mcp-production/supabase-oauth-client.json')))['client_secret'],end='')" \
+  | npx wrangler secret put SUPABASE_OAUTH_CLIENT_SECRET --env production
+npx wrangler secret list --env production       # tiene que salir SUPABASE_OAUTH_CLIENT_SECRET
+```
+Si el Worker aún no existe, wrangler pregunta si lo crea para guardar el secreto: sí (queda vacío hasta el paso 6).
+**Marcha atrás:** `npx wrangler secret delete SUPABASE_OAUTH_CLIENT_SECRET --env production`.
+
+### 4 · El SQL: el hook reconoce al conector, y su barrido (Mini)
+
+```bash
+cd ~/Yala
+python3 mcp/scripts/sql-conector-produccion.py generar <client_id> ~/Secrets/yala-mcp-production/sql
+python3 mcp/scripts/sql-conector-produccion.py ensayo produccion ~/Secrets/yala-mcp-production/sql
+```
+`generar` escribe cuatro ficheros: `conector01_hook`, `conector02_barrido` y sus `_rollback`. `ensayo` los aplica, los
+vuelve atrás y los reaplica **dentro de una transacción que un RAISE final deshace** (lo mismo que se hizo con Yala web
+el 16-nov): no confirma nada y prueba las guardas contra la base real. Tiene que decir `ENSAYO OK`.
+
+Qué hace cada uno (y lo que NO toca):
+- **`conector01`**: reemplaza el hook por el mismo cuerpo que corre hoy, con el id del conector donde está el uuid nulo
+  (md5 `7a703d85…` → el que imprime `generar`). La web sigue saliendo `yala_web`, el login de la app sigue
+  `authenticated` sin tocar, y cualquier otro cliente, 403. Aborta si el hook no es el medido, si faltan los roles o el
+  cliente web, o si el id no es un cliente confidencial con la vuelta de producción. Comprueba su resultado al final.
+- **`conector02`**: el barrido diario (04:17 UTC) que cierra las sesiones de Supabase **del conector** sin uso en 31 días
+  o con más de 91 (`qa/cloud/mcp0_04`). No toca sesiones de la app ni de la web. Solo se aplica con el hook de `conector01`.
+
+```bash
+python3 mcp/scripts/sql-conector-produccion.py aplicar produccion ~/Secrets/yala-mcp-production/sql/conector01_hook.sql
+python3 mcp/scripts/sql-conector-produccion.py aplicar produccion ~/Secrets/yala-mcp-production/sql/conector02_barrido.sql
+python3 mcp/scripts/sql-conector-produccion.py estado produccion
+```
+`aplicar` manda cada fichero como **una transacción**: si una guarda o la comprobación final fallan, no queda nada.
+**Comprobación:** el hook con el md5 «después» de `_md5.json` y el id del conector dentro; `barrido` presente; en cron,
+`yala-mcp-sweep-connector-sessions` y `yala-web-sweep-sessions`. Y **la web sigue entrando**: abrir
+`https://app.yala-app.pe` en una ventana privada, entrar con Google y ver el Panel.
+
+**Marcha atrás**, en este orden: `aplicar … conector02_rollback.sql` y `aplicar … conector01_rollback.sql`. El segundo
+devuelve el hook exacto de hoy (md5 `7a703d85…`): el conector vuelve a recibir 403 y la web no cambia.
+
+### 5 · `site_url` = el conector (Mini)
+
+Supabase manda el navegador a `site_url + /oauth/consent` para pedir el permiso **de cualquier cliente OAuth** (medido en
+staging el 22-nov con el cliente de la web). Yala web no se entera: lee el `authorization_id` de esa redirección sin
+seguirla y no mira el host (`webapp/src/worker/supabase.ts`, `grantReadOnly`). El conector sí la sigue: con
+`localhost:3000` la persona acabaría en una página que no existe. `site_url` también hace válida la vuelta del login
+social del conector (`https://mcp.yala-app.pe/oauth/consent/social`) sin tocar `uri_allow_list`, igual que en staging.
+
+```bash
+curl -s -X PATCH -H "Authorization: Bearer $(cat ~/Secrets/yala-supabase-mgmt/pat)" -H "Content-Type: application/json" \
+  -d '{"site_url":"https://mcp.yala-app.pe"}' \
+  https://api.supabase.com/v1/projects/kefvaiymtgytemwbltlz/config/auth > /dev/null
+python3 mcp/scripts/sql-conector-produccion.py estado produccion | grep site_url
+```
+**Comprobación:**
+- `site_url = https://mcp.yala-app.pe` y `uri_allow_list` sin cambios (`https://app.yala-app.pe/auth/callback`);
+- el login social del conector llega a Google con el cliente web:
+  `curl -s -o /dev/null -w "%{redirect_url}\n" "https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://mcp.yala-app.pe/oauth/consent/social&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=s256"`
+  → `accounts.google.com` con `client_id=295312853864-af0pqpn7…`; con `provider=apple`, `appleid.apple.com` con
+  `client_id=pe.yala.app.web`;
+- Yala web entra otra vez (ventana privada, Google o Apple).
+
+**Marcha atrás:** el mismo `PATCH` con `{"site_url":"http://localhost:3000"}` (el valor de la foto del paso 0).
+
+### 6 · Desplegar el Worker del conector (Max)
+
+En `mcp/wrangler.toml`, sustituir `PENDIENTE-registrar-cliente-oauth-en-supabase-produccion` por el `client_id` (no es
+un secreto). Después:
+```bash
+cd ~/Yala/mcp
+npm run deploy:production
+```
+`deploy:production` corre antes el preflight (`scripts/preflight-production.mjs`): se niega si queda algo PENDIENTE, si
+el id no es un uuid, si falta el secreto o un límite, o si fallan el typecheck o los tests. Una vez desplegado, si la
+configuración está mal el Worker responde **503 a todo** y lo anota (`evento: config_invalida`).
+
+**Ese cambio de una línea en `wrangler.toml` tiene que volver a 2.3** (un PR corto, o pedírselo a una sesión de Yala):
+si no, el siguiente despliegue desde el repo se niega por el PENDIENTE.
+
+**Comprobación:**
+- `curl https://mcp.yala-app.pe/` → «Yala MCP: conector de Yala para tu IA…» (sin «(staging)»);
+- `curl -s https://mcp.yala-app.pe/.well-known/oauth-authorization-server` → el emisor es `https://mcp.yala-app.pe`;
+- `npx wrangler tail --env production --format pretty` mientras se hace el paso 7, sin `config_invalida`.
+
+**Marcha atrás:** `npx wrangler delete --env production` (era el primer despliegue: sin Worker, ninguna IA tiene a quién
+pedir nada). Si ya había una versión buena, `npx wrangler rollback --env production`.
+
+### 7 · Conectar Claude a producción (Jürgen)
+
+claude.ai → Ajustes → Conectores → *Añadir conector personalizado* → `https://mcp.yala-app.pe/mcp`, o en Claude Code
+`claude mcp add --transport http yala https://mcp.yala-app.pe/mcp`. *Continuar* → **Continuar con Apple** (Jürgen; Google ya
+está probado).
+**Comprobación:**
+- «¿cuánto gasté este mes?» responde con los datos de la app;
+- «apunta 1 sol de prueba» deja el borrador en la Bandeja de la app 2.3 (con una app anterior espera en la cola hasta 30
+  días y entra al actualizar); se descarta desde la Bandeja;
+- en la base, `estado produccion` sigue igual y en `auth.sessions` aparece una sesión del cliente del conector.
+
+El e2e automático (`npm run test:e2e`) entra con email y contraseña, que en producción no existen: en producción se
+valida a mano, así.
+
+### 8 · Opcional, fuera del camino crítico: endurecer la cuenta
+
+- **Apagar MFA** (`{"mfa_totp_enroll_enabled": false, "mfa_totp_verify_enabled": false}` con el mismo `PATCH`).
+  Recomendado: la app y la web no lo usan y el 22-nov había **0 factores** en producción, así que no afecta a nadie; cierra
+  la puerta de que un Worker comprometido le ponga un segundo factor a una cuenta. Marcha atrás: los dos a `true`.
+- **Avisos por correo de cambios en la cuenta** (`mailer_notifications_*`, hoy apagados): **pregunta para Jürgen**.
+  Encenderlos manda correos a los usuarios (identidad enlazada, email cambiado…).
+- `security_update_password_*` no hace falta: con el email apagado nadie entra con contraseña.
+
+## Variante B · solo lectura primero
+
+En vez del paso 1, en el paso 6 se despliega sin la escritura: comentar en `mcp/wrangler.toml` el bloque
+`[[env.production.services]]` (las cuatro líneas de `CONNECTOR_DRAFTS`) **solo en la copia local**, desplegar, y
+restaurar el fichero (`git checkout mcp/wrangler.toml`, conservando el `client_id`). La herramienta `apuntar_movimiento`
+no se ofrece. Cuando el gateway esté (paso 1), se despliega otra vez con el bloque. Quien conectó durante B tiene que
+desconectar y volver a conectar para ver la herramienta.
+
+## Marcha atrás completa
+
+Siempre al revés que la subida:
+1. **Worker del conector:** `npx wrangler delete --env production` (o `rollback`). Sin él, nadie pide nada.
+2. **`site_url`:** `PATCH` a `http://localhost:3000`.
+3. **SQL:** `conector02_rollback` y después `conector01_rollback` (paso 4). El hook vuelve al de hoy y la web no cambia.
+4. **Cliente OAuth y secreto:** pueden quedarse (sin hook ni Worker no sirven) o borrarse.
+5. **Gateway:** solo si dio problemas, `wrangler rollback` a la versión apuntada en el paso 1.
+
+No hay paso que toque lo de Yala web: ni su cliente, ni `yala_web`, ni sus funciones, políticas o su cron.
+
+## Cómo se probó (22-nov, staging)
+
+`python3 mcp/scripts/sql-conector-produccion.py ensayo-staging`, en una transacción que se deshace: staging se lleva a la
+forma de producción (marchas atrás generadas), se aplica el SQL generado, se vuelve atrás y se reaplica. Resultado: el
+«después» es **byte a byte** el hook que staging corre hoy (md5 `54a4444f…`, con el que su web entra a diario); en la
+forma de producción la app sale `authenticated`, la web `yala_web` y el conector 403; con el SQL, el conector
+`yala_mcp_reader`; lo de la web (rol, funciones, políticas, cron) idéntico en todos los pasos; reaplicar no cambia nada;
+y abortan el SQL de producción sobre otro hook, un id que no es el cliente y el barrido sin el hook.
+
+Además, un ciclo **real** de 30 s en staging: marchas atrás aplicadas → el e2e de Yala web entra (A, B y una cuenta solo
+de Grupos) y el conector no → SQL aplicado → la web entra y el e2e del conector pasa (salvo un caso que cuenta seis
+herramientas y hoy son siete: ajeno a esto) → staging con la misma huella que al empezar.
 
 ## Coste en Cloudflare (estimación)
 
@@ -48,146 +269,10 @@ gasta cabe en lo incluido. Precios de la página oficial, leída el 2026-11-04:
 | KV, almacenamiento | 1 GB | kilobytes (clientes y grants) | 0,50 USD por GB-mes |
 | Límites de peticiones (`[[ratelimits]]`) | — | 3 cubos | la documentación no les pone precio |
 
-**Tope que se propone:** 0 USD de más al mes en uso normal. Para pasar de lo incluido haría falta más de 10 millones
-de llamadas al mes; un abuso lo frenan los límites (120 llamadas/min por usuario, 600/min por IP en registro y token,
-30/min por IP en las páginas). Sugerencia: una alerta de facturación en Cloudflare a partir de 10 USD.
+**Tope que se propone:** 0 USD de más al mes en uso normal. Un abuso lo frenan los límites (abajo). Sugerencia: una
+alerta de facturación en Cloudflare a partir de 10 USD. Supabase producción ya es Pro y no cambia de plan.
 
-Supabase: el proyecto de producción ya es Pro. Cada llamada a `/mcp` hace un `GET /auth/v1/user` y lecturas de
-PostgREST; no cambia de plan.
-
-## Los pasos
-
-Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar el estado actual: es la marcha atrás.
-
-1. **Medir la configuración de Auth de producción y guardarla.**
-   ```bash
-   mkdir -p ~/Secrets/yala-mcp-production
-   curl -s -H "Authorization: Bearer $(cat ~/Secrets/yala-supabase-mgmt/pat)" \
-     https://api.supabase.com/v1/projects/kefvaiymtgytemwbltlz/config/auth > ~/Secrets/yala-mcp-production/auth-config-antes.json
-   ```
-   Mirar en ese fichero `site_url`, `external_email_enabled`, `hook_custom_access_token_*`, `oauth_server_*`,
-   `mfa_totp_*`, `security_update_password_*`, `mailer_notifications_*` y `sessions_inactivity_timeout`.
-   **Ojo con `site_url`:** el paso 6 lo cambia a la URL del Worker (Supabase arma la pantalla de login con él). Antes,
-   comprobar que ningún flujo de la app depende del valor actual (el login de la app es nativo, con `id_token`, y no
-   debería; medirlo, no suponerlo).
-
-2. **El KV.** Hecho el 2026-11-22: `yala-mcp-production-oauth`, id `3683c13333c04f3d9acfe507caa6ac65`, ya en
-   `wrangler.toml`. No se vuelve a crear.
-
-3. **El cliente del Worker en Supabase producción.** Dashboard del proyecto → *Authentication → OAuth Server*:
-   activarlo con el registro dinámico **apagado**, y registrar un cliente:
-   - nombre «Yala para Claude», tipo **confidencial** (`client_secret_basic`);
-   - una sola vuelta: `https://mcp.yala-app.pe/oauth/supabase/callback`.
-
-   **Todavía no** poner la ruta de autorización ni encender nada más: el hook va antes (paso 5), o habría una ventana
-   en la que Supabase emite tokens que escriben. Su `client_id` sustituye a
-   `PENDIENTE-registrar-cliente-oauth-en-supabase-produccion` en `wrangler.toml`. El secreto, al paso 4 sin pasar por
-   pantalla.
-
-   > Si el dashboard no deja registrar el cliente con el servidor OAuth apagado, encenderlo aquí es seguro solo
-   > porque el DCR está apagado y no hay más clientes: nadie puede pedir un token hasta el paso 6.
-
-4. **El secreto, en el mismo gesto.** Guardar el JSON del cliente en
-   `~/Secrets/yala-mcp-production/supabase-oauth-client.json` (`{"client_id": …, "client_secret": …}`) y subirlo:
-   ```bash
-   python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/Secrets/yala-mcp-production/supabase-oauth-client.json')))['client_secret'],end='')" \
-     | npx wrangler secret put SUPABASE_OAUTH_CLIENT_SECRET --env production
-   ```
-   Si el Worker aún no existe, wrangler pregunta si lo crea para guardar el secreto: sí. Comprobar con
-   `npx wrangler secret list --env production`.
-
-5. **El rol y el hook (DDL), en la ventana sin cola A.** Los SQL de staging llevan el id del cliente de staging y
-   guardas por md5, así que se GENERAN para producción (cambia el id y recalcula las guardas):
-   ```bash
-   python3 scripts/sql-produccion.py --verificar          # los de staging siguen dando los md5 medidos
-   python3 scripts/sql-produccion.py <client_id> ~/Secrets/yala-mcp-production/sql
-   ```
-   Aplicar, en este orden y uno a uno, `mcp0_01_readonly_role.sql`, `mcp0_02_oauth_client_allowlist.sql` y
-   `mcp0_03_hook_keys_on_session.sql` de esa carpeta (SQL editor del proyecto o `psql "$PROD_DB_URL" -f …`). Al
-   terminar, el md5 del hook tiene que ser el que imprimió el script:
-   ```sql
-   select md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'public' and p.proname = 'yala_mcp_access_token_hook';
-   ```
-   Apuntar el antes → después en `docs/RUNBOOK-staging-ddl.md` (la sección de producción de cada `mcp0_0*`).
-
-6. **Encender, en este orden** (`PATCH /v1/projects/kefvaiymtgytemwbltlz/config/auth`, el mismo token del paso 1):
-   1. `hook_custom_access_token_enabled = true`, `hook_custom_access_token_uri = pg-functions://postgres/public/yala_mcp_access_token_hook`.
-      Comprobar que el login normal de la app sigue funcionando (sale `authenticated`, sin `client_id`).
-   2. **Después**, `site_url = https://mcp.yala-app.pe`,
-      `oauth_server_enabled = true`, `oauth_server_allow_dynamic_registration = false`,
-      `oauth_server_authorization_path = /oauth/consent`.
-   3. **El login con Apple y Google de la pantalla de permiso** (las credenciales web ya existen: Llavero
-      `yala-siwa-web` y `yala-google-oauth-web`, y sus Return URLs ya incluyen el callback de Supabase producción):
-      - `external_apple_client_id = pe.yala.app.web,com.jurgenschmidt.yala,com.jurgenschmidt.yala.dev` y
-        `external_apple_secret` = el JWT web. **El Services ID va PRIMERO**: Supabase usa el primero de la lista para el
-        login web, y con el bundle de la app primero Apple responde «Invalid client id or web redirect url» (medido en
-        staging el 2026-11-04). La app nativa acepta cualquiera de la lista: no cambia.
-      - `external_google_client_id` con el cliente web «Yala Web (MCP)» **primero** y los dos de iOS detrás, y
-        `external_google_secret` = su secreto.
-      - Nada en `uri_allow_list`: la vuelta del login (`/oauth/consent/social`) es del mismo host que `site_url`.
-      Comprobación: `curl -s -o /dev/null -w "%{redirect_url}" "https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/authorize?provider=apple&redirect_to=https://mcp.yala-app.pe/oauth/consent/social&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=s256"`
-      → tiene que llevar `client_id=pe.yala.app.web`; con `provider=google`, el id del cliente web.
-
-7. **Desplegar el Worker.**
-   ```bash
-   npm ci
-   npm run deploy:production
-   ```
-   `deploy:production` corre antes el preflight (`scripts/preflight-production.mjs`): se niega si queda algo
-   PENDIENTE en `[env.production]`, si el id del cliente no es un uuid, si el KV no es un id real, si falta un límite
-   o el secreto, o si fallan el typecheck o los tests. Además, una vez desplegado, si la configuración está mal
-   (Supabase de staging, anon key de otro proyecto…) el Worker responde **503 a todo** y lo anota en el log
-   (`evento: config_invalida`): mirarlo con `npx wrangler tail --env production`.
-
-   Comprobación rápida: `curl https://mcp.yala-app.pe/` → «Yala MCP: conector de
-   solo lectura…» (sin «staging»).
-
-8. **Cerrar la cuenta frente a un Worker comprometido** (lo que la review de staging cerró, más lo que falta), con el
-   mismo `PATCH`:
-   - `security_update_password_require_reauthentication = true` y `security_update_password_require_current_password = true`;
-   - `mfa_totp_enroll_enabled = false` y `mfa_totp_verify_enabled = false` (la app no usa MFA);
-   - `mailer_notifications_*` de cambio de contraseña, de email y de factores, encendidas;
-   - `sessions_inactivity_timeout` distinto de 0 (en staging es 0: una sesión huérfana no caduca nunca);
-   - **`external_email_enabled = false`**, solo después de medir que ningún flujo de producción entra con email. Es lo
-     que hace inútil una contraseña puesta a una cuenta de Apple o Google.
-
-   Comprobar con el ticket: `POST /auth/v1/token?grant_type=password` da error aunque la contraseña exista.
-
-9. **El e2e contra producción**, con la cuenta de prueba de producción:
-   ```bash
-   set -a; . ~/Secrets/yala-mcp-production/test-users.env; set +a
-   MCP_URL=https://mcp.yala-app.pe npm run test:e2e
-   ```
-   > Hoy el e2e entra con email y contraseña y tiene fijada la URL de Supabase de staging: hasta que el login con
-   > Apple y Google traiga su propio e2e, en producción se valida a mano conectando Claude (abajo) y repitiendo las
-   > sondas de escritura con el token que recibe Claude: todas tienen que dar `403 bad_jwt`.
-
-10. **Conectar Claude a producción** y preguntar algo («¿cuánto gasté este mes?»): Claude Code con
-    `claude mcp add --transport http yala https://mcp.yala-app.pe/mcp`, o claude.ai →
-    Ajustes → Conectores → *Añadir conector personalizado*.
-
-## Tu IA registra en Yala: la herramienta `apuntar_movimiento` (2026-11-05)
-
-Desde el encargo «Tu IA registra en Yala», el conector ofrece una herramienta de escritura que **solo** deja borradores
-en la Bandeja (`src/writeTool.ts`). No escribe en Supabase: llama a la clase RPC `ConnectorDrafts` del gateway por un
-service binding (`[[env.production.services]]`, `CONNECTOR_DRAFTS`). Por eso el orden es estricto:
-
-1. **El gateway de producción primero**, desde `gateway/`: la migración y luego el código que trae la clase. Lo apuntado
-   entra en la cola común de borradores (`mail_drafts`, con `source: "ai"`), la misma que la app ya recoge por `/mail/drafts`.
-   ```bash
-   npm run migrate:production        # aplica 0004_connector_quota (el techo diario)
-   npm run deploy:production
-   ```
-2. **Después este Worker** (`npm run deploy:production`). Si se despliega antes, la herramienta se ofrece y cada llamada
-   falla con «No se pudo dejar el movimiento en Yala» hasta que llegue el gateway.
-3. **La app que los recoge es 2.3** (`BankEmailDraftService`, que lo distingue por `source: "ai"`). Con una app anterior, lo apuntado espera en la cola
-   (30 días) y entra al actualizar.
-
-Sin el binding, la herramienta no se ofrece y el conector sigue siendo de solo lectura: es la marcha atrás de esta
-parte sin tocar el resto (quitar `[[env.production.services]]` y desplegar). Y una conexión aprobada mientras no había
-binding (con el permiso de solo lectura) no gana la herramienta cuando vuelve: la persona tiene que reconectar
-(`GrantProps.drafts`).
+## Otras IA: ChatGPT y Grok
 
 **ChatGPT** ya está en la lista de vueltas OAuth (`authorize.ts`). **Grok** no publica la suya: el primer intento de
 conectarlo deja la vuelta rechazada en el log,
@@ -195,36 +280,15 @@ conectarlo deja la vuelta rechazada en el log,
 npx wrangler tail --env production --format pretty | grep vuelta_no_permitida
 ```
 y se añade exacta en `[env.production.vars]` como `EXTRA_REDIRECT_URIS = "https://…"` (varias, separadas por comas).
-Si el log dice `+query`, la vuelta traía query y la lista compara la URL entera: hay que conseguir la exacta. Una
-entrada mal escrita no tumba el Worker: se ignora y se avisa (`vuelta_extra_mal_escrita`).
-Cómo dar de alta cada IA, para la persona: `CONECTAR-TU-IA.md`.
-
-## Marcha atrás
-
-Siempre al revés que la subida, para no abrir nunca una ventana con tokens que escriben:
-
-1. **El Worker:** `npx wrangler rollback --env production` (a la versión anterior), o `npx wrangler delete --env production`
-   si era el primer despliegue. Sin Worker, Claude no tiene a quién pedir nada.
-2. **El servidor OAuth de Supabase:** `oauth_server_enabled = false` y `site_url` al valor guardado en el paso 1.
-3. **El hook:** `hook_custom_access_token_enabled = false`. Luego, si hace falta quitar la función y el rol, los
-   `mcp0_0*_rollback.sql` generados, del 03 al 01 (el de `mcp0_01` solo con el hook ya apagado: si no, falla todo login).
-4. **El resto de Auth** (paso 8): el `PATCH` con los valores del fichero del paso 1. Apagar el proveedor de email solo
-   se revierte si algo dependía de él.
-5. **KV, cliente y secreto** pueden quedarse: sin Worker no los usa nadie.
+Si el log dice `+query`, la vuelta traía query y la lista compara la URL entera. Una entrada mal escrita no tumba el
+Worker: se ignora y se avisa (`vuelta_extra_mal_escrita`). Cómo dar de alta cada IA, para la persona: `CONECTAR-TU-IA.md`.
 
 ## Dominio propio
 
-Decidido (decisión 64 de la auditoría del 21-nov): **`mcp.yala-app.pe`**. El DNS de `yala-app.pe` ya está en
-Cloudflare (medido el 2026-11-22: `kyle`/`becky.ns.cloudflare.com`), así que `routes = [{ pattern = "mcp.yala-app.pe",
-custom_domain = true }]` en `[env.production]` crea el registro y el certificado al desplegar, como `app.yala-app.pe`.
-Como se decide **antes** del primer despliegue, nadie tiene que volver a conectar su IA. Todo lo que nombra la URL
-(`PUBLIC_URL`, la vuelta del cliente OAuth de Supabase del paso 3, `site_url` del paso 6, la comprobación social y el
-e2e) ya dice `https://mcp.yala-app.pe` en este documento.
-
-Hasta el 2026-11-22 `mcp.yala-app.pe` era un dominio propio del Worker **de staging**, puesto fuera del repo. Ese día
-se soltó (`DELETE /workers/domains/<id>`) y el de pruebas pasó a `mcp-staging.yala-app.pe`, ahora declarado en el
-`routes` de arriba de `wrangler.toml`. Marcha atrás del cambio de nombre: volver a enganchar `mcp.yala-app.pe` a
-`yala-mcp-staging` con `PUT /accounts/<cuenta>/workers/domains` (solo si producción no lo usa).
+**`mcp.yala-app.pe`** (decisión 64 de la auditoría del 21-nov). El DNS de `yala-app.pe` está en Cloudflare, así que
+`routes = [{ pattern = "mcp.yala-app.pe", custom_domain = true }]` crea el registro y el certificado al desplegar. Hasta
+el 22-nov era un alias del Worker de staging; ese día se soltó y el de pruebas pasó a `mcp-staging.yala-app.pe`.
+Volver a enganchar `mcp.yala-app.pe` a staging rompería este despliegue.
 
 ## Límites de peticiones
 

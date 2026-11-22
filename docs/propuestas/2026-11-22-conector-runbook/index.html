@@ -1,0 +1,165 @@
+<title>Conector a producción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: una columna de lectura (~70ch); tabla antes/después, secuencia de pasos con su comprobación y su marcha atrás, riesgos y decisiones. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --fg: #17211d; --muted: #5b6a63; --line: #dbe2de;
+  --accent: #0f7a5c; --accent-soft: #e2f2ec; --warn: #a15c00; --warn-soft: #fbf0df; --bad: #b42318; --bad-soft: #fbe7e4;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #101614; --surface: #17201d; --fg: #e5ece8; --muted: #9aaba3; --line: #2a3632;
+  --accent: #4cc79f; --accent-soft: #173a2f; --warn: #f0b35a; --warn-soft: #3a2c14; --bad: #f08a7e; --bad-soft: #3d1f1b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #101614; --surface: #17201d; --fg: #e5ece8; --muted: #9aaba3; --line: #2a3632;
+  --accent: #4cc79f; --accent-soft: #173a2f; --warn: #f0b35a; --warn-soft: #3a2c14; --bad: #f08a7e; --bad-soft: #3d1f1b; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 760px; margin: 0 auto; padding-block: 32px 64px; display: grid; gap: 40px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.3rem; }
+p { margin: 0; }
+section { display: grid; gap: 14px; min-width: 0; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.lead { color: var(--muted); font-size: 1.05rem; max-width: 65ch; }
+code { font: 13px var(--mono); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.pill.ok { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.pill.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font: 500 12px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.st { white-space: nowrap; font: 500 12px var(--mono); }
+.st.ya { color: var(--accent); } .st.falta { color: var(--warn); } .st.no { color: var(--bad); }
+ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: p -1; }
+ol.pasos > li { counter-increment: p; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+ol.pasos > li::before { content: counter(p); grid-row: span 3; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font: 600 13px var(--mono); background: var(--accent-soft); color: var(--accent); }
+.paso-t { font-weight: 600; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.donde { font: 500 11px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; }
+.dep { font: 500 11px var(--mono); color: var(--warn); background: var(--warn-soft); border-radius: 4px; padding: 2px 6px; }
+.mini { font-size: 13.5px; color: var(--muted); }
+.mini b { color: var(--fg); font-weight: 500; }
+.riesgos { display: grid; gap: 10px; }
+.riesgo { border-left: 3px solid var(--warn); padding: 4px 0 4px 12px; }
+.riesgo.alto { border-color: var(--bad); }
+.pregunta { background: var(--warn-soft); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; }
+.pregunta h3 { margin: 0; font: 600 15px var(--body); color: var(--warn); }
+.pruebas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.prueba { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.prueba .n { font: 700 1.4rem var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+footer { color: var(--muted); font-size: 13px; }
+</style>
+
+<main>
+  <header style="display:grid;gap:12px">
+    <span class="eyebrow">Yala · conector de Claude · 22-nov-2026</span>
+    <h1>Llevar el conector de Claude a mcp.yala-app.pe</h1>
+    <p class="lead">Producción ya tiene casi todo lo de Supabase desde que salió Yala web el 16-nov. Faltan seis cosas y ninguna toca lo que usa la web. Esta página resume el runbook nuevo para Dan y Jürgen.</p>
+    <div class="status">
+      <span class="pill ok">Probado en staging</span>
+      <span class="pill ok">PR de «Cuenta sola» ya en 2.3</span>
+      <span class="pill warn">Nada desplegado en producción</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Antes y después</h2>
+    <p class="mini">Medido el 22-nov en producción, solo en lectura y sin secretos (<code>sql-conector-produccion.py estado</code>).</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Pieza</th><th>Producción hoy</th><th>Después</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Rol de solo lectura</td><td>Existe, con los mismos 14 permisos que staging</td><td>Igual</td><td class="st ya">ya está</td></tr>
+        <tr><td>Hook de token</td><td>Reconoce a Yala web; el conector es el uuid nulo</td><td>Mismo cuerpo, con el id real del conector</td><td class="st falta">falta</td></tr>
+        <tr><td>Barrido de sesiones del conector</td><td>No está (pg_cron sí)</td><td>Cada día a las 04:17 UTC</td><td class="st falta">falta</td></tr>
+        <tr><td>Servidor OAuth, Apple, Google, email apagado</td><td>Todo encendido como hace falta</td><td>Igual</td><td class="st ya">ya está</td></tr>
+        <tr><td>Cliente OAuth del conector</td><td>Solo existe «Yala web»</td><td>«Yala para Claude», confidencial</td><td class="st falta">falta</td></tr>
+        <tr><td>site_url</td><td><code>http://localhost:3000</code></td><td><code>https://mcp.yala-app.pe</code></td><td class="st falta">falta</td></tr>
+        <tr><td>Gateway</td><td>Con «Cuenta sola» e IA ampliada, sin la tabla del techo diario</td><td>Desplegado desde 2.3 con la migración 0004</td><td class="st falta">falta</td></tr>
+        <tr><td>Worker del conector</td><td>No existe; el dominio no resuelve</td><td>Atiende en mcp.yala-app.pe</td><td class="st falta">falta</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Qué cambió respecto a lo que encontró Dan</h2>
+    <div class="riesgos">
+      <div class="riesgo"><b>Los SQL viejos no se aplican.</b> Dan tenía razón: los <code>mcp0_0*</code> abortarían y, si pasaran, la web perdería su rol. El camino nuevo cambia solo el id del conector en el hook que corre hoy y añade su barrido.</div>
+      <div class="riesgo"><b>site_url sí hace falta.</b> Hoy no lo usa nadie, pero Supabase manda el navegador a <code>site_url + /oauth/consent</code> para pedir el permiso. Lo medí en staging. La web no se entera porque solo lee el código de esa redirección; el conector sí la sigue.</div>
+      <div class="riesgo"><b>Los pasos 6 y 8 viejos sobran.</b> Hook, servidor OAuth, Apple, Google y email ya están. Nunca se manda la config de Auth entera: solo la clave que cambia.</div>
+      <div class="riesgo"><b>La dependencia del gateway ya se cumple.</b> El PR de «Cuenta sola» entró en 2.3 esta mañana; el gateway ya se puede desplegar desde 2.3.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>El orden de Dan</h2>
+    <p class="mini">Cada paso tiene su comprobación y su marcha atrás en <code>mcp/RUNBOOK-produccion.md</code>. Supabase se hace desde la Mini; wrangler, desde la Max con la cuenta de Yala.</p>
+    <ol class="pasos">
+      <li><div class="paso-t">Comprobar que producción sigue igual <span class="donde">Mini · lectura</span></div>
+        <p class="mini"><b>Comprueba:</b> «Hook como el 22-nov: SÍ», un solo cliente OAuth. Si algo no cuadra, se para.</p>
+        <p class="mini"><b>Guarda:</b> la foto de Auth, que es la marcha atrás de site_url.</p></li>
+      <li><div class="paso-t">Gateway: migración 0004 y despliegue desde 2.3 <span class="donde">Max</span> <span class="dep">necesitaba el PR de «Cuenta sola»: ya está</span></div>
+        <p class="mini"><b>Comprueba:</b> solo falta la 0004; /config igual que antes; la app sincroniza y la web entra.</p>
+        <p class="mini"><b>Atrás:</b> <code>wrangler rollback</code> a la versión apuntada antes.</p></li>
+      <li><div class="paso-t">Crear el cliente OAuth del conector <span class="donde">Dashboard de Supabase</span></div>
+        <p class="mini"><b>Comprueba:</b> dos clientes, el nuevo confidencial con la vuelta exacta. Hasta el paso 4 recibe 403.</p>
+        <p class="mini"><b>Atrás:</b> borrarlo; nadie lo usa todavía.</p></li>
+      <li><div class="paso-t">Subir su secreto al Worker <span class="donde">Max</span></div>
+        <p class="mini"><b>Comprueba:</b> <code>wrangler secret list</code> lo muestra.</p>
+        <p class="mini"><b>Atrás:</b> <code>wrangler secret delete</code>.</p></li>
+      <li><div class="paso-t">SQL: el hook reconoce al conector, y su barrido <span class="donde">Mini</span></div>
+        <p class="mini"><b>Comprueba:</b> antes, un ensayo en una transacción que se deshace. Después, el md5 esperado y la web entra.</p>
+        <p class="mini"><b>Atrás:</b> sus dos ficheros de vuelta, que dejan el hook exacto de hoy.</p></li>
+      <li><div class="paso-t">site_url = mcp.yala-app.pe <span class="donde">Mini</span></div>
+        <p class="mini"><b>Comprueba:</b> el login social del conector llega a Google y a Apple con el cliente web; la web entra.</p>
+        <p class="mini"><b>Atrás:</b> volver a <code>http://localhost:3000</code>.</p></li>
+      <li><div class="paso-t">Desplegar el Worker del conector <span class="donde">Max</span></div>
+        <p class="mini"><b>Comprueba:</b> la raíz responde sin «staging» y el emisor OAuth es mcp.yala-app.pe. El id del cliente va en un PR de una línea a 2.3.</p>
+        <p class="mini"><b>Atrás:</b> <code>wrangler delete</code>.</p></li>
+      <li><div class="paso-t">Jürgen conecta Claude con Apple <span class="donde">claude.ai</span></div>
+        <p class="mini"><b>Comprueba:</b> «¿cuánto gasté este mes?» responde y «apunta 1 sol» llega a la Bandeja.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Cómo se probó</h2>
+    <div class="pruebas">
+      <div class="prueba"><div class="n">12/12</div><p class="mini">Ensayo en staging dentro de una transacción deshecha: staging se lleva a la forma de producción, se aplica el SQL, se vuelve atrás y se reaplica.</p></div>
+      <div class="prueba"><div class="n">byte a byte</div><p class="mini">El hook «después» es idéntico al que staging corre hoy, con el que su web entra a diario.</p></div>
+      <div class="prueba"><div class="n">30 s</div><p class="mini">Ciclo real en staging: sin conector la web entra y el conector no; con él, entran los dos. Staging quedó con la misma huella.</p></div>
+      <div class="prueba"><div class="n">3 negativos</div><p class="mini">Abortan el SQL de producción sobre otro hook, un id que no es el cliente y el barrido sin el hook.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Riesgos</h2>
+    <div class="riesgos">
+      <div class="riesgo"><b>El despliegue del gateway sube todo lo de 2.3.</b> Lo que corre hoy es 2.3 con «Cuenta sola», que ya entró. La comprobación es comparar /config antes y después, y que solo falte la 0004.</div>
+      <div class="riesgo"><b>El id del cliente vive en wrangler.toml.</b> Si no vuelve a 2.3, el siguiente despliegue desde el repo se niega por el PENDIENTE. No rompe nada, pero hay que hacerlo.</div>
+      <div class="riesgo"><b>El e2e automático no corre en producción</b> porque entra con contraseña. La validación es la conexión de Jürgen del paso 7.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decide Jürgen</h2>
+    <div class="pregunta">
+      <h3>¿Sale completo o solo de lectura primero?</h3>
+      <p>Recomiendo <b>completo</b> (gateway y después el conector con «apunta un gasto»). La dependencia ya está resuelta, y sacarlo solo de lectura obliga a reconectar a quien entre en esos días. Si no dices nada, va completo.</p>
+    </div>
+    <div class="pregunta">
+      <h3>¿Encender los avisos por correo de cambios en la cuenta?</h3>
+      <p>Hoy están apagados. Encenderlos manda correos a los usuarios cuando se enlaza una identidad o cambia el email. No bloquea el despliegue. Apagar la verificación en dos pasos sí lo recomiendo: hay 0 usuarios con ella.</p>
+    </div>
+  </section>
+
+  <footer>Runbook completo: <code>mcp/RUNBOOK-produccion.md</code> · SQL y ensayos: <code>mcp/scripts/sql-conector-produccion.py</code></footer>
+</main>
