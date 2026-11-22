@@ -1,6 +1,6 @@
 ---
 id: 2026-11-21-novedades-2-3-panel-llegada-nota-salud
-status: backlog
+status: done
 priority: high
 area: panel
 created: 2026-11-22
@@ -9,9 +9,9 @@ source: auditoría de decisiones contra 2.3 (21-nov), decisiones 118, 137, 117 y
 ---
 # Novedades 2.3 con el iPhone Duo, Panel con llegada solo desde Primeros pasos y nota de salud «lo que te queda del mes»
 
-Encargo del 22-nov-2026 (modo nocturno). Hecho todo menos el «uso de línea» de la hoja de cuenta, que **espera una
-decisión de Jürgen**: pide guardar el límite de la tarjeta, un campo nuevo en la cuenta que toca el modelo de datos,
-iCloud de producción y la nube de Yala. Por eso el PR queda en borrador y no se mergea solo.
+Encargo del 22-nov-2026 (modo nocturno) y su continuación de la mañana. El «uso de línea» de la hoja de cuenta esperó
+una decisión de Jürgen, que eligió la opción A (22-nov 06:23): el límite de la tarjeta será un campo nuevo sincronizado
+de la cuenta, en un encargo aparte que va después de este.
 
 ## Hecho
 
@@ -26,12 +26,16 @@ iCloud de producción y la nube de Yala. Por eso el PR queda en borrador y no se
   `NotaSaludTeQueda.strings` (16 idiomas). Los tres textos que decían «tres partes» ya no lo dicen.
 - Estadísticas recalcula la nota al cambiar «Solo gastos» (hallazgo del revisor).
 
-## Pendiente: «uso de línea» (espera decisión)
+## «Uso de línea»: listo, sin pintar hasta que exista el límite
 
 Referencia: `docs/design/referencias/2026-11-17-hoja-cuenta-tarjeta-referencia.jpg` («16 % used · 6,752.50 available of
-8,000.00»). Opciones y recomendación en la card «Espera decisión» del tablero.
+8,000.00»). La hoja tiene la línea «X % usado · N disponible de M» (`HojaCuentaTarjetaLogica.usoDeLinea`, texto
+`hojaCuenta.lineUsage` en los 16 idiomas) y no la pinta sin límite: ni texto vacío ni «0 %». Con varias divisas tampoco.
+El encargo siguiente crea el campo y se lo pasa a `HojaCuentaTarjetaEstado(card:limite:)`.
 
 ## Pruebas
 
 `YalaTests/NovedadesPanelNota/` (cinco suites: Novedades en 16 idiomas, puerta del saldo y su cableado, curva,
-cálculo con medianoche, marcas «≈» y pata de grupo, textos de la parte nueva).
+cálculo con medianoche, marcas «≈» y pata de grupo, textos de la parte nueva) y
+`YalaTests/HojaCuentaTarjeta/HojaCuentaTarjetaLogicaTests` (uso de línea: sin límite no sale; con límite, como la
+referencia; pasado del límite; varias divisas).
