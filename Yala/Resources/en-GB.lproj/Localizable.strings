@@ -96,7 +96,7 @@
 "tutorials.createFavorites.step0.desc" = "In New Record, tap ‘Favourite’ below the amount to save what you’ve entered so far as a favourite.";
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favourite in the row at the top of the form: the fields you saved fill in automatically.";
 "aiSettings.title" = "Yala AI tone";
-"aiConsent.processingMessage" = "Type it, say it or pick a photo of the receipt, and Yala records the expense. To do that it sends what you typed, the audio or the photo to an AI service, only at that moment. With your data in your Yala account, the AI can also read any of your data it needs to be precise and detailed. It’s not used to train the AI.";
+"aiConsent.processingMessage" = "Type it, say it or pick a photo of the receipt, and Yala records the expense. To do that it sends what you typed, the audio or the photo to an AI service, only at that moment. To pick the account, with a photo it also sends your account names and capture rules, never balances or account numbers. With your data in your Yala account, the AI can also read any of your data it needs to be precise and detailed. It’s not used to train the AI.";
 "whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
 "setup.step1.title" = "Explore everything you can customise";
 "guide.accounts.title" = "Your money, organised";

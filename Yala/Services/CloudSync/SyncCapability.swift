@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 8
+    static let clientManifestVersion = 9
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -77,6 +77,10 @@ nonisolated enum SyncCapability {
         "scheduled_payment_ids_raw", "limit_extra_amount", "limit_currency_code", "limit_foreign_amount",
     ]
 
+    /// Versión del manifest que estrena `accounts.capture_rules_raw` (las reglas de captura de una cuenta, parte 2 de la
+    /// cuenta sola al leer, 2026-11-21).
+    static let captureRulesSince = 9
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -87,6 +91,7 @@ nonisolated enum SyncCapability {
     static let suppressedSplitLinesKey = "cloudSync.splitLinesSuppressed"
     static let suppressedCustomLogosKey = "cloudSync.customLogosSuppressed"
     static let suppressedCashFlowLimitsKey = "cloudSync.cashFlowLimitsSuppressed"
+    static let suppressedCaptureRulesKey = "cloudSync.captureRulesSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -301,6 +306,29 @@ nonisolated enum SyncCapability {
             current[id] = remaining.isEmpty ? nil : remaining
         }
         storeSuppressedCashFlowLimits(current)
+    }
+
+    // MARK: - Reglas de captura de cuentas que no subieron (v9)
+
+    /// Las cuentas (por `shortcutID`) cuyas reglas de captura este teléfono cambió mientras hablaba una versión que no
+    /// conoce `capture_rules_raw`. Una sola columna: el apunte es por fila (molde de la v7).
+    static var suppressedCaptureRules: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedCaptureRulesKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `capture_rules_raw` por la versión. Apuntar de más es inocuo: la reemisión sube el valor de
+    /// ese momento.
+    static func noteSuppressedCaptureRules(_ shortcutID: UUID) {
+        var current = suppressedCaptureRules
+        guard current.insert(shortcutID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedCaptureRulesKey)
+    }
+
+    /// Retira las que ya se encolaron. Solo esas: una que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCaptureRules(_ shortcutIDs: Set<UUID>) {
+        let remaining = suppressedCaptureRules.subtracting(shortcutIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedCaptureRulesKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCaptureRulesKey) }
     }
 
     // MARK: - Logos propios de pagos planificados que no subieron (v7)

@@ -54,6 +54,11 @@ final class AccountFormViewModel {
     var name: String = ""
     var selectedType: AccountType = .general
     var accountNumber: String = ""
+    /// Las reglas de captura de la cuenta («Reglas de captura», parte 2 de la cuenta sola al leer). Se guardan con la
+    /// cuenta (`Account.captureRulesRaw`).
+    var captureRules: [AccountCaptureRule] = []
+    /// Reglas que «Pasarla» saca de OTRAS cuentas (por `shortcutID`) al guardar este formulario.
+    var captureRulesMovedFrom: [UUID: [AccountCaptureRule]] = [:]
 
     // Balance - new transaction-based system
     var isPositive: Bool = true  // Sign selector for balance
@@ -345,6 +350,7 @@ final class AccountFormViewModel {
         let creditCardPaymentDay: Int
         let creditCardStatementDay: Int?
         let creditCardReminderDaysBefore: Int
+        let captureRules: [AccountCaptureRule]
     }
 
     private var baseline: FormSnapshot?
@@ -359,7 +365,8 @@ final class AccountFormViewModel {
             adjustmentDate: adjustmentDate, colorHex: selectedColorHex,
             excludeFromStatistics: excludeFromStatistics, isArchived: isArchived, countsInMoney: countsInMoney,
             creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay,
-            creditCardStatementDay: creditCardStatementDay, creditCardReminderDaysBefore: creditCardReminderDaysBefore
+            creditCardStatementDay: creditCardStatementDay, creditCardReminderDaysBefore: creditCardReminderDaysBefore,
+            captureRules: captureRules
         )
     }
 
@@ -464,6 +471,7 @@ final class AccountFormViewModel {
             self.name = account.name
             self.selectedType = AccountType(rawValue: account.type) ?? .general
             self.accountNumber = account.accountNumber ?? ""
+            self.captureRules = AccountCaptureRule.decode(account.captureRulesRaw)
 
             self.selectedCurrency =
                 CurrencyCode(rawValue: normalizeCurrencyCode(account.currencyCode)) ?? .pen
@@ -838,6 +846,7 @@ final class AccountFormViewModel {
             // Update account properties. El nombre de antes, para que sus líneas lo sigan (S30).
             let previousName = account.name
             applyBaseAccountProperties(to: account, trimmedAccountNumber: trimmedAccountNumber)
+            applyCaptureRules(to: account)
             AccountLineService.renameLines(of: account, from: previousName, among: allAccounts)
 
             // Handle balance adjustment if specified
@@ -886,6 +895,7 @@ final class AccountFormViewModel {
             }
             context.insert(newAccount)
             created = newAccount
+            applyCaptureRules(to: newAccount)
 
             // Create initial balance transaction if amount specified
             if let initialAmount = parsedBalanceAmount, let sub = subcategory {
@@ -1217,6 +1227,22 @@ final class AccountFormViewModel {
            let code = CurrencyCode(rawValue: original) {
             selectedCurrency = code
         }
+    }
+
+    /// Las reglas de captura de este formulario en su cuenta, y fuera de las otras las que «Pasarla» movió aquí. Solo se
+    /// escribe lo que cambia: reescribir el mismo valor viajaría igual. Si las reglas de esta cuenta no se tocaron en el
+    /// formulario, el campo no se reescribe: volver a codificar lo leído perdería lo que esta versión no entiende de una
+    /// regla (un campo de una versión futura) y lo subiría con un reloj nuevo a todos los aparatos.
+    private func applyCaptureRules(to account: Account) {
+        if captureRules != baseline?.captureRules {
+            CuentaSolaReglasStore.setRules(captureRules, on: account)
+        }
+        for (otherID, moved) in captureRulesMovedFrom where otherID != account.shortcutID {
+            guard let other = allAccounts.first(where: { $0.shortcutID == otherID }) else { continue }
+            let kept = CuentaSolaReglasStore.rules(of: other).filter { rule in !moved.contains { $0.isSameCondition(as: rule) } }
+            CuentaSolaReglasStore.setRules(kept, on: other)
+        }
+        captureRulesMovedFrom = [:]
     }
 
     /// Apply common account properties (shared between create and update paths)

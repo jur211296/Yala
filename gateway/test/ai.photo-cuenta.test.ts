@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TASK_SCHEMAS } from "../src/ai/routes";
+import { TEXT_PARSE_SCHEMA } from "../src/ai/schemas";
 import { photoSystemPrompt } from "../bench/lib/appRequests";
 
 type Schema = {
@@ -46,5 +47,27 @@ describe("photo.read: medio de pago y cuenta", () => {
     expect(struct).toContain("let kind:");
     expect(struct).toContain("let currencyCode: String");
     expect(struct).not.toMatch(/accountNumber|last4|balance/);
+  });
+});
+
+/**
+ * Parte 2 (2026-11-21): el chat también manda las cuentas (y en la nube sus reglas de captura) y la lectura de la frase
+ * devuelve `account`. Voz y Siri no mandan lista y el modelo da null; las versiones instaladas ignoran el campo al
+ * decodificar. Las reglas viajan como texto en el mismo bloque, sin saldos ni números.
+ */
+describe("text.parse: la cuenta que cree la IA", () => {
+  const parse = (TEXT_PARSE_SCHEMA as unknown as Schema).schema.properties.transactions.items;
+
+  it("el esquema admite `account` como texto o null, obligatorio y cerrado", () => {
+    expect(parse.additionalProperties).toBe(false);
+    expect(parse.properties.account?.type).toEqual(["string", "null"]);
+    expect(parse.required).toContain("account");
+    expect(parse.required).toContain("paymentHint");
+  });
+
+  it("el bloque de cuentas lleva las reglas como texto y ningún sitio para números", () => {
+    const swift = readFileSync(new URL("../../Yala/App/Logic/CuentaSolaAlLeer/CuentaSolaAlLeerPeticion.swift", import.meta.url), "utf8");
+    expect(swift).toContain("rules");
+    expect(swift).not.toMatch(/accountNumber|last4|balance/);
   });
 });

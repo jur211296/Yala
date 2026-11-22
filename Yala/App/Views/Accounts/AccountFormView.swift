@@ -357,6 +357,11 @@ struct AccountFormView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                         generalSection
+                        // Reglas de captura (parte 2 de la cuenta sola al leer): junto al número de cuenta, que también
+                        // elige la cuenta al leer.
+                        if viewModel.showsCaptureRules {
+                            CuentaSolaReglasSection(viewModel: viewModel)
+                        }
                         ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
                         // Tarjeta con varias divisas: una línea dice de qué tarjeta es; una tarjeta de crédito (o una

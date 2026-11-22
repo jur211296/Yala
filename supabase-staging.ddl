@@ -37,6 +37,7 @@ CREATE TABLE accounts (
   parent_account_id UUID,  -- g18_01 (2026-10-18): tarjeta con varias divisas; sin FK a propósito
   credit_card_statement_day INTEGER,  -- g26_01 (2026-10-27): día de corte de la tarjeta (card nmtk); aplicada con el Worker v5 según la card nmtk
   credit_card_reminder_days_before INTEGER,  -- g26_01 (2026-10-27): días antes del pago para el aviso; aplicada con el Worker v5 según la card nmtk
+  capture_rules_raw TEXT,  -- 2026-11-21: reglas de captura de la cuenta (JSON, `AccountCaptureRule`); manifest v9
   PRIMARY KEY (user_id, sync_id)
 );
 

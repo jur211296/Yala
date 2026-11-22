@@ -2895,7 +2895,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala records it for you";
-"aiConsent.processingMessage" = "Type it, say it or pick a photo of the receipt, and Yala records the expense. To do that it sends what you typed, the audio or the photo to an AI service, only at that moment. With your data in your Yala account, the AI can also read any of your data it needs to be precise and detailed. It’s not used to train the AI.";
+"aiConsent.processingMessage" = "Type it, say it or pick a photo of the receipt, and Yala records the expense. To do that it sends what you typed, the audio or the photo to an AI service, only at that moment. To pick the account, with a photo it also sends your account names and capture rules, never balances or account numbers. With your data in your Yala account, the AI can also read any of your data it needs to be precise and detailed. It’s not used to train the AI.";
 "aiConsent.insightsTitle" = "AI summary";
 "aiConsent.insightsMessage" = "Yala analyzes your finances and explains how you’re doing. To do that it sends an AI service a summary —totals and trends by category, budgets, recurring payments, and the names of the small purchases you repeat, with how many times and how much they add up to—, not your full record history. With your data in your Yala account, it can also read whatever it needs to be precise, such as each purchase with its date and amount. It’s not used to train the AI.";
 "aiConsent.accept" = "Accept and Enable";

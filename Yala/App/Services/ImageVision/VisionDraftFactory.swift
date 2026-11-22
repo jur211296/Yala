@@ -87,6 +87,7 @@ import SwiftData
         let choice = DraftBuilder.chooseAccount(
             mention: payment?.isEmpty == false ? payment : nil,
             last4: nil,
+            merchant: transaction.merchant,
             aiAccount: transaction.account,
             currency: transaction.currency,
             in: accounts
@@ -144,7 +145,9 @@ import SwiftData
             draft.account = account
         }
 
-        let eleccion = CuentaSolaAlLeer.Eleccion(resultado: choice.resultado, mention: payment, last4: nil)
+        let eleccion = CuentaSolaAlLeer.Eleccion(
+            resultado: choice.resultado, mention: payment, last4: nil, regla: choice.regla,
+            cuentaInicial: matchedAccount?.shortcutID)
         return (draft, eleccion)
     }
 

@@ -63,9 +63,11 @@ dice su permiso. Cinco cosas que no se tocan sin reabrirlo con Jürgen:
 siempre, y lo NUEVO que el texto añade —hoy, los gastos hormiga con IA— le pide el permiso otra vez con un botón en vez
 de salir solo (`InsightsViewModel.hasCurrentConsentProvider`, `AppPreferences.hasCurrentAIInsightsConsent`). **Una
 función nueva que mande algo que el texto anterior no decía sube la versión de su permiso y mira la vigente**; lo que ya
-salía sigue con el `Bool`. Los demás permisos de IA no tienen versión todavía: la frase general de la nube se añadió sin
-volver a pedirlos: hoy ninguna de esas funciones manda más en la nube que en privado. La primera que lo haga, versiona
-su permiso.
+salía sigue con el `Bool`. **El de voz y foto tiene versión desde el 2026-11-21** (`AIConsentRevision.processing = 1`,
+clave `aiDataConsentVersion`; decisión 1 de Jürgen): el texto dice que con la foto viajan también los nombres de las
+cuentas y las reglas de captura, nunca saldos ni números. Quien aceptó el anterior sigue con la foto de siempre (sin
+nombres en iCloud privado) y la hoja de la foto le vuelve a pedir el permiso UNA vez (`CuentaSolaReglasHoja`,
+`aiDataConsentAskedVersion`; «Ahora no» cuenta). Los demás permisos de IA no tienen versión todavía.
 
 ## El contrato de la tarea
 
@@ -165,20 +167,25 @@ su permiso.
 ## La cuenta sola al leer una foto (`payment` y `account`, 2026-11-20, decisión A + B de Jürgen)
 
 - **Decide primero el teléfono** con la escalera común (`CuentaSolaAlLeer`: últimos 4, nombre entero, palabras, clase,
-  moneda), que usan foto, Apple Pay, avisos del banco, correo, voz, Siri y chat. **La IA es la segunda capa, solo en la
-  foto**: con la cuenta en la nube (`CloudSyncFlags.storageMode == .cloud`) la petición lleva los NOMBRES de las cuentas
+  moneda), que usan foto, Apple Pay, avisos del banco, correo, voz, Siri y chat, con las reglas del usuario delante (paso
+  1, `CuentaSolaAlLeerReglas`). **La IA es la segunda capa, en la foto y en el chat**: en la foto, con la cuenta en la nube (`CloudSyncFlags.storageMode == .cloud`) la petición lleva los NOMBRES de las cuentas
   con su clase y su moneda (`CuentaSolaAlLeerPeticion`), y la IA devuelve `account`. **Nunca saldos, números de cuenta ni
   últimos 4**: el tipo no tiene sitio para ellos y lo fija `CuentaSolaAlLeerPeticionTests` sobre el cuerpo JSON.
-- **En iCloud privado no viaja nada nuevo**: el permiso de voz y foto solo promete la foto. Mandar los nombres también ahí
-  necesita versionar ese permiso (regla «Modo nube» de arriba) y es decisión de Jürgen.
+- **En iCloud privado viajan con el permiso vigente** (decisión 1 de Jürgen, 2026-11-21): nombres y reglas solo si el
+  permiso de voz y foto se aceptó en su versión 1 (`CuentaSolaAlLeerPeticion.Envio.foto`); con la anterior, nada nuevo.
 - **La cuenta de la IA vale solo si existe y una palabra de su nombre está escrita en `payment`**
   (`CuentaSolaAlLeer.cuentaDeIA`). Coinciden → sola con «✦»; solo la IA → «sugerida»; discrepan → no elige y el selector
   enseña las dos con su motivo (`CuentaSolaAlLeer.combinar`).
 - **`photo.read` va con `json_object` en OpenAI**: el esquema (`PHOTO_SCHEMA`, con los dos campos) solo lo imponen
   Anthropic y Gemini. La app tolera que no vengan o que no sean texto (`VisionTransaction`). El ejemplo del prompt los deja
   en `null`: uno con valor enseña a inventar.
-- **El chat todavía no manda nombres** (su petición se arma en `ChatAssistantService`): parte 2 del ticket
-  `2026-11-20-captura-cuenta-automatica-y-reglas`, junto con las reglas de cuenta, que también viajarán como texto.
+- **El chat manda nombres siempre y reglas solo en la nube** (parte 2, 2026-11-21): el permiso de Yala IA ya promete los
+  nombres de las cuentas; las reglas no, y por eso en privado no viajan (`Envio.chat`). La lista va al final del prompt de
+  `text.parse` y la IA devuelve `account` (campo nuevo del esquema, en `TEXT_PARSE_SCHEMA` y `TextParseResponseSchema`,
+  obligatorio y nullable). Voz y Siri no mandan lista y reciben `null`; las versiones instaladas lo ignoran.
+- **Las reglas del usuario mandan sobre la IA** (`CuentaSolaAlLeer.combinar`): una regla cumplida elige sola aunque la IA
+  diga otra cuenta, y un choque de reglas no lo deshace la IA. Viajan como texto en el mismo bloque
+  (`CuentaSolaAlLeerPeticion.reglaTexto`: `text contains "zip"`, `merchant is "Uber"`, `Apple Pay card "…"`).
 
 ## El idioma de la respuesta (2026-10-07)
 

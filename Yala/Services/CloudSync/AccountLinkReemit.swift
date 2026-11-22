@@ -25,6 +25,7 @@
 //  `accounts.credit_card_reminder_days_before`).
 //  Y desde la v6 (Grupos B, card 1), con la receta de líneas de tu parte de un gasto de grupo (`tx_items.split_lines_raw`).
 //  Y desde la v7 (2026-11-20), con el logo propio de un pago planificado (`scheduled_payments.custom_logo_ref`).
+//  Y desde la v9 (2026-11-21), con las reglas de captura de una cuenta (`accounts.capture_rules_raw`).
 //  Y desde la v8 (2026-11-20), con los límites del flujo de caja con pagos y en otra moneda (las cuatro columnas de
 //  `SyncCapability.cashFlowLimitColumns`), por columna como la v5.
 //
@@ -230,6 +231,36 @@ extension CloudSyncEngine {
             reemitted += inputs.count
         }
 
+        // Las reglas de captura de una cuenta (v9, 2026-11-21), con el molde del logo propio.
+        let pendingCaptureRules = level >= SyncCapability.captureRulesSince ? SyncCapability.suppressedCaptureRules : []
+        if !pendingCaptureRules.isEmpty {
+            let accounts = try context.fetch(FetchDescriptor<Account>()).filter {
+                pendingCaptureRules.contains($0.shortcutID)
+            }
+            let emission = EntityEmissionMap.account
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs: [SnapshotRowInput] = accounts.compactMap { account in
+                SnapshotRowInput(syncID: account.shortcutID, entityType: SyncEntityType.account) { hlc in
+                    let result = DeltaEmitter.emit(model: account, emission: emission,
+                                                   changedColumns: ["capture_rules_raw"], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó la cuenta: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.account,
+                                                           reason: "captureRulesReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         // Los límites del flujo de caja con pagos y en otra moneda (v8, 2026-11-20), por columna como la v5.
         let pendingLimits = level >= SyncCapability.cashFlowLimitsSince ? SyncCapability.suppressedCashFlowLimits : [:]
         if !pendingLimits.isEmpty {
@@ -272,6 +303,7 @@ extension CloudSyncEngine {
         SyncCapability.clearSuppressedSplitLines(pendingSplitLines)
         SyncCapability.clearSuppressedCustomLogos(pendingCustomLogos)
         SyncCapability.clearSuppressedCashFlowLimits(pendingLimits)
+        SyncCapability.clearSuppressedCaptureRules(pendingCaptureRules)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

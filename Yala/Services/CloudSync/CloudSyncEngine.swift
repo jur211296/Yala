@@ -3190,6 +3190,11 @@ final class CloudSyncEngine {
                let line = model as? CashFlowLine {
                 SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: changedColumns)
             }
+            // Y con las reglas de captura de una cuenta (v9), también cuando se quitan todas.
+            if level < SyncCapability.captureRulesSince, changedColumns.contains("capture_rules_raw"),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedCaptureRules(account.shortcutID)
+            }
             // Y con el logo propio de un pago planificado (v7), también cuando se quita.
             if level < SyncCapability.customLogoSince, changedColumns.contains("custom_logo_ref"),
                let payment = model as? ScheduledPayment {

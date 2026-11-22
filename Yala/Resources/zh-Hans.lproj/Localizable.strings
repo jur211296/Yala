@@ -2848,7 +2848,7 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala 帮你记下来";
-"aiConsent.processingMessage" = "打字、说出来或选一张收据照片，Yala 就会记下这笔支出。为此，你输入的内容、音频或照片只会在当时发送给 AI 服务。数据在你的 Yala 账户中时，AI 还可以读取为准确、详细所需的你的所有数据。这些数据不会用于训练 AI。";
+"aiConsent.processingMessage" = "打字、说出来或选一张收据照片，Yala 就会记下这笔支出。为此，你输入的内容、音频或照片只会在当时发送给 AI 服务。为了选择账户，发送照片时也会一并发送你的账户名称和记账规则，绝不发送余额或账号。数据在你的 Yala 账户中时，AI 还可以读取为准确、详细所需的你的所有数据。这些数据不会用于训练 AI。";
 "aiConsent.insightsTitle" = "AI 总结";
 "aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算、定期付款，以及你重复的小额消费的名称、次数和合计——发送给 AI 服务，不会发送你的完整记录历史。数据在你的 Yala 账户中时，AI 还可以读取为了准确所需的一切，例如每笔消费的日期和金额。这些数据不会用于训练 AI。";
 "aiConsent.accept" = "接受并启用";

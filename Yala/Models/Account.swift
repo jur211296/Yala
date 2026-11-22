@@ -59,6 +59,13 @@ final class Account {
     /// un build lo escriba. Modo Nube: columna `accounts.parent_account_id`, `since: 2` en el manifest.
     var parentAccountID: UUID?
 
+    /// Las reglas de captura de esta cuenta («cuando leo un pago que cumple esto, va aquí»), en JSON
+    /// (`AccountCaptureRule.decode` / `encode`; ticket `2026-11-20-captura-cuenta-automatica-y-reglas-parte-2`). `nil` =
+    /// sin reglas, como toda cuenta de antes. Viven en la cuenta a propósito: mueren con ella y con «Vaciar mis datos».
+    /// CloudKit: campo nuevo `CD_captureRulesRaw` (los cuatro `.ckdb`), desplegado a Production antes de que un build lo
+    /// escriba. Modo Nube: `accounts.capture_rules_raw`, `since: 9`.
+    var captureRulesRaw: String?
+
     /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?

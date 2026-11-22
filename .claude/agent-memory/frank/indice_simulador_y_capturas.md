@@ -14,6 +14,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
 - [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, ANTES de editar; poco disco: mis cambios encima y build incremental.
+- [El «antes» solo con la base](feedback_el_antes_solo_con_la_base.md) — repetir capturas con fase por variable pisó el antes con la app nueva.
 - [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.

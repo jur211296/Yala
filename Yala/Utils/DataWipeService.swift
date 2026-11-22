@@ -1348,6 +1348,8 @@ final class DataWipeService {
         defaults.removeObject(forKey: "voiceLanguage")          // Default: VoiceLanguage.system.rawValue
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiDataConsentVersion") // Default: 0 (qué texto del permiso de voz y foto se aceptó)
+        defaults.removeObject(forKey: "aiDataConsentAskedVersion") // Default: 0
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentVersion") // Default: 0 (qué texto del permiso se aceptó)
         // El último «Resumen con IA» guardado (UX 2.2 · L11-7): describe los datos que se borran.

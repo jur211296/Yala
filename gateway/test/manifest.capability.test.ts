@@ -72,8 +72,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 8, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(8);
+  it("el Worker anuncia la versión 9, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(9);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -81,7 +81,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7) y los límites del flujo de caja (8)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7), los límites del flujo de caja (8) y las reglas de captura (9)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -89,6 +89,7 @@ describe("capability-set por versión del manifest", () => {
       }
     }
     expect(later.sort()).toEqual([
+      "accounts.capture_rules_raw@9",
       "accounts.credit_card_reminder_days_before@5",
       "accounts.credit_card_statement_day@5",
       "accounts.parent_account_id@2",
@@ -150,7 +151,8 @@ describe("capability-set por versión del manifest", () => {
     expect(accounts).toContain("parent_account_id");
     expect(accounts.sort()).toEqual(
       Object.keys(manifest.entities.accounts.columns)
-        .filter((c) => c !== "credit_card_statement_day" && c !== "credit_card_reminder_days_before")
+        .filter((c) => c !== "credit_card_statement_day" && c !== "credit_card_reminder_days_before"
+          && c !== "capture_rules_raw")
         .sort(),
     );
   });
@@ -259,10 +261,26 @@ describe("capability-set por versión del manifest", () => {
       { scheduled_payment_ids_raw: HLC, limit_extra_amount: HLC })).toBeNull();
   });
 
-  it("v8, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v8", "v99", "full", null]) {
+  it("v9, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v9", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
+  });
+
+  // Las reglas de captura de una cuenta (v9, 2026-11-21, parte 2 de la cuenta sola al leer).
+  it("v8 no baja ni hashea las reglas de captura; v9 sí (como null en una cuenta sin reglas)", () => {
+    const rules = '[{"createdAt":"2026-11-21T00:00:00Z","id":"0f5e8a1c-1d2e-4f30-8a4b-5c6d7e8f9a0b","kind":"text","mode":"allWords","value":"zip"}]';
+    const row = { sync_id: "8d4e5f60-4444-4555-8666-c77788889999", name: "Zip Visa", capture_rules_raw: rules };
+    const stored = { name: HLC, capture_rules_raw: HLC };
+    const v8 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v8"));
+    expect(v8.fields).not.toHaveProperty("capture_rules_raw");
+    expect(v8.field_hlcs).not.toHaveProperty("capture_rules_raw");
+    const v9 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v9"));
+    expect(v9.fields.capture_rules_raw).toBe(rules);
+    expect(merkleColumns("accounts", resolveCapabilitySet("v8"))).not.toContain("capture_rules_raw");
+    const empty = { sync_id: row.sync_id, name: "Zip Visa", capture_rules_raw: null };
+    expect(canonRowC1("accounts", empty, merkleColumns("accounts", resolveCapabilitySet("v9")))).toContain('"capture_rules_raw":null');
+    expect(validateUpsertShape("accounts", { capture_rules_raw: null }, { capture_rules_raw: HLC })).toBeNull();
   });
 
   it("el pull de v5 no baja la receta de líneas ni su unidad; el de v6 sí", () => {

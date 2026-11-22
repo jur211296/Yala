@@ -1,12 +1,53 @@
 ---
 id: 2026-11-20-captura-cuenta-automatica-y-reglas-parte-2
-status: backlog
+status: done
 priority: medium
 area: "captura, cuentas, reglas, sync, ia"
 created: 2026-11-20
-updated: 2026-11-20
+updated: 2026-11-22
 source: "tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas.md (parte 2)"
 ---
+
+## Hecho (encargo 2026-11-21-cuenta-sola-al-leer-parte-2-reglas)
+
+- **Las reglas viven en la cuenta**, no en un modelo propio: `Account.captureRulesRaw` (JSON de `AccountCaptureRule`).
+  Motivo: el canal de la Nube de Yala solo sabe versionar columnas; una entidad nueva habría sido la primera tras el
+  lanzamiento. Así mueren con su cuenta y con «Vaciar mis datos», y exportar/importar no las lleva (como el número de
+  cuenta). CloudKit `CD_captureRulesRaw` (los cuatro `.ckdb`); Nube `accounts.capture_rules_raw`, manifest v9, con apunte y
+  reemisión al subir de versión (molde v7). Coste aceptado: dos aparatos que editan las reglas de la misma cuenta a la vez,
+  gana el último.
+- **Escalera**: paso 1 `CuentaSolaAlLeerReglas` (tarjeta de Apple Pay › comercio › juntas › varias › una; empate hacia
+  cuentas distintas → `choqueReglas`, el selector enseña cada cuenta con su regla). Una regla gana también a la IA. La
+  usan foto, Apple Pay (tarjeta y comercio), avisos del banco (comercio), voz, Siri y chat (comercio aunque no se nombre
+  el medio de pago).
+- **Vista**: «Reglas de captura» en Editar cuenta (fila por regla, «Añadir regla», pie), editor «Nueva regla» con vista
+  previa, «Recordar» al corregir la cuenta en la hoja de la foto y «Ya tienes esta regla para X. ¿La paso a Y?». Textos en
+  `CuentaSolaAlLeer.strings` (16 idiomas).
+- **IA (capa B)**: foto con nombres y reglas en la nube o, en iCloud privado, con el permiso de voz y foto v1
+  (`AIConsentRevision.processing`, texto nuevo en los 16 idiomas; se vuelve a pedir una vez). Chat con nombres siempre y
+  reglas en la nube; `text.parse` devuelve `account`.
+- **Servidor**: `g34_01` aplicada en Supabase staging; Worker de staging con manifest v9 y `account` en `text.parse`;
+  Worker de producción con los campos de IA de las partes 1 y 2 sobre su manifest v8 (sin la columna nueva).
+- **Continuación del 22-nov** (encargo `2026-11-22-cuenta-sola-al-leer-parte-2-continuacion`): la sesión del 21-nov se
+  paró por el límite semanal y se cerró sin commit; su trabajo se recuperó del respaldo, se rebasó sobre 2.3 y pasó el
+  gate. El revisor pidió que Editar cuenta no reescriba las reglas que no se tocaron (`CuentaSolaReglasFormularioTests`).
+- **Pruebas**: `CuentaSolaAlLeerReglasTests`, `CuentaSolaAlLeerReglasSyncTests`, `CuentaSolaReglasUITests`,
+  `gateway/test/ai.photo-cuenta.test.ts` y `manifest.capability.test.ts`.
+
+### Pendiente fuera de esta sesión
+
+- **CloudKit** (lo hace Dan, antes de subir ningún build): campo `CD_captureRulesRaw` (STRING) en `CD_Account`, en
+  Development y luego Production, en los dos contenedores (`iCloud.com.jurgenschmidt.yala` y `.dev`). Guía:
+  `docs/cloudkit-schema-diff-2.1.md`.
+- **Supabase producción + Worker v9**: `bash qa/cloud/g34_01-remote.sh production apply` y después el Worker con el
+  manifest v9 (orden DDL → Worker). Hasta entonces la app nueva habla v8 en producción y apunta las reglas para subirlas
+  al llegar la v9.
+- **Device-QA (iPhone 14, con una tarjeta real)**: medir qué texto entrega «Tarjeta» de Wallet en el atajo de Apple Pay.
+  Si es genérico, «Paga con Apple Pay» se retira en otra card. Guion:
+  1. Ajustes › Tutoriales › «Registrar con Apple Pay», paso «Conecta la tarjeta», y en Atajos pasar la variable Tarjeta.
+  2. En Yala, Editar cuenta de la tarjeta › «Añadir regla» › «Paga con Apple Pay» con el nombre que sale en Wallet.
+  3. Pagar con esa tarjeta. Esperado: el borrador de la Bandeja sale con esa cuenta.
+
 
 # Reglas de cuenta al leer una captura (parte 2)
 

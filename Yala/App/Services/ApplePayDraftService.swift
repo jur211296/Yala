@@ -95,7 +95,8 @@ struct ApplePayDraftService {
             // La tarjeta de Wallet, si el atajo la pasa: la escalera común (últimos 4, nombre, palabras, clase) la cruza con
             // las cuentas, sin conexión. Si no decide, la regla de siempre: cuenta por divisa (único match entre cuentas
             // reales; nil si 0 ó 2+ → user elige) o la de la tarjeta de la última cuenta usada.
-            let matchedAccount = Self.accountFromCard(payload.card, currency: currency, in: realAccounts)
+            let matchedAccount = Self.accountFromCard(
+                payload.card, merchant: payload.merchant, currency: currency, in: realAccounts)
                 ?? Self.matchedAccount(currency: currency, cardAccount: cardAccount, in: realAccounts)
 
             // Subcategoría por merchant (MerchantMemory) — preserva el routing de confianza del
@@ -200,11 +201,17 @@ struct ApplePayDraftService {
         cardAccount ?? currency.flatMap { DraftBuilder.findAccount(byCurrency: $0, in: accounts) }
     }
 
-    /// La cuenta que dice la tarjeta de Wallet (`CuentaSolaAlLeer`), o `nil` si la tarjeta no decide ninguna.
-    static func accountFromCard(_ card: String?, currency: String?, in accounts: [Account]) -> Account? {
+    /// La cuenta que dice la tarjeta de Wallet o una regla de captura (`CuentaSolaAlLeer`), o `nil` si no deciden. Las
+    /// reglas miran la tarjeta como «Paga con Apple Pay» y el comercio (parte 2).
+    static func accountFromCard(
+        _ card: String?, merchant: String? = nil, currency: String?, in accounts: [Account]
+    ) -> Account? {
         let trimmed = card?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !trimmed.isEmpty else { return nil }
-        let choice = DraftBuilder.chooseAccount(mention: trimmed, last4: nil, currency: currency, in: accounts)
+        let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty || !merchantText.isEmpty else { return nil }
+        let choice = DraftBuilder.chooseAccount(
+            mention: trimmed.isEmpty ? nil : trimmed, last4: nil, merchant: merchantText.isEmpty ? nil : merchantText,
+            applePayCard: trimmed.isEmpty ? nil : trimmed, currency: currency, in: accounts)
         return choice.resultado.cuentaPuesta == nil ? nil : choice.account
     }
 

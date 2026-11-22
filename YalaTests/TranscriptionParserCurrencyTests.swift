@@ -230,7 +230,7 @@ struct TranscriptionParserCurrencyTests {
         let required = try #require(item["required"] as? [String])
         #expect(item["additionalProperties"] as? Bool == false)
         #expect(Set(required) == Set(properties.keys), "en modo estricto todo campo es obligatorio")
-        #expect(Set(required) == ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "confidence"])
+        #expect(Set(required) == ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "account", "confidence"])
         for optional in ["amount", "date", "subcategoryHint", "currencyHint"] {
             let type = (properties[optional] as? [String: Any])?["type"] as? [String]
             #expect(type?.last == "null", "\(optional) es opcional en el DTO: va como [tipo, \"null\"]")

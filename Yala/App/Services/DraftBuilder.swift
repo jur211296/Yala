@@ -102,13 +102,22 @@ struct DraftBuilder {
     /// Sin divisa dicha, la cuenta nombrada vale tal cual (y su divisa pasa a ser la del borrador). Con divisa dicha, la
     /// tarjeta con varias divisas va a su línea en esa divisa (`AccountCardLogic.route`); si la cuenta no tiene esa divisa,
     /// `nil`: no se fuerza una cuenta en otra divisa y quien llama vuelve a la regla de siempre, por divisa.
+    ///
+    /// Las reglas de captura del usuario van primero (paso 1, `CuentaSolaAlLeerReglas`): con `merchant` deciden también las
+    /// de comercio y las de palabras aunque no se nombre el medio de pago. `aiAccount` es la cuenta que propuso Yala IA en
+    /// el chat (capa B): solo cuenta si existe y está escrita en la mención, y una regla le gana.
     static func findAccount(
-        paymentMention mention: String?, last4: String? = nil, dictatedCurrency: String?, in accounts: [Account]
+        paymentMention mention: String?, last4: String? = nil, merchant: String? = nil, aiAccount: String? = nil,
+        dictatedCurrency: String?, in accounts: [Account]
     ) -> Account? {
-        guard mention != nil || last4 != nil else { return nil }
+        let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard mention != nil || last4 != nil || merchantText?.isEmpty == false else { return nil }
         let live = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
-        let lectura = CuentaSolaAlLeer.leer(mention: mention, last4: last4, among: cuentaSolaCandidates(in: live))
-        return chosenAccount(for: CuentaSolaAlLeer.combinar(lectura, iaAccountID: nil), currency: dictatedCurrency, in: live)
+        let candidates = cuentaSolaCandidates(in: live)
+        let lectura = CuentaSolaAlLeer.leerConRegla(
+            mention: mention, last4: last4, merchant: merchantText, among: candidates).lectura
+        let ia = CuentaSolaAlLeer.cuentaDeIA(aiAccount, payment: mention, among: candidates)
+        return chosenAccount(for: CuentaSolaAlLeer.combinar(lectura, iaAccountID: ia), currency: dictatedCurrency, in: live)
             .account
     }
 
@@ -122,23 +131,27 @@ struct DraftBuilder {
             .map {
                 CuentaSolaAlLeer.Cuenta(
                     id: $0.shortcutID, name: $0.name, kind: paymentKind(of: $0), currencyCode: $0.currencyCode,
-                    accountNumber: $0.accountNumber)
+                    accountNumber: $0.accountNumber, rules: AccountCaptureRule.decode($0.captureRulesRaw))
             }
     }
 
     /// La cuenta de una captura y por qué: la escalera común con lo leído y, si la hay, la cuenta que propone la IA
     /// (`aiAccount`, foto con la cuenta en la nube). Sin nada que decida por lo leído, la única cuenta en la moneda, como
-    /// siempre (sin estrella). Lo usan foto, Apple Pay y avisos del banco.
+    /// siempre (sin estrella). Lo usan foto, Apple Pay y avisos del banco. `merchant` y `applePayCard` (el nombre de la
+    /// tarjeta, solo desde Apple Pay) los miran las reglas de captura (paso 1); `regla` es la que decidió, si decidió una.
     static func chooseAccount(
-        mention: String?, last4: String?, aiAccount: String? = nil, currency: String?, in accounts: [Account]
-    ) -> (account: Account?, resultado: CuentaSolaAlLeer.Resultado) {
+        mention: String?, last4: String?, merchant: String? = nil, applePayCard: String? = nil, aiAccount: String? = nil,
+        currency: String?, in accounts: [Account]
+    ) -> (account: Account?, resultado: CuentaSolaAlLeer.Resultado, regla: AccountCaptureRule?) {
         let live = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
         let candidates = cuentaSolaCandidates(in: live)
-        let lectura = CuentaSolaAlLeer.leer(mention: mention, last4: last4, among: candidates)
+        let leida = CuentaSolaAlLeer.leerConRegla(
+            mention: mention, last4: last4, merchant: merchant, applePayCard: applePayCard, among: candidates)
         let ia = CuentaSolaAlLeer.cuentaDeIA(aiAccount, payment: mention, among: candidates)
-        let chosen = chosenAccount(for: CuentaSolaAlLeer.combinar(lectura, iaAccountID: ia), currency: currency, in: live)
-        if chosen.account != nil || chosen.resultado != .ninguna { return chosen }
-        return (currency.flatMap { findAccount(byCurrency: $0, in: live) }, .ninguna)
+        let chosen = chosenAccount(for: CuentaSolaAlLeer.combinar(leida.lectura, iaAccountID: ia), currency: currency, in: live)
+        let regla = chosen.account != nil ? leida.regla : nil
+        if chosen.account != nil || chosen.resultado != .ninguna { return (chosen.account, chosen.resultado, regla) }
+        return (currency.flatMap { findAccount(byCurrency: $0, in: live) }, .ninguna, nil)
     }
 
     /// La cuenta que pone un resultado de la escalera, enrutada por la divisa leída. Una cuenta que no tiene esa divisa no
@@ -158,7 +171,7 @@ struct DraftBuilder {
         case .sola(let id, _), .sugerida(let id):
             guard let account = routed(id, currencyCode: code, in: live) else { return (nil, .ninguna) }
             return (account, resultado)
-        case .choque, .ninguna:
+        case .choque, .choqueReglas, .ninguna:
             return (nil, resultado)
         }
     }
@@ -343,9 +356,10 @@ struct DraftBuilder {
         let isExpense = expensesOnlyMode ? true : parsed.isExpense
         let mention = PaymentMethodAccountLogic.mention(
             hint: parsed.paymentHint, hintAnswered: parsed.paymentHintAnswered, sourceText: sourceText, batchCount: batchCount)
-        let paymentAccount = mention.flatMap { mention in
-            findAccount(paymentMention: mention, dictatedCurrency: parsed.currencyHint, in: fetchActiveAccounts(context: context))
-        }
+        // Con medio de pago o sin él: las reglas de comercio y de palabras deciden también con solo la nota (paso 1).
+        let paymentAccount = findAccount(
+            paymentMention: mention, merchant: parsed.note, aiAccount: parsed.accountHint,
+            dictatedCurrency: parsed.currencyHint, in: fetchActiveAccounts(context: context))
         let currency = parsed.currencyHint?.uppercased() ?? paymentAccount?.currencyCode.uppercased() ?? defaultCurrency.uppercased()
         let account = paymentAccount ?? findAccount(byCurrency: currency, context: context)
 
