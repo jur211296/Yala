@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Genera los SQL del hook del conector para PRODUCCIÓN a partir de los de staging (qa/cloud/mcp0_0*.sql).
+"""Genera los SQL del hook del conector a partir de los de staging (qa/cloud/mcp0_0*.sql). YA NO ES PARA PRODUCCIÓN.
+
+**Desde el 16-nov producción ya tiene `mcp0_01`–`mcp0_03`** (con el conector como uuid nulo, aplicados por Yala web) y
+encima `web0_01`–`web3_02`. Volver a aplicar estos ficheros abortaría por su guarda md5 y, si pasara, el hook perdería
+el rol `yala_web`: la web dejaría de entrar. Lo que falta para el conector lo genera `mcp/scripts/sql-conector-produccion.py`
+(runbook: mcp/RUNBOOK-produccion.md). Este script queda para el ensayo `--produccion-simulada` de
+`webapp/supabase/ciclo_staging.py`, que reconstruye en staging la cadena del 16-nov, y por eso pide `--historico`.
 
 Por qué no basta con cambiar el id a mano. Cada migración lleva una guarda que solo la deja aplicarse sobre el cuerpo
 anterior, identificado por el md5 de `prosrc`. Cambiar el id del cliente cambia ese md5, así que `mcp0_03` abortaría
@@ -9,10 +15,10 @@ El md5 se calcula como Postgres: sobre el texto exacto entre `as $$` y `$$;`. Co
 staging (ab0f2476…, 0a03fb94…): `--verificar` lo repite.
 
 Uso:
-    python3 mcp/scripts/sql-produccion.py <id-del-cliente-de-produccion> <carpeta-de-salida>
+    python3 mcp/scripts/sql-produccion.py <id-del-cliente> <carpeta-de-salida> --historico
     python3 mcp/scripts/sql-produccion.py --verificar
 
-No toca ninguna base. La salida no se commitea: se aplica por el runbook (mcp/RUNBOOK-produccion.md, paso 5).
+No toca ninguna base. La salida no se commitea ni se aplica en producción.
 """
 import hashlib
 import pathlib
@@ -94,7 +100,7 @@ def generate(client_id: str, out: pathlib.Path) -> int:
 if __name__ == "__main__":
     if sys.argv[1:] == ["--verificar"]:
         sys.exit(verify())
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4 or sys.argv[3] != "--historico":
         print(__doc__, file=sys.stderr)
         sys.exit(2)
     sys.exit(generate(sys.argv[1], pathlib.Path(sys.argv[2])))

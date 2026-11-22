@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (1448)
 
 | id | status | path |
+| 2026-11-22-conector-mcp-runbook-produccion-al-dia | done | tickets/done/2026-11-22-conector-mcp-runbook-produccion-al-dia.md |
 | 2026-11-22-esto-lei-propuestas-diseno | done | tickets/done/2026-11-22-esto-lei-propuestas-diseno.md |
 | 2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3 | backlog | tickets/backlog/2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3.md |
 | 2026-11-21-ia-ampliada-produccion-navegadores-publicada | qa | tickets/qa/2026-11-21-ia-ampliada-produccion-navegadores-publicada.md |

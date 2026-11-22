@@ -2,13 +2,14 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (136 entradas)
+## Índice (137 entradas)
 
-> **No hace falta leer este fichero entero** — son 345 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 347 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-22` [Lote del 21 y 22-nov: consolas confirmadas, la sesión de las reglas de captura pausada y retomada, u](#2026-11-22-lote-del-21-y-22-nov-consolas-confirmadas-la-sesin-de-las-reglas-de-captura-pausada-y-retomada-uso-de-lnea-con-campo-propio-editor-de-la-bandeja-botones-del-toolbar-en-primary-y-la-hoja-esto-le)
+- `2026-11-22` [El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook ](#2026-11-22-el-conector-de-claude-sale-a-produccin-con-dan-y-su-sql-cambia-solo-el-id-del-conector-en-el-hook-de-yala-web)
 - `2026-11-22` [Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en](#2026-11-22-yala-ia-ampliada-al-100--en-produccin-conector-de-pruebas-en-mcp-stagingyala-apppe-y-face-id-en-la-app-publicada)
+- `2026-11-22` [Lote del 21 y 22-nov: consolas confirmadas, la sesión de las reglas de captura pausada y retomada, u](#2026-11-22-lote-del-21-y-22-nov-consolas-confirmadas-la-sesin-de-las-reglas-de-captura-pausada-y-retomada-uso-de-lnea-con-campo-propio-editor-de-la-bandeja-botones-del-toolbar-en-primary-y-la-hoja-esto-le)
 - `2026-11-21` [Pago planificado compartido: quién paga se elige al registrar, no se guarda](#2026-11-21-pago-planificado-compartido-quin-paga-se-elige-al-registrar-no-se-guarda)
 - `2026-11-21` [Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, a](#2026-11-21-lote-del-21-nov-maana-ci-ms-rpido-logos-en-elige-los-pagos-reusar-con-gastos-de-grupo-asistente-de-pago-planificado-completo-auditora-de-decisiones-y-consolas-resueltas)
 - `2026-11-21` [Lote del 21-nov (madrugada): favoritos de Nuevo registro, auditoría de decisiones, iCloud del flujo ](#2026-11-21-lote-del-21-nov-madrugada-favoritos-de-nuevo-registro-auditora-de-decisiones-icloud-del-flujo-de-caja-privacidad-web-con-sentry-github-en-sentry-nombres-de-cuentas-a-yala-ia-y-salud-financiera)
@@ -21,10 +22,10 @@
 - `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
 - `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
 - `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
-- `2026-11-17` [Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la ho](#2026-11-17-lote-del-17-nov-tarde-desde-un-registro-yala-web-nuevo-registro-una-vista-por-sesin-y-la-hoja-esto-le)
 - `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
+- `2026-11-17` [Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la ho](#2026-11-17-lote-del-17-nov-tarde-desde-un-registro-yala-web-nuevo-registro-una-vista-por-sesin-y-la-hoja-esto-le)
 - `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
@@ -106,16 +107,16 @@
 - `2026-05-10` [..05-11] Onboarding restyle — 5 iteraciones de QA visual (iter1-iter5)](#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5)
 - `2026-05-09` [Onboarding completo restyling — Welcome Hero/Chooser + Yala AI + 8 steps](#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps)
 - `2026-05-09` [Fix bug deeplinks a tabs ocultos en "Más" — centralizar `selectMainTab`](#2026-05-09-fix-bug-deeplinks-a-tabs-ocultos-en-ms--centralizar-selectmaintab)
-- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
+- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
-- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
+- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
 - `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
@@ -123,17 +124,17 @@
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
 - `2026-04-25` [AI toggles removal completo](#2026-04-25-ai-toggles-removal-completo)
+- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
-- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
-- `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
+- `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
 - `2026-04-09` [GC-12: Permisos de grupo y flujo de invitación (2026-04-09)](#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09)
 - `2026-03-25` [Mindset onboarding: cuenta única = patrimonial, separadas = cashFlow](#2026-03-25-mindset-onboarding-cuenta-nica--patrimonial-separadas--cashflow)
 - `2026-03-05` [Filtros Excluir: Income/Expense siempre usa semántica de inclusión](#2026-03-05-filtros-excluir-incomeexpense-siempre-usa-semntica-de-inclusin)
@@ -162,6 +163,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-22] El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook de Yala web
+**Contexto:** Tres decisiones de Jürgen del 22-nov (Lima), capturadas por el bot dueño: 08:49 autoriza que Dan despliegue el conector MCP en producción (mcp.yala-app.pe) con `mcp/RUNBOOK-produccion.md`; 08:51 Dan lo despliega ya, con Google probado, y Jürgen prueba el login con Apple en producción al conectarse; 09:15 autoriza una sesión que ponga al día la guía y el SQL antes del despliegue. Dan se había frenado porque el runbook era anterior a Yala web (16-nov).
+**Decisión:** (1) Dan despliega; Jürgen prueba Apple. (2) El SQL de producción ya no son los `mcp0_0*`: `mcp/scripts/sql-conector-produccion.py` cambia solo el id del conector (hoy el uuid nulo) en el hook que corre, y añade su barrido; cada uno con guardas y marcha atrás. (3) `site_url` pasa a `https://mcp.yala-app.pe` (Supabase lo usa para la pantalla de permiso de cualquier cliente; la web no lo mira). (4) Variante recomendada: completa (gateway desde 2.3 con la migración 0004, y después el conector con su herramienta de escritura); la de solo lectura queda como plan B y la elige Jürgen si quiere.
+**Razones:** Reaplicar los `mcp0_0*` abortaría y, si pasara, la web perdería `yala_web`. El «después» es byte a byte el hook de staging, con el que su web entra a diario.
+**Consecuencias:** Ticket `tickets/done/2026-11-22-conector-mcp-runbook-produccion-al-dia.md`; artifact https://claude.ai/artifact/3m5SxX9tBpiVWVambRwUeZ. Pendiente de Jürgen: variante completa o solo lectura, y los avisos por correo de cambios en la cuenta.
+**Estado:** Activa
 
 ### [2026-11-22] Lote del 21 y 22-nov: consolas confirmadas, la sesión de las reglas de captura pausada y retomada, uso de línea con campo propio, editor de la Bandeja, botones del toolbar en primary y la hoja «Esto leí»
 **Contexto:** Doce decisiones de Jürgen en el chat del 21-nov (09:56 a 21:50) y del 22-nov (06:23 a 06:42, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la continuación de «Cuenta sola al leer, parte 2»; solo ejecuta la (8), que es su encargo.

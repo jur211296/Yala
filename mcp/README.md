@@ -40,7 +40,8 @@ fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8). Cómo conectar cada 
 | `src/logic/` | Cálculos portados de Swift; cada fichero cita la función de origen |
 | `plugin/` | Borrador del plugin: `.mcp.json` y tres skills. No publicado |
 | `scripts/preflight-production.mjs` | Lo que comprueba `deploy:production` antes de desplegar |
-| `scripts/sql-produccion.py` | Genera los SQL del hook para producción (id del cliente y guardas md5) |
+| `scripts/sql-conector-produccion.py` | El SQL que le falta a producción (el id del conector en el hook vigente y su barrido), con guardas, ensayo y estado en solo lectura |
+| `scripts/sql-produccion.py` | Los `mcp0_0*` con otro id. Ya no es para producción (los tiene desde el 16-nov): queda para el ensayo histórico de `webapp/supabase/ciclo_staging.py` |
 | `RUNBOOK-produccion.md` | La salida a producción: pasos, lo que falta crear, coste y marcha atrás |
 
 ## Comandos
@@ -50,7 +51,7 @@ npm ci
 npm run typecheck
 npm test                 # unitarios, sin red (los corre el CI, job `mcp`): el baile OAuth entero con un Supabase falso
 npm run deploy:staging   # wrangler deploy --env="" → https://yala-mcp-staging.misty-surf-6866.workers.dev
-npm run deploy:production  # SOLO Jürgen, por RUNBOOK-produccion.md: preflight y luego wrangler deploy --env production
+npm run deploy:production  # SOLO Dan, por RUNBOOK-produccion.md: preflight y luego wrangler deploy --env production
 
 # E2E contra staging: el baile OAuth entero, las sondas de escritura en /auth/v1/*, las seis herramientas con A y B,
 # refresh y revocación.
@@ -66,7 +67,8 @@ de A y B al cliente del Worker en Supabase.
 - **KV** `OAUTH_KV` (`wrangler.toml`): clientes de Claude, grants y tokens (solo por hash) y transacciones de
   consentimiento.
 - **Cliente del Worker en Supabase**, confidencial, con una sola vuelta: `<PUBLIC_URL>/oauth/supabase/callback`. Su id
-  va en `wrangler.toml` (`SUPABASE_OAUTH_CLIENT_ID`) y en el hook (`mcp0_02`).
+  va en `wrangler.toml` (`SUPABASE_OAUTH_CLIENT_ID`) y en el hook (`mcp0_02` en staging; en producción, `conector01` de
+  `scripts/sql-conector-produccion.py`).
 - **Su secreto**, que no va en el repo. Se carga desde el fichero, sin pasar por pantalla:
 
   ```bash
@@ -94,6 +96,7 @@ plegada, «Cuenta de prueba» con email y contraseña para los usuarios de prueb
 
 ## Producción
 
-`[env.production]` está en `wrangler.toml` y **no está desplegado**: lo despliega Jürgen con
-`npm run deploy:production`, que se niega mientras quede algo PENDIENTE. Pasos, lo que falta crear (KV, cliente de
-Supabase, secreto, hook y configuración de Auth), coste y marcha atrás: `RUNBOOK-produccion.md`.
+`[env.production]` está en `wrangler.toml` y **no está desplegado**: lo despliega Dan con `npm run deploy:production`,
+que se niega mientras quede algo PENDIENTE. Producción ya tiene casi todo lo de Supabase desde Yala web (16-nov); lo que
+falta (gateway con `0004`, cliente OAuth, secreto, el id del conector en el hook, su barrido y `site_url`), en orden,
+con comprobación y marcha atrás: `RUNBOOK-produccion.md`.

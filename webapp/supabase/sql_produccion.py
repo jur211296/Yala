@@ -18,7 +18,11 @@ Si el conector de Claude NO está en producción, su id es el uuid nulo 00000000
 cliente real tiene: el hook solo reconoce a la web. Y entonces `mcp/scripts/sql-produccion.py` se genera con ese mismo
 uuid nulo, para que las guardas encadenen.
 
-Orden de aplicación en producción (cada uno, uno a uno, comprobando el md5 del hook tras cada paso):
+APLICADO EN PRODUCCIÓN EL 16-NOV (webapp/README.md, «Producción»), con el conector como uuid nulo. No se vuelve a
+aplicar: para añadir el conector de Claude, `mcp/scripts/sql-conector-produccion.py` cambia solo el id del conector en el
+hook vigente (mcp/RUNBOOK-produccion.md). Lo de abajo queda como registro y para `ciclo_staging.py --produccion-simulada`.
+
+Orden en que se aplicó en producción (cada uno, uno a uno, comprobando el md5 del hook tras cada paso):
     mcp0_01, mcp0_02, mcp0_03 (del generador del conector) → web0_01 → web1_01 → web3_01 → web3_02.
 Marcha atrás, al revés: web3_02_rollback → web3_01_rollback → web1_01_rollback → web0_01_rollback.
 
