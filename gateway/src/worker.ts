@@ -19,6 +19,7 @@ import {
 
 export { default } from "./index";
 export { RateLimiter } from "./rate_limiter";
+export { ConnectorDrafts } from "./connector/entrypoint";
 
 /** Lectura de Grupos para Yala web (lote 3). Ver `src/web/groupsReader.ts`. */
 export class WebGroupsReader extends WorkerEntrypoint<Env> {
