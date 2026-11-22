@@ -4,8 +4,8 @@
 //
 //  La descripción de una fila de «Esto leí» editable ahí mismo (encargo «X nativa en la hoja de foto», 2026-11-17).
 //  Tocar el texto lo convierte en un campo con teclado; «Listo», Intro o tocar fuera confirma, y lo escrito se guarda en
-//  el borrador al momento, como ya hacen las píldoras de la fila (`VoiceDraftFieldEditing.persist`). El resto de la fila
-//  sigue abriendo el formulario completo: el campo es un botón propio dentro de la etiqueta de la fila.
+//  el borrador al momento, como ya hacen las píldoras de la fila (`VoiceDraftFieldEditing.persist`). Desde la opción A
+//  (2026-11-22) el resto de la tarjeta no abre nada y la fila de varios se despliega: el editor completo es «Ver todo».
 //
 
 import SwiftData
@@ -29,6 +29,9 @@ struct DraftNoteInlineEditor: View {
     /// Lo que la fila pinta como título: la descripción o, sin ella, la subcategoría.
     let title: String
     @Binding var isEditing: Bool
+    /// En la tarjeta B1 de un registro (opción A, 2026-11-22) va centrada y en gris, como la descripción de B1; en la
+    /// fila de la hoja de varios, a la izquierda.
+    var isCentered = false
 
     @Environment(\.modelContext) private var modelContext
     @State private var text = ""
@@ -37,8 +40,9 @@ struct DraftNoteInlineEditor: View {
     var body: some View {
         if isEditing {
             TextField(title, text: $text)
-                .font(DS.Typography.label)
+                .font(isCentered ? DS.Typography.body : DS.Typography.label)
                 .foregroundStyle(.primary)
+                .multilineTextAlignment(isCentered ? .center : .leading)
                 .submitLabel(.done)
                 .autocorrectionDisabled(false)
                 .focused($isFocused)
@@ -60,10 +64,10 @@ struct DraftNoteInlineEditor: View {
                 // Toda la línea de la descripción, no solo sus letras: con un nombre corto («Wong») el dedo caía al lado
                 // y abría el formulario.
                 Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
+                    .font(isCentered ? DS.Typography.body : DS.Typography.label)
+                    .foregroundStyle(isCentered ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                     .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: isCentered ? .center : .leading)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

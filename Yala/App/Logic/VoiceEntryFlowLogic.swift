@@ -128,3 +128,91 @@ enum VoiceEntryFlowLogic {
         !pending.isEmpty && pending.allSatisfy(\.isComplete)
     }
 }
+
+// MARK: - «Esto leí» con la tarjeta B1 (opción A)
+
+/// Lo que la hoja «Esto leí» / «Esto entendí» decide sin pintar nada desde la opción A (elegida por Jürgen el
+/// 2026-11-22; maqueta en `docs/propuestas/2026-11-22-esto-lei/`). Puro, para probarlo sin simulador
+/// (`YalaTests/EstoLei/`).
+enum EstoLeiLogic {
+
+    /// Lo que le falta a un registro para guardarse, en el orden en que la tarjeta lo pide.
+    enum Missing: Equatable {
+        case amount
+        case subcategory
+        case account
+    }
+
+    static func missing(_ readiness: VoiceDraftReadiness) -> [Missing] {
+        var missing: [Missing] = []
+        if !readiness.hasAmount { missing.append(.amount) }
+        if !readiness.hasSubcategory { missing.append(.subcategory) }
+        if !readiness.hasAccount || readiness.accountIsArchived { missing.append(.account) }
+        return missing
+    }
+
+    /// Con varios, la fila que sale desplegada sola: la primera, en el orden en que se pintan, que está marcada, sigue
+    /// pendiente y le falta algo. Si ninguna, ninguna.
+    static func autoExpanded<ID: Hashable>(
+        _ items: [MultiDraftReviewLogic.Item<ID>],
+        _ selection: MultiDraftReviewLogic.Selection<ID>,
+        order: [ID]
+    ) -> ID? {
+        let byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return order.first { id in
+            guard let item = byID[id] else { return false }
+            return item.isPending && !item.isComplete && selection.contains(id)
+        }
+    }
+
+    /// La fila desplegada sigue siéndolo mientras exista; si desapareció (guardada desde «Ver todo», descartada) o no
+    /// había ninguna, se abre la siguiente que lo pida.
+    static func expandedAfterChange<ID: Hashable>(
+        current: ID?,
+        _ items: [MultiDraftReviewLogic.Item<ID>],
+        _ selection: MultiDraftReviewLogic.Selection<ID>,
+        order: [ID]
+    ) -> ID? {
+        if let current, items.contains(where: { $0.id == current && !$0.isSaved }) { return current }
+        return autoExpanded(items, selection, order: order)
+    }
+
+    /// «Otra foto» / «Otra vez» suman a lo que ya está en la hoja (recorrido A, paso 4). La deduplicación puede devolver
+    /// un borrador que ya se enseña (se leyó dos veces el mismo recibo): ese no se repite.
+    static func appended<Element, ID: Hashable>(_ existing: [Element], _ new: [Element], id: (Element) -> ID) -> [Element] {
+        var seen = Set(existing.map(id))
+        var result = existing
+        for element in new where seen.insert(id(element)).inserted {
+            result.append(element)
+        }
+        return result
+    }
+
+    /// Lo que dijiste, tras otra grabación: lo de antes y lo nuevo, en dos párrafos.
+    static func joinedTranscription(_ previous: String, _ new: String) -> String {
+        let old = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+        let added = new.trimmingCharacters(in: .whitespacesAndNewlines)
+        if old.isEmpty { return added }
+        if added.isEmpty { return old }
+        return "\(old)\n\n\(added)"
+    }
+
+    /// Al cerrar con algo sin guardar, el aviso «Lo que leí quedó en tu Bandeja · Ver» (recorrido A, paso 5). No en la
+    /// práctica guiada, que ya dice qué pasa con lo de prueba.
+    static func showsInboxNoticeOnClose(pendingCount: Int, isSetupTrial: Bool) -> Bool {
+        pendingCount > 0 && !isSetupTrial
+    }
+
+    /// La primera oración de la línea ✦ («Elegí BCP Crédito porque la imagen lo dice.»), para cuando la frase entera no
+    /// cabe en una línea. Sin punto seguido de espacio, la frase entera.
+    static func firstSentence(_ text: String) -> String {
+        guard let range = text.range(of: ". ") else { return text }
+        return String(text[..<range.lowerBound]) + "."
+    }
+
+    /// Los botones de abajo van siempre en una fila (nunca uno debajo de otro): con texto de accesibilidad, «Otra foto»
+    /// / «Otra vez» se quedan en su icono y «Guardar» se lleva el ancho.
+    static func secondaryShowsTitle(isAccessibilitySize: Bool) -> Bool {
+        !isAccessibilitySize
+    }
+}

@@ -35,12 +35,12 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         return app
     }
 
-    /// Desde la fila de lo entendido: abre su hoja y toca «Convertir a gasto compartido» hasta que sale el formulario.
+    /// Desde la tarjeta de lo entendido: «Ver todo» abre su editor (empujado en la misma hoja desde la opción A,
+    /// 2026-11-22) y el chip de grupo con «Guardar» lleva al formulario.
     private func openTheGroupForm(in app: XCUIApplication) {
-        let row = app.buttons["voice_draft_row"].firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "No apareció el registro entendido (voice_draft_row).")
-        // El importe, a la derecha: en la hoja de foto la descripción se edita al tocarla (encargo del 2026-11-17).
-        row.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let seeAll = app.buttons["esto_lei_ver_todo"].firstMatch
+        XCTAssertTrue(seeAll.waitForHittable(timeout: 10), "No apareció «Ver todo» en lo entendido (esto_lei_ver_todo).")
+        seeAll.tap()
 
         // Desde el 22-nov-2026 el grupo se elige en el chip de la fila y «Guardar» convierte.
         app.chooseDraftGroupAndSave("Viaje a Cusco")
@@ -137,7 +137,8 @@ final class CaptureConvertToGroupUITests: XCTestCase {
         if discard.waitForExistence(timeout: 2) { discard.tap() }
         XCTAssertTrue(app.textFields["group_expense_amount"].waitForNonExistence(timeout: 10), "El formulario de grupo no se cerró.")
 
-        XCTAssertTrue(app.buttons["voice_draft_row"].firstMatch.waitForExistence(timeout: 10), "Al cancelar desapareció el registro.")
+        XCTAssertTrue(app.descendants(matching: .any)["voice_draft_card"].firstMatch.waitForExistence(timeout: 10),
+                      "Al cancelar desapareció el registro.")
         XCTAssertFalse(
             app.descendants(matching: .any)["draft_registered_in_group_row"].exists,
             "Cancelar el formulario de grupo marcó el registro como guardado."

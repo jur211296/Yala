@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 183,
-      "deterministic": 81,
+      "total": 184,
+      "deterministic": 82,
       "agentic": 35,
       "manual": 59,
       "deterministicSinXCUITest": 0
@@ -4456,9 +4456,9 @@
         "photo-sheet-autoclose"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/XNativaHojaFotoUITests + xcuitest:YalaUITests/ImageEntryReviewUITests + unit:YalaTests/XNativaHojaFotoNoteTests,XNativaHojaFotoAutoCloseTests,XNativaHojaFotoWiringTests | 2026-11-17 (encargo «Hoja de foto: X nativa, cabecera ordenada, descripción editable y cierre automático»): la X del sistema (role .close, 44 pt) en la misma fila que el título y las miniaturas, en personal y en Voz/Foto de Grupos; la descripción de «Esto leí» se corrige tocándola (solo la hoja de foto) y el nombre de cada línea del reparto de Grupos igual; con todo guardado y sin avisos la hoja enseña «Guardado» ~0,6 s y se cierra sola. Device-QA en el iPhone 14 pendiente (teclado real en la fila).",
+      "coverage": "xcuitest:YalaUITests/XNativaHojaFotoUITests + xcuitest:YalaUITests/ImageEntryReviewUITests + unit:YalaTests/XNativaHojaFotoNoteTests,XNativaHojaFotoAutoCloseTests,XNativaHojaFotoWiringTests | 2026-11-17 (encargo «Hoja de foto: X nativa, cabecera ordenada, descripción editable y cierre automático»): la X del sistema (role .close, 44 pt) en la misma fila que el título y las miniaturas, en personal y en Voz/Foto de Grupos; la descripción de «Esto leí» se corrige tocándola (solo la hoja de foto) y el nombre de cada línea del reparto de Grupos igual; con todo guardado y sin avisos la hoja enseña «Guardado» ~0,6 s y se cierra sola. Device-QA en el iPhone 14 pendiente (teclado real en la fila). | 2026-11-22 (opción A de «Esto leí»): la X pasa a la izquierda y el título al centro; tocar la fila ya no abre el formulario (es «Ver todo», `test_review_seeAll_opensTheFullFormInTheSameSheet_andBackReturns`).",
       "owner": "",
-      "lastVerified": "2026-11-17"
+      "lastVerified": "2026-11-22"
     },
     {
       "area": "theme-switch-repaints-open-sheets",
@@ -4559,6 +4559,31 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/FavoritosFilaB1/FavoritosFilaUITests (fila de Favoritos: «Ver todos» en la línea del rótulo, chips completos y centrados mientras quepan, bolitas centradas, scroll desde el margen) — 2026-11-21 (Jürgen): «Ver todos ›» junto al rótulo, chips completos mientras quepan, fila centrada; fixture -uitest-seed-extra-favorites. | xcuitest:YalaUITests/Flows/NuevoRegistroTextoGrande23UITests#test_b1_ax3_bottomRow_staysInOneLine | xcuitest:NuevoRegistroTextoGrande23UITests#test_b1_ax3_titleMenu_choosesTheType | xcuitest:KeyboardSaveBar23UITests (fila y botones sobre el teclado) | unit:YalaTests/NuevoRegistroB1/NuevoRegistroB1LogicTests (fila en una línea, cápsula de moneda, estimado, títulos, «#2», orden del éxito, tabla en 16 idiomas) | 2026-11-20: hoja B1 de Nuevo registro y éxito minimalista (Jürgen, 06:14). Capturas antes/después en el 17 Pro y el SE, claro y oscuro, en el artifact del cierre.",
       "lastVerified": "2026-11-21"
+    },
+    {
+      "area": "esto-lei-tarjeta-b1",
+      "codeGlobs": [
+        "Yala/App/Views/Voice/VoiceDraftReviewCard.swift",
+        "Yala/App/Views/Voice/MultiDraftReviewList.swift",
+        "Yala/App/Views/Voice/EstoLeiInboxNotice.swift",
+        "Yala/App/Views/Voice/VoiceRecordingView.swift",
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Image/EstoLeiPhotoViewer.swift",
+        "Yala/App/Views/Image/EntrySheetCloseButton.swift",
+        "Yala/App/Views/Image/DraftNoteInlineEditor.swift",
+        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
+        "Yala/App/Logic/VoiceEntryFlowLogic.swift"
+      ],
+      "scenarioIDs": [
+        "esto-lei-card-b1",
+        "esto-lei-see-all-pushed",
+        "esto-lei-other-photo-adds",
+        "esto-lei-close-inbox-notice"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/EstoLeiRecorridoUITests + unit:YalaTests/EstoLeiLogicTests | 2026-11-22 (opción A de «Esto leí», elegida por Jürgen): un registro es una tarjeta B1 (cápsula de moneda, categoría bajo el monto o «Elige categoría» en ámbar, fila Hoy · Cuenta · #, línea ✦ en una línea); varios, la vista de siempre con la fila desplegable y «· N por completar»; «Ver todo» empuja el editor de la Bandeja en la misma hoja con ‹ (InboxDraftEditSheet onBack); «Otra foto» y «Otra vez» suman sin preguntar; cerrar sin guardar avisa «quedó en tu Bandeja · Ver». Capturas antes/después con EstoLeiCapturasUITests (iPhone claro y oscuro, iPad). Actualizados XNativaHojaFotoUITests, CaptureConvertToGroupUITests, ImageEntryReviewUITests, MultiDraftReviewUITests, VozFotoAvisos23UITests y VoiceEntryReviewUITests.",
+      "owner": "",
+      "lastVerified": "2026-11-22"
     }
   ]
 }

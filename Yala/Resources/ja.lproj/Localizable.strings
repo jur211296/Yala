@@ -10316,3 +10316,18 @@
 "nube23media.signOutICloud.conservationWithGroups" = "戻るときは「%@」を選び、アカウントでグループに再度サインインしてください。";
 /* Nube 2.3 · volver a pasar a la nube con la misma cuenta tras volver a iCloud (opción A de Jürgen, 16-nov) */
 "nube23media.revert.cloudAgainDetail" = "いつでも可能です。iCloudにあるデータが、保存されている内容に置き換わります。";
+
+/* «Esto leí» con la tarjeta B1 (opción A, 2026-11-22) */
+"estoLei.seeAll" = "すべて表示";
+"estoLei.seeAllA11y" = "記録全体を表示";
+"estoLei.chooseCategory" = "カテゴリを選択";
+"estoLei.toComplete" = "あと%d件を入力";
+"estoLei.savedIn" = "%@に保存しました";
+"estoLei.again" = "もう一度";
+"estoLei.whatYouSaid" = "話した内容";
+"estoLei.inboxNotice.photo" = "読み取った内容は受信箱にあります";
+"estoLei.inboxNotice.voice" = "話した内容は受信箱にあります";
+"estoLei.inboxNotice.view" = "表示";
+"estoLei.appendNote.photo" = "読み取った内容は、ここにあるものに追加されます。";
+"estoLei.appendNote.voice" = "話した内容は、ここにあるものに追加されます。";
+"estoLei.seePhotos" = "写真を表示";

@@ -146,17 +146,16 @@ final class VoiceEntryReviewUITests: XCTestCase {
         XCTAssertEqual(saved.count, 2, "Guardar 2 tiene que guardar los dos.")
     }
 
-    /// Volver a grabar descarta lo entendido y la hoja vuelve a escuchar. Desde la revisión 2.3 (decisión 81) pregunta
-    /// antes: aquí se confirma; el «Seguir revisando» lo prueba `VozFotoAvisos23UITests`.
+    /// «Otra vez» vuelve a escuchar. Desde la opción A de «Esto leí» (2026-11-22) lo nuevo se suma a lo entendido y no
+    /// pregunta; el ‹ de vuelta lo prueba `VozFotoAvisos23UITests`.
     func test_recordAgain_returnsToListening() {
         let app = openReview("one")
 
         let again = app.buttons["voice_record_again"]
         XCTAssertTrue(again.waitForExistence(timeout: 5), "Falta Volver a grabar.")
         again.tap()
-        let discard = app.alerts.buttons["entry_discard_confirm"].firstMatch
-        XCTAssertTrue(discard.waitForExistence(timeout: 5), "Con lo entendido sin guardar, tenía que preguntar.")
-        discard.tap()
+        // Desde la opción A (2026-11-22) «Otra vez» suma a lo entendido: no pregunta.
+        XCTAssertEqual(app.alerts.count, 0, "Sumar no borra nada: sin pregunta.")
 
         XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 10), "Volver a grabar no volvió a escuchar.")
         XCTAssertFalse(app.staticTexts["voice_review_title"].exists, "Lo entendido tenía que desaparecer.")

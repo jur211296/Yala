@@ -52,7 +52,13 @@ struct VoiceRecordingView: View {
     @State private var processingTask: Task<Void, Never>?
     @State private var drafts: [InboxDraft] = []
     @State private var transcription = ""
-    @State private var detailDraft: InboxDraft?
+    /// El borrador abierto con «Ver todo»: su editor completo va empujado dentro de esta misma hoja (opción A, Jürgen
+    /// 2026-11-22), con ‹ para volver a lo entendido.
+    @State private var editingDraft: InboxDraft?
+    /// «Otra vez» con lo entendido a la vista: lo que se diga ahora se SUMA a la hoja (recorrido A, paso 4).
+    @State private var appendsNextRecording = false
+    /// «Lo que dijiste», desde el micro de la barra.
+    @State private var showsTranscription = false
     /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
     @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
     /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
@@ -66,8 +72,6 @@ struct VoiceRecordingView: View {
     /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la voz no puede, Nuevo registro sube encima y, al cerrarse, se cierra
     /// también esta hoja.
     @State private var showManualEntry = false
-    /// «Volver a grabar» con lo entendido sin guardar pregunta antes de borrarlo (decisión 81 de la revisión 2.3).
-    @State private var showRecordAgainConfirmation = false
 
     /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
@@ -98,13 +102,31 @@ struct VoiceRecordingView: View {
     private let buttonHeight: CGFloat = 48 // A11Y-DT: tap target de los botones de la hoja
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            header
-            content
+        ZStack {
+            VStack(spacing: DS.Spacing.none) {
+                header
+                content
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.lg)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Con «Ver todo» abierto, lo entendido sigue montado debajo pero no se ve ni se toca.
+            .opacity(editingDraft == nil ? 1 : 0)
+            .allowsHitTesting(editingDraft == nil)
+            .accessibilityHidden(editingDraft != nil)
+
+            if let editingDraft {
+                InboxDraftEditSheet(
+                    draft: editingDraft,
+                    onConvertToGroupExpense: { converting, groups in
+                        conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
+                    },
+                    onBack: closeEditor
+                )
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
+            }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
         .yalaScreenBackground(
             SelectorSheetSizing.mediumFirst.background(
@@ -114,22 +136,13 @@ struct VoiceRecordingView: View {
             )
         )
         .selectorSheetSizing(.mediumFirst, selectedDetent: $selectedDetent)
+        // «Ver todo» abre el editor a pantalla entera dentro de la hoja.
+        .growsSheetToLarge(when: editingDraft != nil)
         .interactiveDismissDisabled(isBusy)
         // Cada fase y cada fallo se anuncia a VoiceOver (decisión 62 de la revisión 2.3).
         .announcesEntryPhase(phaseAnnouncement)
-        .asksBeforeDiscardingEntry(
-            title: L10n.EntryDiscard.voiceTitle,
-            message: L10n.EntryDiscard.voiceMessage,
-            isPresented: $showRecordAgainConfirmation,
-            onDiscard: recordAgain
-        )
         .task { await startListening() }
         .onDisappear(perform: tearDown)
-        .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
-            InboxDraftEditSheet(draft: draft, onConvertToGroupExpense: { converting, groups in
-                conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
-            })
-        }
         // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
         .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
         .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
@@ -153,7 +166,9 @@ struct VoiceRecordingView: View {
 
     // MARK: - Cabecera
 
-    /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar.
+    /// Cerrar solo cuando no hay un Cancelar abajo; «Ahora no» de la práctica, mientras no haya nada que revisar. En lo
+    /// entendido, la barra de B1 (opción A, 2026-11-22): la X a la izquierda, el título al centro y, a la derecha, el
+    /// micro que enseña lo que dijiste. Grabando otra vez para sumar, ‹ vuelve a lo entendido.
     @ViewBuilder
     private var header: some View {
         if let courtesyTrialText, let skip = onSetupTrialSkipped {
@@ -165,28 +180,80 @@ struct VoiceRecordingView: View {
             }
             .padding(.top, DS.Spacing.md)
         }
-        HStack {
-            if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
-                Button(L10n.SetupChecklist.skipStep) {
-                    stopLivePreview()
-                    recorder.cancelRecording()
-                    skip()
-                    dismiss()
-                }
-                .font(DS.Typography.label)
-                .frame(minHeight: 44)
+        ZStack {
+            if phase == .review {
+                Text(reviewTitle)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("voice_review_title")
             }
-            Spacer()
-            if phase == .review || isFailure {
-                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                    dismiss()
+            HStack {
+                if returnsToReview {
+                    EntrySheetBackButton(action: backToReview)
+                        .accessibilityIdentifier("voice_back_to_review")
+                } else if phase == .review || isFailure {
+                    EntrySheetCloseButton { dismiss() }
+                        .accessibilityIdentifier("voice_close")
                 }
-                .buttonStyle(.glass)
-                .accessibilityIdentifier("voice_close")
+                Spacer()
+                if courtesyTrialText == nil, let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
+                    Button(L10n.SetupChecklist.skipStep) {
+                        stopLivePreview()
+                        recorder.cancelRecording()
+                        skip()
+                        dismiss()
+                    }
+                    .font(DS.Typography.label)
+                    .frame(minHeight: 44)
+                } else if phase == .review, !transcription.isEmpty {
+                    saidButton
+                }
             }
         }
         .frame(minHeight: 44)
         .padding(.top, DS.Spacing.md)
+    }
+
+    /// El micro de la barra: «Lo que dijiste», en un globo.
+    private var saidButton: some View {
+        Button {
+            showsTranscription = true
+        } label: {
+            Image(systemName: "mic")
+                .font(DS.Typography.body.weight(.medium))
+                .foregroundStyle(Color.primary)
+                .frame(width: 44, height: 44) // A11Y-DT: misma caja que la X
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: Circle())
+        .accessibilityLabel(L10n.EstoLei.whatYouSaid)
+        .accessibilityIdentifier("voice_said")
+        .popover(isPresented: $showsTranscription) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(L10n.EstoLei.whatYouSaid)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.secondary)
+                Text(transcription)
+                    .font(DS.Typography.body)
+                    .italic()
+                    .foregroundStyle(.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("voice_said_text")
+            }
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: 320, alignment: .leading)
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    /// Grabando otra vez para sumar a lo entendido: ‹ vuelve ahí sin grabar nada.
+    private var returnsToReview: Bool {
+        appendsNextRecording && !drafts.isEmpty && (phase == .starting || phase == .listening)
     }
 
     /// Lo que VoiceOver oye al cambiar de fase: el título y, en un fallo, su porqué. Vacío mientras pide el micro.
@@ -233,7 +300,7 @@ struct VoiceRecordingView: View {
                 Text(L10n.Chat.listening)
                     .font(DS.Typography.title3)
                     .foregroundStyle(.thPrimaryText)
-                Text(L10n.Chat.voiceHint)
+                Text(returnsToReview ? L10n.EstoLei.appendNoteVoice : L10n.Chat.voiceHint)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -395,32 +462,14 @@ struct VoiceRecordingView: View {
         VStack(spacing: DS.Spacing.md) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(reviewTitle)
-                            .font(DS.Typography.title3)
-                            .foregroundStyle(.thPrimaryText)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("voice_review_title")
-                        if !transcription.isEmpty {
-                            Text(transcription)
-                                .font(DS.Typography.subheadline)
-                                .italic()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    if dynamicTypeSize.isAccessibilitySize {
-                        missingHint
-                    }
-
                     if isMulti {
                         if !drafts.isEmpty {
-                            MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                            MultiDraftReviewList(drafts: drafts, selection: $selection) { openEditor($0) }
                         }
                     } else {
                         ForEach(drafts, id: \.persistentModelID) { draft in
                             VoiceDraftReviewCard(draft: draft) {
-                                detailDraft = draft
+                                openEditor(draft)
                             }
                         }
                     }
@@ -440,10 +489,6 @@ struct VoiceRecordingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            if !dynamicTypeSize.isAccessibilitySize {
-                missingHint
-            }
-
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
                     .font(DS.Typography.caption)
@@ -451,41 +496,23 @@ struct VoiceRecordingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            actionsLayout {
+            // Siempre en una fila, nunca un botón debajo de otro (opción A): con texto grande «Otra vez» se queda en su icono
+            // y «Guardar» encoge su texto en una línea.
+            HStack(spacing: DS.Spacing.md) {
                 if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "voice_finish") {
                         dismiss()
                     }
                 } else {
-                    secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgainTapped)
-                    primaryButton(saveTitle, isEnabled: canSave, identifier: "voice_save", action: saveAll)
+                    compactSecondaryButton(
+                        L10n.EstoLei.again, systemImage: "mic", identifier: "voice_record_again",
+                        action: recordAgainTapped)
+                    primaryButton(saveTitle, isEnabled: canSave, identifier: "voice_save", singleLine: true, action: saveAll)
                 }
             }
         }
         .padding(.top, DS.Spacing.xs)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
-    }
-
-    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
-    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
-    /// scroll, bajo el título.
-    @ViewBuilder
-    private var missingHint: some View {
-        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
-            Text(L10n.Voice.reviewMissingHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.warningForeground)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityIdentifier("multi_review_missing_hint")
-        }
-    }
-
-    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
-    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
-    private var actionsLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
-            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
@@ -640,16 +667,19 @@ struct VoiceRecordingView: View {
 
     // MARK: - Botones
 
+    /// `singleLine`: en la fila de «Esto entendí» el texto no se parte («Guardar 2 · S/ 20.00»), encoge.
     private func primaryButton(
         _ title: String,
         isEnabled: Bool,
         identifier: String,
+        singleLine: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Text(title)
                 .font(DS.Typography.body.weight(.semibold))
-                .lineLimit(2)
+                .lineLimit(singleLine ? 1 : 2)
+                .minimumScaleFactor(singleLine ? 0.7 : 1)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
                 .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
@@ -678,6 +708,34 @@ struct VoiceRecordingView: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// El secundario de «Esto entendí»: icono y texto a su medida, al lado de «Guardar»; con texto de accesibilidad, solo
+    /// el icono (`EstoLeiLogic.secondaryShowsTitle`).
+    private func compactSecondaryButton(
+        _ title: String, systemImage: String, identifier: String, action: @escaping () -> Void
+    ) -> some View {
+        let showsTitle = EstoLeiLogic.secondaryShowsTitle(isAccessibilitySize: dynamicTypeSize.isAccessibilitySize)
+        return Button(action: action) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: systemImage)
+                    .accessibilityHidden(true)
+                if showsTitle {
+                    Text(title)
+                        .lineLimit(1)
+                }
+            }
+            .font(DS.Typography.body.weight(.medium))
+            .foregroundStyle(.thPrimaryText)
+            .frame(minWidth: buttonHeight, minHeight: buttonHeight)
+            .padding(.horizontal, showsTitle ? DS.Spacing.lg : DS.Spacing.sm)
+            .background(Capsule().fill(Color(.tertiarySystemFill)))
+            .contentShape(Capsule())
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
     }
 
@@ -737,20 +795,62 @@ struct VoiceRecordingView: View {
         }
     }
 
-    /// Cancelar mientras escucha descarta sin transcribir y cierra: no hay otra cosa que hacer en esta hoja.
+    /// Cancelar mientras escucha descarta sin transcribir y cierra: no hay otra cosa que hacer en esta hoja. Grabando
+    /// otra vez para sumar, vuelve a lo entendido.
     private func cancelListening() {
         stopLivePreview()
         recorder.cancelRecording()
-        dismiss()
+        if returnsToReview {
+            backToReview()
+        } else {
+            dismiss()
+        }
     }
 
-    /// «Volver a grabar»: con lo entendido a la vista y algo sin guardar, pregunta antes; si no, graba otra vez.
+    /// «Otra vez»: con lo entendido a la vista, se graba otra vez y lo nuevo se SUMA a la hoja (recorrido A, paso 4). Ya
+    /// no se borra nada, así que no hay que preguntar (sustituye a la decisión 81 de la revisión 2.3 en esta hoja).
     private func recordAgainTapped() {
-        if EntryPhaseFeedbackLogic.asksBeforeDiscarding(isReviewing: phase == .review, unsavedCount: pendingDrafts.count) {
-            showRecordAgainConfirmation = true
+        if phase == .review, !drafts.isEmpty {
+            appendsNextRecording = true
+            pendingAudioData = nil
+            saveFailed = false
+            Task { await startListening() }
         } else {
             recordAgain()
         }
+    }
+
+    /// ‹ grabando otra vez: suelta el micro y vuelve a lo entendido sin sumar nada.
+    private func backToReview() {
+        stopLivePreview()
+        if recorder.state == .recording {
+            recorder.cancelRecording()
+        }
+        appendsNextRecording = false
+        phase = .review
+    }
+
+    // MARK: - «Ver todo»
+
+    /// El editor completo del borrador, empujado dentro de esta hoja (opción A).
+    private func openEditor(_ draft: InboxDraft) {
+        dsWithAnimation(reduceMotion) {
+            editingDraft = draft
+        }
+    }
+
+    /// ‹ del editor (o lo que lo cierra: guardar, descartar, pasar a un grupo). Si el borrador se borró, sin animación:
+    /// el editor saliente no puede volver a pintarse con un modelo borrado (`swiftui-ds.md`, modelos borrados).
+    private func closeEditor() {
+        let deleted = editingDraft.map { $0.isDeleted || $0.modelContext == nil } ?? false
+        if deleted || reduceMotion {
+            editingDraft = nil
+        } else {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                editingDraft = nil
+            }
+        }
+        afterDetails()
     }
 
     /// Lo que se borra al grabar otra vez son los borradores pendientes de ESTA grabación: si se quedaran, la Bandeja
@@ -790,11 +890,17 @@ struct VoiceRecordingView: View {
         startProcessing(audioData)
     }
 
-    /// Cancelar a media transcripción cierra la hoja: la petición en curso termina sola y su resultado se ignora.
+    /// Cancelar a media transcripción cierra la hoja: la petición en curso termina sola y su resultado se ignora. Sumando
+    /// a lo entendido, vuelve ahí.
     private func cancelProcessing() {
         processingTask?.cancel()
         processingTask = nil
-        dismiss()
+        if appendsNextRecording, !drafts.isEmpty {
+            appendsNextRecording = false
+            phase = .review
+        } else {
+            dismiss()
+        }
     }
 
     private func processAudio(_ audioData: Data) async {
@@ -838,6 +944,16 @@ struct VoiceRecordingView: View {
             }
 
             pendingAudioData = nil
+            if appendsNextRecording, !drafts.isEmpty {
+                // «Otra vez»: lo nuevo se suma a lo entendido, sin repetir lo que ya se enseña.
+                appendsNextRecording = false
+                drafts = EstoLeiLogic.appended(drafts, created, id: { $0.persistentModelID })
+                transcription = EstoLeiLogic.joinedTranscription(transcription, text)
+                phase = .review
+                DS.Haptic.success()
+                return
+            }
+            appendsNextRecording = false
             // La práctica guiada es de UN registro: se revisa el primero; los demás quedan en la Bandeja, como antes.
             drafts = isSetupTrial ? Array(created.prefix(1)) : created
             if isSetupTrial, created.count > 1 { onCourtesyExtraDrafts?(created.dropFirst().map(\.persistentModelID)) }
@@ -1026,6 +1142,10 @@ struct VoiceRecordingView: View {
         }
         processingTask?.cancel()
         processingTask = nil
+        // Cerrar sin guardar: lo entendido queda en la Bandeja, y el aviso lo dice con «Ver» (recorrido A, paso 5).
+        if EstoLeiLogic.showsInboxNoticeOnClose(pendingCount: pendingDrafts.count, isSetupTrial: isSetupTrial) {
+            EstoLeiInboxNotice.show(message: L10n.EstoLei.inboxNoticeVoice)
+        }
         if let pending = pendingDrafts.first {
             reportTrial(id: pending.persistentModelID, name: pending.note, kind: .draft)
         }

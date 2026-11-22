@@ -141,44 +141,45 @@ final class VozFotoAvisos23UITests: XCTestCase {
 
     /// «Volver a grabar» con lo entendido a la vista pregunta: «Seguir revisando» lo deja como estaba y «Descartar»
     /// vuelve a escuchar.
-    func test_voice_recordAgain_asksBeforeDiscarding() {
+    /// Desde la opción A de «Esto leí» (2026-11-22) «Otra vez» SUMA a lo entendido: no borra nada, así que no pregunta
+    /// (sustituye a la decisión 81 en esta hoja); ‹ vuelve a lo entendido entero.
+    func test_voice_recordAgain_addsWithoutAsking_andBackKeepsEverything() {
         let app = openVoiceAndFinish("two")
         XCTAssertTrue(app.staticTexts["voice_review_title"].waitForExistence(timeout: 15), "No apareció lo entendido.")
-        let again = app.buttons["voice_record_again"]
-        again.tap()
+        app.buttons["voice_record_again"].tap()
 
-        let keep = app.alerts.buttons["entry_discard_keep"].firstMatch
-        XCTAssertTrue(keep.waitForExistence(timeout: 5), "«Volver a grabar» tenía que preguntar antes de descartar.")
-        attachScreenshot(app, "81-voz-pregunta")
-        keep.tap()
-        XCTAssertTrue(app.staticTexts["voice_review_title"].waitForExistence(timeout: 5), "«Seguir revisando» tenía que dejarlo.")
+        XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 10), "«Otra vez» tenía que volver a escuchar.")
+        XCTAssertEqual(app.alerts.count, 0, "Sumar no borra nada: sin pregunta.")
+        let back = app.buttons["voice_back_to_review"]
+        XCTAssertTrue(back.waitForHittable(timeout: 5), "Escuchando para sumar, ‹ vuelve a lo entendido.")
+        attachScreenshot(app, "a-voz-otra-vez")
+        back.tap()
+        XCTAssertTrue(app.staticTexts["voice_review_title"].waitForExistence(timeout: 5), "‹ tenía que volver a lo entendido.")
         XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2, "Lo entendido tenía que seguir entero.")
-
-        again.tap()
-        let discard = app.alerts.buttons["entry_discard_confirm"].firstMatch
-        XCTAssertTrue(discard.waitForExistence(timeout: 5), "La segunda vez tenía que volver a preguntar.")
-        discard.tap()
-        XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 10), "«Descartar» tenía que volver a escuchar.")
     }
 
-    /// «Otra foto» con lo leído a la vista pregunta; desde un fallo no hay nada que perder y vuelve a elegir sin más.
-    func test_photo_otherPhoto_asksBeforeDiscarding_butNotFromAFailure() {
+    /// Desde la opción A (2026-11-22) «Otra foto» con lo leído a la vista SUMA: elige sin preguntar, ‹ vuelve a lo leído
+    /// entero, y leer otra vez el mismo recibo no lo repite. Desde un fallo no hay nada que sumar y vuelve a elegir.
+    func test_photo_otherPhoto_addsWithoutAsking_butNotFromAFailure() {
         let app = openPhotoAndRead("two")
         XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 20), "No apareció lo leído.")
         let other = app.buttons["image_other_photo"]
         other.tap()
 
-        let keep = app.alerts.buttons["entry_discard_keep"].firstMatch
-        XCTAssertTrue(keep.waitForExistence(timeout: 5), "«Otra foto» tenía que preguntar antes de descartar.")
-        attachScreenshot(app, "81-foto-pregunta")
-        keep.tap()
+        XCTAssertTrue(app.buttons["image_source_photos"].waitForExistence(timeout: 10), "«Otra foto» tenía que elegir.")
+        XCTAssertEqual(app.alerts.count, 0, "Sumar no borra nada: sin pregunta.")
+        XCTAssertTrue(app.staticTexts["image_append_note"].exists, "Tiene que decir que lo nuevo se suma.")
+        attachScreenshot(app, "a-foto-otra-foto")
+        app.buttons["image_back_to_review"].tap()
+        XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 5), "‹ tenía que volver a lo leído.")
         XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2, "Lo leído tenía que seguir entero.")
 
         other.tap()
-        let discard = app.alerts.buttons["entry_discard_confirm"].firstMatch
-        XCTAssertTrue(discard.waitForExistence(timeout: 5), "La segunda vez tenía que volver a preguntar.")
-        discard.tap()
-        XCTAssertTrue(app.buttons["image_source_photos"].waitForExistence(timeout: 10), "«Descartar» tenía que volver a elegir.")
+        XCTAssertTrue(app.buttons["image_source_photos"].waitForExistence(timeout: 10))
+        app.buttons["image_source_photos"].tap()
+        XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 20), "Tras leer, vuelve a lo leído.")
+        XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2,
+                       "El mismo recibo leído otra vez no se repite.")
 
         let failing = openPhotoAndRead("none")
         let otherFromFailure = failing.buttons["image_other_photo"]
