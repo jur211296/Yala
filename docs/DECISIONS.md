@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (137 entradas)
+## Índice (138 entradas)
 
 > **No hace falta leer este fichero entero** — son 347 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-22` [Lote del 22-nov (10:01-10:03): conector completo, campo de reglas de captura antes de la build, «Est](#2026-11-22-lote-del-22-nov-1001-1003-conector-completo-campo-de-reglas-de-captura-antes-de-la-build-esto-le-opcin-a-correos-de-seguridad-apagados-y-la-causa-de-las-tandas-5-y-6)
 - `2026-11-22` [El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook ](#2026-11-22-el-conector-de-claude-sale-a-produccin-con-dan-y-su-sql-cambia-solo-el-id-del-conector-en-el-hook-de-yala-web)
 - `2026-11-22` [Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en](#2026-11-22-yala-ia-ampliada-al-100--en-produccin-conector-de-pruebas-en-mcp-stagingyala-apppe-y-face-id-en-la-app-publicada)
 - `2026-11-22` [Lote del 21 y 22-nov: consolas confirmadas, la sesión de las reglas de captura pausada y retomada, u](#2026-11-22-lote-del-21-y-22-nov-consolas-confirmadas-la-sesin-de-las-reglas-de-captura-pausada-y-retomada-uso-de-lnea-con-campo-propio-editor-de-la-bandeja-botones-del-toolbar-en-primary-y-la-hoja-esto-le)
@@ -163,6 +164,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-22] Lote del 22-nov (10:01-10:03): conector completo, campo de reglas de captura antes de la build, «Esto leí» opción A, correos de seguridad apagados y la causa de las tandas 5 y 6
+**Contexto:** Seis decisiones de Jürgen en el chat del 22-nov, de 10:01 a 10:03 (Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de las tandas 5 y 6 de pruebas de interfaz; solo ejecuta la (4), que es su encargo.
+**Decisión:** (1) **El conector de Claude sale completo**, con «apunta un gasto», no solo de lectura. (2) **Antes de cualquier build 2.3**, Dan crea el campo nuevo de reglas de captura en iCloud Development y Production, agrega la columna en Supabase producción y despliega el gateway (la foto pide el tipo de comercio). (3) **Hoja «Esto leí», opción A · tarjeta B1:** se completa en la tarjeta; «Ver todo» abre el editor B1 en la misma hoja con ‹; la explicación de la cuenta elegida va en una línea; el botón principal no cambia para decir lo que falta. (4) **Revisar la causa** de las tandas 5 y 6 de pruebas de interfaz en rojo en la CI de 2.3. (5) **Los correos de seguridad de Supabase Auth** (`mailer_notifications_*`) se quedan apagados en producción; el conector sale sin ellos (cierra la pregunta de la decisión del conector de arriba). (6) **GO para encolar** la construcción de «Esto leí» con la opción A y una sesión de propuesta visual del histórico compartido de comercios (solo comercio→categoría, anónimo, con umbral de varios usuarios, sin montos ni cuentas; lo del usuario manda; política de privacidad), sin construir.
+**Razones:** Las da Jürgen en el chat.
+**Consecuencias:** (1), (2), (3) y (6) son encargos aparte. (4): la causa era de las pruebas (tocaban con la pantalla en movimiento y esperaban 5 s en un runner donde cada lectura cuesta 1-3 s), no de la app; la tanda 6 cayó por el runner. Ticket `tickets/done/2026-11-22-pruebas-interfaz-tandas-5-6-rojo.md`.
+**Estado:** Activa
 
 ### [2026-11-22] El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook de Yala web
 **Contexto:** Tres decisiones de Jürgen del 22-nov (Lima), capturadas por el bot dueño: 08:49 autoriza que Dan despliegue el conector MCP en producción (mcp.yala-app.pe) con `mcp/RUNBOOK-produccion.md`; 08:51 Dan lo despliega ya, con Google probado, y Jürgen prueba el login con Apple en producción al conectarse; 09:15 autoriza una sesión que ponga al día la guía y el SQL antes del despliegue. Dan se había frenado porque el runbook era anterior a Yala web (16-nov).
