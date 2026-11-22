@@ -1,0 +1,76 @@
+/*
+  CapturaAtajoParte2.strings
+  Yala
+
+  Avisos del banco (B2), correo de Mail (B3) y avisos de precio y de baja de los pagos planificados (S2), encargo
+  del 22-nov-2026. Tabla propia: la lee `L10n.CapturaAtajoParte2` y la acción de Atajos (`BankNoticeSourceChoice`).
+*/
+
+"atajoParte2.intent.source" = "Source";
+"atajoParte2.intent.source.notification" = "Notification";
+"atajoParte2.intent.source.mail" = "Email";
+"atajoParte2.bank.row.title" = "Bank alerts";
+"atajoParte2.bank.picker.title" = "Which bank?";
+"atajoParte2.bank.picker.subtitle" = "Choose the app that alerts you about your purchases. Yala reads the alert on your iPhone and leaves the expense in your Inbox to confirm. You can add more banks later.";
+"atajoParte2.bank.picker.ready" = "Ready";
+"atajoParte2.bank.picker.other" = "Other bank";
+"atajoParte2.bank.picker.otherDetail" = "Read by the iPhone's model";
+"atajoParte2.bank.picker.beta" = "Beta";
+"atajoParte2.bank.picker.activeSection" = "Active";
+"atajoParte2.bank.picker.addSection" = "Add another bank";
+"atajoParte2.bank.privacyFooter" = "Free, and it also works with your data in iCloud. The alert text never leaves your iPhone: only the expense is saved in your Inbox.";
+"atajoParte2.bank.status.waiting.title" = "Waiting for the first alert";
+"atajoParte2.bank.status.waiting.detail" = "Make a small purchase with your card. You'll see it here and in your Inbox.";
+"atajoParte2.bank.status.working.title" = "Working";
+"atajoParte2.bank.status.lastNotice" = "Last alert: %@";
+"atajoParte2.bank.status.lastNoticeWith" = "Last alert: %1$@ · %2$@";
+"atajoParte2.bank.status.amountAt" = "%1$@ at %2$@";
+"atajoParte2.bank.status.silent.title" = "Nothing has arrived for %d days";
+"atajoParte2.bank.status.silent.detail" = "If you're still using your card, check in Shortcuts that the automation is still turned on.";
+"atajoParte2.bank.status.paused.title" = "Paused";
+"atajoParte2.bank.status.paused.detail" = "Alerts that arrive are ignored and not saved.";
+"atajoParte2.bank.month.section" = "This month";
+"atajoParte2.bank.month.read" = "Alerts read";
+"atajoParte2.bank.month.notUnderstood" = "Not understood";
+"atajoParte2.bank.month.notPurchases" = "Not purchases";
+"atajoParte2.bank.month.footer" = "“Not purchases” are codes, promotions and balance alerts: they leave nothing in your Inbox.";
+"atajoParte2.bank.settings.section" = "Settings";
+"atajoParte2.bank.defaultAccount" = "Default account";
+"atajoParte2.bank.defaultAccount.none" = "Whatever the alert says";
+"atajoParte2.bank.defaultAccount.footer" = "Used when the alert doesn't say which card you paid with. If it shows the last four digits, the account with those digits wins.";
+"atajoParte2.bank.pause" = "Pause alerts";
+"atajoParte2.bank.guide.section" = "How to turn it on";
+"atajoParte2.bank.guide.step1.title" = "Open Shortcuts and create an automation";
+"atajoParte2.bank.guide.step1.detail" = "In Shortcuts, tap + and choose Automation › Notification.";
+"atajoParte2.bank.guide.step2.title" = "Choose the %@ app";
+"atajoParte2.bank.guide.step2.detail" = "Tap App and look for %@. Don't add any filter.";
+"atajoParte2.bank.guide.step3.title" = "Add Yala's action";
+"atajoParte2.bank.guide.step3.detail" = "Search for “Record transaction from text”. For Text, choose the Notification variable, and for Bank, %@.";
+"atajoParte2.bank.guide.step4.title" = "Leave the automation turned on";
+"atajoParte2.bank.guide.step4.detail" = "That way it runs on its own when the alert arrives, even with your iPhone locked.";
+"atajoParte2.bank.guide.preview" = "%1$@ notifications have to show their content: Settings › Notifications › %2$@ › Show Previews: Always.";
+"atajoParte2.bank.guide.otherNote" = "For a bank without rules, the alert is read by the iPhone's model (with Apple Intelligence). If it can't understand it, it stays in your Inbox for you to complete.";
+"atajoParte2.bank.openShortcuts" = "Open Shortcuts";
+"atajoParte2.bank.addShortcut" = "Add to Shortcuts";
+"atajoParte2.bank.mail.section" = "If your bank alerts you by email";
+"atajoParte2.bank.mail.detail" = "If you get the alerts in the Mail app, create the automation with Email instead of Notification and enter your bank's sender. In Yala's action, choose Email › Content for Text, and Email for Source.";
+"atajoParte2.bank.test.section" = "Try a sample alert";
+"atajoParte2.bank.test.detail" = "Reads a sample %@ alert so you can see the result. Nothing is saved.";
+"atajoParte2.bank.test.button" = "Try";
+"atajoParte2.bank.test.expense" = "Expense of %1$@ at %2$@";
+"atajoParte2.bank.test.income" = "Income of %1$@ from %2$@";
+"atajoParte2.bank.test.amountOnly" = "Transaction of %@";
+"atajoParte2.bank.test.notUnderstood" = "We didn't understand this alert";
+"atajoParte2.bank.test.notAMovement" = "Not a purchase";
+"atajoParte2.bank.remove.section" = "Remove it completely";
+"atajoParte2.bank.remove.step1" = "Open Shortcuts and find the %@ automation.";
+"atajoParte2.bank.remove.step2" = "Swipe left and tap Delete.";
+"atajoParte2.changes.priceUp" = "%1$@ went up to %2$@";
+"atajoParte2.changes.priceDown" = "%1$@ went down to %2$@";
+"atajoParte2.changes.priceDetail" = "The last two charges were %1$@; your payment says %2$@.";
+"atajoParte2.changes.update" = "Update";
+"atajoParte2.changes.keep" = "Leave as is";
+"atajoParte2.changes.stoppedTitle" = "Did you stop paying %@?";
+"atajoParte2.changes.stoppedDetail" = "No charge since %@.";
+"atajoParte2.changes.pause" = "Pause payment";
+"atajoParte2.changes.stillActive" = "Still active";

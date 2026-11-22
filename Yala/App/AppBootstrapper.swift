@@ -909,6 +909,8 @@ final class AppBootstrapper {
             for url in SharedContainerService.pendingImageURLs() {
                 SharedContainerService.removePendingImage(at: url)
             }
+            // Lo mismo con el estado del atajo del banco (B2): bancos activados, contadores y pausa viven en el App Group.
+            BankNoticeActivityStore.removeAll()
             // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // La barra de antes (`[.panel, .statistics, .planning]`), o la de una instalación nueva de 2.3 con
@@ -1365,6 +1367,12 @@ final class AppBootstrapper {
         if let iso = UITestHooks.foreignAccountCurrency {
             DevSeedService().seedForeignCurrencyAccount(currencyCode: iso, in: context)
         }
+        // Pagos que cambiaron de precio o dejaron de cobrarse (S2 de pagos recurrentes). Aditivo, como el anterior.
+        #if DEBUG
+        if UITestHooks.seedRecurringChanges {
+            DevSeedRecurringChanges.create(in: context)
+        }
+        #endif
         // Fila envenenada por el chat viejo (tasa 1,0 sobre un monto convertido correcto). Aditiva
         // e independiente del arg anterior: aquélla siembra filas sanas-pero-aproximadas y ésta el
         // corpus contrario, el que el barrido `fxOneToOneRepairSweep.v2` cura en el sitio.

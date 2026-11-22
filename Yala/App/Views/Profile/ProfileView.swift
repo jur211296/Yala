@@ -1372,6 +1372,8 @@ struct ProfileView: View {
                 SiriShortcutsView()
             case .bankEmail:
                 BankEmailForwardingView()
+            case .bankNotices:
+                BankNoticesView()
             case .aiPrivacy:
                 AIPrivacySettingsView()
             case .permissions:
@@ -1436,7 +1438,7 @@ struct ProfileView: View {
     private func paintsOwnBackButton(_ destination: ProfileDestination) -> Bool {
         switch destination {
         case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
-             .subscription, .tips, .faq, .siriShortcuts, .bankEmail, .permissions, .usageMode:
+             .subscription, .tips, .faq, .siriShortcuts, .bankEmail, .bankNotices, .permissions, .usageMode:
             true
         case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
              .yalaAccount:
@@ -1668,6 +1670,12 @@ struct ProfileView: View {
                         icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
                         iconColor: .blue, destination: .siriShortcuts)
                     .accessibilityIdentifier("profile_siri_shortcuts")
+                    // Avisos del banco (2.3, B2): registran gastos personales desde Atajos; fuera en solo-grupos, como Siri.
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "bell.badge.fill", title: L10n.CapturaAtajoParte2.Bank.rowTitle,
+                        iconColor: .teal, destination: .bankNotices)
+                    .accessibilityIdentifier("profile_bank_notices")
                 }
                 // Correo del banco (2.3): exige los datos en la nube con sesión. Registra gastos personales: fuera en
                 // solo-grupos (lo decide `BankEmailEntryLogic`).

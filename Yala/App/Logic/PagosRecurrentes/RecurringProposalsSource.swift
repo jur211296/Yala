@@ -47,7 +47,9 @@ enum RecurringProposalsSource {
                 ref: index, date: tx.date, amount: abs(tx.amount), currencyCode: tx.currencyCode, name: tx.note ?? ""
             )
         }
-        let planned = payments.map { RecurringPaymentDetector.PlannedPayment(name: $0.name, storedBrandID: $0.brandLogoID) }
+        let planned = payments.map {
+            RecurringPaymentDetector.PlannedPayment(name: $0.name, storedBrandID: $0.brandLogoID, amount: $0.amount)
+        }
 
         return RecurringPaymentDetector.detect(charges: charges, plannedPayments: planned, now: now, calendar: calendar)
             .map { proposal in

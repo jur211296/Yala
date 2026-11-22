@@ -49,6 +49,7 @@ import SwiftData
         let sourceType = mapImageTypeToSource(response.imageType)
         // Un solo fetch para todos los movimientos de la foto.
         let accounts = DraftBuilder.fetchActiveAccounts(context: context)
+        let subcategories = MerchantKindSubcategory.fetchVisible(context: context)
 
         return response.transactions.map { transaction in
             createDraft(
@@ -57,6 +58,7 @@ import SwiftData
                 rawText: rawText,
                 confidence: response.confidence,
                 accounts: accounts,
+                subcategories: subcategories,
                 context: context
             )
         }
@@ -70,6 +72,7 @@ import SwiftData
         rawText: String?,
         confidence: VisionConfidence,
         accounts: [Account],
+        subcategories: [Subcategory],
         context: ModelContext
     ) -> (draft: InboxDraft, eleccion: CuentaSolaAlLeer.Eleccion) {
         // Parse date from YYYY-MM-DD string
@@ -100,10 +103,17 @@ import SwiftData
 
         // Subcategory inference via MerchantMemory (delegated to DraftBuilder). Descarta lo que
         // contradiga el tipo: la memoria de comercios no mira naturaleza (ver `matchesNature`).
+        // Sin recuerdo, lo que sabe la IA del comercio («Starbucks» es un restaurante) y, si no lo sabe, el banco de
+        // comercios del teléfono (decisión 75). Lo que recuerda la persona manda siempre: es su propia corrección.
         let matchedSubcategory: Subcategory? = DraftBuilder.suggestSubcategory(
             merchant: note,
             isExpense: isExpense,
             context: context
+        ) ?? MerchantKindSubcategory.subcategory(
+            kind: VisionMerchantKind.parse(transaction.merchantKind),
+            merchant: transaction.merchant,
+            isExpense: isExpense,
+            in: subcategories
         )
 
         // Determine which fields need user input

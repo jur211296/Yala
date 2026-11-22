@@ -11,6 +11,7 @@ import { interpolate, readRepoFile, swiftMultilineAfter } from "./swift";
 
 const PATHS = {
   vision: "Yala/App/Services/ImageVision/ImageVisionService.swift",
+  merchantKinds: "Yala/App/Logic/ComercioFoto/VisionMerchantKind.swift",
   dateContext: "Yala/App/Services/DateContextProvider.swift",
   intent: "Yala/Services/Chat/ChatIntentClassifierService.swift",
   suggestions: "Yala/App/Services/ChatSuggestionsLLMService.swift",
@@ -82,7 +83,22 @@ export function currencyPromptValues(ctx: CurrencyContext): { dollarRule: string
 
 export function photoSystemPrompt(todayIso: string, currency: CurrencyContext = { main: null, accounts: [] }): string {
   const tpl = swiftMultilineAfter(readRepoFile(PATHS.vision), "func systemPrompt(currency: VisionCurrencyContext) -> String {");
-  return interpolate(tpl, { dateContext: dateContext(todayIso), ...currencyPromptValues(currency) });
+  return interpolate(tpl, {
+    dateContext: dateContext(todayIso),
+    ...currencyPromptValues(currency),
+    merchantKinds: visionMerchantKinds().join(", "),
+  });
+}
+
+/**
+ * Los tipos de comercio que la foto puede devolver (`merchantKind`), leídos del `enum VisionMerchantKind` del Swift en su
+ * orden: `case personalCare = "personal_care"` da `personal_care`; `case fuel`, `fuel`.
+ */
+export function visionMerchantKinds(): string[] {
+  const swift = readRepoFile(PATHS.merchantKinds);
+  const start = swift.indexOf("enum VisionMerchantKind");
+  const body = swift.slice(start, swift.indexOf("static var promptList", start));
+  return [...body.matchAll(/^\s*case (\w+)(?: = "([^"]+)")?\s*$/gm)].map((m) => m[2] ?? m[1]);
 }
 
 /** `currency`: la divisa principal y las de las cuentas del usuario, como las manda la app (sesión 2, paso 6 bis). */

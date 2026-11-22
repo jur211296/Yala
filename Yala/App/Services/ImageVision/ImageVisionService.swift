@@ -27,11 +27,14 @@ struct VisionTransaction: Codable {
     /// La cuenta que la IA cree, copiada de la lista que recibió (solo con la cuenta en la nube), o `nil`. Es la segunda
     /// capa: solo vale si existe y sus palabras están en `payment` (`CuentaSolaAlLeer.cuentaDeIA`).
     var account: String? = nil
+    /// A qué se dedica el comercio, según lo que la IA sabe de él (`VisionMerchantKind`: «restaurant», «supermarket»…),
+    /// o `nil`. El teléfono lo traduce a una subcategoría del usuario. Un gateway o una respuesta sin el campo, `nil`.
+    var merchantKind: String? = nil
 }
 
 extension VisionTransaction {
     private enum CodingKeys: String, CodingKey {
-        case amount, date, merchant, note, currency, payment, account
+        case amount, date, merchant, note, currency, payment, account, merchantKind
     }
 
     /// Los cinco campos de siempre como antes; `payment` y `account`, si traen otra cosa que un texto, se leen como `nil`
@@ -45,6 +48,7 @@ extension VisionTransaction {
         currency = try container.decodeIfPresent(String.self, forKey: .currency)
         payment = Self.lenientText(container, .payment)
         account = Self.lenientText(container, .account)
+        merchantKind = Self.lenientText(container, .merchantKind)
     }
 
     private static func lenientText(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
@@ -155,6 +159,7 @@ final class ImageVisionService {
         let dateContext = DateContextProvider.buildDateContext()
         let dollarRule = currency.dollarRule
         let userCurrencies = currency.userCurrencies
+        let merchantKinds = VisionMerchantKind.promptList
 
         return """
         You are a financial transaction extractor. Analyze images and extract transaction data.
@@ -166,7 +171,13 @@ final class ImageVisionService {
         - "unknown": Cannot identify as financial
 
         Rules:
-        - Merchant: the shop, service or person as printed. Never the bank, the wallet (Yape, Plin) or the card.
+        - Merchant: the shop, service or person. If you recognize the business, write its known trade name instead of
+          the legal company name or a terminal code ("SPV*STARBUCKS 0231" → "Starbucks", "Tiendas Peruanas S.A." → "Oechsle"
+          when the receipt shows that store). Never the bank, the wallet (Yape, Plin) or the card.
+        - MerchantKind: what the merchant sells, from your general knowledge of that business (Starbucks → "restaurant",
+          Wong or Carrefour → "supermarket", Inkafarma → "pharmacy", Uber → "rideshare", Primax → "fuel"). Exactly one of:
+          \(merchantKinds). null if you do not know the business, it
+          is a person or a transfer between accounts, or it fits none of them.
         - Note: null, unless a short detail helps to know where the money went (branch, city). Never the bank's
           template text ("Consumo con tarjeta de crédito BCP", "Purchase approved"), operation numbers or card digits.
         - Amounts: No currency symbol, expenses are NEGATIVE, income is POSITIVE
@@ -217,7 +228,7 @@ final class ImageVisionService {
         Respond ONLY with valid JSON (no markdown, no explanation):
         {
           "imageType": "single",
-          "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD", "payment": null, "account": null}],
+          "transactions": [{"amount": -45.50, "date": "2026-01-25", "merchant": "Starbucks", "note": null, "currency": "USD", "payment": null, "account": null, "merchantKind": "restaurant"}],
           "confidence": {"overall": 0.95, "imageType": 0.90}
         }
         """

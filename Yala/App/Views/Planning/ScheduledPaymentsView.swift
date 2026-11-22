@@ -43,6 +43,12 @@ struct ScheduledPaymentsView: View {
                         viewModel.recalculateData()
                     }
 
+                    // S2: los pagos que cambiaron de precio o dejaron de cobrarse, con su respuesta en un toque.
+                    RecurringChangesCards(
+                        onUpdateAmount: { payment, amount in viewModel.updateAmount(payment, to: amount) },
+                        onPause: { payment in viewModel.setPaused(payment, paused: true) }
+                    )
+
                     // Tab segmented control
                     tabSelector
                         .padding(.horizontal, DS.Spacing.lg)
