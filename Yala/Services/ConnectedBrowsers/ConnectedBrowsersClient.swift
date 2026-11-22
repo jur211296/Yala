@@ -11,19 +11,31 @@
 //    - `POST /api/dispositivo/vincular`                → `{codigo}`: lo aprueba, tras Face ID (lote 2).
 //
 //  Se identifica con el token de la sesión de la nube (`CloudAuthService`), sin App Attest: la web solo deja ver y cerrar
-//  las sesiones web PROPIAS (decisión P9 del lote 1). Solo hay web en staging, así que solo Yala Dev la conoce
-//  (`ConnectedBrowsersConfig.baseURL`); en producción no hay URL y la fila no sale. Logs bajo `#if DEBUG`.
+//  las sesiones web PROPIAS (decisión P9 del lote 1). Cada build habla con la web de SU nube
+//  (`ConnectedBrowsersConfig.baseURL`): Yala Dev con la de staging y Yala con la de producción, `app.yala-app.pe`
+//  (decisiones 42 y 51: la web es un dispositivo más en modo nube). Logs bajo `#if DEBUG`.
 //
 
 import Foundation
 
 nonisolated enum ConnectedBrowsersConfig {
-    /// La web de staging, la única que existe en 2.3. `nil` fuera de Yala Dev: no hay web de producción todavía.
+    /// La web de staging, la de la nube de Yala Dev (`webapp/wrangler.toml`, `PUBLIC_URL` de arriba).
+    static let stagingURL = URL(string: "https://yala-web-staging.misty-surf-6866.workers.dev")
+    /// La web de producción, la de la nube de Yala (`webapp/wrangler.toml`, `PUBLIC_URL` de `[env.production]`). Su
+    /// Worker valida el token contra el Supabase de producción, el mismo que `CloudBackendConfig` fuera de Yala Dev.
+    static let productionURL = URL(string: "https://app.yala-app.pe")
+
+    /// La web con la que habla un build: la de su misma nube. Va separada para que un test la fije sin compilar el
+    /// otro scheme.
+    static func baseURL(isDevBuild: Bool) -> URL? {
+        isDevBuild ? stagingURL : productionURL
+    }
+
     static var baseURL: URL? {
         #if DEV_BUILD
-        return URL(string: "https://yala-web-staging.misty-surf-6866.workers.dev")
+        return baseURL(isDevBuild: true)
         #else
-        return nil
+        return baseURL(isDevBuild: false)
         #endif
     }
 

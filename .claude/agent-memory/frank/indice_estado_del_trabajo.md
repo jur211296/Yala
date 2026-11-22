@@ -110,3 +110,4 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [Fallo conocido de UI en 2.3](project_fallos_conocidos_ui_2_3.md) — IPhoneLandscape con XCTExpectFailure por c94z; quitarlo al decidir Jürgen.
 - [La ida del 14 no cuadra (17-nov)](project_ida_que_no_cuadra_en_el_iphone_14.md) — test@yala-app.pe tras un reset del espejo: verify>failed ×3; mide antes de repetir la prueba.
 - [Cuenta sola al leer: qué espera la parte 2](project_cuenta_sola_al_leer_parte_2_espera.md) — 20-nov: medir «Tarjeta» de Wallet y decidir B en privado (permiso).
+- [IA ampliada al 100 %; conector espera a Dan](project_ia_ampliada_100_y_conector_espera_a_dan.md) — 22-nov: medición hasta ~6-dic; mcp.yala-app.pe reservado, despliega Dan.

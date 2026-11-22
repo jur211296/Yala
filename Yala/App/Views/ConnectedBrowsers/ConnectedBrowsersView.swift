@@ -4,7 +4,7 @@
 //
 //  Ajustes › Tu cuenta de Yala › «Navegadores conectados» (Yala web, lote 1, decisión D5): las sesiones de Yala web
 //  abiertas con esta cuenta, con «Cerrar» en cada una y «Cerrar todas». Al cerrar, esa pestaña se vacía en menos de un
-//  minuto (la web pregunta por su sesión cada 30 s). Solo existe en Yala Dev: la web de 2.3 vive en staging.
+//  minuto (la web pregunta por su sesión cada 30 s). Yala Dev habla con la web de staging y Yala con la de producción.
 //  Lote 2: «Vincular un navegador» abre `LinkBrowserView` (entrar en la web leyendo su QR, con Face ID).
 //
 

@@ -203,11 +203,12 @@ describe("wrangler.toml · percents de rollout DESPLEGADOS en producción", () =
     expect(varIn("env.production.vars", "GROUPS_BACKEND_ROLLOUT_PERCENT")).toBe("100");
   });
 
-  // Yala IA con herramientas: staging al 100 (QA previo a 2.2); producción en 0 hasta 2.2 publicada
-  // (docs/ai-cloud-vs-private-2026-10.md §7). `toBe` explícito: borrar la línea también rompe este test.
-  it("el camino ampliado de Yala IA está al 100 en staging y apagado en producción", () => {
+  // Yala IA con herramientas: al 100 en los dos entornos desde el 22-nov-2026 (encendido en producción por escalones con
+  // la 2.2 publicada; gateway/RUNBOOK.md, «Yala IA ampliada»). `toBe` explícito: borrar la línea también rompe este test,
+  // y un "0" de vuelta (el kill-switch) es un diff que se ve.
+  it("el camino ampliado de Yala IA está al 100 en staging y en producción", () => {
     expect(varIn("vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("100");
-    expect(varIn("env.production.vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("0");
+    expect(varIn("env.production.vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("100");
   });
 
   // «Otra cuenta de Apple» (inicio de sesión web de Apple): pide el proveedor web de Apple en el Supabase del entorno.

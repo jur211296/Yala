@@ -3,6 +3,22 @@
 El Worker no se despliega solo: `deploy:staging` y `deploy:production` los corre Jürgen a mano (`README.md`, «Deploy»).
 Aquí se apunta lo que está mergeado y espera despliegue, con cómo comprobarlo. Lo desplegado se borra de aquí.
 
+**Yala IA ampliada (`chat.explore`) en producción — EN 100 desde el 2026-11-22** (decisión 14 de la auditoría del 21-nov;
+OK de producción de Jürgen, 21-nov 08:39). No es un pendiente: es la marcha atrás, que hay que tener a mano.
+- **Cómo se encendió:** solo la variable `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT`, escalones 1 → 10 → 50 → 100, sobre la versión
+  que ya corría (`86849564`, con el parche sin commit de «cuenta sola»), con `PATCH
+  /accounts/<cuenta>/workers/scripts/yala-gateway-production/settings`: los demás bindings van como `{"type":"inherit"}`,
+  así que no cambia ni el código ni un secreto. Se eligió eso y no `deploy:production` porque desplegar desde una rama
+  le habría cambiado el código a producción.
+- **Volver atrás (segundos, sin release):** la misma llamada con `"0"`. El gateway deja de aceptar `chat.explore` en
+  cuanto la variable no es > 0 (`src/ai/explore/index.ts`, `exploreEnabled`) y la app contesta por el camino de siempre;
+  `/config` publica el 0 al instante (medido en staging el 22-nov: visible en menos de 10 s). Si hiciera falta volver
+  también el código, `wrangler rollback --env production <versión>`. Desde el repo, poner `"0"` en `[env.production.vars]`
+  y `npm run deploy:production` también lo apaga, pero sube el código de la rama.
+- **Qué mirar si algo va mal:** errores del Worker (GraphQL `workersInvocationsAdaptive`, script `yala-gateway-production`)
+  y `chat.explore` en `yala_ai_usage` (tokens y estado). Medido en staging: ~3.750 tokens de entrada (2.200 de caché) y
+  ~60 de salida por pregunta, ≈ 0,0002 USD, ~4 s.
+
 **Pendiente (2026-11-05, rama 2.3): repartir un recibo en un grupo** (card «Grupos: repartir un recibo con IA»). Dos
 tareas nuevas, `receipt.photo` (cubo `vision`, exige imagen) y `receipt.voice` (cubo `voice`, va con la nota), con el
 esquema `RECEIPT_SPLIT_SCHEMA` y JSON estricto. Sin ellas desplegadas, «Desde un recibo» de Nuevo gasto de grupo contesta

@@ -1,8 +1,13 @@
 # Conector de Claude — salida a producción
 
-**Estado (2026-11-04): listo para desplegar, NO desplegado.** El código, `[env.production]`, el script de despliegue
-y los tests están en el repo. Falta lo que solo se puede hacer con acceso a producción, y eso es este documento.
-Lo despliega Jürgen; nadie más.
+**Estado (2026-11-22): listo para desplegar en `https://mcp.yala-app.pe`, NO desplegado.** El código, `[env.production]`
+(con el dominio y el KV ya creado), el script de despliegue y los tests están en el repo. Falta lo que solo se puede
+hacer con acceso a Supabase de producción y a sus consolas: los pasos 1 y 3 a 10 de este documento. Lo despliega Dan
+(decisión 64 de la auditoría del 21-nov: «el conector MCP sale a producción en mcp.yala-app.pe; después despliega Dan»).
+
+**Dominios desde el 22-nov:** `mcp.yala-app.pe` está libre y reservado para producción (hasta ese día era un alias del
+Worker de staging). El conector de pruebas vive en `https://mcp-staging.yala-app.pe` (alias) y en
+`https://yala-mcp-staging.misty-surf-6866.workers.dev` (su URL pública del OAuth, la de siempre).
 
 Contexto: `README.md` (cómo funciona), el ADR «El conector de Claude emite sus propios tokens» (`docs/DECISIONS.md`),
 `docs/exploracion/plugin-claude-mcp.md` §7–§8 y el ticket `claude-mcp-production-auth-hardening`.
@@ -20,7 +25,7 @@ Contexto: `README.md` (cómo funciona), el ADR «El conector de Claude emite sus
 
 | Qué | Dónde queda | Paso |
 |---|---|---|
-| KV `yala-mcp-production-oauth` | su id en `wrangler.toml`, `[[env.production.kv_namespaces]]` | 2 |
+| ~~KV `yala-mcp-production-oauth`~~ — **hecho el 2026-11-22** (`3683c133…`, ya en `wrangler.toml`) | `[[env.production.kv_namespaces]]` | 2 |
 | Cliente OAuth **confidencial** del Worker en Supabase producción | su id en `wrangler.toml` (`SUPABASE_OAUTH_CLIENT_ID`) y en el hook (SQL del paso 5) | 3 |
 | Secreto `SUPABASE_OAUTH_CLIENT_SECRET` | `~/Secrets/yala-mcp-production/supabase-oauth-client.json` **y** `wrangler secret --env production`, en el mismo gesto | 4 |
 | Rol `yala_mcp_reader` + hook `yala_mcp_access_token_hook` | Supabase producción (`kefvaiymtgytemwbltlz`), SQL generado | 5 |
@@ -66,16 +71,13 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
    comprobar que ningún flujo de la app depende del valor actual (el login de la app es nativo, con `id_token`, y no
    debería; medirlo, no suponerlo).
 
-2. **El KV.**
-   ```bash
-   npx wrangler kv namespace create yala-mcp-production-oauth
-   ```
-   Su `id` sustituye a `PENDIENTE-crear-kv-yala-mcp-production-oauth` en `wrangler.toml`.
+2. **El KV.** Hecho el 2026-11-22: `yala-mcp-production-oauth`, id `3683c13333c04f3d9acfe507caa6ac65`, ya en
+   `wrangler.toml`. No se vuelve a crear.
 
 3. **El cliente del Worker en Supabase producción.** Dashboard del proyecto → *Authentication → OAuth Server*:
    activarlo con el registro dinámico **apagado**, y registrar un cliente:
    - nombre «Yala para Claude», tipo **confidencial** (`client_secret_basic`);
-   - una sola vuelta: `https://yala-mcp-production.misty-surf-6866.workers.dev/oauth/supabase/callback`.
+   - una sola vuelta: `https://mcp.yala-app.pe/oauth/supabase/callback`.
 
    **Todavía no** poner la ruta de autorización ni encender nada más: el hook va antes (paso 5), o habría una ventana
    en la que Supabase emite tokens que escriben. Su `client_id` sustituye a
@@ -112,7 +114,7 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
 6. **Encender, en este orden** (`PATCH /v1/projects/kefvaiymtgytemwbltlz/config/auth`, el mismo token del paso 1):
    1. `hook_custom_access_token_enabled = true`, `hook_custom_access_token_uri = pg-functions://postgres/public/yala_mcp_access_token_hook`.
       Comprobar que el login normal de la app sigue funcionando (sale `authenticated`, sin `client_id`).
-   2. **Después**, `site_url = https://yala-mcp-production.misty-surf-6866.workers.dev`,
+   2. **Después**, `site_url = https://mcp.yala-app.pe`,
       `oauth_server_enabled = true`, `oauth_server_allow_dynamic_registration = false`,
       `oauth_server_authorization_path = /oauth/consent`.
    3. **El login con Apple y Google de la pantalla de permiso** (las credenciales web ya existen: Llavero
@@ -124,7 +126,7 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
       - `external_google_client_id` con el cliente web «Yala Web (MCP)» **primero** y los dos de iOS detrás, y
         `external_google_secret` = su secreto.
       - Nada en `uri_allow_list`: la vuelta del login (`/oauth/consent/social`) es del mismo host que `site_url`.
-      Comprobación: `curl -s -o /dev/null -w "%{redirect_url}" "https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/authorize?provider=apple&redirect_to=https://yala-mcp-production.misty-surf-6866.workers.dev/oauth/consent/social&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=s256"`
+      Comprobación: `curl -s -o /dev/null -w "%{redirect_url}" "https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/authorize?provider=apple&redirect_to=https://mcp.yala-app.pe/oauth/consent/social&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=s256"`
       → tiene que llevar `client_id=pe.yala.app.web`; con `provider=google`, el id del cliente web.
 
 7. **Desplegar el Worker.**
@@ -138,7 +140,7 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
    (Supabase de staging, anon key de otro proyecto…) el Worker responde **503 a todo** y lo anota en el log
    (`evento: config_invalida`): mirarlo con `npx wrangler tail --env production`.
 
-   Comprobación rápida: `curl https://yala-mcp-production.misty-surf-6866.workers.dev/` → «Yala MCP: conector de
+   Comprobación rápida: `curl https://mcp.yala-app.pe/` → «Yala MCP: conector de
    solo lectura…» (sin «staging»).
 
 8. **Cerrar la cuenta frente a un Worker comprometido** (lo que la review de staging cerró, más lo que falta), con el
@@ -155,14 +157,14 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
 9. **El e2e contra producción**, con la cuenta de prueba de producción:
    ```bash
    set -a; . ~/Secrets/yala-mcp-production/test-users.env; set +a
-   MCP_URL=https://yala-mcp-production.misty-surf-6866.workers.dev npm run test:e2e
+   MCP_URL=https://mcp.yala-app.pe npm run test:e2e
    ```
    > Hoy el e2e entra con email y contraseña y tiene fijada la URL de Supabase de staging: hasta que el login con
    > Apple y Google traiga su propio e2e, en producción se valida a mano conectando Claude (abajo) y repitiendo las
    > sondas de escritura con el token que recibe Claude: todas tienen que dar `403 bad_jwt`.
 
 10. **Conectar Claude a producción** y preguntar algo («¿cuánto gasté este mes?»): Claude Code con
-    `claude mcp add --transport http yala https://yala-mcp-production.misty-surf-6866.workers.dev/mcp`, o claude.ai →
+    `claude mcp add --transport http yala https://mcp.yala-app.pe/mcp`, o claude.ai →
     Ajustes → Conectores → *Añadir conector personalizado*.
 
 ## Tu IA registra en Yala: la herramienta `apuntar_movimiento` (2026-11-05)
@@ -212,11 +214,17 @@ Siempre al revés que la subida, para no abrir nunca una ventana con tokens que 
 
 ## Dominio propio
 
-Hoy la URL es `*.workers.dev`, como el gateway de producción. Un dominio propio (`mcp.yala-app.pe`) exige que el DNS
-de `yala-app.pe` esté en Cloudflare; hoy está en RCP (`ns.rcp.net.pe`, medido el 2026-11-04). Si se cambia **antes**
-del primer despliegue basta con: `routes = [{ pattern = "mcp.yala-app.pe", custom_domain = true }]` en
-`[env.production]`, `PUBLIC_URL` a la nueva URL, y la vuelta del cliente de Supabase y el `site_url` a juego. Después
-del despliegue, además, los usuarios tendrían que volver a conectar Claude: el emisor OAuth cambia.
+Decidido (decisión 64 de la auditoría del 21-nov): **`mcp.yala-app.pe`**. El DNS de `yala-app.pe` ya está en
+Cloudflare (medido el 2026-11-22: `kyle`/`becky.ns.cloudflare.com`), así que `routes = [{ pattern = "mcp.yala-app.pe",
+custom_domain = true }]` en `[env.production]` crea el registro y el certificado al desplegar, como `app.yala-app.pe`.
+Como se decide **antes** del primer despliegue, nadie tiene que volver a conectar su IA. Todo lo que nombra la URL
+(`PUBLIC_URL`, la vuelta del cliente OAuth de Supabase del paso 3, `site_url` del paso 6, la comprobación social y el
+e2e) ya dice `https://mcp.yala-app.pe` en este documento.
+
+Hasta el 2026-11-22 `mcp.yala-app.pe` era un dominio propio del Worker **de staging**, puesto fuera del repo. Ese día
+se soltó (`DELETE /workers/domains/<id>`) y el de pruebas pasó a `mcp-staging.yala-app.pe`, ahora declarado en el
+`routes` de arriba de `wrangler.toml`. Marcha atrás del cambio de nombre: volver a enganchar `mcp.yala-app.pe` a
+`yala-mcp-staging` con `PUT /accounts/<cuenta>/workers/domains` (solo si producción no lo usa).
 
 ## Límites de peticiones
 

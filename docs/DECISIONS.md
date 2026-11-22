@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (134 entradas)
+## Índice (135 entradas)
 
 > **No hace falta leer este fichero entero** — son 339 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-22` [Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en](#2026-11-22-yala-ia-ampliada-al-100--en-produccin-conector-de-pruebas-en-mcp-stagingyala-apppe-y-face-id-en-la-app-publicada)
 - `2026-11-21` [Pago planificado compartido: quién paga se elige al registrar, no se guarda](#2026-11-21-pago-planificado-compartido-quin-paga-se-elige-al-registrar-no-se-guarda)
 - `2026-11-21` [Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, a](#2026-11-21-lote-del-21-nov-maana-ci-ms-rpido-logos-en-elige-los-pagos-reusar-con-gastos-de-grupo-asistente-de-pago-planificado-completo-auditora-de-decisiones-y-consolas-resueltas)
 - `2026-11-21` [Lote del 21-nov (madrugada): favoritos de Nuevo registro, auditoría de decisiones, iCloud del flujo ](#2026-11-21-lote-del-21-nov-madrugada-favoritos-de-nuevo-registro-auditora-de-decisiones-icloud-del-flujo-de-caja-privacidad-web-con-sentry-github-en-sentry-nombres-de-cuentas-a-yala-ia-y-salud-financiera)
@@ -160,6 +161,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-22] Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en la app publicada
+**Contexto:** Decisiones 14, 42, 51 y 64 de la auditoría del 21-nov, con OK de producción de Jürgen (21-nov 08:39). Producción corría un parche sin commit (versión `86849564`), así que desplegar desde una rama le habría cambiado el código.
+**Decisión:** (1) `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT` de producción sube 1 → 10 → 50 → 100 cambiando solo la variable sobre la versión que corre (API de ajustes del Worker, bindings heredados); el fichero dice 100 para que un despliegue hecho por otro motivo no la apague. Marcha atrás: la misma llamada con 0, probada en staging. (2) `mcp.yala-app.pe` queda reservado para el conector de producción; el de pruebas pasa a `mcp-staging.yala-app.pe` (declarado en `mcp/wrangler.toml`). El alta en Supabase de producción y el despliegue los hace Dan con `mcp/RUNBOOK-produccion.md`. (3) «Navegadores conectados» deja de ser solo de Yala Dev: la app de producción habla con `app.yala-app.pe`, y Debug y Release declaran `NSFaceIDUsageDescription`.
+**Razones:** Cambiar solo la variable deja el código intacto (huella del script idéntica antes y después). Sin la clave de Face ID, iOS cierra la app al vincular un navegador.
+**Consecuencias:** `gateway/RUNBOOK.md` («Yala IA ampliada») tiene la marcha atrás. Volver a enganchar `mcp.yala-app.pe` al Worker de staging rompería el despliegue de producción del conector. Ticket: `tickets/qa/2026-11-21-ia-ampliada-produccion-navegadores-publicada.md`.
+**Estado:** Activa
 
 ### [2026-11-21] Pago planificado compartido: quién paga se elige al registrar, no se guarda
 **Contexto:** El encargo de «Reusar» con gastos de grupo y el asistente completo pedía copiar y preguntar «quién paga». Un pago planificado compartido guarda grupo, moneda y reparto, pero no tiene campo de pagador: al registrarlo desde la Bandeja se abre el gasto de grupo con «Pagado por: tú».

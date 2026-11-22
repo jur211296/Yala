@@ -208,7 +208,7 @@ struct YalaAccountView: View {
     }
 
     /// Yala web, lote 1: «Navegadores conectados», para ver y cerrar las sesiones web. Solo con los datos en la cuenta de
-    /// Yala y solo donde hay web (Yala Dev, contra staging: `ConnectedBrowsersConfig`).
+    /// Yala, contra la web de la misma nube del build (`ConnectedBrowsersConfig`).
     @ViewBuilder
     private var connectedBrowsersSection: some View {
         if ConnectedBrowsersConfig.isAvailable && model.dataLocation == .cloud {

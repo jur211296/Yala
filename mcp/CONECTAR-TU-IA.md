@@ -13,8 +13,8 @@ el conector) para aceptar el permiso nuevo, que es el que dice que podrá apunta
 
 | Entorno | URL |
 |---|---|
-| Staging (pruebas) | `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp` |
-| Producción | aún sin desplegar: falta elegir el dominio (`workers.dev` o `mcp.yala-app.pe`) |
+| Staging (pruebas) | `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp` (alias: `https://mcp-staging.yala-app.pe/mcp`) |
+| Producción | `https://mcp.yala-app.pe/mcp` — escrito, aún sin desplegar (`RUNBOOK-produccion.md`) |
 
 En staging se inicia sesión con un usuario de prueba (email y contraseña, `~/Secrets/yala-supabase-test/`). En
 producción, con Apple o Google, la misma cuenta que en la app.

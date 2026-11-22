@@ -191,9 +191,13 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 # viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
 # owner en TestFlight.
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
-# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). PRODUCCIÓN en 0 a propósito:
-# staging ya va al 100; prod 10→50→100 solo con 2.2 publicada. Ver docs/ai-cloud-vs-private-2026-10.md §7.
-AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). EN 100 desde el 22-nov-2026 (decisión 14 de la
+# auditoría del 21-nov: «encender en producción apenas la 2.2 esté publicada»; OK de producción de Jürgen, 21-nov 08:39),
+# por escalones 1 → 10 → 50 → 100. Se cambió SOLO la variable sobre la versión que ya corría (API de ajustes del Worker),
+# así que este valor alinea el fichero con lo desplegado: un `deploy:production` hecho por otro motivo ya no la apaga.
+# Kill-switch INMEDIATO: "0" (el gateway corta `chat.explore` en cuanto deja de ser > 0, `exploreEnabled`) y la app
+# contesta con el camino de siempre. Cómo, sin redesplegar código: gateway/RUNBOOK.md, «Yala IA ampliada».
+AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "100"
 # «Otra cuenta de Apple»: APAGADO hasta que el Services ID tenga la URL de vuelta del Supabase de producción y ese
 # Supabase tenga `pe.yala.app.web` + su secreto (decisión A de Jürgen, 2026-11-06).
 APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "0"
