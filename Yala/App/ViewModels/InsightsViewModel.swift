@@ -211,7 +211,9 @@ final class InsightsViewModel {
             customRange: customRange,
             preferredCurrencyCode: preferredCurrencyCode,
             includeBridgedGroupTx: includeBridgedGroupTx,
-            adjustment: adjustment
+            adjustment: adjustment,
+            // «Lo que te queda» no cuenta en «Solo gastos», como en el Panel (lote 2 de la nota de salud).
+            countsSavings: !SessionState.shared.isExpensesOnlyMode
         )
         if newScore != financialScore { financialScore = newScore }
     }

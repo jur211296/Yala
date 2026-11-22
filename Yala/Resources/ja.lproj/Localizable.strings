@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "支払い負担";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "金融の健全性";
-"panel.health.total.sheet.explanation" = "スコアは3つの要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。データのある要素が2つ未満なら、スコアはまだ出ません。";
+"panel.health.total.sheet.explanation" = "スコアは複数の要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。データのある要素が2つ未満なら、スコアはまだ出ません。";
 "panel.health.total.headline.high" = "絶好調です！";
 "panel.health.total.headline.mid" = "いいリズムですね";
 "panel.health.total.headline.low" = "小さな一歩から始めましょう";
@@ -8963,12 +8963,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "支払いを予定するとスコアが表示されます。";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "健全性スコアがより正確に";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "最後の記録からの日数を数えるようになり、3日間の猶予があります。予算を少し超えてもほとんど影響しません。スコアを上げるには、こまめに記録して上限に気をつけましょう。パネルの「資産状況」で確認できます。";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "%1$@〜%2$@";

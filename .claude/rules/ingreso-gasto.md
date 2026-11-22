@@ -98,6 +98,13 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
   Un porcentaje que se REABRE (edición, plantilla, pago planificado) pasa por `GroupExpenseViewModel.loadPercentages`,
   que lo deja sumando 100: a un decimal, un gasto pequeño se reabría con 100,1 y no dejaba guardar.
 
+## «Lo que te queda» de la nota de salud: la cifra del hero (lote 2, 22-nov-2026)
+
+La cuarta parte de la nota (`FinancialScoreCalculator.savingsFigures`) suma ingresos y gastos con `HeroBucketsCalculator`,
+la misma pieza del hero del Panel, sobre las cuentas que guardan su historial (`keepsHistory`), sin filtros de sesión y
+hasta el final de hoy. Si cambias cómo suma el hero, la nota lo hereda; no le escribas una suma propia. Sin ingresos en
+el período o en «Solo gastos», la parte no cuenta. Pin: `YalaTests/NovedadesPanelNota/`.
+
 ## «Al 30 tendrías»: una cifra, la del Panel (decisión 30 de 2.3, 2026-11-11)
 
 La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)

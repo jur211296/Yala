@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "Stworzone dla iPhone Duo";
+"novedades23.duo.description" = "Po otwarciu wykorzystasz duży ekran — listy i szczegóły obok siebie. Po zamknięciu Yala dopasuje się do ekranu zewnętrznego.";
+"novedades23.cards.title" = "Twoje konta jako karty";
+"novedades23.cards.description" = "Zaprojektuj kartę każdego konta: szablony, kolory i ostatnie 4 cyfry. Dotknij jej w Panelu, by zobaczyć saldo, rozliczone kwoty i termin płatności.";
+"novedades23.groups.title" = "Prostsze grupy";
+"novedades23.groups.description" = "Podziel paragon zdjęciem lub głosem, rozlicz długi mniejszą liczbą płatności i przenieś grupy ze Splitwise lub Tricount z tymi samymi saldami.";
+"novedades23.records.title" = "Szybsze wpisy";
+"novedades23.records.description" = "Filtruj po koncie lub kategorii jednym dotknięciem, przeskakuj między miesiącami w kalendarzu i zamień dowolny wpis w płatność cykliczną.";
+"novedades23.health.title" = "Twoja ocena kondycji, pełniejsza";
+"novedades23.health.description" = "Teraz sprawdza też, ile zostaje ci z tego, co wpływa. Dotknij jej w Panelu, by zobaczyć, co najbardziej ją zmienia w tym miesiącu.";
+"novedades23.planning.title" = "Ile możesz dziś wydać";
+"novedades23.planning.description" = "Każdy budżet mówi, ile możesz dziś wydać, a Yala proponuje subskrypcje, które znajdzie w twoich wpisach.";
+"novedades23.ant.title" = "Drobne, powtarzające się wydatki";
+"novedades23.ant.description" = "Zobacz, ile sumują się twoje drobne zakupy i, dzięki „Pokaż prognozę”, jak może zakończyć się twój miesiąc.";
+"novedades23.hide.title" = "Ukryj kwoty";
+"novedades23.hide.description" = "Dotknij oka w Panelu, a twoje liczby znikną — idealne, gdy ktoś patrzy na twój ekran.";

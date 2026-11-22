@@ -8362,8 +8362,6 @@ enum L10n {
         static var v22FasterEntryDescription: String { ls("whatsNew.v22.fasterEntry.description", comment: "") }
         static var v22LeftToPayTitle: String { ls("whatsNew.v22.leftToPay.title", comment: "") }
         static var v22LeftToPayDescription: String { ls("whatsNew.v22.leftToPay.description", comment: "") }
-        static var v23HealthScoreTitle: String { ls("whatsNew.v23.healthScore.title", comment: "") }
-        static var v23HealthScoreDescription: String { ls("whatsNew.v23.healthScore.description", comment: "") }
     }
 
     // MARK: - App Update

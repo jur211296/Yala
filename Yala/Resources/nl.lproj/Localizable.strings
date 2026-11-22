@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Verplichtingen";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Je financiële gezondheid";
-"panel.health.total.sheet.explanation" = "Je score bestaat uit drie delen. Elk telt zoveel als ernaast staat; heeft een deel nog geen gegevens, dan verdelen de andere zijn gewicht. Met gegevens in minder dan twee delen is er nog geen score.";
+"panel.health.total.sheet.explanation" = "Je score bestaat uit meerdere delen. Elk telt zoveel als ernaast staat; heeft een deel nog geen gegevens, dan verdelen de andere zijn gewicht. Met gegevens in minder dan twee delen is er nog geen score.";
 "panel.health.total.headline.high" = "Je doet het geweldig!";
 "panel.health.total.headline.mid" = "Lekker bezig";
 "panel.health.total.headline.low" = "Kleine stappen, grote verandering";
@@ -8963,12 +8963,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "Plan een betaling om je score te zien.";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "Je gezondheidsscore, preciezer";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "Hij telt nu de dagen sinds je laatste registratie, met 3 dagen speling, en een budget een beetje overschrijden telt nauwelijks. Verhoog hem door vaak te registreren en op je limieten te letten. Je vindt hem in het Panel, onder Je financiën.";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "Van %1$@ tot %2$@";

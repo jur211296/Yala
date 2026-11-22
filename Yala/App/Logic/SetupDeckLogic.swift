@@ -85,6 +85,10 @@ struct PrimerosPasosPanelGate: Equatable {
         return preferenceHidden.union(Set(PanelSectionKind.allCases).subtracting(allowed))
     }
 
+    /// El saldo grande (con su píldora de período) sale con la cuenta, no antes (decisión 137 de Jürgen, 19-nov-2026:
+    /// «al entrar solo se ven los Primeros pasos»). Antes de la cuenta solo diría S/ 0.00 encima del mazo.
+    var showsBalanceHero: Bool { !isActive || showsAccounts }
+
     /// La barra de período y filtros acompaña a los widgets: con el mazo a medias, no sale.
     var showsFilterBar: Bool { !isActive }
 

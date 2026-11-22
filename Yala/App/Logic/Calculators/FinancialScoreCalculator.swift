@@ -32,6 +32,13 @@ struct FinancialScore: Equatable {
     /// Mantiene el nombre de propiedad `bills` por compatibilidad con la UI/L10n.
     let bills: Int?
 
+    /// Lo que te queda (0–100) o `nil` si en el período no entró nada, o en «Solo gastos» (lote 2 de la nota de salud,
+    /// decisión de Jürgen del 11-nov-2026). No cuenta como parte «que falta»: sin ingresos no hay nada que medir.
+    var savings: Int? = nil
+
+    /// Lo que entró y salió del período con la regla del hero del Panel, para la hoja. `nil` cuando `savings` lo es.
+    var savingsFigures: SavingsFigures? = nil
+
     /// Lo que va mal hoy y la nota mira o no (decisión 9 de la revisión 2.3, PN-2 · B). Vacío si el período no
     /// incluye hoy.
     var alerts = FinancialScoreAlerts()
@@ -44,6 +51,21 @@ struct FinancialScore: Equatable {
     }
 }
 
+/// Lo que entró y salió en el período, en la moneda de la app, con la regla del hero del Panel (`HeroBucketsCalculator`).
+struct SavingsFigures: Equatable {
+    let income: Double
+    let expense: Double
+    /// La marca «≈» de cada cifra que se pinta, con el umbral de la app sobre ESE número (`ApproximateMarkThreshold`):
+    /// cada lado sobre sus magnitudes, y lo que queda sobre la resta.
+    var incomeIsApproximate = false
+    var expenseIsApproximate = false
+    var isApproximate = false
+
+    var left: Double { income - expense }
+    /// La parte de lo que entró que queda, de 0 a 1 (negativa si salió más). `nil` sin ingresos.
+    var rate: Double? { income > 0 ? left / income : nil }
+}
+
 enum FinancialScoreCalculator {
 
     /// La parte que más sube el total si llega a 100 (UX 2.2 · L3-14): lo que le falta, por su peso. No siempre es la
@@ -53,7 +75,8 @@ enum FinancialScoreCalculator {
         let parts: [(FinancialScoreDetailKind, Int?, Double)] = [
             (.budget, score.budget, weightBudget),
             (.activity, score.activity, weightRhythm),
-            (.bills, score.bills, weightCommitments)
+            (.bills, score.bills, weightCommitments),
+            (.savings, score.savings, weightSavings)
         ]
         let candidates = parts.compactMap { kind, value, weight -> (FinancialScoreDetailKind, Int, Double)? in
             guard let value, value < 90 else { return nil }
@@ -69,9 +92,17 @@ enum FinancialScoreCalculator {
 
     /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`). Visibles: la hoja de la nota los enseña
     /// (UX 2.2 · L3-14), y así no pueden divergir de lo que se calcula.
-    static let weightBudget       = 0.40
-    static let weightRhythm       = 0.25
-    static let weightCommitments  = 0.35
+    /// Con «Lo que te queda» (lote 2 de la nota de salud) las tres de siempre conservan su proporción (40 : 25 : 35):
+    /// sin la parte nueva, la nota es exactamente la de antes.
+    static let weightBudget       = 0.32
+    static let weightRhythm       = 0.20
+    static let weightCommitments  = 0.28
+    static let weightSavings      = 0.20
+
+    // Lo que te queda: 20 % o más de lo que entró vale 100; de 0 a 20 %, de 50 a 100 en línea; gastar más de lo que entra
+    // baja de 50 con una pendiente suave y un suelo de 30, el de un presupuesto (lote 2, «no desanimar»).
+    static let savingsFullRate  = 0.20
+    static let savingsFloor     = 30
 
     /// Partes con datos que hacen falta para dar una nota (decisión 9 de la revisión 2.3, PN-2 · A: «dos de tres»).
     /// Con una sola, la nota era esa parte re-ponderada al 100 % y daba 100 con dos registros.
@@ -122,7 +153,8 @@ enum FinancialScoreCalculator {
         calendar: Calendar = .current,
         includeBridgedGroupTx: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
-        coverageAccounts: [Account]? = nil
+        coverageAccounts: [Account]? = nil,
+        countsSavings: Bool = true
     ) -> FinancialScore {
         let interval = period.dateInterval(customRange: customRange, now: now)
         let intervalTransactions = transactions.filter {
@@ -167,7 +199,21 @@ enum FinancialScoreCalculator {
             calendar: calendar,
             adjustment: adjustment
         )
-        let total = computeTotal(budget: budget, rhythm: rhythm, commitments: commitments)
+        let savingsFigures = countsSavings
+            ? Self.savingsFigures(
+                transactions: transactions,
+                accounts: accounts,
+                interval: interval,
+                currencyCode: preferredCurrencyCode,
+                includeBridgedGroupTx: includeBridgedGroupTx,
+                adjustment: adjustment,
+                converter: converter,
+                now: now,
+                calendar: calendar
+            )
+            : nil
+        let savings = savingsFigures?.rate.map { savingsScore(rate: $0) }
+        let total = computeTotal(budget: budget, rhythm: rhythm, commitments: commitments, savings: savings)
         let alerts = FinancialScoreAlertsLogic.alerts(
             transactions: transactions,
             budgets: budgets,
@@ -178,12 +224,15 @@ enum FinancialScoreCalculator {
             adjustment: adjustment,
             converter: converter
         )
-        return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments, alerts: alerts)
+        return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments,
+                              savings: savings, savingsFigures: savings == nil ? nil : savingsFigures, alerts: alerts)
     }
 
     // MARK: - Weighted total con re-normalización
 
-    private static func computeTotal(budget: Int?, rhythm: Int?, commitments: Int?) -> Int? {
+    /// «Lo que te queda» no cuenta para el mínimo de partes (PN-2: «dos de tres» sigue siendo de las tres de siempre): se
+    /// suma a una nota que ya existe, pero no la desbloquea. Con solo registros e ingresos no hay nota todavía.
+    private static func computeTotal(budget: Int?, rhythm: Int?, commitments: Int?, savings: Int? = nil) -> Int? {
         let partsWithData = [budget, rhythm, commitments].compactMap { $0 }.count
         guard partsWithData >= minimumPartsForTotal else { return nil }
 
@@ -202,10 +251,69 @@ enum FinancialScoreCalculator {
             weightedSum += Double(commitments) * weightCommitments
             totalWeight += weightCommitments
         }
+        if let savings {
+            weightedSum += Double(savings) * weightSavings
+            totalWeight += weightSavings
+        }
         guard totalWeight > 0 else { return nil }
 
         let raw = weightedSum / totalWeight
         return clamp(Int(raw.rounded()))
+    }
+
+    // MARK: - Lo que te queda (lote 2 de la nota de salud)
+
+    /// La nota de la parte a partir de la tasa (lo que queda sobre lo que entró). 20 % o más → 100; 0 % → 50;
+    /// gastar un 20 % más de lo que entra → 30, que es el suelo.
+    static func savingsScore(rate: Double) -> Int {
+        guard rate.isFinite else { return savingsFloor }
+        if rate >= savingsFullRate { return 100 }
+        if rate >= 0 { return clamp(Int((50 + 50 * rate / savingsFullRate).rounded())) }
+        return max(savingsFloor, clamp(Int((50 + 100 * rate).rounded())))
+    }
+
+    /// Lo que entró y salió en el período con la regla del hero del Panel (`HeroBucketsCalculator`: con signo, la
+    /// categoría manda, sin ajustes de saldo, con «mi parte» de Grupos), sobre todas las cuentas que guardan su historial
+    /// y sin filtros de sesión: la nota no depende de lo que esté filtrado. En un período en curso, hasta el final de hoy
+    /// (lo fechado después no ha pasado). `nil` si no entró nada.
+    static func savingsFigures(
+        transactions: [TransactionItem],
+        accounts: [Account],
+        interval: DateInterval,
+        currencyCode: String,
+        includeBridgedGroupTx: Bool,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting,
+        now: Date = .now,
+        calendar: Calendar
+    ) -> SavingsFigures? {
+        let endOfToday = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: now))
+            ?? now
+        guard interval.start <= endOfToday else { return nil }
+        let upToToday = DateInterval(start: interval.start, end: min(interval.end, endOfToday))
+        let eligible = Set(accounts.filter(\.keepsHistory).map(\.persistentModelID))
+        let rows = transactions.filter {
+            BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: $0.splitExpenseID,
+                splitSettlementID: $0.splitSettlementID,
+                includeGroupsToggle: includeBridgedGroupTx
+            )
+        }
+        let buckets = HeroBucketsCalculator.calculate(
+            transactions: rows,
+            monthInterval: upToToday,
+            prevInterval: DateInterval(start: .distantPast, duration: 0),
+            periodInterval: upToToday,
+            eligibleAccountIDs: eligible,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+        guard buckets.periodIncome > 0 else { return nil }
+        return SavingsFigures(income: buckets.periodIncome, expense: buckets.periodExpense,
+                              incomeIsApproximate: buckets.periodIncomeApproximate,
+                              expenseIsApproximate: buckets.periodExpenseApproximate,
+                              isApproximate: buckets.periodNetApproximate)
     }
 
     // MARK: - Budget sub-score (period-aware con buckets ponderados)

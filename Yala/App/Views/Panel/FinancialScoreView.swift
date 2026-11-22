@@ -161,6 +161,14 @@ struct FinancialScoreView: View {
                 value: score.bills,
                 label: L10n.Panel.Health.subScoreBills
             ) { presentedSheet = .bills }
+
+            // «Lo que te queda» (lote 2): en «Solo gastos» no cuenta y no se pinta.
+            if !sessionState.isExpensesOnlyMode {
+                SubScoreBarRow(
+                    value: score.savings,
+                    label: L10n.NotaSaludTeQueda.nombre
+                ) { presentedSheet = .savings }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -173,6 +181,7 @@ struct FinancialScoreView: View {
         case .budget:   return score.budget
         case .activity: return score.activity
         case .bills:    return score.bills
+        case .savings:  return score.savings
         }
     }
 
@@ -186,6 +195,9 @@ struct FinancialScoreView: View {
             return { sessionState.navigateToRecordsStandalone() }
         case .bills:
             return { navigation.navigateToScheduledPayments() }
+        case .savings:
+            // En qué se va el dinero: Estadísticas › Distribución.
+            return { navigation.navigateToDetail(.categories) }
         }
     }
 

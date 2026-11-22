@@ -148,6 +148,8 @@ final class StatisticsRecalculation {
         scoreHasher.combine(scoreInterval.end)
         // El toggle de grupos cambia el dataset del score (incluye o excluye las TX bridgeadas).
         scoreHasher.combine(inputs.includeGroupTransactionsInStats)
+        // «Lo que te queda» no cuenta en «Solo gastos» (lote 2 de la nota): cambiar el modo cambia el score.
+        scoreHasher.combine(SessionState.shared.isExpensesOnlyMode)
         let scoreSignature = scoreHasher.finalize()
         if scoreSignature != lastScoreSignature {
             lastScoreSignature = scoreSignature

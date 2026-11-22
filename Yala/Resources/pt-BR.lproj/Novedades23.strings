@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "Feito para o iPhone Duo";
+"novedades23.duo.description" = "Aberto, você aproveita a tela grande, com listas e detalhes lado a lado. Fechado, o Yala se ajusta à tela externa.";
+"novedades23.cards.title" = "Suas contas como cartões";
+"novedades23.cards.description" = "Crie o cartão de cada conta com modelos, cores e seus 4 últimos dígitos. Toque nele no Painel para ver o saldo, o que já foi faturado e quando pagar.";
+"novedades23.groups.title" = "Grupos mais fáceis";
+"novedades23.groups.description" = "Divida um recibo com uma foto ou com a voz, quite dívidas com menos pagamentos e traga seus grupos do Splitwise ou Tricount com os mesmos saldos.";
+"novedades23.records.title" = "Registros mais ágeis";
+"novedades23.records.description" = "Filtre por conta ou categoria com um toque, pule de mês no calendário e transforme qualquer registro em um pagamento recorrente.";
+"novedades23.health.title" = "Sua nota de saúde, mais completa";
+"novedades23.health.description" = "Agora ela também olha quanto sobra do que entra. Toque nela no Painel para ver o que mais a move neste mês.";
+"novedades23.planning.title" = "Quanto você pode gastar hoje";
+"novedades23.planning.description" = "Cada orçamento diz quanto você pode gastar hoje, e o Yala sugere as assinaturas que encontra nos seus registros.";
+"novedades23.ant.title" = "Gastos formiga";
+"novedades23.ant.description" = "Veja quanto somam suas compras pequenas e, com “Ver projeção”, como seu mês pode terminar.";
+"novedades23.hide.title" = "Oculte seus valores";
+"novedades23.hide.description" = "Toque no olho do Painel e seus números somem: ideal quando alguém está olhando sua tela.";

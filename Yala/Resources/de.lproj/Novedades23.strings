@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "Gemacht für das iPhone Duo";
+"novedades23.duo.description" = "Aufgeklappt nutzt du den großen Bildschirm, mit Listen und Details nebeneinander. Zugeklappt passt sich Yala dem Außenbildschirm an.";
+"novedades23.cards.title" = "Deine Konten als Karten";
+"novedades23.cards.description" = "Gestalte die Karte jedes Kontos mit Vorlagen, Farben und deinen letzten 4 Ziffern. Tipp sie im Panel an und sieh Saldo, Abgerechnetes und Zahlungstermin.";
+"novedades23.groups.title" = "Gruppen, einfacher";
+"novedades23.groups.description" = "Teile einen Beleg per Foto oder Stimme, gleiche Schulden mit weniger Zahlungen aus und hol deine Gruppen aus Splitwise oder Tricount mit denselben Salden.";
+"novedades23.records.title" = "Einträge, schneller";
+"novedades23.records.description" = "Filtere mit einem Tipp nach Konto oder Kategorie, spring im Kalender zwischen Monaten und mach aus jedem Eintrag eine wiederkehrende Zahlung.";
+"novedades23.health.title" = "Deine Gesundheitsnote, vollständiger";
+"novedades23.health.description" = "Sie schaut jetzt auch, wie viel von deinen Einnahmen dir bleibt. Tipp sie im Panel an und sieh, was sie diesen Monat am meisten bewegt.";
+"novedades23.planning.title" = "Was du heute ausgeben kannst";
+"novedades23.planning.description" = "Jedes Budget sagt dir, wie viel du heute ausgeben kannst, und Yala schlägt dir Abos vor, die es in deinen Einträgen findet.";
+"novedades23.ant.title" = "Kleine Ausgaben, die sich summieren";
+"novedades23.ant.description" = "Sieh, was deine kleinen Käufe zusammen ausmachen, und mit „Prognose zeigen“, wie dein Monat enden könnte.";
+"novedades23.hide.title" = "Beträge ausblenden";
+"novedades23.hide.description" = "Tipp im Panel auf das Auge und deine Zahlen verschwinden – ideal, wenn jemand auf deinen Bildschirm schaut.";

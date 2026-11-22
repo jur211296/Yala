@@ -763,12 +763,15 @@ struct PanelView: View {
                         // Gated on `heroWidget.data != nil` inside the section
                         // itself so the skeleton doesn't flash an empty card
                         // before the first `performCalculation()` lands.
+                        // Panel progresivo: al entrar, solo los Primeros pasos; el saldo llega con la cuenta (decisión 137).
+                        if panelGate.showsBalanceHero {
                         PanelHeroSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
                         .headerBandColumn(.leading)
+                        }
 
                         if !isQuietArrival {
                         PanelQuickActionsRow(

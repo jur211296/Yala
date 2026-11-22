@@ -132,9 +132,9 @@ enum SaludFinancieraDetalleLogica {
         let consejo: String
     }
 
-    /// Las tres secciones, en el orden de las cápsulas.
+    /// Las secciones, en el orden de las cápsulas. «Lo que te queda» (lote 2 de la nota) no sale en «Solo gastos».
     enum Seccion: String, CaseIterable, Identifiable {
-        case presupuestos, compromisos, ritmo
+        case presupuestos, compromisos, ritmo, teQueda
         var id: String { rawValue }
 
         var parte: FinancialScoreDetailKind {
@@ -142,6 +142,7 @@ enum SaludFinancieraDetalleLogica {
             case .presupuestos: .budget
             case .compromisos: .bills
             case .ritmo: .activity
+            case .teQueda: .savings
             }
         }
 
@@ -150,7 +151,13 @@ enum SaludFinancieraDetalleLogica {
             case .presupuestos: FinancialScoreCalculator.weightBudget
             case .compromisos: FinancialScoreCalculator.weightCommitments
             case .ritmo: FinancialScoreCalculator.weightRhythm
+            case .teQueda: FinancialScoreCalculator.weightSavings
             }
+        }
+
+        /// Las que se pintan: sin «Lo que te queda» en «Solo gastos».
+        static func visibles(isExpensesOnlyMode: Bool) -> [Seccion] {
+            isExpensesOnlyMode ? allCases.filter { $0 != .teQueda } : allCases
         }
     }
 
@@ -166,6 +173,8 @@ enum SaludFinancieraDetalleLogica {
         case agregaPagos
         case registraHoy
         case sinDatos
+        /// «Lo que te queda» sin ingresos en el período.
+        case sinIngresos
     }
 
     /// La frase de consejero bajo la nota: qué mueve más la nota este mes.
@@ -334,6 +343,14 @@ enum SaludFinancieraDetalleLogica {
         return activity >= 70 ? .bien : .paraRevisar
     }
 
+    // MARK: - Lo que te queda
+
+    /// Con 50 o más aún queda algo de lo que entra; por debajo, sale más de lo que entra.
+    static func estadoTeQueda(score: FinancialScore) -> Estado {
+        guard let savings = score.savings else { return .sinDatos }
+        return savings >= 50 ? .bien : .paraRevisar
+    }
+
     // MARK: - Nota
 
     /// Lo que dice la cápsula de una parte sin número. `nil` si la parte tiene nota.
@@ -355,6 +372,9 @@ enum SaludFinancieraDetalleLogica {
         case .ritmo:
             guard score.activity == nil else { return nil }
             return .registraHoy
+        case .teQueda:
+            guard score.savings == nil else { return nil }
+            return .sinIngresos
         }
     }
 

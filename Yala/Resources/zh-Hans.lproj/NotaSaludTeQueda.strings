@@ -1,0 +1,21 @@
+/*
+  NotaSaludTeQueda.strings
+  Yala
+
+  La cuarta parte de la nota de salud, «Lo que te queda» (lote 2, decisión de Jürgen del 11-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.NotaSaludTeQueda`).
+*/
+
+"teQueda.name" = "剩下的钱";
+"teQueda.partDetail" = "收入扣除支出后剩下的比例。20 %或以上为 100。";
+"teQueda.sheetExplanation" = "显示本期收入在支出之后还剩多少。20 %或以上为 100。如果支出多于收入，这一项会慢慢下降，但不会让总分一落千丈。在还没有收入之前，这一项不计入。";
+"teQueda.headline.high" = "收入中剩下了不少。继续保持！";
+"teQueda.headline.mid" = "收入中剩下了一些。再多一点就到 20 %了。";
+"teQueda.headline.low" = "本期支出比收入多了一点。小小调整就能改变。";
+"teQueda.headline.empty" = "本期有收入后，你就能看到剩下多少。";
+"teQueda.cta" = "看看钱花在哪";
+"teQueda.cardStep" = "想提高分数，试着把收入留下一部分。";
+"teQueda.lead.left" = "收入 %1$@，支出 %2$@：剩下 %3$@，占收入的 %4$d %%。";
+"teQueda.lead.over" = "收入 %1$@，支出 %2$@：本期支出比收入多 %3$@。";
+"teQueda.lead.empty" = "本期还没有收入。有收入后这一项才开始计入。";
+"teQueda.capsule.empty" = "有收入后";

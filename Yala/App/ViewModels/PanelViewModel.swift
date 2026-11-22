@@ -3436,7 +3436,9 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             // La cobertura de Compromisos parte de «Tu dinero hoy» (sin tarjetas de crédito), la cifra que enseña la
             // hoja de Salud financiera (20-nov-2026).
-            coverageAccounts: FinancialScoreCalculator.coverageAccounts(accounts, scope: healthCoverageScope)
+            coverageAccounts: FinancialScoreCalculator.coverageAccounts(accounts, scope: healthCoverageScope),
+            // «Lo que te queda» no cuenta en «Solo gastos»: sin ingresos no hay nada que medir (lote 2 de la nota).
+            countsSavings: !SessionState.shared.isExpensesOnlyMode
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }

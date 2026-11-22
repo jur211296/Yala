@@ -2175,7 +2175,7 @@
 "panel.health.total.headline.high" = "¡Vas increíble!";
 "panel.health.total.headline.low" = "Pequeños pasos, grandes cambios";
 "panel.health.total.headline.mid" = "Vas con buen ritmo";
-"panel.health.total.sheet.explanation" = "Tu nota sale de tres partes. Cada una pesa lo que dice al lado; si una aún no tiene datos, las otras se reparten su peso. Con datos en menos de dos, todavía no hay nota.";
+"panel.health.total.sheet.explanation" = "Tu nota sale de varias partes. Cada una pesa lo que dice al lado; si una aún no tiene datos, las otras se reparten su peso. Con datos en menos de dos, todavía no hay nota.";
 "panel.health.total.sheet.title" = "Tu salud financiera";
 "panel.health.voiceover.noData" = "sin datos";
 "panel.health.voiceover.score" = "%d de 100";
@@ -8211,12 +8211,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "Planifica un pago para ver tu nota.";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "Tu nota de salud, más precisa";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "Ahora cuenta los días desde tu último registro, con 3 días de gracia, y pasarte un poco de un presupuesto casi no resta. Para subirla, registra seguido y cuida tus límites. La ves en el Panel, en Tus finanzas.";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "Del %1$@ al %2$@";

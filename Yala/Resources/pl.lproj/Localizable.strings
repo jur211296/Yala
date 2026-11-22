@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Zobowiązania";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Twoja kondycja finansowa";
-"panel.health.total.sheet.explanation" = "Twoja ocena składa się z trzech części. Każda waży tyle, ile podano obok; jeśli któraś nie ma jeszcze danych, pozostałe dzielą się jej wagą. Gdy dane ma mniej niż dwie części, oceny jeszcze nie ma.";
+"panel.health.total.sheet.explanation" = "Twoja ocena składa się z kilku części. Każda waży tyle, ile podano obok; jeśli któraś nie ma jeszcze danych, pozostałe dzielą się jej wagą. Gdy dane ma mniej niż dwie części, oceny jeszcze nie ma.";
 "panel.health.total.headline.high" = "Świetnie sobie radzisz!";
 "panel.health.total.headline.mid" = "Dobre tempo, tak trzymaj";
 "panel.health.total.headline.low" = "Małe kroki, duże zmiany";
@@ -8963,12 +8963,6 @@
 
 /* Health card (compact), no score yet: planned payments have no data */
 "panel.health.card.start.bills" = "Zaplanuj płatność, aby zobaczyć swoją ocenę.";
-
-/* What's New 2.3: the financial health score is more precise */
-"whatsNew.v23.healthScore.title" = "Twoja ocena kondycji, dokładniejsza";
-
-/* What's New 2.3: what changed in the financial health score and how to raise it */
-"whatsNew.v23.healthScore.description" = "Teraz liczy dni od twojego ostatniego zapisu, z 3 dniami zapasu, a lekkie przekroczenie budżetu prawie jej nie obniża. Aby ją podnieść, zapisuj regularnie i pilnuj limitów. Znajdziesz ją w Panelu, w sekcji Twoje finanse.";
 
 /* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
 "records.bulk23.deleteSpan" = "Od %1$@ do %2$@";

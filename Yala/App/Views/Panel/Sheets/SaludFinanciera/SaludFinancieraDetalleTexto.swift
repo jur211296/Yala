@@ -59,6 +59,7 @@ extension L10n {
             case .presupuestos: s("section.budgets")
             case .compromisos: s("section.commitments")
             case .ritmo: s("section.rhythm")
+            case .teQueda: L10n.NotaSaludTeQueda.nombre
             }
         }
         static var seccionComoSeCalcula: String { s("section.howItWorks") }
@@ -80,6 +81,7 @@ extension L10n {
             case .agregaPagos: s("capsule.addPayments")
             case .registraHoy: s("capsule.recordToday")
             case .sinDatos: s("capsule.noData")
+            case .sinIngresos: L10n.NotaSaludTeQueda.capsulaSinIngresos
             }
         }
         static var capsulaPista: String { s("capsule.hint") }

@@ -1,0 +1,21 @@
+/*
+  NotaSaludTeQueda.strings
+  Yala
+
+  La cuarta parte de la nota de salud, «Lo que te queda» (lote 2, decisión de Jürgen del 11-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.NotaSaludTeQueda`).
+*/
+
+"teQueda.name" = "Ce qu'il te reste";
+"teQueda.partDetail" = "La part de ce qui est entré qu'il te reste après tes dépenses. À partir de 20 %, 100.";
+"teQueda.sheetExplanation" = "Montre la part de ce qui est entré sur la période qu'il te reste après tes dépenses. À partir de 20 %, c'est 100. Si tu dépenses plus que ce qui entre, elle baisse doucement, sans faire chuter ta note. Tant que rien n'est entré, cette partie ne compte pas.";
+"teQueda.headline.high" = "Il te reste une bonne part de ce qui entre. Continue comme ça !";
+"teQueda.headline.mid" = "Il te reste un peu de ce qui entre. Encore un effort et tu atteins 20 %.";
+"teQueda.headline.low" = "Sur cette période, il sort un peu plus que ce qui entre. Un petit ajustement suffit.";
+"teQueda.headline.empty" = "Dès que de l'argent entre sur cette période, tu verras ce qu'il te reste.";
+"teQueda.cta" = "Voir où part ton argent";
+"teQueda.cardStep" = "Pour la faire monter, essaie de garder une part de ce qui entre.";
+"teQueda.lead.left" = "Entré : %1$@, sorti : %2$@. Il te reste %3$@, soit %4$d %% de ce qui est entré.";
+"teQueda.lead.over" = "Entré : %1$@, sorti : %2$@. Sur cette période, %3$@ de plus sont sortis.";
+"teQueda.lead.empty" = "Rien n'est encore entré sur cette période. Cette partie compte dès que de l'argent entre.";
+"teQueda.capsule.empty" = "Dès qu'il y a une entrée";

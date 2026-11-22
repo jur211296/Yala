@@ -69,6 +69,7 @@ struct SaludFinancieraDetalleView: View {
                 seccionPresupuestos(datos)
                 seccionCompromisos(datos)
                 seccionRitmo(datos)
+                if !soloGastos { seccionTeQueda }
             } else {
                 HStack(spacing: DS.Spacing.sm) {
                     ProgressView()
@@ -188,7 +189,7 @@ struct SaludFinancieraDetalleView: View {
 
     @ViewBuilder
     private func capsulasDePartes(_ datos: Datos?) -> some View {
-        ForEach(Logica.Seccion.allCases) { seccion in
+        ForEach(Logica.Seccion.visibles(isExpensesOnlyMode: soloGastos)) { seccion in
             capsula(seccion, datos: datos)
         }
     }
@@ -198,6 +199,7 @@ struct SaludFinancieraDetalleView: View {
         case .presupuestos: nota.budget
         case .compromisos: nota.bills
         case .ritmo: nota.activity
+        case .teQueda: nota.savings
         }
     }
 
@@ -823,6 +825,40 @@ struct SaludFinancieraDetalleView: View {
         }
     }
 
+    // MARK: - Lo que te queda
+
+    /// Cuánto entró, cuánto salió y lo que queda, con la cifra de la nota (lote 2). Sin ingresos, por qué no cuenta.
+    private var seccionTeQueda: some View {
+        seccion(.teQueda, estado: Logica.estadoTeQueda(score: nota)) {
+            tarjeta {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    if let cifras = nota.savingsFigures, let tasa = cifras.rate {
+                        let entro = monto(cifras.income, estimado: cifras.incomeIsApproximate)
+                        let salio = monto(cifras.expense, estimado: cifras.expenseIsApproximate)
+                        frase(cifras.left >= 0
+                              ? Texto2.fraseQueda(entro: entro, salio: salio,
+                                                  queda: monto(cifras.left, estimado: cifras.isApproximate),
+                                                  porcentaje: Int((tasa * 100).rounded()))
+                              : Texto2.fraseSePasa(entro: entro, salio: salio,
+                                                   deMas: monto(-cifras.left, estimado: cifras.isApproximate)),
+                              id: "health_savings_lead")
+                    } else {
+                        frase(Texto2.fraseSinIngresos, id: "health_savings_lead")
+                    }
+                }
+                .padding(DS.Spacing.md)
+                if nota.savingsFigures != nil {
+                    Divider().padding(.leading, DS.Spacing.md)
+                    filaEnlace(Texto2.boton, icono: "chart.pie", id: "health_savings_open_distribution") {
+                        abrir(.distribucion)
+                    }
+                }
+            }
+        }
+    }
+
+    private typealias Texto2 = L10n.NotaSaludTeQueda
+
     private func tira(_ racha: Logica.Racha) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(spacing: 0) {
@@ -865,6 +901,11 @@ struct SaludFinancieraDetalleView: View {
                     Divider()
                     filaParte(L10n.Panel.Health.subScoreActivity, L10n.Panel.Health.partActivity,
                               FinancialScoreCalculator.weightRhythm, nota.activity)
+                    if !soloGastos {
+                        Divider()
+                        filaParte(L10n.NotaSaludTeQueda.nombre, L10n.NotaSaludTeQueda.detalleParte,
+                                  FinancialScoreCalculator.weightSavings, nota.savings)
+                    }
                 }
                 if let falta = FinancialScoreCopy.missingLine(for: nota) {
                     Text(falta)
@@ -1025,6 +1066,8 @@ enum SaludFinancieraDetalleDestino: Equatable {
     case resumenIA
     /// La hoja de Yala Pro.
     case pro
+    /// Estadísticas › Distribución: en qué se va el dinero («Lo que te queda»).
+    case distribucion
 }
 
 extension Color {

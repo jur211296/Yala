@@ -1,0 +1,24 @@
+/*
+  Novedades23.strings
+  Yala
+
+  Las tarjetas de Novedades 2.3, con el anuncio del iPhone Duo (decisión 118 de Jürgen, 17-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.Novedades23`).
+*/
+
+"novedades23.duo.title" = "为 iPhone Duo 打造";
+"novedades23.duo.description" = "展开时尽享大屏幕，列表和详情并排显示；合上时 Yala 自动适配外屏。";
+"novedades23.cards.title" = "账户变成卡片";
+"novedades23.cards.description" = "用模板、颜色和卡号后四位设计每个账户的卡片。在面板中轻点，即可查看余额、已出账金额和还款日。";
+"novedades23.groups.title" = "群组更简单";
+"novedades23.groups.description" = "用照片或语音分摊小票，用更少的转账结清欠款，还能把 Splitwise 或 Tricount 的群组连同余额一起导入。";
+"novedades23.records.title" = "记录更顺手";
+"novedades23.records.description" = "一键按账户或类别筛选，在日历中跳转月份，还能把任何一笔记录变成定期付款。";
+"novedades23.health.title" = "财务健康分数，更全面了";
+"novedades23.health.description" = "现在也会看你的收入中剩下多少。在面板中轻点，看看本月影响最大的是什么。";
+"novedades23.planning.title" = "今天可以花多少";
+"novedades23.planning.description" = "每个预算都会告诉你今天能花多少，Yala 还会推荐它在你的记录中发现的订阅。";
+"novedades23.ant.title" = "积少成多的小额支出";
+"novedades23.ant.description" = "看看小额消费加起来有多少，并通过「显示预测」看看本月可能如何收尾。";
+"novedades23.hide.title" = "隐藏金额";
+"novedades23.hide.description" = "轻点面板上的眼睛图标，数字就会隐藏：有人看你屏幕时很方便。";

@@ -1,0 +1,21 @@
+/*
+  NotaSaludTeQueda.strings
+  Yala
+
+  La cuarta parte de la nota de salud, «Lo que te queda» (lote 2, decisión de Jürgen del 11-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.NotaSaludTeQueda`).
+*/
+
+"teQueda.name" = "O que te sobra";
+"teQueda.partDetail" = "Quanto do que entrou te sobra depois das despesas. Com 20 % ou mais, 100.";
+"teQueda.sheetExplanation" = "Mostra quanto do que entrou no período te sobra depois das tuas despesas. Com 20 % ou mais vale 100. Se sai mais do que entra, desce aos poucos, sem afundar a tua nota. Enquanto não entrar nada, não conta.";
+"teQueda.headline.high" = "Sobra-te uma boa parte do que entra. Continua assim!";
+"teQueda.headline.mid" = "Sobra-te um pouco do que entra. Mais um pouco e chegas aos 20 %.";
+"teQueda.headline.low" = "Neste período sai um pouco mais do que entra. Um pequeno ajuste muda isso.";
+"teQueda.headline.empty" = "Quando entrar dinheiro neste período, vais ver quanto te sobra.";
+"teQueda.cta" = "Ver onde gastas";
+"teQueda.cardStep" = "Para a subir, tenta guardar algo do que entra.";
+"teQueda.lead.left" = "Entrou %1$@ e saiu %2$@: sobram-te %3$@, %4$d %% do que entrou.";
+"teQueda.lead.over" = "Entrou %1$@ e saiu %2$@: neste período saiu %3$@ a mais do que entrou.";
+"teQueda.lead.empty" = "Ainda não entrou dinheiro neste período. Esta parte começa a contar quando entrar algo.";
+"teQueda.capsule.empty" = "Quando entrar algo";

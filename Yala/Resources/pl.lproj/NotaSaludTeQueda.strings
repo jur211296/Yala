@@ -1,0 +1,21 @@
+/*
+  NotaSaludTeQueda.strings
+  Yala
+
+  La cuarta parte de la nota de salud, «Lo que te queda» (lote 2, decisión de Jürgen del 11-nov-2026). Tabla
+  propia, leída con el idioma de la app (`L10n.NotaSaludTeQueda`).
+*/
+
+"teQueda.name" = "Co ci zostaje";
+"teQueda.partDetail" = "Ile z tego, co wpłynęło, zostaje ci po wydatkach. Od 20 % to 100.";
+"teQueda.sheetExplanation" = "Pokazuje, jaka część tego, co wpłynęło w tym okresie, zostaje ci po wydatkach. Od 20 % to 100. Jeśli wydajesz więcej, niż wpływa, wynik spada łagodnie, bez pogrążania całej oceny. Dopóki nic nie wpłynie, ta część się nie liczy.";
+"teQueda.headline.high" = "Zostaje ci spora część tego, co wpływa. Tak trzymaj!";
+"teQueda.headline.mid" = "Zostaje ci trochę z tego, co wpływa. Jeszcze trochę i dojdziesz do 20 %.";
+"teQueda.headline.low" = "W tym okresie wydajesz trochę więcej, niż wpływa. Mała zmiana to odwróci.";
+"teQueda.headline.empty" = "Gdy w tym okresie coś wpłynie, zobaczysz, ile ci zostaje.";
+"teQueda.cta" = "Zobacz, na co wydajesz";
+"teQueda.cardStep" = "Aby ją podnieść, spróbuj odłożyć coś z tego, co wpływa.";
+"teQueda.lead.left" = "Wpłynęło %1$@, wydano %2$@: zostaje ci %3$@, czyli %4$d %% tego, co wpłynęło.";
+"teQueda.lead.over" = "Wpłynęło %1$@, wydano %2$@: w tym okresie wydano %3$@ więcej, niż wpłynęło.";
+"teQueda.lead.empty" = "W tym okresie nic jeszcze nie wpłynęło. Ta część zacznie się liczyć, gdy coś wpłynie.";
+"teQueda.capsule.empty" = "Gdy coś wpłynie";
