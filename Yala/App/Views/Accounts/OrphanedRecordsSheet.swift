@@ -30,7 +30,7 @@ struct OrphanedRecordsSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(L10n.Action.cancel) { dismiss() }
+                        YalaToolbarTextButton(L10n.Action.cancel) { dismiss() }
                             .disabled(viewModel.phase == .working)
                             .accessibilityIdentifier("orphaned_records_cancel")
                     }

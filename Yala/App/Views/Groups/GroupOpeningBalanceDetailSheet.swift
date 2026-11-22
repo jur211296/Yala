@@ -124,7 +124,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                 }
                 if canManage {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Action.edit) {
+                        YalaToolbarTextButton(L10n.Action.edit) {
                             onEdit()
                         }
                         .fontWeight(.semibold)

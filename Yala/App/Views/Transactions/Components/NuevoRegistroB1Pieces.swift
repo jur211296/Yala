@@ -127,7 +127,6 @@ struct AmountWithEstimateLayout: Layout {
 /// color (Jürgen, 2026-11-20: «algo más neutro para que no se vea todo tan colorido»). Sin valor, el rótulo en gris; si
 /// falta para guardar, el borde de acento de siempre (L2-2). El único chip relleno de la hoja es la subcategoría.
 struct RecordValueChip: View {
-    @Environment(\.yalaTheme) private var theme
     let icon: String
     var iconColor: Color? = nil
     let text: String
@@ -137,26 +136,43 @@ struct RecordValueChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(isSet ? AnyShapeStyle(iconColor ?? .secondary) : AnyShapeStyle(.secondary))
-                    .accessibilityHidden(true)
-                Text(text)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(isSet ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, DS.FormRow.paddingV)
-            .padding(.vertical, DS.Spacing.sm)
-            .background(.thCard, in: Capsule())
-            .overlay(Capsule().stroke(isMissing ? theme.accent : .clear, lineWidth: 1.5))
-            .contentShape(Capsule())
+            RecordValueChipLabel(icon: icon, iconColor: iconColor, text: text, isSet: isSet, isMissing: isMissing)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(text)
         .accessibilityValue(isMissing ? L10n.UXL2.missingChipValue : "")
         .accessibilityAddTraits(isSet ? .isSelected : [])
+    }
+}
+
+/// Lo que pinta `RecordValueChip`, para un chip que abre un `Menu` en vez de una acción (el grupo del editor de la
+/// Bandeja). `text == nil` = solo el ícono, cuando la fila no cabe con el texto.
+struct RecordValueChipLabel: View {
+    @Environment(\.yalaTheme) private var theme
+    let icon: String
+    var iconColor: Color? = nil
+    let text: String?
+    let isSet: Bool
+    var isMissing: Bool = false
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: icon)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(isSet ? AnyShapeStyle(iconColor ?? .secondary) : AnyShapeStyle(.secondary))
+                .accessibilityHidden(true)
+            if let text {
+                Text(text)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(isSet ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, DS.FormRow.paddingV)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(.thCard, in: Capsule())
+        .overlay(Capsule().stroke(isMissing ? theme.accent : .clear, lineWidth: 1.5))
+        .contentShape(Capsule())
     }
 }
 

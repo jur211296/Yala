@@ -104,7 +104,7 @@ struct PersonalDetailsView: View {
             // UX 2.2 · L16-2: «Listo» arriba a la derecha, que es como se cierra una hoja que guarda.
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.Action.done) {
+                    YalaToolbarTextButton(L10n.Action.done) {
                         saveAndDismiss()
                     }
                     .accessibilityIdentifier("personal_details_done")

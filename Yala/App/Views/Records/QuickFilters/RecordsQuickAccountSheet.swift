@@ -55,7 +55,7 @@ struct RecordsQuickAccountSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if !selection.isEmpty {
-                        Button(L10n.Filters.allAccounts) { clear() }
+                        YalaToolbarTextButton(L10n.Filters.allAccounts) { clear() }
                             .accessibilityIdentifier("records_quick_account_all")
                     }
                 }

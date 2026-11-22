@@ -82,13 +82,10 @@ struct FavoritesListView: View {
                                 editMode?.wrappedValue = .inactive
                             })
                         } else {
-                            Button {
+                            YalaToolbarTextButton(L10n.Action.edit) {
                                 editMode?.wrappedValue = .active
-                            } label: {
-                                Text(L10n.Action.edit)
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(Color.primary)
                             }
+                            .font(DS.Typography.headline)
                             .frame(height: 32)
                         }
                     }

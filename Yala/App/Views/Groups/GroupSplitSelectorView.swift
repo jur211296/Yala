@@ -62,7 +62,7 @@ struct GroupSplitSelectorView: View {
                 // Solo en grupos de 2: volver a la pre-pantalla de 4 opciones rápidas.
                 if let onRequestSimpleOptions {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Groups.Expense.TwoPerson.quickOptions) {
+                        YalaToolbarTextButton(L10n.Groups.Expense.TwoPerson.quickOptions) {
                             onRequestSimpleOptions()
                             dismiss()
                         }

@@ -69,7 +69,7 @@ struct SmartInsightsSettingsView: View {
             .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) { dismiss() }
+                    YalaToolbarTextButton(L10n.Action.done) { dismiss() }
                 }
             }
         }

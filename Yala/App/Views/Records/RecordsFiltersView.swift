@@ -204,7 +204,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 // Quita todo, aplica y cierra en un toque (L3). Antes estaba al fondo de la hoja, solo vaciaba lo elegido y
                 // había que tocar «Aplicar» después.
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Filters.clearFilters) {
+                    YalaToolbarTextButton(L10n.Filters.clearFilters) {
                         clearApplyAndClose()
                     }
                     .disabled(!canClearFilters)
@@ -212,7 +212,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.apply) {
+                    YalaToolbarTextButton(L10n.Action.apply) {
                         // Sin cambios no se escribe nada: abrir y aplicar no puede alterar el filtro.
                         if hasChanges { commitToViewModel() }
                         dismiss()

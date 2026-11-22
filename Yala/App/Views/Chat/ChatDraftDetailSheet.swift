@@ -82,7 +82,7 @@ struct ChatDraftDetailSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button(L10n.Chat.Draft.discardButton) {
+            YalaToolbarTextButton(L10n.Chat.Draft.discardButton) {
                 focusedField = nil
                 onDiscard()
                 dismiss()
@@ -90,7 +90,7 @@ struct ChatDraftDetailSheet: View {
             .accessibilityIdentifier("chat_draft_detail_discard")
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button(L10n.Action.done) {
+            YalaToolbarTextButton(L10n.Action.done) {
                 focusedField = nil
                 dismiss()
             }

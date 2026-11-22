@@ -99,7 +99,7 @@ struct AsistenteCreacionView<Contenido: View>: View {
                         .accessibilityIdentifier("asistente_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(AsistenteCreacionTexto.usarFormulario, action: alUsarFormulario)
+                    YalaToolbarTextButton(AsistenteCreacionTexto.usarFormulario, action: alUsarFormulario)
                         .accessibilityHint(AsistenteCreacionTexto.usarFormularioPista)
                         .accessibilityIdentifier("asistente_use_form")
                 }

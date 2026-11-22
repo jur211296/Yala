@@ -85,7 +85,7 @@ struct GroupsAccountIsCompleteBlockView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Action.close) { onDismiss() }
+                    YalaToolbarTextButton(L10n.Action.close) { onDismiss() }
                         .accessibilityIdentifier("groups_account_complete_close")
                 }
             }

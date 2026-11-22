@@ -94,6 +94,8 @@ struct InboxDraftEditSheet: View {
     // Group conversion: grupos elegibles resueltos en .task (solo para gastos puntuales pendientes).
     // Vacío = no ofrecer la acción "Convertir a gasto compartido".
     @State private var eligibleGroups: [SplitGroup] = []
+    /// El grupo elegido en el chip de grupo (22-nov-2026): con él, «Guardar» convierte el borrador en gasto de ese grupo.
+    @State private var chosenGroupID: UUID?
 
     // Callbacks
     var onApproved: (() -> Void)?
@@ -119,11 +121,24 @@ struct InboxDraftEditSheet: View {
         selectedAccount != nil && amount != nil && selectedSubcategory != nil
     }
 
+    /// El grupo del chip, si sigue entre los elegibles.
+    private var chosenGroup: SplitGroup? {
+        guard let chosenGroupID else { return nil }
+        return eligibleGroups.first { $0.id == chosenGroupID }
+    }
+
+    /// «Guardar»: con grupo, solo el monto (la cuenta y la categoría se eligen en el gasto de grupo).
+    private var canSave: Bool {
+        InboxDraftGroupChipLogic.canSave(
+            hasChosenGroup: chosenGroup != nil, hasAmount: amount != nil, isReadyToApprove: isReadyToApprove)
+    }
+
     private var missingFieldsText: String? {
         var missing: [String] = []
-        if selectedAccount == nil { missing.append(L10n.Transaction.account) }
+        let hasGroup = chosenGroup != nil
+        if !hasGroup, selectedAccount == nil { missing.append(L10n.Transaction.account) }
         if amount == nil { missing.append(L10n.Transaction.amount) }
-        if selectedSubcategory == nil { missing.append(L10n.Transaction.subcategory) }
+        if !hasGroup, selectedSubcategory == nil { missing.append(L10n.Transaction.subcategory) }
         guard !missing.isEmpty else { return nil }
         return "\(L10n.Inbox.missingLabel) \(missing.joined(separator: ", "))"
     }
@@ -423,10 +438,22 @@ struct InboxDraftEditSheet: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel(L10n.Action.delete)
-            } else if payNowTitle == nil, canDiscard || canDeleteForever {
+            } else if payNowTitle == nil, offersRecurringInMenu || canDiscard || canDeleteForever {
                 // Pendiente: lo que destruye va en un menú «⋯» con texto, y arriba queda una sola X, la que cierra
                 // (UX 2.2 · L4-5, variante 2). Antes era una ⓧ roja sin texto que se leía como «cerrar» o «borrar».
+                // «Guardar y hacer recurrente» vive aquí desde el 22-nov-2026 (antes, un enlace bajo «Guardar»).
                 Menu {
+                    if offersRecurringInMenu {
+                        Button {
+                            approvesIntoRecurring = true
+                            approveDraft()
+                        } label: {
+                            Label(L10n.RecurringFromRecord.approveAndMakeRecurring, systemImage: "repeat")
+                        }
+                        .disabled(!isReadyToApprove)
+                        .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                        .accessibilityIdentifier("inbox_approve_and_make_recurring_button")
+                    }
                     if canDiscard {
                         Button {
                             rejectDraft()
@@ -458,6 +485,19 @@ struct InboxDraftEditSheet: View {
     /// nada (un gasto de grupo solo se quita desde su grupo; la marca viva de una liquidación y el aviso de importe
     /// cambiado no se borran). Mismas condiciones que `rejectDraft` y `deleteDraft`.
     private var canDiscard: Bool { !draft.sourceType.blocksInboxDismissal }
+
+    /// «Guardar y hacer recurrente» (encargo del 15-nov): aprueba como siempre y sigue en el editor de recurrentes con el
+    /// registro como primer pago. No en lo que ya viene de un recurrente, desde «Pagar ahora» ni con un grupo elegido.
+    private var offersRecurringInMenu: Bool {
+        InboxDraftGroupChipLogic.offersRecurringInMenu(
+            offersRecurring: payNowTitle == nil && RecurringFromRecordLogic.offersApproveAndMakeRecurring(
+                sourceType: draft.sourceType,
+                sourceScheduledPaymentID: draft.sourceScheduledPaymentID,
+                isPending: initialStatus == .pending
+            ),
+            hasChosenGroup: chosenGroup != nil
+        )
+    }
 
     private var canDeleteForever: Bool {
         !draft.sourceType.blocksInboxDismissal && !draft.isLiveSettlementApprovalMark
@@ -680,10 +720,38 @@ struct InboxDraftEditSheet: View {
 
     // MARK: - Bottom Chips
 
-    /// La fila de abajo de la hoja B1, siempre en una línea: Hoy · Cuenta · #. Si no cabe, encoge la cuenta y trunca su
-    /// nombre. Una tarjeta con varias monedas dice la tarjeta; su línea la elige la cápsula de moneda. Lo que falta para
-    /// aprobar, con el borde de acento.
+    /// La fila de abajo de la hoja B1, siempre en una línea: Hoy · Cuenta · # · Grupo. Sin grupo elegido, si «Grupo» no
+    /// cabe, el chip enseña solo su ícono. Con un grupo elegido enseña su nombre y, si no cabe, encoge con la cuenta
+    /// (truncan los dos). Si aún no cabe, encoge la cuenta y trunca su nombre. Una tarjeta con varias monedas dice la
+    /// tarjeta; su línea la elige la cápsula de moneda. Lo que falta para aprobar, con el borde de acento.
+    @ViewBuilder
     private var bottomChips: some View {
+        Group {
+            if chosenGroup != nil {
+                bottomChipRow(groupIconOnly: false)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    bottomChipRow(groupIconOnly: false)
+                    bottomChipRow(groupIconOnly: true)
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .onChange(of: isExpense) { _, _ in releaseGroupIfItNoLongerFits() }
+    }
+
+    private var showsGroupChip: Bool {
+        InboxDraftGroupChipLogic.showsChip(
+            sourceType: draft.sourceType,
+            isExpense: isExpense,
+            hasEligibleGroups: !eligibleGroups.isEmpty,
+            status: initialStatus,
+            isPayingNow: payNowTitle != nil,
+            hasChosenGroup: chosenGroup != nil
+        )
+    }
+
+    private func bottomChipRow(groupIconOnly: Bool) -> some View {
         OneLineChipRow(spacing: DS.Spacing.sm) {
             RecordDateValueChip(text: dateChipText) {
                 dismissKeyboard()
@@ -713,8 +781,66 @@ struct InboxDraftEditSheet: View {
                 showTagSelector = true
             }
             .accessibilityIdentifier("draft_editor_tags_chip")
+
+            // El grupo (22-nov-2026, sustituye a «Convertir a gasto compartido»): elegido aquí, «Guardar» lo convierte.
+            if showsGroupChip {
+                groupChip(iconOnly: groupIconOnly)
+                    .shrinksInChipRow(chosenGroup != nil)
+            }
         }
-        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// El chip de grupo: un menú con los grupos donde se puede apuntar el gasto y, con uno elegido, «Sin grupo».
+    private func groupChip(iconOnly: Bool) -> some View {
+        let chosen = chosenGroup
+        return Menu {
+            ForEach(eligibleGroups, id: \.id) { group in
+                Button {
+                    chooseGroup(group.id)
+                } label: {
+                    if group.id == chosen?.id {
+                        Label(group.name, systemImage: "checkmark")
+                    } else {
+                        Text(group.name)
+                    }
+                }
+            }
+            if chosen != nil {
+                Divider()
+                Button {
+                    chooseGroup(nil)
+                } label: {
+                    Label(L10n.BandejaChipGrupo.none, systemImage: "person")
+                }
+                .accessibilityIdentifier("draft_editor_group_none")
+            }
+        } label: {
+            RecordValueChipLabel(
+                icon: "person.2",
+                iconColor: chosen.map { Color(hex: $0.colorHex) },
+                text: iconOnly ? nil : (chosen?.name ?? L10n.BandejaChipGrupo.chip),
+                isSet: chosen != nil
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.BandejaChipGrupo.chip)
+        .accessibilityValue(chosen?.name ?? "")
+        .accessibilityHint(L10n.BandejaChipGrupo.chipHint)
+        .accessibilityIdentifier("draft_editor_group_chip")
+    }
+
+    private func chooseGroup(_ id: UUID?) {
+        DS.Haptic.selection()
+        chosenGroupID = id
+    }
+
+    /// Un ingreso no se comparte: al pasar a ingreso, el grupo elegido se suelta.
+    private func releaseGroupIfItNoLongerFits() {
+        guard chosenGroupID != nil else { return }
+        if !InboxDraftGroupChipLogic.keepsChosenGroup(
+            chosenGroupID, isExpense: isExpense, eligibleGroupIDs: Set(eligibleGroups.map(\.id))) {
+            chosenGroupID = nil
+        }
     }
 
     private var subcategoryChipColor: Color? {
@@ -784,69 +910,34 @@ struct InboxDraftEditSheet: View {
                     .accessibilityIdentifier("inbox_return_to_pending_button")
                 }
 
-                // Approve button (primary)
+                // «Guardar». Con un grupo elegido en el chip, convierte el borrador en gasto de ese grupo (crea un
+                // SplitExpense en vez de un TransactionItem personal): no exige subcategoría ni cuenta personal (se
+                // eligen en el form de grupo), así que un borrador de Apple Pay sin clasificar también puede ir a un
+                // grupo. «Guardar y hacer recurrente» está en el menú «…» (22-nov-2026).
                 YalaPrimaryButton(
                     L10n.Inbox.approve,
-                    isDisabled: !isReadyToApprove
+                    isDisabled: !canSave
                 ) {
-                    approvesIntoRecurring = false
-                    approveDraft()
+                    if let group = chosenGroup {
+                        convertToGroup(group)
+                    } else {
+                        approvesIntoRecurring = false
+                        approveDraft()
+                    }
                 }
-                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                .accessibilityHint(!canSave ? L10n.Accessibility.approveCompleteHint : "")
                 .accessibilityIdentifier("inbox_approve_button")
             }
-
-            // «Aprobar y hacer recurrente» (encargo del 15-nov): aprueba como siempre y sigue en el editor de recurrentes
-            // con el registro como primer pago. No en lo que ya viene de un recurrente ni desde «Pagar ahora».
-            if payNowTitle == nil, RecurringFromRecordLogic.offersApproveAndMakeRecurring(
-                sourceType: draft.sourceType,
-                sourceScheduledPaymentID: draft.sourceScheduledPaymentID,
-                isPending: initialStatus == .pending
-            ) {
-                Button {
-                    approvesIntoRecurring = true
-                    approveDraft()
-                } label: {
-                    Label(L10n.RecurringFromRecord.approveAndMakeRecurring, systemImage: "repeat")
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(isReadyToApprove ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.tertiary))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!isReadyToApprove)
-                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
-                .accessibilityIdentifier("inbox_approve_and_make_recurring_button")
-            }
-
-            // Acción terciaria: redirigir el gasto a un grupo (crea un SplitExpense en vez de una
-            // TransactionItem personal). Independiente de isReadyToApprove — convertir NO exige
-            // subcategoría ni cuenta personal (se definen en el form de grupo), así que un draft
-            // de Apple Pay sin clasificar también puede convertirse. saveDraft() primero para que
-            // el template refleje los edits vivos; si el usuario cancela el form, el draft queda igual.
-            if payNowTitle == nil, DraftConversionEligibilityLogic.canOffer(
-                sourceType: draft.sourceType,
-                isExpense: isExpense,
-                hasAmount: amount != nil,
-                hasEligibleGroups: !eligibleGroups.isEmpty,
-                status: initialStatus
-            ) {
-                Button {
-                    saveDraft()
-                    onConvertToGroupExpense?(draft, eligibleGroups)
-                    dismiss()
-                } label: {
-                    Text(L10n.Inbox.convertToShared)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(theme.accentText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("inbox_convert_to_shared_button")
-            }
         }
+    }
+
+    /// El flujo de convertir a compartido de siempre, ya con el grupo elegido: `saveDraft()` primero para que el form de
+    /// grupo se prellene con lo editado; quien presenta la hoja abre el form directo (un solo grupo). Si se cancela el
+    /// form, el borrador queda igual.
+    private func convertToGroup(_ group: SplitGroup) {
+        saveDraft()
+        onConvertToGroupExpense?(draft, [group])
+        dismiss()
     }
 
     // MARK: - Helpers
@@ -938,6 +1029,7 @@ struct InboxDraftEditSheet: View {
         if selectedAccount?.persistentModelID != initialAccount?.persistentModelID { return true }
         if selectedSubcategory?.persistentModelID != initialSubcategory?.persistentModelID { return true }
         if isExpense != initialIsExpense { return true }
+        if chosenGroup != nil { return true }
 
         // Compare tags by ID
         let currentTagIDs = Set(selectedTags.map { $0.persistentModelID })

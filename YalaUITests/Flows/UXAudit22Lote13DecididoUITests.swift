@@ -297,9 +297,7 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         let row = app.buttons["inbox_draft_row_Almuerzo equipo"]
         XCTAssertTrue(row.waitForExistence(timeout: 5), "No apareció el borrador a convertir.")
         row.tap()
-        let convert = app.buttons["inbox_convert_to_shared_button"]
-        XCTAssertTrue(convert.waitForExistence(timeout: 5), "No apareció «Convertir a gasto compartido».")
-        convert.tap()
+        app.chooseDraftGroupAndSave("Viaje a Cusco")
         let save = app.buttons["group_expense_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 15), "No montó el formulario de grupo.")
         save.tap()

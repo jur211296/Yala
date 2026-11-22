@@ -41,7 +41,7 @@ struct RecurringProposalsSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(PagosRecurrentesText.settingsDone) { dismiss() }
+                    YalaToolbarTextButton(PagosRecurrentesText.settingsDone) { dismiss() }
                         .accessibilityIdentifier("recurring_settings_done")
                 }
             }

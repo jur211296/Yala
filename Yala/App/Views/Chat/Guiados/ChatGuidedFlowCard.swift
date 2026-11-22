@@ -1557,7 +1557,7 @@ struct ChatGuidedCreatedListSheet: View {
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.IAGuiados.closeSheet) { dismiss() }
+                    YalaToolbarTextButton(L10n.IAGuiados.closeSheet) { dismiss() }
                         .accessibilityIdentifier("chat_guided_list_close")
                 }
             }

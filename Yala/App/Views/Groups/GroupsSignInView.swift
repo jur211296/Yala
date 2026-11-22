@@ -173,7 +173,7 @@ struct GroupsSignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Common.cancel) { dismiss() }
+                    YalaToolbarTextButton(L10n.Common.cancel) { dismiss() }
                         .accessibilityIdentifier("groups_signin_cancel")
                 }
             }

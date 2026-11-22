@@ -1603,7 +1603,7 @@ struct OnboardingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.Action.close) {
+                    YalaToolbarTextButton(L10n.Action.close) {
                         showSubcategorySheet = false
                     }
                 }
@@ -1760,7 +1760,7 @@ struct OnboardingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Action.cancel) {
+                    YalaToolbarTextButton(L10n.Action.cancel) {
                         showCurrencyPicker = false
                     }
                 }
