@@ -125,3 +125,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Gate apilado sobre un PR abierto](feedback_gate_apilado_sobre_un_pr_abierto.md) — 21-nov: `--base <cabeza del PR de abajo>` en interfaz-de-lo-tocado y checklist; si no, 230 clases ajenas.
 - [Medir el CI con la API de Actions](reference_medir_el_ci_con_la_api_de_actions.md) — cola/prep/build por job; base por head_branch; reintentos inflan picos; factura sin scope user.
 - [La caché de DerivedData se mide en su ruta](feedback_la_cache_de_derived_data_se_mide_en_su_ruta.md) — copiada a otra ruta recompila entero (241 s vs 23 s); varios tipos de cambio.
+- [Contar recálculos con latido y sonda](reference_contar_recalculos_con_latido_y_sonda.md) — latido de 5 ms en el main actor + sonda de pila; separa escenarios del ciclo de 60 s.
