@@ -1,19 +1,22 @@
 ---
 name: project-cuenta-sola-al-leer-parte-2-espera
-description: Qué espera la parte 2 (reglas de cuenta) de «la cuenta sola al leer» y por qué la capa B de la foto solo va en la nube
+description: Reglas de captura (parte 2 de la cuenta sola al leer) hechas el 21-nov; qué falta fuera del código y por qué viven en la cuenta
 metadata:
   type: project
 ---
 
-Parte 1 hecha el 2026-11-20 (A + B). La parte 2 (`tickets/backlog/2026-11-20-captura-cuenta-automatica-y-reglas-parte-2.md`)
-espera dos cosas de Jürgen antes de valer la pena encolarla:
+Parte 2 implementada el 2026-11-21; la sesión se paró por el límite semanal y la continuación del 2026-11-22 la llevó
+al PR (encargo `2026-11-22-cuenta-sola-al-leer-parte-2-continuacion`). Jürgen
+decidió ese día que los nombres y las reglas viajen también en iCloud privado con el permiso de voz y foto versionado.
 
-- **Qué texto entrega el dato «Tarjeta» de Wallet** en un pago real en el iPhone 14 (necesita su tarjeta y su mano). Si no
-  distingue tarjetas, la regla «Paga con Apple Pay» se cae.
-- **Si los nombres de cuentas viajan también en iCloud privado.** Lo dejé solo en la nube porque el permiso de foto en
-  privado solo promete «la foto»; extenderlo exige versionar `aiConsent.processingMessage` (es suya la decisión).
+Falta, fuera de la sesión:
+- **CloudKit `CD_captureRulesRaw`** (Dan, Development → Production, dos contenedores) antes de subir NINGÚN build.
+- **Supabase producción `g34_01` + Worker v9**: producción corre manifest v8 con los campos de IA ya desplegados.
+- **Device-QA**: qué texto da «Tarjeta» de Wallet. Si es genérico, «Paga con Apple Pay» se retira.
 
-**Why:** el encargo pedía A + B sin distinguir modos; tomé la opción más segura en nocturno.
-**How to apply:** al retomar, pregunta las dos antes de diseñar; no muevas la capa B a privado sin la versión del permiso.
+**Why:** las reglas viven en `Account.captureRulesRaw` y no en un `@Model` porque el canal de la Nube solo versiona
+columnas; una entidad nueva habría exigido versión por tabla en Worker, Merkle y cliente con los iPhone de 2.2 delante.
+**How to apply:** si alguien propone pasar las reglas a un modelo propio, ese es el coste; y no subas un build con
+reglas sin confirmar el campo de CloudKit en Production.
 
 Relacionado: [[feedback-cuando-la-app-pregunta-al-usuario]].

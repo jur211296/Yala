@@ -34,4 +34,10 @@ Medido el 2026-11-14 (lote 1 de bugs de entrada, gateway en paralelo).
   falsas). Saber qué base corre: `GET …/workers/scripts/<worker>/deployments` ordenado por `created_on` (no viene
   ordenado) y su `workers/message`, si quien desplegó lo anotó: anótalo tú con `--message`.
 
+- **Repetido el 2026-11-21 (reglas de captura): staging y producción pueden necesitar bases distintas.** Staging recibió
+  manifest v9 (con su columna ya en Supabase staging) y producción solo los cambios de `src/ai/` sobre su manifest v8: un
+  Worker v9 sin la columna en la base de producción rompe la subida de cuentas. Cada uno con su base verificada (0
+  líneas) y diff final solo de lo mío. La renovación del token por `refresh_token` (script en Python, token a un fichero
+  0600 del scratchpad) funcionó sin pedir nada.
+
 Relacionado: [[feedback-verificar-prod-del-gateway-con-token-acunado]].

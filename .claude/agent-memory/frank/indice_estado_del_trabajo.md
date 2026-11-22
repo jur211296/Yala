@@ -109,5 +109,5 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [Doce PR de 2.3 en desbloqueo](project_doce_prs_de_2_3_en_desbloqueo.md) — 14-nov: colgados por conflicto en cola de auto-merge; dos cadenas `desbloquear-pr-*`, cards en blocked.
 - [Fallo conocido de UI en 2.3](project_fallos_conocidos_ui_2_3.md) — IPhoneLandscape con XCTExpectFailure por c94z; quitarlo al decidir Jürgen.
 - [La ida del 14 no cuadra (17-nov)](project_ida_que_no_cuadra_en_el_iphone_14.md) — test@yala-app.pe tras un reset del espejo: verify>failed ×3; mide antes de repetir la prueba.
-- [Cuenta sola al leer: qué espera la parte 2](project_cuenta_sola_al_leer_parte_2_espera.md) — 20-nov: medir «Tarjeta» de Wallet y decidir B en privado (permiso).
+- [Reglas de captura: qué falta](project_cuenta_sola_al_leer_parte_2_espera.md) — 22-nov en PR; CloudKit, Supabase prod + Worker v9 y medir «Tarjeta».
 - [IA ampliada al 100 %; conector espera a Dan](project_ia_ampliada_100_y_conector_espera_a_dan.md) — 22-nov: medición hasta ~6-dic; mcp.yala-app.pe reservado, despliega Dan.
