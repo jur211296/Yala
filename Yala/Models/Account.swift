@@ -49,6 +49,12 @@ final class Account {
     /// Sin día de corte se lee como 0. CloudKit: `CD_creditCardReminderDaysBefore`. Modo Nube:
     /// `accounts.credit_card_reminder_days_before`, `since: 5`.
     var creditCardReminderDaysBefore: Int = 0
+    /// El límite de la tarjeta de crédito, en la divisa de la cuenta (decisión de Jürgen del 22-nov-2026, opción A: da el
+    /// «X % usado · disponible de N» de la hoja de la cuenta). `nil` = sin límite, como toda cuenta de antes; nunca 0 ni
+    /// negativo (`LimiteTarjetaLogica.normalizado`). Solo lo escribe la principal de una tarjeta de crédito.
+    /// CloudKit: campo nuevo `CD_creditLimit` (DOUBLE), en los `.ckdb` de desarrollo; a Production lo despliega Dan antes
+    /// de publicar un build que lo escriba. Modo Nube: `accounts.credit_limit`, `since: 10`.
+    var creditLimit: Double?
 
     /// Tarjeta con varias divisas: si esta cuenta es una LÍNEA en otra divisa, el `shortcutID` de la cuenta
     /// principal de la tarjeta. `nil` = cuenta normal o principal. UUID crudo y no relación, a propósito: una

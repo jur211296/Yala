@@ -570,6 +570,9 @@ enum EntityApplyMap {
             // Reglas de captura (`since: 9`): solo llegan si este teléfono pidió `v9`. Con la key presente manda el
             // servidor, también con NULL (sin reglas).
             "capture_rules_raw": Apply.textOpt(\.captureRulesRaw),
+            // El límite de la tarjeta (`since: 10`): solo llega si este teléfono pidió `v10`. Con la key presente manda el
+            // servidor, también con NULL (sin límite). Dinero: un no finito va a cuarentena, como el resto.
+            "credit_limit": Apply.moneyOpt(\.creditLimit),
         ]
     )
 

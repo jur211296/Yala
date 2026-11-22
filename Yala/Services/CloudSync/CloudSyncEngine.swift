@@ -3190,6 +3190,11 @@ final class CloudSyncEngine {
                let line = model as? CashFlowLine {
                 SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: changedColumns)
             }
+            // Y con el límite de una tarjeta (v10), también cuando se quita.
+            if level < SyncCapability.creditLimitSince, changedColumns.contains("credit_limit"),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedCreditLimit(account.shortcutID)
+            }
             // Y con las reglas de captura de una cuenta (v9), también cuando se quitan todas.
             if level < SyncCapability.captureRulesSince, changedColumns.contains("capture_rules_raw"),
                let account = model as? Account {

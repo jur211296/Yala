@@ -214,10 +214,10 @@ struct HojaCuentaTarjetaCableadoTests {
     @Test func laHoja_usaLaTarjetaYElBloqueNuevos() throws {
         let hoja = try Self.source("Yala/App/Views/Panel/Sheets/AccountDetailSheet.swift")
         #expect(hoja.contains("HojaCuentaTarjetaCara(account: account"))
-        #expect(hoja.contains("HojaCuentaTarjetaEstado(card: statement)"))
+        #expect(hoja.contains("HojaCuentaTarjetaEstado(card: statement, limite: account.creditLimit)"))
         #expect(hoja.contains("HojaCuentaTarjetaSinFechas"))
-        // Opción A del 22-nov: hasta que la cuenta guarde el límite, la hoja no lo pasa y la línea no sale.
-        #expect(!hoja.contains("limite:"), "El límite llega con el campo nuevo, en otro encargo.")
+        // Opción A del 22-nov: el límite lo guarda la principal de la tarjeta (`account`), no la línea elegida.
+        #expect(!hoja.contains("limite: shown"), "El límite es de la tarjeta: lo lee de la principal.")
         #expect(!hoja.contains("CreditCardStatementBlock(card:"), "El bloque viejo ya no se pinta en la hoja.")
     }
 

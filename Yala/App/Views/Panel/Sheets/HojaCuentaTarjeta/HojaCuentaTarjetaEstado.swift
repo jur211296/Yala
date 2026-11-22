@@ -8,8 +8,8 @@
 //  ya existían (`L10n.CreditCardStatement`).
 //
 //  Sin límite de la tarjeta en Yala no hay «% usado»: la barra reparte lo que debes (`HojaCuentaTarjetaLogica.reparto`).
-//  La línea «X % usado · disponible de N» ya está lista y sale solo cuando llega `limite` (decisión de Jürgen del
-//  22-nov-2026, opción A: el límite será un campo nuevo de la cuenta, en otro encargo). Mientras sea `nil`, no se pinta.
+//  La línea «X % usado · disponible de N» sale solo cuando la tarjeta tiene límite (`Account.creditLimit`, decisión de
+//  Jürgen del 22-nov-2026, opción A). Sin límite (`nil`), no se pinta.
 //  Con varias divisas no hay barra (no se suman) y cada cifra va en su divisa, apilada.
 //
 
@@ -17,7 +17,7 @@ import SwiftUI
 
 struct HojaCuentaTarjetaEstado: View {
     let card: CreditCardStatementSummary.Card
-    /// El límite de la tarjeta. Hoy siempre `nil`: la cuenta aún no lo guarda.
+    /// El límite de la tarjeta (`Account.creditLimit` de la principal). `nil` = sin límite: la línea no se pinta.
     var limite: Double? = nil
 
     @Environment(\.yalaTheme) private var theme

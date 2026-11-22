@@ -253,7 +253,8 @@ struct AccountDetailSheet: View {
             puedeEditar: PanelAccountCardLogic.canEdit(isSystemAccount: account.isSystemAccount)
         ) {
         case .estadoDeCuenta:
-            if let statement { HojaCuentaTarjetaEstado(card: statement) }
+            // El límite es de la tarjeta, y lo guarda la principal (`account`), en su divisa.
+            if let statement { HojaCuentaTarjetaEstado(card: statement, limite: account.creditLimit) }
         case .pedirFechas:
             // Los días de corte y de pago son de la principal: el formulario se abre sobre ella.
             HojaCuentaTarjetaSinFechas {

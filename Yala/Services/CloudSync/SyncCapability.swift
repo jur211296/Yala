@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 9
+    static let clientManifestVersion = 10
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -81,6 +81,10 @@ nonisolated enum SyncCapability {
     /// cuenta sola al leer, 2026-11-21).
     static let captureRulesSince = 9
 
+    /// Versión del manifest que estrena `accounts.credit_limit` (el límite de una tarjeta de crédito, decisión de Jürgen
+    /// del 22-nov-2026: el «X % usado · disponible de N» de la hoja de la cuenta).
+    static let creditLimitSince = 10
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -92,6 +96,7 @@ nonisolated enum SyncCapability {
     static let suppressedCustomLogosKey = "cloudSync.customLogosSuppressed"
     static let suppressedCashFlowLimitsKey = "cloudSync.cashFlowLimitsSuppressed"
     static let suppressedCaptureRulesKey = "cloudSync.captureRulesSuppressed"
+    static let suppressedCreditLimitsKey = "cloudSync.creditLimitsSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -329,6 +334,29 @@ nonisolated enum SyncCapability {
         let remaining = suppressedCaptureRules.subtracting(shortcutIDs)
         if remaining.isEmpty { defaults.removeObject(forKey: suppressedCaptureRulesKey) }
         else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCaptureRulesKey) }
+    }
+
+    // MARK: - Límites de tarjeta que no subieron (v10)
+
+    /// Las cuentas (por `shortcutID`) cuyo límite de tarjeta este teléfono cambió mientras hablaba una versión que no
+    /// conoce `credit_limit`. Una sola columna: el apunte es por fila (molde de la v9).
+    static var suppressedCreditLimits: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedCreditLimitsKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `credit_limit` por la versión. Apuntar de más es inocuo: la reemisión sube el valor de ese
+    /// momento.
+    static func noteSuppressedCreditLimit(_ shortcutID: UUID) {
+        var current = suppressedCreditLimits
+        guard current.insert(shortcutID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedCreditLimitsKey)
+    }
+
+    /// Retira las que ya se encolaron. Solo esas: una que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCreditLimits(_ shortcutIDs: Set<UUID>) {
+        let remaining = suppressedCreditLimits.subtracting(shortcutIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedCreditLimitsKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCreditLimitsKey) }
     }
 
     // MARK: - Logos propios de pagos planificados que no subieron (v7)

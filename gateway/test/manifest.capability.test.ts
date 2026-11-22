@@ -72,8 +72,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 9, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(9);
+  it("el Worker anuncia la versión 10, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(10);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -81,7 +81,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7), los límites del flujo de caja (8) y las reglas de captura (9)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7), los límites del flujo de caja (8), las reglas de captura (9) y el límite de la tarjeta (10)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -92,6 +92,7 @@ describe("capability-set por versión del manifest", () => {
       "accounts.capture_rules_raw@9",
       "accounts.credit_card_reminder_days_before@5",
       "accounts.credit_card_statement_day@5",
+      "accounts.credit_limit@10",
       "accounts.parent_account_id@2",
       "cashflow_lines.amount_changes_raw@3",
       "cashflow_lines.limit_currency_code@8",
@@ -152,7 +153,7 @@ describe("capability-set por versión del manifest", () => {
     expect(accounts.sort()).toEqual(
       Object.keys(manifest.entities.accounts.columns)
         .filter((c) => c !== "credit_card_statement_day" && c !== "credit_card_reminder_days_before"
-          && c !== "capture_rules_raw")
+          && c !== "capture_rules_raw" && c !== "credit_limit")
         .sort(),
     );
   });
@@ -261,8 +262,8 @@ describe("capability-set por versión del manifest", () => {
       { scheduled_payment_ids_raw: HLC, limit_extra_amount: HLC })).toBeNull();
   });
 
-  it("v9, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v9", "v99", "full", null]) {
+  it("v10, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v10", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
   });
@@ -281,6 +282,23 @@ describe("capability-set por versión del manifest", () => {
     const empty = { sync_id: row.sync_id, name: "Zip Visa", capture_rules_raw: null };
     expect(canonRowC1("accounts", empty, merkleColumns("accounts", resolveCapabilitySet("v9")))).toContain('"capture_rules_raw":null');
     expect(validateUpsertShape("accounts", { capture_rules_raw: null }, { capture_rules_raw: HLC })).toBeNull();
+  });
+
+  // El límite de una tarjeta de crédito (v10, 2026-11-22).
+  it("v9 no baja ni hashea el límite de la tarjeta; v10 sí (como null en una cuenta sin límite)", () => {
+    const row = { sync_id: "9e5f6071-5555-4666-8777-d88899990000", name: "Visa QA", credit_limit: "8000.0000" };
+    const stored = { name: HLC, credit_limit: HLC };
+    const v9 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v9"));
+    expect(v9.fields).not.toHaveProperty("credit_limit");
+    expect(v9.field_hlcs).not.toHaveProperty("credit_limit");
+    const v10 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v10"));
+    expect(v10.fields).toHaveProperty("credit_limit");
+    expect(merkleColumns("accounts", resolveCapabilitySet("v9"))).not.toContain("credit_limit");
+    expect(merkleColumns("accounts", resolveCapabilitySet("v10"))).toContain("credit_limit");
+    const empty = { sync_id: row.sync_id, name: "Visa QA", credit_limit: null };
+    expect(canonRowC1("accounts", empty, merkleColumns("accounts", resolveCapabilitySet("v10")))).toContain('"credit_limit":null');
+    expect(validateUpsertShape("accounts", { credit_limit: null }, { credit_limit: HLC })).toBeNull();
+    expect(validateUpsertShape("accounts", { credit_limit: "8000.0000" }, { credit_limit: HLC })).toBeNull();
   });
 
   it("el pull de v5 no baja la receta de líneas ni su unidad; el de v6 sí", () => {

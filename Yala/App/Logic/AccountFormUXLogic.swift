@@ -222,3 +222,37 @@ enum AccountMoneyToggleLogic {
         wasChosen ? current : PanelMoneyScopeLogic.countsByDefault(type: newType)
     }
 }
+
+// MARK: - Límite de la tarjeta (22-nov-2026)
+
+/// El límite de una tarjeta de crédito: qué se guarda y qué escribe el formulario. Pura, para medirla en
+/// `YalaTests/LimiteTarjeta/`. Lo que la hoja de la cuenta hace con él («X % usado · disponible de N») vive en
+/// `HojaCuentaTarjetaLogica.usoDeLinea`.
+enum LimiteTarjetaLogica {
+
+    /// Lo que se guarda en `Account.creditLimit`: un límite de verdad (positivo y finito) o `nil`. Un 0, un negativo o un
+    /// campo vacío son «sin límite»: guardar 0 haría que la hoja dijera «sin línea» a quien solo borró el número.
+    static func normalizado(_ valor: Double?) -> Double? {
+        guard let valor, valor.isFinite, valor > 0 else { return nil }
+        return (valor * 100).rounded() / 100
+    }
+
+    /// Lo que escribió la persona (`""` = sin límite), leído con la coma o el punto de su idioma.
+    static func desdeTexto(_ texto: String, locale: Locale = .current) -> Double? {
+        let limpio = texto.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !limpio.isEmpty else { return nil }
+        return normalizado(AmountInputHelper.parseDecimal(limpio, locale: locale))
+    }
+
+    /// Cómo aparece un límite guardado en el campo al abrir el formulario.
+    static func texto(_ limite: Double?, locale: Locale = .current) -> String {
+        guard let limite = normalizado(limite) else { return "" }
+        return AmountInputHelper.formatWithGrouping(limite, locale: locale)
+    }
+
+    /// Lo que guarda la cuenta al salir del formulario: solo una tarjeta de crédito tiene límite. Cambiar el tipo lo borra,
+    /// como el día de corte.
+    static func paraGuardar(esTarjetaDeCredito: Bool, texto: String, locale: Locale = .current) -> Double? {
+        esTarjetaDeCredito ? desdeTexto(texto, locale: locale) : nil
+    }
+}

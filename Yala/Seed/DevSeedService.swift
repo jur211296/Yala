@@ -123,6 +123,9 @@ enum DevSeedProfile: String {
     /// el aviso 3 días antes y tres meses de sueldo y gastos para que el flujo de caja proponga un plan. Ver
     /// `DevSeedAccountLines.createWithStatement`.
     case tarjetaCorte = "tarjeta-corte"
+    /// `.tarjetaCorte` sin la línea en dólares (límite de la tarjeta, 22-nov-2026): la hoja solo enseña el uso de línea
+    /// con UNA divisa. Ver `DevSeedAccountLines.createWithStatement(withDollarLine:)`.
+    case tarjetaLimite = "tarjeta-limite"
     /// El formulario de registro tras un onboarding de una sola cuenta: categorías y «Cuenta Principal», sin registros
     /// (UX 2.2 · L2-1 y L2-6). Ver `DevSeedTransactionForm`.
     case unaCuenta = "una-cuenta"
@@ -144,7 +147,7 @@ enum DevSeedProfile: String {
              .gruposSinFlag, .gruposPendiente, .gruposConHeredero, .gruposRechazado, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .gruposRepetidos, .pataDeGrupoSinCuenta,
-             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .unaCuenta, .formulario: return 7
+             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .tarjetaLimite, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
@@ -251,7 +254,8 @@ final class DevSeedService {
             return
         }
         if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
-            || profile == .tarjetaDosLineas || profile == .tarjetaCorte || profile == .cuentasDeGrupos {
+            || profile == .tarjetaDosLineas || profile == .tarjetaCorte || profile == .tarjetaLimite
+            || profile == .cuentasDeGrupos {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -266,6 +270,9 @@ final class DevSeedService {
                 DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .tarjetaCorte {
                 DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaLimite {
+                DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context),
+                                                        withDollarLine: false, in: context)
             } else if profile == .movimientosSinCuenta {
                 DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .pataDeGrupoSinCuenta {
