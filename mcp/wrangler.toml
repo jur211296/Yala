@@ -22,6 +22,9 @@ compatibility_date = "2026-06-01"
 compatibility_flags = ["global_fetch_strictly_public"]
 account_id = "86c270a7776be98639700bd5959b303b"
 workers_dev = true
+# Dominio propio del conector DE PRUEBAS (22-nov-2026, decisión 64: `mcp.yala-app.pe` es de producción y el de pruebas
+# pasa a otro nombre). La URL pública del OAuth sigue siendo la de workers.dev: el dominio es un alias.
+routes = [{ pattern = "mcp-staging.yala-app.pe", custom_domain = true }]
 
 [observability]
 enabled = true
@@ -74,26 +77,28 @@ name = "RL_MCP"
 namespace_id = "7303"
 simple = { limit = 120, period = 60 }
 
-# ---------- PRODUCCIÓN — escrito, NO desplegado. Runbook: mcp/RUNBOOK-produccion.md ----------
+# ---------- PRODUCCIÓN — escrito, NO desplegado (lo despliega Dan). Runbook: mcp/RUNBOOK-produccion.md ----------
 # En wrangler, `vars`, `kv_namespaces` y `ratelimits` NO se heredan del nivel de arriba: se repiten aquí enteros.
 # Lo que dice PENDIENTE lo crea Jürgen siguiendo el runbook; `npm run deploy:production` se niega mientras quede uno.
 [env.production]
 name = "yala-mcp-production"
-# Mismo patrón que el gateway de producción (yala-gateway-production.misty-surf-6866.workers.dev). Un dominio propio
-# (mcp.yala-app.pe) exige mover el DNS de yala-app.pe a Cloudflare: hoy está en RCP. Ver el runbook, «Dominio propio».
+# Dominio propio (decisión 64 de la auditoría del 21-nov): el DNS de yala-app.pe ya está en Cloudflare, y el 22-nov el
+# dominio se soltó del Worker de staging, que pasó a mcp-staging.yala-app.pe. `custom_domain` crea el registro y el
+# certificado al desplegar. PUBLIC_URL, la vuelta del cliente OAuth de Supabase y su `site_url` van a juego.
 workers_dev = true
+routes = [{ pattern = "mcp.yala-app.pe", custom_domain = true }]
 
 [env.production.observability]
 enabled = true
 
 [[env.production.kv_namespaces]]
 binding = "OAUTH_KV"
-# `npx wrangler kv namespace create yala-mcp-production-oauth` → su id aquí.
-id = "PENDIENTE-crear-kv-yala-mcp-production-oauth"
+# Creado el 22-nov-2026 (`yala-mcp-production-oauth`, vacío hasta el primer despliegue).
+id = "3683c13333c04f3d9acfe507caa6ac65"
 
 [env.production.vars]
 ENVIRONMENT = "production"
-PUBLIC_URL = "https://yala-mcp-production.misty-surf-6866.workers.dev"
+PUBLIC_URL = "https://mcp.yala-app.pe"
 # Supabase PRODUCCIÓN (proyecto kefvaiymtgytemwbltlz), las mismas URL y anon key que el gateway de producción.
 SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
