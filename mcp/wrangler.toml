@@ -104,7 +104,7 @@ SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
 # El cliente OAuth CONFIDENCIAL del Worker en Supabase producción. Se registra en el runbook (paso 2); el mismo id va
 # en el hook de producción (conector01, de scripts/sql-conector-produccion.py).
-SUPABASE_OAUTH_CLIENT_ID = "PENDIENTE-registrar-cliente-oauth-en-supabase-produccion"
+SUPABASE_OAUTH_CLIENT_ID = "4f0cd757-f590-497b-909f-2f90153b7d2b"
 DEFAULT_TIMEZONE = "America/Lima"
 
 [[env.production.ratelimits]]
