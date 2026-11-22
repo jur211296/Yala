@@ -297,9 +297,11 @@ struct InboxDraftEditSheet: View {
                     Button(L10n.Common.cancel, role: .cancel) {
                         shouldCreateDespiteDuplicate = false
                     }
+                    .accessibilityIdentifier("inbox_duplicate_cancel")
                     Button(L10n.Inbox.createAnyway, role: .destructive) {
                         shouldCreateDespiteDuplicate = true
                     }
+                    .accessibilityIdentifier("inbox_duplicate_save_anyway")
                 } message: {
                     Text(L10n.Inbox.duplicateWarningMessage)
                 }
