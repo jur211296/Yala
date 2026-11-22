@@ -4,7 +4,7 @@ status: done
 priority: medium
 area: "captura, cuentas, reglas, sync, ia"
 created: 2026-11-20
-updated: 2026-11-21
+updated: 2026-11-22
 source: "tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas.md (parte 2)"
 ---
 
@@ -28,6 +28,9 @@ source: "tickets/done/2026-11-20-captura-cuenta-automatica-y-reglas.md (parte 2)
   reglas en la nube; `text.parse` devuelve `account`.
 - **Servidor**: `g34_01` aplicada en Supabase staging; Worker de staging con manifest v9 y `account` en `text.parse`;
   Worker de producción con los campos de IA de las partes 1 y 2 sobre su manifest v8 (sin la columna nueva).
+- **Continuación del 22-nov** (encargo `2026-11-22-cuenta-sola-al-leer-parte-2-continuacion`): la sesión del 21-nov se
+  paró por el límite semanal y se cerró sin commit; su trabajo se recuperó del respaldo, se rebasó sobre 2.3 y pasó el
+  gate. El revisor pidió que Editar cuenta no reescriba las reglas que no se tocaron (`CuentaSolaReglasFormularioTests`).
 - **Pruebas**: `CuentaSolaAlLeerReglasTests`, `CuentaSolaAlLeerReglasSyncTests`, `CuentaSolaReglasUITests`,
   `gateway/test/ai.photo-cuenta.test.ts` y `manifest.capability.test.ts`.
 
