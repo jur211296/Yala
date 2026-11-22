@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Kartenlimit";
 "limiteTarjeta.placeholder" = "Optional";
 "limiteTarjeta.footer" = "Dann sagt dir Yala, wie viel deines Kreditrahmens du nutzt und wie viel übrig ist.";
+"limiteTarjeta.lineUsage.converted" = "Ca.: enthält, was du in %@ schuldest, zum letzten Wechselkurs.";

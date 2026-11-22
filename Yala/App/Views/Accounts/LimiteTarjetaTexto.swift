@@ -32,5 +32,10 @@ extension L10n {
         static var opcional: String { s("placeholder") }
         /// Lo que gana la persona al ponerlo.
         static var pie: String { s("footer") }
+        /// «Aprox.: incluye lo que debes en USD, al último tipo de cambio.» Bajo el uso de línea de una tarjeta con dos
+        /// monedas. El hueco llega ya formateado («USD» o «USD y EUR»).
+        static func notaConversion(divisas: String) -> String {
+            String(format: s("lineUsage.converted"), locale: LanguageManager.resolved.locale, divisas)
+        }
     }
 }

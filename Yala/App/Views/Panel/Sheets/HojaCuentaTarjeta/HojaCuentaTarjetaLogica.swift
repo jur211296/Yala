@@ -81,6 +81,56 @@ nonisolated enum HojaCuentaTarjetaLogica {
         return UsoDeLinea(usado: usado, limite: limite)
     }
 
+    // MARK: - Uso de línea con dos monedas (decisión de Jürgen del 22-nov-2026)
+
+    /// Lo que debes en UNA divisa de la tarjeta.
+    struct LineaEnDivisa: Equatable {
+        let facturado: Double
+        let porFacturar: Double
+        let divisa: String
+    }
+
+    /// El uso de línea y las divisas que hubo que convertir a la del límite para calcularlo. Sin conversión, vacía: la
+    /// hoja no pone la nota.
+    struct UsoDeLineaConvertido: Equatable {
+        let uso: UsoDeLinea
+        let divisasConvertidas: [String]
+    }
+
+    /// Con una sola divisa, la regla de siempre (`usoDeLinea(lineas:limite:)`), sin nota. Con varias, lo usado se mide en
+    /// la divisa del límite (la de la principal): lo que debes en otra se convierte con `convertir`, que devuelve `nil`
+    /// cuando no hay tipo de cambio para esa pareja; entonces no hay línea, como antes. Un saldo a favor en una divisa
+    /// cuenta como cero y no descuenta de la otra: son dos deudas, como en el resto de la hoja. Una divisa en la que no
+    /// debes nada no se convierte ni sale en la nota.
+    static func usoDeLinea(
+        lineas: [LineaEnDivisa],
+        limite: Double?,
+        divisaLimite: String,
+        convertir: (_ monto: Double, _ desde: String) -> Double?
+    ) -> UsoDeLineaConvertido? {
+        if lineas.count == 1, let linea = lineas.first {
+            return usoDeLinea(lineas: [(linea.facturado, linea.porFacturar)], limite: limite)
+                .map { UsoDeLineaConvertido(uso: $0, divisasConvertidas: []) }
+        }
+        guard let limite, limite.isFinite, limite > 0, !lineas.isEmpty else { return nil }
+        let destino = divisaLimite.uppercased()
+        var usado = 0.0
+        var convertidas: [String] = []
+        for linea in lineas {
+            let debe = max(linea.facturado, 0) + max(linea.porFacturar, 0)
+            guard debe > 0 else { continue }
+            let origen = linea.divisa.uppercased()
+            if origen == destino {
+                usado += debe
+                continue
+            }
+            guard let convertido = convertir(debe, origen), convertido.isFinite, convertido >= 0 else { return nil }
+            usado += convertido
+            if !convertidas.contains(origen) { convertidas.append(origen) }
+        }
+        return UsoDeLineaConvertido(uso: UsoDeLinea(usado: usado, limite: limite), divisasConvertidas: convertidas)
+    }
+
     // MARK: - Bloque de la tarjeta de crédito
 
     /// Qué enseña el bloque de la tarjeta de crédito bajo el monto.

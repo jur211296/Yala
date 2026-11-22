@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "信用卡额度";
 "limiteTarjeta.placeholder" = "可选";
 "limiteTarjeta.footer" = "Yala 会告诉你已用多少额度、还剩多少。";
+"limiteTarjeta.lineUsage.converted" = "约：包含你以 %@ 欠下的金额，按最新汇率换算。";

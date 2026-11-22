@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Limite do cartão";
 "limiteTarjeta.placeholder" = "Opcional";
 "limiteTarjeta.footer" = "Assim o Yala diz quanto do seu limite você usa e quanto sobra.";
+"limiteTarjeta.lineUsage.converted" = "Aprox.: inclui o que você deve em %@, pela última taxa de câmbio.";

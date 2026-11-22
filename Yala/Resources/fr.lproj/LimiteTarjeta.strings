@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Plafond de la carte";
 "limiteTarjeta.placeholder" = "Facultatif";
 "limiteTarjeta.footer" = "Yala te dira quelle part de ton crédit tu utilises et combien il te reste.";
+"limiteTarjeta.lineUsage.converted" = "Env. : inclut ce que tu dois en %@, au dernier taux de change.";

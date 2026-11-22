@@ -214,7 +214,9 @@ struct HojaCuentaTarjetaCableadoTests {
     @Test func laHoja_usaLaTarjetaYElBloqueNuevos() throws {
         let hoja = try Self.source("Yala/App/Views/Panel/Sheets/AccountDetailSheet.swift")
         #expect(hoja.contains("HojaCuentaTarjetaCara(account: account"))
-        #expect(hoja.contains("HojaCuentaTarjetaEstado(card: statement, limite: account.creditLimit)"))
+        #expect(hoja.contains("HojaCuentaTarjetaEstado(card: statement, limite: account.creditLimit,"))
+        // Dos monedas (22-nov): la divisa del límite es la de la principal.
+        #expect(hoja.contains("divisaLimite: account.currencyCode)"))
         #expect(hoja.contains("HojaCuentaTarjetaSinFechas"))
         // Opción A del 22-nov: el límite lo guarda la principal de la tarjeta (`account`), no la línea elegida.
         #expect(!hoja.contains("limite: shown"), "El límite es de la tarjeta: lo lee de la principal.")

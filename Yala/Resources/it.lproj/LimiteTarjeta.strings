@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Limite della carta";
 "limiteTarjeta.placeholder" = "Facoltativo";
 "limiteTarjeta.footer" = "Così Yala ti dice quanto della tua linea di credito usi e quanto ti resta.";
+"limiteTarjeta.lineUsage.converted" = "Circa: include quanto devi in %@, al tasso di cambio più recente.";
