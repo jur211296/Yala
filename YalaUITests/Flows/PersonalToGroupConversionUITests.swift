@@ -62,9 +62,17 @@ final class PersonalToGroupConversionUITests: XCTestCase {
         }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No está el «Bus» de hoy en Registros.")
         if row.frame.maxY > app.windows.firstMatch.frame.maxY - 140 { app.swipeUp(velocity: .slow) }
-        row.tap()
+        // Nocturnas del 21 y 22-nov (iOS 27.0, runner del CI): el toque llegaba con la lista aún deslizándose tras el
+        // `swipeUp` y solo la frenaba; el detalle no se abría y caía 3 de 3. Se toca con la fila quieta y, si aun así el
+        // detalle no llega, se toca una vez más (el primer toque pudo ser el que frenó la inercia).
         let edit = app.buttons["transaction_detail_edit"]
-        XCTAssertTrue(edit.waitForExistence(timeout: 8), "El detalle no ofrece «Editar».")
+        for _ in 0..<2 where !edit.exists {
+            _ = app.waitForSettledLayout(of: row, timeout: 5)
+            guard row.exists, row.isHittable else { break }
+            row.tap()
+            if edit.waitForExistence(timeout: 8) { break }
+        }
+        XCTAssertTrue(edit.waitForExistence(timeout: 2), "El detalle no ofrece «Editar».")
         edit.tap()
         XCTAssertTrue(app.buttons["new_transaction_save"].waitForExistence(timeout: 8), "No abrió el editor.")
     }
