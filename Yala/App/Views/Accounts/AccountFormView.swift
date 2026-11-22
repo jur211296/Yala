@@ -81,7 +81,7 @@ struct AccountFormView: View {
     }
 
     private enum Field {
-        case name, accountNumber, balance
+        case name, accountNumber, balance, creditLimit
     }
 
     init(
@@ -1365,6 +1365,10 @@ struct AccountFormView: View {
                         .padding(.horizontal)
                         .padding(.bottom)
                         .accessibilityIdentifier("account_cc_cycle_footer")
+
+                    SubsectionDivider()
+
+                    creditLimitRow
                 }
             }
 
@@ -1408,6 +1412,44 @@ struct AccountFormView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// El límite de la tarjeta (opcional, decisión de Jürgen del 22-nov-2026): con él, la hoja de la cuenta dice «X % usado ·
+    /// disponible de N». En la divisa de la cuenta, que va al lado del número.
+    private var creditLimitRow: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            AdaptiveRowStack(spacing: DS.Spacing.md) {
+                Text(L10n.LimiteTarjeta.campo)
+                    .foregroundStyle(.primary)
+            } trailing: {
+                HStack(spacing: DS.Spacing.xs) {
+                    TextField(L10n.LimiteTarjeta.opcional, text: $viewModel.creditLimitText)
+                        .amountKeyboard()
+                        .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                        .focused($focusedField, equals: .creditLimit)
+                        .accessibilityLabel(L10n.LimiteTarjeta.campo)
+                        .accessibilityIdentifier("account_cc_credit_limit")
+                    Text(viewModel.selectedCurrency.rawValue)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+            }
+            Text(L10n.LimiteTarjeta.pie)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("account_cc_credit_limit_footer")
+        }
+        .padding()
+        .onChange(of: viewModel.creditLimitText) { _, newValue in
+            let filtered = AmountInputHelper.filterAmountInput(newValue)
+            if filtered != newValue { viewModel.creditLimitText = filtered }
+        }
+        .onChange(of: focusedField) { old, new in
+            // Al salir del campo, el número con sus separadores; un 0 se lee como «sin límite» y se vacía.
+            guard old == .creditLimit, new != .creditLimit else { return }
+            viewModel.creditLimitText = LimiteTarjetaLogica.texto(LimiteTarjetaLogica.desdeTexto(viewModel.creditLimitText))
         }
     }
 

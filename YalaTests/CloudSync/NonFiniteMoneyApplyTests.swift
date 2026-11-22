@@ -333,7 +333,9 @@ struct NonFiniteMoneyApplyTests {
     @Test func manifest_hasTheMoneyColumnsThisSuiteExpects() throws {
         // Premisa del caso de abajo: sin columnas, el bucle no probaría nada.
         let columns = try Self.manifestMoneyColumns()
-        #expect(columns.count == 16, "14 + el extra y el monto fijo en otra moneda del flujo de caja (v8, 2026-11-21)")
+        // 14 + el extra y el monto fijo en otra moneda del flujo de caja (v8, 2026-11-21) + el límite de la tarjeta (v10).
+        #expect(columns.count == 17)
+        #expect(columns.contains { $0 == ("accounts", "credit_limit") })
         #expect(columns.contains { $0 == ("cashflow_lines", "limit_extra_amount") })
         #expect(columns.contains { $0 == ("cashflow_lines", "limit_foreign_amount") })
         #expect(columns.contains { $0 == ("tx_items", "amount") })

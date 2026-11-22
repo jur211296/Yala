@@ -81,6 +81,18 @@ struct PersonalCloudKitSchemaParityTests {
         "yala-development.ckdb": ["CD_CashFlowOverride.CD_line": "REFERENCE"],
     ]
 
+    /// Campos nuevos que ya están en los `.ckdb` de DESARROLLO y esperan su despliegue a Production. No es una excepción
+    /// cómoda: cada entrada nombra quién despliega, y `pendingProductionDeploy_isStillPending` falla en cuanto el campo
+    /// aparece en el snapshot de producción, para que la entrada se retire al re-exportar.
+    ///
+    /// **`CD_Account.CD_creditLimit`** (límite de la tarjeta, decisión de Jürgen del 22-nov-2026, opción A): el encargo
+    /// pidió tocar solo los esquemas de desarrollo; el despliegue a Production lo hace Dan con el OK de Jürgen, ANTES de
+    /// publicar un build que lo escriba. Ticket `2026-11-22-cuenta-limite-tarjeta-campo-sincronizado`.
+    static let pendingProductionDeploy: [String: Set<String>] = [
+        "yala-production.ckdb": ["CD_Account: falta CD_creditLimit DOUBLE"],
+        "yala_dev-production.ckdb": ["CD_Account: falta CD_creditLimit DOUBLE"],
+    ]
+
     private static var schemasDir: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()  // CloudSync/
@@ -205,7 +217,7 @@ struct PersonalCloudKitSchemaParityTests {
             expected: try Self.expectedSchema(),
             snapshot: try Self.snapshot(file),
             knownMismatches: Self.knownTypeMismatches[file, default: [:]]
-        )
+        ).filter { !Self.pendingProductionDeploy[file, default: []].contains($0) }
         #expect(
             gaps.isEmpty,
             """
@@ -215,6 +227,21 @@ struct PersonalCloudKitSchemaParityTests {
             \(gaps.joined(separator: "\n"))
             """
         )
+    }
+
+    /// Lo pendiente de desplegar sigue pendiente (si no, la entrada sobra y tapa un hueco futuro), y su campo ya está en
+    /// el snapshot de desarrollo del mismo contenedor: la excepción solo cubre el paso de Development a Production.
+    @Test func pendingProductionDeploy_isStillPending() throws {
+        let expected = try Self.expectedSchema()
+        for (file, pending) in Self.pendingProductionDeploy {
+            let gaps = Set(Self.gaps(expected: expected, snapshot: try Self.snapshot(file)))
+            for gap in pending {
+                #expect(gaps.contains(gap), "\(file) ya tiene «\(gap)»: retira la entrada de `pendingProductionDeploy`.")
+            }
+            let development = file.replacingOccurrences(of: "-production", with: "-development")
+            let devGaps = Set(Self.gaps(expected: expected, snapshot: try Self.snapshot(development)))
+            #expect(devGaps.isDisjoint(with: pending), "\(development) tampoco lo tiene: falta en desarrollo.")
+        }
     }
 
     /// El arreglo de `CD_line`: el ajuste de un mes viaja ahora por `CD_cashFlowLine`, que la app escribe

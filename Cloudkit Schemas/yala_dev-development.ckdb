@@ -24,6 +24,7 @@ DEFINE SCHEMA
         CD_creditCardPaymentReminder INT64 QUERYABLE SORTABLE,
         CD_creditCardReminderDaysBefore INT64,
         CD_creditCardStatementDay INT64,
+        CD_creditLimit               DOUBLE,
         CD_currencyCode              STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_entityName                STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_excludeFromStatistics     INT64 QUERYABLE SORTABLE,

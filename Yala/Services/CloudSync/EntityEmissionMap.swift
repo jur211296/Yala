@@ -592,6 +592,11 @@ enum EntityEmissionMap {
             ColumnEmitter("capture_rules_raw", since: SyncCapability.captureRulesSince) { m, _ in
                 Emit.text(m.captureRulesRaw)
             },
+            // El límite de la tarjeta (2026-11-22), en la divisa de la cuenta. `nil` sin límite: la columna nace NULL en
+            // toda cuenta que el servidor ya tenía, así que no hay valor por defecto que divergir.
+            ColumnEmitter("credit_limit", since: SyncCapability.creditLimitSince) { m, _ in
+                Emit.money(m.creditLimit)
+            },
         ],
         columnKeyPaths: [
             \Account.name: ["name"],
@@ -610,6 +615,7 @@ enum EntityEmissionMap {
             \Account.creditCardStatementDay: ["credit_card_statement_day"],
             \Account.creditCardReminderDaysBefore: ["credit_card_reminder_days_before"],
             \Account.captureRulesRaw: ["capture_rules_raw"],
+            \Account.creditLimit: ["credit_limit"],
         ]
     )
 

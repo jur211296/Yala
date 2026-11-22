@@ -6,7 +6,7 @@
 //  de la tarjeta, la barra de lo que debes (facturado frente a por facturar) y si el bloque de la tarjeta de crédito
 //  ofrece añadir las fechas. Pura, sin vistas, para medirla en `YalaTests/HojaCuentaTarjeta/`.
 //
-//  La barra NO es «% de la línea usado»: Yala aún no guarda el límite de la tarjeta. Reparte lo que debes entre lo que ya
+//  La barra NO es «% de la línea usado» (eso es `usoDeLinea`, solo con límite). Reparte lo que debes entre lo que ya
 //  se facturó (lo que pagas en la próxima fecha de pago) y lo que entra en el corte siguiente.
 //
 
@@ -60,8 +60,8 @@ nonisolated enum HojaCuentaTarjetaLogica {
 
     // MARK: - Uso de línea («16 % usado · 6.752,50 disponible de 8.000,00»)
 
-    /// Cuánto de la línea de crédito usas. Hoy Yala no guarda el límite de la tarjeta (decisión de Jürgen del
-    /// 22-nov-2026: será un campo nuevo, en otro encargo), así que la hoja lo recibe como `nil` y no pinta la línea.
+    /// Cuánto de la línea de crédito usas, con el límite que guarda la cuenta (`Account.creditLimit`, decisión de Jürgen
+    /// del 22-nov-2026, opción A). Sin límite, la hoja no pinta la línea.
     struct UsoDeLinea: Equatable {
         let usado: Double
         let limite: Double

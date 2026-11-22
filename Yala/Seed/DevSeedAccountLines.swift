@@ -93,7 +93,9 @@ enum DevSeedAccountLines {
     /// facturado va antes y lo gastado después; el pago, unos 21 días después del corte. Fechas relativas a hoy para que
     /// el estado de cuenta salga igual cualquier día.
     @MainActor
-    static func createWithStatement(subcategoryLookup: [String: Subcategory], in context: ModelContext) {
+    /// `withDollarLine: false` es el perfil `tarjeta-limite`: la tarjeta solo en soles, sin el hotel en dólares.
+    static func createWithStatement(subcategoryLookup: [String: Subcategory], withDollarLine: Bool = true,
+                                    in context: ModelContext) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         func noon(_ offset: Int, from base: Date = today) -> Date {
@@ -120,7 +122,7 @@ enum DevSeedAccountLines {
         let savings = Account(
             name: UITest.savingsName, currencyCode: "PEN", colorHex: "#4CB963",
             iconName: "banknote.fill", type: AccountType.savings.rawValue)
-        [card, line, savings].forEach { context.insert($0) }
+        (withDollarLine ? [card, line, savings] : [card, savings]).forEach { context.insert($0) }
 
         let expenseSub = subcategoryLookup.values.first { !$0.safeCategory.isIncome }
         let incomeSub = subcategoryLookup.values.first { $0.safeCategory.isIncome }
@@ -133,7 +135,9 @@ enum DevSeedAccountLines {
             tx.recalculatePreferredCurrency(context: context)
         }
         insert("Supermercado QA", -StatementUITest.billedPEN, noon(-3, from: statement), card, expenseSub)
-        insert("Hotel QA", -StatementUITest.billedUSD, noon(-2, from: statement), line, expenseSub)
+        if withDollarLine {
+            insert("Hotel QA", -StatementUITest.billedUSD, noon(-2, from: statement), line, expenseSub)
+        }
         insert("Restaurante QA", -StatementUITest.unbilledPEN, noon(-1), card, expenseSub)
 
         // Cuatro meses de sueldo y gastos en la cuenta de ahorros: el flujo de caja necesita historial para proponer

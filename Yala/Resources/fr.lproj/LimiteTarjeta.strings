@@ -1,0 +1,11 @@
+/*
+  LimiteTarjeta.strings
+  Yala
+
+  El límite de una tarjeta de crédito en Editar cuenta (decisión de Jürgen del 22-nov-2026, opción A). Tabla propia,
+  fuera de Localizable.strings. Lo que la hoja de la cuenta dice con él va en HojaCuentaTarjeta.strings.
+*/
+
+"limiteTarjeta.field" = "Plafond de la carte";
+"limiteTarjeta.placeholder" = "Facultatif";
+"limiteTarjeta.footer" = "Yala te dira quelle part de ton crédit tu utilises et combien il te reste.";

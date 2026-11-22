@@ -38,6 +38,7 @@ CREATE TABLE accounts (
   credit_card_statement_day INTEGER,  -- g26_01 (2026-10-27): día de corte de la tarjeta (card nmtk); aplicada con el Worker v5 según la card nmtk
   credit_card_reminder_days_before INTEGER,  -- g26_01 (2026-10-27): días antes del pago para el aviso; aplicada con el Worker v5 según la card nmtk
   capture_rules_raw TEXT,  -- 2026-11-21: reglas de captura de la cuenta (JSON, `AccountCaptureRule`); manifest v9
+  credit_limit NUMERIC(18,4),  -- 2026-11-22: límite de la tarjeta de crédito, en la divisa de la cuenta; manifest v10
   PRIMARY KEY (user_id, sync_id)
 );
 
