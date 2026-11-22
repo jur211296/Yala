@@ -4,7 +4,7 @@
 //
 //  Ajustes › Tu cuenta de Yala › Navegadores conectados › «Vincular un navegador» (Yala web, lote 2). Escanea el QR que
 //  enseña la web (VisionKit) o deja escribir su código, enseña qué navegador es y desde dónde, y aprueba tras Face ID.
-//  La lógica vive en `LinkBrowserModel`. Solo existe en Yala Dev, como la pantalla que la abre.
+//  La lógica vive en `LinkBrowserModel`. Existe donde existe la pantalla que la abre: con los datos en la cuenta de Yala.
 //
 
 import SwiftUI
