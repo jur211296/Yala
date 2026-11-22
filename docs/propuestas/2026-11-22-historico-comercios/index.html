@@ -1,0 +1,614 @@
+<title>Comercios en común</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: página de revisión. Lo de hoy, la idea, el flujo del dato en tres carriles, variantes A·B·C con simulador,
+   maquetas en iPhone, costos y riesgos, texto de la política y el bloque de decisiones al final. */
+:root{
+  --bg:#F4F5F8; --surface:#FFFFFF; --fg:#16171E; --muted:#5B5D6B; --line:#E1E3EB;
+  --accent:#4F4FD8; --accent-soft:#ECECFD; --ok:#0F7A5A; --ok-soft:#E3F5EE; --warn:#9A5B00; --warn-soft:#FFF3DC;
+  --bad:#B42318; --bad-soft:#FDECEA; --phone-bg:#D9DAE0; --sheet:#F2F2F7; --card:#FFFFFF; --chip:#EDEDF2; --ios-fg:#111111; --ios-muted:#8A8A8E; --ios-accent:#5B5BE6;
+  --f-display:"Space Grotesk","Inter",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --f-ios:-apple-system,"SF Pro Text","Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E0F14; --surface:#181920; --fg:#ECEDF3; --muted:#A2A4B3; --line:#2A2C36;
+  --accent:#9A9CFF; --accent-soft:#25254A; --ok:#5FD3A8; --ok-soft:#123227; --warn:#F5B84A; --warn-soft:#3A2A0C;
+  --bad:#FF8A80; --bad-soft:#3A1614; --phone-bg:#2A2B31; --sheet:#1C1C1E; --card:#2C2C2E; --chip:#3A3A3C; --ios-fg:#F2F2F7; --ios-muted:#98989D; --ios-accent:#8E8EFF; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0E0F14; --surface:#181920; --fg:#ECEDF3; --muted:#A2A4B3; --line:#2A2C36;
+  --accent:#9A9CFF; --accent-soft:#25254A; --ok:#5FD3A8; --ok-soft:#123227; --warn:#F5B84A; --warn-soft:#3A2A0C;
+  --bad:#FF8A80; --bad-soft:#3A1614; --phone-bg:#2A2B31; --sheet:#1C1C1E; --card:#2C2C2E; --chip:#3A3A3C; --ios-fg:#F2F2F7; --ios-muted:#98989D; --ios-accent:#8E8EFF; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:52px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4vw,40px);font-weight:700}
+h2{font-size:24px;font-weight:600}
+h3{font-size:17px;font-weight:600}
+p{margin:0;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{font-size:17px;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.rec{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+code{font-size:12.5px;background:var(--accent-soft);color:var(--fg);padding:1px 5px;border-radius:5px;word-break:break-word}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.tag{font-family:var(--f-display);font-weight:700;font-size:13px;background:var(--fg);color:var(--bg);border-radius:6px;padding:1px 7px}
+
+/* Hoy */
+.ladder{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.rung{flex:1 1 200px;display:flex;flex-direction:column;gap:4px}
+.rung b{font-family:var(--f-display)}
+.rung.new{border:2px dashed var(--accent);background:var(--accent-soft)}
+
+/* La idea */
+.idea{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.idea{grid-template-columns:1fr}}
+.translate{display:flex;flex-direction:column;gap:8px}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1.2fr);gap:8px;align-items:center;font-size:13.5px}
+.trow > span{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 9px;min-width:0;overflow-wrap:anywhere}
+.trow .kind{background:var(--accent-soft);border-color:transparent;font-weight:600;text-align:center}
+.trow .arr{border:0;background:none;padding:0;color:var(--muted)}
+.trow.head > span{background:none;border:0;padding:0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+@media (max-width:560px){.trow{grid-template-columns:1fr;gap:4px}.trow .arr{display:none}.trow.head{display:none}.trow{padding-bottom:10px;border-bottom:1px solid var(--line)}}
+
+/* Flujo */
+.flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;align-items:stretch}
+@media (max-width:900px){.flow{grid-template-columns:1fr}}
+.lane{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);background:var(--surface);min-width:0}
+.lane:first-child{border-radius:16px 0 0 16px}.lane:last-child{border-radius:0 16px 16px 0}
+.lane + .lane{border-left:0}
+@media (max-width:900px){.lane:first-child{border-radius:16px 16px 0 0}.lane:last-child{border-radius:0 0 16px 16px}.lane + .lane{border-left:1px solid var(--line);border-top:0}}
+.lane h3{display:flex;gap:8px;align-items:center}
+.lane .where{font-size:12px;color:var(--muted)}
+.node{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.node b{font-size:13.5px}
+.node.store{border-color:var(--accent);background:var(--accent-soft)}
+.node.gate{border-style:dashed}
+.down{align-self:center;color:var(--muted);font-size:16px;line-height:1}
+.payload{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.never{display:flex;flex-wrap:wrap;gap:6px}
+.never span{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--bad-soft);color:var(--bad);text-decoration:line-through;text-decoration-thickness:1px}
+.modes .card{display:flex;flex-direction:column;gap:6px}
+.modes b{font-family:var(--f-display)}
+
+/* Variantes */
+.variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:980px){.variants{grid-template-columns:1fr}}
+.var{display:flex;flex-direction:column;gap:12px}
+.var.recommended{border:2px solid var(--ok)}
+.var header{display:flex;flex-direction:column;gap:6px}
+.var header .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.var dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.var dt{color:var(--muted);font-weight:600}
+.var dd{margin:0}
+.var h4{margin:0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.verdict{border-radius:10px;padding:8px 10px;font-size:13.5px;font-weight:600}
+.verdict.yes{background:var(--ok-soft);color:var(--ok)}
+.verdict.no{background:var(--warn-soft);color:var(--warn)}
+.verdict.tie{background:var(--bad-soft);color:var(--bad)}
+
+/* Simulador */
+.sim{display:flex;flex-direction:column;gap:14px}
+.sim .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.sim label{font-size:13px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.sim input[type=range]{width:100%;accent-color:var(--accent)}
+.sim .chk{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:500}
+.sim output{font-variant-numeric:tabular-nums;color:var(--accent)}
+.norm{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.norm .from{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+
+/* Maquetas */
+.mocks{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x mandatory}
+.mockcol{flex:0 0 auto;width:282px;display:flex;flex-direction:column;gap:10px;scroll-snap-align:start}
+.mockcol p{font-size:13.5px;color:var(--muted)}
+.mockcol h3{font-size:15px}
+.phone{width:282px;height:560px;border-radius:44px;border:9px solid #0B0B0F;background:var(--phone-bg);position:relative;overflow:hidden;font-family:var(--f-ios);color:var(--ios-fg)}
+.phone .status{position:absolute;top:10px;left:26px;right:22px;display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+.phone .island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:86px;height:24px;border-radius:14px;background:#0B0B0F}
+.phone .behind{position:absolute;top:46px;left:16px;right:16px;display:flex;flex-direction:column;gap:10px;opacity:.45}
+.phone .behind .big{font-size:26px;font-weight:700}
+.phone .behind .bar{height:34px;border-radius:17px;background:var(--card)}
+.sheet{position:absolute;left:6px;right:6px;bottom:6px;top:190px;background:var(--sheet);border-radius:30px;padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+.sheet.tall{top:70px}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--ios-muted);opacity:.5;align-self:center}
+.sheet .bar{display:flex;align-items:center;justify-content:space-between}
+.sheet .bar b{font-size:17px}
+.xbtn{width:30px;height:30px;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:14px;color:var(--ios-muted)}
+.thumb{width:26px;height:32px;border-radius:5px;background:linear-gradient(var(--card),var(--chip));border:1px solid var(--chip)}
+.dcard{background:var(--card);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.drow{display:flex;gap:10px;align-items:center}
+.dico{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:17px}
+.dico.green{background:#34C759}.dico.orange{background:#FF9500}.dico.blue{background:#0A84FF}.dico.pink{background:#FF2D55}
+.dtxt{flex:1;min-width:0}
+.dtxt .n{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtxt .c{font-size:12.5px;color:var(--ios-muted)}
+.amt{font-weight:600;font-size:15px;white-space:nowrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips span{font-size:11.5px;background:var(--chip);border-radius:999px;padding:4px 9px}
+.hint{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:var(--ios-muted);line-height:1.35;padding:0 2px}
+.hint .ic{flex:0 0 auto;width:16px;height:16px;border-radius:50%;background:var(--accent-soft);color:var(--ios-accent);display:grid;place-items:center;font-size:9px;font-weight:700}
+.hint a{color:var(--ios-accent);font-weight:600;text-decoration:none}
+.foot{margin-top:auto;display:flex;gap:8px}
+.foot span{flex:1;text-align:center;border-radius:999px;padding:11px 0;font-weight:600;font-size:14px;background:var(--chip)}
+.foot span.primary{background:var(--ios-accent);color:#fff}
+.note{font-size:11.5px;color:var(--ios-muted);padding:0 4px}
+.mark{outline:2px solid var(--ok);outline-offset:3px;border-radius:8px}
+.ios-list{background:var(--card);border-radius:12px;overflow:hidden}
+.ios-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;font-size:13.5px;border-bottom:1px solid var(--chip)}
+.ios-row:last-child{border-bottom:0}
+.toggle{flex:0 0 auto;width:42px;height:25px;border-radius:13px;background:#34C759;position:relative}
+.toggle::after{content:"";position:absolute;right:2px;top:2px;width:21px;height:21px;border-radius:50%;background:#fff}
+.ios-head{font-size:11.5px;color:var(--ios-muted);text-transform:uppercase;letter-spacing:.04em;padding:0 12px}
+.ios-foot{font-size:11.5px;color:var(--ios-muted);padding:0 12px;line-height:1.4}
+.ios-title{font-size:20px;font-weight:700;padding:0 4px}
+
+/* Costos y riesgos */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.tscroll table{min-width:640px}
+tr.recrow td{background:var(--ok-soft)}
+.risk td:first-child{font-weight:600}
+
+/* Política */
+.policy{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.policy .legal{font-size:14.5px;line-height:1.6;border-left:3px solid var(--accent);padding-left:14px;display:flex;flex-direction:column;gap:10px}
+.policy .legal p{max-width:none}
+.copybtn{align-self:flex-start;all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);padding:6px 12px;border:1px solid var(--accent);border-radius:999px}
+.copybtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Decisión */
+.decide{display:flex;flex-direction:column;gap:14px}
+.q{display:flex;flex-direction:column;gap:8px}
+.q > b{font-family:var(--f-display);font-size:15.5px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;flex:1 1 230px;font-size:13.5px;background:var(--bg)}
+.opts input{margin-top:3px;accent-color:var(--accent)}
+.opts label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opts .r{color:var(--ok);font-weight:600}
+textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--bg);color:var(--fg)}
+.save{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.save button{all:unset;cursor:pointer;background:var(--accent);color:#fff;font-weight:600;padding:10px 20px;border-radius:999px}
+.save button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+#status{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">Yala · propuesta para decidir · 22 nov 2026</span>
+  <h1>Comercios en común</h1>
+  <p class="lead">Hoy Yala aprende la categoría de cada comercio por persona: cada usuario nuevo y cada comercio nuevo empiezan de cero. La propuesta es una lista común y anónima, «este comercio es un supermercado», que se arma solo cuando varias personas coinciden y que nunca lleva montos, fechas, cuentas ni quién lo dijo.</p>
+  <p class="small muted">Solo propuesta: no se tocó la app ni el servidor. Lo que eliges abajo se guarda aquí mismo y la sesión que lo construya lo lee de esta página.</p>
+</header>
+
+<section>
+  <span class="eyebrow">Hoy, medido en la rama 2.3</span>
+  <h2>Quién decide la categoría cuando capturas un gasto</h2>
+  <div class="ladder">
+    <div class="card rung"><span class="pill info">1 · Tu memoria</span><b>Lo que tú aprobaste</b><span class="small muted">Propone con 3 aprobaciones y pocas correcciones; la pone sola con 5. Vive en tu iCloud o en tu cuenta. Solo es tuya.</span></div>
+    <div class="card rung"><span class="pill info">2 · La IA</span><b>Solo en la foto</b><span class="small muted">Dice el tipo de comercio de una lista fija de 34 («supermercado», «farmacia»…) y tu teléfono lo traduce a tu categoría.</span></div>
+    <div class="card rung"><span class="pill info">3 · El banco del teléfono</span><b>666 marcas conocidas</b><span class="small muted">Starbucks, Wong, Netflix… Viene dentro de la app. No sabe de la bodega de tu barrio.</span></div>
+    <div class="card rung new"><span class="pill rec">Nuevo · entre 1 y 2</span><b>Lo que coincidieron otros</b><span class="small muted">La lista común. Sirve también a Apple Pay, al aviso y al correo del banco y a la voz, que hoy no tienen la IA de la foto.</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">La idea que lo hace posible</span>
+  <h2>Se comparte el tipo de comercio, no tu categoría</h2>
+  <div class="idea">
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <p>Tus categorías tienen tus nombres, a veces inventados, y la app habla 16 idiomas. Compartirlas no serviría de nada y diría demasiado de ti. Lo que sí sirve a todos es el <b>tipo de comercio</b>, de la misma lista fija de 34 que ya usa la foto.</p>
+      <p>Al aprobar un gasto, tu teléfono traduce tu categoría a ese tipo. En el teléfono de otra persona, el tipo vuelve a traducirse a <i>su</i> categoría, en su idioma. Es el mismo traductor que la foto usa hoy.</p>
+      <p class="small muted">Si tu categoría es solo tuya (la creaste, o la renombraste y le cambiaste el icono) no hay a qué tipo traducirla, y no se aporta nada. Las transferencias y los ingresos no tienen tipo en la lista: nunca se aportan.</p>
+    </div>
+    <div class="translate" role="table" aria-label="Ejemplo de traducción">
+      <div class="trow head" role="row"><span>Tú apruebas</span><span class="arr"></span><span>Viaja</span><span class="arr"></span><span>Otra persona ve</span></div>
+      <div class="trow" role="row"><span>TAMBO+ · «Supermercados y tiendas»</span><span class="arr">→</span><span class="kind">supermercado</span><span class="arr">→</span><span>«Groceries» (en inglés)</span></div>
+      <div class="trow" role="row"><span>MIFARMA · «Farmacia»</span><span class="arr">→</span><span class="kind">farmacia</span><span class="arr">→</span><span>«Salud · Farmacia»</span></div>
+      <div class="trow" role="row"><span>LA LUCHA SANGUCHERÍA · «Restaurantes»</span><span class="arr">→</span><span class="kind">restaurante</span><span class="arr">→</span><span>«Comer fuera»</span></div>
+      <div class="trow" role="row"><span>YAPE A JUAN PÉREZ · «Transferencias»</span><span class="arr">→</span><span class="kind" style="background:var(--bad-soft);color:var(--bad)">no viaja</span><span class="arr">→</span><span>Nada</span></div>
+      <div class="trow" role="row"><span>CHIFA DON LUCHO · «Mi antojo» (creada por ti)</span><span class="arr">→</span><span class="kind" style="background:var(--bad-soft);color:var(--bad)">no viaja</span><span class="arr">→</span><span>Nada</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">De punta a punta</span>
+  <h2>Cómo fluye el dato</h2>
+  <p class="muted">Tres sitios. Los dos primeros solo existen para la gente que aporta; el tercero, la lista común, la recibe todo el mundo. Supabase (tu cuenta en la nube) e iCloud no intervienen.</p>
+  <div class="flow">
+    <div class="lane">
+      <h3><span class="tag">1</span> Tu teléfono</h3>
+      <span class="where">Pasa al aprobar un gasto capturado</span>
+      <div class="node"><b>Apruebas «TAMBO+ · S/ 12,50 · Supermercados»</b><span class="muted small">En la Bandeja, en «Esto leí», tras Apple Pay, el aviso del banco o la voz.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node gate"><b>Filtros, aquí mismo</b><span class="muted small">Solo gastos. Tu categoría tiene que traducirse a un solo tipo. Fuera alquiler e impuestos. Si ya aportaste ese comercio, no se repite.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node"><b>Limpia el nombre</b><span class="muted small">«DP*TAMBO+ AV LARCO 1153» → «TAMBO». Sin números, sucursal, ciudad ni «S.A.C.».</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node"><b>Espera en una cola local</b><span class="muted small">Una vez por semana sale todo junto, en orden al azar. Así nadie puede deducir cuándo compraste.</span></div>
+    </div>
+    <div class="lane">
+      <h3><span class="tag">2</span> Servidor de Yala</h3>
+      <span class="where">Cloudflare, el mismo que ya hace de puente para la IA (base D1)</span>
+      <div class="payload" aria-label="Lo que viaja">{ "comercio": "TAMBO",
+  "tipo": "supermarket" }
++ App Attest (prueba de que es la app real)</div>
+      <div class="never" aria-label="Lo que no viaja"><span>monto</span><span>fecha</span><span>cuenta</span><span>notas</span><span>tu categoría</span><span>email</span><span>IP guardada</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node store"><b>Votos pendientes</b><span class="muted small">Comercio, tipo, semana y una huella del dispositivo cifrada con una llave del servidor: cuenta un teléfono una vez, pero no dice cuál es ni de quién. Se borran a los 90 días o al entrar en la lista.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node gate"><b>Regla del umbral, cada noche</b><span class="muted small">Varios teléfonos distintos coinciden → el par entra. Los números dependen de la variante (abajo).</span></div>
+    </div>
+    <div class="lane">
+      <h3><span class="tag">3</span> Todos los teléfonos</h3>
+      <span class="where">También sin cuenta, con iCloud o sin aportar</span>
+      <div class="node store"><b>La lista común</b><span class="muted small">Solo «comercio → tipo». Sin huellas, sin conteos exactos. Un archivo que el servidor publica una vez al día.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node"><b>Se descarga entera, una vez al día</b><span class="muted small">Unos cientos de KB comprimida (estimado). Si no cambió, no se baja de nuevo.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node"><b>Se busca dentro del teléfono</b><span class="muted small">Al capturar no se le pregunta nada al servidor. Un pago de Apple Pay, que hoy no sale del teléfono, sigue sin salir.</span></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node"><b>Propone, no impone</b><span class="muted small">Tu memoria manda. Si no tienes nada de ese comercio, la lista común propone la categoría y tú confirmas.</span></div>
+    </div>
+  </div>
+  <div class="grid3 modes">
+    <div class="card"><b>Con tu iCloud privado (Modo Nube apagado)</b><span class="small muted">Funciona igual: aportar y recibir pasan por el servidor de Yala, no por tu cuenta. Tus datos siguen en tu iCloud.</span></div>
+    <div class="card"><b>Sin cuenta de Yala</b><span class="small muted">Funciona igual. Lo que cuenta cada teléfono una vez es la clave de App Attest que ya acompaña a cada llamada, no una cuenta.</span></div>
+    <div class="card"><b>Sin internet</b><span class="small muted">Usa la última lista descargada. Los aportes esperan en la cola hasta la próxima conexión.</span></div>
+    <div class="card"><b>Si te sales de aportar</b><span class="small muted">Se vacía tu cola y no sale nada más. Sigues recibiendo la lista común: recibir no envía nada.</span></div>
+    <div class="card"><b>Si eliminas tu cuenta o vacías tus datos</b><span class="small muted">Tus votos pendientes no están ligados a tu cuenta, así que no hay qué buscar: caducan solos a los 90 días. Lo que ya entró en la lista no es tuyo, es de muchos.</span></div>
+    <div class="card"><b>Grupos</b><span class="small muted">No aporta ni recibe en esta primera versión: un gasto de grupo es de varios y su categoría ya la pone quien lo apunta.</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Tres maneras de hacerlo</span>
+  <h2>Variantes comparables</h2>
+  <p class="muted">Cambian tres cosas: cuántos teléfonos tienen que coincidir, cómo se limpia el nombre del comercio y cada cuánto se actualiza la lista. Mueve el simulador para ver qué haría cada una con el mismo comercio.</p>
+
+  <div class="card sim" aria-labelledby="simt">
+    <h3 id="simt">Simulador: ¿entra «TAMBO» en la lista común?</h3>
+    <div class="ctrls">
+      <div><label for="s1">Teléfonos que dijeron «supermercado» <output id="o1">3</output></label><input type="range" id="s1" min="0" max="10" value="3"></div>
+      <div><label for="s2">Teléfonos que dijeron «restaurante» <output id="o2">0</output></label><input type="range" id="s2" min="0" max="10" value="0"></div>
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:6px"><span class="chk"><input type="checkbox" id="s3"><label for="s3" style="font-weight:500;display:inline">Ya estaba publicado como «restaurante»</label></span><span class="small muted">Para ver qué cuesta corregir un error o un intento de envenenarla.</span></div>
+    </div>
+  </div>
+
+  <div class="variants">
+    <article class="card var" id="vA">
+      <header><div class="row"><span class="tag">A</span><h3>Prudente</h3></div><span class="small muted">Menos errores, tarda más en llenarse.</span></header>
+      <div class="verdict" data-v="A"></div>
+      <dl>
+        <dt>Umbral</dt><dd>5 teléfonos distintos y 80 % de acuerdo</dd>
+        <dt>Nombre</dt><dd>La limpieza de hoy: mayúsculas, sin «DP*», sin símbolos. «STARBUCKS MIRAFLORES 123» y «STARBUCKS» quedan como dos comercios.</dd>
+        <dt>Cada cuánto</dt><dd>Lista nueva cada semana</dd>
+        <dt>Quién aporta</dt><dd>Solo aprobaciones de la Bandeja</dd>
+      </dl>
+      <h4>A favor</h4><ul class="clean small"><li>Casi imposible de envenenar.</li><li>Lo más fácil de explicar en la política.</li></ul>
+      <h4>En contra</h4><ul class="clean small"><li>Con pocos usuarios, la lista tarda meses en tener comercios de barrio.</li><li>Las sucursales parten los votos: cada «TAMBO AV …» suma por separado.</li></ul>
+    </article>
+    <article class="card var recommended" id="vB">
+      <header><div class="row"><span class="tag">B</span><h3>Equilibrada</h3><span class="pill rec">Recomendada</span></div><span class="small muted">Útil pronto, con frenos donde importa.</span></header>
+      <div class="verdict" data-v="B"></div>
+      <dl>
+        <dt>Umbral</dt><dd>3 teléfonos distintos con 7 días o más de uso, 75 % de acuerdo y 2 votos de ventaja sobre el segundo tipo. Cambiar un par ya publicado pide 5.</dd>
+        <dt>Nombre</dt><dd>La de hoy, más: fuera números, sucursal, ciudad y «S.A.C.», «E.I.R.L.»; y si casa con una marca del banco de 666, se usa esa marca. «DP*STARBUCKS MIRAFLORES 123» → «STARBUCKS».</dd>
+        <dt>Cada cuánto</dt><dd>El teléfono aporta una vez por semana; la lista se recalcula y se publica cada noche.</dd>
+        <dt>Quién aporta</dt><dd>Aprobaciones de capturas: Bandeja, «Esto leí», Apple Pay, banco, voz.</dd>
+      </dl>
+      <h4>A favor</h4><ul class="clean small"><li>Tres coincidencias bastan para un comercio de barrio.</li><li>Las sucursales suman juntas.</li><li>Un error publicado cuesta más de corregir que de cometer: frena el envenenamiento.</li></ul>
+      <h4>En contra</h4><ul class="clean small"><li>La lista de sucursales y ciudades hay que mantenerla (empieza con Perú).</li><li>Con 3, un grupo de amigos coordinado podría meter un par falso. Solo propone, y tu corrección manda.</li></ul>
+    </article>
+    <article class="card var" id="vC">
+      <header><div class="row"><span class="tag">C</span><h3>Rápida</h3></div><span class="small muted">Máxima cobertura, más riesgo.</span></header>
+      <div class="verdict" data-v="C"></div>
+      <dl>
+        <dt>Umbral</dt><dd>2 teléfonos y mayoría simple</dd>
+        <dt>Nombre</dt><dd>Como B, más parecido aproximado en el servidor: «OXXO» y «OXXO PE» se juntan solos.</dd>
+        <dt>Cada cuánto</dt><dd>En vivo: al capturar, el teléfono pregunta por ese comercio.</dd>
+        <dt>Quién aporta</dt><dd>Todo, también el formulario manual.</dd>
+      </dl>
+      <h4>A favor</h4><ul class="clean small"><li>Lo más útil desde el primer día.</li><li>Sin archivo que descargar.</li></ul>
+      <h4>En contra</h4><ul class="clean small"><li>Cada captura le dice al servidor dónde compraste y cuándo, también la de Apple Pay.</li><li>Dos personas bastan para envenenar un comercio.</li><li>El parecido aproximado junta comercios distintos.</li></ul>
+    </article>
+  </div>
+
+  <div class="card norm">
+    <b>La limpieza del nombre, en ejemplos (variante B)</b>
+    <div class="grid2">
+      <div><div class="from">DP*STARBUCKS COFFEE MIRAFLORES 123</div>→ <b>STARBUCKS</b> <span class="muted">(marca del banco de 666)</span></div>
+      <div><div class="from">IZI*TAMBO+ AV LARCO 1153 LIMA</div>→ <b>TAMBO</b></div>
+      <div><div class="from">INVERSIONES LA LUCHA S.A.C.</div>→ <b>INVERSIONES LA LUCHA</b></div>
+      <div><div class="from">BOTICA SAN JOSE 2 SUC 14</div>→ <b>BOTICA SAN JOSE</b></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Cómo se vería</span>
+  <h2>Una sugerencia propia frente a una de la lista común</h2>
+  <p class="muted">Sobre la hoja «Esto leí» de hoy. Lo único nuevo es la línea bajo la tarjeta cuando la categoría viene de la lista común (marcada en verde). Desliza para ver las cuatro.</p>
+  <div class="mocks">
+    <div class="mockcol">
+      <div class="phone" aria-label="Maqueta: sugerencia propia">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="behind"><div class="big">Registros</div><div class="bar"></div><div class="bar"></div></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="bar"><b>Esto leí</b><span style="display:flex;gap:8px;align-items:center"><span class="thumb"></span><span class="xbtn">✕</span></span></div>
+          <div class="dcard">
+            <div class="drow"><span class="dico orange">◆</span><span class="dtxt"><div class="n">Chifa Don Lucho</div><div class="c">Alimentación · Restaurantes</div></span><span class="amt">S/ 38.00</span></div>
+            <div class="chips"><span>Cuenta Principal</span><span>Hoy</span><span>+ Etiqueta</span></div>
+          </div>
+          <div class="note">Si cierras sin guardar, lo encontrarás en tu Bandeja de Entrada.</div>
+          <div class="foot"><span>Otra foto</span><span class="primary">Guardar</span></div>
+        </div>
+      </div>
+      <h3>1 · Viene de tu memoria</h3>
+      <p>Ya apuntaste este chifa antes. Se ve exactamente como hoy: sin línea nueva.</p>
+    </div>
+
+    <div class="mockcol">
+      <div class="phone" aria-label="Maqueta: sugerencia de la lista común">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="behind"><div class="big">Registros</div><div class="bar"></div><div class="bar"></div></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="bar"><b>Esto leí</b><span style="display:flex;gap:8px;align-items:center"><span class="thumb"></span><span class="xbtn">✕</span></span></div>
+          <div class="dcard">
+            <div class="drow"><span class="dico green">◆</span><span class="dtxt"><div class="n">Tambo+</div><div class="c">Compras · Supermercados y tiendas</div></span><span class="amt">S/ 12.50</span></div>
+            <div class="chips"><span>Cuenta Principal</span><span>Hoy</span><span>+ Etiqueta</span></div>
+          </div>
+          <div class="hint mark"><span class="ic">✓</span><span>Así suele categorizarse Tambo+ en Yala. <a href="#">Cambiar</a></span></div>
+          <div class="note">Si cierras sin guardar, lo encontrarás en tu Bandeja de Entrada.</div>
+          <div class="foot"><span>Otra foto</span><span class="primary">Guardar</span></div>
+        </div>
+      </div>
+      <h3>2 · Viene de la lista común</h3>
+      <p>Nunca apuntaste Tambo+. La categoría ya viene puesta y una línea dice de dónde salió. Al guardar, pasa a tu memoria y la próxima vez se ve como la 1.</p>
+    </div>
+
+    <div class="mockcol">
+      <div class="phone" aria-label="Maqueta: tu corrección manda">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="behind"><div class="big">Registros</div><div class="bar"></div><div class="bar"></div></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="bar"><b>Esto leí</b><span style="display:flex;gap:8px;align-items:center"><span class="thumb"></span><span class="xbtn">✕</span></span></div>
+          <div class="dcard">
+            <div class="drow"><span class="dico pink">◆</span><span class="dtxt"><div class="n">Tambo+</div><div class="c">Ocio · Antojos</div></span><span class="amt">S/ 6.90</span></div>
+            <div class="chips"><span>Cuenta Principal</span><span>Hoy</span><span>+ Etiqueta</span></div>
+          </div>
+          <div class="note">Si cierras sin guardar, lo encontrarás en tu Bandeja de Entrada.</div>
+          <div class="foot"><span>Otra foto</span><span class="primary">Guardar</span></div>
+        </div>
+      </div>
+      <h3>3 · Tu corrección manda</h3>
+      <p>Una vez cambiaste Tambo+ a «Antojos». Aunque la lista común diga «supermercado», gana lo tuyo, y desde la primera vez. Como «Antojos» es una categoría tuya, ese cambio no se aporta.</p>
+    </div>
+
+    <div class="mockcol">
+      <div class="phone" aria-label="Maqueta: ajuste para salirse">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="sheet tall" style="top:44px;border-radius:0;left:0;right:0;bottom:0;box-shadow:none;background:var(--sheet)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px"><span style="color:var(--ios-accent);font-size:14px">‹ Perfil</span></div>
+          <div class="ios-title">Privacidad</div>
+          <div class="ios-head">Categorías en común</div>
+          <div class="ios-list">
+            <div class="ios-row"><span>Aportar comercios</span><span class="toggle" aria-label="Encendido"></span></div>
+            <div class="ios-row"><span style="color:var(--ios-accent)">Qué se envía</span><span style="color:var(--ios-muted)">›</span></div>
+          </div>
+          <div class="ios-foot">Cuando apruebas un gasto, Yala envía solo el nombre del comercio y su tipo (por ejemplo, «Tambo → supermercado»). Nunca el monto, la fecha, tu cuenta ni tus categorías. Si lo apagas, sigues recibiendo sugerencias.</div>
+          <div class="ios-head" style="margin-top:6px">Yala IA</div>
+          <div class="ios-list"><div class="ios-row"><span>Privacidad y datos IA</span><span style="color:var(--ios-muted)">›</span></div></div>
+        </div>
+      </div>
+      <h3>4 · Dónde te sales</h3>
+      <p>Una fila en Perfil, junto a los permisos de la IA. Encendida por defecto, con un aviso la primera vez que algo se aportaría (decisión 3 de abajo).</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Dónde vive y cuánto cuesta</span>
+  <h2>Costos: solo lo gratis o lo que ya se paga</h2>
+  <div class="tscroll">
+    <table>
+      <thead><tr><th>Dónde</th><th>Costo</th><th>Sin cuenta / con iCloud</th><th>Frenos contra el envenenamiento</th><th>Veredicto</th></tr></thead>
+      <tbody>
+        <tr class="recrow"><td><b>Servidor de Yala en Cloudflare</b> (base D1 y caché)<br><span class="pill rec">Recomendado</span></td><td>0 extra. Workers Paid ya se paga y trae 5 GB de base, 50 millones de escrituras y 25 000 millones de lecturas al mes. Estimado con 1 000 teléfonos aportando 30 comercios por semana: unas 130 000 escrituras al mes.</td><td>Sí: ya responde a todos los teléfonos con App Attest.</td><td>Todos: App Attest, un voto por teléfono, tope semanal, umbral en el servidor.</td><td>Hace todo y no mezcla nada con las cuentas.</td></tr>
+        <tr><td><b>Supabase</b> (donde vive la cuenta en la nube)</td><td>Cabe en el plan actual, pero suma tablas a la base de las cuentas.</td><td>No sin trabajo extra: está pensado para usuarios con sesión.</td><td>Los mismos si pasa por el servidor; si no, RLS no basta para contar teléfonos.</td><td>Junta el dato anónimo con las cuentas: peor para la política.</td></tr>
+        <tr><td><b>Base pública de iCloud</b> (CloudKit)</td><td>Gratis dentro de las cuotas de Apple.</td><td>Solo quien tiene iCloud; sin servidor que decida.</td><td>Débiles: cada teléfono escribe directo, el umbral lo tendría que calcular el propio teléfono.</td><td>Envenenable y sin manera de borrar votos viejos con garantías.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted">Construirlo (estimado): una sesión para el servidor (dos rutas, la tabla, el cálculo nocturno) y una o dos para la app (cola, descarga, orden de sugerencias, fila en Perfil, aviso y textos en 16 idiomas). Las cifras de Cloudflare son las del plan publicado; el uso de 1 000 teléfonos es una suposición para dar escala, no una medida.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Qué podría salir mal</span>
+  <h2>Riesgos de privacidad y cómo se cubren</h2>
+  <div class="tscroll">
+    <table class="risk">
+      <thead><tr><th>Riesgo</th><th>Ejemplo</th><th>Cómo se cubre</th><th>Queda</th></tr></thead>
+      <tbody>
+        <tr><td>El «comercio» es una persona</td><td>«YAPE A JUAN PÉREZ», el profesor particular, el casero.</td><td>Transferencias e ingresos no tienen tipo y no viajan. Alquiler e impuestos, fuera. Hace falta que varios teléfonos distintos digan lo mismo.</td><td><span class="pill warn">Bajo</span> Un nombre muy común con un tipo de comercio podría colarse; solo diría «X es un restaurante».</td></tr>
+        <tr><td>El servidor sabe dónde compra un teléfono</td><td>Votos pendientes: «este teléfono aportó TAMBO».</td><td>La huella del teléfono va cifrada con una llave del servidor y no se cruza con la cuenta. Sin IP guardada. Se borra a los 90 días o al entrar en la lista.</td><td><span class="pill warn">Bajo</span> Mientras esperan, son datos con seudónimo: por eso van en la política.</td></tr>
+        <tr><td>Se deduce cuándo compraste</td><td>El aporte llega 2 minutos después del pago.</td><td>Lote semanal en orden al azar; el servidor guarda la semana, no el día ni la hora.</td><td><span class="pill rec">Mínimo</span></td></tr>
+        <tr><td>Se deduce dónde vives</td><td>«TAMBO AV LARCO 1153».</td><td>Sucursal, calle y números fuera antes de salir del teléfono.</td><td><span class="pill rec">Mínimo</span></td></tr>
+        <tr><td>Alguien envenena la lista</td><td>Que «MIFARMA» salga como «bares».</td><td>Solo la app real (App Attest), un voto por teléfono, teléfonos con 7 días o más, tope de 30 aportes por semana, 75 % de acuerdo, corregir pide más que publicar, nunca se pone sola y tu corrección manda.</td><td><span class="pill warn">Bajo</span> Con la variante C sería alto.</td></tr>
+        <tr><td>El equipo de Yala mira la tabla</td><td>Alguien con acceso al servidor.</td><td>No hay montos, fechas ni cuentas que mirar; la huella no lleva a la persona.</td><td><span class="pill rec">Mínimo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Para la web</span>
+  <h2>Texto propuesto para la política de privacidad</h2>
+  <div class="policy">
+    <p class="small muted">Iría como un apartado nuevo dentro de la sección 6 (o como sección propia), más una línea en «Cuánto tiempo guardamos» y otra en «Identificadores». No se publica hasta construir la función. No es asesoría legal: si quieres certeza para la ley peruana de datos personales, conviene que lo mire un abogado.</p>
+    <div class="legal" id="policyText">
+      <p><b>Categorías de comercios en común.</b> Cuando apruebas un movimiento que Yala leyó de una foto, de Apple Pay, de un aviso o correo de tu banco o de tu voz, la app puede enviar a nuestro servidor (alojado en Cloudflare) solo dos cosas: el nombre del comercio, sin números de sucursal, de calle ni de tarjeta, y su tipo, elegido de una lista fija (por ejemplo, «supermercado» o «farmacia»). Nunca el importe, la fecha, la cuenta, tus notas, los nombres de tus categorías ni tu email. No se envía nada de transferencias, ingresos, alquileres ni impuestos.</p>
+      <p>Estos envíos se agrupan una vez por semana y van con una huella de tu dispositivo, cifrada en nuestro servidor, que no está ligada a tu cuenta y solo sirve para contar cada teléfono una vez. Un comercio entra en la lista común cuando varios dispositivos distintos coinciden en su tipo. La lista común no lleva ninguna huella: la descargan todos los usuarios para que Yala proponga la categoría de comercios que aún no has apuntado, y la búsqueda se hace en tu teléfono, sin preguntarle a nuestro servidor. Lo que tú corriges siempre manda en tu app.</p>
+      <p>Las huellas y los envíos que aún no entraron en la lista se borran a los 90 días. Funciona igual con tu iCloud privado o con la cuenta en la nube. Puedes dejar de aportar en Perfil › Privacidad › «Aportar comercios»; seguirás recibiendo las sugerencias.</p>
+      <p><b>En «Cuánto tiempo guardamos tus datos»:</b> Categorías en común: los envíos pendientes y sus huellas, 90 días como máximo. La lista común no contiene datos personales.</p>
+      <p><b>En «Identificadores»:</b> Huella para las categorías en común: se calcula en nuestro servidor a partir de la clave de App Attest, solo para contar cada dispositivo una vez, y se borra con los envíos pendientes.</p>
+    </div>
+    <button class="copybtn" id="copyPolicy" type="button">Copiar el texto</button>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>¿Hace falta pedir permiso?</h3><p class="small" style="margin-top:6px">Recomiendo <b>aviso claro + opción de salirse</b>, sin pedir un «sí» antes. Lo que viaja es mínimo, sin datos de contacto ni montos, y la lista final es anónima. Lo que sí tiene seudónimo son los votos pendientes, por eso el aviso es explícito y la salida está a un toque. Pedir permiso antes es lo más seguro legalmente, pero pocos dirían que sí y la lista apenas crecería.</p></div>
+    <div class="card"><h3>Lo que también cambia fuera de la app</h3><ul class="clean small" style="margin-top:6px"><li>La etiqueta de privacidad de la App Store: añadir «Historial de compras», no vinculado a ti, uso «Funcionalidad de la app».</li><li>La política publicada en la web, en sus idiomas.</li><li>Las dos van en el encargo de construcción, no en esta propuesta.</li></ul></div>
+  </div>
+</section>
+
+<section class="decide" aria-labelledby="dect">
+  <span class="eyebrow">Tus decisiones</span>
+  <h2 id="dect">Elige y guarda</h2>
+  <p class="muted">La opción recomendada va primero y marcada. Lo que guardes aquí lo lee la sesión que lo construya.</p>
+  <div class="card decide">
+    <div class="q"><b>1. ¿Qué variante?</b>
+      <div class="opts">
+        <label><input type="radio" name="variante" value="B"><span><span class="r">B · Equilibrada (recomendada).</span> 3 teléfonos, 75 %, nombres limpios, lista diaria.</span></label>
+        <label><input type="radio" name="variante" value="A"><span>A · Prudente. 5 teléfonos, 80 %, lista semanal.</span></label>
+        <label><input type="radio" name="variante" value="C"><span>C · Rápida. 2 teléfonos, consulta en vivo.</span></label>
+      </div>
+    </div>
+    <div class="q"><b>2. ¿Dónde vive?</b>
+      <div class="opts" data-q="d2">
+        <label><input type="radio" name="d2" value="cloudflare"><span><span class="r">Servidor de Yala en Cloudflare (recomendado).</span> Sin costo extra, funciona sin cuenta.</span></label>
+        <label><input type="radio" name="d2" value="supabase"><span>Supabase, junto a la cuenta en la nube.</span></label>
+        <label><input type="radio" name="d2" value="icloud"><span>Base pública de iCloud.</span></label>
+      </div>
+    </div>
+    <div class="q"><b>3. ¿Cómo participa la gente?</b>
+      <div class="opts" data-q="d3">
+        <label><input type="radio" name="d3" value="aviso-y-salida"><span><span class="r">Aviso una vez + opción de salirse (recomendado).</span> Encendido por defecto.</span></label>
+        <label><input type="radio" name="d3" value="permiso-antes"><span>Pedir permiso antes. Apagado hasta que digan que sí.</span></label>
+        <label><input type="radio" name="d3" value="solo-politica"><span>Solo la política, sin aviso en la app. No lo recomiendo.</span></label>
+      </div>
+    </div>
+    <div class="q"><b>4. ¿Se nota de dónde viene la sugerencia?</b>
+      <div class="opts" data-q="d4">
+        <label><input type="radio" name="d4" value="con-linea"><span><span class="r">Con la línea «Así suele categorizarse… · Cambiar» (recomendado).</span></span></label>
+        <label><input type="radio" name="d4" value="sin-linea"><span>Sin línea: se ve igual que una propia.</span></label>
+      </div>
+    </div>
+    <div class="q"><b>5. ¿Quién recibe las sugerencias?</b>
+      <div class="opts" data-q="d5">
+        <label><input type="radio" name="d5" value="todos"><span><span class="r">Todos, también Free y sin cuenta (recomendado).</span> Cuantos más aportan, mejor para todos.</span></label>
+        <label><input type="radio" name="d5" value="pro"><span>Solo Pro.</span></label>
+        <label><input type="radio" name="d5" value="nube"><span>Solo con la cuenta en la nube.</span></label>
+      </div>
+    </div>
+    <div class="q"><b>6. ¿Qué aprobaciones aportan?</b>
+      <div class="opts" data-q="d6">
+        <label><input type="radio" name="d6" value="capturas"><span><span class="r">Solo gastos capturados (recomendado).</span> Foto, Apple Pay, banco, voz, Bandeja.</span></label>
+        <label><input type="radio" name="d6" value="todo"><span>También lo que escribes a mano en el formulario.</span></label>
+      </div>
+    </div>
+    <div class="q"><label for="notas"><b>Nota (opcional)</b></label><textarea id="notas" placeholder="Algo que cambiarías, un umbral distinto, una duda…"></textarea></div>
+    <div class="save"><button id="guardar" type="button">Guardar decisión</button><span id="status" role="status">Conectando con la base…</span></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* Simulador de umbral */
+const s1=document.getElementById('s1'), s2=document.getElementById('s2'), s3=document.getElementById('s3');
+function verdictFor(v, sup, res, publishedRes){
+  const total=sup+res, top=Math.max(sup,res), second=Math.min(sup,res);
+  const topName = sup>=res ? 'supermercado' : 'restaurante';
+  if(total===0) return ['no','Nadie lo ha aportado todavía.'];
+  if(v==='A'){
+    const need=5, ratio=.8;
+    if(sup===res) return ['tie','Empate: no entra.'];
+    if(top<need) return ['no',`Aún no entra: faltan ${need-top} teléfonos.`];
+    if(top/total<ratio) return ['tie',`No entra: el acuerdo es ${Math.round(top/total*100)} %, pide 80 %.`];
+    if(publishedRes && topName==='supermercado') return ['yes','Se corrige a «supermercado».'];
+    return ['yes',`Entra como «${topName}».`];
+  }
+  if(v==='B'){
+    const changing = publishedRes && topName==='supermercado';
+    const need = changing ? 5 : 3;
+    if(sup===res) return ['tie','Empate: no entra.'];
+    if(top<need) return ['no', changing ? `Sigue como «restaurante»: corregir pide 5, faltan ${need-top}.` : `Aún no entra: faltan ${need-top} teléfonos.`];
+    if(top/total<.75) return ['tie',`No entra: el acuerdo es ${Math.round(top/total*100)} %, pide 75 %.`];
+    if(top-second<2) return ['tie','No entra: pide 2 votos de ventaja.'];
+    if(changing) return ['yes','Se corrige a «supermercado».'];
+    return ['yes',`Entra como «${topName}».`];
+  }
+  // C
+  if(sup===res) return ['tie','Empate: no entra.'];
+  if(top<2) return ['no','Aún no entra: falta 1 teléfono.'];
+  if(publishedRes && topName==='supermercado') return ['yes','Se corrige a «supermercado» al instante.'];
+  return ['yes',`Entra como «${topName}».`];
+}
+function runSim(){
+  const sup=+s1.value, res=+s2.value, pub=s3.checked;
+  document.getElementById('o1').textContent=sup; document.getElementById('o2').textContent=res;
+  document.querySelectorAll('.verdict').forEach(el=>{
+    const [k,txt]=verdictFor(el.dataset.v,sup,res,pub);
+    el.className='verdict '+k; el.textContent=txt;
+  });
+}
+[s1,s2,s3].forEach(e=>e.addEventListener('input',runSim)); runSim();
+
+/* Copiar política */
+document.getElementById('copyPolicy').addEventListener('click',async e=>{
+  const text=[...document.querySelectorAll('#policyText p')].map(p=>p.innerText).join('\n\n');
+  try{ await navigator.clipboard.writeText(text); e.target.textContent='Copiado'; }
+  catch(_){ const r=document.createRange(); r.selectNodeContents(document.getElementById('policyText')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); e.target.textContent='Seleccionado: copia con el menú'; }
+});
+
+/* Decisión en la base del artifact */
+const statusEl=document.getElementById('status');
+const QS=['d2','d3','d4','d5','d6'];
+let docRef=null;
+function fill(d){
+  if(!d) return;
+  if(d.variante){ const r=document.querySelector(`input[name="variante"][value="${d.variante}"]`); if(r) r.checked=true; }
+  const det=d.detalles||{};
+  QS.forEach(q=>{ if(det[q]){ const r=document.querySelector(`input[name="${q}"][value="${det[q]}"]`); if(r) r.checked=true; } });
+  if(typeof d.nota==='string') document.getElementById('notas').value=d.nota;
+  if(d.actualizado) statusEl.textContent='Guardado el '+new Date(d.actualizado).toLocaleString('es-PE');
+}
+(async()=>{
+  const timer=setTimeout(()=>{ if(!docRef) statusEl.textContent='Sin conexión con la base: la decisión no se guardará desde aquí.'; },10000);
+  try{
+    const db = window.claude && await window.claude.use('db');
+    clearTimeout(timer);
+    if(!db){ statusEl.textContent='Abre la página con tu cuenta de claude.ai para guardar la decisión.'; return; }
+    docRef=db.doc('decision/jurgen');
+    const snap=await docRef.get();
+    if(snap.exists) fill(snap.data()); else statusEl.textContent='Aún no hay decisión guardada.';
+  }catch(err){ clearTimeout(timer); statusEl.textContent='No se pudo leer la decisión: '+(err&&err.message||err); }
+})();
+document.getElementById('guardar').addEventListener('click',async()=>{
+  if(!docRef){ statusEl.textContent='No hay conexión con la base: no se guardó.'; return; }
+  const v=document.querySelector('input[name="variante"]:checked');
+  const detalles={}; QS.forEach(q=>{ const r=document.querySelector(`input[name="${q}"]:checked`); detalles[q]=r?r.value:null; });
+  const data={variante:v?v.value:null, detalles, nota:document.getElementById('notas').value, actualizado:new Date().toISOString()};
+  statusEl.textContent='Guardando…';
+  try{ await docRef.set(data); statusEl.textContent='Guardado. La sesión que lo construya lo leerá de aquí.'; }
+  catch(err){ statusEl.textContent='No se guardó: '+(err&&err.message||err); }
+});
+</script>
