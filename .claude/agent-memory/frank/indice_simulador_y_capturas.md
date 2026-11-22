@@ -121,3 +121,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Galería del sistema: solo XCUITest](reference_galeria_del_sistema_solo_con_xcuitest.md) — PhotosPicker fuera del árbol; axe no elige foto; toque por coordenadas; recordVideo «ocupado» → record_sim_video.
 - [Antes/después con un XCUITest de capturas](reference_antes_con_un_xcuitest_de_capturas.md) — escrito antes de editar, corrido en la base, endurecido luego; a mano, axe no teclea montos.
 - [Device MCP espejando otro aparato](reference_device_mcp_espejando_otro_aparato.md) — Free espeja uno: con el iPhone de Jürgen, capturas por XCUITest conductor.
+- [Antes/después con un test de capturas](reference_capturas_antes_despues_con_test_de_capturas.md) — axe no abre la hoja de cuenta; el «antes» antes de editar la vista.
