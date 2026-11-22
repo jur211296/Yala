@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Add your statement and payment days";
 "hojaCuenta.noDates.detail" = "Yala will tell you how much to pay and by when.";
 "hojaCuenta.noDates.action" = "Add dates";
+"hojaCuenta.lineUsage" = "%1$@ used · %2$@ available of %3$@";

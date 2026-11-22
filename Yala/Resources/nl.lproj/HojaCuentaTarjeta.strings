@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Voeg je afschrift- en betaaldag toe";
 "hojaCuenta.noDates.detail" = "Dan vertelt Yala je hoeveel je moet betalen en wanneer.";
 "hojaCuenta.noDates.action" = "Datums toevoegen";
+"hojaCuenta.lineUsage" = "%1$@ gebruikt · %2$@ beschikbaar van %3$@";

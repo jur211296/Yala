@@ -38,5 +38,9 @@ extension L10n {
         static var sinFechasDetalle: String { s("noDates.detail") }
         /// El botón que abre Editar para ponerlas.
         static var anadirFechas: String { s("noDates.action") }
+        /// «16 % usado · 6.752,50 disponible de 8.000,00». Los tres huecos llegan ya formateados.
+        static func usoDeLinea(porcentaje: String, disponible: String, limite: String) -> String {
+            f("lineUsage", porcentaje, disponible, limite)
+        }
     }
 }

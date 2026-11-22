@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "Abrechnungs- und Zahltag hinzufügen";
 "hojaCuenta.noDates.detail" = "Dann sagt dir Yala, wie viel du bis wann zahlen musst.";
 "hojaCuenta.noDates.action" = "Daten hinzufügen";
+"hojaCuenta.lineUsage" = "%1$@ genutzt · %2$@ von %3$@ verfügbar";

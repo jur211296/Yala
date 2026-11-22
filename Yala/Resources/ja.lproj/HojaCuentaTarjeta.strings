@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "締め日と支払日を追加";
 "hojaCuenta.noDates.detail" = "いくら、いつまでに支払うかをYalaがお知らせします。";
 "hojaCuenta.noDates.action" = "日付を追加";
+"hojaCuenta.lineUsage" = "%1$@ 使用済み · %3$@ のうち %2$@ 利用可能";

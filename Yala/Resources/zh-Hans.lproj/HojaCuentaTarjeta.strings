@@ -10,3 +10,4 @@
 "hojaCuenta.noDates.title" = "添加账单日和还款日";
 "hojaCuenta.noDates.detail" = "Yala 会告诉你该还多少、何时还。";
 "hojaCuenta.noDates.action" = "添加日期";
+"hojaCuenta.lineUsage" = "已用 %1$@ · 额度 %3$@，可用 %2$@";
