@@ -127,3 +127,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [La caché de DerivedData se mide en su ruta](feedback_la_cache_de_derived_data_se_mide_en_su_ruta.md) — copiada a otra ruta recompila entero (241 s vs 23 s); varios tipos de cambio.
 - [Contar recálculos con latido y sonda](reference_contar_recalculos_con_latido_y_sonda.md) — latido de 5 ms en el main actor + sonda de pila; separa escenarios del ciclo de 60 s.
 - [Rojo de suite entera: junto a tu test nuevo](feedback_un_rojo_de_suite_entera_junto_a_tu_test_nuevo.md) — aislado verde y junto a lo tuyo rojo = tuyo; la base, con el mismo scheme.
+- [Lote de decisiones ya incorporado por otra sesión](feedback_lote_de_decisiones_puede_estar_ya_incorporado.md) — mira `git log --all -- docs/DECISIONS.md` antes; duplicarlo choca en el índice.
