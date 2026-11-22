@@ -54,3 +54,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Dos Chrome conectados frenan el artifact público](reference_dos_chrome_conectados_frena_el_artifact_publico.md) — 20-nov: hay que elegir navegador; sin Jürgen delante, queda privado y se anota.
 - [La Max sin credenciales de despliegue](reference_max_sin_credenciales_de_despliegue.md) — sin PAT de Supabase ni token de cktool: SQL y pasos de consola, a «Necesita de ti».
 - [Sentry por API: workflows, no rules](reference_sentry_api_workflows.md) — alertas en /workflows/, huella por PUT del proyecto, entorno nuevo no existe hasta su evento.
+- [Cambiar una variable del Worker sin redesplegar](reference_cambiar_una_variable_del_worker_sin_redesplegar.md) — PATCH de settings con «inherit»; la respuesta trae solo el cambiado; etag para probar el mismo código.

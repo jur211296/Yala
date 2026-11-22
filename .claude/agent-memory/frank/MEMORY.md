@@ -6,9 +6,9 @@
 ## Subíndices — ábrelos cuando el tema toque
 - [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 79 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
 - [Simulador y capturas](indice_simulador_y_capturas.md) — 87 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
-- [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
-- [Estado del trabajo](indice_estado_del_trabajo.md) — 94 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
-- [Entorno y herramientas](indice_entorno.md) — 21 entradas: máquina, hooks, accesos, disco.
+- [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 123 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
+- [Estado del trabajo](indice_estado_del_trabajo.md) — 95 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
+- [Entorno y herramientas](indice_entorno.md) — 22 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
 - [Cierre espera el merge real](feedback_cierre_espera_el_merge_real.md) — 19-nov: auto-merge en cola, pero no cierres hasta MERGED; conflicto o CI rojo los arreglas tú; 45 min ajeno → anotar.
