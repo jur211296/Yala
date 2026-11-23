@@ -1,13 +1,17 @@
 ---
 name: dns-yala-app-pe
-description: Dónde se administra el DNS de yala-app.pe, quién puede entrar, y el estado del correo: autentica desde el 2026-09-08 (los tres en pass); queda subir la política DMARC, con ticket propio
+description: (zona en Cloudflare desde antes del 23-nov) Dónde se administra el DNS de yala-app.pe, quién puede entrar, y el estado del correo: autentica desde el 2026-09-08 (los tres en pass); queda subir la política DMARC, con ticket propio
 metadata:
   type: reference
 ---
 
 # DNS de yala-app.pe — dónde se toca y quién puede
 
-**Registrador:** NIC.PE / punto.pe. **Zona autoritativa:** servidores de la RCP
+> **CADUCADO el 2026-11-23 (medido con `dig NS`):** la zona ya está en **Cloudflare** (`kyle`/`becky.ns.cloudflare.com`),
+> con el ápex proxied hacia Vercel. Lo de abajo sobre la RCP es historia; el plan de la web está en
+> `docs/infra/web-a-cloudflare/`. Re-mide el correo (MX, SPF, DKIM) antes de citarlo.
+
+**Registrador:** NIC.PE / punto.pe. **Zona autoritativa (hasta algún momento entre sep y nov):** servidores de la RCP
 (`ns.rcp.net.pe` 161.132.17.10, `ns2.rcp.net.pe` 209.45.127.3).
 **Correo:** Google Workspace (MX a ASPMX.L.GOOGLE.COM + ALT1-4). **Web:** Vercel (A 216.198.79.1).
 
