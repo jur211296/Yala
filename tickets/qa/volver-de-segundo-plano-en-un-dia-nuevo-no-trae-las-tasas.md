@@ -1,6 +1,6 @@
 ---
 id: volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas
-status: done
+status: qa
 priority: medium
 area: currency
 updated: 2026-11-22
@@ -38,7 +38,7 @@ a una petición diaria) y retirar el camino muerto. Decisión de producto: ningu
 - [ ] Volver a primer plano en un día sin la fila de hoy la pide, y el Panel se corrige solo.
 - [ ] `needsExchangeRateReload` retirado o con un escritor.
 
-## Cerrado (2026-11-22, encargo «Tasas de cambio»)
+## Construido (2026-11-22, encargo «Tasas de cambio»): espera el device-QA de abajo
 
 - `AppBootstrapper.handleBecameActive` llama a `updateTodayIfNeeded` en cada vuelta a primer plano (no en el arranque,
   que ya lo hace). Su freno ya acota el coste: con la fila de hoy no pide nada, y como mucho una petición por día. Fuera

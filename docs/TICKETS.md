@@ -556,7 +556,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | es-ar-storage-groups-block-is-in-tuteo-not-voseo | backlog | tickets/backlog/es-ar-storage-groups-block-is-in-tuteo-not-voseo.md |
 | escritores-de-tasas-que-no-avisan | backlog | tickets/backlog/escritores-de-tasas-que-no-avisan.md |
 | estadisticas-y-widget-no-se-enteran-de-tasas-nuevas | backlog | tickets/backlog/estadisticas-y-widget-no-se-enteran-de-tasas-nuevas.md |
-| exchange-rate-date-keys-follow-the-phone-calendar | done | tickets/done/exchange-rate-date-keys-follow-the-phone-calendar.md |
+| exchange-rate-date-keys-follow-the-phone-calendar | qa | tickets/qa/exchange-rate-date-keys-follow-the-phone-calendar.md |
 | exchange-rate-detail-shows-zero-for-low-denomination-currencies | done | tickets/done/exchange-rate-detail-shows-zero-for-low-denomination-currencies.md |
 | exchange-rates-duplicate-per-day-across-installs | backlog | tickets/backlog/exchange-rates-duplicate-per-day-across-installs.md |
 | existing-account-entry-shows-beginner-tips-again | done | tickets/done/existing-account-entry-shows-beginner-tips-again.md |
@@ -1426,7 +1426,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |
-| volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | done | tickets/done/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
+| volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | qa | tickets/qa/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
 | vs-hardcoded-in-statistics-and-panel-comparisons | backlog | tickets/backlog/vs-hardcoded-in-statistics-and-panel-comparisons.md |
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |

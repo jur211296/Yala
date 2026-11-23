@@ -1,6 +1,6 @@
 ---
 id: exchange-rate-date-keys-follow-the-phone-calendar
-status: done
+status: qa
 priority: medium
 area: cloud
 created: 2026-09-26
@@ -41,7 +41,7 @@ Con el iPhone en calendario budista, la fila de hoy se guarda como `2026-…` y 
 
 Triage 2026-10-08: abierto · low → medium · los formatters siguen sin en_US_POSIX ni gregoriano; para toda una región (Tailandia, budista de serie) los importes en otra divisa se convertirían con la tabla aproximada, y el arreglo son dos líneas.
 
-## Cerrado (2026-11-22, encargo «Tasas de cambio»)
+## Construido (2026-11-22, encargo «Tasas de cambio»): espera el device-QA de abajo
 
 - Los tres formatters que escriben o piden claves (`CurrencyConverter`, `ExchangeRateService`, `ExchangeRateAPIService`)
   fijan `locale = en_US_POSIX` y calendario gregoriano.

@@ -9,11 +9,11 @@ source: "Jürgen pidió el 22-nov (15:08 Lima) encolar lo pendiente del backlog 
 
 # Tasas de cambio: una sola tasa por día, claves gregorianas, tasas de hoy al volver y saldo inicial al mover la fecha
 
-Junta cuatro tickets afines, cerrados con su evidencia:
+Junta cuatro tickets afines: dos cerrados y dos en QA con su guion de iPhone:
 
 - `tickets/done/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md`
-- `tickets/done/exchange-rate-date-keys-follow-the-phone-calendar.md`
-- `tickets/done/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md`
+- `tickets/qa/exchange-rate-date-keys-follow-the-phone-calendar.md`
+- `tickets/qa/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md`
 - `tickets/done/initial-balance-date-move-leaves-converted-amount-stale.md`
 
 ## Qué cambia para el usuario
