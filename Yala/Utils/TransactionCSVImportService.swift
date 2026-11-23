@@ -164,6 +164,16 @@ struct ParsedTransactionDraft {
     var fixedRate: Double? = nil
     /// La naturaleza cambiada a mano (`need`), como se guarda en `TransactionItem.needOverride`.
     var needOverride: String? = nil
+    /// La cuenta a la que va, como clave de comparación dentro de este import (duplicados y transferencias).
+    var accountKey: String = ""
+    /// Parece ya importada: hay un movimiento igual en su cuenta (H11). Si el import salta duplicados, no entra.
+    var isDuplicate: Bool = false
+}
+
+/// Un saldo inicial cuya fecha retrocedió el import (para poder deshacerlo, H12).
+struct ImportInitialBalanceChange {
+    let transaction: TransactionItem
+    let previousDate: Date
 }
 
 /// Representa una fila cruda leída de un archivo CSV o XLSX antes de validación.
@@ -256,6 +266,16 @@ struct TransactionImportResult {
     /// Excel con varias hojas con movimientos: la que se leyó y las que no.
     var readSheet: String? = nil
     var skippedSheets: [String] = []
+    /// Cómo se leyeron las fechas del archivo (H10).
+    var dateDecision: ImportDateDecision? = nil
+    /// Las filas que parecen ya importadas (H11), entren o no.
+    var duplicateRowNumbers: [Int] = []
+    /// Las que no entraron por eso (el import saltaba duplicados).
+    var skippedDuplicateCount: Int = 0
+    /// Las patas de transferencia que quedaron sin pareja (H9).
+    var looseTransferCount: Int = 0
+    /// Los saldos iniciales cuya fecha retrocedió (H12).
+    var initialBalanceChanges: [ImportInitialBalanceChange] = []
 }
 
 // MARK: - Servicio principal de importación
@@ -271,12 +291,14 @@ enum TransactionCSVImportService {
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
-        skippingInvalidRows: Bool = false
+        skippingInvalidRows: Bool = false,
+        skippingDuplicates: Bool = false
     ) async throws -> TransactionImportResult {
         guard url.pathExtension.lowercased() == "csv" else { throw ImportError.invalidFileExtension }
         return try await importFile(
             from: url, destination: .account(account), in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows,
+            skippingDuplicates: skippingDuplicates)
     }
 
     /// Importa un CSV con varias monedas, cada una a su cuenta.
@@ -286,12 +308,14 @@ enum TransactionCSVImportService {
         currencyAccountMap: [String: Account],
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
-        skippingInvalidRows: Bool = false
+        skippingInvalidRows: Bool = false,
+        skippingDuplicates: Bool = false
     ) async throws -> TransactionImportResult {
         guard url.pathExtension.lowercased() == "csv" else { throw ImportError.invalidFileExtension }
         return try await importFile(
             from: url, destination: .byCurrency(currencyAccountMap), in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows,
+            skippingDuplicates: skippingDuplicates)
     }
 
     /// Importa un Excel en una cuenta.
@@ -301,12 +325,14 @@ enum TransactionCSVImportService {
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
-        skippingInvalidRows: Bool = false
+        skippingInvalidRows: Bool = false,
+        skippingDuplicates: Bool = false
     ) async throws -> TransactionImportResult {
         guard url.pathExtension.lowercased() == "xlsx" else { throw ImportError.invalidFileExtension }
         return try await importFile(
             from: url, destination: .account(account), in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows,
+            skippingDuplicates: skippingDuplicates)
     }
 
     /// Importa un Excel con varias monedas, cada una a su cuenta.
@@ -316,12 +342,14 @@ enum TransactionCSVImportService {
         currencyAccountMap: [String: Account],
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
-        skippingInvalidRows: Bool = false
+        skippingInvalidRows: Bool = false,
+        skippingDuplicates: Bool = false
     ) async throws -> TransactionImportResult {
         guard url.pathExtension.lowercased() == "xlsx" else { throw ImportError.invalidFileExtension }
         return try await importFile(
             from: url, destination: .byCurrency(currencyAccountMap), in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows,
+            skippingDuplicates: skippingDuplicates)
     }
 
     /// Escanea un archivo CSV y devuelve el conjunto de monedas únicas encontradas.
@@ -339,25 +367,55 @@ enum TransactionCSVImportService {
 
     /// Lee el archivo, valida cada fila en un solo sitio y crea los movimientos (y, con columna `account`, las
     /// cuentas nuevas). No guarda.
+    ///
+    /// - Parameters:
+    ///   - preparedTable: la tabla ya leída (la de la vista previa): así el archivo no se lee dos veces (H14).
+    ///   - skippingDuplicates: las filas que parecen ya importadas no entran (H11).
+    ///   - insertsTransactions: `false` en la vista previa, que solo valida: no crea movimientos para tirarlos (H14).
     @MainActor
     static func importFile(
         from url: URL,
         destination: ImportDestination,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
-        skippingInvalidRows: Bool = false
+        skippingInvalidRows: Bool = false,
+        skippingDuplicates: Bool = false,
+        preparedTable: ImportTable? = nil,
+        insertsTransactions: Bool = true
     ) async throws -> TransactionImportResult {
-        let table = try ImportFileReader.readTable(from: url)
+        let table = try preparedTable ?? ImportFileReader.readTable(from: url)
         guard !table.rows.isEmpty else { throw ImportError.emptyFile }
         return try importTable(
             table, destination: destination, in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: skippingInvalidRows,
+            skippingDuplicates: skippingDuplicates, insertsTransactions: insertsTransactions)
     }
 
     /// Una fila válida y a dónde va.
     private enum Target {
         case existing(Account)
         case new(key: String)
+
+        var key: String {
+            switch self {
+            case .existing(let account): return "e\(ObjectIdentifier(account).hashValue)"
+            case .new(let key): return "n:\(key)"
+            }
+        }
+    }
+
+    /// Lo ya resuelto en este import (H14): cada categoría, subcategoría de sistema y etiqueta se busca una vez, no una
+    /// por fila. Con 3.000 filas eran más de 11.000 consultas en el hilo principal.
+    final class ResolutionCache {
+        struct CategoryKey: Hashable {
+            let category: String
+            let subcategory: String
+            let isIncome: Bool
+        }
+        var categories: [CategoryKey: ImportCategoryResolution] = [:]
+        var systemSubcategories: [CategoryKey: Subcategory?] = [:]
+        var tagsByName: [String: Tag]?
+        var usedTagColors: [String] = []
     }
 
     @MainActor
@@ -366,15 +424,22 @@ enum TransactionCSVImportService {
         destination: ImportDestination,
         in context: ModelContext,
         allowCreatingNewCategories: Bool,
-        skippingInvalidRows: Bool
+        skippingInvalidRows: Bool,
+        skippingDuplicates: Bool = false,
+        insertsTransactions: Bool = true,
+        locale: Locale = .current,
+        timeZone: TimeZone = .current,
+        now: Date = .now
     ) throws -> TransactionImportResult {
         let preferredCode = CurrencyDefaults.currentPreferred
-        // Para emparejar transferencias SOLO entre lo que entra ahora (no con huérfanas viejas).
-        let importStart = Date.now
 
         // H1: el separador decimal se decide con todo el archivo, no celda a celda.
         let convention = ImportAmountParser.fileConvention(
             for: table.rows.filter { !$0.amountIsNumber }.map(\.amount))
+        // H10: y el orden día/mes de las fechas, también.
+        let dateDecision = ImportDateLogic.decide(for: table.rows.map(\.date), locale: locale)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
 
         // H7: con columna `account`, las cuentas del usuario (todas: archivadas y de sistema para no reutilizarlas).
         var resolver: ImportAccountResolver?
@@ -399,15 +464,17 @@ enum TransactionCSVImportService {
         var doubtful: [ImportDoubtfulAmount] = []
         var notChosen: [String: Int] = [:]
         var futureCount = 0
-        // Las de fecha futura se dejan fuera, como siempre; desde S27m antes de crear nada por ellas.
-        let today = Date.now
+        let cache = ResolutionCache()
+        let rules = RowRules(
+            convention: convention, dateOrder: dateDecision.order, timeZone: timeZone, now: now,
+            preferredCurrency: preferredCode)
 
         for row in table.rows {
             do {
                 guard let (draft, target, reading) = try validate(
-                    row, destination: destination, convention: convention, today: today, resolver: &resolver,
+                    row, destination: destination, rules: rules, resolver: &resolver,
                     accountsByID: accountsByID, allowedNewKeys: allowedNewKeys, notChosen: &notChosen,
-                    allowCreatingNewCategories: allowCreatingNewCategories, in: context)
+                    allowCreatingNewCategories: allowCreatingNewCategories, cache: cache, in: context)
                 else {
                     futureCount += 1
                     continue
@@ -418,14 +485,24 @@ enum TransactionCSVImportService {
                         amount: (reading.value as NSDecimalNumber).doubleValue,
                         currencyCode: draft.normalizedCurrencyCode))
                 }
-                validated.append((draft, target))
+                var keyed = draft
+                keyed.accountKey = target.key
+                validated.append((keyed, target))
             } catch let error as ImportError where skippingInvalidRows && error.rowNumber != nil {
                 // Una fila mala no para el archivo entero si se pidió saltarlas (L7-17).
                 failures.append(error)
             }
         }
 
-        let valid = validated
+        // H11: lo que parece ya importado, contra los movimientos de las cuentas que ya existen.
+        let duplicateIndices = try findDuplicates(validated, calendar: calendar, in: context)
+        for index in duplicateIndices { validated[index].draft.isDuplicate = true }
+        let duplicateRows = duplicateIndices.sorted().map { validated[$0].draft.rowNumber }
+        let valid = skippingDuplicates ? validated.filter { !$0.draft.isDuplicate } : validated
+
+        // H9: las transferencias que quedan sin pareja, sobre lo que entra.
+        let transferLegs = transferLegs(of: valid.map(\.draft), calendar: calendar)
+        let pairs = ImportTransferPairingLogic.pairs(transferLegs.map(\.leg))
 
         // Las cuentas nuevas se crean solo si algo entra en ellas.
         var createdAccounts: [String: Account] = [:]
@@ -434,50 +511,71 @@ enum TransactionCSVImportService {
         func remember(_ account: Account) {
             if !touchedAccounts.contains(where: { $0 === account }) { touchedAccounts.append(account) }
         }
-        for (draft, target) in valid {
-            let account: Account
-            switch target {
-            case .existing(let existing):
-                account = existing
-            case .new(let key):
-                if let created = createdAccounts[key] {
-                    account = created
-                } else {
-                    guard let definition = newAccountDefinitions.first(where: { $0.key == key }) else { continue }
-                    let created = Account(
-                        name: definition.name,
-                        currencyCode: definition.currencyCode,
-                        colorHex: AppConstants.defaultColorHex,
-                        iconName: iconName(for: .general),
-                        type: AccountType.general.rawValue,
-                        adjustmentMode: AdjustmentMode.changeInitialBalance.rawValue
-                    )
-                    context.insert(created)
-                    createdAccounts[key] = created
-                    account = created
+        var initialBalanceChanges: [ImportInitialBalanceChange] = []
+        if insertsTransactions {
+            // Alineado con `valid`: `nil` si la fila no llegó a crearse.
+            var inserted: [TransactionItem?] = []
+            inserted.reserveCapacity(valid.count)
+            for (draft, target) in valid {
+                let account: Account
+                switch target {
+                case .existing(let existing):
+                    account = existing
+                case .new(let key):
+                    if let created = createdAccounts[key] {
+                        account = created
+                    } else {
+                        guard let definition = newAccountDefinitions.first(where: { $0.key == key }) else {
+                            inserted.append(nil)
+                            continue
+                        }
+                        let created = Account(
+                            name: definition.name,
+                            currencyCode: definition.currencyCode,
+                            colorHex: AppConstants.defaultColorHex,
+                            iconName: iconName(for: .general),
+                            type: AccountType.general.rawValue,
+                            adjustmentMode: AdjustmentMode.changeInitialBalance.rawValue
+                        )
+                        context.insert(created)
+                        createdAccounts[key] = created
+                        account = created
+                    }
+                }
+                remember(account)
+                inserted.append(insertTransaction(for: draft, into: account, preferredCode: preferredCode, in: context))
+            }
+
+            // El saldo inicial va siempre antes que todo lo demás: si entró algo más antiguo, su fecha retrocede.
+            // Solo hace falta mirar las cuentas que recibieron algo, y con lo que ya tenían más lo de ahora.
+            if !touchedAccounts.isEmpty {
+                let allTransactions: [TransactionItem]
+                do {
+                    allTransactions = try context.fetch(FetchDescriptor<TransactionItem>())
+                } catch {
+                    #if DEBUG
+                    print("TransactionCSVImportService: Error fetching all transactions for initial balance update: \(error)")
+                    #endif
+                    allTransactions = []
+                }
+                if !allTransactions.isEmpty {
+                    for account in touchedAccounts {
+                        let initial = InitialBalanceService.findInitialBalanceTransaction(for: account, in: context)
+                        let before = initial?.date
+                        InitialBalanceService.updateInitialBalanceDateIfNeeded(
+                            for: account, allTransactions: allTransactions, context: context)
+                        if let initial, let before, initial.date < before {
+                            initialBalanceChanges.append(ImportInitialBalanceChange(transaction: initial, previousDate: before))
+                        }
+                    }
                 }
             }
-            remember(account)
-            insertTransaction(for: draft, into: account, preferredCode: preferredCode, in: context)
-        }
-
-        // El saldo inicial va siempre antes que todo lo demás: si entró algo más antiguo, su fecha retrocede.
-        let allTransactions: [TransactionItem]
-        do {
-            allTransactions = try context.fetch(FetchDescriptor<TransactionItem>())
-        } catch {
-            #if DEBUG
-            print("TransactionCSVImportService: Error fetching all transactions for initial balance update: \(error)")
-            #endif
-            allTransactions = []
-        }
-        if !allTransactions.isEmpty {
-            for account in touchedAccounts {
-                InitialBalanceService.updateInitialBalanceDateIfNeeded(
-                    for: account, allTransactions: allTransactions, context: context)
+            for pair in pairs {
+                let pairID = UUID().uuidString
+                inserted[transferLegs[pair.outflow].index]?.transferPairID = pairID
+                inserted[transferLegs[pair.inflow].index]?.transferPairID = pairID
             }
         }
-        applyTransferPairingHeuristic(allTransactions.filter { $0.createdAt >= importStart })
 
         var rowsByNewKey: [String: Int] = [:]
         for (draft, _) in valid { if let key = draft.newAccountKey { rowsByNewKey[key, default: 0] += 1 } }
@@ -493,6 +591,17 @@ enum TransactionCSVImportService {
         }
 
         let drafts = valid.map(\.draft)
+        // Los nombres de las cuentas a las que entra algo, en el orden del archivo (también en la vista previa, que no
+        // crea las nuevas).
+        var receivingNames: [String] = []
+        for (_, target) in valid {
+            let name: String?
+            switch target {
+            case .existing(let account): name = account.name
+            case .new(let key): name = newAccountDefinitions.first { $0.key == key }?.name
+            }
+            if let name, !receivingNames.contains(name) { receivingNames.append(name) }
+        }
         failures.sort { ($0.rowNumber ?? 0) < ($1.rowNumber ?? 0) }
         return TransactionImportResult(
             createdCount: drafts.count,
@@ -504,20 +613,92 @@ enum TransactionCSVImportService {
             newAccounts: newSummaries,
             notChosenAccounts: notChosenSummaries,
             groupRowCount: failures.filter { if case .groupRow = $0 { return true } else { return false } }.count,
-            accountNames: accountNames(for: destination, touched: touchedAccounts),
+            accountNames: accountNames(for: destination, receiving: receivingNames),
             readSheet: table.readSheet,
-            skippedSheets: table.skippedSheets
+            skippedSheets: table.skippedSheets,
+            dateDecision: dateDecision,
+            duplicateRowNumbers: duplicateRows,
+            skippedDuplicateCount: skippingDuplicates ? duplicateIndices.count : 0,
+            looseTransferCount: transferLegs.count - pairs.count * 2,
+            initialBalanceChanges: initialBalanceChanges
         )
+    }
+
+    // MARK: - Duplicados (H11)
+
+    /// Los índices de `validated` que parecen ya importados: los que van a una cuenta que ya existe y tienen un
+    /// movimiento igual en ella (contando: dos iguales en el archivo y uno en la cuenta dejan uno nuevo).
+    @MainActor
+    private static func findDuplicates(
+        _ validated: [(draft: ParsedTransactionDraft, target: Target)], calendar: Calendar, in context: ModelContext
+    ) throws -> Set<Int> {
+        let existingRows = validated.enumerated().filter {
+            if case .existing = $0.element.target { return true } else { return false }
+        }
+        let dates = existingRows.map(\.element.draft.date)
+        guard let first = dates.min(), let last = dates.max() else { return [] }
+        let from = first.addingTimeInterval(-36 * 60 * 60)
+        let to = last.addingTimeInterval(36 * 60 * 60)
+        let accountKeys = Set(existingRows.map(\.element.draft.accountKey))
+        let stored = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= from && $0.date <= to }))
+        let existing = stored.compactMap { transaction -> ImportDuplicateLogic.Fingerprint? in
+            guard let account = transaction.account else { return nil }
+            let key = Target.existing(account).key
+            guard accountKeys.contains(key) else { return nil }
+            return ImportDuplicateLogic.fingerprint(
+                date: transaction.date, amount: transaction.amount, currencyCode: transaction.currencyCode,
+                accountKey: key, note: transaction.note, calendar: calendar)
+        }
+        guard !existing.isEmpty else { return [] }
+        let prints = existingRows.map { item in
+            ImportDuplicateLogic.fingerprint(
+                date: item.element.draft.date, amount: (item.element.draft.amount as NSDecimalNumber).doubleValue,
+                currencyCode: item.element.draft.normalizedCurrencyCode, accountKey: item.element.draft.accountKey,
+                note: item.element.draft.note, calendar: calendar)
+        }
+        let found = ImportDuplicateLogic.duplicateIndices(rows: prints, existing: existing)
+        return Set(found.map { existingRows[$0].offset })
+    }
+
+    // MARK: - Transferencias (H9)
+
+    /// Las patas de transferencia de lo que entra, con su posición en `drafts`.
+    static func transferLegs(
+        of drafts: [ParsedTransactionDraft], calendar: Calendar
+    ) -> [(index: Int, leg: ImportTransferPairingLogic.Leg)] {
+        var legs: [(index: Int, leg: ImportTransferPairingLogic.Leg)] = []
+        for (index, draft) in drafts.enumerated() where draft.subcategory.systemRole == .transfer {
+            let key = ImportDuplicateLogic.fingerprint(
+                date: draft.date, amount: (draft.amount as NSDecimalNumber).doubleValue,
+                currencyCode: draft.normalizedCurrencyCode, accountKey: draft.accountKey, note: draft.note,
+                calendar: calendar)
+            legs.append((index, ImportTransferPairingLogic.Leg(
+                id: legs.count, day: key.day, amount: key.amount, currencyCode: key.currencyCode,
+                accountKey: key.accountKey, note: key.note)))
+        }
+        return legs
     }
 
     /// Los nombres que la vista previa enseña: con una cuenta o por moneda, las elegidas (en orden de moneda); con
     /// columna `account`, las que reciben algo.
-    private static func accountNames(for destination: ImportDestination, touched: [Account]) -> [String] {
+    private static func accountNames(for destination: ImportDestination, receiving: [String]) -> [String] {
         switch destination {
         case .account(let account): return [account.name]
         case .byCurrency(let map): return map.sorted { $0.key < $1.key }.map(\.value.name)
-        case .accountColumn: return touched.map(\.name)
+        case .accountColumn: return receiving
         }
+    }
+
+    /// Lo que vale igual para todas las filas de un archivo.
+    struct RowRules {
+        let convention: ImportAmountParser.FileConvention
+        /// El orden día/mes del archivo (H10).
+        let dateOrder: ImportDateOrder
+        /// La zona del teléfono: el día se guarda a su mediodía.
+        let timeZone: TimeZone
+        let now: Date
+        let preferredCurrency: String
     }
 
     // MARK: - Validación de una fila (el ÚNICO sitio)
@@ -531,16 +712,17 @@ enum TransactionCSVImportService {
     private static func validate(
         _ row: RawImportRow,
         destination: ImportDestination,
-        convention: ImportAmountParser.FileConvention,
-        today: Date,
+        rules: RowRules,
         resolver: inout ImportAccountResolver?,
         accountsByID: [UUID: Account],
         allowedNewKeys: Set<String>?,
         notChosen: inout [String: Int],
         allowCreatingNewCategories: Bool,
+        cache: ResolutionCache,
         in context: ModelContext
     ) throws -> (ParsedTransactionDraft, Target, ImportAmountParser.Reading)? {
         let rowNumber = row.rowNumber
+        let convention = rules.convention
         if let readFailure = row.readFailure { throw readFailure }
 
         // 1. Grupos fuera, antes de resolver nada: así tampoco se crea una categoría «Grupos» (H5). También las filas
@@ -552,31 +734,30 @@ enum TransactionCSVImportService {
             throw ImportError.groupRow(row: rowNumber)
         }
 
-        // 2. Fecha y hora; una futura se deja fuera aquí. Sin hora, el mediodía UTC de siempre; con hora (columna `time`
-        // o dentro de la celda de la fecha), esa hora en la zona del teléfono, la misma en la que la escribe el export
-        // (H18). Una fila con hora es futura por DÍA, como en el formulario: hoy a las 23:00 no es futuro.
-        guard let day = parseDate(row.date) else {
+        // 2. Fecha y hora; una futura se deja fuera aquí. El día se lee con el orden día/mes del ARCHIVO y se guarda al
+        // mediodía de la zona del teléfono (H10; hasta el 2026-11-22, mediodía UTC, que en UTC+13 es el día siguiente).
+        // Con hora (columna `time` o dentro de la celda de la fecha), esa hora en la zona del teléfono, la misma en la
+        // que la escribe el export (H18). Una fila es futura por DÍA, como en el formulario: hoy a las 23:00 no lo es.
+        guard let day = ImportDateLogic.parseDay(
+            row.date, order: rules.dateOrder, timeZone: rules.timeZone, now: rules.now) else {
             throw ImportError.invalidDate(row: rowNumber, value: row.date)
         }
         var date = day
-        var hasTime = false
         let timeText = (row.time ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !timeText.isEmpty {
             guard let time = ImportRecordFieldsLogic.parseTime(timeText),
-                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time) else {
+                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time, localTimeZone: rules.timeZone)
+            else {
                 throw ImportError.invalidTime(row: rowNumber, value: timeText)
             }
             date = combined
-            hasTime = true
         } else if let time = ImportRecordFieldsLogic.timeInDateCell(row.date),
-                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time) {
+                  let combined = ImportRecordFieldsLogic.combine(day: day, time: time, localTimeZone: rules.timeZone) {
             date = combined
-            hasTime = true
         }
-        let isFuture = hasTime
-            ? Calendar.current.compare(date, to: today, toGranularity: .day) == .orderedDescending
-            : date > today
-        if isFuture { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = rules.timeZone
+        if calendar.compare(date, to: rules.now, toGranularity: .day) == .orderedDescending { return nil }
 
         // 3. Moneda (antes que el importe: sus decimales deciden la lectura propuesta de «1,500»).
         let currency = normalizeCurrencyInput(row.currency)
@@ -607,7 +788,7 @@ enum TransactionCSVImportService {
             }
             fixedRate = ImportRecordFieldsLogic.fixedRate(
                 rate: rate, rateCurrency: row.rateCurrency.map(normalizeCurrencyInput), rowCurrency: currency,
-                preferredCurrency: CurrencyDefaults.currentPreferred)
+                preferredCurrency: rules.preferredCurrency)
         }
         var needOverride: String?
         switch ImportRecordFieldsLogic.parseNeed(row.need ?? "") {
@@ -679,22 +860,39 @@ enum TransactionCSVImportService {
             // Una transferencia o un ajuste va a la subcategoría de sistema con ese PAPEL, no a una con ese nombre:
             // si no, en un teléfono sin la sembrada el import creaba una del usuario y sus filas dejaban de ser
             // transferencias en cuanto la subcategoría perdía el nombre como señal (2026-11-13).
-            guard let systemSubcategory = try systemSubcategory(
-                for: role, categoryName: trimmedCategory, isIncome: reading.value >= 0, in: context),
-                  let systemCategory = systemSubcategory.category
+            let key = ResolutionCache.CategoryKey(
+                category: trimmedCategory, subcategory: "\(role)", isIncome: reading.value >= 0)
+            let cached: Subcategory?
+            if let hit = cache.systemSubcategories[key] {
+                cached = hit
+            } else {
+                cached = try systemSubcategory(
+                    for: role, categoryName: trimmedCategory, isIncome: reading.value >= 0, in: context)
+                cache.systemSubcategories[key] = cached
+            }
+            guard let systemSubcategory = cached, let systemCategory = systemSubcategory.category
             else {
                 throw ImportError.unknownSubcategory(row: rowNumber, categoryName: trimmedCategory, name: trimmedSubcategory)
             }
             category = systemCategory
             subcategory = systemSubcategory
         } else {
-            switch try CategoryImportHelper.resolveForImport(
-                categoryName: trimmedCategory,
-                subcategoryName: trimmedSubcategory,
-                isIncome: reading.value >= 0,
-                allowCreating: allowCreatingNewCategories,
-                in: context
-            ) {
+            let key = ResolutionCache.CategoryKey(
+                category: trimmedCategory, subcategory: trimmedSubcategory, isIncome: reading.value >= 0)
+            let resolution: ImportCategoryResolution
+            if let hit = cache.categories[key] {
+                resolution = hit
+            } else {
+                resolution = try CategoryImportHelper.resolveForImport(
+                    categoryName: trimmedCategory,
+                    subcategoryName: trimmedSubcategory,
+                    isIncome: reading.value >= 0,
+                    allowCreating: allowCreatingNewCategories,
+                    in: context
+                )
+                cache.categories[key] = resolution
+            }
+            switch resolution {
             case .resolved(let resolvedCategory, let resolvedSubcategory):
                 category = resolvedCategory
                 subcategory = resolvedSubcategory
@@ -710,7 +908,7 @@ enum TransactionCSVImportService {
         }
 
         // 7. Etiquetas: se crean siempre si no existen, con el interruptor de categorías como esté.
-        let tags = try resolveTags(from: row.tags, in: context, allowCreatingNewTags: true)
+        let tags = try resolveTags(from: row.tags, in: context, cache: cache)
 
         resolver = trialResolver
         var newAccountKey: String?
@@ -727,9 +925,10 @@ enum TransactionCSVImportService {
 
     /// Crea el `TransactionItem` de una fila válida, con su conversión a la moneda preferida.
     @MainActor
+    @discardableResult
     private static func insertTransaction(
         for draft: ParsedTransactionDraft, into account: Account, preferredCode: String, in context: ModelContext
-    ) {
+    ) -> TransactionItem {
         let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
         // `convertChecked` sustituye al par `hasExactRate` + `convert`: aquél decidía por que la FILA de tasas
@@ -783,157 +982,43 @@ enum TransactionCSVImportService {
             transaction.balanceAdjustmentType = systemType
         }
         context.insert(transaction)
+        return transaction
     }
 
     // MARK: - Helpers de Tags
-    /// Resuelve la lista de etiquetas a partir de una cadena opcional con nombres
-    /// separados por punto y coma (;). Si `allowCreatingNewTags` es true, se crean
-    /// etiquetas nuevas cuando no existan. Si es false, se ignoran las etiquetas
-    /// inexistentes (no se aborta la importación).
-    private static func resolveTags(
-        from rawTags: String?,
-        in context: ModelContext,
-        allowCreatingNewTags: Bool
-    ) throws -> [Tag] {
-        guard let raw = rawTags,
-            !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else {
-            return []
-        }
 
-        let names =
-            raw
+    /// Las etiquetas de una celda («viaje; trabajo»). Las que no existen se crean. Todas las etiquetas se leen UNA vez
+    /// por import (`cache`), no una consulta de todas más una por nombre en cada fila (H14).
+    private static func resolveTags(from rawTags: String?, in context: ModelContext, cache: ResolutionCache) throws -> [Tag] {
+        guard let raw = rawTags, !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
+        let names = raw
             .split(separator: ";")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+        guard !names.isEmpty else { return [] }
 
-        if names.isEmpty {
-            return []
+        if cache.tagsByName == nil {
+            let allTags = try context.fetch(FetchDescriptor<Tag>())
+            var byName: [String: Tag] = [:]
+            for tag in allTags where tag.isActive && byName[tag.name] == nil { byName[tag.name] = tag }
+            cache.tagsByName = byName
+            cache.usedTagColors = allTags.map(\.colorHex)
         }
-
-        // Obtener colores ya usados para asignar colores únicos a tags nuevos
-        let allTagsDescriptor = FetchDescriptor<Tag>()
-        let allTags: [Tag]
-        do {
-            allTags = try context.fetch(allTagsDescriptor)
-        } catch {
-            #if DEBUG
-            print("TransactionCSVImportService: Error fetching all tags: \(error)")
-            #endif
-            allTags = []
-        }
-        var usedColors = allTags.map { $0.colorHex }
-
         var resolved: [Tag] = []
         resolved.reserveCapacity(names.count)
-
         for name in names {
-            let descriptor = FetchDescriptor<Tag>(
-                predicate: #Predicate { tag in
-                    tag.name == name && tag.isActive
-                }
-            )
-
-            let existing = try context.fetch(descriptor)
-
-            if let found = existing.first {
+            if let found = cache.tagsByName?[name] {
                 resolved.append(found)
-            } else if allowCreatingNewTags {
-                let nextColor = Tag.nextAvailableColor(excluding: usedColors)
-                let newTag = Tag(name: name, colorHex: nextColor)
-                usedColors.append(nextColor)
-                context.insert(newTag)
-                resolved.append(newTag)
             } else {
-                // Si no se permite crear nuevas etiquetas, simplemente ignoramos
-                // los nombres que no encontremos para no bloquear la importación.
-                continue
+                let nextColor = Tag.nextAvailableColor(excluding: cache.usedTagColors)
+                let newTag = Tag(name: name, colorHex: nextColor)
+                cache.usedTagColors.append(nextColor)
+                context.insert(newTag)
+                cache.tagsByName?[name] = newTag
+                resolved.append(newTag)
             }
         }
-
         return resolved
-    }
-
-    // MARK: - Parseo de fechas
-
-    /// Intenta parsear la fecha usando varios formatos soportados.
-    ///
-    /// Formatos de ejemplo:
-    /// - yyyy-MM-dd
-    /// - dd/MM/yyyy
-    /// - MM/dd/yyyy
-    private static func parseDate(_ value: String) -> Date? {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return nil }
-
-        // Remove time component if present
-        let datePart: String
-        if let idx = trimmed.firstIndex(where: { $0 == "T" || $0 == " " }) {
-            datePart = String(trimmed[..<idx])
-        } else {
-            datePart = trimmed
-        }
-
-        // STRATEGY 1: Manual parsing for dd/MM/yy and dd/MM/yyyy (Most common & User's case)
-        // This bypasses DateFormatter ambiguity and Timezone shifts/Month-1 bugs.
-        if datePart.contains("/") {
-            let parts = datePart.split(separator: "/")
-            if parts.count == 3 {
-                // Assuming dd/MM/yy or dd/MM/yyyy
-                if let day = Int(parts[0]), let month = Int(parts[1]), let yearPart = Int(parts[2])
-                {
-
-                    var year = yearPart
-                    // Handle 2-digit year (e.g., 25 -> 2025)
-                    if year < 100 {
-                        year += 2000
-                    }
-
-                    // Validate valid ranges to avoid false positives (e.g. 99/99/99)
-                    if month >= 1 && month <= 12 && day >= 1 && day <= 31 {
-                        var components = DateComponents()
-                        components.year = year
-                        components.month = month
-                        components.day = day
-                        // Force NOON UTC to avoid timezone shifts
-                        components.hour = 12
-                        components.minute = 0
-                        components.second = 0
-
-                        var calendar = Calendar(identifier: .gregorian)
-                        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-
-                        if let date = calendar.date(from: components) {
-                            return date
-                        }
-                    }
-                }
-            }
-        }
-
-        // STRATEGY 2: Fallback to DateFormatter for other formats (yyyy-MM-dd, etc.)
-        let formats = [
-            "yyyy-MM-dd",
-            "yyyy/MM/dd",
-            "dd-MM-yyyy",
-            "MM-dd-yyyy",
-            "dd.MM.yyyy",
-            "yyyy.MM.dd",
-        ]
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-
-        for format in formats {
-            formatter.dateFormat = format
-            if let date = formatter.date(from: datePart) {
-                // Return date at Noon UTC (12:00)
-                return date.addingTimeInterval(43200)
-            }
-        }
-
-        return nil
     }
 
     // MARK: - Helpers de CSV
@@ -1135,39 +1220,6 @@ enum TransactionCSVImportService {
         return rows
     }
 
-    // MARK: - Transfer Pair Heuristic
-
-    /// Aplica heurística de pairing a TXs recién importadas marcadas como transfer pero sin
-    /// `transferPairID`. Empareja por (día, abs(amount), currency) cuando el grupo es balanced
-    /// (1 negativo + 1 positivo). Comparte la lógica con
-    /// `TransferPairReconcileService.computePairingPlan` (SSOT pure-logic). Orphans no emparejables
-    /// quedan con pairID=nil; el reconciler boot-time intentará repair posterior.
-    private static func applyTransferPairingHeuristic(_ transactions: [TransactionItem]) {
-        let orphans = transactions.filter {
-            $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer && $0.transferPairID == nil
-        }
-        guard !orphans.isEmpty else { return }
-
-        var idMap: [UUID: TransactionItem] = [:]
-        let infos = orphans.map { tx -> TransferPairReconcileService.TransferInfo in
-            let localID = UUID()
-            idMap[localID] = tx
-            return TransferPairReconcileService.TransferInfo(
-                id: localID,
-                date: tx.date,
-                amount: tx.amount,
-                currencyCode: tx.currencyCode,
-                transferPairID: nil,
-                isTransferType: true
-            )
-        }
-
-        let pairings = TransferPairReconcileService.computePairingPlan(orphans: infos)
-        for pairing in pairings {
-            idMap[pairing.txAID]?.transferPairID = pairing.pairID
-            idMap[pairing.txBID]?.transferPairID = pairing.pairID
-        }
-    }
 }
 
 // MARK: - Movimientos de sistema y guardado atómico
@@ -1239,16 +1291,20 @@ extension TransactionCSVImportService {
     /// `CurrencyChangeService` evita restaurando registro a registro.
     ///
     /// - Parameter save: seam de tests para forzar el fallo del guardado; producción usa `context.save()`.
+    /// - Parameter beforeSave: mira lo que el import dejó en el contexto justo antes de guardarlo (lo usa «Deshacer
+    ///   importación» para apuntar lo creado).
     @MainActor
     static func importAndSave<Output>(
         in context: ModelContext,
         save: (ModelContext) throws -> Void = { try $0.save() },
+        beforeSave: (ModelContext) -> Void = { _ in },
         _ work: () async throws -> Output
     ) async throws -> Output {
         // Si este guardado falla, no se ha importado nada y lo pendiente se queda como estaba.
         if context.hasChanges { try save(context) }
         do {
             let result = try await work()
+            beforeSave(context)
             try save(context)
             // Telemetría propia: «usó esta función» (uno al día), con lo importado ya guardado.
             MetricsService.used(.importar)

@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 条记录似乎已导入";
+"importarLote1.duplicates.title.other" = "%d 条记录似乎已导入";
+"importarLote1.duplicates.hint" = "你的账户里已有相同的记录：同一天、金额、账户和备注。不导入它们就不会重复。";
+"importarLote1.duplicates.toggle" = "仍然导入";
+"importarLote1.loose.one" = "1 笔转账缺少另一半。它不计入支出或收入，但看不出转到了哪个账户。";
+"importarLote1.loose.other" = "%d 笔转账缺少另一半。它们不计入支出或收入，但看不出转到了哪个账户。";
+"importarLote1.dateOrder.dayFirst" = "日期按你手机的顺序读作日/月：%1$@ 是 %2$@。";
+"importarLote1.dateOrder.monthFirst" = "日期按你手机的顺序读作月/日：%1$@ 是 %2$@。";
+"importarLote1.dateOrder.hint" = "如果不对，请把文件中的日期写成年-月-日（2026-04-03）。";
+"importarLote1.undo.button" = "撤销导入";
+"importarLote1.undo.confirmTitle" = "撤销这次导入？";
+"importarLote1.undo.confirmMessage.one" = "导入的记录将被删除，即使你之后编辑过。导入时创建的分类、标签和账户只有在没有其他用途时才会删除。";
+"importarLote1.undo.confirmMessage.other" = "导入的 %d 条记录将被删除，即使你之后编辑过。导入时创建的分类、标签和账户只有在没有其他用途时才会删除。";
+"importarLote1.undo.confirmAction" = "撤销";
+"importarLote1.undo.doneTitle" = "已撤销导入";
+"importarLote1.undo.done.one" = "已删除导入的记录。";
+"importarLote1.undo.done.other" = "已删除导入的 %d 条记录。";
+"importarLote1.undo.failed" = "无法撤销导入，请重试。";
+"importarLote1.undo.lastImport.one" = "上次导入：1 条记录。24 小时内可以撤销。";
+"importarLote1.undo.lastImport.other" = "上次导入：%d 条记录。24 小时内可以撤销。";
+"importarLote1.result.skippedDuplicates.one" = "1 条记录已存在，未导入。";
+"importarLote1.result.skippedDuplicates.other" = "%d 条记录已存在，未导入。";
+"importarLote1.undo.inProgress" = "正在撤销导入… %1$d / %2$d";
+"importarLote1.duplicates.allAlready" = "这个文件里的内容都已在你的账户中，没有新的可导入。";

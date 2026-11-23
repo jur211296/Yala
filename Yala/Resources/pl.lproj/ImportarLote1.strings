@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 wpis wygląda na już zaimportowany";
+"importarLote1.duplicates.title.other" = "Wpisy wyglądające na już zaimportowane: %d";
+"importarLote1.duplicates.hint" = "Na twoich kontach są już takie same wpisy: ten sam dzień, kwota, konto i notatka. Jeśli ich nie zaimportujesz, nic się nie zdubluje.";
+"importarLote1.duplicates.toggle" = "Zaimportuj mimo to";
+"importarLote1.loose.one" = "1 przelew nie ma drugiej części. Nie liczy się do wydatków ani przychodów, ale nie będzie wiadomo, na które konto trafił.";
+"importarLote1.loose.other" = "Przelewy bez drugiej części: %d. Nie liczą się do wydatków ani przychodów, ale nie będzie wiadomo, na które konto trafiły.";
+"importarLote1.dateOrder.dayFirst" = "Daty są czytane jako dzień/miesiąc, jak w twoim telefonie: %1$@ to %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Daty są czytane jako miesiąc/dzień, jak w twoim telefonie: %1$@ to %2$@.";
+"importarLote1.dateOrder.hint" = "Jeśli to nie tak, zapisz daty w pliku jako rok-miesiąc-dzień (2026-04-03).";
+"importarLote1.undo.button" = "Cofnij import";
+"importarLote1.undo.confirmTitle" = "Cofnąć import?";
+"importarLote1.undo.confirmMessage.one" = "Zaimportowany wpis zostanie usunięty, nawet jeśli go potem edytowałeś. Utworzone kategorie, tagi i konta zostaną usunięte tylko wtedy, gdy nic innego ich nie używa.";
+"importarLote1.undo.confirmMessage.other" = "Zaimportowane wpisy (%d) zostaną usunięte, nawet jeśli je potem edytowałeś. Utworzone kategorie, tagi i konta zostaną usunięte tylko wtedy, gdy nic innego ich nie używa.";
+"importarLote1.undo.confirmAction" = "Cofnij";
+"importarLote1.undo.doneTitle" = "Import cofnięty";
+"importarLote1.undo.done.one" = "Usunęliśmy zaimportowany wpis.";
+"importarLote1.undo.done.other" = "Usunęliśmy zaimportowane wpisy (%d).";
+"importarLote1.undo.failed" = "Nie udało się cofnąć importu. Spróbuj ponownie.";
+"importarLote1.undo.lastImport.one" = "Twój ostatni import: 1 wpis. Możesz go cofnąć przez 24 godziny.";
+"importarLote1.undo.lastImport.other" = "Twój ostatni import (wpisy: %d). Możesz go cofnąć przez 24 godziny.";
+"importarLote1.result.skippedDuplicates.one" = "1 wpis nie został zaimportowany, bo już był.";
+"importarLote1.result.skippedDuplicates.other" = "Wpisy niezaimportowane, bo już były: %d.";
+"importarLote1.undo.inProgress" = "Cofanie importu… %1$d z %2$d";
+"importarLote1.duplicates.allAlready" = "Wszystko z tego pliku jest już na twoich kontach: nie ma nic nowego do zaimportowania.";

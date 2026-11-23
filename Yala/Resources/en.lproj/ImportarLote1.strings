@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 record looks already imported";
+"importarLote1.duplicates.title.other" = "%d records look already imported";
+"importarLote1.duplicates.hint" = "Your accounts already have identical entries: same day, amount, account and note. If you don't import them, nothing is duplicated.";
+"importarLote1.duplicates.toggle" = "Import them anyway";
+"importarLote1.loose.one" = "1 transfer has no matching other half. It doesn't count as spending or income, but it won't show which account it went to.";
+"importarLote1.loose.other" = "%d transfers have no matching other half. They don't count as spending or income, but they won't show which account they went to.";
+"importarLote1.dateOrder.dayFirst" = "Dates are read as day/month, your phone's order: %1$@ is %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Dates are read as month/day, your phone's order: %1$@ is %2$@.";
+"importarLote1.dateOrder.hint" = "If that's wrong, write the file's dates as year-month-day (2026-04-03).";
+"importarLote1.undo.button" = "Undo import";
+"importarLote1.undo.confirmTitle" = "Undo the import?";
+"importarLote1.undo.confirmMessage.one" = "The record you imported will be deleted, even if you edited it later. Categories, tags and accounts it created are only deleted if nothing else uses them.";
+"importarLote1.undo.confirmMessage.other" = "The %d records you imported will be deleted, even if you edited them later. Categories, tags and accounts it created are only deleted if nothing else uses them.";
+"importarLote1.undo.confirmAction" = "Undo";
+"importarLote1.undo.doneTitle" = "Import undone";
+"importarLote1.undo.done.one" = "We removed the imported record.";
+"importarLote1.undo.done.other" = "We removed the %d imported records.";
+"importarLote1.undo.failed" = "We couldn't undo the import. Please try again.";
+"importarLote1.undo.lastImport.one" = "Your last import: 1 record. You can undo it for 24 hours.";
+"importarLote1.undo.lastImport.other" = "Your last import: %d records. You can undo it for 24 hours.";
+"importarLote1.result.skippedDuplicates.one" = "1 record wasn't imported because it was already there.";
+"importarLote1.result.skippedDuplicates.other" = "%d records weren't imported because they were already there.";
+"importarLote1.undo.inProgress" = "Undoing the import… %1$d of %2$d";
+"importarLote1.duplicates.allAlready" = "Everything in this file is already in your accounts: there's nothing new to import.";

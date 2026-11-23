@@ -125,7 +125,8 @@ struct ImportExportFidelityTests {
         }
         #expect(result.createdCount == 1 && result.failures.isEmpty)
         let item = try #require(try context.fetch(FetchDescriptor<TransactionItem>()).first)
-        #expect(item.date == Self.noonUTC(2026, 10, 10))
+        // Al mediodía de la zona del teléfono desde el 2026-11-22 (H10): el de UTC caía al día siguiente en UTC+13.
+        #expect(item.date == Self.noonLocal(2026, 10, 10))
         #expect(item.needOverride == nil)
     }
 
@@ -251,9 +252,9 @@ struct ImportExportFidelityTests {
 
     // MARK: - Fixture
 
-    private static func noonUTC(_ y: Int, _ m: Int, _ d: Int) -> Date {
+    private static func noonLocal(_ y: Int, _ m: Int, _ d: Int) -> Date {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        calendar.timeZone = .current
         return calendar.date(from: DateComponents(year: y, month: m, day: d, hour: 12)) ?? .distantPast
     }
 

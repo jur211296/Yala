@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 Eintrag scheint schon importiert";
+"importarLote1.duplicates.title.other" = "%d Einträge scheinen schon importiert";
+"importarLote1.duplicates.hint" = "In deinen Konten gibt es schon gleiche Buchungen: gleicher Tag, Betrag, Konto und Notiz. Wenn du sie nicht importierst, wird nichts doppelt.";
+"importarLote1.duplicates.toggle" = "Trotzdem importieren";
+"importarLote1.loose.one" = "1 Überweisung hat kein Gegenstück. Sie zählt nicht zu Ausgaben oder Einnahmen, aber man sieht nicht, auf welches Konto sie ging.";
+"importarLote1.loose.other" = "%d Überweisungen haben kein Gegenstück. Sie zählen nicht zu Ausgaben oder Einnahmen, aber man sieht nicht, auf welches Konto sie gingen.";
+"importarLote1.dateOrder.dayFirst" = "Daten werden als Tag/Monat gelesen, wie auf deinem Telefon: %1$@ ist der %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Daten werden als Monat/Tag gelesen, wie auf deinem Telefon: %1$@ ist der %2$@.";
+"importarLote1.dateOrder.hint" = "Falls das nicht stimmt, schreib die Daten in der Datei als Jahr-Monat-Tag (2026-04-03).";
+"importarLote1.undo.button" = "Import rückgängig machen";
+"importarLote1.undo.confirmTitle" = "Import rückgängig machen?";
+"importarLote1.undo.confirmMessage.one" = "Der importierte Eintrag wird gelöscht, auch wenn du ihn später bearbeitet hast. Kategorien, Tags und Konten, die dabei entstanden sind, werden nur gelöscht, wenn nichts anderes sie nutzt.";
+"importarLote1.undo.confirmMessage.other" = "Die %d importierten Einträge werden gelöscht, auch wenn du sie später bearbeitet hast. Kategorien, Tags und Konten, die dabei entstanden sind, werden nur gelöscht, wenn nichts anderes sie nutzt.";
+"importarLote1.undo.confirmAction" = "Rückgängig";
+"importarLote1.undo.doneTitle" = "Import rückgängig gemacht";
+"importarLote1.undo.done.one" = "Wir haben den importierten Eintrag entfernt.";
+"importarLote1.undo.done.other" = "Wir haben die %d importierten Einträge entfernt.";
+"importarLote1.undo.failed" = "Der Import konnte nicht rückgängig gemacht werden. Versuch es noch einmal.";
+"importarLote1.undo.lastImport.one" = "Dein letzter Import: 1 Eintrag. Du kannst ihn 24 Stunden lang rückgängig machen.";
+"importarLote1.undo.lastImport.other" = "Dein letzter Import: %d Einträge. Du kannst ihn 24 Stunden lang rückgängig machen.";
+"importarLote1.result.skippedDuplicates.one" = "1 Eintrag wurde nicht importiert, weil er schon da war.";
+"importarLote1.result.skippedDuplicates.other" = "%d Einträge wurden nicht importiert, weil sie schon da waren.";
+"importarLote1.undo.inProgress" = "Import wird rückgängig gemacht … %1$d von %2$d";
+"importarLote1.duplicates.allAlready" = "Alles aus dieser Datei ist schon in deinen Konten: Es gibt nichts Neues zu importieren.";
