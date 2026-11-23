@@ -1,0 +1,42 @@
+---
+id: transfer-subcategory-is-looked-up-in-the-current-language
+status: done
+priority: low
+area: "transactions, categories, l10n"
+created: 2026-10-29
+updated: 2026-11-06
+source: "review adversarial de S27l (import-transferencias-rollback), hallazgo fuera de alcance"
+---
+
+# Al cambiar de idioma, una transferencia nueva crea otra subcategoría de transferencia
+
+**Bug preexistente.** Lo encontró la review de la sesión S27l y no se tocó: el encargo era del import.
+
+## Qué ve el usuario
+
+Si cambia el idioma de Yala y crea una transferencia, aparece una segunda subcategoría de transferencia con el nombre del idioma nuevo. Las transferencias quedan repartidas entre dos subcategorías.
+
+## Evidencia (medida en `2.2` el 2026-10-29)
+
+`NewTransactionViewModel.ensureTransferCategory` (`:1106-1108`) y `ensureIncomeTransferCategory` (`:1171-1172`) buscan la subcategoría por `name == L10n.Transfer.categoryName`, el texto del idioma ACTUAL. Si no la encuentran, crean otra. En en, de, nl, ja y zh además nunca reutilizan la sembrada (`subcategory.accountTransfer`), porque su texto es otro.
+
+## Propuesta
+
+Buscar con `Subcategory.transferNames` (los 16 idiomas desde S27l) y quedarse con la que exista. El arreglo de fondo es reconocerla por papel y no por nombre: `transfer-and-adjustment-subcategories-need-a-stable-role`.
+
+## Criterio de hecho
+
+- [ ] Con una transferencia creada en español y la app en inglés, una transferencia nueva reutiliza la subcategoría existente.
+
+## Hecho (2026-11-06, lote UI 2.3)
+
+`TransferCategoryResolver` —el único sitio, lo usan el formulario de Nuevo registro y el puente de Grupos— busca la
+subcategoría por los 16 nombres de `Subcategory.transferNames`. Si hay varias, gana la del idioma actual; si no, la
+primera por orden alfabético. No funde las duplicadas que ya existan: eso sigue en
+`transfer-and-adjustment-subcategories-need-a-stable-role`. Test: `TransferCategoryResolverLanguageTests`.
+
+**Guion de QA (iPhone o simulador):** crea una transferencia con Yala en español; cambia el idioma a inglés; crea otra
+transferencia; en Ajustes › Categorías debe haber UNA subcategoría de transferencia («Transferencia entre cuentas»),
+con las dos transferencias dentro.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `TransferCategoryResolverLanguageTests`
