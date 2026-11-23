@@ -1449,6 +1449,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-private-fresh-start-skips-icloud-check | done | tickets/done/welcome-private-fresh-start-skips-icloud-check.md |
 | welcome-returns-after-the-account-is-ready | done | tickets/done/welcome-returns-after-the-account-is-ready.md |
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
+| welcome-ready-cta-identifier-is-overwritten-by-its-block | backlog | tickets/backlog/welcome-ready-cta-identifier-is-overwritten-by-its-block.md |
+| foto-widget-por-etapas-test-falls-under-load | backlog | tickets/backlog/foto-widget-por-etapas-test-falls-under-load.md |
 | welcome-sign-in-notes-say-the-account-is-bound-to-one-method | done | tickets/done/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | welcome-steps-slide-in-from-the-top-with-a-black-flash | done | tickets/done/welcome-steps-slide-in-from-the-top-with-a-black-flash.md |
