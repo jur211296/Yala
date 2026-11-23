@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "design, ai-connector"
 created: 2026-11-22
-updated: 2026-11-22
+updated: 2026-11-23
 source: "decisiones de Jürgen capturadas en el chat el 2026-11-22 (19:27, sustituida por la de 19:28)"
 ---
 
@@ -26,5 +26,6 @@ pantallas web del flujo, para que Jürgen elija. Sin código hasta que elija.
 
 ## Criterio de hecho
 
-- [ ] Propuestas publicadas para elegir (app y web).
+- [x] Propuestas publicadas para elegir (app y web): https://claude.ai/artifact/65CmVCQkr1JWd7JaFEXnRm. Opciones y
+  preguntas en `2026-11-22-conecta-tu-ia-diseno`.
 - [ ] Elegida una opción y su encargo de construcción escrito.
