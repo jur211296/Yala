@@ -1,6 +1,6 @@
 ---
 id: 2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3
-status: backlog
+status: done
 priority: high
 area: "grupos, deeplink, arranque"
 created: 2026-11-22
@@ -32,3 +32,9 @@ después del arranque. #1107 toca gastos de grupo. Bisecar con esos dos commits 
 
 El caso vuelve a verde en el simulador y en la nocturna, con la causa nombrada en el commit. Si el arreglo no es
 inmediato, a la cuarentena (`qa/cuarentena.json`) con dueño y fecha.
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+Pasó en la nocturna en 34 s y en local en 16 s, sobre el mismo b27dcc084 que este ticket daba rojo y sobre ea35c1234. No se reprodujo: el rojo del gate de «Captura por foto, parte 2» queda sin causa en la app; inferido, sin medir, que fue del entorno de esa corrida. Sin cambios.

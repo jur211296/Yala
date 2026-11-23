@@ -1,12 +1,12 @@
 ---
 id: private-sign-out-wait-uitest-times-out-on-2-3
-status: backlog
+status: done
 priority: medium
 area: "cierre de sesión, XCUITest"
 owner: frank
 created: 2026-11-10
 deadline: 2026-11-17
-updated: 2026-11-10
+updated: 2026-11-22
 source: "gate del lote 10 de las mejoras necesarias 2.3 (Ajustes y Pro: textos), 2026-11-10, Max"
 ---
 
@@ -41,3 +41,9 @@ solo se cuelga la accesibilidad.
 
 El caso vuelve a verde en 2.3 con la causa nombrada en el commit, o se separa el cuelgue real en su propio ticket si
 lo hay.
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+Pasa (127 s en la nocturna, 70 s en local): la app contesta y se ven la tarjeta y el aviso. El cuelgue de la accesibilidad no se reproduce. Sin cambios.
