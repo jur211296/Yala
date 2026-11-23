@@ -1,0 +1,43 @@
+// Worker de la web pública (yala-app.pe), sucesor del proyecto yala-app de Vercel.
+// Guía de corte y de vuelta atrás: docs/infra/web-a-cloudflare/README.md.
+//
+// Dos entornos:
+//   - por defecto `yala-landing-preview`, solo en workers.dev: para verificar antes del corte.
+//       npm run build && npx wrangler deploy
+//   - `production`, con la RUTA yala-app.pe/* (no custom_domain): el registro DNS de yala-app.pe ya está
+//     proxied en Cloudflare apuntando a Vercel; la ruta intercepta delante sin tocar el DNS, y quitarla
+//     devuelve el tráfico a Vercel en segundos. NO desplegar sin el OK de Jürgen: desplegar ES el corte.
+//       npm run build && npx wrangler deploy --env production
+//
+// PUBLIC_DEEP_LINK_SCHEME (esquema del enlace «Abrir en Yala» de /invite) se incrusta AL COMPILAR, no es una
+// variable del Worker: sin definir sale `yala` (producción), como hoy en Vercel. Para un preview que abra
+// Yala Dev: `PUBLIC_DEEP_LINK_SCHEME=yaladev npm run build`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yala-landing-preview",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "account_id": "86c270a7776be98639700bd5959b303b",
+  "workers_dev": true,
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+    // Solo la portada pasa por el Worker antes que lo estático: decide el idioma (ver src/worker.ts).
+    "run_worker_first": ["/"]
+  },
+  "observability": { "enabled": true },
+  "env": {
+    "production": {
+      "name": "yala-landing-production",
+      "workers_dev": false,
+      "routes": [{ "pattern": "yala-app.pe/*", "zone_name": "yala-app.pe" }],
+      "assets": {
+        "binding": "ASSETS",
+        "directory": "./dist",
+        "run_worker_first": ["/"]
+      },
+      "observability": { "enabled": true }
+    }
+  }
+}

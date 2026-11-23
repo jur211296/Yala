@@ -1,0 +1,16 @@
+# Cabeceras de lo estático en Cloudflare Workers: el equivalente de `headers` en vercel.json.
+# Lo que pinta el Worker (/invite, la 404) las recibe en src/worker.ts.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
