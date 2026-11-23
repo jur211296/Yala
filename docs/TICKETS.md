@@ -52,6 +52,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
 | deleting-thousands-of-records-saves-slower-than-linear | backlog | tickets/backlog/deleting-thousands-of-records-saves-slower-than-linear.md |
 | import-of-ten-thousand-rows-still-blocks-the-main-thread | backlog | tickets/backlog/import-of-ten-thousand-rows-still-blocks-the-main-thread.md |
+| 2026-11-22-pruebas-interfaz-rojas-2-3-lote | done | tickets/done/2026-11-22-pruebas-interfaz-rojas-2-3-lote.md |
 | 2026-11-22-comercios-en-comun-construir | done | tickets/done/2026-11-22-comercios-en-comun-construir.md |
 | 2026-11-22-bandeja-aprobar-recurrente-y-cierre | done | tickets/done/2026-11-22-bandeja-aprobar-recurrente-y-cierre.md |
 | 2026-11-22-esto-lei-construir-opcion-a | done | tickets/done/2026-11-22-esto-lei-construir-opcion-a.md |
@@ -63,7 +64,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-22-esto-lei-propuestas-diseno | done | tickets/done/2026-11-22-esto-lei-propuestas-diseno.md |
 | 2026-11-22-historico-comercios-compartido-propuesta | done | tickets/done/2026-11-22-historico-comercios-compartido-propuesta.md |
 | 2026-11-22-pruebas-interfaz-tandas-5-6-rojo | done | tickets/done/2026-11-22-pruebas-interfaz-tandas-5-6-rojo.md |
-| 2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3 | backlog | tickets/backlog/2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3.md |
+| 2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3 | done | tickets/done/2026-11-22-deeplink-grupo-arranque-en-frio-rojo-en-2-3.md |
 | 2026-11-21-ia-ampliada-produccion-navegadores-publicada | qa | tickets/qa/2026-11-21-ia-ampliada-produccion-navegadores-publicada.md |
 | 2026-11-21-captura-foto-comercio-atajo-banco-parte-2 | done | tickets/done/2026-11-21-captura-foto-comercio-atajo-banco-parte-2.md |
 | 2026-11-21-nube-congelamiento-yala-ios-a | done | tickets/done/2026-11-21-nube-congelamiento-yala-ios-a.md |
@@ -196,7 +197,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere | done | tickets/done/a-wipe-on-a-device-without-the-groups-loses-their-rows-everywhere.md |
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
-| account-card-reports-cashflow-carousel-uitest-is-flaky | backlog | tickets/backlog/account-card-reports-cashflow-carousel-uitest-is-flaky.md |
+| account-card-reports-cashflow-carousel-uitest-is-flaky | done | tickets/done/account-card-reports-cashflow-carousel-uitest-is-flaky.md |
 | account-chip-icon-overflows-at-the-largest-text-size | done | tickets/done/account-chip-icon-overflows-at-the-largest-text-size.md |
 | account-collections | backlog | tickets/backlog/account-collections.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
@@ -596,8 +597,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
-| form-clarity-23-large-text-uitests-red-on-2-3 | backlog | tickets/backlog/form-clarity-23-large-text-uitests-red-on-2-3.md |
-| formclarity23-large-text-uitests-tap-offscreen | backlog | tickets/backlog/formclarity23-large-text-uitests-tap-offscreen.md |
+| form-clarity-23-large-text-uitests-red-on-2-3 | done | tickets/done/form-clarity-23-large-text-uitests-red-on-2-3.md |
+| formclarity23-large-text-uitests-tap-offscreen | done | tickets/done/formclarity23-large-text-uitests-tap-offscreen.md |
 | forms-read-their-deleted-model-while-closing | done | tickets/done/forms-read-their-deleted-model-while-closing.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
 | forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |
@@ -1048,7 +1049,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-stayed-filtered-after-removing-the-account-chip | done | tickets/done/panel-stayed-filtered-after-removing-the-account-chip.md |
 | panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
-| pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3 | backlog | tickets/backlog/pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3.md |
+| pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3 | done | tickets/done/pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | done | tickets/done/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | paywall-storekit-alert-is-never-cleared | done | tickets/done/paywall-storekit-alert-is-never-cleared.md |
 | pdf-pages-render-without-a-pixel-ceiling | backlog | tickets/backlog/pdf-pages-render-without-a-pixel-ceiling.md |
@@ -1068,7 +1069,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
 | personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
-| personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen | backlog | tickets/backlog/personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen.md |
+| personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen | done | tickets/done/personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen.md |
 | personalization-shows-two-back-buttons | done | tickets/done/personalization-shows-two-back-buttons.md |
 | phone-with-the-clock-behind-loses-after-seeing-the-row | backlog | tickets/backlog/phone-with-the-clock-behind-loses-after-seeing-the-row.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
@@ -1109,7 +1110,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
 | private-sign-out-misses-group-edits-made-during-the-icloud-wait | backlog | tickets/backlog/private-sign-out-misses-group-edits-made-during-the-icloud-wait.md |
 | private-sign-out-proceeds-with-a-migration-in-flight | done | tickets/done/private-sign-out-proceeds-with-a-migration-in-flight.md |
-| private-sign-out-wait-uitest-times-out-on-2-3 | backlog | tickets/backlog/private-sign-out-wait-uitest-times-out-on-2-3.md |
+| private-sign-out-wait-uitest-times-out-on-2-3 | done | tickets/done/private-sign-out-wait-uitest-times-out-on-2-3.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | pro-saved-entitlement-survives-an-apple-id-switch | backlog | tickets/backlog/pro-saved-entitlement-survives-an-apple-id-switch.md |
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
@@ -1479,7 +1480,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-cache-rebuild-blocks-the-main-thread | done | tickets/done/widget-cache-rebuild-blocks-the-main-thread.md |
 | widget-category-percentages-use-the-signed-total | done | tickets/done/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
-| widget-entry-background-uitests-red-on-2-3 | backlog | tickets/backlog/widget-entry-background-uitests-red-on-2-3.md |
+| widget-entry-background-uitests-red-on-2-3 | done | tickets/done/widget-entry-background-uitests-red-on-2-3.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |

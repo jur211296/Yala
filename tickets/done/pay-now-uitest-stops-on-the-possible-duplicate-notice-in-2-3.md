@@ -1,10 +1,10 @@
 ---
 id: pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3
-status: backlog
+status: done
 priority: medium
 area: "planning, scheduled-payments, uitests"
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-22
 source: "gate del lote de productividad 2.3 (hormiga, logos, sugerencias)"
 ---
 
@@ -25,3 +25,9 @@ toque de «Guardar» o lo deja esperando una segunda confirmación que el test n
 
 Se sabe si el aviso de duplicado debe salir al pagar ahora un pago planificado (decisión de producto) y el test pasa
 estable en `2.3`, o el test cubre ese aviso.
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+Pasa (61 s en la nocturna, 27 s en local), sin el aviso de posible duplicado. Inferido: el «Posible duplicado» venía de la semilla, que el 19-nov dejó de fabricar un borrador que igualaba un transporte del día (commit 57d54796a); no hizo falta decidir nada de producto. Sin cambios.

@@ -1,10 +1,10 @@
 ---
 id: form-clarity-23-large-text-uitests-red-on-2-3
-status: backlog
+status: done
 priority: medium
 area: tests, nuevo registro
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-22
 source: gate de la sesión «Lote 2.3 · barra sobre el teclado»; medido contra el código de origin/2.3 sin el cambio de la sesión
 ---
 
@@ -27,3 +27,9 @@ este fichero. Por eso nadie los vio caer.
 1. El primero es del test: desplazar hasta el importe antes de tocarlo (molde: `KeyboardSaveBar23UITests.typeAmount`).
 2. El segundo puede ser de producto: con texto grande, ¿el «+» del Panel se sale de la pantalla también para una
    persona? Mirarlo en el simulador a AX5 antes de tocar el test; si se sale, es un bug de layout del Panel.
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+`test_v3_largeText_manualEntryIsReachable` pasa (46 s en la nocturna, 23 s en local). `test_m1_largeText_theNoticeIsShown` ya no existe: salió del fichero con la reforma de la hoja B1 (commits ac97d259c y 073df0f17, 20 y 21-nov). Sin cambios.

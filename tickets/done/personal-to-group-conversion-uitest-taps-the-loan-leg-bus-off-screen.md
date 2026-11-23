@@ -1,10 +1,10 @@
 ---
 id: personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen
-status: backlog
+status: done
 priority: medium
 area: grupos
 created: 2026-11-10
-updated: 2026-11-10
+updated: 2026-11-22
 source: gate del lote 02 de mejoras necesarias de 2.3 (Max, simulador iPhone 17 Pro iOS 27.2)
 ---
 # `PersonalToGroupConversionUITests.test_convertingTheBus_toAGroup` cae al buscar el «Bus»
@@ -23,3 +23,9 @@ de lo que dejó el caso anterior de la suite.
 
 **Para cerrarlo:** filtrar el «Bus» que no es pata de grupo (p. ej. excluir `label CONTAINS 'Préstamo a grupos'`) y
 desplazar hacia donde esté la fila, no siempre hacia arriba; confirmar en la nocturna de `qa.yml` desde qué día cae.
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+Los dos casos de la suite caían en la nocturna del 22-nov (3 de 3); el arreglo del mismo día (commit 407e1a91f, ticket `2026-11-22-pruebas-interfaz-tandas-5-6-rojo`: tocar la fila quieta y reintentar una vez) es posterior a esa nocturna. En local, con él: los dos verdes (52 s y 35 s). La confirmación en el runner del CI es la próxima nocturna. Sin cambios en este lote.

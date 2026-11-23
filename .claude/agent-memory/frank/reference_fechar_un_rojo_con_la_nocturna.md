@@ -5,11 +5,11 @@ metadata:
   type: reference
 ---
 
-La nocturna de `.github/workflows/qa.yml` (evento `schedule`, rama `2.2`) corre la suite de UI en tandas y su log trae
+La nocturna de `.github/workflows/qa.yml` (rama `2.3` desde nov-2026; la real llega como `workflow_dispatch` hacia las 06:00 y el `schedule` es respaldo, a menudo sin UI) corre la suite de UI en tandas y su log trae
 la línea `Test Case … passed/failed` de cada caso. Con eso un rojo se fecha en minutos:
 
 ```bash
-gh run list --workflow qa.yml --event schedule --limit 12 --json databaseId,headSha,createdAt
+gh run list --workflow qa.yml --event workflow_dispatch --limit 12 --json databaseId,headSha,createdAt
 gh run view <id> --log | grep -E "Test Case .*<nombre_del_test>.*(passed|failed)"
 ```
 
@@ -21,3 +21,5 @@ sale `success` aunque haya rojos: no mires la conclusión, mira el caso. Un día
 `43daa3354`) y destapó que dos rojos «de la base» dependían del día: verde un día, rojo el siguiente, sin commits de por medio en su área.
 **How to apply:** antes de bisecar o de llamar flaky a un rojo, mira varias nocturnas. Si alterna con el calendario,
 busca qué del escenario depende de la fecha (semilla, «Este mes») — ver [[feedback-regresion-aparente-se-mide-contra-la-base]].
+
+**2026-11-22:** un lote de 8 tickets de «XCUITest rojo en 2.3» salió entero verde mirando la nocturna del día + una corrida local de 9 casos (5 min): los tickets viejos de rojos se miden así ANTES de abrir el código.

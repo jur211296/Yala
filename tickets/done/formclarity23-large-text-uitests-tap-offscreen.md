@@ -1,10 +1,10 @@
 ---
 id: formclarity23-large-text-uitests-tap-offscreen
-status: backlog
+status: done
 priority: medium
 area: "transactions-core-crud"
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-22
 source: gate del lote 2.3 de favoritos al registrar (rojo previo, medido con control)
 ---
 
@@ -33,3 +33,9 @@ no existe: no hay fecha de cuándo empezó. Sospecha sin medir: los lotes de 2.3
 `typeAmount` de `FormClarity23UITests` con el desplazamiento de `KeyboardSaveBar23UITests`, y entrar al «+» de V3 con
 `revealPanelFAB` o por deeplink. Antes, mirar si a texto máximo la pantalla real deja el monto alcanzable (es la promesa
 de Z1/Z2).
+
+## Cierre (2026-11-22)
+
+Medido el 2026-11-22 (sesión nocturna «pruebas de interfaz rojas de 2.3», Max): **verde en la nocturna de 2.3 del 22-nov** (run 44991989046, sobre b27dcc084, runner del CI iOS 27.0) y **verde en local** sobre origin/2.3 = ea35c1234 (iPhone 17 Pro, iOS 27.2, `Yala Dev`, cola del simulador; 9 casos de los 8 tickets en una corrida, 9/9).
+
+Mismo caso que `form-clarity-23-large-text-uitests-red-on-2-3`: V3 pasa y M1 ya no existe (hoja B1, 20-21 nov). Sin cambios.
