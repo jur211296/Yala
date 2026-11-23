@@ -78,6 +78,8 @@ const md = (text: string) => text
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProTitle}</h2>
         <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyProText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+        <!-- Comercios en común (2.3): aporte anónimo comercio → tipo -->
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line mt-4" set:html={md(t.privacyCommonMerchantsText)} />
       </section>
 
       <!-- 7. Own analytics -->
