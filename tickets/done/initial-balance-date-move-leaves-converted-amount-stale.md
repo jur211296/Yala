@@ -1,10 +1,10 @@
 ---
 id: initial-balance-date-move-leaves-converted-amount-stale
-status: backlog
+status: done
 priority: medium
 area: "currency, fx, import"
 created: 2026-09-08
-updated: 2026-10-08
+updated: 2026-11-22
 source: barrido del patrón de bulk-update-account-leaves-converted-amount-stale (2026-09-08)
 ---
 
@@ -72,3 +72,11 @@ una combinación acotada, pero cuando ocurre el número queda mal para siempre y
 - Relación con `converted-amount-sweep-blind-to-input-changes`: es su control positivo, un hijo y no un duplicado. Aquel pone el detector y éste arregla el caso.
 
 Triage 2026-10-08: abierto · medium → medium · no es duplicado: el barrido de `converted-amount-sweep-blind-to-input-changes` lo detectaría pero no lo arregla; `updateInitialBalanceDateIfNeeded` sigue moviendo la fecha sin recomputar (`InitialBalanceService.swift:253-255`).
+
+## Cerrado (2026-11-22, encargo «Tasas de cambio»)
+
+- `updateInitialBalanceDateIfNeeded` llama a `recalculatePreferredCurrency` tras mover la fecha, sin `save()` (el
+  contrato con sus cuatro llamadores no cambia). Sin la tasa del día nuevo en disco, queda provisional y la cura el
+  reparador.
+- **Prueba:** `TasasDeCambioSaldoInicialTests` (cuenta en divisa extranjera, días con tasas 100 y 50: el monto pasa de 10
+  a 20 al retroceder la fecha, más el control de una fecha que no se mueve). **Mutante:** sin el recálculo, el caso cae.

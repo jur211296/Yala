@@ -1,10 +1,10 @@
 ---
 id: exchange-rate-date-keys-follow-the-phone-calendar
-status: backlog
+status: done
 priority: medium
 area: cloud
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-11-22
 source: encargo 2026-09-26-claude-mcp-numbers-match-the-app (review adversarial, lente de tasas)
 ---
 
@@ -40,3 +40,20 @@ Con el iPhone en calendario budista, la fila de hoy se guarda como `2026-…` y 
 - Sigue sin medir en simulador (paso 1 del cuerpo); la subida a `medium` se apoya en el comportamiento documentado del formatter, no en una medida.
 
 Triage 2026-10-08: abierto · low → medium · los formatters siguen sin en_US_POSIX ni gregoriano; para toda una región (Tailandia, budista de serie) los importes en otra divisa se convertirían con la tabla aproximada, y el arreglo son dos líneas.
+
+## Cerrado (2026-11-22, encargo «Tasas de cambio»)
+
+- Los tres formatters que escriben o piden claves (`CurrencyConverter`, `ExchangeRateService`, `ExchangeRateAPIService`)
+  fijan `locale = en_US_POSIX` y calendario gregoriano.
+- **Filas ya guardadas con otra era: se descartan**, no se re-claven (el año japonés no dice de qué era es; la tasa se
+  vuelve a pedir si hace falta). Las borra la limpieza diaria de `ExchangeRateService`
+  (`ExchangeRateDuplicateLogic.isImplausibleDateKey`: año fuera de 1900…actual+1, o clave mal formada).
+- **Pruebas:** `TasasDeCambioLogicTests` reproduce el `2569-11-22` de un formatter sin calendario, fija los tres
+  formatters por código y cubre las claves imposibles; `TasasDeCambioLimpiezaTests` borra `2569-…` y `0008-…`.
+- **No medido en un dispositivo** con el calendario budista: device-QA abajo.
+- **Fuera del toca, sin tocar:** `CurrencySettingsView`, `ExchangeRatesSheet` y `PanelViewModel` parsean una clave para
+  enseñar «última actualización» con un formatter sin calendario fijo; con el budista enseñarían otro año.
+
+### Device-QA (cuando se pueda)
+1. iPhone 14 → Ajustes → General → Idioma y región → Calendario → Budista.
+2. Abrir Yala con una cuenta en otra divisa: el importe convertido sale sin «≈» (tasa del día, no la tabla estática).

@@ -1,8 +1,9 @@
 ---
 id: volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas
-status: backlog
+status: done
 priority: medium
 area: currency
+updated: 2026-11-22
 created: 2026-10-09
 source: medición de la sesión `panel-recalculates-on-new-rates` (2026-10-09)
 ---
@@ -36,3 +37,15 @@ a una petición diaria) y retirar el camino muerto. Decisión de producto: ningu
 
 - [ ] Volver a primer plano en un día sin la fila de hoy la pide, y el Panel se corrige solo.
 - [ ] `needsExchangeRateReload` retirado o con un escritor.
+
+## Cerrado (2026-11-22, encargo «Tasas de cambio»)
+
+- `AppBootstrapper.handleBecameActive` llama a `updateTodayIfNeeded` en cada vuelta a primer plano (no en el arranque,
+  que ya lo hace). Su freno ya acota el coste: con la fila de hoy no pide nada, y como mucho una petición por día. Fuera
+  de XCUITest y de los hosts de test.
+- `needsExchangeRateReload` ya tenía escritor (`UsageModeService`): el segundo criterio se cumplía antes de este encargo.
+- **Sin prueba automática del disparador** (necesita un cambio de día UTC con la app en segundo plano): device-QA abajo.
+
+### Device-QA (cuando se pueda)
+1. Abrir Yala con una cuenta en otra divisa y mandarla a segundo plano (sin cerrarla) antes de las 19:00 de Lima.
+2. Volver a abrirla después de las 19:00 (cambio de día UTC): el «≈» del importe convertido desaparece en unos segundos.

@@ -43,9 +43,10 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (116)
+## Index (117)
 
 | id | status | path |
+| 2026-11-22-tasas-de-cambio-lote | done | tickets/done/2026-11-22-tasas-de-cambio-lote.md |
 | conecta-tu-ia-maqueta-visual-y-pantallas-web | backlog | tickets/backlog/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
 | 2026-11-22-importar-registros-lote-1 | done | tickets/done/2026-11-22-importar-registros-lote-1.md |
 | cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
@@ -536,7 +537,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | drained-intent-that-presents-nothing-may-strand-the-next | done | tickets/done/drained-intent-that-presents-nothing-may-strand-the-next.md |
 | drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks | done | tickets/done/drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
-| duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
+| duplicate-exchange-rate-rows-pick-an-arbitrary-rate | done | tickets/done/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
 | duplicates-mode-rows-dont-say-their-date | done | tickets/done/duplicates-mode-rows-dont-say-their-date.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
 | edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | done | tickets/done/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
@@ -555,7 +556,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | es-ar-storage-groups-block-is-in-tuteo-not-voseo | backlog | tickets/backlog/es-ar-storage-groups-block-is-in-tuteo-not-voseo.md |
 | escritores-de-tasas-que-no-avisan | backlog | tickets/backlog/escritores-de-tasas-que-no-avisan.md |
 | estadisticas-y-widget-no-se-enteran-de-tasas-nuevas | backlog | tickets/backlog/estadisticas-y-widget-no-se-enteran-de-tasas-nuevas.md |
-| exchange-rate-date-keys-follow-the-phone-calendar | backlog | tickets/backlog/exchange-rate-date-keys-follow-the-phone-calendar.md |
+| exchange-rate-date-keys-follow-the-phone-calendar | done | tickets/done/exchange-rate-date-keys-follow-the-phone-calendar.md |
 | exchange-rate-detail-shows-zero-for-low-denomination-currencies | done | tickets/done/exchange-rate-detail-shows-zero-for-low-denomination-currencies.md |
 | exchange-rates-duplicate-per-day-across-installs | backlog | tickets/backlog/exchange-rates-duplicate-per-day-across-installs.md |
 | existing-account-entry-shows-beginner-tips-again | done | tickets/done/existing-account-entry-shows-beginner-tips-again.md |
@@ -849,7 +850,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | indigo-accent-as-small-text-on-dark-themes-is-below-aa | done | tickets/done/indigo-accent-as-small-text-on-dark-themes-is-below-aa.md |
 | indigo-small-text-on-the-light-background-is-4-46 | done | tickets/done/indigo-small-text-on-the-light-background-is-4-46.md |
-| initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
+| initial-balance-date-move-leaves-converted-amount-stale | done | tickets/done/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
 | insights-ant-expenses-ai-version-for-pro | qa | tickets/qa/insights-ant-expenses-ai-version-for-pro.md |
 | insights-budgets-at-risk-compute-spent-on-their-own | done | tickets/done/insights-budgets-at-risk-compute-spent-on-their-own.md |
@@ -1425,7 +1426,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |
-| volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | backlog | tickets/backlog/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
+| volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | done | tickets/done/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
 | vs-hardcoded-in-statistics-and-panel-comparisons | backlog | tickets/backlog/vs-hardcoded-in-statistics-and-panel-comparisons.md |
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
