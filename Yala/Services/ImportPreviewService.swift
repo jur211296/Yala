@@ -31,14 +31,31 @@ enum ImportPreviewService {
         case accountUnavailable
     }
 
-    /// La vista previa siempre se calcula con TODAS las cuentas nuevas: la elección (plan gratuito) se aplica encima
-    /// sin volver a leer el archivo (`ImportPreviewLogic.applying`).
+    /// La vista previa siempre se calcula con TODAS las cuentas nuevas y con los duplicados dentro: la elección (plan
+    /// gratuito, «Importarlos igual») se aplica encima sin volver a leer el archivo (`ImportPreviewLogic.applying`).
+    ///
+    /// Desde el 2026-11-22 (H14) la vista previa solo VALIDA: no crea los movimientos para tirarlos. Devuelve también la
+    /// tabla leída, que el import reutiliza en vez de volver a leer el archivo. La lectura se queda en el hilo
+    /// principal: medida, cuesta 0,03 s con 3.000 filas, y sacarla obligaba a desaislar el lector, el de Excel y los
+    /// errores del import.
     static func preview(
         of url: URL,
         target: Target,
         allowCreatingNewCategories: Bool,
         container: ModelContainer
     ) async throws -> ImportPreview {
+        try await previewAndTable(
+            of: url, target: target, allowCreatingNewCategories: allowCreatingNewCategories, container: container
+        ).preview
+    }
+
+    static func previewAndTable(
+        of url: URL,
+        target: Target,
+        allowCreatingNewCategories: Bool,
+        container: ModelContainer
+    ) async throws -> (preview: ImportPreview, table: ImportTable) {
+        let table = try ImportFileReader.readTable(from: url)
         let scratch = ModelContext(container)
         scratch.autosaveEnabled = false
 
@@ -65,11 +82,12 @@ enum ImportPreviewService {
         let existingBillable = try scratch.fetch(FetchDescriptor<Account>()).billableUserAccounts.count
         let result = try await TransactionCSVImportService.importFile(
             from: url, destination: destination, in: scratch,
-            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true,
+            preparedTable: table, insertsTransactions: false)
 
         // Se copia a valores ANTES de soltar el contexto: los borradores apuntan a objetos suyos.
         let preview = ImportPreviewLogic.make(result: result, existingBillableAccounts: existingBillable)
         scratch.rollback()
-        return preview
+        return (preview, table)
     }
 }

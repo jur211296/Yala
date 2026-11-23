@@ -22,6 +22,13 @@ struct ImportPreview: Equatable {
         var rowNumber: Int = 0
         /// Con columna `account`, la cuenta nueva a la que va (su clave); `nil` si va a una que ya existe.
         var newAccountKey: String? = nil
+        /// La cuenta a la que va, como clave de comparación (H9).
+        var accountKey: String = ""
+        /// Parece ya importada (H11).
+        var isDuplicate: Bool = false
+        /// Es una pata de transferencia (H9).
+        var isTransfer: Bool = false
+        var note: String? = nil
     }
 
     /// La suma de los importes de una moneda (los gastos van en negativo, como en el archivo).
@@ -59,6 +66,21 @@ struct ImportPreview: Equatable {
     /// Excel con varias hojas con movimientos: la que se lee y las que no.
     var readSheet: String? = nil
     var skippedSheets: [String] = []
+    /// Las filas que parecen ya importadas (H11) y si se importan igual. Por defecto se saltan.
+    var duplicateCount: Int = 0
+    var importsDuplicates: Bool = false
+    /// Las patas de transferencia que quedan sin pareja (H9).
+    var looseTransferCount: Int = 0
+    /// El archivo no decidía el orden día/mes y se usó el del teléfono (H10): una fecha de ejemplo y cómo se leyó.
+    var dateOrderNotice: DateOrderNotice? = nil
+
+    struct DateOrderNotice: Equatable {
+        /// La fecha tal como viene en el archivo («03/04/2026»).
+        let example: String
+        /// Cómo se leyó.
+        let readAs: Date
+        let order: ImportDateOrder
+    }
 
     var canImport: Bool { count > 0 }
 }
@@ -109,7 +131,11 @@ enum ImportPreviewLogic {
                 categoryName: $0.category.name,
                 subcategoryName: $0.subcategory.name,
                 rowNumber: $0.rowNumber,
-                newAccountKey: $0.newAccountKey
+                newAccountKey: $0.newAccountKey,
+                accountKey: $0.accountKey,
+                isDuplicate: $0.isDuplicate,
+                isTransfer: $0.subcategory.systemRole == .transfer,
+                note: $0.note
             )
         }
         let failures = result.failures.compactMap(\.errorDescription)
@@ -125,7 +151,29 @@ enum ImportPreviewLogic {
         preview.fileFailures = failures
         preview.readSheet = result.readSheet
         preview.skippedSheets = result.skippedSheets
-        return preview
+        if let decision = result.dateDecision, !decision.decidedByFile, let example = decision.ambiguousExample,
+           let readAs = ImportDateLogic.parseDay(example, order: decision.order) {
+            preview.dateOrderNotice = ImportPreview.DateOrderNotice(example: example, readAs: readAs, order: decision.order)
+        }
+        preview.duplicateCount = rows.filter(\.isDuplicate).count
+        preview.looseTransferCount = looseTransfers(in: rows)
+        // Lo que se ve por defecto: sin los duplicados.
+        return applying(chosen: Set(preview.newAccounts.map(\.key)), importDuplicates: false, to: preview)
+    }
+
+    // MARK: - Transferencias sueltas (H9)
+
+    /// Cuántas patas de transferencia de estas filas quedan sin pareja.
+    static func looseTransfers(in rows: [ImportPreview.Row], calendar: Calendar = .current) -> Int {
+        let legs = rows.filter(\.isTransfer).enumerated().map { index, row in
+            let key = ImportDuplicateLogic.fingerprint(
+                date: row.date, amount: row.amount, currencyCode: row.currencyCode, accountKey: row.accountKey,
+                note: row.note, calendar: calendar)
+            return ImportTransferPairingLogic.Leg(
+                id: index, day: key.day, amount: key.amount, currencyCode: key.currencyCode,
+                accountKey: key.accountKey, note: key.note)
+        }
+        return ImportTransferPairingLogic.looseCount(legs)
     }
 
     // MARK: - Cuentas nuevas y el plan gratuito (H7)
@@ -152,11 +200,13 @@ enum ImportPreviewLogic {
         return chosen.count < slots
     }
 
-    /// La vista previa con solo las cuentas nuevas elegidas: las filas de las demás pasan a no entrar, con su motivo.
-    static func applying(chosen: Set<String>, to preview: ImportPreview) -> ImportPreview {
-        guard !preview.newAccounts.isEmpty else { return preview }
+    /// La vista previa con solo las cuentas nuevas elegidas (las filas de las demás pasan a no entrar, con su motivo) y
+    /// con los duplicados fuera, salvo que se pida importarlos igual (H11).
+    static func applying(chosen: Set<String>, importDuplicates: Bool = false, to preview: ImportPreview) -> ImportPreview {
+        guard !preview.newAccounts.isEmpty || preview.allRows.contains(where: \.isDuplicate) else { return preview }
         let excludedKeys = Set(preview.newAccounts.map(\.key)).subtracting(chosen)
-        let kept = preview.allRows.filter { row in row.newAccountKey.map { !excludedKeys.contains($0) } ?? true }
+        let accountKept = preview.allRows.filter { row in row.newAccountKey.map { !excludedKeys.contains($0) } ?? true }
+        let kept = importDuplicates ? accountKept : accountKept.filter { !$0.isDuplicate }
         let excludedRows = preview.allRows.filter { row in row.newAccountKey.map(excludedKeys.contains) ?? false }
         let nameByKey = Dictionary(uniqueKeysWithValues: preview.newAccounts.map { ($0.key, $0.name) })
         let excludedNames = Set(excludedKeys.compactMap { nameByKey[$0] })
@@ -179,6 +229,10 @@ enum ImportPreviewLogic {
         result.fileFailures = preview.fileFailures
         result.readSheet = preview.readSheet
         result.skippedSheets = preview.skippedSheets
+        result.duplicateCount = accountKept.filter(\.isDuplicate).count
+        result.importsDuplicates = importDuplicates
+        result.looseTransferCount = looseTransfers(in: kept)
+        result.dateOrderNotice = preview.dateOrderNotice
         return result
     }
 

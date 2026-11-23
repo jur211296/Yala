@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 movimento sembra già importato";
+"importarLote1.duplicates.title.other" = "%d movimenti sembrano già importati";
+"importarLote1.duplicates.hint" = "I tuoi conti hanno già movimenti uguali: stesso giorno, importo, conto e nota. Se non li importi, niente viene duplicato.";
+"importarLote1.duplicates.toggle" = "Importali comunque";
+"importarLote1.loose.one" = "1 trasferimento è rimasto senza l'altra metà. Non conta come spesa né entrata, ma non si saprà su quale conto è andato.";
+"importarLote1.loose.other" = "%d trasferimenti sono rimasti senza l'altra metà. Non contano come spese né entrate, ma non si saprà su quale conto sono andati.";
+"importarLote1.dateOrder.dayFirst" = "Le date si leggono come giorno/mese, l'ordine del tuo telefono: %1$@ è il %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Le date si leggono come mese/giorno, l'ordine del tuo telefono: %1$@ è il %2$@.";
+"importarLote1.dateOrder.hint" = "Se non è così, scrivi le date del file come anno-mese-giorno (2026-04-03).";
+"importarLote1.undo.button" = "Annulla importazione";
+"importarLote1.undo.confirmTitle" = "Annullare l'importazione?";
+"importarLote1.undo.confirmMessage.one" = "Il movimento importato verrà eliminato, anche se l'hai modificato dopo. Categorie, etichette e conti creati vengono eliminati solo se nient'altro li usa.";
+"importarLote1.undo.confirmMessage.other" = "I %d movimenti importati verranno eliminati, anche se li hai modificati dopo. Categorie, etichette e conti creati vengono eliminati solo se nient'altro li usa.";
+"importarLote1.undo.confirmAction" = "Annulla";
+"importarLote1.undo.doneTitle" = "Importazione annullata";
+"importarLote1.undo.done.one" = "Abbiamo tolto il movimento importato.";
+"importarLote1.undo.done.other" = "Abbiamo tolto i %d movimenti importati.";
+"importarLote1.undo.failed" = "Non siamo riusciti ad annullare l'importazione. Riprova.";
+"importarLote1.undo.lastImport.one" = "La tua ultima importazione: 1 movimento. Puoi annullarla per 24 ore.";
+"importarLote1.undo.lastImport.other" = "La tua ultima importazione: %d movimenti. Puoi annullarla per 24 ore.";
+"importarLote1.result.skippedDuplicates.one" = "1 movimento non è stato importato perché c'era già.";
+"importarLote1.result.skippedDuplicates.other" = "%d movimenti non sono stati importati perché c'erano già.";
+"importarLote1.undo.inProgress" = "Annullamento dell’importazione… %1$d di %2$d";
+"importarLote1.duplicates.allAlready" = "Tutto quello che c’è in questo file è già nei tuoi conti: non c’è niente di nuovo da importare.";

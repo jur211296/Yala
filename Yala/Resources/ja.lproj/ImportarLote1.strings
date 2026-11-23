@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1件はすでに取り込み済みのようです";
+"importarLote1.duplicates.title.other" = "%d件はすでに取り込み済みのようです";
+"importarLote1.duplicates.hint" = "同じ日付・金額・口座・メモの記録がすでにあります。取り込まなければ重複しません。";
+"importarLote1.duplicates.toggle" = "それでも取り込む";
+"importarLote1.loose.one" = "1件の振替に相手がありません。支出にも収入にも入りませんが、どの口座へ移したかは分かりません。";
+"importarLote1.loose.other" = "%d件の振替に相手がありません。支出にも収入にも入りませんが、どの口座へ移したかは分かりません。";
+"importarLote1.dateOrder.dayFirst" = "日付は端末の順序どおり日/月として読みます：%1$@ は %2$@ です。";
+"importarLote1.dateOrder.monthFirst" = "日付は端末の順序どおり月/日として読みます：%1$@ は %2$@ です。";
+"importarLote1.dateOrder.hint" = "違う場合は、ファイルの日付を年-月-日（2026-04-03）で書いてください。";
+"importarLote1.undo.button" = "取り込みを取り消す";
+"importarLote1.undo.confirmTitle" = "取り込みを取り消しますか？";
+"importarLote1.undo.confirmMessage.one" = "取り込んだ記録を削除します（あとで編集していても削除されます）。作成されたカテゴリ・タグ・口座は、ほかで使われていない場合だけ削除されます。";
+"importarLote1.undo.confirmMessage.other" = "取り込んだ%d件の記録を削除します（あとで編集していても削除されます）。作成されたカテゴリ・タグ・口座は、ほかで使われていない場合だけ削除されます。";
+"importarLote1.undo.confirmAction" = "取り消す";
+"importarLote1.undo.doneTitle" = "取り込みを取り消しました";
+"importarLote1.undo.done.one" = "取り込んだ記録を削除しました。";
+"importarLote1.undo.done.other" = "取り込んだ%d件の記録を削除しました。";
+"importarLote1.undo.failed" = "取り込みを取り消せませんでした。もう一度お試しください。";
+"importarLote1.undo.lastImport.one" = "前回の取り込み：1件。24時間以内なら取り消せます。";
+"importarLote1.undo.lastImport.other" = "前回の取り込み：%d件。24時間以内なら取り消せます。";
+"importarLote1.result.skippedDuplicates.one" = "1件はすでにあったため取り込みませんでした。";
+"importarLote1.result.skippedDuplicates.other" = "%d件はすでにあったため取り込みませんでした。";
+"importarLote1.undo.inProgress" = "取り込みを取り消しています… %1$d / %2$d";
+"importarLote1.duplicates.allAlready" = "このファイルの内容はすべて口座にあります。新しく取り込むものはありません。";

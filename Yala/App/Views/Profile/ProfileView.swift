@@ -51,6 +51,8 @@ struct ProfileView: View {
     @State private var showImportResult: Bool = false
     /// Hay un resultado de importar esperando a que la hoja termine de cerrarse para enseñarse.
     @State private var importResultAwaitingDismiss: Bool = false
+    /// «Deshacer importación» del aviso (H12): la hoja de Importar se abre preguntando si deshacer.
+    @State private var importOpensUndo: Bool = false
 
     // Permission denied alert
 
@@ -951,12 +953,20 @@ struct ProfileView: View {
                 }
             }
             .alert(
-                importResult?.isSuccess == true
-                    ? L10n.Profile.importSuccess : L10n.Profile.importError,
+                importResult?.title
+                    ?? (importResult?.isSuccess == true ? L10n.Profile.importSuccess : L10n.Profile.importError),
                 isPresented: $showImportResult,
                 presenting: importResult
-            ) { _ in
+            ) { result in
                 Button(L10n.Common.ok, role: .cancel) {}
+                // «Deshacer importación» (H12): abre Importar, que pregunta y enseña el avance.
+                if result.offersUndo {
+                    Button(L10n.ImportarLote1.undoButton) {
+                        importOpensUndo = true
+                        activeSheet = .importIntro
+                    }
+                    .accessibilityIdentifier("profile_import_result_undo")
+                }
             } message: { result in
                 Text(result.message)
             }
@@ -1005,6 +1015,7 @@ struct ProfileView: View {
                 // El resultado de importar sale cuando la hoja YA se fue: con un retardo fijo de 200 ms, en un iPhone
                 // real la animación de cierre duraba más y SwiftUI descartaba el aviso, así que «Importación
                 // completada» salía unas veces sí y otras no (ticket `import-completed-alert-is-sometimes-lost`).
+                importOpensUndo = false
                 if importResultAwaitingDismiss {
                     importResultAwaitingDismiss = false
                     showImportResult = true
@@ -1017,6 +1028,7 @@ struct ProfileView: View {
                     ImportIntroSheet(
                         accounts: viewModel.accounts,
                         categories: viewModel.categories,
+                        startsUndo: importOpensUndo,
                         onImportCompleted: { result in
                             // El aviso se pide en el `onDismiss` de esta hoja, no aquí.
                             importResult = result
@@ -1733,6 +1745,7 @@ struct ProfileView: View {
                             iconColor: .blue)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_import")
                 }
 
                 // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría

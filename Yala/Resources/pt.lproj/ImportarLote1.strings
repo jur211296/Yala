@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 registro parece já importado";
+"importarLote1.duplicates.title.other" = "%d registros parecem já importados";
+"importarLote1.duplicates.hint" = "Suas contas já têm movimentos iguais: mesmo dia, valor, conta e nota. Se você não importar, nada fica duplicado.";
+"importarLote1.duplicates.toggle" = "Importar mesmo assim";
+"importarLote1.loose.one" = "1 transferência ficou sem a outra parte. Não conta como gasto nem receita, mas não dá para saber para qual conta foi.";
+"importarLote1.loose.other" = "%d transferências ficaram sem a outra parte. Não contam como gastos nem receitas, mas não dá para saber para qual conta foram.";
+"importarLote1.dateOrder.dayFirst" = "As datas são lidas como dia/mês, a ordem do seu celular: %1$@ é %2$@.";
+"importarLote1.dateOrder.monthFirst" = "As datas são lidas como mês/dia, a ordem do seu celular: %1$@ é %2$@.";
+"importarLote1.dateOrder.hint" = "Se não for isso, escreva as datas do arquivo como ano-mês-dia (2026-04-03).";
+"importarLote1.undo.button" = "Desfazer importação";
+"importarLote1.undo.confirmTitle" = "Desfazer a importação?";
+"importarLote1.undo.confirmMessage.one" = "O registro importado será apagado, mesmo que você o tenha editado depois. Categorias, tags e contas criadas só são apagadas se nada mais as usar.";
+"importarLote1.undo.confirmMessage.other" = "Os %d registros importados serão apagados, mesmo que você os tenha editado depois. Categorias, tags e contas criadas só são apagadas se nada mais as usar.";
+"importarLote1.undo.confirmAction" = "Desfazer";
+"importarLote1.undo.doneTitle" = "Importação desfeita";
+"importarLote1.undo.done.one" = "Removemos o registro importado.";
+"importarLote1.undo.done.other" = "Removemos os %d registros importados.";
+"importarLote1.undo.failed" = "Não foi possível desfazer a importação. Tente de novo.";
+"importarLote1.undo.lastImport.one" = "Sua última importação: 1 registro. Você pode desfazê-la por 24 horas.";
+"importarLote1.undo.lastImport.other" = "Sua última importação: %d registros. Você pode desfazê-la por 24 horas.";
+"importarLote1.result.skippedDuplicates.one" = "1 registro não foi importado porque já existia.";
+"importarLote1.result.skippedDuplicates.other" = "%d registros não foram importados porque já existiam.";
+"importarLote1.undo.inProgress" = "Desfazendo a importação… %1$d de %2$d";
+"importarLote1.duplicates.allAlready" = "Tudo deste arquivo já está nas suas contas: não há nada novo para importar.";
