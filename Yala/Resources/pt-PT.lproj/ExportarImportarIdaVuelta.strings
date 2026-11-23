@@ -1,0 +1,18 @@
+/*
+  ExportarImportarIdaVuelta.strings
+  Yala
+
+  La ida y vuelta del export (23-nov-2026): las columnas «kind» y «transfer_id», sus errores y el saldo inicial
+  que fija un import. Tabla propia, fuera de Localizable.strings.
+*/
+
+"exportarImportarIdaVuelta.column.kind" = "Tipo";
+"exportarImportarIdaVuelta.column.kind.description" = "Despesa, receita, transferência, ajuste ou saldo inicial.";
+"exportarImportarIdaVuelta.column.transferID" = "Par de transferência";
+"exportarImportarIdaVuelta.column.transferID.description" = "Une os dois lados de cada transferência, também entre moedas.";
+"exportarImportarIdaVuelta.error.kind" = "Linha %1$d: não percebemos o tipo “%2$@”. Deixe vazio ou use expense, income, transfer, adjustment ou initial_balance.";
+"exportarImportarIdaVuelta.error.initialBalance" = "Linha %1$d: “%2$@” já tem outro saldo inicial. Não o alterámos: se quiser, altere-o na conta.";
+"exportarImportarIdaVuelta.preview.initialBalances.one" = "Define o saldo inicial de 1 conta.";
+"exportarImportarIdaVuelta.preview.initialBalances.other" = "Define o saldo inicial de %d contas.";
+"exportarImportarIdaVuelta.result.initialBalances.one" = "Também definimos o saldo inicial de 1 conta.";
+"exportarImportarIdaVuelta.result.initialBalances.other" = "Também definimos o saldo inicial de %d contas.";

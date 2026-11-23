@@ -1,0 +1,18 @@
+/*
+  ExportarImportarIdaVuelta.strings
+  Yala
+
+  La ida y vuelta del export (23-nov-2026): las columnas «kind» y «transfer_id», sus errores y el saldo inicial
+  que fija un import. Tabla propia, fuera de Localizable.strings.
+*/
+
+"exportarImportarIdaVuelta.column.kind" = "種類";
+"exportarImportarIdaVuelta.column.kind.description" = "支出、収入、振替、調整、または初期残高。";
+"exportarImportarIdaVuelta.column.transferID" = "振替ペア";
+"exportarImportarIdaVuelta.column.transferID.description" = "各振替の両側をつなぎます。通貨が違っても同じです。";
+"exportarImportarIdaVuelta.error.kind" = "%1$d行目：種類「%2$@」を読み取れません。空欄にするか、expense、income、transfer、adjustment、initial_balance を使ってください。";
+"exportarImportarIdaVuelta.error.initialBalance" = "%1$d行目：「%2$@」にはすでに別の初期残高があります。変更していません。必要なら口座で変更してください。";
+"exportarImportarIdaVuelta.preview.initialBalances.one" = "1件の口座の初期残高を設定します。";
+"exportarImportarIdaVuelta.preview.initialBalances.other" = "%d件の口座の初期残高を設定します。";
+"exportarImportarIdaVuelta.result.initialBalances.one" = "1件の口座の初期残高も設定しました。";
+"exportarImportarIdaVuelta.result.initialBalances.other" = "%d件の口座の初期残高も設定しました。";

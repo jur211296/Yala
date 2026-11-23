@@ -188,4 +188,52 @@ enum ImportRecordFieldsLogic {
             .replacing("_", with: " ")
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
+
+    // MARK: - Tipo de movimiento y pareja de transferencia (H8, 2026-11-23)
+
+    /// Qué es cada fila del archivo: columna `kind`. Hasta el 2026-11-23 el export no lo decía: el saldo inicial volvía
+    /// como un movimiento más (o no entraba, con la categoría vacía) y las transferencias, sin pareja.
+    enum RecordKind: String, CaseIterable, Equatable {
+        case expense
+        case income
+        case transfer
+        case adjustment
+        case initialBalance = "initial_balance"
+        /// Lo que te deben por una venta en un grupo: solo vive en la cuenta de Grupos, y el import no la trae.
+        case receivable
+    }
+
+    /// Lo que dice la celda `kind`.
+    enum KindReading: Equatable {
+        /// Vacía o sin columna: decide la subcategoría, como siempre.
+        case none
+        case kind(RecordKind)
+        case invalid
+    }
+
+    /// El código que escribe el export para un movimiento: su `balanceAdjustmentType` y, si es normal, gasto o ingreso
+    /// con la regla de toda la app (`TransactionClassificationLogic.isIncome`).
+    static func exportKind(balanceAdjustmentType: String?, isIncome: Bool) -> RecordKind {
+        switch balanceAdjustmentType {
+        case "initial_balance": return .initialBalance
+        case "adjustment": return .adjustment
+        case "transfer": return .transfer
+        case "receivable": return .receivable
+        default: return isIncome ? .income : .expense
+        }
+    }
+
+    /// Lee la celda `kind`: el código del export, sin mayúsculas, espacios ni guiones de más («Initial balance»,
+    /// «initial-balance»).
+    static func parseKind(_ raw: String) -> KindReading {
+        let key = fold(raw.replacing("-", with: " "))
+        guard !key.isEmpty else { return .none }
+        return RecordKind.allCases.first { fold($0.rawValue) == key }.map(KindReading.kind) ?? .invalid
+    }
+
+    /// La pareja de transferencia que escribe el export: la de las dos patas, o vacía si no es una transferencia.
+    static func exportTransferID(balanceAdjustmentType: String?, transferPairID: String?) -> String {
+        guard balanceAdjustmentType == "transfer" else { return "" }
+        return transferPairID ?? ""
+    }
 }

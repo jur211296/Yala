@@ -1,10 +1,10 @@
 ---
 id: exported-csv-cannot-be-imported-back
-status: backlog
+status: done
 priority: medium
 area: "export, import"
 created: 2026-10-18
-updated: 2026-10-29
+updated: 2026-11-23
 source: "medido en la entrega 4 de la tarjeta con varias divisas (`multi-currency-accounts-4-reports-and-export`), al comprobar su criterio «reimportar ese CSV sigue funcionando»"
 ---
 
@@ -68,3 +68,7 @@ Criterio de hecho añadido:
 
 - [ ] Un archivo con las columnas obligatorias en otro orden se importa igual.
 - [ ] El mismo test de ida y vuelta, en CSV y en Excel.
+
+## Cierre (2026-11-23)
+
+Ya estaba hecho desde el 29-oct (commit «columnas por nombre, cuenta por fila, Excel en línea y montos por archivo»): la cabecera se lee por nombre, en cualquier orden, las columnas desconocidas se ignoran y la vista previa las nombra. Medido el 23-nov contra `origin/2.3`: `ImportRoundTripAndAccountsTests` (ida y vuelta CSV y Excel con las columnas por defecto, columnas reordenadas) y `ImportReadingLogicTests` en verde. Desde el 23-nov el export trae además `kind` y `transfer_id` (ticket `export-import-carry-record-kind-and-transfer-pair`), y la ida y vuelta las conserva.

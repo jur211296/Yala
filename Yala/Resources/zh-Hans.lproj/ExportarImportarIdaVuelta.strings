@@ -1,0 +1,18 @@
+/*
+  ExportarImportarIdaVuelta.strings
+  Yala
+
+  La ida y vuelta del export (23-nov-2026): las columnas «kind» y «transfer_id», sus errores y el saldo inicial
+  que fija un import. Tabla propia, fuera de Localizable.strings.
+*/
+
+"exportarImportarIdaVuelta.column.kind" = "类型";
+"exportarImportarIdaVuelta.column.kind.description" = "支出、收入、转账、调整或初始余额。";
+"exportarImportarIdaVuelta.column.transferID" = "转账配对";
+"exportarImportarIdaVuelta.column.transferID.description" = "连接每笔转账的两端，跨币种也一样。";
+"exportarImportarIdaVuelta.error.kind" = "第 %1$d 行：无法识别类型“%2$@”。请留空，或使用 expense、income、transfer、adjustment 或 initial_balance。";
+"exportarImportarIdaVuelta.error.initialBalance" = "第 %1$d 行：“%2$@”已有不同的初始余额。我们没有修改：如需修改，请在账户中更改。";
+"exportarImportarIdaVuelta.preview.initialBalances.one" = "设置 1 个账户的初始余额。";
+"exportarImportarIdaVuelta.preview.initialBalances.other" = "设置 %d 个账户的初始余额。";
+"exportarImportarIdaVuelta.result.initialBalances.one" = "我们还设置了 1 个账户的初始余额。";
+"exportarImportarIdaVuelta.result.initialBalances.other" = "我们还设置了 %d 个账户的初始余额。";

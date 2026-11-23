@@ -750,10 +750,14 @@ struct ImportIntroSheet: View {
 
     /// «Importamos 69 registros.» y, si alguna fila no entró, cuántas y cuáles (L7-17). Lo que ya estaba (H11) se dice
     /// junto a lo importado.
-    private func outcomeMessage(importedLine: String, failures: [ImportError], skippedDuplicates: Int = 0) -> String {
-        let imported = skippedDuplicates > 0
+    private func outcomeMessage(
+        importedLine: String, failures: [ImportError], skippedDuplicates: Int = 0, initialBalances: Int = 0
+    ) -> String {
+        var imported = skippedDuplicates > 0
             ? importedLine + " " + L10n.ImportarLote1.skippedDuplicates(skippedDuplicates)
             : importedLine
+        // H8: el saldo inicial que fijó el archivo no es un registro más, pero se dice.
+        if initialBalances > 0 { imported += " " + L10n.ExportarImportarIdaVuelta.resultInitialBalances(initialBalances) }
         return ImportPreviewLogic.outcomeMessage(
             importedLine: imported,
             failures: failures.compactMap(\.errorDescription),
@@ -832,9 +836,10 @@ struct ImportIntroSheet: View {
                     isSuccess: true,
                     message: outcomeMessage(
                         importedLine: L10n.Import.recordsImported(createdCount), failures: result.failures,
-                        skippedDuplicates: result.skippedDuplicateCount),
+                        skippedDuplicates: result.skippedDuplicateCount,
+                        initialBalances: result.initialBalances.count),
                     count: createdCount,
-                    offersUndo: createdCount > 0
+                    offersUndo: createdCount > 0 || !result.initialBalances.isEmpty
                 )
                 #if DEBUG
                 print("🔵 [IMPORT] Dismissing sheet and notifying parent")
@@ -915,9 +920,10 @@ struct ImportIntroSheet: View {
                     isSuccess: true,
                     message: outcomeMessage(
                         importedLine: L10n.Import.recordsImported(result.createdCount), failures: result.failures,
-                        skippedDuplicates: result.skippedDuplicateCount),
+                        skippedDuplicates: result.skippedDuplicateCount,
+                        initialBalances: result.initialBalances.count),
                     count: result.createdCount,
-                    offersUndo: result.createdCount > 0
+                    offersUndo: result.createdCount > 0 || !result.initialBalances.isEmpty
                 ))
             } catch {
                 #if DEBUG
@@ -996,9 +1002,10 @@ struct ImportIntroSheet: View {
                     isSuccess: true,
                     message: outcomeMessage(
                         importedLine: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
-                        failures: result.failures, skippedDuplicates: result.skippedDuplicateCount),
+                        failures: result.failures, skippedDuplicates: result.skippedDuplicateCount,
+                        initialBalances: result.initialBalances.count),
                     count: createdCount,
-                    offersUndo: createdCount > 0
+                    offersUndo: createdCount > 0 || !result.initialBalances.isEmpty
                 )
                 #if DEBUG
                 print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")

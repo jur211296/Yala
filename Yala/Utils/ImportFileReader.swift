@@ -28,6 +28,9 @@ enum ImportField: String, CaseIterable {
     case exchangeRate = "exchange_rate"
     case rateCurrency = "rate_currency"
     case need
+    /// Opcionales desde el 2026-11-23 (H8): qué es la fila y la pareja de cada transferencia.
+    case kind
+    case transferID = "transfer_id"
 
     /// Las que tiene que traer todo archivo.
     static let required: [ImportField] = [.date, .amount, .currency, .category, .subcategory]
@@ -91,7 +94,9 @@ struct ImportHeader: Equatable {
             exchangeRate: value(.exchangeRate),
             rateCurrency: value(.rateCurrency),
             need: value(.need),
-            exchangeRateIsNumber: exchangeRateIsNumber
+            exchangeRateIsNumber: exchangeRateIsNumber,
+            kind: value(.kind),
+            transferID: value(.transferID)
         )
     }
 }

@@ -29,6 +29,8 @@ struct ImportPreview: Equatable {
         /// Es una pata de transferencia (H9).
         var isTransfer: Bool = false
         var note: String? = nil
+        /// La pareja de transferencia que trae el archivo (H8), o vacía.
+        var transferID: String = ""
     }
 
     /// La suma de los importes de una moneda (los gastos van en negativo, como en el archivo).
@@ -73,6 +75,9 @@ struct ImportPreview: Equatable {
     var looseTransferCount: Int = 0
     /// El archivo no decidía el orden día/mes y se usó el del teléfono (H10): una fecha de ejemplo y cómo se leyó.
     var dateOrderNotice: DateOrderNotice? = nil
+    /// Los saldos iniciales que el archivo fija (H8), con todas las cuentas nuevas; y los que entran con las elegidas.
+    var allInitialBalances: [ImportInitialBalanceSummary] = []
+    var initialBalances: [ImportInitialBalanceSummary] = []
 
     struct DateOrderNotice: Equatable {
         /// La fecha tal como viene en el archivo («03/04/2026»).
@@ -82,7 +87,7 @@ struct ImportPreview: Equatable {
         let order: ImportDateOrder
     }
 
-    var canImport: Bool { count > 0 }
+    var canImport: Bool { count > 0 || !initialBalances.isEmpty }
 }
 
 enum ImportPreviewLogic {
@@ -135,7 +140,8 @@ enum ImportPreviewLogic {
                 accountKey: $0.accountKey,
                 isDuplicate: $0.isDuplicate,
                 isTransfer: $0.subcategory.systemRole == .transfer,
-                note: $0.note
+                note: $0.note,
+                transferID: $0.transferID
             )
         }
         let failures = result.failures.compactMap(\.errorDescription)
@@ -155,6 +161,8 @@ enum ImportPreviewLogic {
            let readAs = ImportDateLogic.parseDay(example, order: decision.order) {
             preview.dateOrderNotice = ImportPreview.DateOrderNotice(example: example, readAs: readAs, order: decision.order)
         }
+        preview.allInitialBalances = result.initialBalances
+        preview.initialBalances = result.initialBalances
         preview.duplicateCount = rows.filter(\.isDuplicate).count
         preview.looseTransferCount = looseTransfers(in: rows)
         // Lo que se ve por defecto: sin los duplicados.
@@ -171,7 +179,7 @@ enum ImportPreviewLogic {
                 note: row.note, calendar: calendar)
             return ImportTransferPairingLogic.Leg(
                 id: index, day: key.day, amount: key.amount, currencyCode: key.currencyCode,
-                accountKey: key.accountKey, note: key.note)
+                accountKey: key.accountKey, note: key.note, transferID: row.transferID)
         }
         return ImportTransferPairingLogic.looseCount(legs)
     }
@@ -204,6 +212,7 @@ enum ImportPreviewLogic {
     /// con los duplicados fuera, salvo que se pida importarlos igual (H11).
     static func applying(chosen: Set<String>, importDuplicates: Bool = false, to preview: ImportPreview) -> ImportPreview {
         guard !preview.newAccounts.isEmpty || preview.allRows.contains(where: \.isDuplicate) else { return preview }
+        let keptInitialBalances = preview.allInitialBalances.filter { $0.newAccountKey.map(chosen.contains) ?? true }
         let excludedKeys = Set(preview.newAccounts.map(\.key)).subtracting(chosen)
         let accountKept = preview.allRows.filter { row in row.newAccountKey.map { !excludedKeys.contains($0) } ?? true }
         let kept = importDuplicates ? accountKept : accountKept.filter { !$0.isDuplicate }
@@ -233,6 +242,8 @@ enum ImportPreviewLogic {
         result.importsDuplicates = importDuplicates
         result.looseTransferCount = looseTransfers(in: kept)
         result.dateOrderNotice = preview.dateOrderNotice
+        result.allInitialBalances = preview.allInitialBalances
+        result.initialBalances = keptInitialBalances
         return result
     }
 

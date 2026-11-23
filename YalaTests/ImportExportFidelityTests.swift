@@ -69,11 +69,11 @@ struct ImportExportFidelityTests {
             let header = try #require(text.split(separator: "\n").first)
             // Las columnas de siempre en su sitio y las nuevas al final.
             #expect(header.hasPrefix("date,amount,currency,account,category,subcategory,tags,note"))
-            #expect(header.hasSuffix(",time,exchange_rate,rate_currency,need"))
+            #expect(header.hasSuffix(",time,exchange_rate,rate_currency,need,kind,transfer_id"))
             url = try write(data, ext: "csv")
         case .xlsx:
             let (headers, rows) = TransactionsExportService.makeExportData(transactions: transactions, columns: .default)
-            #expect(Array(headers.suffix(4)) == ["time", "exchange_rate", "rate_currency", "need"])
+            #expect(Array(headers.suffix(6)) == ["time", "exchange_rate", "rate_currency", "need", "kind", "transfer_id"])
             #expect(rows.allSatisfy { $0.count == headers.count })
             url = temporaryURL(ext: "xlsx")
             try XLSXWriter.write(to: url, headers: headers, rows: rows)

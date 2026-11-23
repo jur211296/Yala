@@ -1,10 +1,10 @@
 ---
 id: import-account-column-by-name
-status: backlog
+status: done
 priority: medium
 area: "import, accounts"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-23
 source: "auditoría del import 2.2 (sesión S27j), H7 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -31,3 +31,7 @@ Columna `account` por nombre (tras `exported-csv-cannot-be-imported-back`). Una 
 - [ ] Un archivo con 3 cuentas entra en esas 3 cuentas.
 - [ ] Una cuenta que no existe se crea al confirmar, y la vista previa la anuncia.
 - [ ] Ida y vuelta: exportar con `account` e importar deja cada movimiento en su cuenta.
+
+## Cierre (2026-11-23)
+
+Ya estaba hecho desde el 29-oct: con la columna `account` cada fila va a su cuenta (mayúsculas, tildes y espacios aparte; tarjeta con líneas → la línea de la moneda), las que no existen se crean con saldo inicial cero y la vista previa las anuncia; sin Pro y sin hueco, la persona elige cuáles. Medido el 23-nov contra `origin/2.3`: `ImportRoundTripAndAccountsTests` (tres cuentas, cuenta nueva, archivada, moneda que no casa, plan gratuito) en verde.

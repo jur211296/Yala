@@ -485,7 +485,7 @@ struct TransactionsExportService {
                     value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
 
                 case .category:
-                    value = transaction.category?.name ?? ""
+                    value = Self.categoryName(for: transaction)
 
                 case .subcategory:
                     value = transaction.subcategory?.name ?? ""
@@ -520,6 +520,12 @@ struct TransactionsExportService {
 
                 case .need:
                     value = ImportRecordFieldsLogic.exportNeedCode(override: transaction.needOverride)
+
+                case .kind:
+                    value = Self.kindCode(for: transaction)
+
+                case .transferID:
+                    value = Self.transferIDCode(for: transaction)
                 }
 
                 rowValues.append(csvEscaped(value))
@@ -661,7 +667,7 @@ struct TransactionsExportService {
                 case .card:
                     value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
                 case .category:
-                    value = transaction.category?.name ?? ""
+                    value = categoryName(for: transaction)
                 case .subcategory:
                     value = transaction.subcategory?.name ?? ""
                 case .tags:
@@ -693,6 +699,10 @@ struct TransactionsExportService {
 
                 case .need:
                     value = ImportRecordFieldsLogic.exportNeedCode(override: transaction.needOverride)
+                case .kind:
+                    value = kindCode(for: transaction)
+                case .transferID:
+                    value = transferIDCode(for: transaction)
                 }
 
                 rowValues.append(value)
@@ -702,6 +712,27 @@ struct TransactionsExportService {
         }
 
         return (headers, rows)
+    }
+
+    /// La categoría de la fila. El saldo inicial y los ajustes nacen solo con subcategoría
+    /// (`InitialBalanceService`): se escribe la de su subcategoría, o la fila salía con la categoría vacía y no volvía a
+    /// entrar (H8, 2026-11-23).
+    static func categoryName(for transaction: TransactionItem) -> String {
+        transaction.category?.name ?? transaction.subcategory?.category?.name ?? ""
+    }
+
+    /// Qué es la fila, para la columna `kind` (H8).
+    static func kindCode(for transaction: TransactionItem) -> String {
+        ImportRecordFieldsLogic.exportKind(
+            balanceAdjustmentType: transaction.balanceAdjustmentType,
+            isIncome: TransactionClassificationLogic.isIncome(transaction)
+        ).rawValue
+    }
+
+    /// La pareja de una transferencia, para la columna `transfer_id` (H8).
+    static func transferIDCode(for transaction: TransactionItem) -> String {
+        ImportRecordFieldsLogic.exportTransferID(
+            balanceAdjustmentType: transaction.balanceAdjustmentType, transferPairID: transaction.transferPairID)
     }
 
     /// Escribe un archivo XLSX temporal usando XLSXWriter.
