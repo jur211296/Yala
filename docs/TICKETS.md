@@ -48,6 +48,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | id | status | path |
 | 2026-11-22-tasas-de-cambio-lote | done | tickets/done/2026-11-22-tasas-de-cambio-lote.md |
 | conecta-tu-ia-maqueta-visual-y-pantallas-web | backlog | tickets/backlog/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
+| 2026-11-22-conecta-tu-ia-diseno | backlog | tickets/backlog/2026-11-22-conecta-tu-ia-diseno.md |
 | 2026-11-22-importar-registros-lote-1 | done | tickets/done/2026-11-22-importar-registros-lote-1.md |
 | cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
 | deleting-thousands-of-records-saves-slower-than-linear | backlog | tickets/backlog/deleting-thousands-of-records-saves-slower-than-linear.md |
