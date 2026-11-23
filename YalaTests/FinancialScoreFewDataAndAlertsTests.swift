@@ -142,16 +142,14 @@ struct FinancialScoreFewDataAndAlertsTests {
         #expect(!result.alerts.hasAlerts(isExpensesOnlyMode: true))
     }
 
-    @Test("Un presupuesto pasado creado a mitad de mes no cuenta en la nota y sale en la línea; uno que cuenta, no")
-    func overBudget_unseenOnlyWhenNotCounted() {
+    @Test("Un presupuesto pasado creado a mitad de mes ya cuenta en la nota y no sale en la línea de lo que no ve")
+    func overBudget_createdMidMonth_isCountedAndNotUnseen() {
         let newOne = budget("Comidas fuera", limit: 100, createdAt: date(2026, 3, 10))
-        let oldOne = budget("Mercado", limit: 100, createdAt: date(2026, 1, 1))
-        let result = score(transactions: [tx(-150, date(2026, 3, 15))], budgets: [newOne, oldOne])
-        #expect(result.alerts.overBudgets == [
-            .init(name: "Comidas fuera", countedByScore: false),
-            .init(name: "Mercado", countedByScore: true)
-        ])
-        #expect(result.alerts.unseen(isExpensesOnlyMode: false) == [.overBudget("Comidas fuera")])
+        let result = score(transactions: [tx(-150, date(2026, 3, 15))], budgets: [newOne])
+        #expect(result.alerts.overBudgets == ["Comidas fuera"])
+        #expect(result.alerts.unseen(isExpensesOnlyMode: false).isEmpty)
+        #expect(FinancialScoreCopy.unseenLine(for: result, isExpensesOnlyMode: false) == nil)
+        #expect((result.budget ?? 100) < 100, "La nota de presupuestos baja con el pasado.")
     }
 
     @Test("Con alertas, una nota alta no dice «¡Vas increíble!»")

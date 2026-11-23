@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Keine Daten";
 
 "saludDetalle.capsule.createOne" = "Eins anlegen";
-"saludDetalle.capsule.since" = "Ab %@";
 "saludDetalle.capsule.addPayments" = "Zahlungen hinzufügen";
 "saludDetalle.capsule.recordToday" = "Heute erfassen";
 "saludDetalle.capsule.noData" = "Keine Daten";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d Budgets wurden in diesem Zeitraum überschritten. Unten siehst du, wie du wieder in dein Limit kommst.";
 "saludDetalle.advice.overdue" = "%@ ist bereits fällig. Wenn du es schon bezahlt hast, markiere es als bezahlt.";
 "saludDetalle.advice.createBudget" = "Mit einem Budget wäre deine Note vollständig: Es ist der Teil, der am meisten zählt.";
-"saludDetalle.advice.budgetStarts" = "Dein Budget zählt ab dem %@ für deine Note.";
 "saludDetalle.advice.addPayments" = "Füge deine Zahlungen hinzu, um zu sehen, ob der Monat aufgeht.";
 "saludDetalle.advice.rhythm" = "Am meisten bewegt deine Note gerade, wenn du häufiger erfasst.";
 "saludDetalle.advice.allGood" = "Deine Budgets liegen im Limit und was du diesen Monat noch zahlen musst, ist gedeckt.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ wurde um %@ überschritten. Dein anderes Budget liegt im Limit.";
 "saludDetalle.budgets.overOthers" = "%@ wurde um %@ überschritten. Deine anderen %d Budgets liegen im Limit.";
 "saludDetalle.budgets.manyOver" = "%d Budgets wurden überschritten. Unten siehst du, wie du wieder in dein Limit kommst.";
-"saludDetalle.budgets.startsLater" = "%@ zählt ab dem %@ für deine Note. Schon jetzt siehst du, wie es läuft.";
 "saludDetalle.budgets.seeAll" = "Alle anzeigen (%d)";
 "saludDetalle.budgets.left" = "Dir bleiben";
 "saludDetalle.budgets.over" = "Überschritten um";

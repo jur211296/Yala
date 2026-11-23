@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "No data";
 
 "saludDetalle.capsule.createOne" = "Create one";
-"saludDetalle.capsule.since" = "Since %@";
 "saludDetalle.capsule.addPayments" = "Add payments";
 "saludDetalle.capsule.recordToday" = "Log today";
 "saludDetalle.capsule.noData" = "No data";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d budgets went over this period. Below is how to get back to your limit.";
 "saludDetalle.advice.overdue" = "%@ is past due. If you already paid it, mark it as paid.";
 "saludDetalle.advice.createBudget" = "With a budget your score would be complete: it’s the part that counts most.";
-"saludDetalle.advice.budgetStarts" = "Your budget starts counting toward your score on %@.";
 "saludDetalle.advice.addPayments" = "Add your payments to see whether the month adds up.";
 "saludDetalle.advice.rhythm" = "What moves your score most right now is logging more often.";
 "saludDetalle.advice.allGood" = "Your budgets are within their limits and what’s left to pay this month is covered.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ went over by %@. Your other budget is within its limit.";
 "saludDetalle.budgets.overOthers" = "%@ went over by %@. Your other %d budgets are within their limits.";
 "saludDetalle.budgets.manyOver" = "%d budgets went over. Below is how to get back to your limit.";
-"saludDetalle.budgets.startsLater" = "%@ starts counting toward your score on %@. You can already see how it’s going.";
 "saludDetalle.budgets.seeAll" = "See all (%d)";
 "saludDetalle.budgets.left" = "You have left";
 "saludDetalle.budgets.over" = "You went over by";

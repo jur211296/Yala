@@ -880,9 +880,6 @@ enum L10n {
             static func unseenNegativeAccount(_ name: String) -> String {
                 String(format: ls("panel.health.unseen.negativeAccount", comment: "Health card, item of the 'not counted' line: an account with a negative balance. %@ = account name"), name)
             }
-            static func unseenOverBudget(_ name: String) -> String {
-                String(format: ls("panel.health.unseen.overBudget", comment: "Health card, item of the 'not counted' line: a budget already over its limit that does not count yet. %@ = budget name"), name)
-            }
             static var totalHeadlineHighWithAlerts: String {
                 ls("panel.health.total.headline.highWithAlerts", comment: "Health sheet headline for a total score ≥ 90 while something is going wrong (over budget, account below zero)")
             }

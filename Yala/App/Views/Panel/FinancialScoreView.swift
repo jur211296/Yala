@@ -19,8 +19,8 @@ struct FinancialScoreView: View {
     /// callsite pueda dibujar el título fuera de la card (consistente con el
     /// resto de section headers en Insights / Stats).
     var hideHeader: Bool = false
-    /// Hay presupuestos activos. Con presupuestos y sin nota de presupuestos (uno creado este mes cuenta desde el
-    /// siguiente), su hoja lo dice en vez de invitar a crear el primero (UX 2.2 · L3-13).
+    /// Hay presupuestos activos. Con presupuestos y sin nota de presupuestos (ninguno cubre el período: desde el
+    /// 22-nov-2026 uno cuenta desde el período en que se creó), su hoja no invita a crear el primero (UX 2.2 · L3-13).
     var hasBudgets: Bool = false
 
     // A11Y-DT: ring diameter scales with Dynamic Type.

@@ -26,6 +26,7 @@ struct SaludFinancieraDetalleView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.amountsHidden) private var amountsHidden
+    @Environment(\.yalaTheme) private var theme
 
     @State private var cargador = SaludFinancieraDetalleCargador()
     @State private var muestraComoSeCalcula = false
@@ -63,7 +64,8 @@ struct SaludFinancieraDetalleView: View {
     private var soloGastos: Bool { sessionState.isExpensesOnlyMode }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+        // Entre secciones, el aire del Panel (`DS.Spacing.xxl`): más que del título a su contenido.
+        VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
             cabecera(cargador.datos)
             if let datos = cargador.datos {
                 seccionPresupuestos(datos)
@@ -182,7 +184,9 @@ struct SaludFinancieraDetalleView: View {
         )
     }
 
-    /// Las tres cápsulas, en el orden de las secciones, partidas en líneas si no caben. Tocar una baja a su sección.
+    /// Las cápsulas, en el orden de las secciones, partidas en líneas si no caben. Tocar una baja a su sección. Son
+    /// chips de tarjeta, como los del Panel (decisión de Jürgen del 23-nov-2026): relleno `.thCard` con su borde, sin la
+    /// flecha hacia abajo, que se leía como «desplegar».
     private func capsulas(_ datos: Datos?) -> some View {
         FlowLayout(spacing: DS.Spacing.xs) { capsulasDePartes(datos) }
     }
@@ -223,16 +227,13 @@ struct SaludFinancieraDetalleView: View {
                     .monospacedDigit()
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
             }
             .font(DS.Typography.caption)
             .lineLimit(esAX ? nil : 1)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xs)
-            .background(Color.primary.opacity(0.06), in: Capsule())
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(.thCard, in: Capsule())
+            .overlay(Capsule().stroke(theme.cardBorder, lineWidth: 1))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -291,10 +292,12 @@ struct SaludFinancieraDetalleView: View {
             .background(tinte.opacity(0.14), in: Capsule())
     }
 
+    /// Una tarjeta de la hoja, con el fondo, el borde y el radio de las tarjetas del Panel (`solidCard` con
+    /// `DS.Panel.widgetRadius`, decisión de Jürgen del 23-nov-2026). Las filas de dentro ponen su propio margen.
     private func tarjeta(@ViewBuilder contenido: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 0) { contenido() }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .solidCard(radius: DS.Panel.widgetRadius)
     }
 
     private func frase(_ texto: String, id: String? = nil) -> some View {
@@ -318,14 +321,6 @@ struct SaludFinancieraDetalleView: View {
                 tarjeta {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         frase(frasePresupuestos(presupuestos), id: "health_budgets_lead")
-                        if let pendiente = Logica.presupuestoQueAunNoCuenta(presupuestos, score: nota),
-                           let desde = pendiente.cuentaDesde {
-                            Text(Texto.empiezaDespues(pendiente.nombre, fecha: desde))
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("health_budgets_starts_later")
-                        }
                     }
                     .padding(DS.Spacing.md)
                     let visibles = Array(presupuestos.prefix(Logica.maximoPresupuestos))
@@ -458,7 +453,7 @@ struct SaludFinancieraDetalleView: View {
         if datos.esPro {
             if let ia = datos.tarjetaIA {
                 filas.append(AnyView(consejoFila(
-                    icono: "sparkles", etiqueta: Texto.iaEtiqueta, cuerpo: "\(ia.texto) \(ia.consejo)",
+                    icono: "sparkles", etiqueta: Texto.iaEtiqueta, cuerpo: Texto.iaCuerpo(ia),
                     enlace: Texto.iaBoton, id: "health_improve_ai"
                 ) { abrir(.resumenIA) }))
             }
@@ -466,9 +461,10 @@ struct SaludFinancieraDetalleView: View {
         if let propuesta {
             filas.append(AnyView(consejoFila(
                 icono: "arrow.up.and.down", etiqueta: Texto.ajustarTitulo,
-                cuerpo: Texto.ajustarDetalle(peor.nombre, veces: propuesta.vecesPasado, periodos: propuesta.periodos,
-                                             promedio: monto(propuesta.promedio, peor.moneda),
-                                             limite: monto(propuesta.limite, peor.moneda)),
+                cuerpo: AttributedString(Texto.ajustarDetalle(
+                    peor.nombre, veces: propuesta.vecesPasado, periodos: propuesta.periodos,
+                    promedio: monto(propuesta.promedio, peor.moneda), limite: monto(propuesta.limite, peor.moneda)
+                )),
                 enlace: Texto.ajustarBoton, id: "health_improve_adjust_limit"
             ) { abrirEditor(peor.id, limite: propuesta.limite) }))
         }
@@ -478,13 +474,13 @@ struct SaludFinancieraDetalleView: View {
             let filtro = peor.dondeMasPesa.first?.filtro ?? .ninguno
             filas.append(AnyView(consejoFila(
                 icono: "scissors", etiqueta: Texto.recortarTitulo(solo: propuesta == nil),
-                cuerpo: Texto.recortarDetalle(peor.nombre, lista: lista),
+                cuerpo: AttributedString(Texto.recortarDetalle(peor.nombre, lista: lista)),
                 enlace: Texto.recortarBoton, id: "health_improve_cut"
             ) { abrir(.registrosFiltrados(filtro)) }))
         }
         if datos.esPro, datos.tarjetaIA == nil {
             filas.append(AnyView(consejoFila(
-                icono: "sparkles", etiqueta: Texto.iaSinResumenTitulo, cuerpo: Texto.iaSinResumenDetalle,
+                icono: "sparkles", etiqueta: Texto.iaSinResumenTitulo, cuerpo: AttributedString(Texto.iaSinResumenDetalle),
                 enlace: Texto.iaBoton, id: "health_improve_ai_summary"
             ) { abrir(.resumenIA) }))
         }
@@ -929,8 +925,7 @@ struct SaludFinancieraDetalleView: View {
                 .foregroundStyle(.primary)
         }
         .tint(.secondary)
-        .padding(DS.Spacing.md)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .solidCard(padding: DS.Spacing.md, radius: DS.Panel.widgetRadius)
         .accessibilityIdentifier("health_how_it_works")
     }
 
@@ -967,7 +962,7 @@ struct SaludFinancieraDetalleView: View {
 
     /// Un consejo con su enlace: etiqueta, cuerpo y la acción en el color del tema. Toda la fila se toca.
     private func consejoFila(
-        icono nombre: String, etiqueta: String, cuerpo: String, enlace: String, id: String,
+        icono nombre: String, etiqueta: String, cuerpo: AttributedString, enlace: String, id: String,
         accion: @escaping () -> Void
     ) -> some View {
         Button(action: accion) {
