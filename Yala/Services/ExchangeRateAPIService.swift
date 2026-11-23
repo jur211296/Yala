@@ -58,6 +58,10 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
     init(session: URLSession = .shared) {
         self.session = session
         self.dateFormatter = DateFormatter()
+        // Gregoriano y `en_US_POSIX`, como las claves de `CurrencyConverter` (ticket
+        // `exchange-rate-date-keys-follow-the-phone-calendar`): con el iPhone en calendario budista pedía `2569-…`.
+        self.dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        self.dateFormatter.calendar = Calendar(identifier: .gregorian)
         self.dateFormatter.dateFormat = "yyyy-MM-dd"
         self.dateFormatter.timeZone = TimeZone(identifier: "UTC")
     }

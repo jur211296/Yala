@@ -28,3 +28,10 @@ medias, y aislarlo o pasar la prueba a la cuarentena con dueño. Hermano conocid
 **Otra vez el 2026-11-22 en la Mini** (gate del encargo del chip de grupo, que no toca el widget): `YalaTests` entero
 (15 765 casos) cayó solo en `laFotoPedida_cedeElHiloEntreEtapasYQuedaPublicada` (línea 84, `measured.turns >= 8`). Sola,
 la suite pasó 2 de 2.
+
+**Causa medida el 2026-11-23 en la Max** (gate del lote de tasas de cambio, que no toca el widget ni el borrado): en
+`YalaTests` entero (15 844 casos) cayeron los mismos tres casos, y antes de cada uno el log dice
+`WidgetDataCache: updateCache SUSPENDIDO — wipe armado` (20 veces en la corrida; la primera, a la altura de las suites
+de `legacyFootprint_*`). Es decir: **otra suite deja armado el borrado de cierre de sesión** (`WidgetDataCache.isWipeArmed`)
+y `updateCache` no arranca la foto. A solas pasa 4/4. Arreglo probable: que `FotoWidgetPorEtapasTests` desarme el
+borrado al empezar (y lo restaure), o encontrar la suite que lo arma sin limpiarlo.

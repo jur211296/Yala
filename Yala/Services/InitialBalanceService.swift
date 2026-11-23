@@ -251,6 +251,11 @@ import SwiftData
 
         if newDate < initialBalanceTx.date {
             initialBalanceTx.date = newDate
+            // La fecha es input de la conversión: el monto en la divisa preferida se convierte con la tasa de ESE día.
+            // Sin recalcular, las cuatro columnas de dinero se quedaban con la tasa del día viejo y selladas como
+            // definitivas (ticket `initial-balance-date-move-leaves-converted-amount-stale`). Sin `save()`: lo hace el
+            // llamador, como con la fecha. Si la tasa del día nuevo aún no está, sale provisional y el reparador la cura.
+            initialBalanceTx.recalculatePreferredCurrency(context: context)
         }
     }
 }
