@@ -43,9 +43,14 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (110)
+## Index (116)
 
 | id | status | path |
+| conecta-tu-ia-maqueta-visual-y-pantallas-web | backlog | tickets/backlog/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
+| 2026-11-22-importar-registros-lote-1 | done | tickets/done/2026-11-22-importar-registros-lote-1.md |
+| cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
+| deleting-thousands-of-records-saves-slower-than-linear | backlog | tickets/backlog/deleting-thousands-of-records-saves-slower-than-linear.md |
+| import-of-ten-thousand-rows-still-blocks-the-main-thread | backlog | tickets/backlog/import-of-ten-thousand-rows-still-blocks-the-main-thread.md |
 | 2026-11-22-comercios-en-comun-construir | done | tickets/done/2026-11-22-comercios-en-comun-construir.md |
 | 2026-11-22-bandeja-aprobar-recurrente-y-cierre | done | tickets/done/2026-11-22-bandeja-aprobar-recurrente-y-cierre.md |
 | 2026-11-22-esto-lei-construir-opcion-a | done | tickets/done/2026-11-22-esto-lei-construir-opcion-a.md |
@@ -813,18 +818,18 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-account-column-by-name | backlog | tickets/backlog/import-account-column-by-name.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
-| import-cannot-be-undone | backlog | tickets/backlog/import-cannot-be-undone.md |
+| import-cannot-be-undone | done | tickets/done/import-cannot-be-undone.md |
 | import-completed-alert-is-sometimes-lost | done | tickets/done/import-completed-alert-is-sometimes-lost.md |
 | import-failure-leaves-unsaved-inserts-in-the-main-context | done | tickets/done/import-failure-leaves-unsaved-inserts-in-the-main-context.md |
-| import-guesses-date-order-per-row | backlog | tickets/backlog/import-guesses-date-order-per-row.md |
-| import-has-no-duplicate-detection | backlog | tickets/backlog/import-has-no-duplicate-detection.md |
+| import-guesses-date-order-per-row | done | tickets/done/import-guesses-date-order-per-row.md |
+| import-has-no-duplicate-detection | done | tickets/done/import-has-no-duplicate-detection.md |
 | import-name-matching-is-exact | backlog | tickets/backlog/import-name-matching-is-exact.md |
-| import-of-thousands-of-rows-in-cloud-mode-is-unmeasured | backlog | tickets/backlog/import-of-thousands-of-rows-in-cloud-mode-is-unmeasured.md |
+| import-of-thousands-of-rows-in-cloud-mode-is-unmeasured | done | tickets/done/import-of-thousands-of-rows-in-cloud-mode-is-unmeasured.md |
 | import-offers-the-groups-system-account | done | tickets/done/import-offers-the-groups-system-account.md |
 | import-preview-hides-what-it-will-create | backlog | tickets/backlog/import-preview-hides-what-it-will-create.md |
 | import-reads-thousands-as-decimals-and-drops-the-unicode-minus | done | tickets/done/import-reads-thousands-as-decimals-and-drops-the-unicode-minus.md |
-| import-runs-twice-on-the-main-thread | backlog | tickets/backlog/import-runs-twice-on-the-main-thread.md |
-| import-transfer-pairing-ignores-accounts-and-currency-changes | backlog | tickets/backlog/import-transfer-pairing-ignores-accounts-and-currency-changes.md |
+| import-runs-twice-on-the-main-thread | done | tickets/done/import-runs-twice-on-the-main-thread.md |
+| import-transfer-pairing-ignores-accounts-and-currency-changes | done | tickets/done/import-transfer-pairing-ignores-accounts-and-currency-changes.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |

@@ -1,10 +1,10 @@
 ---
 id: import-guesses-date-order-per-row
-status: backlog
+status: done
 priority: medium
 area: "import, dates"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-22
 source: "auditoría del import 2.2 (sesión S27j), H10 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -30,3 +30,18 @@ Orden día/mes por archivo (si alguna fila lo decide, manda; si no, el del idiom
 
 - [ ] Tests con las fechas medidas en la auditoría (H10).
 - [ ] Una fecha importada en `Pacific/Auckland` se ve el mismo día.
+
+## Hecho (2026-11-22, lote 1 de Importar registros)
+
+- `ImportDateLogic`: el orden día/mes se decide **por archivo** (un número mayor que 12 decide; si el archivo se
+  contradice o no decide nada, el orden del idioma del teléfono, y la vista previa lo enseña con un ejemplo: «Las fechas
+  se leen como mes/día, el orden de tu teléfono: 03/04/2026 es el 4 mar 2026»). Años de dos cifras en todas las rutas
+  (`/`, `-`, `.`), con el siglo que deja la fecha en el pasado. Días que no existen (31/02) son fecha inválida.
+- La fecha se guarda al mediodía **local**, en gregoriano; `ImportRecordFieldsLogic.combine` lee el día en la zona del
+  teléfono. Una fila es futura por día (hoy sin hora entra aunque aún no sea mediodía).
+- Plantilla con calendario gregoriano y `en_US_POSIX`.
+- Pruebas: `ImportarLote1LogicaTests` (las fechas medidas en la auditoría: 03/04/2026 con archivo de EE. UU., 10/27/26,
+  27/10/99, ISO con hora, Auckland) y `ImportarLote1ImportTests` (de punta a punta en Pacific/Auckland y Lima).
+
+- [x] Tests con las fechas medidas en la auditoría (H10).
+- [x] Una fecha importada en `Pacific/Auckland` se ve el mismo día.
