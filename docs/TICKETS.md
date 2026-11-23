@@ -567,11 +567,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-filters-reset-when-the-text-size-changes | done | tickets/done/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | export-hide-mode-with-the-defaults-exports-nothing | done | tickets/done/export-hide-mode-with-the-defaults-exports-nothing.md |
-| export-import-carry-record-kind-and-transfer-pair | backlog | tickets/backlog/export-import-carry-record-kind-and-transfer-pair.md |
+| export-import-carry-record-kind-and-transfer-pair | done | tickets/done/export-import-carry-record-kind-and-transfer-pair.md |
 | export-import-lose-time-manual-rate-and-nature | done | tickets/done/export-import-lose-time-manual-rate-and-nature.md |
 | export-wizard-amount-filter-in-hidden-currency | done | tickets/done/export-wizard-amount-filter-in-hidden-currency.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
-| exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
+| exported-csv-cannot-be-imported-back | done | tickets/done/exported-csv-cannot-be-imported-back.md |
 | exported-xlsx-stores-amounts-and-dates-as-text | backlog | tickets/backlog/exported-xlsx-stores-amounts-and-dates-as-text.md |
 | external-entry-panel-link-loses-the-typed-amount-intermittently | qa | tickets/qa/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
@@ -817,7 +817,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-note-uses-bank-template-instead-of-merchant | done | tickets/done/image-note-uses-bank-template-instead-of-merchant.md |
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
 | image-vision-error-still-names-the-ai-provider | done | tickets/done/image-vision-error-still-names-the-ai-provider.md |
-| import-account-column-by-name | backlog | tickets/backlog/import-account-column-by-name.md |
+| import-account-column-by-name | done | tickets/done/import-account-column-by-name.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | import-cannot-be-undone | done | tickets/done/import-cannot-be-undone.md |
@@ -1504,7 +1504,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-27-1-with-the-iphone-duo-simulator | done | tickets/done/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
-| xlsx-with-inline-text-cannot-be-opened | backlog | tickets/backlog/xlsx-with-inline-text-cannot-be-opened.md |
+| xlsx-with-inline-text-cannot-be-opened | done | tickets/done/xlsx-with-inline-text-cannot-be-opened.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | yala-dev-with-drive-off-mirrored-to-the-production-container | backlog | tickets/backlog/yala-dev-with-drive-off-mirrored-to-the-production-container.md |
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |

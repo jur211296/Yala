@@ -155,6 +155,14 @@ struct ImportPreviewSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("import_preview_loose_transfers")
                 }
+                if !preview.initialBalances.isEmpty {
+                    Label(L10n.ExportarImportarIdaVuelta.previewInitialBalances(preview.initialBalances.count),
+                          systemImage: "flag")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("import_preview_initial_balances")
+                }
                 if let notice = preview.dateOrderNotice {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Label(

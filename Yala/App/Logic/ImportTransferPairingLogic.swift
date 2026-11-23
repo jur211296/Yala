@@ -27,6 +27,8 @@ nonisolated enum ImportTransferPairingLogic {
         let accountKey: String
         /// La nota normalizada (`ImportDuplicateLogic.normalizedNote`).
         let note: String
+        /// La pareja que trae el archivo (`transfer_id`, H8), o vacía.
+        var transferID: String = ""
     }
 
     struct Pair: Equatable, Sendable {
@@ -34,7 +36,12 @@ nonisolated enum ImportTransferPairingLogic {
         let inflow: Int
     }
 
-    /// Las parejas, en tres pasadas:
+    /// Las parejas, en tres pasadas, después de las que el archivo ya trae emparejadas:
+    ///
+    /// 0. Por `transfer_id` (H8, 2026-11-23): exactamente dos patas con el mismo, una que sale y otra que entra, en
+    ///    cuentas distintas, son la misma transferencia, también con cambio de moneda o en días distintos. Un id con otra
+    ///    forma (una sola pata, tres, las dos del mismo signo o de la misma cuenta) no decide nada: sus patas siguen a
+    ///    las pasadas de siempre.
     ///
     /// 1. Mismo día, importe y moneda, en cuentas distintas. Si una salida tiene varias entradas candidatas, se queda
     ///    con las de nota igual a la suya (si hay alguna con nota); si todas las que quedan son de la misma cuenta, son
@@ -48,8 +55,19 @@ nonisolated enum ImportTransferPairingLogic {
         var paired: Set<Int> = []
         var result: [Pair] = []
 
+        // Pasada 0: la pareja que dice el archivo.
+        let byTransferID = Dictionary(grouping: legs.filter { !$0.transferID.isEmpty && $0.amount != 0 }, by: \.transferID)
+        for transferID in byTransferID.keys.sorted() {
+            guard let group = byTransferID[transferID], group.count == 2,
+                  let outflow = group.first(where: { $0.amount < 0 }), let inflow = group.first(where: { $0.amount > 0 }),
+                  outflow.accountKey != inflow.accountKey else { continue }
+            paired.insert(outflow.id)
+            paired.insert(inflow.id)
+            result.append(Pair(outflow: outflow.id, inflow: inflow.id))
+        }
+
         struct Key: Hashable { let day: String; let amount: Int64; let currency: String }
-        let groups = Dictionary(grouping: legs.filter { $0.amount != 0 }) {
+        let groups = Dictionary(grouping: legs.filter { $0.amount != 0 && !paired.contains($0.id) }) {
             Key(day: $0.day, amount: abs($0.amount), currency: $0.currencyCode)
         }
         let orderedKeys = groups.keys.sorted {

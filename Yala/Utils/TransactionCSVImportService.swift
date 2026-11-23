@@ -66,6 +66,10 @@ enum ImportError: LocalizedError, Equatable {
     case invalidExchangeRate(row: Int, value: String)
     /// La columna `need` trae algo que no es ninguna naturaleza (H18).
     case invalidNeed(row: Int, value: String)
+    /// La columna `kind` trae algo que no es ningún tipo de movimiento (H8).
+    case invalidKind(row: Int, value: String)
+    /// La fila es un saldo inicial y su cuenta ya tiene otro: no se pisa (H8).
+    case initialBalanceConflict(row: Int, account: String)
 
     /// La fila del archivo a la que se refiere el error, o `nil` si es del archivo entero. Solo los errores
     /// con fila se pueden saltar al importar el resto (L7-17).
@@ -80,7 +84,7 @@ enum ImportError: LocalizedError, Equatable {
             .accountUnavailable(let row, _), .ambiguousAccount(let row, _),
             .namedAccountCurrencyMismatch(let row, _, _, _), .newAccountNotChosen(let row, _),
             .unreadableRow(let row), .invalidTime(let row, _), .invalidExchangeRate(let row, _),
-            .invalidNeed(let row, _):
+            .invalidNeed(let row, _), .invalidKind(let row, _), .initialBalanceConflict(let row, _):
             return row
         }
     }
@@ -142,6 +146,10 @@ enum ImportError: LocalizedError, Equatable {
             return T.invalidExchangeRate(row, value)
         case .invalidNeed(let row, let value):
             return T.invalidNeed(row, value)
+        case .invalidKind(let row, let value):
+            return L10n.ExportarImportarIdaVuelta.invalidKind(row, value)
+        case .initialBalanceConflict(let row, let account):
+            return L10n.ExportarImportarIdaVuelta.initialBalanceConflict(row, account)
         }
     }
 }
@@ -168,6 +176,10 @@ struct ParsedTransactionDraft {
     var accountKey: String = ""
     /// Parece ya importada: hay un movimiento igual en su cuenta (H11). Si el import salta duplicados, no entra.
     var isDuplicate: Bool = false
+    /// La pareja de transferencia que trae el archivo (`transfer_id`, H8), o vacía.
+    var transferID: String = ""
+    /// La fila es el saldo inicial de su cuenta (`kind = initial_balance`, H8): fija el saldo, no crea un movimiento.
+    var isInitialBalance: Bool = false
 }
 
 /// Un saldo inicial cuya fecha retrocedió el import (para poder deshacerlo, H12).
@@ -197,6 +209,9 @@ struct RawImportRow {
     var need: String? = nil
     /// Excel guardó la tasa como NÚMERO: forma canónica, como `amountIsNumber`.
     var exchangeRateIsNumber: Bool = false
+    /// Las columnas de la ida y vuelta de H8: qué es la fila y la pareja de su transferencia. `nil` sin columna.
+    var kind: String? = nil
+    var transferID: String? = nil
     /// La fila no se pudo leer entera (más columnas que la cabecera): se informa con su número al validar.
     var readFailure: ImportError? = nil
 
@@ -276,6 +291,18 @@ struct TransactionImportResult {
     var looseTransferCount: Int = 0
     /// Los saldos iniciales cuya fecha retrocedió (H12).
     var initialBalanceChanges: [ImportInitialBalanceChange] = []
+    /// Los saldos iniciales que el archivo fija (`kind = initial_balance`, H8), entren o no en la vista previa.
+    var initialBalances: [ImportInitialBalanceSummary] = []
+}
+
+/// Un saldo inicial que el import fija (H8), con la cuenta a la que va.
+struct ImportInitialBalanceSummary: Equatable {
+    let rowNumber: Int
+    let accountName: String
+    let amount: Double
+    let currencyCode: String
+    /// La cuenta nueva a la que va (su clave), o `nil` si va a una que ya existe.
+    let newAccountKey: String?
 }
 
 // MARK: - Servicio principal de importación
@@ -494,10 +521,46 @@ enum TransactionCSVImportService {
             }
         }
 
+        // H8: los saldos iniciales no son movimientos: se apartan antes de buscar duplicados y transferencias.
+        let newAccountDefinitions = resolver?.newAccounts ?? []
+        func targetName(_ target: Target) -> String {
+            switch target {
+            case .existing(let account): return account.name
+            case .new(let key): return newAccountDefinitions.first { $0.key == key }?.name ?? key
+            }
+        }
+        let initialRows = validated.filter { $0.draft.isInitialBalance }
+        validated.removeAll { $0.draft.isInitialBalance }
+        var initialPlans: [(draft: ParsedTransactionDraft, target: Target)] = []
+        var initialAlreadyThere: [Int] = []
+        var plannedInitialKeys: Set<String> = []
+        for item in initialRows {
+            let amount = (item.draft.amount as NSDecimalNumber).doubleValue
+            var conflict = plannedInitialKeys.contains(item.target.key)
+            if !conflict, case .existing(let account) = item.target,
+               let current = InitialBalanceService.findInitialBalanceTransaction(for: account, in: context) {
+                // El mismo saldo ya está: no hay nada que hacer. Otro distinto no se pisa.
+                if abs(current.amount - amount) < 0.000_1 {
+                    initialAlreadyThere.append(item.draft.rowNumber)
+                    plannedInitialKeys.insert(item.target.key)
+                    continue
+                }
+                conflict = true
+            }
+            if conflict {
+                let error = ImportError.initialBalanceConflict(row: item.draft.rowNumber, account: targetName(item.target))
+                guard skippingInvalidRows else { throw error }
+                failures.append(error)
+                continue
+            }
+            plannedInitialKeys.insert(item.target.key)
+            initialPlans.append(item)
+        }
+
         // H11: lo que parece ya importado, contra los movimientos de las cuentas que ya existen.
         let duplicateIndices = try findDuplicates(validated, calendar: calendar, in: context)
         for index in duplicateIndices { validated[index].draft.isDuplicate = true }
-        let duplicateRows = duplicateIndices.sorted().map { validated[$0].draft.rowNumber }
+        let duplicateRows = (duplicateIndices.sorted().map { validated[$0].draft.rowNumber } + initialAlreadyThere).sorted()
         let valid = skippingDuplicates ? validated.filter { !$0.draft.isDuplicate } : validated
 
         // H9: las transferencias que quedan sin pareja, sobre lo que entra.
@@ -506,44 +569,56 @@ enum TransactionCSVImportService {
 
         // Las cuentas nuevas se crean solo si algo entra en ellas.
         var createdAccounts: [String: Account] = [:]
-        let newAccountDefinitions = resolver?.newAccounts ?? []
         var touchedAccounts: [Account] = []
         func remember(_ account: Account) {
             if !touchedAccounts.contains(where: { $0 === account }) { touchedAccounts.append(account) }
         }
         var initialBalanceChanges: [ImportInitialBalanceChange] = []
+        var createdInitials: Set<ObjectIdentifier> = []
         if insertsTransactions {
             // Alineado con `valid`: `nil` si la fila no llegó a crearse.
             var inserted: [TransactionItem?] = []
             inserted.reserveCapacity(valid.count)
-            for (draft, target) in valid {
-                let account: Account
+            func account(for target: Target) -> Account? {
                 switch target {
                 case .existing(let existing):
-                    account = existing
+                    return existing
                 case .new(let key):
-                    if let created = createdAccounts[key] {
-                        account = created
-                    } else {
-                        guard let definition = newAccountDefinitions.first(where: { $0.key == key }) else {
-                            inserted.append(nil)
-                            continue
-                        }
-                        let created = Account(
-                            name: definition.name,
-                            currencyCode: definition.currencyCode,
-                            colorHex: AppConstants.defaultColorHex,
-                            iconName: iconName(for: .general),
-                            type: AccountType.general.rawValue,
-                            adjustmentMode: AdjustmentMode.changeInitialBalance.rawValue
-                        )
-                        context.insert(created)
-                        createdAccounts[key] = created
-                        account = created
-                    }
+                    if let created = createdAccounts[key] { return created }
+                    guard let definition = newAccountDefinitions.first(where: { $0.key == key }) else { return nil }
+                    let created = Account(
+                        name: definition.name,
+                        currencyCode: definition.currencyCode,
+                        colorHex: AppConstants.defaultColorHex,
+                        iconName: iconName(for: .general),
+                        type: AccountType.general.rawValue,
+                        adjustmentMode: AdjustmentMode.changeInitialBalance.rawValue
+                    )
+                    context.insert(created)
+                    createdAccounts[key] = created
+                    return created
+                }
+            }
+            for (draft, target) in valid {
+                guard let account = account(for: target) else {
+                    inserted.append(nil)
+                    continue
                 }
                 remember(account)
                 inserted.append(insertTransaction(for: draft, into: account, preferredCode: preferredCode, in: context))
+            }
+
+            // H8: el saldo inicial que trae el archivo, en su fecha y sin crear un movimiento más. Solo llega aquí si la
+            // cuenta no tenía ninguno (arriba): `setInitialBalance` no tiene nada que borrar.
+            for (draft, target) in initialPlans {
+                guard let account = account(for: target) else { continue }
+                remember(account)
+                let initial = InitialBalanceService.setInitialBalance(
+                    amount: (draft.amount as NSDecimalNumber).doubleValue, for: account, subcategory: draft.subcategory,
+                    allTransactions: [], context: context)
+                initial.date = draft.date
+                initial.recalculatePreferredCurrency(context: context)
+                createdInitials.insert(ObjectIdentifier(initial))
             }
 
             // El saldo inicial va siempre antes que todo lo demás: si entró algo más antiguo, su fecha retrocede.
@@ -564,7 +639,9 @@ enum TransactionCSVImportService {
                         let before = initial?.date
                         InitialBalanceService.updateInitialBalanceDateIfNeeded(
                             for: account, allTransactions: allTransactions, context: context)
-                        if let initial, let before, initial.date < before {
+                        // Uno que fijó este import no se apunta: deshacer lo borra entero.
+                        if let initial, let before, initial.date < before,
+                           !createdInitials.contains(ObjectIdentifier(initial)) {
                             initialBalanceChanges.append(ImportInitialBalanceChange(transaction: initial, previousDate: before))
                         }
                     }
@@ -578,7 +655,9 @@ enum TransactionCSVImportService {
         }
 
         var rowsByNewKey: [String: Int] = [:]
-        for (draft, _) in valid { if let key = draft.newAccountKey { rowsByNewKey[key, default: 0] += 1 } }
+        for (draft, _) in valid + initialPlans {
+            if let key = draft.newAccountKey { rowsByNewKey[key, default: 0] += 1 }
+        }
         let newSummaries = newAccountDefinitions.compactMap { definition -> ImportNewAccountSummary? in
             guard let count = rowsByNewKey[definition.key] else { return nil }
             return ImportNewAccountSummary(
@@ -594,7 +673,7 @@ enum TransactionCSVImportService {
         // Los nombres de las cuentas a las que entra algo, en el orden del archivo (también en la vista previa, que no
         // crea las nuevas).
         var receivingNames: [String] = []
-        for (_, target) in valid {
+        for (_, target) in valid + initialPlans {
             let name: String?
             switch target {
             case .existing(let account): name = account.name
@@ -618,9 +697,15 @@ enum TransactionCSVImportService {
             skippedSheets: table.skippedSheets,
             dateDecision: dateDecision,
             duplicateRowNumbers: duplicateRows,
-            skippedDuplicateCount: skippingDuplicates ? duplicateIndices.count : 0,
+            skippedDuplicateCount: (skippingDuplicates ? duplicateIndices.count : 0) + initialAlreadyThere.count,
             looseTransferCount: transferLegs.count - pairs.count * 2,
-            initialBalanceChanges: initialBalanceChanges
+            initialBalanceChanges: initialBalanceChanges,
+            initialBalances: initialPlans.map { draft, target in
+                ImportInitialBalanceSummary(
+                    rowNumber: draft.rowNumber, accountName: targetName(target),
+                    amount: (draft.amount as NSDecimalNumber).doubleValue, currencyCode: draft.normalizedCurrencyCode,
+                    newAccountKey: draft.newAccountKey)
+            }
         )
     }
 
@@ -675,7 +760,7 @@ enum TransactionCSVImportService {
                 calendar: calendar)
             legs.append((index, ImportTransferPairingLogic.Leg(
                 id: legs.count, day: key.day, amount: key.amount, currencyCode: key.currencyCode,
-                accountKey: key.accountKey, note: key.note)))
+                accountKey: key.accountKey, note: key.note, transferID: draft.transferID)))
         }
         return legs
     }
@@ -733,6 +818,18 @@ enum TransactionCSVImportService {
             || ImportGroupRowFilter.isGroupAccountName(row.account ?? "") {
             throw ImportError.groupRow(row: rowNumber)
         }
+
+        // 1b. Qué es la fila (`kind`, H8), opcional. Un valor que no se entiende deja la fila fuera con su motivo, y lo
+        // que se debe en un grupo es de Grupos.
+        let kind: ImportRecordFieldsLogic.RecordKind?
+        switch ImportRecordFieldsLogic.parseKind(row.kind ?? "") {
+        case .none: kind = nil
+        case .kind(let parsed): kind = parsed
+        case .invalid:
+            throw ImportError.invalidKind(
+                row: rowNumber, value: (row.kind ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        if kind == .receivable { throw ImportError.groupRow(row: rowNumber) }
 
         // 2. Fecha y hora; una futura se deja fuera aquí. El día se lee con el orden día/mes del ARCHIVO y se guarda al
         // mediodía de la zona del teléfono (H10; hasta el 2026-11-22, mediodía UTC, que en UTC+13 es el día siguiente).
@@ -852,11 +949,21 @@ enum TransactionCSVImportService {
 
         // 6. Categoría y subcategoría, por nombre y naturaleza: con «Otros» de gasto y de ingreso, la del signo de la
         // fila; un reembolso o una transferencia se quedan en la categoría que ya tiene su subcategoría.
-        guard !trimmedCategory.isEmpty else { throw ImportError.emptyCategory(row: rowNumber) }
-        guard !trimmedSubcategory.isEmpty else { throw ImportError.emptySubcategory(row: rowNumber) }
+        // Con `kind` de transferencia, ajuste o saldo inicial, la subcategoría de sistema con ese papel aunque el archivo
+        // traiga la categoría vacía (H8).
+        let kindRole: SubcategorySystemRole?
+        switch kind {
+        case .transfer: kindRole = .transfer
+        case .adjustment, .initialBalance: kindRole = .balanceAdjustment
+        default: kindRole = nil
+        }
+        if kindRole == nil {
+            guard !trimmedCategory.isEmpty else { throw ImportError.emptyCategory(row: rowNumber) }
+            guard !trimmedSubcategory.isEmpty else { throw ImportError.emptySubcategory(row: rowNumber) }
+        }
         let category: Category
         let subcategory: Subcategory
-        if let role = systemRole(forImportedSubcategoryName: trimmedSubcategory) {
+        if let role = kindRole ?? systemRole(forImportedSubcategoryName: trimmedSubcategory) {
             // Una transferencia o un ajuste va a la subcategoría de sistema con ese PAPEL, no a una con ese nombre:
             // si no, en un teléfono sin la sembrada el import creaba una del usuario y sus filas dejaban de ser
             // transferencias en cuanto la subcategoría perdía el nombre como señal (2026-11-13).
@@ -914,10 +1021,14 @@ enum TransactionCSVImportService {
         var newAccountKey: String?
         if case .new(let key) = target { newAccountKey = key }
         let note = row.note?.isEmpty == true ? nil : row.note
-        let draft = ParsedTransactionDraft(
+        var draft = ParsedTransactionDraft(
             date: date, amount: reading.value, normalizedCurrencyCode: currency, category: category,
             subcategory: subcategory, note: note, tags: tags, rowNumber: rowNumber, newAccountKey: newAccountKey,
             fixedRate: fixedRate, needOverride: needOverride)
+        draft.isInitialBalance = kind == .initialBalance
+        if subcategory.systemRole == .transfer {
+            draft.transferID = (row.transferID ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         return (draft, target, reading)
     }
 

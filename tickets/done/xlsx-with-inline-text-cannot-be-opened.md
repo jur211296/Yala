@@ -1,10 +1,10 @@
 ---
 id: xlsx-with-inline-text-cannot-be-opened
-status: backlog
+status: done
 priority: medium
 area: "import"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-23
 source: "auditoría del import 2.2 (sesión S27j), H3 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -30,3 +30,7 @@ Sin tabla compartida, seguir con una vacía y leer el texto en línea también e
 
 - [ ] Test con un `.xlsx` de `inlineStr` generado en el propio test: se lee igual que uno con tabla compartida.
 - [ ] El caso real pasa de «no se puede abrir» al error de cabecera (o a importarse, si ya entró `exported-csv-cannot-be-imported-back`).
+
+## Cierre (2026-11-23)
+
+Ya estaba hecho desde el 29-oct: sin `sharedStrings.xml` el lector sigue con una tabla vacía y lee el texto en línea también en la cabecera; la fecha se convierte en la columna `date`; con varias hojas, la primera con cabecera reconocible. Medido el 23-nov contra `origin/2.3`: `ImportRoundTripAndAccountsTests` («Un Excel sin tabla compartida, con portada y columnas en otro orden, se lee y se importa», `.xlsx` de `inlineStr` generado en el test) en verde.

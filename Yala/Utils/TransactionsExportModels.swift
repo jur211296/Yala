@@ -101,6 +101,10 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     /// Escribe DOS columnas, `exchange_rate` y `rate_currency`: una tasa sin su moneda de destino no se puede aplicar.
     case exchangeRate
     case need
+    /// Qué es cada fila (gasto, ingreso, transferencia, ajuste, saldo inicial) y la pareja de cada transferencia (H8,
+    /// 2026-11-23): al final, detrás de `need`, para que un archivo de antes siga entrando igual.
+    case kind
+    case transferID
 
     var id: String { rawValue }
 
@@ -122,6 +126,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .time: return "time"
         case .exchangeRate: return "exchange_rate"
         case .need: return "need"
+        case .kind: return "kind"
+        case .transferID: return "transfer_id"
         }
     }
 
@@ -142,6 +148,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .time: return L10n.Export.columnTime
         case .exchangeRate: return L10n.Export.columnExchangeRate
         case .need: return L10n.Export.columnNeed
+        case .kind: return L10n.ExportarImportarIdaVuelta.columnKind
+        case .transferID: return L10n.ExportarImportarIdaVuelta.columnTransferID
         }
     }
 
@@ -162,6 +170,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .time: return L10n.Export.columnTimeDesc
         case .exchangeRate: return L10n.Export.columnExchangeRateDesc
         case .need: return L10n.Export.columnNeedDesc
+        case .kind: return L10n.ExportarImportarIdaVuelta.columnKindDesc
+        case .transferID: return L10n.ExportarImportarIdaVuelta.columnTransferIDDesc
         }
     }
 
