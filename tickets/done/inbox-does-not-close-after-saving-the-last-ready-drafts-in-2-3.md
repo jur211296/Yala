@@ -1,10 +1,10 @@
 ---
 id: inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3
-status: backlog
+status: done
 priority: medium
 area: "bandeja, 2.3"
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-22
 source: "gate del merge corto de 2.2 en 2.3 (lote 2.3 de Grupos «no tirar el gasto a medias»), 2026-11-11"
 ---
 
@@ -33,3 +33,12 @@ listos» revisa posibles duplicados; pendientes viejos) y `40aef65d10` (texto gr
 ## Criterio de terminado
 
 El XCUITest de arriba en verde sobre 2.3, sin tocar su aserción.
+
+## Cierre (2026-11-22, encargo «Bandeja: aprobar y hacer recurrente, y cierre»)
+
+Ya no pasa en `2.3`. Medido sobre `origin/2.3` (4368d5ccb) en el iPhone 17 Pro, iOS 27.2, con el simulador en cola
+(`sim-lock.sh`) y sin nadie más: `RecurrenteDesdeRegistroUITests#test_inbox_approveAndMakeRecurring_approvesAndOpensTheEditor`
+e `InboxCrudUITests#test_saveReadyButton_savesEveryCompleteDraftAfterConfirming` verdes 1 de 1 y otras 3 vueltas cada una
+(`-test-iterations 3 -run-tests-until-failure`), sin tocar sus aserciones. No se tocó el código del cierre de la Bandeja
+ni el paso al editor. Causa sin aislar (inferido: lo arregló algo de 2.3 entre la fecha del ticket y hoy; el rojo del
+editor coincidía con el que la semilla del día provocaba con «Posible duplicado», quitado en 57d54796a).

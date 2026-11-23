@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (109)
 
 | id | status | path |
+| 2026-11-22-bandeja-aprobar-recurrente-y-cierre | done | tickets/done/2026-11-22-bandeja-aprobar-recurrente-y-cierre.md |
 | 2026-11-22-esto-lei-construir-opcion-a | done | tickets/done/2026-11-22-esto-lei-construir-opcion-a.md |
 | 2026-11-22-limite-tarjeta-uso-linea-dos-monedas | done | tickets/done/2026-11-22-limite-tarjeta-uso-linea-dos-monedas.md |
 | 2026-11-22-cuenta-limite-tarjeta-campo-sincronizado | qa | tickets/qa/2026-11-22-cuenta-limite-tarjeta-campo-sincronizado.md |
@@ -120,7 +121,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-asistente-nueva-cuenta | done | tickets/done/2026-11-17-asistente-nueva-cuenta.md |
 | 2026-11-17-salud-financiera-detalle-visual | done | tickets/done/2026-11-17-salud-financiera-detalle-visual.md |
 | 2026-11-17-hoja-cuenta-panel-tarjeta | done | tickets/done/2026-11-17-hoja-cuenta-panel-tarjeta.md |
-| 2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado | backlog | tickets/backlog/2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado.md |
+| 2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado | done | tickets/done/2026-11-18-bandeja-aprobar-y-recurrente-choca-con-posible-duplicado.md |
 | 2026-11-17-asistente-nuevo-pago-planificado | done | tickets/done/2026-11-17-asistente-nuevo-pago-planificado.md |
 | 2026-11-17-web-logo-oficial-y-tema-sistema | done | tickets/done/2026-11-17-web-logo-oficial-y-tema-sistema.md |
 | 2026-11-17-asistente-nuevo-presupuesto | done | tickets/done/2026-11-17-asistente-nuevo-presupuesto.md |
@@ -136,7 +137,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-17-verificacion-p1-divisas-inestables | done | tickets/done/2026-11-17-verificacion-p1-divisas-inestables.md |
 | 2026-11-16-verificacion-propuesta | done | tickets/done/2026-11-16-verificacion-propuesta.md |
 | 2026-11-15-grupos-captura-igual-personal | done | tickets/done/2026-11-15-grupos-captura-igual-personal.md |
-| inbox-approve-and-make-recurring-no-longer-opens-the-editor | backlog | tickets/backlog/inbox-approve-and-make-recurring-no-longer-opens-the-editor.md |
+| inbox-approve-and-make-recurring-no-longer-opens-the-editor | done | tickets/done/inbox-approve-and-make-recurring-no-longer-opens-the-editor.md |
 | unit-tests-last-used-account-leaks-between-suites | backlog | tickets/backlog/unit-tests-last-used-account-leaks-between-suites.md |
 | 2026-11-16-nube-bugs-media-2-3 | done | tickets/done/2026-11-16-nube-bugs-media-2-3.md |
 | 2026-11-17-verificacion-interfaz-de-lo-tocado | done | tickets/done/2026-11-17-verificacion-interfaz-de-lo-tocado.md |
@@ -831,7 +832,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-deleting-two-drafts-in-a-row-crashes | done | tickets/done/inbox-deleting-two-drafts-in-a-row-crashes.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
-| inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3 | backlog | tickets/backlog/inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3.md |
+| inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3 | done | tickets/done/inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | inbox-list-capped-at-500-may-hide-old-pending-drafts | done | tickets/done/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
