@@ -1338,8 +1338,8 @@ final class NewTransactionViewModel {
 
     /// El tercer registro es el RESPALDO del permiso de notificaciones (UX 2.2 · L5-14): lo normal es pedirlo al
     /// guardar el primer pago planificado o encender la alerta de un presupuesto (`NotificationPrimerMoments`).
-    func checkNotificationPrimer() async {
-        if await NotificationPrimerMoments.claim(.records) {
+    func checkNotificationPrimer(_ context: NotificationPrimerContext = .records) async {
+        if await NotificationPrimerMoments.claim(context) {
             showNotificationPrimer = true
         }
     }

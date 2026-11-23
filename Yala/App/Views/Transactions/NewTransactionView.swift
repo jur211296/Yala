@@ -45,6 +45,8 @@ struct NewTransactionView: View {
     @State private var showSuccessScreen = false
     /// «Favorito» de la pantalla de éxito ya se guardó (B1).
     @State private var successFavorited = false
+    /// La frecuencia con que se guardó desde «Hacer recurrente»: la pantalla de éxito marca «Recurrente» con ella.
+    @State private var successRecurrence: RecurrenceType?
     @State private var successData: TransactionSuccessData?
     @State private var isCreatingAnother = false
     @State private var isEditingFromSuccess = false
@@ -476,6 +478,7 @@ struct NewTransactionView: View {
                     draft?.baseline = formBaseline
                     isCreatingAnother = true
                     successFavorited = false
+                    successRecurrence = nil
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
@@ -494,7 +497,8 @@ struct NewTransactionView: View {
                 },
                 // Las dos ofertas del éxito (B1): abren las hojas de siempre sobre el registro ya guardado.
                 onFavorite: { viewModel.showSaveAsFavoriteSheet = true },
-                onRecurring: data.isTransfer ? nil : { showRecurringQuickSheet = true }
+                onRecurring: data.isTransfer ? nil : { showRecurringQuickSheet = true },
+                recurrence: successRecurrence
             )
             .transition(.opacity.combined(with: .scale(scale: 0.95)))
             .sheet(isPresented: $showingNotificationPrimer, onDismiss: { dismiss() }) {
@@ -1590,7 +1594,7 @@ struct NewTransactionView: View {
             onSaved: { paymentID in
                 handleRecurringSaved(paymentID: paymentID, fromFullEditor: true)
             },
-            // El éxito lo vibra este formulario al cerrarse con el aviso (`closeAfterRecurringEditor`).
+            // El éxito lo vibra este formulario al cerrarse la hoja (`closeAfterRecurringEditor`): pantalla o aviso.
             hostVibratesOnSave: true
         )
     }
@@ -2212,8 +2216,9 @@ struct NewTransactionView: View {
     private func finishSave(wasEdit: Bool) {
         switch TransactionSaveFeedbackLogic.feedback(isEdit: wasEdit) {
         case .fullScreen:
+            successRecurrence = nil
             showTransactionSuccess()
-        case .editedNotice:
+        case .editedNotice, .recurringNotice:
             DS.Haptic.success()
             dismissKeyboard()
             dismiss()
@@ -2261,7 +2266,9 @@ struct NewTransactionView: View {
         close?()
     }
 
-    private func showTransactionSuccess() {
+    /// - Parameter primer: el momento del permiso de notificaciones que se pide al salir de la pantalla («Aceptar»): el
+    ///   tercer registro, o el primer pago planificado si se guardó con «Hacer recurrente».
+    private func showTransactionSuccess(primer: NotificationPrimerContext = .records) {
         DS.Haptic.success()
         dismissKeyboard()
 
@@ -2299,7 +2306,7 @@ struct NewTransactionView: View {
             // Check notification primer AFTER animation completes (~800ms)
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-            await viewModel.checkNotificationPrimer()
+            await viewModel.checkNotificationPrimer(primer)
         }
     }
 
@@ -2768,9 +2775,25 @@ struct NewTransactionView: View {
             #endif
         }
 
-        // Cierra y enseña el aviso de L2-5 (UX 2.2 · L2-15): «Guardado · se repetirá cada mes». Antes, la pantalla
-        // completa de «¡Listo!». Sin «Deshacer» si el registro ya existía: se borraría lo que la persona tenía.
         guard !saved.isEmpty else { return }
+        // Un registro nuevo enseña la pantalla de éxito, como el guardado normal, con «Recurrente» marcado (decisión de
+        // Jürgen del 2026-11-23). Sin el aviso breve: saldría duplicado con la pantalla.
+        if TransactionSaveFeedbackLogic.recurringFeedback(isEdit: wasEdit, successScreenShown: showSuccessScreen)
+            == .fullScreen {
+            if fromFullEditor {
+                // El editor completo ya pidió el permiso de notificaciones del pago: queda el respaldo de registros.
+                closeAfterRecurringEditor = {
+                    successRecurrence = recurrence
+                    showTransactionSuccess()
+                }
+            } else {
+                successRecurrence = recurrence
+                showTransactionSuccess(primer: .scheduledPayment)
+            }
+            return
+        }
+        // Una edición, o la oferta de la propia pantalla de éxito: cierra con el aviso de L2-5 (UX 2.2 · L2-15),
+        // «Guardado · se repetirá cada mes». Sin «Deshacer» si el registro ya existía: se borraría lo que tenía.
         let message = SavedRecordNotice.recurringMessage(for: recurrence)
         let recordIDs = saved.map(\.persistentModelID)
         if fromFullEditor {

@@ -56,6 +56,8 @@ struct TransactionSuccessView: View {
     let onEdit: () -> Void
     var onFavorite: (() -> Void)? = nil
     var onRecurring: (() -> Void)? = nil
+    /// Se guardó con «Hacer recurrente»: «Recurrente» sale marcado con su frecuencia («Mensual») y no se vuelve a abrir.
+    var recurrence: RecurrenceType? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
@@ -100,7 +102,7 @@ struct TransactionSuccessView: View {
                                 .padding(.horizontal, DS.Spacing.xl)
                                 .opacity(showDetails ? 1.0 : 0.0)
                                 .offset(y: showDetails ? 0 : 15)
-                            if onFavorite != nil || onRecurring != nil {
+                            if onFavorite != nil || onRecurring != nil || recurrence != nil {
                                 offersRow
                                     .padding(.horizontal, DS.Spacing.xl)
                                     .padding(.top, DS.Spacing.lg)
@@ -341,7 +343,19 @@ struct TransactionSuccessView: View {
                 .disabled(isFavorited)
                 .accessibilityIdentifier("transaction_success_favorite")
             }
-            if let onRecurring, !data.isTransfer {
+            if let recurrence, !data.isTransfer {
+                // Ya es recurrente: el estado con textos que existían (la frecuencia del pago planificado), como «En
+                // favoritos». VoiceOver lee la frase entera del aviso de antes.
+                offerButton(
+                    title: recurrence.localizedName,
+                    icon: "repeat",
+                    isDone: true,
+                    action: {}
+                )
+                .disabled(true)
+                .accessibilityValue(SavedRecordNotice.recurringMessage(for: recurrence))
+                .accessibilityIdentifier("transaction_success_recurring")
+            } else if let onRecurring, !data.isTransfer {
                 offerButton(
                     title: NuevoRegistroB1Text.string("success.recurring"),
                     icon: "repeat",

@@ -61,11 +61,15 @@ final class TransactionFormDecided02UITests: XCTestCase {
         app.textFields["new_transaction_amount"].waitForNonExistence(timeout: timeout)
     }
 
-    /// Guarda con «Hacer recurrente › Cada mes», que cierra el formulario con el aviso breve. Desde el 2026-11-23
-    /// «Guardar» enseña siempre la pantalla de éxito (`NuevoRegistroExitoSiempreUITests`), así que el aviso con «Deshacer»
-    /// y «Editar» solo sale por aquí.
+    /// Llega al aviso breve: «Guardar», y en la pantalla de éxito «Recurrente › Cada mes», que cierra con «Guardado · se
+    /// repetirá cada mes». Desde el 2026-11-23 «Guardar» (`NuevoRegistroExitoSiempreUITests`) y «Hacer recurrente» del «···»
+    /// (`HacerRecurrenteExitoUITests`) enseñan la pantalla de éxito, así que el aviso solo sale por aquí, y sin «Deshacer»
+    /// ni «Editar»: el registro ya estaba guardado.
     private func saveWithTheNotice(_ app: XCUIApplication) {
-        app.tapNewTransactionMoreAction("new_transaction_recurring_action")
+        app.buttons["new_transaction_save"].tap()
+        let recurring = app.buttons["transaction_success_recurring"]
+        XCTAssertTrue(recurring.waitForExistence(timeout: 10), "Falta «Recurrente» en la pantalla de éxito.")
+        recurring.tap()
         let monthly = app.buttons["recurring_quick_monthly"]
         XCTAssertTrue(monthly.waitForExistence(timeout: 5), "Falta «Cada mes» en «Hacer recurrente».")
         monthly.tap()
@@ -177,34 +181,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
         XCTAssertTrue(formIsGone(app), "Editar sin cambiar nada y cerrar no debía preguntar.")
     }
 
-    /// El aviso breve (hoy, tras «Hacer recurrente»): el formulario se cierra y «Deshacer» devuelve el saldo.
-    func test_afterThreeRecords_noticeWithUndo_restoresTheBalance() {
-        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
-        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
-        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
-        // La cifra grande del hero («Tu saldo hoy»): el gasto la baja y «Deshacer» la devuelve. Desde el 2026-11-16 el hero
-        // ya no tiene la píldora de gastos.
-        let expensePill = app.descendants(matching: .any)["panel_hero_figure"].firstMatch
-        XCTAssertTrue(expensePill.waitForExistence(timeout: 10))
-        let emptyLabel = expensePill.label
-
-        openForm(app)
-        typeAmount(app, "25")
-        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        saveWithTheNotice(app)
-
-        XCTAssertTrue(formIsGone(app), "«Hacer recurrente» cierra el formulario al guardar.")
-        XCTAssertFalse(app.buttons["transaction_success_accept"].exists, "Con el aviso breve, sin pantalla completa.")
-        let undo = element(app, "saved_record_undo")
-        XCTAssertTrue(undo.waitForExistence(timeout: 3), "Salió sin el aviso con «Deshacer».")
-        XCTAssertTrue(element(app, "saved_record_edit").exists, "El aviso lleva «Editar».")
-        XCTAssertNotEqual(expensePill.label, emptyLabel, "El gasto guardado debía contar en el Panel.")
-
-        undo.tap()
-        let restored = NSPredicate(format: "label == %@", emptyLabel)
-        expectation(for: restored, evaluatedWith: expensePill)
-        waitForExpectations(timeout: 8)
-    }
+    // «Deshacer» y «Editar» del aviso de un registro nuevo se quedaron sin camino el 2026-11-23: «Guardar» y «Hacer
+    // recurrente» enseñan la pantalla de éxito, y el aviso que queda (la oferta «Recurrente» del éxito) llega con el
+    // registro ya guardado. Sus casos se retiraron; la lógica de deshacer sigue fijada en `UXAudit22Decidido02FormTests`.
 
     /// Review adversarial del 2026-10-22: la franja del aviso caía sobre el formulario siguiente. Abrir otro lo retira.
     func test_afterThreeRecords_openingAnotherFormRetiresTheNotice() {
@@ -259,27 +238,6 @@ final class TransactionFormDecided02UITests: XCTestCase {
                       "Con el menú del «+» abierto, el aviso de guardado debía retirarse: su franja caería sobre el menú.")
         manual.tap()
         XCTAssertTrue(app.textFields["new_transaction_amount"].waitForExistence(timeout: 5), "No se abrió el formulario.")
-    }
-
-    func test_afterThreeRecords_editFromTheNotice_opensTheRecord() {
-        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
-        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
-        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
-        openForm(app)
-        typeAmount(app, "25")
-        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        saveWithTheNotice(app)
-
-        let edit = element(app, "saved_record_edit")
-        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Salió sin «Editar».")
-        // «Editar» no abre nada mientras el formulario aún se cierra (el ancla no está libre).
-        XCTAssertTrue(formIsGone(app, timeout: 10))
-        edit.tap()
-        // Desde la hoja B1, Eliminar vive en «···»: que lo ofrezca dice que es la edición del guardado.
-        XCTAssertTrue(app.buttons["new_transaction_more"].waitForExistence(timeout: 8), "«Editar» no abrió el formulario.")
-        XCTAssertTrue(app.openNewTransactionMoreAction("new_transaction_delete_action").waitForExistence(timeout: 5),
-                      "«Editar» debía abrir el registro guardado en edición.")
-        app.dismissNewTransactionMoreMenu()
     }
 
     // MARK: - L2-6 · Transferencia con una sola cuenta
@@ -428,10 +386,10 @@ final class TransactionFormDecided02UITests: XCTestCase {
 
     // MARK: - L2-15 · Hacer recurrente
 
-    func test_recurring_monthlyRow_createsThePayment_andClosesWithTheNotice() {
-        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
-        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
-        let app = launch(seed: "una-cuenta", noticeSeconds: 30)
+    /// Desde el 2026-11-23 la fila guarda y enseña la pantalla de éxito, no el aviso breve: el caso entero vive en
+    /// `HacerRecurrenteExitoUITests`; aquí queda que las cuatro filas salen y que el pago se crea.
+    func test_recurring_monthlyRow_createsThePayment_andShowsTheSuccessScreen() {
+        let app = launch(seed: "una-cuenta")
         openForm(app)
         typeAmount(app, "40")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
@@ -442,8 +400,10 @@ final class TransactionFormDecided02UITests: XCTestCase {
         }
         app.buttons["recurring_quick_monthly"].tap()
 
-        XCTAssertTrue(formIsGone(app, timeout: 10), "Tocar una frecuencia guarda, crea el pago y cierra.")
-        XCTAssertTrue(element(app, "saved_record_notice").waitForExistence(timeout: 5), "Salió sin el aviso.")
+        let accept = app.buttons["transaction_success_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 10), "Tocar una frecuencia guarda, crea el pago y enseña el éxito.")
+        accept.tap()
+        XCTAssertTrue(formIsGone(app, timeout: 10), "«Aceptar» no cerró la pantalla de éxito.")
 
         // El pago planificado existe: la app relanzada sobre el mismo almacén aterriza en Pagos planificados.
         let relaunch = XCUIApplication()
