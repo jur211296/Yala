@@ -283,7 +283,8 @@ private struct PanelCategoriesPieSection: View {
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
-            variationDisplay: .panelCompact
+            variationDisplay: .panelCompact,
+            totalIsApproximate: viewModel.categoriesTotalIsApproximate
         )
     }
 
@@ -340,7 +341,8 @@ private struct PanelSubcategoriesPieSection: View {
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
-            variationDisplay: .panelCompact
+            variationDisplay: .panelCompact,
+            totalIsApproximate: viewModel.subcategoriesTotalIsApproximate
         )
     }
 
@@ -399,7 +401,8 @@ private struct PanelTagsPieSection: View {
             customRange: sessionState.customDateRange,
             previousTotalAmount: viewModel.previousTagsTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
-            variationDisplay: .panelCompact
+            variationDisplay: .panelCompact,
+            totalIsApproximate: viewModel.tagsTotalIsApproximate
         )
     }
 

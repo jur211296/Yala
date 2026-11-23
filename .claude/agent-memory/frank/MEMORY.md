@@ -111,7 +111,7 @@
 - [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.
 - [El paso 5 no va en paralelo con el 2 ni el 3](feedback_el_paso_5_no_va_en_paralelo_con_el_3.md) — sim-lock-test rojo con cola o runner al lado; solo, verde (11 y 22-nov).
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
-- [Capturas del Panel por período](reference_capturas_del_panel_por_periodo.md) — menú y píldoras ignoran axe: `-defaultPeriod`; tras axe, reboot si el XCUITest no arranca.
+- [Capturas del Panel por período](reference_capturas_del_panel_por_periodo.md) — `-defaultPeriod`; Distribución, Comparativa y oscuro con axe; el «antes» con git archive.
 - [Tema claro de Yala en el simulador](reference_tema_claro_de_yala_en_el_simulador.md) — `-userTheme 1`; la apariencia del simulador no cambia el tema de la app.
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.

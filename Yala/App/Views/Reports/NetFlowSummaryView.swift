@@ -23,13 +23,17 @@ struct NetFlowSummaryView: View {
     /// El período anterior es un tramo de días («1–7 de octubre»): «En 1–7 de octubre te quedaron…» no se lee bien y la
     /// frase pasa a «El 1–7 de octubre te quedaron…» (decisión 32 de 2.3).
     var previousIsDayRange: Bool = false
+    /// «≈» delante de la cifra cuando la parte convertida con una tasa dudosa pesa (ticket
+    /// `financial-report-amounts-unmarked`): la misma marca que el Panel, también en la frase del período anterior.
+    var currentIsApproximate: Bool = false
+    var previousIsApproximate: Bool = false
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var caption: String {
         guard showsComparison, let previousAmount, !previousPeriodName.isEmpty else { return L10n.UXL18.netCaption }
-        let amount = appPreferences.currency(abs(previousAmount), currencyCode: currencyCode)
+        let amount = appPreferences.currency(abs(previousAmount), currencyCode: currencyCode, isEstimate: previousIsApproximate)
         if previousIsDayRange {
             return previousAmount >= 0
                 ? L10n.UXL18.netCaptionGainBeforeRange(previousPeriodName, amount)
@@ -88,7 +92,8 @@ struct NetFlowSummaryView: View {
             font: DS.Typography.label.weight(.semibold),
             // Tokens de TEXTO que pasan AA en claro y oscuro; índigo y rosa de la paleta no llegan como texto sobre la
             // tarjeta (lote 08 de 2.3, regla de color en `swiftui-ds.md`).
-            tint: .color(currentAmount >= 0 ? Color.incomeAmount : Color.groupOweAmount)
+            tint: .color(currentAmount >= 0 ? Color.incomeAmount : Color.groupOweAmount),
+            isEstimate: currentIsApproximate
         )
         .lineLimit(1)
         .minimumScaleFactor(0.7)

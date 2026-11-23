@@ -1,11 +1,11 @@
 ---
 id: fx-historical-balance-curve-unmarked
-status: backlog
+status: done
 priority: medium
 area: currency
 created: 2026-09-09
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
-updated: 2026-10-16
+updated: 2026-11-23
 ---
 
 # El saldo de un mes cerrado nunca avisa de que es aproximado
@@ -75,3 +75,17 @@ pasado ya no suma `amountInPreferredCurrency`: es el saldo nativo al cierre por 
 `rateFactors`), no el flag de cada fila, y `BalanceValuation.value` ya la devuelve (`approximateMagnitude`); el
 widget la usa para `periodBalanceIsApproximate`. Falta que `fillBalanceBuckets` la guarde para el último punto y que
 `BalanceKPICalculator` la lea en el régimen cerrado. Los AC de arriba siguen valiendo con esa fuente.
+
+## Cerrado el 2026-11-23 (encargo «Marcar como aproximados los importes convertidos en Informes…»)
+
+- `TrendDataProcessor.fillBalanceBuckets` devuelve la magnitud dudosa del último bucket (`BalanceValuation.value`, la
+  calidad de la tasa del CIERRE) y `TrendProcessingResult.finalBalanceIsApproximate` la mide con
+  `ApproximateMarkThreshold` contra el saldo mostrado; con anchor vale lo del saldo vivo.
+- `BalanceKPICalculator.Result.isApproximate` deja de ser `false` fijo en el régimen cerrado y su docblock ya no dice
+  que no hay señal.
+- **Premisa cambiada desde que se escribió:** el hero de Distribución ya no usa ese KPI (desde el 20-nov enseña «Tu
+  dinero hoy»). Donde hoy se ve el saldo de cierre de un período pasado: la fila «inicio → fin» bajo la gráfica de
+  saldo del Panel (`TrendsCarouselWidget`) y el KPI de saldo de Tendencias (`TrendsTabView`, que tampoco marcaba el
+  saldo vivo). Los dos leen ahora `trendFinalBalanceIsApproximate`.
+- Pin: `MarcaAproximadoInformesYGraficasTests` — el mismo conjunto en mes cerrado y en curso da la misma marca; con la
+  tasa del día, sin marca; mutante (sin la señal del cierre) en rojo.

@@ -72,16 +72,31 @@ struct PivotTableCalculator {
             let rowCurrencies = Set((currentTxns + previousTxns).map { normalizeCurrencyCode($0.currencyCode) })
             let convertsCard = key.isAccountCard && rowCurrencies.count > 1
             let useOriginalAmount = dimension == .divisa || (dimension == .cuenta && !convertsCard)
-            let amountOf: (TransactionItem) -> Double = { tx in
+            // Cada importe con la parte que salió de una tasa dudosa (cero en nativo: ahí no hay conversión).
+            let resolvedOf: (TransactionItem) -> (value: Double, approximateMagnitude: Double) = { tx in
                 useOriginalAmount
-                    ? adjustment.amount(tx)
+                    ? (adjustment.amount(tx), 0)
                     : CashFlowCalculator.resolvedAmount(
                         tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
-                    ).value
+                    )
+            }
+            // La fila es una suma con signo (un reembolso resta en su categoría), así que el denominador de la marca es
+            // el número que se pinta, como el neto (`ApproximateMarkThreshold`). Ticket `financial-report-amounts-unmarked`.
+            let sum: ([TransactionItem]) -> (value: Double, isApproximate: Bool) = { txns in
+                var value = 0.0
+                var approximate = 0.0
+                for tx in txns {
+                    let resolved = resolvedOf(tx)
+                    value += resolved.value
+                    approximate += resolved.approximateMagnitude
+                }
+                return (value, ApproximateMarkThreshold.marks(approximate: approximate, total: value))
             }
 
-            let currentAmount = currentTxns.reduce(0.0) { $0 + amountOf($1) }
-            let previousAmountValue = previousTxns.reduce(0.0) { $0 + amountOf($1) }
+            let current = sum(currentTxns)
+            let previous = sum(previousTxns)
+            let currentAmount = current.value
+            let previousAmountValue = previous.value
 
             let previousAmount: Double? = previousTxns.isEmpty ? nil : previousAmountValue
             let variation = PreviousPeriodHelper.calculateVariation(
@@ -131,10 +146,14 @@ struct PivotTableCalculator {
                 children: children,
                 isIncome: key.isIncome,
                 dimension: dimension,
-                isApproximate: convertsCard
-                    && AccountCardReportLogic.convertsAny(currentTxns.map(\.currencyCode), to: preferredCurrency),
-                previousIsApproximate: convertsCard
-                    && AccountCardReportLogic.convertsAny(previousTxns.map(\.currencyCode), to: preferredCurrency)
+                // Dos marcas que se suman: la tarjeta con varias divisas lleva «≈» si algo se convirtió (review del
+                // 2026-10-18), y cualquier fila en la divisa preferida, si la parte de tasa dudosa pesa.
+                isApproximate: (convertsCard
+                    && AccountCardReportLogic.convertsAny(currentTxns.map(\.currencyCode), to: preferredCurrency))
+                    || current.isApproximate,
+                previousIsApproximate: (convertsCard
+                    && AccountCardReportLogic.convertsAny(previousTxns.map(\.currencyCode), to: preferredCurrency))
+                    || (!previousTxns.isEmpty && previous.isApproximate)
             )
         }
 

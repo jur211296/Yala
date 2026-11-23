@@ -208,6 +208,10 @@ final class StatisticsViewModel: Filterable {
     /// educativa, que sin la marca declaraba exacto el número que existe para explicar que no lo es.
     var trendLiveAnchorIsApproximate: Bool = false
 
+    /// La marca del saldo que enseña el KPI de Tendencias sin anchor: el cierre de un período pasado
+    /// (`TrendDataProcessor.finalBalanceIsApproximate`, ticket `fx-historical-balance-curve-unmarked`).
+    var trendFinalBalanceIsApproximate: Bool = false
+
     /// Trend grouping based on period
     var trendGrouping: TrendGrouping = .day
 
@@ -487,6 +491,7 @@ final class StatisticsViewModel: Filterable {
             if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
             if result.liveAnchorNativeBalances != trendLiveAnchorBreakdown { trendLiveAnchorBreakdown = result.liveAnchorNativeBalances }
             if result.liveAnchorIsApproximate != trendLiveAnchorIsApproximate { trendLiveAnchorIsApproximate = result.liveAnchorIsApproximate }
+            if result.finalBalanceIsApproximate != trendFinalBalanceIsApproximate { trendFinalBalanceIsApproximate = result.finalBalanceIsApproximate }
             let newProjection = calculateProjection(
                 metric: trendType,
                 interval: interval,

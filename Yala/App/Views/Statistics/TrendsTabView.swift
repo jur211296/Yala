@@ -404,7 +404,8 @@ struct TrendsTabView: View {
                             AmountText(
                                 value: currentKPIValue,
                                 currencyCode: defaultCurrencyCode,
-                                font: DS.Typography.headline
+                                font: DS.Typography.headline,
+                                isEstimate: currentKPIIsApproximate
                             )
 
                             if appPreferences.showVariations
@@ -1367,6 +1368,15 @@ struct TrendsTabView: View {
     /// «vs S/ …» del período anterior, que es un punto de la curva valorado a las tasas de su día: puestos juntos,
     /// «S/ 75,945.25 vs S/ 75,774.00 · +6.1 %» no cuadraba. Igual que el Panel, que enseña la cifra y la variación de la
     /// curva sin el importe anterior (lote 11 · B5).
+    /// La marca del KPI de saldo: la del número que se pinta, hoy (saldo vivo) o al cierre de un período pasado
+    /// (`TrendDataProcessor.finalBalanceIsApproximate`, ticket `fx-historical-balance-curve-unmarked`). Al recorrer la
+    /// curva con el dedo el número es otro punto y no se mide; ingresos y gastos no son este ticket.
+    private var currentKPIIsApproximate: Bool {
+        trendsViewModel.selectedMetric == .balance
+            && trendsViewModel.focusedDate == nil
+            && trendsViewModel.trendFinalBalanceIsApproximate
+    }
+
     private var kpiIsLiveBalance: Bool {
         trendsViewModel.selectedMetric == .balance
             && trendsViewModel.focusedDate == nil

@@ -1,10 +1,10 @@
 ---
 id: pie-header-total-unmarked
-status: backlog
+status: done
 priority: medium
 area: "currency, ui"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-23
 source: device-QA de fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -81,3 +81,19 @@ Cuando se cierre éste, la frase de aquél queda por fin cierta y su `low` justi
 - No hay commits sobre estos ficheros desde el 2026-09-09.
 
 Triage 2026-10-08: abierto · medium → medium · `PieChartVariationHeader.swift:73` sigue sin `isEstimate:` y los tres pies no tienen ni un `isEstimate`.
+
+## Cerrado el 2026-11-23 (encargo «Marcar como aproximados los importes convertidos en Informes…»)
+
+- Pieza nueva `PieTotalApproximateMark`: mide la marca del total de cada tarta sobre LAS MISMAS transacciones y el mismo
+  criterio de entrada que su calculadora (categorías, subcategorías con su categoría filtrada, etiquetas una vez por
+  etiqueta), con `ApproximateMarkThreshold`: el numerador suma magnitudes dudosas y el denominador es el total que se
+  pinta, `Σ|neto de cada trozo|` (un reembolso resta dentro de su trozo; lo cazó el revisor con checklist: con la suma
+  de magnitudes de cada movimiento la marca se perdía en quien tiene devoluciones).
+- `PieChartVariationHeader` pinta el total con `isEstimate`; los tres widgets la reciben (`totalIsApproximate`) en
+  Distribución (`CategoriesTabView`) y en el Panel (`PanelViewModel` → `PanelWidgetSection`), con comparativa y sin ella.
+- Con algo seleccionado la cifra pintada es solo esa parte y sale sin marca: no se mide (misma familia que
+  `fx-category-totals-unmarked`). Las tajadas y filas del desglose siguen sin marca. El «vs» del período anterior,
+  tampoco (`fx-previous-period-amounts-unmarked`).
+- Corregida la frase de `fx-category-totals-unmarked` («el total SÍ avisa») para que diga desde cuándo es cierto.
+- Pin: `MarcaAproximadoInformesYGraficasTests` (lado del gasto, umbral, filtro de subcategorías, etiquetas) y
+  `MarcaAproximadoCableadoTests` (header, tres widgets, dos anfitriones).

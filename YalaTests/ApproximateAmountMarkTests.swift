@@ -926,9 +926,10 @@ struct ApproximateMarkNewProducersTests {
 
     // MARK: - El KPI de Distribución
 
-    /// El régimen vivo sí sabe; el cerrado no, y devolver `false` ahí dice «no lo sé».
-    @Test("El KPI de Balance marca en el régimen vivo y no en el cerrado")
-    func balanceKPIMarksOnlyTheLiveRegime() {
+    /// Los dos regímenes saben desde el 2026-11-23 (`fx-historical-balance-curve-unmarked`): el vivo por el
+    /// `Breakdown`, el cerrado por la calidad de las tasas de su cierre (`BalanceValuation`).
+    @Test("El KPI de Balance marca en el régimen vivo y también en el cerrado")
+    func balanceKPIMarksBothRegimes() {
         let account = Account(name: "Main", currencyCode: "USD", colorHex: "#6366F1", iconName: "creditcard", type: "bank")
         let category = YalaCategory(name: "Food", colorHex: "#FF0000", isIncome: false)
         let hoy = calendar.startOfDay(for: Date())
@@ -976,11 +977,10 @@ struct ApproximateMarkNewProducersTests {
             CONTROL DEL ESCENARIO: sin esto, el caso de abajo pasaría por «sin datos» y no por el
             régimen cerrado, que es lo que dice medir.
             """)
-        #expect(!cerrado.isApproximate, """
-            El período cerrado lee la curva histórica, que no acumula calidad de conversión. `false`
-            aquí es un PIN del literal, no una red: lo que fija es que nadie lo cablee a la señal del
-            saldo vivo, que describiría otro número. Producir la de verdad es
-            `fx-historical-balance-curve-unmarked`.
+        #expect(cerrado.isApproximate, """
+            El período cerrado valora el saldo al cierre con la tasa de ese día, y aquí esa tasa no era
+            exacta: la marca sale de la curva (`finalBalanceIsApproximate`), no del saldo vivo. Hasta el
+            2026-11-23 este caso fijaba `false`, que decía «no lo sé».
             """)
     }
 }

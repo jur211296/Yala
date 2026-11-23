@@ -18,3 +18,18 @@ Medido el 2026-11-11 en el iPhone 17 Pro (iOS 27.2), capturando el antes y el de
   exit 65). Dos reintentos seguidos no lo curaron; `simctl shutdown` + `boot` + `bootstatus -b` sí.
 
 Relacionado: [[forzar-una-preferencia-en-un-lanzamiento]], [[conducir-simulador-con-axe]].
+
+**Ampliado el 2026-11-23** (encargo de la marca «≈» en Informes y tartas), recorridos con axe que funcionaron:
+
+- **Distribución → Gráficas**: `-uitest-deeplink statistics`, toque en el chip de Distribución (≈ x 215, y 195),
+  toque en «Gráficas» (`distribution_content_mode`, ≈ x 290, y 445) y un arrastre corto: el header de la tarta queda arriba.
+- **Informes (Comparativa)**: no hay deeplink; recién lanzada la app, `axe tap --label "Más"`, un arrastre y
+  `axe tap --id more_card_comparativa`. Tras un arrastre en el Panel la barra de abajo se encoge y «Más» ya no se
+  alcanza con axe: relanza.
+- **Oscuro = `-userTheme 2`** (1 claro, 0 sistema). La apariencia del simulador no cambia el tema.
+- **Para el «antes»**: `git archive origin/2.3` en el scratchpad + `Secrets.xcconfig` + build con su propio
+  `-derivedDataPath`; las dos builds en paralelo tardan ~15 min desde cero en la Max.
+- **El semilla `realista` + `-uitest-seed-foreign-account JPY` no deja tasas dudosas en el cierre del mes pasado**: la
+  marca del saldo de un período cerrado no se puede enseñar en captura con ese seed; se prueba por test.
+- Un bucle `for t in "1 claro"; do set -- $t` en zsh NO parte `$t`: el tema llega como «1 claro» y la app cae al
+  tema por defecto. Llamadas explícitas.
