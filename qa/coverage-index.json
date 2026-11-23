@@ -1877,15 +1877,16 @@
       "codeGlobs": [
         "Yala/App/Services/MerchantMemoryService.swift",
         "Yala/App/Services/MerchantCanonicalizer.swift",
-        "Yala/Models/MerchantMemory.swift"
+        "Yala/Models/MerchantMemory.swift",
+        "Yala/Services/ComerciosEnComun/**"
       ],
       "scenarioIDs": [
         "F-TX-06"
       ],
       "classification": "manual",
-      "coverage": "manual || 2026-10-25 (lote 12.6, k5jh): la sugerencia del comercio respeta el tipo del borrador en Apple Pay, la voz y la Bandeja (`suggest(for:isExpense:)`). unit:YalaTests/MerchantMemoryNatureFilterTests + YalaTests/ApplePayDraftServiceTests#merchantMemory_incomeSubcategory_isNotAssignedToAnApplePayExpense.",
+      "coverage": "manual || 2026-10-25 (lote 12.6, k5jh): la sugerencia del comercio respeta el tipo del borrador en Apple Pay, la voz y la Bandeja (`suggest(for:isExpense:)`). unit:YalaTests/MerchantMemoryNatureFilterTests + YalaTests/ApplePayDraftServiceTests#merchantMemory_incomeSubcategory_isNotAssignedToAnApplePayExpense. || 2026-11-22 («Comercios en común»): `suggest(for:)` consulta la lista común cuando la memoria no propone (solo `.suggest`), y una memoria que existe aunque no llegue al umbral gana a la lista; `updateMemory(…, source:)` encola el aporte. unit:YalaTests/ComerciosEnComunOrdenTests + YalaTests/MerchantMemoryNatureFilterTests.",
       "owner": "",
-      "lastVerified": "2026-10-25"
+      "lastVerified": "2026-11-22"
     },
     {
       "area": "migration-csv-mirror",
@@ -4582,6 +4583,23 @@
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/EstoLeiRecorridoUITests + unit:YalaTests/EstoLeiLogicTests | 2026-11-22 (opción A de «Esto leí», elegida por Jürgen): un registro es una tarjeta B1 (cápsula de moneda, categoría bajo el monto o «Elige categoría» en ámbar, fila Hoy · Cuenta · #, línea ✦ en una línea); varios, la vista de siempre con la fila desplegable y «· N por completar»; «Ver todo» empuja el editor de la Bandeja en la misma hoja con ‹ (InboxDraftEditSheet onBack); «Otra foto» y «Otra vez» suman sin preguntar; cerrar sin guardar avisa «quedó en tu Bandeja · Ver». Capturas antes/después con EstoLeiCapturasUITests (iPhone claro y oscuro, iPad). Actualizados XNativaHojaFotoUITests, CaptureConvertToGroupUITests, ImageEntryReviewUITests, MultiDraftReviewUITests, VozFotoAvisos23UITests y VoiceEntryReviewUITests.",
+      "owner": "",
+      "lastVerified": "2026-11-22"
+    },
+    {
+      "area": "comercios-en-comun",
+      "codeGlobs": [
+        "Yala/Services/ComerciosEnComun/**",
+        "Yala/App/Views/Profile/ComerciosEnComunAjustesView.swift",
+        "Yala/Resources/*.lproj/ComerciosEnComun.strings"
+      ],
+      "scenarioIDs": [
+        "comercios-comun-linea-esto-lei",
+        "comercios-comun-sin-lista",
+        "comercios-comun-perfil-aportar"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/ComerciosEnComunUITests + unit:YalaTests/ComerciosEnComunNombreTests + YalaTests/ComerciosEnComunAporteTests + YalaTests/ComerciosEnComunSyncTests + YalaTests/ComerciosEnComunOrdenTests + YalaTests/ComerciosEnComunCableadoTests | 2026-11-22 (opciones recomendadas de la propuesta, decisión de Jürgen): lista anónima comercio → tipo en D1 del gateway (gateway/test/comercios-comun); el teléfono la baja entera una vez al día y propone sin poner sola; aporte en lote semanal (solo capturas, {comercio, tipo}); aviso una vez con «No aportar» y salida en Perfil › Comercios en común. Device-QA del envío real contra staging: pendiente en el ticket.",
       "owner": "",
       "lastVerified": "2026-11-22"
     }

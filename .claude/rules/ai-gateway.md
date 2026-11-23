@@ -135,9 +135,18 @@ nombres en iCloud privado) y la hoja de la foto le vuelve a pedir el permiso UNA
   elige el teléfono.** La lista es `VisionMerchantKind` y también el `enum` de `PHOTO_SCHEMA`: `ai.photo-comercio.test.ts`
   lee el Swift y exige el mismo orden; un tipo nuevo va en los dos. El prompt la recibe ya calculada (`\(merchantKinds)`),
   porque el banco solo interpola identificadores sueltos. **Ninguna categoría del usuario viaja**: por eso vale en iCloud
-  y en la nube sin tocar el permiso. Orden en `VisionDraftFactory`: memoria de comercios › IA › banco de comercios del
-  teléfono (solo sus categorías sin duda, `VisionMerchantKind.fromCatalog`). Medir el acierto con el modelo real pide la
-  clave de OpenAI del banco, que la Max no tiene.
+  y en la nube sin tocar el permiso. Orden en `VisionDraftFactory`: memoria de comercios › lista común de comercios
+  (desde el 2026-11-22, dentro de `MerchantMemoryService.suggest`) › IA › banco de comercios del teléfono (solo sus
+  categorías sin duda, `VisionMerchantKind.fromCatalog`). Medir el acierto con el modelo real pide la clave de OpenAI del
+  banco, que la Max no tiene.
+- **«Comercios en común» (2026-11-22) comparte esta misma lista cerrada, y la lista común solo PROPONE.** El teléfono
+  aporta `{comercio limpio, tipo}` (nunca la categoría, el importe ni la fecha) y la lista vive en D1 del gateway
+  (`gateway/src/comercios-comun/`, que valida el tipo contra `PHOTO_MERCHANT_KINDS` sin `rent` ni `taxes`). Tres cosas
+  que no se tocan sin reabrirlo con Jürgen: (1) la lista común devuelve `.suggest`, nunca `.autoAssign`, y una memoria
+  del comercio aunque sea de una vez le gana; (2) solo aporta un borrador capturado (`ComerciosEnComunTipo.sourceContributes`)
+  cuya subcategoría se traduce a UN tipo, y una aprobación nueva que llame a `updateMemory` pasa `source:` o no aporta
+  (lo cuenta `ComerciosEnComunCableadoTests`); (3) la limpieza del nombre es UNA función para aportar y para buscar
+  (`ComerciosEnComunNombre.clean`): con dos, un comercio aportado no se encontraría.
 - **El «$» a secas lo decide la divisa principal del usuario** (`VisionCurrencyContext.dollarAlone`): si no se escribe con
   «$», es `null` y se elige en la revisión. El prompt enseña ¥ (JPY o CNY según el texto), R$, zł y CHF.
 

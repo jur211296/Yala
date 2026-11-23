@@ -510,7 +510,8 @@ final class DraftService {
             merchantService.updateMemory(
                 merchantRaw: draft.note,
                 subcategory: subcategory,
-                wasCorrection: false
+                wasCorrection: false,
+                source: draft.sourceType
             )
         }
 
@@ -693,7 +694,8 @@ final class DraftService {
                 merchantService.updateMemory(
                     merchantRaw: draft.note,
                     subcategory: subcategory,
-                    wasCorrection: false
+                    wasCorrection: false,
+                    source: draft.sourceType
                 )
             }
 

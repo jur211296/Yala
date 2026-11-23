@@ -1376,6 +1376,8 @@ struct ProfileView: View {
                 BankNoticesView()
             case .aiPrivacy:
                 AIPrivacySettingsView()
+            case .comerciosEnComun:
+                ComerciosEnComunAjustesView()
             case .permissions:
                 PermissionsSettingsView()
             case .usageMode:
@@ -1440,7 +1442,8 @@ struct ProfileView: View {
         case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
              .subscription, .tips, .faq, .siriShortcuts, .bankEmail, .bankNotices, .permissions, .usageMode:
             true
-        case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
+        case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .comerciosEnComun,
+             .storageMode,
              .yalaAccount:
             false
         }
@@ -1829,6 +1832,12 @@ struct ProfileView: View {
                         icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
                         iconColor: .indigo, destination: .aiPrivacy)
                     .accessibilityIdentifier("profile_ai_privacy")
+                    // «Comercios en común» (2.3): la salida permanente de aportar a la lista anónima. Personal, como la de IA.
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "person.3.fill", title: L10n.ComerciosEnComun.titulo,
+                        iconColor: .teal, destination: .comerciosEnComun)
+                    .accessibilityIdentifier("profile_comercios_comun")
                 }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {

@@ -1,0 +1,25 @@
+/*
+  ComerciosEnComun.strings
+  Yala
+
+  «Comercios en común» (2.3, 2026-11-22): la línea de «Esto leí», el aviso de una vez y Perfil › Comercios en común.
+  Tabla propia, leída con el idioma de la app (`L10n.ComerciosEnComun`). Español neutro latinoamericano en las cuatro
+  variantes de español (encargo del 22-nov).
+*/
+
+"comerciosComun.linea.texto" = "在 Yala 中，%@ 通常这样分类。";
+"comerciosComun.linea.cambiar" = "更改";
+"comerciosComun.aviso.mensaje" = "Yala 会从你确认的商家中学习：只分享名称和类型，绝不分享金额或日期。";
+"comerciosComun.aviso.noAportar" = "不分享";
+"comerciosComun.titulo" = "共享商家";
+"comerciosComun.ajustes.aportar" = "分享商家";
+"comerciosComun.ajustes.aportarPie" = "当你确认一笔支出时，Yala 只发送商家名称及其类型（例如“Tambo → 超市”）。关闭后，你仍会收到建议。";
+"comerciosComun.ajustes.queSeEnvia.titulo" = "发送的内容";
+"comerciosComun.ajustes.queSeEnvia.nombre" = "商家名称，不含分店、街道或号码。";
+"comerciosComun.ajustes.queSeEnvia.tipo" = "商家类型，来自固定列表：超市、药店、餐厅……";
+"comerciosComun.ajustes.queSeEnvia.nunca" = "绝不发送金额、日期、账户、备注、你的分类或邮箱。转账、收入、房租和税款一概不发送。";
+"comerciosComun.ajustes.comoFunciona.titulo" = "运作方式";
+"comerciosComun.ajustes.comoFunciona.semana" = "每周发送一次，全部一起发送，且不含时间。";
+"comerciosComun.ajustes.comoFunciona.varios" = "当多部不同的手机看法一致时，商家才会进入共享列表。";
+"comerciosComun.ajustes.comoFunciona.local" = "你的手机会下载整个列表并在本地查找：从不向服务器询问你的消费。";
+"comerciosComun.ajustes.comoFunciona.manda" = "你的修改在你的应用中始终优先。";

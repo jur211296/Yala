@@ -1,0 +1,25 @@
+/*
+  ComerciosEnComun.strings
+  Yala
+
+  «Comercios en común» (2.3, 2026-11-22): la línea de «Esto leí», el aviso de una vez y Perfil › Comercios en común.
+  Tabla propia, leída con el idioma de la app (`L10n.ComerciosEnComun`). Español neutro latinoamericano en las cuatro
+  variantes de español (encargo del 22-nov).
+*/
+
+"comerciosComun.linea.texto" = "So wird %@ in Yala meist kategorisiert.";
+"comerciosComun.linea.cambiar" = "Ändern";
+"comerciosComun.aviso.mensaje" = "Yala lernt aus den Händlern, die du bestätigst: Geteilt werden nur der Name und die Art, nie Beträge oder Daten.";
+"comerciosComun.aviso.noAportar" = "Nicht teilen";
+"comerciosComun.titulo" = "Gemeinsame Händler";
+"comerciosComun.ajustes.aportar" = "Händler teilen";
+"comerciosComun.ajustes.aportarPie" = "Wenn du eine Ausgabe bestätigst, sendet Yala nur den Namen des Händlers und seine Art (zum Beispiel „Tambo → Supermarkt“). Wenn du es ausschaltest, bekommst du weiterhin Vorschläge.";
+"comerciosComun.ajustes.queSeEnvia.titulo" = "Was gesendet wird";
+"comerciosComun.ajustes.queSeEnvia.nombre" = "Der Name des Händlers, ohne Filiale, Straße oder Nummern.";
+"comerciosComun.ajustes.queSeEnvia.tipo" = "Seine Art, aus einer festen Liste: Supermarkt, Apotheke, Restaurant …";
+"comerciosComun.ajustes.queSeEnvia.nunca" = "Nie der Betrag, das Datum, dein Konto, deine Notizen, deine Kategorien oder deine E-Mail. Nichts von Überweisungen, Einnahmen, Miete oder Steuern.";
+"comerciosComun.ajustes.comoFunciona.titulo" = "So funktioniert es";
+"comerciosComun.ajustes.comoFunciona.semana" = "Die Beiträge werden einmal pro Woche gesendet, alle zusammen und ohne Uhrzeit.";
+"comerciosComun.ajustes.comoFunciona.varios" = "Ein Händler kommt in die gemeinsame Liste, wenn mehrere verschiedene Telefone übereinstimmen.";
+"comerciosComun.ajustes.comoFunciona.local" = "Dein Telefon lädt die ganze Liste herunter und sucht darin: Es fragt den Server nie nach deinen Einkäufen.";
+"comerciosComun.ajustes.comoFunciona.manda" = "Was du korrigierst, gilt in deiner App immer.";

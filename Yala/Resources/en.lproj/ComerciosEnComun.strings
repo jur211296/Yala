@@ -1,0 +1,25 @@
+/*
+  ComerciosEnComun.strings
+  Yala
+
+  «Comercios en común» (2.3, 2026-11-22): la línea de «Esto leí», el aviso de una vez y Perfil › Comercios en común.
+  Tabla propia, leída con el idioma de la app (`L10n.ComerciosEnComun`). Español neutro latinoamericano en las cuatro
+  variantes de español (encargo del 22-nov).
+*/
+
+"comerciosComun.linea.texto" = "This is how %@ is usually categorized in Yala.";
+"comerciosComun.linea.cambiar" = "Change";
+"comerciosComun.aviso.mensaje" = "Yala learns from the merchants you approve: it shares only the name and its type, never amounts or dates.";
+"comerciosComun.aviso.noAportar" = "Don't share";
+"comerciosComun.titulo" = "Shared merchants";
+"comerciosComun.ajustes.aportar" = "Share merchants";
+"comerciosComun.ajustes.aportarPie" = "When you approve an expense, Yala sends only the merchant's name and its type (for example, “Tambo → supermarket”). If you turn this off, you still get suggestions.";
+"comerciosComun.ajustes.queSeEnvia.titulo" = "What's sent";
+"comerciosComun.ajustes.queSeEnvia.nombre" = "The merchant's name, without branch, street or numbers.";
+"comerciosComun.ajustes.queSeEnvia.tipo" = "Its type, from a fixed list: supermarket, pharmacy, restaurant…";
+"comerciosComun.ajustes.queSeEnvia.nunca" = "Never the amount, the date, your account, your notes, your categories or your email. Nothing from transfers, income, rent or taxes.";
+"comerciosComun.ajustes.comoFunciona.titulo" = "How it works";
+"comerciosComun.ajustes.comoFunciona.semana" = "Submissions go out once a week, all together and without the time.";
+"comerciosComun.ajustes.comoFunciona.varios" = "A merchant joins the shared list when several different phones agree.";
+"comerciosComun.ajustes.comoFunciona.local" = "Your phone downloads the whole list and searches it locally: it never asks the server about your purchases.";
+"comerciosComun.ajustes.comoFunciona.manda" = "What you correct always wins in your app.";

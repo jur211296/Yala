@@ -31,9 +31,13 @@ enum SuggestionLevel: Equatable {
 final class MerchantMemoryService {
 
     private let modelContext: ModelContext
+    /// La lista común de comercios (`ComerciosEnComun`): propone cuando la memoria no tiene nada de ese comercio.
+    private let comunes: ComerciosEnComun
 
-    init(modelContext: ModelContext) {
+    /// `comunes` sin pasar es `.shared` (un valor por defecto `.shared` se evaluaría fuera del actor principal).
+    init(modelContext: ModelContext, comunes: ComerciosEnComun? = nil) {
         self.modelContext = modelContext
+        self.comunes = comunes ?? .shared
     }
 
     // MARK: - Pure Decision Logic
@@ -48,24 +52,38 @@ final class MerchantMemoryService {
     // MARK: - Suggest
 
     /// Busca memoria para un merchant y retorna sugerencia según política.
+    ///
+    /// Orden («Comercios en común», 2026-11-22): 1) la memoria con su política; 2) la memoria que existe aunque no
+    /// llegue al umbral GANA a la lista común (propone lo suyo, desde la primera vez); 3) sin memoria, la lista común
+    /// PROPONE (nunca `.autoAssign`). Después, quien llama sigue con la IA y el banco de 666, como antes.
     func suggest(for merchantRaw: String) -> MerchantSuggestion {
         guard !merchantRaw.trimmingCharacters(in: .whitespaces).isEmpty else {
             return .none
         }
 
-        guard let memory = findMemory(for: merchantRaw),
-              let subcategory = memory.subcategory else {
-            return .none
+        if let memory = findMemory(for: merchantRaw), let subcategory = memory.subcategory {
+            switch Self.decideSuggestion(countApproved: memory.countApproved, correctionRate: memory.correctionRate) {
+            case .autoAssign:
+                return .autoAssign(subcategory)
+            case .suggest:
+                return .suggest(subcategory)
+            case .none:
+                return comunes.tipo(paraComercio: merchantRaw) != nil ? .suggest(subcategory) : .none
+            }
         }
 
-        switch Self.decideSuggestion(countApproved: memory.countApproved, correctionRate: memory.correctionRate) {
-        case .autoAssign:
-            return .autoAssign(subcategory)
-        case .suggest:
-            return .suggest(subcategory)
-        case .none:
-            return .none
+        if comunes.tipo(paraComercio: merchantRaw) != nil,
+           let common = comunes.subcategoria(
+               paraComercio: merchantRaw, isExpense: true, en: MerchantKindSubcategory.fetchVisible(context: modelContext)) {
+            return .suggest(common)
         }
+        return .none
+    }
+
+    /// ¿Hay memoria de este comercio, aunque sea de una vez? La línea «Así suele categorizarse…» de «Esto leí» solo sale
+    /// sin ella: con ella, la categoría es de la persona.
+    func hasMemory(for merchantRaw: String) -> Bool {
+        findMemory(for: merchantRaw)?.subcategory != nil
     }
 
     /// Como `suggest(for:)`, pero descarta la subcategoría que contradiga el tipo del borrador: **manda el tipo**,
@@ -94,7 +112,15 @@ final class MerchantMemoryService {
     ///   - merchantRaw: Nombre crudo del comercio (de la nota del draft)
     ///   - subcategory: Subcategoría final elegida por el usuario
     ///   - wasCorrection: true si el usuario cambió la subcategoría sugerida
-    func updateMemory(merchantRaw: String, subcategory: Subcategory, wasCorrection: Bool) {
+    ///   - source: de dónde vino el borrador. Con él, un gasto capturado se encola para «Comercios en común»
+    ///     (`ComerciosEnComun.registrarAporte`, que decide si aporta); sin él (`nil`), no se aporta nada.
+    func updateMemory(merchantRaw: String, subcategory: Subcategory, wasCorrection: Bool, source: DraftSourceType? = nil) {
+        if let source {
+            comunes.registrarAporte(
+                merchantRaw: merchantRaw, subcategory: subcategory, source: source,
+                visibles: MerchantKindSubcategory.fetchVisible(context: modelContext))
+        }
+
         let canonical = MerchantCanonicalizer.canonicalize(merchantRaw)
         guard !canonical.isEmpty else { return }
 

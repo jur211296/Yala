@@ -1,0 +1,25 @@
+/*
+  ComerciosEnComun.strings
+  Yala
+
+  «Comercios en común» (2.3, 2026-11-22): la línea de «Esto leí», el aviso de una vez y Perfil › Comercios en común.
+  Tabla propia, leída con el idioma de la app (`L10n.ComerciosEnComun`). Español neutro latinoamericano en las cuatro
+  variantes de español (encargo del 22-nov).
+*/
+
+"comerciosComun.linea.texto" = "É assim que %@ costuma ser categorizado no Yala.";
+"comerciosComun.linea.cambiar" = "Mudar";
+"comerciosComun.aviso.mensaje" = "O Yala aprende com os estabelecimentos que você aprova: compartilha só o nome e o tipo, nunca valores nem datas.";
+"comerciosComun.aviso.noAportar" = "Não compartilhar";
+"comerciosComun.titulo" = "Estabelecimentos em comum";
+"comerciosComun.ajustes.aportar" = "Compartilhar estabelecimentos";
+"comerciosComun.ajustes.aportarPie" = "Quando você aprova um gasto, o Yala envia só o nome do estabelecimento e o tipo dele (por exemplo, “Tambo → supermercado”). Se desativar, você continua recebendo sugestões.";
+"comerciosComun.ajustes.queSeEnvia.titulo" = "O que é enviado";
+"comerciosComun.ajustes.queSeEnvia.nombre" = "O nome do estabelecimento, sem filial, rua nem números.";
+"comerciosComun.ajustes.queSeEnvia.tipo" = "O tipo dele, de uma lista fixa: supermercado, farmácia, restaurante…";
+"comerciosComun.ajustes.queSeEnvia.nunca" = "Nunca o valor, a data, sua conta, suas notas, suas categorias nem seu e-mail. Nada de transferências, receitas, aluguéis nem impostos.";
+"comerciosComun.ajustes.comoFunciona.titulo" = "Como funciona";
+"comerciosComun.ajustes.comoFunciona.semana" = "Os envios saem uma vez por semana, todos juntos e sem o horário.";
+"comerciosComun.ajustes.comoFunciona.varios" = "Um estabelecimento entra na lista comum quando vários celulares diferentes concordam.";
+"comerciosComun.ajustes.comoFunciona.local" = "Seu celular baixa a lista inteira e procura nela: nunca pergunta ao servidor sobre suas compras.";
+"comerciosComun.ajustes.comoFunciona.manda" = "O que você corrige sempre vale no seu app.";
