@@ -1,7 +1,7 @@
 # Guía de novedades 2.3 (TestFlight 2.3 (7))
 
 Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (7) de
-TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
+TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty (la versión de la 2.3 (2) sigue en https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS, de la cuenta de la Mini)
 
 Sus notas se guardan en la base del artifact, colección `notas` (un documento por ítem, con `veredicto`,
 `comentario`, `titulo` y `area`). Una sesión las lee con `ArtifactData list` sobre esa URL.
