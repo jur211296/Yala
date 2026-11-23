@@ -113,8 +113,14 @@ final class AccountCardReportsUITests: XCTestCase {
 
     /// Recorre el carrusel por cuenta hacia la derecha y dice si alguna página se titula `title`.
     private func carouselShows(_ app: XCUIApplication, title: String) -> Bool {
+        let page = app.staticTexts[title]
         for _ in 0..<5 {
-            if app.staticTexts[title].exists && app.staticTexts[title].isHittable { return true }
+            // Con el carrusel aún pasando de página se miraba a destiempo: con el simulador cargado tras una tanda, el
+            // título entraba después de la lectura y el caso caía 2 de 7 (2026-10-20/21). Se mira con la página quieta.
+            if page.waitForExistence(timeout: 2) {
+                _ = app.waitForSettledLayout(of: page, timeout: 3)
+                if page.isHittable { return true }
+            }
             let picker = element(app, "account_card_grouping_picker")
             // Por la fila del título de la página, no por las barras: la gráfica se queda el arrastre a ratos y la
             // página no pasa (visto en el vídeo del rojo del 2026-11-01: 4 páginas y el caso parado en la 3.ª).
@@ -123,7 +129,9 @@ final class AccountCardReportsUITests: XCTestCase {
             let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.1, dy: y))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
-        return app.staticTexts[title].exists && app.staticTexts[title].isHittable
+        guard page.waitForExistence(timeout: 2) else { return false }
+        _ = app.waitForSettledLayout(of: page, timeout: 3)
+        return page.isHittable
     }
 
     func test_cashFlow_byCard_hidesTheLinePage_andByLineShowsIt() {
