@@ -127,6 +127,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-19-subir-testflight-2-3 | done | tickets/done/2026-11-19-subir-testflight-2-3.md |
 | 2026-11-19-subir-testflight-2-3-build-5 | done | tickets/done/2026-11-19-subir-testflight-2-3-build-5.md |
 | 2026-11-20-subir-testflight-2-3-build-6 | done | tickets/done/2026-11-20-subir-testflight-2-3-build-6.md |
+| 2026-11-23-subir-testflight-2-3-build-7 | done | tickets/done/2026-11-23-subir-testflight-2-3-build-7.md |
 | 2026-11-19-ci-2-3-todo-verde | done | tickets/done/2026-11-19-ci-2-3-todo-verde.md |
 | 2026-11-19-contraste-modo-claro-botones-blancos | done | tickets/done/2026-11-19-contraste-modo-claro-botones-blancos.md |
 | 2026-11-18-verificacion-google-sin-casa | backlog | tickets/backlog/2026-11-18-verificacion-google-sin-casa.md |
