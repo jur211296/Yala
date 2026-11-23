@@ -1,6 +1,6 @@
 ---
 id: volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas
-status: qa
+status: done
 priority: medium
 area: currency
 updated: 2026-11-22
@@ -49,3 +49,5 @@ a una petición diaria) y retirar el camino muerto. Decisión de producto: ningu
 ### Device-QA (cuando se pueda)
 1. Abrir Yala con una cuenta en otra divisa y mandarla a segundo plano (sin cerrarla) antes de las 19:00 de Lima.
 2. Volver a abrirla después de las 19:00 (cambio de día UTC): el «≈» del importe convertido desaparece en unos segundos.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Cambio de día UTC con la app en segundo plano: difícil de provocar a mano; un «≈» de un día no pierde datos Evidencia: `TasasDeCambioLogicTests`, `TasasDeCambioConverterTests`

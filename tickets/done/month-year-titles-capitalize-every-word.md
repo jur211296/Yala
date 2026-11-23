@@ -1,6 +1,6 @@
 ---
 id: month-year-titles-capitalize-every-word
-status: qa
+status: done
 priority: low
 area: "copy, l10n, panel, planning"
 created: 2026-10-14
@@ -53,3 +53,5 @@ Las dos piezas de Pagos (`ScheduledPaymentsViewModel.monthYearLabel` y `Schedule
 - Presupuestos ya no tenía `.capitalized` (grep del 2026-11-06). No queda ningún mes con año que pase por `.capitalized`.
 - QA: con la app en español, el widget de pagos del Panel en tamaño mediano dice «Noviembre de 2026»; con Yala en
   inglés, «November 2026». Capturas en el PR.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Test Evidencia: `PanelScheduledPaymentsPeriodLabelTests`

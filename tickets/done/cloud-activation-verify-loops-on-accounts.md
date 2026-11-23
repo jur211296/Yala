@@ -1,6 +1,6 @@
 ---
 id: cloud-activation-verify-loops-on-accounts
-status: qa
+status: done
 priority: high
 area: "modo-nube, sync"
 created: 2026-10-19
@@ -32,3 +32,5 @@ En `.icloud`, con una fase transitoria del journal (o ilegible), la reparación 
 ## Device-QA
 
 Lo cubre el guion de `cloud-activation-waits-for-icloud-with-no-way-out`: la activación tiene que pasar del 75 % a «Nube activa» sin volver al 60 %.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Bucle de verificación, con tests Evidencia: `IdentityRemapEmissionTests`, `MigrationJournalUnreadableWiringTests`

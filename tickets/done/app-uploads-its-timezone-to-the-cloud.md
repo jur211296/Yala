@@ -1,6 +1,6 @@
 ---
 id: app-uploads-its-timezone-to-the-cloud
-status: qa
+status: done
 priority: low
 area: cloud
 created: 2026-09-26
@@ -71,3 +71,5 @@ Triage 2026-10-08: abierto · medium → low · la app sigue sin subir su zona h
 2. Abre Yala (Dev, staging) y espera un minuto con la app delante: la subida va con el ciclo de la nube.
 3. En Claude Code conectado a `yala-staging`, pregunta «¿cuánto gasté este mes?» sin decir zona.
 4. La respuesta no debe traer el aviso «No se indicó zona horaria». Vuelve a poner la hora automática.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `PreferenceMergeLogicTests`

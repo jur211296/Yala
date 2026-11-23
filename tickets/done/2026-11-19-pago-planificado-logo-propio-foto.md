@@ -1,6 +1,6 @@
 ---
 id: 2026-11-19-pago-planificado-logo-propio-foto
-status: qa
+status: done
 priority: high
 area: planning
 created: 2026-11-19
@@ -54,3 +54,5 @@ Las decisiones de diseño están en el Paso 0 del encargo (`encargos/lanzados/20
    foto la enseña al momento en A y llega a B cuando A vuelve a tener red.
 5. Un aparato con 2.2 en la misma cuenta: el pago con foto se ve con su icono por defecto; editar su importe ahí no quita
    la foto en A.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest y sync con test Evidencia: `PagoLogoPropioUITests`, `PagoLogoPropioSyncTests`

@@ -1,6 +1,6 @@
 ---
 id: tag-selector-from-the-panel-form-shows-no-rows-in-2-3
-status: qa
+status: done
 priority: medium
 area: "transactions, tags, testing"
 created: 2026-11-06
@@ -52,3 +52,5 @@ cambios en la app. Que la fila de chips no avise de que hay más debajo es otra 
 ## QA
 
 Nada en el iPhone: lo fija el propio XCUITest (`TransactionsCrudUITests/test_recordSelectorsOpenAtMediumDetent`).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `TransactionsCrudUITests` (`test_recordSelectorsOpenAtMediumDetent`)

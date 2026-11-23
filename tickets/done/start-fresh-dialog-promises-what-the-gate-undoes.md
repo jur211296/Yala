@@ -1,6 +1,6 @@
 ---
 id: start-fresh-dialog-promises-what-the-gate-undoes
-status: qa
+status: done
 priority: low
 area: "welcome, icloud, restore, copy"
 created: 2026-09-20
@@ -69,3 +69,5 @@ Triage 2026-10-08: abierto · medium → low · El copy sigue diciendo «Esto cr
 
 1. Instalación limpia sin iCloud → «Ya tengo una cuenta» → «Restaurar desde iCloud» → reabrir → «Empezar desde cero».
 2. Debe leerse el texto nuevo; confirmar lleva a la puerta de iCloud, no al onboarding directo.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `WelcomeLote6FixesTests`

@@ -1,6 +1,6 @@
 ---
 id: scheduled-payment-actions-name-the-month-they-apply-to
-status: qa
+status: done
 priority: high
 area: scheduled-payments
 created: 2026-11-01
@@ -41,3 +41,5 @@ Regla en `ScheduledPaymentDetailLogic.currentMonthSettled` / `actionTarget`. Tes
 4. Entra en un pago con el mes en curso sin pagar: ni encabezado ni textos nuevos («Ya lo pagué», «Saltar este mes»).
 5. Mira la Bandeja y el widget de Pagos: el pago ya pagado no aparece como pendiente de noviembre; su próxima fecha es
    el 1 de diciembre.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `ScheduledPaymentsLote10UITests`

@@ -1,6 +1,6 @@
 ---
 id: welcome-adopt-cancel-then-close-mounts-the-icloud-mirror
-status: qa
+status: done
 priority: low
 area: "onboarding, modo-nube"
 created: 2026-11-04
@@ -62,3 +62,5 @@ hoy porque el adopt cancelado ya dejó escrito algo de la cuenta.
 5. Debe abrir en la bienvenida otra vez. Si abre en la app, apúntalo en la card.
 6. Para comprobar que no adjuntó iCloud: elige «Es mi primera vez» → privacidad total; debe pasar por «Ya tienes datos
    en tu iCloud» (pregunta), no traer los datos sin preguntar.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Pasó el 15-nov en el iPhone 14 Evidencia: `WelcomeAdoptBackOutTests`, `FreshStartAfterAdoptExitTests`; `docs/qa/barrido-2-3-final/evidencia/D02-cancelada-vuelve-a-bienvenida.jpg`

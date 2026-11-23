@@ -1,6 +1,6 @@
 ---
 id: voice-live-transcript-label-says-iphone-on-ipad
-status: qa
+status: done
 priority: low
 area: "copy, l10n, ipad, accesibilidad"
 created: 2026-10-29
@@ -35,3 +35,5 @@ clave). La guarda general de «teléfono» no la veía porque no usa esa palabra
 ## QA
 
 Simulador, sin el iPhone: grabar una nota de voz y leer con `axe describe-ui` la etiqueta de la transcripción en vivo.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 1 de la tabla del barrido; VoiceOver Evidencia: `LocalizationParityTests`

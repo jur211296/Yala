@@ -1,6 +1,6 @@
 ---
 id: 2026-11-16-bugs-barrido-final-2-3-app
-status: qa
+status: done
 priority: high
 area: cloud-sync
 created: 2026-11-16
@@ -52,3 +52,5 @@ qa-notes: probado en el iPhone 14 (Yala Dev de esta rama); falta el visto bueno 
 
 `~/Claude/entregas/2026-11-16-bugs-barrido-2-3-app/evidencia/` (antes y después de cada bug, vídeos y el conteo del
 almacén en `almacen-antes-y-despues.txt`).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 5 de la tabla del barrido;  Evidencia: Ajustes › Vaciar datos › tocar el centro del botón rojo «Vaciar mis datos»: tiene que salir «¿Vaciar tus datos?», no «Exportar». Salir con Cancelar

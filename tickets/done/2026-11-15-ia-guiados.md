@@ -1,6 +1,6 @@
 ---
 id: 2026-11-15-ia-guiados
-status: qa
+status: done
 priority: high
 area: ai
 created: 2026-11-16
@@ -88,3 +88,5 @@ pruebas, Registros › «Yala IA».
 4. Di: «Recuérdame pagar el gimnasio cada dos semanas, son ochenta». La tarjeta no pregunta el nombre ni el monto y
    pregunta el día de la semana. En la revisión, «Cuándo» dice «cada 2 semanas». Crea y abre el pago.
 5. Di: «Quiero un presupuesto de una sola vez de dos mil para el viaje». Pregunta las fechas («Desde» y «Hasta»).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; La voz solo cambia la entrada del texto; los guiados los fija el test Evidencia: `IAGuiadosUITests`, `ChatGuidedCreationTests`

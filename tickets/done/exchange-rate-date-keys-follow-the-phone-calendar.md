@@ -1,6 +1,6 @@
 ---
 id: exchange-rate-date-keys-follow-the-phone-calendar
-status: qa
+status: done
 priority: medium
 area: cloud
 created: 2026-09-26
@@ -57,3 +57,5 @@ Triage 2026-10-08: abierto · low → medium · los formatters siguen sin en_US_
 ### Device-QA (cuando se pueda)
 1. iPhone 14 → Ajustes → General → Idioma y región → Calendario → Budista.
 2. Abrir Yala con una cuenta en otra divisa: el importe convertido sale sin «≈» (tasa del día, no la tabla estática).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Pocos usuarios con ese calendario; claves gregorianas con test Evidencia: `TasasDeCambioLogicTests`, `TasasDeCambioLimpiezaTests`

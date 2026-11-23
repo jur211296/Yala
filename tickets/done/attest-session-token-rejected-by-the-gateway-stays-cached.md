@@ -1,6 +1,6 @@
 ---
 id: attest-session-token-rejected-by-the-gateway-stays-cached
-status: qa
+status: done
 priority: low
 area: "attest, gateway, groups"
 created: 2026-09-15
@@ -77,3 +77,5 @@ Fuera también, medido en la review del 19-oct: el proxy de IA y los tipos de ca
 sin olvidar el token. Comparten la caché, así que en la nube lo cura cualquiera de los ocho; un teléfono sin nube con el reloj
 atrasado sigue mandando el rechazado a la IA hasta que caduca. Y aceptado: si el gateway rechazara también los tokens recién
 emitidos (un incidente de su configuración), cada 401 fuerza una assertion nueva, al ritmo de reintento de cada llamador.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Solo se provoca rotando el secreto en producción Evidencia: `AttestSessionTokenLogicTests`

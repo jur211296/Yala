@@ -1,6 +1,6 @@
 ---
 id: flujo-proyectado-en-tendencias-y-panel
-status: qa
+status: done
 priority: medium
 area: "Tendencias, Panel, Flujo de caja, WidgetKit"
 created: 2026-11-06
@@ -173,3 +173,4 @@ encargo, en el PR):
 3. Mantén pulsado el widget «Gasto» (o «Saldo») en la pantalla de inicio › Editar widget › activa «Mostrar proyectado».
    Debe salir una línea de puntos del color del widget hasta fin de mes, distinta de la raya gris del mes anterior.
 
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 5 de la tabla del barrido;  Evidencia: Semilla `realista`, período «Este mes»: «Al 30 de noviembre» en el Panel (Tendencias › Saldo › Ver proyectado), en Más › Flujo de caja («Terminas con») y en la foto del widget de Saldo. Las tres iguales, sin plan y con plan

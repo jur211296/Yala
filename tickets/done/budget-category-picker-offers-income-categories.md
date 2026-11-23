@@ -1,6 +1,6 @@
 ---
 id: budget-category-picker-offers-income-categories
-status: qa
+status: done
 priority: medium
 area: budgets
 created: 2026-11-06
@@ -31,3 +31,5 @@ a la vista; cableado del editor).
 2. En «Qué cuenta», toca «Elegir categorías».
 3. La lista no tiene «Ingresos» (ni ninguna categoría de ingreso propia).
 4. Toca «Seleccionar todo», vuelve: el resumen nombra solo categorías de gasto.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Test Evidencia: `BudgetEditorExpenseCategoriesTests`

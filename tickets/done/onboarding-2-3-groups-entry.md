@@ -1,6 +1,6 @@
 ---
 id: onboarding-2-3-groups-entry
-status: qa
+status: done
 priority: high
 area: "bienvenida 2.3, Grupos"
 created: 2026-11-12
@@ -25,3 +25,5 @@ hoy. Splitwise y Tricount no estaban en el alta. Visto en el simulador hasta los
 3. La hoja de Apple tiene que abrirse sola (sin volver a preguntar con qué entrar). Tras firmar, sale la pregunta de
    tu nombre; escribe uno y continúa: aterrizas en Grupos, sin grupo.
 4. Repite con «Crear mi primer grupo»: termina en el formulario del grupo, como hoy.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Pasó el 15-nov en el iPhone 14; la card está en done Evidencia: `docs/qa/barrido-2-3-final/evidencia/C01-como-empiezas.jpg`, `C02-puerta-grupos-aterriza-en-grupos.jpg`

@@ -1,6 +1,6 @@
 ---
 id: icloud-restore-preview-counts-categories-twice
-status: qa
+status: done
 priority: low
 area: "welcome, icloud"
 created: 2026-11-05
@@ -42,3 +42,5 @@ del 5-nov la fundió). El guion comprueba que las dos cifras coinciden y que la 
 3. En «Ya tienes datos en tu iCloud», anota las cifras (registros, cuentas, categorías).
 4. Toca «Traer mis datos» y, en «¡Hola …!», compara: las categorías deben coincidir con el paso 3.
 5. Si la pantalla del paso 3 dijera «reintentar» en vez de las cifras, apúntalo: es la lista de campos ampliada.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `ICloudCorpusCategoryTallyTests`

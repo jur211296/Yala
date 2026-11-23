@@ -1,6 +1,6 @@
 ---
 id: flujo-de-caja-nutre-el-proyectado
-status: qa
+status: done
 priority: medium
 area: "Flujo de caja, Tendencias, Panel"
 created: 2026-11-06
@@ -57,3 +57,5 @@ Enviadas al bot el 2026-11-07 a las 5:00 (regla nocturna). Jürgen, 2026-11-07: 
    pasa a «Ver tu plan de flujo de caja».
 3. Compara la cifra al cierre con la que daba sin plan: ya no debe caer de golpe por las categorías que el plan dejó
    fuera.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 5 de la tabla del barrido;  Evidencia: Semilla `realista`, período «Este mes»: «Al 30 de noviembre» en el Panel (Tendencias › Saldo › Ver proyectado), en Más › Flujo de caja («Terminas con») y en la foto del widget de Saldo. Las tres iguales, sin plan y con plan

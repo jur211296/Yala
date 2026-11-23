@@ -1,6 +1,6 @@
 ---
 id: daily-allowance-how-much-can-i-spend-today
-status: qa
+status: done
 priority: high
 area: "presupuestos, panel"
 created: 2026-11-04
@@ -45,3 +45,5 @@ elige; si gana B o C, es otro encargo.
 
 Cubierto por `YalaTests/DailyAllowanceLogicTests` y `YalaUITests/DailyAllowanceUITests`. Visto bueno de diseño de Jürgen
 sobre las capturas del PR.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `DailyAllowanceUITests`, `DailyAllowanceLogicTests`

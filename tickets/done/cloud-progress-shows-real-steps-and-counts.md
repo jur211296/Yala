@@ -1,6 +1,6 @@
 ---
 id: cloud-progress-shows-real-steps-and-counts
-status: qa
+status: done
 priority: high
 area: "modo-nube, settings, ux"
 created: 2026-10-21
@@ -73,3 +73,5 @@ zona sana y pocos datos debería ser corto; el canario nuevo dice cuánto pesa e
 3. Volver a iCloud (y «Borrar y volver a iCloud» con datos de antes): desde el «Sí» la tarjeta dice qué hace; «iCloud revisa
    lo que ya tiene» hasta que la cifra empieza a bajar; luego «Subir a iCloud» con lo que falta.
 4. Mirar en Analytics Engine la serie `cloudMigrationStep` de esa instalación: dice qué paso se llevó el tiempo.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Visto el 15-nov: la vuelta subió «446» con su cifra Evidencia: `docs/qa/barrido-2-3-final/evidencia/H04-en-tu-icloud-terminado.jpg`

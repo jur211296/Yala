@@ -1,6 +1,6 @@
 ---
 id: panel-eye-hides-amounts
-status: qa
+status: done
 priority: medium
 area: panel
 created: 2026-11-06
@@ -51,3 +51,5 @@ verlo. Estadísticas, Registros y el resto de la app no cambian.
 4. Cierra Yala del todo (desliza hacia arriba en el selector de apps) y vuelve a abrirla. Los montos deben seguir ocultos.
 5. Toca el ojo otra vez: vuelven todas las cifras.
 6. Pásalo a **Estadísticas** y **Registros** con los montos ocultos: ahí las cifras se ven (es solo el Panel).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `PanelAmountsVisibilityUITests`, `AmountPrivacyTests`

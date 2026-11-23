@@ -1,6 +1,6 @@
 ---
 id: multi-currency-accounts
-status: qa
+status: done
 priority: medium
 area: "accounts, currency"
 created: 2026-09-09
@@ -100,3 +100,5 @@ tres opciones: [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/mul
   [[converted-amount-sweep-blind-to-input-changes]]: deudas de divisa que C agravaría.
 - Abiertos por este análisis: [[personal-cloudkit-schema-snapshot-misses-optional-fields]] (high) y
   [[bulk-move-to-another-currency-account-relabels-the-amount]] (medium).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `AccountLinesUITests`, `AccountLineCardViewTests`

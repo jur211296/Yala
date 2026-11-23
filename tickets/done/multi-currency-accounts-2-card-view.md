@@ -1,6 +1,6 @@
 ---
 id: multi-currency-accounts-2-card-view
-status: qa
+status: done
 priority: medium
 area: "accounts, currency, panel, settings"
 created: 2026-10-10
@@ -140,3 +140,5 @@ archivar puede dejar más cuentas contando que el límite Free; desarchivar la t
 5. En el formulario de la línea USD: no hay recordatorio de pago; «Desvincular de la tarjeta» la devuelve a cuenta suelta.
 6. Con el recordatorio de la tarjeta encendido, el día de pago llega **una** notificación.
 7. Mira las capturas del PR y di si el diseño de la tarjeta te vale.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `AccountLinesUITests`, `AccountLineCardViewTests`

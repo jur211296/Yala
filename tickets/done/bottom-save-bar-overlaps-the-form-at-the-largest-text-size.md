@@ -1,6 +1,6 @@
 ---
 id: bottom-save-bar-overlaps-the-form-at-the-largest-text-size
-status: qa
+status: done
 priority: high
 area: "a11y, design-system, iphone"
 created: 2026-11-05
@@ -65,3 +65,5 @@ Con texto de accesibilidad queda el tono del sistema.
    encima del botón.
 3. Grupos › un grupo › «+» de nuevo gasto: lo mismo con «Guardar».
 4. Devuelve el texto a su tamaño: Nuevo registro se ve como siempre.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 1 de la tabla del barrido; Tamaños Evidencia: `KeyboardSaveBar23UITests`

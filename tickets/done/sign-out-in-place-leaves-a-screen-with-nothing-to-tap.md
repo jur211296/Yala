@@ -1,6 +1,6 @@
 ---
 id: sign-out-in-place-leaves-a-screen-with-nothing-to-tap
-status: qa
+status: done
 priority: high
 area: cloud-sync, sign-out, welcome
 created: 2026-10-28
@@ -122,3 +122,5 @@ Tests nuevos: `BoundStoreContextWiringTests`, `WelcomeUnfinishedAccountEntryTest
 3. Repite 2 pero cierra Yala del todo en el aviso de Google y ábrela. Esperado: «¿Qué quieres hacer?».
 4. Sin probar aún: la sesión caducada con cambios sin subir (el caso original de la card). Si se puede provocar, cierra
    sesión ahí y comprueba lo mismo que en 1.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Tests; cerrar sesión pasó el 15-nov Evidencia: `SignOutDeferredRoutingTests`, `SignOutWelcomeDestinationTests`; `docs/qa/barrido-2-3-final/evidencia/B01-cerrar-sesion-vuelve-a-bienvenida.jpg`

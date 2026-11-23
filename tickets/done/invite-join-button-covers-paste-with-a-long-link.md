@@ -1,6 +1,6 @@
 ---
 id: invite-join-button-covers-paste-with-a-long-link
-status: qa
+status: done
 priority: low
 area: "groups, welcome"
 created: 2026-11-05
@@ -24,3 +24,5 @@ Evidencia: `~/Claude/entregas/2026-11-06-lote-bugs-ui-idioma-ipad-grupos/evidenc
 
 **Guion de QA (iPhone 14):** Welcome › «Me invitaron a un grupo» › «Unirme con un enlace»; pega un enlace largo (que
 ocupe 4 líneas) y deja el teclado abierto: «Pegar» se ve entero por encima de «Unirme al grupo».
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 1 de la tabla del barrido; Teclado y tamaño Evidencia: `InviteRecoveryPasteVisibleUITests`

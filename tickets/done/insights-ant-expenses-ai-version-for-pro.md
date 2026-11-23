@@ -1,6 +1,6 @@
 ---
 id: insights-ant-expenses-ai-version-for-pro
-status: qa
+status: done
 priority: medium
 area: "statistics, insights, pro, ai"
 created: 2026-11-06
@@ -60,3 +60,5 @@ que antes. Los permisos de IA dicen, en los 16 idiomas, que con la cuenta en la 
    parecidos: …» y un consejo de una frase. Las cifras del bloque deben cuadrar con la suma de las grafías.
 5. Sal y vuelve a Estadísticas: el bloque sale sin esperar (guardado), sin «Analizando…».
 6. Con un usuario Free (quita el toggle Pro): la tarjeta es la de siempre, sin bloque ni botón.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Su card ya está en done Evidencia: Ticket

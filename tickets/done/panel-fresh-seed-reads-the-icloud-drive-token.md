@@ -1,6 +1,6 @@
 ---
 id: panel-fresh-seed-reads-the-icloud-drive-token
-status: qa
+status: done
 priority: low
 area: "icloud, panel, preferencias"
 created: 2026-11-05
@@ -55,3 +55,5 @@ los tests que construyen `AppPreferences` sobre un almacén limpio no dependan d
 3. Borra Yala Dev del iPad e instálala desde Xcode. Entra con la misma cuenta y espera a que cargue el Panel.
 4. Vuelve al iPhone, abre Yala y mira el Panel: debe seguir como lo dejaste en el paso 1.
 5. Vuelve a encender iCloud Drive en el iPad.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `PanelPreferencesMigrationTests`

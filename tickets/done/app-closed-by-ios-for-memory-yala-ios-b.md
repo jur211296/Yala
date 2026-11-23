@@ -1,6 +1,6 @@
 ---
 id: app-closed-by-ios-for-memory-yala-ios-b
-status: qa
+status: done
 priority: high
 area: stability
 created: 2026-11-12
@@ -41,3 +41,5 @@ source: card tablero-yala-se-cierra-por-exceso-de-memoria-wat-iq0m · Sentry YAL
 3. Resolver YALA-IOS-B en Sentry «en la release» que trae el cambio, no antes.
 
 Opcional en el iPhone 14 (no bloquea): en «Leer foto», elegir diez fotos de la cámara y leerlas; la app no se cierra.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Medido: 16 de 17 eventos eran del iPhone de QA con 2.2; la card ya está en done Evidencia: Ticket, sección de causas

@@ -1,6 +1,6 @@
 ---
 id: cloud-activation-uploads-thousands-of-items-for-a-few-records
-status: qa
+status: done
 priority: medium
 area: "sync, cloud"
 created: 2026-11-05
@@ -66,3 +66,5 @@ Qué son los 3333. Hipótesis por comprobar: el historial de tipos de cambio, ca
 duplicadas (la vista previa de iCloud dijo 124 categorías y la de restaurar 62, el doble; ver
 `icloud-restore-preview-counts-categories-twice`), o tombstones. Siguiente paso: contar por entidad lo que encola la
 subida antes de cambiar nada.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; Medido el 15-nov: 446 elementos Evidencia: `ExchangeRateDuplicateLogicTests`; `docs/qa/barrido-2-3-final/evidencia/H04-en-tu-icloud-terminado.jpg`

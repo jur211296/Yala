@@ -1,6 +1,6 @@
 ---
 id: onboarding-2-3-learn-to-record-courtesy-trial
-status: qa
+status: done
 priority: high
 area: onboarding
 created: 2026-11-12
@@ -40,3 +40,5 @@ instalación nueva: Ajustes de Yala Dev › «Vaciar datos» o borrar y reinstal
 8. En el Panel, toca Voz, Foto y Yala IA: los tres deben pedir Yala Pro (vuelve el candado).
 
 Si el paso 4, 5 o 6 muestra «Ya usaste tus notas de prueba» o un error de Pro, avísame con una captura.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; La franja, el candado y el recorrido se ven en el simulador; leer voz y foto es el mismo servicio de la app; un fallo no pierde datos ni bloquea la bienvenida Evidencia: `Bienvenida23PasosUITests`, `Bienvenida23BaseUITests`

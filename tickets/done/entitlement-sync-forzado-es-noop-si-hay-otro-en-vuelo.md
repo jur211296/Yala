@@ -1,6 +1,6 @@
 ---
 id: entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo
-status: qa
+status: done
 priority: low
 area: pro
 created: 2026-09-05
@@ -110,3 +110,5 @@ La ventana es de segundos y no se puede forzar a mano; este guion solo comprueba
 2. En la bienvenida, «Ya tengo una cuenta» → entra con la cuenta de Yala que tiene Pro pagado.
 3. Al terminar de entrar, abre Ajustes de Yala: debe decir que tienes Pro, sin salir de la app.
 4. Si dice Free, manda la app a segundo plano y vuelve: si entonces dice Pro, el bug sigue (apúntalo en la card).
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Carrera del arranque; test que falla sin el arreglo Evidencia: `AccountEntitlementSyncTests`

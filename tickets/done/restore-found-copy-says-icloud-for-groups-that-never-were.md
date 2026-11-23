@@ -1,6 +1,6 @@
 ---
 id: restore-found-copy-says-icloud-for-groups-that-never-were
-status: qa
+status: done
 priority: low
 area: "welcome, icloud, restore, l10n"
 created: 2026-09-21
@@ -71,3 +71,5 @@ Triage 2026-10-08: abierto · low → low · imprecisión de encabezado: la cifr
 ## Resuelto en 2.2 (UX 2.2 · L6-5, 2026-10-17)
 
 «Encontramos tus datos» pasa a una lista tipo recibo y el encabezado pierde «en iCloud» («Esto vuelve a este teléfono:»): los grupos siguen en la lista sin afirmar que vienen de iCloud. Falta verlo con una restauración real, que el simulador no tiene.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Copy; solo quien restaura con solo grupos Evidencia: Ticket (resuelto por UX 2.2 L6-5)

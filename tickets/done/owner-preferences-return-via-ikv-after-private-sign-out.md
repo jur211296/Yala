@@ -1,6 +1,6 @@
 ---
 id: owner-preferences-return-via-ikv-after-private-sign-out
-status: qa
+status: done
 priority: medium
 area: "settings, sync"
 created: 2026-09-11
@@ -73,3 +73,5 @@ Triage 2026-10-08: abierto · medium → medium · `PreferenceSyncService.bootst
 3. Elige «Es mi primera vez» y avanza: el nombre tiene que salir vacío y la moneda la de la región, no la tuya.
 4. Sal sin terminar, vuelve a la bienvenida y elige «Restaurar desde iCloud»: tiene que traer tus datos y entrar con
    tu nombre.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Test Evidencia: `SignOutPreferenceHoldTests`

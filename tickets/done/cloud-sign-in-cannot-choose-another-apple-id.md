@@ -1,6 +1,6 @@
 ---
 id: cloud-sign-in-cannot-choose-another-apple-id
-status: qa
+status: done
 priority: medium
 area: "modo-nube, auth"
 created: 2026-09-16
@@ -110,3 +110,5 @@ Hace falta tu mano: escribir un Apple ID que NO sea el del iPhone 14, con su con
 7. Cierra Yala Dev del todo y vuelve a abrirla. **Bien** si la sesión sigue en la nube (no te saca al volver).
 8. (Identidad) Si ese otro Apple ID ya tenía cuenta de Yala por el nativo en otro iPhone, debe ser la MISMA cuenta: los
    mismos datos.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Entrar con otro Apple ID es de pocos usuarios; el bloqueo y su salida los fija el test Evidencia: `StorageMigrationIdentityBlockUITests`, `StorageMigrationSignInLogicTests`

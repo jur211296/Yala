@@ -1,6 +1,6 @@
 ---
 id: external-entry-panel-link-loses-the-typed-amount-intermittently
-status: qa
+status: done
 priority: high
 area: "transactions, statistics, testing"
 created: 2026-10-15
@@ -92,3 +92,5 @@ borrador fuera de la vista. Afecta igual a los casos de foto y voz del mismo fic
 - Registros no tiene el patrón: su hoja cuelga del `ListDetailSplit`, que es el contenedor.
 - QA en el iPhone: Estadísticas › Nuevo registro › escribe un importe › Inicio › abre `yala://panel` (o comparte una
   foto) › al volver, el importe sigue.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; El test es la evidencia; la tanda de rojos del 23-nov cerró las inestables Evidencia: `ExternalEntryForeignSheetUITests`

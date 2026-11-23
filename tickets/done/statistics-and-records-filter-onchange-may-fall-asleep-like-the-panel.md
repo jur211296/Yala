@@ -1,6 +1,6 @@
 ---
 id: statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel
-status: qa
+status: done
 priority: low
 area: "statistics, records"
 created: 2026-11-05
@@ -43,3 +43,5 @@ las dos pantallas tienen un segundo camino de recálculo que el Panel no tenía.
 2. Sal a la pantalla de inicio del iPhone y vuelve a Yala. Quita el filtro con la «x» de su cápsula: la cifra vuelve a
    la de antes.
 3. Repite tres veces. Haz lo mismo en Registros.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `StatisticsRecordsFilterObservationUITests`

@@ -1,6 +1,6 @@
 ---
 id: groups-intro-sheet-comes-back-after-closing-it
-status: qa
+status: done
 priority: low
 area: "groups, onboarding"
 created: 2026-11-05
@@ -25,3 +25,5 @@ el acto. Marca nueva per-device `groupsOnboardingPostponedOnce` (se borra con «
 
 **Guion de QA (iPhone 14, con la bienvenida sin ver):** entra en Grupos → sale la bienvenida → X. Sal y vuelve a
 Grupos → sale otra vez → X. Sal y vuelve → ya no sale.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest Evidencia: `GroupsOnboardingCloseUITests`

@@ -1,6 +1,6 @@
 ---
 id: 2026-11-17-registros-estadisticas-identica
-status: qa
+status: done
 priority: medium
 area: "estadisticas, registros"
 created: 2026-11-17
@@ -50,3 +50,5 @@ columna con el calendario a ancho legible, como en Registros.
 7. Cambia a tema oscuro (Ajustes › Apariencia) y repite el paso 1.
 
 Resultado esperado: en cada paso, lo mismo que la pestaña Registros con el mismo período.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 4 de la tabla del barrido; XCUITest con capturas Evidencia: `RegistrosEstadisticasIgualesUITests`, `RegistrosEstadisticasCapturasUITests`

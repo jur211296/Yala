@@ -1,6 +1,6 @@
 ---
 id: borncloud-consent-epoch-written-before-the-guard-decides
-status: qa
+status: done
 priority: medium
 area: "modo-nube, onboarding, gdpr"
 created: 2026-09-10
@@ -93,3 +93,5 @@ con `created`, en cinco respuestas del claim) y los source-scans de `CloudConsen
 lidera) y la persona sale por «Continuar a la app» desde la espera, ese teléfono no deja epoch: antes sí, al aceptar. No
 ha entrado a ninguna cuenta; «Reintentar» lo escribe con su T0, y si más tarde llega al adopt, el paso 5-bis re-emite con
 `now()` (breadcrumb «fallback now()»). El líder ya registró el consentimiento de la cuenta.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 2 de la tabla del barrido; Orden interno, con test Evidencia: `BornCloudSignUpServiceTests`, `CloudConsentRegistrationWiringTests`

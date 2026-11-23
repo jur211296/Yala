@@ -1,6 +1,6 @@
 ---
 id: amounts-cut-or-split-at-the-largest-text-size
-status: qa
+status: done
 priority: high
 area: "a11y, design-system, iphone"
 created: 2026-11-05
@@ -62,3 +62,5 @@ siempre:
    importe se lee entero.
 4. Planificación › Pagos: abre un pago pendiente; «Ya lo pagué» y «Saltar este mes» se leen enteros.
 5. Devuelve el texto a su tamaño y mira que las mismas pantallas se ven como siempre.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 1 de la tabla del barrido; Tamaños Evidencia: —

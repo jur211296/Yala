@@ -1,6 +1,6 @@
 ---
 id: transfer-subcategory-is-looked-up-in-the-current-language
-status: qa
+status: done
 priority: low
 area: "transactions, categories, l10n"
 created: 2026-10-29
@@ -38,3 +38,5 @@ primera por orden alfabético. No funde las duplicadas que ya existan: eso sigue
 **Guion de QA (iPhone o simulador):** crea una transferencia con Yala en español; cambia el idioma a inglés; crea otra
 transferencia; en Ajustes › Categorías debe haber UNA subcategoría de transferencia («Transferencia entre cuentas»),
 con las dos transferencias dentro.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `TransferCategoryResolverLanguageTests`

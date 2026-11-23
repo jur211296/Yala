@@ -1,6 +1,6 @@
 ---
 id: bulk-move-to-another-currency-account-relabels-the-amount
-status: qa
+status: done
 priority: medium
 area: "transactions, bulk-edit, currency, fx"
 created: 2026-10-08
@@ -77,3 +77,5 @@ intacto.
 - Medido en el simulador: «Electricista» S/ 60.00 movido a «Ahorros USD» quedaba en $ 60.00 (base) y ahora en $ 16.39.
 - QA: Registros › Seleccionar dos gastos en soles › Editar › Cuenta › una en dólares › Aplicar. Los montos salen
   convertidos, no con el mismo número.
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): caso 3 de la tabla del barrido; Test Evidencia: `RecordsViewModelBulkAccountCurrencyTests`

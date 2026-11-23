@@ -1,6 +1,6 @@
 ---
 id: 2026-11-19-icloud-privado-eliminar-mi-cuenta
-status: qa
+status: done
 priority: high
 area: account, cloud-sync
 created: 2026-11-19
@@ -55,3 +55,5 @@ cierra sesión y deja iCloud limpio.
 6. Toca «Entrar con iCloud privado» con el mismo Apple ID. **Hecho cuando** no ofrece restaurar nada y entra de cero
    (sin la cuenta ni el gasto del paso 3).
 7. Antes de cerrar sesión, comprueba que «Cerrar sesión» de esa cuenta nueva no enseña «Cambios por subir».
+
+Cerrado en el barrido de QA 2026-11-23 (antes de la build 7): guion entero del ticket en el iPhone 14 (entra de cero sin ofrecer restaurar); capturas en ~/Claude/entregas/2026-11-23-barrido-qa-2-3-antes-build-7/evidencia/iphone14/18 a 22
