@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (143 entradas)
+## Índice (144 entradas)
 
-> **No hace falta leer este fichero entero** — son 356 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 357 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-23` [Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar](#2026-11-23-lote-del-23-nov-1502-1551-la-build-7-espera-todo-lo-de-23-y-la-web-a-cloudflare-sin-desplegar)
 - `2026-11-23` [Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real](#2026-11-23-lote-del-23-nov-1031-1113-barrido-de-qa-antes-de-la-build-7-en-el-iphone-14-real)
 - `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
 - `2026-11-23` [Lote del 23-nov (07:30-09:59): Salud financiera como el Panel, semana 7 de marketing, esquemas de Cl](#2026-11-23-lote-del-23-nov-0730-0959-salud-financiera-como-el-panel-semana-7-de-marketing-esquemas-de-cloudkit-con-dan-e-importar-de-splitwise-ya-hecho)
@@ -169,6 +170,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-23] Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar
+**Contexto:** Decisiones de Jürgen en el chat del 23-nov (15:02 y 15:51, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 7.
+**Decisión:** (1) La build 7 de TestFlight de 2.3 **espera a que entre todo lo desarrollado en 2.3**: sin PR de iOS abiertos ni sesiones o encargos de Yala pendientes; un conflicto o un CI rojo se soluciona en vez de subir sin ello. (2) Se autoriza encolar la preparación de la mudanza de la web de Yala (Astro) de Vercel a Cloudflare Workers, en la cuenta de Cloudflare de admin@yala-app.pe, sin desplegar ni tocar el DNS de producción.
+**Razones:** Las da Jürgen: la build es para revisar TODO lo de la 2.3 en su teléfono. La mudanza se prepara sin riesgo para la web publicada.
+**Consecuencias:** La build 7 esperó al PR de «Hacer recurrente» con pantalla de éxito (su conflicto de índices lo resolvió esta sesión) y no al de la web, que solo tocaba `Web/`. La mudanza se preparó y entró en 2.3 el mismo día, sin desplegar.
+**Estado:** Activa
 
 ### [2026-11-23] Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real
 **Contexto:** Decisiones de Jürgen en el chat del 23-nov (10:31 y 11:13, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del barrido de QA de la 2.3 antes de la build 7, que es la que las ejecuta.
