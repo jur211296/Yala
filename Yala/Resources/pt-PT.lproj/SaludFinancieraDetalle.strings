@@ -73,6 +73,8 @@
 "saludDetalle.commit.toPay" = "Falta pagar este mês";
 "saludDetalle.commit.moneyToday" = "O seu dinheiro hoje";
 "saludDetalle.commit.short" = "Faltariam %@ para cobrir tudo.";
+"saludDetalle.commit.futureOut" = "Já descontámos %@ que registou com uma data futura.";
+"saludDetalle.commit.futureIn" = "Já somámos %@ que registou com uma data futura.";
 "saludDetalle.commit.income" = "Além disso, espera %1$@ de %2$@ em %3$@.";
 "saludDetalle.commit.incomeMoreOne" = "Além disso, espera %1$@ de %2$@ em %3$@, e mais um rendimento.";
 "saludDetalle.commit.incomeMoreOther" = "Além disso, espera %1$@ de %2$@ em %3$@, e mais %4$d rendimentos.";

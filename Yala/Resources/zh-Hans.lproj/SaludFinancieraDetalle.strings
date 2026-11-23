@@ -73,6 +73,8 @@
 "saludDetalle.commit.toPay" = "本月还要付";
 "saludDetalle.commit.moneyToday" = "你现在的钱";
 "saludDetalle.commit.short" = "要全部覆盖还差 %@。";
+"saludDetalle.commit.futureOut" = "你记在以后日期的 %@ 已经扣除。";
+"saludDetalle.commit.futureIn" = "你记在以后日期的 %@ 已经计入。";
 "saludDetalle.commit.income" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@。";
 "saludDetalle.commit.incomeMoreOne" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@，还有一笔收入。";
 "saludDetalle.commit.incomeMoreOther" = "另外，你预计在 %3$@ 收到来自 %2$@ 的 %1$@，还有 %4$d 笔收入。";

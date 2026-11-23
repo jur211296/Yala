@@ -126,6 +126,16 @@ final class StatisticsRecalculation {
         adjustment: GroupBridgeStatsAdjustment
     ) {
         let criteria = trends.filterCriteria(withTagCatalog: inputs.tags)
+        // «Lo que te falta pagar» descuenta lo ya pagado con un movimiento enlazado, como la nota y la hoja de Salud
+        // financiera: se lee en el mismo intervalo que cuenta lo pendiente (hasta el final de un período en curso).
+        let pendingInterval = FinancialScoreCalculator.commitmentsInterval(
+            period: inputs.period,
+            fallback: inputs.period.dateInterval(customRange: inputs.customRange),
+            calendar: userConfiguredCalendar()
+        )
+        let pendingPaidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+            for: inputs.scheduledPayments.filter(\.isActive), interval: pendingInterval, context: context
+        )
         insights.calculateInsightsData(
             transactions: inputs.transactions,
             accounts: inputs.accounts,
@@ -137,7 +147,8 @@ final class StatisticsRecalculation {
             currencyCode: inputs.currencyCode,
             customRange: inputs.customRange,
             comparisonMode: inputs.comparisonMode,
-            adjustment: adjustment
+            adjustment: adjustment,
+            paidAmounts: pendingPaidAmounts
         )
 
         // Salud Financiera del período. Depende de los datos y del intervalo; los filtros no la mueven.

@@ -73,6 +73,8 @@
 "saludDetalle.commit.toPay" = "今月の未払い";
 "saludDetalle.commit.moneyToday" = "今あるお金";
 "saludDetalle.commit.short" = "すべてまかなうには%@足りません。";
+"saludDetalle.commit.futureOut" = "先の日付で記録した%@はすでに差し引いています。";
+"saludDetalle.commit.futureIn" = "先の日付で記録した%@はすでに加えています。";
 "saludDetalle.commit.income" = "ほかに、%3$@に%2$@から%1$@の入金を予定しています。";
 "saludDetalle.commit.incomeMoreOne" = "ほかに、%3$@に%2$@から%1$@の入金を予定していて、さらに収入が1件あります。";
 "saludDetalle.commit.incomeMoreOther" = "ほかに、%3$@に%2$@から%1$@の入金を予定していて、さらに収入が%4$d件あります。";

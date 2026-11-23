@@ -135,10 +135,22 @@ final class SaludFinancieraDetalleCargador {
         let dineroDudoso = LiveBalanceCalculator.convertAtLatestRate(
             dinero.nativeBalances, to: currencyCode, converter: converter
         ).approximateMagnitude
+        // Lo apuntado con fecha posterior a hoy en esas cuentas: la nota lo cuenta (`asOf: .distantFuture`) y la cifra
+        // del hero no. La comparación lo suma para decir lo mismo que la nota; «Tu dinero hoy» no cambia.
+        let dineroConFuturo = PanelMoneyScopeLogic.moneyBreakdown(
+            accounts: accounts,
+            totalAccountIDs: FinancialScoreCalculator.totalAccountIDs(accounts, scope: coverageScope),
+            overrides: coverageScope.moneyOverrides,
+            transactions: transactions,
+            preferredCurrencyCode: currencyCode,
+            asOf: .distantFuture,
+            converter: converter
+        )
         let comparacion = gastos.isEmpty ? nil : SaludFinancieraDetalleLogica.comparacion(
             pagos: pagos,
             dineroHoy: NSDecimalNumber(decimal: dinero.convertedTotal).doubleValue,
             dineroDudoso: NSDecimalNumber(decimal: dineroDudoso).doubleValue,
+            apuntadoFuturo: NSDecimalNumber(decimal: dineroConFuturo.convertedTotal - dinero.convertedTotal).doubleValue,
             moneda: currencyCode
         )
 

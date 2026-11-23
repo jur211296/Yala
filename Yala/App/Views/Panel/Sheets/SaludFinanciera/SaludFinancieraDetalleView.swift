@@ -618,6 +618,10 @@ struct SaludFinancieraDetalleView: View {
                         : Texto.noAlcanza(mesSiguiente: Texto.mes(datos.finDeMes.addingTimeInterval(1)))
                     frase("\(Texto.compromisosFrase(falta: falta, dinero: dinero)) \(segunda)", id: "health_commit_lead")
                     barras(c)
+                    if c.cuentaApuntadoFuturo {
+                        lineaSecundaria(Texto.apuntadoFuturo(monto(abs(c.apuntadoFuturo)), resta: c.apuntadoFuturo < 0),
+                                        id: "health_commit_future_dated")
+                    }
                     if !c.alcanza {
                         Text(Texto.faltarian(monto(-c.diferencia, estimado: c.diferenciaEsAproximada)))
                             .font(DS.Typography.subheadlineEmphasized)

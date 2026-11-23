@@ -488,12 +488,9 @@ struct PanelView: View {
             viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
         }
-        .onChange(of: appPreferences.includeGroupsInPanelTotal) { _, _ in
-            // El toggle vive en un sheet del tab Grupos, desacoplado del Panel.
-            // Recalcular al volver para reflejar inclusión/exclusión de grupos
-            // en el saldo total agregado.
-            viewModel.recalculateData()
-        }
+        // Las dos preferencias de «Tu dinero hoy» (el interruptor de Grupos y lo que la persona cambió por cuenta): el
+        // saldo y la cobertura de la nota las leen al calcular, y el Panel no las ve en su firma de recarga.
+        .modifier(PanelMoneyScopeObserver(appPreferences: appPreferences) { viewModel.recalculateData() })
         .onChange(of: appPreferences.includeGroupTransactionsInStats) { _, _ in
             // Mismo sheet del tab Grupos: el Financial Score (calculateHealthWidget)
             // incluye/excluye TX bridgeadas según esta preferencia. Recalcular
@@ -992,6 +989,22 @@ struct PanelView: View {
         DS.Haptic.light()
     }
 
+}
+
+/// Recalcula el Panel cuando cambia qué cuentas suman en «Tu dinero hoy». El interruptor de Grupos vive en una hoja del
+/// tab Grupos y el ajuste por cuenta en la hoja del «?» del hero (o en el formulario de la cuenta): los dos solo escriben
+/// la preferencia, que `PanelReloadFreshness` no mira. Sin esto la nota de Compromisos seguía con la cobertura anterior
+/// hasta la siguiente recarga (ticket `nota-no-recalcula-al-cambiar-tu-dinero-hoy`). Dos `onChange` en un modificador
+/// propio: el CI tipa peor las cadenas largas (`swiftui-ds.md`).
+struct PanelMoneyScopeObserver: ViewModifier {
+    let appPreferences: AppPreferences
+    let recalculate: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: appPreferences.includeGroupsInPanelTotal) { _, _ in recalculate() }
+            .onChange(of: appPreferences.panelMoneyAccountOverrides) { _, _ in recalculate() }
+    }
 }
 
 /// Consume la petición de un atajo (`SceneNavigation.pendingKeyboardPanelRequest`) cuando el Panel está delante. Se
