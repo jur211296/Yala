@@ -253,6 +253,18 @@ struct WelcomeCloudSignInView: View {
                 switch UITestHooks.unifiedAccessPhase {
                 case "create": phase = .createAccount; return
                 case "confirm": phase = .confirmLoad; return
+                // Ticket `welcome-returns-after-the-account-is-ready`: el final de cada entrada por los callbacks de
+                // producción, en el orden real. La re-entrada marca el onboarding CON el cover abierto (`onAdoptStarted`),
+                // que es lo que dejaba viejo el `@Binding` del respaldo y devolvía a la bienvenida tras «Empezar».
+                case "reentry-ready":
+                    onAdoptStarted()
+                    phase = .reentryReady
+                    return
+                case "born-ready": phase = .bornCloudReady; return
+                case "groups-only":
+                    // Una vuelta del main actor después: cambiar el contenido del cover dentro de su propio `onAppear`.
+                    launchFlow { onEnterGroupsOnly(false, false) }
+                    return
                 default: break
                 }
                 // Fallo 2 del 13-nov: con el corpus del iCloud privado, `runSignInFlow` deja iCloud aparte antes de abrir

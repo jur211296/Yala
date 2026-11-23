@@ -1447,7 +1447,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
 | welcome-private-fresh-start-skips-icloud-check | done | tickets/done/welcome-private-fresh-start-skips-icloud-check.md |
-| welcome-returns-after-the-account-is-ready | backlog | tickets/backlog/welcome-returns-after-the-account-is-ready.md |
+| welcome-returns-after-the-account-is-ready | done | tickets/done/welcome-returns-after-the-account-is-ready.md |
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-sign-in-notes-say-the-account-is-bound-to-one-method | done | tickets/done/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |

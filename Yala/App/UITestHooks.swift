@@ -449,6 +449,12 @@ final class UITestHooks {
     /// «Vamos a crear tu cuenta» o en «¿Cargamos tus datos y entramos?» sin firmar ni preguntar al servidor, que el
     /// simulador no puede. **Solo pinta la pantalla**: sus botones no tienen sesión detrás (el XCUITest prueba el
     /// contenido; el recorrido con sesión es QA de iPhone). Solo DEBUG.
+    ///
+    /// Tres valores más llevan la entrada a su FINAL por los callbacks de producción (ticket
+    /// `welcome-returns-after-the-account-is-ready`): `reentry-ready` (llama a `onAdoptStarted`, que marca el onboarding
+    /// con el cover abierto, y pinta «¡Tu cuenta está lista!»), `born-ready` («Creamos tu cuenta», que sigue a la
+    /// conversación) y `groups-only` (la cuenta que el servidor clasifica como solo grupos: `onEnterGroupsOnly`). Lo que
+    /// pasa al tocar su botón es lo de producción; lo fija `WelcomeTrasCuentaListaUITests`.
     nonisolated static var unifiedAccessPhase: String? {
         #if DEBUG
         guard isActive else { return nil }

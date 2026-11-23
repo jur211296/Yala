@@ -1,10 +1,10 @@
 ---
 id: welcome-returns-after-the-account-is-ready
-status: backlog
+status: done
 priority: critical
 area: "welcome, cloud sync"
 created: 2026-11-13
-updated: 2026-11-13
+updated: 2026-11-22
 source: "Device-QA del bloqueo de 15 min, iPhone 14, cuenta de staging, 2026-11-13 09:41 (Jürgen: «ERROR GRAVE»)"
 ---
 
@@ -34,3 +34,24 @@ El cierre del cover pasa por `ContentView.welcomeCoverDidDismiss` (respaldo que 
 (`persistDestinationOnArm`), son los candidatos. Falta un log del momento del toque. Captura:
 `~/Claude/entregas/2026-11-13-bloqueo-15-min-conectando-grupos/evidencia/encontrado-bienvenida-tras-ya-esta-tu-cuenta.jpg`
 y el vídeo `flujo-entrada-con-grupos.mp4` de la misma carpeta.
+
+## Cierre (2026-11-22)
+
+**Ya no pasa en `2.3`.** La causa era la que apuntaba «Por dónde mirar»: el respaldo del `onDismiss` del cover
+(`welcomeCoverDidDismiss`) leía `hasCompletedOnboarding` del `@Binding` capturado al presentar el cover (`false`), y
+`onAdoptStarted` lo marca con el cover abierto; el respaldo reabría el elector encima de la app. Se arregló el 14-nov en
+el lote A del barrido del iPhone 14 (card c8i9): el respaldo lo lee de disco. Este ticket no se movió entonces.
+
+**Qué se añadió ahora:** la prueba de interfaz que faltaba, `YalaUITests/WelcomeTrasCuentaLista/WelcomeTrasCuentaListaUITests`,
+con cuatro casos que recorren el final de cada entrada por los callbacks de producción (seam
+`-uitest-unified-access-phase reentry-ready|born-ready|groups-only`, sin red): re-entrada en Modo Nube («¡Tu cuenta está
+lista!» → «Empezar»), alta en Modo Nube («Creamos tu cuenta» → conversación), cuenta nueva con iCloud privado y cuenta de
+solo grupos (primer grupo → Grupos). Los cuatro afirman que se llega a la app y que la bienvenida no vuelve en los 6 s
+siguientes.
+
+**Medido:** los cuatro en verde (iPhone 17 Pro, iOS 27.2). Con el mutante —el respaldo leyendo otra vez el `@Binding`—
+la re-entrada cae con «tras entrar, Yala volvió a la bienvenida»: la prueba distingue el fallo del ticket.
+Evidencia (antes con el mutante, después con el código actual): `~/Claude/entregas/2026-11-22-welcome-vuelve-tras-cuenta-lista/evidencia/`.
+
+**Sin probar en el iPhone:** la re-entrada real con Google y backend de staging. El simulador no inicia sesión; la
+prueba cubre el cierre del cover, que es donde estaba el fallo.
