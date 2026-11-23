@@ -27,6 +27,7 @@ import { sentryOptions } from "./sentry";
 import { handlePushRegister, handlePushUnregister } from "./push/register";
 import { handleMailAddress, handleMailDrafts, handleMailDraftsAck } from "./mail/routes";
 import { handleEmail } from "./mail/email";
+import { handleComerciosAportes, handleComerciosLista } from "./comercios-comun/routes";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -112,6 +113,10 @@ app.post("/groups/rpc/:fn", handleGroupsRpc);
 app.post("/mail/address", handleMailAddress);
 app.get("/mail/drafts", handleMailDrafts);
 app.post("/mail/drafts/ack", handleMailDraftsAck);
+
+// --- Comercios en común (2.3): aporte semanal anónimo «comercio → tipo» y la lista común (src/comercios-comun/) ---
+app.post("/comercios-comun/aportes", handleComerciosAportes);
+app.get("/comercios-comun/lista", handleComerciosLista);
 
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
