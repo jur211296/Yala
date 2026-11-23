@@ -778,6 +778,14 @@ cierra también la sesión de Supabase, y cada petición de datos comprueba ante
 
 Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.
 
+**Corolario en el conector (2026-11-23, «Conecta tu IA»).** `@cloudflare/workers-oauth-provider` tiene el mismo riesgo
+dentro: `listUserGrants` usa `list` (una conexión de hace segundos no sale en la lista de la app) y `revokeGrant` borra
+los tokens de la conexión con `list({prefix: "token:<usuario>:<grant>:"})`, así que el access token que la IA acaba de
+recibir puede no borrarse, y la librería no relee el grant al validar un access. Medido en staging con un e2e (la
+conexión recién hecha no salía en la lista). Por eso quitar una conexión lee el grant por su clave, no por el listado, y
+`/mcp` comprueba en cada llamada que `grant:<usuario>:<id>` sigue existiendo (`mcp/src/mcp.ts`; el mutante sin esa
+comprobación lo caza `mcp/test/conectaTuIA/connections.test.ts`).
+
 ### Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)
 
 **Qué pasó.** Para que Yala web escribiera en Grupos (lote 3, opción A) se creó el rol `yala_web` con INSERT y RLS en las

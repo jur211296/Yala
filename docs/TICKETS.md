@@ -48,8 +48,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | id | status | path |
 | nuevo-registro-exito-no-aparece | done | tickets/done/nuevo-registro-exito-no-aparece.md |
 | 2026-11-22-tasas-de-cambio-lote | done | tickets/done/2026-11-22-tasas-de-cambio-lote.md |
-| conecta-tu-ia-maqueta-visual-y-pantallas-web | backlog | tickets/backlog/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
-| 2026-11-22-conecta-tu-ia-diseno | backlog | tickets/backlog/2026-11-22-conecta-tu-ia-diseno.md |
+| conecta-tu-ia-maqueta-visual-y-pantallas-web | done | tickets/done/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
+| 2026-11-22-conecta-tu-ia-diseno | qa | tickets/qa/2026-11-22-conecta-tu-ia-diseno.md |
 | 2026-11-22-importar-registros-lote-1 | done | tickets/done/2026-11-22-importar-registros-lote-1.md |
 | cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
 | deleting-thousands-of-records-saves-slower-than-linear | backlog | tickets/backlog/deleting-thousands-of-records-saves-slower-than-linear.md |
@@ -406,7 +406,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-seal-writers-read-the-session-after-the-claim-await | backlog | tickets/backlog/claim-seal-writers-read-the-session-after-the-claim-await.md |
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
-| claude-mcp-connected-apps-in-the-app | backlog | tickets/backlog/claude-mcp-connected-apps-in-the-app.md |
+| claude-mcp-connected-apps-in-the-app | done | tickets/done/claude-mcp-connected-apps-in-the-app.md |
 | claude-mcp-consent-with-apple-and-google | qa | tickets/qa/claude-mcp-consent-with-apple-and-google.md |
 | claude-mcp-numbers-match-the-app | done | tickets/done/claude-mcp-numbers-match-the-app.md |
 | claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
@@ -948,7 +948,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | mcp-connector-counts-future-dated-rows-in-todays-balance | done | tickets/done/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
-| mcp-consent-page-overflows-on-a-phone | backlog | tickets/backlog/mcp-consent-page-overflows-on-a-phone.md |
+| mcp-consent-page-overflows-on-a-phone | done | tickets/done/mcp-consent-page-overflows-on-a-phone.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | done | tickets/done/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | done | tickets/done/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |

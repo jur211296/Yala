@@ -1,10 +1,10 @@
 ---
 id: claude-mcp-connected-apps-in-the-app
-status: backlog
+status: done
 priority: low
 area: cloud, mcp
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-23
 source: encargo 2026-11-04-login-apple-google-conector-y-lote-p7 (decisión 1A, propuesta de diseño)
 ---
 
@@ -38,3 +38,17 @@ ya se cierran bien (`mcp/src/revoke.ts`). Las sesiones que el Worker no puede ce
 
 - Si «última lectura» se guarda (es un write al KV por llamada a `/mcp`, o uno por refresh, más barato).
 - El copy de la pantalla (BRAND-VOICE).
+
+## Resuelto (2026-11-23, encargo «Conecta tu IA»)
+
+- **Worker:** `GET /connections` y `DELETE /connections/<id>` en `mcp/src/connections.ts`, con el token normal de la app
+  (`role = authenticated`, audiencia `authenticated`, `session_id`, sin `client_id`). Cada fila: `id`, `ia` (por la vuelta),
+  `vuelta`, `local`, `conectadaEl`. Va al cubo `RL_OAUTH` por IP.
+- **Última lectura:** no se guarda (decisión 4 de Jürgen); la app enseña el último borrador.
+- **Qué cierra desconectar:** el grant y sus tokens. La sesión de Supabase de dentro no se puede cerrar sin el refresh de
+  la IA; queda inservible y la borra el barrido diario (Jürgen, 23-nov: «como al reconectar»).
+- **Medido en staging:** el listado de KV va hasta un minuto atrasado (una conexión recién hecha no salía), y la
+  librería borra los tokens de una conexión con ese listado, así que el último access de la IA podía seguir vivo hasta
+  su caducidad. `/mcp` ahora comprueba que su conexión siga existiendo (`grant:<usuario>:<id>`). Tests en
+  `mcp/test/conectaTuIA/` (mutante: sin esa comprobación, el caso cae) y e2e en `mcp/test/e2e/conectaTuIA.e2e.test.ts`.
+- **App:** Ajustes › «Tu IA». QA en `tickets/qa/2026-11-22-conecta-tu-ia-diseno.md`.
