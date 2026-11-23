@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Card limit";
 "limiteTarjeta.placeholder" = "Optional";
 "limiteTarjeta.footer" = "Yala will tell you how much of your credit line you use and how much is left.";
+"limiteTarjeta.lineUsage.converted" = "Approx.: includes what you owe in %@, at the latest exchange rate.";

@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "Kaartlimiet";
 "limiteTarjeta.placeholder" = "Optioneel";
 "limiteTarjeta.footer" = "Dan vertelt Yala je hoeveel van je kredietlimiet je gebruikt en hoeveel er over is.";
+"limiteTarjeta.lineUsage.converted" = "Ca.: inclusief wat je in %@ schuldig bent, tegen de laatste wisselkoers.";

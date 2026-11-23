@@ -94,8 +94,9 @@ enum DevSeedAccountLines {
     /// el estado de cuenta salga igual cualquier día.
     @MainActor
     /// `withDollarLine: false` es el perfil `tarjeta-limite`: la tarjeta solo en soles, sin el hotel en dólares.
+    /// `creditLimit` es el perfil `tarjeta-limite-dos-monedas`: la misma tarjeta con límite en soles.
     static func createWithStatement(subcategoryLookup: [String: Subcategory], withDollarLine: Bool = true,
-                                    in context: ModelContext) {
+                                    creditLimit: Double? = nil, in context: ModelContext) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         func noon(_ offset: Int, from base: Date = today) -> Date {
@@ -115,6 +116,7 @@ enum DevSeedAccountLines {
         card.creditCardPaymentDay = paymentDay
         card.creditCardStatementDay = statementDay
         card.creditCardReminderDaysBefore = StatementUITest.reminderDaysBefore
+        card.creditLimit = creditLimit
         let line = Account(
             name: UITest.lineName, currencyCode: "USD", colorHex: "#3D36B3",
             iconName: "creditcard.fill", type: AccountType.creditCard.rawValue)

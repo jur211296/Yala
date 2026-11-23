@@ -126,6 +126,9 @@ enum DevSeedProfile: String {
     /// `.tarjetaCorte` sin la línea en dólares (límite de la tarjeta, 22-nov-2026): la hoja solo enseña el uso de línea
     /// con UNA divisa. Ver `DevSeedAccountLines.createWithStatement(withDollarLine:)`.
     case tarjetaLimite = "tarjeta-limite"
+    /// `.tarjetaCorte` con límite de 5.000 S/ (uso de línea con dos monedas, 22-nov-2026): lo que debes en dólares se
+    /// convierte a soles. Ver `DevSeedAccountLines.createWithStatement(creditLimit:)`.
+    case tarjetaLimiteDosMonedas = "tarjeta-limite-dos-monedas"
     /// El formulario de registro tras un onboarding de una sola cuenta: categorías y «Cuenta Principal», sin registros
     /// (UX 2.2 · L2-1 y L2-6). Ver `DevSeedTransactionForm`.
     case unaCuenta = "una-cuenta"
@@ -147,7 +150,8 @@ enum DevSeedProfile: String {
              .gruposSinFlag, .gruposPendiente, .gruposConHeredero, .gruposRechazado, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .gruposRepetidos, .pataDeGrupoSinCuenta,
-             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .tarjetaLimite, .unaCuenta, .formulario: return 7
+             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .tarjetaLimite, .tarjetaLimiteDosMonedas,
+             .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
@@ -255,6 +259,7 @@ final class DevSeedService {
         }
         if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
             || profile == .tarjetaDosLineas || profile == .tarjetaCorte || profile == .tarjetaLimite
+            || profile == .tarjetaLimiteDosMonedas
             || profile == .cuentasDeGrupos {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
@@ -270,6 +275,9 @@ final class DevSeedService {
                 DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .tarjetaCorte {
                 DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaLimiteDosMonedas {
+                DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context),
+                                                        creditLimit: 5_000, in: context)
             } else if profile == .tarjetaLimite {
                 DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context),
                                                         withDollarLine: false, in: context)

@@ -9,3 +9,4 @@
 "limiteTarjeta.field" = "カードの利用限度額";
 "limiteTarjeta.placeholder" = "任意";
 "limiteTarjeta.footer" = "利用枠のうちどれだけ使い、あといくら使えるかをYalaがお知らせします。";
+"limiteTarjeta.lineUsage.converted" = "概算：%@ の利用額を最新の為替レートで換算して含みます。";

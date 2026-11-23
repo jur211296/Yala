@@ -10,7 +10,9 @@
 //  Sin límite de la tarjeta en Yala no hay «% usado»: la barra reparte lo que debes (`HojaCuentaTarjetaLogica.reparto`).
 //  La línea «X % usado · disponible de N» sale solo cuando la tarjeta tiene límite (`Account.creditLimit`, decisión de
 //  Jürgen del 22-nov-2026, opción A). Sin límite (`nil`), no se pinta.
-//  Con varias divisas no hay barra (no se suman) y cada cifra va en su divisa, apilada.
+//  Con varias divisas no hay barra (no se suman) y cada cifra va en su divisa, apilada. La línea sí sale (decisión del
+//  22-nov-2026): lo que debes en otra divisa se convierte a la del límite con el último tipo de cambio guardado, y una
+//  nota lo dice. Sin tipo de cambio real (solo la tabla estática), no se pinta.
 //
 
 import SwiftUI
@@ -19,11 +21,14 @@ struct HojaCuentaTarjetaEstado: View {
     let card: CreditCardStatementSummary.Card
     /// El límite de la tarjeta (`Account.creditLimit` de la principal). `nil` = sin límite: la línea no se pinta.
     var limite: Double? = nil
+    /// La divisa del límite: la de la principal. `nil` = la de la primera línea (una sola divisa).
+    var divisaLimite: String? = nil
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var prefs
     @Environment(\.amountsHidden) private var amountsHidden
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(CurrencyConverter.self) private var currencyConverter
 
     private var calendar: Calendar { .current }
 
@@ -64,9 +69,11 @@ struct HojaCuentaTarjetaEstado: View {
             if let reparto = HojaCuentaTarjetaLogica.reparto(lineas: lineas) {
                 barra(reparto)
             }
-            if let uso = HojaCuentaTarjetaLogica.usoDeLinea(lineas: lineas, limite: limite),
-               let divisa = card.lines.first?.currencyCode {
-                usoDeLinea(uso, divisa: divisa)
+            if let divisa = divisaDelLimite, let calculo = usoDeLineaCalculado(divisa: divisa) {
+                usoDeLinea(calculo.uso, divisa: divisa)
+                if !calculo.divisasConvertidas.isEmpty {
+                    notaConversion(calculo.divisasConvertidas)
+                }
             }
         }
         .accessibilityElement(children: .contain)
@@ -107,6 +114,34 @@ struct HojaCuentaTarjetaEstado: View {
                 }
             }
             .accessibilityHidden(true)
+    }
+
+    private var divisaDelLimite: String? {
+        divisaLimite.map(normalizeCurrencyCode) ?? card.lines.first?.currencyCode
+    }
+
+    /// El uso de línea en la divisa del límite. Lo de otra divisa, con el último tipo de cambio guardado; si para esa
+    /// pareja solo está la tabla estática, no hay tipo de cambio de verdad y la línea no sale.
+    private func usoDeLineaCalculado(divisa: String) -> HojaCuentaTarjetaLogica.UsoDeLineaConvertido? {
+        let lineasEnDivisa = card.lines.map {
+            HojaCuentaTarjetaLogica.LineaEnDivisa(facturado: $0.statement.billed, porFacturar: $0.statement.unbilled,
+                                                  divisa: $0.currencyCode)
+        }
+        return HojaCuentaTarjetaLogica.usoDeLinea(lineas: lineasEnDivisa, limite: limite, divisaLimite: divisa) { monto, desde in
+            let resultado = currencyConverter.convertCheckedWithLatestRate(Decimal(monto), from: desde, to: divisa)
+            guard resultado.quality != .staticFallback else { return nil }
+            return (resultado.amount as NSDecimalNumber).doubleValue
+        }
+    }
+
+    /// «Aprox.: incluye lo que debes en USD, al último tipo de cambio.» Bajo la línea, en el mismo tono; sin botón.
+    private func notaConversion(_ divisas: [String]) -> some View {
+        Text(L10n.LimiteTarjeta.notaConversion(divisas: divisas.formatted(.list(type: .and)
+            .locale(LanguageManager.resolved.locale))))
+            .font(DS.Typography.caption)
+            .foregroundStyle(theme.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("hoja_cuenta_uso_de_linea_nota")
     }
 
     /// «16 % usado · 6.752,50 disponible de 8.000,00». Con los montos ocultos, las cifras van tapadas como en el resto.
