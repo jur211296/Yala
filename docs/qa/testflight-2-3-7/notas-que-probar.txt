@@ -1,0 +1,18 @@
+Novedades desde la build 2.3 (6):
+• Pantalla de éxito: sale siempre al guardar un registro nuevo, también con «Hacer recurrente» (con la frecuencia ya marcada).
+• Favoritos en Nuevo registro: se ven completos mientras quepan y «Ver todos» va junto al rótulo.
+• Foto y voz: «Esto leí» usa la misma tarjeta que Nuevo registro; «Otra foto» y «Otra vez» suman a lo leído; la foto propone el comercio con su categoría.
+• Reglas por cuenta: cada cuenta puede decir qué pagos leídos le tocan (Apple Pay, un texto o un comercio). Al corregir la cuenta en lo leído, Yala ofrece «Recordar».
+• Ajustes › Avisos del banco: guía por banco, estado de los avisos y un aviso de prueba.
+• Ajustes › Tu IA: cómo conectar Claude, ChatGPT o Grok, y desconectarlas desde la app. En la Bandeja, cada borrador dice qué IA lo apuntó.
+• Tarjetas de crédito: puedes guardar el límite y la hoja de la tarjeta muestra el uso de línea, también con soles y dólares.
+• Pagos planificados: «Reusar» trae gastos de grupo para crear un pago compartido; el asistente pregunta si es compartido; avisos cuando un pago sube o dejaste de pagarlo.
+• Bandeja: el grupo se elige en un chip y «Guardar y hacer recurrente» pasa al menú «…».
+• Salud financiera: la hoja con el estilo del Panel, «Lo que te queda» como cuarta parte de la nota, «Lo que te falta pagar» cuenta solo pagos reales y un presupuesto nuevo cuenta desde ya.
+• Novedades de la 2.3 en ocho tarjetas.
+• Importar: reimportar el mismo archivo ya no duplica, puedes deshacer una importación durante 24 horas, y lo que exporta Yala se vuelve a importar sin perder nada.
+• Tipos de cambio: el mismo monto convertido en todos tus dispositivos, y la marca «≈» también en Comparativa, saldo de períodos pasados y tartas.
+• Grupos: reintentar un guardado que falló ya no duplica el gasto, y borrar un pago planificado ya no se lleva un gasto de grupo.
+• Guardar con la nube activa ya no congela la app unos segundos.
+
+Qué probar: guardar un gasto y uno recurrente, leer una foto y corregir la cuenta con «Recordar», poner el límite de una tarjeta, Ajustes › Tu IA y Avisos del banco, reusar un gasto de grupo en Pagos planificados e importar dos veces el mismo archivo. Si algo falla, envía una captura desde TestFlight.

@@ -1,6 +1,6 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (2))
+# Guía de novedades 2.3 (TestFlight 2.3 (7))
 
-Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (2) de
+Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (7) de
 TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
 
 Sus notas se guardan en la base del artifact, colección `notas` (un documento por ítem, con `veredicto`,
@@ -8,10 +8,10 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
 
 ## Qué hay aquí
 
-- `inventario.json`: los 241 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
+- `inventario.json`: los 361 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
   guardan por id), `pr`, `titulo`, `area`, `seccion` (`nuevo` · `existente` · `ambos` · `fuera`), `tipo`, `ruta`,
-  `que_cambio`, `por_que`, `estado` (`listo` · `activable` · `todavia_no` · `fuera`), `activar`, `pro`, `como_probar`,
-  `orden` (recorrido del usuario nuevo), `build` (`1` · `2` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
+  `que_cambio`, `por_que`, `estado` (`listo` · `activable` · `todavia_no` · `retirado` · `fuera`), `activar`, `pro`, `como_probar`,
+  `orden` (recorrido del usuario nuevo), `build` (`1` a `7` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
   desde la versión anterior de la guía).
 - `plantilla.html`: la página; `__DATA__` se sustituye por el inventario con capturas. Los dos recorridos guiados
   (`ROUTES.existente` y `ROUTES.nuevo`) van escritos ahí, por id.
@@ -48,3 +48,24 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
   conector de IA de producción sin desplegar (Cloudflare 1042 en `yala-mcp-production`); Yala web 200 en
   `app.yala-app.pe`. El cupo de recibos de Grupos se da por activo porque el gateway de producción se desplegó desde 2.3
   ese día (deducido del despliegue, sin probar 6 recibos).
+
+## Actualización del 23-nov-2026 (TestFlight 2.3 (7))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (2) hasta el de la 2.3 (7), que lleva también
+  «Hacer recurrente» con pantalla de éxito. 131 PR revisados: 120 ítems nuevos de 78 PR que cambian la app y 52 PR
+  descartados (web, pruebas, CI, docs, maquetas o proceso), con su motivo en `delta_2026_11_23.json`; el de Yala IA al
+  100 % solo cambia un ítem existente (Navegadores conectados).
+- **`build` de cada ítem nuevo:** la primera build de TestFlight que lo llevó (3 a 7), por la hora de merge frente al
+  PR del número de cada build.
+- **Cambios sobre ítems existentes:** 28, con su `cambio_guia`. Estado nuevo `retirado`: lo que llegó en una build y
+  otra posterior reemplazó (las categorías sugeridas bajo el monto, la barra de búsqueda de Registros, la hoja «Ver
+  los 7 pasos», entre otros). Importar de Splitwise o Tricount, voz/foto/Yala IA de Grupos y los filtros rápidos de
+  Registros pasan a «listo» (entraron en la 2.3 (3)).
+- **Medido en producción el 23-nov:** `/config` del gateway con `aiCloudExploreRolloutPercent` 100 y
+  `appleWebSignInRolloutPercent` 0; `mcp.yala-app.pe` y `app.yala-app.pe` responden 200.
+- **Notas de Jürgen:** la colección `notas` del artifact estaba vacía el 23-nov. Si dejó notas, quedaron solo en el
+  navegador de su teléfono.
+- **Capturas:** las 16 del iPhone 14 se conservan salvo la de los logos de pagos (mostraba los distintivos viejos), y
+  se suman 6 del simulador con el seed `realista`: bienvenida, hoja de Salud financiera, Nuevo registro, Estadísticas,
+  Pagos planificados con «Reusar» y Flujo de caja.
+- **Script:** `actualizar_2026_11_23.py` aplica el delta (ya aplicado; no se repite).
