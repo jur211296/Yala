@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Deine KI";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT oder Grok";
+"conectaTuIA.header.title" = "Verbinde deine KI";
+"conectaTuIA.header.message" = "Frag sie nach deinen Ausgaben oder sag „trag 25 fürs Mittagessen ein“. Was sie einträgt, wartet im Posteingang auf dich.";
+"conectaTuIA.steps.header" = "So verbindest du sie";
+"conectaTuIA.copy" = "Kopieren";
+"conectaTuIA.copied" = "Kopiert";
+"conectaTuIA.copyHint" = "Kopiert die Adresse des Connectors";
+"conectaTuIA.claude.step1" = "Öffne in Claude Einstellungen → Connectors → Eigenen Connector hinzufügen.";
+"conectaTuIA.claude.step2" = "Nenne ihn „Yala“ und füge diese Adresse ein:";
+"conectaTuIA.claude.step3" = "Tippe auf Verbinden, erlaube Yala den Zugriff und melde dich mit Apple oder Google an.";
+"conectaTuIA.chatgpt.note" = "Erfordert ein kostenpflichtiges ChatGPT-Abo und den aktivierten Entwicklermodus.";
+"conectaTuIA.chatgpt.step1" = "Öffne in ChatGPT Einstellungen → Apps & Connectors → Erweiterte Einstellungen und aktiviere den Entwicklermodus.";
+"conectaTuIA.chatgpt.step2" = "Erstelle einen Connector namens „Yala“ mit OAuth-Anmeldung und füge diese Adresse ein:";
+"conectaTuIA.chatgpt.step3" = "Erlaube Yala den Zugriff und melde dich mit Apple oder Google an.";
+"conectaTuIA.grok.step1" = "Suche in Grok die Option, einen eigenen Connector (MCP) hinzuzufügen.";
+"conectaTuIA.grok.step2" = "Nenne ihn „Yala“ und füge diese Adresse ein:";
+"conectaTuIA.grok.step3" = "Erlaube Yala den Zugriff und melde dich mit Apple oder Google an.";
+"conectaTuIA.can.header" = "Was sie kann";
+"conectaTuIA.can.read" = "Liest deine Konten, Buchungen, Budgets und wiederkehrenden Zahlungen.";
+"conectaTuIA.can.draft" = "Trägt Ausgaben und Einnahmen als Entwürfe in deinen Posteingang ein. Sie zählen, sobald du sie bestätigst.";
+"conectaTuIA.can.never" = "Ändert oder löscht nie etwas und sieht deine Gruppen nicht.";
+"conectaTuIA.can.footer" = "Kostenlos. Du kannst sie jederzeit trennen.";
+"conectaTuIA.account.title" = "Wechsle zuerst zu deinem Yala-Konto";
+"conectaTuIA.account.message" = "Deine Daten liegen in deiner iCloud, und dort kann deine KI sie nicht lesen. In deinem Yala-Konto schon.";
+"conectaTuIA.account.button" = "Zu deinem Yala-Konto wechseln";
+"conectaTuIA.account.where" = "Das geht unter Einstellungen → „Wo deine Daten liegen“.";
+"conectaTuIA.connected.header" = "Verbunden";
+"conectaTuIA.connected.empty" = "Noch keine KI verbunden.";
+"conectaTuIA.connected.footer" = "Wenn du gerade eine verbunden hast, kann es eine Minute dauern, bis sie erscheint.";
+"conectaTuIA.connected.since" = "Verbunden am %@";
+"conectaTuIA.connected.local" = "Auf deinem Computer";
+"conectaTuIA.connected.lastDraft" = "letzter Entwurf %@";
+"conectaTuIA.connected.loadFailed" = "Die Liste konnte nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.";
+"conectaTuIA.disconnect" = "Trennen";
+"conectaTuIA.disconnect.confirmTitle" = "%@ trennen?";
+"conectaTuIA.disconnect.confirmBody" = "Sie hört sofort auf zu lesen und einzutragen. Was du schon bestätigt hast, bleibt in Yala.";
+"conectaTuIA.disconnect.failed" = "Trennen hat nicht geklappt. Versuch es noch einmal.";
+"conectaTuIA.inbox.title" = "Aus deiner KI eintragen";
+"conectaTuIA.inbox.message" = "Sag Claude „trag 25 fürs Mittagessen ein“ und es landet hier.";
+"conectaTuIA.inbox.button" = "Verbinden";
+"conectaTuIA.filter.fromAI" = "Von deiner KI";
+"conectaTuIA.paso7.name" = "Deine KI";
+"conectaTuIA.paso7.storyTitle" = "Bitte deine KI darum";
+"conectaTuIA.paso7.storyMessage" = "Sag Claude oder ChatGPT „trag 25 fürs Mittagessen ein“ und es wartet im Posteingang auf dich.";
+"conectaTuIA.paso7.methodTitle" = "Verbinde deine KI";
+"conectaTuIA.paso7.methodSubtitle" = "Drei Schritte, in deiner KI. Was sie einträgt, zählt, sobald du es bestätigst.";
+"conectaTuIA.paso7.example" = "Trag 25 fürs Mittagessen ein";

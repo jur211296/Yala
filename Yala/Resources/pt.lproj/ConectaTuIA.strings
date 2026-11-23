@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Sua IA";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT ou Grok";
+"conectaTuIA.header.title" = "Conecte sua IA";
+"conectaTuIA.header.message" = "Pergunte sobre seus gastos ou diga “anota 25 de almoço”. O que ela anotar espera por você na Caixa de entrada.";
+"conectaTuIA.steps.header" = "Como conectar";
+"conectaTuIA.copy" = "Copiar";
+"conectaTuIA.copied" = "Copiado";
+"conectaTuIA.copyHint" = "Copia o endereço do conector";
+"conectaTuIA.claude.step1" = "No Claude, vá em Configurações → Conectores → Adicionar conector personalizado.";
+"conectaTuIA.claude.step2" = "Dê o nome “Yala” e cole este endereço:";
+"conectaTuIA.claude.step3" = "Toque em Conectar, aceite a permissão do Yala e entre com a Apple ou o Google.";
+"conectaTuIA.chatgpt.note" = "Precisa de um plano pago do ChatGPT e de ativar o modo desenvolvedor.";
+"conectaTuIA.chatgpt.step1" = "No ChatGPT, vá em Configurações → Apps e conectores → Configurações avançadas e ative o modo desenvolvedor.";
+"conectaTuIA.chatgpt.step2" = "Crie um conector chamado “Yala”, com autenticação OAuth, e cole este endereço:";
+"conectaTuIA.chatgpt.step3" = "Aceite a permissão do Yala e entre com a Apple ou o Google.";
+"conectaTuIA.grok.step1" = "No Grok, procure a opção para adicionar um conector personalizado (MCP).";
+"conectaTuIA.grok.step2" = "Dê o nome “Yala” e cole este endereço:";
+"conectaTuIA.grok.step3" = "Aceite a permissão do Yala e entre com a Apple ou o Google.";
+"conectaTuIA.can.header" = "O que ela pode fazer";
+"conectaTuIA.can.read" = "Lê suas contas, transações, orçamentos e pagamentos recorrentes.";
+"conectaTuIA.can.draft" = "Anota despesas e receitas como rascunhos na sua Caixa de entrada. Eles contam quando você confirma.";
+"conectaTuIA.can.never" = "Nunca altera nem apaga nada, nem vê seus grupos.";
+"conectaTuIA.can.footer" = "Grátis. Você pode desconectar quando quiser.";
+"conectaTuIA.account.title" = "Primeiro, passe seus dados para a sua conta do Yala";
+"conectaTuIA.account.message" = "Seus dados ficam no seu iCloud e sua IA não consegue lê-los ali. Na sua conta do Yala, consegue.";
+"conectaTuIA.account.button" = "Passar para a sua conta do Yala";
+"conectaTuIA.account.where" = "Faça isso em Ajustes → “Onde ficam seus dados”.";
+"conectaTuIA.connected.header" = "Conectadas";
+"conectaTuIA.connected.empty" = "Nenhuma IA conectada ainda.";
+"conectaTuIA.connected.footer" = "Se você acabou de conectar uma, pode levar um minuto para aparecer.";
+"conectaTuIA.connected.since" = "Conectada em %@";
+"conectaTuIA.connected.local" = "No seu computador";
+"conectaTuIA.connected.lastDraft" = "último rascunho %@";
+"conectaTuIA.connected.loadFailed" = "Não foi possível carregar a lista. Verifique sua conexão e tente de novo.";
+"conectaTuIA.disconnect" = "Desconectar";
+"conectaTuIA.disconnect.confirmTitle" = "Desconectar %@?";
+"conectaTuIA.disconnect.confirmBody" = "Ela para de ler e de anotar na hora. O que você já confirmou fica no Yala.";
+"conectaTuIA.disconnect.failed" = "Não foi possível desconectar. Tente de novo.";
+"conectaTuIA.inbox.title" = "Anote pela sua IA";
+"conectaTuIA.inbox.message" = "Diga ao Claude “anota 25 de almoço” e chega aqui.";
+"conectaTuIA.inbox.button" = "Conectar";
+"conectaTuIA.filter.fromAI" = "Da sua IA";
+"conectaTuIA.paso7.name" = "Sua IA";
+"conectaTuIA.paso7.storyTitle" = "Peça à sua IA";
+"conectaTuIA.paso7.storyMessage" = "Diga ao Claude ou ao ChatGPT “anota 25 de almoço” e espera por você na Caixa de entrada.";
+"conectaTuIA.paso7.methodTitle" = "Conecte sua IA";
+"conectaTuIA.paso7.methodSubtitle" = "Três passos, na sua IA. O que ela anotar conta quando você confirma.";
+"conectaTuIA.paso7.example" = "Anota 25 de almoço";

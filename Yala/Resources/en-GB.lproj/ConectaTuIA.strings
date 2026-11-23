@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Your AI";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT or Grok";
+"conectaTuIA.header.title" = "Connect your AI";
+"conectaTuIA.header.message" = "Ask it about your spending or say “log 25 for lunch”. Whatever it logs waits for you in the Inbox.";
+"conectaTuIA.steps.header" = "How to connect it";
+"conectaTuIA.copy" = "Copy";
+"conectaTuIA.copied" = "Copied";
+"conectaTuIA.copyHint" = "Copies the connector address";
+"conectaTuIA.claude.step1" = "In Claude, go to Settings → Connectors → Add custom connector.";
+"conectaTuIA.claude.step2" = "Name it “Yala” and paste this address:";
+"conectaTuIA.claude.step3" = "Tap Connect, accept Yala’s permission and sign in with Apple or Google.";
+"conectaTuIA.chatgpt.note" = "Requires a paid ChatGPT plan and turning on its developer mode.";
+"conectaTuIA.chatgpt.step1" = "In ChatGPT, go to Settings → Apps & Connectors → Advanced settings and turn on developer mode.";
+"conectaTuIA.chatgpt.step2" = "Create a connector called “Yala”, with OAuth authentication, and paste this address:";
+"conectaTuIA.chatgpt.step3" = "Accept Yala’s permission and sign in with Apple or Google.";
+"conectaTuIA.grok.step1" = "In Grok, look for the option to add a custom connector (MCP).";
+"conectaTuIA.grok.step2" = "Name it “Yala” and paste this address:";
+"conectaTuIA.grok.step3" = "Accept Yala’s permission and sign in with Apple or Google.";
+"conectaTuIA.can.header" = "What it can do";
+"conectaTuIA.can.read" = "Reads your accounts, transactions, budgets and recurring payments.";
+"conectaTuIA.can.draft" = "Logs expenses and income as drafts in your Inbox. They count once you confirm them.";
+"conectaTuIA.can.never" = "Never changes or deletes anything, and never sees your groups.";
+"conectaTuIA.can.footer" = "Free. You can disconnect it whenever you want.";
+"conectaTuIA.account.title" = "First, move your data to your Yala account";
+"conectaTuIA.account.message" = "Your data lives in your iCloud and your AI can’t read it there. In your Yala account, it can.";
+"conectaTuIA.account.button" = "Move to your Yala account";
+"conectaTuIA.account.where" = "Do it in Settings → “Where your data lives”.";
+"conectaTuIA.connected.header" = "Connected";
+"conectaTuIA.connected.empty" = "No AI connected yet.";
+"conectaTuIA.connected.footer" = "If you just connected one, it can take a minute to show up.";
+"conectaTuIA.connected.since" = "Connected on %@";
+"conectaTuIA.connected.local" = "On your computer";
+"conectaTuIA.connected.lastDraft" = "last draft %@";
+"conectaTuIA.connected.loadFailed" = "Couldn’t load the list. Check your connection and try again.";
+"conectaTuIA.disconnect" = "Disconnect";
+"conectaTuIA.disconnect.confirmTitle" = "Disconnect %@?";
+"conectaTuIA.disconnect.confirmBody" = "It stops reading and logging right away. What you already confirmed stays in Yala.";
+"conectaTuIA.disconnect.failed" = "Couldn’t disconnect. Try again.";
+"conectaTuIA.inbox.title" = "Log from your AI";
+"conectaTuIA.inbox.message" = "Tell Claude “log 25 for lunch” and it lands here.";
+"conectaTuIA.inbox.button" = "Connect";
+"conectaTuIA.filter.fromAI" = "From your AI";
+"conectaTuIA.paso7.name" = "Your AI";
+"conectaTuIA.paso7.storyTitle" = "Ask your AI";
+"conectaTuIA.paso7.storyMessage" = "Tell Claude or ChatGPT “log 25 for lunch” and it waits for you in the Inbox.";
+"conectaTuIA.paso7.methodTitle" = "Connect your AI";
+"conectaTuIA.paso7.methodSubtitle" = "Three steps, from your AI. What it logs counts once you confirm it.";
+"conectaTuIA.paso7.example" = "Log 25 for lunch";

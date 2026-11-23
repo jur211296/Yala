@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "A tua IA";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT ou Grok";
+"conectaTuIA.header.title" = "Liga a tua IA";
+"conectaTuIA.header.message" = "Pergunta-lhe pelos teus gastos ou diz “aponta 25 de almoço”. O que ela apontar espera por ti na Caixa de entrada.";
+"conectaTuIA.steps.header" = "Como ligar";
+"conectaTuIA.copy" = "Copiar";
+"conectaTuIA.copied" = "Copiado";
+"conectaTuIA.copyHint" = "Copia o endereço do conector";
+"conectaTuIA.claude.step1" = "No Claude, vai a Definições → Conectores → Adicionar conector personalizado.";
+"conectaTuIA.claude.step2" = "Dá-lhe o nome “Yala” e cola este endereço:";
+"conectaTuIA.claude.step3" = "Toca em Ligar, aceita a permissão do Yala e inicia sessão com a Apple ou a Google.";
+"conectaTuIA.chatgpt.note" = "Precisa de um plano pago do ChatGPT e de ativar o modo de programador.";
+"conectaTuIA.chatgpt.step1" = "No ChatGPT, vai a Definições → Apps e conectores → Definições avançadas e ativa o modo de programador.";
+"conectaTuIA.chatgpt.step2" = "Cria um conector chamado “Yala”, com autenticação OAuth, e cola este endereço:";
+"conectaTuIA.chatgpt.step3" = "Aceita a permissão do Yala e inicia sessão com a Apple ou a Google.";
+"conectaTuIA.grok.step1" = "No Grok, procura a opção para adicionar um conector personalizado (MCP).";
+"conectaTuIA.grok.step2" = "Dá-lhe o nome “Yala” e cola este endereço:";
+"conectaTuIA.grok.step3" = "Aceita a permissão do Yala e inicia sessão com a Apple ou a Google.";
+"conectaTuIA.can.header" = "O que ela pode fazer";
+"conectaTuIA.can.read" = "Lê as tuas contas, movimentos, orçamentos e pagamentos recorrentes.";
+"conectaTuIA.can.draft" = "Aponta despesas e receitas como rascunhos na tua Caixa de entrada. Contam quando os confirmas.";
+"conectaTuIA.can.never" = "Nunca altera nem apaga nada, nem vê os teus grupos.";
+"conectaTuIA.can.footer" = "Grátis. Podes desligá-la quando quiseres.";
+"conectaTuIA.account.title" = "Primeiro, passa os teus dados para a tua conta Yala";
+"conectaTuIA.account.message" = "Os teus dados estão no teu iCloud e a tua IA não os consegue ler aí. Na tua conta Yala, consegue.";
+"conectaTuIA.account.button" = "Passar para a tua conta Yala";
+"conectaTuIA.account.where" = "Fá-lo em Definições → “Onde vivem os teus dados”.";
+"conectaTuIA.connected.header" = "Ligadas";
+"conectaTuIA.connected.empty" = "Ainda não há nenhuma IA ligada.";
+"conectaTuIA.connected.footer" = "Se acabaste de ligar uma, pode demorar um minuto a aparecer.";
+"conectaTuIA.connected.since" = "Ligada a %@";
+"conectaTuIA.connected.local" = "No teu computador";
+"conectaTuIA.connected.lastDraft" = "último rascunho %@";
+"conectaTuIA.connected.loadFailed" = "Não foi possível carregar a lista. Verifica a tua ligação e tenta outra vez.";
+"conectaTuIA.disconnect" = "Desligar";
+"conectaTuIA.disconnect.confirmTitle" = "Desligar %@?";
+"conectaTuIA.disconnect.confirmBody" = "Deixa de ler e de apontar de imediato. O que já confirmaste fica no Yala.";
+"conectaTuIA.disconnect.failed" = "Não foi possível desligar. Tenta outra vez.";
+"conectaTuIA.inbox.title" = "Aponta a partir da tua IA";
+"conectaTuIA.inbox.message" = "Diz ao Claude “aponta 25 de almoço” e chega aqui.";
+"conectaTuIA.inbox.button" = "Ligar";
+"conectaTuIA.filter.fromAI" = "Da tua IA";
+"conectaTuIA.paso7.name" = "A tua IA";
+"conectaTuIA.paso7.storyTitle" = "Pede à tua IA";
+"conectaTuIA.paso7.storyMessage" = "Diz ao Claude ou ao ChatGPT “aponta 25 de almoço” e espera por ti na Caixa de entrada.";
+"conectaTuIA.paso7.methodTitle" = "Liga a tua IA";
+"conectaTuIA.paso7.methodSubtitle" = "Três passos, na tua IA. O que ela apontar conta quando o confirmas.";
+"conectaTuIA.paso7.example" = "Aponta 25 de almoço";

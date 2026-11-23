@@ -2,11 +2,13 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (140 entradas)
+## Índice (142 entradas)
 
 > **No hace falta leer este fichero entero** — son 352 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
+- `2026-11-23` [Lote del 23-nov (07:30-09:59): Salud financiera como el Panel, semana 7 de marketing, esquemas de Cl](#2026-11-23-lote-del-23-nov-0730-0959-salud-financiera-como-el-panel-semana-7-de-marketing-esquemas-de-cloudkit-con-dan-e-importar-de-splitwise-ya-hecho)
 - `2026-11-22` [Lote del 22-nov (15:05): despliegue del límite de tarjeta a producción, comercios en común con lo re](#2026-11-22-lote-del-22-nov-1505-despliegue-del-lmite-de-tarjeta-a-produccin-comercios-en-comn-con-lo-recomendado-y-uso-de-lnea-en-tarjetas-con-dos-monedas)
 - `2026-11-22` [El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook ](#2026-11-22-el-conector-de-claude-sale-a-produccin-con-dan-y-su-sql-cambia-solo-el-id-del-conector-en-el-hook-de-yala-web)
 - `2026-11-22` [Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en](#2026-11-22-yala-ia-ampliada-al-100--en-produccin-conector-de-pruebas-en-mcp-stagingyala-apppe-y-face-id-en-la-app-publicada)
@@ -166,6 +168,20 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-23] «Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconectar
+**Contexto:** Diseño en `tickets/qa/2026-11-22-conecta-tu-ia-diseno.md` (maqueta con tres opciones). Jürgen contestó las seis preguntas el 23-nov a las 09:59 (Lima) y una más a las 10:05, en la sesión que lo construyó.
+**Decisión:** (1) opción **C**: casa en Ajustes (fila «Tu IA») y puertas en Primeros pasos y en la Bandeja vacía, con aviso si los datos no están en la cuenta de Yala. (2) **Gratis para todos**, leer y apuntar. (3) Listar y desconectar desde la app **ya**, con un servicio del conector (`GET`/`DELETE /connections`) que solo acepta la sesión de la app. (4) No se guarda «última actividad»: basta el último borrador. (5) Sin página «Listo» en la web: se vuelve directo a la IA. (6) En la Bandeja, **el nombre de la IA** («Claude»), con «Tu IA» solo si no se conoce, y el filtro «De tu IA». (7) «Desconectar» desde la app borra la conexión y sus llaves; la sesión de la nube que llevaba dentro, inservible, la borra el barrido diario, **como al reconectar**.
+**Razones:** Las da Jürgen. La (7): cerrar esa sesión exigiría una salida nueva del conector hacia la nube o una función en la base, para lo mismo que ya hace el barrido.
+**Consecuencias:** Construido en el encargo `2026-11-23-conecta-tu-ia-construir`. El conector de producción necesita el despliegue de Dan (lista en el PR). `/mcp` comprueba además que su conexión siga existiendo, porque el listado de KV va atrasado.
+**Estado:** Activa
+
+### [2026-11-23] Lote del 23-nov (07:30-09:59): Salud financiera como el Panel, semana 7 de marketing, esquemas de CloudKit con Dan e importar de Splitwise ya hecho
+**Contexto:** Decisiones de Jürgen en el chat del 23-nov (07:30-09:59, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión de «Conecta tu IA», que no ejecuta ninguna: no son de su encargo.
+**Decisión:** (1) **Hoja de Salud financiera:** las tarjetas con el mismo contraste y espaciado que las del Panel, y los tres selectores de arriba (Presupuestos, Compromisos, Ritmo) pasan a chips que se vean tocables, sin flecha de expandir. (2) **Semana 7 de marketing:** entra el reel con el video de Yape grabado por Jürgen (tramo 16–28 s, datos tapados), con excepción a la regla de no mostrar Yape solo para esa pieza, y dos estáticas de prueba con estilo limpio (fondo claro, una idea por lámina). (3) **Esquemas de CloudKit:** exportar los de producción lo hace Dan directamente, sin sesión de Claude; solo hay sesión si hay cambio de código (sustituye a la de las 09:28). (4) **Importar un grupo desde Splitwise o Tricount** ya está construido y mergeado en 2.3 (PR 1003, 16-nov); no se arma encargo nuevo (sustituye a la de las 09:59 que lo daba por pendiente).
+**Razones:** Las da Jürgen en el chat.
+**Consecuencias:** (1) es un encargo aparte. (2) es de Lola (`marketing/`). (3) y (4) no cambian código. El registro del lote con `decisiones.py incorporar-lote` no se pudo correr: el script no está en la Max.
+**Estado:** Activa
 
 ### [2026-11-22] Lote del 22-nov (15:05): despliegue del límite de tarjeta a producción, comercios en común con lo recomendado y uso de línea en tarjetas con dos monedas
 **Contexto:** Tres decisiones de Jürgen en el chat del 22-nov a las 15:05 (Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión «Grupos: un guardado que falla no duplica gastos…», que no ejecuta ninguna: no son de su encargo.

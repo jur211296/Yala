@@ -123,18 +123,19 @@ final class Bienvenida23FinalUITests: XCTestCase {
         XCTAssertTrue(waitForStory(app, 2, of: 4, "Apple Pay"), "Al volver, sigue en la historia donde se cerró.")
     }
 
-    /// Y23-19: con los datos en la cuenta de Yala (la dirección fingida de `-uitest-bank-email`) hay cinco historias y la
-    /// cuarta es el correo; su mini tutorial enseña «Tu dirección de Yala» con «Copiar» y los tres pasos del filtro.
-    func test_step7_withTheYalaAccount_theMailIsTheFourthOfFiveStories() {
+    /// Y23-19: con los datos en la cuenta de Yala (la dirección fingida de `-uitest-bank-email`) hay seis historias y la
+    /// cuarta es el correo; su mini tutorial enseña «Tu dirección de Yala» con «Copiar» y los tres pasos del filtro. La
+    /// sexta, desde el 23-nov, es «Tu IA» («Conecta tu IA», decisión D7), con la misma regla que el correo.
+    func test_step7_withTheYalaAccount_theMailIsTheFourthOfSixStories_andYourAIIsTheLast() {
         let app = launch(atStep: 7, extra: ["-uitest-bank-email"])
         tapWhenSettled(app, "setup_deck_current")
         let stage = element(app, "tutorial_story_stage")
-        XCTAssertTrue(waitForStory(app, 1, of: 5, "Widget"), "Cinco historias.")
+        XCTAssertTrue(waitForStory(app, 1, of: 6, "Widget"), "Seis historias.")
         for _ in 0..<3 {
             _ = app.waitForSettledLayout(of: stage)
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
         }
-        XCTAssertTrue(waitForStory(app, 4, of: 5, "Correo"), "La cuarta es el correo.")
+        XCTAssertTrue(waitForStory(app, 4, of: 6, "Correo"), "La cuarta es el correo.")
         tapWhenSettled(app, "home_tutorial_how_to")
         let address = element(app, "home_tutorial_mail_address")
         XCTAssertTrue(address.waitForExistence(timeout: 10), "El mini tutorial del correo enseña la dirección.")
@@ -143,8 +144,18 @@ final class Bienvenida23FinalUITests: XCTestCase {
         XCTAssertTrue(element(app, "home_tutorial_mail_copy").exists, "«Copiar».")
         attach(app, "paso7-correo")
         tapWhenSettled(app, "home_tutorial_method_done")
-        XCTAssertTrue(waitForStory(app, 5, of: 5, "Siri"), "Después del correo, Siri.")
-        tapWhenSettled(app, "tutorial_story_finish")
+        XCTAssertTrue(waitForStory(app, 5, of: 6, "Siri"), "Después del correo, Siri.")
+        _ = app.waitForSettledLayout(of: stage)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
+        XCTAssertTrue(waitForStory(app, 6, of: 6, "Tu IA"), "La última es Tu IA.")
+        attach(app, "paso7-tu-ia-historia")
+        tapWhenSettled(app, "home_tutorial_how_to")
+        XCTAssertTrue(element(app, "conecta_ia_address").waitForExistence(timeout: 10),
+                      "El mini tutorial de Tu IA enseña la dirección del conector.")
+        XCTAssertTrue(element(app, "conecta_ia_step_3").exists, "Los tres pasos de conectar.")
+        attach(app, "paso7-tu-ia-guia")
+        // Terminar el mini tutorial de la última manera termina el paso (`HomeScreenTutorialFlowView.done`).
+        tapWhenSettled(app, "home_tutorial_method_done")
         XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10))
     }
 

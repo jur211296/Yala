@@ -3,6 +3,9 @@
  * leer nada, aquí se comprueba la sesión de Supabase que ese token lleva dentro:
  *
  * 1. Tiene la forma esperada y es del mismo usuario que el token. Si no, 401: falla cerrado.
+ *    Y su conexión (el grant) sigue existiendo. La librería no lo mira al validar un access token, y al quitar una
+ *    conexión borra sus tokens con un LISTADO de KV, que va atrasado hasta un minuto: el access que la IA acababa de
+ *    recibir se quedaba vivo hasta su caducidad (una hora). Medido en staging el 2026-11-23 («Conecta tu IA»).
  * 2. Sigue siendo un token de solo lectura del cliente del Worker, bien firmado y sin caducar. Si no, 401 sin borrar
  *    nada: Claude refresca y el refresh decide.
  * Entre 1 y 2, el límite de peticiones POR USUARIO (`RL_MCP`, `ratelimit.ts`): por IP ahogaría a todos los usuarios de
@@ -14,6 +17,7 @@
 import type { OAuthResourceAuth } from "@cloudflare/workers-oauth-provider";
 import { invalidTokenChallenge, type UpstreamVerifier } from "./auth";
 import { auditEvent } from "./audit";
+import { grantKey } from "./connections";
 import type { Env } from "./env";
 import type { Fetcher } from "./egress";
 import { allow, tooManyRequests } from "./ratelimit";
@@ -61,6 +65,15 @@ export async function handleMcpRoute(request: Request, env: Env, ctx: Ctx, deps:
   if (!auth?.userId || !auth.clientId || !isAccessProps(props) || props.sub !== auth.userId) {
     return unauthorized(env, "Token no valido");
   }
+  const liveGrant = grantIdOf(auth.token);
+  if (!liveGrant) return unauthorized(env, "Token no valido");
+  let grantStored: string | null;
+  try {
+    grantStored = await env.OAUTH_KV.get(grantKey(auth.userId, liveGrant));
+  } catch {
+    return unavailableResponse();
+  }
+  if (grantStored === null) return unauthorized(env, "La conexion se quito");
   if (!(await allow(env, "RL_MCP", props.sub))) return tooManyRequests();
 
   const check = await deps.verify(props.access, props.sub);

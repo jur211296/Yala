@@ -1,6 +1,6 @@
 ---
 id: 2026-11-22-conecta-tu-ia-diseno
-status: backlog
+status: qa
 priority: medium
 area: "design, ai-connector"
 created: 2026-11-23
@@ -58,5 +58,32 @@ marca en la Bandeja lo que apunta la IA y cómo quedan con marca de Yala las pan
 ## Criterio de hecho
 
 - [x] Maqueta publicada con 2-3 opciones y una recomendada (app y web).
-- [ ] Jürgen responde las seis preguntas.
-- [ ] Encargo de construcción escrito con la opción elegida (app; web del conector; servicio si aplica).
+- [x] Jürgen responde las seis preguntas (23-nov): C, gratis, todo junto, sin «última actividad», sin «Listo», el nombre
+  de la IA en la Bandeja. Más una el mismo día: «Desconectar» desde la app cierra como al reconectar (la sesión de la nube
+  que queda inservible la borra el barrido diario).
+- [x] Construido (encargo `2026-11-23-conecta-tu-ia-construir`): ver «Construido» abajo.
+- [ ] QA en el iPhone (guion abajo). No frena el merge.
+
+## Construido (2026-11-23)
+
+- **App.** Ajustes › «Tu IA» (`ConectaTuIAView`): pasos por IA (Claude, ChatGPT, Grok) con la dirección del conector de
+  su nube y «Copiar», qué puede hacer, y con la cuenta de Yala la lista de conectadas con «Desconectar» (pregunta antes).
+  Sin la cuenta, lo dice primero y apaga los pasos. Bandeja: tarjeta «Apunta desde tu IA» en Pendientes vacía (abre la
+  página en una hoja), etiqueta con el nombre de la IA y chip «De tu IA». Paso 7 de Primeros pasos: sexta manera «Tu IA»,
+  solo con la cuenta de Yala. Textos en `ConectaTuIA.strings` (16 idiomas).
+- **Worker.** `GET /connections` y `DELETE /connections/<id>` (`mcp/src/connections.ts`), solo con la sesión de la app.
+  `/mcp` comprueba además que su conexión siga existiendo (el borrado de la librería va por un listado de KV atrasado).
+  Páginas con la marca de la web (`mcp/src/pages.ts`). Probado en staging; producción la despliega Dan.
+- **Pruebas.** Worker: 34 unitarios + e2e contra staging. App: `YalaTests/ConectaTuIA/`, `YalaUITests/ConectaTuIA/`
+  (5 casos) y el del paso 7 en `Bienvenida23FinalUITests`.
+
+## Guion de QA en el iPhone 14 (Yala Dev, cuenta de prueba en la cuenta de Yala)
+
+1. Ajustes › «Tu IA»: se ven los pasos de Claude y la dirección `https://yala-mcp-staging.misty-surf-6866.workers.dev/mcp`;
+   «Copiar» la deja en el portapapeles.
+2. Desde claude.ai en el mismo teléfono (Safari), añade el conector con esa dirección. La página de permiso cabe en la
+   pantalla sin desplazar de lado, con «Yala × Claude» arriba; «Continuar con Apple/Google» con sus logos.
+3. Vuelve a Yala › «Tu IA»: en un minuto aparece «Claude · Conectada el … · claude.ai».
+4. Pídele a Claude «apunta 25 de almuerzo»: en la Bandeja la fila dice «Claude» y sale el chip «De tu IA».
+5. «Tu IA» › «Desconectar» › confirmar: la fila se va; en Claude, la siguiente pregunta pide volver a conectar.
+6. Con un usuario en iCloud: «Tu IA» dice «Primero, pasa tus datos a tu cuenta de Yala» y los pasos salen apagados.

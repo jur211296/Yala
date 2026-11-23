@@ -12,6 +12,7 @@
  *                                                      (la revocación cierra antes la sesión de Supabase) [revoke.ts]
  *   GET|POST /authorize, /oauth/consent, GET /oauth/supabase/callback → el permiso y el login      [authorize.ts]
  *   POST /mcp                                        → el servidor MCP (Streamable HTTP, sin estado)       [mcp.ts]
+ *   GET  /connections, DELETE /connections/<id>      → la app lista y quita sus IA conectadas    [connections.ts]
  *   GET  /                                           → qué es esto, en una línea
  *
  * Antes de todo eso: si la configuración está mal, 503 a todo (`config.ts`); y los límites de peticiones por IP de
@@ -22,6 +23,7 @@ import type { JWTVerifyGetKey } from "jose";
 import { makeUpstreamVerifier, type UpstreamVerifier } from "./auth";
 import { handleAuthorizeRoutes, registrationPolicy } from "./authorize";
 import { configProblems, misconfiguredResponse } from "./config";
+import { handleConnectionsRoute, makeAppVerifier, type AppVerifier } from "./connections";
 import { mcpResource, publicOrigin, type Env } from "./env";
 import { defaultFetch, type Fetcher } from "./egress";
 import { handleMcpRoute } from "./mcp";
@@ -43,6 +45,9 @@ interface Built {
   /** Los helpers de la librería fuera de un handler (la revocación los usa antes de entrar en ella). */
   helpers: OAuthHelpers;
   fetcher: Fetcher;
+  /** La sesión normal de la app, para `/connections` (nunca la de una IA). */
+  verifyApp: AppVerifier;
+  nowSec: () => number;
 }
 
 function buildProvider(env: Env, deps: AppDeps): Built {
@@ -97,7 +102,13 @@ function buildProvider(env: Env, deps: AppDeps): Built {
       resource_name: env.ENVIRONMENT === "staging" ? "Yala (staging)" : "Yala",
     },
   };
-  return { provider: new OAuthProvider<Env>(options), helpers: getOAuthApi(options, env), fetcher };
+  return {
+    provider: new OAuthProvider<Env>(options),
+    helpers: getOAuthApi(options, env),
+    fetcher,
+    verifyApp: makeAppVerifier(env, deps.upstreamKeys),
+    nowSec,
+  };
 }
 
 export function createApp(deps: AppDeps = {}) {
@@ -130,6 +141,14 @@ export function createApp(deps: AppDeps = {}) {
         built = buildProvider(env, deps);
         providers.set(env, built);
       }
+      // La app lista y quita sus IA conectadas, con su propia sesión. Antes que la librería: no es una ruta OAuth.
+      const connections = await handleConnectionsRoute(request, {
+        helpers: built.helpers,
+        kv: env.OAUTH_KV,
+        verifyApp: built.verifyApp,
+        nowSec: built.nowSec,
+      });
+      if (connections) return connections;
       // Desconectar desde Claude: antes de que la librería borre la conexión, se cierra su sesión de Supabase.
       await closeUpstreamBeforeRevocation(request, env, { provider: built.provider, helpers: built.helpers, fetcher: built.fetcher, ctx });
       return built.provider.fetch(request, env, ctx);

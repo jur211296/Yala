@@ -1,6 +1,6 @@
 ---
 id: conecta-tu-ia-maqueta-visual-y-pantallas-web
-status: backlog
+status: done
 priority: medium
 area: "design, ai-connector"
 created: 2026-11-22
@@ -29,3 +29,8 @@ pantallas web del flujo, para que Jürgen elija. Sin código hasta que elija.
 - [x] Propuestas publicadas para elegir (app y web): https://claude.ai/artifact/65CmVCQkr1JWd7JaFEXnRm. Opciones y
   preguntas en `2026-11-22-conecta-tu-ia-diseno`.
 - [ ] Elegida una opción y su encargo de construcción escrito.
+
+## Cerrado (2026-11-23)
+
+Jürgen eligió la opción C sobre la maqueta y se construyó en el encargo `2026-11-23-conecta-tu-ia-construir` (sin la
+página «Listo», decisión 5). Seguimiento en `tickets/qa/2026-11-22-conecta-tu-ia-diseno.md`.

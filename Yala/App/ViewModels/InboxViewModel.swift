@@ -14,12 +14,19 @@ import SwiftUI
 
 enum InboxFilter: String, CaseIterable {
     case pending
+    /// «De tu IA» («Conecta tu IA», decisión D9): los pendientes que apuntó una IA. Se comporta como «Pendientes».
+    case fromAI
     case archived
+
+    /// Pendientes y su subconjunto: deslizar, guardar los listos y las acciones de pendientes valen en los dos.
+    var isPendingList: Bool { self != .archived }
 
     var displayName: String {
         switch self {
         case .pending:
             return L10n.Inbox.pending
+        case .fromAI:
+            return L10n.ConectaTuIA.filterFromAI
         case .archived:
             return L10n.Inbox.archived
         }
@@ -29,6 +36,8 @@ enum InboxFilter: String, CaseIterable {
         switch self {
         case .pending:
             return "tray.full"
+        case .fromAI:
+            return "sparkles"
         case .archived:
             return "archivebox"
         }
@@ -208,6 +217,8 @@ final class InboxViewModel {
         switch filter {
         case .pending:
             return readableDrafts.filter { $0.status == .pending }
+        case .fromAI:
+            return readableDrafts.filter { $0.status == .pending && $0.sourceType == .aiConnector }
         case .archived:
             // Only show archived drafts that have cached values (to avoid crashes from invalid relationships),
             // plus rejected settlement drafts, which never had an account (`InboxDraft.isShownInArchive`).
@@ -230,10 +241,17 @@ final class InboxViewModel {
             .sorted { $0.date > $1.date }
     }
 
+    /// ¿Alguna IA apuntó algo en este teléfono (pendiente o ya resuelto)? Apaga la puerta de «Conecta tu IA».
+    var hasAnyAIDraft: Bool {
+        readableDrafts.contains { $0.sourceType == .aiConnector }
+    }
+
     func countForFilter(_ filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
             return readableDrafts.count(where: { $0.status == .pending })
+        case .fromAI:
+            return readableDrafts.count(where: { $0.status == .pending && $0.sourceType == .aiConnector })
         case .archived:
             return readableDrafts.count(where: \.isShownInArchive)
         }
@@ -293,7 +311,7 @@ final class InboxViewModel {
             let cachedName = cachedAccountNames[i]
 
             switch filter {
-            case .pending:
+            case .pending, .fromAI:
                 if status == .pending {
                     result.append(i)
                 }
@@ -309,7 +327,7 @@ final class InboxViewModel {
     /// Count drafts by filter (testable without SwiftData)
     func countDrafts(statuses: [DraftStatus], for filter: InboxFilter) -> Int {
         switch filter {
-        case .pending:
+        case .pending, .fromAI:
             return statuses.count(where: { $0 == .pending })
         case .archived:
             return statuses.count(where: { $0 == .approved || $0 == .rejected })

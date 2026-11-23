@@ -23,7 +23,7 @@ struct PrimerosPasosHomeScreenPresentation: ViewModifier {
     func body(content: Content) -> some View {
         content
             .fullScreenCover(isPresented: $sheets.showHomeScreenTutorial, onDismiss: afterTutorial) {
-                HomeScreenTutorialFlowView(progress: progress, showsMail: showsMail) { result in
+                HomeScreenTutorialFlowView(progress: progress, showsMail: showsMail, showsAI: showsAI) { result in
                     exit = result
                     sheets.showHomeScreenTutorial = false
                 }
@@ -39,6 +39,10 @@ struct PrimerosPasosHomeScreenPresentation: ViewModifier {
             hasSession: CloudAuthService.shared.hasSession,
             isGroupsFocusedShell: sessionState.isGroupsFocusedShell)
     }
+
+    /// La sexta, «Tu IA» (encargo «Conecta tu IA», decisión D7): la IA solo lee la cuenta de Yala, que es la misma regla
+    /// que el correo. Va aparte para que el día que las reglas se separen no haya que tocar el correo.
+    private var showsAI: Bool { showsMail }
 
     private func afterTutorial() {
         let result = exit

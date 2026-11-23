@@ -27,7 +27,8 @@ fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8). Cómo conectar cada 
 | `src/config.ts` | Comprueba la configuración: si está mal (producción contra staging, anon key de otro proyecto, algo PENDIENTE, sin límites), 503 a todo |
 | `src/ratelimit.ts` | Límites de peticiones: por IP en las páginas y en registro/token, por usuario en `/mcp` |
 | `src/authorize.ts` | El permiso por cliente (`/authorize`), el login (`/oauth/consent`) y la vuelta de Supabase |
-| `src/pages.ts` | Las páginas HTML, renderizadas en servidor y sin JavaScript |
+| `src/pages.ts` | Las páginas HTML con la marca de la web (logo y botones de Apple y Google en SVG), en servidor y sin JavaScript |
+| `src/connections.ts` | «Conecta tu IA»: `GET /connections` y `DELETE /connections/<id>`, solo con la sesión de la app |
 | `src/upstream.ts` | El Worker como cliente OAuth de Supabase: canje, refresh, sesión viva, login de staging |
 | `src/tokens.ts` | Qué se guarda en cada conexión, cómo se renueva y cuándo caduca |
 | `src/mcp.ts` | `/mcp`: comprueba la sesión de Supabase y la retira si ya no existe |

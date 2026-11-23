@@ -9,6 +9,8 @@
  * - `RL_OAUTH`, por IP y generoso: `/oauth/register` (escribe en KV) y `/oauth/token`. claude.ai los llama desde los
  *   servidores de Anthropic, con pocas IPs para todos los usuarios: el límite tiene que dejar pasar a todos juntos y
  *   solo cortar una avalancha.
+ *   También `/connections` (la app lista y quita sus IA conectadas): lo llama el teléfono, pocas veces, y no merece
+ *   un cubo nuevo que pediría tocar la configuración de producción.
  * - `RL_MCP`, por USUARIO, ya autenticado: `/mcp`. Por IP ahogaría a todos los usuarios de claude.ai a la vez.
  *
  * Si el binding no está (tests, `wrangler dev`) no se limita. En producción no puede faltar: `config.ts` lo exige y
@@ -25,6 +27,7 @@ const OAUTH_PATHS = new Set(["/oauth/register", "/oauth/token"]);
 export function ipBucketFor(pathname: string): Bucket | null {
   if (BROWSER_PATHS.has(pathname)) return "RL_BROWSER";
   if (OAUTH_PATHS.has(pathname)) return "RL_OAUTH";
+  if (pathname === "/connections" || pathname.startsWith("/connections/")) return "RL_OAUTH";
   return null;
 }
 

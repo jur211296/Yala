@@ -28,6 +28,8 @@ struct InboxView: View {
 
     @State private var viewModel = InboxViewModel()
     @State private var selectedFilter: InboxFilter = .pending
+    /// «Conecta tu IA» desde la Bandeja vacía: la página de Ajustes › Tu IA, en una hoja.
+    @State private var showsConectaTuIA = false
     @State private var selectedDraft: InboxDraft?
     @State private var selectedTransaction: TransactionItem?
 
@@ -661,7 +663,7 @@ struct InboxView: View {
                 .padding(.bottom, DS.Spacing.md)
 
             // Gastos de grupo a los que les sobra un borrador o un préstamo (bug del 2026-11-09): se quitan aquí, viendo qué.
-            if !isSelectionMode && selectedFilter == .pending {
+            if !isSelectionMode && selectedFilter.isPendingList {
                 GroupBridgeLeftoversNotice(count: viewModel.groupLeftoverCount) { viewModel.loadData() }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, viewModel.groupLeftoverCount > 0 ? DS.Spacing.sm : DS.Spacing.none)
@@ -669,7 +671,7 @@ struct InboxView: View {
 
             // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
             // Seleccionar todo, Editar y Aprobar.
-            if !isSelectionMode && selectedFilter == .pending && readyDrafts.count >= 2 {
+            if !isSelectionMode && selectedFilter.isPendingList && readyDrafts.count >= 2 {
                 saveReadyButton
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.sm)
@@ -677,7 +679,7 @@ struct InboxView: View {
 
             // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
             // Sin contador: el badge del mini-hero ya transmite la cantidad.
-            if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
+            if !isSelectionMode && selectedFilter.isPendingList && filteredDrafts.count >= 2 {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "hand.tap")
                         .font(DS.Typography.captionSmall)
@@ -740,17 +742,40 @@ struct InboxView: View {
 
     /// A tamaños de accesibilidad los dos filtros van uno debajo del otro: en fila, a AX5 se partían en sílabas
     /// («Pe / n…», punto 4 de `large-text-leftovers-outside-the-main-iphone-screens`).
+    ///
+    /// Con «De tu IA» son tres y no caben siempre a lo ancho: a tamaño normal en un iPhone 17 Pro partían «Pen-dientes» y
+    /// «Archiva-dos» (medido el 23-nov). En fila van en un scroll horizontal y cada chip a su ancho; con dos, como antes.
+    @ViewBuilder
     private var filterChips: some View {
-        let layout = headerScrollsWithContent
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.sm))
-            : AnyLayout(HStackLayout(spacing: DS.Spacing.sm))
-        return HStack(spacing: DS.Spacing.none) {
-            layout {
-                ForEach(InboxFilter.allCases, id: \.self) { filter in
-                    filterChip(for: filter)
+        if headerScrollsWithContent {
+            HStack(spacing: DS.Spacing.none) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    ForEach(visibleFilters, id: \.self) { filter in
+                        filterChip(for: filter)
+                    }
+                }
+                Spacer(minLength: DS.Spacing.none)
+            }
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(visibleFilters, id: \.self) { filter in
+                        filterChip(for: filter)
+                            .fixedSize()
+                    }
                 }
             }
-            Spacer(minLength: DS.Spacing.none)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .scrollClipDisabled()
+            .fadesTowardVerticalBar()
+        }
+    }
+
+    /// «De tu IA» solo cuando hay algo de una IA que filtrar, o si ya está elegido (decisión D9).
+    private var visibleFilters: [InboxFilter] {
+        InboxFilter.allCases.filter { filter in
+            filter != .fromAI || ConectaTuIALogic.showsAIFilter(
+                aiPendingCount: countForFilter(.fromAI), isSelected: selectedFilter == .fromAI)
         }
     }
 
@@ -859,10 +884,10 @@ struct InboxView: View {
         // Deslizar del todo DESCARTA (va a Archivados, se puede deshacer); borrar para siempre es la segunda acción y
         // pide un toque a propósito (UX 2.2 · L4-6). En Archivados no hay deslizamiento completo: ahí la única acción
         // es borrar para siempre.
-        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && selectedFilter == .pending
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && selectedFilter.isPendingList
                       && !viewModel.canHideHere(draft)) {
             if !isSelectionMode {
-                if selectedFilter == .pending && viewModel.canHideHere(draft) {
+                if selectedFilter.isPendingList && viewModel.canHideHere(draft) {
                     // Gasto de grupo sin su grupo en este teléfono: no se rechaza ni se borra (viajaría al otro
                     // dispositivo); se quita de la Bandeja solo aquí (`InboxGroupDraftsHiddenHere`).
                     Button {
@@ -873,7 +898,7 @@ struct InboxView: View {
                     .tint(DS.Semantic.warningForeground)
                     .accessibilityHint(L10n.Inbox.hideHereHint)
                     .accessibilityIdentifier("inbox_hide_here")
-                } else if selectedFilter == .pending {
+                } else if selectedFilter.isPendingList {
                     // Pending: Descartar (primera: la del deslizamiento completo) + Eliminar. El aviso de importe
                     // cambiado no se borra (`DraftService.deleteDraft`): descartarlo es «dejarla como está».
                     Button {
@@ -905,8 +930,8 @@ struct InboxView: View {
                 // Approved drafts in archived: no swipe actions
             }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending) {
-            if !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending {
+        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter.isPendingList) {
+            if !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter.isPendingList {
                 Button {
                     approveDraft(draft)
                 } label: {
@@ -933,12 +958,26 @@ struct InboxView: View {
     @ViewBuilder
     private var emptyState: some View {
         switch selectedFilter {
-        case .pending:
-            YalaEmptyState(
-                icon: "tray",
-                title: L10n.Inbox.noPending,
-                message: L10n.Inbox.noPendingDescription
-            )
+        case .pending, .fromAI:
+            VStack(spacing: DS.Spacing.lg) {
+                YalaEmptyState(
+                    icon: "tray",
+                    title: L10n.Inbox.noPending,
+                    message: L10n.Inbox.noPendingDescription
+                )
+                // «Conecta tu IA» (decisión D8): la puerta en la Bandeja vacía, hasta que una IA apunte algo.
+                if ConectaTuIALogic.showsInboxDoor(isPendingFilter: selectedFilter == .pending,
+                                                   hasAnyAIDraft: viewModel.hasAnyAIDraft,
+                                                   isSelectionMode: isSelectionMode) {
+                    ConectaTuIAInboxCard { showsConectaTuIA = true }
+                        .padding(.horizontal, DS.Spacing.lg)
+                }
+            }
+            .sheet(isPresented: $showsConectaTuIA) {
+                NavigationStack {
+                    ConectaTuIAView(presentation: .sheet)
+                }
+            }
         case .archived:
             YalaEmptyState(
                 icon: "archivebox",
@@ -979,8 +1018,13 @@ struct InboxView: View {
 
     // MARK: - Guardar los listos (UX 2.2 · L4-7)
 
+    /// Lo que se guarda de un toque: lo de la lista a la vista («Pendientes» o «De tu IA»).
+    private var pendingListFilter: InboxFilter {
+        selectedFilter.isPendingList ? selectedFilter : .pending
+    }
+
     private var readyDrafts: [InboxDraft] {
-        InboxSaveReadyLogic.ready(viewModel.filteredDrafts(for: .pending))
+        InboxSaveReadyLogic.ready(viewModel.filteredDrafts(for: pendingListFilter))
     }
 
     private var saveReadyButton: some View {
@@ -1025,7 +1069,7 @@ struct InboxView: View {
             // Lo saltado por parecido tiene su propia línea: aquí contarlo otra vez se leía como dos borradores.
             let skippedIDs = Set(outcome.skippedPossibleDuplicates.map(\.persistentModelID))
             saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(
-                viewModel.filteredDrafts(for: .pending).filter { !skippedIDs.contains($0.persistentModelID) }
+                viewModel.filteredDrafts(for: pendingListFilter).filter { !skippedIDs.contains($0.persistentModelID) }
             )
             // Con nada guardado por parecido también sale la pantalla final, que lo dice: una segunda alerta pedida
             // mientras se cierra la confirmación puede no llegar a presentarse.

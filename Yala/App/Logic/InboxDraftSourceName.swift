@@ -28,7 +28,8 @@ extension InboxDraft {
         case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
         case .manual: return L10n.Inbox.sourceManual
         case .groupScheduledExpense: return L10n.Inbox.sourceGroupScheduledExpense
-        case .aiConnector: return L10n.Inbox.sourceAIConnector
+        // «Conecta tu IA» (decisión 6 de Jürgen, 23-nov): el nombre de la IA que lo apuntó («Claude»); «Tu IA» si no se sabe.
+        case .aiConnector: return ConectaTuIALogic.aiName(evidence: evidence) ?? L10n.Inbox.sourceAIConnector
         }
     }
 }

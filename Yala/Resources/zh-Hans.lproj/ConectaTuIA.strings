@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "你的 AI";
+"conectaTuIA.row.subtitle" = "Claude、ChatGPT 或 Grok";
+"conectaTuIA.header.title" = "连接你的 AI";
+"conectaTuIA.header.message" = "问它你的开销，或者说“记一笔午餐 25”。它记下的内容会在收件箱里等你。";
+"conectaTuIA.steps.header" = "如何连接";
+"conectaTuIA.copy" = "复制";
+"conectaTuIA.copied" = "已复制";
+"conectaTuIA.copyHint" = "复制连接器地址";
+"conectaTuIA.claude.step1" = "在 Claude 中，前往“设置”→“连接器”→“添加自定义连接器”。";
+"conectaTuIA.claude.step2" = "将它命名为“Yala”，然后粘贴这个地址：";
+"conectaTuIA.claude.step3" = "轻点“连接”，接受 Yala 的授权，然后用 Apple 或 Google 登录。";
+"conectaTuIA.chatgpt.note" = "需要 ChatGPT 付费方案并开启开发者模式。";
+"conectaTuIA.chatgpt.step1" = "在 ChatGPT 中，前往“设置”→“应用和连接器”→“高级设置”，开启开发者模式。";
+"conectaTuIA.chatgpt.step2" = "创建一个名为“Yala”的连接器，选择 OAuth 认证，然后粘贴这个地址：";
+"conectaTuIA.chatgpt.step3" = "接受 Yala 的授权，然后用 Apple 或 Google 登录。";
+"conectaTuIA.grok.step1" = "在 Grok 中，找到添加自定义连接器（MCP）的选项。";
+"conectaTuIA.grok.step2" = "将它命名为“Yala”，然后粘贴这个地址：";
+"conectaTuIA.grok.step3" = "接受 Yala 的授权，然后用 Apple 或 Google 登录。";
+"conectaTuIA.can.header" = "它能做什么";
+"conectaTuIA.can.read" = "读取你的账户、交易、预算和定期付款。";
+"conectaTuIA.can.draft" = "把支出和收入作为草稿记到你的收件箱。你确认后才会计入。";
+"conectaTuIA.can.never" = "从不更改或删除任何内容，也看不到你的群组。";
+"conectaTuIA.can.footer" = "免费。你可以随时断开连接。";
+"conectaTuIA.account.title" = "首先，转到你的 Yala 账户";
+"conectaTuIA.account.message" = "你的数据在 iCloud 中，AI 无法在那里读取。在你的 Yala 账户中就可以。";
+"conectaTuIA.account.button" = "转到你的 Yala 账户";
+"conectaTuIA.account.where" = "在“设置”→“你的数据存放在哪里”中操作。";
+"conectaTuIA.connected.header" = "已连接";
+"conectaTuIA.connected.empty" = "还没有连接任何 AI。";
+"conectaTuIA.connected.footer" = "如果你刚刚连接，可能需要一分钟才会显示。";
+"conectaTuIA.connected.since" = "%@ 连接";
+"conectaTuIA.connected.local" = "在你的电脑上";
+"conectaTuIA.connected.lastDraft" = "最近草稿 %@";
+"conectaTuIA.connected.loadFailed" = "无法加载列表。请检查网络连接后重试。";
+"conectaTuIA.disconnect" = "断开连接";
+"conectaTuIA.disconnect.confirmTitle" = "断开 %@？";
+"conectaTuIA.disconnect.confirmBody" = "它会立即停止读取和记录。你已确认的内容会保留在 Yala 中。";
+"conectaTuIA.disconnect.failed" = "无法断开连接。请重试。";
+"conectaTuIA.inbox.title" = "用 AI 记账";
+"conectaTuIA.inbox.message" = "对 Claude 说“记一笔午餐 25”，就会出现在这里。";
+"conectaTuIA.inbox.button" = "连接";
+"conectaTuIA.filter.fromAI" = "来自 AI";
+"conectaTuIA.paso7.name" = "你的 AI";
+"conectaTuIA.paso7.storyTitle" = "让 AI 帮你记";
+"conectaTuIA.paso7.storyMessage" = "对 Claude 或 ChatGPT 说“记一笔午餐 25”，它会在收件箱里等你。";
+"conectaTuIA.paso7.methodTitle" = "连接你的 AI";
+"conectaTuIA.paso7.methodSubtitle" = "在 AI 中完成三步。它记下的内容在你确认后才计入。";
+"conectaTuIA.paso7.example" = "记一笔午餐 25";

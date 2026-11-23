@@ -1390,6 +1390,8 @@ struct ProfileView: View {
                 AIPrivacySettingsView()
             case .comerciosEnComun:
                 ComerciosEnComunAjustesView()
+            case .conectaTuIA:
+                ConectaTuIAView()
             case .permissions:
                 PermissionsSettingsView()
             case .usageMode:
@@ -1455,7 +1457,7 @@ struct ProfileView: View {
              .subscription, .tips, .faq, .siriShortcuts, .bankEmail, .bankNotices, .permissions, .usageMode:
             true
         case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .comerciosEnComun,
-             .storageMode,
+             .storageMode, .conectaTuIA,
              .yalaAccount:
             false
         }
@@ -1868,6 +1870,17 @@ struct ProfileView: View {
     /// D23 · «Tu cuenta», su propio bloque (antes una subsección al final de la seguridad). Sale solo si tiene alguna fila:
     /// «Tu cuenta de Yala» con sesión backend viva y «Cerrar sesión» cuando no se fue a su tarjeta propia (L20-6).
     private var showsAccountSection: Bool {
+        showsConectaTuIARow || showsYalaAccountRow || !signOutRowRemovesDeviceData
+    }
+
+    /// «Tu IA» («Conecta tu IA», 2.3, opción C): junto a «Tu cuenta de Yala», también sin la cuenta (su página dice qué
+    /// falta). Fuera en la vista de solo grupos: el conector lee las finanzas personales.
+    private var showsConectaTuIARow: Bool {
+        !isGroupsOnlyShell
+    }
+
+    /// Bajo «Tu IA» va «Tu cuenta de Yala» o «Cerrar sesión» (si no se fue a su tarjeta del final): entonces lleva línea.
+    private var conectaTuIAHasARowBelow: Bool {
         showsYalaAccountRow || !signOutRowRemovesDeviceData
     }
 
@@ -1876,6 +1889,18 @@ struct ProfileView: View {
             VStack(spacing: DS.Spacing.none) {
                 // §3.2: «Tu cuenta de Yala →» (mapa/explainer, §3.3.5) — SOLO con sesión backend viva. Desde el paso 9
                 // es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
+                if showsConectaTuIARow {
+                    settingsLink(ProfileDestination.conectaTuIA) {
+                        settingsRowContent(
+                            icon: "sparkles",
+                            title: L10n.ConectaTuIA.title,
+                            subtitle: L10n.ConectaTuIA.rowSubtitle,
+                            iconColor: .purple)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_conecta_tu_ia")
+                    if conectaTuIAHasARowBelow { SubsectionDivider() }
+                }
                 if showsYalaAccountRow {
                     settingsLink(ProfileDestination.yalaAccount) {
                         settingsRowContent(

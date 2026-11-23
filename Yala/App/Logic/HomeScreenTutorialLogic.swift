@@ -23,6 +23,8 @@ nonisolated enum HomeScreenTutorialLogic {
         case share
         case mail
         case siri
+        /// «Tu IA» («Conecta tu IA», decisión D7 del 23-nov): la última, solo con los datos en la cuenta de Yala. Gratis.
+        case ai
 
         /// Compartir una foto es de Pro (la ficha y el prototipo llevan la insignia). El resto, gratis.
         var isPro: Bool { self == .share }
@@ -52,9 +54,10 @@ nonisolated enum HomeScreenTutorialLogic {
         case skipped
     }
 
-    /// Las maneras que se enseñan: cinco con el correo, cuatro sin él. `showsMail` es `BankEmailEntryLogic.showsRow`.
-    static func methods(showsMail: Bool) -> [Method] {
-        Method.allCases.filter { $0 != .mail || showsMail }
+    /// Las maneras que se enseñan: cinco con el correo, cuatro sin él. `showsMail` es `BankEmailEntryLogic.showsRow`. Tu IA
+    /// va al final y con la misma regla (la cuenta de Yala), que quien presenta pasa en `showsAI`.
+    static func methods(showsMail: Bool, showsAI: Bool = false) -> [Method] {
+        Method.allCases.filter { ($0 != .mail || showsMail) && ($0 != .ai || showsAI) }
     }
 
     /// La siguiente que falta, o `nil` si ya se resolvieron todas.

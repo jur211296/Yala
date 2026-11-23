@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Twoja AI";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT lub Grok";
+"conectaTuIA.header.title" = "Połącz swoją AI";
+"conectaTuIA.header.message" = "Zapytaj ją o swoje wydatki albo powiedz „zapisz 25 za obiad”. To, co zapisze, czeka na Ciebie w Skrzynce.";
+"conectaTuIA.steps.header" = "Jak ją połączyć";
+"conectaTuIA.copy" = "Kopiuj";
+"conectaTuIA.copied" = "Skopiowano";
+"conectaTuIA.copyHint" = "Kopiuje adres konektora";
+"conectaTuIA.claude.step1" = "W Claude otwórz Ustawienia → Konektory → Dodaj własny konektor.";
+"conectaTuIA.claude.step2" = "Nazwij go „Yala” i wklej ten adres:";
+"conectaTuIA.claude.step3" = "Stuknij Połącz, zaakceptuj uprawnienia Yala i zaloguj się przez Apple lub Google.";
+"conectaTuIA.chatgpt.note" = "Wymaga płatnego planu ChatGPT i włączenia trybu dewelopera.";
+"conectaTuIA.chatgpt.step1" = "W ChatGPT otwórz Ustawienia → Aplikacje i konektory → Ustawienia zaawansowane i włącz tryb dewelopera.";
+"conectaTuIA.chatgpt.step2" = "Utwórz konektor o nazwie „Yala” z uwierzytelnianiem OAuth i wklej ten adres:";
+"conectaTuIA.chatgpt.step3" = "Zaakceptuj uprawnienia Yala i zaloguj się przez Apple lub Google.";
+"conectaTuIA.grok.step1" = "W Grok poszukaj opcji dodania własnego konektora (MCP).";
+"conectaTuIA.grok.step2" = "Nazwij go „Yala” i wklej ten adres:";
+"conectaTuIA.grok.step3" = "Zaakceptuj uprawnienia Yala i zaloguj się przez Apple lub Google.";
+"conectaTuIA.can.header" = "Co może robić";
+"conectaTuIA.can.read" = "Czyta Twoje konta, transakcje, budżety i płatności cykliczne.";
+"conectaTuIA.can.draft" = "Zapisuje wydatki i przychody jako szkice w Twojej Skrzynce. Liczą się, gdy je potwierdzisz.";
+"conectaTuIA.can.never" = "Nigdy niczego nie zmienia ani nie usuwa i nie widzi Twoich grup.";
+"conectaTuIA.can.footer" = "Za darmo. Możesz ją odłączyć, kiedy chcesz.";
+"conectaTuIA.account.title" = "Najpierw przejdź na konto Yala";
+"conectaTuIA.account.message" = "Twoje dane są w Twoim iCloud i Twoja AI nie może ich tam czytać. Na koncie Yala może.";
+"conectaTuIA.account.button" = "Przejdź na konto Yala";
+"conectaTuIA.account.where" = "Zrobisz to w Ustawieniach → „Gdzie są Twoje dane”.";
+"conectaTuIA.connected.header" = "Połączone";
+"conectaTuIA.connected.empty" = "Żadna AI nie jest jeszcze połączona.";
+"conectaTuIA.connected.footer" = "Jeśli właśnie ją połączyłeś, może minąć minuta, zanim się pojawi.";
+"conectaTuIA.connected.since" = "Połączona %@";
+"conectaTuIA.connected.local" = "Na Twoim komputerze";
+"conectaTuIA.connected.lastDraft" = "ostatni szkic %@";
+"conectaTuIA.connected.loadFailed" = "Nie udało się wczytać listy. Sprawdź połączenie i spróbuj ponownie.";
+"conectaTuIA.disconnect" = "Odłącz";
+"conectaTuIA.disconnect.confirmTitle" = "Odłączyć %@?";
+"conectaTuIA.disconnect.confirmBody" = "Od razu przestaje czytać i zapisywać. To, co już potwierdziłeś, zostaje w Yala.";
+"conectaTuIA.disconnect.failed" = "Nie udało się odłączyć. Spróbuj ponownie.";
+"conectaTuIA.inbox.title" = "Zapisuj przez AI";
+"conectaTuIA.inbox.message" = "Powiedz Claude „zapisz 25 za obiad”, a trafi tutaj.";
+"conectaTuIA.inbox.button" = "Połącz";
+"conectaTuIA.filter.fromAI" = "Od Twojej AI";
+"conectaTuIA.paso7.name" = "Twoja AI";
+"conectaTuIA.paso7.storyTitle" = "Poproś swoją AI";
+"conectaTuIA.paso7.storyMessage" = "Powiedz Claude albo ChatGPT „zapisz 25 za obiad”, a poczeka na Ciebie w Skrzynce.";
+"conectaTuIA.paso7.methodTitle" = "Połącz swoją AI";
+"conectaTuIA.paso7.methodSubtitle" = "Trzy kroki, w Twojej AI. To, co zapisze, liczy się, gdy to potwierdzisz.";
+"conectaTuIA.paso7.example" = "Zapisz 25 za obiad";

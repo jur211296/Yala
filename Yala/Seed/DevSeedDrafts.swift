@@ -60,14 +60,17 @@ struct DevSeedDrafts {
             (draftNoteB, -18.40, pastDate),
         ]
 
-        for def in defs {
+        if UITestHooks.seedInboxEmpty { return }
+        let aiNames = ["Claude", "ChatGPT"]
+        for (index, def) in defs.enumerated() {
             let draft = InboxDraft(
                 note: def.note,
                 amount: def.amount,
                 date: def.date,
                 account: account,
                 subcategory: subcategory,
-                sourceType: .manual,
+                sourceType: UITestHooks.seedInboxAIDrafts ? .aiConnector : .manual,
+                evidence: UITestHooks.seedInboxAIDrafts ? aiNames[index % aiNames.count] : nil,
                 needsUserInput: [],
                 status: .pending
             )
