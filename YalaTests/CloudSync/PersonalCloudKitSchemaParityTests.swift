@@ -88,10 +88,7 @@ struct PersonalCloudKitSchemaParityTests {
     /// **`CD_Account.CD_creditLimit`** (límite de la tarjeta, decisión de Jürgen del 22-nov-2026, opción A): el encargo
     /// pidió tocar solo los esquemas de desarrollo; el despliegue a Production lo hace Dan con el OK de Jürgen, ANTES de
     /// publicar un build que lo escriba. Ticket `2026-11-22-cuenta-limite-tarjeta-campo-sincronizado`.
-    static let pendingProductionDeploy: [String: Set<String>] = [
-        "yala-production.ckdb": ["CD_Account: falta CD_creditLimit DOUBLE"],
-        "yala_dev-production.ckdb": ["CD_Account: falta CD_creditLimit DOUBLE"],
-    ]
+    static let pendingProductionDeploy: [String: Set<String>] = [:]
 
     private static var schemasDir: URL {
         URL(fileURLWithPath: #filePath)

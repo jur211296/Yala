@@ -100,14 +100,15 @@ struct LimiteTarjetaLogicaTests {
     }
 
     @Test func iCloud_losEsquemasDeDesarrolloDeclaranElCampo() throws {
-        for file in ["yala-development.ckdb", "yala_dev-development.ckdb"] {
+        for file in ["yala-development.ckdb", "yala_dev-development.ckdb",
+                     "yala-production.ckdb", "yala_dev-production.ckdb"] {
             let url = HojaCuentaTarjetaTextosTests.repoRoot().appending(path: "Cloudkit Schemas/\(file)")
             let text = try String(contentsOf: url, encoding: .utf8)
-            #expect(text.contains("CD_creditLimit               DOUBLE"), "\(file) no declara CD_creditLimit DOUBLE.")
+            #expect(text.range(of: #"CD_creditLimit\s+DOUBLE"#, options: .regularExpression) != nil,
+                    "\(file) no declara CD_creditLimit DOUBLE.")
         }
-        #expect(PersonalCloudKitSchemaParityTests.pendingProductionDeploy["yala-production.ckdb"]?
-            .contains("CD_Account: falta CD_creditLimit DOUBLE") == true,
-                "Production lo despliega Dan: hasta entonces queda apuntado como pendiente.")
+        #expect(PersonalCloudKitSchemaParityTests.pendingProductionDeploy["yala-production.ckdb"] == nil,
+                "Production ya tiene CD_creditLimit: no debe quedar apuntado como pendiente.")
     }
 }
 
