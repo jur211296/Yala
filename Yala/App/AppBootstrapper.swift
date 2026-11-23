@@ -2528,6 +2528,9 @@ final class AppBootstrapper {
         // siguiente — no las conserva para drenarlas tras el relanzamiento.
         guard !StorageModePersistence.isSignOutWipeArmed() else { return }
 
+        // El primer `active` del proceso es el del arranque, que ya pide las tasas de hoy (`loadExchangeRates`).
+        let isWarmStart = hasSeenInitialActive
+
         // Warm start: ping diario (dedup por día UTC — solo el primero del día encola)
         // + drain del spool de canarios pendientes (offline previo / kill).
         if hasSeenInitialActive {
@@ -2550,6 +2553,15 @@ final class AppBootstrapper {
         // El saldo de los widgets corta en el día (movimientos con fecha futura fuera): si la foto es de otro día, se
         // rehace para que lo que llegó a su fecha entre.
         WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
+
+        // Volver a la app en un día nuevo pide las tasas de hoy (ticket
+        // `volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas`): sin esto, con la app viva en segundo plano el
+        // converter cambiaba de día, no encontraba la fila y convertía con la de ayer y «≈» hasta reiniciar en frío.
+        // `updateTodayIfNeeded` frena solo: con la fila de hoy no pide nada, y como mucho una petición por día. Solo en
+        // las vueltas, no en el arranque, que lo hace en su paso; sin red en XCUITest ni en los hosts de test.
+        if isWarmStart && !UITestHooks.isActive && !SwiftDataConfiguration.isRunningTests {
+            Task { await ExchangeRateService.shared.updateTodayIfNeeded(context: context) }
+        }
 
         // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
         SpotlightIndexService.scheduleReconcile(context: context)

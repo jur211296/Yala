@@ -238,9 +238,11 @@ final class CurrencyConverter: CurrencyConverting {
     /// cambio SIN guardar en el mismo contexto, dentro de la misma pasada. El fetch de antes sí lo veía; hoy no hay
     /// escritor de tasas que no guarde en el acto (`ExchangeRateService.persistRate`).
     ///
-    /// Guarda las filas tal cual las devuelve la lectura y decodifica cada una UNA vez, cuando hace falta: la escalera de
-    /// `resolveRates` sale en cuanto cubre lo que falta, así que decodificar las 30 anteriores de golpe costaría más de lo
-    /// que se ahorra (lo cazó la review). Las tasas inservibles se filtran donde siempre, y las dos rutas siguen de acuerdo
+    /// Guarda las filas tal cual las devuelve la lectura, agrupadas por día, y decodifica cada día UNA vez, cuando hace
+    /// falta: la escalera de `resolveRates` sale en cuanto cubre lo que falta, así que decodificar las 30 anteriores de
+    /// golpe costaría más de lo que se ahorra (lo cazó la review). Las copias de un mismo día se funden con una regla fija
+    /// (`ExchangeRateDuplicateLogic.mergedDayRates`, ticket `duplicate-exchange-rate-rows-pick-an-arbitrary-rate`) y las
+    /// tasas inservibles se quedan fuera; las dos rutas siguen de acuerdo
     /// (`CurrencyConverterLatestRateQualityTests.bothRoutesAgree`).
     ///
     /// El candado solo guarda la GENERACIÓN, que cualquier hilo puede subir; las filas viven en el hilo principal y valen
@@ -264,12 +266,19 @@ final class CurrencyConverter: CurrencyConverting {
     /// Las tasas de la fila de cada fecha; `.some(nil)` = «leída, y no hay fila».
     @ObservationIgnored
     private var ownRowRates: [String: [String: Double]?] = [:]
-    /// Las filas estrictamente anteriores a cada fecha, de la más reciente hacia atrás, sin decodificar.
+    /// Los días estrictamente anteriores a cada fecha, de la más reciente hacia atrás, con sus copias sin decodificar.
     @ObservationIgnored
-    private var previousRowsByDate: [String: [ExchangeRate]] = [:]
-    /// El decode de cada fila anterior, hecho la primera vez que la escalera la mira.
+    private var previousRowsByDate: [String: [DayCopies]] = [:]
+    /// Las tasas fundidas de cada día anterior, decodificadas la primera vez que la escalera lo mira. Por clave: un día
+    /// llega siempre con TODAS sus copias (`fetchRates(strictlyBefore:)` completa el día que corta el tope).
     @ObservationIgnored
-    private var decodedPreviousRows: [PersistentIdentifier: [String: Double]] = [:]
+    private var decodedPreviousDays: [String: [String: Double]] = [:]
+
+    /// Las filas de un mismo día. Casi siempre una; dos o más cuando el día llegó de varios dispositivos.
+    private struct DayCopies {
+        let dateKey: String
+        let copies: [ExchangeRate]
+    }
 
     private nonisolated struct RowMemoClock {
         /// Sube en cada retirada: lo leído con una generación anterior no vale.
@@ -304,7 +313,7 @@ final class CurrencyConverter: CurrencyConverting {
         if generation != rowMemoGenerationInUse {
             ownRowRates = [:]
             previousRowsByDate = [:]
-            decodedPreviousRows = [:]
+            decodedPreviousDays = [:]
             rowMemoGenerationInUse = generation
         }
         return generation
@@ -320,31 +329,48 @@ final class CurrencyConverter: CurrencyConverting {
     private func rowRates(for dateKey: String, context: ModelContext) -> [String: Double]? {
         let generation = rowMemoGeneration(for: context)
         if let hit = ownRowRates[dateKey] { return hit }
-        let rates = fetchExchangeRate(for: dateKey, context: context)?.decodedRates()
+        let rates = fetchDayRates(for: dateKey, context: context)
         if rowMemoIsCurrent(generation) { ownRowRates[dateKey] = .some(rates) }
         return rates
     }
 
-    /// Las filas estrictamente anteriores a una fecha (hasta `carryForwardLookback`), leídas una vez por pasada.
-    private func previousRows(strictlyBefore dateKey: String, context: ModelContext) -> [ExchangeRate] {
+    /// Los días estrictamente anteriores a una fecha (las `carryForwardLookback` filas más recientes, con su último día
+    /// completo), de la más reciente hacia atrás, leídos una vez por pasada.
+    private func previousRows(strictlyBefore dateKey: String, context: ModelContext) -> [DayCopies] {
         let generation = rowMemoGeneration(for: context)
         if let hit = previousRowsByDate[dateKey] { return hit }
         let rows = fetchRates(strictlyBefore: dateKey, limit: Self.carryForwardLookback, context: context)
-        if rowMemoIsCurrent(generation) { previousRowsByDate[dateKey] = rows }
-        return rows
+        let days = Dictionary(grouping: rows, by: \.dateKey)
+            .map { DayCopies(dateKey: $0.key, copies: $0.value) }
+            .sorted { $0.dateKey > $1.dateKey }
+        if rowMemoIsCurrent(generation) { previousRowsByDate[dateKey] = days }
+        return days
     }
 
-    /// Las tasas de una fila anterior, decodificadas la primera vez que se miran en la pasada.
-    private func decodedPreviousRates(_ row: ExchangeRate) -> [String: Double] {
-        let id = row.persistentModelID
-        if let hit = decodedPreviousRows[id], rowMemoIsCurrent(rowMemoGenerationInUse) { return hit }
-        let rates = row.decodedRates()
-        if rowMemoIsCurrent(rowMemoGenerationInUse) { decodedPreviousRows[id] = rates }
+    /// Las tasas fundidas de un día anterior, decodificadas la primera vez que se miran en la pasada.
+    private func decodedPreviousRates(_ day: DayCopies) -> [String: Double] {
+        if let hit = decodedPreviousDays[day.dateKey], rowMemoIsCurrent(rowMemoGenerationInUse) { return hit }
+        let rates = Self.mergedRates(day.copies)
+        if rowMemoIsCurrent(rowMemoGenerationInUse) { decodedPreviousDays[day.dateKey] = rates }
         return rates
     }
 
+    /// Las tasas servibles de las copias de UN día. Con una sola fila es su decode filtrado, como antes.
+    private static func mergedRates(_ copies: [ExchangeRate]) -> [String: Double] {
+        ExchangeRateDuplicateLogic.mergedDayRates(copies.map {
+            .init(syncID: $0.syncID?.uuidString.lowercased(), timestamp: $0.timestamp, rates: $0.decodedRates())
+        })
+    }
+
+    /// La clave de cada fila de tasas. Gregoriana y en `en_US_POSIX` pase lo que pase en el iPhone (ticket
+    /// `exchange-rate-date-keys-follow-the-phone-calendar`): sin fijarlas, `yyyy` es el año del calendario del sistema y
+    /// un iPhone en calendario budista buscaba y guardaba hoy como `2569-…`, una clave que ningún otro dispositivo ni la
+    /// nube conocen, y convertía con la tabla estática. Mismo formatter en `ExchangeRateService` y
+    /// `ExchangeRateAPIService`: si cambias uno, cambia los tres.
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
@@ -626,8 +652,8 @@ final class CurrencyConverter: CurrencyConverting {
     /// misma. Si vuelve a tener un consumidor que persista, que use la calidad de `convertChecked`.
     func hasExactRate(for date: Date, needing codes: Set<String>, context: ModelContext) -> Bool {
         let dateKey = dateFormatter.string(from: date)
-        guard let row = fetchExchangeRate(for: dateKey, context: context) else { return false }
-        return codes.isSubset(of: Set(row.decodedRates().keys))
+        guard let rates = fetchDayRates(for: dateKey, context: context) else { return false }
+        return codes.isSubset(of: Set(rates.keys))
     }
 
     // MARK: - Private Helpers
@@ -738,22 +764,25 @@ final class CurrencyConverter: CurrencyConverting {
         // Las filas del rango y las anteriores que el escalón 2 puede pedir, en orden de fecha.
         let previous = fetchRates(strictlyBefore: minKey, limit: Self.carryForwardLookback, context: context)
         let inRange = fetchRates(from: minKey, through: maxKey, context: context)
-        // Sin quitar duplicados de una misma fecha (dos dispositivos pueden escribir la fila del día): el escalón 2 de
-        // `resolveRates` los recorre todos y cuenta cada uno en sus 30, y aquí tiene que ser igual. La fila «propia» de
-        // una fecha es la primera de su clave, como en `fetchExchangeRate`.
-        let rows: [(key: String, rates: [String: Double])] = (previous + inRange)
-            .sorted { $0.dateKey < $1.dateKey }
-            .map { ($0.dateKey, $0.decodedRates().filter { Self.isUsableRate($0.value) }) }
-        var rowIndexByKey: [String: Int] = [:]
-        for (index, row) in rows.enumerated() where rowIndexByKey[row.key] == nil { rowIndexByKey[row.key] = index }
+        // Las copias de un mismo día (dos dispositivos pueden escribir la fila del día) se funden con la misma regla que
+        // `rowRates` y `previousRows`. La ventana del escalón 2 se mide en FILAS, como en `fetchRates(strictlyBefore:)`:
+        // las 30 más recientes y, si la ventana corta un día, el día entero. Así las dos rutas miran los mismos días.
+        let keysByRow: [String] = (previous + inRange).map(\.dateKey).sorted()
+        let ratesByKey: [String: [String: Double]] = Dictionary(grouping: previous + inRange, by: \.dateKey)
+            .mapValues { Self.mergedRates($0) }
         let staticTable = fallbackRates
 
         var out: [Date: [String: RateFactor]] = [:]
         for (date, key) in keyed {
-            // Las filas estrictamente anteriores a la fecha, de la más reciente hacia atrás, como `fetchRates`.
-            let upper = rowIndexByKey[key] ?? rows.firstIndex { $0.key > key } ?? rows.count
-            let before = rows[..<upper].suffix(Self.carryForwardLookback).reversed()
-            let own = rowIndexByKey[key].map { rows[$0].rates } ?? [:]
+            // Los días estrictamente anteriores a la fecha, de la más reciente hacia atrás, como `previousRows`.
+            let upper = Self.firstIndex(notBefore: key, in: keysByRow)
+            var lower = max(0, upper - Self.carryForwardLookback)
+            while lower > 0, keysByRow[lower - 1] == keysByRow[lower] { lower -= 1 }
+            var seen = Set<String>()
+            let before: [(key: String, rates: [String: Double])] = keysByRow[lower..<upper].reversed()
+                .filter { seen.insert($0).inserted }
+                .map { ($0, ratesByKey[$0] ?? [:]) }
+            let own = ratesByKey[key] ?? [:]
 
             var byCode: [String: RateFactor] = [:]
             for rawCode in codes {
@@ -801,6 +830,18 @@ final class CurrencyConverter: CurrencyConverting {
         return out
     }
 
+    /// La primera posición de `sortedKeys` con una clave `>= key` (búsqueda binaria: una curva de «Todo» pide una
+    /// fecha por día).
+    private static func firstIndex(notBefore key: String, in sortedKeys: [String]) -> Int {
+        var low = 0
+        var high = sortedKeys.count
+        while low < high {
+            let mid = (low + high) / 2
+            if sortedKeys[mid] < key { low = mid + 1 } else { high = mid }
+        }
+        return low
+    }
+
     private func fetchRates(from fromKey: String, through toKey: String, context: ModelContext) -> [ExchangeRate] {
         let descriptor = FetchDescriptor<ExchangeRate>(
             predicate: #Predicate { $0.dateKey >= fromKey && $0.dateKey <= toKey },
@@ -830,7 +871,12 @@ final class CurrencyConverter: CurrencyConverting {
         )
         descriptor.fetchLimit = limit
         do {
-            return try context.fetch(descriptor)
+            let rows = try context.fetch(descriptor)
+            // El tope corta por filas, y entre copias del mismo día el orden no está definido: si el corte cae dentro de
+            // un día, cada lectura se quedaría con unas copias distintas. Se completa ese último día entero.
+            guard rows.count == limit, let boundary = rows.last?.dateKey else { return rows }
+            let boundaryDay = FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.dateKey == boundary })
+            return rows.filter { $0.dateKey != boundary } + (try context.fetch(boundaryDay))
         } catch {
             #if DEBUG
             print("CurrencyConverter: Error fetching previous rates: \(error)")
@@ -853,7 +899,7 @@ final class CurrencyConverter: CurrencyConverting {
         if let cached = latestRatesCache.withLock({ $0 }), cached.dayKey == todayKey {
             return cached
         }
-        let row = fetchExchangeRate(for: todayKey, context: context)?.decodedRates() ?? [:]
+        let row = fetchDayRates(for: todayKey, context: context) ?? [:]
         let usable = row.filter { Self.isUsableRate($0.value) }
         let entry = CachedRates(
             rates: usable,
@@ -942,7 +988,9 @@ final class CurrencyConverter: CurrencyConverting {
     @ObservationIgnored private(set) var _testRateRowFetches = 0
     #endif
 
-    private func fetchExchangeRate(for dateKey: String, context: ModelContext) -> ExchangeRate? {
+    /// Las tasas servibles de un día, o `nil` si no hay fila. Con varias filas del mismo día las funde con una regla fija
+    /// (`ExchangeRateDuplicateLogic.mergedDayRates`); antes se quedaba con `results.first`, sin orden.
+    private func fetchDayRates(for dateKey: String, context: ModelContext) -> [String: Double]? {
         #if DEBUG
         _testRateRowFetches += 1
         #endif
@@ -952,7 +1000,8 @@ final class CurrencyConverter: CurrencyConverting {
 
         do {
             let results = try context.fetch(descriptor)
-            return results.first
+            guard !results.isEmpty else { return nil }
+            return Self.mergedRates(results)
         } catch {
             #if DEBUG
             print("CurrencyConverter: Error fetching rate: \(error)")

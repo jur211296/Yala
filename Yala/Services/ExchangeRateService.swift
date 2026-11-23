@@ -50,8 +50,13 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     // All supported currencies - derived from CurrencyCode enum (single source of truth)
     private var supportedSymbols: [String] { CurrencyCode.allRawValues }
 
+    /// Gregoriano y `en_US_POSIX`, como el de `CurrencyConverter` (ticket
+    /// `exchange-rate-date-keys-follow-the-phone-calendar`): la clave de una fila no puede depender del calendario del
+    /// iPhone.
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
@@ -60,6 +65,9 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     // UserDefaults keys
     private let lastHistoricalLoadKey = "exchangeRate_lastHistoricalLoad"
     private let lastTodayUpdateKey = "exchangeRate_lastTodayUpdate"
+    /// El día (clave UTC) de la última limpieza de este proceso (`cleanUpStoredRatesIfDue`). En memoria a propósito: si
+    /// la app se reinicia, volver a mirar cuesta una lectura sin decodificar.
+    private var lastCleanUpDayKey: String?
     /// Tope de días por petición al proveedor. **Lo impone la API, no nosotros**
     /// (`preloadHistoricalIfNeeded` ya troceaba mes a mes por este motivo), y hasta ahora
     /// `ensureRates` no lo respetaba porque en la práctica nunca pedía rangos largos: preguntaba por
@@ -156,6 +164,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     /// mismo bucle con otra ropa.
     func updateTodayIfNeeded(context: ModelContext) async {
         let todayKey = dateFormatter.string(from: Date.now)
+        cleanUpStoredRatesIfDue(todayKey: todayKey, context: context)
 
         // Check if we already have today's rate, con las divisas que esta app necesita
         if rateCovers(getRequiredCurrencies(context: context), for: todayKey, context: context) {
@@ -523,20 +532,39 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         SaveBreadcrumb.didSave("ExchangeRateService.persistRate")
     }
 
-    private func fetchExchangeRate(for dateKey: String, context: ModelContext) -> ExchangeRate? {
+    /// Las filas guardadas para ese día. Casi siempre una; varias cuando el día llegó de más de un dispositivo.
+    private func fetchDayCopies(for dateKey: String, context: ModelContext) -> [ExchangeRate] {
         let descriptor = FetchDescriptor<ExchangeRate>(
             predicate: #Predicate { $0.dateKey == dateKey }
         )
 
         do {
-            let results = try context.fetch(descriptor)
-            return results.first
+            return try context.fetch(descriptor)
         } catch {
             #if DEBUG
             print("ExchangeRateService: Error fetching rate: \(error)")
             #endif
-            return nil
+            return []
         }
+    }
+
+    /// La fila de un día. Con varias copias, la que se aplica la última según `ExchangeRateDuplicateLogic` (antes,
+    /// `results.first` sin orden: cada lectura podía devolver otra, ticket
+    /// `duplicate-exchange-rate-rows-pick-an-arbitrary-rate`).
+    private func fetchExchangeRate(for dateKey: String, context: ModelContext) -> ExchangeRate? {
+        let copies = fetchDayCopies(for: dateKey, context: context)
+        return ExchangeRateDuplicateLogic.newestIndex(copies.map(Self.dayRow)).map { copies[$0] }
+    }
+
+    /// Las tasas servibles de un día con sus copias fundidas, la misma regla con la que convierte `CurrencyConverter`.
+    private func fetchDayRates(for dateKey: String, context: ModelContext) -> [String: Double]? {
+        let copies = fetchDayCopies(for: dateKey, context: context)
+        guard !copies.isEmpty else { return nil }
+        return ExchangeRateDuplicateLogic.mergedDayRates(copies.map(Self.dayRow))
+    }
+
+    private static func dayRow(_ row: ExchangeRate) -> ExchangeRateDuplicateLogic.DayRow {
+        .init(syncID: row.syncID?.uuidString.lowercased(), timestamp: row.timestamp, rates: row.decodedRates())
     }
 
     /// ¿La fila de esa fecha trae las divisas pedidas, con una tasa servible?
@@ -548,8 +576,8 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     /// `CurrencyConverter.hasExactRate(for:needing:)` dejó de serlo por el mismo motivo.
     private func rateCovers(_ codes: Set<String>, for dateKey: String, context: ModelContext) -> Bool
     {
-        guard let rate = fetchExchangeRate(for: dateKey, context: context) else { return false }
-        return ExchangeRateCoverageLogic.covers(rate.decodedRates(), needing: codes)
+        guard let rates = fetchDayRates(for: dateKey, context: context) else { return false }
+        return ExchangeRateCoverageLogic.covers(rates, needing: codes)
     }
 
     /// Checks if a stored rate has ALL supported currencies.
@@ -559,6 +587,91 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     /// `CurrencyConverter`: la fila con ceros se vuelve a pedir en vez de darse por completa.
     private func rateHasAllCurrencies(for dateKey: String, context: ModelContext) -> Bool {
         rateCovers(Set(CurrencyCode.allRawValues), for: dateKey, context: context)
+    }
+
+    // MARK: - Limpieza de tasas guardadas
+
+    /// Una vez por día y proceso: funde las copias repetidas de un día y descarta las filas con una clave imposible.
+    ///
+    /// - **Copias repetidas** (ticket `duplicate-exchange-rate-rows-pick-an-arbitrary-rate`): el pull de la nube trae la
+    ///   fila de cada día de CADA dispositivo, cada una con su `syncID`, y nadie las fundía (medido en staging: 1133
+    ///   filas para 738 días). Se funden con `ExchangeRateDuplicateLogic.fusions`, la misma regla de «Activar la nube»:
+    ///   sobrevive el menor `syncID`, así que otro dispositivo que limpie a la vez elige la misma fila. Un día con
+    ///   alguna copia sin `syncID` no se toca —sin identidad no hay superviviente estable entre dispositivos—; para
+    ///   leerlo basta la fusión de la lectura.
+    /// - **Claves imposibles** (ticket `exchange-rate-date-keys-follow-the-phone-calendar`): las que guardó un iPhone en
+    ///   otro calendario antes del arreglo (`2569-…`, `0008-…`). Se borran; ver
+    ///   `ExchangeRateDuplicateLogic.isImplausibleDateKey`.
+    ///
+    /// Solo con el import asentado (el gate de `persistRate`) y con el store en un estado en que escribir es normal:
+    /// `.icloud`, o la nube con el motor en marcha (`CloudSyncRuntime.canRunDomain`). Con una ida o una vuelta en vuelo
+    /// no se toca: borrar en medio de esas fases no lo ha medido nadie.
+    func cleanUpStoredRatesIfDue(todayKey: String, context: ModelContext) {
+        guard lastCleanUpDayKey != todayKey else { return }
+        guard iCloudSyncService.shared.isImportQuiescent else { return }
+        guard CloudSyncFlags.storageMode == .icloud || CloudSyncRuntime.canRunDomain() else { return }
+        lastCleanUpDayKey = todayKey
+        let currentYear = Calendar(identifier: .gregorian).component(.year, from: Date.now)
+        do {
+            let changed = try cleanUpStoredRates(currentYear: currentYear, context: context)
+            if changed > 0 {
+                NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+            }
+        } catch {
+            #if DEBUG
+            print("ExchangeRateService: Error cleaning up stored rates: \(error)")
+            #endif
+        }
+    }
+
+    /// El cuerpo de la limpieza, sin gates: devuelve cuántas filas borró. Sin `rollback` si el guardado lanza (el
+    /// contexto es compartido; precedente de `MigrationSnapshotUploader.fuseDuplicateExchangeRates`).
+    @discardableResult
+    func cleanUpStoredRates(currentYear: Int, context: ModelContext) throws -> Int {
+        let all = try context.fetch(FetchDescriptor<ExchangeRate>())
+        var removed = 0
+        var kept: [ExchangeRate] = []
+        for row in all {
+            if ExchangeRateDuplicateLogic.isImplausibleDateKey(row.dateKey, currentYear: currentYear) {
+                context.delete(row)
+                removed += 1
+            } else {
+                kept.append(row)
+            }
+        }
+
+        // Solo se decodifica lo que tiene copias: el caso normal es una fila por día. Y solo los días en que TODAS las
+        // copias traen identidad: con una copia sin `syncID` en medio, fundir las demás cambiaría el orden en que la
+        // lectura aplica las copias, y el día se leería distinto después de limpiar.
+        let repeatedDays = Dictionary(grouping: kept) { "\($0.dateKey)|\($0.base)" }.values
+            .filter { $0.count > 1 && $0.allSatisfy { $0.syncID != nil } }
+        var models: [ExchangeRate] = []
+        var rows: [ExchangeRateDuplicateLogic.Row] = []
+        for copy in repeatedDays.joined() {
+            guard let sid = copy.syncID else { continue }
+            // Sin las tasas inservibles, como en la lectura (`mergedDayRates`): fundir un 0 nuevo encima de una tasa
+            // buena la perdería para siempre, y leer el día antes y después de limpiar daría distinto.
+            rows.append(.init(id: models.count, dateKey: copy.dateKey, base: copy.base,
+                              syncID: sid.uuidString.lowercased(), timestamp: copy.timestamp,
+                              rates: copy.decodedRates().filter { CurrencyConverter.isUsableRate($0.value) }))
+            models.append(copy)
+        }
+        for fusion in ExchangeRateDuplicateLogic.fusions(rows) {
+            let survivor = models[fusion.survivorID]
+            let mergedRates = try JSONEncoder().encode(fusion.mergedRates)
+            if survivor.decodedRates() != fusion.mergedRates { survivor.rates = mergedRates }
+            if survivor.timestamp != fusion.mergedTimestamp { survivor.timestamp = fusion.mergedTimestamp }
+            for loser in fusion.loserIDs {
+                context.delete(models[loser])
+                removed += 1
+            }
+        }
+
+        guard context.hasChanges else { return removed }
+        SaveBreadcrumb.willSave("ExchangeRateService.cleanUpStoredRates")
+        try context.save()
+        SaveBreadcrumb.didSave("ExchangeRateService.cleanUpStoredRates")
+        return removed
     }
 
     private func countExistingRates(context: ModelContext) -> Int {
@@ -621,9 +734,10 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             let rows = try context.fetch(descriptor)
             var coverage: [String: Set<String>] = [:]
             coverage.reserveCapacity(rows.count)
-            for row in rows {
-                coverage[row.dateKey] = ExchangeRateCoverageLogic.usableCurrencies(
-                    in: row.decodedRates())
+            // Con varias copias de un día cuenta lo que traen entre todas (antes, la última que se recorría).
+            for (dateKey, copies) in Dictionary(grouping: rows, by: \.dateKey) {
+                coverage[dateKey] = ExchangeRateCoverageLogic.usableCurrencies(
+                    in: ExchangeRateDuplicateLogic.mergedDayRates(copies.map(Self.dayRow)))
             }
             return coverage
         } catch {
