@@ -581,7 +581,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | figures-that-dont-add-up-lote-02-necessary-2-3 | done | tickets/done/figures-that-dont-add-up-lote-02-necessary-2-3.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | done | tickets/done/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
-| financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
+| financial-report-amounts-unmarked | done | tickets/done/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
@@ -619,7 +619,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | full-mode-activation-must-ask-where-personal-data-lives | done | tickets/done/full-mode-activation-must-ask-where-personal-data-lives.md |
 | fx-approximate-mark-missing-on-secondary-surfaces | done | tickets/done/fx-approximate-mark-missing-on-secondary-surfaces.md |
 | fx-category-totals-unmarked | backlog | tickets/backlog/fx-category-totals-unmarked.md |
-| fx-historical-balance-curve-unmarked | backlog | tickets/backlog/fx-historical-balance-curve-unmarked.md |
+| fx-historical-balance-curve-unmarked | done | tickets/done/fx-historical-balance-curve-unmarked.md |
 | fx-manual-writes-seal-approximate-as-final | done | tickets/done/fx-manual-writes-seal-approximate-as-final.md |
 | fx-partial-rate-rows-silent-1to1 | done | tickets/done/fx-partial-rate-rows-silent-1to1.md |
 | fx-per-bucket-approximate-signal-missing | backlog | tickets/backlog/fx-per-bucket-approximate-signal-missing.md |
@@ -1070,7 +1070,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen | backlog | tickets/backlog/personal-to-group-conversion-uitest-taps-the-loan-leg-bus-off-screen.md |
 | personalization-shows-two-back-buttons | done | tickets/done/personalization-shows-two-back-buttons.md |
 | phone-with-the-clock-behind-loses-after-seeing-the-row | backlog | tickets/backlog/phone-with-the-clock-behind-loses-after-seeing-the-row.md |
-| pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
+| pie-header-total-unmarked | done | tickets/done/pie-header-total-unmarked.md |
 | positive-toast-and-top-banners-are-not-coordinated | backlog | tickets/backlog/positive-toast-and-top-banners-are-not-coordinated.md |
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | practice-cleanup-prompt-outside-the-presentation-locks | backlog | tickets/backlog/practice-cleanup-prompt-outside-the-presentation-locks.md |

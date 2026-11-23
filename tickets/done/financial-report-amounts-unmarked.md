@@ -1,11 +1,11 @@
 ---
 id: financial-report-amounts-unmarked
-status: backlog
+status: done
 priority: medium
 area: "currency, fx"
 created: 2026-09-09
 source: hallazgo de camino en bridge-de-grupos-pierde-la-marca-de-sus-patas (2026-09-09)
-updated: 2026-10-08
+updated: 2026-11-23
 ---
 
 # La pantalla de Informes presenta 22 importes y ninguno puede llevar la marca
@@ -58,3 +58,20 @@ la da `GroupBridgeStatsAdjustment.isApproximate(_:)`, no el flag de la fila.
 - Sube a `medium` por coherencia con `pie-header-total-unmarked` (medium en el triage del 2026-10-08): es el mismo número que el Panel sí marca, en la pantalla a la que se va a buscar el detalle.
 
 Triage 2026-10-08: abierto · low → medium · Informes sigue sin poder marcar «≈»; enseña como exacto el mismo dinero que el Panel marca como aproximado, que es copy que miente sobre los datos.
+
+## Cerrado el 2026-11-23 (encargo «Marcar como aproximados los importes convertidos en Informes…»)
+
+Medido en `origin/2.3` antes de tocar: las filas de la tabla ya marcaban, pero solo la tarjeta con varias divisas
+(`PivotTableCalculator.convertsCard`); «Te quedó» y la cifra del período anterior de su frase, sin marca.
+
+- «Te quedó» y la frase del período anterior llevan «≈» cuando la parte con tasa dudosa pesa:
+  `FinancialReportViewModel.netFlow(of:…)`, los dos lados sumados contra el neto mostrado (es una resta), la misma
+  regla que el neto del Flujo de caja. Lo pinta `NetFlowSummaryView` (`currentIsApproximate`, `previousIsApproximate`).
+- Cada fila de la tabla en la divisa preferida lleva su marca, con `ApproximateMarkThreshold` sobre sus propios
+  movimientos y su suma con signo como denominador; la del período anterior, la suya. Las filas agrupadas por Divisa o
+  por Cuenta suman en nativo, no convierten y no llevan marca (escrito en el código). La regla de la tarjeta con varias
+  divisas se conserva.
+- Ningún importe cambia: solo su marca.
+- Pin: `YalaTests/MarcaAproximado/MarcaAproximadoInformesYGraficasTests` (neto, denominador discriminante, filas,
+  lado anterior, divisa) y `MarcaAproximadoCableadoTests`. Mutantes: quitar el umbral del neto o el `|| current` de la
+  fila ponen rojo.

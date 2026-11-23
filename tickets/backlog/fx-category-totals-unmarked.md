@@ -35,7 +35,7 @@ misma razón.
 
 ## Por qué es `low`
 
-El total que agrega estas líneas SÍ avisa desde el 2026-09-09, así que el usuario no ve un número
+El total que agrega estas líneas SÍ avisa (el del Panel desde el 2026-09-09; el de las tartas de Distribución desde el 2026-11-23, `pie-header-total-unmarked`), así que el usuario no ve un número
 declarado exacto que no lo sea: ve un desglose sin marca bajo un total marcado. Es información que
 falta, no información falsa.
 
