@@ -179,7 +179,8 @@ struct AIConnectorMaterializeTests {
         #expect(created == 1)
         let draft = try #require(try w.context.fetch(FetchDescriptor<InboxDraft>()).first)
         #expect(draft.sourceType == .aiConnector)
-        #expect(draft.sourceDisplayName == L10n.Inbox.sourceAIConnector)
+        // «Conecta tu IA» (decisión 6 de Jürgen, 23-nov): la fila dice el nombre de la IA, no «Tu IA».
+        #expect(draft.sourceDisplayName == "Claude")
         #expect(draft.amount == -25)
         #expect(draft.note == "Almuerzo")
         #expect(draft.account?.shortcutID == w.soles.shortcutID)

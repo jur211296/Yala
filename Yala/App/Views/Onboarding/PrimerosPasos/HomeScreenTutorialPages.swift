@@ -49,6 +49,7 @@ struct HomeScreenStoryPart: View {
         case .share: S.shareTitle
         case .mail: S.mailTitle
         case .siri: S.siriTitle
+        case .ai: L10n.ConectaTuIA.paso7StoryTitle
         }
     }
 
@@ -59,6 +60,7 @@ struct HomeScreenStoryPart: View {
         case .share: S.shareMessage
         case .mail: T.mailPartMessage
         case .siri: S.siriMessage
+        case .ai: L10n.ConectaTuIA.paso7StoryMessage
         }
     }
 
@@ -70,6 +72,7 @@ struct HomeScreenStoryPart: View {
         case .share: HomeScreenShareStory()
         case .mail: HomeScreenMailIllustration()
         case .siri: HomeScreenSiriStory()
+        case .ai: ConectaTuIAStory()
         }
     }
 }
@@ -473,6 +476,7 @@ struct HomeScreenMethodPage: View {
         case .share: T.shareTitle
         case .mail: T.mailTitle
         case .siri: T.siriTitle
+        case .ai: L10n.ConectaTuIA.paso7MethodTitle
         }
     }
 
@@ -483,6 +487,7 @@ struct HomeScreenMethodPage: View {
         case .share: T.shareSubtitle
         case .mail: T.mailSubtitle
         case .siri: T.siriSubtitle
+        case .ai: L10n.ConectaTuIA.paso7MethodSubtitle
         }
     }
 
@@ -533,6 +538,8 @@ struct HomeScreenMethodPage: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"))
                 .accessibilityAddTraits(.isButton)
+        case .ai:
+            ConectaTuIAPuertaGuide()
         }
     }
 
@@ -553,7 +560,7 @@ struct HomeScreenMethodPage: View {
         case .widget: doneButton(T.widgetDone)
         case .applePay: doneButton(T.applePayDone)
         case .share: doneButton(L10n.Common.understood)
-        case .mail, .siri: doneButton(L10n.Action.done)
+        case .mail, .siri, .ai: doneButton(L10n.Action.done)
         }
     }
 

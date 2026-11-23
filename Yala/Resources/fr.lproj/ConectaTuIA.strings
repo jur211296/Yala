@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Ton IA";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT ou Grok";
+"conectaTuIA.header.title" = "Connecte ton IA";
+"conectaTuIA.header.message" = "Pose-lui des questions sur tes dépenses ou dis « note 25 pour le déjeuner ». Ce qu’elle note t’attend dans la boîte de réception.";
+"conectaTuIA.steps.header" = "Comment la connecter";
+"conectaTuIA.copy" = "Copier";
+"conectaTuIA.copied" = "Copiée";
+"conectaTuIA.copyHint" = "Copie l’adresse du connecteur";
+"conectaTuIA.claude.step1" = "Dans Claude, va dans Réglages → Connecteurs → Ajouter un connecteur personnalisé.";
+"conectaTuIA.claude.step2" = "Nomme-le « Yala » et colle cette adresse :";
+"conectaTuIA.claude.step3" = "Touche Connecter, accepte l’autorisation de Yala et connecte-toi avec Apple ou Google.";
+"conectaTuIA.chatgpt.note" = "Nécessite un abonnement payant à ChatGPT et l’activation de son mode développeur.";
+"conectaTuIA.chatgpt.step1" = "Dans ChatGPT, va dans Réglages → Apps et connecteurs → Réglages avancés et active le mode développeur.";
+"conectaTuIA.chatgpt.step2" = "Crée un connecteur nommé « Yala », avec authentification OAuth, et colle cette adresse :";
+"conectaTuIA.chatgpt.step3" = "Accepte l’autorisation de Yala et connecte-toi avec Apple ou Google.";
+"conectaTuIA.grok.step1" = "Dans Grok, cherche l’option pour ajouter un connecteur personnalisé (MCP).";
+"conectaTuIA.grok.step2" = "Nomme-le « Yala » et colle cette adresse :";
+"conectaTuIA.grok.step3" = "Accepte l’autorisation de Yala et connecte-toi avec Apple ou Google.";
+"conectaTuIA.can.header" = "Ce qu’elle peut faire";
+"conectaTuIA.can.read" = "Lit tes comptes, transactions, budgets et paiements récurrents.";
+"conectaTuIA.can.draft" = "Note des dépenses et des revenus comme brouillons dans ta boîte de réception. Ils comptent quand tu les confirmes.";
+"conectaTuIA.can.never" = "Ne modifie ni ne supprime jamais rien, et ne voit pas tes groupes.";
+"conectaTuIA.can.footer" = "Gratuit. Tu peux la déconnecter quand tu veux.";
+"conectaTuIA.account.title" = "D’abord, transfère tes données vers ton compte Yala";
+"conectaTuIA.account.message" = "Tes données sont dans ton iCloud et ton IA ne peut pas les lire là-bas. Dans ton compte Yala, si.";
+"conectaTuIA.account.button" = "Passer à ton compte Yala";
+"conectaTuIA.account.where" = "Fais-le dans Réglages → « Où vivent tes données ».";
+"conectaTuIA.connected.header" = "Connectées";
+"conectaTuIA.connected.empty" = "Aucune IA connectée pour l’instant.";
+"conectaTuIA.connected.footer" = "Si tu viens d’en connecter une, elle peut mettre une minute à apparaître.";
+"conectaTuIA.connected.since" = "Connectée le %@";
+"conectaTuIA.connected.local" = "Sur ton ordinateur";
+"conectaTuIA.connected.lastDraft" = "dernier brouillon %@";
+"conectaTuIA.connected.loadFailed" = "Impossible de charger la liste. Vérifie ta connexion et réessaie.";
+"conectaTuIA.disconnect" = "Déconnecter";
+"conectaTuIA.disconnect.confirmTitle" = "Déconnecter %@ ?";
+"conectaTuIA.disconnect.confirmBody" = "Elle arrête de lire et de noter tout de suite. Ce que tu as déjà confirmé reste dans Yala.";
+"conectaTuIA.disconnect.failed" = "Impossible de déconnecter. Réessaie.";
+"conectaTuIA.inbox.title" = "Note depuis ton IA";
+"conectaTuIA.inbox.message" = "Dis à Claude « note 25 pour le déjeuner » et ça arrive ici.";
+"conectaTuIA.inbox.button" = "Connecter";
+"conectaTuIA.filter.fromAI" = "De ton IA";
+"conectaTuIA.paso7.name" = "Ton IA";
+"conectaTuIA.paso7.storyTitle" = "Demande-le à ton IA";
+"conectaTuIA.paso7.storyMessage" = "Dis à Claude ou à ChatGPT « note 25 pour le déjeuner » et ça t’attend dans la boîte de réception.";
+"conectaTuIA.paso7.methodTitle" = "Connecte ton IA";
+"conectaTuIA.paso7.methodSubtitle" = "Trois étapes, depuis ton IA. Ce qu’elle note compte quand tu le confirmes.";
+"conectaTuIA.paso7.example" = "Note 25 pour le déjeuner";

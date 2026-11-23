@@ -47,4 +47,6 @@ enum ProfileDestination: Hashable {
     /// "Tu cuenta de Yala" (§3.3.5): mapa/explainer del enlace privado ↔ nube (método, dónde viven los
     /// datos, desenlaces). Solo con sesión backend viva (DARK hoy).
     case yalaAccount
+    /// «Tu IA» (2.3, «Conecta tu IA»): conectar Claude, ChatGPT o Grok, qué puede hacer y desconectarla. Gratis.
+    case conectaTuIA
 }

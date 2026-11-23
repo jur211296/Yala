@@ -50,12 +50,14 @@ struct HomeScreenTutorialFlowView: View {
     @Bindable var progress: HomeScreenTutorialProgress
     /// `BankEmailEntryLogic.showsRow` en el momento de presentar: con él, cinco maneras.
     let showsMail: Bool
+    /// «Tu IA», la sexta, con la misma regla que el correo (la cuenta de Yala). Ver `PrimerosPasosHomeScreenPresentation`.
+    var showsAI = false
     let onClose: (HomeScreenTutorialLogic.Exit) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var methods: [HomeScreenTutorialLogic.Method] {
-        progress.methods ?? Logic.methods(showsMail: showsMail)
+        progress.methods ?? Logic.methods(showsMail: showsMail, showsAI: showsAI)
     }
 
     private var currentMethod: HomeScreenTutorialLogic.Method {
@@ -82,7 +84,7 @@ struct HomeScreenTutorialFlowView: View {
         .animation(reduceMotion ? nil : DS.Animation.appear, value: progress.phase)
         .yalaScreenBackground(.panel)
         .onAppear {
-            if progress.methods == nil { progress.methods = Logic.methods(showsMail: showsMail) }
+            if progress.methods == nil { progress.methods = Logic.methods(showsMail: showsMail, showsAI: showsAI) }
         }
     }
 
@@ -156,6 +158,7 @@ enum HomeScreenMethodText {
         case .share: T.shareName
         case .mail: T.mailName
         case .siri: T.siriName
+        case .ai: L10n.ConectaTuIA.paso7Name
         }
     }
 
@@ -166,6 +169,7 @@ enum HomeScreenMethodText {
         case .share: "square.and.arrow.up"
         case .mail: "envelope.fill"
         case .siri: "waveform"
+        case .ai: "sparkles"
         }
     }
 
@@ -177,6 +181,7 @@ enum HomeScreenMethodText {
         case .share: .teal
         case .mail: .blue
         case .siri: .purple
+        case .ai: .hotPink
         }
     }
 }

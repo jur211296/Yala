@@ -73,7 +73,7 @@ struct InboxBulkActionsSheet: View {
 
     private var availableOptions: [InboxBulkOption] {
         switch filter {
-        case .pending:
+        case .pending, .fromAI:
             return [.account, .subcategory, .approve, .reject, .delete]
         case .archived:
             return [.returnToPending, .delete]

@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Tu IA";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT o Grok";
+"conectaTuIA.header.title" = "Conecta tu IA";
+"conectaTuIA.header.message" = "Pregúntale por tus gastos o dile «apunta 25 de almuerzo». Lo que apunte te espera en la Bandeja.";
+"conectaTuIA.steps.header" = "Cómo conectarla";
+"conectaTuIA.copy" = "Copiar";
+"conectaTuIA.copied" = "Copiada";
+"conectaTuIA.copyHint" = "Copia la dirección del conector";
+"conectaTuIA.claude.step1" = "En Claude, ve a Ajustes → Conectores → Añadir conector personalizado.";
+"conectaTuIA.claude.step2" = "Ponle de nombre «Yala» y pega esta dirección:";
+"conectaTuIA.claude.step3" = "Toca Conectar, acepta el permiso de Yala e inicia sesión con Apple o Google.";
+"conectaTuIA.chatgpt.note" = "Necesita un plan de pago de ChatGPT y activar su modo desarrollador.";
+"conectaTuIA.chatgpt.step1" = "En ChatGPT, ve a Ajustes → Apps y conectores → Ajustes avanzados y activa el modo desarrollador.";
+"conectaTuIA.chatgpt.step2" = "Crea un conector llamado «Yala», con autenticación OAuth, y pega esta dirección:";
+"conectaTuIA.chatgpt.step3" = "Acepta el permiso de Yala e inicia sesión con Apple o Google.";
+"conectaTuIA.grok.step1" = "En Grok, busca la opción para añadir un conector personalizado (MCP).";
+"conectaTuIA.grok.step2" = "Ponle de nombre «Yala» y pega esta dirección:";
+"conectaTuIA.grok.step3" = "Acepta el permiso de Yala e inicia sesión con Apple o Google.";
+"conectaTuIA.can.header" = "Qué puede hacer";
+"conectaTuIA.can.read" = "Lee tus cuentas, movimientos, presupuestos y pagos recurrentes.";
+"conectaTuIA.can.draft" = "Apunta gastos e ingresos como borradores en tu Bandeja. Cuentan cuando los confirmas.";
+"conectaTuIA.can.never" = "Nunca cambia ni borra nada, ni ve tus grupos.";
+"conectaTuIA.can.footer" = "Gratis. Puedes desconectarla cuando quieras.";
+"conectaTuIA.account.title" = "Primero, pasa tus datos a tu cuenta de Yala";
+"conectaTuIA.account.message" = "Tus datos viven en tu iCloud y tu IA no puede leerlos ahí. En tu cuenta de Yala, sí.";
+"conectaTuIA.account.button" = "Pasar a tu cuenta de Yala";
+"conectaTuIA.account.where" = "Hazlo en Ajustes → «Dónde viven tus datos».";
+"conectaTuIA.connected.header" = "Conectadas";
+"conectaTuIA.connected.empty" = "Ninguna IA conectada todavía.";
+"conectaTuIA.connected.footer" = "Si acabas de conectar una, puede tardar un minuto en aparecer.";
+"conectaTuIA.connected.since" = "Conectada el %@";
+"conectaTuIA.connected.local" = "En tu computadora";
+"conectaTuIA.connected.lastDraft" = "último borrador %@";
+"conectaTuIA.connected.loadFailed" = "No se pudo cargar la lista. Revisa tu conexión e inténtalo de nuevo.";
+"conectaTuIA.disconnect" = "Desconectar";
+"conectaTuIA.disconnect.confirmTitle" = "¿Desconectar %@?";
+"conectaTuIA.disconnect.confirmBody" = "Deja de leer y de apuntar al momento. Lo que ya confirmaste se queda en Yala.";
+"conectaTuIA.disconnect.failed" = "No se pudo desconectar. Inténtalo de nuevo.";
+"conectaTuIA.inbox.title" = "Apunta desde tu IA";
+"conectaTuIA.inbox.message" = "Dile a Claude «apunta 25 de almuerzo» y llega aquí.";
+"conectaTuIA.inbox.button" = "Conectar";
+"conectaTuIA.filter.fromAI" = "De tu IA";
+"conectaTuIA.paso7.name" = "Tu IA";
+"conectaTuIA.paso7.storyTitle" = "Pídeselo a tu IA";
+"conectaTuIA.paso7.storyMessage" = "Dile a Claude o a ChatGPT «apunta 25 de almuerzo» y te espera en la Bandeja.";
+"conectaTuIA.paso7.methodTitle" = "Conecta tu IA";
+"conectaTuIA.paso7.methodSubtitle" = "Tres pasos, desde tu IA. Lo que apunte cuenta cuando lo confirmas.";
+"conectaTuIA.paso7.example" = "Apunta 25 de almuerzo";

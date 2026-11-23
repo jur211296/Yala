@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "La tua IA";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT o Grok";
+"conectaTuIA.header.title" = "Collega la tua IA";
+"conectaTuIA.header.message" = "Chiedile delle tue spese o dille «segna 25 per il pranzo». Quello che segna ti aspetta nella Posta in arrivo.";
+"conectaTuIA.steps.header" = "Come collegarla";
+"conectaTuIA.copy" = "Copia";
+"conectaTuIA.copied" = "Copiato";
+"conectaTuIA.copyHint" = "Copia l’indirizzo del connettore";
+"conectaTuIA.claude.step1" = "In Claude, vai su Impostazioni → Connettori → Aggiungi connettore personalizzato.";
+"conectaTuIA.claude.step2" = "Chiamalo «Yala» e incolla questo indirizzo:";
+"conectaTuIA.claude.step3" = "Tocca Collega, accetta l’autorizzazione di Yala e accedi con Apple o Google.";
+"conectaTuIA.chatgpt.note" = "Serve un piano a pagamento di ChatGPT e attivare la sua modalità sviluppatore.";
+"conectaTuIA.chatgpt.step1" = "In ChatGPT, vai su Impostazioni → App e connettori → Impostazioni avanzate e attiva la modalità sviluppatore.";
+"conectaTuIA.chatgpt.step2" = "Crea un connettore chiamato «Yala», con autenticazione OAuth, e incolla questo indirizzo:";
+"conectaTuIA.chatgpt.step3" = "Accetta l’autorizzazione di Yala e accedi con Apple o Google.";
+"conectaTuIA.grok.step1" = "In Grok, cerca l’opzione per aggiungere un connettore personalizzato (MCP).";
+"conectaTuIA.grok.step2" = "Chiamalo «Yala» e incolla questo indirizzo:";
+"conectaTuIA.grok.step3" = "Accetta l’autorizzazione di Yala e accedi con Apple o Google.";
+"conectaTuIA.can.header" = "Cosa può fare";
+"conectaTuIA.can.read" = "Legge i tuoi conti, movimenti, budget e pagamenti ricorrenti.";
+"conectaTuIA.can.draft" = "Segna spese ed entrate come bozze nella tua Posta in arrivo. Contano quando le confermi.";
+"conectaTuIA.can.never" = "Non modifica né cancella mai nulla e non vede i tuoi gruppi.";
+"conectaTuIA.can.footer" = "Gratis. Puoi scollegarla quando vuoi.";
+"conectaTuIA.account.title" = "Prima, sposta i tuoi dati nel tuo account Yala";
+"conectaTuIA.account.message" = "I tuoi dati sono nel tuo iCloud e la tua IA lì non può leggerli. Nel tuo account Yala sì.";
+"conectaTuIA.account.button" = "Passa al tuo account Yala";
+"conectaTuIA.account.where" = "Fallo in Impostazioni → «Dove si trovano i tuoi dati».";
+"conectaTuIA.connected.header" = "Collegate";
+"conectaTuIA.connected.empty" = "Nessuna IA collegata per ora.";
+"conectaTuIA.connected.footer" = "Se ne hai appena collegata una, può volerci un minuto prima che compaia.";
+"conectaTuIA.connected.since" = "Collegata il %@";
+"conectaTuIA.connected.local" = "Sul tuo computer";
+"conectaTuIA.connected.lastDraft" = "ultima bozza %@";
+"conectaTuIA.connected.loadFailed" = "Impossibile caricare l’elenco. Controlla la connessione e riprova.";
+"conectaTuIA.disconnect" = "Scollega";
+"conectaTuIA.disconnect.confirmTitle" = "Scollegare %@?";
+"conectaTuIA.disconnect.confirmBody" = "Smette subito di leggere e di segnare. Quello che hai già confermato resta in Yala.";
+"conectaTuIA.disconnect.failed" = "Impossibile scollegare. Riprova.";
+"conectaTuIA.inbox.title" = "Segna dalla tua IA";
+"conectaTuIA.inbox.message" = "Di’ a Claude «segna 25 per il pranzo» e arriva qui.";
+"conectaTuIA.inbox.button" = "Collega";
+"conectaTuIA.filter.fromAI" = "Dalla tua IA";
+"conectaTuIA.paso7.name" = "La tua IA";
+"conectaTuIA.paso7.storyTitle" = "Chiedilo alla tua IA";
+"conectaTuIA.paso7.storyMessage" = "Di’ a Claude o a ChatGPT «segna 25 per il pranzo» e ti aspetta nella Posta in arrivo.";
+"conectaTuIA.paso7.methodTitle" = "Collega la tua IA";
+"conectaTuIA.paso7.methodSubtitle" = "Tre passaggi, dalla tua IA. Quello che segna conta quando lo confermi.";
+"conectaTuIA.paso7.example" = "Segna 25 per il pranzo";

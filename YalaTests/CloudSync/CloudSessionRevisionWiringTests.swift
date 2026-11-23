@@ -76,6 +76,8 @@ struct CloudSessionRevisionWiringTests {
          "guard verdictIsTerminal else { return false }", "return CloudAttestNoticeLogic.showsNotice("),
         ("Yala/App/Views/Shared/AppleIDCloseNoticeView.swift",
          "private var currentCell: CloudSignOutFlowLogic.Path {", "return CloudSignOutFlowLogic.path("),
+        ("Yala/App/Views/Settings/ConectaTuIA/ConectaTuIAView.swift",
+         "private var availability: ConectaTuIALogic.Availability {", "return ConectaTuIALogic.availability("),
         ("Yala/App/Views/Groups/GroupInviteOnboardingView.swift",
          "private var joinTapRoute: GroupInviteGroupFirstLogic.JoinTapRoute {",
          "return GroupInviteGroupFirstLogic.joinTapRoute("),

@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "あなたのAI";
+"conectaTuIA.row.subtitle" = "Claude、ChatGPT、Grok";
+"conectaTuIA.header.title" = "AIを接続";
+"conectaTuIA.header.message" = "支出について質問したり、「ランチに25と記録して」と頼んだりできます。記録した内容は受信箱で待っています。";
+"conectaTuIA.steps.header" = "接続方法";
+"conectaTuIA.copy" = "コピー";
+"conectaTuIA.copied" = "コピーしました";
+"conectaTuIA.copyHint" = "コネクタのアドレスをコピーします";
+"conectaTuIA.claude.step1" = "Claudeで「設定」→「コネクタ」→「カスタムコネクタを追加」を開きます。";
+"conectaTuIA.claude.step2" = "名前を「Yala」にして、このアドレスを貼り付けます：";
+"conectaTuIA.claude.step3" = "「接続」をタップし、Yalaの許可を承認して、AppleまたはGoogleでサインインします。";
+"conectaTuIA.chatgpt.note" = "ChatGPTの有料プランと開発者モードの有効化が必要です。";
+"conectaTuIA.chatgpt.step1" = "ChatGPTで「設定」→「アプリとコネクタ」→「詳細設定」を開き、開発者モードをオンにします。";
+"conectaTuIA.chatgpt.step2" = "OAuth認証で「Yala」という名前のコネクタを作成し、このアドレスを貼り付けます：";
+"conectaTuIA.chatgpt.step3" = "Yalaの許可を承認し、AppleまたはGoogleでサインインします。";
+"conectaTuIA.grok.step1" = "Grokで、カスタムコネクタ（MCP）を追加するオプションを探します。";
+"conectaTuIA.grok.step2" = "名前を「Yala」にして、このアドレスを貼り付けます：";
+"conectaTuIA.grok.step3" = "Yalaの許可を承認し、AppleまたはGoogleでサインインします。";
+"conectaTuIA.can.header" = "できること";
+"conectaTuIA.can.read" = "口座、取引、予算、定期支払いを読み取ります。";
+"conectaTuIA.can.draft" = "支出と収入を下書きとして受信箱に記録します。確認するまで反映されません。";
+"conectaTuIA.can.never" = "何も変更・削除せず、グループも見ません。";
+"conectaTuIA.can.footer" = "無料です。いつでも接続を解除できます。";
+"conectaTuIA.account.title" = "まず、データを Yala アカウントに移しましょう";
+"conectaTuIA.account.message" = "データはiCloudにあり、AIはそこでは読めません。Yala アカウントなら読めます。";
+"conectaTuIA.account.button" = "Yala アカウントに移す";
+"conectaTuIA.account.where" = "「設定」→「データの保存先」から行えます。";
+"conectaTuIA.connected.header" = "接続中";
+"conectaTuIA.connected.empty" = "まだ接続されたAIはありません。";
+"conectaTuIA.connected.footer" = "接続したばかりの場合、表示されるまで1分ほどかかることがあります。";
+"conectaTuIA.connected.since" = "%@に接続";
+"conectaTuIA.connected.local" = "このコンピュータ";
+"conectaTuIA.connected.lastDraft" = "最後の下書き %@";
+"conectaTuIA.connected.loadFailed" = "リストを読み込めませんでした。接続を確認してもう一度お試しください。";
+"conectaTuIA.disconnect" = "接続を解除";
+"conectaTuIA.disconnect.confirmTitle" = "%@の接続を解除しますか？";
+"conectaTuIA.disconnect.confirmBody" = "すぐに読み取りと記録を停止します。確認済みの内容はYalaに残ります。";
+"conectaTuIA.disconnect.failed" = "接続を解除できませんでした。もう一度お試しください。";
+"conectaTuIA.inbox.title" = "AIから記録";
+"conectaTuIA.inbox.message" = "Claudeに「ランチに25と記録して」と頼むと、ここに届きます。";
+"conectaTuIA.inbox.button" = "接続";
+"conectaTuIA.filter.fromAI" = "AIから";
+"conectaTuIA.paso7.name" = "あなたのAI";
+"conectaTuIA.paso7.storyTitle" = "AIに頼む";
+"conectaTuIA.paso7.storyMessage" = "ClaudeやChatGPTに「ランチに25と記録して」と頼めば、受信箱で待っています。";
+"conectaTuIA.paso7.methodTitle" = "AIを接続";
+"conectaTuIA.paso7.methodSubtitle" = "AI側で3ステップ。記録した内容は確認すると反映されます。";
+"conectaTuIA.paso7.example" = "ランチに25と記録して";

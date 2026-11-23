@@ -830,6 +830,12 @@ final class UITestHooks {
     /// solo pone el registro gemelo; la comprobación es la de producción.
     nonisolated static var seedInboxDuplicateDraft: Bool { hasArg("-uitest-inbox-duplicate-draft") }
 
+    /// «Conecta tu IA»: `-uitest-inbox-empty` deja la Bandeja sin los dos borradores de la semilla (para ver su puerta), y
+    /// `-uitest-inbox-ai-drafts` los siembra como apuntados por una IA, «Claude» y «ChatGPT» (la etiqueta y el filtro
+    /// «De tu IA»). Solo cambian el origen de la semilla; lo que se pinta lo decide producción.
+    nonisolated static var seedInboxEmpty: Bool { hasArg("-uitest-inbox-empty") }
+    nonisolated static var seedInboxAIDrafts: Bool { hasArg("-uitest-inbox-ai-drafts") }
+
     /// `-uitest-siri-model <available|deviceNotEligible|appleIntelligenceNotEnabled|modelNotReady|languageNotSupported>`:
     /// finge el estado del modelo del iPhone para «Anotar con Siri» sin Pro (L15-6, encendido el 2026-10-21). El
     /// simulador no tiene el modelo de Apple: con `available` la lectura del dictado es un stub fijo

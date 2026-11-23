@@ -1,0 +1,57 @@
+/*
+  ConectaTuIA.strings
+  Yala
+
+  «Conecta tu IA» (2.3, encargo del 2026-11-23): Ajustes › Tu IA, la tarjeta de la Bandeja, el filtro «De tu IA» y la
+  sexta manera del paso 7 de Primeros pasos. Tabla propia, leída con el idioma de la app (`L10n.ConectaTuIA`). Los
+  nombres Claude, ChatGPT y Grok son marcas y no se traducen. Español neutro latinoamericano en las cuatro variantes.
+*/
+
+"conectaTuIA.title" = "Jouw AI";
+"conectaTuIA.row.subtitle" = "Claude, ChatGPT of Grok";
+"conectaTuIA.header.title" = "Koppel je AI";
+"conectaTuIA.header.message" = "Vraag haar naar je uitgaven of zeg ‘noteer 25 voor lunch’. Wat ze noteert, wacht op je in de inbox.";
+"conectaTuIA.steps.header" = "Zo koppel je haar";
+"conectaTuIA.copy" = "Kopiëren";
+"conectaTuIA.copied" = "Gekopieerd";
+"conectaTuIA.copyHint" = "Kopieert het adres van de connector";
+"conectaTuIA.claude.step1" = "Ga in Claude naar Instellingen → Connectors → Aangepaste connector toevoegen.";
+"conectaTuIA.claude.step2" = "Noem hem ‘Yala’ en plak dit adres:";
+"conectaTuIA.claude.step3" = "Tik op Verbinden, accepteer de toestemming van Yala en log in met Apple of Google.";
+"conectaTuIA.chatgpt.note" = "Vereist een betaald ChatGPT-abonnement en de ontwikkelaarsmodus.";
+"conectaTuIA.chatgpt.step1" = "Ga in ChatGPT naar Instellingen → Apps en connectors → Geavanceerde instellingen en zet de ontwikkelaarsmodus aan.";
+"conectaTuIA.chatgpt.step2" = "Maak een connector ‘Yala’ met OAuth-verificatie en plak dit adres:";
+"conectaTuIA.chatgpt.step3" = "Accepteer de toestemming van Yala en log in met Apple of Google.";
+"conectaTuIA.grok.step1" = "Zoek in Grok de optie om een aangepaste connector (MCP) toe te voegen.";
+"conectaTuIA.grok.step2" = "Noem hem ‘Yala’ en plak dit adres:";
+"conectaTuIA.grok.step3" = "Accepteer de toestemming van Yala en log in met Apple of Google.";
+"conectaTuIA.can.header" = "Wat ze kan";
+"conectaTuIA.can.read" = "Leest je rekeningen, transacties, budgetten en terugkerende betalingen.";
+"conectaTuIA.can.draft" = "Noteert uitgaven en inkomsten als concepten in je inbox. Ze tellen zodra je ze bevestigt.";
+"conectaTuIA.can.never" = "Wijzigt of verwijdert nooit iets en ziet je groepen niet.";
+"conectaTuIA.can.footer" = "Gratis. Je kunt haar loskoppelen wanneer je wilt.";
+"conectaTuIA.account.title" = "Stap eerst over naar je Yala-account";
+"conectaTuIA.account.message" = "Je gegevens staan in je iCloud en daar kan je AI ze niet lezen. In je Yala-account wel.";
+"conectaTuIA.account.button" = "Overstappen naar je Yala-account";
+"conectaTuIA.account.where" = "Doe het via Instellingen → ‘Waar je gegevens staan’.";
+"conectaTuIA.connected.header" = "Gekoppeld";
+"conectaTuIA.connected.empty" = "Nog geen AI gekoppeld.";
+"conectaTuIA.connected.footer" = "Heb je er net een gekoppeld, dan kan het een minuut duren voor ze verschijnt.";
+"conectaTuIA.connected.since" = "Gekoppeld op %@";
+"conectaTuIA.connected.local" = "Op je computer";
+"conectaTuIA.connected.lastDraft" = "laatste concept %@";
+"conectaTuIA.connected.loadFailed" = "De lijst kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.";
+"conectaTuIA.disconnect" = "Loskoppelen";
+"conectaTuIA.disconnect.confirmTitle" = "%@ loskoppelen?";
+"conectaTuIA.disconnect.confirmBody" = "Ze stopt meteen met lezen en noteren. Wat je al bevestigd hebt, blijft in Yala.";
+"conectaTuIA.disconnect.failed" = "Loskoppelen is niet gelukt. Probeer het opnieuw.";
+"conectaTuIA.inbox.title" = "Noteer via je AI";
+"conectaTuIA.inbox.message" = "Zeg tegen Claude ‘noteer 25 voor lunch’ en het komt hier binnen.";
+"conectaTuIA.inbox.button" = "Koppelen";
+"conectaTuIA.filter.fromAI" = "Van je AI";
+"conectaTuIA.paso7.name" = "Jouw AI";
+"conectaTuIA.paso7.storyTitle" = "Vraag het je AI";
+"conectaTuIA.paso7.storyMessage" = "Zeg tegen Claude of ChatGPT ‘noteer 25 voor lunch’ en het wacht op je in de inbox.";
+"conectaTuIA.paso7.methodTitle" = "Koppel je AI";
+"conectaTuIA.paso7.methodSubtitle" = "Drie stappen, in je AI. Wat ze noteert telt zodra je het bevestigt.";
+"conectaTuIA.paso7.example" = "Noteer 25 voor lunch";
