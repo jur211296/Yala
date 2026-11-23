@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Geen gegevens";
 
 "saludDetalle.capsule.createOne" = "Maak er een";
-"saludDetalle.capsule.since" = "Vanaf %@";
 "saludDetalle.capsule.addPayments" = "Voeg betalingen toe";
 "saludDetalle.capsule.recordToday" = "Boek vandaag";
 "saludDetalle.capsule.noData" = "Geen gegevens";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d budgetten zijn deze periode overschreden. Hieronder zie je hoe je weer binnen je limiet komt.";
 "saludDetalle.advice.overdue" = "%@ is al verlopen. Als je het al hebt betaald, markeer het dan als betaald.";
 "saludDetalle.advice.createBudget" = "Met een budget is je score compleet: het is het onderdeel dat het zwaarst weegt.";
-"saludDetalle.advice.budgetStarts" = "Je budget telt vanaf %@ mee in je score.";
 "saludDetalle.advice.addPayments" = "Voeg je betalingen toe om te zien of je maand uitkomt.";
 "saludDetalle.advice.rhythm" = "Wat je score nu het meest beweegt, is vaker boeken.";
 "saludDetalle.advice.allGood" = "Je budgetten blijven binnen de limiet en wat je deze maand nog moet betalen, is gedekt.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ is met %@ overschreden. Je andere budget blijft binnen de limiet.";
 "saludDetalle.budgets.overOthers" = "%@ is met %@ overschreden. Je andere %d budgetten blijven binnen de limiet.";
 "saludDetalle.budgets.manyOver" = "%d budgetten zijn overschreden. Hieronder zie je hoe je weer binnen je limiet komt.";
-"saludDetalle.budgets.startsLater" = "%@ telt vanaf %@ mee in je score. Je kunt nu al zien hoe het gaat.";
 "saludDetalle.budgets.seeAll" = "Bekijk alles (%d)";
 "saludDetalle.budgets.left" = "Je houdt over";
 "saludDetalle.budgets.over" = "Je zit erover met";

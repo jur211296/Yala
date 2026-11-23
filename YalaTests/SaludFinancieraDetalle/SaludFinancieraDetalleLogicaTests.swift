@@ -36,10 +36,10 @@ struct SaludFinancieraDetalleLogicaTests {
         return Self.calendar.date(byAdding: .hour, value: hora, to: d) ?? d
     }
 
-    private func presupuesto(_ nombre: String, gastado: Double, limite: Double = 100, moneda: String = "PEN",
-                             cuentaDesde: Date? = nil) -> L.Presupuesto {
+    private func presupuesto(_ nombre: String, gastado: Double, limite: Double = 100, moneda: String = "PEN")
+        -> L.Presupuesto {
         L.Presupuesto(id: UUID(), nombre: nombre, icono: "cart", color: "6366F1", gastado: gastado, limite: limite,
-                      moneda: moneda, cuentaDesde: cuentaDesde)
+                      moneda: moneda)
     }
 
     private func pago(_ nombre: String, dias: Int, monto: Double, aproximado: Bool = false) -> L.Pago {
@@ -200,13 +200,12 @@ struct SaludFinancieraDetalleLogicaTests {
         #expect(L.motivoSinNota(.presupuestos, score: score(budget: nil), presupuestos: [], tienePagos: true) == .creaUno)
     }
 
-    @Test func capsula_presupuestoCreadoAMitadDeMes_diceDesdeCuando() {
-        let desde = dia(11, hora: 0)
-        let p = presupuesto("Comidas fuera", gastado: 40, cuentaDesde: desde)
+    @Test func capsula_conPresupuestosYSinNota_noPrometeUnaFecha() {
+        // Desde el 22-nov-2026 un presupuesto cuenta desde el período en que se creó: sin nota con presupuestos es que
+        // ninguno cubre el período, y la cápsula no dice «Desde el…».
+        let p = presupuesto("Comidas fuera", gastado: 40)
         #expect(L.motivoSinNota(.presupuestos, score: score(budget: nil), presupuestos: [p], tienePagos: true)
-                == .desde(desde))
-        #expect(L.presupuestoQueAunNoCuenta([p], score: score(budget: nil))?.nombre == "Comidas fuera")
-        #expect(L.presupuestoQueAunNoCuenta([p], score: score(budget: 80)) == nil, "Con nota, ya cuenta alguno.")
+                == .sinDatos)
     }
 
     @Test func capsula_sinPagos_diceAgregaPagos_yConNotaNoDiceNada() {
@@ -358,7 +357,7 @@ struct SaludFinancieraDetalleTextosTests {
         var leidas = [
             T.cargando, T.seccionComoSeCalcula, T.peso(40), T.capsulaPista, T.unoDentro("x"), T.todosDentro(3),
             T.todosDentroQueda(3, monto: "1"), T.soloPasado("x", monto: "1"), T.pasadoYOtros("x", monto: "1", otros: 1),
-            T.pasadoYOtros("x", monto: "1", otros: 2), T.variosPasados(2), T.empiezaDespues("x", fecha: fecha),
+            T.pasadoYOtros("x", monto: "1", otros: 2), T.variosPasados(2),
             T.verTodosPresupuestos(5), T.teQuedan, T.tePasastePor, T.sinPresupuestos(peso: 40), T.porDondeEmpezar,
             T.sugerencia("x", monto: "1"), T.crearPresupuesto, T.paraMejorar, T.nadaQueAjustar, T.ajustarTitulo,
             T.ajustarDetalle("x", veces: 3, periodos: 4, promedio: "1", limite: "2"), T.ajustarBoton,
@@ -378,15 +377,15 @@ struct SaludFinancieraDetalleTextosTests {
         ]
         leidas += L.Seccion.allCases.map(T.seccion)
         leidas += [L.Estado.bien, .paraRevisar, .sinDatos].map(T.estado)
-        leidas += [L.MotivoSinNota.creaUno, .desde(fecha), .agregaPagos, .registraHoy, .sinDatos].map(T.motivo)
+        leidas += [L.MotivoSinNota.creaUno, .agregaPagos, .registraHoy, .sinDatos].map(T.motivo)
         leidas += [L.Consejo.noAlcanza(finDeMes: fecha), .presupuestoPasado(nombre: "x"), .variosPasados(2),
-                   .pagoVencido(nombre: "x"), .creaPresupuesto, .presupuestoEmpiezaACuenta(fecha), .agregaPagos,
+                   .pagoVencido(nombre: "x"), .creaPresupuesto, .agregaPagos,
                    .registraMasSeguido, .todoBien].map(T.consejo)
         leidas += [T.apuntadoFuturo("x", resta: true), T.apuntadoFuturo("x", resta: false)]
         for texto in leidas {
             #expect(!texto.contains("saludDetalle."), "Clave sin texto: \(texto)")
         }
-        #expect(try Self.table("es").count == 93)
+        #expect(try Self.table("es").count == 90)
     }
 
     @Test(arguments: locales)

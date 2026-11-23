@@ -359,9 +359,11 @@ enum FinancialScoreCalculator {
         return clamp(avg)
     }
 
-    /// Para `unique`, el bucket = rango del propio budget. Para los demás,
-    /// exige `bucket.start >= startOfDay(createdAt)`. Interno: las alertas de la nota lo usan para decir si un
-    /// presupuesto pasado cuenta en ella (`FinancialScoreAlertsLogic`).
+    /// Para `unique`, el bucket = rango del propio budget. Para los demás, cuenta el período en el que se creó y los
+    /// siguientes: un presupuesto creado a mitad de mes cuenta en la nota desde ya y, si ya se pasó, la baja (decisión
+    /// de Jürgen del 22-nov-2026). Hasta entonces esperaba al período siguiente y la nota salía 100 con el presupuesto
+    /// pasado. Los períodos enteros anteriores a su creación no cuentan: no se gastó contra este límite. Interno: la
+    /// hoja de Salud financiera lo usa para la historia de cada presupuesto.
     static func bucketIsValid(
         _ bucket: DateInterval, for budget: Budget, calendar: Calendar
     ) -> Bool {
@@ -369,7 +371,7 @@ enum FinancialScoreCalculator {
             return true
         }
         let createdDay = calendar.startOfDay(for: budget.createdAt)
-        return bucket.start >= createdDay
+        return bucket.end > createdDay
     }
 
     /// Buckets aplicables al período según `budget.periodType`.

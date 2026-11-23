@@ -8912,7 +8912,6 @@
 "panel.health.unseen.negativeAccount" = "%@ no negativo";
 
 /* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
-"panel.health.unseen.overBudget" = "%@ já passou do limite";
 
 /* Health sheet headline for a score ≥ 90 while something is going wrong */
 "panel.health.total.headline.highWithAlerts" = "Boa nota, mas tem algo para olhar";

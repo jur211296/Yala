@@ -36,11 +36,6 @@ extension L10n {
 
         // MARK: Fechas
 
-        /// «1 dic»: día y mes corto, con el idioma de la app.
-        static func diaYMesCorto(_ date: Foundation.Date) -> String {
-            date.formatted(.dateTime.day().month(.abbreviated).locale(LanguageManager.resolved.locale))
-        }
-
         /// «28 de noviembre»: día y mes, con el idioma de la app.
         static func diaYMes(_ date: Foundation.Date) -> String {
             date.formatted(.dateTime.day().month(.wide).locale(LanguageManager.resolved.locale))
@@ -77,7 +72,6 @@ extension L10n {
         static func motivo(_ motivo: L.MotivoSinNota) -> String {
             switch motivo {
             case .creaUno: s("capsule.createOne")
-            case .desde(let fecha): f("capsule.since", diaYMesCorto(fecha))
             case .agregaPagos: s("capsule.addPayments")
             case .registraHoy: s("capsule.recordToday")
             case .sinDatos: s("capsule.noData")
@@ -95,7 +89,6 @@ extension L10n {
             case .variosPasados(let n): f("advice.overMany", n)
             case .pagoVencido(let nombre): f("advice.overdue", nombre)
             case .creaPresupuesto: s("advice.createBudget")
-            case .presupuestoEmpiezaACuenta(let fecha): f("advice.budgetStarts", diaYMes(fecha))
             case .agregaPagos: s("advice.addPayments")
             case .registraMasSeguido: s("advice.rhythm")
             case .todoBien: s("advice.allGood")
@@ -112,9 +105,6 @@ extension L10n {
             otros == 1 ? f("budgets.overOneOther", nombre, monto) : f("budgets.overOthers", nombre, monto, otros)
         }
         static func variosPasados(_ n: Int) -> String { f("budgets.manyOver", n) }
-        static func empiezaDespues(_ nombre: String, fecha: Foundation.Date) -> String {
-            f("budgets.startsLater", nombre, diaYMes(fecha))
-        }
         static func verTodosPresupuestos(_ total: Int) -> String { f("budgets.seeAll", total) }
         static var teQuedan: String { s("budgets.left") }
         static var tePasastePor: String { s("budgets.over") }
@@ -134,6 +124,11 @@ extension L10n {
         static var recortarBoton: String { s("improve.cut.cta") }
         static var iaEtiqueta: String { s("improve.ai.label") }
         static var iaBoton: String { s("improve.ai.cta") }
+        /// El resumen de Yala IA con su formato: el modelo escribe negritas en markdown (`**S/ 11,821**`) y la hoja las
+        /// pintaba con los asteriscos. Pasa por la misma pieza que Estadísticas › Observaciones.
+        static func iaCuerpo(_ tarjeta: L.TarjetaIA) -> AttributedString {
+            AIInsightCardComponents.markdownAttributed("\(tarjeta.texto) \(tarjeta.consejo)")
+        }
         static var iaSinResumenTitulo: String { s("improve.ai.none.title") }
         static var iaSinResumenDetalle: String { s("improve.ai.none.detail") }
         static var lineaPro: String { s("improve.pro") }

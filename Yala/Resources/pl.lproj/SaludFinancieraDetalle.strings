@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Brak danych";
 
 "saludDetalle.capsule.createOne" = "Utwórz";
-"saludDetalle.capsule.since" = "Od %@";
 "saludDetalle.capsule.addPayments" = "Dodaj płatności";
 "saludDetalle.capsule.recordToday" = "Dodaj wpis dziś";
 "saludDetalle.capsule.noData" = "Brak danych";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "Liczba przekroczonych w tym okresie budżetów: %d. Poniżej zobaczysz, jak wrócić do limitu.";
 "saludDetalle.advice.overdue" = "Termin płatności %@ już minął. Jeśli już zapłacono, oznacz ją jako opłaconą.";
 "saludDetalle.advice.createBudget" = "Z budżetem twoja ocena byłaby pełna: to część, która waży najwięcej.";
-"saludDetalle.advice.budgetStarts" = "Twój budżet zacznie się liczyć do oceny %@.";
 "saludDetalle.advice.addPayments" = "Dodaj swoje płatności, by wiedzieć, czy starczy do końca miesiąca.";
 "saludDetalle.advice.rhythm" = "Najbardziej podniesie twoją ocenę teraz częstsze dodawanie wpisów.";
 "saludDetalle.advice.allGood" = "Twoje budżety mieszczą się w limicie, a to, co zostało do zapłaty w tym miesiącu, jest pokryte.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ został przekroczony o %@. Twój drugi budżet mieści się w limicie.";
 "saludDetalle.budgets.overOthers" = "%@ został przekroczony o %@. Pozostałe budżety (%d) mieszczą się w limicie.";
 "saludDetalle.budgets.manyOver" = "Liczba przekroczonych budżetów: %d. Poniżej zobaczysz, jak wrócić do limitu.";
-"saludDetalle.budgets.startsLater" = "%@ zacznie się liczyć do oceny %@. Już teraz możesz zobaczyć, jak idzie.";
 "saludDetalle.budgets.seeAll" = "Zobacz wszystkie (%d)";
 "saludDetalle.budgets.left" = "Zostaje ci";
 "saludDetalle.budgets.over" = "Przekroczono o";

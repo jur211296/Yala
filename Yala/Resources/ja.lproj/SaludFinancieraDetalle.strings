@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "データなし";
 
 "saludDetalle.capsule.createOne" = "作成する";
-"saludDetalle.capsule.since" = "%@から";
 "saludDetalle.capsule.addPayments" = "支払いを追加";
 "saludDetalle.capsule.recordToday" = "今日記録する";
 "saludDetalle.capsule.noData" = "データなし";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d件の予算が今期、上限を超えました。下で上限内に戻す方法を確認できます。";
 "saludDetalle.advice.overdue" = "%@はすでに期日を過ぎています。支払い済みなら、支払い済みにしておきましょう。";
 "saludDetalle.advice.createBudget" = "予算があるとスコアが完成します。いちばん比重の大きい部分です。";
-"saludDetalle.advice.budgetStarts" = "予算は%@からスコアに反映されます。";
 "saludDetalle.advice.addPayments" = "支払いを追加すると、今月をやりくりできるかわかります。";
 "saludDetalle.advice.rhythm" = "いまスコアをいちばん動かすのは、こまめに記録することです。";
 "saludDetalle.advice.allGood" = "予算は上限内で、今月これから払うぶんもまかなえています。";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@は%@超えました。もう1件の予算は上限内です。";
 "saludDetalle.budgets.overOthers" = "%@は%@超えました。ほかの%d件の予算は上限内です。";
 "saludDetalle.budgets.manyOver" = "%d件の予算が上限を超えました。下で上限内に戻す方法を確認できます。";
-"saludDetalle.budgets.startsLater" = "%@は%@からスコアに反映されます。状況は今から確認できます。";
 "saludDetalle.budgets.seeAll" = "すべて表示（%d）";
 "saludDetalle.budgets.left" = "残り";
 "saludDetalle.budgets.over" = "超過";

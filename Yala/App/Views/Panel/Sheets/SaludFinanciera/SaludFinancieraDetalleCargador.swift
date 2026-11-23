@@ -253,7 +253,8 @@ final class SaludFinancieraDetalleCargador {
                 let previo = BudgetPeriodInterval.current(for: budget, now: cursor.addingTimeInterval(-1),
                                                           calendar: calendar)
                 guard previo.start < cursor else { break }
-                // Un período anterior a su creación no es historia: no se gastó contra este límite.
+                // Un período entero anterior a su creación no es historia: no se gastó contra este límite. El de la
+                // creación sí cuenta, como en la nota (`FinancialScoreCalculator.bucketIsValid`).
                 guard FinancialScoreCalculator.bucketIsValid(previo, for: budget, calendar: calendar) else { break }
                 historial.append(BudgetsViewModel.calculateSpending(
                     budget: budget, transactions: transactions, interval: previo, adjustment: adjustment,
@@ -263,16 +264,11 @@ final class SaludFinancieraDetalleCargador {
             }
         }
 
-        let cuentaDesde: Date? = FinancialScoreCalculator.bucketIsValid(interval, for: budget, calendar: calendar)
-            ? nil
-            : interval.end.addingTimeInterval(1)
-
         return .init(id: budget.id, nombre: budget.name, icono: display.icon, color: display.color,
                      gastado: spent, limite: budget.limitAmount, moneda: budget.currencyCode,
                      historial: historial,
                      dondeMasPesa: dondeMasPesa(budget, transactions: transactions, interval: interval,
-                                                adjustment: adjustment, converter: converter),
-                     cuentaDesde: cuentaDesde)
+                                                adjustment: adjustment, converter: converter))
     }
 
     /// Lo gastado dentro del presupuesto por subcategoría (o categoría si el movimiento no trae subcategoría), con los

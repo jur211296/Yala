@@ -34,8 +34,6 @@ enum SaludFinancieraDetalleLogica {
         var historial: [Double] = []
         /// Lo que más pesa dentro del presupuesto en el período en curso, de más a menos (hasta 3).
         var dondeMasPesa: [Recorte] = []
-        /// El presupuesto aún no cuenta en la nota: este es el primer día del período en que cuenta.
-        var cuentaDesde: Date?
 
         var porcentaje: Double { limite > 0 ? gastado / limite * 100 : 0 }
         var estado: BudgetCounterStatus { BudgetStatusCounter.classify(spent: gastado, limit: limite) }
@@ -176,7 +174,6 @@ enum SaludFinancieraDetalleLogica {
     /// Lo que dice una cápsula cuando su parte no tiene número.
     enum MotivoSinNota: Equatable {
         case creaUno
-        case desde(Date)
         case agregaPagos
         case registraHoy
         case sinDatos
@@ -191,7 +188,6 @@ enum SaludFinancieraDetalleLogica {
         case variosPasados(Int)
         case pagoVencido(nombre: String)
         case creaPresupuesto
-        case presupuestoEmpiezaACuenta(Date)
         case agregaPagos
         case registraMasSeguido
         case todoBien
@@ -275,13 +271,6 @@ enum SaludFinancieraDetalleLogica {
         guard presupuestos.count > 1, let moneda = presupuestos.first?.moneda,
               presupuestos.allSatisfy({ $0.moneda == moneda && !$0.sePaso }) else { return nil }
         return (presupuestos.reduce(0) { $0 + max(0, $1.restante) }, moneda)
-    }
-
-    /// El presupuesto que aún no cuenta en la nota, si la nota de Presupuestos no tiene número por eso.
-    static func presupuestoQueAunNoCuenta(_ presupuestos: [Presupuesto], score: FinancialScore) -> Presupuesto? {
-        guard score.budget == nil else { return nil }
-        return presupuestos.filter { $0.cuentaDesde != nil }
-            .min { ($0.cuentaDesde ?? .distantFuture) < ($1.cuentaDesde ?? .distantFuture) }
     }
 
     // MARK: - Compromisos
@@ -373,8 +362,9 @@ enum SaludFinancieraDetalleLogica {
         switch seccion {
         case .presupuestos:
             guard score.budget == nil else { return nil }
+            // Un presupuesto cuenta desde el período en que se creó: sin nota con presupuestos es que ninguno cubre
+            // este período (p. ej. «Mes pasado» con uno creado este mes).
             if presupuestos.isEmpty { return .creaUno }
-            if let desde = presupuestoQueAunNoCuenta(presupuestos, score: score)?.cuentaDesde { return .desde(desde) }
             return .sinDatos
         case .compromisos:
             guard score.bills == nil else { return nil }
@@ -406,12 +396,7 @@ enum SaludFinancieraDetalleLogica {
         if pasados.count == 1, let primero = pasados.first { return .presupuestoPasado(nombre: primero.nombre) }
         if pasados.count > 1 { return .variosPasados(pasados.count) }
         if let vencido = pagos.first(where: \.vencido) { return .pagoVencido(nombre: vencido.nombre) }
-        if score.budget == nil {
-            if presupuestos.isEmpty { return .creaPresupuesto }
-            if let desde = presupuestoQueAunNoCuenta(presupuestos, score: score)?.cuentaDesde {
-                return .presupuestoEmpiezaACuenta(desde)
-            }
-        }
+        if score.budget == nil, presupuestos.isEmpty { return .creaPresupuesto }
         if !tienePagos { return .agregaPagos }
         if let activity = score.activity, activity < 70 { return .registraMasSeguido }
         if score.activity == nil { return .registraMasSeguido }

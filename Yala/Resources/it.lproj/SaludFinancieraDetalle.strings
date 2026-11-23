@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Nessun dato";
 
 "saludDetalle.capsule.createOne" = "Creane uno";
-"saludDetalle.capsule.since" = "Dal %@";
 "saludDetalle.capsule.addPayments" = "Aggiungi pagamenti";
 "saludDetalle.capsule.recordToday" = "Registra oggi";
 "saludDetalle.capsule.noData" = "Nessun dato";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d budget hanno superato il limite in questo periodo. Più in basso vedi come tornare nel tuo limite.";
 "saludDetalle.advice.overdue" = "%@ è già scaduto. Se l’hai già pagato, segnalo come pagato.";
 "saludDetalle.advice.createBudget" = "Con un budget il tuo voto sarebbe completo: è la parte che pesa di più.";
-"saludDetalle.advice.budgetStarts" = "Il tuo budget inizia a contare nel voto il %@.";
 "saludDetalle.advice.addPayments" = "Aggiungi i tuoi pagamenti per sapere se il mese quadra.";
 "saludDetalle.advice.rhythm" = "Ciò che muove di più il tuo voto adesso è registrare più spesso.";
 "saludDetalle.advice.allGood" = "I tuoi budget sono nel limite e quello che resta da pagare questo mese è coperto.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ ha superato il limite di %@. Il tuo altro budget è nel limite.";
 "saludDetalle.budgets.overOthers" = "%@ ha superato il limite di %@. Gli altri %d budget sono nel limite.";
 "saludDetalle.budgets.manyOver" = "%d budget hanno superato il limite. Più in basso vedi come tornare nel tuo limite.";
-"saludDetalle.budgets.startsLater" = "%@ inizia a contare nel voto il %@. Da subito puoi vedere come va.";
 "saludDetalle.budgets.seeAll" = "Mostra tutti (%d)";
 "saludDetalle.budgets.left" = "Ti restano";
 "saludDetalle.budgets.over" = "Hai superato di";

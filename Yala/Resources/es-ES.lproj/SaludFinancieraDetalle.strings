@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Sin datos";
 
 "saludDetalle.capsule.createOne" = "Crea uno";
-"saludDetalle.capsule.since" = "Desde el %@";
 "saludDetalle.capsule.addPayments" = "Añade pagos";
 "saludDetalle.capsule.recordToday" = "Apunta hoy";
 "saludDetalle.capsule.noData" = "Sin datos";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d presupuestos se han pasado este periodo. Abajo tienes cómo volver a tu límite.";
 "saludDetalle.advice.overdue" = "%@ ya ha vencido. Si ya lo has pagado, márcalo como pagado.";
 "saludDetalle.advice.createBudget" = "Con un presupuesto tu nota estaría completa: es la parte que más pesa.";
-"saludDetalle.advice.budgetStarts" = "Tu presupuesto empieza a contar en tu nota el %@.";
 "saludDetalle.advice.addPayments" = "Añade tus pagos para saber si te llega el mes.";
 "saludDetalle.advice.rhythm" = "Lo que más mueve tu nota ahora es apuntar con más frecuencia.";
 "saludDetalle.advice.allGood" = "Tus presupuestos van dentro del límite y lo que te falta por pagar este mes está cubierto.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ se ha pasado por %@. Tu otro presupuesto va dentro del límite.";
 "saludDetalle.budgets.overOthers" = "%@ se ha pasado por %@. Tus otros %d presupuestos van dentro del límite.";
 "saludDetalle.budgets.manyOver" = "%d presupuestos se han pasado. Abajo tienes cómo volver a tu límite.";
-"saludDetalle.budgets.startsLater" = "%@ empieza a contar en tu nota el %@. Desde ya puedes ver cómo va.";
 "saludDetalle.budgets.seeAll" = "Ver todos (%d)";
 "saludDetalle.budgets.left" = "Te quedan";
 "saludDetalle.budgets.over" = "Te has pasado por";

@@ -25,7 +25,6 @@ enum FinancialScoreCopy {
         let items = score.alerts.unseen(isExpensesOnlyMode: isExpensesOnlyMode).map { item in
             switch item {
             case .negativeAccount(let name): return L10n.Panel.Health.unseenNegativeAccount(name)
-            case .overBudget(let name): return L10n.Panel.Health.unseenOverBudget(name)
             }
         }
         guard !items.isEmpty else { return nil }

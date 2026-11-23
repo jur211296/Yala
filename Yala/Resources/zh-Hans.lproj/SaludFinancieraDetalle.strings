@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "暂无数据";
 
 "saludDetalle.capsule.createOne" = "去创建";
-"saludDetalle.capsule.since" = "自 %@ 起";
 "saludDetalle.capsule.addPayments" = "添加付款";
 "saludDetalle.capsule.recordToday" = "今天记一笔";
 "saludDetalle.capsule.noData" = "暂无数据";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "有 %d 个预算在本期超出了限额。下面是回到限额内的办法。";
 "saludDetalle.advice.overdue" = "%@ 已经到期。如果你已经付过了，把它标记为已付。";
 "saludDetalle.advice.createBudget" = "有了预算，你的评分才算完整：它是占比最大的一部分。";
-"saludDetalle.advice.budgetStarts" = "你的预算将从 %@ 起计入评分。";
 "saludDetalle.advice.addPayments" = "添加你的付款，就能知道这个月够不够用。";
 "saludDetalle.advice.rhythm" = "现在最能提高评分的，是更频繁地记账。";
 "saludDetalle.advice.allGood" = "你的预算都在限额内，本月还没付的款项也有资金覆盖。";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ 超出了 %@。你的另一个预算在限额内。";
 "saludDetalle.budgets.overOthers" = "%@ 超出了 %@。你的其余 %d 个预算都在限额内。";
 "saludDetalle.budgets.manyOver" = "有 %d 个预算超出了限额。下面是回到限额内的办法。";
-"saludDetalle.budgets.startsLater" = "%@ 将从 %@ 起计入评分。你现在就可以看看进展。";
 "saludDetalle.budgets.seeAll" = "查看全部（%d）";
 "saludDetalle.budgets.left" = "还剩";
 "saludDetalle.budgets.over" = "超出";

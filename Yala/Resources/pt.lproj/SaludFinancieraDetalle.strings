@@ -18,7 +18,6 @@
 "saludDetalle.status.noData" = "Sem dados";
 
 "saludDetalle.capsule.createOne" = "Crie um";
-"saludDetalle.capsule.since" = "Desde %@";
 "saludDetalle.capsule.addPayments" = "Adicione pagamentos";
 "saludDetalle.capsule.recordToday" = "Registre hoje";
 "saludDetalle.capsule.noData" = "Sem dados";
@@ -29,7 +28,6 @@
 "saludDetalle.advice.overMany" = "%d orçamentos estouraram neste período. Abaixo você vê como voltar ao seu limite.";
 "saludDetalle.advice.overdue" = "%@ já venceu. Se você já pagou, marque como pago.";
 "saludDetalle.advice.createBudget" = "Com um orçamento, sua nota ficaria completa: é a parte que mais pesa.";
-"saludDetalle.advice.budgetStarts" = "Seu orçamento começa a contar na sua nota em %@.";
 "saludDetalle.advice.addPayments" = "Adicione seus pagamentos para saber se o mês fecha.";
 "saludDetalle.advice.rhythm" = "O que mais move sua nota agora é registrar com mais frequência.";
 "saludDetalle.advice.allGood" = "Seus orçamentos estão dentro do limite e o que falta pagar neste mês está coberto.";
@@ -41,7 +39,6 @@
 "saludDetalle.budgets.overOneOther" = "%@ estourou em %@. Seu outro orçamento está dentro do limite.";
 "saludDetalle.budgets.overOthers" = "%@ estourou em %@. Seus outros %d orçamentos estão dentro do limite.";
 "saludDetalle.budgets.manyOver" = "%d orçamentos estouraram. Abaixo você vê como voltar ao seu limite.";
-"saludDetalle.budgets.startsLater" = "%@ começa a contar na sua nota em %@. Desde já você pode ver como está indo.";
 "saludDetalle.budgets.seeAll" = "Ver todos (%d)";
 "saludDetalle.budgets.left" = "Restam";
 "saludDetalle.budgets.over" = "Você estourou em";

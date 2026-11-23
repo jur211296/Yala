@@ -86,8 +86,9 @@ enum SaludFinancieraDetalleMuestra {
             datos.presupuestos = pasado
             datos.esPro = estado == .excedido
             datos.tarjetaIA = estado == .excedido ? L.TarjetaIA(
-                texto: "Tus pedidos de delivery subieron 38 % frente al mes pasado, sobre todo viernes y sábado.",
-                consejo: "Con un tope de dos pedidos por fin de semana ahorrarías unos S/ 180 al mes."
+                texto: "Tus pedidos de delivery subieron **38 %** frente al mes pasado, sobre todo viernes y sábado.",
+                // Con negritas, como las escribe Yala IA: la hoja tiene que pintarlas, no enseñar los asteriscos.
+                consejo: "Con un tope de dos pedidos por fin de semana ahorrarías unos **S/ 180** al mes."
             ) : nil
             score = FinancialScore(total: 82, budget: 58, activity: 100, bills: 84, savings: 100, savingsFigures: queda)
         case .noalcanza:
