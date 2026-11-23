@@ -2554,6 +2554,16 @@ final class AppBootstrapper {
         // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
         SpotlightIndexService.scheduleReconcile(context: context)
 
+        // «Comercios en común» (2.3): el aviso de una vez, la lista común una vez al día y el lote semanal. Sin red en
+        // XCUITest: ahí la lista la siembra `-uitest-comercios-comun-lista` (vacía si no se pasa).
+        if UITestHooks.isActive {
+            #if DEBUG
+            ComerciosEnComun.shared.prepararParaUITest(UserDefaults.standard.string(forKey: "uitest-comercios-comun-lista"))
+            #endif
+        } else if !SwiftDataConfiguration.isRunningTests {
+            Task { await ComerciosEnComun.shared.sincronizarSiToca() }
+        }
+
         // Grupos B · card 10: lo cobrado de las ventas de grupo, una pasada por grupo con ventas. Funde las patas cobradas
         // que dos aparatos escribieron a la vez antes de verse. Sin ventas, dos consultas y nada más.
         GroupTransactionBridge.shared.reconcileAllReceivables()

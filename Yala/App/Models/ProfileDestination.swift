@@ -34,6 +34,8 @@ enum ProfileDestination: Hashable {
     /// banco. Gratis y también con iCloud.
     case bankNotices
     case aiPrivacy
+    /// «Comercios en común» (2.3, 2026-11-22): aportar o no a la lista anónima comercio → tipo, y qué se envía.
+    case comerciosEnComun
     /// «Cómo usas Yala» (card p0iu): Yala completo o solo grupos, en las dos direcciones.
     case usageMode
     /// «Permisos de Yala» (UX 2.2 · L16-14): estado de cada permiso y un botón por permiso a Configuración.

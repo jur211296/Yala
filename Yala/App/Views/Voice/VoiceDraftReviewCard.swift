@@ -186,6 +186,13 @@ struct VoiceDraftReviewCard: View {
                     onNeedTap: onOpenDetails
                 )
                 .allowsHitTesting(!isSaved)
+
+                // «Comercios en común»: la categoría la propuso la lista común (sin memoria de ese comercio).
+                if !isSaved, let comercio = ComerciosEnComunLinea.comercio(
+                    note: draft.note, subcategory: subcategory, isExpense: isExpense,
+                    subcategories: allSubcategories, context: modelContext) {
+                    ComerciosEnComunLinea(comercio: comercio) { activeField = .subcategory }
+                }
             }
         } else if !isSaved {
             HStack(spacing: DS.Spacing.sm) {

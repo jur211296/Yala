@@ -1,0 +1,25 @@
+/*
+  ComerciosEnComun.strings
+  Yala
+
+  «Comercios en común» (2.3, 2026-11-22): la línea de «Esto leí», el aviso de una vez y Perfil › Comercios en común.
+  Tabla propia, leída con el idioma de la app (`L10n.ComerciosEnComun`). Español neutro latinoamericano en las cuatro
+  variantes de español (encargo del 22-nov).
+*/
+
+"comerciosComun.linea.texto" = "C'est ainsi que %@ est généralement classé dans Yala.";
+"comerciosComun.linea.cambiar" = "Modifier";
+"comerciosComun.aviso.mensaje" = "Yala apprend des commerces que vous validez : seuls le nom et le type sont partagés, jamais les montants ni les dates.";
+"comerciosComun.aviso.noAportar" = "Ne pas partager";
+"comerciosComun.titulo" = "Commerces en commun";
+"comerciosComun.ajustes.aportar" = "Partager les commerces";
+"comerciosComun.ajustes.aportarPie" = "Quand vous validez une dépense, Yala envoie seulement le nom du commerce et son type (par exemple, « Tambo → supermarché »). Si vous désactivez cette option, vous recevez toujours des suggestions.";
+"comerciosComun.ajustes.queSeEnvia.titulo" = "Ce qui est envoyé";
+"comerciosComun.ajustes.queSeEnvia.nombre" = "Le nom du commerce, sans agence, rue ni numéros.";
+"comerciosComun.ajustes.queSeEnvia.tipo" = "Son type, tiré d'une liste fixe : supermarché, pharmacie, restaurant…";
+"comerciosComun.ajustes.queSeEnvia.nunca" = "Jamais le montant, la date, votre compte, vos notes, vos catégories ni votre e-mail. Rien des virements, revenus, loyers ni impôts.";
+"comerciosComun.ajustes.comoFunciona.titulo" = "Comment ça marche";
+"comerciosComun.ajustes.comoFunciona.semana" = "Les envois partent une fois par semaine, tous ensemble et sans l'heure.";
+"comerciosComun.ajustes.comoFunciona.varios" = "Un commerce entre dans la liste commune quand plusieurs téléphones différents sont d'accord.";
+"comerciosComun.ajustes.comoFunciona.local" = "Votre téléphone télécharge toute la liste et cherche dedans : il ne demande jamais au serveur ce que vous achetez.";
+"comerciosComun.ajustes.comoFunciona.manda" = "Ce que vous corrigez l'emporte toujours dans votre app.";

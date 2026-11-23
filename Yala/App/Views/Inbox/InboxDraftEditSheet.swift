@@ -1186,7 +1186,8 @@ struct InboxDraftEditSheet: View {
             merchantService.updateMemory(
                 merchantRaw: note,
                 subcategory: subcategory,
-                wasCorrection: wasCorrection
+                wasCorrection: wasCorrection,
+                source: draft.sourceType
             )
         }
 
