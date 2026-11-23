@@ -1,0 +1,137 @@
+<title>Mudanza de yala-app.pe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura; arriba el veredicto, después la tabla de medidas, y el corte como secuencia real. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#17202b; --muted:#5b6675; --line:#dde2e8;
+  --accent:#e8772e; --accent-soft:#fdeee3;
+  --ok:#1e7f52; --ok-soft:#e3f4eb; --warn:#9a6400; --warn-soft:#fbf1dc; --bad:#b4332a; --bad-soft:#fae6e4;
+  --display:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --body:"Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101419; --surface:#171d24; --fg:#e7ebf0; --muted:#9aa5b3; --line:#2a333e;
+  --accent:#f59a52; --accent-soft:#3a2516;
+  --ok:#5fcf98; --ok-soft:#173326; --warn:#e8b75a; --warn-soft:#352a13; --bad:#f08a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101419; --surface:#171d24; --fg:#e7ebf0; --muted:#9aa5b3; --line:#2a333e;
+  --accent:#f59a52; --accent-soft:#3a2516;
+  --ok:#5fcf98; --ok-soft:#173326; --warn:#e8b75a; --warn-soft:#352a13; --bad:#f08a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(26px,4.5vw,36px)}
+h2{font-size:20px;margin-bottom:12px}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+code{font:13px var(--mono);background:var(--accent-soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+header{display:grid;gap:14px}
+.verdict{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:18px 20px;display:grid;gap:6px}
+.verdict strong{font-family:var(--display);font-size:19px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:2px}
+.kpi b{font:700 24px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:13px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font:500 12px/1.6 var(--mono);padding:0 8px;border-radius:99px;white-space:nowrap}
+.v{background:var(--ok-soft);color:var(--ok)} .i{background:var(--warn-soft);color:var(--warn)}
+.src{color:var(--muted);font-size:13px}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);font:700 15px/32px var(--display);text-align:center;width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent)}
+.who{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.gate{border-left:3px solid var(--accent);padding-left:12px}
+ul.list{margin:0;padding-left:20px;display:grid;gap:6px}
+.risk{display:grid;gap:10px}
+.risk div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;gap:4px}
+.risk b{font-family:var(--display)}
+.sev{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.sev.m{color:var(--warn)} .sev.l{color:var(--ok)}
+footer{color:var(--muted);font-size:13px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Yala · web pública · 23-nov-2026</span>
+  <h1>Mudanza de yala-app.pe a Cloudflare Workers</h1>
+  <div class="verdict">
+    <strong>Recomendación: mudar. La configuración está lista y probada; falta el OK para llevarla a 1.0 y para el corte.</strong>
+    <p>La web es estática salvo dos piezas que caben en el Worker. El corte es una ruta del Worker delante del DNS que ya está en Cloudflare: volver a Vercel es borrar esa ruta, en segundos.</p>
+  </div>
+</header>
+
+<section class="kpis" aria-label="Cifras">
+  <div class="kpi"><b>≈ USD 2,75</b><span>menos al mes en Vercel (análisis del 22-nov)</span></div>
+  <div class="kpi"><b>USD 0</b><span>en Cloudflare: plan gratis, 100 mil peticiones al día</span></div>
+  <div class="kpi"><b>1 de 13</b><span>tipos de página con servidor: <code>/invite</code></span></div>
+  <div class="kpi"><b>Segundos</b><span>para volver a Vercel</span></div>
+</section>
+
+<section>
+  <h2>Qué se midió</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Punto</th><th>Hoy</th><th>Estado</th><th>Fuente</th></tr></thead>
+    <tbody>
+      <tr><td>Partes no estáticas</td><td><code>/invite</code> (vista previa de invitación a grupo) y la portada que elige idioma. Sin formularios, API ni crons.</td><td><span class="pill v">verificado</span></td><td class="src">src/pages, vercel.json, API de Vercel</td></tr>
+      <tr><td>Rama de producción</td><td><code>1.0</code></td><td><span class="pill v">verificado</span></td><td class="src">API de Vercel</td></tr>
+      <tr><td>Previews</td><td>Todas las ramas salvo <code>encargo/*</code></td><td><span class="pill v">verificado</span></td><td class="src">vercel.json</td></tr>
+      <tr><td>Variables</td><td>Solo el esquema del enlace a la app, en preview</td><td><span class="pill v">verificado</span></td><td class="src">API de Vercel</td></tr>
+      <tr><td>DNS de yala-app.pe</td><td>Ya en Cloudflare, con el ápex proxied hacia Vercel</td><td><span class="pill v">verificado</span></td><td class="src">dig, cabeceras HTTP</td></tr>
+      <tr><td>www.yala-app.pe</td><td>No existe</td><td><span class="pill v">verificado</span></td><td class="src">dig</td></tr>
+      <tr><td>app.yala-app.pe</td><td>Ya es un Worker (Yala web). No entra en esta mudanza.</td><td><span class="pill v">verificado</span></td><td class="src">webapp/wrangler.toml</td></tr>
+      <tr><td>yala-pe.com y yala-app.com.pe</td><td>DNS fuera de Cloudflare; redirigen desde Vercel. Se quedan ahí.</td><td><span class="pill v">verificado</span></td><td class="src">dig, curl</td></tr>
+      <tr><td>Otros Workers en la zona</td><td>mcp, mcp-staging, panel, app y gateway, cada uno en su subdominio. Ninguno usa el ápex.</td><td><span class="pill i">inferido</span></td><td class="src">wrangler.toml del repo; sin token que lea la cuenta</td></tr>
+      <tr><td>Registro DNS exacto del ápex</td><td>Proxied hacia Vercel; el valor no se pudo leer</td><td><span class="pill i">inferido</span></td><td class="src">sin acceso de lectura a la zona</td></tr>
+      <tr><td>Ahorro</td><td>≈ USD 2,75 al mes</td><td><span class="pill i">inferido</span></td><td class="src">análisis de costes, Fase 2</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Probado en local contra producción</h2>
+  <p>Con <code>wrangler dev</code>: portada en español y redirigida en inglés, alemán, francés, italiano y portugués, respetando la cookie de idioma; privacidad, términos, soporte, la 404, el sitemap, el fichero de enlaces universales de Apple, <code>/invite</code> con su enlace a la app, las cuatro cabeceras de seguridad y la caché larga de los recursos. Todo igual que hoy. El simulacro de despliegue pasa en los dos entornos.</p>
+  <p style="margin-top:10px">Una diferencia a propósito: <code>/privacy</code> sin barra redirige a <code>/privacy/</code>, que es la dirección oficial de la página. Quien llega desde la app lo nota solo como un salto invisible.</p>
+</section>
+
+<section>
+  <h2>Plan de corte</h2>
+  <ol class="steps">
+    <li><div class="gate"><span class="who">Jürgen</span><p>OK para llevar a 1.0 solo el commit de configuración (un PR a 1.0). Producción tiene que salir del contenido de 1.0, no de 2.3.</p></div></li>
+    <li><div><span class="who">Dan</span><p>Desde 1.0: <code>cd Web &amp;&amp; npm ci &amp;&amp; npm run build &amp;&amp; npx wrangler deploy</code>. Sale en workers.dev, sin tocar producción.</p></div></li>
+    <li><div><span class="who">Dan y Frank</span><p>Comparar la copia de workers.dev con producción, ruta por ruta, con la lista de arriba.</p></div></li>
+    <li><div class="gate"><span class="who">Jürgen</span><p>OK al corte.</p></div></li>
+    <li><div><span class="who">Dan</span><p><code>npx wrangler deploy --env production</code>. Crea la ruta <code>yala-app.pe/*</code>. El DNS no se toca y el certificado sigue siendo el de Cloudflare.</p></div></li>
+    <li><div><span class="who">Dan</span><p>Comprobar: la portada ya no responde desde Vercel, los dominios viejos siguen redirigiendo y un enlace de invitación abre la app en el iPhone.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Vuelta atrás</h2>
+  <ul class="list">
+    <li>Borrar la ruta <code>yala-app.pe/*</code> del Worker en el panel de Cloudflare. El tráfico vuelve a Vercel al instante, porque el DNS nunca cambió.</li>
+    <li>Antes del corte, Dan copia en la guía el registro exacto del ápex, por si alguien lo tocara.</li>
+    <li>En Vercel no se apaga nada durante una semana estable. Los dos dominios viejos siguen allí siempre, porque su DNS no está en Cloudflare.</li>
+    <li>Tras la semana: apagar los builds por git del proyecto de Vercel para dejar de pagarlos.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Riesgos</h2>
+  <div class="risk">
+    <div><span class="sev m">Medio</span><b>Desplegar desde 2.3 por error</b><p>Publicaría páginas aún no lanzadas, como Funciones. Se evita compilando desde 1.0 con el commit de configuración.</p></div>
+    <div><span class="sev m">Medio</span><b>Previews de rama</b><p>Dejan de ser automáticos. En Cloudflare se sacan a mano con <code>wrangler versions upload</code>. Conectar los builds automáticos queda fuera.</p></div>
+    <div><span class="sev l">Bajo</span><b>Enlaces universales</b><p>Apple lee su fichero de yala-app.pe. Se sirve igual, con el mismo tipo; se confirma en el iPhone tras el corte.</p></div>
+    <div><span class="sev l">Bajo</span><b>Choque con otros Workers</b><p>Todos viven en subdominios con dominio propio. La ruta del ápex no los alcanza.</p></div>
+  </div>
+</section>
+
+<footer>Guía completa y comandos: <code>docs/infra/web-a-cloudflare/README.md</code> en el repo de Yala. Configuración: <code>Web/wrangler.jsonc</code>, <code>Web/src/worker.ts</code>, <code>Web/public/_headers</code>, <code>Web/public/_redirects</code>.</footer>
+</div>

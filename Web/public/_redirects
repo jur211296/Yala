@@ -1,0 +1,4 @@
+# Redirecciones de lo estático en Cloudflare Workers: el equivalente de `redirects` en vercel.json.
+# Las que dependen del host (yala-pe.com, yala-app.com.pe) siguen en Vercel: su DNS no está en Cloudflare.
+# La de idioma de la portada depende de Accept-Language y de una cookie: va en src/worker.ts.
+/privacy_content /privacy 308
