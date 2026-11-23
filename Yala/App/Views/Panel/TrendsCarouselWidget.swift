@@ -257,6 +257,10 @@ struct TrendsCarouselWidget: View {
 
     /// Bajo la gráfica de saldo, de dónde partió y dónde está, con el % del cambio: el eje no arranca en cero y la línea
     /// exageraba la caída. Con montos ocultos queda el %; los días 1 y 2 del mes, solo los montos.
+    ///
+    /// La marca del final es la de `finalBalance`, que es ese mismo número: con anchor, la del saldo vivo; en un período
+    /// cerrado, la del cierre (ticket `fx-historical-balance-curve-unmarked`; hasta el 2026-11-23 se apagaba en «Mes
+    /// pasado»).
     @ViewBuilder
     private var startEndRow: some View {
         if viewModel.dataTrendType == .balance,
@@ -278,14 +282,14 @@ struct TrendsCarouselWidget: View {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     startEndSide(date: startDate, value: summary.startValue)
                     startEndArrow
-                    startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                    startEndSide(date: endDate, value: summary.endValue, isEstimate: viewModel.trendFinalBalanceIsApproximate)
                     startEndVariation(variation)
                 }
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     startEndSide(date: startDate, value: summary.startValue)
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         startEndArrow
-                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: viewModel.trendFinalBalanceIsApproximate)
                         startEndVariation(variation)
                     }
                 }
@@ -296,7 +300,7 @@ struct TrendsCarouselWidget: View {
                     startEndSide(date: startDate, value: summary.startValue, stacked: true)
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         startEndArrow
-                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate, stacked: true)
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: viewModel.trendFinalBalanceIsApproximate, stacked: true)
                     }
                     startEndVariation(variation)
                 }
@@ -349,11 +353,15 @@ struct TrendsCarouselWidget: View {
     private func startEndAccessibilityLabel(
         _ summary: PanelTrendSummaryLogic.StartEnd, startDate: String, endDate: String, variation: Double?
     ) -> String {
-        let amount: (Double) -> String = { value in
-            AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
+        let amount: (Double, Bool) -> String = { value, isEstimate in
+            AmountPrivacy.text(
+                appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden
+            )
         }
+        // El final lleva la misma marca que pinta la fila: VoiceOver no puede leer exacto lo que se ve con «≈».
         let base = L10n.Panel.trendStartEndAccessibility(
-            startDate, amount(summary.startValue), endDate, amount(summary.endValue))
+            startDate, amount(summary.startValue, false), endDate,
+            amount(summary.endValue, viewModel.trendFinalBalanceIsApproximate))
         guard let variation else { return base }
         return "\(base). \(VariationChip.accessibilityText(for: variation))"
     }

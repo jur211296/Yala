@@ -39,6 +39,10 @@ struct PieChartVariationHeader: View {
     /// del título sin envolver el componente entero en otro HStack.
     var titleAccessory: AnyView? = nil
 
+    /// «≈» delante del total cuando la parte convertida con una tasa dudosa pesa (`PieTotalApproximateMark`, ticket
+    /// `pie-header-total-unmarked`). El «vs» del período anterior no la lleva: `fx-previous-period-amounts-unmarked`.
+    var isApproximate: Bool = false
+
     // MARK: - Computed Properties
 
     private var previousInterval: DateInterval {
@@ -77,7 +81,8 @@ struct PieChartVariationHeader: View {
                     AmountText(
                         value: totalAmount,
                         currencyCode: currencyCode,
-                        font: DS.Typography.headline
+                        font: DS.Typography.headline,
+                        isEstimate: isApproximate
                     )
 
                     // Show previous period value for comparison (only when showVariations is ON)

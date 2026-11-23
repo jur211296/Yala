@@ -47,6 +47,12 @@ struct TrendDataProcessor {
         /// desglose porque lo pinta la misma pantalla: la hoja «¿Cuánto tienes hoy?». `false`
         /// cuando no hay anchor — sin número que marcar no hay marca.
         let liveAnchorIsApproximate: Bool
+        /// `true` si `finalBalance` —el número que se pinta como saldo del período— salió con una tasa que no era la
+        /// del día y esa parte pesa (`ApproximateMarkThreshold`). Con anchor vale lo mismo que `liveAnchorIsApproximate`;
+        /// en un período cerrado mide la calidad de las tasas del CIERRE (`BalanceValuation`), que es de donde sale el
+        /// último punto (ticket `fx-historical-balance-curve-unmarked`). Hasta el 2026-11-23 el período cerrado no se
+        /// medía y la marca desaparecía al pasar de «Este mes» a «Mes pasado». `false` fuera de `.balance`.
+        let finalBalanceIsApproximate: Bool
     }
 
     // MARK: - Main Processing Entry Point
@@ -131,7 +137,8 @@ struct TrendDataProcessor {
                 finalBalance: 0,
                 liveAnchor: nil,
                 liveAnchorNativeBalances: nil,
-                liveAnchorIsApproximate: false
+                liveAnchorIsApproximate: false,
+                finalBalanceIsApproximate: false
             )
         }
 
@@ -161,7 +168,8 @@ struct TrendDataProcessor {
                 finalBalance: 0,
                 liveAnchor: nil,
                 liveAnchorNativeBalances: nil,
-                liveAnchorIsApproximate: false
+                liveAnchorIsApproximate: false,
+                finalBalanceIsApproximate: false
             )
         }
 
@@ -184,9 +192,11 @@ struct TrendDataProcessor {
         }
 
         // 3. Fill buckets based on metric
+        // Magnitud dudosa del ÚLTIMO bucket de saldo (el que da `finalBalance` sin anchor).
+        var lastBalanceApproximateMagnitude: Double = 0
         switch metric {
         case .balance:
-            fillBalanceBuckets(
+            lastBalanceApproximateMagnitude = fillBalanceBuckets(
                 &buckets,
                 transactions: transactions,
                 interval: effectiveInterval,  // Use the matched interval
@@ -288,6 +298,18 @@ struct TrendDataProcessor {
         }
 
         let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
+        // La marca es del número que se pinta: con anchor, la del saldo vivo; sin él, la del cierre del último bucket,
+        // contra el saldo mostrado (es una resta: el denominador honesto es lo que se ve, no la suma que lo formó).
+        let finalBalanceIsApproximate: Bool
+        if liveAnchor != nil {
+            finalBalanceIsApproximate = liveAnchorIsApproximate
+        } else if metric == .balance, !rawPoints.isEmpty {
+            finalBalanceIsApproximate = ApproximateMarkThreshold.marks(
+                approximate: lastBalanceApproximateMagnitude, total: finalBalance
+            )
+        } else {
+            finalBalanceIsApproximate = false
+        }
 
         // 6. yDomain: cuenta también el liveAnchor, que puede caer fuera del rango histórico. Entra en el cálculo y no
         //    se suma después: así el margen de los extremos también lo deja respirar, y el saldo de hoy no queda pegado
@@ -306,7 +328,8 @@ struct TrendDataProcessor {
             finalBalance: finalBalance,
             liveAnchor: liveAnchor,
             liveAnchorNativeBalances: liveAnchorNativeBalances,
-            liveAnchorIsApproximate: liveAnchorIsApproximate
+            liveAnchorIsApproximate: liveAnchorIsApproximate,
+            finalBalanceIsApproximate: finalBalanceIsApproximate
         )
     }
 
@@ -319,6 +342,10 @@ struct TrendDataProcessor {
     /// a hoy ES la cifra del saldo, y el de un periodo cerrado, lo que valía el saldo ese día. Hasta el 2026-10-16
     /// sumaba cada fila al tipo de su fecha, y con una cuenta en dólares la curva acababa lejos de la cifra
     /// (ticket `panel-balance-chart-contradicts-its-own-figure`).
+    ///
+    /// Devuelve la magnitud que salió de una tasa dudosa en el ÚLTIMO bucket (`BalanceValuation.value`): es la duda del
+    /// saldo de cierre de un período pasado (ticket `fx-historical-balance-curve-unmarked`).
+    @discardableResult
     private static func fillBalanceBuckets(
         _ buckets: inout [Date: Double],
         transactions: [TransactionItem],
@@ -328,7 +355,7 @@ struct TrendDataProcessor {
         currencyCode: String,
         valuationCap: Date,
         converter: CurrencyConverting
-    ) {
+    ) -> Double {
         // Quien llama pasa las filas de las cuentas cuyo historial se ve (ya sin las excluidas), y una cuenta archivada
         // está ahí pero no suma en un saldo (`Account.sumsInBalance`, decisión 6 de 2.3). Sin este filtro la curva acababa
         // lejos de la cifra, que ya la deja fuera. Solo quita las archivadas: el resto del filtrado es de quien llama.
@@ -364,14 +391,23 @@ struct TrendDataProcessor {
         )
 
         // Fill buckets with cumulative balance
+        var lastApproximateMagnitude: Double = 0
         for (index, date) in sortedDates.enumerated() {
             if let txns = transactionsByBucket[date] {
                 for txn in txns {
                     LiveBalanceCalculator.addNative(txn, to: &native)
                 }
             }
-            buckets[date] = valuation.doubleValue(native, at: closings[index])
+            if index == sortedDates.count - 1 {
+                // El último punto: el mismo valor que `doubleValue`, con su parte dudosa.
+                let valued = valuation.value(native, at: closings[index])
+                buckets[date] = NSDecimalNumber(decimal: valued.total).doubleValue
+                lastApproximateMagnitude = NSDecimalNumber(decimal: valued.approximateMagnitude).doubleValue
+            } else {
+                buckets[date] = valuation.doubleValue(native, at: closings[index])
+            }
         }
+        return lastApproximateMagnitude
     }
 
     /// Fill buckets with cumulative (running total) values for income/expense

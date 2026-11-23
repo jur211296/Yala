@@ -248,7 +248,9 @@ struct FinancialReportView: View {
                             currencyCode: preferredCurrencyCode,
                             showsComparison: viewModel.supportsComparison,
                             previousPeriodName: comparedPeriodName?.inSentence ?? "",
-                            previousIsDayRange: comparedPeriodName?.isDayRange ?? false
+                            previousIsDayRange: comparedPeriodName?.isDayRange ?? false,
+                            currentIsApproximate: viewModel.netFlowCurrentIsApproximate,
+                            previousIsApproximate: viewModel.netFlowPreviousIsApproximate
                         )
                     }
                 } else {

@@ -137,6 +137,11 @@ final class FinancialReportViewModel: Filterable {
     private(set) var netFlowCurrent: Double = 0
     private(set) var netFlowPrevious: Double?
     private(set) var netFlowVariation: Double?
+    /// La marca «≈» de «Te quedó» y de la cifra del período anterior en su frase: la parte que salió de una tasa dudosa
+    /// (los dos lados sumados) contra el neto que se pinta, que es una resta (`ApproximateMarkThreshold`, la misma
+    /// regla que el neto del Flujo de caja en `CashFlowCalculator`). Ticket `financial-report-amounts-unmarked`.
+    private(set) var netFlowCurrentIsApproximate: Bool = false
+    private(set) var netFlowPreviousIsApproximate: Bool = false
 
     /// «Todo el tiempo» no tiene período anterior: `PreviousPeriodHelper` devuelve el mismo intervalo y la
     /// tabla se comparaba consigo misma («+0 %» en cada fila). Con `false` no hay columna anterior ni chip.
@@ -277,20 +282,41 @@ final class FinancialReportViewModel: Filterable {
         // (`CashFlowCalculator.resolvedAmount`): una fila guardada en otra divisa principal se
         // reconvierte, o el neto y las filas de la tabla (las agrupadas en divisa principal; por
         // divisa o por cuenta suman el nativo) darían números distintos.
-        let netAmount: (TransactionItem) -> Double = { tx in
-            guard !adjustment.isSuppressed(tx) else { return 0 }
-            return CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
-            ).value
+        let net: ([TransactionItem]) -> (value: Double, isApproximate: Bool) = { txns in
+            Self.netFlow(of: txns, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter)
         }
-        netFlowCurrent = currentTxns.reduce(0.0) { $0 + netAmount($1) }
-        netFlowPrevious = previousTxns.isEmpty
-            ? nil
-            : previousTxns.reduce(0.0) { $0 + netAmount($1) }
+        let currentNet = net(currentTxns)
+        netFlowCurrent = currentNet.value
+        netFlowCurrentIsApproximate = currentNet.isApproximate
+        let previousNet = previousTxns.isEmpty ? nil : net(previousTxns)
+        netFlowPrevious = previousNet?.value
+        netFlowPreviousIsApproximate = previousNet?.isApproximate ?? false
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }
         self.supportsComparison = supportsComparison
         currentDataEnd = currentTxns.map(\.date).max()
     }
+
+    /// «Te quedó» de un conjunto de movimientos y su marca «≈»: la parte que salió de una tasa dudosa (los dos lados
+    /// sumados, en magnitud) contra el neto que se pinta, que es una resta (`ApproximateMarkThreshold`; la misma regla
+    /// que el neto del Flujo de caja, `CashFlowCalculator`). Ticket `financial-report-amounts-unmarked`.
+    static func netFlow(
+        of transactions: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting
+    ) -> (value: Double, isApproximate: Bool) {
+        var value = 0.0
+        var approximate = 0.0
+        for tx in transactions where !adjustment.isSuppressed(tx) {
+            let resolved = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            )
+            value += resolved.value
+            approximate += resolved.approximateMagnitude
+        }
+        return (value, ApproximateMarkThreshold.marks(approximate: approximate, total: value))
+    }
+
 }

@@ -36,6 +36,9 @@ struct CategoriesPieWidget: View {
     /// Show header even when `previousAmount` is nil (renders N/A).
     var showVariationHeader: Bool = false
     var variationDisplay: VariationDisplayConfig = .full
+    /// «≈» del total de la tarta (`PieTotalApproximateMark`, ticket `pie-header-total-unmarked`). Mide el total
+    /// ENTERO: con algo seleccionado la cifra pintada es solo esa parte, que no se mide, y sale sin marca.
+    var totalIsApproximate: Bool = false
 
     // Computed Properties
     private var totalExpense: Double {
@@ -43,6 +46,8 @@ struct CategoriesPieWidget: View {
     }
 
     // Filtered total based on selected categories
+    private var filteredTotalIsApproximate: Bool { selectedCategoryIDs.isEmpty && totalIsApproximate }
+
     private var filteredTotalExpense: Double {
         guard !selectedCategoryIDs.isEmpty else { return totalExpense }
         return categories
@@ -513,7 +518,8 @@ struct CategoriesPieWidget: View {
                             legacyTitle: L10n.WidgetType.categoriesPie,
                             legacyMessage: L10n.Widget.Hint.categoriesPie
                         )
-                    )
+                    ),
+                    isApproximate: totalIsApproximate
                 )
             } else {
                 // Original header without comparison
@@ -536,7 +542,8 @@ struct CategoriesPieWidget: View {
                         AmountText(
                             value: filteredTotalExpense,
                             currencyCode: currencyCode,
-                            font: DS.Typography.headline
+                            font: DS.Typography.headline,
+                            isEstimate: filteredTotalIsApproximate
                         )
                     }
                     Spacer()

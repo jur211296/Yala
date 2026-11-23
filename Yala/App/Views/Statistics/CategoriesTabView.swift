@@ -77,6 +77,11 @@ struct CategoriesTabView: View {
     @State private var firstCalculationTask: Task<Void, Never>?
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
+    /// «≈» del total de cada tarta, medido sobre las mismas transacciones (`PieTotalApproximateMark`, ticket
+    /// `pie-header-total-unmarked`).
+    @State private var categoryPieIsApproximate = false
+    @State private var subcategoryPieIsApproximate = false
+    @State private var tagPieIsApproximate = false
     @State private var needTrendPoints: [NeedTrendPoint] = []
     @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
@@ -578,7 +583,8 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    totalIsApproximate: categoryPieIsApproximate
                 )
             }
         }
@@ -610,7 +616,8 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    totalIsApproximate: subcategoryPieIsApproximate
                 )
             }
         }
@@ -642,7 +649,8 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    totalIsApproximate: tagPieIsApproximate
                 )
             }
         }
@@ -1454,6 +1462,11 @@ struct CategoriesTabView: View {
             adjustment: adjustment
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
+        let newCategoryPieIsApproximate = PieTotalApproximateMark.marks(
+            transactions: pieFiltered, interval: interval, currencyCode: defaultCurrencyCode,
+            natures: naturesFilter, slices: .categories, adjustment: adjustment
+        )
+        if newCategoryPieIsApproximate != categoryPieIsApproximate { categoryPieIsApproximate = newCategoryPieIsApproximate }
         detailSource.current = pieFiltered
         detailSource.interval = interval
         detailSource.natures = naturesFilter
@@ -1479,6 +1492,13 @@ struct CategoriesTabView: View {
             adjustment: adjustment
         )
         if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
+        let newSubcategoryPieIsApproximate = PieTotalApproximateMark.marks(
+            transactions: subcategoryTransactions, interval: interval, currencyCode: defaultCurrencyCode,
+            natures: naturesFilter, slices: .subcategories, adjustment: adjustment
+        )
+        if newSubcategoryPieIsApproximate != subcategoryPieIsApproximate {
+            subcategoryPieIsApproximate = newSubcategoryPieIsApproximate
+        }
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
         // selectedTags=[] intentional → tagCriteria.selectedTagUUIDs stays empty (no tag filter applied).
@@ -1516,6 +1536,11 @@ struct CategoriesTabView: View {
             adjustment: adjustment
         )
         if newTagSpending != tagSpending { tagSpending = newTagSpending }
+        let newTagPieIsApproximate = PieTotalApproximateMark.marks(
+            transactions: tagFiltered, interval: interval, currencyCode: defaultCurrencyCode,
+            natures: naturesFilter, slices: .tags, adjustment: adjustment
+        )
+        if newTagPieIsApproximate != tagPieIsApproximate { tagPieIsApproximate = newTagPieIsApproximate }
 
         // Calculate need trend data with correct grouping based on period
         // Uses needFiltered (no need filter) so selection = visual dim, not data filter

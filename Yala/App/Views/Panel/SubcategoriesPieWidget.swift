@@ -37,6 +37,9 @@ struct SubcategoriesPieWidget: View {
     /// Show header even when `previousAmount` is nil (renders N/A).
     var showVariationHeader: Bool = false
     var variationDisplay: VariationDisplayConfig = .full
+    /// «≈» del total de la tarta (`PieTotalApproximateMark`, ticket `pie-header-total-unmarked`). Mide el total
+    /// ENTERO: con algo seleccionado la cifra pintada es solo esa parte, que no se mide, y sale sin marca.
+    var totalIsApproximate: Bool = false
 
     // Computed Properties
     private var totalExpense: Double {
@@ -44,6 +47,8 @@ struct SubcategoriesPieWidget: View {
     }
 
     // Filtered total based on selected subcategories
+    private var filteredTotalIsApproximate: Bool { selectedSubcategoryIDs.isEmpty && totalIsApproximate }
+
     private var filteredTotalExpense: Double {
         guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
         return subcategories
@@ -501,7 +506,8 @@ struct SubcategoriesPieWidget: View {
                             legacyTitle: L10n.WidgetType.subcategoriesPie,
                             legacyMessage: L10n.Widget.Hint.subcategoriesPie
                         )
-                    )
+                    ),
+                    isApproximate: totalIsApproximate
                 )
             } else {
                 // Original header without comparison
@@ -521,7 +527,7 @@ struct SubcategoriesPieWidget: View {
                         }
                         .padding(.bottom, DS.Spacing.xxs)
 
-                        Text(formattedCurrency(filteredTotalExpense))
+                        Text(formattedCurrency(filteredTotalExpense, isEstimate: filteredTotalIsApproximate))
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -588,8 +594,10 @@ struct SubcategoriesPieWidget: View {
 
     // MARK: - Helpers
 
-    private func formattedCurrency(_ value: Double) -> String {
-        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
+    private func formattedCurrency(_ value: Double, isEstimate: Bool = false) -> String {
+        AmountPrivacy.text(
+            appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden
+        )
     }
 
     private static let percentFormatter: NumberFormatter = {

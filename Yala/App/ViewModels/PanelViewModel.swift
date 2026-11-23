@@ -29,6 +29,9 @@ struct PanelTrendData: Equatable {
     /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Lo pinta la hoja
     /// «¿Cuánto tienes hoy?», que existe precisamente porque el saldo es multimoneda.
     var trendLiveAnchorIsApproximate: Bool = false
+    /// La marca del saldo de FIN de la curva (`TrendDataProcessor.finalBalanceIsApproximate`): con el período en curso,
+    /// la del saldo vivo; en uno cerrado, la del cierre. La pinta la fila «inicio → fin» bajo la gráfica de saldo.
+    var trendFinalBalanceIsApproximate: Bool = false
     /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación hasta el final del período.
     /// `nil` sin días por delante; la píldora del widget solo decide si se pinta.
     var trendProjection: ProjectedFlowCalculator.Projection? = nil
@@ -41,11 +44,15 @@ struct PanelTrendData: Equatable {
 struct PanelCategoriesData: Equatable {
     var topSpendingCategories: [CategorySpendingSummary] = []
     var previousTotalAmount: Double? = nil
+    /// «≈» del total de la tarta (`PieTotalApproximateMark`, ticket `pie-header-total-unmarked`).
+    var totalIsApproximate: Bool = false
 }
 
 struct PanelSubcategoriesData: Equatable {
     var topSubcategories: [SubcategorySpendingSummary] = []
     var previousTotalAmount: Double? = nil
+    /// «≈» del total de la tarta (`PieTotalApproximateMark`, ticket `pie-header-total-unmarked`).
+    var totalIsApproximate: Bool = false
 }
 
 struct PanelNeedData: Equatable {
@@ -121,6 +128,8 @@ struct PanelWeekdayData: Equatable {
 struct PanelTagsData: Equatable {
     var topTags: [TagSpendingSummary] = []
     var previousTotalAmount: Double? = nil
+    /// «≈» del total de la tarta (`PieTotalApproximateMark`, ticket `pie-header-total-unmarked`).
+    var totalIsApproximate: Bool = false
 }
 
 /// Pre-computed payload for the period comparison page of the Trends carousel.
@@ -763,10 +772,13 @@ final class PanelViewModel {
     // Backward-compatible read-only accessors (do NOT create independent observers)
     var topSpendingCategories: [CategorySpendingSummary] { categoriesWidget.topSpendingCategories }
     var previousCategoriesTotalAmount: Double? { categoriesWidget.previousTotalAmount }
+    var categoriesTotalIsApproximate: Bool { categoriesWidget.totalIsApproximate }
     var topSubcategories: [SubcategorySpendingSummary] { subcategoriesWidget.topSubcategories }
     var previousSubcategoriesTotalAmount: Double? { subcategoriesWidget.previousTotalAmount }
+    var subcategoriesTotalIsApproximate: Bool { subcategoriesWidget.totalIsApproximate }
     var topTags: [TagSpendingSummary] { tagsWidget.topTags }
     var previousTagsTotalAmount: Double? { tagsWidget.previousTotalAmount }
+    var tagsTotalIsApproximate: Bool { tagsWidget.totalIsApproximate }
     var needTrendPoints: [NeedTrendPoint] { needWidget.needTrendPoints }
     var previousNeedTotalAmount: Double? { needWidget.previousTotalAmount }
     var previousNeedAmounts: [SubcategoryNeed: Double] { needWidget.previousAmounts }
@@ -783,6 +795,7 @@ final class PanelViewModel {
     var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
     var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var trendLiveAnchorIsApproximate: Bool { trendChart.trendLiveAnchorIsApproximate }
+    var trendFinalBalanceIsApproximate: Bool { trendChart.trendFinalBalanceIsApproximate }
     var trendProjection: ProjectedFlowCalculator.Projection? { trendChart.trendProjection }
     var trendPeriodStartBalance: Double? { trendChart.trendPeriodStartBalance }
     var currentInterval: DateInterval { trendChart.currentInterval }
@@ -1546,6 +1559,7 @@ final class PanelViewModel {
         var newTrendLiveAnchor: BarPoint? = nil
         var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
         var newTrendLiveAnchorIsApproximate = false
+        var newTrendFinalBalanceIsApproximate = false
         var newTrendProjection: ProjectedFlowCalculator.Projection? = nil
         var newTrendPeriodStartBalance: Double? = nil
         if trendVisible {
@@ -1582,6 +1596,7 @@ final class PanelViewModel {
             newTrendLiveAnchor = result.liveAnchor
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
             newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
+            newTrendFinalBalanceIsApproximate = result.finalBalanceIsApproximate
             if trendType == .balance {
                 // La misma fuente que «Empezaste con» del flujo de caja: el saldo antes del día 1, no el cierre del día 1.
                 newTrendPeriodStartBalance = PanelTrendSummaryLogic.periodStartBalance(
@@ -1605,19 +1620,23 @@ final class PanelViewModel {
         // Categories — Distribución
         var newTopSpendingCategories = topSpendingCategories
         var newPreviousCategoriesTotal = categoriesWidget.previousTotalAmount
+        var newCategoriesTotalIsApproximate = categoriesWidget.totalIsApproximate
         if categoriesVisible {
             let categoriesResult = calculateCategoriesWidget(context: calcContext)
             newTopSpendingCategories = categoriesResult.categories
             newPreviousCategoriesTotal = categoriesResult.previousTotal
+            newCategoriesTotalIsApproximate = categoriesResult.totalIsApproximate
         }
 
         // Subcategories — Distribución
         var newTopSubcategories = topSubcategories
         var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
+        var newSubcategoriesTotalIsApproximate = subcategoriesWidget.totalIsApproximate
         if subcategoriesVisible {
             let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
             newTopSubcategories = subcategoriesResult.subcategories
             newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
+            newSubcategoriesTotalIsApproximate = subcategoriesResult.totalIsApproximate
         }
 
         // Cash Flow — Tendencias
@@ -1697,6 +1716,7 @@ final class PanelViewModel {
                 trendLiveAnchor: newTrendLiveAnchor,
                 trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown,
                 trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate,
+                trendFinalBalanceIsApproximate: newTrendFinalBalanceIsApproximate,
                 trendProjection: newTrendProjection,
                 trendPeriodStartBalance: newTrendPeriodStartBalance
             )
@@ -1725,7 +1745,8 @@ final class PanelViewModel {
         if categoriesVisible {
             let newCategories = PanelCategoriesData(
                 topSpendingCategories: newTopSpendingCategories,
-                previousTotalAmount: newPreviousCategoriesTotal
+                previousTotalAmount: newPreviousCategoriesTotal,
+                totalIsApproximate: newCategoriesTotalIsApproximate
             )
             if newCategories != categoriesWidget { categoriesWidget = newCategories }
         }
@@ -1733,7 +1754,8 @@ final class PanelViewModel {
         if subcategoriesVisible {
             let newSubcategories = PanelSubcategoriesData(
                 topSubcategories: newTopSubcategories,
-                previousTotalAmount: newPreviousSubcategoriesTotal
+                previousTotalAmount: newPreviousSubcategoriesTotal,
+                totalIsApproximate: newSubcategoriesTotalIsApproximate
             )
             if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
         }
@@ -2202,7 +2224,7 @@ final class PanelViewModel {
     /// only dims categories visually, rather than filtering out other categories' data
     /// Returns: (categories, previousPeriodTotal)
     private func calculateCategoriesWidget(context: PanelCalculationContext)
-        -> (categories: [CategorySpendingSummary], previousTotal: Double?)
+        -> (categories: [CategorySpendingSummary], previousTotal: Double?, totalIsApproximate: Bool)
     {
         // Calculate current period data using need-filtered transactions
         // This ensures category pie shows ALL categories (selection = visual dim, not data filter)
@@ -2219,10 +2241,19 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             converter: context.converter
         )
+        let totalIsApproximate = PieTotalApproximateMark.marks(
+            transactions: context.needFilteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            natures: naturesFilter,
+            slices: .categories,
+            adjustment: statsAdjustment,
+            converter: context.converter
+        )
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard context.period != .allTime else {
-            return (currentData, nil)
+            return (currentData, nil, totalIsApproximate)
         }
 
         // Calculate previous period data for comparison
@@ -2265,7 +2296,7 @@ final class PanelViewModel {
             currentData[index].previousAmount = previousAmounts[categoryID]
         }
 
-        return (currentData, previousTotal > 0 ? previousTotal : nil)
+        return (currentData, previousTotal > 0 ? previousTotal : nil, totalIsApproximate)
     }
 
     /// Calculate top subcategories with period comparison
@@ -2273,7 +2304,7 @@ final class PanelViewModel {
     /// only dims subcategories visually, rather than filtering out other subcategories' data
     /// Returns: (subcategories, previousPeriodTotal)
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
-        -> (subcategories: [SubcategorySpendingSummary], previousTotal: Double?)
+        -> (subcategories: [SubcategorySpendingSummary], previousTotal: Double?, totalIsApproximate: Bool)
     {
         // Use pre-filtered transactions from context (need already applied)
         let effectiveCategoryFilter =
@@ -2295,10 +2326,24 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             converter: context.converter
         )
+        // Con categoría elegida la tarta solo suma esa categoría (`categoryFilter` de la calculadora).
+        let totalIsApproximate = PieTotalApproximateMark.marks(
+            transactions: context.needFilteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            natures: naturesFilter,
+            slices: .subcategories,
+            adjustment: statsAdjustment,
+            converter: context.converter,
+            includes: { tx in
+                guard let effectiveCategoryFilter else { return true }
+                return tx.category?.persistentModelID == effectiveCategoryFilter
+            }
+        )
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard context.period != .allTime else {
-            return (currentData, nil)
+            return (currentData, nil, totalIsApproximate)
         }
 
         // Calculate previous period data for comparison
@@ -2346,7 +2391,7 @@ final class PanelViewModel {
             }
         }
 
-        return (currentData, previousTotal > 0 ? previousTotal : nil)
+        return (currentData, previousTotal > 0 ? previousTotal : nil, totalIsApproximate)
     }
 
     /// Calculate cash flow summary (excludes adjustments/initial balances)
@@ -3250,9 +3295,20 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             converter: context.converter
         )
+        let totalIsApproximate = PieTotalApproximateMark.marks(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            natures: nil,
+            slices: .tags,
+            adjustment: statsAdjustment,
+            converter: context.converter
+        )
 
         guard context.period != .allTime else {
-            let newData = PanelTagsData(topTags: currentData, previousTotalAmount: nil)
+            let newData = PanelTagsData(
+                topTags: currentData, previousTotalAmount: nil, totalIsApproximate: totalIsApproximate
+            )
             if newData != tagsWidget { tagsWidget = newData }
             return
         }
@@ -3291,7 +3347,8 @@ final class PanelViewModel {
 
         let newData = PanelTagsData(
             topTags: currentData,
-            previousTotalAmount: previousTotal > 0 ? previousTotal : nil
+            previousTotalAmount: previousTotal > 0 ? previousTotal : nil,
+            totalIsApproximate: totalIsApproximate
         )
         if newData != tagsWidget { tagsWidget = newData }
     }
