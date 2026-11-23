@@ -63,8 +63,8 @@
 "saludDetalle.improve.pro" = "Con Yala Pro, tu resumen con IA te dice en qué se fue el gasto.";
 "saludDetalle.improve.pro.cta" = "Ver Pro";
 
-"saludDetalle.commit.lead" = "Te faltan pagar %@ este mes y hoy tienes %@.";
-"saludDetalle.commit.leadExpensesOnly" = "Te faltan pagar %@ este mes.";
+"saludDetalle.commit.lead" = "Te falta pagar %@ este mes y hoy tienes %@.";
+"saludDetalle.commit.leadExpensesOnly" = "Te falta pagar %@ este mes.";
 "saludDetalle.commit.enough" = "Te alcanza, y te quedarían %@.";
 "saludDetalle.commit.notEnough" = "Podrías mover algún pago a %@ o revisar si alguno ya no corresponde.";
 "saludDetalle.commit.toPay" = "Te falta pagar este mes";
