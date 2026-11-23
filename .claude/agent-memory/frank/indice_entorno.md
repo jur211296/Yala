@@ -55,3 +55,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [La Max sin credenciales de despliegue](reference_max_sin_credenciales_de_despliegue.md) — sin PAT de Supabase, token de cktool ni Wrangler: SQL, consola y deploy de staging, a «Necesita de ti».
 - [Sentry por API: workflows, no rules](reference_sentry_api_workflows.md) — alertas en /workflows/, huella por PUT del proyecto, entorno nuevo no existe hasta su evento.
 - [Cambiar una variable del Worker sin redesplegar](reference_cambiar_una_variable_del_worker_sin_redesplegar.md) — PATCH de settings con «inherit»; la respuesta trae solo el cambiado; etag para probar el mismo código.
+- [Barrido desde la Mini: límites](reference_barrido_en_la_mini_limites.md) — sin Duo ni app Simulator; Device MCP un aparato; iPhone 14 en es-ES y sin giro.
