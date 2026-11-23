@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (117)
 
 | id | status | path |
+| nuevo-registro-exito-no-aparece | done | tickets/done/nuevo-registro-exito-no-aparece.md |
 | 2026-11-22-tasas-de-cambio-lote | done | tickets/done/2026-11-22-tasas-de-cambio-lote.md |
 | conecta-tu-ia-maqueta-visual-y-pantallas-web | backlog | tickets/backlog/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
 | 2026-11-22-conecta-tu-ia-diseno | backlog | tickets/backlog/2026-11-22-conecta-tu-ia-diseno.md |

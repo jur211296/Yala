@@ -26,3 +26,9 @@ ANTES de la primera corrida de XCUITest de una sesión**, no después del primer
 **Tercera vez, 2026-11-18 (Mini, motor del mes del flujo de caja):** mismo síntoma por el mismo orden (gate paso 2 con
 `YalaTests` entero y luego el paso 3). Con un choke-point tocado, **reinicia el simulador entre el paso 2 y el 3 de
 antemano**: cuesta 40 s y ahorra una vuelta de 7 min.
+
+**Cuarta cara, 2026-11-23 (Mini, éxito siempre al guardar):** a mitad de una tanda de 14 clases, desde un `typeText`
+cada gesto empezó a esperar 60 s («App animations complete notification not received» / «Unable to monitor animations»)
+y un caso cayó porque el aviso de 30 s caducó durante esas esperas. Los casos hermanos con el mismo camino habían pasado
+en ~40 s. Cortar la corrida, `shutdown` + `boot` y repetir solo lo que faltaba: todo verde. **Una espera de 60 s por
+gesto es el simulador, no el cambio: corta y reinicia en vez de dejar que se coma el presupuesto.**

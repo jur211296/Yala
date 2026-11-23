@@ -2138,7 +2138,7 @@ struct NewTransactionView: View {
             if addAnother && !wasEdit {
                 startAnotherAfterSave()
             } else {
-                finishSave(saved: saved, wasEdit: wasEdit)
+                finishSave(wasEdit: wasEdit)
             }
         }
     }
@@ -2205,14 +2205,12 @@ struct NewTransactionView: View {
             || viewModel.showSourceAccountSelector || viewModel.showDestinationAccountSelector
     }
 
-    // MARK: - Tras guardar (UX 2.2 · L2-5)
+    // MARK: - Tras guardar
 
-    /// La pantalla completa «¡Listo!» solo mientras la persona lleve menos de 3 registros; después el formulario se
-    /// cierra y sale el aviso breve con «Editar» y «Deshacer». Una edición nunca enseña la pantalla completa: cierra con
-    /// «Cambios guardados».
-    private func finishSave(saved: [TransactionItem], wasEdit: Bool) {
-        let savedCount = UserDefaults.standard.integer(forKey: NotificationPrimerMoments.savedRecordsKey)
-        switch TransactionSaveFeedbackLogic.feedback(isEdit: wasEdit, savedCountAfterSave: savedCount) {
+    /// Un registro nuevo enseña siempre la pantalla completa «¡Listo!» (decisión de Jürgen del 2026-11-23); una edición
+    /// cierra con «Cambios guardados».
+    private func finishSave(wasEdit: Bool) {
+        switch TransactionSaveFeedbackLogic.feedback(isEdit: wasEdit) {
         case .fullScreen:
             showTransactionSuccess()
         case .editedNotice:
@@ -2220,13 +2218,6 @@ struct NewTransactionView: View {
             dismissKeyboard()
             dismiss()
             SavedRecordNotice.showEdited()
-        case .savedNotice:
-            let message = SavedRecordNotice.message(
-                for: viewModel.transactionType,
-                formattedAmount: appPreferences.currency(
-                    viewModel.amount, currencyCode: viewModel.amountCurrencyCode, forceFullPrecision: true)
-            )
-            closeWithSavedNotice(message: message, recordIDs: saved.map(\.persistentModelID), scheduledPaymentID: nil)
         }
     }
 

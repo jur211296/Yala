@@ -61,6 +61,16 @@ final class TransactionFormDecided02UITests: XCTestCase {
         app.textFields["new_transaction_amount"].waitForNonExistence(timeout: timeout)
     }
 
+    /// Guarda con «Hacer recurrente › Cada mes», que cierra el formulario con el aviso breve. Desde el 2026-11-23
+    /// «Guardar» enseña siempre la pantalla de éxito (`NuevoRegistroExitoSiempreUITests`), así que el aviso con «Deshacer»
+    /// y «Editar» solo sale por aquí.
+    private func saveWithTheNotice(_ app: XCUIApplication) {
+        app.tapNewTransactionMoreAction("new_transaction_recurring_action")
+        let monthly = app.buttons["recurring_quick_monthly"]
+        XCTAssertTrue(monthly.waitForExistence(timeout: 5), "Falta «Cada mes» en «Hacer recurrente».")
+        monthly.tap()
+    }
+
     // MARK: - L2-1 · La cuenta viene puesta
 
     /// Tras un onboarding de una sola cuenta: monto y categoría bastan para guardar.
@@ -167,7 +177,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         XCTAssertTrue(formIsGone(app), "Editar sin cambiar nada y cerrar no debía preguntar.")
     }
 
-    /// Desde el cuarto: el formulario se cierra y sale el aviso; «Deshacer» devuelve el saldo.
+    /// El aviso breve (hoy, tras «Hacer recurrente»): el formulario se cierra y «Deshacer» devuelve el saldo.
     func test_afterThreeRecords_noticeWithUndo_restoresTheBalance() {
         // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
         // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
@@ -181,10 +191,10 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_save"].tap()
+        saveWithTheNotice(app)
 
-        XCTAssertTrue(formIsGone(app), "Desde el cuarto registro el formulario se cierra al guardar.")
-        XCTAssertFalse(app.buttons["transaction_success_accept"].exists, "Desde el cuarto, sin pantalla completa.")
+        XCTAssertTrue(formIsGone(app), "«Hacer recurrente» cierra el formulario al guardar.")
+        XCTAssertFalse(app.buttons["transaction_success_accept"].exists, "Con el aviso breve, sin pantalla completa.")
         let undo = element(app, "saved_record_undo")
         XCTAssertTrue(undo.waitForExistence(timeout: 3), "Salió sin el aviso con «Deshacer».")
         XCTAssertTrue(element(app, "saved_record_edit").exists, "El aviso lleva «Editar».")
@@ -204,8 +214,8 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_save"].tap()
-        XCTAssertTrue(formIsGone(app))
+        saveWithTheNotice(app)
+        XCTAssertTrue(formIsGone(app, timeout: 10))
         let notice = element(app, "saved_record_notice")
         XCTAssertTrue(notice.waitForExistence(timeout: 3), "Control: el aviso salió.")
 
@@ -229,8 +239,8 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_save"].tap()
-        XCTAssertTrue(formIsGone(app))
+        saveWithTheNotice(app)
+        XCTAssertTrue(formIsGone(app, timeout: 10))
         let notice = element(app, "saved_record_notice")
         XCTAssertTrue(notice.waitForExistence(timeout: 3), "Control: el aviso salió.")
 
@@ -258,12 +268,12 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_save"].tap()
+        saveWithTheNotice(app)
 
         let edit = element(app, "saved_record_edit")
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "Salió sin «Editar».")
         // «Editar» no abre nada mientras el formulario aún se cierra (el ancla no está libre).
-        XCTAssertTrue(formIsGone(app))
+        XCTAssertTrue(formIsGone(app, timeout: 10))
         edit.tap()
         // Desde la hoja B1, Eliminar vive en «···»: que lo ofrezca dice que es la edición del guardado.
         XCTAssertTrue(app.buttons["new_transaction_more"].waitForExistence(timeout: 8), "«Editar» no abrió el formulario.")

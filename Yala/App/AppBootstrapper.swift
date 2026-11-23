@@ -1341,8 +1341,9 @@ final class AppBootstrapper {
             CuentaSolaAlLeerUITestPerfil.applyCaptureRuleArgument(context: context)
             #endif
         }
-        // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
-        // pantalla completa. Tras el reset, que borra el contador.
+        // Registros que la persona ya lleva (UX 2.2 · L2-5). Desde el 2026-11-23 ya no decide qué se ve al guardar (la
+        // pantalla de éxito sale siempre): sirve para el respaldo del permiso de notificaciones. Tras el reset, que borra
+        // el contador.
         if let saved = UITestHooks.transactionsSavedCount {
             UserDefaults.standard.set(saved, forKey: NotificationPrimerMoments.savedRecordsKey)
             // Quien ya lleva esos registros ya pasó por el respaldo del permiso de notificaciones (sale en el tercero):

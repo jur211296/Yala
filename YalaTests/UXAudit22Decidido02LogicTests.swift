@@ -134,24 +134,8 @@ struct TransactionAccountPrefillLogicTests {
 
 // MARK: - L2-5 · Qué se ve al guardar
 
-@Suite("L2-5 · Pantalla completa o aviso")
-struct TransactionSaveFeedbackLogicTests {
-    @Test func lasTresPrimeras_pantallaCompleta() {
-        for count in 1...3 {
-            #expect(TransactionSaveFeedbackLogic.feedback(isEdit: false, savedCountAfterSave: count) == .fullScreen)
-        }
-    }
-
-    @Test func desdeLaCuarta_aviso() {
-        #expect(TransactionSaveFeedbackLogic.feedback(isEdit: false, savedCountAfterSave: 4) == .savedNotice)
-        #expect(TransactionSaveFeedbackLogic.feedback(isEdit: false, savedCountAfterSave: 40) == .savedNotice)
-    }
-
-    @Test func unaEdicion_nuncaPantallaCompleta() {
-        #expect(TransactionSaveFeedbackLogic.feedback(isEdit: true, savedCountAfterSave: 1) == .editedNotice)
-        #expect(TransactionSaveFeedbackLogic.feedback(isEdit: true, savedCountAfterSave: 40) == .editedNotice)
-    }
-}
+// Superado el 2026-11-23 por la decisión «la pantalla de éxito aparece siempre»: lo fija
+// `YalaTests/NuevoRegistroExitoSiempre/NuevoRegistroExitoSiempreTests`.
 
 // MARK: - L2-15 · Hacer recurrente
 

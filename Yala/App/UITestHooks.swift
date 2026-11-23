@@ -1448,7 +1448,8 @@ final class UITestHooks {
     }
 
     /// Valor de `-uitest-transactions-saved <n>`: los registros que la persona ya lleva guardados
-    /// (`transactionsSavedCount`). Con 3 o más, guardar cierra el formulario con el aviso breve (UX 2.2 · L2-5).
+    /// (`transactionsSavedCount`). Alimenta el respaldo del permiso de notificaciones y los hitos; desde el 2026-11-23 ya no
+    /// decide qué se ve al guardar (la pantalla de éxito sale siempre).
     nonisolated static var transactionsSavedCount: Int? {
         #if DEBUG
         guard isActive else { return nil }

@@ -77,8 +77,12 @@ final class UndoNoticePlacementUITests: XCTestCase {
         amount.tap()
         amount.typeText("25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
-        app.buttons["new_transaction_save"].tap()
-        XCTAssertTrue(amount.waitForNonExistence(timeout: 8), "El formulario no se cerró al guardar.")
+        // Desde el 2026-11-23 «Guardar» enseña siempre la pantalla de éxito; el aviso breve sale con «Hacer recurrente».
+        app.tapNewTransactionMoreAction("new_transaction_recurring_action")
+        let monthly = app.buttons["recurring_quick_monthly"]
+        XCTAssertTrue(monthly.waitForExistence(timeout: 5), "Falta «Cada mes» en «Hacer recurrente».")
+        monthly.tap()
+        XCTAssertTrue(amount.waitForNonExistence(timeout: 10), "El formulario no se cerró al guardar.")
 
         let notice = element(app, "saved_record_notice")
         XCTAssertTrue(notice.waitForExistence(timeout: 3), "Control: el aviso salió.")
