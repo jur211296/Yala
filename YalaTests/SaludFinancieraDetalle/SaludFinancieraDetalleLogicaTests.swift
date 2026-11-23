@@ -382,10 +382,11 @@ struct SaludFinancieraDetalleTextosTests {
         leidas += [L.Consejo.noAlcanza(finDeMes: fecha), .presupuestoPasado(nombre: "x"), .variosPasados(2),
                    .pagoVencido(nombre: "x"), .creaPresupuesto, .presupuestoEmpiezaACuenta(fecha), .agregaPagos,
                    .registraMasSeguido, .todoBien].map(T.consejo)
+        leidas += [T.apuntadoFuturo("x", resta: true), T.apuntadoFuturo("x", resta: false)]
         for texto in leidas {
             #expect(!texto.contains("saludDetalle."), "Clave sin texto: \(texto)")
         }
-        #expect(try Self.table("es").count == 91)
+        #expect(try Self.table("es").count == 93)
     }
 
     @Test(arguments: locales)

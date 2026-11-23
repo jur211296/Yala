@@ -234,6 +234,7 @@ struct InsightsCalculator {
         currentUserMemberIDs: Set<String> = [],
         includeBridgedGroupTx: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
+        paidAmounts: [String: [PaidOccurrenceInfo]] = [:],
         now: Date = .now
     ) -> InsightData {
         // Filter transactions using FilterService
@@ -436,14 +437,17 @@ struct InsightsCalculator {
         // Commitments. «Lo que te falta pagar» de un período EN CURSO cuenta hasta su final, no hasta hoy (decisión A de
         // Jürgen, 2026-10-27; ticket `insights-to-pay-this-month-leaves-out-the-rest-of-the-month`): el alquiler del 28,
         // visto el 27, no salía. Solo los pendientes; el resto de la pantalla sigue cerrando hoy.
+        let pendingCalendar = userConfiguredCalendar()
         let pendingPaymentsInterval = FinancialScoreCalculator.commitmentsInterval(
-            period: period, fallback: interval, now: now, calendar: userConfiguredCalendar())
+            period: period, fallback: interval, now: now, calendar: pendingCalendar)
         let commitments = calculateCommitments(
             budgets: budgets,
             scheduledPayments: scheduledPayments,
+            paidAmounts: paidAmounts,
             periodTxns: periodTxns,
             allTransactions: transactions,
             pendingPaymentsInterval: pendingPaymentsInterval,
+            calendar: pendingCalendar,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
@@ -670,9 +674,11 @@ struct InsightsCalculator {
     private static func calculateCommitments(
         budgets: [Budget],
         scheduledPayments: [ScheduledPayment],
+        paidAmounts: [String: [PaidOccurrenceInfo]],
         periodTxns: [TransactionItem],
         allTransactions: [TransactionItem],
         pendingPaymentsInterval: DateInterval,
+        calendar: Calendar,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
@@ -706,17 +712,30 @@ struct InsightsCalculator {
                 }
             }
 
-            // Check if next due date is within period
-            if pendingPaymentsInterval.contains(payment.nextDueDate) {
-                pendingCount += 1
-                pendingAmount += amount
-                if payment.paymentCategory == PaymentCategory.subscription.rawValue {
-                    pendingSubscriptionsCount += 1
-                    pendingSubscriptionsAmount += amount
-                } else {
-                    pendingOtherCount += 1
-                    pendingOtherAmount += amount
-                }
+        }
+
+        // Lo que falta pagar: la misma cuenta que la nota y la hoja de Salud financiera
+        // (`FinancialScoreCalculator.pendingOccurrences`): solo gastos, cada ocurrencia del período, sin las saltadas ni
+        // las ya pagadas con un movimiento enlazado. Hasta el 2026-11-22 sumaba una vez cada pago activo cuyo
+        // `nextDueDate` caía dentro, también los de ingreso y los saltados (ticket
+        // `lo-que-te-falta-pagar-cuenta-ingresos-y-saltados`).
+        let expensePayments = scheduledPayments.filter {
+            $0.isActive && $0.transactionType != TransactionType.income.rawValue
+        }
+        let pending = FinancialScoreCalculator.pendingOccurrences(
+            active: expensePayments, paidAmounts: paidAmounts, interval: pendingPaymentsInterval, calendar: calendar
+        )
+        for occurrence in pending {
+            let payment = occurrence.payment
+            let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
+            pendingCount += 1
+            pendingAmount += amount
+            if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+                pendingSubscriptionsCount += 1
+                pendingSubscriptionsAmount += amount
+            } else {
+                pendingOtherCount += 1
+                pendingOtherAmount += amount
             }
         }
 

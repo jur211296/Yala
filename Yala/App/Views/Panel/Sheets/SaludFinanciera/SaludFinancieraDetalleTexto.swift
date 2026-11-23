@@ -148,6 +148,10 @@ extension L10n {
         static var teFaltaPagar: String { s("commit.toPay") }
         static var tuDineroHoy: String { s("commit.moneyToday") }
         static func faltarian(_ monto: String) -> String { f("commit.short", monto) }
+        /// Lo apuntado a futuro que ya cuenta la diferencia: `monto` en magnitud; `resta` si son gastos (neto negativo).
+        static func apuntadoFuturo(_ monto: String, resta: Bool) -> String {
+            resta ? f("commit.futureOut", monto) : f("commit.futureIn", monto)
+        }
         static func ingreso(_ monto: String, de nombre: String, fecha: Foundation.Date, mas: Int) -> String {
             switch mas {
             case 0: f("commit.income", monto, nombre, diaYMes(fecha))

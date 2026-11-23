@@ -101,9 +101,16 @@ enum SaludFinancieraDetalleLogica {
         /// Lo convertido con una tasa dudosa dentro de lo que falta pagar (magnitud).
         let faltaDudosa: Double
         let moneda: String
+        /// Lo apuntado con fecha posterior a hoy en las cuentas de «Tu dinero hoy» (con signo: un gasto resta). La cifra
+        /// de «Tu dinero hoy» es la del hero y no lo cuenta; la nota sí (`asOf: .distantFuture`, `currency-fx.md`): el
+        /// alquiler apuntado hoy para el 25 y enlazado a su pago ya no está en lo pendiente. Sin restarlo aquí, la hoja
+        /// decía «Te alcanza» con ese importe de más (ticket `hoja-y-nota-difieren-con-pagos-apuntados-a-futuro`).
+        var apuntadoFuturo: Double = 0
 
-        /// Lo que queda tras pagar todo (negativo: lo que falta para cubrirlo).
-        var diferencia: Double { dineroHoy - faltaPagar }
+        /// Lo que queda tras pagar todo (negativo: lo que falta para cubrirlo). Cuenta lo apuntado a futuro, como la nota.
+        var diferencia: Double { dineroHoy + apuntadoFuturo - faltaPagar }
+        /// Si la hoja tiene que decir que la diferencia ya cuenta lo apuntado a futuro.
+        var cuentaApuntadoFuturo: Bool { !CurrencyFormattingHelper.isShownAsZero(apuntadoFuturo) }
         var dineroEsAproximado: Bool { ApproximateMarkThreshold.marks(approximate: dineroDudoso, total: abs(dineroHoy)) }
         var faltaEsAproximado: Bool { ApproximateMarkThreshold.marks(approximate: faltaDudosa, total: abs(faltaPagar)) }
         /// La diferencia es una resta: su incertidumbre es la de las dos, sobre lo que se pinta (`|diferencia|`).
@@ -298,13 +305,16 @@ enum SaludFinancieraDetalleLogica {
         }
     }
 
-    static func comparacion(pagos: [Pago], dineroHoy: Double, dineroDudoso: Double = 0, moneda: String) -> Comparacion {
+    static func comparacion(
+        pagos: [Pago], dineroHoy: Double, dineroDudoso: Double = 0, apuntadoFuturo: Double = 0, moneda: String
+    ) -> Comparacion {
         Comparacion(
             dineroHoy: dineroHoy,
             dineroDudoso: dineroDudoso,
             faltaPagar: pagos.reduce(0) { $0 + $1.montoConvertido },
             faltaDudosa: pagos.filter(\.esAproximado).reduce(0) { $0 + abs($1.montoConvertido) },
-            moneda: moneda
+            moneda: moneda,
+            apuntadoFuturo: apuntadoFuturo
         )
     }
 

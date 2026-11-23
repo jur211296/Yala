@@ -41,10 +41,14 @@ struct InsightsToPayUntilPeriodEndTests {
     private func pago(
         _ nombre: String, _ importe: Double, vence: Date, categoria: PaymentCategory = .recurring
     ) -> ScheduledPayment {
-        ScheduledPayment(
-            name: nombre, amount: importe, currencyCode: "PEN",
+        // Un pago de una vez creado antes del período: desde el 2026-11-22 «Lo que te falta pagar» enumera ocurrencias
+        // (`FinancialScoreCalculator.pendingOccurrences`), que salen desde el día de creación del pago.
+        let p = ScheduledPayment(
+            name: nombre, amount: importe, currencyCode: "PEN", isRecurring: false,
             nextDueDate: vence, paymentCategory: categoria.rawValue, isActive: true
         )
+        p.createdAt = date(2026, 1, 1)
+        return p
     }
 
     private func resumen(

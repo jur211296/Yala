@@ -73,6 +73,8 @@
 "saludDetalle.commit.toPay" = "Nog te betalen deze maand";
 "saludDetalle.commit.moneyToday" = "Je geld vandaag";
 "saludDetalle.commit.short" = "Je komt %@ tekort om alles te dekken.";
+"saludDetalle.commit.futureOut" = "We hebben %@ die je met een latere datum noteerde al afgetrokken.";
+"saludDetalle.commit.futureIn" = "We hebben %@ die je met een latere datum noteerde al opgeteld.";
 "saludDetalle.commit.income" = "Daarnaast verwacht je %1$@ van %2$@ op %3$@.";
 "saludDetalle.commit.incomeMoreOne" = "Daarnaast verwacht je %1$@ van %2$@ op %3$@, en nog een inkomen.";
 "saludDetalle.commit.incomeMoreOther" = "Daarnaast verwacht je %1$@ van %2$@ op %3$@, en nog %4$d inkomens.";

@@ -105,6 +105,15 @@ la misma pieza del hero del Panel, sobre las cuentas que guardan su historial (`
 hasta el final de hoy. Si cambias cómo suma el hero, la nota lo hereda; no le escribas una suma propia. Sin ingresos en
 el período o en «Solo gastos», la parte no cuenta. Pin: `YalaTests/NovedadesPanelNota/`.
 
+## «Te falta pagar»: una pieza para Estadísticas, la nota y la hoja (22-nov-2026)
+
+«Lo que te falta pagar» de Estadísticas › Resumen, la cobertura de la nota y «Te falta pagar este mes» de la hoja de Salud
+financiera cuentan con `FinancialScoreCalculator.pendingOccurrences`: solo pagos de gasto activos, cada ocurrencia del
+intervalo, sin saltadas ni pagadas con un movimiento enlazado (lo pagado del mismo intervalo, `ScheduledPaymentPaidStatusHelper`).
+La comparación de la hoja suma lo apuntado con fecha posterior a hoy (`Comparacion.apuntadoFuturo`), como la nota
+(`asOf: .distantFuture`), sin tocar «Tu dinero hoy», que es la cifra del hero. Un consumidor nuevo de «lo que falta
+pagar» pasa por la misma pieza. Pin: `YalaTests/FaltaPagarCompromisos/`, `SaludFinancieraCompromisosParidadTests`.
+
 ## «Al 30 tendrías»: una cifra, la del Panel (decisión 30 de 2.3, 2026-11-11)
 
 La cabecera del mes en curso del flujo de caja y «Ver proyectado» del Panel (Saldo, «Este mes», sin filtro de cuentas)

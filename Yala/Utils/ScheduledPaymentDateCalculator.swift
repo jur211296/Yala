@@ -36,7 +36,10 @@ enum ScheduledPaymentDateCalculator {
         // One-time payments
         if !params.isRecurring {
             let paymentDate = calendar.startOfDay(for: params.nextDueDate)
-            if monthInterval.contains(paymentDate) {
+            // Semiabierto: el mes de `Calendar` acaba en la medianoche del 1 del siguiente y `DateInterval` es cerrado,
+            // así que un pago de una vez del día 1 salía también en el mes anterior y contaba dos veces en un período que
+            // cruza los dos meses (2026-11-22, `InsightsToPayUntilPeriodEndTests.thisWeek_boundaryAtTheEndOfTheWeek`).
+            if paymentDate >= monthInterval.start && paymentDate < monthInterval.end {
                 dates.append(paymentDate)
             }
             return applyPostFilters(dates: dates, params: params, calendar: calendar)

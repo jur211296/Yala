@@ -143,7 +143,8 @@ final class InsightsViewModel {
         currencyCode: String,
         customRange: DateInterval?,
         comparisonMode: ComparisonMode = .month,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        paidAmounts: [String: [PaidOccurrenceInfo]] = [:]
     ) {
         // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
         // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
@@ -181,7 +182,8 @@ final class InsightsViewModel {
             tone: currentTone,
             focus: currentFocus,
             includeBridgedGroupTx: includeBridgedGroupTx,
-            adjustment: adjustment
+            adjustment: adjustment,
+            paidAmounts: paidAmounts
         )
     }
 

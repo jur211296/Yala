@@ -73,6 +73,8 @@
 "saludDetalle.commit.toPay" = "Still to pay this month";
 "saludDetalle.commit.moneyToday" = "Your money today";
 "saludDetalle.commit.short" = "You’d be %@ short of covering everything.";
+"saludDetalle.commit.futureOut" = "We’ve already taken off %@ you recorded with a later date.";
+"saludDetalle.commit.futureIn" = "We’ve already added %@ you recorded with a later date.";
 "saludDetalle.commit.income" = "You also expect %1$@ from %2$@ on %3$@.";
 "saludDetalle.commit.incomeMoreOne" = "You also expect %1$@ from %2$@ on %3$@, and one more income.";
 "saludDetalle.commit.incomeMoreOther" = "You also expect %1$@ from %2$@ on %3$@, and %4$d more incomes.";
