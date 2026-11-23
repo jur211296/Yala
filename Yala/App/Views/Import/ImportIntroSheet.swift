@@ -18,6 +18,10 @@ struct ImportResult: Identifiable {
     let isSuccess: Bool
     let message: String
     let count: Int
+    /// Ofrece «Deshacer importación» (H12): solo tras un import que guardó algo.
+    var offersUndo: Bool = false
+    /// Un título propio («Importación deshecha»); `nil` = el de siempre.
+    var title: String? = nil
 }
 
 // MARK: - Import Result Overlay
@@ -120,6 +124,14 @@ struct ImportIntroSheet: View {
 
     /// La importación esperando a que la persona la revise (L7-15): el archivo, a dónde va y qué entraría.
     @State private var pendingImport: PendingImport?
+    /// El último import, mientras se pueda deshacer (H12), y la pregunta antes de hacerlo.
+    @State private var undoRecord: ImportUndoRecord?
+    @State private var isConfirmingUndo = false
+    /// Mientras se deshace: cuántos van de cuántos.
+    @State private var undoProgress: (done: Int, total: Int)?
+    /// Se abrió desde «Deshacer importación» del aviso del resultado: pregunta en cuanto aparece.
+    let startsUndo: Bool
+
     /// La vista previa que espera a que se cierre la hoja de elegir cuenta o monedas. Lanzada antes, con un archivo
     /// pequeño la vista previa llega mientras la primera hoja aún se desmonta del mismo ancla, y UIKit no presenta
     /// la segunda: no salía nada y no se importaba (review de UX 2.2 · L7-15).
@@ -131,10 +143,12 @@ struct ImportIntroSheet: View {
     init(
         accounts: [Account],
         categories: [Category],
+        startsUndo: Bool = false,
         onImportCompleted: ((ImportResult) -> Void)? = nil
     ) {
         self.accounts = accounts
         self.categories = categories
+        self.startsUndo = startsUndo
         self.onImportCompleted = onImportCompleted
     }
 
@@ -154,6 +168,9 @@ struct ImportIntroSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         introSection
+                        if let undoRecord {
+                            undoSection(undoRecord)
+                        }
                         columnsSection
                         templateSection
                         toggleSection
@@ -174,6 +191,7 @@ struct ImportIntroSheet: View {
                     ) {
                         startImportFlow()
                     }
+                    .accessibilityIdentifier("import_select_file")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.lg)
@@ -183,6 +201,8 @@ struct ImportIntroSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 viewModel.setContext(modelContext)
+                undoRecord = ImportUndoService.current()
+                if startsUndo, undoRecord != nil { isConfirmingUndo = true }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -240,9 +260,18 @@ struct ImportIntroSheet: View {
             }
         }
         .sheet(item: $pendingImport) { pending in
-            ImportPreviewSheet(preview: pending.preview) { chosenAccounts in
-                runImport(pending, chosenAccounts: chosenAccounts)
+            ImportPreviewSheet(preview: pending.preview) { chosenAccounts, importsDuplicates in
+                runImport(pending, chosenAccounts: chosenAccounts, importsDuplicates: importsDuplicates)
             }
+        }
+        .alert(L10n.ImportarLote1.undoConfirmTitle, isPresented: $isConfirmingUndo) {
+            Button(L10n.ImportarLote1.undoConfirmAction, role: .destructive) {
+                DS.Haptic.warning()
+                undoLastImport()
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.ImportarLote1.undoConfirmMessage(undoRecord?.count ?? 0))
         }
         .alert(L10n.Import.templateGenerated, isPresented: $showTemplateAlert) {
             Button(L10n.Import.continueBtn, role: .cancel) {}
@@ -270,6 +299,65 @@ struct ImportIntroSheet: View {
             .multilineTextAlignment(.center)
         }
         .padding(.top, DS.Spacing.xxxl)
+    }
+
+    /// «Tu última importación: 30 registros» y «Deshacer importación» (H12), durante 24 h.
+    private func undoSection(_ record: ImportUndoRecord) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(undoProgress.map { L10n.ImportarLote1.undoProgress($0.done, $0.total) }
+                 ?? L10n.ImportarLote1.lastImport(record.count))
+                .font(Typography.label)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                isConfirmingUndo = true
+            } label: {
+                HStack {
+                    Text(L10n.ImportarLote1.undoButton)
+                        .font(Typography.bodyLarge)
+                        .foregroundStyle(.thPrimaryText)
+                    Spacer()
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thAccentText)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+                .solidCard(radius: DS.Radius.lg)
+            }
+            .buttonStyle(.plain)
+            .disabled(undoProgress != nil)
+            .accessibilityIdentifier("import_undo_last")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func undoLastImport() {
+        undoProgress = (0, undoRecord?.count ?? 0)
+        Task {
+            do {
+                let outcome = try await ImportUndoService.undo(in: modelContext) { done, total in
+                    undoProgress = (done, total)
+                }
+                WidgetDataCache.updateCache(context: modelContext)
+                SessionState.shared.incrementDataVersion()
+                DS.Haptic.success()
+                undoRecord = nil
+                undoProgress = nil
+                finish(with: ImportResult(
+                    isSuccess: true, message: L10n.ImportarLote1.undoDone(outcome.deletedTransactions), count: 0,
+                    title: L10n.ImportarLote1.undoDoneTitle))
+            } catch {
+                #if DEBUG
+                print("ImportIntroSheet: Error: \(error)")
+                #endif
+                DS.Haptic.error()
+                undoRecord = ImportUndoService.current()
+                undoProgress = nil
+                finish(with: ImportResult(isSuccess: false, message: L10n.ImportarLote1.undoFailed, count: 0))
+            }
+        }
     }
 
     private var templateSection: some View {
@@ -323,6 +411,7 @@ struct ImportIntroSheet: View {
 
                 Toggle(L10n.Import.createCategories, isOn: $allowCreatingNewCategories)
                     .labelsHidden()
+                    .accessibilityIdentifier("import_create_categories_toggle")
 
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -402,6 +491,13 @@ struct ImportIntroSheet: View {
     /// Abre el selector de archivos. Sin cuentas ya no se para aquí: un archivo con columna `account` crea las suyas
     /// (H7), así que la falta de cuentas se mira después de leer el archivo.
     private func startImportFlow() {
+        #if DEBUG
+        // XCUITest: el selector de documentos es del sistema y no se conduce con fiabilidad (molde de Importar grupo).
+        if let path = ImportarLote1UITestSeams.filePath {
+            handleFileImportResult(.success([URL(fileURLWithPath: path)]))
+            return
+        }
+        #endif
         isShowingFileImporter = true
     }
 
@@ -412,7 +508,11 @@ struct ImportIntroSheet: View {
 
     private func generateTemplate(format: TemplateFormat) {
         let now = Date.now
+        // Gregoriano y sin depender del idioma (H10): con el calendario budista del teléfono salía el año 2569 y todas
+        // las filas de la plantilla se descartaban como futuras.
         let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: now)
 
@@ -608,14 +708,14 @@ struct ImportIntroSheet: View {
         let allowCreating = allowCreatingNewCategories
         Task {
             do {
-                let preview = try await ImportPreviewService.preview(
+                let (preview, table) = try await ImportPreviewService.previewAndTable(
                     of: url,
                     target: target,
                     allowCreatingNewCategories: allowCreating,
                     container: modelContext.container
                 )
                 isImporting = false
-                pendingImport = PendingImport(url: url, target: target, preview: preview)
+                pendingImport = PendingImport(url: url, target: target, preview: preview, table: table)
             } catch {
                 #if DEBUG
                 print("ImportIntroSheet: Error preparing the preview: \(error)")
@@ -627,14 +727,15 @@ struct ImportIntroSheet: View {
     }
 
     /// La persona dijo «Importar» en la vista previa: se importa de verdad, saltando las filas malas.
-    private func runImport(_ pending: PendingImport, chosenAccounts: Set<String>) {
+    private func runImport(_ pending: PendingImport, chosenAccounts: Set<String>, importsDuplicates: Bool) {
         switch pending.target {
         case .single(let account):
-            runSingleImport(from: pending.url, into: account)
+            runSingleImport(from: pending.url, into: account, pending: pending, importsDuplicates: importsDuplicates)
         case .multi(let map):
-            runMultiImport(from: pending.url, with: map)
+            runMultiImport(from: pending.url, with: map, pending: pending, importsDuplicates: importsDuplicates)
         case .accountColumn:
-            runAccountColumnImport(from: pending.url, chosenAccounts: chosenAccounts)
+            runAccountColumnImport(
+                from: pending.url, chosenAccounts: chosenAccounts, pending: pending, importsDuplicates: importsDuplicates)
         }
     }
 
@@ -647,17 +748,21 @@ struct ImportIntroSheet: View {
         }
     }
 
-    /// «Importamos 69 registros.» y, si alguna fila no entró, cuántas y cuáles (L7-17).
-    private func outcomeMessage(importedLine: String, failures: [ImportError]) -> String {
-        ImportPreviewLogic.outcomeMessage(
-            importedLine: importedLine,
+    /// «Importamos 69 registros.» y, si alguna fila no entró, cuántas y cuáles (L7-17). Lo que ya estaba (H11) se dice
+    /// junto a lo importado.
+    private func outcomeMessage(importedLine: String, failures: [ImportError], skippedDuplicates: Int = 0) -> String {
+        let imported = skippedDuplicates > 0
+            ? importedLine + " " + L10n.ImportarLote1.skippedDuplicates(skippedDuplicates)
+            : importedLine
+        return ImportPreviewLogic.outcomeMessage(
+            importedLine: imported,
             failures: failures.compactMap(\.errorDescription),
             notImportedLine: { L10n.UXL7.ImportReview.notImported($0) },
             moreLine: { L10n.UXL7.ImportReview.more($0) }
         )
     }
 
-    private func runSingleImport(from url: URL, into account: Account) {
+    private func runSingleImport(from url: URL, into account: Account, pending: PendingImport, importsDuplicates: Bool) {
         #if DEBUG
         print("🔵 [IMPORT] Starting import, setting isImporting = true")
         #endif
@@ -670,28 +775,18 @@ struct ImportIntroSheet: View {
         Task {
             try? await Task.sleep(for: .milliseconds(100))
             do {
-                let isXLSX = url.pathExtension.lowercased() == "xlsx"
-                #if DEBUG
-                print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
-                #endif
 
-                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
-                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
-                    if isXLSX {
-                        return try await TransactionCSVImportService.importXLSX(
-                            from: url,
-                            into: account,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories,
-                            skippingInvalidRows: true
-                        )
-                    }
-                    return try await TransactionCSVImportService.importCSV(
+                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import). Con la tabla que
+                // leyó la vista previa (H14) y apuntando lo creado para poder deshacerlo (H12).
+                let result = try await ImportUndoService.importAndRemember(in: modelContext) {
+                    try await TransactionCSVImportService.importFile(
                         from: url,
-                        into: account,
+                        destination: .account(account),
                         in: modelContext,
                         allowCreatingNewCategories: allowCreatingNewCategories,
-                        skippingInvalidRows: true
+                        skippingInvalidRows: true,
+                        skippingDuplicates: !importsDuplicates,
+                        preparedTable: pending.table
                     )
                 }
 
@@ -736,8 +831,10 @@ struct ImportIntroSheet: View {
                 let importResult = ImportResult(
                     isSuccess: true,
                     message: outcomeMessage(
-                        importedLine: L10n.Import.recordsImported(createdCount), failures: result.failures),
-                    count: createdCount
+                        importedLine: L10n.Import.recordsImported(createdCount), failures: result.failures,
+                        skippedDuplicates: result.skippedDuplicateCount),
+                    count: createdCount,
+                    offersUndo: createdCount > 0
                 )
                 #if DEBUG
                 print("🔵 [IMPORT] Dismissing sheet and notifying parent")
@@ -774,7 +871,9 @@ struct ImportIntroSheet: View {
     // MARK: - Import por columna de cuenta (H7)
 
     /// Cada fila a la cuenta que nombra; se crean solo las cuentas nuevas elegidas en la vista previa.
-    private func runAccountColumnImport(from url: URL, chosenAccounts: Set<String>) {
+    private func runAccountColumnImport(
+        from url: URL, chosenAccounts: Set<String>, pending: PendingImport, importsDuplicates: Bool
+    ) {
         isImporting = true
         Task {
             // Una vuelta para que el botón pinte «Importando» antes del trabajo pesado.
@@ -786,13 +885,15 @@ struct ImportIntroSheet: View {
             }
             do {
                 // Importa y guarda; si algo falla, deshace lo insertado, cuentas nuevas incluidas.
-                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                let result = try await ImportUndoService.importAndRemember(in: modelContext) {
                     try await TransactionCSVImportService.importFile(
                         from: url,
                         destination: .accountColumn(allowedNewAccountKeys: chosenAccounts),
                         in: modelContext,
                         allowCreatingNewCategories: allowCreatingNewCategories,
-                        skippingInvalidRows: true
+                        skippingInvalidRows: true,
+                        skippingDuplicates: !importsDuplicates,
+                        preparedTable: pending.table
                     )
                 }
 
@@ -813,8 +914,10 @@ struct ImportIntroSheet: View {
                 finish(with: ImportResult(
                     isSuccess: true,
                     message: outcomeMessage(
-                        importedLine: L10n.Import.recordsImported(result.createdCount), failures: result.failures),
-                    count: result.createdCount
+                        importedLine: L10n.Import.recordsImported(result.createdCount), failures: result.failures,
+                        skippedDuplicates: result.skippedDuplicateCount),
+                    count: result.createdCount,
+                    offersUndo: result.createdCount > 0
                 ))
             } catch {
                 #if DEBUG
@@ -828,7 +931,9 @@ struct ImportIntroSheet: View {
 
     // MARK: - Multi-Currency Import
 
-    private func runMultiImport(from url: URL, with currencyAccountMap: [String: Account]) {
+    private func runMultiImport(
+        from url: URL, with currencyAccountMap: [String: Account], pending: PendingImport, importsDuplicates: Bool
+    ) {
         #if DEBUG
         print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
         #endif
@@ -837,28 +942,17 @@ struct ImportIntroSheet: View {
         Task {
             try? await Task.sleep(for: .milliseconds(100))
             do {
-                let isXLSX = url.pathExtension.lowercased() == "xlsx"
-                #if DEBUG
-                print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
-                #endif
 
                 // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
-                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
-                    if isXLSX {
-                        return try await TransactionCSVImportService.importXLSXMultiCurrency(
-                            from: url,
-                            currencyAccountMap: currencyAccountMap,
-                            in: modelContext,
-                            allowCreatingNewCategories: allowCreatingNewCategories,
-                            skippingInvalidRows: true
-                        )
-                    }
-                    return try await TransactionCSVImportService.importCSVMultiCurrency(
+                let result = try await ImportUndoService.importAndRemember(in: modelContext) {
+                    try await TransactionCSVImportService.importFile(
                         from: url,
-                        currencyAccountMap: currencyAccountMap,
+                        destination: .byCurrency(currencyAccountMap),
                         in: modelContext,
                         allowCreatingNewCategories: allowCreatingNewCategories,
-                        skippingInvalidRows: true
+                        skippingInvalidRows: true,
+                        skippingDuplicates: !importsDuplicates,
+                        preparedTable: pending.table
                     )
                 }
 
@@ -902,8 +996,9 @@ struct ImportIntroSheet: View {
                     isSuccess: true,
                     message: outcomeMessage(
                         importedLine: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
-                        failures: result.failures),
-                    count: createdCount
+                        failures: result.failures, skippedDuplicates: result.skippedDuplicateCount),
+                    count: createdCount,
+                    offersUndo: createdCount > 0
                 )
                 #if DEBUG
                 print("🔵 [IMPORT-MULTI] Dismissing sheet and notifying parent")
@@ -942,6 +1037,8 @@ struct PendingImport: Identifiable {
     let url: URL
     let target: ImportPreviewService.Target
     let preview: ImportPreview
+    /// La tabla que leyó la vista previa: el import la reutiliza en vez de volver a leer el archivo (H14).
+    let table: ImportTable
 }
 
 struct TemplateFile: Identifiable {

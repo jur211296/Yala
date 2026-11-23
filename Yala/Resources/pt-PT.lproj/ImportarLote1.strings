@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 registo parece já importado";
+"importarLote1.duplicates.title.other" = "%d registos parecem já importados";
+"importarLote1.duplicates.hint" = "As tuas contas já têm movimentos iguais: mesmo dia, valor, conta e nota. Se não os importares, nada fica duplicado.";
+"importarLote1.duplicates.toggle" = "Importar na mesma";
+"importarLote1.loose.one" = "1 transferência ficou sem a outra parte. Não conta como gasto nem receita, mas não se sabe para que conta foi.";
+"importarLote1.loose.other" = "%d transferências ficaram sem a outra parte. Não contam como gastos nem receitas, mas não se sabe para que conta foram.";
+"importarLote1.dateOrder.dayFirst" = "As datas são lidas como dia/mês, a ordem do teu telemóvel: %1$@ é %2$@.";
+"importarLote1.dateOrder.monthFirst" = "As datas são lidas como mês/dia, a ordem do teu telemóvel: %1$@ é %2$@.";
+"importarLote1.dateOrder.hint" = "Se não for assim, escreve as datas do ficheiro como ano-mês-dia (2026-04-03).";
+"importarLote1.undo.button" = "Anular importação";
+"importarLote1.undo.confirmTitle" = "Anular a importação?";
+"importarLote1.undo.confirmMessage.one" = "O registo importado será apagado, mesmo que o tenhas editado depois. Categorias, etiquetas e contas criadas só são apagadas se nada mais as usar.";
+"importarLote1.undo.confirmMessage.other" = "Os %d registos importados serão apagados, mesmo que os tenhas editado depois. Categorias, etiquetas e contas criadas só são apagadas se nada mais as usar.";
+"importarLote1.undo.confirmAction" = "Anular";
+"importarLote1.undo.doneTitle" = "Importação anulada";
+"importarLote1.undo.done.one" = "Retirámos o registo importado.";
+"importarLote1.undo.done.other" = "Retirámos os %d registos importados.";
+"importarLote1.undo.failed" = "Não foi possível anular a importação. Tenta novamente.";
+"importarLote1.undo.lastImport.one" = "A tua última importação: 1 registo. Podes anulá-la durante 24 horas.";
+"importarLote1.undo.lastImport.other" = "A tua última importação: %d registos. Podes anulá-la durante 24 horas.";
+"importarLote1.result.skippedDuplicates.one" = "1 registo não foi importado porque já existia.";
+"importarLote1.result.skippedDuplicates.other" = "%d registos não foram importados porque já existiam.";
+"importarLote1.undo.inProgress" = "A anular a importação… %1$d de %2$d";
+"importarLote1.duplicates.allAlready" = "Tudo deste ficheiro já está nas tuas contas: não há nada novo para importar.";

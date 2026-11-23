@@ -125,14 +125,18 @@ struct ImportFailureRollbackTests {
     }
 
     /// La hoja ya no guarda por su cuenta: sus tres rutas (una cuenta, por moneda y por columna de cuenta, S27m)
-    /// pasan por `importAndSave`.
+    /// pasan por `importAndSave`. Desde el 2026-11-22 (H12) llegan a él por `ImportUndoService.importAndRemember`, que
+    /// además apunta lo creado para poder deshacerlo.
     @Test("ImportIntroSheet importa y guarda por importAndSave en sus tres rutas")
     func importSheet_usesImportAndSave() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let source = try String(
             contentsOf: root.appendingPathComponent("Yala/App/Views/Import/ImportIntroSheet.swift"), encoding: .utf8)
-        #expect(source.components(separatedBy: "TransactionCSVImportService.importAndSave(in: modelContext)").count - 1 == 3)
+        #expect(source.components(separatedBy: "ImportUndoService.importAndRemember(in: modelContext)").count - 1 == 3)
         #expect(!source.contains("try modelContext.save()"))
+        let undo = try String(
+            contentsOf: root.appendingPathComponent("Yala/Services/ImportUndoService.swift"), encoding: .utf8)
+        #expect(undo.contains("try await TransactionCSVImportService.importAndSave("))
     }
 
     // MARK: - Fixture

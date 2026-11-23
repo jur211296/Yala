@@ -13,14 +13,16 @@ struct ImportPreviewSheet: View {
 
     /// Lo que devolvió el import con TODAS las cuentas nuevas.
     let fullPreview: ImportPreview
-    /// «Importar», con las cuentas nuevas que se crean (sus claves).
-    let onImport: (Set<String>) -> Void
+    /// «Importar», con las cuentas nuevas que se crean (sus claves) y si se importan también los duplicados (H11).
+    let onImport: (Set<String>, Bool) -> Void
 
     /// Las cuentas nuevas que se crean. Sin límite, todas; con el plan gratuito lleno, las que la persona elige.
     @State private var chosenAccounts: Set<String> = []
     @State private var isShowingProOffer = false
+    /// «Importarlos igual»: por defecto, lo que parece ya importado se salta.
+    @State private var importsDuplicates = false
 
-    init(preview: ImportPreview, onImport: @escaping (Set<String>) -> Void) {
+    init(preview: ImportPreview, onImport: @escaping (Set<String>, Bool) -> Void) {
         self.fullPreview = preview
         self.onImport = onImport
         let slots = ImportPreviewLogic.newAccountSlots(
@@ -41,7 +43,7 @@ struct ImportPreviewSheet: View {
 
     /// La vista previa con las cuentas elegidas.
     private var preview: ImportPreview {
-        ImportPreviewLogic.applying(chosen: effectiveChosenAccounts, to: fullPreview)
+        ImportPreviewLogic.applying(chosen: effectiveChosenAccounts, importDuplicates: importsDuplicates, to: fullPreview)
     }
 
     /// El plan gratuito no deja crear todas: la persona elige.
@@ -56,6 +58,9 @@ struct ImportPreviewSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
                         summaryCard
+                        if preview.duplicateCount > 0 {
+                            duplicatesSection
+                        }
                         if !fullPreview.newAccounts.isEmpty {
                             newAccountsSection
                         }
@@ -77,8 +82,9 @@ struct ImportPreviewSheet: View {
                     if preview.canImport {
                         YalaPrimaryButton(L10n.UXL7.ImportReview.importButton(preview.count), icon: "square.and.arrow.down") {
                             let chosen = effectiveChosenAccounts
+                            let duplicates = importsDuplicates
                             dismiss()
-                            onImport(chosen)
+                            onImport(chosen, duplicates)
                         }
                         .accessibilityIdentifier("import_preview_confirm")
                     }
@@ -142,6 +148,30 @@ struct ImportPreviewSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("import_preview_skipped_sheets")
                 }
+                if preview.looseTransferCount > 0 {
+                    Label(L10n.ImportarLote1.looseTransfers(preview.looseTransferCount), systemImage: "arrow.left.arrow.right")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("import_preview_loose_transfers")
+                }
+                if let notice = preview.dateOrderNotice {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Label(
+                            L10n.ImportarLote1.dateOrder(
+                                notice.order, example: notice.example, readAs: notice.readAs.formatted(Self.dateStyle)),
+                            systemImage: "calendar.badge.exclamationmark")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(L10n.ImportarLote1.dateOrderHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("import_preview_date_order")
+                }
                 if preview.groupRowCount > 0 {
                     Label(L10n.UXL7.ImportReview.groupRows(preview.groupRowCount), systemImage: "person.2")
                         .font(DS.Typography.subheadline)
@@ -154,7 +184,9 @@ struct ImportPreviewSheet: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text(L10n.UXL7.ImportReview.nothingToImport)
+                Text(preview.duplicateCount > 0 && !preview.importsDuplicates
+                     ? L10n.ImportarLote1.allAlreadyImported
+                     : L10n.UXL7.ImportReview.nothingToImport)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -166,6 +198,31 @@ struct ImportPreviewSheet: View {
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .fill(Color.electricIndigo.opacity(0.12))
+        )
+    }
+
+    // MARK: - Ya importados (H11)
+
+    private var duplicatesSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Label(L10n.ImportarLote1.duplicatesTitle(preview.duplicateCount), systemImage: "doc.on.doc")
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("import_preview_duplicates")
+            Text(L10n.ImportarLote1.duplicatesHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Toggle(L10n.ImportarLote1.duplicatesToggle, isOn: $importsDuplicates)
+                .font(DS.Typography.body)
+                .accessibilityIdentifier("import_preview_duplicates_toggle")
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(DS.Semantic.warningBackground)
         )
     }
 

@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 registro parece ya importado";
+"importarLote1.duplicates.title.other" = "%d registros parecen ya importados";
+"importarLote1.duplicates.hint" = "Ya hay movimientos iguales en tus cuentas: mismo día, importe, cuenta y nota. Si no los importas, no se duplican.";
+"importarLote1.duplicates.toggle" = "Importarlos igual";
+"importarLote1.loose.one" = "1 transferencia queda sin su otra parte. No suma a gastos ni ingresos, pero no se sabrá a qué cuenta fue.";
+"importarLote1.loose.other" = "%d transferencias quedan sin su otra parte. No suman a gastos ni ingresos, pero no se sabrá a qué cuenta fueron.";
+"importarLote1.dateOrder.dayFirst" = "Las fechas se leen como día/mes, el orden de tu teléfono: %1$@ es el %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Las fechas se leen como mes/día, el orden de tu teléfono: %1$@ es el %2$@.";
+"importarLote1.dateOrder.hint" = "Si no es así, escribe las fechas del archivo como año-mes-día (2026-04-03).";
+"importarLote1.undo.button" = "Deshacer importación";
+"importarLote1.undo.confirmTitle" = "¿Deshacer la importación?";
+"importarLote1.undo.confirmMessage.one" = "Se borrará el registro que importaste, también si lo editaste después. Las categorías, etiquetas y cuentas que creó se borran solo si nada más las usa.";
+"importarLote1.undo.confirmMessage.other" = "Se borrarán los %d registros que importaste, también si los editaste después. Las categorías, etiquetas y cuentas que creó se borran solo si nada más las usa.";
+"importarLote1.undo.confirmAction" = "Deshacer";
+"importarLote1.undo.doneTitle" = "Importación deshecha";
+"importarLote1.undo.done.one" = "Quitamos el registro importado.";
+"importarLote1.undo.done.other" = "Quitamos los %d registros importados.";
+"importarLote1.undo.failed" = "No pudimos deshacer la importación. Inténtalo de nuevo.";
+"importarLote1.undo.lastImport.one" = "Tu última importación: 1 registro. Puedes deshacerla durante 24 horas.";
+"importarLote1.undo.lastImport.other" = "Tu última importación: %d registros. Puedes deshacerla durante 24 horas.";
+"importarLote1.result.skippedDuplicates.one" = "1 registro no se importó porque ya estaba.";
+"importarLote1.result.skippedDuplicates.other" = "%d registros no se importaron porque ya estaban.";
+"importarLote1.undo.inProgress" = "Deshaciendo la importación… %1$d de %2$d";
+"importarLote1.duplicates.allAlready" = "Todo lo de este archivo ya está en tus cuentas: no hay nada nuevo que importar.";

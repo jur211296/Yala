@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 transactie lijkt al geïmporteerd";
+"importarLote1.duplicates.title.other" = "%d transacties lijken al geïmporteerd";
+"importarLote1.duplicates.hint" = "Je rekeningen hebben al gelijke transacties: zelfde dag, bedrag, rekening en notitie. Als je ze niet importeert, komt er niets dubbel.";
+"importarLote1.duplicates.toggle" = "Toch importeren";
+"importarLote1.loose.one" = "1 overboeking mist haar andere helft. Ze telt niet als uitgave of inkomen, maar je ziet niet naar welke rekening ze ging.";
+"importarLote1.loose.other" = "%d overboekingen missen hun andere helft. Ze tellen niet als uitgaven of inkomen, maar je ziet niet naar welke rekening ze gingen.";
+"importarLote1.dateOrder.dayFirst" = "Datums worden gelezen als dag/maand, de volgorde van je telefoon: %1$@ is %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Datums worden gelezen als maand/dag, de volgorde van je telefoon: %1$@ is %2$@.";
+"importarLote1.dateOrder.hint" = "Klopt dat niet, schrijf de datums in het bestand dan als jaar-maand-dag (2026-04-03).";
+"importarLote1.undo.button" = "Import ongedaan maken";
+"importarLote1.undo.confirmTitle" = "Import ongedaan maken?";
+"importarLote1.undo.confirmMessage.one" = "De geïmporteerde transactie wordt verwijderd, ook als je haar later hebt bewerkt. Categorieën, labels en rekeningen die zijn aangemaakt, worden alleen verwijderd als niets anders ze gebruikt.";
+"importarLote1.undo.confirmMessage.other" = "De %d geïmporteerde transacties worden verwijderd, ook als je ze later hebt bewerkt. Categorieën, labels en rekeningen die zijn aangemaakt, worden alleen verwijderd als niets anders ze gebruikt.";
+"importarLote1.undo.confirmAction" = "Ongedaan maken";
+"importarLote1.undo.doneTitle" = "Import ongedaan gemaakt";
+"importarLote1.undo.done.one" = "We hebben de geïmporteerde transactie verwijderd.";
+"importarLote1.undo.done.other" = "We hebben de %d geïmporteerde transacties verwijderd.";
+"importarLote1.undo.failed" = "We konden de import niet ongedaan maken. Probeer het opnieuw.";
+"importarLote1.undo.lastImport.one" = "Je laatste import: 1 transactie. Je kunt hem 24 uur ongedaan maken.";
+"importarLote1.undo.lastImport.other" = "Je laatste import: %d transacties. Je kunt hem 24 uur ongedaan maken.";
+"importarLote1.result.skippedDuplicates.one" = "1 transactie is niet geïmporteerd omdat ze er al was.";
+"importarLote1.result.skippedDuplicates.other" = "%d transacties zijn niet geïmporteerd omdat ze er al waren.";
+"importarLote1.undo.inProgress" = "Import ongedaan maken… %1$d van %2$d";
+"importarLote1.duplicates.allAlready" = "Alles uit dit bestand staat al in je rekeningen: er is niets nieuws om te importeren.";

@@ -1,0 +1,32 @@
+/*
+  ImportarLote1.strings
+  Yala
+
+  Importar registros, lote 1 (22-nov-2026): duplicados al reimportar, deshacer un import, el orden de las fechas
+  por archivo y las transferencias sin pareja. Tabla propia, fuera de Localizable.strings.
+*/
+
+"importarLote1.duplicates.title.one" = "1 opération semble déjà importée";
+"importarLote1.duplicates.title.other" = "%d opérations semblent déjà importées";
+"importarLote1.duplicates.hint" = "Tes comptes ont déjà des opérations identiques : même jour, montant, compte et note. Si tu ne les importes pas, rien n'est en double.";
+"importarLote1.duplicates.toggle" = "Les importer quand même";
+"importarLote1.loose.one" = "1 virement n'a pas son autre moitié. Il ne compte ni en dépenses ni en revenus, mais on ne saura pas vers quel compte il est allé.";
+"importarLote1.loose.other" = "%d virements n'ont pas leur autre moitié. Ils ne comptent ni en dépenses ni en revenus, mais on ne saura pas vers quel compte ils sont allés.";
+"importarLote1.dateOrder.dayFirst" = "Les dates sont lues jour/mois, l'ordre de ton téléphone : %1$@ est le %2$@.";
+"importarLote1.dateOrder.monthFirst" = "Les dates sont lues mois/jour, l'ordre de ton téléphone : %1$@ est le %2$@.";
+"importarLote1.dateOrder.hint" = "Sinon, écris les dates du fichier en année-mois-jour (2026-04-03).";
+"importarLote1.undo.button" = "Annuler l'import";
+"importarLote1.undo.confirmTitle" = "Annuler l'import ?";
+"importarLote1.undo.confirmMessage.one" = "L'opération importée sera supprimée, même si tu l'as modifiée ensuite. Les catégories, étiquettes et comptes créés ne sont supprimés que si rien d'autre ne les utilise.";
+"importarLote1.undo.confirmMessage.other" = "Les %d opérations importées seront supprimées, même si tu les as modifiées ensuite. Les catégories, étiquettes et comptes créés ne sont supprimés que si rien d'autre ne les utilise.";
+"importarLote1.undo.confirmAction" = "Annuler";
+"importarLote1.undo.doneTitle" = "Import annulé";
+"importarLote1.undo.done.one" = "Nous avons retiré l'opération importée.";
+"importarLote1.undo.done.other" = "Nous avons retiré les %d opérations importées.";
+"importarLote1.undo.failed" = "Impossible d'annuler l'import. Réessaie.";
+"importarLote1.undo.lastImport.one" = "Ton dernier import : 1 opération. Tu peux l'annuler pendant 24 heures.";
+"importarLote1.undo.lastImport.other" = "Ton dernier import : %d opérations. Tu peux l'annuler pendant 24 heures.";
+"importarLote1.result.skippedDuplicates.one" = "1 opération n'a pas été importée car elle existait déjà.";
+"importarLote1.result.skippedDuplicates.other" = "%d opérations n'ont pas été importées car elles existaient déjà.";
+"importarLote1.undo.inProgress" = "Annulation de l’import… %1$d sur %2$d";
+"importarLote1.duplicates.allAlready" = "Tout ce fichier est déjà dans tes comptes : rien de nouveau à importer.";
