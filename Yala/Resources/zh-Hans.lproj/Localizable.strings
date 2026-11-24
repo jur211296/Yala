@@ -2027,6 +2027,7 @@
 "inbox.errorFutureDate" = "无法保存未来日期的记录";
 "inbox.duplicateWarningTitle" = "可能重复";
 "inbox.duplicateWarningMessage" = "已存在类似记录。仍要保存吗？";
+"inbox.duplicateWarningNamed" = "已有类似记录：%@。仍要保存吗？";
 "inbox.createAnyway" = "仍然保存";
 "inbox.bulkDuplicates.skipped" = "可能重复，未保存：%d";
 "inbox.saveLater" = "稍后处理";

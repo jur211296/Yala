@@ -2025,6 +2025,7 @@
 "inbox.errorFutureDate" = "Non si possono salvare registrazioni con data futura";
 "inbox.duplicateWarningTitle" = "Possibile duplicato";
 "inbox.duplicateWarningMessage" = "Esiste già una registrazione simile. Salvarla comunque?";
+"inbox.duplicateWarningNamed" = "Ce n’è già una simile: %@. Salvarla comunque?";
 "inbox.createAnyway" = "Salva comunque";
 "inbox.bulkDuplicates.skipped" = "Non salvati, possibile duplicato: %d";
 "inbox.saveLater" = "Lascia per dopo";

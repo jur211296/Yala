@@ -7296,6 +7296,10 @@ enum L10n {
         static var duplicateWarningMessage: String {
             ls("inbox.duplicateWarningMessage", comment: "")
         }
+        /// «Ya hay uno parecido: Wong · S/ 89.90 · 15 oct. ¿Guardarlo de todas formas?» (lote 0 de Bandeja sin duplicados).
+        static func duplicateWarningNamed(_ twin: String) -> String {
+            String(format: ls("inbox.duplicateWarningNamed", comment: ""), twin)
+        }
         static var createAnyway: String {
             ls("inbox.createAnyway", comment: "")
         }

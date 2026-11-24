@@ -65,6 +65,8 @@ struct InboxDraftEditSheet: View {
     @State private var approveErrorMessage = ""
     @State private var showDuplicateWarning = false
     @State private var duplicateTransaction: TransactionItem?
+    /// El aviso ya con el gemelo nombrado: se lee al detectarlo, porque el registro puede borrarse con el aviso abierto.
+    @State private var duplicateWarningMessage = ""
     @State private var shouldCreateDespiteDuplicate = false
     @State private var showDeleteConfirmation = false
     @State private var showDiscardChangesAlert = false
@@ -305,7 +307,7 @@ struct InboxDraftEditSheet: View {
                     }
                     .accessibilityIdentifier("inbox_duplicate_save_anyway")
                 } message: {
-                    Text(L10n.Inbox.duplicateWarningMessage)
+                    Text(duplicateWarningMessage.isEmpty ? L10n.Inbox.duplicateWarningMessage : duplicateWarningMessage)
                 }
                 .onChange(of: showDuplicateWarning) { _, isShowing in
                     // Trigger creation after alert dismisses if user chose to proceed
@@ -1132,6 +1134,7 @@ struct InboxDraftEditSheet: View {
         let finalAmount = isExpense ? -abs(amt) : abs(amt)
         if let duplicate = findDuplicateTransaction(amount: finalAmount, date: transactionDate, account: account) {
             duplicateTransaction = duplicate
+            duplicateWarningMessage = InboxDuplicateCheck.warningMessage(naming: duplicate)
             showDuplicateWarning = true
             return
         }
@@ -1272,11 +1275,13 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    /// Checks if a similar transaction already exists (same date, amount, account). El criterio es el de toda la Bandeja
+    /// Busca un registro ya guardado que parezca el mismo pago. El criterio es el de toda la Bandeja
     /// (`InboxDuplicateCheck`); aquí una lectura fallida deja guardar, como siempre: la persona está mirando el borrador.
     private func findDuplicateTransaction(amount: Double, date: Date, account: Account) -> TransactionItem? {
         do {
-            return try InboxDuplicateCheck.findDuplicate(amount: amount, date: date, account: account, in: modelContext)
+            return try InboxDuplicateCheck.findDuplicate(
+                amount: amount, date: date, account: account, fromSource: draft.sourceType, in: modelContext
+            )
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error checking duplicates: \(error)")

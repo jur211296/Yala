@@ -109,7 +109,8 @@ struct InboxDuplicateCheckTests {
         #expect(try transactionCount(in: context) == 1)
     }
 
-    /// Control: otro importe, otra cuenta u otro día no son el mismo pago, y el lote los guarda todos.
+    /// Control: otro importe (dos céntimos), otra cuenta o dos días de distancia no son el mismo pago, y el lote los guarda todos. (El día
+    /// anterior y el siguiente sí cuentan desde el 24-nov-2026: `BandejaRedMasMenosUnDiaTests`.)
     @Test func bulkApprove_savesWhatOnlyLooksAlikeInPart() throws {
         let context = try makeTestContext()
         DraftService.shared.setContext(context)
@@ -117,9 +118,9 @@ struct InboxDuplicateCheckTests {
         let fixture = makeFixture(in: context)
 
         insertTransaction(amount: -42.5, date: day, account: fixture.account, in: context)
-        let otherAmount = insertDraft("A", amount: -42.51, date: day, account: fixture.account, subcategory: fixture.subcategory, in: context)
+        let otherAmount = insertDraft("A", amount: -42.52, date: day, account: fixture.account, subcategory: fixture.subcategory, in: context)
         let otherAccount = insertDraft("B", amount: -42.5, date: day, account: fixture.otherAccount, subcategory: fixture.subcategory, in: context)
-        let otherDay = insertDraft("C", amount: -42.5, date: day.addingTimeInterval(-86_400), account: fixture.account, subcategory: fixture.subcategory, in: context)
+        let otherDay = insertDraft("C", amount: -42.5, date: day.addingTimeInterval(-2 * 86_400), account: fixture.account, subcategory: fixture.subcategory, in: context)
         try context.save()
 
         let outcome = try DraftService.shared.bulkApproveOutcome(

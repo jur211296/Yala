@@ -2027,6 +2027,7 @@
 "inbox.errorFutureDate" = "Records with a future date can’t be saved";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "A similar record already exists. Save it anyway?";
+"inbox.duplicateWarningNamed" = "There’s already a similar one: %@. Save it anyway?";
 "inbox.createAnyway" = "Save anyway";
 "inbox.bulkDuplicates.skipped" = "Not saved, possible duplicate: %d";
 "inbox.saveLater" = "Leave for later";

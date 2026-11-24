@@ -1723,6 +1723,7 @@
 "inbox.discardChangesMessage" = "As tuas alterações não guardadas serão perdidas.";
 "inbox.discardChangesTitle" = "Descartar alterações?";
 "inbox.duplicateWarningMessage" = "Já existe um registo parecido. Guardar mesmo assim?";
+"inbox.duplicateWarningNamed" = "Já existe um parecido: %@. Guardar mesmo assim?";
 "inbox.duplicateWarningTitle" = "Possível duplicado";
 "inbox.editDraft" = "Editar rascunho";
 "inbox.errorArchivedAccount" = "Esta conta está arquivada. Edita o rascunho e escolhe outra conta para o guardar.";

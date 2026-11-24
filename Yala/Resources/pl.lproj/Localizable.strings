@@ -2027,6 +2027,7 @@
 "inbox.errorFutureDate" = "Nie można zapisać wpisów z datą w przyszłości";
 "inbox.duplicateWarningTitle" = "Możliwy duplikat";
 "inbox.duplicateWarningMessage" = "Podobny wpis już istnieje. Zapisać mimo to?";
+"inbox.duplicateWarningNamed" = "Podobny wpis już istnieje: %@. Zapisać mimo to?";
 "inbox.createAnyway" = "Zapisz mimo to";
 "inbox.bulkDuplicates.skipped" = "Niezapisane, możliwy duplikat: %d";
 "inbox.saveLater" = "Zostaw na później";

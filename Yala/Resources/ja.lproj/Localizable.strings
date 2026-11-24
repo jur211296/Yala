@@ -2027,6 +2027,7 @@
 "inbox.errorFutureDate" = "未来の日付の記録は保存できません";
 "inbox.duplicateWarningTitle" = "重複の可能性があります";
 "inbox.duplicateWarningMessage" = "似た記録がすでにあります。それでも保存しますか？";
+"inbox.duplicateWarningNamed" = "似た記録がすでにあります：%@。それでも保存しますか？";
 "inbox.createAnyway" = "それでも保存";
 "inbox.bulkDuplicates.skipped" = "重複の可能性があり未保存：%d件";
 "inbox.saveLater" = "あとで";

@@ -62,6 +62,8 @@ struct InboxView: View {
     @State private var saveReadyDuplicatesLine: String?
     /// Deslizar para guardar un borrador que se parece a un registro que ya existe: pregunta, como el borrador abierto.
     @State private var swipeDuplicateDraft: InboxDraft?
+    /// El aviso ya con el gemelo nombrado: se lee al detectarlo, porque el registro puede borrarse con el aviso abierto.
+    @State private var swipeDuplicateMessage = ""
     @State private var showSwipeDuplicateAlert = false
 
     // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
@@ -531,6 +533,7 @@ struct InboxView: View {
             .modifier(InboxSwipeDuplicatePresentation(
                 isPresented: $showSwipeDuplicateAlert,
                 draft: swipeDuplicateDraft,
+                message: swipeDuplicateMessage,
                 onSaveAnyway: saveSwipedDuplicateAnyway
             ))
             .safeAreaInset(edge: .bottom) {
@@ -1192,7 +1195,8 @@ struct InboxView: View {
         // lectura que falla guarda, como el borrador abierto: el aviso diría «ya existe» sin saberlo.
         if !skipDuplicateCheck {
             do {
-                if try InboxDuplicateCheck.possibleDuplicate(of: draft, in: modelContext) != nil {
+                if let twin = try InboxDuplicateCheck.possibleDuplicate(of: draft, in: modelContext) {
+                    swipeDuplicateMessage = InboxDuplicateCheck.warningMessage(naming: twin)
                     swipeDuplicateDraft = draft
                     showSwipeDuplicateAlert = true
                     return
@@ -1341,6 +1345,7 @@ private struct InboxSaveReadyPresentations: ViewModifier {
 private struct InboxSwipeDuplicatePresentation: ViewModifier {
     @Binding var isPresented: Bool
     let draft: InboxDraft?
+    let message: String
     let onSaveAnyway: (InboxDraft) -> Void
 
     func body(content: Content) -> some View {
@@ -1351,7 +1356,7 @@ private struct InboxSwipeDuplicatePresentation: ViewModifier {
                 Button(L10n.Inbox.createAnyway) { onSaveAnyway(pending) }
                     .accessibilityIdentifier("inbox_swipe_duplicate_save_anyway")
             } message: { _ in
-                Text(L10n.Inbox.duplicateWarningMessage)
+                Text(message.isEmpty ? L10n.Inbox.duplicateWarningMessage : message)
             }
     }
 }

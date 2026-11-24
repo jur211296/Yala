@@ -1821,6 +1821,7 @@
 "inbox.discardChanges" = "Descartar";
 "inbox.discardChangesTitle" = "¿Descartar cambios?";
 "inbox.duplicateWarningMessage" = "Ya existe un registro parecido. ¿Guardarlo de todas formas?";
+"inbox.duplicateWarningNamed" = "Ya hay uno parecido: %@. ¿Guardarlo de todas formas?";
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.editDraft" = "Editar borrador";
 "inbox.errorArchivedAccount" = "Esta cuenta está archivada. Editá el borrador y elegí otra cuenta para guardarlo.";
