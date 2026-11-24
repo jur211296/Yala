@@ -86,6 +86,73 @@ nonisolated enum AsistentePresupuestoLogica {
         nombre.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // MARK: - Categorías y sus subcategorías («¿Cuáles?»)
+
+    /// Una categoría que se ofrece en «¿Cuáles?», con sus subcategorías visibles en el orden en que se pintan. Genérica para
+    /// probarla sin SwiftData: en la app, `PersistentIdentifier` y el `shortcutID` de cada subcategoría.
+    struct CategoriaOfrecida<C: Hashable, S: Hashable> {
+        let id: C
+        let subcategorias: [S]
+    }
+
+    /// Lo elegido en «¿Cuáles?»: las categorías en el orden en que se tocaron (el nombre propuesto usa las dos primeras) y
+    /// las subcategorías marcadas. Una categoría está en `categorias` si y solo si alguna de sus subcategorías está marcada.
+    struct Seleccion<C: Hashable, S: Hashable>: Equatable {
+        var categorias: [C] = []
+        var subcategorias: Set<S> = []
+    }
+
+    /// Tocar una categoría: elegida la quita con todas sus subcategorías; sin elegir, la añade con todas marcadas (como el
+    /// filtro de categoría de Registros y el primer presupuesto de Primeros pasos).
+    static func alternarCategoria<C, S>(_ categoria: CategoriaOfrecida<C, S>, en seleccion: Seleccion<C, S>) -> Seleccion<C, S> {
+        var result = seleccion
+        if let indice = result.categorias.firstIndex(of: categoria.id) {
+            result.categorias.remove(at: indice)
+            result.subcategorias.subtract(categoria.subcategorias)
+        } else {
+            result.categorias.append(categoria.id)
+            result.subcategorias.formUnion(categoria.subcategorias)
+        }
+        return result
+    }
+
+    /// Tocar una subcategoría la quita o la vuelve a poner. Si se quita la última de su categoría, la categoría deja de
+    /// estar elegida; si se vuelve a poner una de una categoría sin elegir, la categoría vuelve al final del orden.
+    static func alternarSubcategoria<C, S>(
+        _ subcategoria: S, de categoria: CategoriaOfrecida<C, S>, en seleccion: Seleccion<C, S>
+    ) -> Seleccion<C, S> {
+        guard categoria.subcategorias.contains(subcategoria) else { return seleccion }
+        var result = seleccion
+        if result.subcategorias.contains(subcategoria) {
+            result.subcategorias.remove(subcategoria)
+        } else {
+            result.subcategorias.insert(subcategoria)
+        }
+        let quedaAlguna = categoria.subcategorias.contains { result.subcategorias.contains($0) }
+        if quedaAlguna {
+            if !result.categorias.contains(categoria.id) { result.categorias.append(categoria.id) }
+        } else {
+            result.categorias.removeAll { $0 == categoria.id }
+        }
+        return result
+    }
+
+    /// Las subcategorías con las que se crea el presupuesto (y se calcula lo gastado): las marcadas de cada categoría
+    /// elegida, en el orden de las categorías elegidas y, dentro, en el de la categoría. Sin repetidas.
+    static func subcategoriasDelPresupuesto<C, S>(
+        _ seleccion: Seleccion<C, S>, ofrecidas: [CategoriaOfrecida<C, S>]
+    ) -> [S] {
+        var vistas: Set<S> = []
+        var result: [S] = []
+        for id in seleccion.categorias {
+            guard let categoria = ofrecidas.first(where: { $0.id == id }) else { continue }
+            for sub in categoria.subcategorias where seleccion.subcategorias.contains(sub) && vistas.insert(sub).inserted {
+                result.append(sub)
+            }
+        }
+        return result
+    }
+
     // MARK: - Tope sugerido
 
     /// Un día dentro del período ANTERIOR al de hoy: con él, `TutorialPlanningMath.budgetSpent(now:)` da lo gastado el

@@ -243,9 +243,9 @@
         "F-BUD-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/AsistentePresupuestoUITests | 2026-11-18 (encargo del 17-nov): «Nuevo presupuesto» abre el asistente por pasos; recorrido completo hasta crear, «Usar formulario» con lo respondido, cerrar con respuestas pregunta, Atrás y volver al resumen. Editar sigue en el formulario. unit:YalaTests/AsistentePresupuesto/AsistentePresupuestoTests (navegador compartido, reglas, paso al formulario, textos en 16 idiomas).",
+      "coverage": "xcuitest:YalaUITests/AsistentePresupuestoUITests | 2026-11-18 (encargo del 17-nov): «Nuevo presupuesto» abre el asistente por pasos; recorrido completo hasta crear, «Usar formulario» con lo respondido, cerrar con respuestas pregunta, Atrás y volver al resumen. Editar sigue en el formulario. unit:YalaTests/AsistentePresupuesto/AsistentePresupuestoTests (navegador compartido, reglas, paso al formulario, textos en 16 idiomas). | 2026-11-24 (pedido del 23-nov): en «¿Cuáles?» tocar una categoría saca debajo sus subcategorías marcadas; desmarcarlas todas desmarca la categoría. xcuitest:YalaUITests/PresupuestoGuiadoSubcategoriasUITests. unit:YalaTests/PresupuestoGuiadoSubcategorias/PresupuestoGuiadoSubcategoriasTests (reglas de la selección, gastado del mes pasado con lo marcado, paso al formulario, cableado).",
       "owner": "",
-      "lastVerified": "2026-11-21"
+      "lastVerified": "2026-11-24"
     },
     {
       "area": "group-creation-wizard",
