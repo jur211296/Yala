@@ -13,3 +13,10 @@ Tres propuestas comparadas contra el Resumen de hoy, con los mismos datos de eje
 | **C · Mosaico** | Los cuatro anillos en fila y todo en tarjetas que llevan al detalle. | Igual que B, salvo el orden de acciones. |
 
 En las tres se van «Categoría principal» y «Subcategoría principal» como cajas, y «Promedio diario» deja la caja ancha.
+
+## Decisión de Jürgen (23-nov-2026, 21:41)
+
+Queda elegida la **opción B · Decidir**: franja de salud con el factor que más baja la nota, bloque «Para decidir hoy»
+(hasta 3 acciones a Presupuestos, Pagos planificados o Tendencias), gastos hormiga protagonista con Yala IA en su
+franja, fila «Ir a» (Distribución, Tendencias, Registros, Presupuestos). Se retiran las cajas de Categoría principal,
+Subcategoría principal y Promedio diario ancho. La construcción va en su propio encargo.

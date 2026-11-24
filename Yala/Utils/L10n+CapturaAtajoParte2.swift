@@ -73,15 +73,56 @@ extension L10n {
             static var defaultAccountFooter: String { string("bank.defaultAccount.footer") }
             static var pause: String { string("bank.pause") }
 
+            // Encargo del 23-nov-2026: la entrada explica qué es un aviso y cómo funciona; fuera de Perú solo queda
+            // «Tu banco o app»; con los datos en la cuenta de Yala, los correos van a «Correo del banco».
+            static var pickerOtherAlone: String { string("bank.picker.otherAlone") }
+            static var pickerOtherAloneFooter: String { string("bank.picker.otherAloneFooter") }
+            static var howSection: String { string("bank.how.section") }
+            static var howNotice: String { string("bank.how.notice") }
+            static var howShortcut: String { string("bank.how.shortcut") }
+            static var howInbox: String { string("bank.how.inbox") }
+            static var howFooter: String { string("bank.how.footer") }
+            static var emailSection: String { string("bank.email.section") }
+            static var emailRowTitle: String { string("bank.email.row.title") }
+            static var emailRowDetail: String { string("bank.email.row.detail") }
+
+            /// Un banco que la persona abrió pero aún no confirmó ni recibió ningún aviso.
+            static var notSetUpTitle: String { string("bank.status.notSetUp.title") }
+            static var notSetUpDetail: String { string("bank.status.notSetUp.detail") }
+
+            static var introSection: String { string("bank.intro.section") }
+            /// «… para que cada aviso de BCP le llegue a Yala».
+            static func introDetail(_ bank: String) -> String { format("bank.intro.detail", bank) }
+            /// «tu banco»: el nombre en la guía cuando el banco es `.other`.
+            static var guideYourBank: String { string("bank.guide.yourBank") }
+            /// «la app de BCP».
+            static func guideAppOf(_ bank: String) -> String { format("bank.guide.appOf", bank) }
+            static var guideYourBankApp: String { string("bank.guide.yourBankApp") }
+
             static var guideSection: String { string("bank.guide.section") }
             static var guideStep1Title: String { string("bank.guide.step1.title") }
             static var guideStep1Detail: String { string("bank.guide.step1.detail") }
-            static func guideStep2Title(_ bank: String) -> String { format("bank.guide.step2.title", bank) }
-            static func guideStep2Detail(_ bank: String) -> String { format("bank.guide.step2.detail", bank) }
-            static var guideStep3Title: String { string("bank.guide.step3.title") }
-            static func guideStep3Detail(_ bank: String) -> String { format("bank.guide.step3.detail", bank) }
+            static var guideStep2Title: String { string("bank.guide.step2.title") }
+            static var guideStep2Detail: String { string("bank.guide.step2.detail") }
+            /// «Elige «Notificación» y la app de BCP».
+            static func guideStep3Title(_ app: String) -> String { format("bank.guide.step3.title", app) }
+            static func guideStep3Detail(_ app: String) -> String { format("bank.guide.step3.detail", app) }
             static var guideStep4Title: String { string("bank.guide.step4.title") }
             static var guideStep4Detail: String { string("bank.guide.step4.detail") }
+            static var guideStep5Title: String { string("bank.guide.step5.title") }
+            /// El valor que se elige en «Banco» dentro de Atajos: el nombre de marca u «Otro banco».
+            static func guideStep5Detail(_ bankValue: String) -> String { format("bank.guide.step5.detail", bankValue) }
+            static var guideStep6Title: String { string("bank.guide.step6.title") }
+            static var guideStep6Detail: String { string("bank.guide.step6.detail") }
+            static var confirmSetup: String { string("bank.confirmSetup") }
+
+            static var mailCloudDetail: String { string("bank.mail.cloudDetail") }
+            static var mailCloudButton: String { string("bank.mail.cloudButton") }
+
+            static var deactivate: String { string("bank.deactivate") }
+            static func deactivateTitle(_ bank: String) -> String { format("bank.deactivate.title", bank) }
+            static func deactivateMessage(_ bank: String) -> String { format("bank.deactivate.message", bank) }
+            static var deactivateConfirm: String { string("bank.deactivate.confirm") }
             static func guidePreview(_ bank: String) -> String { format("bank.guide.preview", bank, bank) }
             static var guideOtherNote: String { string("bank.guide.otherNote") }
             static var openShortcuts: String { string("bank.openShortcuts") }
