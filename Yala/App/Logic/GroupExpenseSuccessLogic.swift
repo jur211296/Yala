@@ -256,3 +256,45 @@ nonisolated enum GroupOpeningBalanceMissingFieldLogic {
 nonisolated enum SettlementMissingFieldLogic {
     static func amountMissing(_ amount: Double) -> Bool { !(amount > 0) }
 }
+
+// MARK: - Éxito minimalista (encargo del 2026-11-24)
+
+/// Las filas de la tarjeta del éxito de un gasto de grupo, en el orden en que se ven (sin rótulos, como la personal):
+/// grupo, quién pagó, fecha, categoría si tiene, la cuenta si no la dice ya el bloque de «qué apuntó Yala» y el reparto.
+nonisolated enum GroupExpenseSuccessFieldOrder {
+    enum Field: Equatable { case group, paidBy, date, subcategory, account, split }
+
+    static func fields(hasSubcategory: Bool, hasAccount: Bool, outcome: GroupExpensePersonalOutcome) -> [Field] {
+        var fields: [Field] = [.group, .paidBy, .date]
+        if hasSubcategory { fields.append(.subcategory) }
+        if showsAccountRow(hasAccount: hasAccount, outcome: outcome) { fields.append(.account) }
+        fields.append(.split)
+        return fields
+    }
+
+    /// Con «−S/ 150 en Cuenta» en el bloque de abajo, la fila de la cuenta repetiría lo mismo.
+    static func showsAccountRow(hasAccount: Bool, outcome: GroupExpensePersonalOutcome) -> Bool {
+        guard hasAccount else { return false }
+        if case .chargedToAccount = outcome { return false }
+        return true
+    }
+}
+
+extension GroupExpenseSuccessLogic {
+
+    /// El color del check y del monto: el de un gasto, o el de un ingreso si es una venta (como el tipo en la personal).
+    nonisolated enum Tint: Equatable { case expense, income }
+
+    nonisolated static func tint(isSale: Bool) -> Tint { isSale ? .income : .expense }
+
+    /// El tono de la línea de «tu parte»: verde si te deben, rosa si debes, gris si no queda nada.
+    nonisolated enum DebtTone: Equatable { case owedToMe, iOwe, settled }
+
+    nonisolated static func debtTone(_ debt: GroupExpenseDebt) -> DebtTone {
+        switch debt {
+        case .theyOweMe: .owedToMe
+        case .iOwe: .iOwe
+        case .settled: .settled
+        }
+    }
+}

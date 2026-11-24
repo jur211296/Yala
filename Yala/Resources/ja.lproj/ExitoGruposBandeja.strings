@@ -1,0 +1,10 @@
+/* Éxito minimalista de Grupos y de la Bandeja (encargo del 2026-11-24). */
+
+"exitoGB.group.title.expenseCreated" = "支出を追加しました";
+"exitoGB.group.title.expenseUpdated" = "支出を更新しました";
+"exitoGB.group.title.saleCreated" = "販売を追加しました";
+"exitoGB.group.title.saleUpdated" = "販売を更新しました";
+"exitoGB.group.paidByMe" = "あなたが支払いました";
+"exitoGB.group.paidBy" = "%@が支払いました";
+"exitoGB.bulk.title.one" = "1件の記録を保存しました";
+"exitoGB.bulk.title.many" = "%lld件の記録を保存しました";

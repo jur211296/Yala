@@ -260,6 +260,91 @@ enum RecurringFromRecordService {
         return save(context)
     }
 
+    // MARK: - Desde el formulario de registro (hoja «Hacer recurrente», 23-nov)
+
+    /// Lo que Nuevo registro (o Editar) tiene del registro al tocar «Hacer recurrente». De aquí salen las dos salidas de
+    /// la hoja —una frecuencia rápida y «Más opciones…»—, así que las dos copian lo mismo (pedido de Jürgen del 23-nov).
+    struct FormRecord {
+        let transactionType: TransactionType
+        /// Magnitud, sin signo: el formulario la guarda así.
+        let amount: Double
+        /// La divisa del importe, la que enseña la pantalla, sin convertir (card 4k2q).
+        let currencyCode: String
+        let note: String
+        let account: Account?
+        let subcategory: Subcategory?
+        let tags: [Tag]
+        /// La necesidad elegida en el formulario; `nil` = la de la subcategoría.
+        let need: SubcategoryNeed?
+        let date: Date
+
+        /// El nombre del pago: la descripción y, sin ella, la subcategoría (`RecurringFromRecordLogic.paymentName`).
+        var paymentName: String {
+            RecurringFromRecordLogic.paymentName(note: note, subcategoryName: subcategory?.name)
+        }
+
+        /// La necesidad que se guarda en el pago: solo si no es la que ya trae la subcategoría.
+        var needOverrideToStore: String? {
+            need.flatMap { $0 != subcategory?.need ? $0.rawValue : nil }
+        }
+    }
+
+    /// «Más opciones…»: el editor completo, con todo lo del registro ya puesto. El nombre es el mismo que el de la opción
+    /// rápida; sin descripción ni subcategoría queda vacío y el editor lo pide.
+    static func moreOptionsPrefill(from form: FormRecord) -> ScheduledPaymentPrefill {
+        ScheduledPaymentPrefill(
+            transactionType: form.transactionType.rawValue,
+            amount: AmountInputHelper.formatWithGrouping(form.amount),
+            note: form.note,
+            account: form.account,
+            subcategory: form.subcategory,
+            tagIDs: Set(form.tags.map(\.persistentModelID)),
+            needOverride: form.need,
+            currencyCode: form.currencyCode,
+            transactionDate: form.date,
+            name: form.paymentName)
+    }
+
+    /// Una frecuencia de la hoja: crea el pago con todo lo del registro y el ancla de su fecha (el día de la semana, el
+    /// del mes o el día y el mes). Sin nombre posible, el del tipo («Gasto»). `nil` sin cuenta o si no se pudo guardar.
+    static func createQuickPayment(
+        from form: FormRecord,
+        recurrence: RecurrenceType,
+        context: ModelContext,
+        deletionService: EntityDeletionService
+    ) -> UUID? {
+        guard let account = form.account else { return nil }
+        let anchor = RecurringQuickChoiceLogic.anchor(for: form.date)
+        let name = form.paymentName.isEmpty ? form.transactionType.displayName : form.paymentName
+        let editor = ScheduledPaymentEditorViewModel()
+        editor.setContext(context, deletionService: deletionService)
+        return editor.savePayment(
+            existing: nil,
+            name: name,
+            amount: form.amount,
+            note: form.note,
+            currencyCode: form.currencyCode,
+            transactionType: form.transactionType.rawValue,
+            paymentCategory: .recurring,
+            account: account,
+            subcategory: form.subcategory,
+            selectedTags: Set(form.tags.map(\.persistentModelID)),
+            isRecurring: true,
+            recurrenceType: recurrence,
+            recurrenceInterval: 1,
+            paymentDate: Calendar.current.startOfDay(for: form.date),
+            dayOfMonth: anchor.dayOfMonth,
+            selectedWeekdays: [anchor.weekday],
+            yearlyMonth: anchor.month,
+            yearlyDay: anchor.dayOfMonth,
+            endDate: nil,
+            notifyOnDueDate: true,
+            notifyDaysBefore: 0,
+            isActive: true,
+            needOverride: form.needOverrideToStore
+        )
+    }
+
     // MARK: - Piezas
 
     /// Avanza la próxima fecha mientras `shouldAdvance` lo pida y el recurrente siga activo (uno de una sola vez se

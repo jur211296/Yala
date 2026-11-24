@@ -9165,6 +9165,7 @@
 "rfr.choice.nextDue" = "Próximo cobro: %@";
 "rfr.notice.linked" = "Vinculado a «%@»";
 "rfr.notice.created" = "Recurrente creado · este registro es su primer pago";
+"rfr.quick.moreOptionsDetail" = "Fecha de fin, avisos e importe variable";
 
 /* Panel: el saldo en grande, «Tu dinero hoy» en chico y el globo que explica los dos (2026-11-16) */
 /* Panel hero, small line under the big balance: the money in the accounts that count as usable money (by default, without credit cards). Never 'available' or 'liquidity' */
