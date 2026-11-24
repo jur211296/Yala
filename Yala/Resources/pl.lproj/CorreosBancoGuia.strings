@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "Ustawiasz to raz, w Safari: aplikacja Twojej poczty nie ma tej opcji. To zajmie kilka minut.";
+"correosGuia.findBank" = "Zanim zaczniesz, znajdź adres swojego banku: otwórz powiadomienie od banku i sprawdź w polu „Od”, kto je wysłał (na przykład powiadomienia@twojbank.pl).";
+
+"correosGuia.copy.title" = "Skopiuj swój adres Yala";
+"correosGuia.copy.detail" = "Stuknij „Kopiuj adres”. Nic się nie zmieni na ekranie: adres zostaje zapamiętany, żeby wkleić go w poczcie. Jeśli go zgubisz, na górze, obok Twojego adresu, jest drugi przycisk do kopiowania.";
+
+"correosGuia.gmail.add.title" = "Dodaj swój adres Yala w Gmailu";
+"correosGuia.gmail.add.detail" = "1. Stuknij „Otwórz Gmail”. Gmail otworzy się w Safari, w sekcji przekazywania. Zaloguj się, jeśli zostaniesz poproszony.\n2. Jeśli widzisz wersję mobilną, stuknij przycisk na pasku adresu Safari i wybierz „Pokaż wersję na komputery”.\n3. Stuknij „Dodaj adres do przekazywania”.\n4. Przytrzymaj palec w polu, stuknij „Wklej”, a potem „Dalej”.\n5. Otworzy się okno: stuknij „Kontynuuj”, a potem „OK”.\nNie zaznaczaj „Przekaż kopię poczty przychodzącej do”: wtedy szłaby cała Twoja poczta. Powiadomienia banku oddzieli filtr z kroku 4.";
+"correosGuia.gmail.confirm.title" = "Potwierdź kodem z Gmaila";
+"correosGuia.gmail.confirm.waiting" = "Gmail właśnie wysłał kod na Twój adres Yala, a Yala odbiera go za Ciebie: nie musisz szukać go w poczcie.\n1. Poczekaj minutę i stuknij „Szukaj kodu”.\n2. Gdy dotrze, zobaczysz go tutaj.";
+"correosGuia.gmail.confirm.code" = "Twój kod z Gmaila to %@.\n1. Stuknij „Kopiuj kod”.\n2. Wróć do Gmaila, na ten sam ekran przekazywania.\n3. Wklej kod w pole potwierdzenia i stuknij „Zweryfikuj”. Jeśli nie widzisz pola, odśwież stronę.";
+"correosGuia.gmail.filter.title" = "Utwórz filtr dla powiadomień banku";
+"correosGuia.gmail.filter.detail" = "1. W Gmailu, w Safari, wpisz adres banku w pasek wyszukiwania na górze.\n2. Stuknij przycisk opcji, na prawo od wyszukiwania, a potem „Utwórz filtr”.\n3. Zaznacz „Przekaż do” i wybierz swój adres Yala.\n4. Stuknij „Utwórz filtr”.\nJeśli bank pisze do Ciebie z kilku adresów, powtórz te kroki dla każdego.";
+
+"correosGuia.rule.title" = "Utwórz regułę dla powiadomień banku";
+"correosGuia.outlook.rule.detail" = "1. Stuknij „Otwórz Outlook”. Outlook otworzy się w Safari, w sekcji reguł. Zaloguj się, jeśli zostaniesz poproszony.\n2. Stuknij „Dodaj nową regułę” i nadaj jej nazwę, na przykład „Yala”.\n3. W warunku wybierz „Od” i wpisz adres banku.\n4. W akcji wybierz „Przekaż do” i wklej swój adres Yala.\n5. Stuknij „Zapisz”.";
+"correosGuia.icloud.rule.detail" = "1. Stuknij „Otwórz iCloud Mail”. iCloud.com otworzy się w Safari. Zaloguj się kontem Apple, jeśli zostaniesz poproszony.\n2. Stuknij przycisk ustawień (koło zębate) i wybierz „Reguły”.\n3. Stuknij „Dodaj regułę”.\n4. W „Jeśli wiadomość” wybierz „jest od” i wpisz adres banku.\n5. W „Wtedy” wybierz „Przekaż do” i wklej swój adres Yala.\n6. Stuknij „Gotowe”.";
+
+"correosGuia.wait.title" = "Gotowe: poczekaj na następne powiadomienie";
+"correosGuia.wait.detail" = "Nic więcej nie musisz robić. Gdy bank wyśle następne powiadomienie, transakcja trafi do Twojej Skrzynki, żebyś ją potwierdził. Jeśli przez dzień nic nie dotrze, sprawdź, czy filtr lub reguła używa tego samego adresu, z którego pisze bank.";
+
+"correosGuia.stepGuide.reopen" = "Wróć do tego kroku";
+"correosGuia.stepGuide.reopenHint" = "Otwiera ten krok ponownie, żeby go powtórzyć albo dokończyć to, czego brakowało.";

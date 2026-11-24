@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "Je stelt dit één keer in, in Safari: de app van je e-mail heeft deze optie niet. Het duurt een paar minuten.";
+"correosGuia.findBank" = "Zoek eerst het adres van je bank: open een melding die je bank je stuurde en kijk bij „Van” wie hem verstuurt (bijvoorbeeld meldingen@jouwbank.nl).";
+
+"correosGuia.copy.title" = "Kopieer je Yala-adres";
+"correosGuia.copy.detail" = "Tik op „Adres kopiëren”. Je ziet niets veranderen: het adres is bewaard zodat je het in je e-mail kunt plakken. Kwijt? Bovenaan, naast je adres, staat nog een knop om het te kopiëren.";
+
+"correosGuia.gmail.add.title" = "Voeg je Yala-adres toe in Gmail";
+"correosGuia.gmail.add.detail" = "1. Tik op „Gmail openen”. Gmail opent in Safari, bij het onderdeel doorsturen. Log in als daarom wordt gevraagd.\n2. Zie je de mobiele versie, tik dan op de knop in de adresbalk van Safari en kies „Vraag desktopwebsite aan”.\n3. Tik op „Een doorstuuradres toevoegen”.\n4. Houd je vinger in het vak, tik op „Plak” en daarna op „Volgende”.\n5. Er opent een venster: tik op „Doorgaan” en daarna op „OK”.\nVink „Een kopie van inkomende e-mail doorsturen naar” niet aan: dan gaat al je e-mail mee. De meldingen van de bank haalt het filter van stap 4 eruit.";
+"correosGuia.gmail.confirm.title" = "Bevestig met de code van Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail heeft net een code naar je Yala-adres gestuurd, en Yala ontvangt die voor je: je hoeft hem niet in je e-mail te zoeken.\n1. Wacht een minuut en tik op „Code zoeken”.\n2. Zodra hij er is, zie je hem hier.";
+"correosGuia.gmail.confirm.code" = "Je Gmail-code is %@.\n1. Tik op „Code kopiëren”.\n2. Ga terug naar Gmail, naar hetzelfde scherm voor doorsturen.\n3. Plak de code in het bevestigingsvak en tik op „Verifiëren”. Zie je het vak niet, laad de pagina dan opnieuw.";
+"correosGuia.gmail.filter.title" = "Maak een filter voor de meldingen van je bank";
+"correosGuia.gmail.filter.detail" = "1. Typ in Gmail, in Safari, het adres van je bank in de zoekbalk bovenaan.\n2. Tik op de optieknop rechts van het zoekveld en daarna op „Filter maken”.\n3. Vink „Doorsturen naar” aan en kies je Yala-adres.\n4. Tik op „Filter maken”.\nSchrijft je bank je vanaf meerdere adressen, herhaal deze stappen dan voor elk adres.";
+
+"correosGuia.rule.title" = "Maak een regel voor de meldingen van je bank";
+"correosGuia.outlook.rule.detail" = "1. Tik op „Outlook openen”. Outlook opent in Safari, bij het onderdeel regels. Log in als daarom wordt gevraagd.\n2. Tik op „Nieuwe regel toevoegen” en geef hem een naam, bijvoorbeeld „Yala”.\n3. Kies als voorwaarde „Van” en typ het adres van je bank.\n4. Kies als actie „Doorsturen naar” en plak je Yala-adres.\n5. Tik op „Opslaan”.";
+"correosGuia.icloud.rule.detail" = "1. Tik op „iCloud Mail openen”. iCloud.com opent in Safari. Log in met je Apple Account als daarom wordt gevraagd.\n2. Tik op de instellingenknop (het tandwiel) en kies „Regels”.\n3. Tik op „Voeg een regel toe”.\n4. Kies bij „Als een bericht” de optie „is van” en typ het adres van je bank.\n5. Kies bij „Dan” de optie „Doorsturen naar” en plak je Yala-adres.\n6. Tik op „Gereed”.";
+
+"correosGuia.wait.title" = "Klaar: wacht op de volgende melding";
+"correosGuia.wait.detail" = "Je hoeft niets meer te doen. Als je bank de volgende melding stuurt, komt de transactie in je Inbox zodat je hem kunt bevestigen. Komt er na een dag niets binnen, controleer dan of het filter of de regel hetzelfde adres gebruikt waarvandaan je bank schrijft.";
+
+"correosGuia.stepGuide.reopen" = "Terug naar deze stap";
+"correosGuia.stepGuide.reopenHint" = "Opent deze stap opnieuw zodat je hem kunt herhalen of kunt afmaken wat ontbrak.";

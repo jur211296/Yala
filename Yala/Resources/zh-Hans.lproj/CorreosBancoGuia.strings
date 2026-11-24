@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "只需设置一次，在 Safari 中完成：你的邮件 App 没有这个选项。几分钟就好。";
+"correosGuia.findBank" = "开始前，先找到银行的地址：打开一封银行发来的通知，看“发件人”是谁（例如 notice@yourbank.cn）。";
+
+"correosGuia.copy.title" = "复制你的 Yala 地址";
+"correosGuia.copy.detail" = "轻点“复制地址”。屏幕上不会有变化：地址已经保存好，可以粘贴到你的邮箱里。如果找不到了，上方你的地址旁边还有一个复制按钮。";
+
+"correosGuia.gmail.add.title" = "在 Gmail 中添加你的 Yala 地址";
+"correosGuia.gmail.add.detail" = "1. 轻点“打开 Gmail”。Gmail 会在 Safari 中打开转发设置。如有提示，请登录。\n2. 如果看到的是手机版，轻点 Safari 地址栏中的按钮，选择“请求桌面网站”。\n3. 轻点“添加转发地址”。\n4. 在输入框中长按，轻点“粘贴”，然后轻点“下一步”。\n5. 会弹出一个窗口：轻点“继续”，再轻点“确定”。\n不要选择“将收到的邮件副本转发到”：那样会转发你所有的邮件。银行通知由第 4 步的过滤器单独挑出来。";
+"correosGuia.gmail.confirm.title" = "用 Gmail 的验证码确认";
+"correosGuia.gmail.confirm.waiting" = "Gmail 刚刚向你的 Yala 地址发送了验证码，Yala 会替你接收：你不用去邮箱里找。\n1. 等一分钟，然后轻点“查找验证码”。\n2. 收到后就会显示在这里。";
+"correosGuia.gmail.confirm.code" = "你的 Gmail 验证码是 %@。\n1. 轻点“复制验证码”。\n2. 回到 Gmail 的同一个转发页面。\n3. 把验证码粘贴到确认框里，然后轻点“验证”。如果看不到确认框，请刷新页面。";
+"correosGuia.gmail.filter.title" = "为银行通知创建过滤器";
+"correosGuia.gmail.filter.detail" = "1. 在 Safari 的 Gmail 中，在顶部搜索栏输入银行的地址。\n2. 轻点搜索框右侧的选项按钮，然后轻点“创建过滤器”。\n3. 勾选“转发至”，选择你的 Yala 地址。\n4. 轻点“创建过滤器”。\n如果银行从多个地址给你发邮件，请对每个地址重复这些步骤。";
+
+"correosGuia.rule.title" = "为银行通知创建规则";
+"correosGuia.outlook.rule.detail" = "1. 轻点“打开 Outlook”。Outlook 会在 Safari 中打开规则设置。如有提示，请登录。\n2. 轻点“添加新规则”，并给它起个名字，例如“Yala”。\n3. 条件选择“发件人”，输入银行的地址。\n4. 操作选择“转发到”，粘贴你的 Yala 地址。\n5. 轻点“保存”。";
+"correosGuia.icloud.rule.detail" = "1. 轻点“打开 iCloud Mail”。iCloud.com 会在 Safari 中打开。如有提示，请用你的 Apple 账户登录。\n2. 轻点设置按钮（齿轮），选择“规则”。\n3. 轻点“添加规则”。\n4. 在“如果邮件”中选择“发件人是”，输入银行的地址。\n5. 在“则”中选择“转发到”，粘贴你的 Yala 地址。\n6. 轻点“完成”。";
+
+"correosGuia.wait.title" = "完成：等待下一条通知";
+"correosGuia.wait.detail" = "你不需要再做什么。银行发来下一条通知时，这笔交易会进入你的收件箱，等你确认。如果过了一天还没收到，请检查过滤器或规则使用的地址是否与银行的发件地址相同。";
+
+"correosGuia.stepGuide.reopen" = "回到这一步";
+"correosGuia.stepGuide.reopenHint" = "重新打开这一步，可以重做或补完没做完的部分。";

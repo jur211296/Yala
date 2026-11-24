@@ -66,6 +66,25 @@ final class BankEmailGuideUITests: XCTestCase {
         assertProgress("Paso 3 de 5", in: app)
     }
 
+    /// Un paso hecho se vuelve a abrir (pedido de Jürgen del 2026-11-23): llegó al paso 3 sin terminar el 1, toca
+    /// «Volver a este paso» en el 1 y queda activo con su botón; la dirección sigue a mano en la cabecera.
+    func test_gmailGuide_goesBackToADoneStep() {
+        let app = launchAndOpenBankEmail(extra: ["-stepGuide.progress.bankEmailGmail", "2"])
+        app.buttons["bank_email_provider_gmail"].tap()
+        assertProgress("Paso 3 de 5", in: app)
+        XCTAssertTrue(app.buttons["bank_email_guide_copy"].waitForExistence(timeout: 5),
+                      "La cabecera no ofrece copiar la dirección.")
+        XCTAssertFalse(app.buttons["step_guide_reopen_2"].exists, "El paso activo no se «vuelve a abrir».")
+
+        let reopen = app.buttons["step_guide_reopen_0"]
+        XCTAssertTrue(reopen.waitForExistence(timeout: 5), "El paso hecho no ofrece volver a él.")
+        reopen.tap()
+        assertProgress("Paso 1 de 5", in: app)
+        XCTAssertTrue(app.buttons["step_guide_action"].label.contains("Copiar dirección"),
+                      "Al volver, el paso 1 no es el activo: «\(app.buttons["step_guide_action"].label)».")
+        XCTAssertFalse(app.buttons["step_guide_reopen_1"].exists, "El paso 2 debía volver a pendiente.")
+    }
+
     func test_outlookGuide_isARuleInThreeSteps() {
         let app = launchAndOpenBankEmail()
         app.buttons["bank_email_provider_outlook"].tap()

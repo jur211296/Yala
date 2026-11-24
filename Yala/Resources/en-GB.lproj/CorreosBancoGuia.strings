@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "You set it up once, in Safari: your mail app doesn't have this option. It takes a few minutes.";
+"correosGuia.findBank" = "Before you start, find your bank's address: open an alert your bank sent you and look at who sent it, under “From” (for example, alerts@yourbank.com).";
+
+"correosGuia.copy.title" = "Copy your Yala address";
+"correosGuia.copy.detail" = "Tap “Copy address”. You won't see anything change: the address is saved so you can paste it into your email. If you lose it, there's another button to copy it at the top, next to your address.";
+
+"correosGuia.gmail.add.title" = "Add your Yala address in Gmail";
+"correosGuia.gmail.add.detail" = "1. Tap “Open Gmail”. Gmail opens in Safari, on the forwarding section. Sign in if it asks you to.\n2. If you see the mobile version, tap the button in Safari's address bar and choose “Request Desktop Website”.\n3. Tap “Add a forwarding address”.\n4. Press and hold in the box, tap “Paste”, then “Next”.\n5. A window opens: tap “Proceed”, then “OK”.\nDon't select “Forward a copy of incoming mail”: that would send all your email. The filter in step 4 picks out your bank's alerts.";
+"correosGuia.gmail.confirm.title" = "Confirm with Gmail's code";
+"correosGuia.gmail.confirm.waiting" = "Gmail just sent a code to your Yala address, and Yala receives it for you: you don't need to look for it in your email.\n1. Wait a minute and tap “Look for the code”.\n2. When it arrives, you'll see it right here.";
+"correosGuia.gmail.confirm.code" = "Your Gmail code is %@.\n1. Tap “Copy code”.\n2. Go back to Gmail, to the same forwarding screen.\n3. Paste the code in the confirmation box and tap “Verify”. If you don't see the box, reload the page.";
+"correosGuia.gmail.filter.title" = "Create a filter for your bank's alerts";
+"correosGuia.gmail.filter.detail" = "1. In Gmail, in Safari, type your bank's address in the search bar at the top.\n2. Tap the options button to the right of the search, then “Create filter”.\n3. Check “Forward it to” and choose your Yala address.\n4. Tap “Create filter”.\nIf your bank writes to you from several addresses, repeat these steps for each one.";
+
+"correosGuia.rule.title" = "Create a rule for your bank's alerts";
+"correosGuia.outlook.rule.detail" = "1. Tap “Open Outlook”. Outlook opens in Safari, on the rules section. Sign in if it asks you to.\n2. Tap “Add new rule” and give it a name, for example “Yala”.\n3. For the condition, choose “From” and type your bank's address.\n4. For the action, choose “Forward to” and paste your Yala address.\n5. Tap “Save”.";
+"correosGuia.icloud.rule.detail" = "1. Tap “Open iCloud Mail”. iCloud.com opens in Safari. Sign in with your Apple Account if it asks you to.\n2. Tap the settings button (the gear) and choose “Rules”.\n3. Tap “Add a Rule”.\n4. Under “If a message”, choose “is from” and type your bank's address.\n5. Under “Then”, choose “Forward to” and paste your Yala address.\n6. Tap “Done”.";
+
+"correosGuia.wait.title" = "Done: wait for the next alert";
+"correosGuia.wait.detail" = "There's nothing else to do. When your bank sends its next alert, the transaction arrives in your Inbox for you to confirm. If a day goes by and nothing arrives, check that the filter or rule uses the same address your bank writes from.";
+
+"correosGuia.stepGuide.reopen" = "Back to this step";
+"correosGuia.stepGuide.reopenHint" = "Opens this step again so you can repeat it or finish what was missing.";

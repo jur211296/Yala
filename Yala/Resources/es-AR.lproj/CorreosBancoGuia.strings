@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "Se hace una sola vez, desde Safari: la app de tu correo no tiene esta opción. Toma unos minutos.";
+"correosGuia.findBank" = "Antes de empezar, buscá la dirección de tu banco: abrí un aviso que te haya mandado y mirá quién lo envía, en «De» (por ejemplo, notificaciones@tubanco.com).";
+
+"correosGuia.copy.title" = "Copiá tu dirección de Yala";
+"correosGuia.copy.detail" = "Tocá «Copiar dirección». No vas a ver ningún cambio: la dirección queda guardada para pegarla en tu correo. Si la perdés, arriba, junto a tu dirección, tenés otro botón para copiarla.";
+
+"correosGuia.gmail.add.title" = "Agregá tu dirección de Yala en Gmail";
+"correosGuia.gmail.add.detail" = "1. Tocá «Abrir Gmail». Se abre Gmail en Safari, en la sección de reenvío. Si te lo pide, iniciá sesión.\n2. Si ves la versión para celular, tocá el botón de la barra de direcciones de Safari y elegí «Solicitar sitio web de escritorio».\n3. Tocá «Agregar una dirección de reenvío».\n4. Mantené el dedo en el recuadro, tocá «Pegar» y luego «Siguiente».\n5. Se abre una ventana: tocá «Continuar» y después «Aceptar».\nNo marqués «Reenviar una copia del correo entrante»: así se mandaría todo tu correo. Lo del banco lo separa el filtro del paso 4.";
+"correosGuia.gmail.confirm.title" = "Confirmá con el código de Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail acaba de mandar un código a tu dirección de Yala, y Yala lo recibe por ti: no tenés que buscarlo en tu correo.\n1. Esperá un minuto y tocá «Buscar el código».\n2. Cuando llegue, lo vas a ver acá mismo.";
+"correosGuia.gmail.confirm.code" = "Tu código de Gmail es %@.\n1. Tocá «Copiar código».\n2. Volvé a Gmail, a la misma pantalla de reenvío.\n3. Pegá el código en el recuadro de confirmación y tocá «Verificar». Si no ves el recuadro, recargá la página.";
+"correosGuia.gmail.filter.title" = "Creá un filtro para los avisos de tu banco";
+"correosGuia.gmail.filter.detail" = "1. En Gmail, en Safari, escribí la dirección de tu banco en la barra de búsqueda de arriba.\n2. Tocá el botón de opciones, a la derecha de la búsqueda, y luego «Crear filtro».\n3. Marcá «Reenviarlo a» y elegí tu dirección de Yala.\n4. Tocá «Crear filtro».\nSi tu banco te escribe desde varias direcciones, repetí estos pasos con cada una.";
+
+"correosGuia.rule.title" = "Creá una regla para los avisos de tu banco";
+"correosGuia.outlook.rule.detail" = "1. Tocá «Abrir Outlook». Se abre Outlook en Safari, en la sección de reglas. Si te lo pide, iniciá sesión.\n2. Tocá «Agregar nueva regla» y ponele un nombre, por ejemplo «Yala».\n3. En la condición, elegí «De» y escribí la dirección de tu banco.\n4. En la acción, elegí «Reenviar a» y pegá tu dirección de Yala.\n5. Tocá «Guardar».";
+"correosGuia.icloud.rule.detail" = "1. Tocá «Abrir iCloud Mail». Se abre iCloud.com en Safari. Si te lo pide, iniciá sesión con tu cuenta de Apple.\n2. Tocá el botón de ajustes (el engranaje) y elegí «Reglas».\n3. Tocá «Agregar una regla».\n4. En «Si un mensaje», elegí «es de» y escribí la dirección de tu banco.\n5. En «Entonces», elegí «Reenviar a» y pegá tu dirección de Yala.\n6. Tocá «Listo».";
+
+"correosGuia.wait.title" = "Listo: esperá el próximo aviso";
+"correosGuia.wait.detail" = "No tenés que hacer nada más. Cuando tu banco te mande su siguiente aviso, el movimiento llega a tu Bandeja para que lo confirmes. Si pasa un día y no llega nada, revisá que el filtro o la regla usen la misma dirección desde la que te escribe tu banco.";
+
+"correosGuia.stepGuide.reopen" = "Volver a este paso";
+"correosGuia.stepGuide.reopenHint" = "Volvé a abrir este paso para repetirlo o terminar lo que faltó.";
