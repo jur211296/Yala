@@ -43,9 +43,12 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (137)
+## Index (140)
 
 | id | status | path |
+| 2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region | done | tickets/done/2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region.md |
+| 2026-11-24-textos-viejos-de-correo-del-banco-sin-uso | done | tickets/done/2026-11-24-textos-viejos-de-correo-del-banco-sin-uso.md |
+| 2026-11-24-selector-xcuitest-anfitrionas-de-ajustes | done | tickets/done/2026-11-24-selector-xcuitest-anfitrionas-de-ajustes.md |
 | 2026-11-24-exito-grupos-y-bandeja-como-personal | qa | tickets/qa/2026-11-24-exito-grupos-y-bandeja-como-personal.md |
 | 2026-11-23-hacer-recurrente-rediseno-y-campos | done | tickets/done/2026-11-23-hacer-recurrente-rediseno-y-campos.md |
 | 2026-11-23-reportes-rebote-encabezado-comparativa-flujo | qa | tickets/qa/2026-11-23-reportes-rebote-encabezado-comparativa-flujo.md |

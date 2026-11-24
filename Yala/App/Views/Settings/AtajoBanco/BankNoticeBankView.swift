@@ -56,6 +56,13 @@ struct BankNoticeBankView: View {
             regionCode: Locale.current.region?.identifier, mainCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
     }
 
+    /// El aviso de ejemplo, en la moneda que toca: soles con los bancos de Perú; si no, la principal de Yala.
+    private var sampleText: String {
+        BankNoticeChoiceLogic.sampleText(
+            for: bank, regionCode: Locale.current.region?.identifier,
+            mainCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
     private var name: String { Self.displayName(bank, offersPeruvianBanks: offersPeruvianBanks) }
     /// El banco dentro de una frase de la guía: «cada aviso de BCP», «cada aviso de tu banco».
     private var guideName: String { bank == .other ? L10n.CapturaAtajoParte2.Bank.guideYourBank : bank.brandName }
@@ -324,7 +331,7 @@ struct BankNoticeBankView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.thSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(BankNoticeSamples.text(for: bank).replacingOccurrences(of: "\n", with: " · "))
+                Text(sampleText.replacingOccurrences(of: "\n", with: " · "))
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(.thSecondaryText)
                     .padding(DS.Spacing.sm)
@@ -346,7 +353,7 @@ struct BankNoticeBankView: View {
     private func runSample() {
         Task { @MainActor in
             let entry = await BankNoticeIntent.read(
-                text: BankNoticeSamples.text(for: bank), bankHint: bank, modelReader: BankNoticeModelReader.read)
+                text: sampleText, bankHint: bank, modelReader: BankNoticeModelReader.read)
             testResult = Self.resultLine(entry.reading, format: formatted)
             DS.Haptic.selection()
         }

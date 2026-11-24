@@ -8698,25 +8698,10 @@
 "bankEmail.skipped" = "E-maile, które przyszły bez odczytania: %d.";
 "bankEmail.trialUsed" = "Wykorzystane e-maile próbne: %1$d z %2$d.";
 "bankEmail.guideTitle" = "Przekazuj z %@";
-"bankEmail.guideLine" = "Ustawiasz to raz, w przeglądarce.";
 "bankEmail.guarantee" = "Z Twojej skrzynki wychodzą tylko powiadomienia z banku: reszta poczty nie jest przekazywana.";
-"bankEmail.stepCopyTitle" = "Skopiuj swój adres Yala";
-"bankEmail.stepCopyDetail" = "Wkleisz go w swojej poczcie w następnym kroku.";
-"bankEmail.gmailAddTitle" = "Dodaj go jako adres przekazywania";
-"bankEmail.gmailAddDetail" = "W Gmailu, w przeglądarce: Ustawienia › Zobacz wszystkie ustawienia › Przekazywanie i POP/IMAP › Dodaj adres do przekazywania. Wklej swój adres i potwierdź.";
 "bankEmail.openProvider" = "Otwórz %@";
-"bankEmail.gmailConfirmTitle" = "Potwierdź kodem z Gmaila";
-"bankEmail.gmailConfirmWaiting" = "Gmail wysyła kod na Twój adres Yala. Gdy dotrze, zobaczysz go tutaj: za chwilę dotknij „Szukaj kodu”.";
-"bankEmail.gmailConfirmCode" = "Twój kod z Gmaila to %@. Wpisz go w Gmailu w sekcji Przekazywanie i POP/IMAP i dotknij Zweryfikuj.";
 "bankEmail.copyCode" = "Kopiuj kod";
 "bankEmail.checkCode" = "Szukaj kodu";
-"bankEmail.gmailFilterTitle" = "Utwórz filtr dla swojego banku";
-"bankEmail.gmailFilterDetail" = "W Gmailu wyszukaj adres, z którego bank wysyła powiadomienia, i dotknij Utwórz filtr. Zaznacz „Przekaż do”, wybierz swój adres Yala i utwórz filtr. Dzięki temu przekazywane są tylko powiadomienia z banku.";
-"bankEmail.ruleTitle" = "Utwórz regułę dla swojego banku";
-"bankEmail.outlookRuleDetail" = "W Outlooku, w przeglądarce: Ustawienia › Poczta › Reguły › Dodaj nową regułę. Warunek: „Od” adres Twojego banku. Akcja: „Przekaż do” Twój adres Yala. Zapisz regułę.";
-"bankEmail.icloudRuleDetail" = "Na iCloud.com otwórz Pocztę i przejdź do Ustawienia › Reguły › Dodaj regułę. Jeśli wiadomość jest z adresu Twojego banku, przekaż ją na Twój adres Yala. Zapisz regułę.";
-"bankEmail.stepWaitTitle" = "Poczekaj na następne powiadomienie";
-"bankEmail.stepWaitDetail" = "Gdy bank wyśle kolejne, transakcja pojawi się w Twojej Skrzynce do potwierdzenia.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Nie udało się zapisać wszystkiego. Część zmian może być już widoczna; sprawdź konto i zapisz ponownie.";

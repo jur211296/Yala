@@ -30,6 +30,35 @@ nonisolated enum BankNoticeChoiceLogic {
         return pool.filter { !active.contains($0) }
     }
 
+    /// El aviso de ejemplo de «Probar con un aviso de ejemplo». Con los bancos de Perú (región o moneda), el de siempre,
+    /// en soles. Fuera, «Tu banco o app» lleva la moneda principal de Yala (o la de la región si no la hay) y un comercio
+    /// genérico: antes decía «S/ 25.00 en Starbucks Larcomar» también en Estados Unidos.
+    static func sampleText(for bank: BankNoticeBank, regionCode: String?, mainCurrencyCode: String?) -> String {
+        guard bank == .other, !offersPeruvianBanks(regionCode: regionCode, mainCurrencyCode: mainCurrencyCode) else {
+            return BankNoticeSamples.text(for: bank)
+        }
+        let code = sampleCurrencyCode(regionCode: regionCode, mainCurrencyCode: mainCurrencyCode)
+        return "Tu banco\nPagaste \(code) \(sampleAmount(currencyCode: code)) en CAFE CENTRAL con tu tarjeta ****3456."
+    }
+
+    /// La moneda del ejemplo fuera de Perú: la principal de Yala; sin ella, la de la región del iPhone; sin las dos, USD.
+    static func sampleCurrencyCode(regionCode: String?, mainCurrencyCode: String?) -> String {
+        if let main = mainCurrencyCode?.uppercased(), main.count == 3 { return main }
+        if let region = regionCode, let regional = Locale(identifier: "und_\(region.uppercased())").currency?.identifier {
+            return regional.uppercased()
+        }
+        return "USD"
+    }
+
+    /// 25 con los decimales de esa moneda: «25.00» en USD, «25» en JPY.
+    static func sampleAmount(currencyCode: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        let digits = formatter.maximumFractionDigits
+        return String(format: "%.\(digits)f", 25.0)
+    }
+
     /// Activo: la persona confirmó que terminó la configuración, o llegó algún aviso de ese banco.
     static func isActive(settings: BankNoticeSettings, activity: BankNoticeActivity) -> Bool {
         settings.isSetUp || !activity.arrivals.isEmpty

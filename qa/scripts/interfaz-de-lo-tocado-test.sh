@@ -170,6 +170,53 @@ final class LocaleUITests: XCTestCase {
     func test_a() { app.launchArguments += ["-AppleLocale", "en_US", "yyyy-MM-dd"] }
 }
 EOF
+mkdir -p Yala/App/Views/Ajustes
+cat > Yala/App/Views/Ajustes/AjustesView.swift <<'EOF'
+enum AjustesDestino { case sub, otra }
+struct AjustesView: View {
+    var showsSub: Bool { SubGate.visible }
+    var body: some View {
+        List {
+            fila(destino: .otra)
+                .accessibilityIdentifier("ajustes_fila_otra")
+            if showsSub {
+                fila(destino: .sub)
+                    .accessibilityIdentifier("ajustes_fila_sub")
+            }
+        }
+    }
+
+    @ViewBuilder func pantalla(_ d: AjustesDestino) -> some View {
+        switch d {
+        case .otra:
+            OtraView()
+        case .sub:
+            SubView()
+        }
+    }
+}
+EOF
+cat > Yala/App/Views/Ajustes/SubView.swift <<'EOF'
+enum SubGate { static let visible = true }
+struct SubView: View {
+    var body: some View { Text("sub").accessibilityIdentifier("sub_screen_title") }
+}
+EOF
+cat > Yala/App/Views/Ajustes/OtraView.swift <<'EOF'
+struct OtraView: View {
+    var body: some View { Text("otra") }
+}
+EOF
+cat > YalaUITests/Flows/SubUITests.swift <<'EOF'
+final class SubUITests: XCTestCase {
+    func test_a() { app.buttons["ajustes_fila_sub"].tap() }
+}
+EOF
+cat > YalaUITests/Flows/OtraUITests.swift <<'EOF'
+final class OtraUITests: XCTestCase {
+    func test_a() { app.buttons["ajustes_fila_otra"].tap() }
+}
+EOF
 cat > qa/coverage-index.json <<'EOF'
 {"areas": [
   {"area": "estrecha", "codeGlobs": ["Yala/App/Logic/Indexado.swift"], "coverage": "xcuitest:YalaUITests/IndiceUITests | 2026-11-17"},
@@ -179,7 +226,8 @@ cat > qa/coverage-index.json <<'EOF'
 EOF
 cat > qa/ci-ui-tiempos.json <<'EOF'
 {"suites": {"MontoUITests": 60, "CuentaUITests": 120, "FilaUITests": 60, "AyudanteUITests": 60, "HostUITests": 60,
-            "MathUITests": 60, "AjustesUITests": 60, "IndiceUITests": 60, "AnchoUITests": 60, "CaraUITests": 3000}}
+            "MathUITests": 60, "AjustesUITests": 60, "IndiceUITests": 60, "AnchoUITests": 60, "CaraUITests": 3000,
+            "SubUITests": 60, "OtraUITests": 60}}
 EOF
 git add -A && git commit -qm base
 
@@ -278,6 +326,26 @@ if [ "$rc1" = 2 ] && [ "$rc2" = 2 ]; then ok "errores de uso → exit 2"; else m
 # 18 · --arbol-de lee el árbol de un commit sin extraerlo: en c1 la prueba existe aunque estemos en base.
 git checkout -q base
 espera "--arbol-de lee del commit" "$(sel --base base --cabeza c1 --arbol-de c1)" "MathUITests"
+
+# 19 · subpantalla de un anfitrión que enruta por `case .x:` (Ajustes): solo la clase que abre ESA rama,
+#      no las que entran por otra fila del mismo anfitrión (hasta el 24-nov salían las dos).
+git checkout -q base
+rama c19; echo "// toque" >> Yala/App/Views/Ajustes/SubView.swift; cometer c19
+espera "subpantalla → solo quien abre su rama" "$(sel --base base --cabeza HEAD)" "SubUITests AnchoUITests"
+
+# 20 · tocar el anfitrión mismo sigue trayendo a todas las que usan sus identificadores.
+rama c20; echo "// toque" >> Yala/App/Views/Ajustes/AjustesView.swift; cometer c20
+salida="$(sel --base base --cabeza HEAD)"
+if printf '%s\n' "$salida" | grep -qx SubUITests && printf '%s\n' "$salida" | grep -qx OtraUITests; then ok "anfitrión tocado → todas sus clases"; else mal "anfitrión tocado → todas sus clases" "$salida"; fi
+
+# 21 · nada de Ajustes: un cambio en otra parte no trae a las clases de Ajustes.
+rama c21; echo "// toque" >> Yala/App/Logic/MathLogic.swift; cometer c21
+salida="$(sel --base base --cabeza HEAD)"
+if printf '%s\n' "$salida" | grep -qxE 'SubUITests|OtraUITests'; then mal "fuera de Ajustes → ninguna de Ajustes" "$salida"; else ok "fuera de Ajustes → ninguna de Ajustes"; fi
+
+# 22 · un anfitrión SIN ramas sigue aportando el fichero entero (el componente cambia el alto de toda la vista).
+git checkout -q c9
+espera "anfitrión sin ramas → el fichero entero" "$(sel --base base --cabeza HEAD)" "HostUITests AnchoUITests"
 
 cd "$RAIZ" || exit 1
 

@@ -385,18 +385,12 @@ struct LocalizationParityTests {
         }
     }
 
-    /// Textos que guían por el menú de otra app (Gmail, Outlook) y por eso usan la palabra de esa app.
-    private static let externalAppMenuKeys: Set<String> = ["bankEmail.gmailAddDetail", "bankEmail.outlookRuleDetail"]
-
     @Test(arguments: SupportedLocale.allCases.map(\.code))
     func settingsScreen_hasOneName(_ code: String) {
         let strings = StringsFileParser.parseStrings(forLocale: code)
         #expect(strings["settings.title"] == strings["profile.title"], "\(code): la pantalla de ajustes tiene dos nombres")
         for discarded in Self.discardedSettingsNames[code] ?? [] {
-            // Los pasos de Gmail y Outlook nombran el menú de ESA app, no la pantalla de Ajustes de Yala (pt-BR:
-            // «Configurações» es como se llama en Gmail).
-            let offenders = strings.filter { !Self.externalAppMenuKeys.contains($0.key) && $0.value.contains(discarded) }
-                .keys.sorted()
+            let offenders = strings.filter { $0.value.contains(discarded) }.keys.sorted()
             #expect(offenders.isEmpty, "\(code): «\(discarded)» en \(offenders)")
         }
     }
