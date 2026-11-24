@@ -1,5 +1,6 @@
 import type { Env } from "../env";
 import { generateCode } from "./address";
+import type { GmailConfirmationParts } from "./gmail";
 
 /** D1 del correo del banco (`migrations/0003_mail_forwarding.sql`). */
 
@@ -17,6 +18,8 @@ export interface MailAddressRow {
   skipped_quota: number;
   gmail_code: string | null;
   gmail_code_at: number | null;
+  /** El enlace de confirmación de Gmail (`migrations/0006_mail_gmail_link.sql`). Comparte `gmail_code_at`. */
+  gmail_link: string | null;
   last_received_at: number | null;
   day_key: string | null;
   day_count: number;
@@ -92,8 +95,14 @@ export async function countSkipped(env: Env, userId: string): Promise<void> {
   await env.DB.prepare("UPDATE mail_addresses SET skipped_quota = skipped_quota + 1 WHERE user_id = ?").bind(userId).run();
 }
 
-export async function saveGmailCode(env: Env, userId: string, code: string, now = Date.now()): Promise<void> {
-  await env.DB.prepare("UPDATE mail_addresses SET gmail_code = ?, gmail_code_at = ? WHERE user_id = ?").bind(code, now, userId).run();
+/**
+ * Lo que trajo el ÚLTIMO correo de Gmail: código y enlace juntos, con su hora. Uno que falte se guarda como `null`: el
+ * correo nuevo es de la petición más reciente, y un código de una petición vieja ya no confirma esta.
+ */
+export async function saveGmailConfirmation(env: Env, userId: string, parts: GmailConfirmationParts, now = Date.now()): Promise<void> {
+  await env.DB.prepare("UPDATE mail_addresses SET gmail_code = ?, gmail_link = ?, gmail_code_at = ? WHERE user_id = ?")
+    .bind(parts.code, parts.link, now, userId)
+    .run();
 }
 
 export interface DraftPayload {

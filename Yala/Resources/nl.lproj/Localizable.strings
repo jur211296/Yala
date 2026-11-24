@@ -8701,7 +8701,13 @@
 "bankEmail.guarantee" = "Alleen de meldingen van je bank verlaten je mailbox: de rest van je e-mail wordt niet doorgestuurd.";
 "bankEmail.openProvider" = "%@ openen";
 "bankEmail.copyCode" = "Code kopiëren";
-"bankEmail.checkCode" = "Code zoeken";
+"bankEmail.checkCode" = "Nu zoeken";
+"bankEmail.searching" = "Zoeken…";
+"bankEmail.confirmInGoogle" = "Bevestigen bij Google";
+"bankEmail.gmailNotYet" = "Nog niet binnen. Nieuwe zoekopdracht over %d s.";
+"bankEmail.gmailSearchFailed" = "Yala is niet bereikbaar. Controleer je verbinding: nieuwe zoekopdracht over %d s.";
+"bankEmail.gmailGaveUp" = "Er is in 2 minuten niets binnengekomen. Stuur in Gmail, naast je Yala-adres, de bevestigingsmail opnieuw en tik dan op ‘Nu zoeken’. Komt hij nog steeds niet, vraag dan hieronder om hulp.";
+"bankEmail.gmailGaveUpOffline" = "Yala was 2 minuten niet bereikbaar. Controleer je verbinding en tik op ‘Nu zoeken’.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Niet alles kon worden opgeslagen. Een deel van de wijzigingen is misschien al zichtbaar; controleer de rekening en sla opnieuw op.";

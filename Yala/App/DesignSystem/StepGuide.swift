@@ -32,12 +32,19 @@ struct StepGuideStep: Identifiable {
         let title: String
         let systemImage: String
         let perform: (_ markDone: @escaping () -> Void) -> Void
+        /// Está trabajando (buscar en el servidor): el botón enseña que espera y no se puede volver a tocar.
+        var isBusy = false
+        /// Se puede tocar ya. `false` mientras toca esperar (la búsqueda del código de Gmail entre una vuelta y otra).
+        var isEnabled = true
     }
 
     let id: Int
     let title: String
     let detail: String?
     var action: Action?
+    /// Lo que va bajo el botón del paso activo: un estado que cambia (cuánto falta para volver a buscar) o una salida.
+    /// Solo sale en el paso activo, como el botón.
+    var footnote: AnyView?
 }
 
 /// La cabecera: qué se hace y con qué datos.
@@ -200,6 +207,10 @@ struct YalaStepGuide<Preview: View>: View {
             if phase == .active {
                 activeButton(for: step, index: index)
                     .padding(.top, DS.Spacing.sm)
+                if let footnote = step.footnote {
+                    footnote
+                        .padding(.top, DS.Spacing.xs)
+                }
             }
             if phase == .done {
                 reopenButton(index: index)
@@ -257,9 +268,19 @@ struct YalaStepGuide<Preview: View>: View {
                 Button {
                     action.perform(markDone)
                 } label: {
-                    Label(action.title, systemImage: action.systemImage)
+                    if action.isBusy {
+                        HStack(spacing: DS.Spacing.sm) {
+                            ProgressView()
+                                .tint(theme.onAccent)
+                            Text(action.title)
+                        }
                         .font(DS.Typography.label)
+                    } else {
+                        Label(action.title, systemImage: action.systemImage)
+                            .font(DS.Typography.label)
+                    }
                 }
+                .disabled(action.isBusy || !action.isEnabled)
             } else {
                 Button(action: markDone) {
                     Label(L10n.StepGuide.markDone, systemImage: "checkmark")

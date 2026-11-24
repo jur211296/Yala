@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "在 Gmail 中添加你的 Yala 地址";
 "correosGuia.gmail.add.detail" = "1. 轻点“打开 Gmail”。Gmail 会在 Safari 中打开转发设置。如有提示，请登录。\n2. 如果看到的是手机版，轻点 Safari 地址栏中的按钮，选择“请求桌面网站”。\n3. 轻点“添加转发地址”。\n4. 在输入框中长按，轻点“粘贴”，然后轻点“下一步”。\n5. 会弹出一个窗口：轻点“继续”，再轻点“确定”。\n不要选择“将收到的邮件副本转发到”：那样会转发你所有的邮件。银行通知由第 4 步的过滤器单独挑出来。";
-"correosGuia.gmail.confirm.title" = "用 Gmail 的验证码确认";
-"correosGuia.gmail.confirm.waiting" = "Gmail 刚刚向你的 Yala 地址发送了验证码，Yala 会替你接收：你不用去邮箱里找。\n1. 等一分钟，然后轻点“查找验证码”。\n2. 收到后就会显示在这里。";
+"correosGuia.gmail.confirm.title" = "在 Gmail 中确认你的 Yala 地址";
+"correosGuia.gmail.confirm.waiting" = "Gmail 已向你的 Yala 地址发送确认链接，Yala 每隔几秒替你查找一次。也可以轻点“立即查找”。链接到达后，轻点“在 Google 上确认”。";
 "correosGuia.gmail.confirm.code" = "你的 Gmail 验证码是 %@。\n1. 轻点“复制验证码”。\n2. 回到 Gmail 的同一个转发页面。\n3. 把验证码粘贴到确认框里，然后轻点“验证”。如果看不到确认框，请刷新页面。";
+"correosGuia.gmail.confirm.link" = "Gmail 的确认链接已到达。\n1. 轻点“在 Google 上确认”。会打开一个 Google 页面；如果要求确认，轻点“确认”。\n2. 回到 Yala 继续下一步。";
 "correosGuia.gmail.filter.title" = "为银行通知创建过滤器";
 "correosGuia.gmail.filter.detail" = "1. 在 Safari 的 Gmail 中，在顶部搜索栏输入银行的地址。\n2. 轻点搜索框右侧的选项按钮，然后轻点“创建过滤器”。\n3. 勾选“转发至”，选择你的 Yala 地址。\n4. 轻点“创建过滤器”。\n如果银行从多个地址给你发邮件，请对每个地址重复这些步骤。";
 

@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Dodaj swój adres Yala w Gmailu";
 "correosGuia.gmail.add.detail" = "1. Stuknij „Otwórz Gmail”. Gmail otworzy się w Safari, w sekcji przekazywania. Zaloguj się, jeśli zostaniesz poproszony.\n2. Jeśli widzisz wersję mobilną, stuknij przycisk na pasku adresu Safari i wybierz „Pokaż wersję na komputery”.\n3. Stuknij „Dodaj adres do przekazywania”.\n4. Przytrzymaj palec w polu, stuknij „Wklej”, a potem „Dalej”.\n5. Otworzy się okno: stuknij „Kontynuuj”, a potem „OK”.\nNie zaznaczaj „Przekaż kopię poczty przychodzącej do”: wtedy szłaby cała Twoja poczta. Powiadomienia banku oddzieli filtr z kroku 4.";
-"correosGuia.gmail.confirm.title" = "Potwierdź kodem z Gmaila";
-"correosGuia.gmail.confirm.waiting" = "Gmail właśnie wysłał kod na Twój adres Yala, a Yala odbiera go za Ciebie: nie musisz szukać go w poczcie.\n1. Poczekaj minutę i stuknij „Szukaj kodu”.\n2. Gdy dotrze, zobaczysz go tutaj.";
+"correosGuia.gmail.confirm.title" = "Potwierdź swój adres Yala w Gmailu";
+"correosGuia.gmail.confirm.waiting" = "Gmail wysłał link potwierdzający na Twój adres Yala, a Yala szuka go za Ciebie co kilka sekund. Jeśli chcesz, dotknij „Szukaj teraz”. Gdy dotrze, dotknij „Potwierdź w Google”.";
 "correosGuia.gmail.confirm.code" = "Twój kod z Gmaila to %@.\n1. Stuknij „Kopiuj kod”.\n2. Wróć do Gmaila, na ten sam ekran przekazywania.\n3. Wklej kod w pole potwierdzenia i stuknij „Zweryfikuj”. Jeśli nie widzisz pola, odśwież stronę.";
+"correosGuia.gmail.confirm.link" = "Dotarł link potwierdzający z Gmaila.\n1. Dotknij „Potwierdź w Google”. Otworzy się strona Google; jeśli poprosi o potwierdzenie, dotknij „Potwierdź”.\n2. Wróć do Yala, aby przejść do następnego kroku.";
 "correosGuia.gmail.filter.title" = "Utwórz filtr dla powiadomień banku";
 "correosGuia.gmail.filter.detail" = "1. W Gmailu, w Safari, wpisz adres banku w pasek wyszukiwania na górze.\n2. Stuknij przycisk opcji, na prawo od wyszukiwania, a potem „Utwórz filtr”.\n3. Zaznacz „Przekaż do” i wybierz swój adres Yala.\n4. Stuknij „Utwórz filtr”.\nJeśli bank pisze do Ciebie z kilku adresów, powtórz te kroki dla każdego.";
 

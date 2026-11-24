@@ -55,15 +55,30 @@ final class BankEmailGuideUITests: XCTestCase {
         assertProgress("Paso 4 de 5", in: app)
     }
 
-    func test_gmailGuide_withoutTheCode_offersToLookForIt() {
+    /// Sin nada de Gmail (bug del 2026-11-24): el paso busca solo, dice que todavía no llegó y cuánto falta, y el botón
+    /// espera su turno en vez de no hacer nada.
+    func test_gmailGuide_withoutTheConfirmation_searchesAndSaysItHasNotArrived() {
         let app = launchAndOpenBankEmail(extra: ["-stepGuide.progress.bankEmailGmail", "2"])
         app.buttons["bank_email_provider_gmail"].tap()
         assertProgress("Paso 3 de 5", in: app)
-        XCTAssertTrue(app.buttons["step_guide_action"].label.contains("Buscar el código"),
-                      "Sin código, el paso no ofrece buscarlo: «\(app.buttons["step_guide_action"].label)».")
-        // Buscar sin código no da el paso por hecho.
-        app.buttons["step_guide_action"].tap()
+        XCTAssertTrue(app.buttons["step_guide_action"].label.contains("Buscar ahora"),
+                      "Sin confirmación, el paso no ofrece buscarla: «\(app.buttons["step_guide_action"].label)».")
+        let status = app.staticTexts["bank_email_gmail_status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5), "El paso no dice qué pasó con la búsqueda.")
+        XCTAssertTrue(status.label.contains("Todavía no llegó"), "«\(status.label)»")
+        XCTAssertFalse(app.buttons["step_guide_action"].isEnabled, "Entre una búsqueda y otra, el botón espera su turno.")
         assertProgress("Paso 3 de 5", in: app)
+    }
+
+    /// Lo que manda Gmail desde 2025 es un enlace, sin código: el paso ofrece abrirlo en Google.
+    func test_gmailGuide_withTheLink_offersToConfirmOnGoogle() {
+        let app = launchAndOpenBankEmail(extra: ["-uitest-bank-email-gmail-link", "-stepGuide.progress.bankEmailGmail", "2"])
+        app.buttons["bank_email_provider_gmail"].tap()
+        assertProgress("Paso 3 de 5", in: app)
+        let action = app.buttons["step_guide_action"]
+        XCTAssertTrue(action.waitForExistence(timeout: 5))
+        XCTAssertTrue(action.label.contains("Confirmar en Google"), "Con el enlace, el paso no ofrece abrirlo: «\(action.label)».")
+        XCTAssertFalse(app.staticTexts["bank_email_gmail_status"].exists, "Con el enlace ya no se busca nada.")
     }
 
     /// Un paso hecho se vuelve a abrir (pedido de Jürgen del 2026-11-23): llegó al paso 3 sin terminar el 1, toca

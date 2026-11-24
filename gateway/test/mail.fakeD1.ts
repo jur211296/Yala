@@ -10,8 +10,9 @@ type Row = Record<string, unknown>;
 
 export function makeMailD1(extraSql: string[] = []): { db: D1Database; sqlite: DatabaseSync } {
   const sqlite = new DatabaseSync(":memory:");
-  const migration = readFileSync(fileURLToPath(new URL("../migrations/0003_mail_forwarding.sql", import.meta.url)), "utf8");
-  sqlite.exec(migration);
+  for (const file of ["0003_mail_forwarding.sql", "0006_mail_gmail_link.sql"]) {
+    sqlite.exec(readFileSync(fileURLToPath(new URL(`../migrations/${file}`, import.meta.url)), "utf8"));
+  }
   sqlite.exec(
     "CREATE TABLE account_entitlements (user_id TEXT PRIMARY KEY, entitlement_product TEXT, entitlement_expires_at INTEGER, original_transaction_id TEXT NOT NULL, bound_via TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
   );

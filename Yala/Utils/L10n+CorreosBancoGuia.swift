@@ -33,7 +33,7 @@ extension L10n {
         /// Las claves de la tabla, para la paridad entre idiomas.
         static let keys = [
             "guideLine", "findBank", "copy.title", "copy.detail",
-            "gmail.add.title", "gmail.add.detail", "gmail.confirm.title", "gmail.confirm.waiting", "gmail.confirm.code",
+            "gmail.add.title", "gmail.add.detail", "gmail.confirm.title", "gmail.confirm.waiting", "gmail.confirm.code", "gmail.confirm.link",
             "gmail.filter.title", "gmail.filter.detail",
             "rule.title", "outlook.rule.detail", "icloud.rule.detail",
             "wait.title", "wait.detail", "stepGuide.reopen", "stepGuide.reopenHint",
@@ -51,6 +51,7 @@ extension L10n {
             static var confirmTitle: String { string("gmail.confirm.title") }
             static var confirmWaiting: String { string("gmail.confirm.waiting") }
             static func confirmCode(_ code: String) -> String { format("gmail.confirm.code", code) }
+            static var confirmLink: String { string("gmail.confirm.link") }
             static var filterTitle: String { string("gmail.filter.title") }
             static var filterDetail: String { string("gmail.filter.detail") }
         }

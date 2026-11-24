@@ -10,14 +10,14 @@ import { ackDrafts, getOrCreateAddress, GMAIL_CODE_TTL_MS, listDrafts, TRIAL_LIM
  * Rutas de la app para el correo del banco. Guard: `requireUserAndAttest` (datos financieros personales, como
  * `/sync/*`); el `user_id` sale SIEMPRE del JWT, nunca del cuerpo.
  *
- *   POST /mail/address        → crea (si hace falta) y devuelve la dirección, el cupo y el código de Gmail.
+ *   POST /mail/address        → crea (si hace falta) y devuelve la dirección, el cupo y la confirmación de Gmail.
  *   GET  /mail/drafts         → los movimientos leídos que esperan a la app.
  *   POST /mail/drafts/ack     → {ids:[…]} la app ya los creó en su Bandeja: se borran del servidor.
  */
 type Ctx = Context<{ Bindings: Env }>;
 
 export function addressBody(row: MailAddressRow, env: Env, pro: boolean, now = Date.now()): Record<string, unknown> {
-  const gmailFresh = row.gmail_code !== null && row.gmail_code_at !== null && now - row.gmail_code_at < GMAIL_CODE_TTL_MS;
+  const gmailFresh = row.gmail_code_at !== null && now - row.gmail_code_at < GMAIL_CODE_TTL_MS;
   return {
     address: formatAddress(row.code, mailConfig(env)),
     pro,
@@ -25,7 +25,10 @@ export function addressBody(row: MailAddressRow, env: Env, pro: boolean, now = D
     trial_used: Math.min(row.trial_used, TRIAL_LIMIT),
     skipped_quota: row.skipped_quota,
     last_received_at_ms: row.last_received_at,
-    gmail_confirmation: gmailFresh ? { code: row.gmail_code, received_at_ms: row.gmail_code_at } : null,
+    // Solo con código: la build 8 decodifica `code` como obligatorio, y un `null` le tumbaría la dirección entera.
+    gmail_confirmation: gmailFresh && row.gmail_code !== null ? { code: row.gmail_code, received_at_ms: row.gmail_code_at } : null,
+    // El enlace va aparte (2026-11-24): Gmail puede mandar solo el enlace, sin código.
+    gmail_link: gmailFresh && row.gmail_link ? { url: row.gmail_link, received_at_ms: row.gmail_code_at } : null,
   };
 }
 

@@ -3,7 +3,8 @@
 //  Yala
 //
 //  Cliente HTTP del correo del banco por reenvío (2.3) contra el gateway (`gateway/src/mail/routes.ts`):
-//    - `POST /mail/address`     → la dirección `auto+<código>@yalainbox.com`, el cupo de prueba y el código de Gmail.
+//    - `POST /mail/address`     → la dirección `auto+<código>@yalainbox.com`, el cupo de prueba y la confirmación de Gmail
+//                                 (el código, que Gmail ya no manda, o el enlace de confirmación).
 //    - `GET  /mail/drafts`      → los movimientos que el gateway leyó de los avisos reenviados.
 //    - `POST /mail/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
 //
@@ -40,6 +41,18 @@ struct BankEmailAddressInfo: Decodable, Equatable, Sendable {
         }
     }
 
+    /// El enlace con que Gmail confirma la dirección (`gmail_link`, desde el 2026-11-24). Medido ese día: el correo de
+    /// Gmail ya no trae código, solo este enlace, y Ajustes › Reenvío de Gmail ya no tiene recuadro para escribirlo.
+    struct GmailLink: Decodable, Equatable, Sendable {
+        let url: String
+        let receivedAtMs: Double
+
+        enum CodingKeys: String, CodingKey {
+            case url
+            case receivedAtMs = "received_at_ms"
+        }
+    }
+
     let address: String
     let pro: Bool
     let trialLimit: Int
@@ -47,6 +60,8 @@ struct BankEmailAddressInfo: Decodable, Equatable, Sendable {
     let skippedQuota: Int
     let lastReceivedAtMs: Double?
     let gmailConfirmation: GmailConfirmation?
+    /// Opcional también en el JSON: un gateway sin desplegar no lo manda.
+    var gmailLink: GmailLink? = nil
 
     enum CodingKeys: String, CodingKey {
         case address, pro
@@ -55,6 +70,7 @@ struct BankEmailAddressInfo: Decodable, Equatable, Sendable {
         case skippedQuota = "skipped_quota"
         case lastReceivedAtMs = "last_received_at_ms"
         case gmailConfirmation = "gmail_confirmation"
+        case gmailLink = "gmail_link"
     }
 }
 

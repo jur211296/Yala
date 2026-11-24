@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Voeg je Yala-adres toe in Gmail";
 "correosGuia.gmail.add.detail" = "1. Tik op „Gmail openen”. Gmail opent in Safari, bij het onderdeel doorsturen. Log in als daarom wordt gevraagd.\n2. Zie je de mobiele versie, tik dan op de knop in de adresbalk van Safari en kies „Vraag desktopwebsite aan”.\n3. Tik op „Een doorstuuradres toevoegen”.\n4. Houd je vinger in het vak, tik op „Plak” en daarna op „Volgende”.\n5. Er opent een venster: tik op „Doorgaan” en daarna op „OK”.\nVink „Een kopie van inkomende e-mail doorsturen naar” niet aan: dan gaat al je e-mail mee. De meldingen van de bank haalt het filter van stap 4 eruit.";
-"correosGuia.gmail.confirm.title" = "Bevestig met de code van Gmail";
-"correosGuia.gmail.confirm.waiting" = "Gmail heeft net een code naar je Yala-adres gestuurd, en Yala ontvangt die voor je: je hoeft hem niet in je e-mail te zoeken.\n1. Wacht een minuut en tik op „Code zoeken”.\n2. Zodra hij er is, zie je hem hier.";
+"correosGuia.gmail.confirm.title" = "Bevestig je Yala-adres in Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail heeft een bevestigingslink naar je Yala-adres gestuurd, en Yala zoekt er om de paar seconden naar. Als je wilt, tik op ‘Nu zoeken’. Als hij er is, tik op ‘Bevestigen bij Google’.";
 "correosGuia.gmail.confirm.code" = "Je Gmail-code is %@.\n1. Tik op „Code kopiëren”.\n2. Ga terug naar Gmail, naar hetzelfde scherm voor doorsturen.\n3. Plak de code in het bevestigingsvak en tik op „Verifiëren”. Zie je het vak niet, laad de pagina dan opnieuw.";
+"correosGuia.gmail.confirm.link" = "De bevestigingslink van Gmail is binnen.\n1. Tik op ‘Bevestigen bij Google’. Er opent een Google-pagina; als die om bevestiging vraagt, tik op ‘Bevestigen’.\n2. Ga terug naar Yala voor de volgende stap.";
 "correosGuia.gmail.filter.title" = "Maak een filter voor de meldingen van je bank";
 "correosGuia.gmail.filter.detail" = "1. Typ in Gmail, in Safari, het adres van je bank in de zoekbalk bovenaan.\n2. Tik op de optieknop rechts van het zoekveld en daarna op „Filter maken”.\n3. Vink „Doorsturen naar” aan en kies je Yala-adres.\n4. Tik op „Filter maken”.\nSchrijft je bank je vanaf meerdere adressen, herhaal deze stappen dan voor elk adres.";
 

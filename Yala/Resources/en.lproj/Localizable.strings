@@ -8695,7 +8695,13 @@
 "bankEmail.guarantee" = "Only your bank's alerts leave your mailbox: the rest of your email isn't forwarded.";
 "bankEmail.openProvider" = "Open %@";
 "bankEmail.copyCode" = "Copy code";
-"bankEmail.checkCode" = "Look for the code";
+"bankEmail.checkCode" = "Search now";
+"bankEmail.searching" = "Searching…";
+"bankEmail.confirmInGoogle" = "Confirm on Google";
+"bankEmail.gmailNotYet" = "It hasn't arrived yet. Searching again in %d s.";
+"bankEmail.gmailSearchFailed" = "We couldn't reach Yala. Check your connection: searching again in %d s.";
+"bankEmail.gmailGaveUp" = "Nothing arrived in 2 minutes. In Gmail, next to your Yala address, tap “Re-send email”, then tap “Search now”. If it still doesn't arrive, ask for help below.";
+"bankEmail.gmailGaveUpOffline" = "We couldn't reach Yala for 2 minutes. Check your connection and tap “Search now”.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Not everything could be saved. Some of the changes may already show; check the account and save again.";

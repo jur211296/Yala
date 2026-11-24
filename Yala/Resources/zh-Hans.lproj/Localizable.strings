@@ -8701,7 +8701,13 @@
 "bankEmail.guarantee" = "只有银行的通知会离开你的邮箱，其他邮件不会被转发。";
 "bankEmail.openProvider" = "打开 %@";
 "bankEmail.copyCode" = "复制验证码";
-"bankEmail.checkCode" = "查找验证码";
+"bankEmail.checkCode" = "立即查找";
+"bankEmail.searching" = "正在查找…";
+"bankEmail.confirmInGoogle" = "在 Google 上确认";
+"bankEmail.gmailNotYet" = "还没有到达。%d 秒后再次查找。";
+"bankEmail.gmailSearchFailed" = "无法连接 Yala。请检查网络：%d 秒后再次查找。";
+"bankEmail.gmailGaveUp" = "2 分钟内没有收到。在 Gmail 中你的 Yala 地址旁边重新发送确认邮件，然后轻点“立即查找”。如果仍然没有收到，请在下方寻求帮助。";
+"bankEmail.gmailGaveUpOffline" = "2 分钟内无法连接 Yala。请检查网络，然后轻点“立即查找”。";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
