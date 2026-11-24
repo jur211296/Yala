@@ -1,0 +1,527 @@
+<title>Resumen de Estadísticas 2.3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: página de revisión. Arriba el problema; luego el comparador (Hoy fijo a la izquierda, la propuesta elegida a
+   la derecha, en marco de iPhone), qué cambia en cada bloque, la tabla para elegir y el bloque de decisión al final.
+   Oscuro es el tema principal (como lo prueba Jürgen); el botón pasa todo a claro, maquetas incluidas. */
+:root{
+  --bg:#0D0E13; --surface:#16171E; --fg:#ECEDF3; --muted:#A3A5B4; --line:#2A2C37;
+  --accent:#9C9BFF; --accent-soft:#25254A; --ok:#5FD3A8; --ok-soft:#12322A; --warn:#F5B84A; --warn-soft:#3A2A0C;
+  --bad:#FF8FB4; --bad-soft:#3B1626; --new:#7FC8FF; --new-soft:#11283A;
+  --ios-bg:#000000; --ios-card:#1C1C1E; --ios-card2:#2C2C2E; --ios-fg:#F2F2F7; --ios-2:#98989D; --ios-sep:#38383A;
+  --ios-accent:#8E8CFF; --ios-pink:#FF6FA8; --ios-violet:#B48CFF; --ios-amber:#F2B544; --ios-amber-soft:#2E230E;
+  --ios-ring-track:#2C2C2E; --frame:#2B2C33;
+  --f-display:"Space Grotesk","Inter",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --f-ios:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;
+  --f-round:ui-rounded,"SF Pro Rounded",-apple-system,"Inter",system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#F3F4F8; --surface:#FFFFFF; --fg:#16171E; --muted:#5A5C6B; --line:#E0E2EA;
+  --accent:#4F4FD8; --accent-soft:#ECECFD; --ok:#0F7A5A; --ok-soft:#E3F5EE; --warn:#935700; --warn-soft:#FFF2D9;
+  --bad:#B4235A; --bad-soft:#FDE9F0; --new:#0B6AA8; --new-soft:#E2F1FB;
+  --ios-bg:#F2F2F7; --ios-card:#FFFFFF; --ios-card2:#ECECF1; --ios-fg:#111114; --ios-2:#6C6C70; --ios-sep:#E2E2E7;
+  --ios-accent:#5B5BE6; --ios-pink:#D63384; --ios-violet:#8A5CF0; --ios-amber:#9A6400; --ios-amber-soft:#FFF1D6;
+  --ios-ring-track:#E5E5EA; --frame:#C9CAD1; color-scheme:light } }
+:root[data-theme="light"]{
+  --bg:#F3F4F8; --surface:#FFFFFF; --fg:#16171E; --muted:#5A5C6B; --line:#E0E2EA;
+  --accent:#4F4FD8; --accent-soft:#ECECFD; --ok:#0F7A5A; --ok-soft:#E3F5EE; --warn:#935700; --warn-soft:#FFF2D9;
+  --bad:#B4235A; --bad-soft:#FDE9F0; --new:#0B6AA8; --new-soft:#E2F1FB;
+  --ios-bg:#F2F2F7; --ios-card:#FFFFFF; --ios-card2:#ECECF1; --ios-fg:#111114; --ios-2:#6C6C70; --ios-sep:#E2E2E7;
+  --ios-accent:#5B5BE6; --ios-pink:#D63384; --ios-violet:#8A5CF0; --ios-amber:#9A6400; --ios-amber-soft:#FFF1D6;
+  --ios-ring-track:#E5E5EA; --frame:#C9CAD1; color-scheme:light }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 72px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4vw,40px);font-weight:700}
+h2{font-size:24px;font-weight:600}
+p{margin:0;max-width:70ch}
+section{display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{font-size:17px;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.btn{font:600 14px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:8px 14px;cursor:pointer}
+.btn:focus-visible,.seg button:focus-visible,.vote button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.obs{display:flex;flex-direction:column;gap:6px}
+.obs b{font-family:var(--f-display);font-size:16px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.t-compacta{background:var(--accent-soft);color:var(--accent)}
+.t-se-va{background:var(--bad-soft);color:var(--bad)}
+.t-funde{background:var(--warn-soft);color:var(--warn)}
+.t-nuevo{background:var(--new-soft);color:var(--new)}
+.t-acceso{background:var(--ok-soft);color:var(--ok)}
+.t-igual{background:var(--line);color:var(--muted)}
+.d-ya{color:var(--ok);font-weight:600}
+.d-nuevo{color:var(--warn);font-weight:600}
+
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
+.seg button{font:600 14px var(--f-body);border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--fg)}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px;align-items:center;min-width:0}
+.col-head{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.col-head .h{font-family:var(--f-display);font-weight:600;font-size:18px}
+.measure{font-size:12.5px;color:var(--muted)}
+@media (max-width:860px){ .compare{grid-template-columns:minmax(0,1fr)} }
+
+/* ---------- iPhone ---------- */
+.phone{width:100%;max-width:392px;background:var(--frame);border-radius:52px;padding:10px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.screen{background:var(--ios-bg);color:var(--ios-fg);border-radius:43px;overflow:hidden;font-family:var(--f-ios);font-size:15px;line-height:1.3;padding:0 14px 26px;display:flex;flex-direction:column;gap:12px}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0;font-weight:600;font-size:15px}
+.sbar .isl{width:118px;height:32px;background:#000;border-radius:20px}
+.sbar .ic{display:flex;gap:5px;align-items:center}
+.sbar .ic i{display:block;width:17px;height:10px;border-radius:3px;background:var(--ios-fg);opacity:.9}
+.lt{font-size:32px;font-weight:700;letter-spacing:-.02em;padding:2px 2px 0}
+.tabs{display:flex;gap:4px;background:var(--ios-card);border-radius:999px;padding:3px}
+.tabs span{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--ios-2);padding:6px 0;border-radius:999px}
+.tabs span.on{background:var(--ios-card2);color:var(--ios-fg)}
+.hero{display:flex;flex-direction:column;gap:6px;padding:6px 4px 2px}
+.hero .cap{font-size:13px;color:var(--ios-2)}
+.hero .big{font-family:var(--f-round);font-size:34px;font-weight:700;letter-spacing:-.02em}
+.hero .flow{display:flex;gap:14px;font-size:13px;color:var(--ios-2)}
+.hero .flow b{color:var(--ios-fg);font-weight:600}
+.period{display:inline-flex;gap:6px;font-size:12.5px;font-weight:600;background:var(--ios-card);border-radius:999px;padding:5px 11px;align-self:flex-start;color:var(--ios-fg)}
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qa span{background:var(--ios-card);border-radius:14px;padding:9px 0;text-align:center;font-size:11px;color:var(--ios-2);display:flex;flex-direction:column;align-items:center;gap:4px}
+.qa span i{width:20px;height:20px;border-radius:50%;background:var(--ios-card2);display:block}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters span{font-size:12px;background:var(--ios-card);border-radius:999px;padding:5px 10px;color:var(--ios-2)}
+.c{background:var(--ios-card);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sh{font-size:17px;font-weight:700;padding:4px 2px 0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sh small{font-size:12.5px;font-weight:500;color:var(--ios-2)}
+.s2{color:var(--ios-2)}
+.f13{font-size:13px}.f12{font-size:12px}.f11{font-size:11px}
+.num{font-family:var(--f-round);font-variant-numeric:tabular-nums;font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;min-width:0}
+.row > :first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row > :last-child{flex:none}
+.hr{height:1px;background:var(--ios-sep)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px}
+.chip.up{background:var(--bad-soft);color:var(--ios-pink)}
+.chip.ai{background:var(--accent-soft);color:var(--ios-accent)}
+.chip.amb{background:var(--ios-card);color:var(--ios-amber)}
+.pillseg{display:flex;background:var(--ios-card);border-radius:999px;padding:3px}
+.pillseg span{flex:1;text-align:center;font-size:13px;font-weight:600;padding:6px 0;border-radius:999px;color:var(--ios-2)}
+.pillseg span.on{background:var(--ios-card2);color:var(--ios-fg)}
+.bar{height:6px;border-radius:3px;background:var(--ios-ring-track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cell{background:var(--ios-card);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cell .k{font-size:12px;color:var(--ios-2)}
+.cell .v{font-family:var(--f-round);font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell .x{font-size:12px;color:var(--ios-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link{color:var(--ios-accent);font-size:13.5px;font-weight:600}
+.chev::after{content:" ›"}
+.ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;flex:none;background:var(--ios-card2);color:var(--ios-2)}
+.ico svg{display:block}
+.coll{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.coll::after{content:"⌄";color:var(--ios-2)}
+.coll.open::after{content:"⌃"}
+.ai-t{color:var(--ios-accent);font-weight:600;font-size:14px}
+.ttl{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+/* marcas sobre la maqueta: qué cambia */
+.mk{position:relative}
+.mk::before{content:attr(data-mk);position:absolute;top:-9px;right:10px;font:700 10px var(--f-body);letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;z-index:2}
+.mk-c::before{background:var(--accent);color:var(--bg)}
+.mk-n::before{background:var(--new);color:var(--bg)}
+.mk-f::before{background:var(--warn);color:var(--bg)}
+.mk-a::before{background:var(--ok);color:var(--bg)}
+.gone{border:1.5px dashed var(--bad)}
+.gone-note{font-size:11px;color:var(--bad);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+body.nomarks .mk::before{display:none}
+body.nomarks .gone{display:none}
+
+/* hormiga */
+.dots{display:flex;gap:3px;flex-wrap:wrap}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--ios-amber);display:block}
+.ant-hero{background:var(--ios-amber-soft);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ant-big{font-family:var(--f-round);font-size:34px;font-weight:700;letter-spacing:-.02em;color:var(--ios-fg)}
+.ant-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center}
+.ant-row .nm{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ant-row .tt{font-family:var(--f-round);font-weight:700;font-variant-numeric:tabular-nums}
+.ant-row .dots{grid-column:1/-1}
+.merge{display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:12px}
+.merge span{background:var(--ios-card2);border-radius:8px;padding:2px 7px;color:var(--ios-2)}
+.tip{border-left:3px solid var(--ios-accent);padding:2px 0 2px 10px;font-size:13.5px}
+.btnrow{display:flex;gap:8px}
+.ibtn{flex:1;text-align:center;font-size:13px;font-weight:600;border-radius:12px;padding:9px 0;background:var(--ios-card);color:var(--ios-accent)}
+.jump{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.jump span{background:var(--ios-card);border-radius:16px;padding:10px 2px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ios-fg);text-align:center;min-width:0}
+.jump span i{width:24px;height:24px;border-radius:8px;display:block;background:var(--accent-soft)}
+.act{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--ios-card);border-radius:18px;padding:12px}
+.act .t{font-weight:600;font-size:14px}
+.act .d{font-size:12.5px;color:var(--ios-2)}
+.act .go{color:var(--ios-accent);font-size:20px}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--ios-card);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0;position:relative}
+.tile .go{position:absolute;top:10px;right:12px;color:var(--ios-2)}
+.tile.wide{grid-column:1/-1}
+.rings4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center}
+.rings4 div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ios-2);min-width:0}
+.health-strip{display:flex;align-items:center;gap:12px}
+.minis{display:flex;gap:4px;justify-content:space-between}
+.minis div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--ios-2);min-width:0;text-align:center}
+.segbars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.segbars div{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ios-2);min-width:0}
+.segbars b{color:var(--ios-fg);font-family:var(--f-round);font-size:13px}
+.needbar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}
+
+.changes{display:flex;flex-direction:column}
+.ch{display:grid;grid-template-columns:170px minmax(0,1fr);gap:4px 14px;padding:12px 0;border-top:1px solid var(--line)}
+.ch:first-child{border-top:0;padding-top:0}
+.ch .bk{font-weight:600}
+.ch .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+@media (max-width:600px){ .ch{grid-template-columns:minmax(0,1fr)} }
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-family:var(--f-display);font-size:15px}
+tbody th{font-weight:600;color:var(--muted);width:180px}
+td.rec{background:var(--ok-soft)}
+
+.dec{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.vote{display:flex;gap:6px;flex-wrap:wrap}
+.vote button{font:600 13px var(--f-body);border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
+.vote button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.vote button:disabled{opacity:.5;cursor:default}
+textarea{width:100%;min-height:72px;font:14px var(--f-body);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px}
+.status{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0;flex:1 1 520px">
+      <span class="eyebrow">Yala 2.3 · Estadísticas → Resumen · propuesta de diseño</span>
+      <h1>Un Resumen que siga la conversación del Panel</h1>
+      <p class="lead">Tres maneras de rehacer la pestaña Resumen a partir de lo que viste el 23 de noviembre probando la 2.3. Las tres usan los mismos datos de ejemplo para que se comparen solas. No se tocó código de la app: eliges aquí y la construcción va en otra sesión.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="themeBtn" type="button">Ver en claro</button>
+      <button class="btn" id="marksBtn" type="button">Ocultar marcas</button>
+    </div>
+  </header>
+
+  <section>
+    <span class="eyebrow">Lo que observaste</span>
+    <div class="grid4">
+      <div class="card obs"><b>Salud financiera, demasiado alta</b><p class="small muted">Un anillo de 88 pt y cuatro barras ocupan casi media pantalla para dar cinco números. En el Panel la misma nota cabe en una tarjeta chata con un anillo y una frase.</p></div>
+      <div class="card obs"><b>Cajas que no suman</b><p class="small muted">«Categoría principal» casi siempre dice Hogar y repite lo que dicen «Subcategoría principal» (Alquiler) y «Mayor gasto» (Renta). «Promedio diario» ocupa todo el ancho para un solo número.</p></div>
+      <div class="card obs"><b>Gastos hormiga, desordenado</b><p class="small muted">Lista, regla en medio, «Con Yala IA» con otra fila, el total combinado y el consejo, uno debajo del otro y sin jerarquía.</p></div>
+      <div class="card obs"><b>No lleva a ningún lado</b><p class="small muted">Hoy ninguna fila del Resumen abre otra vista. Solo las hojas de la nota de salud tienen salidas a Presupuestos, Registros o Distribución.</p></div>
+    </div>
+  </section>
+
+  <section id="comparar">
+    <div class="topbar">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span class="eyebrow">Comparar</span>
+        <h2>Hoy contra cada propuesta</h2>
+        <p class="small muted">Datos de ejemplo: noviembre, día 23, cuenta Pro con Yala IA activa. Las etiquetas de color dicen qué cambia; el recuadro rojo punteado lista lo que se va.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Propuesta">
+        <button type="button" data-p="A" aria-pressed="false">A · Ordenar</button>
+        <button type="button" data-p="B" aria-pressed="true">B · Decidir (recomendada)</button>
+        <button type="button" data-p="C" aria-pressed="false">C · Mosaico</button>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="col">
+        <div class="col-head"><span class="h">Hoy en la 2.3</span><span class="measure" id="m-hoy"></span></div>
+        <div class="phone"><div class="screen" id="ph-hoy"></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="h" id="propTitle"></span><span class="measure" id="m-prop"></span></div>
+        <div class="phone"><div class="screen" id="ph-prop"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Qué cambia, bloque por bloque</span>
+    <h2 id="chTitle"></h2>
+    <p class="small muted"><span class="d-ya">Ya lo calcula</span>: la app tiene el dato hoy y solo cambia cómo se ve. <span class="d-nuevo">Cálculo nuevo</span>: hay que escribir lógica, casi siempre pequeña, antes de enseñarlo.</p>
+    <div class="card changes" id="changes"></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Para elegir rápido</span>
+    <h2>Las tres, en una tabla</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th></th><th>A · Ordenar</th><th>B · Decidir</th><th>C · Mosaico</th></tr></thead>
+        <tbody>
+          <tr><th>Idea</th><td>Las mismas piezas, compactas y en orden.</td><td class="rec">El Resumen empieza donde terminó el Panel: qué pide atención hoy y a dónde ir.</td><td>Todo en tarjetas pequeñas que se tocan para ir al detalle.</td></tr>
+          <tr><th>Salud financiera</th><td>Tarjeta chata: anillo pequeño y cuatro mini anillos.</td><td class="rec">Una franja: anillo pequeño, cuatro barras cortas y qué parte la baja.</td><td>Los cuatro anillos en fila; la nota total va en el título.</td></tr>
+          <tr><th>Categoría principal</th><td>Se funde en una línea con salida a Distribución.</td><td class="rec">Se va. «Lo que más pesa» queda con la barra de necesidad y salida a Distribución.</td><td>Se va. El mosaico de necesidad lleva a Distribución.</td></tr>
+          <tr><th>Promedio diario</th><td>Celda chica en una cuadrícula de cuatro.</td><td class="rec">Celda chica; si sube más de 5 %, además sale como acción.</td><td>Mosaico chico.</td></tr>
+          <tr><th>Gastos hormiga</th><td>Misma tarjeta, ordenada: total arriba, barras por comercio, IA en una etiqueta.</td><td class="rec">Bloque protagonista con fondo propio, frecuencia en puntos, la IA en su franja y dos botones.</td><td>Mosaico grande a todo el ancho.</td></tr>
+          <tr><th>Accesos directos</th><td>«Ver …» al pie de cada bloque.</td><td class="rec">Acciones con salida y una fila fija de cuatro vistas.</td><td>Cada mosaico es un acceso.</td></tr>
+          <tr><th>Cálculo nuevo</th><td>Solo el filtro de Registros por comercio, si se quiere ese enlace.</td><td class="rec">Ritmo del mes de hormiga, lo que queda por día del presupuesto, cuándo y en qué orden sale cada acción, filtro por comercio.</td><td>Lo mismo que B, salvo el orden de acciones.</td></tr>
+          <tr><th>Altura en la maqueta</th><td id="h-A"></td><td class="rec" id="h-B"></td><td id="h-C"></td></tr>
+          <tr><th>Esfuerzo</th><td>Bajo · una sesión.</td><td class="rec">Medio · dos sesiones (vista, y lógica con sus tests).</td><td>Medio-alto · cambia el lenguaje visual de la pestaña.</td></tr>
+          <tr><th>Riesgo</th><td>Se queda corta: ordena, pero no conversa con el Panel.</td><td class="rec">«Para decidir hoy» tiene que callarse cuando no hay nada que decidir.</td><td>Se aleja del resto de Estadísticas, que es de listas y tarjetas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Recomendación: <b>B</b>. Es la única que responde a tu punto 4: al venir del Panel no repite la nota, te dice qué hacer con ella y te lleva al sitio. De A toma la cuadrícula chica, y de C, la salud con los cuatro números a la vista.</p>
+  </section>
+
+  <section id="decidir">
+    <span class="eyebrow">Tu decisión</span>
+    <h2>¿Cuál construimos?</h2>
+    <p class="small muted" id="dbStatus">Cargando lo guardado…</p>
+    <div class="dec" id="dec"></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:8px">
+      <label for="nota-general"><b>Nota general</b> <span class="small muted">(mezclas, piezas que quieres de otra, algo que falta)</span></label>
+      <textarea id="nota-general" placeholder="Ej.: B, pero la salud como en C."></textarea>
+      <div><button class="btn" type="button" id="saveGeneral">Guardar nota</button> <span class="status" id="st-general"></span></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">De dónde sale cada dato</span>
+    <div class="card small muted" style="display:flex;flex-direction:column;gap:8px">
+      <p>Leído del código de la 2.3: la pestaña Resumen, la nota de salud (cuatro partes con pesos 32 · 20 · 28 · 20), el cálculo del Resumen, los gastos hormiga (compras por debajo de la mediana del período que se repiten 3 veces o más) y su capa de Yala IA, que solo junta nombres de la misma tienda y no calcula cifras.</p>
+      <p>Dos límites que la propuesta respeta. El «≈ al mes» de hormiga hoy solo sale en períodos de más de 31 días, así que en «Este mes» B y C usan un ritmo del mes nuevo (marcado). Y «Comparativa» no es una pestaña de Estadísticas: vive en Informes. Por eso los accesos son Distribución, Tendencias, Registros y Presupuestos.</p>
+      <p>Los números de la maqueta son de ejemplo y cuadran entre sí: la nota 72 sale de los pesos reales con Presupuestos 58, Ritmo 90, Compromisos 78 y Lo que te queda 66.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, themeBtn=document.getElementById('themeBtn');
+  function setTheme(t){ root.setAttribute('data-theme',t); themeBtn.textContent = t==='dark' ? 'Ver en claro' : 'Ver en oscuro'; try{localStorage.setItem('tema',t)}catch(e){} }
+  var saved=null; try{saved=localStorage.getItem('tema')}catch(e){}
+  setTheme(saved==='light'?'light':'dark');
+  themeBtn.addEventListener('click',function(){ setTheme(root.getAttribute('data-theme')==='dark'?'light':'dark'); });
+  var marksBtn=document.getElementById('marksBtn');
+  marksBtn.addEventListener('click',function(){ var on=document.body.classList.toggle('nomarks'); marksBtn.textContent=on?'Mostrar marcas':'Ocultar marcas'; measureAll(); });
+
+  function ring(size,val,stroke,color,inner){
+    var r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-val/100), h=size/2;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" aria-hidden="true">'+
+      '<circle cx="'+h+'" cy="'+h+'" r="'+r+'" fill="none" stroke="var(--ios-ring-track)" stroke-width="'+stroke+'"/>'+
+      '<circle cx="'+h+'" cy="'+h+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+off.toFixed(2)+'" transform="rotate(-90 '+h+' '+h+')"/>'+
+      (inner?'<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" fill="var(--ios-fg)" font-family="ui-rounded,-apple-system,Inter,sans-serif" font-weight="700" font-size="'+Math.round(size*0.3)+'">'+inner+'</text>':'')+'</svg>';
+  }
+  function tint(v){ return v>=75?'var(--ios-accent)':(v>=62?'var(--ios-violet)':'var(--ios-pink)'); }
+  function dots(n){ var s=''; for(var i=0;i<n;i++) s+='<i></i>'; return '<div class="dots" role="img" aria-label="'+n+' compras">'+s+'</div>'; }
+  var ANT='<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="8" r="2.2"/><circle cx="8.2" cy="8" r="1.7"/><circle cx="12" cy="8" r="2.6"/></g><g stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"><path d="M7 7 5 4M8.2 7l0-3.2M9.4 7l2-3M7 9l-2 3M8.2 9v3.2M9.4 9l2 3"/></g></svg>';
+  function antIco(bg,fg){ return '<span class="ico" style="background:'+bg+';color:'+fg+'">'+ANT+'</span>'; }
+  var parts=[['Presupuestos',58],['Ritmo',90],['Compromisos',78],['Lo que te queda',66]];
+  var partsShort=[['Presup.',58],['Ritmo',90],['Compr.',78],['Te queda',66]];
+  var groups=[['Tambo',12,98],['Starbucks',9,141],['Uber',6,54]];
+
+  var top = '<div class="sbar"><span>9:41</span><span class="isl"></span><span class="ic"><i></i><i></i></span></div>'+
+    '<div class="lt">Estadísticas</div>'+
+    '<div class="tabs"><span class="on">Resumen</span><span>Distribución</span><span>Tendencias</span><span>Registros</span></div>'+
+    '<div class="hero"><span class="cap">Gastaste en noviembre</span><span class="big">S/ 4,820</span>'+
+    '<div class="flow"><span>Ingresos <b>S/ 6,500</b></span><span>Gastos <b>S/ 4,820</b></span></div>'+
+    '<span class="period">Este mes ⌄</span></div>'+
+    '<div class="qa"><span><i></i>Registrar</span><span><i></i>Voz</span><span><i></i>Foto</span><span><i></i>Yala IA</span></div>'+
+    '<div class="filters"><span>Cuentas: todas</span><span>Categorías</span><span>Solo gastos</span></div>';
+  var aiResumen = '<div class="c"><div class="ai-t">✦ Resumen con IA</div><div class="f13">Noviembre va 8 % por encima de octubre por día. Restaurantes casi llega a su límite y quedan 7 días.</div><div class="f11 s2">Escrito con tus datos de las 20:14 · Actualizar</div></div>';
+  var TIP='Si cambias dos cafés por semana por uno en casa, te quedan unos S/ 60 al mes.';
+  function pagar(cls,extra){ return '<div class="c'+(cls||'"')+'><div class="coll open">Lo que te falta pagar</div><div class="f12 s2">Total: S/ 420</div>'+
+    '<div class="row f13"><span>Pagos</span><span class="s2">Pendientes: 2</span></div><div class="row f13"><span>Suscripciones</span><span class="s2">Pendientes: 3</span></div>'+(extra||'')+'</div>'; }
+  function brow(n,sp,lim,p){ return '<div style="display:flex;flex-direction:column;gap:5px"><div class="row f13"><span>'+n+'</span><span class="s2 num">S/ '+sp+' de S/ '+lim+' · '+p+' %</span></div><div class="bar"><i style="width:'+Math.min(p,100)+'%;background:var(--ios-accent)"></i></div></div>'; }
+  function presupuestos(cls,extra){ return '<div class="c'+(cls||'"')+'><div class="coll open">Tus presupuestos</div><div class="f12 s2">Período actual de cada presupuesto</div>'+
+    brow('Restaurantes',460,500,92)+brow('Transporte',210,300,70)+brow('Supermercado',660,1200,55)+(extra||'')+'</div>'; }
+  var necesidad = '<div class="c"><div class="coll">Distribución del gasto por necesidad</div></div>';
+  var cuadricula = '<div class="cell"><span class="k">Promedio diario</span><span class="v">S/ 210</span><span class="x"><span class="chip up">▲ 8 %</span></span></div>'+
+    '<div class="cell"><span class="k">Día de más gasto</span><span class="v">Sábado</span><span class="x">S/ 310 de promedio</span></div>'+
+    '<div class="cell"><span class="k">Mayor gasto</span><span class="v">S/ 1,600</span><span class="x">Renta</span></div>'+
+    '<div class="cell"><span class="k">Suscripciones</span><span class="v">S/ 96</span><span class="x">al mes</span></div>';
+  var needbar = '<div class="needbar"><i style="flex:58;background:var(--ios-accent)"></i><i style="flex:24;background:var(--ios-violet)"></i><i style="flex:18;background:var(--ios-amber)"></i></div><div class="f11 s2">Esencial 58 % · Prioritaria 24 % · Opcional 18 %</div>';
+
+  // ---------- HOY (fiel a InsightsTabView de la 2.3) ----------
+  var hoy = top +
+    '<div class="sh">Tu salud financiera</div>'+
+    '<div class="c"><div class="f12 s2">Noviembre</div><div style="display:flex;gap:16px;align-items:center">'+ring(88,72,9,tint(72),'72')+
+    '<div style="flex:1;display:flex;flex-direction:column;gap:9px;min-width:0">'+parts.map(function(p){return '<div style="display:flex;flex-direction:column;gap:4px"><div class="row f13"><span>'+p[0]+'</span><span class="num">'+p[1]+'</span></div><div class="bar"><i style="width:'+p[1]+'%;background:'+tint(p[1])+'"></i></div></div>';}).join('')+'</div></div></div>'+
+    aiResumen +
+    '<div class="pillseg"><span class="on">Detalle</span><span>Observaciones</span></div>'+
+    '<div class="sh">Tus cifras <small>Noviembre · vs. mes anterior ⌄</small></div>'+
+    '<div class="c"><div class="f13 s2">Promedio diario</div><div class="num" style="font-size:30px;font-weight:700">S/ 209.57</div><div><span class="chip up">▲ 8 %</span> <span class="f12 s2">· por día en noviembre</span></div></div>'+
+    '<div class="g2"><div class="cell"><span class="k">Categoría principal</span><span class="v" style="font-size:16px">Hogar</span><span class="x">S/ 1,850 · 38 %</span></div>'+
+    '<div class="cell"><span class="k">Subcategoría principal</span><span class="v" style="font-size:16px">Alquiler o hipoteca</span><span class="x">S/ 1,600</span></div>'+
+    '<div class="cell"><span class="k">Mayor gasto</span><span class="v" style="font-size:16px">S/ 1,600</span><span class="x">Renta</span></div>'+
+    '<div class="cell"><span class="k">Día de más gasto</span><span class="v" style="font-size:16px">Sábado</span><span class="x">S/ 310</span></div></div>'+
+    '<div class="c" style="flex-direction:row;align-items:center;gap:10px"><span class="ico">↻</span><div><div style="font-weight:600;font-size:14px">Suscripciones</div><div class="f13 s2">S/ 96 · mensual</div></div></div>'+
+    '<div class="c"><div style="display:flex;gap:10px">'+antIco('var(--ios-card2)','var(--ios-2)')+'<div><div style="font-weight:600;font-size:14px">Gastos hormiga</div><div class="f13 s2">S/ 286 en 31 compras pequeñas</div></div></div>'+
+    '<div style="display:flex;flex-direction:column;gap:5px"><div class="row f13"><span>Tambo</span><span class="s2">12 veces · S/ 98</span></div><div class="row f13"><span>Starbucks</span><span class="s2">7 veces · S/ 112</span></div><div class="row f13"><span>Uber</span><span class="s2">6 veces · S/ 54</span></div></div>'+
+    '<div class="f11 s2">Compras de hasta S/ 18 que repites 3 veces o más en el período.</div><div class="hr"></div>'+
+    '<div class="ai-t">✦ Con Yala IA</div><div class="row f13"><span>Starbucks</span><span class="s2">9 veces · S/ 141</span></div><div class="f11 s2">También escrito como «STARBUCKS COFFEE» y «Sbux Larco»</div>'+
+    '<div class="f13">Juntando los nombres parecidos: S/ 315 en 33 compras pequeñas</div><div class="f13">'+TIP+'</div></div>'+
+    pagar() + presupuestos() + necesidad;
+
+  // ---------- A ----------
+  var A = top +
+    '<div class="c mk mk-c" data-mk="Compacta" style="flex-direction:row;align-items:center;gap:12px">'+ring(50,72,6,tint(72),'72')+
+    '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><div style="font-weight:600;font-size:14px">Tu salud financiera</div>'+
+    '<div class="minis">'+partsShort.map(function(p){return '<div>'+ring(30,p[1],4,tint(p[1]),'')+'<span>'+p[0]+' <b style="color:var(--ios-fg)">'+p[1]+'</b></span></div>';}).join('')+'</div></div></div>'+
+    aiResumen +
+    '<div class="pillseg"><span class="on">Detalle</span><span>Observaciones</span></div>'+
+    '<div class="sh">Tus cifras <small>Noviembre · vs. mes anterior ⌄</small></div>'+
+    '<div class="g2 mk mk-c" data-mk="Compacta">'+cuadricula+'</div>'+
+    '<div class="c mk mk-f" data-mk="Se funde" style="flex-direction:row;justify-content:space-between;align-items:center;padding:11px 14px"><span class="f13">Lo que más pesa: <b>Hogar</b> · 38 %</span><span class="link chev">Distribución</span></div>'+
+    '<div class="c mk mk-c" data-mk="Ordenada"><div class="row"><span class="ttl">'+antIco('var(--ios-amber-soft)','var(--ios-amber)')+'Gastos hormiga</span><span class="num" style="font-size:20px;font-weight:700">S/ 315</span></div>'+
+    '<div class="f12 s2">33 compras pequeñas · hasta S/ 18 cada una ⓘ</div>'+
+    groups.map(function(g){return '<div style="display:flex;flex-direction:column;gap:4px"><div class="row f13"><span>'+g[0]+(g[0]==='Starbucks'?' <span class="chip ai">✦ juntó 3 nombres</span>':'')+'</span><span class="num">'+g[1]+'× · S/ '+g[2]+'</span></div><div class="bar"><i style="width:'+Math.round(g[2]/141*100)+'%;background:var(--ios-amber)"></i></div></div>';}).join('')+
+    '<div class="tip">'+TIP+'</div>'+
+    '<span class="link chev">Ver las 33 compras en Registros</span></div>'+
+    pagar(' mk mk-a" data-mk="Acceso"','<span class="link chev">Ver pagos planificados</span>') +
+    presupuestos(' mk mk-a" data-mk="Acceso"','<span class="link chev">Ver presupuestos</span>') + necesidad;
+
+  // ---------- B ----------
+  var B = top +
+    '<div class="c mk mk-c" data-mk="Compacta"><div class="health-strip">'+ring(46,72,6,tint(72),'72')+
+    '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">Tu salud financiera</div><div class="f12 s2">Lo que más la baja: Presupuestos</div></div><span class="s2">›</span></div>'+
+    '<div class="segbars">'+partsShort.map(function(p){return '<div><span>'+p[0]+' <b>'+p[1]+'</b></span><div class="bar"><i style="width:'+p[1]+'%;background:'+tint(p[1])+'"></i></div></div>';}).join('')+'</div></div>'+
+    '<div class="sh mk mk-n" data-mk="Nuevo">Para decidir hoy <small>3</small></div>'+
+    '<div class="act"><span class="ico" style="background:var(--bad-soft);color:var(--ios-pink);font-weight:700">!</span><div style="min-width:0"><div class="t">Restaurantes está al 92 %</div><div class="d">Te quedan S/ 40 para 7 días · S/ 5.70 por día</div></div><span class="go">›</span></div>'+
+    '<div class="act"><span class="ico">◷</span><div style="min-width:0"><div class="t">Te faltan pagar S/ 420</div><div class="d">2 pagos y 3 suscripciones antes del 30</div></div><span class="go">›</span></div>'+
+    '<div class="act"><span class="ico">↗</span><div style="min-width:0"><div class="t">Gastas 8 % más por día que en octubre</div><div class="d">S/ 210 al día · mira en qué subió</div></div><span class="go">›</span></div>'+
+    '<div class="ant-hero mk mk-c" data-mk="Protagonista">'+
+    '<div class="row"><span class="ttl">'+antIco('var(--ios-card)','var(--ios-amber)')+'Gastos hormiga</span><span class="chip amb">33 compras</span></div>'+
+    '<div><div class="ant-big">S/ 315</div><div class="f13 s2">en compras de hasta S/ 18 que repites · a este ritmo cierras el mes en <b style="color:var(--ios-fg)">≈ S/ 410</b></div></div>'+
+    groups.map(function(g){return '<div class="ant-row"><span class="nm">'+g[0]+'</span><span class="tt">S/ '+g[2]+'</span>'+dots(g[1])+'</div>';}).join('')+
+    '<div style="background:var(--ios-card);border-radius:16px;padding:11px;display:flex;flex-direction:column;gap:7px">'+
+    '<div class="ai-t f13">✦ Yala IA juntó nombres de la misma tienda</div>'+
+    '<div class="merge"><span>Starbucks</span><span>STARBUCKS COFFEE</span><span>Sbux Larco</span><b style="color:var(--ios-fg)">→ Starbucks · 9 veces</b></div>'+
+    '<div class="tip">'+TIP+'</div></div>'+
+    '<div class="btnrow mk mk-a" data-mk="Acceso"><span class="ibtn">Ver las compras</span><span class="ibtn">Ponerle un tope</span></div></div>'+
+    '<div class="sh">Tus cifras <small>vs. octubre ⌄</small></div>'+
+    '<div class="g2 mk mk-c" data-mk="Compacta">'+cuadricula+'</div>'+
+    '<div class="c mk mk-f" data-mk="Se funde" style="gap:8px"><div class="row"><span class="f13">Lo que más pesa: <b>Hogar</b> 38 %</span><span class="link chev">Distribución</span></div>'+needbar+'</div>'+
+    '<div class="sh mk mk-a" data-mk="Acceso">Ir a</div>'+
+    '<div class="jump"><span><i></i>Distribución</span><span><i></i>Tendencias</span><span><i></i>Registros</span><span><i></i>Presupuestos</span></div>'+
+    '<div class="c gone"><span class="gone-note">Se van del Resumen</span><span class="f12 s2">Categoría y Subcategoría principal · la caja ancha de Promedio diario · las listas de presupuestos y de «Lo que te falta pagar», que ahora salen como acción cuando piden algo</span></div>';
+
+  // ---------- C ----------
+  var C = top +
+    '<div class="c mk mk-c" data-mk="Cuatro anillos"><div class="row"><span style="font-weight:700;font-size:15px">Tu salud financiera</span><span class="num" style="font-size:20px">72<span class="s2 f12"> /100</span></span></div>'+
+    '<div class="rings4">'+parts.map(function(p){return '<div>'+ring(54,p[1],6,tint(p[1]),String(p[1]))+'<span>'+p[0]+'</span></div>';}).join('')+'</div></div>'+
+    '<div class="bento">'+
+    '<div class="tile wide mk mk-c" data-mk="Protagonista" style="background:var(--ios-amber-soft);gap:8px"><span class="go">›</span><span class="ttl">'+antIco('var(--ios-card)','var(--ios-amber)')+'Gastos hormiga</span>'+
+    '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="ant-big" style="font-size:30px">S/ 315</span><span class="f12 s2">33 compras · ≈ S/ 410 al cierre</span></div>'+
+    '<div class="g2" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">'+groups.map(function(g){return '<div style="background:var(--ios-card);border-radius:12px;padding:8px;min-width:0"><div class="f12" style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g[0]+'</div><div class="num f13">S/ '+g[2]+'</div><div class="f11 s2">'+g[1]+' veces</div></div>';}).join('')+'</div>'+
+    '<div class="f12"><span class="chip ai">✦ Yala IA</span> juntó 3 nombres de Starbucks · toca para el consejo</div></div>'+
+    '<div class="tile mk mk-n" data-mk="Nuevo"><span class="go">›</span><span class="f12 s2">Restaurantes</span><span class="num" style="font-size:20px;color:var(--ios-pink)">92 %</span><span class="f11 s2">S/ 40 para 7 días</span></div>'+
+    '<div class="tile"><span class="go">›</span><span class="f12 s2">Te falta pagar</span><span class="num" style="font-size:20px">S/ 420</span><span class="f11 s2">5 pendientes</span></div>'+
+    '<div class="tile"><span class="go">›</span><span class="f12 s2">Promedio diario</span><span class="num" style="font-size:20px">S/ 210</span><span class="f11"><span class="chip up">▲ 8 %</span></span></div>'+
+    '<div class="tile"><span class="go">›</span><span class="f12 s2">Mayor gasto</span><span class="num" style="font-size:20px">S/ 1,600</span><span class="f11 s2">Renta</span></div>'+
+    '<div class="tile"><span class="go">›</span><span class="f12 s2">Día de más gasto</span><span class="num" style="font-size:20px">Sábado</span><span class="f11 s2">S/ 310</span></div>'+
+    '<div class="tile"><span class="go">›</span><span class="f12 s2">Suscripciones</span><span class="num" style="font-size:20px">S/ 96</span><span class="f11 s2">al mes</span></div>'+
+    '<div class="tile wide mk mk-f" data-mk="Se funde"><span class="go">›</span><span class="f12 s2">Por necesidad · lo que más pesa es Hogar</span>'+needbar+'</div>'+
+    '<div class="tile wide"><span class="go">›</span><span class="ai-t f13">✦ Observaciones de Yala IA</span><span class="f12 s2">3 ideas sobre tu mes</span></div>'+
+    '</div>'+
+    '<div class="c gone"><span class="gone-note">Se van del Resumen</span><span class="f12 s2">El selector Detalle / Observaciones (las observaciones pasan a su mosaico) · Categoría y Subcategoría principal · las listas plegables</span></div>';
+
+  var T={c:['t-compacta','Se compacta'],v:['t-se-va','Se va'],f:['t-funde','Se funde'],n:['t-nuevo','Nuevo'],a:['t-acceso','Acceso directo'],i:['t-igual','Igual']};
+  function tags(l){ return '<div class="tags">'+l.map(function(k){return '<span class="pill '+T[k][0]+'">'+T[k][1]+'</span>';}).join('')+'</div>'; }
+  var YA='<span class="d-ya">Ya lo calcula.</span> ', NU='<span class="d-nuevo">Cálculo nuevo.</span> ';
+  var CH={
+    A:{title:'A · Ordenar: las mismas piezas en menos espacio',rows:[
+      ['Salud financiera',['c'],YA+'Tarjeta chata como la del Panel, con las cuatro partes en mini anillos con su número. Cada uno abre la hoja que ya existe.'],
+      ['Promedio diario',['c'],YA+'Deja la caja ancha y entra en una cuadrícula de cuatro con Día de más gasto, Mayor gasto y Suscripciones, que deja su propia tarjeta.'],
+      ['Categoría y subcategoría',['f','a'],YA+'Una sola línea, «Lo que más pesa: Hogar · 38 %», que abre Distribución. Subcategoría principal se va: Mayor gasto ya dice Renta.'],
+      ['Gastos hormiga',['c'],YA+'Total arriba a la derecha (ya con los nombres juntados), una barra por comercio y la regla en un botón ⓘ. La IA deja de ser una sección: es una etiqueta «juntó 3 nombres» en la fila que juntó, y el consejo cierra la tarjeta.'],
+      ['Salidas',['a'],'«Ver …» al pie de hormiga, pagos y presupuestos. Pagos y Presupuestos ya tienen vista. '+NU+'abrir Registros solo con esas compras pide un filtro por comercio que hoy no existe.'],
+      ['Resumen con IA y necesidad',['i'],'Como hoy.']]},
+    B:{title:'B · Decidir: el Resumen sigue donde terminó el Panel',rows:[
+      ['Salud financiera',['c'],YA+'Una franja: anillo de 46 pt como el del Panel, cuatro barras cortas con su número y la parte que más baja la nota (la misma lógica que elige el paso del Panel). No repite el mensaje del Panel: dice por qué. Al tocarla abre el detalle que ya existe.'],
+      ['Para decidir hoy',['n','a'],YA+'el presupuesto en riesgo, lo que falta pagar y la variación del gasto diario. '+NU+'ordenarlas por urgencia, callarlas cuando no piden nada (sin riesgo, sin pendientes, variación menor al 5 %) y «S/ 40 para 7 días · S/ 5.70 por día». Tres como máximo. Cada una abre Presupuestos, Pagos planificados o Tendencias.'],
+      ['Gastos hormiga',['c','n'],YA+'total, compras, umbral, comercios y la unión de Yala IA. '+NU+'«a este ritmo cierras el mes en ≈ S/ 410»: hoy el «≈ al mes» solo sale en períodos de más de 31 días. La frecuencia se ve en puntos, uno por compra. La IA va en su propia franja, con qué nombres juntó y el consejo, sin mezclarse con la lista.'],
+      ['Botones de hormiga',['a','n'],'«Ponerle un tope» abre crear presupuesto, que ya existe. '+NU+'«Ver las compras» abre Registros solo con esas compras y pide un filtro por comercio que hoy no existe.'],
+      ['Tus cifras',['c'],YA+'Cuadrícula de cuatro celdas chicas, como en A.'],
+      ['Categoría principal y necesidad',['f','v'],YA+'Categoría y Subcategoría principal se van. Queda una línea «Lo que más pesa: Hogar 38 %» con la barra de necesidad (Esencial, Prioritaria, Opcional) y salida a Distribución.'],
+      ['Pagos y presupuestos',['v'],'Las listas plegables salen del Resumen: aparecen como acción cuando piden algo, y la lista entera vive en su vista.'],
+      ['Ir a',['a'],YA+'Fila fija con Distribución, Tendencias, Registros y Presupuestos. Cambiar de pestaña dentro de Estadísticas ya es barato; Presupuestos abre su vista.']]},
+    C:{title:'C · Mosaico: todo en tarjetas que llevan al detalle',rows:[
+      ['Salud financiera',['c'],YA+'Tu idea literal: los cuatro anillos en fila con su número y la nota total en el título. Ocupa algo menos que hoy, pero más que A o B.'],
+      ['Mosaicos',['n','a'],YA+'Cada dato es una tarjeta chica con flecha: presupuesto en riesgo, lo que falta pagar, promedio, mayor gasto, día y suscripciones. '+NU+'«S/ 40 para 7 días».'],
+      ['Gastos hormiga',['c','n'],YA+'Mosaico ancho con fondo propio y los tres comercios en mini tarjetas; la IA queda en una línea que abre el consejo. '+NU+'el ritmo del mes, como en B.'],
+      ['Detalle / Observaciones',['v'],'El selector se va y las observaciones de Yala IA pasan a su propio mosaico. Cambia más de lo que pediste y es lo que más riesgo tiene.'],
+      ['Categoría principal',['f'],YA+'Se va como caja; Hogar aparece en el mosaico de necesidad, que abre Distribución.']]}
+  };
+
+  var hoyEl=document.getElementById('ph-hoy'), propEl=document.getElementById('ph-prop');
+  hoyEl.innerHTML=hoy;
+  var MOCK={A:A,B:B,C:C};
+  var TITLE={A:'A · Ordenar',B:'B · Decidir (recomendada)',C:'C · Mosaico'};
+  function off(html){ var t=document.createElement('div'); t.className='screen'; t.style.cssText='position:absolute;left:-9999px;top:0;width:372px'; t.innerHTML=html; document.body.appendChild(t); var h=t.scrollHeight/852; document.body.removeChild(t); return h; }
+  function measureAll(){
+    var h=off(hoy); document.getElementById('m-hoy').textContent='≈ '+h.toFixed(1)+' pantallas de iPhone en esta maqueta';
+    ['A','B','C'].forEach(function(k){ var hk=off(MOCK[k]); var el=document.getElementById('h-'+k); el.textContent='≈ '+hk.toFixed(1)+' pantallas (hoy ≈ '+h.toFixed(1)+')';
+      if(propEl.getAttribute('data-p')===k){ var d=Math.round((hk/h-1)*100); document.getElementById('m-prop').textContent='≈ '+hk.toFixed(1)+' pantallas · '+(d<=0?'−':'+')+Math.abs(d)+' % frente a hoy'; } });
+  }
+  function show(p){
+    propEl.setAttribute('data-p',p); propEl.innerHTML=MOCK[p];
+    document.getElementById('propTitle').textContent=TITLE[p];
+    document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-p')===p?'true':'false'); });
+    document.getElementById('chTitle').textContent=CH[p].title;
+    document.getElementById('changes').innerHTML=CH[p].rows.map(function(r){return '<div class="ch"><div class="bk">'+r[0]+'</div><div>'+tags(r[1])+'<div class="small">'+r[2]+'</div></div></div>';}).join('');
+    try{localStorage.setItem('prop',p)}catch(e){}
+    measureAll();
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click',function(){ show(b.getAttribute('data-p')); }); });
+  var sp=null; try{sp=localStorage.getItem('prop')}catch(e){}
+  show(sp==='A'||sp==='C'?sp:'B');
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(measureAll);
+
+  // ---------- decisión (db del artifact; solo escribe el dueño) ----------
+  var decEl=document.getElementById('dec'), st=document.getElementById('dbStatus');
+  var OPTS=[['si','Sí, esta'],['no','No'],['despues','Después']];
+  var state={}, canWrite=false, db=null;
+  function renderDec(){
+    decEl.innerHTML=['A','B','C'].map(function(k){
+      var v=(state[k]||{}).voto||'';
+      return '<div class="card" style="display:flex;flex-direction:column;gap:10px"><b style="font-family:var(--f-display);font-size:16px">'+TITLE[k]+'</b>'+
+        '<div class="vote" role="group" aria-label="'+TITLE[k]+'">'+OPTS.map(function(o){return '<button type="button" data-k="'+k+'" data-v="'+o[0]+'" aria-pressed="'+(v===o[0])+'"'+(canWrite?'':' disabled')+'>'+o[1]+'</button>';}).join('')+'</div>'+
+        '<span class="status" id="st-'+k+'"></span></div>';
+    }).join('');
+    decEl.querySelectorAll('.vote button').forEach(function(b){ b.addEventListener('click',function(){ vote(b.getAttribute('data-k'),b.getAttribute('data-v')); }); });
+  }
+  function msg(id,t){ var s=document.getElementById(id); if(s) s.textContent=t; }
+  function vote(k,v){
+    if(!db||!canWrite) return;
+    state[k]={voto:v}; renderDec(); msg('st-'+k,'Guardando…');
+    db.doc('decisiones/'+k).set({voto:v,propuesta:k,en:new Date().toISOString()}).then(function(){ msg('st-'+k,'Guardado'); })
+      .catch(function(e){ msg('st-'+k,'No se guardó ('+((e&&e.code)||'error')+'). Prueba otra vez.'); });
+  }
+  var ta=document.getElementById('nota-general');
+  document.getElementById('saveGeneral').addEventListener('click',function(){
+    if(!db||!canWrite){ msg('st-general','Desde esta vista no se puede guardar.'); return; }
+    msg('st-general','Guardando…');
+    db.doc('decisiones/general').set({nota:ta.value.slice(0,2000),en:new Date().toISOString()}).then(function(){msg('st-general','Guardado');}).catch(function(e){msg('st-general','No se guardó ('+((e&&e.code)||'error')+').');});
+  });
+  renderDec();
+  var timer=setTimeout(function(){ st.textContent='No se pudo cargar lo guardado. Puedes responder en el chat.'; },10000);
+  (async function(){
+    try{
+      var c=window.claude; if(!c||!c.use){ clearTimeout(timer); st.textContent='Esta vista no guarda respuestas. Puedes responder en el chat.'; return; }
+      var u=await c.use('user'); db=await c.use('db');
+      if(!db){ clearTimeout(timer); st.textContent='Inicia sesión en claude.ai para guardar tu elección.'; return; }
+      canWrite = u ? ((await u.isOwner()) || false) : false;
+      st.textContent = canWrite ? 'Tu elección se guarda aquí y la leo antes de construir.' : 'Solo el dueño vota; aquí ves lo que eligió.';
+      ta.disabled=!canWrite;
+      db.collection('decisiones').onSnapshot(function(snap){
+        clearTimeout(timer);
+        state={}; snap.docs.forEach(function(d){ var x=d.data()||{}; if(d.id==='general'){ if(document.activeElement!==ta) ta.value=typeof x.nota==='string'?x.nota:''; } else state[d.id]={voto:typeof x.voto==='string'?x.voto:''}; });
+        renderDec();
+      },function(){ clearTimeout(timer); st.textContent='No se pudo leer lo guardado.'; });
+    }catch(e){ clearTimeout(timer); st.textContent='No se pudo conectar para guardar. Puedes responder en el chat.'; }
+  })();
+})();
+</script>
