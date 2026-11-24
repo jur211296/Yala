@@ -231,6 +231,21 @@ restaurar el fichero (`git checkout mcp/wrangler.toml`, conservando el `client_i
 no se ofrece. Cuando el gateway esté (paso 1), se despliega otra vez con el bloque. Quien conectó durante B tiene que
 desconectar y volver a conectar para ver la herramienta.
 
+## Lote 5 · `ver_bandeja`, `referencia` y posible duplicado (24-nov)
+
+En staging desde el 24-nov (e2e `test/e2e/bandeja.e2e.test.ts`, 4/4). En producción **no**. Tres pasos, en este orden,
+y cada uno con su porqué:
+
+1. **Migración D1 `0007_connector_refs.sql`** en el gateway de producción (`npm run migrate:production` en `gateway/`;
+   aditiva, una tabla nueva). Antes que el código: sin ella, una `referencia` hace fallar `apuntar_movimiento`.
+2. **Gateway desde 2.3** con este lote. Trae `ConnectorDrafts.pending` y las opciones de `enqueue`; sin opciones se
+   comporta como antes, así que el conector de producción de hoy sigue igual.
+3. **Conector desde 2.3.** Después del gateway: un conector nuevo contra un gateway viejo ofrecería `ver_bandeja` y su
+   lectura de la cola fallaría.
+
+Comprobación: con una cuenta de prueba, `apuntar_movimiento` dos veces con la misma `referencia` → la segunda responde
+`ya_apuntado`. Marcha atrás: `wrangler rollback` de los dos Workers; la tabla `connector_refs` se queda (no la lee nadie).
+
 ## Marcha atrás completa
 
 Siempre al revés que la subida:

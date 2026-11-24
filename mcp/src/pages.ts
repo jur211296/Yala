@@ -124,9 +124,10 @@ export function consentPage(
   const where = local
     ? `<p class="warn"><strong>El acceso irá a una aplicación de tu computadora.</strong> Sigue solo si acabas de empezar la conexión desde ella.</p>`
     : `<p class="dest">Volverá a: <code>${escapeHtml(host)}</code></p>`;
-  // Con la cola de la Bandeja enlazada (`CONNECTOR_DRAFTS`) el conector ofrece `apuntar_movimiento`: el permiso lo dice.
+  // Con la cola de la Bandeja enlazada (`CONNECTOR_DRAFTS`) el conector ofrece `ver_bandeja` y `apuntar_movimiento`: el
+  // permiso dice las dos.
   const draftItem = canDraft
-    ? `<li><span class="k p" aria-hidden="true">✦</span><span>Y podrá <strong>apuntar</strong> gastos e ingresos como borradores en tu Bandeja. Ninguno cuenta hasta que tú lo confirmes en la app.</span></li>`
+    ? `<li><span class="k p" aria-hidden="true">✦</span><span>Y podrá <strong>ver</strong> lo que espera en tu Bandeja y <strong>apuntar</strong> gastos e ingresos como borradores. Ninguno cuenta hasta que tú lo confirmes en la app.</span></li>`
     : "";
   const cannot = canDraft
     ? `<li><span class="k n" aria-hidden="true">✕</span><span><strong>No podrá</strong> cambiar ni borrar nada, ni confirmar un borrador: ni tus finanzas ni los datos de tu cuenta. Tampoco verá tus grupos.</span></li>`

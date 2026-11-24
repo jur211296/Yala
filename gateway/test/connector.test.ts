@@ -29,9 +29,10 @@ const OTHER = "99999999-8888-7777-6666-555555555555";
 const ACCOUNT = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 const SUBCAT = "12345678-1234-4234-8234-123456789abc";
 const MIGRATION = readFileSync(fileURLToPath(new URL("../migrations/0004_connector_quota.sql", import.meta.url)), "utf8");
+const MIGRATION_REFS = readFileSync(fileURLToPath(new URL("../migrations/0007_connector_refs.sql", import.meta.url)), "utf8");
 
 function setup() {
-  const { db, sqlite } = makeMailD1([MIGRATION]);
+  const { db, sqlite } = makeMailD1([MIGRATION, MIGRATION_REFS]);
   const env = { DB: db, ENFORCE: "observe" } as unknown as Env;
   return { env, sqlite };
 }
@@ -182,13 +183,15 @@ describe("la cola común", () => {
     expect(aiRows(sqlite)).toEqual({ n: CONNECTOR_MAX_PENDING + 1 });
   });
 
-  it("borrar la cuenta borra la cola y el contador", async () => {
+  it("borrar la cuenta borra la cola, el contador y las referencias", async () => {
     const { env, sqlite } = setup();
-    await enqueueConnectorDraft(env, SUB, almuerzo);
+    await enqueueConnectorDraft(env, SUB, almuerzo, Date.now(), { referencia: "msg-1", candidatos: [] });
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM connector_refs").get()).toEqual({ n: 1 });
     await deleteMailData(env, SUB);
     await deleteConnectorData(env, SUB);
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM mail_drafts").get()).toEqual({ n: 0 });
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM connector_quota").get()).toEqual({ n: 0 });
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM connector_refs").get()).toEqual({ n: 0 });
   });
 });
 

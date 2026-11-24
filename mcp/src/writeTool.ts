@@ -18,6 +18,7 @@ import { z } from "zod";
 import { InvalidInputError, assertDay, dayInZone } from "./logic/dates";
 import type { AccountRow, CategoryRow, SubcategoryRow } from "./logic/types";
 import { loadLookup, loadPrefs, resolvePreferredCurrency, zoneNotice, zoneOf, type ToolContext } from "./toolCore";
+import { inboxSourceLabel, loadMatchCandidates, type MatchCandidate, type QueueReader } from "./inboxTool";
 
 export const WRITE_TOOL_NAME = "apuntar_movimiento";
 export const WRITE_TOOL_TITLE = "Apuntar un movimiento en la Bandeja";
@@ -26,7 +27,10 @@ export const WRITE_TOOL_DESCRIPTION =
   "app; hasta entonces no cuenta en saldos, presupuestos ni estadísticas. No modifica ni borra nada. La cuenta y la " +
   "categoría se buscan por nombre entre las del usuario (las de listar_cuentas y listar_categorias): si no se encuentran " +
   "o hay varias que encajan, devuelve un error con las opciones. Sin cuenta, se usa la única cuenta en esa divisa si la " +
-  "hay; si no, el borrador la pide en la app. Devuelve lo que quedó en el borrador y lo que falta completar.";
+  "hay; si no, el borrador la pide en la app. Si ya hay uno parecido pendiente en la Bandeja, esperando a la app o " +
+  "guardado en los últimos días, no crea nada y devuelve «posible_duplicado» con lo encontrado; con forzar=true lo crea " +
+  "igual. Con una referencia ya usada no crea otro y devuelve «ya_apuntado». Devuelve lo que quedó en el borrador y lo " +
+  "que falta completar.";
 
 const MAX_AMOUNT = 1_000_000_000;
 const MAX_LISTED_OPTIONS = 40;
@@ -56,6 +60,18 @@ export const WRITE_TOOL_INPUT = {
     .max(64)
     .optional()
     .describe("Zona horaria IANA del usuario, por ejemplo America/Lima. Decide qué día es «hoy»."),
+  referencia: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "Identificador único del origen del movimiento, si lo hay: el id del correo del banco (Message-ID), de la notificación o del recibo. " +
+        "La misma referencia no crea un segundo borrador.",
+    ),
+  forzar: z
+    .boolean()
+    .optional()
+    .describe("true crea el borrador aunque se parezca a uno pendiente o ya guardado (el usuario confirmó que es otro movimiento). Por defecto, false."),
 };
 
 /** Lo que el conector deja en la cola del gateway. Espejo de `ConnectorDraftPayload` (`gateway/src/connector/store.ts`). */
@@ -72,11 +88,28 @@ export interface ConnectorDraftPayload {
   client: string | null;
 }
 
-export type EnqueueOutcome = { ok: true; id: string } | { ok: false; reason: "invalid" | "daily_cap" | "queue_full" };
+/** Espejo de `EnqueueOptions` del gateway. Sin él, el gateway no comprueba ni recuerda referencias (como antes). */
+export interface EnqueueOptions {
+  referencia: string | null;
+  forzar: boolean;
+  candidatos: MatchCandidate[];
+}
+
+/** Espejo de `DuplicateMatch` del gateway. */
+export interface DuplicateMatch extends MatchCandidate {
+  nivel: "fuerte" | "dudosa";
+}
+
+/** Espejo de `EnqueueOutcome` del gateway. */
+export type EnqueueOutcome =
+  | { ok: true; id: string }
+  | { ok: true; id: string; repeated: true; first_at: number }
+  | { ok: false; reason: "invalid" | "daily_cap" | "queue_full" }
+  | { ok: false; reason: "possible_duplicate"; matches: DuplicateMatch[] };
 
 /** El service binding a la clase RPC `ConnectorDrafts` del gateway. */
-export interface ConnectorDraftsBinding {
-  enqueue(userId: string, payload: ConnectorDraftPayload): Promise<EnqueueOutcome>;
+export interface ConnectorDraftsBinding extends QueueReader {
+  enqueue(userId: string, payload: ConnectorDraftPayload, options?: EnqueueOptions): Promise<EnqueueOutcome>;
 }
 
 /** La cola rechazó el movimiento: se le dice a la IA por qué, en palabras. */
@@ -262,8 +295,43 @@ export async function runWriteTool(ctx: ToolContext, deps: WriteToolDeps, args: 
     subcategory_name: sub?.sub.name ?? null,
     client: await deps.clientLabel(),
   };
-  const out = await deps.queue.enqueue(deps.sub, payload);
+  const referencia = typeof args.referencia === "string" && args.referencia.trim() ? args.referencia.trim() : null;
+  const forzar = args.forzar === true;
+  // Lo que el gateway no puede leer (no tiene la sesión de la persona): la Bandeja y lo guardado alrededor de ese día.
+  // Con `forzar` no hace falta: el gateway no compara.
+  const candidatos = forzar ? [] : await loadMatchCandidates(ctx, lookup.accounts, date, zone.tz);
+  const out = await deps.queue.enqueue(deps.sub, payload, { referencia, forzar, candidatos });
+  const borrador = {
+    tipo: isIncome ? "ingreso" : "gasto",
+    importe: amount,
+    divisa: currency,
+    nota: note,
+    fecha: date,
+    cuenta: finalAccount?.name ?? null,
+    categoria: sub?.label ?? null,
+  };
+
+  if (!out.ok && out.reason === "possible_duplicate") {
+    return {
+      resultado: "posible_duplicado",
+      borrador,
+      coincidencias: out.matches.map(describeMatch),
+      avisos: [
+        "No se creó nada. Se parece a lo de «coincidencias». Si el usuario confirma que es otro movimiento, vuelve a llamar con forzar=true; si es el mismo, no hace falta apuntarlo.",
+        ...zoneNotice(zone),
+      ],
+    };
+  }
   if (!out.ok) throw new EnqueueRejectedError(out.reason);
+  if ("repeated" in out) {
+    return {
+      resultado: "ya_apuntado",
+      borrador,
+      avisos: [
+        `Esta referencia ya se apuntó el ${new Date(out.first_at).toISOString().slice(0, 10)}: no se creó otro borrador. Está en la Bandeja de Yala, o el usuario ya lo confirmó o lo descartó.`,
+      ],
+    };
+  }
 
   const falta: string[] = [];
   if (!finalAccount) falta.push("cuenta");
@@ -275,17 +343,39 @@ export async function runWriteTool(ctx: ToolContext, deps: WriteToolDeps, args: 
   ];
   return {
     resultado: "borrador_en_bandeja",
-    borrador: {
-      tipo: isIncome ? "ingreso" : "gasto",
-      importe: amount,
-      divisa: currency,
-      nota: note,
-      fecha: date,
-      cuenta: finalAccount?.name ?? null,
-      categoria: sub?.label ?? null,
-    },
+    borrador,
     falta,
     avisos,
+  };
+}
+
+const PLACE: Record<DuplicateMatch["donde"], string> = {
+  bandeja: "pendiente en la Bandeja",
+  cola: "esperando a que la app lo recoja",
+  guardado: "ya guardado",
+};
+
+/** Una coincidencia como la ve la IA: dónde está, de dónde vino y qué dice. */
+export function describeMatch(m: DuplicateMatch) {
+  const fuente = m.fuente.startsWith("ai:")
+    ? m.fuente.slice(3) || "Tu IA"
+    : m.fuente === "correo"
+      ? "Correo del banco"
+      : m.fuente === "web"
+        ? "Yala web"
+        : m.fuente === "guardado"
+          ? null
+          : inboxSourceLabel(m.fuente, null);
+  return {
+    donde: PLACE[m.donde],
+    fuente,
+    parecido: m.nivel === "fuerte" ? "casi seguro el mismo" : "parecido",
+    tipo: m.kind === "income" ? "ingreso" : "gasto",
+    importe: m.amount,
+    divisa: m.currency,
+    nota: m.merchant,
+    fecha: m.day,
+    cuenta: m.account_name,
   };
 }
 
