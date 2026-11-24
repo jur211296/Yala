@@ -89,7 +89,7 @@ export class EnqueueRejectedError extends Error {
 export interface WriteToolDeps {
   queue: ConnectorDraftsBinding;
   sub: string;
-  /** Qué IA está conectada («Claude», «ChatGPT», «Grok»), o `null` si no se sabe. */
+  /** Qué IA está conectada («Claude», «ChatGPT», «Grok», «Cursor»), o `null` si no se sabe. */
   clientLabel: () => Promise<string | null>;
 }
 
@@ -301,18 +301,32 @@ export function enqueueRejectedMessage(reason: EnqueueRejectedError["reason"]): 
   }
 }
 
-/** La IA conectada, por la vuelta que registró su cliente (no por el nombre que se puso: ese lo elige el cliente). */
+/**
+ * La IA conectada, por la vuelta que registró su cliente (no por el nombre que se puso: ese lo elige el cliente).
+ *
+ * Un cliente puede registrar varias vueltas, y no todas dicen lo mismo. Las de una web concreta (claude.ai, chatgpt.com,
+ * grok.com) identifican a la IA y mandan, en el orden en que llegan. Las de Cursor (`cursor.com`, `cursor://`) solo
+ * cuentan si no hay ninguna de esas: Grok Bot se registra con el documento de cliente de Cursor, que trae también la de
+ * grok.com, y es Grok. El loopback va el último: lo usan Claude Code y Grok Bot por igual, y solo dice «Claude» si es lo
+ * único que hay.
+ */
 export function clientLabelFromRedirects(redirectUris: string[]): string | null {
+  let cursor = false;
+  let loopback = false;
   for (const raw of redirectUris) {
-    let host: string;
+    let u: URL;
     try {
-      host = new URL(raw).hostname;
+      u = new URL(raw);
     } catch {
       continue;
     }
-    if (host === "claude.ai" || host === "claude.com" || host === "localhost" || host === "127.0.0.1" || host === "[::1]") return "Claude";
+    const host = u.hostname;
+    if (host === "claude.ai" || host === "claude.com") return "Claude";
     if (host === "chatgpt.com" || host === "chat.openai.com") return "ChatGPT";
     if (host === "grok.com" || host.endsWith(".grok.com") || host === "x.ai" || host.endsWith(".x.ai")) return "Grok";
+    if (u.protocol === "cursor:" || host === "cursor.com" || host.endsWith(".cursor.com")) cursor = true;
+    else if (host === "localhost" || host === "127.0.0.1" || host === "[::1]") loopback = true;
   }
-  return null;
+  if (cursor) return "Cursor";
+  return loopback ? "Claude" : null;
 }

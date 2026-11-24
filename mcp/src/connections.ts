@@ -11,7 +11,7 @@
  * audiencia `authenticated` y SIN `client_id`. Así una IA conectada no puede ver qué otras hay ni desconectarlas.
  *
  * Qué cuenta cada fila. La conexión es un grant del Worker (uno por IA; reconectar la misma IA retira el anterior).
- * `ia` sale de la vuelta que registró su cliente («Claude», «ChatGPT», «Grok»), no del nombre que se puso al
+ * `ia` sale de la vuelta que registró su cliente («Claude», «ChatGPT», «Grok», «Cursor»), no del nombre que se puso al
  * registrarse, que lo elige ella. Si no se reconoce, `null` y la app dice «Tu IA». Nada de tokens, ids de sesión ni el
  * nombre elegido por el cliente. No se guarda «última actividad» (decisión 4): la app ya enseña el último borrador.
  *
@@ -91,7 +91,7 @@ export function makeAppVerifier(env: Env, keys?: JWTVerifyGetKey): AppVerifier {
 /** Una fila de la lista, tal como la recibe la app (`ConectaTuIAClient.swift`). */
 export interface PublicConnection {
   id: string;
-  /** «Claude», «ChatGPT», «Grok»; `null` si la vuelta no es de ninguna conocida. */
+  /** «Claude», «ChatGPT», «Grok», «Cursor»; `null` si la vuelta no es de ninguna conocida. */
   ia: string | null;
   /** El dominio al que vuelve el acceso (el mismo que enseñó la pantalla de permiso), o `null`. */
   vuelta: string | null;
