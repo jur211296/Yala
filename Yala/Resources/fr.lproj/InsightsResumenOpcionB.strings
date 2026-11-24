@@ -1,0 +1,37 @@
+/*
+  InsightsResumenOpcionB.strings
+  Yala
+
+  Estadísticas › Resumen, opción B · Decidir (Jürgen, 23-nov-2026): franja de salud, «Para decidir hoy», gastos
+  hormiga protagonistas, fila «Ir a» y la cápsula de Registros por comercio. Tabla propia, leída con el idioma de la
+  app (`ResumenOpcionBText`).
+*/
+
+"resumenB.health.lowering" = "Ce qui la fait le plus baisser : %@";
+"resumenB.health.openHint" = "Ouvre le détail de ta note";
+"resumenB.decide.title" = "À décider aujourd'hui";
+"resumenB.decide.budgetAtRisk.title" = "%1$@ est à %2$@";
+"resumenB.decide.budgetAtRisk.perDay" = "Il te reste %1$@ · %2$@ par jour jusqu'au %3$@";
+"resumenB.decide.budgetAtRisk.spent" = "Tu as utilisé tout le plafond · jusqu'au %@";
+"resumenB.decide.budgetOver.title" = "Tu as dépassé %@";
+"resumenB.decide.budgetOver.detail" = "De %1$@ · la période se termine le %2$@";
+"resumenB.decide.toPay.title" = "Reste à payer : %@";
+"resumenB.decide.toPay.detail" = "En attente : %1$d · jusqu'au %2$@";
+"resumenB.decide.toPay.count" = "En attente : %d";
+"resumenB.decide.spendingUp.title" = "Tu dépenses %@ de plus par jour";
+"resumenB.decide.spendingUp.detail" = "%@ par jour · regarde ce qui a augmenté";
+"resumenB.decide.hint.budgets" = "Ouvre Budgets";
+"resumenB.decide.hint.payments" = "Ouvre Paiements planifiés";
+"resumenB.decide.hint.trends" = "Ouvre Tendances";
+"resumenB.ant.purchases" = "%d achats";
+"resumenB.ant.caption" = "Sur des achats jusqu'à %@ que tu répètes";
+"resumenB.ant.pace.closesMonth" = "À ce rythme, tu finis le mois à %@";
+"resumenB.ant.pace.perMonth" = "À ce rythme, environ %@ par mois";
+"resumenB.ant.ai.merged" = "Yala IA a regroupé les noms d'un même magasin";
+"resumenB.ant.seePurchases" = "Voir les achats";
+"resumenB.ant.setCap" = "Fixer un plafond";
+"resumenB.ant.rowHint" = "Ouvre ses opérations";
+"resumenB.figures.weight" = "Ce qui pèse le plus : %1$@ %2$@";
+"resumenB.goTo.title" = "Aller à";
+"resumenB.records.only" = "Seulement %@";
+"resumenB.records.clear" = "Retirer le filtre %@";

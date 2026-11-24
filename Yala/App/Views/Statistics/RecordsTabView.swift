@@ -89,6 +89,14 @@ struct RecordsTabView: View {
                         }
                     }
 
+                    // Opción B del Resumen: «Solo Starbucks ✕» cuando se llegó tocando un gasto hormiga.
+                    if let merchant = viewModel.merchantFilter {
+                        RecordsMerchantFilterChip(filter: merchant) {
+                            viewModel.clearMerchantFilter()
+                            onFilterChange()
+                        }
+                    }
+
                     filterBarPanel
 
                     // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;

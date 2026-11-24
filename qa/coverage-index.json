@@ -4087,9 +4087,9 @@
         "P23-HORMIGA-IA-01"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_insights_showsTheSmallRecurringSpendingCard + unit:YalaTests/AntExpensesCalculatorTests | 2026-11-06 (lote de productividad 2.3, card ea78): tarjeta «Gastos hormiga» en Estadísticas › Resumen › Detalle. Regla sin IA: gastos hasta la mediana del período que se repiten 3+ veces, agrupados por descripción o subcategoría; sin ingresos, devoluciones, transferencias, ajustes ni pagos planificados. | 2026-11-06 (ticket insights-ant-expenses-ai-version-for-pro): versión Pro con IA debajo de la regla, dentro de la misma tarjeta; Free sin cambios. La IA junta grafías del mismo comercio (solo ids enviados; cifras sumadas en Swift) y escribe un consejo. Privado: nombre+veces+total; nube: además grafías, subcategoría, compras con fecha y lo del período anterior. Permiso de Estadísticas con versión (AIConsentRevision): con el texto viejo, botón en vez de salir solo. Tarea de gateway insights.ants (staging desplegado; producción antes de publicar 2.3). xcuitest:YalaUITests/Flows/AntExpensesAIProUITests (Pro con IA, Free sin nada nuevo, Pro sin permiso → botón → permiso → bloque; seams -uitest-stats-ai-reply y -uitest-seed-ant-spellings) + unit:YalaTests/AntExpensesAILogicTests + AntExpensesAIViewModelTests (mutantes: privado mandando detalle y marca de versión ignorada, los dos en rojo) + InsightsHighestExpenseNoNoteTests (nota del gasto más alto solo en la nube con el permiso vigente).",
+      "coverage": "xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_insights_showsTheSmallRecurringSpendingCard + unit:YalaTests/AntExpensesCalculatorTests | 2026-11-06 (lote de productividad 2.3, card ea78): tarjeta «Gastos hormiga» en Estadísticas › Resumen › Detalle. Regla sin IA: gastos hasta la mediana del período que se repiten 3+ veces, agrupados por descripción o subcategoría; sin ingresos, devoluciones, transferencias, ajustes ni pagos planificados. | 2026-11-06 (ticket insights-ant-expenses-ai-version-for-pro): versión Pro con IA debajo de la regla, dentro de la misma tarjeta; Free sin cambios. La IA junta grafías del mismo comercio (solo ids enviados; cifras sumadas en Swift) y escribe un consejo. Privado: nombre+veces+total; nube: además grafías, subcategoría, compras con fecha y lo del período anterior. Permiso de Estadísticas con versión (AIConsentRevision): con el texto viejo, botón en vez de salir solo. Tarea de gateway insights.ants (staging desplegado; producción antes de publicar 2.3). xcuitest:YalaUITests/Flows/AntExpensesAIProUITests (Pro con IA, Free sin nada nuevo, Pro sin permiso → botón → permiso → bloque; seams -uitest-stats-ai-reply y -uitest-seed-ant-spellings) + unit:YalaTests/AntExpensesAILogicTests + AntExpensesAIViewModelTests (mutantes: privado mandando detalle y marca de versión ignorada, los dos en rojo) + InsightsHighestExpenseNoNoteTests (nota del gasto más alto solo en la nube con el permiso vigente). | 2026-11-24 (opción B del Resumen): bloque protagonista con ritmo del mes (AntExpensesPaceLogic), filas que abren Registros por comercio (RecordsMerchantFilter, misma clave groupKey) y claves de cada unión de IA. unit:YalaTests/EstadisticasResumenOpcionB/EstadisticasResumenOpcionBTests.",
       "owner": "frank",
-      "lastVerified": "2026-11-06"
+      "lastVerified": "2026-11-24"
     },
     {
       "area": "scheduled-payment-brand-logos",
@@ -4626,6 +4626,21 @@
       "coverage": "xcuitest:YalaUITests/ComerciosEnComunUITests + unit:YalaTests/ComerciosEnComunNombreTests + YalaTests/ComerciosEnComunAporteTests + YalaTests/ComerciosEnComunSyncTests + YalaTests/ComerciosEnComunOrdenTests + YalaTests/ComerciosEnComunCableadoTests | 2026-11-22 (opciones recomendadas de la propuesta, decisión de Jürgen): lista anónima comercio → tipo en D1 del gateway (gateway/test/comercios-comun); el teléfono la baja entera una vez al día y propone sin poner sola; aporte en lote semanal (solo capturas, {comercio, tipo}); aviso una vez con «No aportar» y salida en Perfil › Comercios en común. Device-QA del envío real contra staging: pendiente en el ticket.",
       "owner": "",
       "lastVerified": "2026-11-22"
+    },
+    {
+      "area": "estadisticas-resumen-opcion-b",
+      "codeGlobs": [
+        "Yala/App/Logic/ResumenOpcionB/*.swift",
+        "Yala/App/Views/Statistics/ResumenOpcionB/*.swift",
+        "Yala/Utils/L10n+InsightsResumenOpcionB.swift"
+      ],
+      "scenarioIDs": [
+        "P23-RESUMEN-B-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/Flows/UXAudit22Lote11DecididasUITests#test_summary_showsWhatYouStillHaveToPay_asADecisionWithItsAmount + #test_weightLine_showsTheTopCategory_andTheNeedBar + unit:YalaTests/EstadisticasResumenOpcionB/EstadisticasResumenOpcionBTests | 2026-11-24 (opción B · Decidir, Jürgen 23-nov): franja de salud con la parte que más baja la nota (weakestPart), «Para decidir hoy» (orden pasado → ≥90 % → falta pagar → 80–90 % → gasto diario ≥5 %; máx. 3; solo con período que llega a hoy), gastos hormiga protagonista con ritmo del mes, Registros por comercio (efímero, cápsula «Solo X»), fila «Ir a», «Lo que más pesa» con la barra de necesidad. Fuera: Categoría/Subcategoría principal, caja ancha de Promedio diario, secciones plegables de pagos, presupuestos y necesidad.",
+      "owner": "frank",
+      "lastVerified": "2026-11-24"
     }
   ]
 }

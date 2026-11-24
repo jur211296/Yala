@@ -321,6 +321,8 @@ struct DetailContainerView: View {
                 showFloatingActions = false
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
+                    // El filtro por comercio del Resumen, igual: al volver, la lista entera.
+                    if recordsViewModel.clearMerchantFilter() { recalculateData() }
                 }
                 if navigation.selectedDetailTab != newTab {
                     navigation.selectedDetailTab = newTab
@@ -503,7 +505,9 @@ struct DetailContainerView: View {
                 scheduledPayments: dataViewModel.scheduledPayments,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 viewModel: insightsViewModel,
-                trendsViewModel: trendsViewModel
+                trendsViewModel: trendsViewModel,
+                // Opción B del Resumen: un gasto hormiga abre este chip Registros solo con sus registros.
+                onShowMerchantRecords: { showMerchantRecords($0) }
             )
             .accessibilityIdentifier("stats_tab_insights")
         case .trends:
@@ -542,6 +546,13 @@ struct DetailContainerView: View {
         case .records:
             recordsContent
         }
+    }
+
+    /// Registros de un comercio (opción B del Resumen): el filtro es de este chip y se quita al salir de él.
+    private func showMerchantRecords(_ filter: RecordsMerchantFilter) {
+        recordsViewModel.merchantFilter = filter
+        StagedTabSelection.select(.records, in: $pages, reduceMotion: reduceMotion)
+        recalculateData()
     }
 
     /// Un registro tocado fuera del chip Registros (el detalle de una categoría): siempre en hoja, también en ancha,

@@ -19,6 +19,7 @@ struct InsightsTabView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openURL) private var openURL
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SceneNavigation.self) private var navigation
 
     // MARK: - Data (passed from parent)
 
@@ -39,6 +40,10 @@ struct InsightsTabView: View {
     @Bindable var viewModel: InsightsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
 
+    /// Abre el chip Registros solo con los registros de un comercio (opción B: tocar un gasto hormiga). Lo pone
+    /// `DetailContainerView`, que es quien tiene la lista.
+    var onShowMerchantRecords: (RecordsMerchantFilter) -> Void = { _ in }
+
     // MARK: - Pro State
 
     @State private var showUpgradeSheet = false
@@ -51,13 +56,13 @@ struct InsightsTabView: View {
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
     @State private var isShortContainer = false
 
-    // Content split: bento Detalle (stats + commitments + need) vs Observaciones
+    // Content split: Detalle (gastos hormiga, cifras, lo que más pesa) vs Observaciones
     @State private var contentMode: InsightsContentMode = .detail
-    // «Lo que te falta pagar» y «Tus presupuestos» (UX 2.2 · L11-5) se abren solos si caben: el primero siempre (dos
-    // filas como mucho); el segundo con pocos presupuestos. Un toque de la persona manda sobre eso.
-    @State private var isToPayExpanded: Bool = true
-    @State private var budgetsExpandedChoice: Bool?
-    @State private var isNeedSectionExpanded: Bool = false
+    // «Ponerle un tope» de los gastos hormiga (opción B): el asistente de «Nuevo presupuesto» de Planificación, o el
+    // paywall si se llegó al límite del plan.
+    @State private var newBudgetWizard = AsistentePresupuestoEstado()
+    @State private var showsNewBudget = false
+    @State private var showsBudgetsUpgrade = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -83,12 +88,21 @@ struct InsightsTabView: View {
                         )
                         .padding(.top, DS.Spacing.xxxxl)
                     } else {
-                        // En ancha, tarjetas en pares: [Salud financiera | Resumen inteligente], el selector a lo
-                        // ancho, [Compromisos | Por necesidad]. Hoy era el iPhone estirado, con barras de 900 pt para
-                        // tres números (ticket `ipad-and-duo-panel-and-statistics-use-the-width`).
+                        // Opción B · Decidir (Jürgen, 23-nov-2026): la franja de salud, «Para decidir hoy» y, debajo, el
+                        // resumen con IA y el detalle. En ancha, tarjetas en pares (ticket
+                        // `ipad-and-duo-panel-and-statistics-use-the-width`).
                         PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                             if let score = viewModel.financialScore {
-                                financialScoreSection(score)
+                                ResumenSaludFranja(
+                                    score: score,
+                                    sessionState: sessionState,
+                                    hasBudgets: budgets.contains { $0.isActive }
+                                )
+                            }
+
+                            let actions = decideActions(data)
+                            if !actions.isEmpty {
+                                ResumenDecidirSeccion(actions: actions, onOpen: openDecision)
                             }
 
                             if isProUser {
@@ -118,16 +132,14 @@ struct InsightsTabView: View {
                                     .padding(.vertical, DS.Spacing.lg)
                                     .spansAllColumns()
                             }
+
+                            ResumenIrA(onSelect: goTo)
+                                .spansAllColumns()
                         }
                         .frame(maxWidth: .infinity)
                         // 12 + 8 = 20 pt sobre la primera sección, el mismo aire que entre tarjetas: con 12 el título
                         // «Tu salud financiera» colgaba de la fila de acciones en vez de encabezar su tarjeta.
                         .padding(.top, DS.Spacing.sm)
-                        // Las secciones plegables se abren y se cierran con lo de debajo moviéndose (card C2). Implícitas,
-                        // en el contenedor común: el `withAnimation` del toque no anima dentro de una pestaña.
-                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)
-                        .animation(reduceMotion ? nil : DS.Animation.appear, value: budgetsExpandedChoice)
-                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isNeedSectionExpanded)
                         // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
                         // por encima de los dos (mismo margen que `RecordsTabView`).
                         .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
@@ -165,6 +177,8 @@ struct InsightsTabView: View {
         .insightsConsentAlert(isPresented: $showAntAIConsentAlert) {
             Task { await viewModel.triggerAntAI() }
         }
+        .modifier(ResumenNewBudgetSheets(
+            wizard: newBudgetWizard, showsNewBudget: $showsNewBudget, showsUpgrade: $showsBudgetsUpgrade))
         .onChange(of: viewModel.insightData?.periodSummary.transactionCount) { _, newCount in
             // Reset defensivo: con < 5 tx no se monta el pill ni la rama Observaciones;
             // forzar Detalle para que al volver a >= 5 el bento sea visible de inmediato.
@@ -448,51 +462,79 @@ struct InsightsTabView: View {
         }
     }
 
-    // MARK: - Section 3: Quick Stats Bento
+    // MARK: - Para decidir hoy · Ir a (opción B)
 
-    // MARK: - Section: Salud financiera (header externo, view sin header interno)
+    /// Lo que pide «Para decidir hoy» con los datos del cálculo y los ajustes de Smart Insights (`ResumenDecidirLogic`).
+    private func decideActions(_ data: InsightData) -> [ResumenAccion] {
+        let c = data.commitments
+        let showsPayments = appPreferences.insightsShowPendingPayments
+        let showsSubscriptions = appPreferences.insightsShowSubscriptions
+        let input = ResumenDecidirEntrada(
+            periodIncludesToday: !PeriodTenseLogic.isClosed(
+                period: trendsViewModel.detailPeriod, customRange: sessionState.customDateRange),
+            budgets: c.budgets.map { ResumenPresupuesto($0) },
+            showsBudgets: appPreferences.insightsShowBudgetsAtRisk,
+            toPayAmount: (showsPayments ? c.pendingOtherPaymentsAmount : 0)
+                + (showsSubscriptions ? c.pendingSubscriptionsAmount : 0),
+            toPayCount: (showsPayments ? c.pendingOtherPaymentsCount : 0)
+                + (showsSubscriptions ? c.pendingSubscriptionsCount : 0),
+            toPayUntil: c.pendingUntil,
+            dailyAverage: data.periodSummary.dailyAverageExpense,
+            dailyAverageIsApproximate: data.periodSummary.expenseAmountsAreApproximate,
+            dailyVariation: data.periodSummary.dailyAverageVariation,
+            showsVariations: appPreferences.showVariations
+        )
+        return ResumenDecidirLogic.actions(input)
+    }
 
-    @ViewBuilder
-    private func financialScoreSection(_ score: FinancialScore) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Panel.Health.cardTitle)
-            FinancialScoreView(
-                score: score,
-                sessionState: sessionState,
-                subtitle: trendsViewModel.detailPeriod.displayName,
-                hideHeader: true,
-                hasBudgets: budgets.contains { $0.isActive }
-            )
+    private func openDecision(_ destination: ResumenDestino) {
+        switch destination {
+        case .budgets: navigation.navigateToBudgets()
+        case .scheduledPayments: navigation.navigateToScheduledPayments()
+        case .trends: navigation.navigateToDetail(.trends)
         }
     }
 
-    // MARK: - Detail mode (Tus cifras + M/A + bento + commitments + need)
+    private func goTo(_ destination: ResumenIrADestino) {
+        switch destination {
+        case .distribution: navigation.navigateToDetail(.categories)
+        case .trends: navigation.navigateToDetail(.trends)
+        case .records: navigation.navigateToDetail(.records)
+        case .budgets: navigation.navigateToBudgets()
+        }
+    }
+
+    /// «Ponerle un tope»: el asistente de «Nuevo presupuesto», o el paywall si el plan ya no admite otro.
+    private func openNewBudget() {
+        let active = budgets.filter(\.isActive).count
+        if FeatureGateService.shared.canCreate(.budgets, currentCount: active) {
+            newBudgetWizard.empezar(periodo: .monthly)
+            showsNewBudget = true
+        } else {
+            showsBudgetsUpgrade = true
+        }
+    }
+
+    // MARK: - Detail mode (gastos hormiga · Tus cifras · Lo que más pesa)
 
     @ViewBuilder
     private func detailModeContent(_ data: InsightData) -> some View {
         if appPreferences.insightsShowQuickStats {
-            // En ancha: [Promedio diario | las cuatro cifras], Suscripciones debajo a la izquierda.
+            if let ants = data.quickStats.antExpenses {
+                antExpensesCard(ants)
+            }
+
+            // En ancha: la cabecera a lo ancho y las cuatro cifras en pares.
             PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
                 detailModeHeader(summary: data.periodSummary)
                     .spansAllColumns()
-                detailModeBody(stats: data.quickStats, summary: data.periodSummary)
+                figuresGrid(stats: data.quickStats, summary: data.periodSummary)
+                    .spansAllColumns()
             }
             .spansAllColumns()
         }
 
-        if hasToPayData(data.commitments) {
-            toPaySection(data.commitments)
-        }
-
-        if hasBudgetsData(data.commitments) {
-            budgetsSection(data.commitments.budgets)
-        }
-
-        if data.periodSummary.transactionCount >= 5,
-           appPreferences.insightsShowNature,
-           data.needDistribution.total > 0 {
-            needSection(data.needDistribution)
-        }
+        weightLine(data)
     }
 
     @ViewBuilder
@@ -521,34 +563,22 @@ struct InsightsTabView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    @ViewBuilder
-    private func detailModeBody(stats: QuickStats, summary: PeriodSummary) -> some View {
-        dailyAverageCard(stats: stats, summary: summary)
-
-        // Con el texto al máximo, una ficha por fila: en media pantalla «Subcategoría principal» se partía en sílabas y el
-        // importe salía cortado («S/ 67,3…», barrido final 2.2). A tamaño normal, las dos columnas de siempre.
+    /// «Tus cifras»: cuatro celdas chicas (opción B). «Promedio diario» deja la caja ancha; «Categoría principal» y
+    /// «Subcategoría principal» se van (Mayor gasto ya nombra lo que más costó y «Lo que más pesa» la categoría).
+    private func figuresGrid(stats: QuickStats, summary: PeriodSummary) -> some View {
+        // Con el texto al máximo, una ficha por fila: una cifra no se corta (barrido final 2.2).
         let columns = dynamicTypeSize.isAccessibilitySize
             ? [GridItem(.flexible(), spacing: DS.Spacing.md)]
-            : [
-                GridItem(.flexible(), spacing: DS.Spacing.md),
-                GridItem(.flexible(), spacing: DS.Spacing.md)
-            ]
+            : [GridItem(.flexible(), spacing: DS.Spacing.md), GridItem(.flexible(), spacing: DS.Spacing.md)]
 
-        LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-            if let top = stats.topCategory {
+        return LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+            dailyAverageCell(stats: stats, summary: summary)
+            if let bestDay = stats.highestAvgWeekday {
                 QuickStatCell(
-                    icon: "folder.fill",
-                    label: L10n.Insights.topCategory,
-                    value: top.name,
-                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage.rounded()))%"
-                )
-            }
-            if let topSub = stats.topSubcategory {
-                QuickStatCell(
-                    icon: "tag.fill",
-                    label: L10n.Insights.topSubcategory,
-                    value: topSub.subcategoryName,
-                    secondary: appPreferences.currency(topSub.amount, currencyCode: defaultCurrencyCode)
+                    icon: "calendar.circle.fill",
+                    label: L10n.Insights.highestAvgWeekday,
+                    value: bestDay.weekdayName.capitalized,
+                    secondary: appPreferences.currency(bestDay.average, currencyCode: defaultCurrencyCode)
                 )
             }
             if let highest = stats.highestExpense {
@@ -559,22 +589,395 @@ struct InsightsTabView: View {
                     secondary: highest.note
                 )
             }
-            if let bestDay = stats.highestAvgWeekday {
+            if stats.subscriptionsTotal > 0 {
                 QuickStatCell(
-                    icon: "calendar.circle.fill",
-                    label: L10n.Insights.highestAvgWeekday,
-                    value: bestDay.weekdayName.capitalized,
-                    secondary: appPreferences.currency(bestDay.average, currencyCode: defaultCurrencyCode)
+                    icon: "repeat.circle.fill",
+                    label: L10n.Insights.subscriptions,
+                    value: appPreferences.currency(stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
+                    secondary: L10n.Insights.monthly
                 )
             }
         }
+        .accessibilityIdentifier("insights_figures")
+    }
 
-        if stats.subscriptionsTotal > 0 {
-            subscriptionsCard(stats)
+    /// «Promedio diario» en celda chica, con su variación debajo si la hay.
+    private func dailyAverageCell(stats: QuickStats, summary: PeriodSummary) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "chart.bar.fill")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.Insights.dailyAverage)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            AmountText(
+                value: stats.dailyAverage,
+                currencyCode: defaultCurrencyCode,
+                font: DS.Typography.headline, secondaryFont: DS.Typography.captionSmall,
+                // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el cociente aproximado/total
+                // que mide `ApproximateMarkThreshold` no cambia al dividir, así que la marca del gasto es la suya.
+                isEstimate: summary.expenseAmountsAreApproximate
+            )
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+            .minimumScaleFactor(0.7)
+
+            // Reserva su alto aunque no haya variación: cambiar de período no hace saltar la cuadrícula.
+            Group {
+                if appPreferences.showVariations, summary.dailyAverageVariation != nil {
+                    VariationChip(variation: summary.dailyAverageVariation, size: .small, isExpenseContext: true)
+                } else {
+                    Text(verbatim: " ")
+                        .font(DS.Typography.captionSmall)
+                        .opacity(0)
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(small: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("insights_daily_average")
+    }
 
-        if let ants = stats.antExpenses {
-            antExpensesCard(ants)
+    /// «Lo que más pesa: Hogar · 38 %» con la barra de necesidad y salida a Distribución. Sustituye a «Categoría
+    /// principal» y a la sección plegable de la necesidad.
+    @ViewBuilder
+    private func weightLine(_ data: InsightData) -> some View {
+        let top = appPreferences.insightsShowQuickStats ? data.quickStats.topCategory : nil
+        let need = data.needDistribution
+        let showsNeed = data.periodSummary.transactionCount >= 5 && appPreferences.insightsShowNature && need.total > 0
+        if top != nil || showsNeed {
+            Button {
+                navigation.navigateToDetail(.categories)
+            } label: {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    // Con el texto al máximo, «Distribución ›» baja a su línea (al lado partía las dos cosas).
+                    AdaptiveRowStack {
+                        Text(top.map {
+                            ResumenOpcionBText.Figures.weight($0.name, percent: L10n.UXL11D.percent($0.percentage))
+                        } ?? L10n.Insights.needDistribution)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } trailing: {
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Text(DetailViewTab.categories.title)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(theme.accentText)
+                            Image(systemName: "chevron.right")
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(theme.accentText)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    if showsNeed {
+                        // Con su leyenda (Esencial, Prioritaria, Opcional y su parte), la de Distribución.
+                        NeedBar(distribution: need)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .panelCard()
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("insights_weight_line")
+        }
+    }
+
+    // MARK: - Gastos hormiga, el bloque protagonista (opción B)
+
+    /// Compras pequeñas que se repiten: el total grande, el ritmo del mes, una fila por comercio con un punto por compra
+    /// (tocarla abre sus registros), la franja de Yala IA (Pro) y dos salidas. La regla vive en `AntExpensesCalculator`.
+    private func antExpensesCard(_ ants: AntExpensesSummary) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Con el texto al máximo, las compras bajan bajo el título: al lado, «Gastos hormiga» se partía en sílabas.
+            AdaptiveRowStack {
+                HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(DS.Semantic.warningBackground)
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "ant.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Semantic.warningForeground)
+                    }
+                    .accessibilityHidden(true)
+                    Text(L10n.Insights.antExpensesTitle)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                }
+            } trailing: {
+                Text(ResumenOpcionBText.Ant.purchases(ants.count))
+                    .font(DS.Typography.captionSmall)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(DS.Semantic.warningBackground, in: Capsule())
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                AmountText(
+                    value: ants.total,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.cardHeroAmount, secondaryFont: DS.Typography.cardHeroAmountSecondary
+                )
+                Text(ResumenOpcionBText.Ant.caption(
+                    threshold: appPreferences.currency(ants.threshold, currencyCode: defaultCurrencyCode)))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let pace = antPaceText(ants) {
+                    Text(pace)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_pace")
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(antSummaryLabel(ants))
+            .accessibilityIdentifier("insights_ant_expenses_summary")
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                ForEach(ants.groups.prefix(3), id: \.key) { group in
+                    antRow(group)
+                }
+            }
+
+            // Pro: la franja de Yala IA, aparte de la lista. Free no ve nada nuevo.
+            if isProUser {
+                antExpensesAIBlock
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.sm) { antButtons(ants) }
+                VStack(spacing: DS.Spacing.sm) { antButtons(ants) }
+            }
+        }
+        .panelCard()
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.antAI)
+        // `.contain`: la tarjeta tiene su id sin pisar los de su resumen y sus filas.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("insights_ant_expenses_card")
+    }
+
+    /// «A este ritmo cierras el mes en S/ 410» o «A este ritmo, unos S/ 300 al mes». Sin ritmo, nada.
+    private func antPaceText(_ ants: AntExpensesSummary) -> String? {
+        switch ants.pace {
+        case .closesMonth(let amount):
+            return ResumenOpcionBText.Ant.closesMonth(appPreferences.currency(amount, currencyCode: defaultCurrencyCode))
+        case .perMonth(let amount):
+            return ResumenOpcionBText.Ant.perMonth(appPreferences.currency(amount, currencyCode: defaultCurrencyCode))
+        case nil:
+            return nil
+        }
+    }
+
+    /// Lo que oye VoiceOver del total: la frase de siempre («S/ 567 en 24 compras pequeñas») y el ritmo.
+    private func antSummaryLabel(_ ants: AntExpensesSummary) -> String {
+        let summary = L10n.Insights.antExpensesSummary(
+            total: appPreferences.currency(ants.total, currencyCode: defaultCurrencyCode), count: ants.count)
+        return [summary, antPaceText(ants)].compactMap { $0 }.joined(separator: ". ")
+    }
+
+    /// Una fila por comercio: nombre, un punto por compra y el total. Tocarla abre sus registros.
+    private func antRow(_ group: AntExpenseGroup) -> some View {
+        let total = appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)
+        return Button {
+            onShowMerchantRecords(RecordsMerchantFilter(label: group.label, keys: [group.key]))
+        } label: {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(group.label)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                        HStack(spacing: DS.Spacing.sm) {
+                            AntFrequencyDots(count: group.count)
+                            Spacer(minLength: DS.Spacing.sm)
+                            Text(total)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                } else {
+                    HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                        Text(group.label)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .layoutPriority(1)
+                        Spacer(minLength: DS.Spacing.sm)
+                        AntFrequencyDots(count: group.count)
+                        Text(total)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .monospacedDigit()
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .fixedSize()
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+            .padding(.vertical, DS.Spacing.xxs)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(group.label), \(L10n.Insights.antExpensesRow(count: group.count, total: total))")
+        .accessibilityHint(ResumenOpcionBText.Ant.rowHint)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("insights_ant_expenses_row")
+    }
+
+    @ViewBuilder
+    private func antButtons(_ ants: AntExpensesSummary) -> some View {
+        Button {
+            onShowMerchantRecords(RecordsMerchantFilter(
+                label: L10n.Insights.antExpensesTitle,
+                keys: Set(ants.groups.map(\.key)).union(viewModel.antAI?.mergedGroups.flatMap(\.keys) ?? [])))
+        } label: {
+            antButtonLabel(ResumenOpcionBText.Ant.seePurchases, systemImage: "list.bullet")
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("insights_ant_see_purchases")
+
+        Button {
+            openNewBudget()
+        } label: {
+            antButtonLabel(ResumenOpcionBText.Ant.setCap, systemImage: "gauge.with.dots.needle.bottom.50percent")
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("insights_ant_set_cap")
+    }
+
+    private func antButtonLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(DS.Typography.labelSmall)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(.thBackground, in: Capsule())
+            .contentShape(Capsule())
+    }
+
+    /// La franja de Yala IA de los gastos hormiga (Pro): las tiendas que juntó (cada una abre sus registros, todas sus
+    /// grafías) y el consejo. Sin consentimiento, un toque lo pide; con él, sale solo
+    /// (`InsightsViewModel.autoRefreshAntAIIfNeeded`). Un fallo no enseña nada: el bloque gratis sigue igual.
+    @ViewBuilder
+    private var antExpensesAIBlock: some View {
+        if let insight = viewModel.antAI, !insight.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                if !insight.mergedGroups.isEmpty {
+                    Label(ResumenOpcionBText.Ant.aiMerged, systemImage: "sparkles")
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(theme.accentText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                ForEach(Array(insight.mergedGroups.prefix(3).enumerated()), id: \.offset) { _, group in
+                    Button {
+                        onShowMerchantRecords(RecordsMerchantFilter(label: group.label, keys: group.keys))
+                    } label: {
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                                Text(group.label)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Spacer(minLength: DS.Spacing.sm)
+                                Text(L10n.Insights.antExpensesRow(
+                                    count: group.count,
+                                    total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            Text(L10n.Insights.antExpensesAIAlsoWritten(group.otherLabels.map { "«\($0)»" }
+                                .formatted(.list(type: .and))))
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityHint(ResumenOpcionBText.Ant.rowHint)
+                    .accessibilityIdentifier("insights_ant_expenses_ai_merge")
+                }
+
+                if let total = insight.combinedTotal, let count = insight.combinedCount {
+                    Text(L10n.Insights.antExpensesAICombined(
+                        total: appPreferences.currency(total, currencyCode: defaultCurrencyCode), count: count))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_ai_combined")
+                }
+
+                if let tip = insight.tip {
+                    Text(AIInsightCardComponents.markdownAttributed(tip))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_ai_tip")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.md)
+            .background(.thBackground, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("insights_ant_expenses_ai")
+        } else if viewModel.isLoadingAntAI {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(theme.accentText)
+                    .symbolEffect(.pulse)
+                    .accessibilityHidden(true)
+                Text(L10n.Insights.analyzingData)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.md)
+            .background(.thBackground, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .transition(.loadingPlaceholder)
+        } else if !appPreferences.hasCurrentAIInsightsConsent {
+            // Sin el permiso con el texto vigente hace falta un toque: es el que autoriza enviar los nombres de las compras
+            // pequeñas. También a quien aceptó el texto anterior (decisión A de Jürgen, 2026-11-06); su resumen de
+            // siempre sigue saliendo solo.
+            Button {
+                showAntAIConsentAlert = true
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(theme.accentText)
+                        .accessibilityHidden(true)
+                    Text(L10n.Insights.antExpensesAICta)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: DS.Spacing.sm)
+                }
+                .padding(DS.Spacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.thBackground, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("insights_ant_expenses_ai_cta")
         }
     }
 
@@ -591,550 +994,6 @@ struct InsightsTabView: View {
         }
         if !isProUser { lockedFunFact }
     }
-
-    // MARK: - Daily Average Card (full-width hero del bento)
-
-    private func dailyAverageCard(stats: QuickStats, summary: PeriodSummary) -> some View {
-        // Sin icono delante: repetía el de la pestaña y empujaba la etiqueta y la cifra fuera de la línea izquierda
-        // de las demás tarjetas.
-        HStack(spacing: DS.Spacing.md) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Insights.dailyAverage)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-
-                AmountText(
-                    value: stats.dailyAverage,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.cardHeroAmount, secondaryFont: DS.Typography.cardHeroAmountSecondary,
-                    // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el
-                    // cociente aproximado/total que mide `ApproximateMarkThreshold` no cambia al
-                    // dividir, así que la marca del gasto es exactamente la suya.
-                    isEstimate: summary.expenseAmountsAreApproximate
-                )
-
-                // Reserva altura constante: evita salto visual al alternar
-                // dailyAverageVariation nil ↔ valor (cambio de período).
-                Group {
-                    if appPreferences.showVariations, summary.dailyAverageVariation != nil {
-                        HStack(spacing: DS.Spacing.xs) {
-                            VariationChip(variation: summary.dailyAverageVariation, size: .small, isExpenseContext: true)
-                            Text("· " + L10n.Stats.Insights.dailyAvgIn(trendsViewModel.detailPeriod.displayName))
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Text(" ")
-                            .font(DS.Typography.caption)
-                            .padding(.vertical, DS.Spacing.xxs)
-                            .opacity(0)
-                    }
-                }
-            }
-            Spacer()
-        }
-        .panelCard()
-    }
-
-    // MARK: - Subscriptions Card (banner condicional)
-
-    private func subscriptionsCard(_ stats: QuickStats) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            // En gris, como los iconos de las celdas: el acento se queda para la acción y la pestaña elegida.
-            Image(systemName: "repeat.circle.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Insights.subscriptions)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                Text("\(appPreferences.currency(stats.subscriptionsTotal, currencyCode: defaultCurrencyCode)) · \(L10n.Insights.monthly)")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .panelCard()
-    }
-
-    // MARK: - Gastos hormiga (card ea78, 2.3)
-
-    /// Compras pequeñas que se repiten, con lo que suman. La regla vive en `AntExpensesCalculator` y se enseña al pie
-    /// para que la cifra se entienda sin abrir nada.
-    private func antExpensesCard(_ ants: AntExpensesSummary) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(alignment: .top, spacing: DS.Spacing.md) {
-                Image(systemName: "ant.circle.fill")
-                    .font(.system(size: 24)) // A11Y-DT: mismo tamaño que el icono de Suscripciones, al lado.
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Insights.antExpensesTitle)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
-                    Text(L10n.Insights.antExpensesSummary(
-                        total: appPreferences.currency(ants.total, currencyCode: defaultCurrencyCode),
-                        count: ants.count))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("insights_ant_expenses_summary")
-                    if let monthly = ants.monthlyEstimate {
-                        Text(L10n.Insights.antExpensesMonthly(
-                            appPreferences.currency(monthly, currencyCode: defaultCurrencyCode)))
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                ForEach(ants.groups.prefix(3), id: \.key) { group in
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                        Text(group.label)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Spacer(minLength: DS.Spacing.sm)
-                        Text(L10n.Insights.antExpensesRow(
-                            count: group.count,
-                            total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("insights_ant_expenses_row")
-                }
-            }
-
-            Text(L10n.Insights.antExpensesRule(
-                threshold: appPreferences.currency(ants.threshold, currencyCode: defaultCurrencyCode),
-                minCount: AntExpensesCalculator.minOccurrences))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Pro: lo de la IA se SUMA debajo; lo de arriba es la tarjeta gratis tal cual (ticket
-            // `insights-ant-expenses-ai-version-for-pro`). Free no ve nada nuevo.
-            if isProUser {
-                antExpensesAIBlock
-            }
-        }
-        .panelCard()
-        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.antAI)
-        // `.contain`: la tarjeta tiene su id sin pisar los de su resumen y sus filas.
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("insights_ant_expenses_card")
-    }
-
-    /// El bloque Pro de los gastos hormiga: las compras que la IA juntó (la misma tienda escrita de otra forma), el total
-    /// con ellas juntas y un consejo. Sin consentimiento, un toque lo pide; con él, sale solo
-    /// (`InsightsViewModel.autoRefreshAntAIIfNeeded`). Un fallo no enseña nada: la tarjeta gratis sigue igual.
-    @ViewBuilder
-    private var antExpensesAIBlock: some View {
-        if let insight = viewModel.antAI {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Divider()
-                Label(L10n.Insights.antExpensesAITitle, systemImage: "sparkles")
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(theme.accentText)
-                    .padding(.top, DS.Spacing.xxs)
-
-                ForEach(Array(insight.mergedGroups.prefix(3).enumerated()), id: \.offset) { _, group in
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                            Text(group.label)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            Spacer(minLength: DS.Spacing.sm)
-                            Text(L10n.Insights.antExpensesRow(
-                                count: group.count,
-                                total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        Text(L10n.Insights.antExpensesAIAlsoWritten(group.otherLabels.map { "«\($0)»" }
-                            .formatted(.list(type: .and))))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("insights_ant_expenses_ai_merge")
-                }
-
-                if let total = insight.combinedTotal, let count = insight.combinedCount {
-                    Text(L10n.Insights.antExpensesAICombined(
-                        total: appPreferences.currency(total, currencyCode: defaultCurrencyCode), count: count))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("insights_ant_expenses_ai_combined")
-                }
-
-                if let tip = insight.tip {
-                    Text(AIInsightCardComponents.markdownAttributed(tip))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, DS.Spacing.xxs)
-                        .accessibilityIdentifier("insights_ant_expenses_ai_tip")
-                }
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("insights_ant_expenses_ai")
-        } else if viewModel.isLoadingAntAI {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Divider()
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(theme.accentText)
-                        .symbolEffect(.pulse)
-                        .accessibilityHidden(true)
-                    Text(L10n.Insights.analyzingData)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .transition(.loadingPlaceholder)
-        } else if !appPreferences.hasCurrentAIInsightsConsent {
-            // Sin el permiso con el texto vigente hace falta un toque: es el que autoriza enviar los nombres de las compras
-            // pequeñas. También a quien aceptó el texto anterior (decisión A de Jürgen, 2026-11-06); su resumen de
-            // siempre sigue saliendo solo.
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Divider()
-                Button {
-                    showAntAIConsentAlert = true
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(theme.accentText)
-                            .accessibilityHidden(true)
-                        Text(L10n.Insights.antExpensesAICta)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: DS.Spacing.sm)
-                    }
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("insights_ant_expenses_ai_cta")
-            }
-        }
-    }
-
-    // MARK: - Section 4: Lo que te falta pagar · Tus presupuestos (UX 2.2 · L11-5)
-    //
-    // Hasta el 2026-10-18 era una sola sección plegada, «Compromisos · Periodo actual de cada presupuesto», que mezclaba
-    // los pagos pendientes, las suscripciones activas («S/ 223 mensual», sin pasar a mensual y contando otra vez la que
-    // estaba pendiente) y los presupuestos con solo su porcentaje. Decisión B de Jürgen: dos bloques con nombre de
-    // persona, cada número diciendo de dónde sale.
-
-    private func hasToPayData(_ c: Commitments) -> Bool {
-        (appPreferences.insightsShowPendingPayments && c.pendingOtherPaymentsCount > 0) ||
-        (appPreferences.insightsShowSubscriptions && c.pendingSubscriptionsCount > 0)
-    }
-
-    private func hasBudgetsData(_ c: Commitments) -> Bool {
-        appPreferences.insightsShowBudgetsAtRisk && !c.budgets.isEmpty
-    }
-
-    /// Los presupuestos se abren solos si caben sin alargar la pantalla.
-    static let budgetsOpenWhenAtMost = 4
-
-    private func isBudgetsExpanded(_ budgets: [BudgetAtRisk]) -> Bool {
-        budgetsExpandedChoice ?? (budgets.count <= Self.budgetsOpenWhenAtMost)
-    }
-
-    /// Lo que suma «Lo que te falta pagar»: solo las filas que se ven.
-    private func toPayTotal(_ c: Commitments) -> Double {
-        (appPreferences.insightsShowPendingPayments ? c.pendingOtherPaymentsAmount : 0)
-            + (appPreferences.insightsShowSubscriptions ? c.pendingSubscriptionsAmount : 0)
-    }
-
-    /// El cuerpo de una sección plegable: se desenrolla bajo su cabecera, recortado a su propio hueco (card C2). Sin el
-    /// recorte, el `.move(edge: .top)` lo hacía bajar desde encima de las tarjetas de arriba mientras se fundía (vídeo).
-    /// La separación con la cabecera va dentro del cuerpo: plegada, la sección mide lo mismo que antes.
-    private func collapsibleBody<Content: View>(_ isExpanded: Bool, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(spacing: DS.Spacing.none) {
-            if isExpanded {
-                content()
-                    .padding(.top, DS.Spacing.sm)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .clipped()
-    }
-
-    @ViewBuilder
-    private func toPaySection(_ c: Commitments) -> some View {
-        VStack(spacing: DS.Spacing.none) {
-            CollapsibleSectionHeader(
-                title: L10n.UXL11D.toPayTitle,
-                subtitle: L10n.UXL11D.toPayTotal(
-                    appPreferences.currency(toPayTotal(c), currencyCode: defaultCurrencyCode)
-                ),
-                isExpanded: isToPayExpanded
-            ) {
-                isToPayExpanded.toggle()
-            }
-            .accessibilityIdentifier("insights_to_pay_header")
-
-            collapsibleBody(isToPayExpanded) {
-                VStack(spacing: DS.Spacing.md) {
-                    if appPreferences.insightsShowPendingPayments, c.pendingOtherPaymentsCount > 0 {
-                        commitmentRow(
-                            icon: "clock",
-                            label: L10n.UXL11D.toPayPayments,
-                            value: appPreferences.currency(c.pendingOtherPaymentsAmount, currencyCode: defaultCurrencyCode),
-                            secondary: L10n.UXL11D.pendingCount(c.pendingOtherPaymentsCount)
-                        )
-                        .accessibilityIdentifier("insights_to_pay_payments")
-                    }
-
-                    if appPreferences.insightsShowSubscriptions, c.pendingSubscriptionsCount > 0 {
-                        commitmentRow(
-                            icon: "repeat",
-                            label: L10n.UXL11D.toPaySubscriptions,
-                            value: appPreferences.currency(c.pendingSubscriptionsAmount, currencyCode: defaultCurrencyCode),
-                            secondary: L10n.UXL11D.pendingCount(c.pendingSubscriptionsCount)
-                        )
-                        .accessibilityIdentifier("insights_to_pay_subscriptions")
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func budgetsSection(_ budgets: [BudgetAtRisk]) -> some View {
-        let expanded = isBudgetsExpanded(budgets)
-        VStack(spacing: DS.Spacing.none) {
-            CollapsibleSectionHeader(
-                title: L10n.UXL11D.budgetsTitle,
-                subtitle: L10n.Insights.commitmentsNote,
-                isExpanded: expanded
-            ) {
-                budgetsExpandedChoice = !expanded
-            }
-            .accessibilityIdentifier("insights_budgets_header")
-
-            collapsibleBody(expanded) {
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(budgets) { budget in
-                        budgetRow(budget)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Budget Row (with icon, no alert colors)
-
-    private func budgetRow(_ budget: BudgetAtRisk) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.md) {
-                // Budget icon (compact version of BudgetRowView)
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: budget.colorHex ?? "4A90D9"))
-                        .frame(width: 28, height: 28)
-
-                    Image(systemName: budget.icon)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.white)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(budget.name)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.primary)
-
-                    // «S/ 780 de S/ 1,000 · 78 %» (UX 2.2 · L11-5): el porcentaje solo no decía de cuánto. Bajo el
-                    // nombre y no a su derecha: con importes de cuatro cifras, a la derecha se partía en dos líneas.
-                    Text(L10n.UXL11D.budgetUsage(
-                        spent: appPreferences.currency(budget.spent, currencyCode: budget.currencyCode),
-                        limit: appPreferences.currency(budget.limit, currencyCode: budget.currencyCode),
-                        percent: L10n.UXL11D.percent(budget.usagePercent)
-                    ))
-                        .font(DS.Typography.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("insights_budget_usage")
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            BudgetProgressBar(
-                percentage: budget.usagePercent,
-                color: budget.colorHex ?? "4A90D9",
-                // Rosa solo si te pasaste, como en Planificación: justo el límite no es pasarse (decisión 23 de 2.3).
-                isExceeded: BudgetRemainingLogic.isOver(limit: budget.limit, spent: budget.spent),
-                simplified: true
-            )
-            .frame(height: 6)
-        }
-        .panelCard(small: true)
-    }
-
-    private func commitmentRow(icon: String, label: String, value: String, secondary: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.body)
-                .foregroundStyle(theme.accentText)
-                .frame(width: 32)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(label)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                Text(secondary)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Text(value)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-        }
-        .panelCard(small: true)
-    }
-
-    // MARK: - Section 6: Need Distribution
-
-    @ViewBuilder
-    private func needSection(_ distribution: NeedDistribution) -> some View {
-        VStack(spacing: DS.Spacing.none) {
-            CollapsibleSectionHeader(
-                title: L10n.Insights.needDistribution,
-                isExpanded: isNeedSectionExpanded
-            ) {
-                isNeedSectionExpanded.toggle()
-            }
-
-            collapsibleBody(isNeedSectionExpanded) {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // El para qué (UX 2.2 · L11-6, decisión B): las tres palabras no se explicaban solas.
-                    Text(L10n.UXL11D.needPurpose)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("insights_need_purpose")
-
-                    NeedBar(distribution: distribution)
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        needBucketRow(
-                            label: L10n.Need.essential,
-                            example: SubcategoryNeed.essential.description,
-                            amount: distribution.essential,
-                            percent: distribution.essentialPercent,
-                            color: Color.essentialNeed,
-                            icon: "house.fill"
-                        )
-                        needBucketRow(
-                            label: L10n.Need.priority,
-                            example: SubcategoryNeed.priority.description,
-                            amount: distribution.priority,
-                            percent: distribution.priorityPercent,
-                            color: Color.priorityNeedNew,
-                            icon: "star.fill"
-                        )
-                        needBucketRow(
-                            label: L10n.Need.optional,
-                            example: SubcategoryNeed.optional.description,
-                            amount: distribution.optional,
-                            percent: distribution.optionalPercent,
-                            color: Color.optionalNeed,
-                            icon: "sparkles"
-                        )
-                    }
-
-                    if let tip = needContextualTip(distribution) {
-                        Text(tip)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, DS.Spacing.xs)
-                    }
-                }
-                .panelCard()
-            }
-        }
-    }
-
-    private func needBucketRow(
-        label: String, example: String, amount: Double, percent: Double, color: Color, icon: String
-    ) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: 32, height: 32)
-                Image(systemName: icon)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(color)
-            }
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(label)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                // Un ejemplo por fila, el mismo texto que el selector de necesidad del formulario (L2-9 B).
-                Text(example)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(L10n.Stats.Insights.needDailyFormat(appPreferences.currency(amount / Double(periodDays), currencyCode: defaultCurrencyCode)))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                AmountText(
-                    value: amount,
-                    currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall
-                )
-                // Redondeado, no truncado: 21,95 % salía «21 %» y las tres necesidades sumaban 98 %; Distribución
-                // redondea y daba otra cifra para lo mismo (auditoría UX 2.2 · lote 11 · B4).
-                Text("\(Int(percent.rounded()))%")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket. Los mismos días que el «Promedio diario»
-    /// de arriba: en «Todo el tiempo», desde el primer registro y no desde hace diez años (lote 11 · B3).
-    private var periodDays: Int {
-        max(1, viewModel.insightData?.periodSummary.dayCount ?? 1)
-    }
-
-    /// Tip motivacional contextual: reusa la regla `ruleOptionalHigh` ya
-    /// localizada (16 locales × 3 tonos). Solo se muestra si optional% > 40.
-    private func needContextualTip(_ distribution: NeedDistribution) -> String? {
-        guard distribution.total > 0, distribution.optionalPercent > 40 else { return nil }
-        return L10n.Insights.ruleOptionalHigh(Int(distribution.optionalPercent), tone: InsightTone.current)
-    }
-
 
     // MARK: - Section 7: Text Insights (Free users)
 
@@ -1253,5 +1112,28 @@ private enum InsightsContentMode: String, CaseIterable {
         case .detail:       return L10n.Stats.Insights.modeDetail
         case .observations: return L10n.Insights.intelligentInsights
         }
+    }
+}
+
+// MARK: - «Ponerle un tope» (opción B)
+
+/// Las dos hojas de «Ponerle un tope» de los gastos hormiga: el asistente de «Nuevo presupuesto» de Planificación y el
+/// paywall del límite de presupuestos. En su propio modificador: el `body` de la pestaña ya va cargado de presentaciones
+/// (regla del compilador del CI en `swiftui-ds.md`).
+private struct ResumenNewBudgetSheets: ViewModifier {
+    let wizard: AsistentePresupuestoEstado
+    @Binding var showsNewBudget: Bool
+    @Binding var showsUpgrade: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showsNewBudget, onDismiss: { wizard.empezar(periodo: .monthly) }) {
+                NuevoPresupuestoHoja(estado: wizard) { showsNewBudget = false }
+            }
+            // Como Planificación: al pasarse a Pro, el asistente se abre solo.
+            .proUpgradeSheet(isPresented: $showsUpgrade, feature: .budgets, context: .limitReached) {
+                wizard.empezar(periodo: .monthly)
+                showsNewBudget = true
+            }
     }
 }

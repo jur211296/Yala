@@ -479,21 +479,24 @@ final class AdaptiveNavigationUITests: XCTestCase {
                 + "quedó en una barra aparte.")
     }
 
-    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen con IA» en la misma
-    /// fila. En iPhone, uno debajo de otro.
+    /// Fase 2b: Estadísticas › Resumen en pares en ancho. Desde la opción B (24-nov-2026) la franja de salud va con el
+    /// bloque que la sigue: «Para decidir hoy» si hay algo que decidir, y si no, «Resumen con IA». En iPhone, uno
+    /// debajo de otro.
     func test_statisticsSummary_pairsTheCards_inWideWindow() {
         if expectsWideWindow { XCUIDevice.shared.orientation = .landscapeLeft }
         let app = launch(deeplink: "statistics")
-        let health = label("Tu salud financiera", in: app)
+        let health = app.buttons["insights_health_strip"]
         let smart = label("Resumen con IA", in: app)
         XCTAssertTrue(health.waitForExistence(timeout: 15), "No está «Tu salud financiera».")
         XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen con IA».")
+        let decide = app.descendants(matching: .any)["insights_decide"]
+        let partner = decide.exists ? decide : smart
 
         if expectsWideWindow {
-            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen con IA» no está al lado de la salud financiera.")
-            XCTAssertLessThan(abs(smart.frame.midY - health.frame.midY), 60, "Las dos tarjetas no están en la misma fila.")
+            XCTAssertGreaterThan(partner.frame.minX, health.frame.maxX, "El bloque siguiente no está al lado de la salud financiera.")
+            XCTAssertLessThan(abs(partner.frame.minY - health.frame.minY), 60, "Las dos tarjetas no están en la misma fila.")
         } else {
-            XCTAssertGreaterThan(smart.frame.minY, health.frame.maxY, "En iPhone el Resumen dejó de ir en una columna.")
+            XCTAssertGreaterThan(partner.frame.minY, health.frame.maxY, "En iPhone el Resumen dejó de ir en una columna.")
         }
     }
 

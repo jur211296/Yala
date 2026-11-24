@@ -1,0 +1,37 @@
+/*
+  InsightsResumenOpcionB.strings
+  Yala
+
+  Estadísticas › Resumen, opción B · Decidir (Jürgen, 23-nov-2026): franja de salud, «Para decidir hoy», gastos
+  hormiga protagonistas, fila «Ir a» y la cápsula de Registros por comercio. Tabla propia, leída con el idioma de la
+  app (`ResumenOpcionBText`).
+*/
+
+"resumenB.health.lowering" = "拉低最多的一项：%@";
+"resumenB.health.openHint" = "打开评分详情";
+"resumenB.decide.title" = "今天要决定的事";
+"resumenB.decide.budgetAtRisk.title" = "%1$@ 已用 %2$@";
+"resumenB.decide.budgetAtRisk.perDay" = "还剩 %1$@ · 到 %3$@ 前每天 %2$@";
+"resumenB.decide.budgetAtRisk.spent" = "上限已用完 · 到 %@";
+"resumenB.decide.budgetOver.title" = "%@ 已超支";
+"resumenB.decide.budgetOver.detail" = "超出 %1$@ · 本期于 %2$@ 结束";
+"resumenB.decide.toPay.title" = "还需支付 %@";
+"resumenB.decide.toPay.detail" = "待付：%1$d 笔 · 到 %2$@";
+"resumenB.decide.toPay.count" = "待付：%d 笔";
+"resumenB.decide.spendingUp.title" = "你每天多花 %@";
+"resumenB.decide.spendingUp.detail" = "每天 %@ · 看看哪里涨了";
+"resumenB.decide.hint.budgets" = "打开预算";
+"resumenB.decide.hint.payments" = "打开计划付款";
+"resumenB.decide.hint.trends" = "打开趋势";
+"resumenB.ant.purchases" = "%d 笔消费";
+"resumenB.ant.caption" = "每笔不超过 %@ 的重复消费";
+"resumenB.ant.pace.closesMonth" = "按这个速度，本月将花到 %@";
+"resumenB.ant.pace.perMonth" = "按这个速度，每月约 %@";
+"resumenB.ant.ai.merged" = "Yala AI 合并了同一家店的名称";
+"resumenB.ant.seePurchases" = "查看这些消费";
+"resumenB.ant.setCap" = "设置上限";
+"resumenB.ant.rowHint" = "打开相关记录";
+"resumenB.figures.weight" = "占比最大：%1$@ %2$@";
+"resumenB.goTo.title" = "前往";
+"resumenB.records.only" = "仅 %@";
+"resumenB.records.clear" = "移除 %@ 筛选";

@@ -46,6 +46,9 @@ struct AntAIMergedGroup: Equatable {
     let otherLabels: [String]
     let count: Int
     let total: Double
+    /// Las claves (`AntExpenseGroup.key`) de las grafías juntadas: tocar la unión abre Registros con todas ellas
+    /// (Resumen, opción B).
+    var keys: Set<String> = []
 }
 
 /// Lo que se enseña en el bloque Pro, ya validado.
@@ -199,7 +202,8 @@ enum AntExpensesAILogic {
                     label: head.label,
                     otherLabels: members.dropFirst().map(\.label),
                     count: count,
-                    total: members.reduce(0) { $0 + $1.total }
+                    total: members.reduce(0) { $0 + $1.total },
+                    keys: Set(members.map(\.key))
                 ),
                 Set(members.map(\.key))
             ))

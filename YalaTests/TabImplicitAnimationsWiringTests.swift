@@ -126,12 +126,8 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: notificationsCardDismissals)"),
         ("Yala/App/Views/Groups/GroupNotificationsOptInCard.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: state)"),
-        ("Yala/App/Views/Statistics/InsightsTabView.swift",
-         ".animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)"),
-        ("Yala/App/Views/Statistics/InsightsTabView.swift",
-         ".animation(reduceMotion ? nil : DS.Animation.appear, value: budgetsExpandedChoice)"),
-        ("Yala/App/Views/Statistics/InsightsTabView.swift",
-         ".animation(reduceMotion ? nil : DS.Animation.appear, value: isNeedSectionExpanded)"),
+        // Las tres secciones plegables de Resumen («Lo que te falta pagar», «Tus presupuestos» y la necesidad) se fueron
+        // con la opción B (23-nov-2026): lo que piden sale como acción en «Para decidir hoy».
         ("Yala/App/Views/Statistics/TrendsTabView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: showsPreviousPeriod)"),
         ("Yala/App/Views/Statistics/TrendsTabView.swift",

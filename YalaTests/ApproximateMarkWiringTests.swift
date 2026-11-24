@@ -314,6 +314,10 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         #expect(expense == 1, """
             El promedio diario, que es `totalExpense` dividido entre un entero exacto. Hay \(expense).
             """)
+        // Opción B del Resumen (24-nov): la acción «Gastas X % más por día» pinta el mismo promedio y lleva su marca.
+        #expect(src.contains("dailyAverageIsApproximate: data.periodSummary.expenseAmountsAreApproximate"))
+        let decide = try Self.code("Yala/App/Views/Statistics/ResumenOpcionB/ResumenOpcionBViews.swift")
+        #expect(decide.contains("money(action.amount, isEstimate: action.isApproximate)"))
     }
 
     @Test("Tendencias marca también sus chips, y el hero del Panel ya no tiene")
