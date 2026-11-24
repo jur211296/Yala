@@ -8686,25 +8686,10 @@
 "bankEmail.skipped" = "E-mails que chegaram sem ser lidos: %d.";
 "bankEmail.trialUsed" = "E-mails de teste usados: %1$d de %2$d.";
 "bankEmail.guideTitle" = "Encaminhar do %@";
-"bankEmail.guideLine" = "Você configura uma vez só, pelo navegador.";
 "bankEmail.guarantee" = "Só os avisos do seu banco saem do seu e-mail: o resto dos seus e-mails não é encaminhado.";
-"bankEmail.stepCopyTitle" = "Copie seu endereço do Yala";
-"bankEmail.stepCopyDetail" = "Você vai colar no seu e-mail no próximo passo.";
-"bankEmail.gmailAddTitle" = "Adicione como endereço de encaminhamento";
-"bankEmail.gmailAddDetail" = "No Gmail, pelo navegador: Configurações › Ver todas as configurações › Encaminhamento e POP/IMAP › Adicionar um endereço de encaminhamento. Cole seu endereço e confirme.";
 "bankEmail.openProvider" = "Abrir o %@";
-"bankEmail.gmailConfirmTitle" = "Confirme com o código do Gmail";
-"bankEmail.gmailConfirmWaiting" = "O Gmail manda um código para o seu endereço do Yala. Quando chegar, você vai vê-lo aqui: toque em “Buscar o código” daqui a pouco.";
-"bankEmail.gmailConfirmCode" = "Seu código do Gmail é %@. Digite no Gmail, em Encaminhamento e POP/IMAP, e toque em Verificar.";
 "bankEmail.copyCode" = "Copiar código";
 "bankEmail.checkCode" = "Buscar o código";
-"bankEmail.gmailFilterTitle" = "Crie um filtro para o seu banco";
-"bankEmail.gmailFilterDetail" = "No Gmail, busque o endereço do qual seu banco manda os avisos e toque em Criar filtro. Marque “Encaminhar para”, escolha seu endereço do Yala e crie o filtro. Assim só os avisos do banco são encaminhados.";
-"bankEmail.ruleTitle" = "Crie uma regra para o seu banco";
-"bankEmail.outlookRuleDetail" = "No Outlook, pelo navegador: Configurações › Email › Regras › Adicionar nova regra. Condição: “De” o endereço do seu banco. Ação: “Encaminhar para” o seu endereço do Yala. Salve a regra.";
-"bankEmail.icloudRuleDetail" = "No iCloud.com, abra o Mail e vá em Ajustes › Regras › Adicionar uma regra. Se uma mensagem for do endereço do seu banco, encaminhe para o seu endereço do Yala. Salve a regra.";
-"bankEmail.stepWaitTitle" = "Espere o próximo aviso";
-"bankEmail.stepWaitDetail" = "Quando seu banco mandar o próximo, a movimentação aparece na sua Caixa de Entrada para confirmar.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Não foi possível salvar tudo. Parte das alterações pode já aparecer; confira a conta e salve de novo.";

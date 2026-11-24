@@ -38,27 +38,12 @@ extension L10n {
         static var privacyFooter: String { bankEmailString("bankEmail.privacyFooter") }
         static var proLine: String { bankEmailString("bankEmail.proLine") }
         static var trialExhausted: String { bankEmailString("bankEmail.trialExhausted") }
-        static var guideLine: String { bankEmailString("bankEmail.guideLine") }
         static var guarantee: String { bankEmailString("bankEmail.guarantee") }
-        static var stepCopyTitle: String { bankEmailString("bankEmail.stepCopyTitle") }
-        static var stepCopyDetail: String { bankEmailString("bankEmail.stepCopyDetail") }
-        static var gmailAddTitle: String { bankEmailString("bankEmail.gmailAddTitle") }
-        static var gmailAddDetail: String { bankEmailString("bankEmail.gmailAddDetail") }
-        static var gmailConfirmTitle: String { bankEmailString("bankEmail.gmailConfirmTitle") }
-        static var gmailConfirmWaiting: String { bankEmailString("bankEmail.gmailConfirmWaiting") }
         static var copyCode: String { bankEmailString("bankEmail.copyCode") }
         static var checkCode: String { bankEmailString("bankEmail.checkCode") }
-        static var gmailFilterTitle: String { bankEmailString("bankEmail.gmailFilterTitle") }
-        static var gmailFilterDetail: String { bankEmailString("bankEmail.gmailFilterDetail") }
-        static var ruleTitle: String { bankEmailString("bankEmail.ruleTitle") }
-        static var outlookRuleDetail: String { bankEmailString("bankEmail.outlookRuleDetail") }
-        static var icloudRuleDetail: String { bankEmailString("bankEmail.icloudRuleDetail") }
-        static var stepWaitTitle: String { bankEmailString("bankEmail.stepWaitTitle") }
-        static var stepWaitDetail: String { bankEmailString("bankEmail.stepWaitDetail") }
         static func skipped(_ count: Int) -> String { String(format: bankEmailString("bankEmail.skipped"), count) }
         static func trialUsed(_ used: Int, _ limit: Int) -> String { String(format: bankEmailString("bankEmail.trialUsed"), used, limit) }
         static func guideTitle(_ provider: String) -> String { String(format: bankEmailString("bankEmail.guideTitle"), provider) }
         static func openProvider(_ provider: String) -> String { String(format: bankEmailString("bankEmail.openProvider"), provider) }
-        static func gmailConfirmCode(_ code: String) -> String { String(format: bankEmailString("bankEmail.gmailConfirmCode"), code) }
     }
 }
