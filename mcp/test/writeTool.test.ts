@@ -263,6 +263,20 @@ describe("resolución por nombre", () => {
     expect(clientLabelFromRedirects(["https://grok.com/oauth/callback"])).toBe("Grok");
     expect(clientLabelFromRedirects(["https://otra.example/cb"])).toBeNull();
   });
+
+  it("Grok Bot (paquete de Cursor con grok.com) es Grok; solo Cursor es Cursor; el loopback no tapa a nadie", () => {
+    const cursorOnly = ["https://www.cursor.com/agents/mcp/oauth/callback", "https://www.cursor.com/bot/mcp/oauth/callback", "cursor://anysphere.cursor-mcp/oauth/callback"];
+    const grokBot = [...cursorOnly.slice(0, 2), "https://grok.com/connectors-oauth-exchange-code/", cursorOnly[2]!, "http://localhost:8787/callback", "http://127.0.0.1:8787/callback"];
+    expect(clientLabelFromRedirects(grokBot)).toBe("Grok");
+    // La vuelta del grant va delante (`describeGrant`): aunque sea la de Cursor o el loopback, sigue siendo Grok.
+    expect(clientLabelFromRedirects(["http://localhost:8787/callback", ...grokBot])).toBe("Grok");
+    expect(clientLabelFromRedirects(["cursor://anysphere.cursor-mcp/oauth/callback", ...grokBot])).toBe("Grok");
+    expect(clientLabelFromRedirects(["https://grok.com/connectors-oauth-exchange-code/"])).toBe("Grok");
+    expect(clientLabelFromRedirects(cursorOnly)).toBe("Cursor");
+    expect(clientLabelFromRedirects(["cursor://anysphere.cursor-mcp/oauth/callback"])).toBe("Cursor");
+    expect(clientLabelFromRedirects(["http://localhost:8787/callback", ...cursorOnly])).toBe("Cursor");
+    expect(clientLabelFromRedirects(["http://localhost:8787/callback", "https://claude.ai/api/mcp/auth_callback"])).toBe("Claude");
+  });
 });
 
 describe("el permiso y las vueltas de ChatGPT y Grok", () => {

@@ -204,6 +204,24 @@ describe("el nombre de cada IA sale de su vuelta, no del nombre que se puso", ()
     expect(await describeGrant(helpers([uri]), grant(uri))).toMatchObject({ ia, vuelta, local });
   });
 
+  it("Grok Bot: aunque el grant vuelva a Cursor o al loopback, la fila dice Grok", async () => {
+    const grokBot = [
+      "https://www.cursor.com/agents/mcp/oauth/callback",
+      "https://www.cursor.com/bot/mcp/oauth/callback",
+      "https://grok.com/connectors-oauth-exchange-code/",
+      "cursor://anysphere.cursor-mcp/oauth/callback",
+      "http://localhost:8787/callback",
+      "http://127.0.0.1:8787/callback",
+    ];
+    expect(await describeGrant(helpers(grokBot, "Grok"), grant("https://www.cursor.com/bot/mcp/oauth/callback"))).toMatchObject({
+      ia: "Grok",
+      vuelta: "www.cursor.com",
+      local: false,
+    });
+    expect(await describeGrant(helpers(grokBot, "Grok"), grant("http://localhost:8787/callback"))).toMatchObject({ ia: "Grok", local: true });
+    expect(await describeGrant(helpers(grokBot.filter((u) => !u.includes("grok.com")), "Grok"), grant())).toMatchObject({ ia: "Cursor" });
+  });
+
   it("una vuelta desconocida es null aunque el cliente se llame «Claude»", async () => {
     const row = await describeGrant(helpers(["https://evil.example/cb"], "Claude"), grant("https://evil.example/cb"));
     expect(row).toMatchObject({ ia: null, vuelta: "evil.example", local: false });

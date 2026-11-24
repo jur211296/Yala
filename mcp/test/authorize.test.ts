@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedRedirect } from "../src/authorize";
+import { extraRedirects, isAllowedRedirect } from "../src/authorize";
 import { escapeHtml } from "../src/pages";
 import { randB64url, sha256b64url } from "./b64";
 import { authorizeUrl, BASE, Browser, productionEnv, register, REDIRECT, world, type World } from "./helpers";
 import { USER_A, WORKER_SB_CLIENT } from "./supabase-fake";
+
+/** Lo que manda Grok Bot al registrarse: el documento de cliente que publica Cursor (cursor.com/oauth/mcp-client.json). */
+const GROK_BOT_REDIRECTS = [
+  "https://www.cursor.com/agents/mcp/oauth/callback",
+  "https://www.cursor.com/bot/mcp/oauth/callback",
+  "https://grok.com/connectors-oauth-exchange-code/",
+  "cursor://anysphere.cursor-mcp/oauth/callback",
+];
 
 const pkce = async () => {
   const verifier = randB64url(32);
@@ -291,7 +299,99 @@ describe("piezas", () => {
     }
   });
 
+  it("Grok web y Grok Bot: sus cuatro vueltas exactas entran; sus primas no", () => {
+    for (const ok of GROK_BOT_REDIRECTS) expect(isAllowedRedirect(ok), ok).toBe(true);
+    for (const bad of [
+      // Otra ruta, barra de más o de menos, otro host de Cursor.
+      "https://www.cursor.com/agents/mcp/oauth/callback/",
+      "https://www.cursor.com/otra/mcp/oauth/callback",
+      "https://www.cursor.com/bot/mcp/oauth/callback?x=1",
+      "https://cursor.com/bot/mcp/oauth/callback",
+      "https://evil.cursor.com/bot/mcp/oauth/callback",
+      "http://www.cursor.com/bot/mcp/oauth/callback",
+      "https://grok.com/connectors-oauth-exchange-code",
+      "https://grok.com/connectors-oauth-exchange-code/x",
+      "https://grok.com/connectors-oauth-exchange-code/?next=https://evil.example/",
+      // `cursor://`: solo la exacta. Otro host, otra ruta, query, fragmento, mayúsculas o forma no canónica.
+      "cursor://anysphere.cursor-mcp/oauth/callback?code=x",
+      "cursor://anysphere.cursor-mcp/oauth/callback#x",
+      "cursor://anysphere.cursor-mcp/oauth/callback/",
+      "cursor://anysphere.cursor-mcp/otra",
+      "cursor://evil.example/oauth/callback",
+      "cursor://ANYSPHERE.cursor-mcp/oauth/callback",
+      "cursor://u:p@anysphere.cursor-mcp/oauth/callback",
+      "cursor:anysphere.cursor-mcp/oauth/callback",
+      "cursor://localhost/callback",
+      "vscode://anysphere.cursor-mcp/oauth/callback",
+    ]) {
+      expect(isAllowedRedirect(bad), bad).toBe(false);
+    }
+  });
+
+  it("EXTRA_REDIRECT_URIS sigue aceptando solo https exactas: un cursor:// ahí no abre nada", () => {
+    expect([...extraRedirects("cursor://otra.cosa/cb, https://grok.com/cb")]).toEqual(["https://grok.com/cb"]);
+    expect(isAllowedRedirect("cursor://otra.cosa/cb", extraRedirects("cursor://otra.cosa/cb"))).toBe(false);
+  });
+
   it("escapeHtml cubre los cinco caracteres", () => {
     expect(escapeHtml(`<a href="x">'&'</a>`)).toBe("&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;");
+  });
+});
+
+describe("Grok Bot y Grok web se registran y vuelven", () => {
+  const FULL = [...GROK_BOT_REDIRECTS, "http://localhost:8787/callback", "http://127.0.0.1:8787/callback"];
+
+  it("el paquete entero de Grok Bot (https, cursor:// y loopback) se registra, y el de Grok web solo también", async () => {
+    const w = await world();
+    expect((await register(w, FULL, "Grok")).res.status).toBe(201);
+    expect((await register(w, ["https://grok.com/connectors-oauth-exchange-code/"], "Grok")).res.status).toBe(201);
+    expect((await register(w, ["cursor://anysphere.cursor-mcp/oauth/callback"], "Cursor")).res.status).toBe(201);
+  });
+
+  it("con UNA vuelta prima en el paquete, el alta entera se rechaza y la prima queda en el log", async () => {
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (line: unknown) => void logs.push(String(line));
+    const statuses: number[] = [];
+    try {
+      const w = await world();
+      for (const bad of [
+        "https://www.cursor.com/otra/mcp/oauth/callback",
+        "cursor://otro.host/oauth/callback",
+        "cursor://anysphere.cursor-mcp/oauth/callback?x=1",
+        "cursor://anysphere.cursor-mcp/oauth/callback#x",
+      ]) {
+        statuses.push((await register(w, [...FULL, bad], "Grok")).res.status);
+      }
+    } finally {
+      console.log = original;
+    }
+    expect(statuses).toEqual([400, 400, 400, 400]);
+    const lines = logs.map((l) => JSON.parse(l) as Record<string, string>).filter((l) => l.motivo === "vuelta_no_permitida");
+    expect(lines.map((l) => l.resultado)).toEqual([
+      "https://www.cursor.com/otra/mcp/oauth/callback",
+      "cursor://otro.host/oauth/callback",
+      "cursor://anysphere.cursor-mcp/oauth/callback +query",
+      "cursor://anysphere.cursor-mcp/oauth/callback",
+    ]);
+  });
+
+  it("el permiso se pide como Grok, y sin PKCE el error vuelve a cursor:// con su state", async () => {
+    const w = await world();
+    const { body } = await register(w, FULL, "Grok Bot");
+    const ok = await new Browser(w).fetch(authorizeUrl(body.client_id!, "x".repeat(43), "st", { redirect_uri: "https://www.cursor.com/bot/mcp/oauth/callback" }));
+    expect(ok.status).toBe(200);
+    expect(await ok.text()).toContain('<span class="ai">Grok</span>');
+
+    const res = await w.call(
+      `${BASE}/authorize?` +
+        new URLSearchParams({ response_type: "code", client_id: body.client_id!, redirect_uri: "cursor://anysphere.cursor-mcp/oauth/callback", state: "s7" }),
+    );
+    expect(res.status).toBe(302);
+    const loc = res.headers.get("Location")!;
+    expect(loc.startsWith("cursor://anysphere.cursor-mcp/oauth/callback?")).toBe(true);
+    const q = new URL(loc).searchParams;
+    expect(q.get("error")).toBe("invalid_request");
+    expect(q.get("state")).toBe("s7");
   });
 });

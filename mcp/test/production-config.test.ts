@@ -52,6 +52,13 @@ describe("wrangler.toml real", () => {
     }
   });
 
+  it("producción tiene Workers Observability encendida, como staging (si no, no deja eventos)", () => {
+    const prod = productionSection(TOML);
+    const staging = TOML.slice(0, TOML.indexOf(prod));
+    expect(staging).toMatch(/^\[observability\]\nenabled = true$/m);
+    expect(prod).toMatch(/^\[env\.production\.observability\]\nenabled = true$/m);
+  });
+
   it("producción declara los tres límites y su propio KV, distintos de los de staging", () => {
     const prod = productionSection(TOML);
     const staging = TOML.slice(0, TOML.indexOf(prod));

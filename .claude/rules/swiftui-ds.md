@@ -87,6 +87,14 @@ paths:
   haya abierto (cambiar el período en el Panel), y sin `hasEnteredOnce` cargaban y calculaban los diez años en segundo
   plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
   `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
+  **Y volver a una página de Estadísticas no recalcula lo suyo si nada cambió (2026-11-24, encargo de fluidez).**
+  `StagedTabPages` desmonta la página que se va, y la que vuelve nacía sin su `@State`: medido con diez años, el 70 % del
+  hilo principal al alternar chips eran las tarjetas de Tendencias, el Sankey y «Tu dinero hoy» recalculándose igual.
+  Tendencias y Distribución guardan lo calculado con su firma en `StatisticsPageMemory` (en el `StatisticsViewModel` del
+  contenedor) y «Tu dinero hoy» va por `StatsMoneyTodayMemory` (por contenedor, por el entorno). ⇒ **un `onChange`
+  nuevo que recalcule una de esas páginas lleva su campo en la firma** (`cardsKey`, `distributionKey`, `sankeyKey`), y
+  un `@State` nuevo que salga del cálculo, en el snapshot y en la restauración; si no, volver al chip enseña cifras
+  viejas. Pin: `YalaTests/EstadisticasFluidez/` (el cableado lee cada `onChange` y lo busca en la firma).
 
 - **Las tres pestañas de Estadísticas comparan con el período anterior HASTA HOY (decisión 29 de la revisión 2.3,
   2026-11-12).** La regla es la de Resumen, `DateAlignmentHelper.alignedPreviousInterval(asOf:)`: en un período en curso
