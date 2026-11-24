@@ -1,6 +1,6 @@
 ---
 name: ax-loaded-timeout-se-cura-reiniciando
-description: «Timed out waiting for AX loaded notification» con 0 casos: reiniciar el iPhone 17 Pro y calentar con un caso suelto; repetir sin reiniciar no sirve
+description: «Timed out waiting for AX loaded notification» con 0 casos, o 60 s por paso con «App animations complete notification not received»: reiniciar el iPhone 17 Pro; repetir sin reiniciar no sirve
 metadata:
   type: feedback
 ---
@@ -18,3 +18,9 @@ centinela decía «estuviste solo», así que no era una colisión.
 **How to apply:** al ver ese mensaje, no relances el gate: apaga cualquier simulador extra, reinicia el 17 Pro, corre un
 caso suelto y luego el subconjunto. Si creas un simulador para reproducir (el SE), apágalo y bórralo en cuanto acabes,
 antes del gate. Relacionado: [[el-carril-espera-a-cola-a]].
+
+**Variante del 2026-11-24 (Mini, simulador recién arrancado con `simctl boot`):** la corrida SÍ ejecuta, pero cada
+paso espera 60 s con «App animations complete notification not received, will attempt to continue». Dos casos de una
+hoja tardaron 1.007 s y 700 s y se comieron el presupuesto de 30 min de interfaz de un encargo nocturno. `shutdown` +
+`boot` y los mismos casos bajaron a 40-55 s. ⇒ si el primer caso pasa de ~3 min, cuenta esa línea en el log
+(`grep -c "animations complete notification not received"`) y reinicia antes de seguir: no esperes a que acabe.

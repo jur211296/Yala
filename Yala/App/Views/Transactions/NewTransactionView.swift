@@ -1553,7 +1553,7 @@ struct NewTransactionView: View {
     /// La hoja corta «Hacer recurrente» (L2-15), desde «···» o desde la pantalla de éxito.
     private var recurringQuickSheetContent: some View {
         RecurringQuickSheet(
-            transactionDate: viewModel.transactionDate,
+            record: recurringFormRecord,
             onPick: { recurrence in
                 pendingRecurrence = recurrence
                 showRecurringQuickSheet = false
@@ -1581,21 +1581,26 @@ struct NewTransactionView: View {
         )
     }
 
+    /// Lo que el formulario tiene del registro, para «Hacer recurrente»: la hoja corta lo resume y sus dos salidas lo
+    /// copian entero (`RecurringFromRecordService.FormRecord`).
+    private var recurringFormRecord: RecurringFromRecordService.FormRecord {
+        RecurringFromRecordService.FormRecord(
+            transactionType: viewModel.transactionType,
+            amount: viewModel.amount,
+            currencyCode: viewModel.amountCurrencyCode,
+            note: viewModel.note,
+            account: viewModel.selectedAccount,
+            subcategory: viewModel.selectedSubcategory,
+            tags: viewModel.selectedTags,
+            need: viewModel.selectedNeed,
+            date: viewModel.transactionDate)
+    }
+
     private var recurringSheetContent: some View {
         ScheduledPaymentEditorView(
             payment: nil,
-            prefill: ScheduledPaymentPrefill(
-                transactionType: viewModel.transactionType.rawValue,
-                amount: AmountInputHelper.formatWithGrouping(viewModel.amount),
-                note: viewModel.note,
-                account: viewModel.selectedAccount,
-                subcategory: viewModel.selectedSubcategory,
-                tagIDs: Set(viewModel.selectedTags.map { $0.persistentModelID }),
-                needOverride: viewModel.selectedNeed,
-                // La divisa del importe, sin convertir (card 4k2q).
-                currencyCode: viewModel.amountCurrencyCode,
-                transactionDate: viewModel.transactionDate
-            ),
+            // Todo lo del registro, de la misma fuente que la opción rápida (23-nov).
+            prefill: RecurringFromRecordService.moreOptionsPrefill(from: recurringFormRecord),
             onSaved: { paymentID in
                 handleRecurringSaved(paymentID: paymentID, fromFullEditor: true)
             },
@@ -2748,39 +2753,16 @@ struct NewTransactionView: View {
         let wasEdit = viewModel.editingTransaction != nil || viewModel.editingTransferPair != nil
         // Always save the transaction (new or edited) before linking
         let saved = viewModel.save(context: modelContext) ?? []
-        let txToLink = saved.first
-        txToLink?.scheduledPaymentID = paymentID.uuidString
+        guard let txToLink = saved.first else { return }
 
-        // Advance nextDueDate so the system doesn't create a duplicate draft
-        let paymentIDString = paymentID.uuidString
+        // El registro queda como el primer pago, ya pagado, y la próxima fecha avanza con la misma regla que «Hacer
+        // recurrente» de un registro guardado (23-nov): antes avanzaba una vez, y un registro de mañana dejaba mañana
+        // un borrador duplicado; uno de hace meses, borradores de lo de en medio.
         var recurrence: RecurrenceType = .monthly
-        do {
-            let descriptor = FetchDescriptor<ScheduledPayment>()
-            if let payment = try modelContext.fetch(descriptor).first(where: { $0.id.uuidString == paymentIDString }) {
-                recurrence = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
-                let calendar = Calendar.current
-                if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date.now) {
-                    payment.lastPaidDate = Date.now
-                    ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("NewTransactionView: Error fetching scheduled payment: \(error)")
-            #endif
+        if let payment = RecurringFromRecordService.linkAsFirstPayment(
+            txToLink, paymentID: paymentID, context: modelContext) {
+            recurrence = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
         }
-
-        do {
-            try modelContext.save()
-            WidgetDataCache.updateCache(context: modelContext)
-            SessionState.shared.incrementDataVersion()
-        } catch {
-            #if DEBUG
-            print("NewTransactionView: Error linking to scheduled payment: \(error)")
-            #endif
-        }
-
-        guard !saved.isEmpty else { return }
         // Un registro nuevo enseña la pantalla de éxito, como el guardado normal, con «Recurrente» marcado (decisión de
         // Jürgen del 2026-11-23). Sin el aviso breve: saldría duplicado con la pantalla.
         if TransactionSaveFeedbackLogic.recurringFeedback(isEdit: wasEdit, successScreenShown: showSuccessScreen)
@@ -2851,39 +2833,9 @@ struct NewTransactionView: View {
     /// Una fila de la hoja corta: crea el pago planificado con la frecuencia y el ancla de la fecha del registro, guarda
     /// el de hoy y cierra con el aviso. El pago no crea registros: deja un borrador en la Bandeja y avisa el día.
     private func createRecurringPayment(_ recurrence: RecurrenceType) {
-        guard viewModel.canSave, let account = viewModel.selectedAccount else { return }
-        let anchor = RecurringQuickChoiceLogic.anchor(for: viewModel.transactionDate)
-        let editor = ScheduledPaymentEditorViewModel()
-        editor.setContext(modelContext, deletionService: deletionService)
-        let trimmedNote = viewModel.note.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmedNote.isEmpty ? (viewModel.selectedSubcategory?.name ?? viewModel.transactionType.displayName) : trimmedNote
-        guard let paymentID = editor.savePayment(
-            existing: nil,
-            name: name,
-            amount: viewModel.amount,
-            note: viewModel.note,
-            // La divisa del importe, la que enseña la pantalla, sin convertir (card 4k2q).
-            currencyCode: viewModel.amountCurrencyCode,
-            transactionType: viewModel.transactionType.rawValue,
-            paymentCategory: .recurring,
-            account: account,
-            subcategory: viewModel.selectedSubcategory,
-            selectedTags: Set(viewModel.selectedTags.map(\.persistentModelID)),
-            isRecurring: true,
-            recurrenceType: recurrence,
-            recurrenceInterval: 1,
-            paymentDate: Calendar.current.startOfDay(for: viewModel.transactionDate),
-            dayOfMonth: anchor.dayOfMonth,
-            selectedWeekdays: [anchor.weekday],
-            yearlyMonth: anchor.month,
-            yearlyDay: anchor.dayOfMonth,
-            endDate: nil,
-            notifyOnDueDate: true,
-            notifyDaysBefore: 0,
-            isActive: true,
-            needOverride: viewModel.selectedNeed.flatMap {
-                $0 != viewModel.selectedSubcategory?.need ? $0.rawValue : nil
-            }
+        guard viewModel.canSave, viewModel.selectedAccount != nil else { return }
+        guard let paymentID = RecurringFromRecordService.createQuickPayment(
+            from: recurringFormRecord, recurrence: recurrence, context: modelContext, deletionService: deletionService
         ) else {
             // Sin háptico aquí: `ScheduledPaymentEditorViewModel.savePayment` ya vibra error() al fallar, y el éxito lo
             // vibra `closeWithSavedNotice` al cerrar con el aviso (card C4, uno por gesto).
