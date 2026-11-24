@@ -24,6 +24,7 @@ struct AsistentePresupuestoView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
 
@@ -140,20 +141,60 @@ struct AsistentePresupuestoView: View {
         }
     }
 
+    /// Arriba, las categorías; debajo, las subcategorías de las elegidas, todas marcadas, para quitar las que no se quieran
+    /// contar (el patrón del filtro de categoría de Registros, `RecordsQuickCategorySheet`).
     private var categoriasRejilla: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm),
-                                 count: TutorialGridColumns.count(3, dynamicTypeSize: dynamicTypeSize)),
-                  spacing: DS.Spacing.sm) {
-            ForEach(categorias) { categoria in
-                let gastado = gastadoEsteMes(subcategorias: subcategorias(de: categoria))
-                TutorialSelectableTile(
-                    icon: categoria.iconName ?? "tag.fill",
-                    color: Color(hex: categoria.colorHex),
-                    title: categoria.name,
-                    caption: gastado > 0 ? T.categoriesSpent(dinero(gastado)) : nil,
-                    isOn: estado.categorias.contains(categoria.persistentModelID),
-                    id: "asistente_presupuesto_categoria"
-                ) { alternar(categoria) }
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm),
+                                     count: TutorialGridColumns.count(3, dynamicTypeSize: dynamicTypeSize)),
+                      spacing: DS.Spacing.sm) {
+                ForEach(categorias) { categoria in
+                    let gastado = gastadoEsteMes(subcategorias: subcategorias(de: categoria))
+                    TutorialSelectableTile(
+                        icon: categoria.iconName ?? "tag.fill",
+                        color: Color(hex: categoria.colorHex),
+                        title: categoria.name,
+                        caption: gastado > 0 ? T.categoriesSpent(dinero(gastado)) : nil,
+                        isOn: estado.categorias.contains(categoria.persistentModelID),
+                        id: "asistente_presupuesto_categoria"
+                    ) { alternar(categoria) }
+                }
+            }
+            let elegidas = categorias.filter { estado.categorias.contains($0.persistentModelID) }
+            if !elegidas.isEmpty {
+                Text(L10n.RecordsQuickFilters23.subcategoriesHint)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity)
+                ForEach(elegidas) { categoria in
+                    grupoSubcategorias(categoria)
+                        .transition(.opacity)
+                }
+            }
+        }
+        .dsAnimation(DS.Animation.appear, value: estado.categorias, reduceMotion: reduceMotion)
+    }
+
+    private func grupoSubcategorias(_ categoria: Category) -> some View {
+        let color = Color(hex: categoria.colorHex)
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Label {
+                Text(categoria.name).font(DS.Typography.subheadline.weight(.semibold))
+            } icon: {
+                Circle().fill(color).frame(width: 10, height: 10)
+            }
+            .accessibilityAddTraits(.isHeader)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xs),
+                                     count: TutorialGridColumns.count(4, dynamicTypeSize: dynamicTypeSize)),
+                      spacing: DS.Spacing.sm) {
+                ForEach(subcategoriasVisibles(de: categoria), id: \.persistentModelID) { sub in
+                    AsistenteSubcategoriaCirculo(
+                        subcategoria: sub,
+                        color: color,
+                        marcada: estado.subcategorias.contains(sub.shortcutID)
+                    ) { alternar(sub.shortcutID, de: categoria) }
+                }
             }
         }
     }
@@ -315,7 +356,14 @@ struct AsistentePresupuestoView: View {
 
     private var valorAlcance: String {
         guard estado.alcance == .categories else { return T.scopeAll }
-        return categoriasElegidas.map(\.name).formatted(.list(type: .and))
+        // Una categoría entera se nombra por ella; a medias, por las subcategorías que quedaron (como Registros).
+        let entradas = categoriasElegidas.map { categoria in
+            CategoryFilterSummaryLogic.CategoryEntry(
+                name: categoria.name,
+                subcategories: subcategoriasVisibles(de: categoria).map { (id: $0.shortcutID, name: $0.name) })
+        }
+        return CategoryFilterSummaryLogic.names(selected: estado.subcategorias, categories: entradas)
+            .formatted(.list(type: .and))
     }
 
     private var nombrePeriodo: String {
@@ -355,10 +403,15 @@ struct AsistentePresupuestoView: View {
         estado.categorias.compactMap { id in categorias.first { $0.persistentModelID == id } }
     }
 
+    /// Las categorías que se ofrecen, con sus subcategorías visibles, para las reglas de la selección.
+    private var ofrecidas: [Logica.CategoriaOfrecida<PersistentIdentifier, UUID>] {
+        categorias.map { Logica.CategoriaOfrecida(id: $0.persistentModelID, subcategorias: subcategorias(de: $0)) }
+    }
+
+    /// Las subcategorías MARCADAS de las categorías elegidas: con ellas se calcula lo gastado y se crea el presupuesto.
     private var subcategoriasElegidas: [UUID] {
         guard estado.alcance == .categories else { return [] }
-        var vistas: Set<UUID> = []
-        return categoriasElegidas.flatMap { subcategorias(de: $0) }.filter { vistas.insert($0).inserted }
+        return Logica.subcategoriasDelPresupuesto(estado.seleccion, ofrecidas: ofrecidas)
     }
 
     private func subcategoriasVisibles(de categoria: Category) -> [Subcategory] {
@@ -440,12 +493,16 @@ struct AsistentePresupuestoView: View {
         }
     }
 
+    private func ofrecida(_ categoria: Category) -> Logica.CategoriaOfrecida<PersistentIdentifier, UUID> {
+        Logica.CategoriaOfrecida(id: categoria.persistentModelID, subcategorias: subcategorias(de: categoria))
+    }
+
     private func alternar(_ categoria: Category) {
-        if let indice = estado.categorias.firstIndex(of: categoria.persistentModelID) {
-            estado.categorias.remove(at: indice)
-        } else {
-            estado.categorias.append(categoria.persistentModelID)
-        }
+        estado.seleccion = Logica.alternarCategoria(ofrecida(categoria), en: estado.seleccion)
+    }
+
+    private func alternar(_ subcategoria: UUID, de categoria: Category) {
+        estado.seleccion = Logica.alternarSubcategoria(subcategoria, de: ofrecida(categoria), en: estado.seleccion)
     }
 
     private var nombreSugerido: String {
@@ -556,5 +613,49 @@ struct AsistentePresupuestoView: View {
         sessionState.needsBudgetsWidgetRefresh = true
         BudgetEditorView.noteCreated(name: nombre, savedID: guardado, in: modelContext)
         alCerrar()
+    }
+}
+
+/// Una subcategoría en «¿Cuáles?»: el círculo del filtro de categoría de Registros y del primer presupuesto, con el mismo
+/// dibujo (los dos son privados allí). Marcada: relleno del color de la categoría y ✓.
+private struct AsistenteSubcategoriaCirculo: View {
+    let subcategoria: Subcategory
+    let color: Color
+    let marcada: Bool
+    let accion: () -> Void
+
+    var body: some View {
+        Button {
+            DS.Haptic.selection()
+            accion()
+        } label: {
+            VStack(spacing: DS.Spacing.xxs) {
+                Image(systemName: subcategoria.iconName ?? "circle.fill")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(marcada ? Color.white : color)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(marcada ? color : color.opacity(0.15)))
+                    .overlay(alignment: .topTrailing) {
+                        if marcada {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.white, color)
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                    .accessibilityHidden(true)
+                Text(subcategoria.name)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(marcada ? .primary : .secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(marcada ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("asistente_presupuesto_subcategoria")
     }
 }
