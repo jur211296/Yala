@@ -15,6 +15,21 @@
 import SwiftData
 import SwiftUI
 
+/// La tarjeta de «Esto leí» sobre el glass de la hoja (encargo del 2026-11-23): el aire que la separa de la cabecera y
+/// el contorno que marca dónde termina.
+enum EstoLeiCardLayout {
+    /// Entre la cabecera (X, título, miniatura de la foto) y el borde de arriba de la primera tarjeta.
+    static let airAboveFirstCard = DS.Spacing.lg
+    /// El contorno de la tarjeta. Sobre el glass, el `cardBorder` del tema (blanco al 8 % en oscuro) no se distinguía.
+    static let edgeWidth: CGFloat = 1
+    static let edge = Color(uiColor: UIColor { traits in // A11Y-DM: contorno propio por modo, sube con «Aumentar contraste»
+        let high = traits.accessibilityContrast == .high
+        return traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(high ? 0.4 : 0.2)
+            : UIColor.black.withAlphaComponent(high ? 0.3 : 0.12)
+    })
+}
+
 struct VoiceDraftReviewCard: View {
     let draft: InboxDraft
     /// La hoja de foto deja corregir la descripción tocándola (encargo del 2026-11-17); la de voz no lo pide.
@@ -75,6 +90,14 @@ struct VoiceDraftReviewCard: View {
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .fill(.thCard)
+        )
+        // Sin contorno, sobre el glass de la hoja a media altura no se veía dónde terminaba la tarjeta por arriba
+        // (encargo del 2026-11-23). Va encima del relleno, dentro del borde: no cambia el tamaño de la tarjeta.
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                .strokeBorder(EstoLeiCardLayout.edge, lineWidth: EstoLeiCardLayout.edgeWidth)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice_draft_card")

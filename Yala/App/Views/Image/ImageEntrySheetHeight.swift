@@ -13,14 +13,25 @@
 //  que se llega como en `SheetDismissAttemptModifier`. SwiftUI queda de acuerdo: ofrece solo `.large` y su selección
 //  también es `.large`.
 //
+//  La media altura de la hoja personal es `estoLeiPartial` (encargo del 2026-11-23): la `.medium` del sistema, salvo cuando
+//  no le cabe un registro con su nota y «Guardar», como en el iPhone SE. La foto de Grupos sigue con `.medium`.
+//
 
 import SwiftUI
 import UIKit
 
 enum ImageEntrySheetHeightLogic {
     /// Los detents de la hoja: con varios registros que revisar, solo grande; en lo demás, media altura primero.
-    static func detents(showsSeveralToReview: Bool, dynamicTypeSize: DynamicTypeSize) -> Set<PresentationDetent> {
-        showsSeveralToReview ? [.large] : SelectorSheetSizing.mediumFirst.detents(dynamicTypeSize: dynamicTypeSize)
+    /// `partial` es la media altura que se ofrece: `.medium` en la foto de Grupos, `estoLeiPartial` en la personal.
+    static func detents(
+        showsSeveralToReview: Bool,
+        dynamicTypeSize: DynamicTypeSize,
+        partial: PresentationDetent = .medium
+    ) -> Set<PresentationDetent> {
+        guard !showsSeveralToReview else { return [.large] }
+        let base = SelectorSheetSizing.mediumFirst.detents(dynamicTypeSize: dynamicTypeSize)
+        guard base.contains(.medium) else { return base }
+        return [partial, .large]
     }
 
     /// El fondo, con la misma regla que los selectores: el glass del sistema a media altura y `.subtle` cuando se ve
@@ -30,8 +41,52 @@ enum ImageEntrySheetHeightLogic {
         selectedDetent: PresentationDetent,
         usesLargeSheets: Bool
     ) -> YalaBackgroundVariant {
-        guard detents.contains(.medium) else { return .subtle }
+        guard detents.contains(where: { $0 != .large }) else { return .subtle }
         return usesLargeSheets || selectedDetent == .large ? .subtle : .transparent
+    }
+
+    // MARK: - Media altura de «Esto leí» (encargo del 2026-11-23)
+
+    /// La media altura de la hoja personal de foto: la `.medium` de siempre salvo cuando no le cabe lo leído de un
+    /// registro (cabecera, aire, tarjeta, nota de la Bandeja y «Guardar»). En un iPhone SE la `.medium` cortaba la fila
+    /// de chips y la nota ya antes del aire sobre la tarjeta (medido en el simulador, 2026-11-23).
+    static let estoLeiPartial = PresentationDetent.custom(EstoLeiPartialDetent.self)
+
+    /// Lo que mide «Esto leí» con un registro, del borde de arriba de la hoja al de abajo, con «Guardar» y su margen.
+    /// Medido en el simulador con el texto de siempre: en el iPhone SE la nota de la Bandeja va en dos líneas y con 450 pt
+    /// la segunda quedaba cortada. Los tamaños más grandes suman lo que crecen sus líneas.
+    static func estoLeiContentHeight(dynamicTypeSize: DynamicTypeSize) -> CGFloat {
+        switch dynamicTypeSize {
+        case .xSmall, .small, .medium, .large: return 470
+        case .xLarge: return 495
+        case .xxLarge: return 520
+        default: return 550
+        }
+    }
+
+    /// Lo que mide la `.medium` del sistema respecto al alto máximo de la hoja: en el iPhone 17 Pro el máximo es 778 pt y la
+    /// `.medium` medía 436 (medido con una sonda y en la captura, 2026-11-23). Una `CustomPresentationDetent` no puede
+    /// leerla, y quedarse corto haría la hoja más baja que antes en los iPhone grandes.
+    static let systemMediumFraction: CGFloat = 0.56
+
+    /// La `.medium` del sistema (`systemMedium`) o, si no alcanza, lo que mide el contenido; nunca más que la hoja entera.
+    static func estoLeiPartialHeight(
+        maxHeight: CGFloat,
+        systemMedium: CGFloat,
+        dynamicTypeSize: DynamicTypeSize
+    ) -> CGFloat {
+        min(maxHeight, max(systemMedium, estoLeiContentHeight(dynamicTypeSize: dynamicTypeSize)))
+    }
+}
+
+/// La media altura de «Esto leí» (`ImageEntrySheetHeightLogic.estoLeiPartial`).
+struct EstoLeiPartialDetent: CustomPresentationDetent {
+    static func height(in context: Context) -> CGFloat? {
+        ImageEntrySheetHeightLogic.estoLeiPartialHeight(
+            maxHeight: context.maxDetentValue,
+            systemMedium: context.maxDetentValue * ImageEntrySheetHeightLogic.systemMediumFraction,
+            dynamicTypeSize: context.dynamicTypeSize
+        )
     }
 }
 

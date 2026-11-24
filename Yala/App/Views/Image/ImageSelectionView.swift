@@ -82,7 +82,7 @@ struct ImageSelectionView: View {
     @State private var registeredInGroup: [DraftRegisteredInGroup] = []
     @State private var saveFailed = false
     @State private var trialReported = false
-    @State private var selectedDetent: PresentationDetent = .medium
+    @State private var selectedDetent: PresentationDetent = ImageEntrySheetHeightLogic.estoLeiPartial
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showPhotosPicker = false
@@ -223,7 +223,9 @@ struct ImageSelectionView: View {
     private var needsLargeSheet: Bool { showsSeveralToReview || editingDraft != nil }
 
     private var sheetDetents: Set<PresentationDetent> {
-        ImageEntrySheetHeightLogic.detents(showsSeveralToReview: needsLargeSheet, dynamicTypeSize: dynamicTypeSize)
+        ImageEntrySheetHeightLogic.detents(
+            showsSeveralToReview: needsLargeSheet, dynamicTypeSize: dynamicTypeSize,
+            partial: ImageEntrySheetHeightLogic.estoLeiPartial)
     }
 
     /// SwiftUI no mueve la hoja por sí solo (`ImageEntrySheetHeight.swift`): la sube `growsSheetToLarge`. El elegido se
@@ -773,7 +775,9 @@ struct ImageSelectionView: View {
                 }
             }
         }
-        .padding(.top, DS.Spacing.xs)
+        // Aire entre la cabecera (X, título y fotos) y la primera tarjeta: con 4 pt el borde de arriba se pegaba a la X y a
+        // la miniatura (encargo del 2026-11-23).
+        .padding(.top, EstoLeiCardLayout.airAboveFirstCard)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
     }
 
