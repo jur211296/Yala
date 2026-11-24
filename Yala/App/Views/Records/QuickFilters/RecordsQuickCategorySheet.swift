@@ -9,6 +9,10 @@
 //  la primera categoría y lo dejaba puesto al sumar una de ingresos. Lo marcado lo guarda quien presenta la hoja; cómo
 //  se escribe en la sesión, `RecordsQuickCategorySelectionLogic`.
 //
+//  Altura (Jürgen, 23-nov): abre a media altura sin nada elegido y grande con algo elegido, y al elegir una categoría
+//  sube a grande para que sus subcategorías se vean (`RecordsQuickCategoryDetentLogic`). La sube la hoja de UIKit
+//  (`growsSheetToLarge`): cambiar la `selection` de SwiftUI no mueve una hoja ya presentada (`swiftui-ds.md`).
+//
 
 import SwiftData
 import SwiftUI
@@ -22,14 +26,40 @@ struct RecordsQuickCategorySheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var selectedDetent: PresentationDetent
+    /// La hoja tiene que estar grande: se elige una categoría (o había una al abrir). Bajarla con el dedo lo apaga, para
+    /// que la próxima categoría elegida la vuelva a subir.
+    @State private var growsToLarge: Bool
+    /// La categoría recién elegida: la hoja se desplaza hasta sus subcategorías.
+    @State private var revealTarget: PersistentIdentifier?
+    @State private var scrollPosition = ScrollPosition(idType: PersistentIdentifier.self)
+    /// Cada pedido de desplazamiento la sube: solo cuenta el último (la hoja cambia de alto varias veces al crecer).
+    @State private var revealGeneration = 0
 
     private let sizing = SelectorSheetSizing.mediumFirst
     private typealias Entry = RecordsQuickCategorySelectionLogic.Entry<PersistentIdentifier, PersistentIdentifier>
     private typealias Logic = RecordsQuickCategorySelectionLogic
 
+    init(categories: [Category], subcategories: [Subcategory], expanded: Binding<Set<PersistentIdentifier>>) {
+        self.categories = categories
+        self.subcategories = subcategories
+        _expanded = expanded
+        let entries = Self.offered(categories: categories, subcategories: subcategories)
+            .map { Self.entry($0.category, $0.subs) }
+        let opening = RecordsQuickCategoryDetentLogic.initialDetent(entries, expanded: expanded.wrappedValue)
+        _selectedDetent = State(initialValue: opening)
+        _growsToLarge = State(initialValue: opening == .large)
+    }
+
     /// Las categorías que se ofrecen: las que tienen alguna subcategoría visible, como la hoja de «Más filtros».
     private var offered: [(category: Category, subs: [Subcategory])] {
+        Self.offered(categories: categories, subcategories: subcategories)
+    }
+
+    private static func offered(
+        categories: [Category], subcategories: [Subcategory]
+    ) -> [(category: Category, subs: [Subcategory])] {
         categories.compactMap { category in
             let subs = subcategories.filter { $0.category == category && $0.isVisible }
             return subs.isEmpty ? nil : (category, subs)
@@ -37,6 +67,10 @@ struct RecordsQuickCategorySheet: View {
     }
 
     private func entry(_ category: Category, _ subs: [Subcategory]) -> Entry {
+        Self.entry(category, subs)
+    }
+
+    private static func entry(_ category: Category, _ subs: [Subcategory]) -> Entry {
         Entry(id: category.persistentModelID, subcategories: subs.map(\.persistentModelID))
     }
 
@@ -62,7 +96,7 @@ struct RecordsQuickCategorySheet: View {
                                 isOn: Logic.isChosen(itemEntry, in: expanded),
                                 id: "records_quick_category_tile"
                             ) {
-                                write(Logic.togglingCategory(itemEntry, in: expanded))
+                                chooseCategory(Logic.togglingCategory(itemEntry, in: expanded))
                             }
                         }
                     }
@@ -75,12 +109,17 @@ struct RecordsQuickCategorySheet: View {
 
                         ForEach(chosen, id: \.category.persistentModelID) { item in
                             subcategoryGroup(item.category, item.subs, expanded: expanded)
+                                .id(item.category.persistentModelID)
                         }
                     }
                 }
+                .scrollTargetLayout()
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
             }
+            .scrollPosition($scrollPosition)
+            .onChange(of: revealTarget) { _, target in reveal(target) }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { _ in heightChanged() }
             .yalaScreenBackground(sizing.background(
                 selectedDetent: selectedDetent,
                 usesLargeSheets: usesLargeSheets,
@@ -107,6 +146,8 @@ struct RecordsQuickCategorySheet: View {
             }
         }
         .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
+        .onChange(of: selectedDetent) { _, detent in noteDetent(detent) }
+        .growsSheetToLarge(when: growsToLarge)
     }
 
     // MARK: - Subcategorías de lo elegido (el paso 2 del primer presupuesto)
@@ -144,6 +185,57 @@ struct RecordsQuickCategorySheet: View {
 
     private func write(_ newExpanded: Set<PersistentIdentifier>) {
         expanded = newExpanded
+    }
+
+    /// Tocar una tarjeta: si elige una categoría nueva, sus subcategorías salen debajo y la hoja sube a grande.
+    private func chooseCategory(_ newExpanded: Set<PersistentIdentifier>) {
+        let entries = offered.map { entry($0.category, $0.subs) }
+        let grows = RecordsQuickCategoryDetentLogic.growsToLarge(entries, before: expanded, after: newExpanded)
+        let chosen = RecordsQuickCategoryDetentLogic.newlyChosen(entries, before: expanded, after: newExpanded)
+        write(newExpanded)
+        guard grows else { return }
+        // La selección de SwiftUI, de acuerdo con la de UIKit: el fondo pasa a `.subtle` con la hoja grande.
+        selectedDetent = .large
+        growsToLarge = true
+        revealTarget = chosen
+    }
+
+    /// Desplazarse mientras la hoja crece no hace nada (medido en el simulador: el desplazamiento se pierde si llega antes
+    /// de que la hoja tenga su alto final). Por eso se espera a que el alto deje de cambiar; con la hoja ya grande, el
+    /// alto no cambia y basta el primer plazo.
+    private func reveal(_ target: PersistentIdentifier?) {
+        guard target != nil else { return }
+        scheduleReveal(after: 0.6)
+    }
+
+    private func heightChanged() {
+        guard revealTarget != nil else { return }
+        scheduleReveal(after: 0.5)
+    }
+
+    private func scheduleReveal(after delay: TimeInterval) {
+        revealGeneration += 1
+        let generation = revealGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            guard generation == revealGeneration, let target = revealTarget else { return }
+            revealTarget = nil
+            let isLastGroup = offered.last { Logic.isChosen(entry($0.category, $0.subs), in: expanded) }?
+                .category.persistentModelID == target
+            dsWithAnimation(reduceMotion) {
+                // El último grupo, hasta el final: así queda entero sobre «Listo» (anclado al id quedaba debajo de la
+                // barra). Uno de en medio, al centro.
+                if isLastGroup {
+                    scrollPosition.scrollTo(edge: .bottom)
+                } else {
+                    scrollPosition.scrollTo(id: target, anchor: .center)
+                }
+            }
+        }
+    }
+
+    /// Bajada a media altura con el dedo: la próxima categoría elegida la vuelve a subir.
+    private func noteDetent(_ detent: PresentationDetent) {
+        if detent != .large { growsToLarge = false }
     }
 }
 

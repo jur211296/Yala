@@ -514,7 +514,12 @@ paths:
   `UISheetPresentationController.animateChanges { selectedDetentIdentifier = .large }`, una vuelta del main actor
   después del cambio, llegando a ella como `SheetDismissAttemptModifier` (molde: `growsSheetToLarge(when:)` en
   `ImageEntrySheetHeight.swift`, decisión 80 de 2.3; pin `VozFotoAvisos23UITests`). Úsalo solo cuando una decisión pida
-  que la hoja crezca; deja la selección de SwiftUI de acuerdo con la de UIKit.
+  que la hoja crezca; deja la selección de SwiftUI de acuerdo con la de UIKit. **Un desplazamiento del scroll pedido
+  mientras la hoja crece se pierde (medido el 2026-11-24, iOS 27.2, hoja de «Categoría ▾» de Registros):** `scrollTo`
+  corría y la lista no se movía, con `ScrollViewReader` y con `ScrollPosition`; con la hoja ya grande, el mismo gesto sí
+  bajaba. Un plazo fijo (0,35 s, 0,6 s) unas veces llegaba tarde y otras no. ⇒ se pide cuando el alto del scroll deja de
+  cambiar (`onGeometryChange` + el último de varios pedidos, molde `RecordsQuickCategorySheet.scheduleReveal`). Y anclado
+  por id con `.bottom`, el último bloque queda bajo una `.safeAreaBar`: para el final, `scrollTo(edge: .bottom)`.
 
 - **`.presentationBackground(<material>)` como ESTILO impide presentar la hoja cuando la pide otra hoja que ya está
   sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del
