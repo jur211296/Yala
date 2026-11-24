@@ -15,6 +15,9 @@
 //     pasos hechos; mientras falten, el pie dice cuántos y que el avance se guarda (auditoría UX 2.2, lote 15, L15-10,
 //     opción C variante 2: «Listo» competía con «Hecho» y dejaba terminar sin hacer nada).
 //
+//  Un paso hecho se puede volver a abrir («Volver a este paso», o tocando la fila): queda activo otra vez y los de
+//  después, pendientes (pedido de Jürgen del 2026-11-23: un «Hecho» tocado sin querer dejaba el paso cerrado).
+//
 //  El estado (qué paso está activo) vive en `StepGuideProgress`, con test. En una ventana ancha el contenido se
 //  queda en `DS.Adaptive.readableWidth`, centrado: decide el ancho, no el aparato.
 //
@@ -44,6 +47,9 @@ struct StepGuideHeader {
     let title: String
     /// Líneas de contexto bajo el título, en gris. La primera es la descripción; las siguientes, datos vivos.
     let lines: [String]
+    /// Un control bajo las líneas que tiene que estar a mano en cualquier paso (copiar la dirección de Yala en la guía
+    /// de correos). Opcional: las demás guías no lo llevan.
+    var accessory: AnyView? = nil
 }
 
 struct YalaStepGuide<Preview: View>: View {
@@ -154,6 +160,10 @@ struct YalaStepGuide<Preview: View>: View {
                         .foregroundStyle(.thSecondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let accessory = header.accessory {
+                    accessory
+                        .padding(.top, DS.Spacing.xs)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -191,10 +201,19 @@ struct YalaStepGuide<Preview: View>: View {
                 activeButton(for: step, index: index)
                     .padding(.top, DS.Spacing.sm)
             }
+            if phase == .done {
+                reopenButton(index: index)
+            }
         }
         .padding(.leading, markerSize + DS.Spacing.md)
         .padding(.bottom, isLast ? DS.Spacing.none : DS.Spacing.xl)
         .frame(maxWidth: .infinity, minHeight: markerSize, alignment: .topLeading)
+        // Un paso hecho se abre también tocando su fila: el botón de dentro gana su toque, y en los demás pasos el
+        // gesto no hace nada.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if progress.canReopen(index) { reopen(index) }
+        }
         // El hilo: del pie del número al número siguiente. Va de fondo para que mida lo que mide la fila.
         .background(alignment: .topLeading) {
             if !isLast {
@@ -254,6 +273,30 @@ struct YalaStepGuide<Preview: View>: View {
         .tint(theme.accent)
         .foregroundStyle(theme.onAccent)
         .accessibilityIdentifier("step_guide_action")
+    }
+
+    /// «Volver a este paso»: enlace bajo el título de cada paso hecho. Lo deja activo otra vez.
+    private func reopenButton(index: Int) -> some View {
+        Button {
+            reopen(index)
+        } label: {
+            Label(L10n.CorreosBancoGuia.reopen, systemImage: "arrow.uturn.backward")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thAccentText)
+                .padding(.vertical, DS.Spacing.xxs)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.CorreosBancoGuia.reopenHint)
+        .accessibilityIdentifier("step_guide_reopen_\(index)")
+    }
+
+    private func reopen(_ index: Int) {
+        DS.Haptic.selection()
+        dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+            progress.reopen(index)
+        }
+        StepGuideProgressStore.save(progress, guideID: progressID)
     }
 
     private func advance(from index: Int) {

@@ -54,6 +54,17 @@ nonisolated struct StepGuideProgress: Equatable {
         guard index == activeIndex else { return }
         completed += 1
     }
+
+    /// Vuelve a un paso ya hecho: queda activo otra vez y los de después, pendientes (los hechos siguen siendo los
+    /// primeros). Para quien tocó «Hecho» sin querer o quiere repetir un paso (copiar otra vez, terminar lo que faltó;
+    /// pedido de Jürgen del 2026-11-23). Un índice que no está hecho no cambia nada.
+    mutating func reopen(_ index: Int) {
+        guard index >= 0, index < completed else { return }
+        completed = index
+    }
+
+    /// ¿Se puede volver a este paso? Solo a uno ya hecho.
+    func canReopen(_ index: Int) -> Bool { index >= 0 && index < completed }
 }
 
 /// El avance de una guía, guardado por guía: el pie promete «tu avance se guarda» mientras faltan pasos (auditoría UX

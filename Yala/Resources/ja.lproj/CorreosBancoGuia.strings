@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "設定は一度だけで、Safari で行います。メールのアプリにはこのオプションがありません。数分で終わります。";
+"correosGuia.findBank" = "始める前に、銀行のアドレスを確認しましょう。銀行から届いたお知らせを開き、「差出人」に表示されている送信元を見てください（例：info@yourbank.co.jp）。";
+
+"correosGuia.copy.title" = "Yala のアドレスをコピー";
+"correosGuia.copy.detail" = "「アドレスをコピー」をタップします。画面は何も変わりませんが、アドレスはメールに貼り付けられるよう保存されています。見失ったときは、上のアドレスの横にもコピーするボタンがあります。";
+
+"correosGuia.gmail.add.title" = "Gmail に Yala のアドレスを追加";
+"correosGuia.gmail.add.detail" = "1.「Gmail を開く」をタップします。Gmail が Safari の転送の設定で開きます。求められたらログインします。\n2. モバイル版が表示されたら、Safari のアドレスバーのボタンをタップして「デスクトップ用Webサイトを表示」を選びます。\n3.「転送先アドレスを追加」をタップします。\n4. 入力欄を長押しして「ペースト」をタップし、「次へ」をタップします。\n5. ウインドウが開いたら「続行」、次に「OK」をタップします。\n「受信メールをコピーして転送」は選ばないでください。すべてのメールが転送されてしまいます。銀行のお知らせはステップ 4 のフィルタで分けます。";
+"correosGuia.gmail.confirm.title" = "Gmail のコードで確認";
+"correosGuia.gmail.confirm.waiting" = "Gmail から Yala のアドレスにコードが送られ、Yala が代わりに受け取ります。メールで探す必要はありません。\n1. 1 分ほど待ってから「コードを確認」をタップします。\n2. 届くとここに表示されます。";
+"correosGuia.gmail.confirm.code" = "Gmail のコードは %@ です。\n1.「コードをコピー」をタップします。\n2. Gmail の同じ転送の画面に戻ります。\n3. 確認コードの欄にペーストして「確認」をタップします。欄が見えないときはページを再読み込みします。";
+"correosGuia.gmail.filter.title" = "銀行のお知らせ用のフィルタを作成";
+"correosGuia.gmail.filter.detail" = "1. Safari の Gmail で、上の検索バーに銀行のアドレスを入力します。\n2. 検索欄の右にあるオプションのボタンをタップし、「フィルタを作成」をタップします。\n3.「次のアドレスに転送する」にチェックを入れ、Yala のアドレスを選びます。\n4.「フィルタを作成」をタップします。\n銀行が複数のアドレスから送ってくる場合は、それぞれについて繰り返します。";
+
+"correosGuia.rule.title" = "銀行のお知らせ用のルールを作成";
+"correosGuia.outlook.rule.detail" = "1.「Outlook を開く」をタップします。Outlook が Safari のルールの設定で開きます。求められたらサインインします。\n2.「新しいルールを追加」をタップし、名前（例：「Yala」）を付けます。\n3. 条件で「差出人」を選び、銀行のアドレスを入力します。\n4. アクションで「転送先」を選び、Yala のアドレスをペーストします。\n5.「保存」をタップします。";
+"correosGuia.icloud.rule.detail" = "1.「iCloud Mail を開く」をタップします。iCloud.com が Safari で開きます。求められたら Apple アカウントでサインインします。\n2. 設定のボタン（歯車）をタップして「ルール」を選びます。\n3.「ルールを追加」をタップします。\n4.「メッセージが」で「差出人が」を選び、銀行のアドレスを入力します。\n5.「次の操作を実行」で「転送」を選び、Yala のアドレスをペーストします。\n6.「完了」をタップします。";
+
+"correosGuia.wait.title" = "完了：次のお知らせを待ちましょう";
+"correosGuia.wait.detail" = "これ以上の操作は不要です。銀行から次のお知らせが届くと、取引が受信箱に入り、確認できます。1 日たっても何も届かないときは、フィルタやルールのアドレスが銀行の送信元と同じか確認してください。";
+
+"correosGuia.stepGuide.reopen" = "このステップに戻る";
+"correosGuia.stepGuide.reopenHint" = "このステップをもう一度開いて、やり直したり残りを終えたりできます。";

@@ -1,0 +1,32 @@
+/*
+  CorreosBancoGuia.strings
+  Yala
+
+  Guía de «Correo del banco» para quien nunca configuró un reenvío (23-nov-2026): cada paso dice dónde entrar, qué
+  tocar y qué se va a ver. Más el «Volver a este paso» de `YalaStepGuide`. Tabla propia, leída con el idioma de la app
+  (`L10n.CorreosBancoGuia`). Los nombres de los botones de Gmail, Outlook e iCloud son los de ESA app en este idioma.
+*/
+
+"correosGuia.guideLine" = "Du richtest das einmal in Safari ein: Deine Mail-App hat diese Option nicht. Es dauert ein paar Minuten.";
+"correosGuia.findBank" = "Bevor du anfängst, such die Adresse deiner Bank: Öffne eine Benachrichtigung deiner Bank und sieh unter „Von“ nach, wer sie geschickt hat (zum Beispiel benachrichtigung@deinebank.de).";
+
+"correosGuia.copy.title" = "Kopiere deine Yala-Adresse";
+"correosGuia.copy.detail" = "Tippe auf „Adresse kopieren“. Du siehst keine Änderung: Die Adresse ist gespeichert, damit du sie in deine E-Mail einfügen kannst. Falls du sie verlierst, gibt es oben neben deiner Adresse noch eine Taste zum Kopieren.";
+
+"correosGuia.gmail.add.title" = "Füge deine Yala-Adresse in Gmail hinzu";
+"correosGuia.gmail.add.detail" = "1. Tippe auf „Gmail öffnen“. Gmail öffnet sich in Safari, im Bereich Weiterleitung. Melde dich an, falls du gefragt wirst.\n2. Wenn du die mobile Version siehst, tippe auf die Taste in der Adressleiste von Safari und wähle „Desktop-Website anfordern“.\n3. Tippe auf „Weiterleitungsadresse hinzufügen“.\n4. Halte den Finger in das Feld, tippe auf „Einsetzen“ und dann auf „Weiter“.\n5. Ein Fenster öffnet sich: Tippe auf „Fortfahren“ und dann auf „OK“.\nAktiviere nicht „Eine Kopie eingehender Nachrichten weiterleiten an“: Dann würde deine ganze Post weitergeleitet. Die Nachrichten der Bank trennt der Filter in Schritt 4.";
+"correosGuia.gmail.confirm.title" = "Bestätige mit dem Gmail-Code";
+"correosGuia.gmail.confirm.waiting" = "Gmail hat gerade einen Code an deine Yala-Adresse geschickt, und Yala empfängt ihn für dich: Du musst ihn nicht in deiner E-Mail suchen.\n1. Warte eine Minute und tippe auf „Nach Code suchen“.\n2. Sobald er da ist, siehst du ihn hier.";
+"correosGuia.gmail.confirm.code" = "Dein Gmail-Code ist %@.\n1. Tippe auf „Code kopieren“.\n2. Geh zurück zu Gmail, auf denselben Weiterleitungsbildschirm.\n3. Füge den Code in das Bestätigungsfeld ein und tippe auf „Bestätigen“. Wenn du das Feld nicht siehst, lade die Seite neu.";
+"correosGuia.gmail.filter.title" = "Erstelle einen Filter für die Nachrichten deiner Bank";
+"correosGuia.gmail.filter.detail" = "1. Gib in Gmail, in Safari, die Adresse deiner Bank oben in die Suchleiste ein.\n2. Tippe auf die Optionstaste rechts neben der Suche und dann auf „Filter erstellen“.\n3. Aktiviere „Weiterleiten an“ und wähle deine Yala-Adresse.\n4. Tippe auf „Filter erstellen“.\nWenn deine Bank dir von mehreren Adressen schreibt, wiederhole diese Schritte für jede.";
+
+"correosGuia.rule.title" = "Erstelle eine Regel für die Nachrichten deiner Bank";
+"correosGuia.outlook.rule.detail" = "1. Tippe auf „Outlook öffnen“. Outlook öffnet sich in Safari, im Bereich Regeln. Melde dich an, falls du gefragt wirst.\n2. Tippe auf „Neue Regel hinzufügen“ und gib ihr einen Namen, zum Beispiel „Yala“.\n3. Wähle als Bedingung „Von“ und gib die Adresse deiner Bank ein.\n4. Wähle als Aktion „Weiterleiten an“ und füge deine Yala-Adresse ein.\n5. Tippe auf „Speichern“.";
+"correosGuia.icloud.rule.detail" = "1. Tippe auf „iCloud Mail öffnen“. iCloud.com öffnet sich in Safari. Melde dich mit deinem Apple Account an, falls du gefragt wirst.\n2. Tippe auf die Einstellungstaste (das Zahnrad) und wähle „Regeln“.\n3. Tippe auf „Regel hinzufügen“.\n4. Wähle unter „Wenn eine E-Mail“ die Option „ist von“ und gib die Adresse deiner Bank ein.\n5. Wähle unter „Dann“ die Option „Weiterleiten an“ und füge deine Yala-Adresse ein.\n6. Tippe auf „Fertig“.";
+
+"correosGuia.wait.title" = "Fertig: Warte auf die nächste Benachrichtigung";
+"correosGuia.wait.detail" = "Du musst nichts weiter tun. Wenn deine Bank die nächste Benachrichtigung schickt, landet die Buchung in deinem Posteingang, damit du sie bestätigst. Wenn nach einem Tag nichts ankommt, prüfe, ob der Filter oder die Regel dieselbe Adresse verwendet, von der deine Bank schreibt.";
+
+"correosGuia.stepGuide.reopen" = "Zurück zu diesem Schritt";
+"correosGuia.stepGuide.reopenHint" = "Öffnet diesen Schritt erneut, damit du ihn wiederholen oder Fehlendes erledigen kannst.";

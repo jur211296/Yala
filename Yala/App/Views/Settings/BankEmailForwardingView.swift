@@ -260,7 +260,9 @@ struct BankEmailGuideView: View {
                 systemImage: "envelope.fill",
                 tint: .blue,
                 title: L10n.BankEmail.guideTitle(provider.name),
-                lines: [model.info?.address ?? "", L10n.BankEmail.guideLine].filter { !$0.isEmpty }),
+                lines: [model.info?.address ?? "", L10n.CorreosBancoGuia.guideLine].filter { !$0.isEmpty },
+                // Copiar la dirección, a mano en cualquier paso: sin tener que volver al primero (2026-11-23).
+                accessory: model.info.map { AnyView(BankEmailGuideCopyButton(address: $0.address)) }),
             steps: steps,
             guarantee: L10n.BankEmail.guarantee,
             successTitle: L10n.Action.done,
@@ -273,7 +275,7 @@ struct BankEmailGuideView: View {
 
     private var steps: [StepGuideStep] {
         var list: [StepGuideStep] = []
-        var copyStep = StepGuideStep(id: 0, title: L10n.BankEmail.stepCopyTitle, detail: L10n.BankEmail.stepCopyDetail)
+        var copyStep = StepGuideStep(id: 0, title: L10n.CorreosBancoGuia.copyTitle, detail: L10n.CorreosBancoGuia.copyDetail)
         copyStep.action = StepGuideStep.Action(
             title: L10n.BankEmail.copyAddress, systemImage: "doc.on.doc",
             perform: { markDone in
@@ -285,14 +287,14 @@ struct BankEmailGuideView: View {
 
         switch provider {
         case .gmail:
-            var add = StepGuideStep(id: 1, title: L10n.BankEmail.gmailAddTitle, detail: L10n.BankEmail.gmailAddDetail)
+            var add = StepGuideStep(id: 1, title: L10n.CorreosBancoGuia.Gmail.addTitle, detail: L10n.CorreosBancoGuia.Gmail.addDetail)
             add.action = openAction(title: L10n.BankEmail.openProvider(provider.name))
             list.append(add)
 
             var confirm = StepGuideStep(
-                id: 2, title: L10n.BankEmail.gmailConfirmTitle,
-                detail: model.info?.gmailConfirmation.map { L10n.BankEmail.gmailConfirmCode($0.code) }
-                    ?? L10n.BankEmail.gmailConfirmWaiting)
+                id: 2, title: L10n.CorreosBancoGuia.Gmail.confirmTitle,
+                detail: model.info?.gmailConfirmation.map { L10n.CorreosBancoGuia.Gmail.confirmCode($0.code) }
+                    ?? L10n.CorreosBancoGuia.Gmail.confirmWaiting)
             if let code = model.info?.gmailConfirmation?.code {
                 confirm.action = StepGuideStep.Action(
                     title: L10n.BankEmail.copyCode, systemImage: "doc.on.doc",
@@ -307,18 +309,21 @@ struct BankEmailGuideView: View {
             }
             list.append(confirm)
 
-            list.append(StepGuideStep(id: 3, title: L10n.BankEmail.gmailFilterTitle, detail: L10n.BankEmail.gmailFilterDetail))
+            list.append(StepGuideStep(
+                id: 3, title: L10n.CorreosBancoGuia.Gmail.filterTitle, detail: L10n.CorreosBancoGuia.findBank + "\n\n" + L10n.CorreosBancoGuia.Gmail.filterDetail))
         case .outlook:
-            var rule = StepGuideStep(id: 1, title: L10n.BankEmail.ruleTitle, detail: L10n.BankEmail.outlookRuleDetail)
+            var rule = StepGuideStep(
+                id: 1, title: L10n.CorreosBancoGuia.ruleTitle, detail: L10n.CorreosBancoGuia.findBank + "\n\n" + L10n.CorreosBancoGuia.outlookRuleDetail)
             rule.action = openAction(title: L10n.BankEmail.openProvider(provider.name))
             list.append(rule)
         case .icloud:
-            var rule = StepGuideStep(id: 1, title: L10n.BankEmail.ruleTitle, detail: L10n.BankEmail.icloudRuleDetail)
+            var rule = StepGuideStep(
+                id: 1, title: L10n.CorreosBancoGuia.ruleTitle, detail: L10n.CorreosBancoGuia.findBank + "\n\n" + L10n.CorreosBancoGuia.icloudRuleDetail)
             rule.action = openAction(title: L10n.BankEmail.openProvider(provider.name))
             list.append(rule)
         }
 
-        list.append(StepGuideStep(id: list.count, title: L10n.BankEmail.stepWaitTitle, detail: L10n.BankEmail.stepWaitDetail))
+        list.append(StepGuideStep(id: list.count, title: L10n.CorreosBancoGuia.waitTitle, detail: L10n.CorreosBancoGuia.waitDetail))
         return list
     }
 
@@ -330,5 +335,30 @@ struct BankEmailGuideView: View {
                 if accepted { markDone() }
             }
         })
+    }
+}
+
+/// «Copiar dirección» en la cabecera de la guía: la dirección de Yala a mano en cualquier paso.
+private struct BankEmailGuideCopyButton: View {
+    let address: String
+
+    @Environment(\.yalaTheme) private var theme
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = address
+            copied = true
+            DS.Haptic.success()
+        } label: {
+            Label(copied ? L10n.BankEmail.copied : L10n.BankEmail.copyAddress,
+                  systemImage: copied ? "checkmark" : "doc.on.doc")
+                .font(DS.Typography.subheadline.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(theme.accentText)
+        .accessibilityIdentifier("bank_email_guide_copy")
     }
 }
