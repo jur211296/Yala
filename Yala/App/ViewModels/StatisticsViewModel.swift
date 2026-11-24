@@ -31,6 +31,17 @@ final class StatisticsViewModel: Filterable {
     /// Whether to show aggregated view (true) or per-account view (false)
     var isAggregatedView: Bool = true
 
+    // MARK: - Lo que las páginas recuerdan entre cambios de chip (encargo de fluidez, 24-nov-2026)
+
+    /// Lo último que calcularon las tarjetas de Tendencias, con su firma (`StatisticsPageMemory`). Vive aquí porque este
+    /// ViewModel es del contenedor y sobrevive a que la página se desmonte al cambiar de chip. Sin observar: guardarlo
+    /// no repinta nada.
+    @ObservationIgnored var trendsCardsMemory = StatisticsPageMemory<TrendsCardsKey, TrendsCardsSnapshot>()
+    /// Lo mismo para las tartas, rankings y necesidades de Distribución.
+    @ObservationIgnored var distributionMemory = StatisticsPageMemory<DistributionKey, DistributionSnapshot>()
+    /// Con qué entradas se calculó el `sankeyData` que hay: al volver a Distribución con las mismas, no se recalcula.
+    @ObservationIgnored var sankeyComputedFor: DistributionSankeyKey?
+
     // MARK: - Trend Locking Logic
 
     // Check if any category/subcategory/need filters are active. Solo los INCLUIDOS: ocultar una categoría no convierte

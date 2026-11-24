@@ -728,16 +728,25 @@ struct CategoriesTabView: View {
     /// El primer cálculo de la página, una vuelta después de aparecer (G1 de la decisión 28).
     private func scheduleFirstCalculation() {
         firstCalculationTask?.cancel()
+        // Volver a Distribución con lo mismo de antes (datos, período, filtros) enseña lo ya calculado sin repetirlo
+        // (`StatisticsPageMemory`, encargo de fluidez del 24-nov-2026). El Sankey vive en el ViewModel y sobrevive al
+        // desmontaje: solo se recalcula si cambió lo que lee.
+        let restored = restoreDistributionFromMemory()
+        let sankeyIsCurrent = viewModel.sankeyComputedFor == sankeyKey
+        guard !(restored && sankeyIsCurrent) else { return }
         firstCalculationTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(30)) } catch { return }
             guard !Task.isCancelled else { return }
-            calculateData()
-            recomputeSankey()
+            if !restored { calculateData() }
+            if !sankeyIsCurrent { recomputeSankey() }
             if !pageCalculated { pageCalculated = true }
         }
     }
 
     private func recomputeSankey() {
+        // La firma se toma ANTES de calcular: es lo que el cálculo lee.
+        let key = sankeyKey
+        defer { viewModel.sankeyComputedFor = key }
         viewModel.calculateSankeyData(
             allTransactions: allTransactions,
             accounts: accounts,
@@ -1382,6 +1391,12 @@ struct CategoriesTabView: View {
     }
 
     private func calculateData() {
+        // La firma se toma ANTES de calcular: es lo que el cálculo lee. Lo calculado se recuerda al terminar
+        // (`StatisticsPageMemory`); uno sin movimientos no, para no saltarse la carga al volver.
+        let memoryKey = distributionKey
+        defer {
+            if !allTransactions.isEmpty { viewModel.distributionMemory.remember(distributionSnapshot, for: memoryKey) }
+        }
         let interval = viewModel.panelDateInterval
 
         // Proyección "mi parte" (neto) de gastos de grupo bridgeados, desde el set AMPLIO
@@ -1563,6 +1578,90 @@ struct CategoriesTabView: View {
             currentTagSource: tagFiltered,
             currentNeedSource: needFiltered
         )
+    }
+
+    // MARK: - Lo calculado, entre cambios de chip (`StatisticsPageMemory`)
+
+    /// Todo lo que `calculateData` lee. Cada `onChange` que la llama tiene su campo aquí (también los de
+    /// `CategoriesFilterRecalcObservers`): lo que recalcula la página montada es lo que invalida lo guardado (lo fija
+    /// `EstadisticasFluidezCableadoTests`).
+    private var distributionKey: DistributionKey {
+        DistributionKey(
+            dataGeneration: dataGeneration,
+            detailPeriod: viewModel.detailPeriod,
+            interval: viewModel.panelDateInterval,
+            customDateRange: sessionState.customDateRange,
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: viewModel.selectedCategories,
+            selectedSubcategories: viewModel.selectedSubcategories,
+            selectedTags: viewModel.selectedTags,
+            selectedNeeds: viewModel.selectedNeeds,
+            selectedCurrencies: viewModel.selectedCurrencies,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            excludedEntitiesKey: viewModel.excludedEntitiesKey,
+            viewModelNatures: viewModel.selectedTransactionNatures,
+            selectedTransactionNatures: sessionState.selectedTransactionNatures,
+            isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+            comparisonMode: sessionState.comparisonMode,
+            allSubcategories: allSubcategories.map(\.persistentModelID),
+            currencyCode: defaultCurrencyCode,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats,
+            firstWeekday: userConfiguredCalendar().firstWeekday
+        )
+    }
+
+    /// Lo que lee el Sankey (`recomputeSankey`): su clave del ViewModel, los datos y los pagos planificados.
+    private var sankeyKey: DistributionSankeyKey {
+        DistributionSankeyKey(
+            input: viewModel.sankeyInputKey,
+            dataGeneration: dataGeneration,
+            scheduledPaymentsSignature: scheduledPaymentsSignature,
+            currencyCode: defaultCurrencyCode,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
+        )
+    }
+
+    private var distributionSnapshot: DistributionSnapshot {
+        DistributionSnapshot(
+            categorySpending: categorySpending,
+            subcategorySpending: subcategorySpending,
+            tagSpending: tagSpending,
+            categoryPieIsApproximate: categoryPieIsApproximate,
+            subcategoryPieIsApproximate: subcategoryPieIsApproximate,
+            tagPieIsApproximate: tagPieIsApproximate,
+            needTrendPoints: needTrendPoints,
+            previousCategoryTotal: previousCategoryTotal,
+            previousSubcategoryTotal: previousSubcategoryTotal,
+            previousTagTotal: previousTagTotal,
+            previousNeedTotal: previousNeedTotal,
+            previousNeedAmounts: previousNeedAmounts,
+            totalAmount: totalAmount,
+            detailSource: detailSource.copy()
+        )
+    }
+
+    /// Enseña lo calculado la última vez si las entradas no cambiaron. `false` si no hay nada que valga: toca calcular.
+    private func restoreDistributionFromMemory() -> Bool {
+        guard let saved = viewModel.distributionMemory.recall(distributionKey) else { return false }
+        categorySpending = saved.categorySpending
+        subcategorySpending = saved.subcategorySpending
+        tagSpending = saved.tagSpending
+        categoryPieIsApproximate = saved.categoryPieIsApproximate
+        subcategoryPieIsApproximate = saved.subcategoryPieIsApproximate
+        tagPieIsApproximate = saved.tagPieIsApproximate
+        needTrendPoints = saved.needTrendPoints
+        previousCategoryTotal = saved.previousCategoryTotal
+        previousSubcategoryTotal = saved.previousSubcategoryTotal
+        previousTagTotal = saved.previousTagTotal
+        previousNeedTotal = saved.previousNeedTotal
+        previousNeedAmounts = saved.previousNeedAmounts
+        totalAmount = saved.totalAmount
+        detailSource.take(saved.detailSource)
+        // Lo mismo que `calculateData` hace al terminar con la lista (bloqueo a subcategorías con un filtro de categoría).
+        enforceListViewLock()
+        pageCalculated = true
+        return true
     }
 
     // MARK: - Previous Period Calculation
@@ -2219,6 +2318,60 @@ private struct CategoriesFilterRecalcObservers: ViewModifier {
 
 // MARK: - Detalle de una categoría
 
+/// Las entradas de las tartas, rankings y necesidades de Distribución (`CategoriesTabView.distributionKey`).
+struct DistributionKey: Equatable {
+    let dataGeneration: Int
+    let detailPeriod: DetailPeriod
+    /// El intervalo del período: cambia con el día aunque el período elegido sea el mismo.
+    let interval: DateInterval
+    let customDateRange: DateInterval?
+    let selectedAccounts: Set<PersistentIdentifier>
+    let selectedCategories: Set<PersistentIdentifier>
+    let selectedSubcategories: Set<PersistentIdentifier>
+    let selectedTags: Set<PersistentIdentifier>
+    let selectedNeeds: Set<SubcategoryNeed>
+    let selectedCurrencies: Set<CurrencyCode>
+    let amountCondition: AmountFilterCondition
+    let searchText: String
+    let excludedEntitiesKey: StatisticsViewModel.ExcludedEntitiesKey
+    let viewModelNatures: Set<TransactionNature>
+    let selectedTransactionNatures: Set<TransactionNature>
+    let isExpensesOnlyMode: Bool
+    let comparisonMode: ComparisonMode
+    let allSubcategories: [PersistentIdentifier]
+    let currencyCode: String
+    let includeGroupTransactionsInStats: Bool
+    let firstWeekday: Int
+}
+
+/// Las entradas del Sankey de Distribución (`CategoriesTabView.sankeyKey`).
+struct DistributionSankeyKey: Equatable {
+    let input: StatisticsViewModel.SankeyInputKey
+    let dataGeneration: Int
+    let scheduledPaymentsSignature: Int
+    let currencyCode: String
+    let includeGroupTransactionsInStats: Bool
+}
+
+/// Lo que Distribución pinta tras `calculateData`.
+struct DistributionSnapshot {
+    let categorySpending: [CategorySpendingSummary]
+    let subcategorySpending: [SubcategorySpendingSummary]
+    let tagSpending: [TagSpendingSummary]
+    let categoryPieIsApproximate: Bool
+    let subcategoryPieIsApproximate: Bool
+    let tagPieIsApproximate: Bool
+    let needTrendPoints: [NeedTrendPoint]
+    let previousCategoryTotal: Double?
+    let previousSubcategoryTotal: Double?
+    let previousTagTotal: Double?
+    let previousNeedTotal: Double?
+    let previousNeedAmounts: [SubcategoryNeed: Double]
+    let totalAmount: Double
+    /// Una copia de lo que el cálculo dejó para el detalle de una categoría: la página la vuelca en la suya al volver.
+    let detailSource: CategoryDetailSource
+}
+
 /// La categoría abierta en su detalle desde Distribución.
 struct CategoryDetailRoute: Hashable, Identifiable {
     let categoryID: PersistentIdentifier
@@ -2234,4 +2387,21 @@ final class CategoryDetailSource {
     var previousInterval: DateInterval?
     var natures: Set<TransactionNature>?
     var adjustment: GroupBridgeStatsAdjustment = .none
+
+    /// Otra instancia con lo mismo: lo que recuerda `StatisticsPageMemory` no puede ser la que el cálculo siguiente
+    /// reescribe.
+    func copy() -> CategoryDetailSource {
+        let other = CategoryDetailSource()
+        other.take(self)
+        return other
+    }
+
+    func take(_ other: CategoryDetailSource) {
+        current = other.current
+        previous = other.previous
+        interval = other.interval
+        previousInterval = other.previousInterval
+        natures = other.natures
+        adjustment = other.adjustment
+    }
 }
