@@ -8687,25 +8687,10 @@
 "bankEmail.skipped" = "E-mails arrivés sans être lus : %d.";
 "bankEmail.trialUsed" = "E-mails d’essai utilisés : %1$d sur %2$d.";
 "bankEmail.guideTitle" = "Transférer depuis %@";
-"bankEmail.guideLine" = "Ça se configure une seule fois, depuis le navigateur.";
 "bankEmail.guarantee" = "Seules les alertes de ta banque quittent ta boîte : le reste de tes e-mails n’est pas transféré.";
-"bankEmail.stepCopyTitle" = "Copie ton adresse Yala";
-"bankEmail.stepCopyDetail" = "Tu vas la coller dans ta messagerie à l’étape suivante.";
-"bankEmail.gmailAddTitle" = "Ajoute-la comme adresse de transfert";
-"bankEmail.gmailAddDetail" = "Dans Gmail, depuis le navigateur : Paramètres › Voir tous les paramètres › Transfert et POP/IMAP › Ajouter une adresse de transfert. Colle ton adresse et valide.";
 "bankEmail.openProvider" = "Ouvrir %@";
-"bankEmail.gmailConfirmTitle" = "Confirme avec le code Gmail";
-"bankEmail.gmailConfirmWaiting" = "Gmail envoie un code à ton adresse Yala. Dès qu’il arrive, tu le verras ici : touche « Chercher le code » dans un instant.";
-"bankEmail.gmailConfirmCode" = "Ton code Gmail est %@. Saisis-le dans Gmail, dans Transfert et POP/IMAP, puis touche Valider.";
 "bankEmail.copyCode" = "Copier le code";
 "bankEmail.checkCode" = "Chercher le code";
-"bankEmail.gmailFilterTitle" = "Crée un filtre pour ta banque";
-"bankEmail.gmailFilterDetail" = "Dans Gmail, recherche l’adresse depuis laquelle ta banque envoie ses alertes et touche Créer un filtre. Coche « Transférer à », choisis ton adresse Yala et crée le filtre. Ainsi, seules les alertes de la banque sont transférées.";
-"bankEmail.ruleTitle" = "Crée une règle pour ta banque";
-"bankEmail.outlookRuleDetail" = "Dans Outlook, depuis le navigateur : Paramètres › Courrier › Règles › Ajouter une nouvelle règle. Condition : « De » l’adresse de ta banque. Action : « Transférer à » ton adresse Yala. Enregistre la règle.";
-"bankEmail.icloudRuleDetail" = "Sur iCloud.com, ouvre Mail et va dans Réglages › Règles › Ajouter une règle. Si un message vient de l’adresse de ta banque, transfère-le à ton adresse Yala. Enregistre la règle.";
-"bankEmail.stepWaitTitle" = "Attends la prochaine alerte";
-"bankEmail.stepWaitDetail" = "Quand ta banque enverra la prochaine, l’opération apparaîtra dans ta Boîte de réception, prête à être confirmée.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Tout n'a pas pu être enregistré. Une partie des modifications est peut-être déjà visible ; vérifie le compte et enregistre à nouveau.";
