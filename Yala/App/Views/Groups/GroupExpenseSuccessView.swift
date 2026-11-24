@@ -2,10 +2,12 @@
 //  GroupExpenseSuccessView.swift
 //  Yala
 //
-//  Pantalla de éxito tras crear/editar un gasto de grupo. Espeja el patrón de
-//  `TransactionSuccessView` (hero animado + checkmark + monto + resumen + acciones),
-//  adaptada al split: grupo, quién pagó, división, participantes y la deuda que le queda
-//  al usuario ("te deben" / "debes"). Con confetti de celebración (respeta reduceMotion).
+//  Pantalla de éxito tras crear/editar un gasto de grupo, con el diseño minimalista del registro personal (encargo del
+//  2026-11-24; el de `TransactionSuccessView`, elegido por Jürgen el 2026-11-20): «Editar» arriba, un check pequeño junto
+//  al título, la descripción sobre el monto grande, debajo lo que te toca («Debes S/ 40.00 · Se lo debes a Ana») y una
+//  tarjeta sin rótulos con grupo, quién pagó, fecha, categoría, cuenta y el reparto con cada participante. Debajo, qué
+//  apuntó Yala en tus finanzas (solo si el puente lo escribió de verdad, card dx3m) con «Partir tu parte»; al pie,
+//  «Agregar otro gasto» y «Aceptar» lado a lado. Sin confeti ni círculo grande.
 //
 
 import SwiftUI
@@ -37,7 +39,7 @@ struct GroupExpenseSuccessData {
     var splitExpenseID: String? = nil
     var offersSplitLines: Bool = false
     /// Grupos B · card 00xj: pagaste tú con una categoría de ingreso (`GroupExpenseViewModel.isSale`). El título dice
-    /// «¡Venta agregada!» en vez de «¡Gasto agregado!».
+    /// «Venta agregada» en vez de «Gasto agregado».
     var isSale: Bool = false
 
     /// Participante con su parte del gasto. `id` estable = memberID (los nombres pueden repetirse).
@@ -58,99 +60,52 @@ struct GroupExpenseSuccessView: View {
         return f
     }()
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
-    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-    @ScaledMetric(relativeTo: .body) private var infoIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
-
     let data: GroupExpenseSuccessData
     let onAccept: () -> Void
     let onCreateAnother: () -> Void
     let onEdit: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
-    @State private var showConfetti = false
     @State private var showHero = false
-    @State private var showCheckmark = false
-    @State private var showAmount = false
     @State private var showDetails = false
     @State private var showActions = false
     @State private var showsSplitLines = false
 
-    private var heroColor: Color { DS.Semantic.successForeground }
+    private var tint: Color {
+        switch GroupExpenseSuccessLogic.tint(isSale: data.isSale) {
+        case .expense: TransactionType.expense.color
+        case .income: TransactionType.income.color
+        }
+    }
 
     var body: some View {
-        ZStack {
-            theme.background.ignoresSafeArea()
-
-            if showConfetti {
-                ConfettiView()
-                    .ignoresSafeArea()
-            }
-
-            // Subtle background glow
-            RadialGradient(
-                colors: [heroColor.opacity(0.06), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 200
-            )
-            .frame(height: 300)
-            .blur(radius: 40)
-            .offset(y: -60)
-
+        MinimalSuccessLayout(
+            onEdit: onEdit,
+            editIdentifier: "group_expense_success_edit",
+            footerVisible: showActions
+        ) {
             VStack(spacing: DS.Spacing.none) {
-                // Edit button at top right — native iOS style
-                HStack {
-                    Spacer()
-                    Button(L10n.Action.edit, action: onEdit)
-                        .buttonStyle(.bordered)
-                        .accessibilityIdentifier("group_expense_success_edit")
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.lg)
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxxl) {
-                        heroArea
-
-                        VStack(spacing: DS.Spacing.lg) {
-                            detailsSection
-                            participantsSection
-                        }
-                        .opacity(showDetails ? 1.0 : 0.0)
-                        .offset(y: showDetails ? 0 : 15)
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.top, DS.Spacing.xl)
+                hero
                     .padding(.bottom, DS.Spacing.xl)
-                }
-                .scrollIndicators(.hidden)
-
-                // Action buttons — native iOS style
-                VStack(spacing: DS.Spacing.md) {
-                    YalaPrimaryButton(L10n.Common.accept, action: onAccept)
-                        .accessibilityIdentifier("group_expense_success_accept")
-
-                    Button(action: onCreateAnother) {
-                        Text(L10n.Groups.Expense.Success.addAnother)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .accessibilityIdentifier("group_expense_success_add_another")
+                VStack(spacing: DS.Spacing.lg) {
+                    detailsCard
+                    moneyBlock
                 }
                 .padding(.horizontal, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xxxl)
-                .opacity(showActions ? 1.0 : 0.0)
-                .offset(y: showActions ? 0 : 10)
+                .opacity(showDetails ? 1.0 : 0.0)
+                .offset(y: showDetails ? 0 : 15)
             }
+        } footer: {
+            MinimalSuccessFooter(
+                secondary: .init(title: L10n.Groups.Expense.Success.addAnother,
+                                 identifier: "group_expense_success_add_another", action: onCreateAnother),
+                primary: .init(title: L10n.Common.accept, identifier: "group_expense_success_accept", action: onAccept)
+            )
         }
         // Sin identifier en el contenedor: en un container SwiftUI, .accessibilityIdentifier se
-        // propaga a TODOS los elementos hijos y PISA sus identifiers propios (los botones
-        // group_expense_success_accept/_edit/_add_another reportaban este id → XCUI no los hallaba).
+        // propaga a TODOS los elementos hijos y PISA sus identifiers propios.
         .onAppear(perform: runEntranceAnimation)
         .sheet(isPresented: $showsSplitLines) {
             if let splitExpenseID = data.splitExpenseID {
@@ -163,108 +118,75 @@ struct GroupExpenseSuccessView: View {
 
     private var heroTitle: String {
         switch GroupExpenseSuccessLogic.title(isSale: data.isSale, isEditMode: data.isEditMode) {
-        case .expenseCreated: L10n.Groups.Expense.Success.titleCreated
-        case .expenseUpdated: L10n.Groups.Expense.Success.titleUpdated
-        case .saleCreated: L10n.Groups.Expense.Success.titleSaleCreated
-        case .saleUpdated: L10n.Groups.Expense.Success.titleSaleUpdated
+        case .expenseCreated: ExitoGruposBandejaText.GroupTitle.expenseCreated
+        case .expenseUpdated: ExitoGruposBandejaText.GroupTitle.expenseUpdated
+        case .saleCreated: ExitoGruposBandejaText.GroupTitle.saleCreated
+        case .saleUpdated: ExitoGruposBandejaText.GroupTitle.saleUpdated
         }
     }
 
-    private var heroArea: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Text(heroTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-                .opacity(showHero ? 1.0 : 0.0)
-                .accessibilityIdentifier("group_expense_success_title")
+    private var hero: some View {
+        VStack(spacing: DS.Spacing.md) {
+            MinimalSuccessTitle(title: heroTitle, tint: tint, bounces: reduceMotion ? false : showHero,
+                                identifier: "group_expense_success_title")
 
-            heroCircle
+            if !data.description.isEmpty {
+                MinimalSuccessDescription(text: data.description, identifier: "group_expense_success_description")
+            }
 
             AmountText(
                 value: data.totalAmount,
                 currencyCode: data.currencyCode,
                 font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
-                tint: .color(heroColor),
+                tint: .color(tint),
                 forceFullPrecision: true
             )
-            .scaleEffect(showAmount ? 1.0 : 0.8)
-            .opacity(showAmount ? 1.0 : 0.0)
-
-            // L13-3 (decisión de Jürgen del 15-oct, variante 1): dos líneas que dicen qué pasó con tu dinero — quién te
-            // debe (o a quién debes) y qué apuntamos en tus finanzas, y de qué cuenta salió.
-            VStack(spacing: DS.Spacing.md) {
-                debtLine
-                moneyLine
-            }
-            .opacity(showAmount ? 1.0 : 0.0)
-        }
-    }
-
-    private var heroCircle: some View {
-        ZStack {
-            // Radiant glow
-            RadialGradient(
-                colors: [heroColor.opacity(0.25), .clear],
-                center: .center,
-                startRadius: 20,
-                endRadius: 90
-            )
-            .frame(width: 180, height: 180)
-            .blur(radius: 12)
+            .scaleEffect(showHero ? 1.0 : 0.9)
             .opacity(showHero ? 1.0 : 0.0)
 
-            // Main gradient circle
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [heroColor, heroColor.opacity(0.7)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 100, height: 100)
-                .shadow(color: heroColor.opacity(0.4), radius: 20, y: 8)
-                .scaleEffect(showHero ? 1.0 : 0.3)
+            debtLine
                 .opacity(showHero ? 1.0 : 0.0)
-
-            // Glass overlay
-            Circle()
-                .fill(Color.white.opacity(0.1))
-                .frame(width: 100, height: 100)
-                .mask(
-                    LinearGradient(
-                        colors: [.white, .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    )
-                )
-                .opacity(showHero ? 1.0 : 0.0)
-
-            // White checkmark
-            Image(systemName: "checkmark")
-                .font(.system(size: heroIconSize, weight: .semibold))
-                .foregroundStyle(.white)
-                .scaleEffect(showCheckmark ? 1.0 : 0.0)
-                .opacity(showCheckmark ? 1.0 : 0.0)
-                .accessibilityHidden(true)
         }
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
+    /// Tu parte, bajo el monto (L13-3): quién te debe, a quién debes o que no queda nada.
     private var debtLine: some View {
         let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
+        let title: String
+        let detail: String?
         switch data.debt {
         case .theyOweMe(let amount):
-            return infoRow(icon: "person.2.fill", color: DS.Semantic.successForeground,
-                           title: L10n.UXL13.successOwedTitle(format(amount)), detail: debtorsDetail)
-                .accessibilityIdentifier("group_expense_success_debt_line")
+            title = L10n.UXL13.successOwedTitle(format(amount))
+            detail = debtorsDetail
         case .iOwe(let amount):
-            return infoRow(icon: "person.2.fill", color: .hotPink,
-                           title: L10n.UXL13.successIOweTitle(format(amount)),
-                           detail: L10n.UXL13.successIOweTo(data.paidByName))
-                .accessibilityIdentifier("group_expense_success_debt_line")
+            title = L10n.UXL13.successIOweTitle(format(amount))
+            detail = L10n.UXL13.successIOweTo(data.paidByName)
         case .settled:
-            return infoRow(icon: "checkmark", color: .secondary, title: L10n.UXL13.successSettledTitle, detail: nil)
-                .accessibilityIdentifier("group_expense_success_debt_line")
+            title = L10n.UXL13.successSettledTitle
+            detail = nil
+        }
+        return VStack(spacing: DS.Spacing.xxs) {
+            Text(title)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(debtColor)
+            if let detail {
+                Text(detail)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_success_debt_line")
+    }
+
+    private var debtColor: Color {
+        switch GroupExpenseSuccessLogic.debtTone(data.debt) {
+        case .owedToMe: Color.groupOwedAmount
+        case .iOwe: Color.groupOweAmount
+        case .settled: Color(.secondaryLabel)
         }
     }
 
@@ -290,44 +212,125 @@ struct GroupExpenseSuccessView: View {
             .joined(separator: " · ")
     }
 
+    // MARK: - Tarjeta
+
+    private var fields: [GroupExpenseSuccessFieldOrder.Field] {
+        GroupExpenseSuccessFieldOrder.fields(
+            hasSubcategory: data.subcategoryName != nil,
+            hasAccount: data.accountName != nil,
+            outcome: data.personalOutcome
+        )
+    }
+
+    private var detailsCard: some View {
+        MinimalSuccessCard {
+            ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
+                row(for: field)
+            }
+        }
+    }
+
     @ViewBuilder
-    private var moneyLine: some View {
+    private func row(for field: GroupExpenseSuccessFieldOrder.Field) -> some View {
+        switch field {
+        case .group:
+            MinimalSuccessRow(icon: "person.3", label: L10n.Groups.Expense.Success.group, spoken: data.groupName,
+                              identifier: "group_expense_success_group") {
+                MinimalSuccessDotted(text: data.groupName, colorHex: data.groupColorHex)
+            }
+        case .paidBy:
+            let paidBy = data.paidByIsMe ? ExitoGruposBandejaText.paidByMe : ExitoGruposBandejaText.paidBy(data.paidByName)
+            MinimalSuccessRow(icon: "person.crop.circle", label: L10n.Groups.Expense.paidByTitle, spoken: paidBy,
+                              identifier: "group_expense_success_paid_by") {
+                Text(paidBy)
+            }
+        case .date:
+            let date = Self.dateFormatter.string(from: data.date)
+            MinimalSuccessRow(icon: "calendar", label: L10n.Transaction.date, spoken: date,
+                              identifier: "group_expense_success_date") {
+                Text(date)
+            }
+        case .subcategory:
+            if let subcategory = data.subcategoryName {
+                MinimalSuccessRow(icon: "tag", label: L10n.Transaction.category, spoken: subcategory,
+                                  identifier: "group_expense_success_category") {
+                    Text(subcategory)
+                }
+            }
+        case .account:
+            if let account = data.accountName {
+                MinimalSuccessRow(icon: "creditcard", label: L10n.Transaction.account, spoken: account,
+                                  identifier: "group_expense_success_account") {
+                    MinimalSuccessDotted(text: account, colorHex: data.accountColorHex ?? AppConstants.defaultColorHex)
+                }
+            }
+        case .split:
+            MinimalSuccessRow(icon: data.splitType.iconName, label: L10n.Groups.Expense.Success.splitLabel,
+                              spoken: [data.splitType.displayName, participantsLine].joined(separator: ", "),
+                              identifier: "group_expense_success_split_row") {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(data.splitType.displayName)
+                    Text(participantsLine)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    /// «Jürgen S/ 40.00 · Ana S/ 40.00 · Luis S/ 40.00»: cómo se repartió, en una línea que parte si no cabe. El nombre
+    /// propio va tal cual (como en la pantalla de antes): a veces ya es «Tú» y un sufijo lo repetiría.
+    private var participantsLine: String {
+        data.participants
+            .map { "\($0.name) \(appPreferences.currency($0.amount, currencyCode: data.currencyCode))" }
+            .joined(separator: " · ")
+    }
+
+    // MARK: - Qué apuntó Yala en tus finanzas
+
+    @ViewBuilder
+    private var moneyBlock: some View {
         let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
         switch data.personalOutcome {
         case .chargedToAccount(let accountName):
-            infoRow(icon: "creditcard.fill", color: .electricIndigo,
-                    title: L10n.UXL13.successAccountTitle(amount: format(data.totalAmount), account: accountName),
-                    detail: L10n.UXL13.successAccountDetail, offersSplit: data.offersSplitLines,
-                    contentIdentifier: "group_expense_success_money_line")
+            moneyRow(icon: "creditcard",
+                     title: L10n.UXL13.successAccountTitle(amount: format(data.totalAmount), account: accountName),
+                     detail: L10n.UXL13.successAccountDetail, offersSplit: data.offersSplitLines)
         case .waitingInInbox:
-            infoRow(icon: "tray.full.fill", color: .electricIndigo,
-                    title: L10n.UXL13.successInboxTitle,
-                    detail: L10n.UXL13.successInboxDetail(format(data.totalAmount)))
-                .accessibilityIdentifier("group_expense_success_money_line")
+            moneyRow(icon: "tray.full", title: L10n.UXL13.successInboxTitle,
+                     detail: L10n.UXL13.successInboxDetail(format(data.totalAmount)), offersSplit: false)
         case .shareAsGroupExpense(let amount):
-            infoRow(icon: "chart.pie.fill", color: .electricIndigo,
-                    title: L10n.UXL13.successShareTitle(format(amount)),
-                    detail: L10n.UXL13.successShareDetail, offersSplit: data.offersSplitLines,
-                    contentIdentifier: "group_expense_success_money_line")
+            moneyRow(icon: "chart.pie", title: L10n.UXL13.successShareTitle(format(amount)),
+                     detail: L10n.UXL13.successShareDetail, offersSplit: data.offersSplitLines)
         case .none:
             EmptyView()
         }
     }
 
-    /// - Parameter offersSplit: Grupos B (card 6): el enlace «Partir tu parte» dentro del bloque, bajo el texto (maqueta
-    ///   `opcion-b.html`, escenarios 2 y 3). Va fuera del elemento combinado para que se pueda tocar por sí solo.
-    private func infoRow(
-        icon: String, color: Color, title: String, detail: String?, offersSplit: Bool = false,
-        contentIdentifier: String? = nil
-    ) -> some View {
+    /// - Parameter offersSplit: Grupos B (card 6): «Partir tu parte» dentro del bloque, bajo el texto. Va fuera del
+    ///   elemento combinado para que se pueda tocar por sí solo; el id del texto va en el texto por lo mismo.
+    private func moneyRow(icon: String, title: String, detail: String, offersSplit: Bool) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Con el enlace dentro, el id va en el texto y no en el bloque: en el bloque pisaría el del enlace.
-            if let contentIdentifier {
-                infoRowContent(icon: icon, color: color, title: title, detail: detail)
-                    .accessibilityIdentifier(contentIdentifier)
-            } else {
-                infoRowContent(icon: icon, color: color, title: title, detail: detail)
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(title)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.primary)
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("group_expense_success_money_line")
+
             if offersSplit {
                 Button {
                     showsSplitLines = true
@@ -335,7 +338,7 @@ struct GroupExpenseSuccessView: View {
                     Label(L10n.Groups.SplitLines.splitYourShare, systemImage: "scissors")
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.thAccentText)
-                        .padding(.leading, infoIconSize + DS.Spacing.md)
+                        .padding(.leading, 20 + DS.Spacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }
@@ -343,232 +346,26 @@ struct GroupExpenseSuccessView: View {
                 .accessibilityIdentifier("group_expense_success_split")
             }
         }
-        .padding(DS.Spacing.md)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-    }
-
-    private func infoRowContent(icon: String, color: Color, title: String, detail: String?) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(.white)
-                .frame(width: infoIconSize, height: infoIconSize)
-                .background(color, in: Circle())
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let detail {
-                    Text(detail)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    // MARK: - Details
-
-    private var detailsSection: some View {
-        VStack(spacing: DS.Spacing.none) {
-            detailRow(icon: "person.3.fill", label: L10n.Groups.Expense.Success.group,
-                      value: data.groupName, dotColorHex: data.groupColorHex)
-
-            paidByRow
-
-            detailRow(icon: "calendar", label: L10n.Transaction.date, value: formattedDate)
-
-            if let subcategory = data.subcategoryName {
-                detailRow(icon: "tag", label: L10n.Transaction.category, value: subcategory)
-            }
-
-            // Con la línea «−S/ 150 en Cuenta» arriba, la fila de la cuenta repetiría lo mismo.
-            if let account = data.accountName, !isChargedToAccount {
-                detailRow(icon: "creditcard", label: L10n.Transaction.account,
-                          value: account, dotColorHex: data.accountColorHex)
-            }
-
-            detailRow(icon: data.splitType.iconName, label: L10n.Groups.Expense.Success.splitLabel,
-                      value: data.splitType.displayName)
-        }
-        .padding(.vertical, DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
     }
 
-    private func detailRow(icon: String, label: String, value: String, dotColorHex: String? = nil) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(label)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xs) {
-                if let dot = dotColorHex {
-                    Circle()
-                        .fill(Color(hex: dot))
-                        .frame(width: 8, height: 8)
-                }
-                Text(value)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
-
-    private var paidByRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "creditcard.fill")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(L10n.Groups.Expense.paidByTitle)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xs) {
-                Text(data.paidByName)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                if data.paidByIsMe {
-                    Text(L10n.Groups.Member.you)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
-
-    // MARK: - Participants
-
-    private var participantsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Expense.Success.participants)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, DS.Spacing.xs)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(data.participants) { participant in
-                    participantRow(participant)
-
-                    if participant.id != data.participants.last?.id {
-                        Divider()
-                            .padding(.leading, DS.Spacing.xxxl)
-                    }
-                }
-            }
-            .solidCard(radius: DS.Radius.xl)
-        }
-    }
-
-    private func participantRow(_ participant: GroupExpenseSuccessData.Participant) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            avatar(name: participant.name)
-
-            Text(participant.name)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Spacer()
-
-            Text(appPreferences.currency(participant.amount, currencyCode: data.currencyCode))
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
-    }
-
-    private func avatar(name: String) -> some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: data.groupColorHex).opacity(0.2))
-                .frame(width: avatarSize, height: avatarSize)
-            Text(String(name.prefix(1)).uppercased())
-                .font(DS.Typography.label)
-                .foregroundStyle(Color(hex: data.groupColorHex))
-        }
-        .accessibilityHidden(true)
-    }
-
-    // MARK: - Helpers
-
-    private var isChargedToAccount: Bool {
-        if case .chargedToAccount = data.personalOutcome { return true }
-        return false
-    }
-
-    private var formattedDate: String {
-        Self.dateFormatter.string(from: data.date)
-    }
+    // MARK: - Entrada
 
     private func runEntranceAnimation() {
-        guard !reduceMotion else {
+        if reduceMotion {
             showHero = true
-            showCheckmark = true
-            showAmount = true
             showDetails = true
             showActions = true
-            return
-        }
-
-        showConfetti = true
-        Task {
-            // 0ms — hero circle + glow
-            withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
-                showHero = true
-            }
-
-            // 150ms — checkmark
-            try? await Task.sleep(for: .milliseconds(150))
-            withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
-                showCheckmark = true
-            }
-
-            // 300ms — amount + debt
-            try? await Task.sleep(for: .milliseconds(150))
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                showAmount = true
-            }
-
-            // 500ms — details + participants
-            try? await Task.sleep(for: .milliseconds(200))
-            withAnimation(.easeOut(duration: 0.35)) {
-                showDetails = true
-            }
-
-            // 700ms — action buttons
-            try? await Task.sleep(for: .milliseconds(200))
-            withAnimation(.easeOut(duration: 0.3)) {
-                showActions = true
-            }
+        } else {
+            withAnimation(DS.Animation.appear) { showHero = true }
+            withAnimation(DS.Animation.appear.delay(0.15)) { showDetails = true }
+            withAnimation(DS.Animation.appear.delay(0.3)) { showActions = true }
         }
     }
 }
@@ -589,12 +386,13 @@ struct GroupExpenseSuccessView: View {
             accountColorHex: "FF6B6B",
             splitType: .equal,
             participants: [
-                .init(id: "1", name: "Tú", amount: 40),
+                .init(id: "1", name: "Jürgen", amount: 40),
                 .init(id: "2", name: "Ana", amount: 40),
                 .init(id: "3", name: "Luis", amount: 40),
             ],
             debt: .theyOweMe(80),
-            isEditMode: false
+            isEditMode: false,
+            currentUserMemberID: "1"
         ),
         onAccept: {},
         onCreateAnother: {},

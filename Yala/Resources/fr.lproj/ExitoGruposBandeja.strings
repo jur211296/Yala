@@ -1,0 +1,10 @@
+/* Éxito minimalista de Grupos y de la Bandeja (encargo del 2026-11-24). */
+
+"exitoGB.group.title.expenseCreated" = "Dépense ajoutée";
+"exitoGB.group.title.expenseUpdated" = "Dépense mise à jour";
+"exitoGB.group.title.saleCreated" = "Vente ajoutée";
+"exitoGB.group.title.saleUpdated" = "Vente mise à jour";
+"exitoGB.group.paidByMe" = "Vous avez payé";
+"exitoGB.group.paidBy" = "%@ a payé";
+"exitoGB.bulk.title.one" = "1 enregistrement effectué";
+"exitoGB.bulk.title.many" = "%lld enregistrements effectués";

@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (135)
 
 | id | status | path |
+| 2026-11-24-exito-grupos-y-bandeja-como-personal | qa | tickets/qa/2026-11-24-exito-grupos-y-bandeja-como-personal.md |
 | 2026-11-23-reportes-rebote-encabezado-comparativa-flujo | qa | tickets/qa/2026-11-23-reportes-rebote-encabezado-comparativa-flujo.md |
 | 2026-11-23-filtro-categoria-registros-detent-large | done | tickets/done/2026-11-23-filtro-categoria-registros-detent-large.md |
 | 2026-11-23-presupuesto-guiado-subcategorias | done | tickets/done/2026-11-23-presupuesto-guiado-subcategorias.md |
