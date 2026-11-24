@@ -27,6 +27,8 @@ struct FinancialReportView: View {
     @State private var comparativaPendiente = true
     @State private var comparativaGuardadosVistos: Int?
     @State private var comparativaDiaVisto: Date?
+    /// El alto de la página, para que el fondo de la cabecera de chips sea el mismo tramo del degradado de la pantalla.
+    @State private var reportPageHeight: CGFloat = 0
 
     // MARK: - Environment
 
@@ -88,14 +90,8 @@ struct FinancialReportView: View {
             // Comparativa en un `VStack` por encima del scroll, al lanzar la lista hasta un borde la barra de pestañas
             // se encogía y se desplegaba sin parar y la lista rebotaba sola (medido en vídeo; el Panel, con el scroll de
             // raíz, no lo hacía). La guía va dentro del scroll, como `StatsGuideSlot` en Estadísticas.
-            tabContent
+            tabContentWithChips
                 .yalaScreenBackground()
-                // Barra y no `safeAreaInset`: con el inset las filas del flujo de caja pasaban por debajo de las cápsulas
-                // «Comparativa / Flujo de caja» y su texto se leía detrás (S2 del replanteo, 18-nov-2026). La barra
-                // difumina el borde del scroll bajo ella (`swiftui-ds.md`).
-                .safeAreaBar(edge: .top) {
-                    navigationChipsBar
-                }
                 .navigationTitle(L10n.Report.title)
                 .navigationBarTitleDisplayMode(.large)
                 .prefersToolbarItemsInVerticalBar()
@@ -173,6 +169,24 @@ struct FinancialReportView: View {
 
     // MARK: - Navigation Chips
 
+    /// Las pestañas con la barra de chips en su entorno: cada scroll la monta como cabecera fija con
+    /// `ReportChipsHeaderStack` (encargo del 24-nov-2026). Ni `safeAreaBar` ni `safeAreaInset`: colgada bajo la barra de
+    /// navegación, la barra de chips saltaba 52 pt con cada cambio entre título grande y compacto, y a mitad de camino
+    /// el título y toda la parte de arriba entraban en un vaivén (vídeo de Jürgen del 23-nov, iPhone).
+    private var tabContentWithChips: some View {
+        tabContent
+            .environment(\.reportChipsHeader, chipsHeader)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.frame(in: .global).maxY + proxy.safeAreaInsets.bottom
+            } action: { reportPageHeight = $0 }
+    }
+
+    /// Con una sola pestaña visible (Solo Gastos) no hay barra: el contenido arranca arriba, sin reservar sitio.
+    private var chipsHeader: ReportChipsHeader? {
+        guard visibleReportTabs.count > 1 else { return nil }
+        return ReportChipsHeader(bar: AnyView(navigationChipsBar), pageHeight: reportPageHeight)
+    }
+
     /// Con una sola pestaña visible (Solo Gastos) la barra de chips sobra → se omite
     /// (sin reservar espacio). El condicional vive aquí, no en el `body`, para no
     /// cargar el presupuesto del type-checker del `body`.
@@ -224,44 +238,47 @@ struct FinancialReportView: View {
 
     private var comparativaContent: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.xl) {
-                // La guía de primera visita, primera pieza del scroll: se va con el contenido al desplazar. El Flujo de
-                // caja no lleva guía (UX 2.2 · L5-6, opción A): ya trae su «¿Qué es el flujo de caja?».
-                ContextualGuideBanner.comparative()
-                    .padding(.horizontal, DS.Spacing.lg)
-                filterBar
-                comparisonHeader
-                GroupingChipsBar(state: $viewModel.groupingState)
-                accountCardGroupingPicker
+            // Los márgenes de `scrollViewGlassEdges` no van con la barra de chips, que pone los suyos.
+            ReportChipsHeaderStack(horizontalBleed: DS.Spacing.lg) {
+                VStack(spacing: DS.Spacing.xl) {
+                    // La guía de primera visita, primera pieza del scroll: se va con el contenido al desplazar. El Flujo de
+                    // caja no lleva guía (UX 2.2 · L5-6, opción A): ya trae su «¿Qué es el flujo de caja?».
+                    ContextualGuideBanner.comparative()
+                        .padding(.horizontal, DS.Spacing.lg)
+                    filterBar
+                    comparisonHeader
+                    GroupingChipsBar(state: $viewModel.groupingState)
+                    accountCardGroupingPicker
 
-                if viewModel.hasData {
-                    allTimeCard
-                    pivotTable
+                    if viewModel.hasData {
+                        allTimeCard
+                        pivotTable
 
-                    // «Te quedó» (= neto con signo) no aplica en Solo Gastos (sin ingresos);
-                    // el comparativo de gasto ya está en la fila raíz "Gastos" del pivot.
-                    if !sessionState.isExpensesOnlyMode {
-                        NetFlowSummaryView(
-                            currentAmount: viewModel.netFlowCurrent,
-                            previousAmount: viewModel.netFlowPrevious,
-                            variation: viewModel.netFlowVariation,
-                            currencyCode: preferredCurrencyCode,
-                            showsComparison: viewModel.supportsComparison,
-                            previousPeriodName: comparedPeriodName?.inSentence ?? "",
-                            previousIsDayRange: comparedPeriodName?.isDayRange ?? false,
-                            currentIsApproximate: viewModel.netFlowCurrentIsApproximate,
-                            previousIsApproximate: viewModel.netFlowPreviousIsApproximate
-                        )
+                        // «Te quedó» (= neto con signo) no aplica en Solo Gastos (sin ingresos);
+                        // el comparativo de gasto ya está en la fila raíz "Gastos" del pivot.
+                        if !sessionState.isExpensesOnlyMode {
+                            NetFlowSummaryView(
+                                currentAmount: viewModel.netFlowCurrent,
+                                previousAmount: viewModel.netFlowPrevious,
+                                variation: viewModel.netFlowVariation,
+                                currencyCode: preferredCurrencyCode,
+                                showsComparison: viewModel.supportsComparison,
+                                previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                                previousIsDayRange: comparedPeriodName?.isDayRange ?? false,
+                                currentIsApproximate: viewModel.netFlowCurrentIsApproximate,
+                                previousIsApproximate: viewModel.netFlowPreviousIsApproximate
+                            )
+                        }
+                    } else {
+                        emptyState
+                            .padding(.top, DS.Spacing.xxl)
                     }
-                } else {
-                    emptyState
-                        .padding(.top, DS.Spacing.xxl)
                 }
+                .padding(.top, DS.Spacing.sm)
+                .yalaSafeBottomPadding()
+                // Ventana ancha: la Comparativa a 700 pt, centrada (decisión 7 de la revisión 2.3).
+                .readableColumn()
             }
-            .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
-            // Ventana ancha: la Comparativa a 700 pt, centrada (decisión 7 de la revisión 2.3).
-            .readableColumn()
         }
         .scrollViewGlassEdges()
         // Al entrar (o volver desde el Flujo de caja o desde otra pestaña), calcula solo si quedó algo pendiente.
@@ -347,9 +364,11 @@ struct FinancialReportView: View {
     private var cashFlowContent: some View {
         if transactions.isEmpty {
             ScrollView {
-                // El flujo de caja no tiene período: su vacío no dice «en este período» (lote 08 de 2.3).
-                emptyState(message: L10n.Report.cashFlowNoDataDescription)
-                    .padding(.top, DS.Spacing.xxl)
+                ReportChipsHeaderStack {
+                    // El flujo de caja no tiene período: su vacío no dice «en este período» (lote 08 de 2.3).
+                    emptyState(message: L10n.Report.cashFlowNoDataDescription)
+                        .padding(.top, DS.Spacing.xxl)
+                }
             }
         } else if cashFlowViewModel.hasPlan {
             CashFlowTableView(
@@ -586,3 +605,73 @@ extension View {
         modifier(CashFlowResetDialogModifier(isPresented: isPresented, onReset: onReset))
     }
 }
+
+// MARK: - Cabecera de chips dentro del scroll
+
+/// La barra «Comparativa / Flujo de caja» y el alto de la página, que `FinancialReportView` deja en el entorno de sus
+/// pestañas.
+struct ReportChipsHeader {
+    let bar: AnyView
+    let pageHeight: CGFloat
+}
+
+extension EnvironmentValues {
+    /// `nil` fuera de Reportes o con una sola pestaña visible.
+    @Entry var reportChipsHeader: ReportChipsHeader?
+}
+
+/// El contenido de una pestaña de Reportes con la barra de chips como cabecera fija DENTRO de su scroll (encargo del
+/// 24-nov-2026). Se usa como primer hijo del `ScrollView` de cada pestaña.
+///
+/// Por qué no una barra de la pantalla: colgada bajo la barra de navegación (`safeAreaBar` o `safeAreaInset`), su sitio
+/// depende de si el título está grande o compacto, y al moverse cambia el área segura del scroll, que es justo lo que
+/// UIKit mira para decidir el título. Sostenido en ese umbral, el título y toda la parte de arriba saltaban 52 pt una y
+/// otra vez. Dentro del scroll, el título se pliega como en el Panel y la barra no toca el área segura.
+///
+/// La cabecera lleva debajo el mismo tramo del fondo de la pantalla, desde arriba del todo: fija, tapa las filas que
+/// pasan por detrás y por encima de ella (S2 del replanteo del flujo de caja, 18-nov-2026: no se leen detrás de las
+/// cápsulas). El título grande y los botones se pintan por encima de ese fondo.
+struct ReportChipsHeaderStack<Content: View>: View {
+    /// Lo que el scroll mete de margen lateral y la barra no debe heredar (`scrollViewGlassEdges`).
+    var horizontalBleed: CGFloat = 0
+    @ViewBuilder let content: Content
+
+    @Environment(\.reportChipsHeader) private var header
+
+    var body: some View {
+        LazyVStack(spacing: DS.Spacing.none, pinnedViews: [.sectionHeaders]) {
+            Section {
+                content
+            } header: {
+                if let header {
+                    header.bar
+                        .padding(.horizontal, -horizontalBleed)
+                        .background { ReportChipsHeaderBackground(pageHeight: header.pageHeight) }
+                }
+            }
+        }
+    }
+}
+
+/// El fondo de la pantalla entre su borde de arriba y el de abajo de la cabecera, colocado en su sitio: el mismo
+/// degradado que `yalaScreenBackground`, así que en reposo no se ve y fija tapa lo que pasa por detrás.
+private struct ReportChipsHeaderBackground: View {
+    let pageHeight: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let frame = proxy.frame(in: .global)
+            // El degradado del tema claro acaba en un índigo al 10 %: la pantalla lo pinta sobre el fondo del sistema, y
+            // aquí también, o las filas se leerían a través.
+            PanelBackgroundView(ignoredEdges: [])
+                .background(Color(uiColor: .systemBackground))
+                .frame(width: frame.width, height: max(pageHeight, frame.maxY), alignment: .top)
+                .frame(width: frame.width, height: max(frame.maxY, 0), alignment: .top)
+                .clipped()
+                .offset(y: -frame.minY)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+

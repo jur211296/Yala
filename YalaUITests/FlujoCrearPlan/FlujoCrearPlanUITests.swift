@@ -28,9 +28,18 @@ final class FlujoCrearPlanUITests: XCTestCase {
 
         let header = app.buttons.matching(identifier: "cashflow_setup_group").firstMatch
         XCTAssertTrue(header.waitForExistence(timeout: 5), "No hay cabeceras de categoría.")
+        // Desde el 24-nov-2026 los chips «Comparativa / Flujo de caja» van fijos dentro del scroll: un `swipeUp` dejaba
+        // la cabecera debajo de ellos, XCUITest la daba por tocable y el toque caía en el chip. Se lleva al centro con un
+        // arrastre sin inercia y por debajo de los chips.
+        let chips = app.buttons["report_chip_flujoDeCaja"]
         var tries = 0
-        while !header.isHittable || header.frame.minY > app.frame.height * 0.6, tries < 6 {
-            app.swipeUp(velocity: .slow)
+        while header.frame.midY > app.frame.height * 0.6 || header.frame.minY < chips.frame.maxY + 8, tries < 6 {
+            let delta = header.frame.midY - app.frame.height * 0.45
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(
+                forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -delta)),
+                withVelocity: .slow, thenHoldForDuration: 0.3
+            )
             tries += 1
         }
         // Nocturna del 22-nov (iOS 27.0, runner del CI): el toque llegaba con la página aún deslizándose y solo la

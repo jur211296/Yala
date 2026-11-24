@@ -232,11 +232,13 @@ struct FlujoDetalleMesCableadoTests {
         #expect(capsula.contains("FlujoDetalleMesLogica.textoCapsula("))
     }
 
-    /// La barra de «Comparativa / Flujo de caja» difumina lo que pasa por debajo: con `safeAreaInset` el texto de las
-    /// filas se leía detrás de las cápsulas.
-    @Test func laBarraDeReportes_esUnaBarra() throws {
+    /// La barra de «Comparativa / Flujo de caja» tapa lo que pasa por debajo: con `safeAreaInset` el texto de las filas
+    /// se leía detrás de las cápsulas. Desde el 24-nov-2026 es una cabecera fija dentro del scroll con el fondo de la
+    /// pantalla debajo (la `safeAreaBar` de antes rebotaba en el umbral del título: `ReportesReboteEncabezadoTests`).
+    @Test func laBarraDeReportes_tapaLasFilas() throws {
         let reportes = try source("Yala/App/Views/Reports/FinancialReportView.swift")
-        #expect(reportes.contains(".safeAreaBar(edge: .top"))
+        #expect(reportes.contains("pinnedViews: [.sectionHeaders]"))
+        #expect(reportes.contains(".background { ReportChipsHeaderBackground(pageHeight: header.pageHeight) }"))
         #expect(!reportes.contains(".safeAreaInset(edge: .top"))
     }
 }
