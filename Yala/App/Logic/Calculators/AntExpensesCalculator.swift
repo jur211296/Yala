@@ -59,6 +59,9 @@ struct AntExpensesSummary: Equatable {
     /// Las mismas compras pequeñas (con el MISMO tope) en el período anterior, para que el consejo diga si algo subió.
     /// Lo rellena `InsightsCalculator`; `nil` sin período anterior.
     var previousCandidates: [AntExpenseGroup]? = nil
+    /// El ritmo del mes que enseña el Resumen (`AntExpensesPaceLogic`); lo rellena `InsightsCalculator`, que conoce el
+    /// período. `nil` si no hay ritmo que decir.
+    var pace: AntExpensesPace? = nil
 }
 
 enum AntExpensesCalculator {

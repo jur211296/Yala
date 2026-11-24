@@ -1,0 +1,37 @@
+/*
+  InsightsResumenOpcionB.strings
+  Yala
+
+  Estadísticas › Resumen, opción B · Decidir (Jürgen, 23-nov-2026): franja de salud, «Para decidir hoy», gastos
+  hormiga protagonistas, fila «Ir a» y la cápsula de Registros por comercio. Tabla propia, leída con el idioma de la
+  app (`ResumenOpcionBText`).
+*/
+
+"resumenB.health.lowering" = "What lowers it most: %@";
+"resumenB.health.openHint" = "Opens the details of your score";
+"resumenB.decide.title" = "To decide today";
+"resumenB.decide.budgetAtRisk.title" = "%1$@ is at %2$@";
+"resumenB.decide.budgetAtRisk.perDay" = "%1$@ left · %2$@ a day until %3$@";
+"resumenB.decide.budgetAtRisk.spent" = "You've used the whole limit · until %@";
+"resumenB.decide.budgetOver.title" = "You went over on %@";
+"resumenB.decide.budgetOver.detail" = "By %1$@ · the period ends on %2$@";
+"resumenB.decide.toPay.title" = "Still to pay: %@";
+"resumenB.decide.toPay.detail" = "Pending: %1$d · until %2$@";
+"resumenB.decide.toPay.count" = "Pending: %d";
+"resumenB.decide.spendingUp.title" = "You spend %@ more per day";
+"resumenB.decide.spendingUp.detail" = "%@ a day · see what went up";
+"resumenB.decide.hint.budgets" = "Opens Budgets";
+"resumenB.decide.hint.payments" = "Opens Scheduled Payments";
+"resumenB.decide.hint.trends" = "Opens Trends";
+"resumenB.ant.purchases" = "%d purchases";
+"resumenB.ant.caption" = "On purchases of up to %@ that you repeat";
+"resumenB.ant.pace.closesMonth" = "At this pace you'll end the month at %@";
+"resumenB.ant.pace.perMonth" = "At this pace, about %@ a month";
+"resumenB.ant.ai.merged" = "Yala AI grouped names of the same store";
+"resumenB.ant.seePurchases" = "See the purchases";
+"resumenB.ant.setCap" = "Set a limit";
+"resumenB.ant.rowHint" = "Opens its records";
+"resumenB.figures.weight" = "What weighs most: %1$@ %2$@";
+"resumenB.goTo.title" = "Go to";
+"resumenB.records.only" = "Only %@";
+"resumenB.records.clear" = "Remove the %@ filter";

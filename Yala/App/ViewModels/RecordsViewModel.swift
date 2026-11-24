@@ -140,6 +140,10 @@ final class RecordsViewModel: Filterable {
     /// Whether "identify duplicates" mode is active (ephemeral, per-view — resets on view/tab change)
     var duplicateModeActive: Bool = false
 
+    /// Registros de un comercio (Estadísticas › Resumen, opción B): efímero como el modo duplicados. Lo pone el Resumen
+    /// al tocar un gasto hormiga y se quita al salir del chip Registros o con la ✕ de su cápsula.
+    var merchantFilter: RecordsMerchantFilter?
+
     /// Which fields must match for two records to count as duplicates (default: all 4)
     var duplicateCriteria = RecordsDuplicateLogic.Criteria(
         amount: true, note: true, subcategory: true, date: true
@@ -386,6 +390,9 @@ final class RecordsViewModel: Filterable {
             criteria: criteria
         )
 
+        // Opción B del Resumen: solo los registros del comercio tocado, antes de buscar duplicados entre ellos.
+        groupedRecords = RecordsMerchantFilter.applying(merchantFilter, to: groupedRecords)
+
         // DIAG (caso "registro de grupo desaparece al clasificar"): cuántas TX bridgeadas
         // quedan visibles en el feed tras este refresh. Sin PII. Quitar tras QA.
         let bridgedVisible = groupedRecords.flatMap(\.records).filter {
@@ -612,6 +619,14 @@ final class RecordsViewModel: Filterable {
     /// Exit "identify duplicates" mode (ephemeral — also called on view/tab change)
     func exitDuplicateMode() {
         duplicateModeActive = false
+    }
+
+    /// Quita el filtro por comercio. `true` si había uno: quien llama vuelve a filtrar la lista.
+    @discardableResult
+    func clearMerchantFilter() -> Bool {
+        guard merchantFilter != nil else { return false }
+        merchantFilter = nil
+        return true
     }
 
     /// «Quitar repetidos»: mide qué se borraría y pide la confirmación. Con un día elegido en el calendario, solo los

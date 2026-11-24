@@ -89,43 +89,37 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
                       "El toque no eligió Observaciones.", file: file, line: line)
     }
 
-    // MARK: - L11-5 · L11-6
+    // MARK: - L11-5 · L11-6 (desde la opción B del Resumen, 23-nov-2026)
 
-    func test_summary_showsWhatYouStillHaveToPay_andBudgetsWithTheirAmounts() {
-        // «Este mes» cierra hoy a las 23:59:59 y la sección cuenta los pagos que vencen dentro del período: con los de
-        // la semilla (días 3 a 28) salía solo los días en que vencía uno. El pago que vence HOY la hace independiente
-        // del día en que corre (ticket `ui-suite-2-2-five-tests-red-on-the-base`).
-        let app = launchStatistics(extraArguments: ["-uitest-scheduled-due-today"])
+    /// «Lo que te falta pagar» y «Tus presupuestos» ya no son secciones plegables: lo que piden sale como acción en «Para
+    /// decidir hoy», con su cifra y salida. El pago que vence HOY hace el caso independiente del día en que corre (ticket
+    /// `ui-suite-2-2-five-tests-red-on-the-base`). Los presupuestos van apagados (ajuste de Smart Insights): la semilla
+    /// los llena con el mes, y a fin de mes tres pasados o al 90 % ocupaban las tres plazas antes que lo que falta pagar.
+    func test_summary_showsWhatYouStillHaveToPay_asADecisionWithItsAmount() {
+        let app = launchStatistics(extraArguments: ["-uitest-scheduled-due-today", "-insightsShowBudgetsAtRisk", "NO"])
         chooseThisMonth(app)
 
-        let toPay = element(app, "insights_to_pay_header")
-        XCTAssertTrue(scrollTo(app, toPay), "Falta «Lo que te falta pagar».")
-        XCTAssertTrue(toPay.label.contains("Lo que te falta pagar"), "Rótulo inesperado: \(toPay.label)")
-        // La cabecera plegable vieja era un botón «Compromisos»; la fila «Compromisos, N de 100» de «Tu salud
-        // financiera» es otra cosa y se queda.
-        XCTAssertFalse(app.buttons["Compromisos"].exists, "La sección «Compromisos» debería haber desaparecido.")
+        let decide = element(app, "insights_decide")
+        XCTAssertTrue(scrollTo(app, decide), "Falta «Para decidir hoy».")
+        let toPay = element(app, "insights_decide_to_pay")
+        XCTAssertTrue(scrollTo(app, toPay), "Falta la acción de lo que falta pagar.")
+        XCTAssertTrue(toPay.label.contains("Te falta pagar"), "Rótulo inesperado: \(toPay.label)")
+        XCTAssertTrue(toPay.label.contains("S/"), "La acción no dice cuánto falta: \(toPay.label)")
 
-        // Con más de cuatro presupuestos el bloque sale plegado («abiertos si caben»): el corpus `realista` tiene seis.
-        let budgets = element(app, "insights_budgets_header")
-        XCTAssertTrue(scrollTo(app, budgets), "Falta «Tus presupuestos».")
-        let usage = element(app, "insights_budget_usage")
-        if !usage.exists { budgets.tap() }
-        XCTAssertTrue(scrollTo(app, usage), "Falta la línea «S/ X de S/ Y · Z %» de un presupuesto.")
-        XCTAssertTrue(usage.label.contains(" de "), "La barra no dice de cuánto: \(usage.label)")
+        // Las secciones plegables de antes no vuelven.
+        XCTAssertFalse(element(app, "insights_to_pay_header").exists, "Volvió la sección «Lo que te falta pagar».")
+        XCTAssertFalse(element(app, "insights_budgets_header").exists, "Volvió la sección «Tus presupuestos».")
     }
 
-    func test_needSection_explainsWhatItIsFor_andGivesAnExamplePerRow() {
+    /// La necesidad deja su sección plegable: queda en «Lo que más pesa», con la barra y salida a Distribución.
+    func test_weightLine_showsTheTopCategory_andTheNeedBar() {
         let app = launchStatistics()
         chooseLastMonth(app)
 
-        let header = app.buttons["Distribución del gasto por necesidad"].firstMatch
-        XCTAssertTrue(scrollTo(app, header), "Falta la sección de la necesidad.")
-        header.tap()
-        let purpose = element(app, "insights_need_purpose")
-        XCTAssertTrue(scrollTo(app, purpose), "Falta la línea con el para qué.")
-        // El texto es `need.optional.desc`, el mismo del selector de necesidad del formulario: desde el lote 2 · B
-        // (2026-10-23) lleva ejemplos tras los dos puntos.
-        XCTAssertTrue(app.staticTexts["Gustos y caprichos: salidas, delivery."].exists, "Falta el ejemplo de «Opcional».")
+        let line = element(app, "insights_weight_line")
+        XCTAssertTrue(scrollTo(app, line), "Falta «Lo que más pesa».")
+        XCTAssertTrue(line.label.contains("Lo que más pesa"), "Rótulo inesperado: \(line.label)")
+        XCTAssertFalse(app.buttons["Distribución del gasto por necesidad"].exists, "Volvió la sección de la necesidad.")
     }
 
     // MARK: - L11-7

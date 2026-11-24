@@ -116,6 +116,9 @@ struct Commitments {
     /// «Tus presupuestos»: TODOS los activos, de más a menos usado. `budgetsAtRisk` sigue siendo los de ≥ 50 % (lo leen
     /// Yala IA y las observaciones).
     var budgets: [BudgetAtRisk] = []
+    /// Hasta cuándo se cuentan los pendientes (el final del período): «Pendientes: 5 · hasta el 30 nov.» de «Para decidir
+    /// hoy» (Resumen, opción B).
+    var pendingUntil: Date? = nil
 }
 
 struct BudgetAtRisk: Identifiable {
@@ -128,6 +131,11 @@ struct BudgetAtRisk: Identifiable {
     let colorHex: String?
     /// Moneda de `spent` y `limit`: la del presupuesto.
     var currencyCode: String = ""
+    /// Días que le quedan a su período, como `BudgetSummary.daysRemaining` (-1 cerrado, 0 sin empezar, > 0 en curso con
+    /// hoy incluido): lo que queda por día de «Para decidir hoy» (Resumen, opción B).
+    var daysRemaining: Int = 0
+    /// El último instante de su período en curso.
+    var periodEnd: Date? = nil
 }
 
 struct NeedDistribution {
@@ -422,6 +430,13 @@ struct InsightsCalculator {
                 isSuppressed: { adjustment.isSuppressed($0) },
                 threshold: threshold
             )
+        }
+
+        // El ritmo del mes (Resumen, opción B): también en «Este mes» en curso y en los períodos cortos, no solo en los de
+        // más de 31 días como `monthlyEstimate`.
+        if let total = antExpenses?.total {
+            antExpenses?.pace = AntExpensesPaceLogic.pace(
+                total: total, period: period, countedDays: daysInPeriod, calendar: userConfiguredCalendar())
         }
 
         let quickStats = QuickStats(
@@ -751,10 +766,11 @@ struct InsightsCalculator {
             guard budget.isActive else { continue }
             guard budget.limitAmount > 0 else { continue }
 
+            let budgetInterval = currentBudgetInterval(for: budget, now: now)
             let spent = BudgetsViewModel.calculateSpending(
                 budget: budget,
                 transactions: allTransactions,
-                interval: currentBudgetInterval(for: budget, now: now),
+                interval: budgetInterval,
                 adjustment: adjustment,
                 converter: converter
             )
@@ -771,7 +787,9 @@ struct InsightsCalculator {
                 spent: spent,
                 limit: budget.limitAmount,
                 colorHex: budget.category?.colorHex ?? display.color,
-                currencyCode: budget.currencyCode
+                currencyCode: budget.currencyCode,
+                daysRemaining: BudgetPeriodInterval.summaryDaysRemaining(now: now, in: budgetInterval, calendar: calendar),
+                periodEnd: budgetInterval.end
             )
             allBudgets.append(row)
             if usage >= 50 { budgetsAtRisk.append(row) }
@@ -791,7 +809,8 @@ struct InsightsCalculator {
             pendingSubscriptionsAmount: pendingSubscriptionsAmount,
             pendingOtherPaymentsCount: pendingOtherCount,
             pendingOtherPaymentsAmount: pendingOtherAmount,
-            budgets: allBudgets
+            budgets: allBudgets,
+            pendingUntil: pendingPaymentsInterval.end
         )
     }
 
