@@ -75,16 +75,38 @@ final class RecordsQuickFiltersRowUITests: XCTestCase {
 
         let tiles = app.buttons.matching(identifier: "records_quick_category_tile")
         XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 5), "La hoja de categorías no usa la rejilla del onboarding.")
-        tiles.element(boundBy: 0).tap()
-        tiles.element(boundBy: 1).tap()
-        XCTAssertTrue(tiles.element(boundBy: 0).isSelected)
-        XCTAssertTrue(tiles.element(boundBy: 1).isSelected)
-
-        // Las subcategorías salen debajo de la rejilla: la hoja se estira y se baja hasta ellas, como con el dedo.
         let subcategories = app.buttons.matching(identifier: "records_quick_subcategory")
-        let hint = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'subcategor'")).firstMatch
         // Por encima de «Listo»: lo que queda bajo la barra de abajo da `isHittable` y el toque cae en el botón.
         let done = app.buttons["records_quick_category_done"].firstMatch
+
+        // Por nombre, no por posición: la rejilla es perezosa y, al bajar la hoja, el índice pasa a otra tarjeta.
+        let firstName = tiles.element(boundBy: 0).label
+        tiles.element(boundBy: 0).tap()
+        // Desde el 24-nov, elegir una categoría sube la hoja a grande y la baja sola hasta sus subcategorías. Se espera a
+        // que acabe: tocar la segunda mientras la hoja se mueve cae en el sitio viejo. La segunda va en la segunda fila,
+        // porque la primera queda medio tapada por la barra de la hoja tras bajar.
+        let revealDeadline = Date().addingTimeInterval(8)
+        while Date() < revealDeadline,
+              !(subcategories.firstMatch.exists && subcategories.firstMatch.frame.maxY < done.frame.minY) {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+        XCTAssertTrue(
+            subcategories.firstMatch.exists && subcategories.firstMatch.frame.maxY < done.frame.minY,
+            "Elegir una categoría no dejó sus subcategorías a la vista sobre «Listo»."
+        )
+        let second = tiles.element(boundBy: 3)
+        XCTAssertTrue(app.waitForSettledLayout(of: second), "La hoja no dejó de moverse tras elegir la primera categoría.")
+        let secondName = second.label
+        second.tap()
+        // Elegidas las dos, cada una tiene su grupo de subcategorías con su nombre de título. La marca de la tarjeta no se
+        // puede leer: al bajar la hoja hasta el final, la rejilla suelta la primera fila.
+        for name in [firstName, secondName] {
+            let header = app.staticTexts.matching(NSPredicate(format: "label == %@", name)).firstMatch
+            XCTAssertTrue(header.waitForExistence(timeout: 5), "«\(name)» no quedó elegida: no sale su grupo de subcategorías.")
+        }
+
+        // Las subcategorías salen debajo de la rejilla; si hace falta, se baja hasta ellas como con el dedo.
+        let hint = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'subcategor'")).firstMatch
         for _ in 0..<8 where !(subcategories.firstMatch.exists
                                && subcategories.firstMatch.frame.maxY < done.frame.minY - 16) {
             app.swipeUp()
