@@ -140,9 +140,12 @@ struct ScheduledPaymentsListView: View {
             )
             .padding(.horizontal, DS.Spacing.lg)
 
-            // Sin el rótulo de la pestaña: repetía «Todos», que ya está elegido arriba (L10-1). Chips con su nombre desde
-            // la izquierda (encargo del 24-nov-2026): solo con icono, a la derecha, se veían poco.
-            viewModeSelector
+            // Sin el rótulo de la pestaña: repetía «Todos», que ya está elegido arriba (L10-1).
+            HStack {
+                Spacer()
+                viewModeSelector
+            }
+            .padding(.horizontal, DS.Spacing.lg)
 
             Group {
                 switch appPreferences.scheduledPaymentsViewMode {
@@ -247,21 +250,13 @@ struct ScheduledPaymentsListView: View {
 
     // MARK: - View Mode
 
-    /// Chips con icono y nombre, desde la izquierda. En un scroll horizontal: con texto grande o en un idioma largo se
-    /// desplazan, nunca se recortan.
     private var viewModeSelector: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(PaymentsViewMode.allCases) { mode in
-                    viewModeButton(for: mode)
-                }
+        HStack(spacing: DS.Spacing.sm) {
+            ForEach(PaymentsViewMode.allCases) { mode in
+                viewModeButton(for: mode)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.xxs)
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .fadesTowardVerticalBar()
-        // El relleno se desliza entre Lista, Línea de tiempo y Calendario (card C2); la página cambia en seco.
+        // El círculo se desliza entre Lista, Línea y Calendario (card C2); la página cambia en seco.
         .dsAnimation(DS.Animation.selection, value: appPreferences.scheduledPaymentsViewMode, reduceMotion: reduceMotion)
     }
 
@@ -272,33 +267,30 @@ struct ScheduledPaymentsListView: View {
             if !isSelected { DS.Haptic.selection() }
             appPreferences.scheduledPaymentsViewMode = mode
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: mode.iconName)
-                    .font(DS.Typography.labelSmall)
-                    .accessibilityHidden(true)
-                Text(mode.accessibilityLabel)
-                    .font(DS.Typography.label)
-                    .lineLimit(1)
-                    .fixedSize()
-            }
-            .foregroundStyle(isSelected ? theme.onAccent : Color.secondary)
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.sm)
-            .frame(minHeight: DS.Button.actionSize)
-            .background {
-                if isSelected {
-                    Capsule()
-                        .fill(theme.accent)
-                        .matchedGeometryEffect(id: "viewModeSelector", in: viewModeNamespace)
-                } else {
-                    Capsule()
-                        .fill(.thCard)
+            Image(systemName: mode.iconName)
+                .font(DS.Typography.labelSmall)
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
+                // El círculo es de tamaño fijo: con el texto al máximo el icono crecía fuera de él y los tres se montaban
+                // (QA físico 2.2, iPhone 14). Tope como el de una barra, y el visor de contenido grande al mantenerlo.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "viewModeSelector", in: viewModeNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
+                    }
                 }
-            }
-            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityShowsLargeContentViewer {
+            Label(mode.accessibilityLabel, systemImage: mode.iconName)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("scheduled_view_mode_\(mode.rawValue)")
     }

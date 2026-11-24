@@ -8,13 +8,13 @@ updated: 2026-11-24
 source: "QA de Jürgen en su iPhone, 2.3 (24-nov, 06:08-06:15 Lima)"
 ---
 
-# Pagos planificados: chips de vista con nombre, ícono cuando no hay logo y el enlace del pie pegado al final
+# Pagos planificados: ícono cuando no hay logo, el enlace del pie pegado al final y la vista recordada
 
 ## Qué cambia para quien usa la app
 
-- Debajo del mes, en vez de tres botones redondos solo con ícono a la derecha, hay tres chips con nombre desde la
-  izquierda: «Lista», «Línea de tiempo» y «Calendario». Con texto grande o en idiomas largos se desplazan en
-  horizontal. La vista elegida se recuerda al salir y volver (antes se perdía).
+- Selector de vista: se probaron chips con texto desde la izquierda y Jürgen los revirtió el mismo día («no me gusta como
+  queda»). Quedan los tres botones redondos con ícono a la derecha, como en 2.2. Lo que sí cambia: la vista elegida se
+  recuerda al salir y volver (antes se perdía).
 - En la línea de tiempo y en el calendario, los pagos sin logo de comercio llevan el ícono de su subcategoría (o de
   su categoría) en el mismo sitio y tamaño que el logo. En el calendario, la marca del día es ese ícono con el aro del
   color de estado, dos por celda.
@@ -27,6 +27,6 @@ El hueco salía de un margen de 100 pt «para el botón flotante» que la lista 
 
 ## Pruebas
 
-`YalaTests/PagosPlanificadosChipsVista/` (orden y nombre de las vistas, vista recordada, orden logo → subcategoría →
+`YalaTests/PagosPlanificadosChipsVista/` (orden y nombre de las vistas, vista recordada y su vuelta a Lista tras borrar, orden logo → subcategoría →
 categoría → tipo, cableado). Capturas antes/después en claro, oscuro, texto grande y girado con
 `YalaUITests/PagosPlanificadosChipsVista/PagosChipsVistaCapturasUITests` (a mano).

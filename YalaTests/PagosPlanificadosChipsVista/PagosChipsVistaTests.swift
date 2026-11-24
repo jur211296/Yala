@@ -2,8 +2,8 @@
 //  PagosChipsVistaTests.swift
 //  YalaTests
 //
-//  Pagos planificados (encargo del 24-nov-2026): chips de vista con nombre, la vista elegida recordada, el ícono de la
-//  subcategoría cuando no hay logo (lista, línea de tiempo y calendario) y el enlace del pie pegado al final.
+//  Pagos planificados (encargo del 24-nov-2026): la vista elegida recordada, el ícono de la subcategoría cuando no hay
+//  logo (lista, línea de tiempo y calendario) y el enlace del pie pegado al final. Los chips con texto se revirtieron.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("Pagos planificados · chips de vista: orden, nombre y vista recordada", .serialized)
+@Suite("Pagos planificados · selector de vista: orden, nombre y vista recordada", .serialized)
 @MainActor
 struct PagosChipsVistaTests {
 
@@ -164,17 +164,15 @@ struct PagosChipsVistaCableadoTests {
     private static let contenedor = "Yala/App/Views/Planning/ScheduledPaymentsView.swift"
     private static let pie = "Yala/App/Views/Planning/PagosRecurrentes/RecurringProposalsSettingsView.swift"
 
-    @Test("Los chips llevan su nombre, van desde la izquierda en un scroll y la vista sale de las preferencias")
-    func chipsConNombre() throws {
+    @Test("El selector de vista sigue con iconos a la derecha y lee la vista guardada")
+    func selectorConIconosQueRecuerda() throws {
         let code = Self.codeOnly(try Self.source(Self.lista))
-        #expect(code.contains("Text(mode.accessibilityLabel)"))
-        #expect(code.contains("ScrollView(.horizontal, showsIndicators: false)"))
+        // Jürgen, 24-nov-2026: los chips con texto se probaron y se revirtieron; quedan los botones redondos a la derecha.
+        #expect(code.contains("Spacer()\n                viewModeSelector"))
+        #expect(code.contains("Image(systemName: mode.iconName)"))
+        #expect(!code.contains("Text(mode.accessibilityLabel)"))
         #expect(code.contains("appPreferences.scheduledPaymentsViewMode = mode"))
         #expect(code.contains("switch appPreferences.scheduledPaymentsViewMode"))
-        // Ya no hay un `Spacer()` que los empuje a la derecha ni un tope de tamaño que los recorte.
-        #expect(!code.contains("Spacer()\n                viewModeSelector"))
-        #expect(!code.contains(".dynamicTypeSize(...DynamicTypeSize.xxxLarge)\n                .frame(width: DS.Icon.badgeMedium"))
-        // Accesibilidad: nombre, estado elegido e identificador por vista.
         #expect(code.contains(".accessibilityAddTraits(isSelected ? .isSelected : [])"))
         #expect(code.contains("\"scheduled_view_mode_\\(mode.rawValue)\""))
     }
