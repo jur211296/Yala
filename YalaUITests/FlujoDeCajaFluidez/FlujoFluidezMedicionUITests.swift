@@ -133,6 +133,56 @@ final class FlujoFluidezMedicionUITests: XCTestCase {
         marca(app, "fin")
     }
 
+    /// El rebote del umbral (vídeo de Jürgen del 23-nov, encargo del 24-nov): con el título contraído, volver a bajar
+    /// despacio y quedarse con el dedo justo donde el título grande se despliega. Arrastres cortos desde arriba del
+    /// todo sosteniendo el dedo, y uno muy lento que cruza el umbral. Con `simctl io recordVideo` alrededor, la y del
+    /// chip elegido fotograma a fotograma dice si salta: antes del arreglo, en el iPhone, iba de 127 a 179 pt cada
+    /// segundo. Ojo: en el simulador el bucle no salía ni antes (el toque sintético no tiembla), así que esto mide que
+    /// la barra siga al contenido sin saltos, no reproduce el rebote.
+    func test_reboteUmbral() {
+        let env = ProcessInfo.processInfo.environment
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: env["FLUIDEZ_SEMILLA"] ?? "realista")
+        XCTAssertTrue(app.waitForUITestReady(timeout: 120), "uitest_ready ausente.")
+        app.openReport("comparativa")
+        pause(2)
+        let pasos: [CGFloat] = [12, 16, 20, 24, 28]
+        for pantalla in ["comparativa", "flujo"] {
+            if pantalla == "flujo" {
+                tap(app.buttons["report_chip_flujoDeCaja"])
+                pause(1.5)
+                skipCoachMark(app)
+                let create = app.buttons["primary_button"]
+                if create.waitForExistence(timeout: 5) {
+                    create.tap()
+                    _ = app.staticTexts["cashflow_month_title"].waitForExistence(timeout: 60)
+                    skipCoachMark(app)
+                }
+                pause(1.5)
+            }
+            for distancia in pasos {
+                marca(app, "umbral \(pantalla) \(Int(distancia))")
+                let inicio = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+                let fin = inicio.withOffset(CGVector(dx: 0, dy: -distancia))
+                inicio.press(forDuration: 0.05, thenDragTo: fin, withVelocity: 30, thenHoldForDuration: 2.5)
+                pause(1)
+                app.swipeDown(velocity: .slow)
+                pause(1)
+            }
+            // El gesto del vídeo: contraer el título y volver a bajar muy despacio, cruzando el umbral con el dedo puesto.
+            marca(app, "lento \(pantalla)")
+            let arriba = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+            let abajo = arriba.withOffset(CGVector(dx: 0, dy: 140))
+            abajo.press(forDuration: 0.05, thenDragTo: arriba, withVelocity: 50, thenHoldForDuration: 0.5)
+            pause(1)
+            arriba.press(forDuration: 0.05, thenDragTo: abajo, withVelocity: 12, thenHoldForDuration: 1.5)
+            pause(1)
+            app.swipeDown(velocity: .slow)
+            pause(1)
+        }
+        marca(app, "fin")
+    }
+
     /// Una marca en el log del runner para cruzar con el vídeo y con el log de la app.
     private func marca(_ app: XCUIApplication, _ nombre: String) {
         NSLog("FLUIDEZ marca \(nombre)")

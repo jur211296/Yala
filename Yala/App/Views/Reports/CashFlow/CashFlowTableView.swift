@@ -33,40 +33,43 @@ struct CashFlowTableView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                if let projection = viewModel.projection {
-                    VStack(spacing: DS.Spacing.none) {
-                        // Month strip
-                        CashFlowMonthStrip(
-                            months: projection.months,
-                            selectedMonthKey: $viewModel.selectedMonthKey,
-                            currencyCode: currencyCode
-                        )
-
-                        // Month detail for selected month
-                        if let month = projection.months.first(where: { $0.monthKey == viewModel.selectedMonthKey }) {
-                            CashFlowMonthDetailView(
-                                month: month,
-                                viewModel: viewModel,
-                                currencyCode: currencyCode,
-                                transactions: transactions,
-                                onCellDetailDismiss: { recalculate() }
+                // La barra «Comparativa / Flujo de caja», fija dentro del scroll (`ReportChipsHeaderStack`).
+                ReportChipsHeaderStack {
+                    if let projection = viewModel.projection {
+                        VStack(spacing: DS.Spacing.none) {
+                            // Month strip
+                            CashFlowMonthStrip(
+                                months: projection.months,
+                                selectedMonthKey: $viewModel.selectedMonthKey,
+                                currencyCode: currencyCode
                             )
-                            // Deslizar cambia de mes sin quitarle el arrastre vertical al scroll. Un `DragGesture`
-                            // aquí —con `.gesture` y también con `.simultaneousGesture`— dejaba la lista del mes sin
-                            // desplazarse: solo se movía arrastrando desde la tira de meses (lote 18, medido).
-                            .gesture(HorizontalSwipeGesture { towardsNext in
-                                navigateMonth(in: projection.months, forward: towardsNext)
-                            })
-                            .accessibilityAdjustableAction { direction in
-                                navigateMonth(in: projection.months, forward: direction == .increment)
+
+                            // Month detail for selected month
+                            if let month = projection.months.first(where: { $0.monthKey == viewModel.selectedMonthKey }) {
+                                CashFlowMonthDetailView(
+                                    month: month,
+                                    viewModel: viewModel,
+                                    currencyCode: currencyCode,
+                                    transactions: transactions,
+                                    onCellDetailDismiss: { recalculate() }
+                                )
+                                // Deslizar cambia de mes sin quitarle el arrastre vertical al scroll. Un `DragGesture`
+                                // aquí —con `.gesture` y también con `.simultaneousGesture`— dejaba la lista del mes sin
+                                // desplazarse: solo se movía arrastrando desde la tira de meses (lote 18, medido).
+                                .gesture(HorizontalSwipeGesture { towardsNext in
+                                    navigateMonth(in: projection.months, forward: towardsNext)
+                                })
+                                .accessibilityAdjustableAction { direction in
+                                    navigateMonth(in: projection.months, forward: direction == .increment)
+                                }
                             }
                         }
+                        // Ventana ancha: la tira de meses y el mes a 700 pt, centrados (decisión 7 de la revisión 2.3).
+                        .readableColumn()
+                    } else {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    // Ventana ancha: la tira de meses y el mes a 700 pt, centrados (decisión 7 de la revisión 2.3).
-                    .readableColumn()
-                } else {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .scrollDisabled(showTour)

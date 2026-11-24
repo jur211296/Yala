@@ -112,39 +112,42 @@ struct CashFlowSetupView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                startingBalanceHero
-                bannerSection
-                if viewModel.suggestedLines.isEmpty {
-                    emptyState
-                } else {
-                    if !allSelected {
-                        selectAllButton
-                    }
-                    if !incomeLines.isEmpty {
-                        lineSection(title: L10n.UXL18.sectionIn, lines: incomeLines)
-                    }
-                    if asksForIncome {
-                        incomeQuestion
-                    }
-                    if !expenseGroups.isEmpty {
-                        expenseSection
-                    }
-                    if !awaitsIncomeAnswer {
-                        summarySection
-                        fixedLimitsNote
-                        createButton
+            // La barra «Comparativa / Flujo de caja», fija dentro del scroll (`ReportChipsHeaderStack`).
+            ReportChipsHeaderStack {
+                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                    startingBalanceHero
+                    bannerSection
+                    if viewModel.suggestedLines.isEmpty {
+                        emptyState
+                    } else {
+                        if !allSelected {
+                            selectAllButton
+                        }
+                        if !incomeLines.isEmpty {
+                            lineSection(title: L10n.UXL18.sectionIn, lines: incomeLines)
+                        }
+                        if asksForIncome {
+                            incomeQuestion
+                        }
+                        if !expenseGroups.isEmpty {
+                            expenseSection
+                        }
+                        if !awaitsIncomeAnswer {
+                            summarySection
+                            fixedLimitsNote
+                            createButton
+                        }
                     }
                 }
+                // Implícita en el contenedor común: en una pestaña un `withAnimation` no anima (card oxyr).
+                .animation(reduceMotion ? nil : DS.Animation.appear, value: showVariableLines)
+                .animation(reduceMotion ? nil : DS.Animation.appear, value: collapsedGroups)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+                .yalaSafeBottomPadding()
+                // Ventana ancha: el armado del plan a 700 pt, centrado (decisión 7 de la revisión 2.3).
+                .readableColumn()
             }
-            // Implícita en el contenedor común: en una pestaña un `withAnimation` no anima (card oxyr).
-            .animation(reduceMotion ? nil : DS.Animation.appear, value: showVariableLines)
-            .animation(reduceMotion ? nil : DS.Animation.appear, value: collapsedGroups)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
-            // Ventana ancha: el armado del plan a 700 pt, centrado (decisión 7 de la revisión 2.3).
-            .readableColumn()
         }
         .onChange(of: transactions.count) { _, _ in refreshTodayBalance() }
         .onAppear {

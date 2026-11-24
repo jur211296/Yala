@@ -123,3 +123,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Device MCP espejando otro aparato](reference_device_mcp_espejando_otro_aparato.md) — Free espeja uno: con el iPhone de Jürgen, capturas por XCUITest conductor.
 - [Antes/después con un test de capturas](reference_capturas_antes_despues_con_test_de_capturas.md) — axe no abre la hoja de cuenta; el «antes» antes de editar la vista.
 - [Capturas giradas en XCUITest](reference_capturas_giradas_en_xcuitest.md) — `app.screenshot()` girado sale recortado; `XCUIScreen.main` entero (rotar 90°, `-strip`).
+- [El rebote del título no sale en el simulador](feedback_rebote_del_titulo_no_sale_en_el_simulador.md) — 24-nov: ni XCUITest ni Device MCP; mide el vídeo del iPhone por fotograma.
