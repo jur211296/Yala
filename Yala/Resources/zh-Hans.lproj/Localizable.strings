@@ -8698,25 +8698,10 @@
 "bankEmail.skipped" = "未被读取的来信：%d 封。";
 "bankEmail.trialUsed" = "已用试用邮件：%1$d / %2$d。";
 "bankEmail.guideTitle" = "从 %@ 转发";
-"bankEmail.guideLine" = "只需在浏览器里设置一次。";
 "bankEmail.guarantee" = "只有银行的通知会离开你的邮箱，其他邮件不会被转发。";
-"bankEmail.stepCopyTitle" = "复制你的 Yala 地址";
-"bankEmail.stepCopyDetail" = "下一步要把它粘贴到你的邮箱设置里。";
-"bankEmail.gmailAddTitle" = "把它添加为转发地址";
-"bankEmail.gmailAddDetail" = "在浏览器中打开 Gmail：设置 › 查看所有设置 › 转发和 POP/IMAP › 添加转发地址。粘贴你的地址并确认。";
 "bankEmail.openProvider" = "打开 %@";
-"bankEmail.gmailConfirmTitle" = "用 Gmail 验证码确认";
-"bankEmail.gmailConfirmWaiting" = "Gmail 会给你的 Yala 地址发送验证码。收到后会显示在这里：稍等片刻再点“查找验证码”。";
-"bankEmail.gmailConfirmCode" = "你的 Gmail 验证码是 %@。在 Gmail 的“转发和 POP/IMAP”中输入，然后点“验证”。";
 "bankEmail.copyCode" = "复制验证码";
 "bankEmail.checkCode" = "查找验证码";
-"bankEmail.gmailFilterTitle" = "为你的银行创建过滤器";
-"bankEmail.gmailFilterDetail" = "在 Gmail 中搜索银行发送通知所用的地址，点“创建过滤器”。勾选“转发到”，选择你的 Yala 地址并创建过滤器。这样只会转发银行的通知。";
-"bankEmail.ruleTitle" = "为你的银行创建规则";
-"bankEmail.outlookRuleDetail" = "在浏览器中打开 Outlook：设置 › 邮件 › 规则 › 添加新规则。条件：“发件人”为银行的地址。操作：“转发到”你的 Yala 地址。保存规则。";
-"bankEmail.icloudRuleDetail" = "在 iCloud.com 打开邮件，前往 设置 › 规则 › 添加规则。如果邮件来自银行的地址，就转发到你的 Yala 地址。保存规则。";
-"bankEmail.stepWaitTitle" = "等待下一条通知";
-"bankEmail.stepWaitDetail" = "银行发来下一条通知时，这笔交易会出现在你的收件箱，等你确认。";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";

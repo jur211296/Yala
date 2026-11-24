@@ -8686,25 +8686,10 @@
 "bankEmail.skipped" = "Ungelesen eingegangene E-Mails: %d.";
 "bankEmail.trialUsed" = "Genutzte Test-E-Mails: %1$d von %2$d.";
 "bankEmail.guideTitle" = "Weiterleiten von %@";
-"bankEmail.guideLine" = "Du richtest es einmal im Browser ein.";
 "bankEmail.guarantee" = "Nur die Benachrichtigungen deiner Bank verlassen dein Postfach: Der Rest deiner E-Mails wird nicht weitergeleitet.";
-"bankEmail.stepCopyTitle" = "Kopiere deine Yala-Adresse";
-"bankEmail.stepCopyDetail" = "Im nächsten Schritt fügst du sie in deinem E-Mail-Konto ein.";
-"bankEmail.gmailAddTitle" = "Füge sie als Weiterleitungsadresse hinzu";
-"bankEmail.gmailAddDetail" = "In Gmail im Browser: Einstellungen › Alle Einstellungen aufrufen › Weiterleitung und POP/IMAP › Weiterleitungsadresse hinzufügen. Füge deine Adresse ein und bestätige.";
 "bankEmail.openProvider" = "%@ öffnen";
-"bankEmail.gmailConfirmTitle" = "Bestätige mit dem Gmail-Code";
-"bankEmail.gmailConfirmWaiting" = "Gmail schickt einen Code an deine Yala-Adresse. Sobald er da ist, siehst du ihn hier: Tippe gleich auf „Nach Code suchen“.";
-"bankEmail.gmailConfirmCode" = "Dein Gmail-Code ist %@. Gib ihn in Gmail unter Weiterleitung und POP/IMAP ein und tippe auf Bestätigen.";
 "bankEmail.copyCode" = "Code kopieren";
 "bankEmail.checkCode" = "Nach Code suchen";
-"bankEmail.gmailFilterTitle" = "Erstelle einen Filter für deine Bank";
-"bankEmail.gmailFilterDetail" = "Suche in Gmail nach der Adresse, von der deine Bank die Benachrichtigungen schickt, und tippe auf Filter erstellen. Aktiviere „Weiterleiten an“, wähle deine Yala-Adresse und erstelle den Filter. So werden nur die Benachrichtigungen der Bank weitergeleitet.";
-"bankEmail.ruleTitle" = "Erstelle eine Regel für deine Bank";
-"bankEmail.outlookRuleDetail" = "In Outlook im Browser: Einstellungen › E-Mail › Regeln › Neue Regel hinzufügen. Bedingung: „Von“ der Adresse deiner Bank. Aktion: „Weiterleiten an“ deine Yala-Adresse. Speichere die Regel.";
-"bankEmail.icloudRuleDetail" = "Öffne auf iCloud.com Mail und gehe zu Einstellungen › Regeln › Regel hinzufügen. Wenn eine Nachricht von der Adresse deiner Bank ist, leite sie an deine Yala-Adresse weiter. Speichere die Regel.";
-"bankEmail.stepWaitTitle" = "Warte auf die nächste Benachrichtigung";
-"bankEmail.stepWaitDetail" = "Wenn deine Bank die nächste schickt, erscheint die Buchung zum Bestätigen in deinem Posteingang.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Nicht alles konnte gespeichert werden. Ein Teil der Änderungen ist eventuell schon sichtbar; prüfe das Konto und speichere erneut.";

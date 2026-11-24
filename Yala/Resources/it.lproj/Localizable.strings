@@ -8696,25 +8696,10 @@
 "bankEmail.skipped" = "Email arrivate senza essere lette: %d.";
 "bankEmail.trialUsed" = "Email di prova usate: %1$d su %2$d.";
 "bankEmail.guideTitle" = "Inoltra da %@";
-"bankEmail.guideLine" = "Si imposta una volta sola, dal browser.";
 "bankEmail.guarantee" = "Escono dalla tua casella solo gli avvisi della banca: il resto delle tue email non viene inoltrato.";
-"bankEmail.stepCopyTitle" = "Copia il tuo indirizzo Yala";
-"bankEmail.stepCopyDetail" = "La incollerai nella tua email al passaggio successivo.";
-"bankEmail.gmailAddTitle" = "Aggiungilo come indirizzo di inoltro";
-"bankEmail.gmailAddDetail" = "In Gmail, dal browser: Impostazioni › Visualizza tutte le impostazioni › Inoltro e POP/IMAP › Aggiungi un indirizzo di inoltro. Incolla il tuo indirizzo e conferma.";
 "bankEmail.openProvider" = "Apri %@";
-"bankEmail.gmailConfirmTitle" = "Conferma con il codice di Gmail";
-"bankEmail.gmailConfirmWaiting" = "Gmail invia un codice al tuo indirizzo Yala. Quando arriva lo vedrai qui: tocca «Cerca il codice» tra poco.";
-"bankEmail.gmailConfirmCode" = "Il tuo codice Gmail è %@. Inseriscilo in Gmail, in Inoltro e POP/IMAP, e tocca Verifica.";
 "bankEmail.copyCode" = "Copia codice";
 "bankEmail.checkCode" = "Cerca il codice";
-"bankEmail.gmailFilterTitle" = "Crea un filtro per la tua banca";
-"bankEmail.gmailFilterDetail" = "In Gmail, cerca l’indirizzo da cui la tua banca invia gli avvisi e tocca Crea filtro. Seleziona «Inoltra a», scegli il tuo indirizzo Yala e crea il filtro. Così vengono inoltrati solo gli avvisi della banca.";
-"bankEmail.ruleTitle" = "Crea una regola per la tua banca";
-"bankEmail.outlookRuleDetail" = "In Outlook, dal browser: Impostazioni › Posta › Regole › Aggiungi nuova regola. Condizione: «Da» l’indirizzo della tua banca. Azione: «Inoltra a» il tuo indirizzo Yala. Salva la regola.";
-"bankEmail.icloudRuleDetail" = "Su iCloud.com apri Mail e vai in Impostazioni › Regole › Aggiungi una regola. Se un messaggio arriva dall’indirizzo della tua banca, inoltralo al tuo indirizzo Yala. Salva la regola.";
-"bankEmail.stepWaitTitle" = "Aspetta il prossimo avviso";
-"bankEmail.stepWaitDetail" = "Quando la banca invierà il prossimo, il movimento comparirà nella tua Posta in arrivo da confermare.";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Non è stato possibile salvare tutto. Parte delle modifiche potrebbe essere già visibile; controlla il conto e salva di nuovo.";
