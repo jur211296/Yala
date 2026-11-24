@@ -16,20 +16,9 @@ import {
   clientLabelFromRedirects,
   resolveAccount,
   resolveSubcategory,
-  type ConnectorDraftPayload,
-  type ConnectorDraftsBinding,
-  type EnqueueOutcome,
 } from "../src/writeTool";
+import { FakeQueue } from "./fakeQueue";
 
-class FakeQueue implements ConnectorDraftsBinding {
-  calls: { userId: string; payload: ConnectorDraftPayload }[] = [];
-  next: EnqueueOutcome | Error = { ok: true, id: "11111111-1111-4111-8111-111111111111" };
-  async enqueue(userId: string, payload: ConnectorDraftPayload): Promise<EnqueueOutcome> {
-    this.calls.push({ userId, payload });
-    if (this.next instanceof Error) throw this.next;
-    return this.next;
-  }
-}
 
 const BCP = uuid(7001);
 const YAPE = uuid(7002);
@@ -84,7 +73,7 @@ describe("apuntar_movimiento por MCP", () => {
     const writers = result.tools.filter((t) => t.annotations?.readOnlyHint !== true);
     expect(writers.map((t) => t.name)).toEqual(["apuntar_movimiento"]);
     expect(writers[0]!.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: false });
-    expect(result.tools).toHaveLength(7);
+    expect(result.tools).toHaveLength(8);
   });
 
   it("sin la cola enlazada no existe: el conector sigue siendo de solo lectura", async () => {
@@ -326,12 +315,12 @@ describe("el permiso y las vueltas de ChatGPT y Grok", () => {
     expect((await register(w, ["https://grok.com/cb"], "Grok")).res.status).toBe(400);
   });
 
-  it("con la cola enlazada, el permiso dice que puede apuntar borradores y que no confirma nada", async () => {
+  it("con la cola enlazada, el permiso dice que puede ver la Bandeja y apuntar borradores, y que no confirma nada", async () => {
     const w = await world({ env: { CONNECTOR_DRAFTS: new FakeQueue() } });
     const { body } = await register(w);
     const html = await (await new Browser(w).fetch(authorizeUrl(body.client_id!, "x".repeat(43), "st"))).text();
     expect(html).toContain("quiere usar tus datos de Yala");
-    expect(html).toContain("<strong>apuntar</strong> gastos e ingresos como borradores en tu Bandeja");
+    expect(html).toContain("<strong>ver</strong> lo que espera en tu Bandeja y <strong>apuntar</strong> gastos e ingresos como borradores");
     expect(html).toContain("ni confirmar un borrador");
     expect(BASE).toBeTruthy();
   });

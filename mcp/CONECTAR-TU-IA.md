@@ -71,7 +71,12 @@ registra en Yala».
 | Herramienta | Qué hace |
 |---|---|
 | `listar_cuentas`, `listar_categorias`, `buscar_movimientos`, `resumen_periodo`, `estado_presupuestos`, `listar_recurrentes` | Leen. No cambian nada. |
+| `ver_bandeja` | Lee lo que espera en tu Bandeja: lo que aún no confirmaste y lo que llegó del correo, de Yala web o de una IA y la app aún no recogió. Sin Grupos y sin el texto original de cada captura. |
 | `apuntar_movimiento` | Deja UN borrador en la Bandeja: importe, gasto o ingreso, divisa, nota, fecha (hoy o antes) y, si los nombras, cuenta y categoría. |
+
+Si lo que vas a apuntar se parece a algo que ya está en la Bandeja, esperando a la app o guardado esos días, la IA no
+lo apunta: te enseña lo que encontró y te pregunta. Si le dices que es otro, lo apunta igual. Y si lo saca de un correo,
+usa su identificador como referencia: el mismo correo leído dos veces no deja dos borradores.
 
 Si nombras una cuenta o una categoría que no existe, o que encaja con varias, la IA recibe las opciones y te pregunta.
 Si no las nombras, el borrador las pide en la Bandeja (salvo que tengas una sola cuenta en esa divisa). Límites: 50
