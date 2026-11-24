@@ -566,8 +566,8 @@
   "id": "788-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "La guía del reenvío se rehízo en la 2.3 (8), con pasos para principiantes y «Volver a este paso»."
  },
  {
   "pr": 801,
@@ -965,8 +965,8 @@
   "id": "840-2",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Medido de nuevo el 23-nov: sigue al 0 % en producción."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 841,
@@ -1003,8 +1003,8 @@
   "id": "843-1",
   "orden": 50,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Lo que queda fuera del plan ya no sigue el ritmo de 90 días."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 845,
@@ -1117,8 +1117,8 @@
   "id": "855-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La línea «Ahora en dólares (USD)…» salió del formulario; lo dicen la cápsula de moneda y el «≈»."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 855,
@@ -1193,8 +1193,8 @@
   "id": "887-1",
   "orden": 50,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Sin plan, «Ver proyectado» ya no usa el ritmo de 90 días."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 887,
@@ -1972,8 +1972,8 @@
   "id": "906-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "El mes del Flujo de caja ahora dice «Terminas con» y ya no tiene «Tienes hoy · Falta entrar · Falta salir» ni «Este mes te quedaría»."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 906,
@@ -2162,8 +2162,8 @@
   "id": "917-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La barra de búsqueda de Registros se quitó; la búsqueda por importe vive en la pestaña Buscar."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 918,
@@ -2181,8 +2181,8 @@
   "id": "918-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Con la hoja nueva, la barra sobre el teclado lleva la fila Hoy · Cuenta · # y los dos botones."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 919,
@@ -2200,8 +2200,8 @@
   "id": "919-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "En la 2.3 (8) el filtro de categoría sube a pantalla completa y enseña las subcategorías."
  },
  {
   "pr": 919,
@@ -2542,8 +2542,8 @@
   "id": "933-2",
   "orden": 21,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Sin «Ver los 7 pasos»: el progreso va en el mazo."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 933,
@@ -2561,8 +2561,8 @@
   "id": "933-3",
   "orden": 33,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Las guías de «días después» esperan a que termine Primeros pasos."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 937,
@@ -2732,8 +2732,8 @@
   "id": "942-1",
   "orden": 30,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "El paso 7 pasa a historias y suma «Tu IA»."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 942,
@@ -2751,8 +2751,8 @@
   "id": "942-2",
   "orden": 31,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La oferta de un mes de Pro se adelanta al final del paso 2 y muestra los ocho beneficios."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 944,
@@ -3397,8 +3397,8 @@
   "id": "965-3",
   "orden": 22,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La hoja «Ver los 7 pasos» se quitó."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 969,
@@ -3454,8 +3454,8 @@
   "id": "970-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La fila llega a la app de TestFlight y la App Store apuntando a la web de producción."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 970,
@@ -3701,8 +3701,8 @@
   "id": "982-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Ya existe la pantalla guiada de Yala para los avisos del banco."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 983,
@@ -3720,8 +3720,8 @@
   "id": "983-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La tarjeta pasó a un banner que abre una hoja grande con el formulario completo."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -3739,8 +3739,8 @@
   "id": "824-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "En la 2.3 (8) los gastos hormiga pasan a protagonistas del Resumen de Estadísticas."
  },
  {
   "pr": 824,
@@ -3758,8 +3758,8 @@
   "id": "824-2",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Los 40 distintivos con iniciales pasaron a logos reales de 666 comercios."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -3777,8 +3777,8 @@
   "id": "824-3",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Elegir una sugerencia ahora también pone cuenta, subcategoría y etiquetas."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 930,
@@ -3910,8 +3910,8 @@
   "id": "920-1",
   "orden": 24.5,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Las tres categorías sugeridas bajo el monto se retiraron."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 916,
@@ -3948,8 +3948,8 @@
   "id": "912-1",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Tocar la tarjeta abre ahora la hoja de Salud financiera nueva."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 899,
@@ -4005,8 +4005,8 @@
   "id": "818-1",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Según el PR 1139, mcp.yala-app.pe ya corre en producción; el arreglo del gateway para «apunta un gasto» queda a desplegar por Dan. Sin medir aquí."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 613,
@@ -4062,8 +4062,8 @@
   "id": "983-2",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "La hoja «Hacer recurrente» se rediseñó en la 2.3 (8)."
  },
  {
   "pr": 910,
@@ -4171,8 +4171,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Editar un saldo inicial también pregunta antes de dejar dos de la misma pareja y moneda.",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Grupos",
   "seccion": "existente",
   "titulo": "Grupos: el saldo inicial pregunta antes de reemplazar otro",
@@ -4266,8 +4266,8 @@
   "como_probar": "Sale en las novedades de la versión si vienes de la 2.2.",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Las novedades pasan a ocho tarjetas que abren con el iPhone Duo.",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Panel",
   "seccion": "existente",
   "titulo": "Novedades 2.3: tarjeta «Tu nota de salud, más precisa»",
@@ -4285,8 +4285,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "«Guardar y hacer recurrente» se mudó al menú «…» del borrador.",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Bandeja y Yala IA",
   "seccion": "existente",
   "titulo": "Bandeja: «Guardar y hacer recurrente»",
@@ -4304,8 +4304,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "«Desde un registro» se llama ahora «Reusar» y su hoja trae filtros y buscador.",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Planificación",
   "seccion": "existente",
   "titulo": "Pagos planificados: «Reusar» un registro",
@@ -4380,8 +4380,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Estadísticas cambia «Tu saldo hoy» por «Tu dinero hoy».",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Estadísticas",
   "seccion": "existente",
   "titulo": "Estadísticas: «Tu saldo hoy» y «Tu saldo al cierre»",
@@ -4532,8 +4532,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Ya llegó: entró en la 2.3 (3).",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Grupos",
   "seccion": "existente",
   "titulo": "Traer un grupo de Splitwise o Tricount con los mismos saldos",
@@ -4551,8 +4551,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Ya llegó: entró en la 2.3 (3).",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Grupos",
   "seccion": "existente",
   "titulo": "Grupos: voz, foto y Yala IA como en personal, y el «+» solo al desplazar",
@@ -4570,8 +4570,8 @@
   "como_probar": "",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Ya llegó: entró en la 2.3 (3).",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Registros",
   "seccion": "existente",
   "titulo": "Registros: filtros rápidos con icono, en la línea de Lista/Calendario y con selección múltiple",
@@ -4594,8 +4594,8 @@
   "como_probar": "En Yala IA escribe «quiero un presupuesto para comida», responde las preguntas y toca «Crear»; luego «Ver presupuesto».",
   "orden": 46,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1016-1",
@@ -4613,8 +4613,8 @@
   "como_probar": "Dicta en Yala IA «pago del gimnasio de ciento veinte cada dos semanas» y responde «Sí» a las opciones avanzadas.",
   "orden": 47,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1016-2",
@@ -4632,8 +4632,8 @@
   "como_probar": "Escribe «quiero un presupuesto para comida» y mira que el teclado baje y no salga el permiso de la nube.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1017-1",
@@ -4651,8 +4651,8 @@
   "como_probar": "Escribe «Crea una categoría Mascotas con veterinario y comida» y termina el guiado; luego prueba «Crea un favorito de gasto de 12.50 llamado Café».",
   "orden": 48,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1018-1",
@@ -4670,8 +4670,8 @@
   "como_probar": "Con un grupo donde estén Ana y Luis, escribe en Yala IA «Pagué 120 de la cena con Ana y Luis» y sigue hasta «Revisa antes de crear».",
   "orden": 52,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1034-1",
@@ -4689,8 +4689,8 @@
   "como_probar": "Abre Yala IA, toca «Crea conversando» y elige «Una cuenta».",
   "orden": 45,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1008-1",
@@ -4708,8 +4708,8 @@
   "como_probar": "Solo en el iPhone 14 de pruebas: pasa a tu cuenta de Yala, vuelve a tu iCloud y pasa de nuevo con la misma cuenta.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1008-2",
@@ -4727,8 +4727,8 @@
   "como_probar": "Con los datos en tu iCloud, abre Ajustes y busca «Cerrar sesión»; abre la hoja sin confirmar.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1008-3",
@@ -4746,8 +4746,8 @@
   "como_probar": "Entra con una cuenta de Yala nueva y vacía y revisa que el Panel no muestre ese aviso.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1019-1",
@@ -4765,8 +4765,8 @@
   "como_probar": "Solo en el iPhone 14 de pruebas: pasa a tu cuenta de Yala, registra algo y vuelve a tu iCloud; los datos deben seguir ahí.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1009-1",
@@ -4784,8 +4784,8 @@
   "como_probar": "En un iPhone SE con instalación nueva, haz el paso 2 de Primeros pasos hasta «¿En qué fue?».",
   "orden": 24,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1041-1",
@@ -4803,8 +4803,8 @@
   "como_probar": "Abre Nuevo registro, escribe un monto y elige la categoría con el chip «Categoría».",
   "orden": 40,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1040-1",
@@ -4822,8 +4822,8 @@
   "como_probar": "Registra con una foto de recibo, toca la descripción en «Esto leí», cámbiala y toca «Listo».",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1040-2",
@@ -4841,8 +4841,8 @@
   "como_probar": "Registra una foto, guarda y mira que la hoja se cierre sola; repite dejando uno desmarcado en una foto con varios.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1013-1",
@@ -4860,8 +4860,8 @@
   "como_probar": "Con «Mostrar ayudas» encendido, abre Estadísticas › Resumen y toca el «?» junto al rótulo.",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1013-2",
@@ -4879,8 +4879,8 @@
   "como_probar": "Toca una cuenta con movimientos y baja hasta «Últimos registros».",
   "orden": 0,
   "build": "3",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (3)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1033-1",
@@ -4898,8 +4898,8 @@
   "como_probar": "Con Resumen con IA encendido, registra varios gastos, vuelve a Estadísticas › Resumen y toca «Actualizar».",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1036-1",
@@ -4917,8 +4917,8 @@
   "como_probar": "Abre Estadísticas › Registros, tira la lista hacia abajo y busca un importe.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1043-1",
@@ -4936,8 +4936,8 @@
   "como_probar": "Abre Reportes › Comparativa y mira el color de Gastos e Ingresos.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1044-1",
@@ -4956,7 +4956,7 @@
   "orden": 60,
   "build": "4",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "cambio_guia": "En la 2.3 (8) el paso «¿Cuáles?» deja quitar subcategorías."
  },
  {
   "id": "1045-1",
@@ -4974,8 +4974,8 @@
   "como_probar": "Toca Nuevo pago planificado, elige Servicios y llega hasta «¿Lo creamos así?».",
   "orden": 62,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1035-1",
@@ -4993,8 +4993,8 @@
   "como_probar": "Con cobros repetidos en tu historial, toca el banner y abre uno de los casos.",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1037-1",
@@ -5013,7 +5013,7 @@
   "orden": 0,
   "build": "4",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "cambio_guia": "En la 2.3 (8) un pago sin logo lleva el ícono de su subcategoría."
  },
  {
   "id": "1054-1",
@@ -5031,8 +5031,8 @@
   "como_probar": "Sube el texto al máximo en iOS y abre Pagos planificados con un pago de Spotify.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1039-1",
@@ -5050,8 +5050,8 @@
   "como_probar": "Toca «Reusar», filtra por una cuenta, elige un registro y luego mira que Registros no quedó filtrado.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1046-1",
@@ -5069,8 +5069,8 @@
   "como_probar": "Toca Nuevo grupo, elige la idea «Viaje» y llega hasta «¿Lo creamos así?».",
   "orden": 50,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1047-1",
@@ -5088,8 +5088,8 @@
   "como_probar": "En el Panel toca «Agregar cuenta», elige Tarjeta de crédito y llega al resumen.",
   "orden": 30,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1048-1",
@@ -5107,8 +5107,8 @@
   "como_probar": "En Ajustes › Registros favoritos toca «+», elige Transferencia y revisa que no te ofrezca la misma cuenta de origen.",
   "orden": 80,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1050-1",
@@ -5126,8 +5126,8 @@
   "como_probar": "Abre Ajustes › Editar perfil, elige un emoji y una plantilla, y mira la cabecera de Ajustes y el Panel.",
   "orden": 82,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1049-1",
@@ -5145,8 +5145,8 @@
   "como_probar": "Toca la tarjeta de Salud financiera en el Panel y toca una fila de «Para revisar».",
   "orden": 66,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1052-1",
@@ -5164,8 +5164,8 @@
   "como_probar": "Toca una tarjeta de crédito con día de corte; luego una sin día de corte.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1051-1",
@@ -5183,8 +5183,8 @@
   "como_probar": "Con muchos registros y widgets en la pantalla de inicio, guarda un gasto y sigue tocando la app enseguida.",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1068-1",
@@ -5202,8 +5202,8 @@
   "como_probar": "En modo claro abre Nuevo registro y Yala IA y mira los chips y la caja de texto.",
   "orden": 5,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1053-1",
@@ -5221,8 +5221,8 @@
   "como_probar": "Compara el cierre del mes en Flujo de caja con «Al 30 de noviembre tendrías» del Panel.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1056-1",
@@ -5240,8 +5240,8 @@
   "como_probar": "Abre Flujo de caja, toca el mes en curso y luego un mes cerrado.",
   "orden": 63,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1056-2",
@@ -5259,8 +5259,8 @@
   "como_probar": "Abre Flujo de caja y pliega y despliega una categoría.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1058-1",
@@ -5278,8 +5278,8 @@
   "como_probar": "Toca una línea de gasto del mes en curso y luego «Ver en Registros».",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1059-1",
@@ -5297,8 +5297,8 @@
   "como_probar": "Sin plan, abre Flujo de caja › Crear mi plan y pliega una categoría.",
   "orden": 64,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1060-1",
@@ -5316,8 +5316,8 @@
   "como_probar": "Sin plan, enciende «Ver proyectado» en Tendencias y compáralo con el Panel.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1062-1",
@@ -5335,8 +5335,8 @@
   "como_probar": "Con un sueldo que llega cada mes y sin línea de ingreso, mira los meses que vienen en Flujo de caja.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1062-2",
@@ -5354,8 +5354,8 @@
   "como_probar": "Abre «Ingresos no considerados» y revisa tu sueldo.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (4)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1065-1",
@@ -5373,8 +5373,8 @@
   "como_probar": "Abre una línea que tuvo un mes muy alto y lee «Cómo se calcula».",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1065-2",
@@ -5392,8 +5392,8 @@
   "como_probar": "En una línea toca «Cambiar», prueba dos métodos y luego toca una barra de la gráfica.",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1070-1",
@@ -5411,8 +5411,8 @@
   "como_probar": "Compara el primer número de esa fila con «Empezaste con» del mes en Flujo de caja.",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1070-2",
@@ -5430,8 +5430,8 @@
   "como_probar": "Apaga «Considerar a futuro» en un iPhone y revisa la misma partida en otro dispositivo.",
   "orden": 0,
   "build": "5",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (5)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1073-1",
@@ -5449,8 +5449,8 @@
   "como_probar": "Abre Ajustes › Temas, cambia de Claro a Oscuro y mira que el texto se lea sin cerrar la hoja.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1073-2",
@@ -5468,8 +5468,8 @@
   "como_probar": "Mira una etiqueta o cuenta de color turquesa o naranja: el texto debe verse oscuro y nítido.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1074-1",
@@ -5487,8 +5487,8 @@
   "como_probar": "En el iPhone de pruebas, entra con una cuenta nueva sin registros y toca «Cerrar sesión»: debe cerrar sin pedir subir cambios.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1074-2",
@@ -5506,8 +5506,8 @@
   "como_probar": "En el iPhone de pruebas con datos en iCloud, baja al final de Ajustes y comprueba que la fila está. No la uses en tu teléfono personal.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1076-1",
@@ -5525,8 +5525,8 @@
   "como_probar": "Instala desde cero, toca la mitad derecha y luego la izquierda de la vitrina, y prueba la pausa.",
   "orden": 3,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1076-2",
@@ -5544,8 +5544,8 @@
   "como_probar": "En el iPhone de pruebas con datos que restaurar, abre Restaurar y toca el borde de «Empezar desde cero».",
   "orden": 6,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1077-1",
@@ -5563,8 +5563,8 @@
   "como_probar": "Abre un pago como «Internet», toca «Logo», elige «Usar una foto» y mira la lista de pagos.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1078-1",
@@ -5582,8 +5582,8 @@
   "como_probar": "Instala desde cero, elige «Solo gastos» en el alta y mira el mazo del Panel.",
   "orden": 21,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1078-2",
@@ -5601,8 +5601,8 @@
   "como_probar": "Instala desde cero y mira el Panel antes y después de crear la primera cuenta y el primer registro.",
   "orden": 21.5,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1078-3",
@@ -5620,8 +5620,8 @@
   "como_probar": "Haz los pasos 1 y 2 y comprueba que no aparecen otras guías encima.",
   "orden": 22,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1079-1",
@@ -5639,8 +5639,8 @@
   "como_probar": "Abre el paso 1, toca a la derecha y a la izquierda, y mantén el dedo para pausar.",
   "orden": 22.5,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1079-2",
@@ -5658,8 +5658,8 @@
   "como_probar": "Con el tema Claro y el iPhone en modo oscuro, crea la primera cuenta, vuelve un paso y mira que el nombre siga ahí.",
   "orden": 23,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1079-3",
@@ -5677,8 +5677,8 @@
   "como_probar": "En el paso 3 toca «No deseo crear ningún presupuesto»; en el paso 4 crea un pago y mira «Anotar otro pago».",
   "orden": 25.5,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1080-1",
@@ -5696,8 +5696,8 @@
   "como_probar": "Llega al paso 7, toca a la derecha para pasar de historia y prueba «Enséñame cómo».",
   "orden": 28,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1080-2",
@@ -5715,8 +5715,8 @@
   "como_probar": "Haz un paso, deja otro para después y mira la fila de pasos bajo la carta; toca uno pendiente.",
   "orden": 22.2,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1080-3",
@@ -5734,8 +5734,8 @@
   "como_probar": "En el iPhone de pruebas con una cuenta de prueba de compras, empieza la prueba de Pro y toca «Dictar un gasto».",
   "orden": 29,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1081-1",
@@ -5753,8 +5753,8 @@
   "como_probar": "Abre Nuevo registro, cambia a Ingreso desde el título, cambia la moneda en la cápsula y guarda con «Agregar otro».",
   "orden": 24.2,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1081-2",
@@ -5772,8 +5772,8 @@
   "como_probar": "Guarda un gasto y revisa la pantalla de éxito.",
   "orden": 24.3,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1081-3",
@@ -5791,8 +5791,8 @@
   "como_probar": "Escribe las primeras letras de un gasto habitual, toca la sugerencia y mira que la cuenta y la categoría se pongan solas.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1083-1",
@@ -5810,8 +5810,8 @@
   "como_probar": "Con tu historial completo, abre Flujo de caja y una línea, y vuelve al Panel: no debe quedarse congelado.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1083-2",
@@ -5829,8 +5829,8 @@
   "como_probar": "En la pestaña Buscar escribe «45,90» o una categoría sin tilde.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1086-1",
@@ -5848,8 +5848,8 @@
   "como_probar": "Termina el paso 2, abre «Ver todos los beneficios» y vuelve con «‹».",
   "orden": 24.8,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1089-1",
@@ -5867,8 +5867,8 @@
   "como_probar": "En el iPhone de pruebas, entra con una cuenta de Yala con historial y toca la app mientras baja: debe responder.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1110-1",
@@ -5886,8 +5886,8 @@
   "como_probar": "Con la nube activa, guarda un gasto y sigue usando la app unos segundos: no debe trabarse.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1090-1",
@@ -5906,7 +5906,7 @@
   "orden": 0,
   "build": "6",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "cambio_guia": "Quedaba un rebote en el umbral del título; se arregló en la 2.3 (8)."
  },
  {
   "id": "1090-2",
@@ -5924,8 +5924,8 @@
   "como_probar": "Abre una línea del Flujo de caja, ciérrala, ve a la Comparativa y vuelve.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1090-3",
@@ -5943,8 +5943,8 @@
   "como_probar": "Apaga «Mostrar variaciones» y abre la Comparativa: las flechas deben seguir ahí.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1091-1",
@@ -5962,8 +5962,8 @@
   "como_probar": "Lee un recibo con foto, toca «Convertir a gasto compartido», guárdalo en un grupo y mira la fila al volver.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1092-1",
@@ -5981,8 +5981,8 @@
   "como_probar": "Abre Estadísticas, compara la cifra con «Tu dinero hoy» del Panel y desliza entre pestañas: no debe saltar.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1093-1",
@@ -6000,8 +6000,8 @@
   "como_probar": "Toma foto de un voucher que nombre una de tus cuentas y mira que la cuenta salga puesta.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1093-2",
@@ -6019,8 +6019,8 @@
   "como_probar": "Pon los 4 últimos dígitos en el «Número de cuenta» de una tarjeta y paga con Apple Pay con la automatización armada.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1094-1",
@@ -6038,8 +6038,8 @@
   "como_probar": "Toca la nota de salud en el Panel, toca la cápsula «Compromisos» y lee la sección.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1104-1",
@@ -6057,8 +6057,8 @@
   "como_probar": "Con un presupuesto que te pases seguido, toca «Ajusta el límite a lo real» y mira el límite en el editor.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1131-1",
@@ -6076,8 +6076,8 @@
   "como_probar": "Compara «Lo que te falta pagar» de Estadísticas con Compromisos en la hoja de la nota.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1131-2",
@@ -6095,8 +6095,8 @@
   "como_probar": "Apunta un gasto con fecha de la próxima semana y abre Compromisos.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1138-1",
@@ -6114,8 +6114,8 @@
   "como_probar": "Crea un presupuesto con un límite menor a lo ya gastado este mes y mira la nota.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1138-2",
@@ -6133,8 +6133,8 @@
   "como_probar": "Abre la hoja de la nota y mira las cápsulas y el resumen de Yala IA.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1140-1",
@@ -6152,8 +6152,8 @@
   "como_probar": "Abre Compromisos en la hoja de la nota.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1095-1",
@@ -6171,8 +6171,8 @@
   "como_probar": "En una línea, elige «Pagos planificados», marca dos pagos y añade un extra.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1095-2",
@@ -6190,8 +6190,8 @@
   "como_probar": "Pon una línea en monto fijo de 100 USD y toca la cápsula del promedio.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1106-1",
@@ -6209,8 +6209,8 @@
   "como_probar": "Abre «Elige los pagos» en una línea con un pago de alquiler.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1096-1",
@@ -6228,8 +6228,8 @@
   "como_probar": "Abre un borrador de la Bandeja y luego un gasto nuevo en un grupo, y compara con Nuevo registro.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1096-2",
@@ -6247,8 +6247,8 @@
   "como_probar": "Elige una cuenta en dólares en Nuevo registro y mira la cápsula del tipo de cambio.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (6)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1103-1",
@@ -6266,8 +6266,8 @@
   "como_probar": "Abre Nuevo registro con dos o tres favoritos y mira que salgan con nombre.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1107-1",
@@ -6285,8 +6285,8 @@
   "como_probar": "En Reusar, elige un gasto de grupo y mira que el formulario venga compartido.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1107-2",
@@ -6304,8 +6304,8 @@
   "como_probar": "Crea un pago planificado con el asistente y responde «Sí» a «¿Es un gasto compartido?».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1107-3",
@@ -6323,8 +6323,8 @@
   "como_probar": "Edita un pago, enciende «¿Es un gasto compartido?» e intenta guardar sin grupo.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1111-1",
@@ -6342,8 +6342,8 @@
   "como_probar": "Sale al abrir la app tras actualizar desde la 2.2; recorre las ocho tarjetas.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1111-2",
@@ -6361,8 +6361,8 @@
   "como_probar": "Abre la hoja de la nota y toca la cápsula «Lo que te queda».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1111-3",
@@ -6380,8 +6380,8 @@
   "como_probar": "Instala desde cero y mira el Panel antes y después de crear la primera cuenta.",
   "orden": 21.6,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1112-1",
@@ -6399,8 +6399,8 @@
   "como_probar": "Toma foto de un recibo de un comercio que nunca registraste y mira la categoría propuesta.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1112-2",
@@ -6419,7 +6419,7 @@
   "orden": 0,
   "build": "7",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "cambio_guia": "Rehecha en la 2.3 (8): guía para principiantes, bancos según el país y activo solo al confirmar (ver «Avisos del banco para principiantes»)."
  },
  {
   "id": "1112-3",
@@ -6437,8 +6437,8 @@
   "como_probar": "Con una suscripción cuyo último cobro fue mayor que lo planificado, abre Pagos planificados.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1115-1",
@@ -6456,8 +6456,8 @@
   "como_probar": "Crea en una cuenta la regla «El texto dice» con una palabra de tu voucher y lee ese voucher con foto.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1115-2",
@@ -6475,8 +6475,8 @@
   "como_probar": "Lee una foto, cambia la cuenta y toca «Recordar»; luego mira la regla en la cuenta.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1121-1",
@@ -6494,8 +6494,8 @@
   "como_probar": "Pon el límite a una tarjeta y abre su hoja desde el Panel.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1125-1",
@@ -6513,8 +6513,8 @@
   "como_probar": "Con una tarjeta con límite y deuda en soles y dólares, abre su hoja.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1122-1",
@@ -6532,8 +6532,8 @@
   "como_probar": "Abre un borrador, elige un grupo en el chip y busca «Guardar y hacer recurrente» en «…».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1122-2",
@@ -6551,8 +6551,8 @@
   "como_probar": "Abre Registros › Editar o cualquier hoja con «Cancelar» y mira el color.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1123-1",
@@ -6570,8 +6570,8 @@
   "como_probar": "Difícil de forzar a mano: si al guardar un gasto de grupo sale un error, vuelve a tocar «Guardar» y revisa que quede un solo gasto.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1123-2",
@@ -6589,8 +6589,8 @@
   "como_probar": "Convierte un registro de un pago planificado en gasto compartido, borra el pago y mira que el registro siga.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1124-1",
@@ -6609,7 +6609,7 @@
   "orden": 0,
   "build": "7",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "cambio_guia": "En la 2.3 (8) la primera tarjeta tiene aire y borde visible."
  },
  {
   "id": "1124-2",
@@ -6627,8 +6627,8 @@
   "como_probar": "Lee un recibo, toca «Otra foto», lee otro y mira que estén los dos.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1128-1",
@@ -6646,8 +6646,8 @@
   "como_probar": "Aún no se puede probar con producción; con el servicio de pruebas, lee un recibo de un comercio que nunca apuntaste.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1129-1",
@@ -6665,8 +6665,8 @@
   "como_probar": "Importa un CSV y luego el mismo archivo otra vez: la vista previa debe avisarlo.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1129-2",
@@ -6684,8 +6684,8 @@
   "como_probar": "Importa un archivo pequeño y toca «Deshacer importación».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1129-3",
@@ -6703,8 +6703,8 @@
   "como_probar": "Importa un extracto con fechas mes/día y revisa el ejemplo de la vista previa.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1134-1",
@@ -6722,8 +6722,8 @@
   "como_probar": "Exporta tus registros e impórtalos en el iPhone de pruebas; revisa transferencias y saldos iniciales.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1132-1",
@@ -6741,8 +6741,8 @@
   "como_probar": "Deja Yala abierta hasta el día siguiente y mira que el «≈» desaparezca al volver.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1133-1",
@@ -6760,8 +6760,8 @@
   "como_probar": "Con registros en dólares, abre la Comparativa y busca la marca «≈».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1135-1",
@@ -6779,8 +6779,8 @@
   "como_probar": "Guarda cinco registros seguidos y mira que la pantalla de éxito salga en todos.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1141-1",
@@ -6798,8 +6798,8 @@
   "como_probar": "En Nuevo registro toca «···» › «Hacer recurrente» › «Cada mes» y mira el botón «Recurrente» marcado.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1139-1",
@@ -6818,7 +6818,7 @@
   "orden": 0,
   "build": "7",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "cambio_guia": "Arreglado en el conector el 24-nov: Grok Bot y Grok web ya pueden conectarse. Ese arreglo no viaja en la app: espera su despliegue en producción."
  },
  {
   "id": "1139-2",
@@ -6836,8 +6836,8 @@
   "como_probar": "Con la Bandeja vacía, toca «Apunta desde tu IA»; con un borrador de Claude, mira su nombre.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1139-3",
@@ -6855,7 +6855,273 @@
   "como_probar": "En el iPhone de pruebas con cuenta de Yala, llega al paso 7 y busca la historia «Tu IA».",
   "orden": 28.1,
   "build": "7",
+  "nuevo_guia": false,
+  "cambio_guia": ""
+ },
+ {
+  "id": "1144-1",
+  "pr": 1144,
+  "titulo": "El selector de cuenta enseña solo las cuentas de la moneda del monto",
+  "area": "Nuevo registro",
+  "seccion": "existente",
+  "tipo": "mejora",
+  "ruta": "+ › Nuevo registro › Cuenta; Bandeja › un borrador › Cuenta",
+  "que_cambio": "Con el monto en soles salen solo las cuentas en soles; en dólares, solo las de dólares. Para cambiar de moneda se usa la cápsula «S/ ▾» junto al monto, que pone la cuenta de esa moneda. Si no tienes cuentas en esa moneda, la hoja enseña todas con un aviso. En la Bandeja el selector abre a media altura.",
+  "por_que": "Antes salían todas mezcladas (BCP Crédito PEN, BCP Crédito USD…) y era fácil elegir la línea equivocada.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con una tarjeta en soles y dólares, abre Nuevo registro, toca Cuenta y mira que solo salen las de la moneda del monto. Cambia la cápsula a USD y vuelve a abrir Cuenta.",
+  "orden": 0,
+  "build": "8",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (7)."
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1146-1",
+  "pr": 1146,
+  "titulo": "«Esto leí»: la primera tarjeta con aire y borde visible",
+  "area": "Nuevo registro",
+  "seccion": "existente",
+  "tipo": "visual",
+  "ruta": "Foto o voz › «Esto leí» / «Esto entendí»",
+  "que_cambio": "La primera tarjeta ya no queda pegada a la X ni a la miniatura, y lleva un contorno fino que se ve en claro y en oscuro. En un iPhone pequeño la hoja abre un poco más alta para que se vean la tarjeta, la nota y «Guardar».",
+  "por_que": "No se veía dónde terminaba la tarjeta sobre el fondo de cristal.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Lee la foto de un recibo y mira la primera tarjeta en modo oscuro.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1147-1",
+  "pr": 1147,
+  "titulo": "Flujo de dinero: «Ver subcategorías» despliega una columna más",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "tipo": "funcion",
+  "ruta": "Estadísticas › Distribución › Flujo de dinero › «Ver subcategorías +»",
+  "que_cambio": "Debajo del diagrama sale «Ver subcategorías +»: suma la columna de subcategorías de todas las categorías y se desplaza hasta ella. «Ver menos −» la pliega. Como mucho 8 filas; el resto va a «Otros». En el iPad no cambia.",
+  "por_que": "En el iPhone el diagrama se quedaba en las categorías y no había forma de ver el detalle.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En Distribución, baja al Flujo de dinero y toca «Ver subcategorías +».",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1148-1",
+  "pr": 1148,
+  "titulo": "Avisos del banco para principiantes, con bancos según tu país",
+  "area": "Integraciones",
+  "seccion": "existente",
+  "tipo": "mejora",
+  "ruta": "Ajustes › «Avisos del banco»",
+  "que_cambio": "La pantalla explica qué es un aviso y cómo funciona en tres líneas; cada banco suma «Antes de empezar» y una guía de 6 pasos con los nombres de los botones de Atajos. Los bancos de Perú solo salen con la región o la moneda de Perú; fuera, «Tu banco o app». Un banco solo pasa a «Activos» al tocar «Ya lo configuré» o al llegar el primer aviso, y se puede quitar.",
+  "por_que": "Lo pediste tras probarlo en el iPhone el 23-nov: abrir un banco ya lo daba por activo y la guía suponía que sabías usar Atajos.",
+  "estado": "activable",
+  "activar": "Para que lleguen avisos reales hay que armar la automatización de Atajos con la app del banco, siguiendo la guía.",
+  "pro": false,
+  "como_probar": "Abre BCP, mira que dice «Aún no está activo», toca «Ya lo configuré» y vuelve a la lista.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1149-1",
+  "pr": 1149,
+  "titulo": "Correo del banco: guía para quien nunca configuró un reenvío y volver a un paso hecho",
+  "area": "Integraciones",
+  "seccion": "existente",
+  "tipo": "mejora",
+  "ruta": "Ajustes › Correo del banco › Gmail / Outlook / iCloud Mail",
+  "que_cambio": "Cada paso dice dónde entrar, qué tocar y qué vas a ver, en subpasos numerados. Un paso hecho lleva «Volver a este paso». «Copiar dirección» queda siempre a mano en la cabecera. Lo de volver a un paso vale también para las guías de Apple Pay y Face ID.",
+  "por_que": "Un «Hecho» tocado sin querer dejaba el paso cerrado para siempre, y las instrucciones daban por sabido el reenvío.",
+  "estado": "activable",
+  "activar": "El reenvío real necesita tus datos en la cuenta de Yala y configurar el filtro en tu correo.",
+  "pro": false,
+  "como_probar": "Abre la guía de Gmail, marca un paso como hecho y toca «Volver a este paso».",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1150-1",
+  "pr": 1150,
+  "titulo": "«Hacer recurrente»: hoja con fondo sólido y el registro que se programa a la vista",
+  "area": "Registros",
+  "seccion": "existente",
+  "tipo": "visual",
+  "ruta": "+ › Nuevo gasto › «···» › Hacer recurrente",
+  "que_cambio": "La hoja tiene fondo sólido y arriba enseña el registro (icono, nombre, monto, cuenta y categoría). Las tres frecuencias van en una tarjeta, cada una con su mini calendario. «Más opciones…» ya no abre el editor con el nombre vacío. Un registro fechado mañana ya no deja un borrador duplicado en la Bandeja.",
+  "por_que": "Se transparentaban los botones del formulario detrás y no se veía qué datos viajaban.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En Nuevo gasto, llena los datos, toca «···» › Hacer recurrente y mira la hoja en claro y en oscuro.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1151-1",
+  "pr": 1151,
+  "titulo": "Estadísticas: volver a Tendencias o Distribución es inmediato",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "tipo": "rendimiento",
+  "ruta": "Estadísticas › chips Tendencias y Distribución",
+  "que_cambio": "Si no cambiaron los datos, el período ni los filtros, las tarjetas salen en el acto y el scroll responde enseguida. No cambia nada de lo que se ve.",
+  "por_que": "Cada vuelta a Tendencias congelaba la app cerca de 1,4 s con un historial grande.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con muchos registros, pasa de Tendencias a Resumen y vuelve, y baja enseguida.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1152-1",
+  "pr": 1152,
+  "titulo": "Nuevo presupuesto: «¿Cuáles?» deja quitar subcategorías",
+  "area": "Planificación",
+  "seccion": "ambos",
+  "tipo": "mejora",
+  "ruta": "Planificación › Presupuestos › Nuevo presupuesto › «¿Cuáles?»",
+  "que_cambio": "Al tocar una categoría aparecen debajo sus subcategorías, todas marcadas. Tocar una la quita o la vuelve a poner. El tope sugerido y el presupuesto usan exactamente las marcadas, y el resumen las nombra.",
+  "por_que": "Antes el presupuesto contaba la categoría entera aunque no quisieras incluir alguna subcategoría.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Crea un presupuesto de Alimentación, quita Delivery y mira que el tope y el resumen cambian.",
+  "orden": 60.1,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1153-1",
+  "pr": 1153,
+  "titulo": "Registros: el filtro de categoría sube a pantalla completa y enseña las subcategorías",
+  "area": "Registros",
+  "seccion": "existente",
+  "tipo": "mejora",
+  "ruta": "Registros › chip Categoría ▾",
+  "que_cambio": "Al tocar una categoría, la hoja sube a pantalla completa y baja sola hasta sus subcategorías. Si ya había una elegida, abre directo a pantalla completa.",
+  "por_que": "Lo pediste el 23-nov: las subcategorías quedaban escondidas bajo la media altura.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En Registros, toca Categoría ▾ y elige Alimentación.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1155-1",
+  "pr": 1155,
+  "titulo": "Estadísticas › Resumen: qué decidir hoy, en vez de repetir el Panel",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "tipo": "funcion",
+  "ruta": "Estadísticas › Resumen",
+  "que_cambio": "La salud financiera va en una franja chata con lo que más la baja. «Para decidir hoy» propone hasta tres acciones con salida a Presupuestos, Pagos planificados o Tendencias. Los gastos hormiga pasan a protagonistas, con cada comercio que abre sus compras. «Tus cifras» en cuatro celdas y «Ir a» con cuatro atajos. Se van las tarjetas de categoría y subcategoría principal y las secciones plegables.",
+  "por_que": "Es la opción B que elegiste el 23-nov: el Resumen repetía lo que ya muestra el Panel.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Abre Estadísticas › Resumen en «Este mes», toca una acción de «Para decidir hoy» y un comercio de los gastos hormiga.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1156-1",
+  "pr": 1156,
+  "titulo": "Reportes: la parte de arriba ya no rebota al plegar el título",
+  "area": "Flujo de caja",
+  "seccion": "existente",
+  "tipo": "arreglo",
+  "ruta": "Estadísticas › Reportes › Comparativa y Flujo de caja",
+  "que_cambio": "Al bajar despacio hasta el punto donde el título grande se despliega, el título, la barra de chips y la lista ya no saltan. El título sigue al dedo, como en el Panel.",
+  "por_que": "Lo viste en tu iPhone el 23-nov: en ese umbral la cabecera rebotaba sola.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En Comparativa, sube un poco y baja muy despacio hasta que el título vuelva a crecer.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1157-1",
+  "pr": 1157,
+  "titulo": "Pagos planificados: ícono cuando no hay logo, sin hueco bajo la lista y la vista recordada",
+  "area": "Planificación",
+  "seccion": "existente",
+  "tipo": "mejora",
+  "ruta": "Planificación › Pagos planificados",
+  "que_cambio": "En la línea de tiempo y el calendario, un pago sin logo lleva el ícono de su subcategoría sobre el color de su categoría. La vista elegida (lista, línea de tiempo o calendario) queda guardada. El enlace del pie va pegado a la lista y se llama «Ver más pagos que se repiten».",
+  "por_que": "Lo pediste el 24-nov tras probarlo en el iPhone: los pagos sin logo quedaban vacíos y la vista volvía a «Lista» al salir.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Elige la línea de tiempo, sal de Planificación y vuelve; mira un pago como «Sueldo».",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1158-1",
+  "pr": 1158,
+  "titulo": "Grupos y Bandeja: la pantalla de éxito minimalista",
+  "area": "Grupos",
+  "seccion": "existente",
+  "tipo": "visual",
+  "ruta": "Grupos › Nuevo gasto › Guardar; Bandeja › Aprobar",
+  "que_cambio": "Al guardar un gasto de grupo o aprobar en la Bandeja sale la misma pantalla de éxito que en Nuevo registro: check pequeño, monto grande, tarjeta con los datos y dos botones lado a lado. En el grupo dice tu parte; al aprobar varios, el total.",
+  "por_que": "Quedaban con el círculo verde grande y el confeti de antes.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Guarda un gasto en un grupo y aprueba dos borradores juntos en la Bandeja.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+ },
+ {
+  "id": "1159-1",
+  "pr": 1159,
+  "titulo": "Avisos del banco: el ejemplo va en la moneda de tu región",
+  "area": "Integraciones",
+  "seccion": "existente",
+  "tipo": "texto",
+  "ruta": "Ajustes › «Avisos del banco» › «Tu banco o app»",
+  "que_cambio": "Fuera de Perú el aviso de ejemplo dice, por ejemplo, «Pagaste USD 25.00 en CAFE CENTRAL», en tu moneda principal. En Perú sigue en soles.",
+  "por_que": "Fuera de Perú el ejemplo salía en soles con un comercio de Lima.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con la moneda principal en USD, abre «Tu banco o app» y mira el ejemplo.",
+  "orden": 0,
+  "build": "8",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
  }
 ]

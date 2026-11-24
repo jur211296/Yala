@@ -1,0 +1,15 @@
+Novedades desde la build 2.3 (7):
+• Estadísticas › Resumen: ahora dice qué decidir hoy. La salud financiera en una franja, hasta tres acciones con atajo a Presupuestos, Pagos planificados o Tendencias, los gastos hormiga como protagonistas y «Tus cifras» en cuatro celdas.
+• Estadísticas: volver a Tendencias o Distribución es inmediato, y el Flujo de dinero suma «Ver subcategorías».
+• Reportes: la parte de arriba ya no rebota al plegar el título en Comparativa y Flujo de caja.
+• Nuevo registro: al elegir la cuenta salen solo las de la moneda del monto; para cambiar de moneda, la cápsula junto al monto.
+• «Hacer recurrente»: hoja nueva con fondo sólido, el registro a la vista y las frecuencias con su calendario. Un registro fechado mañana ya no deja un borrador repetido.
+• «Esto leí»: la primera tarjeta tiene aire y borde visible.
+• Registros: el filtro de categoría sube a pantalla completa y enseña las subcategorías.
+• Nuevo presupuesto: en «¿Cuáles?» puedes quitar subcategorías, y el tope sugerido usa solo las que quedan.
+• Pagos planificados: los pagos sin logo llevan el ícono de su categoría, la vista elegida se recuerda y la lista ya no deja un hueco abajo.
+• Grupos y Bandeja: la pantalla de éxito con el mismo diseño que al guardar un registro personal.
+• Ajustes › Avisos del banco: guía para principiantes, bancos según tu país y un banco solo queda activo cuando confirmas que lo configuraste.
+• Ajustes › Correo del banco: pasos detallados para configurar el reenvío y «Volver a este paso».
+
+Qué probar: Estadísticas › Resumen en «Este mes», «Ver subcategorías» en Distribución, elegir cuenta con un monto en dólares, «Hacer recurrente» desde Nuevo gasto, quitar una subcategoría en un presupuesto nuevo, un gasto de grupo y Ajustes › Avisos del banco. Si algo falla, envía una captura desde TestFlight.
