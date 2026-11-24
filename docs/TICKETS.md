@@ -43,21 +43,23 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (142)
+## Index (144)
 
 | id | status | path |
+| 2026-11-24-barrido-qa-2-3-antes-build-8 | done | tickets/done/2026-11-24-barrido-qa-2-3-antes-build-8.md |
+| 2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad | backlog | tickets/backlog/2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad.md |
 | 2026-11-24-propuesta-bandeja-sin-duplicados | done | tickets/done/2026-11-24-propuesta-bandeja-sin-duplicados.md |
 | 2026-11-24-pagos-planificados-chips-vista-y-pie | done | tickets/done/2026-11-24-pagos-planificados-chips-vista-y-pie.md |
 | 2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region | done | tickets/done/2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region.md |
 | 2026-11-24-textos-viejos-de-correo-del-banco-sin-uso | done | tickets/done/2026-11-24-textos-viejos-de-correo-del-banco-sin-uso.md |
 | 2026-11-24-selector-xcuitest-anfitrionas-de-ajustes | done | tickets/done/2026-11-24-selector-xcuitest-anfitrionas-de-ajustes.md |
-| 2026-11-24-exito-grupos-y-bandeja-como-personal | qa | tickets/qa/2026-11-24-exito-grupos-y-bandeja-como-personal.md |
+| 2026-11-24-exito-grupos-y-bandeja-como-personal | done | tickets/done/2026-11-24-exito-grupos-y-bandeja-como-personal.md |
 | 2026-11-23-hacer-recurrente-rediseno-y-campos | done | tickets/done/2026-11-23-hacer-recurrente-rediseno-y-campos.md |
-| 2026-11-23-reportes-rebote-encabezado-comparativa-flujo | qa | tickets/qa/2026-11-23-reportes-rebote-encabezado-comparativa-flujo.md |
+| 2026-11-23-reportes-rebote-encabezado-comparativa-flujo | done | tickets/done/2026-11-23-reportes-rebote-encabezado-comparativa-flujo.md |
 | 2026-11-23-filtro-categoria-registros-detent-large | done | tickets/done/2026-11-23-filtro-categoria-registros-detent-large.md |
 | 2026-11-23-presupuesto-guiado-subcategorias | done | tickets/done/2026-11-23-presupuesto-guiado-subcategorias.md |
 | 2026-11-23-estadisticas-resumen-opcion-b-decidir | done | tickets/done/2026-11-23-estadisticas-resumen-opcion-b-decidir.md |
-| 2026-11-23-estadisticas-fluidez-scroll-y-chips | qa | tickets/qa/2026-11-23-estadisticas-fluidez-scroll-y-chips.md |
+| 2026-11-23-estadisticas-fluidez-scroll-y-chips | done | tickets/done/2026-11-23-estadisticas-fluidez-scroll-y-chips.md |
 | 2026-11-23-correos-del-banco-claridad-y-volver | done | tickets/done/2026-11-23-correos-del-banco-claridad-y-volver.md |
 | 2026-11-23-sankey-distribucion-subcategorias | done | tickets/done/2026-11-23-sankey-distribucion-subcategorias.md |
 | 2026-11-23-avisos-del-banco-claridad-y-region | qa | tickets/qa/2026-11-23-avisos-del-banco-claridad-y-region.md |

@@ -1,6 +1,6 @@
 ---
 id: 2026-11-24-exito-grupos-y-bandeja-como-personal
-status: qa
+status: done
 priority: medium
 area: "groups, inbox, ui"
 created: 2026-11-24
@@ -49,3 +49,7 @@ tampoco se habían llevado al diseño nuevo.
   encargo no dejaba tocarla.
 - **Device-QA (iPhone):** guardar un gasto de grupo pagado por ti y por otro, aprobar uno y varios en la Bandeja;
   mirar que se vean como la personal y que «Partir tu parte» y «Guardar el siguiente» funcionen.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-11-24: en el iPhone 14 real, aprobar uno en la Bandeja enseña el éxito nuevo y «Guardar el siguiente» abre el siguiente borrador. El gasto de grupo y aprobar varios, con `ExitoGruposBandejaCapturasUITests` (`test_grupo` y `test_bandejaVarios`) en el iPhone 17 Pro simulado: 2 de 2 en verde, en claro, oscuro y girado. En el iPhone no había sesión de nube para Grupos.
