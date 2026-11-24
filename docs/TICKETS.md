@@ -46,7 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (127)
 
 | id | status | path |
-| 2026-11-23-avisos-del-banco-claridad-y-region | done | tickets/done/2026-11-23-avisos-del-banco-claridad-y-region.md |
+| 2026-11-23-avisos-del-banco-claridad-y-region | qa | tickets/qa/2026-11-23-avisos-del-banco-claridad-y-region.md |
 | 2026-11-23-esto-lei-aire-card-superior | done | tickets/done/2026-11-23-esto-lei-aire-card-superior.md |
 | 2026-11-23-estadisticas-resumen-propuesta-rediseno | done | tickets/done/2026-11-23-estadisticas-resumen-propuesta-rediseno.md |
 | 2026-11-23-selector-cuenta-moneda-y-detent | done | tickets/done/2026-11-23-selector-cuenta-moneda-y-detent.md |

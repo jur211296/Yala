@@ -1,6 +1,6 @@
 ---
 id: 2026-11-23-avisos-del-banco-claridad-y-region
-status: done
+status: qa
 priority: medium
 area: "captura-atajo-banco-parte-2, ajustes"
 created: 2026-11-23
@@ -45,3 +45,15 @@ Jürgen probó «Avisos del banco» en el iPhone y reportó cinco problemas:
 - No se menciona SMS: no está confirmado que la automatización de notificación los lea.
 - El aviso de ejemplo de «Tu banco o app» sigue en soles («S/ 25.00 en Starbucks Larcomar»), también fuera de Perú.
 - Los nombres de los botones de Atajos en los 16 idiomas están escritos de memoria, sin un iPhone en cada idioma.
+
+## Guion de QA en el iPhone 14 (Yala Dev, región Perú)
+
+1. Ajustes › «Avisos del banco»: arriba se lee «Un aviso es…» y «Cómo funciona» en tres líneas.
+2. Toca BCP: dice «Aún no está activo». Vuelve atrás: el BCP NO aparece en «Activos».
+3. Entra al BCP y sigue los seis pasos en la app Atajos de verdad. Esperado: cada botón que nombra la guía
+   («Automatización», «+», «Notificación», «App», «Ejecutar inmediatamente», «Siguiente», «Nueva automatización en
+   blanco», «Agregar acción», «Texto», «Banco», «OK») existe con ese nombre. Apunta los que no coincidan.
+4. Toca «Ya lo configuré»: el BCP pasa a «Activos · Esperando el primer aviso».
+5. Haz una compra pequeña con la tarjeta: el estado pasa a «Funcionando» y el gasto llega a la Bandeja.
+6. En el BCP, al final, «Quitar de Activos» › «Quitar»: vuelve a la lista y el BCP sale de «Activos».
+7. Con los datos en tu cuenta de Yala: la lista enseña «¿Tu banco te avisa por correo?» y lleva a «Correo del banco».
