@@ -1,6 +1,6 @@
 ---
 id: 2026-11-23-estadisticas-fluidez-scroll-y-chips
-status: qa
+status: done
 priority: high
 area: "statistics"
 created: 2026-11-23
@@ -48,3 +48,7 @@ del tiempo, igual antes y después).
 
 - Medir en el iPhone 14 (no estaba conectado la noche del arreglo): si el scroll largo sigue trabándose con la página
   ya calculada, la causa es otra (render del cristal o de las gráficas, no el hilo principal) y va en card aparte.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-11-24: probado en el iPhone 14 real (Device MCP) con la build optimizada y unas tres veces la semilla `pesado`. Volver a Tendencias, Distribución o Resumen enseña las tarjetas en el acto (3 de 3), el scroll largo responde y el cambio a «Mes pasado» llega a las tres pestañas. Evidencia: `docs/qa/barrido-2-3-antes-build-8/lista.md`.
