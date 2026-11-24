@@ -47,11 +47,16 @@ struct UXAudit22Decidido02WiringTests {
 
     @Test func elPagoPlanificado_guardaLaDivisaDelImporte() throws {
         let code = try Self.source(Self.form)
+        // Desde el 23-nov las dos salidas de «Hacer recurrente» copian de una sola fuente (`recurringFormRecord`).
+        let source = try Self.section(code, from: "private var recurringFormRecord", to: "private var recurringSheetContent")
+        #expect(source.contains("currencyCode: viewModel.amountCurrencyCode"))
+        #expect(!source.contains("effectiveCurrencyCode"))
         let editor = try Self.section(code, from: "private var recurringSheetContent", to: "private var splitCalculatorSheetContent")
-        #expect(editor.contains("currencyCode: viewModel.amountCurrencyCode"))
-        #expect(!editor.contains("effectiveCurrencyCode"))
+        #expect(editor.contains("RecurringFromRecordService.moreOptionsPrefill(from: recurringFormRecord)"))
         let quick = try Self.section(code, from: "private func createRecurringPayment", to: "SetupChecklistManager")
-        #expect(quick.contains("currencyCode: viewModel.amountCurrencyCode"))
+        #expect(quick.contains("from: recurringFormRecord"))
+        let service = try Self.source("Yala/App/Logic/RecurringFromRecord/RecurringFromRecordService.swift")
+        #expect(service.contains("currencyCode: form.currencyCode"))
     }
 
     @Test func elEditorDePagos_conservaLaDivisaDelRegistroYSuDiaDeLaSemana() throws {

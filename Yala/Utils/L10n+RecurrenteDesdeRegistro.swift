@@ -51,6 +51,11 @@ extension L10n {
         /// «Próximo cobro: 3 dic 2026». %@ = la fecha.
         static func choiceNextDue(_ date: String) -> String { String(format: rfr("rfr.choice.nextDue"), date) }
 
+        // MARK: Hoja corta de Nuevo registro (rediseño del 23-nov)
+
+        /// Bajo «Más opciones…»: lo que trae el editor completo y la opción rápida no («Fecha de fin, avisos y monto variable»).
+        static var quickMoreOptionsDetail: String { rfr("rfr.quick.moreOptionsDetail") }
+
         // MARK: Avisos
 
         /// «Vinculado a «Cloudflare»». %@ = el nombre del recurrente.
