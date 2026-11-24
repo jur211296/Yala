@@ -27,6 +27,13 @@ struct SankeyChartView: View {
     let onTapPoolNode: (String) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.yalaTheme) private var theme
+
+    /// «Ver subcategorías»: la columna de subcategorías de todas las categorías, desplegada donde no caben las cuatro
+    /// (pedido de Jürgen del 23-nov-2026). Arranca plegada cada vez: el inicio es hasta las categorías.
+    @State private var subcategoriesExpanded = false
+    /// Para llevar la vista a las subcategorías al desplegarlas y volver al principio al replegarlas.
+    @State private var scrollPosition = ScrollPosition(edge: .leading)
 
     // MARK: - Layout constants
 
@@ -44,11 +51,35 @@ struct SankeyChartView: View {
     /// El ancho que ocupa la gráfica, medido. Con él se decide cuántas columnas caben (`SankeyColumnLayoutLogic`).
     @State private var containerWidth: CGFloat = 0
 
-    /// Columnas visibles y su ancho (G3, decisión 28): en el iPhone, ingresos, flujo y categorías sin desplazar.
+    private var hasCategorySelection: Bool {
+        !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty
+    }
+
+    /// ¿Caben las cuatro columnas sin desplazar? (el iPad). Ahí la columna de subcategorías ya se ve y no hay botón.
+    private var fitsAllColumns: Bool {
+        SankeyColumnLayoutLogic.columns(containerWidth: containerWidth, hasCategorySelection: false)
+            .visible.count == SankeyColumn.allCases.count
+    }
+
+    private var showsSubcategoryToggle: Bool {
+        SankeySubcategoryExpansion.showsToggle(
+            fitsAllColumns: fitsAllColumns,
+            hasCategorySelection: hasCategorySelection,
+            hasSubcategories: SankeySubcategoryExpansion.hasSubcategories(poolFilteredData)
+        )
+    }
+
+    /// La columna de subcategorías desplegada con el botón (no por una categoría elegida).
+    private var showsExpandedSubcategories: Bool {
+        subcategoriesExpanded && showsSubcategoryToggle
+    }
+
+    /// Columnas visibles y su ancho (G3, decisión 28): en el iPhone, ingresos, flujo y categorías sin desplazar. Con
+    /// lo elegido o con «Ver subcategorías», las cuatro, desplazando a lo ancho.
     private var columns: SankeyColumnLayoutLogic.Columns {
         SankeyColumnLayoutLogic.columns(
             containerWidth: containerWidth,
-            hasCategorySelection: !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty
+            hasCategorySelection: hasCategorySelection || showsExpandedSubcategories
         )
     }
 
@@ -85,7 +116,48 @@ struct SankeyChartView: View {
     ///   by links from the selected pool nodes (Hybrid: pool nodes stay visible with
     ///   dimming, cols downstream get filtered).
     /// - Cat/subcat selection restricts col 3 as before.
+    /// - «Ver subcategorías» ordena la columna 3 por categoría madre y agrupa la cola en «Otros».
     private var visibleData: SankeyData {
+        var kept = poolFilteredData
+
+        if showsExpandedSubcategories {
+            return SankeySubcategoryExpansion.expanded(kept)
+        }
+
+        // Cat/subcat filter (existing behavior, applied over pool-filtered universe)
+        guard !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty else {
+            return kept
+        }
+        let subcatNodes = kept.nodes(in: .expenseSubcategory)
+        let subcatNodeIDs = Set(subcatNodes.map(\.id))
+        let keptSubcatIDs = Set(subcatNodes.filter { sub in
+            if !selectedSubcategoryIDs.isEmpty {
+                guard let id = sub.persistentID else { return false }
+                return selectedSubcategoryIDs.contains(id)
+            }
+            if let parent = sub.parentCategoryID {
+                return selectedCategoryIDs.contains(parent)
+            }
+            return false
+        }.map(\.id))
+        let filteredLinks = kept.links.filter { link in
+            subcatNodeIDs.contains(link.targetID) ? keptSubcatIDs.contains(link.targetID) : true
+        }
+        let nodes = kept.nodes.filter { n in
+            n.column != .expenseSubcategory || keptSubcatIDs.contains(n.id)
+        }
+        kept = SankeyData(
+            nodes: nodes,
+            links: filteredLinks,
+            totalIncome: kept.totalIncome,
+            totalExpense: kept.totalExpense,
+            pool: kept.pool
+        )
+        return kept
+    }
+
+    /// Pool filter: restricts cols 2/3 to what the selected pool nodes reach.
+    private var poolFilteredData: SankeyData {
         var kept = data
 
         // Pool filter (applies first, narrows the universe of cats/subs)
@@ -137,36 +209,7 @@ struct SankeyChartView: View {
                 pool: kept.pool
             )
         }
-
-        // Cat/subcat filter (existing behavior, applied over pool-filtered universe)
-        guard !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty else {
-            return kept
-        }
-        let subcatNodes = kept.nodes(in: .expenseSubcategory)
-        let subcatNodeIDs = Set(subcatNodes.map(\.id))
-        let keptSubcatIDs = Set(subcatNodes.filter { sub in
-            if !selectedSubcategoryIDs.isEmpty {
-                guard let id = sub.persistentID else { return false }
-                return selectedSubcategoryIDs.contains(id)
-            }
-            if let parent = sub.parentCategoryID {
-                return selectedCategoryIDs.contains(parent)
-            }
-            return false
-        }.map(\.id))
-        let filteredLinks = kept.links.filter { link in
-            subcatNodeIDs.contains(link.targetID) ? keptSubcatIDs.contains(link.targetID) : true
-        }
-        let nodes = kept.nodes.filter { n in
-            n.column != .expenseSubcategory || keptSubcatIDs.contains(n.id)
-        }
-        return SankeyData(
-            nodes: nodes,
-            links: filteredLinks,
-            totalIncome: kept.totalIncome,
-            totalExpense: kept.totalExpense,
-            pool: kept.pool
-        )
+        return kept
     }
 
     // MARK: - Layout cache
@@ -203,6 +246,7 @@ struct SankeyChartView: View {
                 }
                 .frame(width: totalWidth, height: cardHeight)
             }
+            .scrollPosition($scrollPosition)
             .frame(height: cardHeight)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
                 if abs(width - containerWidth) > 0.5 { containerWidth = width }
@@ -229,10 +273,49 @@ struct SankeyChartView: View {
             if visibleRatio < 1 {
                 scrollIndicator
             }
+
+            if showsSubcategoryToggle {
+                subcategoryToggle
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
         .onAppear { layout = buildLayout() }
         .onChange(of: visibleData) { layout = buildLayout() }
         .onChange(of: columns) { layout = buildLayout() }
+        .onChange(of: showsExpandedSubcategories) { _, expanded in revealSubcategories(expanded) }
+    }
+
+    /// «Ver subcategorías +» / «Ver menos −»: discreto, bajo la gráfica y a la derecha, donde acaba el flujo.
+    private var subcategoryToggle: some View {
+        Button {
+            DS.Haptic.selection()
+            subcategoriesExpanded.toggle()
+        } label: {
+            HStack(spacing: DS.Spacing.xxs) {
+                Text(subcategoriesExpanded ? SankeySubcategoriasText.hide : SankeySubcategoriasText.show)
+                    .lineLimit(1)
+                Image(systemName: subcategoriesExpanded ? "minus" : "plus")
+                    .imageScale(.small)
+            }
+            .font(DS.Typography.caption.weight(.semibold))
+            .foregroundStyle(theme.accentText)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(Capsule().fill(.thSecondaryText.opacity(0.08)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(subcategoriesExpanded ? SankeySubcategoriasText.hide : SankeySubcategoriasText.show)
+        .accessibilityHint(subcategoriesExpanded ? SankeySubcategoriasText.hideHint : SankeySubcategoriasText.showHint)
+        .accessibilityIdentifier("sankey_subcategories_toggle")
+    }
+
+    /// Al desplegar, la vista va a las subcategorías (quedan a un deslizamiento a la derecha); al replegar, al principio.
+    /// Una vuelta del main actor después, cuando el ancho de cuatro columnas ya está puesto.
+    private func revealSubcategories(_ expanded: Bool) {
+        Task { @MainActor in
+            scrollPosition.scrollTo(edge: expanded ? .trailing : .leading)
+        }
     }
 
     /// Opaco en el centro y transparente hacia el borde por el que queda contenido (lote 07 de 2.3).
