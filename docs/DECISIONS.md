@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (144 entradas)
+## Índice (145 entradas)
 
 > **No hace falta leer este fichero entero** — son 357 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-24` [Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después d](#2026-11-24-lote-del-24-nov-0847-1433-la-build-8-espera-todo-lo-de-23-la-bandeja-sin-duplicados-despus-de-la-build-y-marketing-en-lenguaje-simple)
 - `2026-11-23` [Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar](#2026-11-23-lote-del-23-nov-1502-1551-la-build-7-espera-todo-lo-de-23-y-la-web-a-cloudflare-sin-desplegar)
 - `2026-11-23` [Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real](#2026-11-23-lote-del-23-nov-1031-1113-barrido-de-qa-antes-de-la-build-7-en-el-iphone-14-real)
 - `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
@@ -170,6 +171,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-24] Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después de la build y marketing en lenguaje simple
+**Contexto:** Decisiones de Jürgen en el chat del 24-nov (08:47 a 14:33, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 8.
+**Decisión:** (1) La build 8 de TestFlight de 2.3 **espera a que entre todo lo desarrollado en 2.3** y sube completa, igual que la 7. (2) Bandeja sin duplicados entre fuentes: se aprueba todo lo recomendado en la propuesta (opción B, un pendiente por consumo; unir solo con coincidencia fuerte y «Separar» a un toque; manda el importe del banco; un planificado de monto fijo con cargo distinto pregunta; la IA puede leer pendientes con las columnas de Yala web, sin el texto original; lote 0 en 2.3; grupos y cuentas compartidas fuera de esta tanda). (3) Los lotes 1 a 4 de la Bandeja sin duplicados (emparejador, unir al llegar, fila con fuentes, casar con planificados) entran en 2.3 **después** de la subida de la build 8, no en 2.4. (4) Desde la semana 7, todas las publicaciones de Yala (captions, X, textos en pantalla y voz) van en lenguaje simple, sin términos internos de la app como «Bandeja»; sustituye a la versión de las 08:49, que lo decía solo de los textos de marketing. (5) Los videos de los conectores de IA de la 2.3 (uno por conector, con el personaje de cada IA) son prioridad de la próxima semana; todavía no se piden.
+**Razones:** Las da Jürgen: la build es para revisar todo lo de la 2.3; la Bandeja sin duplicados no frena la build; quien ve una publicación no conoce los nombres internos de la app.
+**Consecuencias:** La build 8 esperó al PR de «Estadísticas › Resumen: opción B» (su conflicto de índices lo resolvió esta sesión). Los encargos de la Bandeja sin duplicados quedaron en cola detrás de este. Las decisiones (4) y (5) son de marketing (Lola).
+**Estado:** Activa
 
 ### [2026-11-23] Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar
 **Contexto:** Decisiones de Jürgen en el chat del 23-nov (15:02 y 15:51, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 7.
