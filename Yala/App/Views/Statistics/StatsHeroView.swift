@@ -48,6 +48,12 @@ struct StatsHeroNatureFilter {
     let toggle: (TransactionNature) -> Void
 }
 
+extension EnvironmentValues {
+    /// «Tu dinero hoy» ya calculado en este contenedor de Estadísticas (`StatsMoneyTodayMemory`). Lo pone
+    /// `DetailContainerView`; fuera de él, `nil` y cada hero calcula el suyo.
+    @Entry var statsMoneyTodayMemory: StatsMoneyTodayMemory? = nil
+}
+
 /// De dónde sale «Tu dinero hoy»: los movimientos y las cuentas que ya cargó la pantalla.
 struct StatsHeroMoneySource {
     let accounts: [Account]
@@ -60,6 +66,8 @@ struct StatsHeroView<Period: View>: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La memoria de «Tu dinero hoy» del contenedor de Estadísticas; `nil` fuera de él (la pestaña Registros).
+    @Environment(\.statsMoneyTodayMemory) private var moneyMemory
 
     let caption: StatsHeroCaption
     /// La cifra cuando es de un lado (gasto, ingreso o total); `nil` si no hay nada que enseñar. Con `.moneyToday` no se lee.
@@ -144,27 +152,13 @@ struct StatsHeroView<Period: View>: View {
         return money.accounts.isEmpty ? nil : moneyFigure
     }
 
-    /// Lo que mueve «Tu dinero hoy». El corte va como fecha solo con un período cerrado: en uno en curso es «ahora», y
-    /// meter el reloj aquí recalcularía en cada repintado.
-    private struct MoneyInputs: Equatable {
-        let needed: Bool
-        let generation: Int
-        let transactionCount: Int
-        let accountScopes: [String]
-        let currencyCode: String
-        let includeGroups: Bool
-        let overrides: String
-        let selectedAccountIDs: Set<PersistentIdentifier>
-        let excludedAccountIDs: Set<PersistentIdentifier>
-        let closedAt: Date?
-    }
-
-    private var moneyInputs: MoneyInputs {
+    /// Lo que mueve «Tu dinero hoy» (`StatsHeroMoneyInputs`).
+    private var moneyInputs: StatsHeroMoneyInputs {
         let closed = isClosed
         let interval = closed
             ? sessionState.selectedPeriod.dateInterval(customRange: sessionState.customDateRange)
             : nil
-        return MoneyInputs(
+        return StatsHeroMoneyInputs(
             needed: caption == .moneyToday,
             generation: money.dataGeneration,
             transactionCount: money.transactions.count,
@@ -180,9 +174,21 @@ struct StatsHeroView<Period: View>: View {
         )
     }
 
-    private func recalculateMoney(_ inputs: MoneyInputs) {
+    private func recalculateMoney(_ inputs: StatsHeroMoneyInputs) {
         guard inputs.needed else { return }
-        let figure = StatsMoneyTodayLogic.figure(
+        // Dentro de Estadísticas, la cifra ya calculada por otra página del mismo contenedor con las mismas entradas se
+        // reutiliza: cada página que se montaba al cambiar de chip la volvía a calcular (`StatsMoneyTodayMemory`).
+        guard let memory = moneyMemory else {
+            let figure = computeMoney(inputs)
+            if figure != moneyFigure { moneyFigure = figure }
+            return
+        }
+        let figure = memory.figure(for: inputs, day: Calendar.current.startOfDay(for: .now)) { computeMoney(inputs) }
+        if figure != moneyFigure { moneyFigure = figure }
+    }
+
+    private func computeMoney(_ inputs: StatsHeroMoneyInputs) -> StatsMoneyTodayLogic.Figure {
+        StatsMoneyTodayLogic.figure(
             accounts: money.accounts,
             transactions: money.transactions,
             currencyCode: inputs.currencyCode,
@@ -192,7 +198,6 @@ struct StatsHeroView<Period: View>: View {
             overrides: inputs.overrides,
             asOf: inputs.closedAt ?? .now
         )
-        if figure != moneyFigure { moneyFigure = figure }
     }
 
     // MARK: - Ingresos y gastos

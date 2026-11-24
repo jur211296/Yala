@@ -43,8 +43,9 @@ final class CapturaAtajoParte2UITests: XCTestCase {
         app.terminate()
     }
 
-    /// B2: la fila de Ajustes abre «¿De qué banco?»; un banco enseña su estado («Esperando el primer aviso»), la guía y
-    /// la prueba con un aviso de ejemplo, que lee el monto y el comercio sin guardar nada.
+    /// B2: la fila de Ajustes abre «¿De qué banco?»; un banco enseña su estado, la guía y la prueba con un aviso de
+    /// ejemplo, que lee el monto y el comercio sin guardar nada. Desde el 23-nov-2026 abrirlo no lo activa: «Aún no está
+    /// activo» (la activación la fija `AvisosDelBancoActivacionUITests`).
     func test_bankNotices_rowOpensTheBank_andTheSampleIsRead() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal")
@@ -67,7 +68,7 @@ final class CapturaAtajoParte2UITests: XCTestCase {
 
         let status = app.staticTexts["bank_notice_status_title"].firstMatch
         XCTAssertTrue(status.waitForExistence(timeout: 10), "La pantalla del BCP no enseña su estado.")
-        XCTAssertTrue(status.label.hasPrefix("Esperando el primer aviso"), "Estado: \(status.label)")
+        XCTAssertTrue(status.label.hasPrefix("Aún no está activo"), "Estado: \(status.label)")
 
         let probar = app.buttons["bank_notice_test_button"]
         var scrolls = 0

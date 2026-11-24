@@ -7,6 +7,10 @@
 //  activos (los que la persona eligió o de los que llegó algún aviso) con su estado; abajo, «¿De qué banco?» con los
 //  demás. Gratis y también con los datos en iCloud: todo se lee en el iPhone.
 //
+//  Encargo del 23-nov-2026: arriba se explica qué es un aviso y cómo funciona, para quien nunca usó Atajos; fuera de
+//  Perú solo se ofrece «Tu banco o app» (`BankNoticeChoiceLogic`); y con los datos en la cuenta de Yala, quien recibe
+//  los avisos por correo va directo a «Correo del banco», sin Atajos.
+//
 
 import SwiftUI
 
@@ -14,11 +18,32 @@ struct BankNoticesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Se relee al aparecer y al volver a primer plano: la acción de Atajos escribe el App Group desde otro proceso.
     @State private var known: [BankNoticeBank] = []
 
-    private var available: [BankNoticeBank] { BankNoticeBank.allCases.filter { !known.contains($0) } }
+    private var available: [BankNoticeBank] {
+        BankNoticeChoiceLogic.addableBanks(
+            regionCode: Locale.current.region?.identifier,
+            mainCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            active: known)
+    }
+
+    private var offersPeruvianBanks: Bool {
+        BankNoticeChoiceLogic.offersPeruvianBanks(
+            regionCode: Locale.current.region?.identifier, mainCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    /// «Correo del banco» exige los datos en la cuenta de Yala y sesión: la misma regla que su fila en Ajustes. Esta
+    /// pantalla solo existe fuera de solo-grupos, así que ese eje va en `false`.
+    private var offersBankEmail: Bool {
+        CloudSessionRevision.shared.track()
+        return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow(
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud,
+            hasSession: CloudAuthService.shared.hasSession,
+            isGroupsFocusedShell: false)
+    }
 
     var body: some View {
         YalaSettingsList {
@@ -38,11 +63,19 @@ struct BankNoticesView: View {
                 .accessibilityAddTraits(.isHeader)
             }
 
+            YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.howSection) {
+                howRow("bell.badge.fill", L10n.CapturaAtajoParte2.Bank.howNotice, id: "notice")
+                howRow("arrow.triangle.turn.up.right.diamond.fill", L10n.CapturaAtajoParte2.Bank.howShortcut, id: "shortcut")
+                howRow("tray.and.arrow.down.fill", L10n.CapturaAtajoParte2.Bank.howInbox, id: "inbox")
+            } footer: {
+                Text(L10n.CapturaAtajoParte2.Bank.howFooter)
+            }
+
             if !known.isEmpty {
                 YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.activeSection) {
                     ForEach(known, id: \.self) { bank in
                         NavigationLink(value: bank) {
-                            BankNoticeBankRow(bank: bank, statusLine: statusLine(for: bank))
+                            BankNoticeBankRow(bank: bank, name: name(bank), statusLine: statusLine(for: bank))
                         }
                         .accessibilityIdentifier("bank_notices_active_\(bank.rawValue)")
                     }
@@ -52,12 +85,36 @@ struct BankNoticesView: View {
             YalaSettingsSection(known.isEmpty ? nil : L10n.CapturaAtajoParte2.Bank.addSection) {
                 ForEach(available, id: \.self) { bank in
                     NavigationLink(value: bank) {
-                        BankNoticeBankRow(bank: bank, statusLine: nil)
+                        BankNoticeBankRow(bank: bank, name: name(bank), statusLine: nil)
                     }
                     .accessibilityIdentifier("bank_notices_bank_\(bank.rawValue)")
                 }
             } footer: {
-                Text(L10n.CapturaAtajoParte2.Bank.privacyFooter)
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    if !offersPeruvianBanks { Text(L10n.CapturaAtajoParte2.Bank.pickerOtherAloneFooter) }
+                    Text(L10n.CapturaAtajoParte2.Bank.privacyFooter)
+                }
+            }
+
+            if offersBankEmail {
+                YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.emailSection) {
+                    NavigationLink {
+                        BankEmailForwardingView()
+                    } label: {
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.CapturaAtajoParte2.Bank.emailRowTitle)
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(.thPrimaryText)
+                            Text(L10n.CapturaAtajoParte2.Bank.emailRowDetail)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.thSecondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("bank_notices_email_row")
+                }
             }
         }
         .yalaScreenBackground(.subtle)
@@ -85,6 +142,27 @@ struct BankNoticesView: View {
         known = BankNoticeActivityStore.knownBanks()
     }
 
+    private func name(_ bank: BankNoticeBank) -> String {
+        BankNoticeBankView.displayName(bank, offersPeruvianBanks: offersPeruvianBanks)
+    }
+
+    private func howRow(_ icon: String, _ text: String, id: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .font(DS.Typography.body)
+                .foregroundStyle(.thSecondaryText)
+                .frame(width: DS.Icon.badgeSmall)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, DS.Spacing.xxs)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("bank_notices_how_\(id)")
+    }
+
     private func statusLine(for bank: BankNoticeBank) -> String {
         let status = BankNoticeStatus.status(
             activity: BankNoticeActivityStore.activity(for: bank),
@@ -102,13 +180,14 @@ struct BankNoticesView: View {
 /// iPhone) y, si está activo, su estado.
 struct BankNoticeBankRow: View {
     let bank: BankNoticeBank
+    let name: String
     let statusLine: String?
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             BankNoticeBankBadge(bank: bank)
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(BankNoticeBankView.displayName(bank))
+                Text(name)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.thPrimaryText)
                 if let statusLine {

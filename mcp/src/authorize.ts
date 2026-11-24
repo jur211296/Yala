@@ -54,16 +54,27 @@ import {
  *   un servidor que cumple RFC 9207, como este (la librería manda `iss`)— y la de id de callback,
  *   `https://chatgpt.com/connector/oauth/{callback_id}`, que OpenAI documenta para el resto. Solo esa ruta y un id sin
  *   barras ni query.
- * - **Las de `EXTRA_REDIRECT_URIS`**, exactas y https: para la IA que no publica la suya (Grok). Una vuelta rechazada
- *   se anota en el log (`mcp_autorizacion`, motivo `vuelta_no_permitida`, con origen y ruta) para poder fijarla.
+ * - **Grok web y Grok Bot** ([cursor]): Grok Bot se registra con el documento de cliente que publica Cursor, que trae
+ *   juntas la vuelta de Grok web (`https://grok.com/connectors-oauth-exchange-code/`), las dos de `www.cursor.com`
+ *   (agents y bot), la de esquema propio `cursor://anysphere.cursor-mcp/oauth/callback` y el loopback `:8787/callback`
+ *   (ya cubierto arriba). Cada una EXACTA: otra ruta en `www.cursor.com` u otro `cursor://` no entran. El registro
+ *   exige que TODAS pasen, así que con una sola fuera el alta entera falla (`invalid_redirect_uri`).
+ * - **Las de `EXTRA_REDIRECT_URIS`**, exactas y https: para la IA que no publica la suya. Una vuelta rechazada se
+ *   anota en el log (`mcp_autorizacion`, motivo `vuelta_no_permitida`, con origen y ruta) para poder fijarla.
  *
  * [claude]: https://claude.com/docs/connectors/building/authentication
  * [chatgpt]: https://developers.openai.com/apps-sdk/build/auth
+ * [cursor]: https://cursor.com/oauth/mcp-client.json
  */
 const HOSTED_CALLBACKS = new Set([
   "https://claude.ai/api/mcp/auth_callback",
   "https://claude.com/api/mcp/auth_callback",
   "https://chatgpt.com/connector_platform_oauth_redirect",
+  "https://grok.com/connectors-oauth-exchange-code/",
+  "https://www.cursor.com/agents/mcp/oauth/callback",
+  "https://www.cursor.com/bot/mcp/oauth/callback",
+  // Esquema propio (no https): se compara igual, por la cadena exacta y en forma canónica (ver `isAllowedRedirect`).
+  "cursor://anysphere.cursor-mcp/oauth/callback",
 ]);
 const CHATGPT_CALLBACK_ID_RE = /^https:\/\/chatgpt\.com\/connector\/oauth\/[A-Za-z0-9_-]{1,128}$/;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);

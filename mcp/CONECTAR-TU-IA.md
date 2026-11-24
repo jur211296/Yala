@@ -43,17 +43,28 @@ Del lado de Yala ya está todo: el conector acepta las dos vueltas OAuth que doc
 (`https://chatgpt.com/connector_platform_oauth_redirect` y `https://chatgpt.com/connector/oauth/{id}`) y el registro
 dinámico de clientes, que es lo que usa ChatGPT.
 
-## Grok (medido en su documentación: SÍ acepta conectores propios; sin probar con una cuenta real)
+## Grok y Grok Bot (medido en su documentación: SÍ aceptan conectores propios)
 
 xAI documenta conectores MCP remotos en grok.com: *grok.com/connectors* → *New Connector* → *Custom* → la URL. El
 inicio de sesión se abre en una ventana emergente (el navegador tiene que permitirlas para grok.com). Según guías de
 terceros, son de los planes de pago; en Grok Business y Enterprise los da de alta un administrador. Un conector
 añadido a mitad de una conversación puede no verse: abrir una nueva.
 
-**Lo que falta en Yala:** xAI no publica la vuelta OAuth que usa Grok, y el conector solo acepta las que conoce. El
-primer intento sale con «Esta aplicación no está autorizada a conectarse con Yala» y deja la vuelta en el log del
-Worker (`mcp_autorizacion`, motivo `vuelta_no_permitida`). Se añade exacta en `EXTRA_REDIRECT_URIS`
-(`wrangler.toml`) y se despliega; el segundo intento entra. Pasos: `RUNBOOK-produccion.md`, «Tu IA registra en Yala».
+**Del lado de Yala ya está todo** (24-nov-2026): el conector acepta por defecto las vueltas OAuth de Grok web y de
+Grok Bot. Grok Bot se registra con el documento de cliente que publica Cursor
+(`https://cursor.com/oauth/mcp-client.json`), que trae juntas:
+
+- `https://grok.com/connectors-oauth-exchange-code/` (Grok web)
+- `https://www.cursor.com/agents/mcp/oauth/callback` y `https://www.cursor.com/bot/mcp/oauth/callback`
+- `cursor://anysphere.cursor-mcp/oauth/callback`
+- `http://localhost:8787/callback` y `http://127.0.0.1:8787/callback` (la regla del loopback)
+
+Cada una entra exacta: otra ruta en `www.cursor.com`, otro `cursor://` o una vuelta con query o fragmento se rechazan, y
+con una sola fuera el registro entero falla. En «Tus conexiones» de la app sale como Grok, aunque el acceso vuelva por
+Cursor. Si un día Grok cambia de vuelta, el primer intento sale con «Esta aplicación no está autorizada a conectarse
+con Yala» y deja la vuelta en el log del Worker (`mcp_autorizacion`, motivo `vuelta_no_permitida`); una https se puede
+añadir exacta en `EXTRA_REDIRECT_URIS` (`wrangler.toml`) sin tocar código. Pasos: `RUNBOOK-produccion.md`, «Tu IA
+registra en Yala».
 
 ## Qué puede hacer la IA
 

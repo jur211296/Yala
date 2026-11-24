@@ -194,6 +194,10 @@ struct TrendsTabView: View {
         }
         .scrollViewGlassEdges()
         .onAppear {
+            // Volver a la pestaña con lo mismo de antes (datos, período, filtros) enseña las tarjetas que ya se
+            // calcularon, sin repetir el cálculo (`StatisticsPageMemory`, encargo de fluidez del 24-nov-2026): cada vuelta
+            // a Tendencias costaba ~1,4 s de hilo principal en el iPhone 14 y trababa el primer scroll.
+            guard !restoreCardsFromMemory() else { return }
             // G1 de la decisión 28: el primer cálculo ya no va aquí. Con diez años tardaba 1,4 s en el iPhone 14, y con
             // la página montándose debajo (`StagedTabPages`) el chip no cambiaba hasta terminar. Ahora la página se
             // enseña en el acto, con el esqueleto en sus tarjetas, y las cifras llegan una vuelta después.
@@ -1431,17 +1435,90 @@ struct TrendsTabView: View {
         recalcTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(debounceMs)) } catch { return }
             guard !Task.isCancelled else { return }
+            // La firma se toma ANTES de calcular: es lo que el cálculo lee.
+            let key = cardsKey
             calculateCashFlowData()
             calculatePeriodComparisonData()
             calculateWeekdayData()
             // Con los movimientos aún sin cargar (la primera entrada los trae después), el esqueleto se queda: si no, se
             // veía un momento «sin flujo» antes de las cifras.
             if !cardsCalculated, !allTransactions.isEmpty { cardsCalculated = true }
+            // Solo se recuerda un cálculo con datos: uno vacío dejaría las tarjetas sin esqueleto al volver.
+            if cardsCalculated { trendsViewModel.trendsCardsMemory.remember(cardsSnapshot, for: key) }
             // Y otra vez al terminar: un «Generar» tocado durante el debounce se
             // llevó los totales viejos con la etiqueta del período nuevo.
             trendsAI.reset()
             trendsAIContextVersion &+= 1
         }
+    }
+
+    // MARK: - Lo calculado, entre cambios de chip (`StatisticsPageMemory`)
+
+    /// Todo lo que las tarjetas leen para calcularse. Cada `onChange` que llama a `scheduleTrendsRecalc` tiene su campo
+    /// aquí: lo que recalcula la página montada es lo que invalida lo guardado (lo fija `EstadisticasFluidezCableadoTests`).
+    private var cardsKey: TrendsCardsKey {
+        TrendsCardsKey(
+            dataGeneration: dataGeneration,
+            detailPeriod: trendsViewModel.detailPeriod,
+            interval: trendsViewModel.panelDateInterval,
+            customDateRange: sessionState.customDateRange,
+            selectedAccounts: trendsViewModel.selectedAccounts,
+            selectedCategories: trendsViewModel.selectedCategories,
+            selectedSubcategories: trendsViewModel.selectedSubcategories,
+            selectedTags: trendsViewModel.selectedTags,
+            selectedNeeds: trendsViewModel.selectedNeeds,
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
+            excludedFilterSets: sessionState.excludedFilterSets,
+            selectedMetric: trendsViewModel.selectedMetric,
+            comparisonMode: sessionState.comparisonMode,
+            selectedTransactionNatures: sessionState.selectedTransactionNatures,
+            currencyCode: defaultCurrencyCode,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats,
+            firstWeekday: userConfiguredCalendar().firstWeekday,
+            cashFlowAccountGrouping: cashFlowAccountGrouping
+        )
+    }
+
+    private var cardsSnapshot: TrendsCardsSnapshot {
+        TrendsCardsSnapshot(
+            hasAccountCards: hasAccountCards,
+            cashFlowGroupingChoice: cashFlowGroupingChoice,
+            cashFlowSummary: cashFlowSummary,
+            cashFlowByAccount: cashFlowByAccount,
+            cashFlowByCurrency: cashFlowByCurrency,
+            previousCashFlowSummary: previousCashFlowSummary,
+            previousCashFlowByAccount: previousCashFlowByAccount,
+            previousCashFlowByCurrency: previousCashFlowByCurrency,
+            currentPeriodPoints: currentPeriodPoints,
+            previousPeriodPoints: previousPeriodPoints,
+            comparisonYDomain: comparisonYDomain,
+            currentPeriodTotal: currentPeriodTotal,
+            previousPeriodTotal: previousPeriodTotal,
+            weekdaySpending: weekdaySpending
+        )
+    }
+
+    /// Enseña lo calculado la última vez si las entradas no cambiaron. `false` si no hay nada que valga: toca calcular.
+    private func restoreCardsFromMemory() -> Bool {
+        guard let saved = trendsViewModel.trendsCardsMemory.recall(cardsKey) else { return false }
+        hasAccountCards = saved.hasAccountCards
+        cashFlowGroupingChoice = saved.cashFlowGroupingChoice
+        cashFlowSummary = saved.cashFlowSummary
+        cashFlowByAccount = saved.cashFlowByAccount
+        cashFlowByCurrency = saved.cashFlowByCurrency
+        previousCashFlowSummary = saved.previousCashFlowSummary
+        previousCashFlowByAccount = saved.previousCashFlowByAccount
+        previousCashFlowByCurrency = saved.previousCashFlowByCurrency
+        currentPeriodPoints = saved.currentPeriodPoints
+        previousPeriodPoints = saved.previousPeriodPoints
+        comparisonYDomain = saved.comparisonYDomain
+        currentPeriodTotal = saved.currentPeriodTotal
+        previousPeriodTotal = saved.previousPeriodTotal
+        weekdaySpending = saved.weekdaySpending
+        cardsCalculated = true
+        return true
     }
 
     // MARK: - Weekday Spending Calculation
@@ -1930,6 +2007,49 @@ struct TrendsTabView: View {
         }
     }
 
+}
+
+/// Las entradas de las tarjetas de Tendencias (`TrendsTabView.cardsKey`).
+struct TrendsCardsKey: Equatable {
+    let dataGeneration: Int
+    let detailPeriod: DetailPeriod
+    /// El intervalo del período: cambia con el día aunque el período elegido sea el mismo.
+    let interval: DateInterval
+    let customDateRange: DateInterval?
+    let selectedAccounts: Set<PersistentIdentifier>
+    let selectedCategories: Set<PersistentIdentifier>
+    let selectedSubcategories: Set<PersistentIdentifier>
+    let selectedTags: Set<PersistentIdentifier>
+    let selectedNeeds: Set<SubcategoryNeed>
+    let selectedCurrencies: Set<CurrencyCode>
+    let amountCondition: AmountFilterCondition
+    let searchText: String
+    let excludedFilterSets: SessionState.ExcludedFilterSets
+    let selectedMetric: TrendMetric
+    let comparisonMode: ComparisonMode
+    let selectedTransactionNatures: Set<TransactionNature>
+    let currencyCode: String
+    let includeGroupTransactionsInStats: Bool
+    let firstWeekday: Int
+    let cashFlowAccountGrouping: AccountCardGrouping
+}
+
+/// Lo que las tarjetas de Tendencias pintan tras calcularse.
+struct TrendsCardsSnapshot {
+    let hasAccountCards: Bool
+    let cashFlowGroupingChoice: TrendGrouping
+    let cashFlowSummary: CashFlowSummary?
+    let cashFlowByAccount: [PersistentIdentifier: CashFlowSummary]
+    let cashFlowByCurrency: [String: CashFlowSummary]
+    let previousCashFlowSummary: CashFlowSummary?
+    let previousCashFlowByAccount: [PersistentIdentifier: CashFlowSummary]
+    let previousCashFlowByCurrency: [String: CashFlowSummary]
+    let currentPeriodPoints: [BarPoint]
+    let previousPeriodPoints: [BarPoint]
+    let comparisonYDomain: ClosedRange<Double>
+    let currentPeriodTotal: Double
+    let previousPeriodTotal: Double?
+    let weekdaySpending: [WeekdaySpending]
 }
 
 /// El análisis con IA de Tendencias sale solo para Pro con la IA aceptada (encargo `estadisticas-ia-automatica`): al
