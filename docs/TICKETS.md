@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (140)
 
 | id | status | path |
+| 2026-11-24-propuesta-bandeja-sin-duplicados | done | tickets/done/2026-11-24-propuesta-bandeja-sin-duplicados.md |
 | 2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region | done | tickets/done/2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region.md |
 | 2026-11-24-textos-viejos-de-correo-del-banco-sin-uso | done | tickets/done/2026-11-24-textos-viejos-de-correo-del-banco-sin-uso.md |
 | 2026-11-24-selector-xcuitest-anfitrionas-de-ajustes | done | tickets/done/2026-11-24-selector-xcuitest-anfitrionas-de-ajustes.md |
