@@ -9130,7 +9130,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Marcado como «No es fijo» el %@";
 "pagosRecurrentes.settings.restore" = "Volver a proponer";
 "pagosRecurrentes.settings.done" = "Listo";
-"pagosRecurrentes.footer.link" = "Pagos que se repiten";
+"pagosRecurrentes.footer.link" = "Ver más pagos que se repiten";
 "pagosRecurrentes.footer.off" = "Apagado";
 "pagosRecurrentes.list.footer" = "Toca uno para planificarlo o deslízalo para descartarlo.";
 

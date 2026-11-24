@@ -74,9 +74,7 @@ final class ScheduledPaymentsViewModel {
     var hideInactive: Bool = false
 
     // MARK: - View Mode State
-
-    /// View mode for payments tabs (list or calendar) - applies to all tabs
-    var paymentsViewMode: PaymentsViewMode = .list
+    // La vista (Lista, Línea de tiempo, Calendario) vive en `AppPreferences.scheduledPaymentsViewMode`, recordada.
 
     /// Selected month for both list and calendar views (shared)
     var selectedMonth: Date = Date.now

@@ -152,7 +152,7 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.number, value: fraction)"),
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
-         ".dsAnimation(DS.Animation.selection, value: viewModel.paymentsViewMode, reduceMotion: reduceMotion)"),
+         ".dsAnimation(DS.Animation.selection, value: appPreferences.scheduledPaymentsViewMode, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
          ".dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Planning/BudgetChartsView.swift",

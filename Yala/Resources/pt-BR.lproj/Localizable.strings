@@ -9870,7 +9870,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Marcado como “Não é fixo” em %@";
 "pagosRecurrentes.settings.restore" = "Sugerir de novo";
 "pagosRecurrentes.settings.done" = "OK";
-"pagosRecurrentes.footer.link" = "Pagamentos que se repetem";
+"pagosRecurrentes.footer.link" = "Ver mais pagamentos que se repetem";
 "pagosRecurrentes.footer.off" = "Desativado";
 "pagosRecurrentes.list.footer" = "Toque em um para planejá-lo ou deslize-o para descartá-lo.";
 

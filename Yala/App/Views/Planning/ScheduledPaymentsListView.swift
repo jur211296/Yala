@@ -148,7 +148,7 @@ struct ScheduledPaymentsListView: View {
             .padding(.horizontal, DS.Spacing.lg)
 
             Group {
-                switch viewModel.paymentsViewMode {
+                switch appPreferences.scheduledPaymentsViewMode {
                 case .list: listContent
                 case .timeline: timelineContent
                 case .calendar: calendarContent
@@ -157,7 +157,8 @@ struct ScheduledPaymentsListView: View {
             .padding(.top, DS.Spacing.xs)
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, DS.Spacing.safeBottom) // Space for FAB
+        // Sin margen de abajo propio: el sitio del «+» flotante lo reserva `ScheduledPaymentsView` DEBAJO del enlace del
+        // pie. Aquí dejaba ~100 pt vacíos entre la lista y el enlace (encargo del 24-nov-2026).
         .sheet(isPresented: $viewModel.showPeriodSelector) {
             ScheduledPaymentPeriodSelectorSheet(
                 viewModel: viewModel,
@@ -230,9 +231,12 @@ struct ScheduledPaymentsListView: View {
     }
 
     /// El logo del comercio delante del nombre, con el criterio común de Pagos planificados (`PagoLogoComercio`). Sin
-    /// logo no pinta nada: el icono de la línea de tiempo es el círculo del día.
+    /// logo, el icono de su subcategoría (o categoría) del mismo tamaño, para que todas las filas queden alineadas
+    /// (encargo del 24-nov-2026; antes no pintaba nada).
     private func timelineBrandBadge(_ summary: ScheduledPaymentSummary) -> some View {
-        PagoLogoDistintivo(logo: PagoLogoComercio.logo(for: summary.payment), diameter: DS.Icon.badgeSmall)
+        PagoLogoDistintivo(logo: PagoLogoComercio.logo(for: summary.payment), diameter: DS.Icon.badgeSmall) {
+            PagoIconoRespaldo(icon: summary.icon, colorHex: summary.color, diameter: DS.Icon.badgeSmall)
+        }
     }
 
     /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
@@ -253,15 +257,15 @@ struct ScheduledPaymentsListView: View {
             }
         }
         // El círculo se desliza entre Lista, Línea y Calendario (card C2); la página cambia en seco.
-        .dsAnimation(DS.Animation.selection, value: viewModel.paymentsViewMode, reduceMotion: reduceMotion)
+        .dsAnimation(DS.Animation.selection, value: appPreferences.scheduledPaymentsViewMode, reduceMotion: reduceMotion)
     }
 
     private func viewModeButton(for mode: PaymentsViewMode) -> some View {
-        let isSelected = viewModel.paymentsViewMode == mode
+        let isSelected = appPreferences.scheduledPaymentsViewMode == mode
 
         return Button {
             if !isSelected { DS.Haptic.selection() }
-            viewModel.paymentsViewMode = mode
+            appPreferences.scheduledPaymentsViewMode = mode
         } label: {
             Image(systemName: mode.iconName)
                 .font(DS.Typography.labelSmall)
@@ -542,8 +546,8 @@ struct ScheduledPaymentsListView: View {
                     .foregroundStyle(isSelected ? theme.onAccent : (isToday ? theme.accentText : .secondary))
 
                 if hasPayments {
-                    // Con algún logo caben dos marcas por celda en vez de tres puntos (card 9nn7, 2.3).
-                    let markLimit = summaries.contains { PagoLogoComercio.logo(for: $0.payment) != nil } ? 2 : 3
+                    // Cada marca es un logo o un icono con su aro (card 9nn7 y encargo del 24-nov-2026): caben dos por celda.
+                    let markLimit = Self.calendarMarkLimit
                     HStack(spacing: 3) {
                         ForEach(Array(summaries.prefix(markLimit).enumerated()), id: \.offset) { _, summary in
                             calendarMark(summary, isSelected: isSelected)
@@ -579,8 +583,12 @@ struct ScheduledPaymentsListView: View {
         .buttonStyle(.plain)
     }
 
-    /// La marca de un pago en su día: el punto de estado o, si tiene logo, el logo (o su inicial) con un aro del color
-    /// del estado (pagado, vencido, pendiente), para no perder lo que decían los puntos.
+    /// Marcas por celda del calendario. Desde que todo pago lleva logo o icono (encargo del 24-nov-2026) son todas de
+    /// 15 pt: tres no caben en la celda de un iPhone.
+    static let calendarMarkLimit = 2
+
+    /// La marca de un pago en su día: su logo (o su inicial) o, sin logo, el icono de su subcategoría, con un aro del
+    /// color del estado (pagado, vencido, pendiente), para no perder lo que decían los puntos.
     @ViewBuilder
     private func calendarMark(_ summary: ScheduledPaymentSummary, isSelected: Bool) -> some View {
         let stateColor = isSelected
@@ -589,9 +597,7 @@ struct ScheduledPaymentsListView: View {
         if let logo = PagoLogoComercio.logo(for: summary.payment) {
             PaymentLogoCalendarMark(logo: logo, stateColor: stateColor)
         } else {
-            Circle()
-                .fill(stateColor)
-                .frame(width: 6, height: 6)
+            PaymentIconCalendarMark(icon: summary.icon, colorHex: summary.color, stateColor: stateColor)
         }
     }
 

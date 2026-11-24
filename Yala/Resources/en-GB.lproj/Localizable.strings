@@ -9114,7 +9114,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Marked as ‘Not fixed’ on %@";
 "pagosRecurrentes.settings.restore" = "Suggest again";
 "pagosRecurrentes.settings.done" = "Done";
-"pagosRecurrentes.footer.link" = "Payments that repeat";
+"pagosRecurrentes.footer.link" = "See more payments that repeat";
 "pagosRecurrentes.footer.off" = "Off";
 "pagosRecurrentes.list.footer" = "Tap one to plan it, or swipe it to dismiss it.";
 

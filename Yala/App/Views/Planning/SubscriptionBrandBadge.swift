@@ -102,3 +102,23 @@ struct PaymentLogoCalendarMark: View {
         .accessibilityHidden(true)
     }
 }
+
+/// La marca de un pago SIN logo en una celda del calendario: el icono de su subcategoría en 12 pt, sobre el color de su
+/// categoría, con el mismo aro del estado que la del logo (encargo del 24-nov-2026; antes era un punto).
+struct PaymentIconCalendarMark: View {
+    let icon: String
+    let colorHex: String
+    let stateColor: Color
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color(hex: colorHex)).frame(width: 12, height: 12)
+            Image(systemName: icon)
+                .font(.system(size: 6.5, weight: .bold)) // A11Y-DT: micro-marca del calendario
+                .foregroundStyle(.white)
+            Circle().stroke(stateColor, lineWidth: 1.5).frame(width: 15, height: 15)
+        }
+        .frame(width: 15, height: 15)
+        .accessibilityHidden(true)
+    }
+}

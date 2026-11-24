@@ -21,3 +21,8 @@ leyó: el estado puede venir de la corrida anterior.
 Lo volví a pisar el 2026-11-07 con `-panelSectionsOrder planificacion,tendencias` para probar «Restablecer» de
 «Configurar Panel»: el reset «no hacía nada». El orden de partida se puso arrastrando en la hoja ↕ desde el XCUITest
 (`PanelSectionsConfigResetUITests.movePlanningAboveTrends`).
+
+**`NO` llega como TEXTO si la preferencia se lee con `as? Bool` (medido el 2026-11-24,
+`-recurringProposals.isEnabled NO`):** `RecurringProposalPreferences` hace `object(forKey:) as? Bool` y el texto «NO» no
+casa, así que cae al default (`true`) sin aviso. `bool(forKey:)` sí convierte «NO». Para las dos lecturas: `<false/>`
+como valor del argumento (literal plist).

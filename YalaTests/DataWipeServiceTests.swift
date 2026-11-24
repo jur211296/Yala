@@ -24,7 +24,7 @@ struct DataWipeServiceTests {
         // Personalización
         "defaultPeriod", "userTheme", "translucentVariant", "colorfulIcons", "firstWeekday",
         "showWidgetHints", "showsProjectedFlow", "defaultCurrencyCode", "tabBarConfiguration",
-        "customPeriodStart", "customPeriodEnd",
+        "customPeriodStart", "customPeriodEnd", "scheduledPaymentsViewMode",
         // Visualización
         "showVariations", "decimalPlaces", "currencyDisplayFormat", "useRoundedAmounts",
         "averageLineMode", "sankeyLabelMode",

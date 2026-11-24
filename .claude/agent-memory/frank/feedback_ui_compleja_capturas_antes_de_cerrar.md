@@ -18,3 +18,9 @@ perdiera una función existente al plegar («que no se pierdan las opciones ráp
 - Las maquetas del lienzo se ven más aireadas que el simulador real: compara con la captura, no con la maqueta.
 - Al plegar u ocultar algo, enumera lo que estaba a la vista (atajos, avisos) y decide dónde queda. Ver
   [[disena-en-lienzo-antes-de-construir]].
+
+**Vale también para un cambio visual «pequeño» que él mismo dictó (2026-11-24, Pagos planificados).** Pidió chips con
+texto en vez de los tres botones redondos de vista; se construyeron, pasaron el gate y quedaron en auto-merge, y al
+verlos dijo «Revierte los chips en texto, a los iconos a la derecha, no me gusta como queda». Lo pedido en palabras no
+es lo aprobado en pantalla: un cambio de aspecto de un control visible va con captura (SendUserFile) ANTES del
+auto-merge, también en semi. El resto del lote (íconos, hueco, texto) sí lo dio por bueno.

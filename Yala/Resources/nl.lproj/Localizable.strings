@@ -9882,7 +9882,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Op %@ gemarkeerd als ‘Niet vast’";
 "pagosRecurrentes.settings.restore" = "Opnieuw voorstellen";
 "pagosRecurrentes.settings.done" = "Gereed";
-"pagosRecurrentes.footer.link" = "Terugkerende betalingen";
+"pagosRecurrentes.footer.link" = "Meer terugkerende betalingen bekijken";
 "pagosRecurrentes.footer.off" = "Uit";
 "pagosRecurrentes.list.footer" = "Tik op een betaling om die te plannen, of veeg om hem af te wijzen.";
 
