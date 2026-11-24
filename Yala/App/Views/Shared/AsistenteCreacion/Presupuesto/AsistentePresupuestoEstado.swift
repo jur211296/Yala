@@ -28,6 +28,9 @@ final class AsistentePresupuestoEstado {
     var alcance: Logica.Alcance = .all
     /// Las categorías elegidas en «¿Cuáles?», en el orden en que se tocaron (el nombre propuesto usa las dos primeras).
     var categorias: [PersistentIdentifier] = []
+    /// Las subcategorías marcadas de las categorías elegidas (`shortcutID`): al tocar una categoría entran todas, y se
+    /// desmarcan las que no se quieran contar.
+    var subcategorias: Set<UUID> = []
     var periodo: BudgetPeriodType = .monthly
     var inicio: Date = .now
     var fin: Date = .now
@@ -49,6 +52,7 @@ final class AsistentePresupuestoEstado {
         navegador = AsistenteCreacionNavegador(inicio: .alcance)
         alcance = .all
         categorias = []
+        subcategorias = []
         self.periodo = periodo
         let hoy = calendar.startOfDay(for: .now)
         inicio = hoy
@@ -58,6 +62,15 @@ final class AsistentePresupuestoEstado {
         nombreEditado = false
         aviso = FirstBudgetFlowLogic.proposedAlert
         avisosPermitidos = false
+    }
+
+    /// Lo elegido en «¿Cuáles?», para las reglas de `AsistentePresupuestoLogica`.
+    var seleccion: Logica.Seleccion<PersistentIdentifier, UUID> {
+        get { Logica.Seleccion(categorias: categorias, subcategorias: subcategorias) }
+        set {
+            categorias = newValue.categorias
+            subcategorias = newValue.subcategorias
+        }
     }
 
     var tope: Double? {
