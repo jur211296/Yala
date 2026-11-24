@@ -90,12 +90,13 @@ final class FormClarity23UITests: XCTestCase {
         add(attachment)
     }
 
-    /// Escribe 45 con la moneda principal y elige la cuenta en dólares: el número se queda y la moneda cambia.
+    /// Escribe 45 con la moneda principal y pasa a dólares: el número se queda y la moneda cambia. Desde el 23-nov-2026 el
+    /// selector de cuenta solo enseña las de la moneda del monto, así que a la cuenta en dólares se llega por la cápsula.
     private func typeThenChooseDollarAccount(_ app: XCUIApplication) {
         openForm(app)
         typeAmount(app, "45")
         dismissKeyboard(app)
-        app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_Ahorros").tap()
+        app.chooseNewTransactionCurrency("USD")
     }
 
     // MARK: - M1 · El cambio de moneda se dice con palabras
@@ -122,7 +123,7 @@ final class FormClarity23UITests: XCTestCase {
         let app = launch()
         openForm(app)
         dismissKeyboard(app)
-        app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_Ahorros").tap()
+        app.chooseNewTransactionCurrency("USD")
         typeAmount(app, "45")
         dismissKeyboard(app)
 

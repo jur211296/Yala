@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "标签，无";
 "nr.tags.a11yCount" = "标签，已添加 %d 个：%@";
 "nr.need.a11yChange" = "更改需求";
+"nr.accountSelector.noneInCurrency" = "你没有%@账户。以下是你的全部账户。";

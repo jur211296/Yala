@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "Etiquetas, ninguna puesta";
 "nr.tags.a11yCount" = "Etiquetas, %d puestas: %@";
 "nr.need.a11yChange" = "Cambiar necesidad";
+"nr.accountSelector.noneInCurrency" = "No tenés cuentas en %@. Estas son todas tus cuentas.";

@@ -122,8 +122,8 @@ final class TransactionFormDecided02BUITests: XCTestCase {
         openForm(app)
         typeAmount(app, "10")
         dismissKeyboard(app)
-        let usd = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_Ahorros")
-        usd.tap()
+        // El selector de cuenta solo enseña las de la moneda del monto (23-nov-2026): a dólares se pasa por la cápsula.
+        app.chooseNewTransactionCurrency("USD")
 
         let equivalence = element(app, "new_transaction_equivalence")
         XCTAssertTrue(equivalence.waitForExistence(timeout: 10), "Con una cuenta en dólares, el formulario enseña «≈ S/ …».")

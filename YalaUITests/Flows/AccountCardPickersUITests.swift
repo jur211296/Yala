@@ -31,14 +31,16 @@ final class AccountCardPickersUITests: XCTestCase {
 
     // MARK: - Selector
 
-    /// La tarjeta sale una vez, con su divisa en el nombre, y la línea justo debajo. Tocar la tarjeta y la pastilla de dólares deja
-    /// el registro en la línea.
-    func test_selector_nestsTheLineUnderItsCard_andThePillPicksTheLine() {
+    /// En una transferencia (el selector sin moneda), la tarjeta sale una vez, con su divisa en el nombre, y la línea justo
+    /// debajo. Desde el 23-nov-2026 el selector de un gasto enseña solo las cuentas de la moneda del monto, así que el
+    /// anidado se mira en el origen de una transferencia.
+    func test_selector_nestsTheLineUnderItsCard_inATransfer() {
         let app = launch()
         app.buttons["panel_action_new"].tap()
+        app.chooseNewTransactionType("transfer")
 
         // La primera fila sigue siendo una cabeza: los UITests que eligen la primera fila no cambian de cuenta.
-        let first = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
+        let first = app.openSelectorFirstRow(chip: "new_transaction_source_chip", rowPrefix: "account_selector_row_")
         XCTAssertFalse(first.identifier.hasSuffix("· USD"), "La primera fila es una línea: «\(first.identifier)».")
 
         let cardRow = app.buttons["account_selector_row_\(card)"]
@@ -55,6 +57,21 @@ final class AccountCardPickersUITests: XCTestCase {
         XCTAssertFalse(dollars.label.contains("Dólares QA · "), "Una cuenta sin líneas no lleva la divisa en el nombre.")
         XCTAssertTrue(dollars.frame.maxY <= cardRow.frame.minY || dollars.frame.minY >= lineRow.frame.maxY,
                       "Otra cuenta se mete entre la tarjeta y su línea.")
+    }
+
+    /// Un gasto en soles: el selector enseña solo las cuentas en soles (la tarjeta, con su nombre «Visa QA · PEN», y no su
+    /// línea ni «Dólares QA»). Tocar la tarjeta y pasar a dólares deja el registro en la línea, con el nombre de la tarjeta.
+    func test_selector_inSoles_showsOnlyTheSolesAccounts_andTheCapsulePicksTheLine() {
+        let app = launch()
+        app.buttons["panel_action_new"].tap()
+        _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
+
+        let cardRow = app.buttons["account_selector_row_\(card)"]
+        XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "No está la fila de la tarjeta.")
+        XCTAssertTrue(cardRow.label.contains("\(card) · PEN"), "La tarjeta no lleva su divisa en el nombre: «\(cardRow.label)».")
+        XCTAssertTrue(app.buttons["account_selector_row_Ahorros QA"].exists, "Falta la otra cuenta en soles.")
+        XCTAssertFalse(app.buttons["account_selector_row_\(line)"].exists, "Un gasto en soles enseña la línea en dólares.")
+        XCTAssertFalse(app.buttons["account_selector_row_Dólares QA"].exists, "Un gasto en soles enseña una cuenta en dólares.")
 
         cardRow.tap()
         let accountChip = app.buttons["new_transaction_account_chip"]
@@ -69,9 +86,10 @@ final class AccountCardPickersUITests: XCTestCase {
         XCTAssertEqual(accountChip.label, card, "Elegir la divisa no puede cambiar el nombre de la tarjeta.")
     }
 
-    /// Card y1z6: con la pastilla de dólares elegida, el importe va en dólares, y tocar la tarjeta en el selector la
-    /// enrutaba a la misma línea: la hoja se cerraba sin cambiar nada. Desde su propia línea, la tarjeta es la principal.
-    func test_selector_fromTheUSDLine_choosingTheCardGoesBackToThePrincipal() {
+    /// En dólares, el selector enseña solo las cuentas en dólares (la línea de la tarjeta y «Dólares QA»), y la cápsula
+    /// vuelve a soles con la principal de la tarjeta. Sustituye al caso de la card y1z6 (tocar la tarjeta desde su línea),
+    /// que ya no cabe: con el monto en dólares la tarjeta en soles no sale en el selector.
+    func test_selector_inDollars_showsOnlyTheDollarAccounts_andTheCapsuleGoesBackToThePrincipal() {
         let app = launch()
         app.buttons["panel_action_new"].tap()
         _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
@@ -84,13 +102,17 @@ final class AccountCardPickersUITests: XCTestCase {
         // En dólares sale la fila del tipo de cambio, que baja la pastilla de cuenta hasta debajo de la barra de «Guardar»:
         // un toque directo cae en la barra. El ayudante la desplaza a la vista antes de tocarla.
         _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
-        XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "El selector no volvió a abrir con la tarjeta.")
-        cardRow.tap()
-        XCTAssertTrue(cardRow.waitForNonExistence(timeout: 5), "El selector no se cerró al tocar la tarjeta.")
-        let backToPEN = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == 'PEN'"), object: app.buttons["new_transaction_currency_capsule"])
-        XCTAssertEqual(XCTWaiter().wait(for: [backToPEN], timeout: 5), .completed,
-                       "Tocar la tarjeta desde su línea en dólares no volvió a la principal.")
+        let lineRow = app.buttons["account_selector_row_\(line)"]
+        XCTAssertTrue(lineRow.waitForExistence(timeout: 5), "En dólares falta la línea de la tarjeta.")
+        XCTAssertTrue(app.buttons["account_selector_row_Dólares QA"].exists, "En dólares falta «Dólares QA».")
+        XCTAssertFalse(cardRow.exists, "Un gasto en dólares enseña la tarjeta en soles.")
+        XCTAssertFalse(app.buttons["account_selector_row_Ahorros QA"].exists, "Un gasto en dólares enseña una cuenta en soles.")
+        lineRow.tap()
+        XCTAssertTrue(lineRow.waitForNonExistence(timeout: 5), "El selector no se cerró al tocar la línea.")
+
+        app.chooseNewTransactionCurrency("PEN")
+        XCTAssertEqual(app.buttons["new_transaction_account_chip"].label, card,
+                       "Volver a soles desde la línea tiene que dejar la tarjeta.")
     }
 
     // MARK: - Filtro

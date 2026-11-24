@@ -57,6 +57,8 @@ struct InboxDraftEditSheet: View {
     /// La tarjeta de la cuenta elegida, con sus líneas (la principal primero). Vacía si no tiene líneas. La cápsula de
     /// moneda las ofrece: elegir una moneda es elegir su línea (hoja B1; antes, las pastillas PEN · USD).
     @State private var cardMembers: [Account] = []
+    /// Las cuentas activas de la persona, para la cápsula de moneda.
+    @State private var currencyAccounts: [Account] = []
 
     // Alert states
     @State private var showApproveError = false
@@ -522,7 +524,10 @@ struct InboxDraftEditSheet: View {
             title: L10n.Transaction.account,
             // Elegir otra tarjeta conserva la divisa que ya tenía el borrador (entrega 3); la tarjeta de la propia línea
             // vuelve a su principal (card y1z6, `AccountSelectorViewModel.selection`).
-            routingCurrency: selectedAccount?.currencyCode
+            routingCurrency: selectedAccount?.currencyCode,
+            // Solo las cuentas de la moneda junto al monto, y a media altura como en Nuevo registro (Jürgen, 23-nov-2026).
+            currencyScope: displayCurrencyCode,
+            sizing: .mediumFirst
         )
     }
 
@@ -605,29 +610,50 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    /// La moneda del borrador es la de su cuenta (o la principal, sin cuenta). Con una tarjeta de varias monedas, la cápsula
-    /// abre sus líneas; si no, no abre nada.
+    /// La moneda del borrador es la de su cuenta (o la principal, sin cuenta).
     private var displayCurrencyCode: String {
         selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
     }
 
-    private var currencyOptions: [AmountCurrencyOption] {
-        cardMembers.map { AmountCurrencyOption(currencyCode: $0.currencyCode.uppercased(), accountCount: 1) }
+    /// Las cuentas que tiene en cuenta la cápsula de moneda: activas y de la persona, con su tarjeta.
+    private var currencyMenuAccounts: [AmountCurrencyAccount<PersistentIdentifier>] {
+        let nodes = currencyAccounts.map { AccountLineNode($0) }
+        return currencyAccounts.map { account in
+            let members = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: nodes)
+            return AmountCurrencyAccount(
+                id: account.persistentModelID,
+                currencyCode: account.currencyCode.uppercased(),
+                cardMembers: members.count > 1
+                    ? members.compactMap { node in currencyAccounts.first { $0.shortcutID == node.id }?.persistentModelID }
+                    : []
+            )
+        }
     }
 
-    private func chooseCardLine(_ code: String) {
-        guard let member = cardMembers.first(where: { $0.currencyCode.uppercased() == code.uppercased() }) else { return }
+    /// Como en Nuevo registro: todas las monedas con alguna cuenta (Jürgen, 23-nov-2026). Antes solo abría las líneas de
+    /// una tarjeta; con el selector de cuenta filtrado por moneda, el borrador se quedaba sin forma de pasar a otra.
+    private var currencyOptions: [AmountCurrencyOption] {
+        AmountCurrencyMenuLogic.options(accounts: currencyMenuAccounts, current: displayCurrencyCode)
+    }
+
+    /// Elegir una moneda es elegir la cuenta que la tiene: la línea de su tarjeta o la primera cuenta en esa moneda.
+    private func chooseAmountCurrency(_ code: String) {
+        guard let id = AmountCurrencyMenuLogic.target(
+            for: code, selected: selectedAccount?.persistentModelID, accounts: currencyMenuAccounts),
+              let account = currencyAccounts.first(where: { $0.persistentModelID == id }) else { return }
         DS.Haptic.selection()
-        selectedAccount = member
+        selectedAccount = account
     }
 
     private func loadCardMembers() {
-        guard let account = selectedAccount else {
-            cardMembers = []
-            return
-        }
         do {
             let all = try modelContext.fetch(FetchDescriptor<Account>())
+            // También sin cuenta elegida: la cápsula ofrece las monedas para elegir una.
+            currencyAccounts = all.filter { !$0.isArchived && !$0.isSystemAccount }
+            guard let account = selectedAccount else {
+                cardMembers = []
+                return
+            }
             let card = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: all.map { AccountLineNode($0) })
             cardMembers = card.count > 1
                 ? card.compactMap { node in all.first { $0.shortcutID == node.id } }
@@ -647,7 +673,7 @@ struct InboxDraftEditSheet: View {
                 options: currencyOptions,
                 current: displayCurrencyCode.uppercased(),
                 identifierPrefix: "draft_editor",
-                onChoose: chooseCardLine
+                onChoose: chooseAmountCurrency
             )
 
             TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))

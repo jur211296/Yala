@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "Tags, keine";
 "nr.tags.a11yCount" = "Tags, %d gesetzt: %@";
 "nr.need.a11yChange" = "Bedarf ändern";
+"nr.accountSelector.noneInCurrency" = "Du hast keine Konten in %@. Hier sind alle deine Konten.";

@@ -321,14 +321,16 @@ struct RegistroUnificadoWiringTests {
         }
     }
 
-    /// Una tarjeta con varias monedas: la cápsula de moneda de la aprobación ofrece sus líneas y elegir una elige la
-    /// línea (lo que hacían las pastillas PEN · USD hasta la hoja B1).
+    /// Una tarjeta con varias monedas: la cápsula de moneda de la aprobación lleva a la línea de la tarjeta en esa moneda
+    /// (lo que hacían las pastillas PEN · USD hasta la hoja B1). Desde el 23-nov-2026 ofrece además las demás monedas con
+    /// cuenta, como Nuevo registro, por la misma regla (`AmountCurrencyMenuLogic.target`: primero la línea de su tarjeta).
     @Test func aprobacion_laCapsulaDeMonedaEligeLaLineaDeLaTarjeta() throws {
         let code = try Self.source(Self.approval)
         #expect(code.contains("identifierPrefix: \"draft_editor\""))
-        #expect(code.contains("onChoose: chooseCardLine"))
+        #expect(code.contains("onChoose: chooseAmountCurrency"))
         #expect(code.contains("AccountCardLogic.liveMembers(of: account.shortcutID"))
-        let choose = try Self.section(code, from: "private func chooseCardLine(", to: "private func loadCardMembers")
-        #expect(choose.contains("selectedAccount = member"))
+        let choose = try Self.section(code, from: "private func chooseAmountCurrency(", to: "private func loadCardMembers")
+        #expect(choose.contains("AmountCurrencyMenuLogic.target("))
+        #expect(choose.contains("selectedAccount = account"))
     }
 }
