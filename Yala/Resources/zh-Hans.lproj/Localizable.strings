@@ -9897,7 +9897,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "于%@标记为“不是固定的”";
 "pagosRecurrentes.settings.restore" = "重新建议";
 "pagosRecurrentes.settings.done" = "完成";
-"pagosRecurrentes.footer.link" = "重复的付款";
+"pagosRecurrentes.footer.link" = "查看更多重复的付款";
 "pagosRecurrentes.footer.off" = "关闭";
 "pagosRecurrentes.list.footer" = "轻点一项即可加入计划，滑动可忽略。";
 

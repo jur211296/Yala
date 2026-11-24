@@ -241,6 +241,15 @@ final class AppPreferences {
         }
     }
 
+    /// La vista de Pagos planificados (Lista, Línea de tiempo o Calendario), recordada en este dispositivo (encargo del
+    /// 24-nov-2026: hasta entonces vivía en el ViewModel y se perdía al salir de la pantalla).
+    var scheduledPaymentsViewMode: PaymentsViewMode = .list {
+        didSet {
+            guard oldValue != scheduledPaymentsViewMode else { return }
+            persistString(scheduledPaymentsViewMode.rawValue, forKey: Keys.scheduledPaymentsViewMode, synced: false)
+        }
+    }
+
     var averageLineMode: Int = 1 {
         didSet {
             guard oldValue != averageLineMode else { return }
@@ -1255,6 +1264,13 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.showsProjectedFlow) != nil {
             showsProjectedFlow = defaults.bool(forKey: Keys.showsProjectedFlow)
         }
+        // Sin clave (borrada por «Vaciar datos» o por `-uitest-reset`) vuelve a la lista: si solo se asignara con la
+        // clave puesta, la vista leída antes del borrado sobreviviría en memoria.
+        let storedViewMode = defaults.string(forKey: Keys.scheduledPaymentsViewMode)
+            .flatMap(PaymentsViewMode.init(rawValue:)) ?? .list
+        if storedViewMode != scheduledPaymentsViewMode {
+            scheduledPaymentsViewMode = storedViewMode
+        }
         if defaults.object(forKey: Keys.averageLineMode) != nil {
             averageLineMode = defaults.integer(forKey: Keys.averageLineMode)
         }
@@ -1562,6 +1578,7 @@ final class AppPreferences {
         static let showVariations = "showVariations"
         static let showWidgetHints = "showWidgetHints"
         static let showsProjectedFlow = "showsProjectedFlow"
+        static let scheduledPaymentsViewMode = "scheduledPaymentsViewMode"
         static let averageLineMode = "averageLineMode"
 
         // Voice / Image / AI

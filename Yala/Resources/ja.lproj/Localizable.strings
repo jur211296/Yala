@@ -9897,7 +9897,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "%@に「固定ではない」にしました";
 "pagosRecurrentes.settings.restore" = "もう一度提案";
 "pagosRecurrentes.settings.done" = "完了";
-"pagosRecurrentes.footer.link" = "繰り返しの支払い";
+"pagosRecurrentes.footer.link" = "繰り返しの支払いをもっと見る";
 "pagosRecurrentes.footer.off" = "オフ";
 "pagosRecurrentes.list.footer" = "タップすると予定に追加できます。スワイプすると見送れます。";
 

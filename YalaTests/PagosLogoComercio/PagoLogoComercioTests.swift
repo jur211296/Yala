@@ -117,8 +117,9 @@ struct PagoLogoComercioCableadoTests {
         // Línea de tiempo: el distintivo en sus dos formas (tamaño normal y letra grande) sale de una función que usa la pieza.
         #expect(Self.count("timelineBrandBadge(summary)", in: lista) == 2)
         #expect(lista.contains("PagoLogoDistintivo(logo: PagoLogoComercio.logo(for: summary.payment), diameter: DS.Icon.badgeSmall)"))
-        // Calendario: la marca y el límite de marcas por celda leen el mismo logo.
-        #expect(Self.count("PagoLogoComercio.logo(for: $0.payment)", in: lista) == 1)
+        // Calendario: la marca lee el mismo logo. Desde el 24-nov-2026 toda marca es logo o icono, así que el límite por
+        // celda ya no depende del logo (`calendarMarkLimit`, fijado en `YalaTests/PagosPlanificadosChipsVista/`).
+        #expect(Self.count("PagoLogoComercio.logo(for: $0.payment)", in: lista) == 0)
         #expect(lista.contains("if let logo = PagoLogoComercio.logo(for: summary.payment)"))
     }
 

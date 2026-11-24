@@ -9895,7 +9895,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Segnato come «Non è fisso» il %@";
 "pagosRecurrentes.settings.restore" = "Suggerisci di nuovo";
 "pagosRecurrentes.settings.done" = "Fine";
-"pagosRecurrentes.footer.link" = "Pagamenti che si ripetono";
+"pagosRecurrentes.footer.link" = "Vedi altri pagamenti che si ripetono";
 "pagosRecurrentes.footer.off" = "Disattivato";
 "pagosRecurrentes.list.footer" = "Toccane uno per pianificarlo o scorrilo per scartarlo.";
 

@@ -9886,7 +9886,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Marqué « Pas fixe » le %@";
 "pagosRecurrentes.settings.restore" = "Suggérer à nouveau";
 "pagosRecurrentes.settings.done" = "OK";
-"pagosRecurrentes.footer.link" = "Paiements qui se répètent";
+"pagosRecurrentes.footer.link" = "Voir plus de paiements qui se répètent";
 "pagosRecurrentes.footer.off" = "Désactivé";
 "pagosRecurrentes.list.footer" = "Touches-en un pour le planifier, ou fais-le glisser pour l'écarter.";
 

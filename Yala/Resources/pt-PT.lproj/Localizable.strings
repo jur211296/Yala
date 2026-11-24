@@ -9134,7 +9134,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Marcado como «Não é fixo» a %@";
 "pagosRecurrentes.settings.restore" = "Sugerir outra vez";
 "pagosRecurrentes.settings.done" = "OK";
-"pagosRecurrentes.footer.link" = "Pagamentos que se repetem";
+"pagosRecurrentes.footer.link" = "Ver mais pagamentos que se repetem";
 "pagosRecurrentes.footer.off" = "Desativado";
 "pagosRecurrentes.list.footer" = "Toca num para o planear ou desliza-o para o descartar.";
 

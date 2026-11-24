@@ -1317,6 +1317,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
         defaults.removeObject(forKey: "showsProjectedFlow")     // Default: false («Ver proyectado»)
+        defaults.removeObject(forKey: AppPreferences.Keys.scheduledPaymentsViewMode)  // Default: lista (Pagos planificados)
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: la de la región (CurrencyDefaults.preferred)
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
