@@ -88,10 +88,23 @@ final class ReceiptDropUITests: XCTestCase {
             app.staticTexts["image_review_title"].waitForExistence(timeout: 40),
             "El PDF soltado tenía que leerse y enseñar lo leído (image_review_title).", file: file, line: line
         )
-        XCTAssertEqual(
-            app.buttons.matching(identifier: "voice_draft_row").count, rows,
-            "Tenía que haber un registro por página leída.", file: file, line: line
-        )
+        // Con un registro, «Esto leí» lo enseña en su tarjeta (opción A, 2026-11-22) y no hay filas; con varios, una fila
+        // por registro.
+        if rows == 1 {
+            XCTAssertTrue(
+                app.descendants(matching: .any)["voice_draft_card"].firstMatch.exists,
+                "Una página leída va en la tarjeta de «Esto leí» (voice_draft_card).", file: file, line: line
+            )
+            XCTAssertEqual(
+                app.buttons.matching(identifier: "voice_draft_row").count, 0,
+                "Con un solo registro no hay filas.", file: file, line: line
+            )
+        } else {
+            XCTAssertEqual(
+                app.buttons.matching(identifier: "voice_draft_row").count, rows,
+                "Tenía que haber un registro por página leída.", file: file, line: line
+            )
+        }
     }
 
     /// El rojo del ticket: con el código de antes, de un extracto de tres páginas solo salía la primera.
