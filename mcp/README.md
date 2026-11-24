@@ -36,7 +36,8 @@ fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8). Cómo conectar cada 
 | `src/auth.ts` | Verifica los tokens de Supabase (firma, cliente, rol, sesión) |
 | `src/server.ts` | Servidor MCP sin estado, errores y auditoría por llamada |
 | `src/tools.ts` | Las seis herramientas de lectura tal como las ve el SDK de MCP: el núcleo más su esquema de `zod` |
-| `src/writeTool.ts` | `apuntar_movimiento`: valida, resuelve cuenta y subcategoría por nombre y encola en el gateway |
+| `src/writeTool.ts` | `apuntar_movimiento`: valida, resuelve cuenta y subcategoría por nombre y encola en el gateway. Con `referencia` (id del correo, por ejemplo) no crea dos veces lo mismo; sin `forzar`, el gateway lo compara con lo que ya está y devuelve `posible_duplicado` |
+| `src/inboxTool.ts` | `ver_bandeja`: los pendientes de la Bandeja (columnas de Yala web, sin `raw_text`) y lo que espera en la cola del gateway (`ConnectorDrafts.pending`). Y lo que `apuntar_movimiento` manda al gateway para comparar: pendientes y movimientos de ±3 días. Sin Grupos |
 | `src/toolCore.ts` | El núcleo de las seis (qué leen y qué calculan) y el punto de extensión Pro (`plan`). Lo comparte el gateway para Yala IA en la nube: sin dependencias, ver `gateway/src/ai/explore/` |
 | `src/logic/` | Cálculos portados de Swift; cada fichero cita la función de origen |
 | `plugin/` | Borrador del plugin: `.mcp.json` y tres skills. No publicado |
