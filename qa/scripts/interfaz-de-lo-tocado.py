@@ -28,6 +28,8 @@ declaran en `NewTransactionView.swift`, el fichero que el PR tocó.
    prueba que lo buscaba se quedó sin fila.
 6. `anfitrion` — la clase usa identificadores de una vista que USA lo tocado (hasta dos saltos:
    lógica → view model → vista). Un componente nuevo cambia el alto de la pantalla que lo aloja.
+   Si el anfitrión la monta en una rama `case .x:` (los destinos de Ajustes en `ProfileView`), solo
+   cuentan los identificadores de la fila que abre `.x`, no los de toda la pantalla.
 
 **Orden.** La prueba tocada va siempre delante. El resto, por puntos sumados de todas sus señales,
 que miden lo ESPECÍFICA que es cada una: un identificador vale `1/n` (`n` = clases que lo usan), un
@@ -77,6 +79,12 @@ GLOB_ANCHO = 0.25        # un glob que casa con más de esta fracción de la app
 MAX_ANFITRIONES = 40     # un tipo que usan más ficheros es un componente común: no se sigue
 MIN_PREFIJO = 6          # un prefijo de identificador interpolado más corto no discrimina
 PUNTOS_PRUEBA = 100.0    # la prueba tocada va siempre delante
+CASE_RE = re.compile(r'\bcase\s+\.(\w+)\b[^:]*:')            # `case .bankEmail:` (o con argumentos)
+LISTA_CASOS_RE = re.compile(r'^\s*(case\s+)?\.\w+(\s*,\s*\.\w+)*\s*,?\s*:?\s*$')  # `.a, .b, .x:`
+CASE_ARRIBA = 3          # líneas por encima del uso donde se busca su `case`
+VENTANA_ANTES = 0        # la fila que abre una rama: su identificador va DETRÁS de `destination: .x`; arriba está la fila anterior
+VENTANA_DESPUES = 4
+VENTANA_SUELTO = 2         # un uso suelto en un anfitrión con ramas: su línea y las dos siguientes
 PESO_DEBAJO = 4.0        # un identificador que el cambio empuja vale por cuatro
 
 # Un identificador: dos o más trozos unidos por _ o -, sin espacios (`fab_manual`, `tarjeta-dos-lineas`).
@@ -160,6 +168,49 @@ def ids_de_app(src):
         elif es_id(txt):
             exactos.add(txt)
     return exactos, prefijos
+
+
+def ids_del_anfitrion(src, tipos):
+    """Identificadores de un anfitrión que llevan a lo tocado (capa 6).
+
+    Un anfitrión que monta la vista tocada en una rama `case .x:` de un switch de destinos —Ajustes:
+    `ProfileView` monta así sus ~40 pantallas— solo aporta los identificadores pegados a quien ABRE esa
+    rama (`destination: .x` y la fila que la lleva). Hasta el 24-nov aportaba el fichero entero, y tocar
+    cualquier subpantalla de Ajustes proponía ~90 clases que entran a Ajustes por otra fila.
+
+    En un anfitrión así, un uso fuera de rama (la puerta que decide si la fila se ve:
+    `BankEmailEntryLogic.showsRow`) aporta los identificadores de su alrededor.
+
+    Sin ninguna rama (la vista se pinta directamente, que es lo normal), o si lo acotado no deja ningún
+    identificador: el fichero entero, como antes. Ante la duda se propone de más, no de menos.
+    """
+    lineas = sin_comentarios(src).split('\n')
+    pat_tipo = re.compile(r'\b(' + '|'.join(sorted(map(re.escape, tipos), key=len, reverse=True)) + r')\b')
+    casos, sueltos = set(), []
+    for i, linea in enumerate(lineas):
+        if not pat_tipo.search(linea):
+            continue
+        rama = None
+        for j in range(i, max(-1, i - CASE_ARRIBA - 1), -1):
+            m = CASE_RE.search(lineas[j])
+            if m:
+                rama = m.group(1)
+                break
+        if rama is None:
+            sueltos.append(i)
+        else:
+            casos.add(rama)
+    if not casos:
+        return ids_de_app(src)
+    trozos = ['\n'.join(lineas[i:i + VENTANA_SUELTO + 1]) for i in sueltos]
+    abre = re.compile(r'\.(' + '|'.join(map(re.escape, sorted(casos))) + r')\b')
+    for i, linea in enumerate(lineas):
+        # Las ramas y las listas de casos (`.a, .b, .x:`) no abren nada.
+        if CASE_RE.search(linea) or LISTA_CASOS_RE.match(linea) or not abre.search(linea):
+            continue
+        trozos.append('\n'.join(lineas[max(0, i - VENTANA_ANTES):i + VENTANA_DESPUES + 1]))
+    acotados = ids_de_app('\n'.join(trozos))
+    return acotados if acotados[0] or acotados[1] else ids_de_app(src)
 
 
 def tokens_de_prueba(src):
@@ -585,8 +636,15 @@ def planear(arbol, diff, techo_min, techo_clases):
                             avisos.add(f'{t} lo usan {len(u)} ficheros: componente común, no se siguen sus anfitriones')
                             continue
                         siguiente |= u - vistos
+                tipos_de = defaultdict(set)   # anfitrión -> tipos de la frontera que nombra
+                for g in frontera:
+                    for t in por_fichero.get(g, []):
+                        u = usos.get(t, set())
+                        if len(u) <= MAX_ANFITRIONES:
+                            for h in u:
+                                tipos_de[h].add(t)
                 for h in sorted(siguiente - set(tocados_app)):
-                    por_ids(ids_de_app(arbol.fuente(h)), 'anfitrion', 0.5 ** salto, f'{os.path.basename(h)} (usa {os.path.basename(f)})', f)
+                    por_ids(ids_del_anfitrion(arbol.fuente(h), tipos_de[h]), 'anfitrion', 0.5 ** salto, f'{os.path.basename(h)} (usa {os.path.basename(f)})', f)
                 vistos |= siguiente
                 # Una vista ya es la pantalla: se sigue solo lo que no es vista (lógica → view model → vista).
                 frontera = {h for h in siguiente if '/Views/' not in h}
