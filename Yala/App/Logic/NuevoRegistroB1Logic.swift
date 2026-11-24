@@ -302,5 +302,6 @@ enum NuevoRegistroB1Text {
         "success.saved.expense", "success.saved.income", "success.saved.transfer",
         "success.favorite", "success.favorited", "success.recurring",
         "tags.a11yNone", "tags.a11yCount", "need.a11yChange",
+        "accountSelector.noneInCurrency",
     ]
 }

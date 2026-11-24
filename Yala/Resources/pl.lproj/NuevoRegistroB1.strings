@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "Tagi, brak";
 "nr.tags.a11yCount" = "Tagi, dodane: %d: %@";
 "nr.need.a11yChange" = "Zmień potrzebę";
+"nr.accountSelector.noneInCurrency" = "Nie masz kont w %@. Oto wszystkie twoje konta.";

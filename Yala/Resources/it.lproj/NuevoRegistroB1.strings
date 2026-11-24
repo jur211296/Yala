@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "Etichette, nessuna";
 "nr.tags.a11yCount" = "Etichette, %d aggiunte: %@";
 "nr.need.a11yChange" = "Cambia necessità";
+"nr.accountSelector.noneInCurrency" = "Non hai conti in %@. Ecco tutti i tuoi conti.";

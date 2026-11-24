@@ -650,6 +650,9 @@ struct NewTransactionView: View {
                     // Tarjeta con varias divisas (entrega 3): elegir la tarjeta guarda su línea en la divisa del importe. En
                     // un gasto de grupo (Caso A) la divisa es la del grupo.
                     routingCurrency: isBridgedCasoA ? readableTransactionToEdit?.currencyCode : viewModel.currencyCode,
+                    // Solo las cuentas de la moneda junto al monto (Jürgen, 23-nov-2026); para cambiarla, la cápsula
+                    // «S/ ▾». En Caso A ya manda la divisa fija del grupo.
+                    currencyScope: isBridgedCasoA ? nil : viewModel.amountCurrencyCode,
                     sizing: .mediumFirst
                 )
             }
@@ -1387,8 +1390,10 @@ struct NewTransactionView: View {
 
     /// Las monedas de la cápsula: en una transferencia la moneda la fijan sus dos cuentas, y en un gasto de grupo (Caso A)
     /// la del grupo: ahí la cápsula no abre nada.
+    /// También sin cuenta elegida (Jürgen, 23-nov-2026): el selector de cuenta enseña solo las de la moneda del monto, y la
+    /// cápsula es la forma de pasar a otra. Elegir una moneda pone la primera cuenta en ella.
     private var currencyCapsuleOptions: [AmountCurrencyOption] {
-        guard !viewModel.isTransfer, !isBridgedReadOnly, viewModel.selectedAccount != nil else { return [] }
+        guard !viewModel.isTransfer, !isBridgedReadOnly else { return [] }
         return viewModel.amountCurrencyOptions
     }
 

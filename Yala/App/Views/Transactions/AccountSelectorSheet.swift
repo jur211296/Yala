@@ -24,6 +24,9 @@ struct AccountSelectorSheet: View {
     /// Tarjeta con varias divisas (entrega 3): la divisa del importe que se está registrando. Tocar una tarjeta guarda su
     /// línea en esa divisa (o la principal si no tiene). `nil` = guardar la cuenta tocada tal cual (transferencias).
     var routingCurrency: String?
+    /// La moneda del monto de un gasto o ingreso (Jürgen, 23-nov-2026): la hoja enseña solo las cuentas en ella. Si no
+    /// hay ninguna, enseña todas y lo dice arriba (`AccountSelectorCurrencyScope`). `nil` = todas (transferencias).
+    var currencyScope: String?
 
     /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
     var sizing: SelectorSheetSizing = .large
@@ -56,6 +59,7 @@ struct AccountSelectorSheet: View {
         excludeAccount: Account? = nil,
         currencyFilter: String? = nil,
         routingCurrency: String? = nil,
+        currencyScope: String? = nil,
         sizing: SelectorSheetSizing = .large,
         offersCreatingAccount: Bool = false
     ) {
@@ -64,6 +68,7 @@ struct AccountSelectorSheet: View {
         self.excludeAccount = excludeAccount
         self.currencyFilter = currencyFilter
         self.routingCurrency = routingCurrency
+        self.currencyScope = currencyScope
         self.sizing = sizing
         self.offersCreatingAccount = offersCreatingAccount
     }
@@ -72,7 +77,7 @@ struct AccountSelectorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    let filteredAccounts = viewModel.activeAccounts.filter { account in
+                    let candidates = viewModel.activeAccounts.filter { account in
                         if let exclude = excludeAccount,
                            account.persistentModelID == exclude.persistentModelID {
                             return false
@@ -82,6 +87,11 @@ struct AccountSelectorSheet: View {
                         }
                         return true
                     }
+                    let scoped = AccountSelectorCurrencyScope.shown(
+                        candidates, currencyCode: currencyScope, currencyOf: \.currencyCode)
+                    let filteredAccounts = scoped.accounts
+                    // Con una moneda que filtra de verdad, la lista es plana como con la divisa fija.
+                    let isFlatList = currencyFilter != nil || (currencyScope != nil && !scoped.isFallback)
 
                     if filteredAccounts.isEmpty, offersCreatingAccount {
                         YalaEmptyState(
@@ -95,10 +105,20 @@ struct AccountSelectorSheet: View {
                     } else if filteredAccounts.isEmpty {
                         YalaEmptyState.noAccounts()
                     } else {
+                        if scoped.isFallback, let currencyScope {
+                            Text(String(
+                                format: NuevoRegistroB1Text.string("accountSelector.noneInCurrency"),
+                                currencyScope.uppercased()))
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("account_selector_none_in_currency")
+                        }
                         // Con divisa fija (gastos de grupo, liquidaciones) la lista es plana: solo caben cuentas de esa
                         // divisa, y una línea sale con su nombre («Visa · USD»). Sin ella, cada tarjeta una vez con sus
                         // líneas debajo (entrega 3): la tarjeta va antes, así que la primera fila sigue siendo una cabeza.
-                        let cards = currencyFilter == nil
+                        let cards = !isFlatList
                             ? viewModel.cards(of: filteredAccounts)
                             : filteredAccounts.map { AccountCard(head: $0, lines: []) }
                         // Cada fila dice una sola divisa, la suya; la principal de una tarjeta con líneas la lleva además
@@ -231,6 +251,31 @@ struct AccountSelectorSheet: View {
     private func isSelected(_ account: Account) -> Bool {
         guard let selected = selectedAccount else { return false }
         return selected.persistentModelID == account.persistentModelID
+    }
+}
+
+// MARK: - Cuentas por la moneda del monto
+
+/// Qué cuentas enseña el selector de cuenta de un gasto o ingreso según la moneda del monto (Jürgen, 23-nov-2026): solo
+/// las de esa moneda. Si no hay ninguna, todas, con `isFallback` para que la hoja lo diga: una hoja vacía no deja seguir.
+/// Sin moneda, todas. Genérico para probarlo sin SwiftData (`YalaTests/SelectorCuentaMoneda/`).
+nonisolated enum AccountSelectorCurrencyScope {
+    struct Shown<Element> {
+        let accounts: [Element]
+        /// No había cuentas en la moneda pedida y salen todas.
+        let isFallback: Bool
+    }
+
+    static func shown<Element>(
+        _ accounts: [Element], currencyCode: String?, currencyOf: (Element) -> String
+    ) -> Shown<Element> {
+        guard let currencyCode else { return Shown(accounts: accounts, isFallback: false) }
+        let wanted = currencyCode.uppercased()
+        let inCurrency = accounts.filter { currencyOf($0).uppercased() == wanted }
+        if inCurrency.isEmpty, !accounts.isEmpty {
+            return Shown(accounts: accounts, isFallback: true)
+        }
+        return Shown(accounts: inCurrency, isFallback: false)
     }
 }
 

@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "タグ、なし";
 "nr.tags.a11yCount" = "タグ、%d件: %@";
 "nr.need.a11yChange" = "必要度を変更";
+"nr.accountSelector.noneInCurrency" = "%@の口座はありません。すべての口座を表示しています。";

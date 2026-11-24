@@ -41,3 +41,4 @@
 "nr.tags.a11yNone" = "Labels, geen";
 "nr.tags.a11yCount" = "Labels, %d toegevoegd: %@";
 "nr.need.a11yChange" = "Behoefte wijzigen";
+"nr.accountSelector.noneInCurrency" = "Je hebt geen rekeningen in %@. Dit zijn al je rekeningen.";
