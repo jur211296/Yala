@@ -103,7 +103,9 @@ struct RecurringProposalsFooterLink: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("recurring_proposals_footer_link")
                 .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.lg)
+                // Cerca del final de la lista, con el aire de una sección (encargo del 24-nov-2026). El sitio del «+»
+                // flotante lo pone `ScheduledPaymentsView` debajo.
+                .padding(.top, DS.Spacing.lg)
             }
         }
         .sheet(isPresented: $showsSettings) {

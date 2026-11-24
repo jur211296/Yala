@@ -80,3 +80,25 @@ extension PagoLogoDistintivo where SinLogo == EmptyView {
         self.init(logo: logo, diameter: diameter, sinLogo: { EmptyView() })
     }
 }
+
+/// Sin logo de comercio, el icono del pago: el de su subcategoría (o su categoría, o el de su tipo) sobre el color de
+/// su categoría, como en Registros. Es el mismo criterio de la lista y del Flujo de caja
+/// (`ScheduledPaymentsViewModel.paymentDisplayProperties`); aquí solo se pinta, al tamaño que pida la vista (encargo del
+/// 24-nov-2026: la línea de tiempo y el calendario no pintaban nada). Decorativo: el nombre va al lado.
+struct PagoIconoRespaldo: View {
+    let icon: String
+    let colorHex: String
+    var diameter: CGFloat = DS.Icon.badgeLarge
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color(hex: colorHex))
+            Image(systemName: icon)
+                // A11Y-DT: el icono escala con el círculo, como el logo al que sustituye, no con el texto.
+                .font(.system(size: diameter * 0.45, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: diameter, height: diameter)
+        .accessibilityHidden(true)
+    }
+}

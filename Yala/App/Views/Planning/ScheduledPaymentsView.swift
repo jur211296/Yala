@@ -69,6 +69,9 @@ struct ScheduledPaymentsView: View {
                     // Volver a encender las propuestas o recuperar lo descartado sin banner a la vista (lote S1).
                     RecurringProposalsFooterLink()
                 }
+                // El sitio del «+» flotante, debajo de todo y solo lo de un botón: el último pago y el enlace del pie
+                // suben por encima de él. Antes iban 100 pt entre la lista y el enlace (encargo del 24-nov-2026).
+                .padding(.bottom, DS.Button.fabStackClearance(buttons: 1))
             }
 
             // FAB button for new payment: solo cuando el scroll se lleva el botón de arriba (card kzhe).

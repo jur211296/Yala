@@ -9870,7 +9870,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Am %@ als „Nicht fest“ markiert";
 "pagosRecurrentes.settings.restore" = "Wieder vorschlagen";
 "pagosRecurrentes.settings.done" = "Fertig";
-"pagosRecurrentes.footer.link" = "Wiederkehrende Zahlungen";
+"pagosRecurrentes.footer.link" = "Weitere wiederkehrende Zahlungen ansehen";
 "pagosRecurrentes.footer.off" = "Aus";
 "pagosRecurrentes.list.footer" = "Tippe auf eine, um sie zu planen, oder wische sie zur Seite, um sie zu verwerfen.";
 

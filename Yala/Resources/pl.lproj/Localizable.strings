@@ -9882,7 +9882,7 @@
 "pagosRecurrentes.settings.dismissedOn" = "Oznaczono jako „Nie jest stała”: %@";
 "pagosRecurrentes.settings.restore" = "Proponuj ponownie";
 "pagosRecurrentes.settings.done" = "Gotowe";
-"pagosRecurrentes.footer.link" = "Powtarzające się płatności";
+"pagosRecurrentes.footer.link" = "Zobacz więcej powtarzających się płatności";
 "pagosRecurrentes.footer.off" = "Wyłączone";
 "pagosRecurrentes.list.footer" = "Stuknij jedną, aby ją zaplanować, lub przesuń, aby ją odrzucić.";
 

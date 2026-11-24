@@ -11,7 +11,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 
 - [Mutantes: orden rechazada y zsh](feedback_mutantes_rechazados_y_zsh.md) — una orden rechazada ya pudo mutar; `$FILES` en zsh no se parte: `git diff --stat` tras cada tanda.
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
-- [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
+- [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al registro de -uitest; con `as? Bool`, `<false/>`.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
 - [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, ANTES de editar; poco disco: mis cambios encima y build incremental.
 - [El «antes» solo con la base](feedback_el_antes_solo_con_la_base.md) — repetir capturas con fase por variable pisó el antes con la app nueva.
@@ -124,3 +124,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Antes/después con un test de capturas](reference_capturas_antes_despues_con_test_de_capturas.md) — axe no abre la hoja de cuenta; el «antes» antes de editar la vista.
 - [Capturas giradas en XCUITest](reference_capturas_giradas_en_xcuitest.md) — `app.screenshot()` girado sale recortado; `XCUIScreen.main` entero (rotar 90°, `-strip`).
 - [El rebote del título no sale en el simulador](feedback_rebote_del_titulo_no_sale_en_el_simulador.md) — 24-nov: ni XCUITest ni Device MCP; mide el vídeo del iPhone por fotograma.
+- [Conductor de capturas: oscuro y girado](feedback_conductor_de_capturas_oscuro_y_girado.md) — `-userTheme 1` tapa el oscuro; y mira el índice antes de escribir el conductor.
