@@ -437,10 +437,20 @@ paths:
   del scroll, lanzar la lista hasta un borde y soltarla dejaba un bucle: la barra de pestañas (`.onScrollDown`) se
   encogía y se desplegaba sola y la lista saltaba ~88 pt cada ~1,2 s, en Flujo de caja y en Comparativa; el Panel, con
   el mismo gesto, no. Con el scroll de raíz y la guía dentro, un solo movimiento. ⇒ lo que va arriba de la lista va
-  DENTRO del scroll (molde `StatsGuideSlot`) o en una `.safeAreaBar`; nunca en un contenedor que envuelva al scroll. El
+  DENTRO del scroll (molde `StatsGuideSlot`); nunca en un contenedor que envuelva al scroll. El
   gesto que lo reproduce: `YalaUITests/FlujoDeCajaFluidez/FlujoFluidezMedicionUITests.test_rebote` (cinco
   `swipeUp(.fast)` y un `swipeDown(velocity: 4_000)`); con `axe swipe` no sale. Pin del cableado:
   `FlujoFluidezCableadoTests`.
+  **Y una barra de chips bajo el título grande tampoco cuelga de la pantalla con `.safeAreaBar(edge: .top)` (vídeo de
+  Jürgen del 23-nov-2026, iPhone, Reportes).** Su sitio es el borde de la barra de navegación, que mide 52 pt más con el
+  título grande, y al moverse cambia el área segura del scroll, que es lo que decide el título: sostenido el dedo en el
+  umbral, chips, título y lista saltaban de 127 a 179 pt y vuelta cada segundo (medido fotograma a fotograma). Reportes
+  la monta como cabecera fija DENTRO de cada scroll (`ReportChipsHeaderStack` en `FinancialReportView.swift`: sección con
+  `pinnedViews`, y debajo el mismo tramo del fondo de la pantalla sobre el del sistema, que tapa las filas sin
+  dejarlas leer). **El simulador no lo reproduce**, ni con XCUITest ni con Device MCP (el toque sintético no tiembla y el
+  título se pliega y se queda quieto): se prueba en el teléfono. Estadísticas, Planificación y el detalle de grupo
+  siguen con `navigationChipsInset` (`safeAreaInset`, el mismo acoplamiento) sin rebote reportado; no están medidas.
+  Pin: `YalaTests/ReportesReboteEncabezado/`.
 
 - **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
   el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a

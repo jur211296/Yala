@@ -65,8 +65,10 @@ struct FlujoFluidezCableadoTests {
         #expect(code.contains("if shown { recalculateComparativaIfNeeded() }"))
         // El `onAppear` de la pantalla entera ya no calcula la Comparativa (corría también con el Flujo de caja delante).
         #expect(code.contains(".onAppear { cashFlowViewModel.setContext(modelContext) }"))
-        // El rebote: el scroll de cada pestaña es la raíz de la pila, sin `VStack` ni guía por encima.
-        #expect(code.contains("NavigationStack { tabContent .yalaScreenBackground()"))
+        // El rebote: el scroll de cada pestaña es la raíz de la pila, sin `VStack` ni guía por encima (la barra de chips
+        // le llega por el entorno: `ReportesReboteEncabezadoTests`).
+        #expect(code.contains("NavigationStack { tabContentWithChips .yalaScreenBackground()"))
+        #expect(code.contains("private var tabContentWithChips: some View { tabContent .environment("))
         #expect(code.contains("ContextualGuideBanner.comparative() .padding(.horizontal, DS.Spacing.lg) filterBar"))
     }
 }

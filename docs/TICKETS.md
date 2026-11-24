@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (132)
 
 | id | status | path |
+| 2026-11-23-reportes-rebote-encabezado-comparativa-flujo | qa | tickets/qa/2026-11-23-reportes-rebote-encabezado-comparativa-flujo.md |
 | 2026-11-23-estadisticas-fluidez-scroll-y-chips | qa | tickets/qa/2026-11-23-estadisticas-fluidez-scroll-y-chips.md |
 | 2026-11-23-filtro-categoria-registros-detent-large | done | tickets/done/2026-11-23-filtro-categoria-registros-detent-large.md |
 | 2026-11-23-correos-del-banco-claridad-y-volver | done | tickets/done/2026-11-23-correos-del-banco-claridad-y-volver.md |
