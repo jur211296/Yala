@@ -1,0 +1,10 @@
+/* Éxito minimalista de Grupos y de la Bandeja (encargo del 2026-11-24). */
+
+"exitoGB.group.title.expenseCreated" = "已添加支出";
+"exitoGB.group.title.expenseUpdated" = "已更新支出";
+"exitoGB.group.title.saleCreated" = "已添加销售";
+"exitoGB.group.title.saleUpdated" = "已更新销售";
+"exitoGB.group.paidByMe" = "你付的款";
+"exitoGB.group.paidBy" = "%@ 付的款";
+"exitoGB.bulk.title.one" = "已保存 1 条记录";
+"exitoGB.bulk.title.many" = "已保存 %lld 条记录";
