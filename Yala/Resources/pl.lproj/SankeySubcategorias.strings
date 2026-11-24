@@ -1,0 +1,12 @@
+/*
+  SankeySubcategorias.strings
+  Yala
+
+  El botón que despliega y repliega la columna de subcategorías del Sankey de Distribución (pedido de Jürgen del
+  23-nov-2026). Tabla propia, leída con el idioma de la app (`SankeySubcategoriasText`).
+*/
+
+"sankeySubcategorias.show" = "Pokaż podkategorie";
+"sankeySubcategorias.hide" = "Pokaż mniej";
+"sankeySubcategorias.showHint" = "Pokazuje kolumnę podkategorii na diagramie.";
+"sankeySubcategorias.hideHint" = "Pokazuje diagram tylko do poziomu kategorii.";
