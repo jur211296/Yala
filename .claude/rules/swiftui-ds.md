@@ -822,6 +822,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   (`GroupPickerSheet(opensAtMediumHeight:)`). Molde: `PanelSectionsConfigView`; lo fija
   `SheetGlassBackgroundWiringTests`, que prohíbe `.presentationBackground` en `Yala/App` (salvo el `.clear` del aviso
   de Bandeja y la definición de `glassSheet()`) y cualquier llamada a `.glassSheet()`.
+  **Excepción: la hoja corta «Hacer recurrente» de Nuevo registro (`RecurringQuickSheet`) va en `.subtle` también a
+  media altura** (Jürgen, 23-nov-2026): con el cristal se veían por detrás los botones de color del formulario
+  («Guardar» y los chips). Sólido sin `.presentationBackground`: el fondo del tema en la raíz. Otra hoja que se abra
+  ENCIMA de un formulario con botones de color y moleste igual se pregunta antes de copiarla.
 - `GlassSheetModifier.glassSheet()` (`.presentationBackground(.ultraThinMaterial)`) no tiene usos y **no se usa en
   hojas**: tapa el glass del sistema, lo contrario de la regla de arriba. `.transparent` NO usa material (es desnudo).
 
