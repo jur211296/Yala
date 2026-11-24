@@ -10,6 +10,11 @@
 //  necesitan publicarse desde un iPhone con la app de cada banco; mientras `BankNoticeShortcutLinks` no tenga el de un
 //  banco, la guía va con los pasos a mano (I1, el respaldo que la propia propuesta deja dentro de I2).
 //
+//  Encargo del 23-nov-2026: abrir la pantalla ya no activa el banco. Queda «Aún no está activo» hasta que la persona
+//  toca «Ya lo configuré» o llega un aviso; uno activo se puede quitar de «Activos». La guía explica Atajos para quien
+//  nunca lo usó (seis pasos con los nombres de sus botones) y, con los datos en la cuenta de Yala, el correo lleva a
+//  «Correo del banco» en vez de a una automatización de Mail.
+//
 
 import SwiftData
 import SwiftUI
@@ -25,6 +30,7 @@ enum BankNoticeShortcutLinks {
 struct BankNoticeBankView: View {
     let bank: BankNoticeBank
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.yalaTheme) private var theme
@@ -36,23 +42,51 @@ struct BankNoticeBankView: View {
     @State private var activity = BankNoticeActivity()
     @State private var settings = BankNoticeSettings()
     @State private var testResult: String?
+    @State private var confirmsDeactivation = false
 
-    static func displayName(_ bank: BankNoticeBank) -> String {
-        bank == .other ? L10n.CapturaAtajoParte2.Bank.pickerOther : bank.brandName
+    /// El nombre del banco en la lista y en el título. Fuera de Perú, `.other` es el único que se ofrece y se llama
+    /// «Tu banco o app»; con los bancos de Perú al lado, «Otro banco».
+    static func displayName(_ bank: BankNoticeBank, offersPeruvianBanks: Bool = true) -> String {
+        guard bank == .other else { return bank.brandName }
+        return offersPeruvianBanks ? L10n.CapturaAtajoParte2.Bank.pickerOther : L10n.CapturaAtajoParte2.Bank.pickerOtherAlone
     }
 
-    private var name: String { Self.displayName(bank) }
+    private var offersPeruvianBanks: Bool {
+        BankNoticeChoiceLogic.offersPeruvianBanks(
+            regionCode: Locale.current.region?.identifier, mainCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    private var name: String { Self.displayName(bank, offersPeruvianBanks: offersPeruvianBanks) }
+    /// El banco dentro de una frase de la guía: «cada aviso de BCP», «cada aviso de tu banco».
+    private var guideName: String { bank == .other ? L10n.CapturaAtajoParte2.Bank.guideYourBank : bank.brandName }
+    /// «la app de BCP», «la app de tu banco».
+    private var guideApp: String {
+        bank == .other ? L10n.CapturaAtajoParte2.Bank.guideYourBankApp : L10n.CapturaAtajoParte2.Bank.guideAppOf(bank.brandName)
+    }
+    /// Lo que se elige en «Banco» dentro de Atajos: el valor de `BankNoticeBankChoice` («Otro banco» para `.other`).
+    private var shortcutBankValue: String { bank == .other ? L10n.CapturaAtajoParte2.Bank.pickerOther : bank.brandName }
+    private var isActive: Bool { BankNoticeChoiceLogic.isActive(settings: settings, activity: activity) }
     private var status: BankNoticeStatus { BankNoticeStatus.status(activity: activity, settings: settings) }
+
+    /// «Correo del banco» exige los datos en la cuenta de Yala y sesión: la misma regla que su fila en Ajustes.
+    private var offersBankEmail: Bool {
+        CloudSessionRevision.shared.track()
+        return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow(
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud,
+            hasSession: CloudAuthService.shared.hasSession,
+            isGroupsFocusedShell: false)
+    }
 
     var body: some View {
         YalaSettingsList {
             statusSection
             if activity.lastArrival != nil { monthSection }
-            settingsSection
+            if isActive { settingsSection }
+            if !isActive { introSection }
             guideSection
             mailSection
             testSection
-            removeSection
+            if isActive { removeSection }
         }
         .yalaScreenBackground(.subtle)
         .navigationTitle(name)
@@ -61,6 +95,12 @@ struct BankNoticeBankView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { reload() } }
         .onChange(of: settings) { _, _ in persist() }
         .accessibilityIdentifier("bank_notice_bank_\(bank.rawValue)")
+        .alert(L10n.CapturaAtajoParte2.Bank.deactivateTitle(name), isPresented: $confirmsDeactivation) {
+            Button(L10n.CapturaAtajoParte2.Bank.deactivateConfirm, role: .destructive) { deactivate() }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.CapturaAtajoParte2.Bank.deactivateMessage(name))
+        }
     }
 
     // MARK: - Estado
@@ -94,6 +134,7 @@ struct BankNoticeBankView: View {
     }
 
     private var statusIcon: String {
+        guard isActive else { return "circle.dashed" }
         switch status {
         case .waiting: return "hourglass"
         case .working: return "checkmark.circle.fill"
@@ -103,6 +144,7 @@ struct BankNoticeBankView: View {
     }
 
     private var statusTint: Color {
+        guard isActive else { return Color(uiColor: .secondaryLabel) }
         switch status {
         case .working: return DS.Semantic.successForeground
         case .silent: return DS.Semantic.warningForeground
@@ -111,6 +153,7 @@ struct BankNoticeBankView: View {
     }
 
     private var statusTitle: String {
+        guard isActive else { return L10n.CapturaAtajoParte2.Bank.notSetUpTitle }
         switch status {
         case .waiting: return L10n.CapturaAtajoParte2.Bank.waitingTitle
         case .working: return L10n.CapturaAtajoParte2.Bank.workingTitle
@@ -120,6 +163,7 @@ struct BankNoticeBankView: View {
     }
 
     private var statusDetail: String {
+        guard isActive else { return L10n.CapturaAtajoParte2.Bank.notSetUpDetail }
         switch status {
         case .waiting: return L10n.CapturaAtajoParte2.Bank.waitingDetail
         case .working(let last): return lastNoticeLine(last)
@@ -180,18 +224,39 @@ struct BankNoticeBankView: View {
 
     // MARK: - Guía
 
+    // MARK: - Antes de empezar
+
+    /// Qué es Atajos y qué es una automatización, en una frase, para quien nunca los usó.
+    private var introSection: some View {
+        YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.introSection) {
+            Text(L10n.CapturaAtajoParte2.Bank.introDetail(guideName))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, DS.Spacing.xxs)
+                .accessibilityIdentifier("bank_notice_intro")
+        }
+    }
+
     private var guideSection: some View {
         YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.guideSection) {
             guideStep(1, L10n.CapturaAtajoParte2.Bank.guideStep1Title, L10n.CapturaAtajoParte2.Bank.guideStep1Detail)
-            guideStep(2, L10n.CapturaAtajoParte2.Bank.guideStep2Title(name), L10n.CapturaAtajoParte2.Bank.guideStep2Detail(name))
-            guideStep(3, L10n.CapturaAtajoParte2.Bank.guideStep3Title, L10n.CapturaAtajoParte2.Bank.guideStep3Detail(name))
+            guideStep(2, L10n.CapturaAtajoParte2.Bank.guideStep2Title, L10n.CapturaAtajoParte2.Bank.guideStep2Detail)
+            guideStep(3, L10n.CapturaAtajoParte2.Bank.guideStep3Title(guideApp), L10n.CapturaAtajoParte2.Bank.guideStep3Detail(guideApp))
             guideStep(4, L10n.CapturaAtajoParte2.Bank.guideStep4Title, L10n.CapturaAtajoParte2.Bank.guideStep4Detail)
+            guideStep(5, L10n.CapturaAtajoParte2.Bank.guideStep5Title, L10n.CapturaAtajoParte2.Bank.guideStep5Detail(shortcutBankValue))
+            guideStep(6, L10n.CapturaAtajoParte2.Bank.guideStep6Title, L10n.CapturaAtajoParte2.Bank.guideStep6Detail)
             if let link = BankNoticeShortcutLinks.url(for: bank) {
                 Button(L10n.CapturaAtajoParte2.Bank.addShortcut) { open(link) }
                     .accessibilityIdentifier("bank_notice_add_shortcut")
             } else {
                 Button(L10n.CapturaAtajoParte2.Bank.openShortcuts) { openShortcuts() }
                     .accessibilityIdentifier("bank_notice_open_shortcuts")
+            }
+            if !isActive {
+                Button(L10n.CapturaAtajoParte2.Bank.confirmSetup) { confirmSetup() }
+                    .font(DS.Typography.bodyBold)
+                    .accessibilityIdentifier("bank_notice_confirm_setup")
             }
         } footer: {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -229,12 +294,24 @@ struct BankNoticeBankView: View {
 
     private var mailSection: some View {
         YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.mailSection) {
-            Text(L10n.CapturaAtajoParte2.Bank.mailDetail)
+            // Con los datos en la cuenta de Yala, el correo se reenvía a la dirección de Yala: sin automatización de Mail.
+            Text(offersBankEmail ? L10n.CapturaAtajoParte2.Bank.mailCloudDetail : L10n.CapturaAtajoParte2.Bank.mailDetail)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thSecondaryText)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.vertical, DS.Spacing.xxs)
                 .accessibilityIdentifier("bank_notice_mail_detail")
+            if offersBankEmail {
+                NavigationLink {
+                    BankEmailForwardingView()
+                } label: {
+                    Text(L10n.CapturaAtajoParte2.Bank.mailCloudButton)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thAccentText)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("bank_notice_mail_open_bank_email")
+            }
         }
     }
 
@@ -299,6 +376,8 @@ struct BankNoticeBankView: View {
                 .accessibilityIdentifier("bank_notice_remove_step_1")
             guideStep(2, L10n.CapturaAtajoParte2.Bank.removeStep2, "")
                 .accessibilityIdentifier("bank_notice_remove_step_2")
+            Button(L10n.CapturaAtajoParte2.Bank.deactivate, role: .destructive) { confirmsDeactivation = true }
+                .accessibilityIdentifier("bank_notice_deactivate")
         }
     }
 
@@ -307,9 +386,19 @@ struct BankNoticeBankView: View {
     private func reload() {
         activity = BankNoticeActivityStore.activity(for: bank)
         settings = BankNoticeActivityStore.settings(for: bank)
-        // Abrir la pantalla de un banco es elegirlo: queda arriba, «Esperando el primer aviso», aunque no llegue nada. El
-        // `onChange(of: settings)` lo guarda.
-        if !settings.isSetUp { settings.isSetUp = true }
+        // Abrir la pantalla ya no activa el banco (encargo del 23-nov-2026): lo activa «Ya lo configuré» o un aviso.
+    }
+
+    private func confirmSetup() {
+        // El `onChange(of: settings)` lo guarda.
+        settings = BankNoticeChoiceLogic.confirmingSetup(settings)
+        DS.Haptic.success()
+    }
+
+    private func deactivate() {
+        BankNoticeActivityStore.deactivate(bank)
+        DS.Haptic.warning()
+        dismiss()
     }
 
     private func persist() {

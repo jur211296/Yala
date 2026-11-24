@@ -70,6 +70,11 @@ struct CloudSessionRevisionWiringTests {
          "private var showsBankEmailRow: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
         ("Yala/App/Views/Panel/PrimerosPasosHomeScreenPresentation.swift",
          "private var showsMail: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
+        // «Avisos del banco» (encargo del 23-nov-2026): la fila y el botón que llevan a «Correo del banco».
+        ("Yala/App/Views/Settings/AtajoBanco/BankNoticesView.swift",
+         "private var offersBankEmail: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
+        ("Yala/App/Views/Settings/AtajoBanco/BankNoticeBankView.swift",
+         "private var offersBankEmail: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
         ("Yala/App/Views/Profile/YalaAccountView.swift",
          "if let previewModel { return previewModel }", "return YalaAccountLogic.model("),
         ("Yala/App/Views/Shared/CloudAttestNoticeBanner.swift",
