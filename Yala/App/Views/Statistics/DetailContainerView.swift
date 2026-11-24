@@ -48,6 +48,8 @@ struct DetailContainerView: View {
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
     @State private var insightsViewModel = InsightsViewModel()
+    /// «Tu dinero hoy» ya calculado, para los heros de las cuatro páginas (`StatsMoneyTodayMemory`).
+    @State private var moneyTodayMemory = StatsMoneyTodayMemory()
 
     // MARK: - Navigation State
 
@@ -482,6 +484,7 @@ struct DetailContainerView: View {
         StagedTabPages(selection: $pages) { tab in
             page(for: tab)
                 .environment(\.statsGuideTab, tab)
+                .environment(\.statsMoneyTodayMemory, moneyTodayMemory)
         }
     }
 
