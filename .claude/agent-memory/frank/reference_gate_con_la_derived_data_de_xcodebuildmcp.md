@@ -18,3 +18,8 @@ otra DerivedData de ~6 GB en `~/Library/Developer/Xcode/DerivedData`. Se reusó 
   HEAD --` de esos ficheros, compilar (1 min incremental), copiar el `.app` al scratchpad y devolver los ficheros.
 
 Relacionado: [[disco-de-la-mini-con-simulador-y-build-de-iphone]], [[el-antes-del-iphone-con-git-archive]].
+
+**En la Max (23-nov, Sankey de subcategorías):** una DerivedData NUEVA para el build de `Yala Dev` del gate se colgó
+30 min sin escribir nada al log, en `YalaWidgetsExtension` (xcodebuild vivo con 4 s de CPU). Matado y repetido sobre la
+carpeta que ya había compilado el «después» (`-derivedDataPath <scratchpad>/dd-despues`): verde en ~2 min. ⇒ el gate
+compila y prueba sobre la DerivedData del «después», no sobre otra de cero; y un log que no crece en 5 min es cuelgue.
