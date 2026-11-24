@@ -41,3 +41,13 @@ Medido el 2026-11-14 (lote 1 de bugs de entrada, gateway en paralelo).
   0600 del scratchpad) funcionó sin pedir nada.
 
 Relacionado: [[feedback-verificar-prod-del-gateway-con-token-acunado]].
+
+- **Repetido el 2026-11-24 (lote 5 del conector): staging corría el trabajo SIN MERGEAR de otra sesión** (Gmail sin
+  código, «sobre 400978c4d sin 436e7f9c8 routes ni apariencia de shared-core + solo src/mail»). Desplegar la rama a
+  pelo se lo habría quitado. La base se reconstruye leyendo su `--message`: `git archive 400978c4d` + `src/mail` de su
+  rama + `git show <commit>^:<fichero>` de lo que dice que quitó → 0 líneas. **El `export {}` del final del bundle dice
+  qué entrypoints viven**: ese staging no publicaba `ConnectorDrafts` (el conector no podía apuntar) aunque 2.3 sí.
+  Con el symlink a `node_modules` las rutas del bundle cambian: normaliza con `sed` antes del `diff`. Nombres nuevos
+  (`str`, `tokens`) renombran variables ajenas en el bundle: son ruido, no cambios.
+- **El D1 de staging no lleva `d1_migrations` al día** (le faltaban 0004 y 0005): `migrations apply` reaplicaría todo.
+  Se aplica solo el fichero propio con `d1 execute --file` (que sea `IF NOT EXISTS`) y se anota a mano su fila.
