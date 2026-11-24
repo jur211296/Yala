@@ -58,3 +58,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Barrido desde la Mini: límites](reference_barrido_en_la_mini_limites.md) — sin Duo ni app Simulator; Device MCP un aparato; iPhone 14 en es-ES y sin giro.
 - [DerivedData fuera del worktree](feedback_deriveddata_fuera_del_worktree.md) — dentro, el sello del gate hashea 26.000 ficheros y se cuelga; info/exclude del worktree no vale.
 - [Sentry: commits entre máquinas](reference_sentry_commits_entre_maquinas.md) — archivar en otra máquina rompe set-commits; los dSYM suben igual.
+- [Probar el reenvío de Gmail](reference_probar_el_reenvio_de_gmail.md) — correo a staging desde el Gmail de Jürgen, leer Email Routing por GraphQL; la página de Reenvío engaña recién cargada.
