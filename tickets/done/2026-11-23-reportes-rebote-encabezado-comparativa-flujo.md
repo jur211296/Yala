@@ -1,6 +1,6 @@
 ---
 id: 2026-11-23-reportes-rebote-encabezado-comparativa-flujo
-status: qa
+status: done
 priority: high
 area: "reportes, comparativa, flujo-de-caja"
 created: 2026-11-23
@@ -55,3 +55,7 @@ vaivenes, ~1 s en cada posición, sin posiciones intermedias).
 5. Desplaza la tabla: los chips quedan fijos bajo el título pequeño y ninguna fila se lee detrás ni por encima de ellos.
 6. Toca **Flujo de caja** y repite 2-5 sobre el mes.
 7. Repite 3 en tema claro (Ajustes › Temas › Claro).
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-11-24: no es grave (una animación) y el gesto del guion (dedo quieto 4 s en el umbral, bajar al final y subir de golpe) no rebota en el iPhone 14, en Comparativa ni en Flujo de caja. El temblor del dedo no se reproduce con toques sintéticos: si vuelve a verse, se reabre. Evidencia: `~/Claude/entregas/2026-11-24-barrido-qa-2-3-antes-build-8/evidencia/iphone14/04-reportes-sin-rebote.mp4`.
