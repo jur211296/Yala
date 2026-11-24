@@ -57,3 +57,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Cambiar una variable del Worker sin redesplegar](reference_cambiar_una_variable_del_worker_sin_redesplegar.md) — PATCH de settings con «inherit»; la respuesta trae solo el cambiado; etag para probar el mismo código.
 - [Barrido desde la Mini: límites](reference_barrido_en_la_mini_limites.md) — sin Duo ni app Simulator; Device MCP un aparato; iPhone 14 en es-ES y sin giro.
 - [DerivedData fuera del worktree](feedback_deriveddata_fuera_del_worktree.md) — dentro, el sello del gate hashea 26.000 ficheros y se cuelga; info/exclude del worktree no vale.
+- [Sentry: commits entre máquinas](reference_sentry_commits_entre_maquinas.md) — archivar en otra máquina rompe set-commits; los dSYM suben igual.

@@ -1,17 +1,19 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (7))
+# Guía de novedades 2.3 (TestFlight 2.3 (8))
 
-Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (7) de
-TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty (la versión de la 2.3 (2) sigue en https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS, de la cuenta de la Mini)
+Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (8) de
+TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
+(cuenta de la Mini: solo se publica desde la Mini). La versión de la 2.3 (7) queda en
+https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty, de la cuenta de la Max.
 
 Sus notas se guardan en la base del artifact, colección `notas` (un documento por ítem, con `veredicto`,
 `comentario`, `titulo` y `area`). Una sesión las lee con `ArtifactData list` sobre esa URL.
 
 ## Qué hay aquí
 
-- `inventario.json`: los 361 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
+- `inventario.json`: los 375 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
   guardan por id), `pr`, `titulo`, `area`, `seccion` (`nuevo` · `existente` · `ambos` · `fuera`), `tipo`, `ruta`,
   `que_cambio`, `por_que`, `estado` (`listo` · `activable` · `todavia_no` · `retirado` · `fuera`), `activar`, `pro`, `como_probar`,
-  `orden` (recorrido del usuario nuevo), `build` (`1` a `7` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
+  `orden` (recorrido del usuario nuevo), `build` (`1` a `8` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
   desde la versión anterior de la guía).
 - `plantilla.html`: la página; `__DATA__` se sustituye por el inventario con capturas. Los dos recorridos guiados
   (`ROUTES.existente` y `ROUTES.nuevo`) van escritos ahí, por id.
@@ -69,3 +71,20 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
   se suman 6 del simulador con el seed `realista`: bienvenida, hoja de Salud financiera, Nuevo registro, Estadísticas,
   Pagos planificados con «Reusar» y Flujo de caja.
 - **Script:** `actualizar_2026_11_23.py` aplica el delta (ya aplicado; no se repite).
+
+## Actualización del 24-nov-2026 (TestFlight 2.3 (8))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (7) hasta el de la 2.3 (8), con «Estadísticas ›
+  Resumen: opción B» dentro. 18 PR revisados: 14 ítems nuevos (todos llegan en la 2.3 (8)), 10 cambios sobre ítems
+  existentes con su `cambio_guia`, y 4 PR descartados con su motivo en `delta_2026_11_24.json`.
+- **Conector de Grok:** el arreglo que deja conectar Grok Bot y Grok web es del servidor; no viaja en la build y
+  espera su despliegue. Se anota en el ítem de «Ajustes › Tu IA».
+- **Medido en producción el 24-nov:** `/config` del gateway igual que el 23-nov (`aiCloudExploreRolloutPercent` 100,
+  `appleWebSignInRolloutPercent` 0); `mcp.yala-app.pe` y `app.yala-app.pe` responden 200.
+- **Notas de Jürgen:** la colección `notas` estaba vacía el 24-nov en las dos guías (la de la Mini y la de la Max):
+  no hay notas que marcar como resueltas.
+- **Capturas:** se conservan las 21 anteriores y se suman 4 del simulador con el seed `realista` y la rama de la build:
+  Estadísticas › Resumen, «Ver subcategorías» en el Flujo de dinero, Pagos planificados en línea de tiempo y Avisos del
+  banco.
+- **Recorrido del usuario antiguo:** suma 10 pasos con lo nuevo de la build 8.
+- **Script:** `actualizar_2026_11_24.py` aplica el delta (ya aplicado; no se repite).
