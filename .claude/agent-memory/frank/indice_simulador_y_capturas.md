@@ -125,3 +125,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Capturas giradas en XCUITest](reference_capturas_giradas_en_xcuitest.md) — `app.screenshot()` girado sale recortado; `XCUIScreen.main` entero (rotar 90°, `-strip`).
 - [El rebote del título no sale en el simulador](feedback_rebote_del_titulo_no_sale_en_el_simulador.md) — 24-nov: ni XCUITest ni Device MCP; mide el vídeo del iPhone por fotograma.
 - [Conductor de capturas: oscuro y girado](feedback_conductor_de_capturas_oscuro_y_girado.md) — `-userTheme 1` tapa el oscuro; y mira el índice antes de escribir el conductor.
+- [Vaciar el almacén de pruebas del iPhone](reference_vaciar_el_almacen_de_pruebas_del_iphone.md) — vive en el grupo de apps; reset con `pesado` mata el arranque; `devicectl copy to` vacío.
