@@ -1,0 +1,12 @@
+Novedades desde la build 2.3 (8):
+• Bandeja sin duplicados: el mismo pago que llega por Apple Pay, el aviso del banco, el correo del banco, Yala web o tu IA queda en un solo pendiente, con el importe del banco y la hora exacta. «Separar» devuelve cada fuente por su lado.
+• Bandeja: cada pendiente dice de dónde vino («Apple Pay · Correo»). Si dos pendientes pueden ser el mismo gasto, la Bandeja pregunta «¿Es el mismo gasto?». Si uno se parece a un registro ya guardado, dice «Ya registrado» con «Descartar» y «Guardar igual».
+• Bandeja y Pagos planificados: el cargo de un pago planificado completa su borrador en vez de salir como otro pendiente. Si el pago era estimado, la fila dice el monto real y «Antes S/ … estimado». La primera vez pregunta «¿Es tu pago …?».
+• Bandeja: el aviso de posible duplicado mira también el día de antes y el de después, y nombra el registro parecido. Dos compras iguales por Apple Pay ya no se avisan entre sí.
+• Correo del banco › Gmail: el paso 3 busca solo la confirmación, dice qué pasa mientras busca y, cuando llega, ofrece «Confirmar en Google».
+• Avisos del banco: la guía de Atajos sigue los pasos de iOS 27.
+• Panel: «Ver detalle ›» abre Estadísticas (antes ocultaba los montos) y el saldo grande sale enseguida aunque estés importando o guardando muchos registros.
+• Texto grande: la cifra principal de Estadísticas, Registros y «Te falta pagar» crece como la del Panel.
+• Estadísticas: al cambiar de período, las cifras de arriba esperan a las del período nuevo en vez de enseñar las del anterior.
+
+Qué probar: un pago con Apple Pay que también te llegue por correo del banco, el cargo de un pago planificado (luz, agua, Netflix), «Separar» en un pendiente unido, «Ver detalle ›» en el Panel y el paso 3 de Gmail en Ajustes › Correo del banco. Si algo falla, envía una captura desde TestFlight.

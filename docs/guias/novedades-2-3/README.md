@@ -1,6 +1,6 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (8))
+# Guía de novedades 2.3 (TestFlight 2.3 (9))
 
-Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (8) de
+Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (9) de
 TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
 (cuenta de la Mini: solo se publica desde la Mini). La versión de la 2.3 (7) queda en
 https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty, de la cuenta de la Max.
@@ -88,3 +88,16 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
   banco.
 - **Recorrido del usuario antiguo:** suma 10 pasos con lo nuevo de la build 8.
 - **Script:** `actualizar_2026_11_24.py` aplica el delta (ya aplicado; no se repite).
+
+## Actualización del 25-nov-2026 (TestFlight 2.3 (9))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (8) hasta el de la 2.3 (9). 7 PR revisados: 5 ítems
+  nuevos (cuatro de la Bandeja sin duplicados y el paso 3 de Gmail del correo del banco), 6 cambios sobre ítems
+  existentes con su `cambio_guia` y 2 PR descartados con su motivo en `delta_2026_11_25.json`.
+- **iCloud:** la build 9 escribe `CD_InboxDraft.CD_joinRecordRaw`; Dan lo desplegó en Production en los dos contenedores
+  el 25-nov (medido con `cktool` a las 06:24) antes de subirla.
+- **Medido en producción el 25-nov:** `/config` del gateway igual que el 24-nov (`aiCloudExploreRolloutPercent` 100,
+  `appleWebSignInRolloutPercent` 0); `mcp.yala-app.pe` y `app.yala-app.pe` responden 200.
+- **Capturas:** se conservan las anteriores; la build 9 no suma capturas nuevas.
+- **Recorrido del usuario antiguo:** suma 5 pasos (los cuatro de la Bandeja y Gmail).
+- **Script:** `actualizar_2026_11_25.py` aplica el delta (ya aplicado; no se repite).

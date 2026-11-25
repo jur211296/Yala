@@ -36,7 +36,7 @@
 - [Credencial pendiente: se aparca y se mide](feedback_credencial_pendiente_se_aparca.md) — pídela una vez; al llegar, mide a qué alcanza antes de usarla.
 - [Device MCP: lo enciende Jürgen](feedback_device_mcp_lo_enciende_jurgen.md) — permisos y servidor MCP en su pantalla; no scriptear su UI; listo = lo confirma el bot.
 - [Si Jürgen está en el chat, háblale directo](feedback_si_jurgen_esta_en_el_chat_hablale_directo.md) — no por preguntar-bot; el bot es para cuando no está.
-- [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el suyo personal; elige por modelo, no por el primer UDID.
+- [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el personal: solo Yala Dev si lo pide; elige por modelo.
 - [QA físico: datos dev, no preguntes](feedback_qa_fisico_datos_dev_no_preguntes.md) — borrar/vaciar en el iPhone 14 lo decides tú; contáctale solo urgente o su mano.
 - [Tester de Sandbox del iPhone 14](reference_tester_sandbox_iphone_14.md) — ya existe en ASC; no crear otro; contraseña en 1Password o la pone Jürgen.
 - [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — sin Pro: xcodebuild+devicectl; screenshot sin overwrite; Siri por Atajos; teclado inglés.
