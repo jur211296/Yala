@@ -7,8 +7,11 @@
 //  nuevo nace vacío y se puede escribir (Paso 0, D11).
 //
 //  El modelo de 2.2 no vive en el repo como código. Se reconstruye así: el `NSManagedObjectModel` que SwiftData genera hoy,
-//  sin los atributos que el esquema de PRODUCCIÓN de iCloud (`Cloudkit Schemas/yala-production.ckdb`, el de 2.2) no tiene.
-//  Hoy eso quita `InboxDraft.joinRecordRaw`, y la prueba lo exige: si quitara nada, no estaría probando la migración.
+//  sin los atributos que el esquema de PRODUCCIÓN de iCloud de 2.2 no tiene. Ese esquema está CONGELADO junto a esta prueba
+//  (`yala-production-2.2.ckdb`, copia exacta de `Cloudkit Schemas/yala-production.ckdb` en el tag `v2.2`) y no se lee el
+//  vivo: el vivo sigue a Producción, y el 25-nov la build 9 dio de alta `CD_joinRecordRaw` ahí. Leyendo el vivo, el modelo
+//  «de 2.2» pasó a tener el campo nuevo, la prueba dejó de probar migración alguna y su control la puso en rojo.
+//  Quita `InboxDraft.joinRecordRaw` (y lo demás que 2.3 añadió), y la prueba lo exige: si no, no probaría la migración.
 //
 
 import CoreData
@@ -29,18 +32,19 @@ struct BandejaUnirMigracion22Tests {
         CashFlowPlan.self, CashFlowLine.self, CashFlowOverride.self, GroupBridgePreference.self, CloudMigrationMarker.self,
     ]
 
-    private func productionSnapshot() throws -> [String: [String: String]] {
-        let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Cloudkit Schemas/yala-production.ckdb")
+    /// El esquema de Producción de iCloud tal como estaba al publicar 2.2: congelado aquí, no el vivo de `Cloudkit Schemas/`.
+    private func production22Snapshot() throws -> [String: [String: String]] {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("yala-production-2.2.ckdb")
         return PersonalCloudKitSchemaParityTests.parseSnapshot(try String(contentsOf: url, encoding: .utf8))
     }
 
-    /// El modelo de hoy sin lo que la producción de iCloud no tiene. Devuelve también lo que quitó, por entidad.
+    /// El modelo de hoy sin lo que la producción de iCloud de 2.2 no tenía. Devuelve también lo que quitó, por entidad.
     private func model22() throws -> (NSManagedObjectModel, [String: [String]]) {
         let current = try #require(NSManagedObjectModel.makeManagedObjectModel(for: Self.personalTypes))
         let old = try #require(current.copy() as? NSManagedObjectModel)
-        let snapshot = try productionSnapshot()
+        let snapshot = try production22Snapshot()
+        #expect(snapshot["CD_InboxDraft"] != nil, "control: el esquema congelado de 2.2 se leyó y trae la Bandeja")
         var removed: [String: [String]] = [:]
         for entity in old.entities {
             guard let name = entity.name, let fields = snapshot["CD_\(name)"] else { continue }
