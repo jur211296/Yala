@@ -22,4 +22,10 @@ Medido el 2026-11-24 (barrido antes de la build 8, Max, iPhone 14 por cable, iOS
 - **`rotate` de Device MCP no gira el iPhone 14** si tiene el bloqueo de rotación o está de pie: lo girado se deja a los
   XCUITest de capturas.
 
+**25-nov (Mini, barrido antes de la build 9): lo volví a pisar** por no abrir esta nota antes de lanzar en el iPhone:
+dos arranques muertos y una desinstalación inútil. Dos cosas más: las semillas extra de la Bandeja
+(`-uitest-inbox-*`) solo entran cuando se siembra el perfil, así que sin vaciar el almacén no se repiten (el lote 4
+se probó en el simulador); y en la Mini el simulador no tiene ventana (no hay Simulator.app), así que tampoco se gira
+ahí con el atajo de teclado.
+
 Relacionado: [[conducir-el-iphone-real-con-device-mcp]], [[medir-release-en-el-iphone-con-semilla]].

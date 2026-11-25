@@ -547,8 +547,8 @@
   "id": "826-1",
   "orden": 50,
   "build": "1",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "Arreglado en la 2.3 (9): tocar «Ver detalle ›» abre Estadísticas; antes el toque lo recogía el ojo y ocultaba los montos. El ojo sigue ocultando con su propio toque."
  },
  {
   "pr": 788,
@@ -566,8 +566,8 @@
   "id": "788-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "La guía del reenvío se rehízo en la 2.3 (8), con pasos para principiantes y «Volver a este paso»."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 801,
@@ -2200,8 +2200,8 @@
   "id": "919-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "En la 2.3 (8) el filtro de categoría sube a pantalla completa y enseña las subcategorías."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 919,
@@ -3739,8 +3739,8 @@
   "id": "824-1",
   "orden": 0,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "En la 2.3 (8) los gastos hormiga pasan a protagonistas del Resumen de Estadísticas."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 824,
@@ -4005,8 +4005,8 @@
   "id": "818-1",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "Mergeado el 24-nov, solo servidor y aún sin producción: tu IA podrá ver tu Bandeja, no dejará dos borradores del mismo correo y preguntará antes de apuntar algo que parece repetido."
  },
  {
   "pr": 613,
@@ -4062,8 +4062,8 @@
   "id": "983-2",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "La hoja «Hacer recurrente» se rediseñó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 910,
@@ -4342,8 +4342,8 @@
   "como_probar": "Con una tarjeta de crédito con gasto, mira las dos cifras y toca el «?».",
   "orden": 32.5,
   "build": "2",
-  "nuevo_guia": false,
-  "cambio_guia": "",
+  "nuevo_guia": true,
+  "cambio_guia": "Arreglado en la 2.3 (9): el saldo grande sale en cuanto está calculado, también mientras se importan o se guardan muchos registros seguidos (antes podía tardar hasta 46 s).",
   "area": "Panel",
   "seccion": "ambos",
   "titulo": "Panel: «Tu saldo hoy» en grande, «Tu dinero hoy» en chico y un «?» que explica los dos",
@@ -4955,8 +4955,8 @@
   "como_probar": "Toca Nuevo presupuesto, responde dos preguntas y toca «Usar formulario» para ver lo respondido.",
   "orden": 60,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "En la 2.3 (8) el paso «¿Cuáles?» deja quitar subcategorías."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1045-1",
@@ -5012,8 +5012,8 @@
   "como_probar": "Mira tus pagos planificados; crea uno llamado «Claro» y luego toca «Logo» y busca otra marca.",
   "orden": 0,
   "build": "4",
-  "nuevo_guia": true,
-  "cambio_guia": "En la 2.3 (8) un pago sin logo lleva el ícono de su subcategoría."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1054-1",
@@ -5905,8 +5905,8 @@
   "como_probar": "En Flujo de caja baja hasta el final, lanza la lista hacia arriba y suéltala.",
   "orden": 0,
   "build": "6",
-  "nuevo_guia": true,
-  "cambio_guia": "Quedaba un rebote en el umbral del título; se arregló en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1090-2",
@@ -6152,8 +6152,8 @@
   "como_probar": "Abre Compromisos en la hoja de la nota.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "Arreglado en la 2.3 (9): con texto de accesibilidad la cifra de «Te falta pagar» crece como la del Panel y vuelve a ser lo mayor del bloque."
  },
  {
   "id": "1095-1",
@@ -6418,8 +6418,8 @@
   "como_probar": "Abre Ajustes › Avisos del banco, elige tu banco y prueba el aviso de ejemplo.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Rehecha en la 2.3 (8): guía para principiantes, bancos según el país y activo solo al confirmar (ver «Avisos del banco para principiantes»)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1112-3",
@@ -6608,8 +6608,8 @@
   "como_probar": "Lee un recibo con foto y toca «Ver todo»; luego vuelve con «‹».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "En la 2.3 (8) la primera tarjeta tiene aire y borde visible."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1124-2",
@@ -6817,8 +6817,8 @@
   "como_probar": "Abre Ajustes › Tu IA, toca «Copiar» y revisa la lista «Conectadas».",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en el conector el 24-nov: Grok Bot y Grok web ya pueden conectarse. Ese arreglo no viaja en la app: espera su despliegue en producción."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1139-2",
@@ -6874,8 +6874,8 @@
   "como_probar": "Con una tarjeta en soles y dólares, abre Nuevo registro, toca Cuenta y mira que solo salen las de la moneda del monto. Cambia la cápsula a USD y vuelve a abrir Cuenta.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1146-1",
@@ -6893,8 +6893,8 @@
   "como_probar": "Lee la foto de un recibo y mira la primera tarjeta en modo oscuro.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1147-1",
@@ -6912,8 +6912,8 @@
   "como_probar": "En Distribución, baja al Flujo de dinero y toca «Ver subcategorías +».",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1148-1",
@@ -6932,7 +6932,7 @@
   "orden": 0,
   "build": "8",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "cambio_guia": "Arreglado en la 2.3 (9): en iOS 27 la guía de Atajos enseña los pasos de la app Atajos nueva (el «+» de abajo, la pestaña «Automatización» de la hoja y guardar con «‹»)."
  },
  {
   "id": "1149-1",
@@ -6950,8 +6950,8 @@
   "como_probar": "Abre la guía de Gmail, marca un paso como hecho y toca «Volver a este paso».",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1150-1",
@@ -6969,8 +6969,8 @@
   "como_probar": "En Nuevo gasto, llena los datos, toca «···» › Hacer recurrente y mira la hoja en claro y en oscuro.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1151-1",
@@ -6988,8 +6988,8 @@
   "como_probar": "Con muchos registros, pasa de Tendencias a Resumen y vuelve, y baja enseguida.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1152-1",
@@ -7007,8 +7007,8 @@
   "como_probar": "Crea un presupuesto de Alimentación, quita Delivery y mira que el tope y el resumen cambian.",
   "orden": 60.1,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1153-1",
@@ -7026,8 +7026,8 @@
   "como_probar": "En Registros, toca Categoría ▾ y elige Alimentación.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1155-1",
@@ -7046,7 +7046,7 @@
   "orden": 0,
   "build": "8",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "cambio_guia": "Arreglado en la 2.3 (9): con texto de accesibilidad la cifra grande crece como la del Panel, y al cambiar de período el hero sale en esqueleto en vez de enseñar las cifras del período anterior."
  },
  {
   "id": "1156-1",
@@ -7064,8 +7064,8 @@
   "como_probar": "En Comparativa, sube un poco y baja muy despacio hasta que el título vuelva a crecer.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1157-1",
@@ -7083,8 +7083,8 @@
   "como_probar": "Elige la línea de tiempo, sal de Planificación y vuelve; mira un pago como «Sueldo».",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1158-1",
@@ -7102,8 +7102,8 @@
   "como_probar": "Guarda un gasto en un grupo y aprueba dos borradores juntos en la Bandeja.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1159-1",
@@ -7121,7 +7121,102 @@
   "como_probar": "Con la moneda principal en USD, abre «Tu banco o app» y mira el ejemplo.",
   "orden": 0,
   "build": "8",
+  "nuevo_guia": false,
+  "cambio_guia": ""
+ },
+ {
+  "id": "1165-1",
+  "pr": 1165,
+  "titulo": "Bandeja: el aviso de posible duplicado mira el día de antes y el de después, y nombra el registro parecido",
+  "area": "Bandeja y Yala IA",
+  "seccion": "ambos",
+  "tipo": "mejora",
+  "ruta": "Panel › Bandeja › deslizar para guardar, «Guardar los listos» o un borrador abierto",
+  "que_cambio": "Al guardar un pendiente, Yala avisa de «Posible duplicado» también si el registro parecido está guardado el día anterior o el siguiente, y lo nombra: «Ya hay uno parecido: Wong · S/ 89.90 · 15 oct». Dos compras iguales por Apple Pay o por el correo del banco ya no se avisan entre sí: dos cafés de S/ 12 a las 8:10 y a las 18:40 se guardan los dos.",
+  "por_que": "Un Apple Pay a las 23:50 y su correo del banco al día siguiente se guardaban dos veces sin aviso, y el aviso no decía con qué registro chocaba.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Guarda a mano un gasto de ayer y espera a que llegue el mismo cargo a la Bandeja; al guardarlo, el aviso nombra el de ayer.",
+  "orden": 0,
+  "build": "9",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (8)."
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+ },
+ {
+  "id": "1168-1",
+  "pr": 1168,
+  "titulo": "Bandeja: el mismo pago que llega por varias vías queda en un solo pendiente, con «Separar»",
+  "area": "Bandeja y Yala IA",
+  "seccion": "ambos",
+  "tipo": "nuevo",
+  "ruta": "Panel › Bandeja › un pendiente unido › «Juntamos el mismo gasto» › Separar",
+  "que_cambio": "El mismo consumo que llega por Apple Pay, por el aviso del banco, por el correo del banco, por Yala web o por tu IA ya no deja varios pendientes: queda uno, con el importe del banco, la hora exacta y el nombre limpio de Apple Pay. El borrador dice «Juntamos el mismo gasto: Apple Pay · Correo del banco» y «Separar» devuelve cada fuente como pendiente aparte. Solo se une lo seguro: mismo tipo, misma cuenta o mismos últimos 4, mismo importe y el mismo día (o el siguiente si el correo llega tarde). Grupos y cuentas compartidas quedan fuera.",
+  "por_que": "Con varias vías conectadas, un solo café dejaba hasta tres pendientes iguales en la Bandeja.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con Apple Pay y el correo del banco conectados, paga algo con el iPhone: cuando llegue el correo, la Bandeja sigue con un solo pendiente. Ábrelo y toca «Separar».",
+  "orden": 0,
+  "build": "9",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+ },
+ {
+  "id": "1169-1",
+  "pr": 1169,
+  "titulo": "Bandeja: la fila dice sus fuentes, «¿Es el mismo gasto?» y «Ya registrado»",
+  "area": "Bandeja y Yala IA",
+  "seccion": "ambos",
+  "tipo": "nuevo",
+  "ruta": "Panel › Bandeja › Pendientes",
+  "que_cambio": "Un pendiente que la Bandeja juntó enseña una cápsula por fuente («Apple Pay · Correo»). Dos pendientes que pueden ser el mismo consumo salen juntos en la tarjeta «¿Es el mismo gasto?»: «Es el mismo» los junta con el importe del banco y «Son distintos» los deja aparte sin volver a preguntar. Un pendiente que se parece a un registro ya guardado dice «Ya registrado el 15 oct», con «Descartar» (a Archivados, con Deshacer) y «Guardar igual».",
+  "por_que": "Lo dudoso no se une solo: ahora la Bandeja lo pregunta antes, en vez de frenarlo en silencio al guardar.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Paga algo con Apple Pay de noche y espera el correo del banco al día siguiente con otro importe (propina): sale «¿Es el mismo gasto?». Toca «Es el mismo».",
+  "orden": 0,
+  "build": "9",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+ },
+ {
+  "id": "1170-1",
+  "pr": 1170,
+  "titulo": "Bandeja: el cargo de un pago planificado completa su borrador y el estimado toma el monto real",
+  "area": "Bandeja y Yala IA",
+  "seccion": "ambos",
+  "tipo": "nuevo",
+  "ruta": "Panel › Bandeja › el borrador de un pago planificado",
+  "que_cambio": "El cargo de un pago que ya está en Planificación (el correo de Luz del Sur, el Apple Pay de Netflix, el aviso del banco, Yala web o tu IA) ya no sale como otro pendiente: completa el borrador de ese pago con el importe y la fecha del banco, y conserva su nota, cuenta y categoría. Si el pago era estimado, la fila dice el monto real y debajo «Antes S/ 120.00 estimado». La primera vez que un comercio casa con un pago, o si un pago fijo cobró otro importe, la Bandeja pregunta «¿Es tu pago «Luz del Sur»?» con «Sí, es ese pago» y «No es ese pago». «Separar» lo deshace. El pago planificado no cambia.",
+  "por_que": "El recibo de la luz llegaba dos veces: el borrador del pago planificado y el cargo del banco.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Con un pago planificado estimado (la luz, el agua) y el correo del banco conectado, espera su cargo: la fila del pago dice el monto real y «Antes … estimado».",
+  "orden": 0,
+  "build": "9",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+ },
+ {
+  "id": "1163-1",
+  "pr": 1163,
+  "titulo": "Correo del banco › Gmail: el paso 3 busca solo y confirma con el enlace de Google",
+  "area": "Integraciones",
+  "seccion": "ambos",
+  "tipo": "arreglo",
+  "ruta": "Ajustes › Correo del banco › Reenviar desde Gmail › paso 3",
+  "que_cambio": "El paso se llama «Confirma tu dirección de Yala en Gmail» y busca solo al abrirse y cada 10 s durante 2 minutos. «Buscar ahora» enseña «Buscando…» y debajo dice «Todavía no llegó. Nueva búsqueda en N s.», o que no pudo conectar con Yala. A los 2 minutos deja de buscar y explica cómo volver a enviar el correo desde Gmail, con «Abrir Gmail». Cuando llega el enlace, el botón pasa a «Confirmar en Google».",
+  "por_que": "Gmail ya no manda un código, solo un enlace: «Buscar el código» no hacía nada visible y el paso no terminaba nunca.",
+  "estado": "activable",
+  "activar": "Necesita el servidor del correo del banco del 24-nov en producción (lo despliega Dan); sin él, el paso busca y no encuentra el enlace.",
+  "pro": false,
+  "como_probar": "En Ajustes › Correo del banco › Gmail, pon tu dirección de Yala como reenvío en Gmail y vuelve al paso 3: en unos segundos sale «Confirmar en Google».",
+  "orden": 0,
+  "build": "9",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
  }
 ]
