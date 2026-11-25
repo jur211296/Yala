@@ -1,0 +1,2615 @@
+{
+ "tandas": [
+  {
+   "run": "41319488785",
+   "fecha": "2026-11-01",
+   "sha": "5b4898f",
+   "rama": "2.2",
+   "tanda": 2,
+   "conteo": "",
+   "rojas": [
+    "AccountCardPickersUITests.test_budgetOnTheCard_countsTheLineExpense"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "41319488785",
+   "fecha": "2026-11-01",
+   "sha": "5b4898f",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [
+    "CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth",
+    "UXAudit22Lote11DecididasUITests.test_needSection_explainsWhatItIsFor_andGivesAnExamplePerRow",
+    "UXAudit22Lote11DecididasUITests.test_proObservations_doNotAskForATap",
+    "UXAudit22Lote11DecididasUITests.test_proObservations_withoutConsent_offerTheButtonInPlace"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "41319488785",
+   "fecha": "2026-11-01",
+   "sha": "5b4898f",
+   "rama": "2.2",
+   "tanda": 6,
+   "conteo": "",
+   "rojas": [
+    "UsageModeUITests.test_startFresh_confirmsTwice_asksOnlyForTheMainAccount_andErasesTheRecords",
+    "UsageModeUITests.test_withRecords_keepEverything_bringsTheDataBack"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "41499680249",
+   "fecha": "2026-11-02",
+   "sha": "5b8730e",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [
+    "UsageModeUITests.test_startFresh_confirmsTwice_asksOnlyForTheMainAccount_andErasesTheRecords",
+    "UsageModeUITests.test_withRecords_keepEverything_bringsTheDataBack"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "41499680249",
+   "fecha": "2026-11-02",
+   "sha": "5b8730e",
+   "rama": "2.2",
+   "tanda": 7,
+   "conteo": "",
+   "rojas": [
+    "ExportFreePeriodsUITests.test_aNoteThatMatchesNothing_isShown_andTheButtonTurnsOff"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "41499680249",
+   "fecha": "2026-11-02",
+   "sha": "5b8730e",
+   "rama": "2.2",
+   "tanda": 8,
+   "conteo": "",
+   "rojas": [
+    "ExportHiddenCurrencyAmountUITests.test_hideMode_amountIsInTheCurrencyLeftInView"
+   ],
+   "salvadas_por_reintento": [
+    "AIConsentAlertUITests.test_voicePillWithoutConsent_showsTheNotice_withoutTheProviderName_andCancelCloses",
+    "ExternalEntryForeignSheetUITests.test_halfFilledFormInAnotherTab_panelLink_keepsTheForm"
+   ]
+  },
+  {
+   "run": "41865831610",
+   "fecha": "2026-11-04",
+   "sha": "a81b36e",
+   "rama": "2.2",
+   "tanda": 2,
+   "conteo": "",
+   "rojas": [
+    "ExportHiddenCurrencyAmountUITests.test_hideMode_amountIsInTheCurrencyLeftInView"
+   ],
+   "salvadas_por_reintento": [
+    "SiriShortcutsScreenUITests.test_rowsUseTheShortcutsNames_andTheButtonOpensYalasPageInShortcuts"
+   ]
+  },
+  {
+   "run": "41865831610",
+   "fecha": "2026-11-04",
+   "sha": "a81b36e",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [
+    "InboxCrudUITests.test_saveReadyButton_savesEveryCompleteDraftAfterConfirming"
+   ],
+   "salvadas_por_reintento": [
+    "UXAudit22Lote04UITests.test_privateSignOut_waitShowsTheUploadCard_andTheNoticeOffersExportFirst"
+   ]
+  },
+  {
+   "run": "41865831610",
+   "fecha": "2026-11-04",
+   "sha": "a81b36e",
+   "rama": "2.2",
+   "tanda": 5,
+   "conteo": "",
+   "rojas": [
+    "ExternalEntryForeignSheetUITests.test_halfFilledFormInAnotherTab_voiceEntry_keepsTheFormAndOpensOnThePanelWhenClosed"
+   ],
+   "salvadas_por_reintento": [
+    "AccountRemovalUITests.test_deleteAccountWithRecords_movesThemToAnotherAccount"
+   ]
+  },
+  {
+   "run": "42064641786",
+   "fecha": "2026-11-05",
+   "sha": "346fd07",
+   "rama": "2.2",
+   "tanda": 1,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42064641786",
+   "fecha": "2026-11-05",
+   "sha": "346fd07",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42064641786",
+   "fecha": "2026-11-05",
+   "sha": "346fd07",
+   "rama": "2.2",
+   "tanda": 5,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42064641786",
+   "fecha": "2026-11-05",
+   "sha": "346fd07",
+   "rama": "2.2",
+   "tanda": 6,
+   "conteo": "",
+   "rojas": [
+    "ExportHiddenCurrencyAmountUITests.test_hideMode_amountIsInTheCurrencyLeftInView"
+   ],
+   "salvadas_por_reintento": [
+    "SiriShortcutsScreenUITests.test_rowsUseTheShortcutsNames_andTheButtonOpensYalasPageInShortcuts"
+   ]
+  },
+  {
+   "run": "42064641786",
+   "fecha": "2026-11-05",
+   "sha": "346fd07",
+   "rama": "2.2",
+   "tanda": 7,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 1,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 2,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 4,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 5,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 6,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 7,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 8,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42247422332",
+   "fecha": "2026-11-06",
+   "sha": "7777e9b",
+   "rama": "2.2",
+   "tanda": 9,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 1,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 2,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 4,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 5,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 6,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 7,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 8,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42383702440",
+   "fecha": "2026-11-07",
+   "sha": "f0571f6",
+   "rama": "2.2",
+   "tanda": 9,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42493471329",
+   "fecha": "2026-11-08",
+   "sha": "263fee8",
+   "rama": "2.2",
+   "tanda": 1,
+   "conteo": "  → ejecutados=55",
+   "rojas": [
+    "BalanceCalculatorReopenUITests.test_reopeningTheCalculator_keepsAThousandsBalance"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42677093033",
+   "fecha": "2026-11-09",
+   "sha": "5200c9a",
+   "rama": "2.2",
+   "tanda": 1,
+   "conteo": "  → ejecutados=55",
+   "rojas": [
+    "BalanceCalculatorReopenUITests.test_reopeningTheCalculator_keepsAThousandsBalance"
+   ],
+   "salvadas_por_reintento": [
+    "AppLanguageSettingsReturnUITests.test_changingLanguage_reopensPersonalization_andSettingsButtonKeepsOpening"
+   ]
+  },
+  {
+   "run": "42854221342",
+   "fecha": "2026-11-10",
+   "sha": "3f85358",
+   "rama": "2.2",
+   "tanda": 3,
+   "conteo": "  → ejecutados=83",
+   "rojas": [
+    "RecordsLote8UITests.test_changeSubcategory_marksTheCurrent_andUndoesFromTheNotice"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "42854221342",
+   "fecha": "2026-11-10",
+   "sha": "3f85358",
+   "rama": "2.2",
+   "tanda": 8,
+   "conteo": "  → ejecutados=72",
+   "rojas": [
+    "BulkEditUITests.test_bulkEditAccount_isPendingUntilApply_andThenTheRecordsChange"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43324338848",
+   "fecha": "2026-11-12",
+   "sha": "97fd23a",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=83",
+   "rojas": [
+    "StatisticsHeroLikePanelUITests.test_statisticsHeroIsThePanelHero_inEveryTab",
+    "TransactionFormDecided02UITests.test_transferFavorite_setsBothAccounts"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43324338848",
+   "fecha": "2026-11-12",
+   "sha": "97fd23a",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "  → ejecutados=94",
+   "rojas": [
+    "PanelQuickActionsLargeTextUITests.test_accessibilityXXXL_everyQuickActionIsWhollyOnScreen"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43324338848",
+   "fecha": "2026-11-12",
+   "sha": "97fd23a",
+   "rama": "2.3",
+   "tanda": 8,
+   "conteo": "  → ejecutados=89",
+   "rojas": [
+    "FormClarity23UITests.test_m1_largeText_theNoticeIsShown",
+    "FormClarity23UITests.test_v3_largeText_manualEntryIsReachable",
+    "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43324338848",
+   "fecha": "2026-11-12",
+   "sha": "97fd23a",
+   "rama": "2.3",
+   "tanda": 9,
+   "conteo": "  → ejecutados=95",
+   "rojas": [
+    "IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=92",
+   "rojas": [
+    "PanelQuickActionsLargeTextUITests.test_accessibilityXXXL_everyQuickActionIsWhollyOnScreen",
+    "TransactionFormDecided02UITests.test_transferFavorite_setsBothAccounts"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 2,
+   "conteo": "  → ejecutados=95",
+   "rojas": [
+    "RecordsLote8UITests.test_changeSubcategory_marksTheCurrent_andUndoesFromTheNotice"
+   ],
+   "salvadas_por_reintento": [
+    "AjustesYProNecesariasLote10UITests.test_aiPrivacy_withPro_insightsRowHasNoMark_andAsksTheConsent",
+    "ExternalEntryForeignSheetUITests.test_rebuiltForm_panelLink_keepsWhatWasTyped"
+   ]
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=89",
+   "rojas": [
+    "LargeTextSecondaryScreensUITests.test_ax3_settingsRowTitles_aOneWordTitleTakesOneLine"
+   ],
+   "salvadas_por_reintento": [
+    "InboxNotificationTapUITests.test_foreground_tapWithTheNoticeOnScreen_opensInboxInstead"
+   ]
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 7,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 8,
+   "conteo": "  → ejecutados=85",
+   "rojas": [
+    "FormClarity23UITests.test_m1_largeText_theNoticeIsShown",
+    "FormClarity23UITests.test_v3_largeText_manualEntryIsReachable"
+   ],
+   "salvadas_por_reintento": [
+    "AccountCardPickersUITests.test_budgetOnTheCard_countsTheLineExpense"
+   ]
+  },
+  {
+   "run": "43461894908",
+   "fecha": "2026-11-13",
+   "sha": "9d118a7",
+   "rama": "2.3",
+   "tanda": 9,
+   "conteo": "  → ejecutados=93",
+   "rojas": [
+    "IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView",
+    "StatisticsHeroLikePanelUITests.test_statisticsHeroIsThePanelHero_inEveryTab"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=85",
+   "rojas": [
+    "TransactionFormDecided02UITests.test_transferFavorite_setsBothAccounts"
+   ],
+   "salvadas_por_reintento": [
+    "UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips"
+   ]
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "  → ejecutados=103",
+   "rojas": [
+    "LargeTextSecondaryScreensUITests.test_ax3_settingsRowTitles_aOneWordTitleTakesOneLine"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=93",
+   "rojas": [
+    "StatisticsHeroLikePanelUITests.test_statisticsHeroIsThePanelHero_inEveryTab"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 7,
+   "conteo": "  → ejecutados=118",
+   "rojas": [
+    "PanelQuickActionsLargeTextUITests.test_accessibilityXXXL_everyQuickActionIsWhollyOnScreen"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 8,
+   "conteo": "  → ejecutados=90",
+   "rojas": [
+    "FormClarity23UITests.test_m1_largeText_theNoticeIsShown",
+    "FormClarity23UITests.test_v3_largeText_manualEntryIsReachable"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43608092892",
+   "fecha": "2026-11-14",
+   "sha": "e8043c2",
+   "rama": "2.3",
+   "tanda": 9,
+   "conteo": "  → ejecutados=98",
+   "rojas": [
+    "IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView"
+   ],
+   "salvadas_por_reintento": [
+    "AccountLinesUITests.test_savingsForm_offersLines"
+   ]
+  },
+  {
+   "run": "43731050927",
+   "fecha": "2026-11-15",
+   "sha": "11b1ea3",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "  → ejecutados=108",
+   "rojas": [
+    "WhatsNewLaunchUITests.test_updateFrom2_0_withATrialOfferPending_showsTheSheetOnTheFirstLaunch",
+    "WhatsNewLaunchUITests.test_updateFrom2_1_showsTheSheetOnce"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43731050927",
+   "fecha": "2026-11-15",
+   "sha": "11b1ea3",
+   "rama": "2.3",
+   "tanda": 7,
+   "conteo": "  → ejecutados=116",
+   "rojas": [
+    "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43929672868",
+   "fecha": "2026-11-16",
+   "sha": "984cbb8",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=85",
+   "rojas": [
+    "PersonalToGroupConversionUITests.test_convertingTheBus_toAGroup"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43929672868",
+   "fecha": "2026-11-16",
+   "sha": "984cbb8",
+   "rama": "2.3",
+   "tanda": 8,
+   "conteo": "  → ejecutados=94",
+   "rojas": [
+    "SplitCalculatorUITests.test_applyingSplitShowsChipInForm",
+    "SplitCalculatorUITests.test_splitCalculatorComputesPortion"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "43929672868",
+   "fecha": "2026-11-16",
+   "sha": "984cbb8",
+   "rama": "2.3",
+   "tanda": 9,
+   "conteo": "  → ejecutados=95",
+   "rojas": [
+    "AccountCardPickersUITests.test_selector_fromTheUSDLine_choosingTheCardGoesBackToThePrincipal"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "44074738336",
+   "fecha": "2026-11-17",
+   "sha": "c4d0071",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "44074738336",
+   "fecha": "2026-11-17",
+   "sha": "c4d0071",
+   "rama": "2.3",
+   "tanda": 5,
+   "conteo": "  → ejecutados=111",
+   "rojas": [
+    "TransactionsCrudUITests.test_recordSelectorsOpenAtMediumDetent"
+   ],
+   "salvadas_por_reintento": [
+    "TopPrimaryActionUITests.test_recordsPage_actionsRowOnTop_floatingOnlyAfterScrolling"
+   ]
+  },
+  {
+   "run": "44074738336",
+   "fecha": "2026-11-17",
+   "sha": "c4d0071",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=115",
+   "rojas": [],
+   "salvadas_por_reintento": [
+    "AIConsentAlertUITests.test_voicePillWithoutConsent_showsTheNotice_withoutTheProviderName_andCancelCloses"
+   ]
+  },
+  {
+   "run": "44138906449",
+   "fecha": "2026-11-17",
+   "sha": "48410a1",
+   "rama": "2.3",
+   "tanda": 5,
+   "conteo": "  → ejecutados=111",
+   "rojas": [
+    "TransactionsCrudUITests.test_recordSelectorsOpenAtMediumDetent"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "44138906449",
+   "fecha": "2026-11-17",
+   "sha": "48410a1",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": [
+    "AIConsentAlertUITests.test_voicePillWithoutConsent_showsTheNotice_withoutTheProviderName_andCancelCloses",
+    "StatisticsRecordsFilterObservationUITests.test_distribution_followsTheAccountFilter_acrossBackgroundRoundTrips"
+   ]
+  },
+  {
+   "run": "44356469669",
+   "fecha": "2026-11-18",
+   "sha": "55ddcb6",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=95",
+   "rojas": [
+    "InboxDuplicateCheckUITests.test_saveReady_leavesThePossibleDuplicatePending_andSaysSo",
+    "InboxDuplicateCheckUITests.test_swipeToSave_aCompleteDraft_showsTheSuccessScreenWithItsSummary"
+   ],
+   "salvadas_por_reintento": [
+    "BalanceCalculatorReopenUITests.test_reopeningTheCalculator_keepsAThousandsBalance",
+    "UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips"
+   ]
+  },
+  {
+   "run": "44356469669",
+   "fecha": "2026-11-18",
+   "sha": "55ddcb6",
+   "rama": "2.3",
+   "tanda": 2,
+   "conteo": "  → ejecutados=102",
+   "rojas": [
+    "AsistenteCuentaUITests.test_capturas_cadaPaso"
+   ],
+   "salvadas_por_reintento": [
+    "AsistenteCuentaUITests.test_cerrarConRespuestas_preguntaAntes",
+    "UXAudit22Lote08UITests.test_deletingARecord_offersUndo_andUndoBringsItBack"
+   ]
+  },
+  {
+   "run": "44356469669",
+   "fecha": "2026-11-18",
+   "sha": "55ddcb6",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "",
+   "rojas": [],
+   "salvadas_por_reintento": [
+    "AsistentePagoPlanificadoUITests.test_cerrarConRespuestas_preguntaAntes",
+    "CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth",
+    "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt"
+   ]
+  },
+  {
+   "run": "44356469669",
+   "fecha": "2026-11-18",
+   "sha": "55ddcb6",
+   "rama": "2.3",
+   "tanda": 5,
+   "conteo": "  → ejecutados=108",
+   "rojas": [
+    "InboxCrudUITests.test_saveReadyButton_savesEveryCompleteDraftAfterConfirming"
+   ],
+   "salvadas_por_reintento": [
+    "AccountCardPickersUITests.test_budgetOnTheCard_countsTheLineExpense"
+   ]
+  },
+  {
+   "run": "44356469669",
+   "fecha": "2026-11-18",
+   "sha": "55ddcb6",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=123",
+   "rojas": [
+    "RecurrenteDesdeRegistroUITests.test_inbox_approveAndMakeRecurring_approvesAndOpensTheEditor"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "44576408696",
+   "fecha": "2026-11-19",
+   "sha": "5e87a33",
+   "rama": "2.3",
+   "tanda": 11,
+   "conteo": "  → ejecutados=72",
+   "rojas": [
+    "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "44576408696",
+   "fecha": "2026-11-19",
+   "sha": "5e87a33",
+   "rama": "2.3",
+   "tanda": 3,
+   "conteo": "  → ejecutados=66",
+   "rojas": [
+    "InboxNotificationTapUITests.test_foreground_tapWithTheNoticeOnScreen_opensInboxInstead"
+   ],
+   "salvadas_por_reintento": [
+    "InboxNotificationTapUITests.test_background_tapAfterTheNotice_opensInbox_andTheNoticeNeverFollows"
+   ]
+  },
+  {
+   "run": "44991989046",
+   "fecha": "2026-11-22",
+   "sha": "b27dcc0",
+   "rama": "2.3",
+   "tanda": 5,
+   "conteo": "  → ejecutados=78",
+   "rojas": [
+    "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt",
+    "PersonalToGroupConversionUITests.test_cancellingTheReview_changesNothing",
+    "PersonalToGroupConversionUITests.test_convertingTheBus_toAGroup"
+   ],
+   "salvadas_por_reintento": [
+    "FlujoCrearPlanUITests.test_armado_partedelSaldo_yLaCategoriaSePliega"
+   ]
+  },
+  {
+   "run": "44991989046",
+   "fecha": "2026-11-22",
+   "sha": "b27dcc0",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=78",
+   "rojas": [
+    "FirstExpensePracticeAlertUITests.test_firstExpense_showsSuccessScreenBeforePracticeAlert"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 14,
+   "conteo": "  → ejecutados=74",
+   "rojas": [
+    "VozFotoAvisos23UITests.test_success_createAnother_hasItsIdentifier"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 2,
+   "conteo": "  → ejecutados=79",
+   "rojas": [
+    "TransactionFormDecided02UITests.test_missingLine_inATransfer_staysUntilBothAccountsAreChosen"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 4,
+   "conteo": "  → ejecutados=65",
+   "rojas": [
+    "LimiteTarjetaUITests.test_ponerCambiarYBorrarElLimite_laHojaEnseñaElUsoSoloConLimite"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 6,
+   "conteo": "  → ejecutados=75",
+   "rojas": [
+    "GroupExpenseSuccessUITests.test_createGroupExpenseShowsSuccessScreen"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 8,
+   "conteo": "  → ejecutados=77",
+   "rojas": [
+    "PersonalToGroupConversionUITests.test_cancellingTheReview_changesNothing"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45104524444",
+   "fecha": "2026-11-23",
+   "sha": "c6affe8",
+   "rama": "2.3",
+   "tanda": 9,
+   "conteo": "  → ejecutados=72",
+   "rojas": [
+    "ReceiptDropUITests.test_trialUsedUpMidway_keepsWhatWasRead_andOffersPro"
+   ],
+   "salvadas_por_reintento": [
+    "AsistentePagoPlanificadoUITests.test_recorridoCompleto_creaElPago",
+    "PaywallInboxAlertRoutingUITests.test_alertAndPaywallSerialize_thenToolbarAliveAndInboxOpens"
+   ]
+  },
+  {
+   "run": "45319446916",
+   "fecha": "2026-11-24",
+   "sha": "35d5ce4",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=81",
+   "rojas": [
+    "PagoLogoPropioUITests.test_ownPhoto_showsInTheList_afterSaving_lightTheme"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45319446916",
+   "fecha": "2026-11-24",
+   "sha": "35d5ce4",
+   "rama": "2.3",
+   "tanda": 12,
+   "conteo": "  → ejecutados=74",
+   "rojas": [
+    "LimiteTarjetaUITests.test_ponerCambiarYBorrarElLimite_laHojaEnseñaElUsoSoloConLimite"
+   ],
+   "salvadas_por_reintento": [
+    "TrendsInsightCardUITests.test_free_lastMonth_addsTheComparisonBullet"
+   ]
+  },
+  {
+   "run": "45319446916",
+   "fecha": "2026-11-24",
+   "sha": "35d5ce4",
+   "rama": "2.3",
+   "tanda": 14,
+   "conteo": "  → ejecutados=73",
+   "rojas": [
+    "PersonalToGroupConversionUITests.test_convertingTheBus_toAGroup",
+    "VozFotoAvisos23UITests.test_photoWithSeveral_showsMoreThanOneRow_withoutStretchingTheSheet"
+   ],
+   "salvadas_por_reintento": [
+    "FavoritesAlRegistrar23UITests.test_f1_tappingAFavorite_opensTheKeyboardWithTheAmountSelected",
+    "PersonalToGroupConversionUITests.test_cancellingTheReview_changesNothing"
+   ]
+  },
+  {
+   "run": "45535770873",
+   "fecha": "2026-11-25",
+   "sha": "15f0146",
+   "rama": "2.3",
+   "tanda": 1,
+   "conteo": "  → ejecutados=80",
+   "rojas": [
+    "IAGuiadosUITests.test_account_stepByStep_createsIt"
+   ],
+   "salvadas_por_reintento": []
+  },
+  {
+   "run": "45535770873",
+   "fecha": "2026-11-25",
+   "sha": "15f0146",
+   "rama": "2.3",
+   "tanda": 13,
+   "conteo": "  → ejecutados=82",
+   "rojas": [
+    "RecurrenteDesdeRegistroUITests.test_detail_makeRecurring_prefillsTheEditor_andTheRecordBecomesItsFirstPayment",
+    "RecurrenteDesdeRegistroUITests.test_rowMenu_offersMakeRecurring_andOpensTheEditor"
+   ],
+   "salvadas_por_reintento": [
+    "ArchivedAccountKeepsHistoryUITests.test_archivingAnAccount_keepsExcludeOff_andItsRecordsStayInRegistros"
+   ]
+  },
+  {
+   "run": "45535770873",
+   "fecha": "2026-11-25",
+   "sha": "15f0146",
+   "rama": "2.3",
+   "tanda": 4,
+   "conteo": "  → ejecutados=74",
+   "rojas": [
+    "RecordsLote8BUITests.test_duplicates_removeRepeated_asksFirst_andLeavesOnePerGroup"
+   ],
+   "salvadas_por_reintento": [
+    "GroupsSmokeUITests.test_groupShareableSummaryOpensAndRendersImage"
+   ]
+  },
+  {
+   "run": "45535770873",
+   "fecha": "2026-11-25",
+   "sha": "15f0146",
+   "rama": "2.3",
+   "tanda": 5,
+   "conteo": "  → ejecutados=70",
+   "rojas": [
+    "RecordsLote8UITests.test_changeSubcategory_marksTheCurrent_andUndoesFromTheNotice"
+   ],
+   "salvadas_por_reintento": [
+    "AdaptiveNavigationUITests.test_budgetDetailOpensItsCharts_andBackReturnsToTheList",
+    "CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth"
+   ]
+  },
+  {
+   "run": "45535770873",
+   "fecha": "2026-11-25",
+   "sha": "15f0146",
+   "rama": "2.3",
+   "tanda": 7,
+   "conteo": "  → ejecutados=94",
+   "rojas": [
+    "LimiteTarjetaUITests.test_ponerCambiarYBorrarElLimite_laHojaEnseñaElUsoSoloConLimite",
+    "UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips"
+   ],
+   "salvadas_por_reintento": []
+  }
+ ],
+ "rojas_por_prueba": {
+  "AccountCardPickersUITests.test_budgetOnTheCard_countsTheLineExpense": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertGreaterThan failed: (\"0\") is not greater than (\"41\") - El presupuesto no cuenta el gasto de la línea: «Presupuesto Tarjeta QA, 0 por ciento gastado, S/ 0.00 de S/ 3,000.00»."
+    ]
+   }
+  ],
+  "CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El plan no se creó."
+    ]
+   }
+  ],
+  "UXAudit22Lote11DecididasUITests.test_needSection_explainsWhatItIsFor_andGivesAnExamplePerRow": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Falta la sección de la necesidad."
+    ]
+   }
+  ],
+  "UXAudit22Lote11DecididasUITests.test_proObservations_doNotAskForATap": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La píldora Observaciones no quedó a la vista."
+    ]
+   }
+  ],
+  "UXAudit22Lote11DecididasUITests.test_proObservations_withoutConsent_offerTheButtonInPlace": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La píldora Observaciones no quedó a la vista."
+    ]
+   }
+  ],
+  "UsageModeUITests.test_startFresh_confirmsTwice_asksOnlyForTheMainAccount_andErasesTheRecords": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Control: el Panel no enseñó los registros sembrados."
+    ]
+   },
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Control: el Panel no enseñó los registros sembrados."
+    ]
+   }
+  ],
+  "UsageModeUITests.test_withRecords_keepEverything_bringsTheDataBack": [
+   {
+    "run": "41319488785",
+    "fecha": "2026-11-01",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Control: el Panel no enseñó los registros sembrados."
+    ]
+   },
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Control: el Panel no enseñó los registros sembrados."
+    ]
+   }
+  ],
+  "ExportFreePeriodsUITests.test_aNoteThatMatchesNothing_isShown_andTheButtonTurnsOff": [
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 7,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Con una nota que no casa, no dice «Ninguno con estos filtros».",
+     "XCTAssertTrue failed - El resumen de «Más opciones» no enseña la nota."
+    ]
+   }
+  ],
+  "ExportHiddenCurrencyAmountUITests.test_hideMode_amountIsInTheCurrencyLeftInView": [
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Con «Ahorros USD» a la vista tiene que salir algo: el escenario no es el del ticket."
+    ]
+   },
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Con «Ahorros USD» a la vista tiene que salir algo: el escenario no es el del ticket."
+    ]
+   },
+   {
+    "run": "42064641786",
+    "fecha": "2026-11-05",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Con «Ahorros USD» a la vista tiene que salir algo: el escenario no es el del ticket."
+    ]
+   }
+  ],
+  "InboxCrudUITests.test_saveReadyButton_savesEveryCompleteDraftAfterConfirming": [
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to tap \"inbox_filter_archived\" Button: No matches found for Elements matching predicate '\"inbox_filter_archived\" IN identifiers' from input {("
+    ]
+   },
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Sin borradores pendientes, la Bandeja no se cerró sola al volver de la pantalla final."
+    ]
+   }
+  ],
+  "ExternalEntryForeignSheetUITests.test_halfFilledFormInAnotherTab_voiceEntry_keepsTheFormAndOpensOnThePanelWhenClosed": [
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El importe escrito se perdió (valor: «0.00»). Ciclo de vida — al arrancar: pid=87564 escenas=+0/-0 shell=0 formularios=0 · traza: ; al volver: pid=87564 escenas=+0/-0 shell=0 fo",
+     "XCTAssertTrue failed - El importe escrito se perdió (valor: «0.00»). Ciclo de vida — al arrancar: pid=90054 escenas=+0/-0 shell=0 formularios=0 · traza: ; al volver: pid=90054 escenas=+0/-0 shell=0 fo",
+     "XCTAssertTrue failed - El importe escrito se perdió (valor: «0.00»). Ciclo de vida — al arrancar: pid=91982 escenas=+0/-0 shell=0 formularios=0 · traza: ; al volver: pid=91982 escenas=+0/-0 shell=0 fo"
+    ]
+   }
+  ],
+  "BalanceCalculatorReopenUITests.test_reopeningTheCalculator_keepsAThousandsBalance": [
+   {
+    "run": "42493471329",
+    "fecha": "2026-11-08",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - No salió «Editar» bajo «Calcúlalo conmigo»."
+    ]
+   },
+   {
+    "run": "42677093033",
+    "fecha": "2026-11-09",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - No salió «Editar» bajo «Calcúlalo conmigo»."
+    ]
+   }
+  ],
+  "RecordsLote8UITests.test_changeSubcategory_marksTheCurrent_andUndoesFromTheNotice": [
+   {
+    "run": "42854221342",
+    "fecha": "2026-11-10",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El menú no ofrece cambiar la categoría."
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La hoja no se titula «Cambiar categoría»."
+    ]
+   },
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El menú no ofrece cambiar la categoría."
+    ]
+   }
+  ],
+  "BulkEditUITests.test_bulkEditAccount_isPendingUntilApply_andThenTheRecordsChange": [
+   {
+    "run": "42854221342",
+    "fecha": "2026-11-10",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - «Aplicar» sigue apagado con la cuenta pendiente."
+    ]
+   }
+  ],
+  "StatisticsHeroLikePanelUITests.test_statisticsHeroIsThePanelHero_inEveryTab": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"43.166666666666686\") is not less than (\"36.0\") - Registros: hay 43.166666666666686 pt entre los chips y el rótulo del hero; volvió el hueco sobrante bajo los chips."
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"43.166666666666686\") is not less than (\"36.0\") - Registros: hay 43.166666666666686 pt entre los chips y el rótulo del hero; volvió el hueco sobrante bajo los chips."
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"43.166666666666686\") is not less than (\"36.0\") - Registros: hay 43.166666666666686 pt entre los chips y el rótulo del hero; volvió el hueco sobrante bajo los chips."
+    ]
+   }
+  ],
+  "TransactionFormDecided02UITests.test_transferFavorite_setsBothAccounts": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed"
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed"
+    ]
+   }
+  ],
+  "PanelQuickActionsLargeTextUITests.test_accessibilityXXXL_everyQuickActionIsWhollyOnScreen": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertGreaterThanOrEqual failed: (\"-111.66666666666666\") is less than (\"-0.5\") - Con AX5 la acción panel_action_new empieza fuera de su fila ((-111.66666666666666, 495.0, 400.0, 58.66666666666674),"
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertGreaterThanOrEqual failed: (\"-77.0\") is less than (\"-0.5\") - Con AX5 la acción panel_action_new empieza fuera de su fila ((-77.0, 495.0, 400.0, 58.66666666666674), fila (0.0, 495.0, 357.33334"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 7,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertGreaterThanOrEqual failed: (\"-85.0\") is less than (\"-0.5\") - Con AX5 la acción panel_action_new empieza fuera de su fila ((-85.0, 495.0, 400.0, 58.66666666666674), fila (0.0, 495.0, 349.33334"
+    ]
+   }
+  ],
+  "FormClarity23UITests.test_m1_largeText_theNoticeIsShown": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to synthesize event: Neither element nor any descendant has keyboard focus. Event dispatch snapshot: TextField, {{104.7, 789.7}, {241.3, 131.0}}, identifier: 'new_transaction_amount', placehold"
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to synthesize event: Neither element nor any descendant has keyboard focus. Event dispatch snapshot: TextField, {{104.7, 789.7}, {241.3, 131.0}}, identifier: 'new_transaction_amount', placehold"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to synthesize event: Neither element nor any descendant has keyboard focus. Event dispatch snapshot: TextField, {{104.7, 789.7}, {241.3, 131.0}}, identifier: 'new_transaction_amount', placehold"
+    ]
+   }
+  ],
+  "FormClarity23UITests.test_v3_largeText_manualEntryIsReachable": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to failed to scroll to visible (by AX action) Button, {{421.3, 711.0}, {56.0, 56.0}}, identifier: 'fab_new_transaction', label: 'Nuevo registro', error: Error kAXErrorFailure performing AXActio"
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to failed to scroll to visible (by AX action) Button, {{403.7, 711.0}, {56.0, 56.0}}, identifier: 'fab_new_transaction', label: 'Nuevo registro', error: Error kAXErrorFailure performing AXActio"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to failed to scroll to visible (by AX action) Button, {{405.0, 711.0}, {56.0, 56.0}}, identifier: 'fab_new_transaction', label: 'Nuevo registro', error: Error kAXErrorFailure performing AXActio"
+    ]
+   }
+  ],
+  "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - El arrastre no subió Planificación encima de Tendencias."
+    ]
+   },
+   {
+    "run": "43731050927",
+    "fecha": "2026-11-15",
+    "tanda": 7,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - El arrastre no subió Planificación encima de Tendencias."
+    ]
+   },
+   {
+    "run": "44576408696",
+    "fecha": "2026-11-19",
+    "tanda": 11,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - El arrastre no subió Planificación encima de Tendencias."
+    ]
+   },
+   {
+    "run": "44991989046",
+    "fecha": "2026-11-22",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - «Restablecer» no devolvió el orden original.",
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - El arrastre no subió Planificación encima de Tendencias."
+    ]
+   }
+  ],
+  "IPhoneLandscapeUITests.test_shortHeight_recordsHeaderLeavesTheFirstRowInView": [
+   {
+    "run": "43324338848",
+    "fecha": "2026-11-12",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"434.6666564941406\") is not less than (\"338.0\") - Con poco alto la cabecera tapa la lista: la primera fila ((16.0, 434.6666564941406, 842.0, 65.66665649414062)) queda bajo l"
+    ]
+   },
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"434.6666564941406\") is not less than (\"338.0\") - Con poco alto la cabecera tapa la lista: la primera fila ((16.0, 434.6666564941406, 842.0, 65.66665649414062)) queda bajo l"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertLessThan failed: (\"434.6666564941406\") is not less than (\"338.0\") - Con poco alto la cabecera tapa la lista: la primera fila ((16.0, 434.6666564941406, 842.0, 65.66665649414062)) queda bajo l"
+    ]
+   }
+  ],
+  "LargeTextSecondaryScreensUITests.test_ax3_settingsRowTitles_aOneWordTitleTakesOneLine": [
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x10a49a440, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'",
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x10a59bd40, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'",
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x10a591680, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'"
+    ]
+   },
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x109609040, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'",
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x10954aa80, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'",
+     "XCTAssertTrue failed - La fila de Favoritos no expone su título: Attributes: Button, 0x1095f43c0, {{16.0, 510.3}, {370.0, 156.0}}, identifier: 'profile_favorites', label: 'Registros favoritos'"
+    ]
+   }
+  ],
+  "WhatsNewLaunchUITests.test_updateFrom2_0_withATrialOfferPending_showsTheSheetOnTheFirstLaunch": [
+   {
+    "run": "43731050927",
+    "fecha": "2026-11-15",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Con la oferta pendiente, Novedades no salió en el primer arranque tras actualizar."
+    ]
+   }
+  ],
+  "WhatsNewLaunchUITests.test_updateFrom2_1_showsTheSheetOnce": [
+   {
+    "run": "43731050927",
+    "fecha": "2026-11-15",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La hoja de Novedades no salió al venir de 2.1.3."
+    ]
+   }
+  ],
+  "PersonalToGroupConversionUITests.test_convertingTheBus_toAGroup": [
+   {
+    "run": "43929672868",
+    "fecha": "2026-11-16",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El registro no quedó enlazado al gasto del grupo."
+    ]
+   },
+   {
+    "run": "44991989046",
+    "fecha": "2026-11-22",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El detalle no ofrece «Editar»."
+    ]
+   },
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 14,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El detalle no ofrece «Editar»."
+    ]
+   }
+  ],
+  "SplitCalculatorUITests.test_applyingSplitShowsChipInForm": [
+   {
+    "run": "43929672868",
+    "fecha": "2026-11-16",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - No se montó SplitCalculatorSheet (selector de modo)."
+    ]
+   }
+  ],
+  "SplitCalculatorUITests.test_splitCalculatorComputesPortion": [
+   {
+    "run": "43929672868",
+    "fecha": "2026-11-16",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - No se montó SplitCalculatorSheet (selector de modo)."
+    ]
+   }
+  ],
+  "AccountCardPickersUITests.test_selector_fromTheUSDLine_choosingTheCardGoesBackToThePrincipal": [
+   {
+    "run": "43929672868",
+    "fecha": "2026-11-16",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El selector no volvió a abrir con la tarjeta.",
+     "XCTAssertTrue failed - La pastilla de dólares no quedó elegida."
+    ]
+   }
+  ],
+  "TransactionsCrudUITests.test_recordSelectorsOpenAtMediumDetent": [
+   {
+    "run": "44074738336",
+    "fecha": "2026-11-17",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El selector de new_transaction_account_chip no se cerró.",
+     "Failed to determine hittability of \"new_transaction_account_chip\" Button: Activation point invalid and no suggested hit points based on element frame"
+    ]
+   },
+   {
+    "run": "44138906449",
+    "fecha": "2026-11-17",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El selector de new_transaction_account_chip no se cerró."
+    ]
+   }
+  ],
+  "InboxDuplicateCheckUITests.test_saveReady_leavesThePossibleDuplicatePending_andSaysSo": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La línea de duplicados dice «Sin guardar por posible duplicado: 2»."
+    ]
+   }
+  ],
+  "InboxDuplicateCheckUITests.test_swipeToSave_aCompleteDraft_showsTheSuccessScreenWithItsSummary": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - La pantalla de éxito salió vacía, sin «Aceptar»."
+    ]
+   }
+  ],
+  "AsistenteCuentaUITests.test_capturas_cadaPaso": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "Failed to get matching snapshots: Timed out while evaluating UI query.",
+     "XCTAssertTrue failed - El avatar de Perfil existe pero NO es alcanzable — algo lo tapa (¿un sheet sin cerrar?) y el tap se perdería."
+    ]
+   }
+  ],
+  "RecurrenteDesdeRegistroUITests.test_inbox_approveAndMakeRecurring_approvesAndOpensTheEditor": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - No se abrió el editor de recurrentes."
+    ]
+   }
+  ],
+  "InboxNotificationTapUITests.test_foreground_tapWithTheNoticeOnScreen_opensInboxInstead": [
+   {
+    "run": "44576408696",
+    "fecha": "2026-11-19",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Al arrancar con borradores nuevos tenía que salir el aviso (control del productor)."
+    ]
+   }
+  ],
+  "PersonalToGroupConversionUITests.test_cancellingTheReview_changesNothing": [
+   {
+    "run": "44991989046",
+    "fecha": "2026-11-22",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El detalle no ofrece «Editar»."
+    ]
+   },
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El detalle no ofrece «Editar»."
+    ]
+   }
+  ],
+  "FirstExpensePracticeAlertUITests.test_firstExpense_showsSuccessScreenBeforePracticeAlert": [
+   {
+    "run": "44991989046",
+    "fecha": "2026-11-22",
+    "tanda": 6,
+    "intentos": [],
+    "cuelgue": true,
+    "errores": []
+   }
+  ],
+  "VozFotoAvisos23UITests.test_success_createAnother_hasItsIdentifier": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 14,
+    "intentos": [],
+    "cuelgue": true,
+    "errores": []
+   }
+  ],
+  "TransactionFormDecided02UITests.test_missingLine_inATransfer_staysUntilBothAccountsAreChosen": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 2,
+    "intentos": [],
+    "cuelgue": true,
+    "errores": []
+   }
+  ],
+  "LimiteTarjetaUITests.test_ponerCambiarYBorrarElLimite_laHojaEnseñaElUsoSoloConLimite": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 4,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «800».",
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «8»."
+    ]
+   },
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 12,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «800».",
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «80»."
+    ]
+   },
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 7,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «8».",
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «800».",
+     "XCTAssertTrue failed - El campo no quedó vacío antes de escribir: «80»."
+    ]
+   }
+  ],
+  "GroupExpenseSuccessUITests.test_createGroupExpenseShowsSuccessScreen": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 6,
+    "intentos": [],
+    "cuelgue": true,
+    "errores": []
+   }
+  ],
+  "ReceiptDropUITests.test_trialUsedUpMidway_keepsWhatWasRead_andOffersPro": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"0\") is not equal to (\"1\") - Tenía que haber un registro por página leída."
+    ]
+   }
+  ],
+  "PagoLogoPropioUITests.test_ownPhoto_showsInTheList_afterSaving_lightTheme": [
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - «Colegio San Martín» no aparece en la lista."
+    ]
+   }
+  ],
+  "VozFotoAvisos23UITests.test_photoWithSeveral_showsMoreThanOneRow_withoutStretchingTheSheet": [
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 14,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - Con siete leídos la hoja tenía que enseñar más de una fila sin estirarla."
+    ]
+   }
+  ],
+  "IAGuiadosUITests.test_account_stepByStep_createsIt": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 1,
+    "intentos": [],
+    "cuelgue": true,
+    "errores": []
+   }
+  ],
+  "RecurrenteDesdeRegistroUITests.test_detail_makeRecurring_prefillsTheEditor_andTheRecordBecomesItsFirstPayment": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 13,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El detalle no ofrece «Recurrente» al pie."
+    ]
+   }
+  ],
+  "RecurrenteDesdeRegistroUITests.test_rowMenu_offersMakeRecurring_andOpensTheEditor": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 13,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El menú del registro no ofrece «Hacer recurrente»."
+    ]
+   }
+  ],
+  "RecordsLote8BUITests.test_duplicates_removeRepeated_asksFirst_andLeavesOnePerGroup": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 4,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - Sin «Fecha», ninguna fila de un grupo de días distintos dice de qué día es."
+    ]
+   }
+  ],
+  "UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 7,
+    "intentos": [
+     "failed",
+     "failed",
+     "failed"
+    ],
+    "cuelgue": false,
+    "errores": [
+     "XCTAssertTrue failed - El chip del año pasado no quedó elegido."
+    ]
+   }
+  ]
+ },
+ "salvadas_por_reintento": {
+  "AIConsentAlertUITests.test_voicePillWithoutConsent_showsTheNotice_withoutTheProviderName_andCancelCloses": [
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "44074738336",
+    "fecha": "2026-11-17",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "44138906449",
+    "fecha": "2026-11-17",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "ExternalEntryForeignSheetUITests.test_halfFilledFormInAnotherTab_panelLink_keepsTheForm": [
+   {
+    "run": "41499680249",
+    "fecha": "2026-11-02",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "SiriShortcutsScreenUITests.test_rowsUseTheShortcutsNames_andTheButtonOpensYalasPageInShortcuts": [
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "42064641786",
+    "fecha": "2026-11-05",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "UXAudit22Lote04UITests.test_privateSignOut_waitShowsTheUploadCard_andTheNoticeOffersExportFirst": [
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AccountRemovalUITests.test_deleteAccountWithRecords_movesThemToAnotherAccount": [
+   {
+    "run": "41865831610",
+    "fecha": "2026-11-04",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AppLanguageSettingsReturnUITests.test_changingLanguage_reopensPersonalization_andSettingsButtonKeepsOpening": [
+   {
+    "run": "42677093033",
+    "fecha": "2026-11-09",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AjustesYProNecesariasLote10UITests.test_aiPrivacy_withPro_insightsRowHasNoMark_andAsksTheConsent": [
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "ExternalEntryForeignSheetUITests.test_rebuiltForm_panelLink_keepsWhatWasTyped": [
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "InboxNotificationTapUITests.test_foreground_tapWithTheNoticeOnScreen_opensInboxInstead": [
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AccountCardPickersUITests.test_budgetOnTheCard_countsTheLineExpense": [
+   {
+    "run": "43461894908",
+    "fecha": "2026-11-13",
+    "tanda": 8,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips": [
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AccountLinesUITests.test_savingsForm_offersLines": [
+   {
+    "run": "43608092892",
+    "fecha": "2026-11-14",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "TopPrimaryActionUITests.test_recordsPage_actionsRowOnTop_floatingOnlyAfterScrolling": [
+   {
+    "run": "44074738336",
+    "fecha": "2026-11-17",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "StatisticsRecordsFilterObservationUITests.test_distribution_followsTheAccountFilter_acrossBackgroundRoundTrips": [
+   {
+    "run": "44138906449",
+    "fecha": "2026-11-17",
+    "tanda": 6,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "BalanceCalculatorReopenUITests.test_reopeningTheCalculator_keepsAThousandsBalance": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 1,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AsistenteCuentaUITests.test_cerrarConRespuestas_preguntaAntes": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "UXAudit22Lote08UITests.test_deletingARecord_offersUndo_andUndoBringsItBack": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 2,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AsistentePagoPlanificadoUITests.test_cerrarConRespuestas_preguntaAntes": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   },
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "PanelSectionsConfigResetUITests.test_reset_asksFirst_cancelKeepsTheOrder_andConfirmRestoresIt": [
+   {
+    "run": "44356469669",
+    "fecha": "2026-11-18",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "InboxNotificationTapUITests.test_background_tapAfterTheNotice_opensInbox_andTheNoticeNeverFollows": [
+   {
+    "run": "44576408696",
+    "fecha": "2026-11-19",
+    "tanda": 3,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "FlujoCrearPlanUITests.test_armado_partedelSaldo_yLaCategoriaSePliega": [
+   {
+    "run": "44991989046",
+    "fecha": "2026-11-22",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AsistentePagoPlanificadoUITests.test_recorridoCompleto_creaElPago": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "PaywallInboxAlertRoutingUITests.test_alertAndPaywallSerialize_thenToolbarAliveAndInboxOpens": [
+   {
+    "run": "45104524444",
+    "fecha": "2026-11-23",
+    "tanda": 9,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "TrendsInsightCardUITests.test_free_lastMonth_addsTheComparisonBullet": [
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 12,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "FavoritesAlRegistrar23UITests.test_f1_tappingAFavorite_opensTheKeyboardWithTheAmountSelected": [
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 14,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "PersonalToGroupConversionUITests.test_cancellingTheReview_changesNothing": [
+   {
+    "run": "45319446916",
+    "fecha": "2026-11-24",
+    "tanda": 14,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "ArchivedAccountKeepsHistoryUITests.test_archivingAnAccount_keepsExcludeOff_andItsRecordsStayInRegistros": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 13,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "GroupsSmokeUITests.test_groupShareableSummaryOpensAndRendersImage": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 4,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ],
+  "AdaptiveNavigationUITests.test_budgetDetailOpensItsCharts_andBackReturnsToTheList": [
+   {
+    "run": "45535770873",
+    "fecha": "2026-11-25",
+    "tanda": 5,
+    "intentos": [
+     "failed",
+     "passed"
+    ]
+   }
+  ]
+ }
+}
