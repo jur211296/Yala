@@ -127,3 +127,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Conductor de capturas: oscuro y girado](feedback_conductor_de_capturas_oscuro_y_girado.md) — `-userTheme 1` tapa el oscuro; y mira el índice antes de escribir el conductor.
 - [Vaciar el almacén de pruebas del iPhone](reference_vaciar_el_almacen_de_pruebas_del_iphone.md) — vive en el grupo de apps; reset con `pesado` mata el arranque; `devicectl copy to` vacío.
 - [«Sign out» de depuración borra el proveedor](reference_sign_out_de_depuracion_borra_el_proveedor.md) — monta «nube sin sesión»; la puerta abría Apple; consola Debug en el iPhone; Release-Dev no compila.
+- [Observar el iPhone en vivo](reference_observar_el_iphone_en_vivo.md) — vigía por árbol AX + capturas al cambiar; sin log del sistema; telemetría por la Mini; horas del reloj.
