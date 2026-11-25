@@ -1,0 +1,9 @@
+Novedades desde la build 2.3 (9):
+• Cuenta de Yala: después de «Vaciar datos», la app ya no pide «Inicia sesión para subir N cambios» con la sesión abierta, y al reabrirla el Panel sale enseguida en vez de quedarse cargando.
+• Ajustes: «Tu cuenta de Yala» y «Eliminar mi cuenta» salen siempre que tus datos estén en la nube, también si la sesión se perdió. Sin sesión, al eliminar te pide entrar con la misma cuenta (Google o Apple) y termina en la bienvenida.
+• Primeros pasos: sale al crear una cuenta nueva en un teléfono que ya tuvo Yala antes, en «Solo gastos» y en «Gastos e ingresos».
+• «Esto leí»: «S/ ▾» cambia la moneda y la cuenta pasa a una de esa moneda. La descripción va en negrita y la tarjeta ya no tiene un hueco arriba.
+• Hoja de varios: cada fila se despliega como la tarjeta de «Esto leí». Un registro sin monto, cuenta o categoría no se puede marcar y se queda en la Bandeja.
+• Estadísticas: al elegir comparar con el mismo mes del año pasado, ese chip queda marcado.
+
+Qué probar: instala desde cero y recorre la bienvenida en «Solo gastos» y en «Gastos e ingresos»; con una cuenta de Yala, «Vaciar datos» y reabre la app; «Eliminar mi cuenta» en Ajustes; lee la foto de un recibo y cambia la moneda. Si algo falla, envía una captura desde TestFlight.
