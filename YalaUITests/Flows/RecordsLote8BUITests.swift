@@ -69,7 +69,11 @@ final class RecordsLote8BUITests: XCTestCase {
         //    la copia salía con la fecha de hoy y el grupo de días distintos tenía que ponerlo la semilla, que cambia
         //    con el día del mes: el caso salía verde unos días y rojo otros (ticket
         //    `ui-suite-2-2-five-tests-red-on-the-base`).
-        app.buttons.matching(identifier: "record_row").element(boundBy: 0).tap()
+        //    Se duplica el primer GASTO y no la primera fila: los días 10 y 25 la semilla pone arriba una transferencia, y
+        //    el modo duplicados deja fuera las transferencias, así que la copia no formaba grupo (nocturna del 25-nov).
+        app.buttons.matching(NSPredicate(
+            format: "identifier == 'record_row' AND (label BEGINSWITH 'Gasto, ' OR label CONTAINS ', Gasto, ')"))
+            .firstMatch.tap()
         let editButton = app.buttons["transaction_detail_edit"]
         XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle.")
         editButton.tap()
