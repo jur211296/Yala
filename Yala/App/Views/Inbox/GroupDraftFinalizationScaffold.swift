@@ -178,7 +178,8 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
             // Formatea una sola vez por render (el font-size deriva de su longitud).
             let formatted = YalaFormatterStatic.number(value: abs(amount))
             let fontSize = amountFontSize(forLength: formatted.count)
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            // La cápsula centrada en vertical con el monto, como en Nuevo registro (Jürgen, 25-nov-2026).
+            HStack(alignment: .center, spacing: DS.Spacing.sm) {
                 AmountCurrencyCapsule(
                     label: YalaFormatterStatic.currencyIdentifier(for: currencyCode),
                     options: [],

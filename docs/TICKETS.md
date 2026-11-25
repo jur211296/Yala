@@ -43,14 +43,15 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (159)
+## Index (160)
 
 | id | status | path |
-| 2026-11-25-ui-nocturna-cuelgues-cuarentena-ci | done | tickets/done/2026-11-25-ui-nocturna-cuelgues-cuarentena-ci.md |
 | 2026-11-25-build-9-migracion-bandeja-22 | done | tickets/done/2026-11-25-build-9-migracion-bandeja-22.md |
-| 2026-11-25-ui-nocturna-rojos-reales | done | tickets/done/2026-11-25-ui-nocturna-rojos-reales.md |
 | 2026-11-24-barrido-y-testflight-2-3-build-9 | done | tickets/done/2026-11-24-barrido-y-testflight-2-3-build-9.md |
 | 2026-11-25-ya-registrado-parte-descartar-con-texto-grande | backlog | tickets/backlog/2026-11-25-ya-registrado-parte-descartar-con-texto-grande.md |
+| 2026-11-25-ui-nocturna-cuelgues-cuarentena-ci | done | tickets/done/2026-11-25-ui-nocturna-cuelgues-cuarentena-ci.md |
+| 2026-11-25-esto-lei-moneda-descripcion-sin-hueco | done | tickets/done/2026-11-25-esto-lei-moneda-descripcion-sin-hueco.md |
+| 2026-11-25-ui-nocturna-rojos-reales | done | tickets/done/2026-11-25-ui-nocturna-rojos-reales.md |
 | 2026-11-25-gateway-d1-overloaded-vincular-suscripcion | done | tickets/done/2026-11-25-gateway-d1-overloaded-vincular-suscripcion.md |
 | 2026-11-24-bugs-barrido-build-8 | done | tickets/done/2026-11-24-bugs-barrido-build-8.md |
 | 2026-11-24-bandeja-emparejador-entre-fuentes | done | tickets/done/2026-11-24-bandeja-emparejador-entre-fuentes.md |

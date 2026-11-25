@@ -633,7 +633,8 @@ struct GroupExpenseFormView: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+        // La cápsula centrada en vertical con el monto, como en Nuevo registro (Jürgen, 25-nov-2026).
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
             currencyChip
 
             // El rosa del gasto de los tres formularios de registro (registro unificado); antes, el acento del tema. Sin
