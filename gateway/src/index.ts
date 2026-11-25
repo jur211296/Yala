@@ -28,6 +28,7 @@ import { handlePushRegister, handlePushUnregister } from "./push/register";
 import { handleMailAddress, handleMailDrafts, handleMailDraftsAck } from "./mail/routes";
 import { handleEmail } from "./mail/email";
 import { handleComerciosAportes, handleComerciosLista } from "./comercios-comun/routes";
+import { esD1Saturada, RETRY_AFTER_D1_SATURADA_S } from "./d1-reintento";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -128,6 +129,20 @@ app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 // que no pudimos escribir. Lo que se arregla es el shape, no el status.
 app.onError((err, c) => {
   console.log(`[unhandled] ${c.req.method} ${new URL(c.req.url).pathname}: ${err.message}`);
+  // D1 saturada (2026-11-25, YALA-GATEWAY-2/3/4): la cola de Cloudflare no llegó a ejecutar la sentencia. Es
+  // pasajero y se puede repetir, así que va como 503 con `Retry-After` y no como el 500 genérico. Sigue siendo 5xx:
+  // Apple reintenta igual el webhook. A Sentry va como aviso con una sola huella, para que todas las rutas caigan
+  // en un mismo issue en lugar de abrir uno por ruta.
+  if (esD1Saturada(err)) {
+    Sentry.withScope((scope) => {
+      scope.setLevel("warning");
+      scope.setFingerprint(["d1-saturada"]);
+      Sentry.captureException(err);
+    });
+    return jsonError("yala_unavailable", "Servicio saturado un instante; reintenta en unos segundos.", 503, {
+      "Retry-After": String(RETRY_AFTER_D1_SATURADA_S),
+    });
+  }
   // Hono atrapa el throw aquí y `withSentry` ya no lo ve: el aviso se manda a mano. Sin DSN es un no-op.
   Sentry.captureException(err);
   return jsonError("yala_unavailable", "Internal error", 500);

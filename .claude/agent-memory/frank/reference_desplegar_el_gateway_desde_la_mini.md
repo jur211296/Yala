@@ -51,3 +51,14 @@ Relacionado: [[feedback-verificar-prod-del-gateway-con-token-acunado]].
   (`str`, `tokens`) renombran variables ajenas en el bundle: son ruido, no cambios.
 - **El D1 de staging no lleva `d1_migrations` al día** (le faltaban 0004 y 0005): `migrations apply` reaplicaría todo.
   Se aplica solo el fichero propio con `d1 execute --file` (que sea `IF NOT EXISTS`) y se anota a mano su fila.
+
+- **2026-11-25 (D1 saturada): parche de BUNDLE sobre el bundle vivo, sin reconstruir la base.** Staging corría un montaje
+  de tres sesiones (manifest v9, por detrás de 2.3 con v11). En vez de reconstruirlo: `dry-run` de 2.3 y de mi commit, `diff
+  -u` entre los dos bundles (100 líneas, solo lo mío), `patch` sobre el `worker.js` bajado de `content/v2`, y comprobar que
+  las funciones que nombra el parche existen en el vivo (`withScope2`, etc.). Desplegar con una COPIA del toml con
+  `main = "<parcheado>"` y `no_bundle = true` (`wrangler deploy <fichero> --no-bundle` ignora el toml: «provide a name»);
+  `dry-run --outdir` + `cmp` confirma que sube exactamente ese fichero. Antes, `/settings` del script contra `[vars]` del
+  toml: un deploy reescribe las variables.
+- **Diagnosticar D1 desde la Mini, solo lectura**: GraphQL `d1AnalyticsAdaptiveGroups` (por `databaseId`, por minuto) y
+  `workersInvocationsAdaptive` (por `scriptName`). Un minuto sin consultas registradas con el error en Sentry = la cola de
+  Cloudflare, no carga nuestra.
