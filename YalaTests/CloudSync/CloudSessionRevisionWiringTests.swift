@@ -59,13 +59,20 @@ struct CloudSessionRevisionWiringTests {
 
     // MARK: - Las lecturas que pintan
 
-    /// Cada accesor que el body lee abre atando la dependencia, y lee la sesión justo después.
+    /// Cada accesor que el body lee abre atando la dependencia, y lee la sesión justo después. `read` puede ocupar varias
+    /// líneas: se comparan todas, en orden, detrás de `track()`.
     @Test(arguments: [
         ("Yala/App/Views/Profile/ProfileView.swift",
          "private var signOutRowPath: CloudSignOutFlowLogic.Path {", "return CloudSignOutFlowLogic.path("),
+        // Bugs de cuenta nube (2026-11-25): la fila sigue con los datos en la nube aunque se pierda la sesión, y la lectura
+        // de la sesión pasa a ser el primer argumento de la decisión. Se fija la expresión entera, en orden.
         ("Yala/App/Views/Profile/ProfileView.swift",
          "private var deleteAccountRowHasSession: Bool {",
-         "return UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession"),
+         """
+         return AccountDeletionRowLogic.shouldShow(
+         hasSession: UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession,
+         storageIsCloud: CloudSyncFlags.storageMode == .cloud)
+         """),
         ("Yala/App/Views/Profile/ProfileView.swift",
          "private var showsBankEmailRow: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
         ("Yala/App/Views/Panel/PrimerosPasosHomeScreenPresentation.swift",
@@ -89,7 +96,9 @@ struct CloudSessionRevisionWiringTests {
     ])
     func readerTracksTheSession(file: String, anchor: String, read: String) throws {
         let src = try Self.source(file)
-        #expect(try Self.lines(after: anchor, in: src, count: 2) == [Self.track, read], "\(file): «\(anchor)»")
+        let readLines = read.split(separator: "\n").map(String.init)
+        #expect(try Self.lines(after: anchor, in: src, count: 1 + readLines.count) == [Self.track] + readLines,
+                "\(file): «\(anchor)»")
     }
 
     /// El CTA del último paso del educativo se decide en `ctaSection`, que abre atando la dependencia.

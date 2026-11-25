@@ -56,12 +56,16 @@ struct PanelWaitsAfterEmpezarTests {
     private final class Engine {
         var cloudEngineActive = true
         var firstPullCompleted = false
+        /// El motor parado hasta volver a iniciar sesión (bugs de cuenta nube, 2026-11-25). Fijo en el test: con el real,
+        /// el caso dependería del estado que otra suite dejó en `CloudSyncRuntime.shared`.
+        var waitsForSignIn = false
     }
 
     private func makePanel(_ engine: Engine, context: ModelContext) -> PanelViewModel {
         let viewModel = PanelViewModel()
         viewModel.isApplicationInForeground = { true }
         viewModel.accountDataWaitInputs = { (engine.cloudEngineActive, engine.firstPullCompleted, false) }
+        viewModel.accountDataWaitEngineWaitsForSignIn = { engine.waitsForSignIn }
         viewModel.setContext(context, defaultCurrencyCode: "PEN", sessionState: session)
         return viewModel
     }
@@ -110,6 +114,24 @@ struct PanelWaitsAfterEmpezarTests {
         #expect(viewModel.accountDataWait == .idle)
     }
 
+    @Test("Con el motor parado hasta iniciar sesión no espera nada: la entrada se consume y el Panel sale en el acto")
+    func afterEmpezar_engineWaitsForSignIn_consumesTheEntry() async throws {
+        let context = try makeTestContext()
+        _ = makeTestAccount(context: context, name: "Gastos Soles")
+        try context.save()
+        let engine = Engine()
+        engine.waitsForSignIn = true
+        let viewModel = makePanel(engine, context: context)
+        AccountEntryPanelWait.arm()
+        defer { AccountEntryPanelWait.disarm() }
+
+        viewModel.reloadAndRecalculate()
+        try await settle(until: { viewModel.isReady })
+        #expect(viewModel.isReady, "Ahí no baja nada hasta entrar: esperar solo taparía el aviso de «Iniciar sesión»")
+        #expect(viewModel.accountDataWait == .idle)
+        #expect(!AccountEntryPanelWait.isArmed(), "Una entrada sin nada que traer no se queda armada hasta el techo")
+    }
+
     // MARK: - Cableado
 
     @Test("«Empezar» arma la entrada antes de pedir la recarga, y el Panel la lee y la consume")
@@ -119,6 +141,12 @@ struct PanelWaitsAfterEmpezarTests {
         let panel = try BarridoFinal23Source.code("Yala/App/ViewModels/PanelViewModel.swift")
         #expect(panel.contains("let justEntered = AccountEntryPanelWait.isArmed(now: now)"))
         #expect(panel.contains("justEnteredAccount: justEntered, now: now)"))
-        #expect(panel.contains("if justEntered, next.isWaiting || inputs.firstPullCompleted || inputs.attestVerdictIsTerminal { AccountEntryPanelWait.disarm() }"))
+        // Se desarma al empezar a esperar o cuando el motor ya no trae nada: el primer tirón hecho, el veredicto terminal
+        // del attest o, desde los bugs de cuenta nube (2026-11-25), el motor parado hasta volver a iniciar sesión.
+        #expect(panel.contains("let waitsForSignIn = accountDataWaitEngineWaitsForSignIn()"))
+        #expect(panel.contains("engineWaitsForSignIn: waitsForSignIn, justEnteredAccount: justEntered, now: now)"))
+        #expect(panel.contains("if justEntered, next.isWaiting || inputs.firstPullCompleted || inputs.attestVerdictIsTerminal || waitsForSignIn { AccountEntryPanelWait.disarm() }"))
+        #expect(panel.components(separatedBy: "AccountEntryPanelWait.disarm()").count - 1 == 1,
+                "La entrada se desarma en un solo sitio")
     }
 }
