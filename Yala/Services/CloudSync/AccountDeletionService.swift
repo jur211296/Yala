@@ -61,6 +61,20 @@ enum AccountDeletionRowLogic {
     static func shouldShow(hasSession: Bool) -> Bool {
         hasSession
     }
+
+    /// **Y en un teléfono con los datos en la nube, también sin sesión** (bugs de cuenta nube, 2026-11-25). Medido en el
+    /// iPhone de Jürgen: en modo nube con la sesión perdida, «Tu cuenta de Yala» y con ella «Eliminar mi cuenta»
+    /// desaparecían, y esa cuenta quedaba sin ninguna forma de borrarse. La decisión «Sesiones — dos ejes» (2026-09-09,
+    /// punto 6) lo prohíbe: «Eliminar mi cuenta» no puede desaparecer para sesiones en la nube (App Store 5.1.1 v).
+    static func shouldShow(hasSession: Bool, storageIsCloud: Bool) -> Bool {
+        hasSession || storageIsCloud
+    }
+
+    /// Sin sesión, la cuenta no se puede borrar en el servidor: antes hay que volver a entrar, con la misma cuenta
+    /// (`CloudMigrationController.signInToResumeSync`, la puerta de «Iniciar sesión», que rechaza otra cuenta).
+    static func needsSignInBeforeDeleting(hasSession: Bool, storageIsCloud: Bool) -> Bool {
+        !hasSession && storageIsCloud
+    }
 }
 
 @MainActor

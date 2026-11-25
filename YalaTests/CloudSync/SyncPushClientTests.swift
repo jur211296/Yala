@@ -519,6 +519,56 @@ struct SyncPushClientTests {
         #expect(session.requests.isEmpty)
     }
 
+    /// Bugs de cuenta nube (2026-11-25): el token se pide ANTES DE CADA TROZO. Con uno solo para toda la subida, una cola de
+    /// 7.166 cambios (media hora) mandaba los últimos trozos con el JWT vencido, el 401 se leía «sesión caducada» y el
+    /// motor se paraba pidiendo «Iniciar sesión». Con el mutante (token pedido una vez) los tres trozos llevan «jwt-1».
+    @Test func push_renewsTheTokenBeforeEveryChunk() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(5, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(1), error: nil),
+        ])
+        var issued = 0
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { issued += 1; return "jwt-\(issued)" }, urlSession: session, pushChunkSize: 2)
+        guard case .completed(let results) = await client.push(rows) else {
+            Issue.record("expected .completed"); return
+        }
+        #expect(results.count == 5)
+        let auth = session.requests.map { $0.value(forHTTPHeaderField: "Authorization") ?? "" }
+        #expect(auth == ["Bearer jwt-1", "Bearer jwt-2", "Bearer jwt-3"])
+    }
+
+    /// Si el token deja de llegar a mitad de la subida, lo confirmado se entrega (`.completed`) y el resto no sale: el ciclo
+    /// siguiente clasifica el token que falta con la lectura de siempre.
+    @Test func push_tokenGoneAfterAConfirmedChunk_returnsWhatWasConfirmed() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(4, context: context)
+        for sdkKeepsTheSession in [true, false] {
+            let session = SequencedHTTPSession([
+                .init(status: 200, body: okBody(2), error: nil),
+                .init(status: 200, body: okBody(2), error: nil),
+            ])
+            var issued = 0
+            let client = SyncPushClient(
+                baseURL: URL(string: "https://example.test")!,
+                tokenProvider: { issued += 1; return issued == 1 ? "jwt" : nil }, urlSession: session, pushChunkSize: 2,
+                canRenewSession: { sdkKeepsTheSession })
+            guard case .completed(let results) = await client.push(rows) else {
+                Issue.record("expected .completed(parciales)"); return
+            }
+            #expect(results.count == 2)
+            #expect(session.requests.count == 1)
+            // Sesión conservada: la renovación no volvió, la subida no llegó por la red. Borrada: caducada, no es la red.
+            #expect(client.lastPushFailedAtServer == sdkKeepsTheSession)
+        }
+    }
+
     /// Primer chunk falla → el outcome del fallo sube TAL CUAL (conserva la clasificación).
     @Test func push_firstChunkFails_preservesOutcome() async throws {
         let dir = freshDir(); defer { cleanup(dir) }

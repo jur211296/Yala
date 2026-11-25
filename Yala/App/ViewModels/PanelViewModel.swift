@@ -675,18 +675,27 @@ final class PanelViewModel {
          GroupsAttestStreakStore.isTerminal())
     }
 
+    /// El motor está parado hasta que se vuelva a iniciar sesión: no bajará nada (bugs de cuenta nube, 2026-11-25). Aparte
+    /// de `accountDataWaitInputs` para no cambiar su forma. Sustituible en los tests.
+    @ObservationIgnored var accountDataWaitEngineWaitsForSignIn: @MainActor () -> Bool = {
+        SyncSignInBannerLogic.engineWaitsForSignIn(
+            state: CloudSyncRuntime.shared?.state, hasSession: CloudAuthService.shared.hasSession)
+    }
+
     private func nextAccountDataWait(now: Date = .now) -> PanelAccountDataWait {
         let inputs = accountDataWaitInputs()
+        let waitsForSignIn = accountDataWaitEngineWaitsForSignIn()
         let justEntered = AccountEntryPanelWait.isArmed(now: now)
         let next = accountDataWait.next(
             hasAccounts: !loadedAccounts.isEmpty,
             cloudEngineActive: inputs.cloudEngineActive,
             firstPullCompleted: inputs.firstPullCompleted,
             attestVerdictIsTerminal: inputs.attestVerdictIsTerminal,
+            engineWaitsForSignIn: waitsForSignIn,
             justEnteredAccount: justEntered,
             now: now)
         // La entrada se consume al empezar a esperar (la espera ya se sostiene sola) o cuando el motor ya no trae nada.
-        if justEntered, next.isWaiting || inputs.firstPullCompleted || inputs.attestVerdictIsTerminal {
+        if justEntered, next.isWaiting || inputs.firstPullCompleted || inputs.attestVerdictIsTerminal || waitsForSignIn {
             AccountEntryPanelWait.disarm()
         }
         return next

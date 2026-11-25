@@ -1458,7 +1458,13 @@ enum CloudSyncBreadcrumb {
     /// El push de la migración paró ANTES de un chunk porque su llamador dejó de poder confirmar el lease
     /// (`SyncPushClient.push(_:continueWhile:)`). `sent` = deltas ya enviados; `pending` = del lote.
     static func pushStoppedBeforeChunk(sent: Int, pending: Int) {
-        logger.notice("CloudSyncMigration pushStoppedBeforeChunk sent=\(sent, privacy: .public) pending=\(pending, privacy: .public) — la confirmación del lease ya no vale")
+        logger.notice("CloudSyncMigration pushStoppedBeforeChunk sent=\(sent, privacy: .public) pending=\(pending, privacy: .public) — corte antes de un trozo (lease vencido, o tope antes de la primera bajada)")
+    }
+
+    /// Altas retiradas de la cola porque una baja posterior de la misma fila las deja sin efecto
+    /// (`CloudSyncEngine.dropSupersededUpserts`).
+    static func outboxSupersededUpsertsDropped(count: Int) {
+        logger.notice("CloudSync outboxSupersededUpsertsDropped count=\(count, privacy: .public)")
     }
 
     /// El líder de la ida perdió el lease (`other_leader`/`not_in_progress`) y SALE sin subir nada más. `step` = dónde se
@@ -3909,6 +3915,40 @@ final class CloudSyncEngine {
         }
         // El espejo se borra DESPUÉS del purge de la fila (orden espeja el write: fila-primero al subir).
         outboxMirror?.remove(syncID: syncID, hlc: hlc)
+    }
+
+    /// **Retira de la cola las altas que una baja posterior de la misma fila deja sin efecto** (bugs de cuenta nube,
+    /// 2026-11-25; la regla, en `SyncOutboxBacklogLogic.supersededUpserts`). Tras «Vaciar datos» con altas que aún no
+    /// habían subido, la cola llevaba el alta y la baja de cada fila: el doble de trozos para el mismo resultado.
+    ///
+    /// Mismo orden que `confirmUploaded`: las filas con su autor y DESPUÉS sus entradas del espejo. Si el guardado falla
+    /// no se toca el espejo y no se retira nada: la subida sigue como antes. Devuelve las filas retiradas.
+    @discardableResult
+    func dropSupersededUpserts(from rows: [SyncOutbox], context: ModelContext) -> Set<PersistentIdentifier> {
+        let entries = rows.map {
+            SyncOutboxBacklogLogic.Entry(key: AnyHashable($0.persistentModelID), syncID: $0.syncID, hlc: $0.hlc,
+                                         isTombstone: SyncOutboxOp(rawValue: $0.opRaw) == .tombstone)
+        }
+        let dropped = Set(SyncOutboxBacklogLogic.supersededUpserts(entries).compactMap { $0.base as? PersistentIdentifier })
+        guard !dropped.isEmpty else { return [] }
+        let victims = rows.filter { dropped.contains($0.persistentModelID) }
+        let keys = victims.map { (syncID: $0.syncID, hlc: $0.hlc) }
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for row in victims { context.delete(row) }
+            }
+        } catch {
+            // Sin `rollback`, como `confirmUploaded`: el contexto es el compartido y puede llevar ediciones sin guardar. Si
+            // esos borrados se guardan después con otro save, el espejo conserva sus entradas y el arranque las repone:
+            // vuelve a subir el alta, que es el comportamiento de antes.
+            #if DEBUG
+            print("CloudSyncEngine: dropSupersededUpserts falló: \(error)")
+            #endif
+            return []
+        }
+        for key in keys { outboxMirror?.remove(syncID: key.syncID, hlc: key.hlc) }
+        CloudSyncBreadcrumb.outboxSupersededUpsertsDropped(count: keys.count)
+        return dropped
     }
 
     /// Corte SEGURO para `deleteHistory(before:)` (invariante §d.5): NUNCA por delante de la fila de

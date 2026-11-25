@@ -76,6 +76,17 @@ enum TabBarDefaultsMigration {
         defaults.bool(forKey: freshInstallKey)
     }
 
+    /// **Una persona que termina el alta de la bienvenida de 2.3 también empezó con ella** (bugs de cuenta nube,
+    /// 2026-11-25). `runIfNeeded` decide la marca una sola vez, en el primer arranque con este código: un teléfono que ya
+    /// tenía Yala antes de 2.3 queda en `.pinnedLegacy` para siempre, y quien creaba ahí una cuenta nueva —tras cerrar
+    /// sesión o eliminar la cuenta— no veía Primeros pasos, en «Solo gastos» ni en «Gastos e ingresos» (medido en el
+    /// iPhone de Jürgen: `tabBarDefaults23.migrated` puesto y sin `onboarding23.freshInstall`). Lo llama el efecto de alta
+    /// nueva (`EntryOnboardingEffects.marksNewInstall`), no las re-entradas: quien vuelve con sus datos sigue sin mazo.
+    /// No toca la barra guardada: es de la persona o del aparato, y el borrado del cierre ya la retira.
+    static func markStartedWithWelcome23(defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: freshInstallKey)
+    }
+
     /// XCUITest (`-uitest-reset`): deja la instalación como una de antes de 2.3 (barra de siempre) o, con
     /// `-uitest-fresh-install`, como una nueva. Las pruebas eligen Estadísticas y Planificación por la barra en una
     /// veintena de ficheros; la instalación nueva se prueba a propósito.
