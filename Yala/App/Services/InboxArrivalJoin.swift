@@ -192,6 +192,46 @@ enum InboxArrivalJoin {
         return true
     }
 
+    // MARK: - «Es el mismo» (lote 3)
+
+    /// «Es el mismo» de la Bandeja: une un pendiente ya guardado en otro, por el mismo camino que la unión al llegar
+    /// (registro de unión, importe del banco y «Separar» después). `arriving` no puede tener nada unido; `holder` sí. Se
+    /// borra `arriving` y se guarda todo en un solo `save()`; si falla, no cambia nada. Devuelve si se unió.
+    @discardableResult
+    static func joinPending(_ arriving: InboxDraft, into holder: InboxDraft, context: ModelContext,
+                            now: Date = .now) -> Bool {
+        guard arriving !== holder, arriving.isReadableInInbox, holder.isReadableInInbox,
+              case .none = InboxJoinRecord.read(arriving.joinRecordRaw),
+              let arrivalFacts = derivedFacts(of: arriving),
+              let held = consumption(of: holder),
+              let candidate = InboxJoinLogic.candidate(id: UUID(), facts: arrivalFacts, fields: fields(of: arriving),
+                                                       fallbackDate: arriving.createdAt) else { return false }
+        var joined = held
+        guard joined.absorb(candidate) else { return false }
+
+        var outcome = Outcome()
+        let arrival = Arrival(draft: arriving, currencyCode: arrivalFacts.currencyCode, last4: arrivalFacts.last4)
+        guard join(arrival, facts: arrivalFacts, into: holder, holderFacts: derivedFacts(of: holder),
+                   resolved: joined.resolved, holderIsArrival: false, now: now, outcome: &outcome) else { return false }
+        do {
+            // La fila del que se va se desmonta antes del borrado (crash de iOS 27 al leer un modelo borrado, card f8rj).
+            InboxRowPruneCoordinator.shared.pruneRow(arriving.persistentModelID)
+            context.delete(arriving)
+            SaveBreadcrumb.willSave("InboxArrivalJoin.joinPending")
+            try context.save()
+            SaveBreadcrumb.didSave("InboxArrivalJoin.joinPending")
+            return true
+        } catch {
+            #if DEBUG
+            print("InboxArrivalJoin: Error joining pending drafts: \(error)")
+            #endif
+            // El borrado no se deshace a mano: `rollback` lo descarta, y con él lo que la unión cambió en `holder`.
+            revert(outcome)
+            context.rollback()
+            return false
+        }
+    }
+
     // MARK: - Separar
 
     /// Deshace la unión de un borrador pendiente: cada fuente absorbida vuelve como pendiente propio, tal como llegó, y el
@@ -356,7 +396,9 @@ enum InboxArrivalJoin {
             hasExactTime: source == .applePay || source == .bankNotice)
     }
 
-    private static func consumption(of draft: InboxDraft) -> InboxMatchLogic.Consumption? {
+    /// El consumo que sostiene un pendiente: él solo, o él con lo que ya absorbió. `nil` si no entra en el emparejador o
+    /// su registro de unión no se entiende.
+    static func consumption(of draft: InboxDraft) -> InboxMatchLogic.Consumption? {
         let id = UUID()
         switch InboxJoinRecord.read(draft.joinRecordRaw) {
         case .unreadable:

@@ -36,6 +36,34 @@ extension L10n {
         /// Lo que pasa al separar, para VoiceOver.
         static var separarPista: String { s("separate.hint") }
 
+        // MARK: Lote 3: la fila con sus fuentes, «¿Es el mismo gasto?» y «Ya registrado»
+
+        /// «Llegó por Apple Pay, Correo»: las fuentes de un pendiente unido, para VoiceOver.
+        static func llegoPor(fuentes: String) -> String {
+            String(format: s("row.sources.a11y"), locale: LanguageManager.resolved.locale, fuentes)
+        }
+        /// «¿Es el mismo gasto?».
+        static var preguntaTitulo: String { s("ask.title") }
+        /// «Es el mismo».
+        static var esElMismo: String { s("ask.same") }
+        static var esElMismoPista: String { s("ask.same.hint") }
+        /// «Son distintos».
+        static var sonDistintos: String { s("ask.distinct") }
+        static var sonDistintosPista: String { s("ask.distinct.hint") }
+        /// «Ya registrado el 15 oct».
+        static func yaRegistrado(fecha: String) -> String {
+            String(format: s("recorded.title"), locale: LanguageManager.resolved.locale, fecha)
+        }
+        /// «Ya registrado: Wong · S/ 89.90 · 15 oct», para VoiceOver.
+        static func yaRegistradoDetalle(_ resumen: String) -> String {
+            String(format: s("recorded.a11y"), locale: LanguageManager.resolved.locale, resumen)
+        }
+        /// «Descartar».
+        static var descartar: String { s("recorded.discard") }
+        /// «Guardar igual».
+        static var guardarIgual: String { s("recorded.saveAnyway") }
+        static var guardarIgualPista: String { s("recorded.saveAnyway.hint") }
+
         /// El nombre de cada fuente en el resumen.
         static func fuente(_ source: InboxMatchLogic.Source) -> String {
             switch source {

@@ -15,3 +15,16 @@
 "bandejaUnir.source.web" = "Yala web";
 "bandejaUnir.source.ai" = "Twoja AI";
 "bandejaUnir.source.manual" = "Ręcznie";
+
+/* Lote 3: la fila con sus fuentes, «¿Es el mismo gasto?» y «Ya registrado». */
+"bandejaUnir.ask.title" = "Czy to ten sam wydatek?";
+"bandejaUnir.ask.same" = "Ten sam";
+"bandejaUnir.ask.same.hint" = "Połączymy je w jedną pozycję do zatwierdzenia; później możesz je rozdzielić";
+"bandejaUnir.ask.distinct" = "Różne";
+"bandejaUnir.ask.distinct.hint" = "Zostaną jako dwie pozycje i nie zapytamy ponownie";
+"bandejaUnir.recorded.title" = "Już zapisany %@";
+"bandejaUnir.recorded.a11y" = "Już zapisany: %@";
+"bandejaUnir.recorded.discard" = "Odrzuć";
+"bandejaUnir.recorded.saveAnyway" = "Zapisz mimo to";
+"bandejaUnir.recorded.saveAnyway.hint" = "Zapisuje go, choć przypomina już zapisany";
+"bandejaUnir.row.sources.a11y" = "Przyszło przez %@";

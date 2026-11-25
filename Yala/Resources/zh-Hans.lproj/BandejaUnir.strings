@@ -15,3 +15,16 @@
 "bandejaUnir.source.web" = "Yala 网页版";
 "bandejaUnir.source.ai" = "你的 AI";
 "bandejaUnir.source.manual" = "手动";
+
+/* Lote 3: la fila con sus fuentes, «¿Es el mismo gasto?» y «Ya registrado». */
+"bandejaUnir.ask.title" = "是同一笔支出吗？";
+"bandejaUnir.ask.same" = "是同一笔";
+"bandejaUnir.ask.same.hint" = "我们会把它们合并为一个待处理项，之后可以拆分";
+"bandejaUnir.ask.distinct" = "不是同一笔";
+"bandejaUnir.ask.distinct.hint" = "它们保留为两个待处理项，我们不会再问";
+"bandejaUnir.recorded.title" = "已于%@记录";
+"bandejaUnir.recorded.a11y" = "已记录：%@";
+"bandejaUnir.recorded.discard" = "丢弃";
+"bandejaUnir.recorded.saveAnyway" = "仍然保存";
+"bandejaUnir.recorded.saveAnyway.hint" = "即使与已记录的相似也会保存";
+"bandejaUnir.row.sources.a11y" = "来自%@";

@@ -72,6 +72,13 @@ final class InboxViewModel {
     /// los devuelve: su fila volvería a montarse y leería el `InboxDraft` cuando se borre (crash de TestFlight 2.2 (2),
     /// card f8rj). Registros y Pagos planificados esconden igual lo que espera (`RecordPendingDeletion`).
     @ObservationIgnored private var pendingRemovalIDs: Set<PersistentIdentifier> = []
+    /// «¿Es el mismo gasto?» (Bandeja sin duplicados, lote 3): las parejas de pendientes que pueden ser el mismo consumo.
+    private(set) var sameExpensePairs: [InboxSameExpensePair] = []
+    /// «Ya registrado» (lote 3): por pendiente, el registro ya guardado que se le parece, con el criterio que frena al
+    /// guardar (`InboxDuplicateCheck`).
+    private(set) var alreadyRecorded: [PersistentIdentifier: InboxAlreadyRecorded] = [:]
+    /// Dónde vive lo marcado como «Son distintos» (`InboxSameExpenseDistinct`). Las pruebas pasan uno aislado.
+    @ObservationIgnored var distinctDefaults: UserDefaults = .standard
 
     // MARK: - Setup
 
@@ -90,7 +97,76 @@ final class InboxViewModel {
         loadHideableHere()
         loadGroupExpenseCurrencies()
         loadGroupLeftovers()
+        loadSameExpensePairs()
+        loadAlreadyRecorded()
         LoadTimeMarks.ready(.inbox)
+    }
+
+    // MARK: - Bandeja sin duplicados, lote 3
+
+    /// Las parejas «¿Es el mismo gasto?» de los pendientes de ahora. Sin leer nada más: el emparejador trabaja sobre lo
+    /// que cada borrador ya guarda.
+    private func loadSameExpensePairs(calendar: Calendar = .current) {
+        var drafts: [InboxDraft] = []
+        var entries: [InboxSameExpensePairing.Entry] = []
+        for draft in pendingDrafts where draft.isReadableInInbox {
+            guard let consumption = InboxArrivalJoin.consumption(of: draft) else { continue }
+            let isPlain: Bool
+            if case .none = InboxJoinRecord.read(draft.joinRecordRaw) { isPlain = true } else { isPlain = false }
+            entries.append(InboxSameExpensePairing.Entry(
+                consumption: consumption, isPlain: isPlain, createdAt: draft.createdAt,
+                key: InboxSameExpenseDistinct.draftKey(of: draft)))
+            drafts.append(draft)
+        }
+        let pairs = InboxSameExpensePairing.pairs(
+            entries, distinct: InboxSameExpenseDistinct.pairs(distinctDefaults), calendar: calendar
+        ).map { InboxSameExpensePair(holder: drafts[$0.holder], arriving: drafts[$0.arriving]) }
+        if pairs != sameExpensePairs { sameExpensePairs = pairs }
+    }
+
+    /// «Ya registrado»: lo que «Guardar los listos» dejaría pendiente por posible duplicado, dicho en la fila. Una lectura
+    /// que falla no avisa de nada, como deslizar para guardar.
+    private func loadAlreadyRecorded() {
+        guard let context = modelContext else { return }
+        var found: [PersistentIdentifier: InboxAlreadyRecorded] = [:]
+        for draft in pendingDrafts where draft.isReadableInInbox && !draft.isFromGroup && !draft.requiresApprovalForm
+            && !draft.isSettlementAmountChangeNotice {
+            do {
+                guard let twin = try InboxDuplicateCheck.possibleDuplicate(of: draft, in: context) else { continue }
+                found[draft.persistentModelID] = InboxAlreadyRecorded(
+                    dateText: InboxDuplicateCheck.twinDateText(twin.date),
+                    summary: InboxDuplicateCheck.twinSummary(twin))
+            } catch {
+                #if DEBUG
+                print("InboxViewModel: Error checking already recorded: \(error)")
+                #endif
+            }
+        }
+        if found != alreadyRecorded { alreadyRecorded = found }
+    }
+
+    func alreadyRecorded(for draft: InboxDraft) -> InboxAlreadyRecorded? {
+        alreadyRecorded[draft.persistentModelID]
+    }
+
+    /// La lista por días, con las parejas «¿Es el mismo gasto?» juntas en una tarjeta si `pairsSameExpense` (filtro
+    /// «Pendientes», fuera del modo selección). La tarjeta va en el día del más reciente; un borrador que ya no está en la
+    /// lista (podado, borrado) deshace su pareja.
+    func listSections(for filter: InboxFilter, pairsSameExpense: Bool) -> [InboxListSection] {
+        let filtered = filteredDrafts(for: filter)
+        let present = Set(filtered.map(\.persistentModelID))
+        var paired: Set<PersistentIdentifier> = []
+        var items: [InboxListItem] = []
+        if pairsSameExpense {
+            for pair in sameExpensePairs where pair.holder.isReadableInInbox && pair.arriving.isReadableInInbox
+                && present.contains(pair.holder.persistentModelID) && present.contains(pair.arriving.persistentModelID) {
+                paired.insert(pair.holder.persistentModelID)
+                paired.insert(pair.arriving.persistentModelID)
+                items.append(.pair(pair))
+            }
+        }
+        items += filtered.filter { !paired.contains($0.persistentModelID) }.map(InboxListItem.draft)
+        return InboxListSection.grouped(items)
     }
 
     private func loadGroupLeftovers() {
@@ -366,5 +442,195 @@ extension InboxDraft {
 enum InboxDraftListMerge {
     static func newestFirst(pending: [InboxDraft], resolved: [InboxDraft]) -> [InboxDraft] {
         (pending + resolved).sorted { $0.createdAt > $1.createdAt }
+    }
+}
+
+// MARK: - Bandeja sin duplicados, lote 3: lo que pinta la lista
+
+/// Dos pendientes que pueden ser el mismo consumo: «¿Es el mismo gasto?». `holder` es el que se queda con «Es el mismo»
+/// (el que llegó primero, o el que ya tenía algo unido) y `arriving` el que se une a él.
+struct InboxSameExpensePair: Identifiable, Equatable {
+    struct ID: Hashable {
+        let holder: PersistentIdentifier
+        let arriving: PersistentIdentifier
+    }
+
+    let holder: InboxDraft
+    let arriving: InboxDraft
+
+    var id: ID { ID(holder: holder.persistentModelID, arriving: arriving.persistentModelID) }
+
+    /// Los dos, del más antiguo al más reciente por su fecha: así se leen en la tarjeta.
+    var chronological: [InboxDraft] {
+        holder.effectiveDate <= arriving.effectiveDate ? [holder, arriving] : [arriving, holder]
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
+}
+
+/// «Ya registrado el 15 oct»: el registro guardado que se parece a un pendiente, ya en texto (se lee al cargar: el
+/// registro puede borrarse con la lista abierta).
+struct InboxAlreadyRecorded: Equatable {
+    let dateText: String
+    let summary: String
+}
+
+enum InboxListItem: Identifiable {
+    case draft(InboxDraft)
+    case pair(InboxSameExpensePair)
+
+    enum ID: Hashable {
+        case draft(PersistentIdentifier)
+        case pair(InboxSameExpensePair.ID)
+    }
+
+    var id: ID {
+        switch self {
+        case .draft(let draft): .draft(draft.persistentModelID)
+        case .pair(let pair): .pair(pair.id)
+        }
+    }
+
+    /// La fecha que decide su día y su orden: la del borrador, o la del más reciente de la pareja.
+    var sortDate: Date {
+        switch self {
+        case .draft(let draft): draft.effectiveDate
+        case .pair(let pair): max(pair.holder.effectiveDate, pair.arriving.effectiveDate)
+        }
+    }
+
+    var sortCreatedAt: Date {
+        switch self {
+        case .draft(let draft): draft.createdAt
+        case .pair(let pair): max(pair.holder.createdAt, pair.arriving.createdAt)
+        }
+    }
+}
+
+struct InboxListSection {
+    let date: Date
+    let items: [InboxListItem]
+
+    /// Por día, lo más nuevo primero; el mismo orden que `groupedDrafts`.
+    static func grouped(_ items: [InboxListItem], calendar: Calendar = .current) -> [InboxListSection] {
+        Dictionary(grouping: items) { calendar.startOfDay(for: $0.sortDate) }
+            .map { day, items in
+                InboxListSection(date: day, items: items.sorted {
+                    if $0.sortDate == $1.sortDate { return $0.sortCreatedAt > $1.sortCreatedAt }
+                    return $0.sortDate > $1.sortDate
+                })
+            }
+            .sorted { $0.date > $1.date }
+    }
+}
+
+/// Qué pendientes se preguntan «¿Es el mismo gasto?». Pura: la fijan `BandejaFilaConFuentesTests`.
+///
+/// Solo entre pendientes de fuentes que avisan de un cargo (las del emparejador), y al menos uno de los dos sin nada unido:
+/// ese es el que se une al otro. Con los dos sin unir, se une el más reciente. Lo dudoso y lo fuerte se preguntan (lo
+/// fuerte que no se unió al llegar es de antes de la unión, o de dos aparatos a la vez): en la lista nunca se une solo.
+/// Uno a uno, la mejor pareja primero: la más fuerte, la más cercana en el tiempo y en el importe.
+nonisolated enum InboxSameExpensePairing {
+    struct Entry: Sendable {
+        let consumption: InboxMatchLogic.Consumption
+        /// Sin nada unido: puede unirse a otro con «Es el mismo».
+        let isPlain: Bool
+        let createdAt: Date
+        /// `InboxSameExpenseDistinct.draftKey`.
+        let key: String
+    }
+
+    struct Pair: Equatable, Sendable {
+        /// Índices en las entradas.
+        let holder: Int
+        let arriving: Int
+        let level: InboxMatchLogic.Level
+    }
+
+    static func pairs(_ entries: [Entry], distinct: Set<String>, calendar: Calendar = .current) -> [Pair] {
+        var options: [(pair: Pair, comparison: InboxMatchLogic.Comparison, createdAt: Date)] = []
+        for first in entries.indices {
+            for second in entries.indices where second > first {
+                let a = entries[first]
+                let b = entries[second]
+                guard a.isPlain || b.isPlain else { continue }
+                guard !distinct.contains(InboxSameExpenseDistinct.pairKey(a.key, b.key)) else { continue }
+                // Se une el que no tiene nada unido; si ninguno lo tiene, el más reciente.
+                let arriving: Int
+                if a.isPlain && b.isPlain {
+                    arriving = a.createdAt > b.createdAt ? first : second
+                } else {
+                    arriving = a.isPlain ? first : second
+                }
+                let holder = arriving == first ? second : first
+                let comparison = InboxMatchLogic.compare(
+                    entries[arriving].consumption.holder, with: entries[holder].consumption, calendar: calendar)
+                guard comparison.level > .none else { continue }
+                options.append((Pair(holder: holder, arriving: arriving, level: comparison.level), comparison,
+                                entries[holder].createdAt))
+            }
+        }
+        options.sort { lhs, rhs in
+            if lhs.comparison.level != rhs.comparison.level { return lhs.comparison.level > rhs.comparison.level }
+            if lhs.comparison.timeGap != rhs.comparison.timeGap { return lhs.comparison.timeGap < rhs.comparison.timeGap }
+            if lhs.comparison.amountGap != rhs.comparison.amountGap {
+                return lhs.comparison.amountGap < rhs.comparison.amountGap
+            }
+            return lhs.createdAt < rhs.createdAt
+        }
+        var used: Set<Int> = []
+        var chosen: [Pair] = []
+        for option in options where !used.contains(option.pair.holder) && !used.contains(option.pair.arriving) {
+            used.insert(option.pair.holder)
+            used.insert(option.pair.arriving)
+            chosen.append(option.pair)
+        }
+        return chosen
+    }
+}
+
+/// «Son distintos» y «Separar»: las parejas que la persona ya dijo que no son el mismo gasto, para no volver a preguntar.
+///
+/// **Solo en este teléfono, a propósito** (Paso 0, D4): un campo sincronizado pediría otra migración. Vive en
+/// `UserDefaults.standard` sin prefijo de preferencias sincronizadas, como «Quitar de aquí»
+/// (`InboxGroupDraftsHiddenHere`), y lo retira el borrado de datos (`DataWipeService.removeRowDerivedKeys`). Cada
+/// borrador se reconoce por su origen y su instante de llegada: el `syncID` puede llegar después, y «Separar» devuelve a
+/// cada fuente su instante de llegada.
+@MainActor
+enum InboxSameExpenseDistinct {
+    nonisolated static let key = "inbox.sameExpenseDistinctPairs"
+    /// Las más recientes que se guardan: una pareja vieja ya no está en la Bandeja.
+    nonisolated static let limit = 300
+
+    nonisolated static func draftKey(sourceTypeRaw: String, createdAt: Date) -> String {
+        "\(sourceTypeRaw)@\(Int64((createdAt.timeIntervalSinceReferenceDate * 1000).rounded()))"
+    }
+
+    static func draftKey(of draft: InboxDraft) -> String {
+        draftKey(sourceTypeRaw: draft.sourceTypeRaw, createdAt: draft.createdAt)
+    }
+
+    nonisolated static func pairKey(_ a: String, _ b: String) -> String {
+        a < b ? "\(a)|\(b)" : "\(b)|\(a)"
+    }
+
+    static func pairs(_ defaults: UserDefaults = .standard) -> Set<String> {
+        Set(defaults.stringArray(forKey: key) ?? [])
+    }
+
+    /// Marca como distintos a todos los de `drafts` entre sí (dos con «Son distintos»; el borrador y lo que se separó de
+    /// él con «Separar»).
+    static func markDistinct(_ drafts: [InboxDraft], _ defaults: UserDefaults = .standard) {
+        let keys = drafts.filter(\.isReadableInInbox).map(draftKey(of:))
+        guard keys.count >= 2 else { return }
+        var stored = defaults.stringArray(forKey: key) ?? []
+        for first in keys.indices {
+            for second in keys.indices where second > first {
+                let pair = pairKey(keys[first], keys[second])
+                stored.removeAll { $0 == pair }
+                stored.append(pair)
+            }
+        }
+        defaults.set(Array(stored.suffix(limit)), forKey: key)
     }
 }

@@ -835,6 +835,11 @@ final class UITestHooks {
     /// Bandeja sin duplicados). No decide nada: la unión es la de producción.
     nonisolated static var seedInboxJoinedDraft: Bool { hasArg("-uitest-inbox-joined-draft") }
 
+    /// `-uitest-inbox-same-expense-pair`: la semilla de borradores añade «Rappi» por Apple Pay ayer a las 23:50 y el cargo
+    /// del correo del banco hoy con otro importe (−S/ 89.90 y −S/ 92.40), para ver «¿Es el mismo gasto?» (lote 3 de la
+    /// Bandeja sin duplicados). No decide nada: la pareja la calcula el emparejador de producción.
+    nonisolated static var seedInboxSameExpensePair: Bool { hasArg("-uitest-inbox-same-expense-pair") }
+
     /// «Conecta tu IA»: `-uitest-inbox-empty` deja la Bandeja sin los dos borradores de la semilla (para ver su puerta), y
     /// `-uitest-inbox-ai-drafts` los siembra como apuntados por una IA, «Claude» y «ChatGPT» (la etiqueta y el filtro
     /// «De tu IA»). Solo cambian el origen de la semilla; lo que se pinta lo decide producción.
