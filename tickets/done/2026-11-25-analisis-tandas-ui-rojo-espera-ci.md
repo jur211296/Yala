@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-analisis-tandas-ui-rojo-espera-ci
-status: backlog
+status: done
 priority: high
 area: "ci, qa, proceso"
 created: 2026-11-25
