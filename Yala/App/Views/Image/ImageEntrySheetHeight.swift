@@ -36,14 +36,24 @@ enum ImageEntrySheetHeightLogic {
 
     /// El fondo, con la misma regla que los selectores: el glass del sistema a media altura y `.subtle` cuando se ve
     /// grande (porque se estiró, porque la ventana lo fuerza o porque no hay media altura que ofrecer).
+    ///
+    /// `sheetTop` es dónde está de verdad el borde de arriba de la hoja, en la ventana. Con varios leídos solo se ofrece
+    /// grande, pero si la hoja no llega a subir se queda a media altura: Jürgen la vio así, con fondo sólido, el
+    /// 25-nov-2026 en su iPhone. Se ve a media altura ⇒ glass, diga lo que diga el detent.
     static func background(
         detents: Set<PresentationDetent>,
         selectedDetent: PresentationDetent,
-        usesLargeSheets: Bool
+        usesLargeSheets: Bool,
+        sheetTop: CGFloat? = nil
     ) -> YalaBackgroundVariant {
+        if !usesLargeSheets, let sheetTop, sheetTop > largeSheetTopMax { return .transparent }
         guard detents.contains(where: { $0 != .large }) else { return .subtle }
         return usesLargeSheets || selectedDetent == .large ? .subtle : .transparent
     }
+
+    /// Por debajo de esto, el borde de arriba de la hoja está pegado a la barra de estado: es la hoja grande. La media
+    /// altura empieza mucho más abajo (en el iPhone 14, ~370 pt; la grande, ~55 pt).
+    static let largeSheetTopMax: CGFloat = 120
 
     // MARK: - Media altura de «Esto leí» (encargo del 2026-11-23)
 

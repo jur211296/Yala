@@ -83,6 +83,8 @@ struct ImageSelectionView: View {
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = ImageEntrySheetHeightLogic.estoLeiPartial
+    /// El borde de arriba de la hoja en la ventana, medido: decide el fondo junto con los detents.
+    @State private var sheetTop: CGFloat?
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showPhotosPicker = false
@@ -156,11 +158,14 @@ struct ImageSelectionView: View {
             }
         }
         .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
+        // Dónde está la hoja de verdad: a media altura lleva glass aunque solo se ofrezca grande (Jürgen, 25-nov-2026).
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { sheetTop = $0 }
         .yalaScreenBackground(
             ImageEntrySheetHeightLogic.background(
                 detents: sheetDetents,
                 selectedDetent: selectedDetent,
-                usesLargeSheets: usesLargeSheets
+                usesLargeSheets: usesLargeSheets,
+                sheetTop: sheetTop
             )
         )
         // Con varios leídos, la hoja pasa a grande sola: a media altura enseñaba una fila (decisión 80 de la revisión 2.3).
@@ -691,7 +696,10 @@ struct ImageSelectionView: View {
     /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
     private var draftsToSave: [InboxDraft] {
         guard isMulti else { return pendingDrafts }
-        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+        // Lo que la lógica da por marcado, no la selección cruda: un incompleto sigue en ella aunque no cuente como
+        // marcado (Jürgen, 25-nov-2026), y aprobarlo falla y corta el resto.
+        let ids = Set(MultiDraftReviewLogic.toSave(reviewItems, selection).map(\.id))
+        return pendingDrafts.filter { ids.contains($0.persistentModelID) }
     }
 
     private var canSave: Bool {

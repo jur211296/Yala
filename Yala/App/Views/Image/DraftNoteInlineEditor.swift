@@ -29,9 +29,11 @@ struct DraftNoteInlineEditor: View {
     /// Lo que la fila pinta como título: la descripción o, sin ella, la subcategoría.
     let title: String
     @Binding var isEditing: Bool
-    /// En la tarjeta B1 de un registro (opción A, 2026-11-22) va centrada y en gris, como la descripción de B1; en la
-    /// fila de la hoja de varios, a la izquierda.
+    /// En la tarjeta B1 de un registro (opción A, 2026-11-22) va centrada; en la hoja de varios, a la izquierda. Siempre
+    /// en el color del texto (Jürgen, 25-nov-2026: en gris fino no se leía).
     var isCentered = false
+    /// Con el peso de la descripción de B1 (`headline`): en la tarjeta de un registro y en la fila desplegada de varios.
+    var isProminent = false
 
     @Environment(\.modelContext) private var modelContext
     @State private var text = ""
@@ -40,7 +42,7 @@ struct DraftNoteInlineEditor: View {
     var body: some View {
         if isEditing {
             TextField(title, text: $text)
-                .font(isCentered ? DS.Typography.body : DS.Typography.label)
+                .font(isProminent ? DS.Typography.headline : DS.Typography.label)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(isCentered ? .center : .leading)
                 .submitLabel(.done)
@@ -64,9 +66,12 @@ struct DraftNoteInlineEditor: View {
                 // Toda la línea de la descripción, no solo sus letras: con un nombre corto («Wong») el dedo caía al lado
                 // y abría el formulario.
                 Text(title)
-                    .font(isCentered ? DS.Typography.body : DS.Typography.label)
-                    .foregroundStyle(isCentered ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                    .lineLimit(1)
+                    .font(isProminent ? DS.Typography.headline : DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(isCentered ? .center : .leading)
+                    // Dos líneas: con una, «Restaurante El Buen Gusto» se cortaba en la fila de varios.
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: isCentered ? .center : .leading)
                     .contentShape(Rectangle())
             }

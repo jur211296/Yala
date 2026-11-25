@@ -79,8 +79,16 @@ enum MultiDraftReviewLogic {
 
     // MARK: - Resumen
 
+    /// Lo marcado de verdad: un borrador pendiente al que le falta el monto, la cuenta o la categoría no cuenta como
+    /// marcado aunque la persona no lo haya quitado (Jürgen, 25-nov-2026: con el check puesto parecía listo para guardar).
+    /// Al completarlo vuelve a contar, salvo que la persona lo quitara.
     static func marked<ID>(_ items: [Item<ID>], _ selection: Selection<ID>) -> [Item<ID>] {
-        items.filter { selection.contains($0.id) }
+        items.filter { selection.contains($0.id) && isMarkable($0) }
+    }
+
+    /// Se puede marcar: completo, o ya guardado.
+    static func isMarkable<ID>(_ item: Item<ID>) -> Bool {
+        item.isComplete || !item.isPending
     }
 
     /// Lo que se registra: los marcados, guardados o por guardar. Sin signo, como el importe de cada fila.
@@ -161,9 +169,9 @@ enum MultiDraftReviewLogic {
         return !pending.isEmpty && pending.allSatisfy(\.isComplete)
     }
 
-    /// Cuántos marcados le impiden guardar.
-    static func incompleteMarked<ID>(_ items: [Item<ID>], _ selection: Selection<ID>) -> Int {
-        toSave(items, selection).filter { !$0.isComplete }.count
+    /// Cuántos pendientes falta completar: no se pueden marcar hasta entonces.
+    static func incompletePending<ID>(_ items: [Item<ID>]) -> Int {
+        items.filter { $0.isPending && !$0.isComplete }.count
     }
 
     /// Tras guardar lo marcado ya no queda nada que hacer en la hoja: «Listo», aunque queden desmarcados en la Bandeja.
@@ -175,6 +183,6 @@ enum MultiDraftReviewLogic {
 
     /// Hay pendientes sin marcar: se quedan en la Bandeja y la hoja lo dice.
     static func leavesUnmarkedInInbox<ID>(_ items: [Item<ID>], _ selection: Selection<ID>) -> Bool {
-        items.contains { $0.isPending && !selection.contains($0.id) }
+        items.contains { $0.isPending && !(selection.contains($0.id) && isMarkable($0)) }
     }
 }

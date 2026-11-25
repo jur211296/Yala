@@ -83,8 +83,9 @@ struct MultiDraftReviewList: View {
     }
 
     @ViewBuilder
-    private func summaryToggleAll(pending: [PersistentIdentifier], allMarked: Bool) -> some View {
-        if !pending.isEmpty {
+    private func summaryToggleAll(pending: [PersistentIdentifier], markable: [PersistentIdentifier], allMarked: Bool) -> some View {
+        // Sin nada completo que marcar, «Marcar todos» no haría nada: no sale.
+        if !markable.isEmpty {
             Button(allMarked ? L10n.Voice.reviewDeselectAll : L10n.Voice.reviewSelectAll) {
                 selection.setAll(!allMarked, pending: pending)
                 DS.Haptic.selection()
@@ -101,20 +102,22 @@ struct MultiDraftReviewList: View {
         let code = Logic.sharedCurrency(marked.isEmpty ? items : marked)
         let slices = code == nil ? [] : Logic.slices(items, selection)
         let pending = items.filter(\.isPending).map(\.id)
-        let allMarked = pending.allSatisfy(selection.contains)
+        // «Quitar todos» mira solo lo que se puede marcar: un incompleto nunca sale marcado.
+        let markable = items.filter { $0.isPending && Logic.isMarkable($0) }.map(\.id)
+        let allMarked = !markable.isEmpty && markable.allSatisfy(selection.contains)
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Con texto de accesibilidad, el total encima de «Quitar todos»: al lado, el total salía «S/2….71» (pase de
             // estrés 2.2, card 48ri). A tamaño normal, la fila de siempre.
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     summaryTotal(items, code: code)
-                    summaryToggleAll(pending: pending, allMarked: allMarked)
+                    summaryToggleAll(pending: pending, markable: markable, allMarked: allMarked)
                 }
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                     summaryTotal(items, code: code)
                     Spacer(minLength: DS.Spacing.sm)
-                    summaryToggleAll(pending: pending, allMarked: allMarked)
+                    summaryToggleAll(pending: pending, markable: markable, allMarked: allMarked)
                 }
             }
             countLine(items, marked: marked.count)
@@ -129,11 +132,11 @@ struct MultiDraftReviewList: View {
         .accessibilityIdentifier("multi_review_summary")
     }
 
-    /// «7 de 7 · 19 – 22 nov.» y, si a algún marcado le falta algo, «· 2 por completar» en ámbar: es lo que dice por qué
-    /// «Guardar» está apagado.
+    /// «5 de 7 · 19 – 22 nov.» y, si a alguno le falta algo, «· 2 por completar» en ámbar: es lo que dice por qué esos no
+    /// se pueden marcar.
     private func countLine(_ items: [Item], marked: Int) -> Text {
         let base = Text(countAndRange(items, marked: marked)).foregroundStyle(.secondary)
-        let incomplete = Logic.incompleteMarked(items, selection)
+        let incomplete = Logic.incompletePending(items)
         guard incomplete > 0 else { return base }
         let separator = Text(verbatim: " · ").foregroundStyle(.secondary)
         let toComplete = Text(L10n.EstoLei.toComplete(incomplete)).foregroundStyle(DS.Semantic.warningForeground)
@@ -224,9 +227,11 @@ struct MultiDraftReviewList: View {
                         if index > 0 {
                             Divider().padding(.leading, DS.ListRow.paddingH + 28 + DS.ListRow.spacing)
                         }
+                        let item = items.first { $0.id == id }
                         MultiDraftReviewRow(
                             draft: draft,
-                            isMarked: selection.contains(id),
+                            isMarked: selection.contains(id) && (item.map { Logic.isMarkable($0) } ?? true),
+                            canBeMarked: item.map { Logic.isMarkable($0) } ?? true,
                             editsNoteInPlace: editsNoteInPlace,
                             isExpanded: expandedID == id,
                             onToggle: {
@@ -283,11 +288,13 @@ extension MultiDraftReviewLogic {
 // MARK: - Fila
 
 /// Una fila compacta: marca, icono de categoría, nota y lo que falta (en ámbar), importe. Tocar la fila la despliega
-/// (opción A, 2026-11-22): lo que falta, la fecha y la cuenta como chips de B1, y «Ver todo». Ya guardada, no se
-/// despliega y la marca pasa a «Registrado».
+/// (opción A, 2026-11-22) y, desplegada, es la tarjeta de un registro pegada a la izquierda (`EstoLeiCardStyle.row`,
+/// 25-nov-2026). Ya guardada, no se despliega y la marca pasa a «Registrado».
 private struct MultiDraftReviewRow: View {
     let draft: InboxDraft
     let isMarked: Bool
+    /// Incompleto: el check sale vacío y no se puede tocar hasta completarlo (Jürgen, 25-nov-2026).
+    let canBeMarked: Bool
     let editsNoteInPlace: Bool
     let isExpanded: Bool
     let onToggle: () -> Void
@@ -295,19 +302,13 @@ private struct MultiDraftReviewRow: View {
     let onOpenDetails: () -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
 
-    @Query(filter: #Predicate<Account> { !$0.isArchived }) private var allAccounts: [Account]
-    @Query(filter: #Predicate<Subcategory> { $0.isVisible == true }) private var allSubcategories: [Subcategory]
-    @Query private var allTags: [Tag]
-
-    @State private var activeField: ChatDraftField?
     /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`), para el chip y el selector.
     @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
-    @State private var isEditingNote = false
 
     private var isSaved: Bool { draft.status == .approved }
+    private var isShowingCard: Bool { isExpanded && !isSaved }
 
     var body: some View {
         // Una fila puede volver a pintarse con su borrador ya borrado (rechazado desde el formulario completo).
@@ -320,59 +321,48 @@ private struct MultiDraftReviewRow: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // La marca va centrada en vertical en la fila, también desplegada, a la altura del chevron (Jürgen, 25-nov).
             HStack(spacing: DS.ListRow.spacing) {
                 mark
                 Group {
-                    if isSaved {
-                        rowLabel
-                    } else if editsNoteInPlace {
-                        // La descripción es un botón propio: dentro de la etiqueta de la fila se fundiría con ella. El
-                        // resto de la fila la despliega con un toque (el botón de la descripción, como hijo, gana el
-                        // suyo), y el botón de fondo solo existe para VoiceOver, que lee la fila entera ahí.
-                        rowLabel
-                            .onTapGesture(perform: toggleOrConfirmNote)
+                    if isShowingCard {
+                        // Desplegada, la fila es la tarjeta de un registro: descripción en dos líneas, «S/ ▾» y monto,
+                        // categoría, Hoy · Cuenta · # y el chevron de «Ver todo» (Jürgen, 25-nov-2026: «como Nuevo
+                        // registro, bien ordenada»). Crece desde la fila plegada, sin saltar.
+                        VoiceDraftReviewCard(
+                            draft: draft, editsNoteInPlace: editsNoteInPlace, style: .row, onOpenDetails: onOpenDetails)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                            // La fila sigue existiendo para VoiceOver (y para quien cuenta las filas): su botón de fondo
+                            // la lee entera y la pliega. El dedo lo reciben las piezas de la tarjeta.
                             .background { rowButton }
+                    } else if isSaved {
+                        rowLabel
                     } else {
+                        // Plegada, un toque en cualquier parte de la fila la despliega; la descripción se edita ya
+                        // desplegada, en la tarjeta (Jürgen, 25-nov-2026).
                         Button(action: onToggleExpanded) { rowLabel }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("voice_draft_row")
                     }
                 }
-                .opacity(isMarked || isSaved ? 1 : 0.45)
-            }
-            if isExpanded, !isSaved {
-                expandedSection
-                    .transition(.opacity)
+                // Se atenúa lo que la persona quitó, no lo incompleto: eso tiene que verse para completarlo.
+                .opacity(isMarked || isSaved || !canBeMarked ? 1 : 0.45)
             }
         }
         .padding(.vertical, DS.ListRow.paddingV)
         .padding(.horizontal, DS.ListRow.paddingH)
-        // La fila abierta a la que le falta algo se marca con el borde ámbar (maqueta A).
+        // La fila que se está editando, con el borde del acento (Jürgen, 25-nov-2026: índigo, no ámbar). Lo que falta
+        // ya lo dicen en ámbar sus chips.
         .overlay {
-            if isExpanded, !isSaved, isIncomplete {
+            if isShowingCard {
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .strokeBorder(DS.Semantic.warningForeground, lineWidth: 1.5)
+                    .strokeBorder(theme.accent, lineWidth: 1.5)
                     .accessibilityHidden(true)
+                    .transition(.opacity)
             }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("multi_review_row")
-        .sheet(item: $activeField) { field in
-            ChatDraftFieldSheet(
-                field: field,
-                isExpense: (draft.amount ?? -1) < 0,
-                account: draft.account,
-                subcategory: draft.subcategory,
-                tags: currentTags,
-                date: draft.effectiveDate,
-                editing: VoiceDraftFieldEditing.editing(
-                    draft: draft, accounts: allAccounts, subcategories: allSubcategories, tags: allTags,
-                    context: modelContext
-                )
-            )
-            .environment(
-                \.cuentaSolaAlLeerSelector, CuentaSolaAlLeerSelectorPista.pista(for: cuentaSolaHoja.eleccion(for: draft)))
-        }
     }
 
     @ViewBuilder
@@ -390,7 +380,8 @@ private struct MultiDraftReviewRow: View {
                     Circle()
                         .fill(isMarked ? AnyShapeStyle(theme.accent) : AnyShapeStyle(Color.clear))
                     Circle()
-                        .strokeBorder(isMarked ? Color.clear : Color.secondary.opacity(0.6), lineWidth: 1.5)
+                        .strokeBorder(
+                            isMarked ? Color.clear : Color.secondary.opacity(canBeMarked ? 0.6 : 0.25), lineWidth: 1.5)
                     if isMarked {
                         Image(systemName: "checkmark")
                             .font(DS.Typography.labelSmall.weight(.bold))
@@ -403,40 +394,26 @@ private struct MultiDraftReviewRow: View {
             }
             .buttonStyle(.plain)
             .frame(width: 28, height: 28)
+            // Incompleto no se marca: se completa primero (el chip ámbar dice qué falta).
+            .disabled(!canBeMarked)
             .accessibilityLabel(L10n.Voice.reviewIncludeA11y(title))
+            .accessibilityValue(canBeMarked ? "" : L10n.UXL2.missingChipValue)
             .accessibilityAddTraits(isMarked ? .isSelected : [])
             .accessibilityIdentifier("multi_review_check")
         }
     }
 
-    /// Las piezas que no se tocan dejan el toque al gesto de la fila cuando la descripción va en línea.
-    private var passesTouches: Bool { editsNoteInPlace && !isSaved }
-
-    /// Con la descripción editable en línea, el resto de la fila la despliega (y, con la descripción abierta, la
-    /// confirma). VoiceOver lee la fila entera en este botón.
+    /// Desplegada, la fila sigue existiendo para VoiceOver: lee la fila entera y la pliega. Solo para VoiceOver: el dedo
+    /// lo reciben las piezas de la tarjeta, encima.
     private var rowButton: some View {
-        Button(action: toggleOrConfirmNote) {
+        Button(action: onToggleExpanded) {
             Color.clear
         }
         .buttonStyle(.plain)
-        // Solo para VoiceOver: el dedo lo recibe el gesto de la fila, encima.
         .allowsHitTesting(false)
         .accessibilityLabel([title, draft.subcategory?.name ?? L10n.Common.uncategorized,
                              draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount].joined(separator: ", "))
         .accessibilityIdentifier("voice_draft_row")
-    }
-
-    /// Con la descripción abierta, tocar el resto de la fila la confirma; si no, la despliega o la pliega.
-    private func toggleOrConfirmNote() {
-        if isEditingNote {
-            isEditingNote = false
-        } else {
-            onToggleExpanded()
-        }
-    }
-
-    private var isIncomplete: Bool {
-        draft.amount == nil || draft.subcategory == nil || draft.account == nil || (draft.account?.isArchived ?? false)
     }
 
     private var accountPresentation: CuentaSolaAlLeerChipPresentacion {
@@ -445,65 +422,14 @@ private struct MultiDraftReviewRow: View {
             accountName: draft.account?.name, muestraPorque: false, selectAccount: L10n.Chat.Draft.selectAccount)
     }
 
-    /// Desplegada: lo que falta en ámbar, la fecha y la cuenta con los chips de B1, y «Ver todo». Alineada con el texto
-    /// de la fila.
-    private var expandedSection: some View {
-        let presentation = accountPresentation
-        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            FlowLayout(spacing: DS.Spacing.sm) {
-                if draft.amount == nil {
-                    EstoLeiMissingChip(title: L10n.Chat.Draft.missingAmount, action: onOpenDetails)
-                        .accessibilityIdentifier("esto_lei_missing_amount")
-                }
-                if draft.subcategory == nil {
-                    EstoLeiMissingChip(title: L10n.EstoLei.chooseCategory) { activeField = .subcategory }
-                        .accessibilityIdentifier("voice_draft_chip_subcategory")
-                }
-                RecordDateValueChip(text: ChatDraftFormatting.dateLabel(draft.effectiveDate)) {
-                    activeField = .date
-                }
-                .accessibilityIdentifier("voice_draft_chip_date")
-                RecordValueChip(
-                    icon: "creditcard",
-                    iconColor: draft.account.map { Color(hex: $0.colorHex) },
-                    text: presentation.titulo,
-                    isSet: draft.account != nil,
-                    isMissing: presentation.estilo == .falta
-                ) {
-                    activeField = .account
-                }
-                .accessibilityLabel(presentation.accessibilityLabel ?? presentation.titulo)
-                .accessibilityIdentifier("voice_draft_chip_account")
-                // «Ver todo» al final de los chips, sin una fila propia.
-                Button(action: onOpenDetails) {
-                    Label(L10n.EstoLei.seeAll, systemImage: "arrow.up.left.and.arrow.down.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.thAccentText)
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.EstoLei.seeAllA11y)
-                .accessibilityIdentifier("esto_lei_ver_todo")
-            }
-        }
-        .padding(.leading, 28 + DS.ListRow.spacing + DS.ListRow.iconSize + DS.ListRow.spacing)
-    }
-
     private var rowLabel: some View {
         HStack(spacing: DS.ListRow.spacing) {
             ChatDraftCategoryIcon(subcategory: draft.subcategory)
-                .rowPassesTouches(passesTouches)
             VStack(alignment: .leading, spacing: 3) {
-                if editsNoteInPlace, !isSaved {
-                    DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote)
-                } else {
-                    Text(title)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                }
+                Text(title)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
                 detailLine
             }
             Spacer(minLength: DS.Spacing.sm)
@@ -515,7 +441,6 @@ private struct MultiDraftReviewRow: View {
                         : AnyShapeStyle(Color.amountTint(isIncome: (draft.amount ?? -1) >= 0))
                 )
                 .monospacedDigit()
-                .rowPassesTouches(passesTouches)
         }
         .contentShape(Rectangle())
     }
@@ -529,13 +454,11 @@ private struct MultiDraftReviewRow: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Semantic.warningForeground)
                 .lineLimit(1)
-                .rowPassesTouches(passesTouches)
         } else {
             Text(draft.subcategory?.name ?? L10n.Common.uncategorized)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .rowPassesTouches(passesTouches)
         }
     }
 
@@ -556,11 +479,6 @@ private struct MultiDraftReviewRow: View {
     private var title: String {
         if !draft.note.isEmpty { return draft.note }
         return draft.subcategory?.name ?? L10n.Common.uncategorized
-    }
-
-    private var currentTags: [Tag] {
-        guard let ids = draft.resolvedTagIDs() else { return [] }
-        return allTags.filter { ids.contains($0.id) }
     }
 
     private var formattedAmount: String {
