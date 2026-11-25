@@ -2,7 +2,7 @@ import type { Env } from "../env";
 import { getAccountEntitlement, isAccountProActive } from "../db";
 import { recordUsage, usageRecord, usageSink, type AIUsageSink } from "../ai/usage";
 import { codeFromRecipient, mailConfig } from "./address";
-import { gmailConfirmationCode, isGmailForwardingConfirmation } from "./gmail";
+import { gmailConfirmationParts, gmailTemplateShape, isGmailForwardingConfirmation } from "./gmail";
 import { parseMail, textForModel, type ParsedMail } from "./mime";
 import { isUsableReading, MAIL_READ_ROUTE, readBankEmail, type ReadOutcome } from "./read";
 import {
@@ -14,7 +14,7 @@ import {
   markSeen,
   refundTrial,
   reserveTrial,
-  saveGmailCode,
+  saveGmailConfirmation,
 } from "./store";
 
 /**
@@ -24,7 +24,7 @@ import {
  *   1. ¿Es nuestra la dirección? Si no, se rechaza (rebota a quien la mandó).
  *   2. Tamaño: un aviso de banco pesa unos KB; más de 256 KB se rechaza sin leerlo.
  *   3. Techo diario por dirección (50).
- *   4. El código de Gmail: se guarda y termina. No pasa por la IA ni gasta cupo.
+ *   4. La confirmación de Gmail (código y/o enlace): se guarda y termina. No pasa por la IA ni gasta cupo.
  *   5. El mismo aviso dos veces (Message-ID) se lee una vez.
  *   6. Pro por CUENTA, o el cupo de prueba (5 correos leídos). Sin ninguno, no se lee: se cuenta para avisar en la app.
  *   7. La IA lee el aviso. Un fallo del proveedor devuelve el cupo y olvida el «visto» para que un reenvío lo reintente.
@@ -85,8 +85,11 @@ export async function processIncomingMail(msg: IncomingMail, env: Env, deps: Mai
   const mail = await parseMail(await msg.raw());
 
   if (isGmailForwardingConfirmation(mail)) {
-    const gmailCode = gmailConfirmationCode(mail);
-    if (gmailCode) await saveGmailCode(env, address.user_id, gmailCode, now);
+    const parts = gmailConfirmationParts(mail);
+    if (parts.code || parts.link) await saveGmailConfirmation(env, address.user_id, parts, now);
+    const found = parts.code && parts.link ? "both" : parts.code ? "code" : parts.link ? "link" : "none";
+    // Sin código, la forma del correo (sin cifras, correos ni enlaces): así se ve en el log si Google cambió la plantilla.
+    console.log(`[mail] gmail found=${found}${parts.code ? "" : ` shape=${gmailTemplateShape(mail)}`}`);
     return "gmail_code";
   }
 

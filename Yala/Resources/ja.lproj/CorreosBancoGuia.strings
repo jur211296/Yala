@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Gmail に Yala のアドレスを追加";
 "correosGuia.gmail.add.detail" = "1.「Gmail を開く」をタップします。Gmail が Safari の転送の設定で開きます。求められたらログインします。\n2. モバイル版が表示されたら、Safari のアドレスバーのボタンをタップして「デスクトップ用Webサイトを表示」を選びます。\n3.「転送先アドレスを追加」をタップします。\n4. 入力欄を長押しして「ペースト」をタップし、「次へ」をタップします。\n5. ウインドウが開いたら「続行」、次に「OK」をタップします。\n「受信メールをコピーして転送」は選ばないでください。すべてのメールが転送されてしまいます。銀行のお知らせはステップ 4 のフィルタで分けます。";
-"correosGuia.gmail.confirm.title" = "Gmail のコードで確認";
-"correosGuia.gmail.confirm.waiting" = "Gmail から Yala のアドレスにコードが送られ、Yala が代わりに受け取ります。メールで探す必要はありません。\n1. 1 分ほど待ってから「コードを確認」をタップします。\n2. 届くとここに表示されます。";
+"correosGuia.gmail.confirm.title" = "Gmail で Yala のアドレスを確認";
+"correosGuia.gmail.confirm.waiting" = "Gmail から Yala のアドレスに確認用リンクが届きます。Yala が数秒ごとに自動で探します。今すぐ探す場合は「今すぐ探す」をタップ。届いたら「Google で確認」をタップします。";
 "correosGuia.gmail.confirm.code" = "Gmail のコードは %@ です。\n1.「コードをコピー」をタップします。\n2. Gmail の同じ転送の画面に戻ります。\n3. 確認コードの欄にペーストして「確認」をタップします。欄が見えないときはページを再読み込みします。";
+"correosGuia.gmail.confirm.link" = "Gmail の確認用リンクが届きました。\n1. 「Google で確認」をタップします。Google のページが開き、確認を求められたら「確認」をタップします。\n2. Yala に戻って次のステップへ進みます。";
 "correosGuia.gmail.filter.title" = "銀行のお知らせ用のフィルタを作成";
 "correosGuia.gmail.filter.detail" = "1. Safari の Gmail で、上の検索バーに銀行のアドレスを入力します。\n2. 検索欄の右にあるオプションのボタンをタップし、「フィルタを作成」をタップします。\n3.「次のアドレスに転送する」にチェックを入れ、Yala のアドレスを選びます。\n4.「フィルタを作成」をタップします。\n銀行が複数のアドレスから送ってくる場合は、それぞれについて繰り返します。";
 

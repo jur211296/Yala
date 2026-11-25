@@ -6,8 +6,10 @@
 //  pasos para reenviar los avisos del banco desde Gmail, Outlook o iCloud Mail. Solo sale con los datos en la nube y
 //  sesión (la fila de Ajustes la gatea `BankEmailEntryLogic.showsRow`).
 //
-//  La guía es un `YalaStepGuide`: se hace fuera de Yala, en el correo de la persona. El paso de Gmail que pide el código
-//  de confirmación lo enseña aquí en cuanto llega a la dirección de Yala (el gateway lo guarda sin leerlo con IA).
+//  La guía es un `YalaStepGuide`: se hace fuera de Yala, en el correo de la persona. El paso de Gmail que confirma la
+//  dirección enseña aquí lo que manda Gmail en cuanto llega a la dirección de Yala (el gateway lo guarda sin leerlo con
+//  IA): el ENLACE de confirmación, que es lo único que manda Gmail desde 2025 (medido el 2026-11-24), o el código de antes.
+//  Mientras no llega, lo busca solo cada 10 s durante 2 minutos y dice en qué está (`GmailConfirmationSearch`).
 //
 
 import SwiftData
@@ -52,6 +54,131 @@ enum BankEmailProvider: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+/// La búsqueda de la confirmación de Gmail en el paso 3. Pura, para los tests.
+///
+/// Antes del 2026-11-24 el botón solo pedía la dirección otra vez: sin carga, sin desactivarse y sin decir nada si no había
+/// llegado (Jürgen: «he apretado mil veces y no tiene una animación, ni se bloquea ni me dice nada»). Ahora la pantalla
+/// busca sola cada `interval` mientras el paso está a la vista, y a los `window` deja de buscar y ofrece salidas.
+struct GmailConfirmationSearch: Equatable {
+    enum Phase: Equatable {
+        /// Lista para buscar: la primera vez, o tras volver a la pantalla.
+        case idle
+        case searching
+        /// Preguntó y todavía no llegó; la siguiente búsqueda va en `nextAt`.
+        case notYet(nextAt: Date)
+        /// No se pudo preguntar (red, servidor); se reintenta en `nextAt`.
+        case failed(nextAt: Date)
+        /// Pasó la ventana sin nada: no busca más sola, y el botón vuelve a abrir otra ventana.
+        case gaveUp(lastFailed: Bool)
+        /// Llegó el código o el enlace.
+        case found
+    }
+
+    enum Result: Equatable {
+        case found, notYet, failed
+    }
+
+    static let interval: TimeInterval = 10
+    static let window: TimeInterval = 120
+
+    private(set) var phase: Phase = .idle
+    private(set) var windowStart: Date?
+
+    var isSearching: Bool { phase == .searching }
+
+    /// El botón se puede tocar al principio y cuando ya no busca sola. Entre una búsqueda y otra, espera: la pantalla dice
+    /// cuánto falta y la búsqueda llega sola.
+    var canSearchByHand: Bool {
+        switch phase {
+        case .idle, .gaveUp: return true
+        case .searching, .notYet, .failed, .found: return false
+        }
+    }
+
+    /// El paso vuelve a estar a la vista (al abrirlo o al volver de Gmail): ventana nueva y búsqueda en el acto.
+    mutating func start(now: Date) {
+        guard phase != .found, phase != .searching else { return }
+        windowStart = now
+        phase = .idle
+    }
+
+    func isDueForAutoSearch(now: Date) -> Bool {
+        guard windowStart != nil else { return false }
+        switch phase {
+        case .idle: return true
+        case .notYet(let next), .failed(let next): return now >= next
+        case .searching, .gaveUp, .found: return false
+        }
+    }
+
+    /// A mano: tras rendirse, abre otra ventana de 2 minutos.
+    mutating func beginByHand(now: Date) -> Bool {
+        guard canSearchByHand else { return false }
+        if case .gaveUp = phase { windowStart = now }
+        if windowStart == nil { windowStart = now }
+        phase = .searching
+        return true
+    }
+
+    mutating func beginAuto(now: Date) -> Bool {
+        guard isDueForAutoSearch(now: now) else { return false }
+        phase = .searching
+        return true
+    }
+
+    mutating func finish(_ result: Result, now: Date) {
+        if result == .found {
+            phase = .found
+            return
+        }
+        let expired = windowStart.map { now.timeIntervalSince($0) >= Self.window } ?? true
+        if expired {
+            phase = .gaveUp(lastFailed: result == .failed)
+        } else {
+            let next = now.addingTimeInterval(Self.interval)
+            phase = result == .failed ? .failed(nextAt: next) : .notYet(nextAt: next)
+        }
+    }
+
+    /// Segundos que faltan para la siguiente búsqueda, redondeados hacia arriba (nunca 0 mientras espera).
+    func secondsLeft(now: Date) -> Int? {
+        switch phase {
+        case .notYet(let next), .failed(let next):
+            return max(1, Int(next.timeIntervalSince(now).rounded(.up)))
+        default:
+            return nil
+        }
+    }
+}
+
+/// Qué ofrece el paso 3 según lo que llegó de Gmail. Pura, para los tests.
+enum GmailConfirmationStepLogic {
+    enum Offer: Equatable {
+        /// El enlace de confirmación: abrirlo ES confirmar.
+        case link(URL)
+        /// El código de antes (Gmail ya no lo manda, pero un gateway viejo o un correo viejo pueden traerlo).
+        case code(String)
+        /// Nada todavía: buscar.
+        case search
+    }
+
+    /// Solo enlaces `https` de Gmail: lo que el servidor mande se abre en Safari, y nada más que Google.
+    static let linkHosts: Set<String> = ["mail-settings.google.com", "mail.google.com", "isolated.mail.google.com"]
+
+    static func confirmationURL(_ raw: String?) -> URL? {
+        guard let raw, let url = URL(string: raw), url.scheme == "https",
+              let host = url.host?.lowercased(), linkHosts.contains(host), url.user == nil, url.port == nil else { return nil }
+        return url
+    }
+
+    /// El enlace primero: desde 2025 Gmail no tiene dónde escribir el código.
+    static func offer(for info: BankEmailAddressInfo?) -> Offer {
+        if let url = confirmationURL(info?.gmailLink?.url) { return .link(url) }
+        if let code = info?.gmailConfirmation?.code { return .code(code) }
+        return .search
+    }
+}
+
 @Observable
 @MainActor
 final class BankEmailModel {
@@ -62,18 +189,35 @@ final class BankEmailModel {
     }
 
     private(set) var phase: Phase = .loading
-    private let client: BankEmailClient
+    private(set) var gmailSearch = GmailConfirmationSearch()
+    private let fetch: @MainActor () async throws -> BankEmailAddressInfo
+    /// Lo mínimo que se enseña «Buscando…» tras un toque: una respuesta en 200 ms parecería que el botón no hizo nada.
+    private let minimumVisibleSearch: Duration
+    /// Búsquedas hechas, para el gancho `-uitest-bank-email-gmail-link-after`.
+    private var fakeSearches = 0
 
     init(client: BankEmailClient? = nil) {
-        self.client = client ?? BankEmailDraftService.makeClient()
+        let client = client ?? BankEmailDraftService.makeClient()
+        self.fetch = { try await client.address() }
+        self.minimumVisibleSearch = .milliseconds(700)
     }
 
+    /// Para los tests: la respuesta del servidor sin red y sin la espera mínima.
+    init(fetch: @escaping @MainActor () async throws -> BankEmailAddressInfo, minimumVisibleSearch: Duration = .zero) {
+        self.fetch = fetch
+        self.minimumVisibleSearch = minimumVisibleSearch
+    }
+
+    static let uiTestGmailLink = "https://mail-settings.google.com/mail/vf-%5BANGjdJ8uitest%5D-Yala"
+
     /// La dirección fija de `-uitest-bank-email`: sin red ni cuenta.
-    static func uiTestInfo(withGmailCode: Bool) -> BankEmailAddressInfo {
-        BankEmailAddressInfo(
+    static func uiTestInfo(withGmailCode: Bool, withGmailLink: Bool = false) -> BankEmailAddressInfo {
+        let now = Date.now.timeIntervalSince1970 * 1000
+        return BankEmailAddressInfo(
             address: "auto+k7m2xq9wpb@yalainbox.com", pro: false, trialLimit: 5, trialUsed: 2, skippedQuota: 0,
             lastReceivedAtMs: nil,
-            gmailConfirmation: withGmailCode ? .init(code: "482913765", receivedAtMs: Date.now.timeIntervalSince1970 * 1000) : nil)
+            gmailConfirmation: withGmailCode ? .init(code: "482913765", receivedAtMs: now) : nil,
+            gmailLink: withGmailLink ? .init(url: uiTestGmailLink, receivedAtMs: now) : nil)
     }
 
     var info: BankEmailAddressInfo? {
@@ -81,22 +225,87 @@ final class BankEmailModel {
         return nil
     }
 
+    var gmailConfirmationArrived: Bool { GmailConfirmationStepLogic.offer(for: info) != .search }
+
     func refresh() async {
-        if UITestHooks.bankEmailFake {
-            phase = .ready(Self.uiTestInfo(withGmailCode: UITestHooks.bankEmailFakeGmailCode))
-            return
-        }
         if info == nil { phase = .loading }
         do {
-            let info = try await client.address()
+            let info = try await address()
             phase = .ready(info)
-            BankEmailSetupStore.markSetUp()
+            if !UITestHooks.bankEmailFake { BankEmailSetupStore.markSetUp() }
         } catch {
             #if DEBUG
             print("BankEmailModel: Error: \(error)")
             #endif
             if info == nil { phase = .failed }
         }
+    }
+
+    /// Mientras el paso 3 está a la vista: busca ya y luego cada 10 s, hasta que llegue o pasen 2 minutos. La corta quien la
+    /// lanzó (el `.task` del paso) al salir de la pantalla, al pasar de paso o al irse la app a segundo plano.
+    func watchGmailConfirmation(now: @escaping () -> Date = { .now }) async {
+        gmailSearch.start(now: now())
+        while !Task.isCancelled {
+            if gmailConfirmationArrived {
+                gmailSearch.finish(.found, now: now())
+                return
+            }
+            if gmailSearch.beginAuto(now: now()) {
+                await runGmailSearch(byHand: false, now: now)
+            }
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return // cancelada: la pantalla se fue
+            }
+        }
+    }
+
+    /// El botón «Buscar ahora». No hace nada mientras busca o espera su turno.
+    func searchGmailConfirmationByHand(now: @escaping () -> Date = { .now }) async {
+        guard gmailSearch.beginByHand(now: now()) else { return }
+        await runGmailSearch(byHand: true, now: now)
+    }
+
+    private func runGmailSearch(byHand: Bool, now: () -> Date) async {
+        let started = ContinuousClock.now
+        var result: GmailConfirmationSearch.Result
+        do {
+            let fresh = try await address()
+            phase = .ready(fresh)
+            result = gmailConfirmationArrived ? .found : .notYet
+        } catch {
+            #if DEBUG
+            print("BankEmailModel: Error: \(error)")
+            #endif
+            result = .failed
+        }
+        if byHand {
+            let elapsed = ContinuousClock.now - started
+            if elapsed < minimumVisibleSearch {
+                do {
+                    try await Task.sleep(for: minimumVisibleSearch - elapsed)
+                } catch {
+                    #if DEBUG
+                    print("BankEmailModel: Error: \(error)")
+                    #endif
+                }
+            }
+        }
+        gmailSearch.finish(result, now: now())
+        if result == .found { DS.Haptic.success() }
+    }
+
+    private struct FakeSearchFailure: Error {}
+
+    private func address() async throws -> BankEmailAddressInfo {
+        guard UITestHooks.bankEmailFake else { return try await fetch() }
+        if UITestHooks.bankEmailFakeSearchFails, info != nil { throw FakeSearchFailure() }
+        fakeSearches += 1
+        // La primera llamada es la de la pantalla de la dirección; las búsquedas cuentan desde la segunda.
+        let linkArrived = UITestHooks.bankEmailFakeGmailLink
+            || UITestHooks.bankEmailFakeGmailLinkAfter.map { fakeSearches > $0 } ?? false
+        return Self.uiTestInfo(withGmailCode: UITestHooks.bankEmailFakeGmailCode, withGmailLink: linkArrived)
     }
 }
 
@@ -291,23 +500,7 @@ struct BankEmailGuideView: View {
             add.action = openAction(title: L10n.BankEmail.openProvider(provider.name))
             list.append(add)
 
-            var confirm = StepGuideStep(
-                id: 2, title: L10n.CorreosBancoGuia.Gmail.confirmTitle,
-                detail: model.info?.gmailConfirmation.map { L10n.CorreosBancoGuia.Gmail.confirmCode($0.code) }
-                    ?? L10n.CorreosBancoGuia.Gmail.confirmWaiting)
-            if let code = model.info?.gmailConfirmation?.code {
-                confirm.action = StepGuideStep.Action(
-                    title: L10n.BankEmail.copyCode, systemImage: "doc.on.doc",
-                    perform: { markDone in
-                        UIPasteboard.general.string = code
-                        markDone()
-                    })
-            } else {
-                confirm.action = StepGuideStep.Action(
-                    title: L10n.BankEmail.checkCode, systemImage: "arrow.clockwise",
-                    perform: { _ in Task { await model.refresh() } })
-            }
-            list.append(confirm)
+            list.append(gmailConfirmStep)
 
             list.append(StepGuideStep(
                 id: 3, title: L10n.CorreosBancoGuia.Gmail.filterTitle, detail: L10n.CorreosBancoGuia.findBank + "\n\n" + L10n.CorreosBancoGuia.Gmail.filterDetail))
@@ -327,6 +520,39 @@ struct BankEmailGuideView: View {
         return list
     }
 
+    /// Paso 3 de Gmail. Con el enlace, abrirlo ES confirmar; con el código de antes, copiarlo; sin nada, buscar (solo y a
+    /// mano) diciendo en qué está.
+    private var gmailConfirmStep: StepGuideStep {
+        switch GmailConfirmationStepLogic.offer(for: model.info) {
+        case .link(let url):
+            var step = StepGuideStep(id: 2, title: L10n.CorreosBancoGuia.Gmail.confirmTitle, detail: L10n.CorreosBancoGuia.Gmail.confirmLink)
+            step.action = StepGuideStep.Action(title: L10n.BankEmail.confirmInGoogle, systemImage: "checkmark.seal", perform: { markDone in
+                openURL(url) { accepted in
+                    if accepted { markDone() }
+                }
+            })
+            return step
+        case .code(let code):
+            var step = StepGuideStep(id: 2, title: L10n.CorreosBancoGuia.Gmail.confirmTitle, detail: L10n.CorreosBancoGuia.Gmail.confirmCode(code))
+            step.action = StepGuideStep.Action(title: L10n.BankEmail.copyCode, systemImage: "doc.on.doc", perform: { markDone in
+                UIPasteboard.general.string = code
+                markDone()
+            })
+            return step
+        case .search:
+            var step = StepGuideStep(id: 2, title: L10n.CorreosBancoGuia.Gmail.confirmTitle, detail: L10n.CorreosBancoGuia.Gmail.confirmWaiting)
+            let search = model.gmailSearch
+            step.action = StepGuideStep.Action(
+                title: search.isSearching ? L10n.BankEmail.searching : L10n.BankEmail.checkCode,
+                systemImage: "arrow.clockwise",
+                perform: { _ in Task { await model.searchGmailConfirmationByHand() } },
+                isBusy: search.isSearching,
+                isEnabled: search.canSearchByHand)
+            step.footnote = AnyView(GmailConfirmationStatusView(model: model, gmailSettingsURL: provider.settingsURL))
+            return step
+        }
+    }
+
     /// Abrir la configuración ES el paso solo si iOS la abrió; el paso en sí se hace allí.
     private func openAction(title: String) -> StepGuideStep.Action {
         StepGuideStep.Action(title: title, systemImage: "arrow.up.forward.app", perform: { markDone in
@@ -335,6 +561,62 @@ struct BankEmailGuideView: View {
                 if accepted { markDone() }
             }
         })
+    }
+}
+
+/// Bajo «Buscar ahora»: cuánto falta para volver a buscar, si falló la conexión, y la salida si no llega. Lanza la búsqueda
+/// sola mientras está a la vista con la app delante: solo existe en el paso activo, así que pasar de paso o salir la corta.
+struct GmailConfirmationStatusView: View {
+    let model: BankEmailModel
+    let gmailSettingsURL: URL?
+
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            content(now: context.date)
+        }
+        .font(DS.Typography.subheadline)
+        .foregroundStyle(.thSecondaryText)
+        .fixedSize(horizontal: false, vertical: true)
+        // Volver de Gmail (o de segundo plano) abre otra ventana y busca en el acto.
+        .task(id: scenePhase == .active) {
+            guard scenePhase == .active else { return }
+            await model.watchGmailConfirmation()
+        }
+    }
+
+    @ViewBuilder
+    private func content(now: Date) -> some View {
+        switch model.gmailSearch.phase {
+        case .notYet:
+            Text(L10n.BankEmail.gmailNotYet(model.gmailSearch.secondsLeft(now: now) ?? 1))
+                .accessibilityIdentifier("bank_email_gmail_status")
+        case .failed:
+            Text(L10n.BankEmail.gmailSearchFailed(model.gmailSearch.secondsLeft(now: now) ?? 1))
+                .accessibilityIdentifier("bank_email_gmail_status")
+        case .gaveUp(let lastFailed):
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(lastFailed ? L10n.BankEmail.gmailGaveUpOffline : L10n.BankEmail.gmailGaveUp)
+                    .accessibilityIdentifier("bank_email_gmail_status")
+                if let gmailSettingsURL {
+                    Button {
+                        openURL(gmailSettingsURL)
+                    } label: {
+                        Label(L10n.BankEmail.openProvider("Gmail"), systemImage: "arrow.up.forward.app")
+                            .font(DS.Typography.subheadline.weight(.semibold))
+                            .foregroundStyle(.thAccentText)
+                            .padding(.vertical, DS.Spacing.xxs)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("bank_email_gmail_open")
+                }
+            }
+        case .idle, .searching, .found:
+            EmptyView()
+        }
     }
 }
 

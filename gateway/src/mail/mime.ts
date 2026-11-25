@@ -11,6 +11,8 @@ export interface ParsedMail {
   from: string;
   subject: string;
   text: string;
+  /** El HTML tal cual, solo para buscar el enlace de confirmación de Gmail (el texto pierde los `href`). No va al modelo. */
+  html: string;
 }
 
 /** Techo de lo que se le pasa al modelo, en caracteres (≈2.000 tokens). Un aviso de banco cabe de sobra. */
@@ -25,6 +27,7 @@ export async function parseMail(raw: ArrayBuffer | Uint8Array | string): Promise
     from: email.from?.address?.toLowerCase() ?? "",
     subject: email.subject ?? "",
     text: normalizeWhitespace(text),
+    html: email.html ?? "",
   };
 }
 

@@ -1131,6 +1131,15 @@ final class UITestHooks {
     /// recurrentes, `DevSeedRecurringChanges`). Aditivo al perfil.
     nonisolated static var seedRecurringChanges: Bool { hasArg("-uitest-seed-s2-changes") }
     nonisolated static var bankEmailFakeGmailCode: Bool { hasArg("-uitest-bank-email-gmail-code") }
+    /// `-uitest-bank-email-gmail-link`: con `-uitest-bank-email`, el enlace de confirmación de Gmail ya recibido (la forma
+    /// que tiene el correo de Gmail desde 2025: sin código). `-uitest-bank-email-gmail-link-after N`: llega en la búsqueda
+    /// número N, para ver «Buscando…» y «Todavía no llegó» antes. `-uitest-bank-email-search-fails`: la búsqueda falla.
+    nonisolated static var bankEmailFakeGmailLink: Bool { hasArg("-uitest-bank-email-gmail-link") }
+    nonisolated static var bankEmailFakeGmailLinkAfter: Int? {
+        guard bankEmailFake, UserDefaults.standard.object(forKey: "uitest-bank-email-gmail-link-after") != nil else { return nil }
+        return UserDefaults.standard.integer(forKey: "uitest-bank-email-gmail-link-after")
+    }
+    nonisolated static var bankEmailFakeSearchFails: Bool { hasArg("-uitest-bank-email-search-fails") }
 
     /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
     /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de

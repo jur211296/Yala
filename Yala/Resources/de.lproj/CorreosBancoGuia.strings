@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Füge deine Yala-Adresse in Gmail hinzu";
 "correosGuia.gmail.add.detail" = "1. Tippe auf „Gmail öffnen“. Gmail öffnet sich in Safari, im Bereich Weiterleitung. Melde dich an, falls du gefragt wirst.\n2. Wenn du die mobile Version siehst, tippe auf die Taste in der Adressleiste von Safari und wähle „Desktop-Website anfordern“.\n3. Tippe auf „Weiterleitungsadresse hinzufügen“.\n4. Halte den Finger in das Feld, tippe auf „Einsetzen“ und dann auf „Weiter“.\n5. Ein Fenster öffnet sich: Tippe auf „Fortfahren“ und dann auf „OK“.\nAktiviere nicht „Eine Kopie eingehender Nachrichten weiterleiten an“: Dann würde deine ganze Post weitergeleitet. Die Nachrichten der Bank trennt der Filter in Schritt 4.";
-"correosGuia.gmail.confirm.title" = "Bestätige mit dem Gmail-Code";
-"correosGuia.gmail.confirm.waiting" = "Gmail hat gerade einen Code an deine Yala-Adresse geschickt, und Yala empfängt ihn für dich: Du musst ihn nicht in deiner E-Mail suchen.\n1. Warte eine Minute und tippe auf „Nach Code suchen“.\n2. Sobald er da ist, siehst du ihn hier.";
+"correosGuia.gmail.confirm.title" = "Bestätige deine Yala-Adresse in Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail hat einen Bestätigungslink an deine Yala-Adresse geschickt, und Yala sucht alle paar Sekunden für dich danach. Wenn du willst, tippe auf „Jetzt suchen“. Wenn er da ist, tippe auf „Bei Google bestätigen“.";
 "correosGuia.gmail.confirm.code" = "Dein Gmail-Code ist %@.\n1. Tippe auf „Code kopieren“.\n2. Geh zurück zu Gmail, auf denselben Weiterleitungsbildschirm.\n3. Füge den Code in das Bestätigungsfeld ein und tippe auf „Bestätigen“. Wenn du das Feld nicht siehst, lade die Seite neu.";
+"correosGuia.gmail.confirm.link" = "Der Bestätigungslink von Gmail ist da.\n1. Tippe auf „Bei Google bestätigen“. Eine Google-Seite öffnet sich; falls sie dich um Bestätigung bittet, tippe auf „Bestätigen“.\n2. Kehre für den nächsten Schritt zu Yala zurück.";
 "correosGuia.gmail.filter.title" = "Erstelle einen Filter für die Nachrichten deiner Bank";
 "correosGuia.gmail.filter.detail" = "1. Gib in Gmail, in Safari, die Adresse deiner Bank oben in die Suchleiste ein.\n2. Tippe auf die Optionstaste rechts neben der Suche und dann auf „Filter erstellen“.\n3. Aktiviere „Weiterleiten an“ und wähle deine Yala-Adresse.\n4. Tippe auf „Filter erstellen“.\nWenn deine Bank dir von mehreren Adressen schreibt, wiederhole diese Schritte für jede.";
 

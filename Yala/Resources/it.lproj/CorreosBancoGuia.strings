@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Aggiungi il tuo indirizzo Yala in Gmail";
 "correosGuia.gmail.add.detail" = "1. Tocca «Apri Gmail». Gmail si apre in Safari, nella sezione dell’inoltro. Se te lo chiede, accedi.\n2. Se vedi la versione per cellulare, tocca il pulsante della barra degli indirizzi di Safari e scegli «Richiedi sito desktop».\n3. Tocca «Aggiungi un indirizzo di inoltro».\n4. Tieni premuto nel riquadro, tocca «Incolla» e poi «Avanti».\n5. Si apre una finestra: tocca «Procedi» e poi «OK».\nNon selezionare «Inoltra una copia della posta in arrivo»: verrebbe inviata tutta la tua posta. Gli avvisi della banca li separa il filtro del passaggio 4.";
-"correosGuia.gmail.confirm.title" = "Conferma con il codice di Gmail";
-"correosGuia.gmail.confirm.waiting" = "Gmail ha appena mandato un codice al tuo indirizzo Yala, e Yala lo riceve per te: non devi cercarlo nella tua posta.\n1. Aspetta un minuto e tocca «Cerca il codice».\n2. Quando arriva, lo vedrai proprio qui.";
+"correosGuia.gmail.confirm.title" = "Conferma il tuo indirizzo Yala in Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail ha inviato un link di conferma al tuo indirizzo Yala, e Yala lo cerca per te ogni pochi secondi. Se vuoi, tocca «Cerca ora». Quando arriva, tocca «Conferma su Google».";
 "correosGuia.gmail.confirm.code" = "Il tuo codice Gmail è %@.\n1. Tocca «Copia codice».\n2. Torna su Gmail, nella stessa schermata dell’inoltro.\n3. Incolla il codice nel riquadro di conferma e tocca «Verifica». Se non vedi il riquadro, ricarica la pagina.";
+"correosGuia.gmail.confirm.link" = "È arrivato il link di conferma di Gmail.\n1. Tocca «Conferma su Google». Si apre una pagina di Google; se ti chiede di confermare, tocca «Conferma».\n2. Torna su Yala per il passaggio successivo.";
 "correosGuia.gmail.filter.title" = "Crea un filtro per gli avvisi della tua banca";
 "correosGuia.gmail.filter.detail" = "1. In Gmail, in Safari, scrivi l’indirizzo della tua banca nella barra di ricerca in alto.\n2. Tocca il pulsante delle opzioni, a destra della ricerca, e poi «Crea filtro».\n3. Seleziona «Inoltra a» e scegli il tuo indirizzo Yala.\n4. Tocca «Crea filtro».\nSe la tua banca ti scrive da più indirizzi, ripeti questi passaggi per ognuno.";
 

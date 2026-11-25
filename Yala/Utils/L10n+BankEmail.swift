@@ -41,6 +41,12 @@ extension L10n {
         static var guarantee: String { bankEmailString("bankEmail.guarantee") }
         static var copyCode: String { bankEmailString("bankEmail.copyCode") }
         static var checkCode: String { bankEmailString("bankEmail.checkCode") }
+        static var searching: String { bankEmailString("bankEmail.searching") }
+        static var confirmInGoogle: String { bankEmailString("bankEmail.confirmInGoogle") }
+        static var gmailGaveUp: String { bankEmailString("bankEmail.gmailGaveUp") }
+        static var gmailGaveUpOffline: String { bankEmailString("bankEmail.gmailGaveUpOffline") }
+        static func gmailNotYet(_ seconds: Int) -> String { String(format: bankEmailString("bankEmail.gmailNotYet"), seconds) }
+        static func gmailSearchFailed(_ seconds: Int) -> String { String(format: bankEmailString("bankEmail.gmailSearchFailed"), seconds) }
         static func skipped(_ count: Int) -> String { String(format: bankEmailString("bankEmail.skipped"), count) }
         static func trialUsed(_ used: Int, _ limit: Int) -> String { String(format: bankEmailString("bankEmail.trialUsed"), used, limit) }
         static func guideTitle(_ provider: String) -> String { String(format: bankEmailString("bankEmail.guideTitle"), provider) }

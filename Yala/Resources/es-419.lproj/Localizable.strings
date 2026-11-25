@@ -8710,7 +8710,13 @@
 "bankEmail.guarantee" = "Solo salen de tu correo los avisos de tu banco: el resto de tus correos no se reenvía.";
 "bankEmail.openProvider" = "Abrir %@";
 "bankEmail.copyCode" = "Copiar código";
-"bankEmail.checkCode" = "Buscar el código";
+"bankEmail.checkCode" = "Buscar ahora";
+"bankEmail.searching" = "Buscando…";
+"bankEmail.confirmInGoogle" = "Confirmar en Google";
+"bankEmail.gmailNotYet" = "Todavía no llegó. Nueva búsqueda en %d s.";
+"bankEmail.gmailSearchFailed" = "No pudimos conectar con Yala. Revisa tu conexión: nueva búsqueda en %d s.";
+"bankEmail.gmailGaveUp" = "No llegó en 2 minutos. En Gmail, junto a tu dirección de Yala, vuelve a enviar el correo de confirmación y toca «Buscar ahora». Si sigue sin llegar, pide ayuda abajo.";
+"bankEmail.gmailGaveUpOffline" = "No pudimos conectar con Yala en 2 minutos. Revisa tu conexión y toca «Buscar ahora».";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "No se pudo guardar del todo. Puede que parte de los cambios ya se vea; revisa la cuenta y vuelve a guardar.";

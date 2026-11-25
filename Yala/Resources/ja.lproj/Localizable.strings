@@ -8701,7 +8701,13 @@
 "bankEmail.guarantee" = "メールボックスから送られるのは銀行の通知だけです。ほかのメールは転送されません。";
 "bankEmail.openProvider" = "%@ を開く";
 "bankEmail.copyCode" = "コードをコピー";
-"bankEmail.checkCode" = "コードを確認";
+"bankEmail.checkCode" = "今すぐ探す";
+"bankEmail.searching" = "探しています…";
+"bankEmail.confirmInGoogle" = "Google で確認";
+"bankEmail.gmailNotYet" = "まだ届いていません。%d 秒後にもう一度探します。";
+"bankEmail.gmailSearchFailed" = "Yala に接続できません。接続を確認してください。%d 秒後にもう一度探します。";
+"bankEmail.gmailGaveUp" = "2 分たっても届きませんでした。Gmail で Yala のアドレスの横から確認メールを再送信し、「今すぐ探す」をタップしてください。それでも届かない場合は、下からサポートに連絡してください。";
+"bankEmail.gmailGaveUpOffline" = "2 分間 Yala に接続できませんでした。接続を確認して「今すぐ探す」をタップしてください。";
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "すべてを保存できませんでした。一部の変更はすでに反映されている可能性があります。口座を確認して、もう一度保存してください。";

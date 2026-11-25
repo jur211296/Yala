@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Adicione seu endereço do Yala no Gmail";
 "correosGuia.gmail.add.detail" = "1. Toque em “Abrir o Gmail”. O Gmail abre no Safari, na seção de encaminhamento. Se pedir, faça login.\n2. Se aparecer a versão para celular, toque no botão da barra de endereços do Safari e escolha “Solicitar Site para Computador”.\n3. Toque em “Adicionar um endereço de encaminhamento”.\n4. Mantenha o dedo no campo, toque em “Colar” e depois em “Próxima”.\n5. Abre uma janela: toque em “Continuar” e depois em “OK”.\nNão marque “Encaminhar uma cópia dos e-mails recebidos”: assim todo o seu e-mail seria enviado. Os avisos do banco são separados pelo filtro do passo 4.";
-"correosGuia.gmail.confirm.title" = "Confirme com o código do Gmail";
-"correosGuia.gmail.confirm.waiting" = "O Gmail acabou de mandar um código para o seu endereço do Yala, e o Yala recebe por você: não precisa procurar no seu e-mail.\n1. Espere um minuto e toque em “Buscar o código”.\n2. Quando chegar, você vai vê-lo aqui mesmo.";
+"correosGuia.gmail.confirm.title" = "Confirme seu endereço do Yala no Gmail";
+"correosGuia.gmail.confirm.waiting" = "O Gmail enviou um link de confirmação para o seu endereço do Yala, e o Yala procura por você a cada poucos segundos. Se quiser, toque em “Buscar agora”. Quando chegar, toque em “Confirmar no Google”.";
 "correosGuia.gmail.confirm.code" = "Seu código do Gmail é %@.\n1. Toque em “Copiar código”.\n2. Volte ao Gmail, na mesma tela de encaminhamento.\n3. Cole o código no campo de confirmação e toque em “Verificar”. Se não vir o campo, recarregue a página.";
+"correosGuia.gmail.confirm.link" = "O link de confirmação do Gmail chegou.\n1. Toque em “Confirmar no Google”. Abre uma página do Google; se pedir para confirmar, toque em “Confirmar”.\n2. Volte ao Yala para o próximo passo.";
 "correosGuia.gmail.filter.title" = "Crie um filtro para os avisos do seu banco";
 "correosGuia.gmail.filter.detail" = "1. No Gmail, no Safari, digite o endereço do seu banco na barra de pesquisa lá em cima.\n2. Toque no botão de opções, à direita da pesquisa, e depois em “Criar filtro”.\n3. Marque “Encaminhar para” e escolha seu endereço do Yala.\n4. Toque em “Criar filtro”.\nSe o seu banco escreve de vários endereços, repita esses passos para cada um.";
 

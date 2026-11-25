@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Agrega tu dirección de Yala en Gmail";
 "correosGuia.gmail.add.detail" = "1. Toca «Abrir Gmail». Se abre Gmail en Safari, en la sección de reenvío. Si te lo pide, inicia sesión.\n2. Si ves la versión para celular, toca el botón de la barra de direcciones de Safari y elige «Solicitar sitio web de escritorio».\n3. Toca «Agregar una dirección de reenvío».\n4. Mantén el dedo en el recuadro, toca «Pegar» y luego «Siguiente».\n5. Se abre una ventana: toca «Continuar» y después «Aceptar».\nNo marques «Reenviar una copia del correo entrante»: así se mandaría todo tu correo. Lo del banco lo separa el filtro del paso 4.";
-"correosGuia.gmail.confirm.title" = "Confirma con el código de Gmail";
-"correosGuia.gmail.confirm.waiting" = "Gmail acaba de mandar un código a tu dirección de Yala, y Yala lo recibe por ti: no tienes que buscarlo en tu correo.\n1. Espera un minuto y toca «Buscar el código».\n2. Cuando llegue, lo verás aquí mismo.";
+"correosGuia.gmail.confirm.title" = "Confirma tu dirección de Yala en Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail mandó un enlace de confirmación a tu dirección de Yala, y Yala lo busca por ti cada pocos segundos. Si quieres, toca «Buscar ahora». Cuando llegue, toca «Confirmar en Google».";
 "correosGuia.gmail.confirm.code" = "Tu código de Gmail es %@.\n1. Toca «Copiar código».\n2. Vuelve a Gmail, a la misma pantalla de reenvío.\n3. Pega el código en el recuadro de confirmación y toca «Verificar». Si no ves el recuadro, recarga la página.";
+"correosGuia.gmail.confirm.link" = "Llegó el enlace de confirmación de Gmail.\n1. Toca «Confirmar en Google». Se abre una página de Google; si te pide confirmar, toca «Confirmar».\n2. Vuelve a Yala para el paso siguiente.";
 "correosGuia.gmail.filter.title" = "Crea un filtro para los avisos de tu banco";
 "correosGuia.gmail.filter.detail" = "1. En Gmail, en Safari, escribe la dirección de tu banco en la barra de búsqueda de arriba.\n2. Toca el botón de opciones, a la derecha de la búsqueda, y luego «Crear filtro».\n3. Marca «Reenviarlo a» y elige tu dirección de Yala.\n4. Toca «Crear filtro».\nSi tu banco te escribe desde varias direcciones, repite estos pasos con cada una.";
 

@@ -15,9 +15,10 @@
 
 "correosGuia.gmail.add.title" = "Ajoute ton adresse Yala dans Gmail";
 "correosGuia.gmail.add.detail" = "1. Touche « Ouvrir Gmail ». Gmail s’ouvre dans Safari, dans la section du transfert. Connecte-toi si on te le demande.\n2. Si tu vois la version mobile, touche le bouton de la barre d’adresse de Safari et choisis « Demander le site web pour ordinateur ».\n3. Touche « Ajouter une adresse de transfert ».\n4. Garde le doigt dans le champ, touche « Coller » puis « Suivant ».\n5. Une fenêtre s’ouvre : touche « Continuer » puis « OK ».\nNe coche pas « Transférer une copie des messages entrants » : tout ton courrier serait envoyé. Le filtre de l’étape 4 trie les alertes de ta banque.";
-"correosGuia.gmail.confirm.title" = "Confirme avec le code de Gmail";
-"correosGuia.gmail.confirm.waiting" = "Gmail vient d’envoyer un code à ton adresse Yala, et Yala le reçoit pour toi : tu n’as pas à le chercher dans ta messagerie.\n1. Attends une minute et touche « Chercher le code ».\n2. Quand il arrive, tu le vois ici même.";
+"correosGuia.gmail.confirm.title" = "Confirme ton adresse Yala dans Gmail";
+"correosGuia.gmail.confirm.waiting" = "Gmail a envoyé un lien de confirmation à ton adresse Yala, et Yala le cherche pour toi toutes les quelques secondes. Si tu veux, touche « Chercher maintenant ». Quand il arrive, touche « Confirmer sur Google ».";
 "correosGuia.gmail.confirm.code" = "Ton code Gmail est %@.\n1. Touche « Copier le code ».\n2. Retourne dans Gmail, sur le même écran de transfert.\n3. Colle le code dans le champ de confirmation et touche « Valider ». Si tu ne vois pas le champ, recharge la page.";
+"correosGuia.gmail.confirm.link" = "Le lien de confirmation de Gmail est arrivé.\n1. Touche « Confirmer sur Google ». Une page Google s’ouvre ; si elle te demande de confirmer, touche « Confirmer ».\n2. Reviens dans Yala pour l’étape suivante.";
 "correosGuia.gmail.filter.title" = "Crée un filtre pour les alertes de ta banque";
 "correosGuia.gmail.filter.detail" = "1. Dans Gmail, dans Safari, écris l’adresse de ta banque dans la barre de recherche en haut.\n2. Touche le bouton des options, à droite de la recherche, puis « Créer un filtre ».\n3. Coche « Transférer à » et choisis ton adresse Yala.\n4. Touche « Créer un filtre ».\nSi ta banque t’écrit depuis plusieurs adresses, refais ces étapes pour chacune.";
 
