@@ -314,7 +314,7 @@ final class SyncPushClient {
         // Hasta el 2026-09-16 las dos eran caducada: sin red y con el token vencido, el motor se paraba hasta volver a
         // primer plano y Ajustes pedía iniciar sesión (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
         // El SDK borra la sesión ANTES de lanzar, así que se lee después del `await`.
-        guard let token = await tokenProvider(), !token.isEmpty else {
+        guard let firstToken = await tokenProvider(), !firstToken.isEmpty else {
             guard canRenewSession() else {
                 CloudSyncBreadcrumb.pushBlockedNoSession(pending: rows.count)
                 MetricsService.cloudSyncBlockedByExpiredSession(pending: rows.count)
@@ -337,8 +337,14 @@ final class SyncPushClient {
             return .transient
         }
 
-        // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push).
-        let attest = await attestProvider()
+        // El token y el attest se vuelven a pedir ANTES DE CADA TROZO (bugs de cuenta nube, 2026-11-25). Hasta ese día se
+        // pedían una vez para toda la subida, con la premisa «el TTL ≫ la duración del push», falsa con una cola grande:
+        // 7.166 cambios tras «Vaciar datos» son 144 trozos de ~15 s, media hora, y el JWT dura una hora y el attest 15 min.
+        // El trozo que salía con el token vencido volvía 401, se leía «sesión caducada» y el motor se paraba con «Inicia
+        // sesión para subir N cambios» a quien tenía la sesión viva. Los dos proveedores devuelven lo guardado mientras
+        // sirva, así que pedirlos por trozo no cuesta red.
+        var token = firstToken
+        var attest = await attestProvider()
 
         var confirmed: [SyncDeltaResult] = []
         var index = 0
@@ -346,6 +352,23 @@ final class SyncPushClient {
             if let continueWhile, !continueWhile() {
                 CloudSyncBreadcrumb.pushStoppedBeforeChunk(sent: index, pending: deltas.count)
                 return confirmed.isEmpty ? .transient : .completed(confirmed)
+            }
+            if index > 0 {
+                // Tras un trozo confirmado: lo confirmado se entrega y el ciclo siguiente clasifica el token que falta
+                // (sesión borrada o renovación que no volvió) con la misma lectura de arriba.
+                guard let renewed = await tokenProvider(), !renewed.isEmpty else {
+                    // Las dos lecturas de arriba, con su rastro: la sesión que el SDK conserva es una renovación que no
+                    // volvió (la subida no llegó por la red); la que borró es una sesión caducada.
+                    if canRenewSession() {
+                        lastPushFailedAtServer = true
+                        CloudSyncBreadcrumb.pushTokenUnavailable(pending: deltas.count - index)
+                    } else {
+                        CloudSyncBreadcrumb.pushBlockedNoSession(pending: deltas.count - index)
+                    }
+                    return .completed(confirmed)
+                }
+                token = renewed
+                attest = await attestProvider()
             }
             let upper = min(index + pushChunkSize, deltas.count)
             let outcome = await pushBatch(

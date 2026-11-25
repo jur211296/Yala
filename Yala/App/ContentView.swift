@@ -4539,6 +4539,9 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
     }
     if EntryOnboardingEffects.marksNewInstall(kind) {
         SetupChecklistManager.shared.markAsNewInstall()
+        // Bugs de cuenta nube (2026-11-25): sin esto, un teléfono que tuvo Yala antes de 2.3 no enseñaba Primeros pasos a
+        // nadie que creara cuenta en él (`TabBarDefaultsMigration.markStartedWithWelcome23`).
+        TabBarDefaultsMigration.markStartedWithWelcome23()
     }
     // Telemetría del usuario nuevo (card 4b7h): quien vuelve con sus datos no manda «primeros».
     if kind == .reentry { NewUserMetrics.reentered() }

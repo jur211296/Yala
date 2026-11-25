@@ -567,10 +567,33 @@ struct ProfileView: View {
             isGroupsFocusedShell: isGroupsOnlyShell)
     }
 
+    ///
+    /// **Desde el 2026-11-25 (bugs de cuenta nube) también con los datos en la nube y la sesión perdida**: la cuenta existe y
+    /// «Eliminar mi cuenta» no puede desaparecer (`AccountDeletionRowLogic.shouldShow(hasSession:storageIsCloud:)`). Al
+    /// confirmar sin sesión, se pide entrar antes (`confirmAccountDeletion`).
     private var deleteAccountRowHasSession: Bool {
         // Card n533 · sin esto, la sesión que entra con Ajustes abierto no sacaba «Tu cuenta de Yala» (medido).
         CloudSessionRevision.shared.track()
-        return UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
+        return AccountDeletionRowLogic.shouldShow(
+            hasSession: UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession,
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud)
+    }
+
+    /// El «Eliminar» de la alerta final y su «Reintentar». Con los datos en la nube y sin sesión, primero la puerta de
+    /// «Iniciar sesión» —la misma del aviso del Panel, que solo acepta la cuenta de este teléfono— y, con la sesión de
+    /// vuelta, el borrado de siempre. Si no se entra (cancelar, otra cuenta), no se borra nada y la fila sigue ahí.
+    private func confirmAccountDeletion() async {
+        if AccountDeletionRowLogic.needsSignInBeforeDeleting(
+            hasSession: UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession,
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud) {
+            guard let controller = CloudMigrationController.shared else { return }
+            await controller.signInToResumeSync()
+            guard CloudAuthService.shared.hasSession else {
+                if controller.lastError != nil { showDeleteAccountError = true }
+                return
+            }
+        }
+        await AccountDeletionService.shared.deleteAccount(context: modelContext)
     }
 
     /// §3.3.5: la fila/pantalla "Tu cuenta de Yala" — con sesión backend viva, fuera de secundaria (M1,
@@ -1278,7 +1301,7 @@ struct ProfileView: View {
         }
         .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
             Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
-                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+                Task { await confirmAccountDeletion() }
             }
             Button(L10n.Common.cancel, role: .cancel) {}
         } message: {
@@ -1287,7 +1310,7 @@ struct ProfileView: View {
         }
         .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
             Button(L10n.Settings.deleteAccountRetry) {
-                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+                Task { await confirmAccountDeletion() }
             }
             Button(L10n.Common.cancel, role: .cancel) {
                 AccountDeletionService.shared.acknowledgeFailure()

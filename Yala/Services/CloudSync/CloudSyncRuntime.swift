@@ -717,8 +717,12 @@ final class CloudSyncRuntime {
             return .transient
         }
         if !liveRows.isEmpty {
-            let (buildable, poison) = pushClient.partitionBuildable(liveRows)
+            var (buildable, poison) = pushClient.partitionBuildable(liveRows)
             if !poison.isEmpty { deadLetterPoison(poison, context: context) }
+            // Las altas que una baja posterior de la misma fila deja sin efecto no se suben (bugs de cuenta nube,
+            // 2026-11-25: tras «Vaciar datos», la mitad de la cola).
+            let dropped = engine.dropSupersededUpserts(from: buildable, context: context)
+            if !dropped.isEmpty { buildable.removeAll { dropped.contains($0.persistentModelID) } }
 
             // Gate de sesión expirada (pendientes + no-renovable → estado accionable, sin loop).
             // CONTRATO I7c (nota del review): el provider real DEBE devolver `canRenewSession == true`
@@ -733,7 +737,14 @@ final class CloudSyncRuntime {
             }
 
             if !buildable.isEmpty {
-                let pushOutcome = await pushClient.push(buildable)
+                // Antes de la primera bajada del proceso, dos trozos y a bajar (`SyncOutboxBacklogLogic.uploadsChunk`): con una
+                // cola grande el Panel esperaba la cuenta detrás de media hora de subida. El resto va en el ciclo siguiente.
+                let firstPullCompleted = coordinator.hasCompletedFirstPull
+                var chunkIndex = 0
+                let pushOutcome = await pushClient.push(buildable, continueWhile: {
+                    defer { chunkIndex += 1 }
+                    return SyncOutboxBacklogLogic.uploadsChunk(chunkIndex, firstPullCompleted: firstPullCompleted)
+                })
                 // SERIO-2: teardown durante el push suspendido → NO aplicar resultados (no purgar
                 // outbox/espejo bajo una sesión que ya no existe).
                 guard epoch == sessionEpoch else { return .coalesced }

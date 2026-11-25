@@ -79,7 +79,11 @@ enum SyncSignInBannerLogic {
            let anchored = CloudSignInProvider(rawValue: beaconProvider ?? "") {
             return anchored
         }
-        return CloudSignInProvider(rawValue: stored ?? "") ?? .apple
+        if let stored = CloudSignInProvider(rawValue: stored ?? "") { return stored }
+        // Sin proveedor guardado (el cierre local de la sesión lo borra con el perfil) y sin dueño con el que comparar el
+        // faro: el del faro antes que Apple a ciegas (bugs de cuenta nube, 2026-11-25: en un teléfono de Google, «Eliminar
+        // mi cuenta» sin sesión abría el inicio de sesión de Apple). Entrar con otra cuenta lo sigue rechazando `afterSignIn`.
+        return CloudSignInProvider(rawValue: beaconProvider ?? "") ?? .apple
     }
 
     // MARK: - Al pulsar
