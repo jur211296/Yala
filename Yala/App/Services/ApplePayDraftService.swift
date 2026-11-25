@@ -67,6 +67,7 @@ struct ApplePayDraftService {
         }
 
         var createdDrafts: [InboxDraft] = []
+        var arrivals: [InboxArrivalJoin.Arrival] = []
         var materializedKeys: [String] = []
         var droppedKeys: [String] = []
 
@@ -143,6 +144,9 @@ struct ApplePayDraftService {
             )
             context.insert(draft)
             createdDrafts.append(draft)
+            // La moneda que dijo el pago; con un `$` o `kr` sueltos, la de la cuenta que se le puso.
+            arrivals.append(InboxArrivalJoin.Arrival(
+                draft: draft, currencyCode: parsed.ambiguousSymbol == nil ? parsed.currency : nil, last4: payload.card))
             materializedKeys.append(key)
         }
 
@@ -153,6 +157,10 @@ struct ApplePayDraftService {
 
         guard !createdDrafts.isEmpty else { return 0 }
 
+        // Bandeja sin duplicados (lote 2): el mismo consumo que ya llegó por el aviso o el correo del banco se une al
+        // pendiente que lo tiene, en este mismo guardado (`InboxArrivalJoin`).
+        let joined = InboxArrivalJoin.joinBeforeSave(arrivals, context: context)
+
         do {
             SaveBreadcrumb.willSave("ApplePayDraftService.processPending")
             try context.save()
@@ -162,8 +170,10 @@ struct ApplePayDraftService {
             print("ApplePayDraftService: Error saving drafts: \(error)")
             #endif
             // Save falló: revertir SOLO nuestros inserts (sin rollback global, que borraría otros
-            // cambios pendientes) y NO borrar las keys → se reintentan. Sin pérdida ni duplicado.
-            createdDrafts.forEach { context.delete($0) }
+            // cambios pendientes) y lo que la unión cambió en los pendientes, y NO borrar las keys → se reintentan.
+            // Sin pérdida ni duplicado.
+            createdDrafts.filter { !joined.isAbsorbed($0) }.forEach { context.delete($0) }
+            InboxArrivalJoin.revert(joined)
             return 0
         }
 

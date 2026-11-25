@@ -51,6 +51,7 @@ enum BankNoticeDraftService {
         }
 
         var createdDrafts: [InboxDraft] = []
+        var arrivals: [InboxArrivalJoin.Arrival] = []
         var materializedKeys: [String] = []
         var droppedKeys: [String] = []
 
@@ -62,12 +63,20 @@ enum BankNoticeDraftService {
             context.insert(draft)
             createdDrafts.append(draft)
             materializedKeys.append(key)
+            if case .movement(let movement, _) = entry.reading {
+                arrivals.append(InboxArrivalJoin.Arrival(
+                    draft: draft, currencyCode: movement.currencyCode, last4: movement.cardLast4))
+            }
         }
 
         if !droppedKeys.isEmpty {
             BankNoticePendingStore.remove(keys: droppedKeys, defaults: pendingStoreDefaults)
         }
         guard !createdDrafts.isEmpty else { return 0 }
+
+        // Bandeja sin duplicados (lote 2): el mismo consumo que ya llegó por Apple Pay o el correo del banco se une al
+        // pendiente que lo tiene, en este mismo guardado (`InboxArrivalJoin`).
+        let joined = InboxArrivalJoin.joinBeforeSave(arrivals, context: context)
 
         do {
             SaveBreadcrumb.willSave("BankNoticeDraftService.processPending")
@@ -77,7 +86,8 @@ enum BankNoticeDraftService {
             #if DEBUG
             print("BankNoticeDraftService: Error saving drafts: \(error)")
             #endif
-            createdDrafts.forEach { context.delete($0) }
+            createdDrafts.filter { !joined.isAbsorbed($0) }.forEach { context.delete($0) }
+            InboxArrivalJoin.revert(joined)
             return 0
         }
         BankNoticePendingStore.remove(keys: materializedKeys, defaults: pendingStoreDefaults)

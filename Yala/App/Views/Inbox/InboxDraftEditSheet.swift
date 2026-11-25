@@ -902,6 +902,11 @@ struct InboxDraftEditSheet: View {
                     .accessibilityIdentifier("inbox_discarded_on")
             }
 
+            // Bandeja sin duplicados (lote 2): el mismo consumo unido de varias fuentes, con «Separar».
+            if initialStatus == .pending, let joinedSources = InboxJoinedSourcesSection.sources(of: draft) {
+                InboxJoinedSourcesSection(sources: joinedSources, onSeparate: separateJoinedSources)
+            }
+
             // Validation message when not ready
             if let missingText = missingFieldsText {
                 Text(missingText)
@@ -1288,6 +1293,18 @@ struct InboxDraftEditSheet: View {
             #endif
             return nil
         }
+    }
+
+    /// «Separar» (Bandeja sin duplicados, lote 2): cada fuente unida vuelve como pendiente aparte y este borrador recupera
+    /// sus valores (`InboxArrivalJoin.separate`). Cierra la hoja: lo que enseña salió del borrador antes de separar.
+    private func separateJoinedSources() {
+        guard InboxArrivalJoin.separate(draft, context: modelContext) != nil else {
+            DS.Haptic.error()
+            return
+        }
+        DS.Haptic.success()
+        sessionState.incrementDataVersion()
+        dismiss()
     }
 
     private func rejectDraft() {

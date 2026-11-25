@@ -272,6 +272,7 @@ DEFINE SCHEMA
         CD_date                     TIMESTAMP QUERYABLE SORTABLE,
         CD_entityName               STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_evidence                 STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_joinRecordRaw            STRING,
         CD_needsUserInput           BYTES QUERYABLE SORTABLE,
         CD_newlyCreatedTagNames     BYTES QUERYABLE SORTABLE,
         CD_note                     STRING QUERYABLE SEARCHABLE SORTABLE,

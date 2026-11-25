@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 10
+    static let clientManifestVersion = 11
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -85,6 +85,10 @@ nonisolated enum SyncCapability {
     /// del 22-nov-2026: el «X % usado · disponible de N» de la hoja de la cuenta).
     static let creditLimitSince = 10
 
+    /// Versión del manifest que estrena `inbox_drafts.join_record_raw` (lo que la Bandeja unió al llegar el mismo consumo
+    /// por otra fuente, lote 2 de la Bandeja sin duplicados, 2026-11-24).
+    static let inboxJoinRecordSince = 11
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -97,6 +101,7 @@ nonisolated enum SyncCapability {
     static let suppressedCashFlowLimitsKey = "cloudSync.cashFlowLimitsSuppressed"
     static let suppressedCaptureRulesKey = "cloudSync.captureRulesSuppressed"
     static let suppressedCreditLimitsKey = "cloudSync.creditLimitsSuppressed"
+    static let suppressedInboxJoinRecordsKey = "cloudSync.inboxJoinRecordsSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -357,6 +362,29 @@ nonisolated enum SyncCapability {
         let remaining = suppressedCreditLimits.subtracting(shortcutIDs)
         if remaining.isEmpty { defaults.removeObject(forKey: suppressedCreditLimitsKey) }
         else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCreditLimitsKey) }
+    }
+
+    // MARK: - Uniones de la Bandeja que no subieron (v11)
+
+    /// Los borradores (por `syncID`) cuyo registro de unión este teléfono cambió mientras hablaba una versión que no
+    /// conoce `join_record_raw`. Una sola columna: el apunte es por fila (molde de la v9).
+    static var suppressedInboxJoinRecords: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedInboxJoinRecordsKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `join_record_raw` por la versión. Apuntar de más es inocuo: la reemisión sube el valor de ese
+    /// momento.
+    static func noteSuppressedInboxJoinRecord(_ syncID: UUID) {
+        var current = suppressedInboxJoinRecords
+        guard current.insert(syncID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedInboxJoinRecordsKey)
+    }
+
+    /// Retira los que ya se encolaron. Solo esos: uno que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedInboxJoinRecords(_ syncIDs: Set<UUID>) {
+        let remaining = suppressedInboxJoinRecords.subtracting(syncIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedInboxJoinRecordsKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedInboxJoinRecordsKey) }
     }
 
     // MARK: - Logos propios de pagos planificados que no subieron (v7)
