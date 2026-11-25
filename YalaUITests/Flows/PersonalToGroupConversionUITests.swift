@@ -61,10 +61,23 @@ final class PersonalToGroupConversionUITests: XCTestCase {
             swipes += 1
         }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No está el «Bus» de hoy en Registros.")
-        if row.frame.maxY > app.windows.firstMatch.frame.maxY - 140 { app.swipeUp(velocity: .slow) }
-        // Nocturnas del 21 y 22-nov (iOS 27.0, runner del CI): el toque llegaba con la lista aún deslizándose tras el
-        // `swipeUp` y solo la frenaba; el detalle no se abría y caía 3 de 3. Se toca con la fila quieta y, si aun así el
-        // detalle no llega, se toca una vez más (el primer toque pudo ser el que frenó la inercia).
+        // Nocturnas del 22, 23 y 24-nov (iOS 27.2, runner del CI, 3 de 3 cada una): el `swipeUp` de media pantalla
+        // dejaba la fila donde cayera, y dos toques con la fila quieta no abrían el detalle (el log del CI enseña los dos
+        // toques sintetizados y ninguna hoja). `isHittable` da `true` también bajo la barra de chips o la de pestañas, y
+        // el toque cae encima (testing.md). Se lleva la fila a la franja central con arrastres cortos, sin inercia, y
+        // solo entonces se toca (molde: `UXAudit22Lote11y16UITests`).
+        let bounds = app.windows.firstMatch.frame
+        var drags = 0
+        while drags < 8, row.exists, !(row.frame.midY > bounds.height * 0.35 && row.frame.midY < bounds.height * 0.65) {
+            let goingUp = row.frame.midY >= bounds.height * 0.65
+            let from = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: goingUp ? 0.6 : 0.4))
+            let to = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: goingUp ? 0.45 : 0.55))
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.2)
+            drags += 1
+        }
+        // Nocturnas del 21 y 22-nov (iOS 27.0, runner del CI): el toque llegaba con la lista aún deslizándose y solo la
+        // frenaba. Se toca con la fila quieta y, si aun así el detalle no llega, se toca una vez más (el primer toque pudo
+        // ser el que frenó la inercia).
         let edit = app.buttons["transaction_detail_edit"]
         for _ in 0..<2 where !edit.exists {
             _ = app.waitForSettledLayout(of: row, timeout: 5)

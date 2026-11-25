@@ -57,7 +57,11 @@ final class UXAudit22Lote08UITests: XCTestCase {
 
     /// Borra la primera fila desde su menú contextual y confirma. Devuelve su etiqueta.
     private func deleteFirstRowFromContextMenu(_ app: XCUIApplication) -> String {
-        let first = rows(app).firstMatch
+        // El primer GASTO, no la primera fila: los días 10 y 25 la semilla `minimal` pone arriba una transferencia, y
+        // borrar una pata borra también la otra, así que el aviso contaba «3 registros» y no «2» (gate del 25-nov).
+        // Molde: `RecordsLote8BUITests`.
+        let first = rows(app).matching(NSPredicate(format: "label BEGINSWITH 'Gasto, ' OR label CONTAINS ', Gasto, '"))
+            .firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 15), "No hay filas de registro.")
         let label = first.label
         first.press(forDuration: 1.2)

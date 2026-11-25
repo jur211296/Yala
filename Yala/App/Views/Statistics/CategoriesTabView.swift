@@ -446,6 +446,9 @@ struct CategoriesTabView: View {
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange
                 )
+                // El mismo selector que Resumen y Tendencias, donde se quedaba con el chip o la frase viejos al elegir
+                // (medido en XCUITest): atado al modo, se rehace con cada cambio. Causa sin aislar.
+                .id(sessionState.comparisonMode)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
