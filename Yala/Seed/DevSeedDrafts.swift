@@ -87,6 +87,26 @@ struct DevSeedDrafts {
             twin.category = subcategory.safeCategory
             context.insert(twin)
         }
+
+        // `-uitest-inbox-joined-draft`: el mismo café por Apple Pay y por el correo del banco, unidos al llegar
+        // (`InboxArrivalJoin`, lote 2 de la Bandeja sin duplicados). Con céntimos que la semilla no genera.
+        if UITestHooks.seedInboxJoinedDraft {
+            let paidAt = Calendar.current.startOfDay(for: Date.now).addingTimeInterval(9 * 3600 + 5 * 60)
+            let applePay = InboxDraft(
+                note: "Starbucks", amount: -27.30, date: paidAt, account: account, sourceType: .applePay,
+                rawText: "S/27.30", evidence: "Starbucks", confidenceAmount: 1, confidenceDate: 1,
+                needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+            context.insert(applePay)
+            let email = InboxDraft(
+                note: "STARBUCKS MIRAFLORES", amount: -27.30,
+                date: Calendar.current.startOfDay(for: Date.now).addingTimeInterval(12 * 3600), account: account,
+                sourceType: .emailAlert, rawText: "BCP · ****4821", evidence: "BCP · ****4821", confidenceAmount: 0.9,
+                confidenceDate: 0.9, needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+            context.insert(email)
+            _ = InboxArrivalJoin.joinBeforeSave(
+                [InboxArrivalJoin.Arrival(draft: email, currencyCode: account.currencyCode, last4: "4821")],
+                context: context)
+        }
     }
 }
 #endif

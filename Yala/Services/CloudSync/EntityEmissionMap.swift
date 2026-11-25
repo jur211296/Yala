@@ -410,8 +410,14 @@ enum EntityEmissionMap {
             ColumnEmitter("origin_group_name") { m, _ in Emit.text(m.originGroupName) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
             ColumnEmitter("updated_at_domain") { m, _ in .timestamp(m.updatedAt) },
+            // Lo que la Bandeja unió al llegar (JSON de `InboxJoinRecord`, lote 2, 2026-11-24). `nil` sin nada unido: la
+            // columna nace NULL en todo borrador que el servidor ya tenía, así que no hay valor por defecto que divergir.
+            ColumnEmitter("join_record_raw", since: SyncCapability.inboxJoinRecordSince) { m, _ in
+                Emit.text(m.joinRecordRaw)
+            },
         ],
         columnKeyPaths: [
+            \InboxDraft.joinRecordRaw: ["join_record_raw"],
             \InboxDraft.note: ["note"],
             \InboxDraft.amount: ["amount"],
             \InboxDraft.date: ["date"],

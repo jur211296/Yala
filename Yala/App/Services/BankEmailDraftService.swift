@@ -110,6 +110,7 @@ enum BankEmailDraftService {
         guard !dtos.isEmpty else { return 0 }
         let accounts = DraftBuilder.fetchActiveAccounts(context: context)
         var inserted: [InboxDraft] = []
+        var arrivals: [InboxArrivalJoin.Arrival] = []
 
         // Lo que apuntó la IA tiene su propio paso (cuenta y subcategoría por id o por nombre, y el freno contra el
         // duplicado de otro aparato). Si sus lecturas fallan, no se crea nada de la vuelta y no se confirma nada.
@@ -118,6 +119,7 @@ enum BankEmailDraftService {
             guard let aiDrafts = aiConnectorDrafts(aiDTOs, accounts: accounts, context: context) else { return nil }
             aiDrafts.forEach { context.insert($0) }
             inserted.append(contentsOf: aiDrafts)
+            arrivals.append(contentsOf: aiDrafts.map { InboxArrivalJoin.Arrival(draft: $0, currencyCode: $0.cachedCurrencyCode) })
         }
 
         for dto in dtos where !AIConnectorDraftLogic.isAI(source: dto.source) {
@@ -180,7 +182,12 @@ enum BankEmailDraftService {
             draft.cachedCurrencyCode = account?.currencyCode ?? fields.currencyCode
             context.insert(draft)
             inserted.append(draft)
+            arrivals.append(InboxArrivalJoin.Arrival(draft: draft, currencyCode: fields.currencyCode, last4: dto.accountLast4))
         }
+
+        // Bandeja sin duplicados (lote 2): el mismo consumo que ya llegó por otra fuente (Apple Pay, el aviso del banco, o
+        // el correo y la IA de esta misma tanda) se une al pendiente que lo tiene, en este mismo guardado.
+        let joined = InboxArrivalJoin.joinBeforeSave(arrivals, context: context)
 
         do {
             SaveBreadcrumb.willSave("BankEmailDraftService.materialize")
@@ -190,7 +197,8 @@ enum BankEmailDraftService {
             #if DEBUG
             print("BankEmailDraftService: Error saving drafts: \(error)")
             #endif
-            inserted.forEach { context.delete($0) }
+            inserted.filter { !joined.isAbsorbed($0) }.forEach { context.delete($0) }
+            InboxArrivalJoin.revert(joined)
             return nil
         }
         return inserted.count
@@ -208,15 +216,18 @@ enum BankEmailDraftService {
         let existing: [InboxDraft]
         do {
             subcategories = try context.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate<Subcategory> { $0.isVisible == true }))
+            // También los que tienen algo unido: un borrador de la IA puede vivir dentro de otro (`InboxArrivalJoin`).
             let raw = DraftSourceType.aiConnector.rawValue
-            existing = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> { $0.sourceTypeRaw == raw }))
+            existing = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.sourceTypeRaw == raw || $0.joinRecordRaw != nil
+            }))
         } catch {
             #if DEBUG
             print("BankEmailDraftService: Error reading for AI drafts: \(error)")
             #endif
             return nil
         }
-        let known = existing.map(AIConnectorDraftLogic.Existing.init)
+        let known = InboxArrivalJoin.aiMaterializations(in: existing)
 
         var drafts: [InboxDraft] = []
         for dto in dtos {

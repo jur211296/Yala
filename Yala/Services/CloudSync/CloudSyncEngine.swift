@@ -3190,6 +3190,11 @@ final class CloudSyncEngine {
                let line = model as? CashFlowLine {
                 SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: changedColumns)
             }
+            // Y con lo que la Bandeja unió al llegar (v11), también cuando «Separar» lo vacía.
+            if level < SyncCapability.inboxJoinRecordSince, changedColumns.contains("join_record_raw"),
+               let draft = model as? InboxDraft, let draftSyncID = draft.syncID {
+                SyncCapability.noteSuppressedInboxJoinRecord(draftSyncID)
+            }
             // Y con el límite de una tarjeta (v10), también cuando se quita.
             if level < SyncCapability.creditLimitSince, changedColumns.contains("credit_limit"),
                let account = model as? Account {

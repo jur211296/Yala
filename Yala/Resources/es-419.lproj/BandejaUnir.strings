@@ -1,0 +1,17 @@
+/*
+  BandejaUnir.strings
+  Yala
+
+  «Separar» en un borrador que la Bandeja unió al llegar (lote 2 de la Bandeja sin duplicados, decisión de Jürgen del
+  24-nov-2026). Tabla propia, fuera de Localizable.strings.
+*/
+
+"bandejaUnir.joined.summary" = "Juntamos el mismo gasto: %@";
+"bandejaUnir.separate" = "Separar";
+"bandejaUnir.separate.hint" = "Cada fuente vuelve como un pendiente aparte";
+"bandejaUnir.source.applePay" = "Apple Pay";
+"bandejaUnir.source.bankNotice" = "Aviso del banco";
+"bandejaUnir.source.bankEmail" = "Correo del banco";
+"bandejaUnir.source.web" = "Yala web";
+"bandejaUnir.source.ai" = "Tu IA";
+"bandejaUnir.source.manual" = "A mano";

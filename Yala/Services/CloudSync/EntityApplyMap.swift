@@ -288,6 +288,9 @@ enum EntityApplyMap {
             "cached_category_color_hex": Apply.textOpt(\.cachedCategoryColorHex),
             "cached_subcategory_icon": Apply.textOpt(\.cachedSubcategoryIcon),
             "cached_currency_code": Apply.textOpt(\.cachedCurrencyCode),
+            // Lo que la Bandeja unió al llegar (`since: 11`): solo llega si este teléfono pidió `v11`. Con la key presente
+            // manda el servidor, también con NULL (nada unido, o separado).
+            "join_record_raw": Apply.textOpt(\.joinRecordRaw),
             "source_scheduled_payment_ref": Apply.refUUIDStringOpt(\.sourceScheduledPaymentID),
             "split_expense_id": Apply.textOpt(\.splitExpenseID),
             "split_group_zone_id": Apply.textOpt(\.splitGroupZoneID),

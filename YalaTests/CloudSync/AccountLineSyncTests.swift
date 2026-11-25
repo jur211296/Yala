@@ -146,9 +146,9 @@ struct AccountLineSyncTests {
     @Test func capability_isCappedByWhatThisBuildUnderstands() {
         let restoreCapability = isolateCapability(backend: nil)
         defer { restoreCapability() }
-        SyncCapability.recordBackendManifestVersion(10)
+        SyncCapability.recordBackendManifestVersion(11)
         #expect(SyncCapability.declaredLevel == SyncCapability.clientManifestVersion)
-        #expect(SyncCapability.declaredLevel == 10, "v10: el límite de una tarjeta de crédito")
+        #expect(SyncCapability.declaredLevel == 11, "v11: lo que la Bandeja unió al llegar")
     }
 
     @Test func capability_workerRolledBack_goesBackToV1() {
@@ -200,6 +200,7 @@ struct AccountLineSyncTests {
             "favorite_payments": ["destination_account_ref": 4],
             "tx_items": ["split_lines_raw": 6],
             "scheduled_payments": ["custom_logo_ref": 7],
+            "inbox_drafts": ["join_record_raw": 11],
         ], "control: el test lee algo")
         #expect(manifest.manifest_version == SyncCapability.clientManifestVersion,
                 "subir el manifest sin subir lo que entiende el cliente (o al revés) deja una columna sin gate")

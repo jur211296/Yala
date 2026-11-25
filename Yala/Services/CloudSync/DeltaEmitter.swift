@@ -96,6 +96,11 @@ enum DeltaEmitter {
             if line.limitForeignAmount != nil { withValue.insert("limit_foreign_amount") }
             SyncCapability.noteSuppressedCashFlowLimits(line.id, columns: withValue.intersection(changedColumns))
         }
+        // Y con lo que la Bandeja unió al llegar (v11, 2026-11-24).
+        if capabilityLevel < SyncCapability.inboxJoinRecordSince, changedColumns.contains("join_record_raw"),
+           let draft = model as? InboxDraft, draft.joinRecordRaw != nil, let draftSyncID = draft.syncID {
+            SyncCapability.noteSuppressedInboxJoinRecord(draftSyncID)
+        }
         // Y con el límite de una tarjeta (v10, 2026-11-22).
         if capabilityLevel < SyncCapability.creditLimitSince, changedColumns.contains("credit_limit"),
            let account = model as? Account, account.creditLimit != nil {

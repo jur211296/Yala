@@ -219,6 +219,14 @@ final class InboxDraft: Identifiable {
     /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
     @Attribute(.preserveValueOnDeletion) var syncID: UUID?
 
+    // MARK: - Unir al llegar (Bandeja sin duplicados, lote 2)
+
+    /// Lo que la Bandeja unió en este borrador porque era el mismo consumo llegado por otra fuente (Apple Pay, aviso o
+    /// correo del banco, Yala web, tu IA), en JSON de `InboxJoinRecord`. `nil` si no se unió nada. Guarda lo que trajo
+    /// cada fuente y los valores del borrador antes de unir: con eso «Separar» devuelve cada uno a su sitio. Una versión
+    /// anterior a 2.3 no lo conoce y ve el borrador unido, sin más.
+    var joinRecordRaw: String?
+
     // MARK: - Computed Properties
 
     var sourceType: DraftSourceType {

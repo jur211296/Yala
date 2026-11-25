@@ -26,6 +26,7 @@
 //  Y desde la v6 (Grupos B, card 1), con la receta de líneas de tu parte de un gasto de grupo (`tx_items.split_lines_raw`).
 //  Y desde la v7 (2026-11-20), con el logo propio de un pago planificado (`scheduled_payments.custom_logo_ref`).
 //  Y desde la v9 (2026-11-21), con las reglas de captura de una cuenta (`accounts.capture_rules_raw`).
+//  Y desde la v11 (2026-11-24), con lo que la Bandeja unió al llegar (`inbox_drafts.join_record_raw`).
 //  Y desde la v10 (2026-11-22), con el límite de una tarjeta de crédito (`accounts.credit_limit`).
 //  Y desde la v8 (2026-11-20), con los límites del flujo de caja con pagos y en otra moneda (las cuatro columnas de
 //  `SyncCapability.cashFlowLimitColumns`), por columna como la v5.
@@ -292,6 +293,38 @@ extension CloudSyncEngine {
             reemitted += inputs.count
         }
 
+        // Lo que la Bandeja unió al llegar (v11, 2026-11-24), con el molde de las reglas de captura.
+        let pendingJoinRecords = level >= SyncCapability.inboxJoinRecordSince
+            ? SyncCapability.suppressedInboxJoinRecords : []
+        if !pendingJoinRecords.isEmpty {
+            let drafts = try context.fetch(FetchDescriptor<InboxDraft>()).filter {
+                $0.syncID.map(pendingJoinRecords.contains) ?? false
+            }
+            let emission = EntityEmissionMap.inboxDraft
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs: [SnapshotRowInput] = drafts.compactMap { draft in
+                guard let syncID = draft.syncID else { return nil }
+                return SnapshotRowInput(syncID: syncID, entityType: SyncEntityType.inboxDraft) { hlc in
+                    let result = DeltaEmitter.emit(model: draft, emission: emission,
+                                                   changedColumns: ["join_record_raw"], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó el borrador: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.inboxDraft,
+                                                           reason: "inboxJoinRecordReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         // Los límites del flujo de caja con pagos y en otra moneda (v8, 2026-11-20), por columna como la v5.
         let pendingLimits = level >= SyncCapability.cashFlowLimitsSince ? SyncCapability.suppressedCashFlowLimits : [:]
         if !pendingLimits.isEmpty {
@@ -336,6 +369,7 @@ extension CloudSyncEngine {
         SyncCapability.clearSuppressedCashFlowLimits(pendingLimits)
         SyncCapability.clearSuppressedCaptureRules(pendingCaptureRules)
         SyncCapability.clearSuppressedCreditLimits(pendingCreditLimits)
+        SyncCapability.clearSuppressedInboxJoinRecords(pendingJoinRecords)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

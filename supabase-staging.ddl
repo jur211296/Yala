@@ -262,6 +262,7 @@ CREATE TABLE inbox_drafts (
   server_seq BIGINT NOT NULL,
   schema_version INTEGER NOT NULL DEFAULT 1,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  join_record_raw TEXT,  -- g36_01 (2026-11-24): lo que la Bandeja unió al llegar (JSON, `InboxJoinRecord`); manifest v11
   PRIMARY KEY (user_id, sync_id)
 );
 

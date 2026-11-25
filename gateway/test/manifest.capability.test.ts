@@ -72,8 +72,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 10, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(10);
+  it("el Worker anuncia la versión 11, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(11);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -81,7 +81,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7), los límites del flujo de caja (8), las reglas de captura (9) y el límite de la tarjeta (10)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5), la receta de líneas (6), el logo propio (7), los límites del flujo de caja (8), las reglas de captura (9), el límite de la tarjeta (10) y lo que la Bandeja unió (11)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -100,6 +100,7 @@ describe("capability-set por versión del manifest", () => {
       "cashflow_lines.limit_foreign_amount@8",
       "cashflow_lines.scheduled_payment_ids_raw@8",
       "favorite_payments.destination_account_ref@4",
+      "inbox_drafts.join_record_raw@11",
       "scheduled_payments.custom_logo_ref@7",
       "tx_items.split_lines_raw@6",
     ]);
@@ -113,7 +114,8 @@ describe("capability-set por versión del manifest", () => {
     expect([...(cap.columns!.favorite_payments ?? [])]).not.toContain("destination_account_ref");
     expect([...(cap.columns!.tx_items ?? [])]).not.toContain("split_lines_raw");
     expect([...(cap.columns!.scheduled_payments ?? [])]).not.toContain("custom_logo_ref");
-    const later = new Set(["accounts", "cashflow_lines", "favorite_payments", "tx_items", "scheduled_payments"]);
+    expect([...(cap.columns!.inbox_drafts ?? [])]).not.toContain("join_record_raw");
+    const later = new Set(["accounts", "cashflow_lines", "favorite_payments", "tx_items", "scheduled_payments", "inbox_drafts"]);
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       if (later.has(entity)) continue;
       expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
@@ -262,8 +264,8 @@ describe("capability-set por versión del manifest", () => {
       { scheduled_payment_ids_raw: HLC, limit_extra_amount: HLC })).toBeNull();
   });
 
-  it("v10, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v10", "v99", "full", null]) {
+  it("v11, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v11", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
   });
@@ -282,6 +284,24 @@ describe("capability-set por versión del manifest", () => {
     const empty = { sync_id: row.sync_id, name: "Zip Visa", capture_rules_raw: null };
     expect(canonRowC1("accounts", empty, merkleColumns("accounts", resolveCapabilitySet("v9")))).toContain('"capture_rules_raw":null');
     expect(validateUpsertShape("accounts", { capture_rules_raw: null }, { capture_rules_raw: HLC })).toBeNull();
+  });
+
+  // Lo que la Bandeja unió al llegar (v11, 2026-11-24).
+  it("v10 no baja ni hashea lo que la Bandeja unió; v11 sí (como null en un borrador sin nada unido)", () => {
+    const record = '{"holderAfter":{"note":"Starbucks"},"members":[],"version":1}';
+    const row = { sync_id: "1f2e3d4c-6666-4777-8888-999900001111", note: "Starbucks", join_record_raw: record };
+    const stored = { note: HLC, join_record_raw: HLC };
+    const v10 = projectRowToDelta("inbox_drafts", row, stored, resolveCapabilitySet("v10"));
+    expect(v10.fields).not.toHaveProperty("join_record_raw");
+    expect(v10.field_hlcs).not.toHaveProperty("join_record_raw");
+    const v11 = projectRowToDelta("inbox_drafts", row, stored, resolveCapabilitySet("v11"));
+    expect(v11.fields.join_record_raw).toBe(record);
+    expect(merkleColumns("inbox_drafts", resolveCapabilitySet("v10"))).not.toContain("join_record_raw");
+    expect(merkleColumns("inbox_drafts", resolveCapabilitySet("v11"))).toContain("join_record_raw");
+    const empty = { sync_id: row.sync_id, note: "Starbucks", join_record_raw: null };
+    expect(canonRowC1("inbox_drafts", empty, merkleColumns("inbox_drafts", resolveCapabilitySet("v11")))).toContain('"join_record_raw":null');
+    expect(validateUpsertShape("inbox_drafts", { join_record_raw: null }, { join_record_raw: HLC })).toBeNull();
+    expect(validateUpsertShape("inbox_drafts", { join_record_raw: record }, { join_record_raw: HLC })).toBeNull();
   });
 
   // El límite de una tarjeta de crédito (v10, 2026-11-22).

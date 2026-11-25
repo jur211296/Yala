@@ -107,7 +107,8 @@ struct LimiteTarjetaLogicaTests {
             #expect(text.range(of: #"CD_creditLimit\s+DOUBLE"#, options: .regularExpression) != nil,
                     "\(file) no declara CD_creditLimit DOUBLE.")
         }
-        #expect(PersonalCloudKitSchemaParityTests.pendingProductionDeploy["yala-production.ckdb"] == nil,
+        let pending = PersonalCloudKitSchemaParityTests.pendingProductionDeploy["yala-production.ckdb", default: []]
+        #expect(!pending.contains { $0.contains("CD_creditLimit") },
                 "Production ya tiene CD_creditLimit: no debe quedar apuntado como pendiente.")
     }
 }
