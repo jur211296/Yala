@@ -22,6 +22,12 @@ enum EstoLeiCardLayout {
     static let airAboveFirstCard = DS.Spacing.lg
     /// El contorno de la tarjeta. Sobre el glass, el `cardBorder` del tema (blanco al 8 % en oscuro) no se distinguía.
     static let edgeWidth: CGFloat = 1
+    /// «Ver todo» es un chevron a la derecha, centrado en vertical (Jürgen, 25-nov-2026: arriba dejaba un hueco a la
+    /// izquierda). Su objetivo de toque, 44 pt como mínimo.
+    static let chevronHitTarget: CGFloat = 44
+    /// El margen extra a cada lado del contenido: el del chevron a la derecha y el mismo a la izquierda, para que lo de
+    /// dentro siga centrado en la tarjeta.
+    static let chevronColumn = DS.Spacing.xl
     static let edge = Color(uiColor: UIColor { traits in // A11Y-DM: contorno propio por modo, sube con «Aumentar contraste»
         let high = traits.accessibilityContrast == .high
         return traits.userInterfaceStyle == .dark
@@ -30,10 +36,19 @@ enum EstoLeiCardLayout {
     })
 }
 
+/// Dónde va la tarjeta: sola en la hoja, con su fondo y su contorno (opción A), o como la fila desplegada de la hoja de
+/// varios, sin fondo propio y con el chevron al lado (Jürgen, 25-nov-2026: «como Nuevo registro, bien ordenada»). Las
+/// dos van centradas.
+enum EstoLeiCardStyle {
+    case card
+    case row
+}
+
 struct VoiceDraftReviewCard: View {
     let draft: InboxDraft
     /// La hoja de foto deja corregir la descripción tocándola (encargo del 2026-11-17); la de voz no lo pide.
     var editsNoteInPlace = false
+    var style: EstoLeiCardStyle = .card
     /// «Ver todo»: el editor completo del borrador, dentro de la misma hoja.
     let onOpenDetails: () -> Void
 
@@ -48,12 +63,15 @@ struct VoiceDraftReviewCard: View {
     @State private var isEditingNote = false
     /// El monto grande de la tarjeta: más pequeño que el de B1 (64), que ocupa la hoja entera.
     @ScaledMetric(relativeTo: .largeTitle) private var amountSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
+    /// En la fila de la hoja de varios, un poco menos: va entre otras filas.
+    @ScaledMetric(relativeTo: .largeTitle) private var rowAmountSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
     /// La cuenta elegida sola al leer la foto (`CuentaSolaAlLeer`): sin ella, el chip de siempre.
     @Environment(\.cuentaSolaAlLeerHoja) private var cuentaSolaHoja
     /// «Recordar» tras corregir la cuenta (parte 2): lo pone la hoja de la foto.
     @Environment(\.cuentaSolaAlLeerRecordar) private var cuentaSolaRecordar
 
     private var isSaved: Bool { draft.status == .approved }
+    private var isRow: Bool { style == .row }
 
     var body: some View {
         // La tarjeta puede volver a pintarse con su borrador ya borrado (desde «Ver todo»): no se lee nada de él.
@@ -65,10 +83,60 @@ struct VoiceDraftReviewCard: View {
     }
 
     private var card: some View {
-        VStack(spacing: DS.Spacing.md) {
+        Group {
+            if isRow {
+                rowLayout
+            } else {
+                cardLayout
+            }
+        }
+        .sheet(item: $activeField) { field in
+            ChatDraftFieldSheet(
+                field: field,
+                isExpense: isExpense,
+                account: draft.account,
+                subcategory: draft.subcategory,
+                tags: currentTags,
+                date: draft.effectiveDate,
+                // Solo las cuentas de la moneda junto al monto, como en Nuevo registro; para cambiarla, «S/ ▾».
+                currencyScope: currencyCode,
+                editing: editing
+            )
+            .environment(\.cuentaSolaAlLeerSelector, CuentaSolaAlLeerSelectorPista.pista(for: cuentaSolaEleccion))
+        }
+    }
+
+    /// La fila desplegada de la hoja de varios: lo de la tarjeta, centrado, y el chevron de «Ver todo» a la derecha,
+    /// centrado en vertical en la fila (Jürgen, 25-nov-2026).
+    /// El chevron ocupa una columna estrecha y su toque de 44 pt sobresale hacia el margen de la fila: con la columna
+    /// entera de 44, la fila de chips se quedaba corta y «Cuenta» se cortaba (medido en el iPhone 14).
+    private var rowLayout: some View {
+        VStack(spacing: DS.Spacing.sm) {
             descriptionLine
             amountLine
             categoryBlock
+            bottomRow
+            lineUnderChips
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.trailing, EstoLeiCardLayout.chevronColumn)
+        .overlay(alignment: .trailing) {
+            seeAllButton
+                .padding(.trailing, -(EstoLeiCardLayout.chevronHitTarget - EstoLeiCardLayout.chevronColumn) / 2)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var cardLayout: some View {
+        VStack(spacing: DS.Spacing.md) {
+            // Lo de arriba deja sitio al chevron a cada lado; la fila de chips va a todo el ancho, por debajo de él, o
+            // el chip de la cuenta se cortaba («Selecciona…», medido en el iPhone 14).
+            VStack(spacing: DS.Spacing.md) {
+                descriptionLine
+                amountLine
+                categoryBlock
+            }
+            .padding(.horizontal, EstoLeiCardLayout.chevronColumn)
             if isSaved {
                 savedLine
             } else {
@@ -76,15 +144,13 @@ struct VoiceDraftReviewCard: View {
                 lineUnderChips
             }
         }
-        .padding(.top, isSaved ? DS.Spacing.lg : DS.Spacing.xxxxl)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.lg)
+        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity)
-        .overlay(alignment: .topTrailing) {
+        // «Ver todo» a la derecha y centrado en vertical: ya no ocupa la primera fila (Jürgen, 25-nov-2026).
+        .overlay(alignment: .trailing) {
             if !isSaved {
                 seeAllButton
-                    .padding(.top, DS.Spacing.xs)
-                    .padding(.trailing, DS.Spacing.sm)
+                    .padding(.trailing, DS.Spacing.xs)
             }
         }
         .background(
@@ -101,38 +167,20 @@ struct VoiceDraftReviewCard: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice_draft_card")
-        .sheet(item: $activeField) { field in
-            ChatDraftFieldSheet(
-                field: field,
-                isExpense: isExpense,
-                account: draft.account,
-                subcategory: draft.subcategory,
-                tags: currentTags,
-                date: draft.effectiveDate,
-                editing: editing
-            )
-            .environment(\.cuentaSolaAlLeerSelector, CuentaSolaAlLeerSelectorPista.pista(for: cuentaSolaEleccion))
-        }
     }
 
     // MARK: - «Ver todo»
 
+    /// Un chevron, como el de una fila que lleva a su detalle; VoiceOver lo lee como «Ver el registro completo».
     private var seeAllButton: some View {
         Button(action: onOpenDetails) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(DS.Typography.captionSmall)
-                    .accessibilityHidden(true)
-                Text(L10n.EstoLei.seeAll)
-                    .font(DS.Typography.labelSmall)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, DS.Chip.paddingH)
-            .padding(.vertical, DS.Chip.paddingV)
-            .background(Capsule().fill(.quaternary))
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            Image(systemName: "chevron.right")
+                .font(DS.Typography.headline)
+                .foregroundStyle(.secondary)
+                .frame(
+                    minWidth: EstoLeiCardLayout.chevronHitTarget,
+                    minHeight: EstoLeiCardLayout.chevronHitTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.EstoLei.seeAllA11y)
@@ -144,13 +192,16 @@ struct VoiceDraftReviewCard: View {
     @ViewBuilder
     private var descriptionLine: some View {
         if editsNoteInPlace, !isSaved {
-            DraftNoteInlineEditor(draft: draft, title: title, isEditing: $isEditingNote, isCentered: true)
+            DraftNoteInlineEditor(
+                draft: draft, title: title, isEditing: $isEditingNote, isCentered: true, isProminent: true)
         } else {
+            // Con peso y en el color del texto (Jürgen, 25-nov-2026: en gris fino no se leía); el monto sigue mandando.
             Text(title)
-                .font(DS.Typography.body)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("esto_lei_description")
         }
     }
@@ -159,18 +210,34 @@ struct VoiceDraftReviewCard: View {
         draft.account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
     }
 
-    /// La cápsula de moneda de B1, sin menú: la moneda es la de la cuenta, y se cambia cambiando la cuenta.
+    /// Las monedas de la cápsula, como en Nuevo registro (Jürgen, 25-nov-2026). Guardado, ya no se cambia nada.
+    private var currencyOptions: [AmountCurrencyOption] {
+        guard !isSaved else { return [] }
+        return EstoLeiCurrencyChoice.options(accounts: allAccounts, current: currencyCode)
+    }
+
+    /// La moneda es la de la cuenta: elegir una es elegir la cuenta que la tiene, y se guarda al momento.
+    private func chooseCurrency(_ code: String) {
+        guard let account = EstoLeiCurrencyChoice.account(for: code, selected: draft.account, accounts: allAccounts),
+              account.persistentModelID != draft.account?.persistentModelID else { return }
+        DS.Haptic.selection()
+        draft.account = account
+        VoiceDraftFieldEditing.persist(draft, context: modelContext)
+    }
+
+    /// La cápsula de moneda de B1, con el menú de Nuevo registro.
     private var amountLine: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+        // La cápsula centrada en vertical con el monto: por la línea de base quedaba muy abajo (Jürgen, 25-nov-2026).
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
             AmountCurrencyCapsule(
                 label: appPreferences.currencyIdentifier(for: currencyCode),
-                options: [],
+                options: currencyOptions,
                 current: currencyCode.uppercased(),
                 identifierPrefix: "esto_lei",
-                onChoose: { _ in }
+                onChoose: chooseCurrency
             )
             Text(amountNumber)
-                .font(.system(size: amountSize, weight: .bold, design: .rounded))
+                .font(.system(size: isRow ? rowAmountSize : amountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(draft.amount == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(amountColor))
                 .monospacedDigit()
                 .lineLimit(1)
@@ -252,7 +319,9 @@ struct VoiceDraftReviewCard: View {
             ) {
                 activeField = .account
             }
-            .accessibilityLabel(presentation.accessibilityLabel ?? presentation.titulo)
+            // En el chip dice «Cuenta», que no se corta (Jürgen, 25-nov-2026); VoiceOver sigue oyendo qué hacer.
+            .accessibilityLabel(presentation.accessibilityLabel
+                ?? (draft.account == nil ? L10n.Chat.Draft.selectAccount : presentation.titulo))
             .accessibilityIdentifier("voice_draft_chip_account")
             .shrinksInChipRow()
 
@@ -310,7 +379,8 @@ struct VoiceDraftReviewCard: View {
             currentAccountID: draft.account?.shortcutID,
             accountName: draft.account?.name,
             muestraPorque: cuentaSolaHoja.muestraPorque(draft),
-            selectAccount: L10n.Chat.Draft.selectAccount)
+            // «Cuenta» y no «Selecciona cuenta»: en la fila de chips se cortaba (Jürgen, 25-nov-2026).
+            selectAccount: L10n.Transaction.account)
     }
 
     // MARK: - Edición
@@ -420,6 +490,42 @@ struct EstoLeiWhyLine: View {
     }
 }
 
+/// La cápsula de moneda de la tarjeta de «Esto leí»: las mismas monedas y la misma elección que Nuevo registro y la
+/// Bandeja (`AmountCurrencyMenuLogic`). Elegir una moneda es elegir la cuenta que la tiene.
+enum EstoLeiCurrencyChoice {
+    /// Las cuentas que tiene en cuenta: activas y de la persona, con su tarjeta.
+    @MainActor
+    static func menuAccounts(_ accounts: [Account]) -> [AmountCurrencyAccount<PersistentIdentifier>] {
+        let usable = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
+        let nodes = usable.map { AccountLineNode($0) }
+        return usable.map { account in
+            let members = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: nodes)
+            return AmountCurrencyAccount(
+                id: account.persistentModelID,
+                currencyCode: account.currencyCode.uppercased(),
+                cardMembers: members.count > 1
+                    ? members.compactMap { node in usable.first { $0.shortcutID == node.id }?.persistentModelID }
+                    : []
+            )
+        }
+    }
+
+    @MainActor
+    static func options(accounts: [Account], current: String) -> [AmountCurrencyOption] {
+        AmountCurrencyMenuLogic.options(accounts: menuAccounts(accounts), current: current)
+    }
+
+    /// La cuenta a la que lleva elegir `code`: la misma si ya está en esa moneda, la línea de su tarjeta en esa moneda o
+    /// la primera cuenta en ella. `nil` si no hay ninguna.
+    @MainActor
+    static func account(for code: String, selected: Account?, accounts: [Account]) -> Account? {
+        let menu = menuAccounts(accounts)
+        guard let id = AmountCurrencyMenuLogic.target(
+            for: code, selected: selected?.persistentModelID, accounts: menu) else { return nil }
+        return accounts.first { $0.persistentModelID == id }
+    }
+}
+
 /// Lo que escriben los selectores de una fila de «Esto leí» en su borrador. Lo comparten la tarjeta de un registro y la
 /// fila de la hoja de varios (`MultiDraftReviewList`).
 enum VoiceDraftFieldEditing {
@@ -472,14 +578,5 @@ enum VoiceDraftFieldEditing {
             print("VoiceDraftReviewCard: Error saving draft change: \(error)")
             #endif
         }
-    }
-}
-
-extension View {
-    /// Una pieza de una fila de «Esto leí» que no se toca: con la descripción en línea deja el toque al gesto de la fila,
-    /// y VoiceOver la oye en el botón de fondo de la fila, no suelta.
-    func rowPassesTouches(_ passes: Bool) -> some View {
-        allowsHitTesting(!passes)
-            .accessibilityHidden(passes)
     }
 }

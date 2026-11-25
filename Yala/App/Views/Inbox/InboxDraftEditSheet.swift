@@ -669,7 +669,8 @@ struct InboxDraftEditSheet: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+        // La cápsula centrada en vertical con el monto, como en Nuevo registro (Jürgen, 25-nov-2026).
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
             AmountCurrencyCapsule(
                 label: appPreferences.currencyIdentifier(for: displayCurrencyCode),
                 options: currencyOptions,

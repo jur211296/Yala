@@ -108,6 +108,8 @@ final class EstoLeiRecorridoUITests: XCTestCase {
         XCTAssertTrue(count.label.contains("por completar"), "El recuento dice cuántos faltan: \(count.label)")
         XCTAssertEqual(app.buttons.matching(identifier: "esto_lei_ver_todo").count, 1, "Una sola fila desplegada.")
         XCTAssertTrue(app.buttons["voice_draft_chip_subcategory"].firstMatch.exists, "La desplegada ofrece completar.")
-        XCTAssertFalse(app.buttons["image_save"].isEnabled, "Con incompletas marcadas, Guardar va apagado.")
+        let checks = app.buttons.matching(identifier: "multi_review_check").allElementsBoundByIndex
+        XCTAssertTrue(checks.contains { !$0.isEnabled && !$0.isSelected },
+                      "Una incompleta sale con el check vacío y sin poder marcarse (Jürgen, 25-nov-2026).")
     }
 }

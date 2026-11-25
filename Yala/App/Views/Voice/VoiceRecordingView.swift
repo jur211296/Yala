@@ -444,7 +444,10 @@ struct VoiceRecordingView: View {
     /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
     private var draftsToSave: [InboxDraft] {
         guard isMulti else { return pendingDrafts }
-        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+        // Lo que la lógica da por marcado, no la selección cruda: un incompleto sigue en ella aunque no cuente como
+        // marcado (Jürgen, 25-nov-2026), y aprobarlo falla y corta el resto.
+        let ids = Set(MultiDraftReviewLogic.toSave(reviewItems, selection).map(\.id))
+        return pendingDrafts.filter { ids.contains($0.persistentModelID) }
     }
 
     private var canSave: Bool {

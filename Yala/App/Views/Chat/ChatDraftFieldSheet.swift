@@ -37,6 +37,9 @@ struct ChatDraftFieldSheet: View {
     let field: ChatDraftField
     let isExpense: Bool
     let editing: ChatDraftEditing
+    /// La moneda del monto: el selector de cuenta enseña solo las cuentas en ella, como en Nuevo registro. `nil` = todas
+    /// (el chat y la lista de varios, que no la acotan).
+    let currencyScope: String?
 
     @State private var account: Account?
     @State private var subcategory: Subcategory?
@@ -50,11 +53,13 @@ struct ChatDraftFieldSheet: View {
         subcategory: Subcategory?,
         tags: [Tag],
         date: Date,
+        currencyScope: String? = nil,
         editing: ChatDraftEditing
     ) {
         self.field = field
         self.isExpense = isExpense
         self.editing = editing
+        self.currencyScope = currencyScope
         _account = State(initialValue: account)
         _subcategory = State(initialValue: subcategory)
         _tags = State(initialValue: tags)
@@ -73,7 +78,13 @@ struct ChatDraftFieldSheet: View {
             )
             .onChange(of: subcategory) { _, new in editing.onSubcategoryChange(new?.persistentModelID) }
         case .account:
-            AccountSelectorSheet(selectedAccount: $account, title: L10n.Transaction.account, sizing: .mediumFirst)
+            AccountSelectorSheet(
+                selectedAccount: $account,
+                title: L10n.Transaction.account,
+                routingCurrency: currencyScope,
+                currencyScope: currencyScope,
+                sizing: .mediumFirst
+            )
                 .onChange(of: account) { _, new in editing.onAccountChange(new?.persistentModelID) }
         case .date:
             DatePickerSheet(selectedDate: $date)
