@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "Nessun addebito dal %@.";
 "atajoParte2.changes.pause" = "Metti in pausa";
 "atajoParte2.changes.stillActive" = "È ancora attivo";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Tocca + in basso al centro: si apre «Nuovo comando». Nel pannello in basso, tocca la scheda «Automazione».";
+"atajoParte2.bank.guide27.step3.detail" = "Scorri fino ad «App» e tocca «Notifica». Nel blocco che compare in alto, tocca «App» e scegli %@, senza filtri.";
+"atajoParte2.bank.guide27.step4.detail" = "Nella ricerca del pannello in basso, scrivi «Yala» e tocca «Registra movimento da testo». L’azione va sotto la notifica.";
+"atajoParte2.bank.guide27.step5.detail" = "Tocca «Testo», poi «Seleziona variabile», e scegli «Notifica». Tocca la freccia › dell’azione e, in «Banca», scegli %@. Tocca ‹ in alto a sinistra per salvare.";
+"atajoParte2.bank.remove27.step1" = "Apri Comandi, vai in «Automazione» e cerca quella di %@.";
+"atajoParte2.bank.remove27.step2" = "Tieni premuto il dito, tocca Elimina e conferma.";

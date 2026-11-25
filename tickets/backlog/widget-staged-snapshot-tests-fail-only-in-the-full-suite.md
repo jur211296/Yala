@@ -35,3 +35,5 @@ la suite pasó 2 de 2.
 de `legacyFootprint_*`). Es decir: **otra suite deja armado el borrado de cierre de sesión** (`WidgetDataCache.isWipeArmed`)
 y `updateCache` no arranca la foto. A solas pasa 4/4. Arreglo probable: que `FotoWidgetPorEtapasTests` desarme el
 borrado al empezar (y lo restaure), o encontrar la suite que lo arma sin limpiarlo.
+
+- 2026-11-24 (gate del lote de bugs del barrido de la build 8): otra vez solo en la suite entera (16 177 casos), `measured.turns → 1`; sola, 2 de 2 en verde.

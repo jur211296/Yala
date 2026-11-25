@@ -74,6 +74,12 @@ paths:
   (`finishRecalculation`). **Tras cada `await` de la recarga, una tarea cancelada no toca `recalculateTask`** (quien la
   canceló ya lo soltó) y un almacén soltado corta. Una lectura nueva de tabla entera en `loadData` pasa por tramos o se mide.
   Pin: `YalaTests/SentryHangs2026Nov/PanelSlicedLoadTests`.
+  **El saldo grande no espera al pase por tramos del hero (barrido de la build 8, 24-nov-2026).** Cada guardado de
+  cualquier contexto sube `StoreRemoteChangeCounter`, y ese aviso corta el pase y lo vuelve a empezar: con guardados
+  seguidos (semilla, import) no termina nunca, y el Panel enseñaba todo menos el saldo. Fuera de «Solo gastos» el hero
+  sale en cuanto el saldo está calculado (`PanelHeroFigureLogic.showsHero`, `hasCalculatedBalance`). ⇒ una cifra nueva
+  del hero que salga de ese pase no se puede pintar «al terminar el pase» sin contar con eso. Pin:
+  `YalaTests/BugsBarridoBuild8/SaldoPanelConGuardadosSeguidosTests`.
 
 - **Entrar en Estadísticas no calcula en el `onAppear`, y solo calcula si cambió su firma (2026-11-11, G1 de la
   decisión 28).** Medido en el iPhone 14 con diez años (Release optimizado): el `onAppear` bloqueaba 7,5 s y el cambio

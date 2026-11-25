@@ -25,6 +25,19 @@ enum PanelHeroFigure: Equatable {
 
 enum PanelHeroFigureLogic {
 
+    /// Si el hero del Panel ya puede salir. Fuera de «Solo gastos» la cifra grande es el saldo de hoy, que no sale del pase
+    /// por tramos del hero: basta con que el saldo se haya calculado. Antes esperaba a ese pase, y con guardados seguidos (una
+    /// semilla, un import grande) cada guardado lo cortaba y volvía a empezar: el Panel enseñaba todo menos el saldo hasta
+    /// 46 s después de parar (barrido de la build 8, iPhone 14). En «Solo gastos» la cifra es el gasto del período, que sí
+    /// sale de ese pase, y sigue esperándolo.
+    static func showsHero(hasHeroData: Bool, isExpensesOnlyMode: Bool, hasCalculatedBalance: Bool) -> Bool {
+        if hasHeroData { return true }
+        return !isExpensesOnlyMode && hasCalculatedBalance
+    }
+
+    /// El dato del mes mientras el pase del hero no ha terminado. `HeroMonthView` no lo pinta: solo lo recibe.
+    static let pendingMonthData = HeroMonthData(state: .neutral, income: 0, expense: 0, daysRemaining: 0, daysElapsed: 0)
+
     /// Mes al que pone nombre el rótulo, o `nil` si el período no es un mes de calendario.
     static func namedMonth(
         for period: DetailPeriod,

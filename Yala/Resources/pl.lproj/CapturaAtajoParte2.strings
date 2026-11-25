@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "Brak obciążenia od %@.";
 "atajoParte2.changes.pause" = "Wstrzymaj płatność";
 "atajoParte2.changes.stillActive" = "Nadal aktywne";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Stuknij + na dole pośrodku: otworzy się „Nowy skrót”. W panelu na dole stuknij kartę „Automatyzacja”.";
+"atajoParte2.bank.guide27.step3.detail" = "Przewiń do „Aplikacje” i stuknij „Powiadomienie”. W bloku, który pojawi się u góry, stuknij „Aplikacja” i wybierz %@, bez żadnego filtra.";
+"atajoParte2.bank.guide27.step4.detail" = "W wyszukiwarce panelu na dole wpisz „Yala” i stuknij „Zapisz transakcję z tekstu”. Czynność pojawi się pod powiadomieniem.";
+"atajoParte2.bank.guide27.step5.detail" = "Stuknij „Tekst”, potem „Wybierz zmienną”, i wybierz „Powiadomienie”. Stuknij strzałkę › czynności i w polu „Bank” wybierz %@. Stuknij ‹ w lewym górnym rogu, aby zachować.";
+"atajoParte2.bank.remove27.step1" = "Otwórz Skróty, przejdź do „Automatyzacja” i znajdź tę dla %@.";
+"atajoParte2.bank.remove27.step2" = "Przytrzymaj ją palcem, stuknij Usuń i potwierdź.";

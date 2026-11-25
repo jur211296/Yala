@@ -28,9 +28,9 @@
       "none"
     ],
     "counts": {
-      "total": 184,
+      "total": 185,
       "deterministic": 82,
-      "agentic": 35,
+      "agentic": 36,
       "manual": 59,
       "deterministicSinXCUITest": 0
     }
@@ -4655,6 +4655,22 @@
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/Flows/UXAudit22Lote11DecididasUITests#test_summary_showsWhatYouStillHaveToPay_asADecisionWithItsAmount + #test_weightLine_showsTheTopCategory_andTheNeedBar + unit:YalaTests/EstadisticasResumenOpcionB/EstadisticasResumenOpcionBTests | 2026-11-24 (opción B · Decidir, Jürgen 23-nov): franja de salud con la parte que más baja la nota (weakestPart), «Para decidir hoy» (orden pasado → ≥90 % → falta pagar → 80–90 % → gasto diario ≥5 %; máx. 3; solo con período que llega a hoy), gastos hormiga protagonista con ritmo del mes, Registros por comercio (efímero, cápsula «Solo X»), fila «Ir a», «Lo que más pesa» con la barra de necesidad. Fuera: Categoría/Subcategoría principal, caja ancha de Promedio diario, secciones plegables de pagos, presupuestos y necesidad.",
+      "owner": "frank",
+      "lastVerified": "2026-11-24"
+    },
+    {
+      "area": "bugs-barrido-build-8",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/AtajoBanco/BankNoticeGuideVersion.swift",
+        "Yala/App/Views/Settings/AtajoBanco/BankNoticeBankView.swift",
+        "Yala/App/Views/Panel/HeroMonthView.swift",
+        "Yala/App/Views/Panel/Sections/PanelHeroSection.swift",
+        "Yala/App/Logic/PanelHeroFigureLogic.swift",
+        "Yala/App/Views/Statistics/StatsHeroView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "agentic",
+      "coverage": "device-qa | unit:YalaTests/BugsBarridoBuild8/ | 2026-11-24 (barrido de la build 8, iPhone 14 con iOS 27.2.1): guía de Atajos de iOS 27 recorrida con Atajos de verdad y un aviso de BCP simulado (recordatorio) que llegó a la Bandeja y dejó el BCP «Funcionando»; «Ver detalle ›» abre Estadísticas 3 de 3 y el ojo sigue ocultando; cifra del hero con texto AX5 en iPhone 14, SE e iPad Pro 13 (Estadísticas, Registros y «Te falta pagar»); saldo grande visible mientras la semilla `pesado` escribe; esqueleto del hero al cambiar de período en Estadísticas (con `-uitest-stats-calculation-delay-seconds`).",
       "owner": "frank",
       "lastVerified": "2026-11-24"
     }

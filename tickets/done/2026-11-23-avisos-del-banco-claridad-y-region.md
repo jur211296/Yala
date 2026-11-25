@@ -1,6 +1,6 @@
 ---
 id: 2026-11-23-avisos-del-banco-claridad-y-region
-status: qa
+status: done
 priority: medium
 area: "captura-atajo-banco-parte-2, ajustes"
 created: 2026-11-23
@@ -61,3 +61,16 @@ Jürgen probó «Avisos del banco» en el iPhone y reportó cinco problemas:
 ## Barrido de QA 2026-11-24
 
 Pasos 1, 2, 4 y 6 bien en el iPhone 14 (iOS 27.2.1), y «Probar» con el aviso de ejemplo también. El paso 3 falla: la guía describe el Atajos de iOS 26; en iOS 27.2 «Automatización» es una fila de Biblioteca, el «+» abre «Nuevo atajo» y no existen «Ejecutar inmediatamente», «Siguiente» ni «Nueva automatización en blanco». Sigue en QA hasta que cierre la card de bug «Avisos del banco: la guía de Atajos no casa con iOS 27» (`tablero-bug-2-3-avisos-del-banco-la-guia-de-ataj-zyaf`). El paso 5 (una compra real) va después. Detalle: `docs/qa/barrido-2-3-antes-build-8/lista.md`.
+
+## Pasos 3 y 5 (2026-11-24, lote de bugs del barrido de la build 8)
+
+- **Paso 3**: la guía de iOS 27 (`BankNoticeGuideVersion`) recorrida en el iPhone 14 (iOS 27.2.1) con Atajos de verdad:
+  cada botón que nombra existe con ese nombre («+», «Nuevo atajo», pestaña «Automatización», «Notificación», «App»,
+  buscador, «Registrar movimiento desde texto», «Texto», «Seleccionar variable», «Banco», «‹»). Quitarla: pulsación
+  larga › Eliminar › «Eliminar automatización». En iOS 26 sigue la guía de antes.
+- **Paso 5**: sin app de banco en el iPhone de pruebas, el aviso se simuló con un recordatorio cuyo texto es el de un
+  consumo de BCP («Realizaste un consumo de PEN 12.50 con tu Tarjeta BCP en TAMBO MIRAFLORES»), disparando la
+  automatización «Al recibir una notificación de Recordatorios». El gasto de S/ 12.50 en TAMBO MIRAFLORES llegó a la
+  Bandeja con «Aviso de BCP» y el BCP pasó a «Activos · Funcionando».
+- **Paso 7** (correo del banco con la cuenta de Yala) no se repitió en el teléfono: lo fijan los tests de
+  `AvisosDelBancoClaridadTests`.

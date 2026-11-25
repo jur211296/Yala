@@ -2,8 +2,8 @@
 //  PanelHeroSection.swift
 //  Yala
 //
-//  Gating wrapper: renders `HeroMonthView` only once `PanelViewModel` has
-//  computed the hero payload (otherwise the skeleton flashes an empty card).
+//  Gating wrapper: renders `HeroMonthView` once there is something to show (`PanelHeroFigureLogic.showsHero`): the
+//  balance, or in «Solo gastos» the hero payload. Otherwise the skeleton would flash an empty card.
 //  Propaga el binding del period picker para que `PanelFilterControlBar`
 //  pueda quedarse en chips-only. La frase motivacional y el upsellCTA viven
 //  en `PanelPanoramaSection` (subtítulo de "Tus finanzas" colapsado).
@@ -23,9 +23,13 @@ struct PanelHeroSection: View {
     @Binding var showCustomPeriodPicker: Bool
 
     var body: some View {
-        if let data = viewModel.heroWidget.data {
+        if PanelHeroFigureLogic.showsHero(
+            hasHeroData: viewModel.heroWidget.data != nil,
+            isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+            hasCalculatedBalance: viewModel.hasCalculatedBalance
+        ) {
             HeroMonthView(
-                data: data,
+                data: viewModel.heroWidget.data ?? PanelHeroFigureLogic.pendingMonthData,
                 currencyCode: viewModel.defaultCurrencyCode,
                 selectedPeriod: sessionState.selectedPeriod,
                 customDateRange: sessionState.customDateRange,
@@ -37,7 +41,8 @@ struct PanelHeroSection: View {
                 totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate,
                 moneyBalance: money?.value,
                 moneyBalanceIsApproximate: money?.isApproximate ?? false,
-                accounts: viewModel.accounts
+                accounts: viewModel.accounts,
+                onSeeDetail: { navigation.navigateToDetail(.insights) }
             )
             .contentShape(Rectangle())
             .onTapGesture {

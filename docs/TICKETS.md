@@ -43,16 +43,17 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (147)
+## Index (149)
 
 | id | status | path |
+| 2026-11-24-bugs-barrido-build-8 | done | tickets/done/2026-11-24-bugs-barrido-build-8.md |
 | 2026-11-24-bandeja-emparejador-entre-fuentes | done | tickets/done/2026-11-24-bandeja-emparejador-entre-fuentes.md |
 | 2026-11-24-bandeja-unir-al-llegar | done | tickets/done/2026-11-24-bandeja-unir-al-llegar.md |
 | 2026-11-24-conector-ia-ver-bandeja-y-referencia | done | tickets/done/2026-11-24-conector-ia-ver-bandeja-y-referencia.md |
 | 2026-11-24-gmail-buscar-codigo-sin-respuesta | done | tickets/done/2026-11-24-gmail-buscar-codigo-sin-respuesta.md |
 | 2026-11-24-subir-testflight-2-3-build-8 | done | tickets/done/2026-11-24-subir-testflight-2-3-build-8.md |
 | 2026-11-24-barrido-qa-2-3-antes-build-8 | done | tickets/done/2026-11-24-barrido-qa-2-3-antes-build-8.md |
-| 2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad | backlog | tickets/backlog/2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad.md |
+| 2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad | done | tickets/done/2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad.md |
 | 2026-11-24-propuesta-bandeja-sin-duplicados | done | tickets/done/2026-11-24-propuesta-bandeja-sin-duplicados.md |
 | 2026-11-24-pagos-planificados-chips-vista-y-pie | done | tickets/done/2026-11-24-pagos-planificados-chips-vista-y-pie.md |
 | 2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region | done | tickets/done/2026-11-24-aviso-de-ejemplo-en-la-moneda-de-la-region.md |
@@ -67,7 +68,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-23-estadisticas-fluidez-scroll-y-chips | done | tickets/done/2026-11-23-estadisticas-fluidez-scroll-y-chips.md |
 | 2026-11-23-correos-del-banco-claridad-y-volver | done | tickets/done/2026-11-23-correos-del-banco-claridad-y-volver.md |
 | 2026-11-23-sankey-distribucion-subcategorias | done | tickets/done/2026-11-23-sankey-distribucion-subcategorias.md |
-| 2026-11-23-avisos-del-banco-claridad-y-region | qa | tickets/qa/2026-11-23-avisos-del-banco-claridad-y-region.md |
+| 2026-11-23-avisos-del-banco-claridad-y-region | done | tickets/done/2026-11-23-avisos-del-banco-claridad-y-region.md |
 | 2026-11-23-esto-lei-aire-card-superior | done | tickets/done/2026-11-23-esto-lei-aire-card-superior.md |
 | 2026-11-23-estadisticas-resumen-propuesta-rediseno | done | tickets/done/2026-11-23-estadisticas-resumen-propuesta-rediseno.md |
 | 2026-11-23-selector-cuenta-moneda-y-detent | done | tickets/done/2026-11-23-selector-cuenta-moneda-y-detent.md |

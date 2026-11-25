@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "自 %@ 起没有扣款。";
 "atajoParte2.changes.pause" = "暂停付款";
 "atajoParte2.changes.stillActive" = "仍在使用";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "轻点底部中间的 +，会打开“新快捷指令”。在下方的面板中轻点“自动化”标签。";
+"atajoParte2.bank.guide27.step3.detail" = "向下滚动到“App”，轻点“通知”。在上方出现的模块中轻点“App”并选择%@，不要添加过滤条件。";
+"atajoParte2.bank.guide27.step4.detail" = "在下方面板的搜索中输入“Yala”，轻点“从文本记录交易”。它会出现在通知下方。";
+"atajoParte2.bank.guide27.step5.detail" = "轻点“文本”，再轻点“选择变量”，选择“通知”。轻点操作的 › 箭头，在“银行”中选择%@。轻点左上角的 ‹ 保存。";
+"atajoParte2.bank.remove27.step1" = "打开快捷指令，前往“自动化”，找到 %@ 的那一个。";
+"atajoParte2.bank.remove27.step2" = "按住它，轻点“删除”并确认。";

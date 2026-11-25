@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "Aucun prélèvement depuis le %@.";
 "atajoParte2.changes.pause" = "Mettre en pause";
 "atajoParte2.changes.stillActive" = "Toujours actif";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Touche + en bas au centre : « Nouveau raccourci » s’ouvre. Dans le panneau du bas, touche l’onglet « Automatisation ».";
+"atajoParte2.bank.guide27.step3.detail" = "Fais défiler jusqu’à « Apps » et touche « Notification ». Dans le bloc qui apparaît en haut, touche « App » et choisis %@, sans aucun filtre.";
+"atajoParte2.bank.guide27.step4.detail" = "Dans la recherche du panneau du bas, tape « Yala » et touche « Enregistrer une opération depuis un texte ». L’action se place sous la notification.";
+"atajoParte2.bank.guide27.step5.detail" = "Touche « Texte », puis « Sélectionner une variable », et choisis « Notification ». Touche la flèche › de l’action et, pour « Banque », choisis %@. Touche ‹ en haut à gauche pour enregistrer.";
+"atajoParte2.bank.remove27.step1" = "Ouvre Raccourcis, va dans « Automatisation » et cherche celle de %@.";
+"atajoParte2.bank.remove27.step2" = "Maintiens le doigt dessus, touche Supprimer et confirme.";

@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "Geen afschrijving sinds %@.";
 "atajoParte2.changes.pause" = "Betaling pauzeren";
 "atajoParte2.changes.stillActive" = "Nog actief";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Tik onderin in het midden op +: ‘Nieuwe opdracht’ gaat open. Tik in het paneel onderin op het tabblad ‘Automatisering’.";
+"atajoParte2.bank.guide27.step3.detail" = "Scrol naar ‘Apps’ en tik op ‘Melding’. Tik in het blok dat bovenin verschijnt op ‘App’ en kies %@, zonder filter.";
+"atajoParte2.bank.guide27.step4.detail" = "Typ in het zoekveld van het paneel onderin ‘Yala’ en tik op ‘Transactie vastleggen uit tekst’. De taak komt onder de melding.";
+"atajoParte2.bank.guide27.step5.detail" = "Tik op ‘Tekst’, dan op ‘Selecteer variabele’, en kies ‘Melding’. Tik op het pijltje › van de taak en kies bij ‘Bank’ %@. Tik linksboven op ‹ om te bewaren.";
+"atajoParte2.bank.remove27.step1" = "Open Opdrachten, ga naar ‘Automatisering’ en zoek die van %@.";
+"atajoParte2.bank.remove27.step2" = "Houd je vinger erop, tik op Verwijder en bevestig.";

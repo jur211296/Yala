@@ -1,6 +1,6 @@
 ---
 id: 2026-11-24-cifra-del-hero-pequena-con-texto-de-accesibilidad
-status: backlog
+status: done
 priority: low
 area: "statistics, records, planning, a11y"
 created: 2026-11-24
@@ -28,3 +28,13 @@ techo a tamaños de accesibilidad. Medir si es el token fijo o el reparto de `He
 
 A AX5 en el iPhone SE y el iPad, la cifra del hero de Estadísticas, Registros y Pagos planificados es la más grande de
 su bloque, como en el Panel, sin cortarse.
+
+## Resolución (2026-11-24, lote de bugs del barrido de la build 8)
+
+La causa era la que decía la pista: `StatsHeroView` y el hero de Pagos planificados pintaban la cifra con
+`DS.Typography.panelHeroAmount`, un tamaño fijo, mientras las líneas de debajo crecían con el texto. Ahora usan
+`HeroFigureFonts` (en `StatsHeroView.swift`): con texto de accesibilidad la cifra crece como la del Panel, con el mismo
+techo (60 pt), y el rótulo y las líneas de debajo dejan de crecer en AX2. A tamaño normal nada cambia.
+
+Medido a AX5: Estadísticas, Registros y «Te falta pagar» en el iPhone 14 y en los simuladores iPhone SE e iPad Pro 13. La
+cifra es lo mayor de su bloque y no se corta. Pin: `YalaTests/BugsBarridoBuild8/HeroBarridoBuild8Tests`.

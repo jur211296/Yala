@@ -36,6 +36,9 @@ struct HeroMonthView: View {
     var moneyBalanceIsApproximate: Bool = false
     /// Las cuentas del Panel, para la lista de la hoja del «?» (qué cuentas suman en «Tu dinero hoy»).
     var accounts: [Account] = []
+    /// «Ver detalle ›»: abre Estadísticas. Es un botón propio y no solo el toque del hero entero: el ojo, a un par de
+    /// dedos por debajo, se quedaba ese toque y ocultaba los montos (3 de 3 en el iPhone 14, barrido de la build 8).
+    var onSeeDetail: (() -> Void)? = nil
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
@@ -191,7 +194,27 @@ struct HeroMonthView: View {
         .accessibilityIdentifier("panel_hero_amounts_visibility")
     }
 
+    @ViewBuilder
     private func detailHint(showsText: Bool) -> some View {
+        if let onSeeDetail {
+            Button {
+                onSeeDetail()
+            } label: {
+                detailHintLabel(showsText: showsText)
+                    // La zona de toque, del alto de la fila y un poco más: el dedo cae en «Ver detalle» y no en el ojo.
+                    .padding(.vertical, DS.Spacing.sm)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, -DS.Spacing.sm)
+            // VoiceOver ya lo tiene en la acción «Ver detalles» del hero (`PanelHeroSection`): aquí no se repite.
+            .accessibilityHidden(true)
+        } else {
+            detailHintLabel(showsText: showsText)
+        }
+    }
+
+    private func detailHintLabel(showsText: Bool) -> some View {
         HStack(spacing: DS.Spacing.xxs) {
             if showsText {
                 Text(L10n.Panel.Hero.seeDetail)

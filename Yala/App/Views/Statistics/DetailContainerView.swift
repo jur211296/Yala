@@ -74,6 +74,9 @@ struct DetailContainerView: View {
     @State private var hasCalculatedOnce = false
     /// Lo que leyó la última pasada completa: entrar sin que nada cambie no recalcula (`StatisticsEntryFreshness`).
     @State private var lastCalculationStamp: StatisticsCalculationStamp?
+    /// El período de las cifras que se ven: el de la última pasada completa. Mientras no coincide con el elegido, el hero
+    /// sale en esqueleto (`StatsHeroPendingLogic`; barrido de la build 8).
+    @State private var calculatedPeriod: StatsHeroPeriodKey?
     /// Hay una pasada pedida que aún no terminó (en su espera, a medias o cancelada al salir).
     @State private var calculationInFlight = false
     /// La persona ya entró alguna vez. La página está montada desde el arranque y sus observadores piden pasadas aunque
@@ -487,6 +490,11 @@ struct DetailContainerView: View {
             page(for: tab)
                 .environment(\.statsGuideTab, tab)
                 .environment(\.statsMoneyTodayMemory, moneyTodayMemory)
+                .environment(\.statsHeroFiguresPending, StatsHeroPendingLogic.isPending(
+                    hasCalculatedOnce: hasCalculatedOnce,
+                    calculated: calculatedPeriod,
+                    current: StatsHeroPeriodKey(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)
+                ))
         }
     }
 
@@ -857,6 +865,8 @@ struct DetailContainerView: View {
         guard finished, !Task.isCancelled else { return }
         // La firma se toma al TERMINAR: lo que la propia pasada guarde (tasas, la Salud Financiera) ya cuenta.
         lastCalculationStamp = currentCalculationStamp()
+        let period = StatsHeroPeriodKey(period: inputs.period, customRange: inputs.customRange)
+        if period != calculatedPeriod { calculatedPeriod = period }
         calculationInFlight = false
         if !hasCalculatedOnce { hasCalculatedOnce = true }
         LoadTimeMarks.ready(.statistics)

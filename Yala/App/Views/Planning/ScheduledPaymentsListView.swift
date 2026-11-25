@@ -31,6 +31,8 @@ struct ScheduledPaymentsListView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// La cifra de «Te falta pagar», que crece con el texto de accesibilidad (`HeroFigureFonts`).
+    private var heroFigureFonts = HeroFigureFonts()
 
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
@@ -184,13 +186,15 @@ struct ScheduledPaymentsListView: View {
         // El hero del Panel (`HeroHeader`): rótulo, cifra y detalle a la izquierda. El mes lo dice el navegador de debajo.
         return HeroHeader {
             HeroHeaderLabel(text: L10n.UXL10.heroToPay)
+                .dynamicTypeSize(...HeroFigureFonts.sidesMaxTypeSize)
         } period: {
             EmptyView()
         } content: {
             AmountText(
                 value: hero.pending,
                 currencyCode: currencyCode,
-                font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                // Crece con el texto de accesibilidad, como la del Panel (barrido de la build 8).
+                font: heroFigureFonts.figure, secondaryFont: heroFigureFonts.secondary,
                 animatesValue: true
             )
             .accessibilityIdentifier("scheduled_hero_pending")
@@ -210,6 +214,8 @@ struct ScheduledPaymentsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, DS.Spacing.xxs)
+                // Detalle de la cifra: deja de crecer en AX2, como en el Panel.
+                .dynamicTypeSize(...HeroFigureFonts.sidesMaxTypeSize)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
